@@ -1,16 +1,73 @@
 /**
  * ts-resolve-loader.mjs
  *
- * Custom Node ESM resolve hook that falls back to `.ts` when a `.js` specifier
- * cannot be found. This bridges the gap between TypeScript source files (which
- * use `.js` import specifiers for bundler compatibility) and Node ESM (which
- * resolves specifiers literally).
+ * Custom Node ESM resolve hook that:
+ *  1. Resolves the project's TypeScript path aliases (@/, @lib/, @components/)
+ *     so contract tests can import from the canonical Svelte 5 + bridge paths
+ *     the same way the Vite/Svelte app does.
+ *  2. Falls back to `.ts` when a `.js` specifier cannot be found. This bridges
+ *     the gap between TypeScript source files (which use `.js` import specifiers
+ *     for bundler compatibility) and Node ESM (which resolves specifiers literally).
  *
  * Used by the contract test runner to execute .mjs tests that transitively
- * import from js/modules/*.ts files.
+ * import from js/modules/<file>.ts files and src/lib/<any>/<file>.ts files.
  */
 
+import { fileURLToPath, pathToFileURL } from 'node:url';
+import { resolve as pathResolve, dirname, sep } from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT = pathResolve(__dirname, '..', '..');
+
+// Mirror tsconfig.json path mappings so contract tests can use the same
+// @ / @lib / @components specifiers that src/ code uses.
+const PATH_ALIASES = [
+  { prefix: '@components/', target: pathResolve(PROJECT_ROOT, 'src', 'components') + sep },
+  { prefix: '@lib/',       target: pathResolve(PROJECT_ROOT, 'src', 'lib') + sep },
+  { prefix: '@/',          target: pathResolve(PROJECT_ROOT, 'src') + sep },
+];
+
+function resolveAlias(specifier) {
+  for (const { prefix, target } of PATH_ALIASES) {
+    if (specifier === prefix.slice(0, -1)) {
+      return pathToFileURL(target).href;
+    }
+    if (specifier.startsWith(prefix)) {
+      const tail = specifier.slice(prefix.length).replace(/\//g, sep);
+      return pathToFileURL(target + tail).href;
+    }
+  }
+  return null;
+}
+
 export async function resolve(specifier, context, nextResolve) {
+  // 1. Path alias resolution (matches tsconfig.json paths for @/ @lib/ @components/).
+  if (!specifier.startsWith('node:') && !specifier.startsWith('npm:') &&
+      !specifier.startsWith('.') && !specifier.startsWith('/')) {
+    const aliased = resolveAlias(specifier);
+    if (aliased) {
+      // Try as-is first, then with .ts appended (handles @lib/state/app.svelte → app.svelte.ts).
+      const candidates = [aliased];
+      if (!/\.[a-z]+$/i.test(new URL(aliased).pathname)) {
+        candidates.push(aliased.replace(/\/?$/, '.ts'));
+      }
+      for (const candidate of candidates) {
+        try {
+          const result = await nextResolve(candidate, context);
+          if (process.env.TS_RESOLVE_DEBUG) console.error(`[ts-resolve] alias ${specifier} -> ${candidate}`);
+          return result;
+        } catch (err) {
+          if (process.env.TS_RESOLVE_DEBUG) console.error(`[ts-resolve] alias miss for ${specifier} -> ${candidate}: ${err.message}`);
+          // try next candidate
+        }
+      }
+      // Fall through to default + extension retry.
+    } else if (process.env.TS_RESOLVE_DEBUG) {
+      console.error(`[ts-resolve] no alias for ${specifier}`);
+    }
+  }
+
   try {
     return await nextResolve(specifier, context);
   } catch (err) {

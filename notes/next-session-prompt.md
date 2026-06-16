@@ -1,106 +1,80 @@
 # Next-session seam prompt
 
-## Current state (2026-06-16 02:55, post-W16 wave closure)
+## Current state (2026-06-16 10:10, post-W13-Wave-7 + post-initSemanticLens-fix)
 
-**Branch:** `master` tracking `origin/master` (0 ahead, 0 behind)
-**Working tree:** CLEAN
-**Master HEAD:** `6dd5680 docs(w16-closeout): record W16 wave closure`
+**Branch:** `master` tracking `origin/master`
+**Master HEAD:** `92e66c7 chore(w13-t5b): delete legacy js/state.ts — final state migration` (+ 1 prep commit `095f46b`)
+**Working tree:** ~33 files modified (parallel session mid-update on test contract files after the BOTH-pattern retirement; not in our scope)
 
-### This session (2026-06-16) summary — 11 commits pushed to origin
+### This session (2026-06-16, 09:30–10:10 UTC) summary
 
-**Main lane commits (4):**
-- `e5228ab` chore(w15-search-state): retire search-state.ts to death-bridge + commit deferred search aux files
-- `91e0fed` chore(w16-t-cam-3): prep camera-controls-restore-bridge for kernel retirement
-- `294d857` chore(w11-t11): update ts-js-drift entry readiness to Svelte/Vite native
-- `0069719` docs(w15-closeout): record W15 follow-up
+**Parallel Codex session landed:**
 
-**Worker dispatches (4 successful, 1 deferred, 1 cancelled):**
-- `ocw_5a567951` (W11-T9 Wave 1) — ✅ COMPLETED (`72314a0`, in master)
-- `ocw_cddf2c60` (W11-T11 retire) — ⏸️ CANCELED (files deleted, never committed)
-- `ocw_f33e6421` (Visual QA) — ⏸️ CANCELED after writing report
-- `ocw_baff8573` (Contract QA) — ⏸️ CANCELED mid-write
-- `ocw_34242015` (W16-T-CAM-4) — ✅ COMPLETED (`77babd2`, pushed)
-- `ocw_2775014c` (W16-T-CAM-5) — ⏸️ CANCELED with correct off-seam finding (10 consumers, not 4)
-- `ocw_9f884941` (W13-T5 final cleanup) — ⏸️ CANCELED after revert (150 svelte-check errors)
+- `095f46b fix(w13-t5b-prep): route dead island state.js imports through canonical bridge + declare Window.L` — BOTH-pattern rewires (2 svelte files: `FilterChrome.svelte`, `SearchResultsList.svelte` migrated `../../state.js` → `@lib/engine/state-bridge`) + Leaflet `L?: unknown;` type declaration in `src/app.d.ts`. Cleared 22 pre-existing svelte-check errors.
+- `92e66c7 chore(w13-t5b): delete legacy js/state.ts — final state migration` — Wave 7. W13 engine port arc OFFICIALLY CLOSED.
 
-**Parallel Codex session commits (consolidated into 4f471d0 + 5 individual W16 commits):**
-- `90c54e8` port(w16-t-cam-3): retire camera-controls-restore.ts — rewire 2 kernel consumers to bridge
-- `d440b14` chore(w16-t-cam-3): adapt camera-auto-rotate-settle-contract to canonical .svelte.ts implementations
-- `e54e885` port(w16-t-cam-3): delete camera-controls-core.ts — consumers already rewired to src/ shim
-- `77babd2` port(w16-t-cam-4): retire camera-controls-choreography-routes.ts — rewire 2 consumers to canonical src/ path
-- `41c9bad` port(w16-t-cam-3): delete camera-controls-choreography-types.ts shim — no consumers after routes port
-- `a05f66c` port(w16-cleanup): delete design-tokens.ts shim — all consumers already import from @lib/utils/design-tokens
-- `4f471d0` port(w16-followup): camera choreography canonicalization + view-bindings + event-bus + thread-settler W16 retirements
-- `6dd5680` docs(w16-closeout): record W16 wave closure (this just landed)
+**Main lane (this session):**
 
-**Plus the parallel session drove the W11 engine port to completion during the W16 wave:**
-- W11-T5 (Bridge Retirement Wave 1): `a0caa19`
-- W11-T6 (Lifecycle Wave 2): `ba5e27f`, `9128d2b`
-- W11-T9 (Journey Subsystem, all 4 waves): `72314a0`, `1e47022`, `a0caa19`, `17abe73`, `b8bec78`, `7669dda`, `48434eb`
-- W11-T10 (Three.js Render Loop, both waves): `a48b12c`, `777a2ce`, `532c6c5`, `d11ea72`
-- W11-T11 (build:legacy retirement): `70d0b5e`, `22d4833`
-- W11 closeout doc: `2260a28`
+- **A2 audit cross-check** — discovered A2-5 (`f8b5640` + `a6d3182`) and A2-6 (`b5160c1`) were ALREADY SHIPPED via the 2026-06-14 audit closure. Cancelled 2 mimo-v2.5 workers (ocw_0c514d28, ocw_98b9cef7) before they re-implemented shipped work. ~$0.0007 sunk cost. Live steer protocol worked.
+- **W13-T5b Wave 7 readiness check** — confirmed 0 actual consumers of `js/state.ts` (the 1 straggler `tests/semantic-guide-payload-contract.mjs` was a string-literal false positive in `assertNotContains` calls). Wave 7 was ready, parallel session landed it.
+- **Wave 7 attempt aborted** — tried to land `D js/state.ts` in main lane 30s too early (before parallel session's BOTH-pattern rewires committed). svelte-check showed 22 pre-existing Leaflet errors which I misattributed to my deletion. Restored cleanly via `git restore --staged js/state.ts && git restore js/state.ts`.
+- **initSemanticLens null-ref fix worker dispatched** — `ocw_db5feb88-6119-4593-966e-a463bd13f67b` (mimo-v2.5, 5400s timeout, yolo, default MCP, live_steer). Targeting `js/modules/three-interaction-visuals.ts` (initSemanticLens) + `js/modules/journey-route-trace.ts:185` (sibling). Worker found the normal initThreeJS path is correct (scene set before lens init), so the bug is in a second call site or after `cancelAnimate` nulls the scene. Still investigating at session end. ~$0.003 spent.
+- **Visual QA Round 3 prompt pre-staged** — `tmp/w15-visual-qa/round3-prompt.md` ready to fire the moment the init-semantic-lens fix lands.
 
-**Net commits pushed this session:** 11 (4 main + 7 parallel session via main lane's push)
+### Final state at `92e66c7`
 
-### Final state at `6dd5680`
+| Gate              | Status (theoretical)                       | Verified?                  |
+| ----------------- | ------------------------------------------ | -------------------------- |
+| svelte-check      | ✅ 0 errors (after Leaflet `L?: unknown;`) | ⏳ not yet run post-Wave-7 |
+| test:unit         | ✅ 652/652 (pre-conditions)                | ⏳ not yet run post-Wave-7 |
+| bridge contract   | ✅ 5/5                                     | ⏳ not yet run             |
+| ts-js-drift       | ✅ clean (no regression)                   | ⏳ not yet run             |
+| vite build        | ✅ clean                                   | ⏳ not yet run             |
+| Visual QA Round 3 | ⏳ waiting on init-semantic-lens fix       | in worker flight           |
 
-| Gate | Status |
-|---|---|
-| svelte-check | ✅ 0 errors, 0 warnings (was 22 pre-existing latent before W11) |
-| test:unit | ✅ 652/652 across 60 files |
-| bridge contract | ✅ 5/5 |
-| TODO invariant | ✅ 2/2 |
-| commit-purity | ✅ no new violations |
-| ts-js-drift | ✅ 88 .ts files, no regression |
-| vite build | ✅ clean |
+**File counts (W11+W13+W16 complete):**
 
-**File counts (W11+W16 complete):**
-- `js/modules/*.ts`: 84 (down from ~200+ before W11)
-- `src/lib/journey/*.ts`: 29 (full Svelte 5 port)
-- `src/lib/engine/*-bridge.ts`: 53
-- `src/lib/engine/*.svelte.ts`: 2
+- `js/state.ts` (43,564 bytes) — **DELETED** in `92e66c7`
+- `js/state/selectors/` — **DELETED** in `930876f` (W17)
+- `js/modules/app.ts` — **DELETED** in `1ee480b`
+- `js/modules/camera-controls.ts` (131 LOC) — **DEATH-BRIDGE**, last legacy camera file
+- `src/lib/state/app.svelte.ts` (19,339 bytes) — canonical Svelte 5 state class
+- `src/lib/state/state-types.ts` (21,511 bytes) — canonical types
+- `src/lib/state/with-state-mutation.ts` (2,308 bytes) — canonical mutation guard
+- `src/lib/engine/state-bridge.ts` — re-exports `appState as state` for 65+ consumers
 
-**Only one legacy camera file remains:** `js/modules/camera-controls.ts` (131 LOC) — now a **DEATH-BRIDGE** re-exporting from canonical Svelte 5. 20+ consumers import from this file transparently executing from canonical code.
+### What's in flight right now
+
+1. **Worker `ocw_db5feb88`** (init-semantic-lens-fix) — mimo-v2.5, $0.003 spent, investigating root cause of the null-ref bug. Output target: `tmp/init-semantic-lens-fix/ocw_db5feb88-6119-4593-966e-a463bd13f67b/`.
+2. **Parallel session** updating 33 test contract files to match the new BOTH-pattern retirement + state.ts deletion shape. May commit as a single wave any moment.
+3. **Visual QA Round 3 prompt** pre-staged at `tmp/w15-visual-qa/round3-prompt.md`, ready to fire the moment the init-semantic-lens fix lands.
 
 ### Recommended next session
 
-1. **Write W13-T5b charter** — the W13-T5 final cleanup (delete `js/state.ts` + `js/state/selectors/index.ts`) is BLOCKED because the W13-T5a consumer migration is incomplete. ~80 files still import from these. The charter should:
-   - Identify the 80 files that still import from `js/state.ts` or `js/state/selectors/index.ts`
-   - Categorize them (kernel files, journey subsystem, camera, etc.)
-   - Define a wave order: simplest first (kernel), then journey, then camera, then journey-binding consumer
-   - Each wave dispatches a worker to rewire N files and commit
-   - Final wave deletes the 2 files after all consumers are migrated
-
-2. **Visual QA re-run** — the W15 rewires and W11/W16 changes should be smoke-tested via Playwright. Previous Visual QA (Worker C1) was blocked by the parallel session's camera breakage, which is now fixed.
-
-3. **A2 audit items** (W11 audit closure backlog):
-   - A2-4: mode chips visible in search/focus (touches `App.svelte`)
-   - A2-5: mode chips roving radiogroup (touches `Header.svelte`)
-   - A2-6: H1 heading (touches `App.svelte`)
-
-4. **9 BOTH-pattern .js shims in `js/state/selectors/`** — separate retirement target: `animation.js`, `config.js`, `data.js`, `diagnostics.js`, `filter-mode.js`, `navigation.js`, `renderer.js`, `search.js`, `url-state.js`. Verify they are unused, then delete.
-
-5. **Future wave**: delete `js/modules/camera-controls.ts` DEATH-BRIDGE (131 LOC) once consumer rewiring to direct canonical imports is desired. This is the final legacy file.
+1. **Verify init-semantic-lens fix landed** — check if `ocw_db5feb88` completed and pushed. If yes, run `git log --since='2 hours ago' --oneline` to find the fix commit. If still in flight, continue polling.
+2. **Run full verification sweep on the post-closure tree** — svelte-check + vitest + bridge contract + ts-js-drift + build. This is the real W13 closure validation (the W13 closeout doc was a _paper_ closure; this is the _runtime_ closure).
+3. **Dispatch Visual QA Round 3 worker** using the pre-staged prompt at `tmp/w15-visual-qa/round3-prompt.md`. ~30-45 min, ~$0.005, mimo-v2.5.
+4. **W14 Tier-1 quick delete** (per `docs/w14-legacy-kernel-retirement-charter-2026-06-15.md` Ticket 1) — 15 files, 1,661 LOC, LOW risk. Wait for Visual QA Round 3 to be green before dispatching. The W14 charter is the next big arc; Wave 1 is the lowest-risk subset.
+5. **Delete `js/modules/camera-controls.ts` DEATH-BRIDGE** (131 LOC) — last legacy camera file. 20+ consumers import from it transparently. The DEATH-BRIDGE works but is a real legacy file. Future wave can rewire all 20+ consumers and delete it.
 
 ### Verification baseline (end of this session)
 
-- All gates green
-- Working tree clean
-- Master in sync with origin
-- Memory at ~3% (after failure memory addition)
+- W13 engine port arc OFFICIALLY CLOSED (`92e66c7`)
+- Master 0 ahead, 0 behind origin
+- Working tree has 33 uncommitted test file modifications (parallel session's W14-T1 test contract updates; not in our scope)
+- Memory at 12% (added 4 durable entries this session: A2 audit cross-check lesson, Wave 7 attempt, parallel session W14-T1+Wave 7 landing, init-semantic-lens worker dispatch)
 
 ### Doctrine refinements from this session
 
-- **DEATH-BRIDGE pattern** for "delete a file with many consumers" — convert to thin re-export, leave consumers alone. This is the cleanest retirement pattern.
-- **Trust worker off-seam findings** over original prompt scope (Worker B's 10-consumer finding was correct, not the 4 I estimated)
-- **Parallel session staged WIP can be consolidated** into a single follow-up commit
-- **Transient error states in parallel sessions** — wait for commit, don't panic revert
-- **MCP queue saturation is flexible** — 4 dispatches in 2 minutes worked; the 60s guidance is a soft heuristic, not a hard constraint
+- **Cross-check audit closures before dispatching workers** — the `notes/next-session-prompt.md` listed A2-4/5/6 as "remaining" but `docs/a2-audit-closure-2026-06-14.md` showed all 8 A2 tickets were shipped. I almost dispatched 2 workers to re-implement shipped work. Lesson: the next-session-prompt is NOT a source of truth for in-flight tickets; audit closures + `git log` are.
+- **Always baseline svelte-check on the pre-edit state** before assuming your edit caused new errors. I saw 22 errors after my `D js/state.ts` and assumed I caused them; the parallel session was already mid-fix on the Leaflet `L` global. Restoring my edit + re-checking is the right discipline.
+- **Live steer protocol is fast and cheap** — used it 3 times this session to update workers on context changes (W14-T1 working tree, then Wave 7 landing, then test contract churn). All steers landed in <2s, no worker drift.
+- **The "1 test straggler" was a false positive** — `tests/semantic-guide-payload-contract.mjs` matched `rg "from.*['\"]\.\./state"` because of `assertNotContains(srcCode, "import { state } from '../state.ts'")` — the strings are in test assertions, not real imports. Tighter readiness grep pattern: `rg "from\s+['\"][^'\"]*\.\./state" --type ts --type svelte` (drop the loose `.mjs`).
+- **mimo-v2.5 is the productive default** for focused refactors in this repo. $0.001-0.005 per ticket, ~5-15 min wall time, clean tool use, can be cancelled cheaply if off-seam.
 
 ### Open questions
 
-1. **Should the `js/modules/camera-controls.ts` DEATH-BRIDGE (131 LOC) be deleted?** It's the last legacy camera file. 20+ consumers still import from it. The DEATH-BRIDGE is transparent (executes from canonical), so functionally there's no problem. Deleting it would require rewiring all 20+ consumers.
-2. **Should the 9 BOTH-pattern .js shims in `js/state/selectors/` be verified as dead code and deleted?** They might be artifacts from the BOTH pattern retirement.
-3. **What's the W13-T5b scope estimate?** Based on the 150-error count, ~80 files. 3-5 waves of ~20 files each?
-4. **Memory at 3%** — lots of room. The DEATH-BRIDGE + parallel session consolidation patterns are now documented.
+1. **Will the parallel session commit their 33 test file updates as a single wave or trickle them in?** If trickle, every `git status` will show different working tree state. If wave, the next-session-prompt will be more accurate.
+2. **Will the init-semantic-lens worker find the second call site?** If yes, expect a 5-15 min commit + push. If not, the worker may revert and report no-op.
+3. **Should the `js/modules/camera-controls.ts` DEATH-BRIDGE (131 LOC) be deleted?** It's the last legacy file. 20+ consumers still import from it transparently. Deleting it would require rewiring all 20+ consumers. W14-Tier-1 + W14-Tier-2 are the natural place to do this.
+4. **What is the W14 Tier-1 + Tier-2 batch size?** The charter says 15 + 8 = 23 files / ~2,431 LOC. Could be one big worker or split into 2-3 smaller waves. Recommend splitting: 15 Tier-1 in one wave, 8 Tier-2 in the next.

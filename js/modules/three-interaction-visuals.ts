@@ -234,6 +234,10 @@ export function disposeSemanticLens() {
 }
 
 export function initSemanticManifold() {
+    if (!state.scene) {
+        console.warn('[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init');
+        return;
+    }
     const manifoldGeo = new THREE.CircleGeometry(4, 64);
     const manifoldMat = new THREE.ShaderMaterial({
         uniforms: {
@@ -297,6 +301,10 @@ export function initSemanticManifold() {
 }
 
 export function initSemanticLens() {
+    if (!state.scene) {
+        console.warn('[three-interaction-visuals] initSemanticLens: state.scene is null, skipping lens init');
+        return;
+    }
     disposeSemanticLens();
     state.semanticLensGroup = new THREE.Group();
     state.semanticLensGroup.visible = false;
