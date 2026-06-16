@@ -369,6 +369,10 @@ class AppState {
   /** Derived from navState.trailDepth === 2 — read-only. Use navState.trailDepth to set. */
   semanticDiveMode = $derived(this.navState.trailDepth === 2);
 
+  // ==== URL STATE TRACKING ====
+  applyingUrlState = $state<boolean>(false);
+  restoringBrowserHistory = $state<boolean>(false);
+
   // ==== MUTATION GUARD ====
 
   /** Batched mutation: sets _isMutatingRef, runs fn, restores. */
