@@ -45,6 +45,7 @@
   import { appState } from '@lib/state/app.svelte.ts';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
   import { applyUrlState } from '@lib/orchestration/url-state';
+  import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
 
@@ -202,9 +203,24 @@
         return;
       }
 
+      // A2-7: `?` keybinding opens the keyboard shortcuts overlay.
+      // Was missing from the Svelte port — Round 2/3 QA flagged it.
+      // Ensure the panel DOM is created (idempotent), then show it.
+      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        e.preventDefault();
+        initKeyboardShortcutsHint();
+        showKeyboardShortcutsHint();
+        return;
+      }
+
       if (e.key === 'Escape') {
         // A2-4: Escape always returns to Overview from any non-idle mode.
         // If the search input is focused, clear its text as a side effect.
+        // Visual QA Round 3 found that without `preventDefault()` the
+        // browser's default back-nav fires AFTER the handler and overwrites
+        // the page to about:blank. preventDefault() here preserves the
+        // app-side return-to-overview behavior.
+        e.preventDefault();
         const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
         if (searchInput && document.activeElement === searchInput) {
           searchInput.value = '';
