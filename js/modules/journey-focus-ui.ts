@@ -25,7 +25,7 @@ import {
     getNextWalkCandidateForIndex
 } from './journey-neighborhood.ts';
 import { ensureCanvasNodeInteractionBindings } from './journey-canvas-interaction.ts';
-import { focusOnNode } from './camera-controls.ts';
+import { focusOnNode } from '@lib/engine/camera-choreography';
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './lifecycle.ts';
 import {
     refreshFocusSemanticOverlay,

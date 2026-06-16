@@ -12,7 +12,7 @@ import {
   setSearchPanelState,
   updateSearchStatusMessage
 } from './search-state.ts';
-import { settleCameraToOverviewPose } from './camera-controls.ts';
+import { settleCameraToOverviewPose } from '@lib/engine/camera-controls-restore-bridge';
 import { refreshCompositionState, updateExplorationUi } from './lifecycle-modes.ts';
 import { appState } from '@lib/state/app.svelte';
 

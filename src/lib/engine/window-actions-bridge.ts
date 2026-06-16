@@ -7,7 +7,7 @@
  */
 
 export { state, withStateMutation } from './state-bridge';
-export { focusOnNode } from './camera-controls';
+export { focusOnNode } from '@lib/engine/camera-choreography';
 export { search, clearSearch } from './search-state-bridge';
 export {
   switchView,

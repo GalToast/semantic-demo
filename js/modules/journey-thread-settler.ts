@@ -8,7 +8,7 @@
 import { state, withStateMutation } from '@lib/engine/state-bridge';
 import { formatBusinessName, cleanOptionalValue } from './utils/dom-formatters.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
-import { focusOnNode } from './camera-controls.ts';
+import { focusOnNode } from '@lib/engine/camera-choreography';
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, focusOnPoint, updateJourneyCompass } from './lifecycle.ts';
 import {
     renderThreadInspection,
