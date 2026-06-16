@@ -265,7 +265,7 @@
     margin-left: auto;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
-    color: rgba(176, 208, 208, 0.5);
+    color: rgba(176, 208, 208, 0.75);
     flex-shrink: 0;
   }
 </style>

@@ -32,10 +32,9 @@ const UI_RENDERERS_PATH = resolveSource('src/lib/ui-renderers.ts', SEMDEMO_ROOT)
 const FOCUS_STAGE_RENDERER_PATH = resolveSource('js/modules/focus-stage-renderer.ts', SEMDEMO_ROOT)
 const SCENE_REVEAL_PATH = resolveSource('src/lib/engine/scene-reveal.ts', SEMDEMO_ROOT)
 const EVENT_BINDINGS_PATH = resolveSource('js/modules/event-bindings.ts', SEMDEMO_ROOT)
-const CAMERA_CONTROLS_PATH = resolveSource('js/modules/camera-controls.ts', SEMDEMO_ROOT)
-const SEARCH_STATE_PATH = resolveSource('js/modules/search-state.ts', SEMDEMO_ROOT)
+const CAMERA_CONTROLS_PATH = resolveSource('src/lib/engine/camera-controls.ts', SEMDEMO_ROOT)
+const SEARCH_STATE_PATH = resolveSource('src/lib/search/state.ts', SEMDEMO_ROOT)
 const SEARCH_ORCHESTRATION_PATH = resolveSource('src/lib/search/orchestration.ts', SEMDEMO_ROOT)
-const APP_PATH = resolveSource('src/lib/orchestration/adapters.ts', SEMDEMO_ROOT)
 const ADAPTER_DEPS_PATH = resolveSource('src/lib/orchestration/adapter-deps.ts', SEMDEMO_ROOT)
 const APP_INIT_PATH = resolveSource('src/lib/orchestration/app-init.ts', SEMDEMO_ROOT)
 
@@ -123,7 +122,7 @@ function testGap2_syncClusterSectionState() {
     )
 
     assert(
-        /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"](?:\.\/cluster-labels(?:\.ts)?|\.\.\/\.\.\/\.\.\/js\/modules\/cluster-labels)['"]\s?;?/.test(
+        /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"](?:\.\/cluster-labels(?:\.ts)?|\.\.\/\.\.\/\.\.\/js\/modules\/cluster-labels|@lib\/ui\/cluster-labels)['"]\s?;?/.test(
             sceneRevealSrc
         ),
         'Gap 2: scene-reveal.ts must import syncClusterSectionState directly'
@@ -218,7 +217,7 @@ function testGap3b_applySearchGlowVisualState() {
     // (it's fine if the function name still appears in comments)
     const lines = pointColorSrc.split('\n')
     let bareApplySearchGlowVisualState = false
-    lines.forEach((line, i) => {
+    lines.forEach((line) => {
         const pos = line.indexOf('window.applySearchGlowVisualState')
         if (pos === -1) return
         const before = line.substring(0, pos)
@@ -308,8 +307,8 @@ function testGap5_focusOnNode() {
     const eventBusSrc = fs.readFileSync(resolveSource('src/lib/orchestration/event-bus.ts', SEMDEMO_ROOT), 'utf-8')
 
     assert(
-        /^export\s+function\s+focusOnNode\s*\(/m.test(cameraControlsSrc),
-        'camera-controls.js must export focusOnNode as a named function'
+        /(?:^export\s+function\s+focusOnNode\s*\(|^\s+focusOnNode\s*,)/m.test(cameraControlsSrc),
+        'camera-controls.ts must export focusOnNode as a named function (direct or re-export)'
     )
 
     // event-bindings.js and lifecycle.js must use direct imports (no window.focusOnNode calls)
