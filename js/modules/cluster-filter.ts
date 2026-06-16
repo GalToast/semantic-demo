@@ -8,9 +8,9 @@ import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { el, setChildren } from './utils/dom-builder.ts';
 import { resetActiveFilters, setActiveFilter, getActiveFilters, getActiveClusterFilter, setActiveClusterFilter, overwriteActiveFilters } from './filter-state.ts';
-import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from './cluster-filter-adapter.ts';
-import { getFilteredClusterCounts } from './search-filter-core.ts';
-import { CONFIG } from './config.ts';
+import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from '../../src/lib/orchestration/cluster-filter-controller.ts';
+import { getFilteredClusterCounts } from "@lib/orchestration/search-filter-core";
+import { CONFIG } from "@lib/engine/config";
 import { setMyceliumMode } from './lifecycle.ts';
 
 export function findClusterByKeyword(keyword: string): number | null {

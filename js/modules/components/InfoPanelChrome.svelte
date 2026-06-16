@@ -1,9 +1,9 @@
 <script lang="ts">
     import { isInfoPanelOpenStore, isLegendPanelOpenStore, compositionStore } from '../stores.js';
-    import { cancelMicroDemo } from '../micro-demo.js';
+    import { cancelMicroDemo } from '../../../src/lib/engine/demo-choreography.ts';
     import { closeLegendPanel } from '../legend-ui.js';
     import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
-    import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
+    import { setFocusPanelMode, FOCUS_PANEL_MODE } from "@lib/utils/focus-panel-mode";
 
     import OverviewSurface from './InfoPanelOverviewSurface.svelte';
     import SearchSurface from './InfoPanelSearchSurface.svelte';

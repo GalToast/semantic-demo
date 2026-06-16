@@ -324,6 +324,31 @@ export function applyStoryPrompt(story: string | null, options: Record<string, u
   applyFilters();
 }
 
+// ── Legacy Adapter Re-exports ──────────────────────────────────────────────────
+// These re-exports satisfy importers that previously depended on
+// js/modules/cluster-filter-adapter.ts. The adapter was an injection
+// boundary for circular-dependency avoidance; the controller already
+// imports the real implementations directly.
+
+export { applyFilters, clearShortSemanticSearchState } from "@lib/orchestration/search-filter-core";
+export { updateUrlState } from "@lib/orchestration/url-state";
+export { clearSearchGlow } from "@lib/stores/search.svelte";
+
+/**
+ * Legacy adapter injection — no-op. The controller imports real
+ * implementations directly; injection is no longer needed.
+ */
+export function initClusterFilterAdapter(_deps?: unknown): void {
+  // intentionally empty — direct imports replace injection
+}
+
+/**
+ * Legacy adapter readiness check — always true.
+ */
+export function isClusterFilterAdapterReady(): boolean {
+  return true;
+}
+
 // ── Event Subscriptions ────────────────────────────────────────────────────────
 
 subscribe(EVENTS.FILTER_CHANGED, () => {

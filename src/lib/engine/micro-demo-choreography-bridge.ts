@@ -10,4 +10,4 @@ export {
   setDemoNodeIndex,
   runDemo,
   cancelChoreography,
-} from '../../../js/modules/micro-demo-choreography';
+} from './demo-choreography';

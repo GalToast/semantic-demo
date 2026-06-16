@@ -17,7 +17,7 @@
 // ── Engine-kernel adapter re-exports (js/modules/) ───────────────────────────
 
 export { initJourneyLifecycleAdapter } from '../../../js/modules/journey-lifecycle-adapter';
-export { initClusterFilterAdapter } from '../../../js/modules/cluster-filter-adapter';
+export { initClusterFilterAdapter } from '../orchestration/cluster-filter-controller';
 export { initJourneyCompassAdapter } from '@lib/engine/journey-compass-controller-bridge';
 export { initJourneySelectedCard } from '../../../js/modules/journey-selected-card';
 export { initFocusNeighborRailSubscriptions } from '../../../js/modules/journey-focus-ui';
