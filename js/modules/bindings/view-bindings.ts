@@ -11,7 +11,7 @@ import { toggleAutoRotate } from '@lib/engine/camera-controls-restore-bridge'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { resetExperienceState, copyCurrentViewLink } from '../lifecycle.ts'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
-import { zoomMap } from '../map-state.ts'
+import { zoomMap } from '@lib/engine/map-state'
 
 interface BindClickOptions {
     optional?: boolean
