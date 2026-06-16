@@ -44,7 +44,7 @@
   import { state as legacyState } from '@lib/engine/state-bridge';
   import { appState } from '@lib/state/app.svelte.ts';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
-  import { applyUrlState } from '@lib/orchestration/url-state';
+  import { applyUrlState, updateUrlState } from '@lib/orchestration/url-state';
   import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
@@ -229,6 +229,9 @@
         const { mode, surface } = navStore();
         if (mode !== 'overview' || surface !== 'idle') {
           dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
+          // A2-7: after returning to overview, sync the URL to reflect
+          // the galaxy view so the back button works correctly.
+          updateUrlState({}, { reason: 'return-overview' });
         }
       }
     }
