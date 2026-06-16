@@ -6,8 +6,8 @@ import {
   easeInOutCubic,
   quadraticBezierComponent
 } from './utils/math-easing.ts'
-import { setFocusTransitionMode } from './camera-controls-core.ts'
-import { noteSceneInteraction } from './camera-controls-restore.ts'
+import { setFocusTransitionMode } from '@lib/engine/camera-controls-core'
+import { noteSceneInteraction } from '@lib/engine/camera-controls-restore-bridge'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { appState } from '@lib/state/app.svelte';
 import { CONFIG } from '@lib/engine/config';

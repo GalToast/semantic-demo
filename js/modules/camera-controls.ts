@@ -4,8 +4,8 @@
  * TypeScript shadow of camera-controls.js.
  * Facade re-exporting from camera-controls-core, camera-controls-restore, and camera-controls-choreography.
  */
-import * as core from './camera-controls-core.ts';
-import * as restore from './camera-controls-restore.ts';
+import * as core from '@lib/engine/camera-controls-core';
+import * as restore from '@lib/engine/camera-controls-restore-bridge';
 import * as choreography from './camera-controls-choreography.ts';
 
 export const OVERVIEW_CAMERA_POSE = (restore as any).OVERVIEW_CAMERA_POSE;
