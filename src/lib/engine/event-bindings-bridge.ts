@@ -1,7 +1,6 @@
 /**
- * @lib/engine/event-bindings-bridge.ts — Sanctioned passthrough (W11-T10 Wave 1).
- * Re-exports the legacy event-bindings module. Will retire when T10-Wave 3
- * ports the module natively.
+ * @lib/engine/event-bindings-bridge.ts — Canonical passthrough (W15 Wave E).
+ * Re-exports from the canonical src/lib/ui/event-bindings module.
  */
 export {
   revealSelectedBusinessCard,
@@ -13,4 +12,4 @@ export {
   returnToCountyView,
   updateHasQuery,
   initEventListeners,
-} from '../../../js/modules/event-bindings';
+} from '../ui/event-bindings';

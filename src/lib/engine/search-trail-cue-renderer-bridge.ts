@@ -1,5 +1,5 @@
 /**
- * @lib/engine/search-trail-cue-renderer-bridge.ts — Legacy search trail cue bridge.
+ * @lib/engine/search-trail-cue-renderer-bridge.ts — Canonical passthrough (W15 Wave E).
  */
 
-export { updateSearchTrailCue } from '../../../js/modules/search-trail-cue-renderer';
+export { updateSearchTrailCue } from '../journey/search-trail-cue-renderer'

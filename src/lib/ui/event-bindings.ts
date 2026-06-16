@@ -1,0 +1,89 @@
+/**
+ * event-bindings.ts
+ * Central event binding orchestrator. Imports each binding module and
+ * dispatches its bind function during app initialization.
+ *
+ * Ported from js/modules/event-bindings.ts (W15 Wave E).
+ */
+
+import { state as _state } from '@lib/engine/state-bridge'
+const state = _state as any
+import { bindViewControls, zoomCamera } from '../../../js/modules/bindings/view-bindings'
+import {
+    bindFocusControls,
+    expandNeighborhoodFromCurrentNode,
+    recenterFocusedNode,
+    returnToCountyView
+} from '../../../js/modules/bindings/journey-bindings'
+import { updateHasQuery, bindSearchControls } from '../../../js/modules/bindings/search-bindings'
+import { bindSuggestionControls } from '../../../js/modules/bindings/suggestion-bindings'
+import { bindSemanticLaneControls } from '../../../js/modules/bindings/semantic-lane-bindings'
+import { bindModeAndPromptControls } from '../../../js/modules/bindings/mode-bindings'
+import { bindFilterControls } from '../../../js/modules/bindings/filter-bindings'
+import {
+    bindPanelControls,
+    revealSelectedBusinessCard as _revealSelectedBusinessCard,
+    setInfoPanelOpen as _setInfoPanelOpen
+} from '../../../js/modules/bindings/panel-bindings'
+import { bindLegendControls } from '../../../js/modules/bindings/legend-bindings'
+import { bindUtilityButtons } from '../../../js/modules/bindings/utility-bindings'
+import { bindGlobalEvents, disposeEventListeners } from '../../../js/modules/bindings/global-bindings'
+import { scheduleOnboardingHint } from '../../../js/modules/bindings/onboarding-bindings'
+import { bindFocusTrapObserver } from '../../../js/modules/bindings/focus-trap-bindings'
+
+import { buildLegend } from '@lib/stores/legend-panel.svelte.ts'
+import { syncClusterSectionState } from '@lib/ui/cluster-labels'
+
+export function revealSelectedBusinessCard(): void {
+    setInfoPanelOpen(true)
+    return _revealSelectedBusinessCard()
+}
+
+export function setInfoPanelOpen(open?: boolean | undefined, options: { restoreFocus?: boolean } = {}): boolean {
+    return _setInfoPanelOpen(open, options)
+}
+
+export {
+    disposeEventListeners,
+    zoomCamera,
+    expandNeighborhoodFromCurrentNode,
+    recenterFocusedNode,
+    returnToCountyView,
+    updateHasQuery
+}
+
+interface InitEventListenersOptions {
+    onWindowResize?: () => void
+    recordSemanticLaneSnapshot?: (snapshot: { state: string; attempted_warm: boolean }) => void
+    setMyceliumMode?: (mode: string) => void
+    setSemanticLaneUiState?: (state: string, options: { label: string; title: string }) => void
+    updateUrlState?: (...args: any[]) => void
+}
+
+export async function initEventListeners({
+    onWindowResize = () => {},
+    recordSemanticLaneSnapshot = () => {},
+    setMyceliumMode = () => {},
+    setSemanticLaneUiState = () => {},
+    updateUrlState = () => {}
+}: InitEventListenersOptions = {}): Promise<void> {
+    if (state.eventListenersInitialized) return
+    state.eventListenersInitialized = true
+
+    bindViewControls()
+    bindFocusControls()
+    bindSuggestionControls()
+    bindSearchControls()
+    bindSemanticLaneControls(recordSemanticLaneSnapshot, setSemanticLaneUiState)
+    bindGlobalEvents()
+    bindModeAndPromptControls(setMyceliumMode)
+    bindUtilityButtons()
+    bindFilterControls()
+    bindPanelControls(onWindowResize)
+    bindLegendControls()
+    bindFocusTrapObserver()
+
+    if (typeof buildLegend === 'function') buildLegend()
+    if (typeof syncClusterSectionState === 'function') syncClusterSectionState()
+    scheduleOnboardingHint()
+}
