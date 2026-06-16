@@ -10,23 +10,23 @@
  * ```
  */
 
-export { animateCameraToNode } from './focus';
-export type { AnimateCameraToNodeOptions } from './focus';
+export { animateCameraToNode, cancelFocusCameraAnimation } from './focus'
+export type { AnimateCameraToNodeOptions } from './focus'
 
-export { focusOnNode } from './cursor';
-export type { FocusOnNodeOptions } from './cursor';
-
-export {
-  animateCameraToSearchCorridor,
-  animateCameraToTerrainPrelude,
-  applySemanticCentroidCamera,
-  zoomCamera,
-  clearInsideCentroid,
-} from './routes';
+export { focusOnNode } from './cursor'
+export type { FocusOnNodeOptions } from './cursor'
 
 export {
-  isSearchRouteFocusActive,
-  getFocusOrbitSlackPivot,
-  applyFocusOrbitSlack,
-  clearFocusOrbitSlack,
-} from './orbit-slack';
+    animateCameraToSearchCorridor,
+    animateCameraToTerrainPrelude,
+    applySemanticCentroidCamera,
+    zoomCamera,
+    clearInsideCentroid
+} from './routes'
+
+export {
+    isSearchRouteFocusActive,
+    getFocusOrbitSlackPivot,
+    applyFocusOrbitSlack,
+    clearFocusOrbitSlack
+} from './orbit-slack'

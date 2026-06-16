@@ -290,8 +290,8 @@ export function walkThreadNeighbor(index: number, options: WalkThreadNeighborOpt
         syncSemanticDiveUi();
         updateJourneyCompass();
     };
-    window.setTimeout(reassertThreadTarget, 120);
-    window.setTimeout(reassertThreadTarget, 420);
+    _trackTimer('reassert-early', timerAdapter.setTimer(reassertThreadTarget, 120));
+    _trackTimer('reassert-late', timerAdapter.setTimer(reassertThreadTarget, 420));
     clearThreadInspection({ preserveJourney: true });
     syncSemanticDiveUi();
     updateJourneyCompass();

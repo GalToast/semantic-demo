@@ -297,8 +297,8 @@ export class ThreadSettler {
 			updateJourneyCompass();
 		};
 
-		window.setTimeout(reassertThreadTarget, 120);
-		window.setTimeout(reassertThreadTarget, 420);
+		setTimer('reassert-early', 120, reassertThreadTarget);
+		setTimer('reassert-late', 420, reassertThreadTarget);
 		clearThreadInspection({ preserveJourney: true });
 		syncSemanticDiveUi();
 		updateJourneyCompass();

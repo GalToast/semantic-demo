@@ -57,10 +57,16 @@ export type EventName = (typeof EVENTS)[keyof typeof EVENTS];
 // ── Payload Types ─────────────────────────────────────────────────────────
 
 export interface EventPayloads {
-  [EVENTS.CAMERA_MOVED]: { position: unknown; target: unknown };
-  [EVENTS.CAMERA_NODE_FOCUSED]: { point: unknown; options: Record<string, unknown> };
-  [EVENTS.TRANSITION_PHASE_CHANGED]: { phase: string };
-  [EVENTS.EXPLORATION_FOCUS_SYNC]: { index: number };
+  [EVENTS.CAMERA_MOVED]: {
+    position?: unknown;
+    target?: unknown;
+    reason?: string;
+    index?: number;
+    [key: string]: unknown;
+  };
+  [EVENTS.CAMERA_NODE_FOCUSED]: { point?: unknown; index?: number; options?: Record<string, unknown> };
+  [EVENTS.TRANSITION_PHASE_CHANGED]: { phase: string; details?: Record<string, unknown>; options?: Record<string, unknown> };
+  [EVENTS.EXPLORATION_FOCUS_SYNC]: { index: number; point?: unknown };
   [EVENTS.DIVE_MODE_REQUESTED]: { enabled: boolean };
   [EVENTS.EXPLORATION_RESET_REQUESTED]: {
     preserveSearch?: boolean;
@@ -69,19 +75,28 @@ export interface EventPayloads {
   };
   [EVENTS.OVERVIEW_REQUESTED]: Record<string, never>;
   [EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED]: { depth: number; options?: Record<string, unknown> };
-  [EVENTS.SEARCH_STARTED]: Record<string, never>;
+  [EVENTS.SEARCH_STARTED]: Record<string, unknown>;
   [EVENTS.SEARCH_SUCCESS]: Record<string, unknown>;
   [EVENTS.SEARCH_EMPTY]: { query: string };
   [EVENTS.SEARCH_DEGRADED]: Record<string, unknown>;
-  [EVENTS.SEARCH_CLEARED]: Record<string, never>;
-  [EVENTS.SEARCH_FOCUS_TRANSITION_STARTED]: Record<string, never>;
-  [EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED]: Record<string, never>;
-  [EVENTS.SEARCH_FOCUS_REQUESTED]: { index: number };
-  [EVENTS.SEARCH_STATE_RESET_REQUESTED]: Record<string, never>;
-  [EVENTS.VIEW_CHANGED]: { myceliumMode?: string };
-  [EVENTS.STATE_RESET]: { reason?: string; options?: Record<string, unknown> };
+  [EVENTS.SEARCH_CLEARED]: {
+    preserveSearch?: boolean;
+    preservedSearch?: boolean;
+    summary?: unknown;
+    [key: string]: unknown;
+  };
+  [EVENTS.SEARCH_FOCUS_TRANSITION_STARTED]: Record<string, unknown>;
+  [EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED]: Record<string, unknown>;
+  [EVENTS.SEARCH_FOCUS_REQUESTED]: { index?: number; point?: unknown };
+  [EVENTS.SEARCH_STATE_RESET_REQUESTED]: {
+    preserveSearch?: boolean;
+    skipUrlSync?: boolean;
+    skipSearchClearEvent?: boolean;
+  };
+  [EVENTS.VIEW_CHANGED]: { view?: string; previousView?: string; myceliumMode?: string };
+  [EVENTS.STATE_RESET]: { reason?: string; silent?: boolean; options?: Record<string, unknown> };
   [EVENTS.FILTER_CHANGED]: Record<string, unknown>;
-  [EVENTS.COMPOSITION_UPDATED]: Record<string, never>;
+  [EVENTS.COMPOSITION_UPDATED]: { reason?: string; [key: string]: unknown };
   [EVENTS.EXPLORATION_DEPTH_CHANGED]: { depth: number };
   [EVENTS.URL_SYNC_REQUESTED]: Record<string, unknown>;
   [EVENTS.SEARCH_UI_SYNC_REQUESTED]: Record<string, unknown>;
@@ -92,7 +107,7 @@ export interface EventPayloads {
   [EVENTS.VIEW_CHANGE_REQUESTED]: { view: string };
   [EVENTS.TOOLTIP_HIDE_REQUESTED]: Record<string, never>;
   [EVENTS.TOOLTIP_POSITION_REQUESTED]: { x: number; y: number };
-  [EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED]: { content: string };
+  [EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED]: { content?: string; point?: unknown };
 }
 
 // ── Internal Storage ──────────────────────────────────────────────────────

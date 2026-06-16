@@ -552,8 +552,10 @@ subscribe(EVENTS.STATE_RESET, ({ options }: { options?: { skipUrlSync?: boolean 
     }
 });
 
-subscribe(EVENTS.CAMERA_NODE_FOCUSED, ({ point, options }: { point?: Point; options?: { skipUrlSync?: boolean; historyMode?: string } }) => {
-    if (!options?.skipUrlSync) {
-        updateUrlState({ record: point?.lead_id || null }, { mode: options?.historyMode || 'push', reason: 'focus' });
+subscribe(EVENTS.CAMERA_NODE_FOCUSED, ({ point, options }: { point?: unknown; options?: Record<string, unknown> }) => {
+    const p = point as Point | undefined;
+    const opts = options as { skipUrlSync?: boolean; historyMode?: string } | undefined;
+    if (!opts?.skipUrlSync) {
+        updateUrlState({ record: p?.lead_id || null }, { mode: opts?.historyMode || 'push', reason: 'focus' });
     }
 });

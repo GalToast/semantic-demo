@@ -56,7 +56,7 @@ export function bindSuggestionControls(): void {
             if (idx >= 0) {
                 const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
                 if (searchInput) searchInput.value = '';
-                clearShortSemanticSearchState();
+                clearShortSemanticSearchState(null, null);
                 
                 focusOnNode(idx, { fromCanvasNode: true });
             }

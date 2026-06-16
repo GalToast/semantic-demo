@@ -28,12 +28,13 @@ const VIEW_CONTROLLER_PATH = resolveSource('js/modules/view-controller.ts', SEMD
 const JOURNEY_PATH = resolveSource('js/modules/journey.ts', SEMDEMO_ROOT);
 const JOURNEY_POINT_COLOR_PATH = resolveSource('js/modules/journey-point-color.ts', SEMDEMO_ROOT);
 const JOURNEY_SELECTED_CARD_PATH = resolveSource('js/modules/journey-selected-card.ts', SEMDEMO_ROOT);
-const UI_RENDERERS_PATH = resolveSource('js/modules/ui-renderers.ts', SEMDEMO_ROOT);
+const UI_RENDERERS_PATH = resolveSource('src/lib/ui-renderers.ts', SEMDEMO_ROOT);
 const FOCUS_STAGE_RENDERER_PATH = resolveSource('js/modules/focus-stage-renderer.ts', SEMDEMO_ROOT);
-const SCENE_REVEAL_PATH = resolveSource('js/modules/scene-reveal.ts', SEMDEMO_ROOT);
+const SCENE_REVEAL_PATH = resolveSource('src/lib/engine/scene-reveal.ts', SEMDEMO_ROOT);
 const EVENT_BINDINGS_PATH = resolveSource('js/modules/event-bindings.ts', SEMDEMO_ROOT);
 const CAMERA_CONTROLS_PATH = resolveSource('js/modules/camera-controls.ts', SEMDEMO_ROOT);
 const SEARCH_STATE_PATH = resolveSource('js/modules/search-state.ts', SEMDEMO_ROOT);
+const SEARCH_ORCHESTRATION_PATH = resolveSource('src/lib/search/orchestration.ts', SEMDEMO_ROOT);
 const APP_PATH = resolveSource('js/modules/app.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
@@ -114,7 +115,7 @@ function testGap2_syncClusterSectionState() {
   );
 
   assert(
-    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels(\.ts)?['"]\s?;?/.test(sceneRevealSrc),
+    /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"](?:\.\/cluster-labels(?:\.ts)?|\.\.\/\.\.\/\.\.\/js\/modules\/cluster-labels)['"]\s?;?/.test(sceneRevealSrc),
     'Gap 2: scene-reveal.ts must import syncClusterSectionState directly'
   );
 
@@ -190,7 +191,7 @@ function testGap3b_applySearchGlowVisualState() {
     'journey-point-color.js must publish SEARCH_STATUS_SYNC_REQUESTED in searchGlowActive block'
   );
   assert(
-    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.(?:js|ts)['"]/.test(pointColorSrc),
+    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"](?:\.\/event-bus\.(?:js|ts)|@lib\/orchestration\/event-bus)['"]/.test(pointColorSrc),
     'journey-point-color.js must import publish and EVENTS from event-bus.ts'
   );
   assert(!/search-lifecycle-adapter/.test(pointColorSrc), 'journey-point-color.js must not import retired search lifecycle adapter');
@@ -213,9 +214,9 @@ function testGap3b_applySearchGlowVisualState() {
 
 // ---------------------------------------------------------------------------
 // GAP 4 — updateSelectedCardHeading: resolved through the selected-card renderer
-// owner chain. focus-stage-renderer.js owns the DOM write, ui-renderers.js keeps
-// the compatibility re-export, and journey-selected-card.js/journey.js call the
-// renderer path. lifecycle.js only publishes COMPOSITION_UPDATED.
+// owner chain. focus-stage-renderer.js owns the DOM write, and
+// journey-selected-card.js/journey.js call that renderer path directly.
+// lifecycle.js only publishes COMPOSITION_UPDATED.
 // ---------------------------------------------------------------------------
 
 function testGap4_updateSelectedCardHeading() {
@@ -236,20 +237,16 @@ function testGap4_updateSelectedCardHeading() {
     'focus-stage-renderer.js updateSelectedCardHeading must target #selected-card-title'
   );
   assert(
-    /export\s+function\s+updateSelectedCardHeading\s*\([^)]*\)(?:\s*:\s*\S[^{]*)?\s*\{[\s\S]{0,180}(?:focusRendererModule|focusRenderers)\.updateSelectedCardHeading/.test(uiRendererSrc),
-    'ui-renderers.js must re-export updateSelectedCardHeading by delegating to focus-stage-renderer.ts'
-  );
-  assert(
     !/selected-card-title/.test(uiRendererSrc),
     'ui-renderers.js must not keep dummy selected-card-title markers after the focus-stage transfer'
   );
   assert(
-    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.(?:js|ts)['"]/.test(selectedCardSrc),
-    'journey-selected-card.js must import updateSelectedCardHeading from ui-renderers.ts'
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/focus-stage-renderer\.(?:js|ts)['"]/.test(selectedCardSrc),
+    'journey-selected-card.js must import updateSelectedCardHeading from focus-stage-renderer.ts'
   );
   assert(
-    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/ui-renderers\.(?:js|ts)['"]/.test(journeySrc),
-    'journey.js must re-export updateSelectedCardHeading through the ui-renderers selected-card path'
+    /import\s*\{[\s\S]*updateSelectedCardHeading[\s\S]*\}\s*from\s*['"]\.\/focus-stage-renderer\.(?:js|ts)['"]/.test(journeySrc),
+    'journey.js must re-export updateSelectedCardHeading through the focus-stage-renderer selected-card path'
   );
   assert(
     /publish\s*\(\s*EVENTS\.COMPOSITION_UPDATED\s*\)/.test(lifecycleSrc),
@@ -279,8 +276,9 @@ function testGap5_focusOnNode() {
   const eventBindingsSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const searchStateSrc = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
+  const searchOrchestrationSrc = fs.readFileSync(SEARCH_ORCHESTRATION_PATH, 'utf-8');
   const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
-  const eventBusSrc = fs.readFileSync(resolveSource('js/modules/event-bus.ts', SEMDEMO_ROOT), 'utf-8');
+  const eventBusSrc = fs.readFileSync(resolveSource('src/lib/orchestration/event-bus.ts', SEMDEMO_ROOT), 'utf-8');
 
   assert(
     /^export\s+function\s+focusOnNode\s*\(/m.test(cameraControlsSrc),
@@ -296,8 +294,8 @@ function testGap5_focusOnNode() {
     'event-bus.js must expose SEARCH_FOCUS_REQUESTED for search-state focus requests'
   );
   assert(
-    /publish\s*\(\s*EVENTS\.SEARCH_FOCUS_REQUESTED\s*,\s*\{[^}]*\bpoint\b[^}]*\bindex\b/.test(searchStateSrc),
-    'search-state.js must publish SEARCH_FOCUS_REQUESTED with point and index'
+    /publish\s*\(\s*EVENTS\.SEARCH_FOCUS_REQUESTED\s*,\s*\{[^}]*\bpoint\b[^}]*\bindex\b/.test(searchOrchestrationSrc),
+    'search orchestration must publish SEARCH_FOCUS_REQUESTED with point and index'
   );
   assert(
     !/import\s+\{[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(searchStateSrc),

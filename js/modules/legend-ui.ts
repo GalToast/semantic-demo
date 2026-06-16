@@ -15,9 +15,10 @@ import { escapeHtml } from './utils/dom-formatters.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { getSemanticGuideTitle } from '../../src/lib/journey/semantic-guide.ts';
 import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.ts';
+import { getActiveClusterFilter } from './filter-state.ts';
 import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts';
 import { getViewportSize } from './environment.ts';
-import { CONFIG } from '@lib/engine/config';
+import { getColors, getClusterNames } from '../state/selectors/config.js';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -128,7 +129,7 @@ export function buildLegend(): void {
     const guideTitle = guide ? getSemanticGuideTitle(guide as Record<string, unknown>) : 'Read the scene';
     const guideNote: string = guide?.text || 'Neighborhood colors group records by shared language, trade, civic role, and business texture.';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const activeCluster = _getActiveClusterFilter() as number | null;
+    const activeCluster = getActiveClusterFilter();
 
     legendPanel.innerHTML = `
         <div class="legend-guide">
@@ -151,7 +152,7 @@ export function buildLegend(): void {
             ${rows.map(([cluster, count]) => {
                 const active = activeCluster !== null && activeCluster === cluster;
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const colors = _getColors() as string[];
+                const colors = getColors() as string[];
                 const color = colors[cluster % colors.length] || '#4ecdc4';
                 return `
                     <button class="legend-item${active ? ' active' : ''}" type="button" data-legend-cluster="${cluster}" aria-pressed="${String(active)}">
@@ -230,9 +231,9 @@ export function buildCanvasColorLegend(): void {
     if (!root) return;
     const counts = getFilteredClusterCounts();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const colors: string[] = Array.isArray(_getColors()) ? (_getColors() as string[]) : [];
+    const colors: string[] = Array.isArray(getColors()) ? (getColors() as string[]) : [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const names: string[] = Array.isArray(_getClusterNames()) ? (_getClusterNames() as unknown as string[]) : [];
+    const names: string[] = Array.isArray(getClusterNames()) ? (getClusterNames() as unknown as string[]) : [];
 
     let top: number[] | null = counts && counts.size > 0
         ? Array.from(counts.entries())

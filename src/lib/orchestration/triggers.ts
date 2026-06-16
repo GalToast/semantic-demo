@@ -171,11 +171,12 @@ subscribe(EVENTS.STATE_RESET, updateJourneyCompass);
 // reactively render. The legacy engine reads the same focus state via its
 // own state mirror.
 
-subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
-  if (!Number.isFinite(index)) return;
+subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
+  if (typeof index !== 'number' || !Number.isFinite(index)) return;
+  const focusIndex = index;
   const searchSummary = appState.currentSearchSummary;
   const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || [];
-  const manifest = buildNeighborhoodManifest(index, resultIndices, {
+  const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
     displayLimit: getSemanticThreadDisplayLimit()
   });
   const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])];
@@ -188,11 +189,11 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index: number }) => {
   );
   navStore.update((s) => ({
     ...s,
-    focusedIndex: index,
+    focusedIndex: focusIndex,
     mode: 'focus',
     surface: 'focus-search',
     trailDepth: 1,
-    trailSeedIndex: index,
+    trailSeedIndex: focusIndex,
     trailNeighborIndices: candidateIndices,
     threadCandidates: candidateIndices,
     threadReasonByIndex,
