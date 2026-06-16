@@ -197,3 +197,52 @@ The W15 closeout's "deferred to W16" section was closed on 2026-06-16 in 3 commi
    - Drift direction inverted: orphan .js files (legacy shims) instead of orphan .ts files (BOTH pattern retired)
 
 **End state after follow-up**: Working tree clean, `master` at `294d857` on origin. `js/modules/search-state.ts` is now a 52-LOC DEATH-BRIDGE awaiting deletion in W16 once all consumers are rewired.
+
+## W11 + W16 wave progress (2026-06-16, post-follow-up, via parallel Codex session)
+
+After the W15 follow-up landed at `294d857`, a parallel Codex session (`codex` PID 20240) drove the rest of the W11 engine port arc + the W16 camera retirement wave. This effectively closed the W11 engine port and the W16 #1+#2 picks.
+
+**W11 engine port tickets closed by the parallel session:**
+
+| Ticket | Commit(s) | What landed |
+|---|---|---|
+| W11-T5 Wave 1 (bridge retirement) | `a0caa19` | 7 trivial/low-risk bridges tracked as sanctioned passthroughs |
+| W11-T6 Wave 2 (lifecycle) | `ba5e27f`, `9128d2b` | search subsystem Svelte port + focus-pocket bridge retirement + journey selected-card native port |
+| W11-T9 Wave 1 (3 leaf utilities) | `72314a0` | 345 LOC: `webgl-utils.ts`, `lifecycle-adapter.ts`, `arrival-handoff.ts` (also committed by main lane Worker A as `72314a0`) |
+| W11-T9 Wave 2 (3 mid-tier utilities) | `1e47022` | 531 LOC: `route-trace.ts`, `compass-state.ts`, `webgl.ts` (barrel) |
+| W11-T9 Wave 3 (compass-controller) | `17abe73`, `b8bec78` | 373 LOC port + 9 consumer flips |
+| W11-T9 Wave 3 follow-up | `7669dda` | `js/modules/app.ts` flipped to import from `journey-compass-controller-bridge` |
+| W11-T9 Wave 4 (semantic overlay) | `48434eb` | 983 LOC: `semantic-overlay.ts` + `journey-focus-ui.ts` (re-port) |
+| W11-T10 Wave 1 (Three.js render loop) | `a48b12c` | 4 ALREADY_PORTED flips + 5 COLD_NO_PATH bridges |
+| W11-T10 Wave 2 | `777a2ce` | 8 HOT imports via sanctioned passthroughs |
+| W11-T10 inline | `532c6c5` | loading-ui sanctioned passthrough |
+| W11-T10 thinnability | `d11ea72` | render loop thinnability wave 1 + state-touch footprint reduction |
+| W11-T11 (build:legacy retirement) | `70d0b5e`, `22d4833` | data-worker.js → .ts port + 14 native bridge flips |
+| W11 closeout doc | `2260a28` | W11 arc closeout + T10 thinnability strategy |
+
+**W16 camera retirement wave (W15 closeout's adjacent seams table):**
+
+| Pick | Commit(s) | What landed |
+|---|---|---|
+| W16 #1: `camera-controls-restore.ts` | `90c54e8` | 200 LOC retired, 2 kernel consumers rewired to bridge |
+| W16 follow-up: camera contract test | `d440b14` | adapted to canonical .svelte.ts implementations |
+| W16 #2: `camera-controls-core.ts` | `e54e885` | 130 LOC deleted, consumers already rewired to src/ shim |
+
+**Resulting state at this checkpoint:**
+
+- `master` local + origin in sync at `e54e885`
+- Working tree CLEAN
+- `js/modules/camera-controls.ts` restored to 131 LOC (parallel session fixed the 0-byte state)
+- svelte-check: **0 errors** (was 22 pre-existing latent — parallel session fixed them in the W11-T10/W11-T11 work)
+- test:unit: **652/652** across 60 files
+- bridge contract: 5/5
+- ts-js-drift: 88 .ts files clean
+
+**Remaining W16 picks (still TODO):**
+
+- `camera-controls-choreography-cursor.ts` (136 LOC, LOW risk) — W16 #3
+- `camera-controls-choreography-focus.ts` (311 LOC, MEDIUM risk) — W16 #4
+- `camera-controls-choreography-routes.ts` (342 LOC, MEDIUM risk) — W16 #5 (needs `setFocusTransitionMode` rewire first)
+- `camera-controls.ts` facade (127 LOC, HIGH risk, 7 kernel importers) — W16 #6 (full chain retirement per W14 charter)
+
+**W13-T5 status:** the W11-T5 Wave 1 (`a0caa19`) is a partial W13-T5 — 7 sanctioned passthroughs. The full W13-T5 (delete `js/state/selectors/*.ts` and `js/state.ts`) remains as a separate cleanup once W11 is fully settled.
