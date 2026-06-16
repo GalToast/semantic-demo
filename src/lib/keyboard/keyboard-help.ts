@@ -59,6 +59,12 @@ export function handleGalaxyKeydown(e: KeyboardEvent): void {
         return;
     }
 
+    if (e.key === '?') {
+        e.preventDefault();
+        showKeyboardShortcutsHint();
+        return;
+    }
+
     if (e.key === 'Escape') {
         e.preventDefault();
         _resetExplorationFocus();
