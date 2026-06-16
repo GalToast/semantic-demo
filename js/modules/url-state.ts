@@ -22,7 +22,7 @@ import {
 import { switchView } from './view-controller.ts';
 import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.ts';
 import { isPointVisible, type GeoPoint } from './utils/geo-data.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { formatBusinessName, escapeHtml } from './utils/dom-formatters.ts';
 import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.ts';
 import {
@@ -36,8 +36,9 @@ import {
 } from './search-state.ts';
 import { updateHasQuery } from './bindings/search-bindings.ts';
 import { setCurrentView } from './state-mutators.ts';
-import { getCurrentView, getFocusedNode, getSelectedPoint, getPoints, getMyceliumMode, getActiveClusterFilter, getActiveFilters, getCurrentSearchSummary, getTrailDepth, getActiveStoryPrompt, getApplyingUrlState, getRestoringBrowserHistory, getUrlStateRestoreToken, getSemanticLaneOpsMode, getDeferredUrlStateHandler } from '../state/selectors/index.ts';
+import { getSemanticLaneOpsMode } from '../state/selectors/index.ts'
 import { getLocation } from './environment.ts';
+import { appState } from '@lib/state/app.svelte';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -89,11 +90,11 @@ function getRestoreAnchorLeadId(...values: Array<string | null>): string | undef
 }
 
 function getSearchSummaryView(): SearchSummaryView | null {
-    return getCurrentSearchSummary() as unknown as SearchSummaryView | null;
+    return appState.currentSearchSummary as unknown as SearchSummaryView | null;
 }
 
 function getSelectedPointView(): Point | null {
-    return getSelectedPoint() as unknown as Point | null;
+    return appState.selectedPoint as unknown as Point | null;
 }
 
 // ── URL State ──────────────────────────────────────────────────────────────
@@ -106,7 +107,7 @@ function getRequestedUrlDepth(params: URLSearchParams): number {
 function restoreDepthFromUrlAfterFocus(params: URLSearchParams): boolean {
     const requestedDepth = getRequestedUrlDepth(params);
     if (requestedDepth < 2) return false;
-    if (!getSelectedPoint() && !Number.isFinite(getFocusedNode())) return false;
+    if (!appState.selectedPoint && !Number.isFinite(appState.focusedNode)) return false;
     publish(EVENTS.DIVE_MODE_REQUESTED, { enabled: true });
     return true;
 }
@@ -133,7 +134,7 @@ async function applyUrlStateFromDeferred(): Promise<void> {
         }
     }
 
-    if (getSelectedPoint() || Number.isFinite(getFocusedNode())) {
+    if (appState.selectedPoint || Number.isFinite(appState.focusedNode)) {
         restoreDepthFromUrlAfterFocus(searchParams);
     }
 
@@ -171,7 +172,7 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
 
 export async function applyUrlState(options: UrlStateOptions = {}): Promise<void> {
     const restoreToken = ++state.urlStateRestoreToken;
-    const priorRestoringBrowserHistory = getRestoringBrowserHistory();
+    const priorRestoringBrowserHistory = appState.restoringBrowserHistory;
     state.applyingUrlState = true;
     state.restoringBrowserHistory = !!options.fromHistory;
 
@@ -210,7 +211,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
 
         const mode = params.get('mode');
         if (mode && MODE_DESCRIPTIONS && (MODE_DESCRIPTIONS as Record<string, unknown>)[mode]) {
-            if (getMyceliumMode() !== null && getMyceliumMode() !== undefined) {
+            if (appState.myceliumMode !== null && appState.myceliumMode !== undefined) {
                 setMyceliumMode(mode, { skipUrlSync: true });
             }
         }
@@ -222,14 +223,14 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         applyFilters();
         publish(EVENTS.COMPOSITION_UPDATED);
 
-        if (getActiveClusterFilter() !== null) {
+        if (appState.activeClusterFilter !== null) {
             document.querySelectorAll('.cluster-item').forEach((el) => {
-                el.classList.toggle('active', Number((el as HTMLElement).dataset.cluster) === getActiveClusterFilter());
+                el.classList.toggle('active', Number((el as HTMLElement).dataset.cluster) === appState.activeClusterFilter);
             });
 
-            if (getPoints() && Array.isArray(getPoints())) {
+            if (appState.points && Array.isArray(appState.points)) {
                 const clusterGlowIndices = getFilteredIndices().filter(
-                    (index: number) => (getPoints() as Point[])[index]?.cluster === getActiveClusterFilter()
+                    (index: number) => (appState.points as Point[])[index]?.cluster === appState.activeClusterFilter
                 );
                 activateSearchGlow(clusterGlowIndices, clusterGlowIndices[0] ?? null);
             }
@@ -247,15 +248,15 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             const input = document.getElementById('search-input');
             if (input) (input as HTMLInputElement).value = query;
             updateHasQuery();
-            if (!getPoints() || !Array.isArray(getPoints()) || getPoints().length === 0) {
+            if (!appState.points || !Array.isArray(appState.points) || appState.points.length === 0) {
                 // Store deferred params for retry once data loads
                 urlState._deferredUrlState = { params: Object.fromEntries(params.entries()), timestamp: Date.now() };
                 // Listen for the data-loaded event
-                if (getDeferredUrlStateHandler()) {
-                    document.removeEventListener('semantic-data-loaded', getDeferredUrlStateHandler() as EventListener);
+                if (appState._deferredUrlStateHandler) {
+                    document.removeEventListener('semantic-data-loaded', appState._deferredUrlStateHandler as EventListener);
                 }
                 const handler: EventListener = () => {
-                    if (restoreToken === getUrlStateRestoreToken() && getPoints()?.length > 0) {
+                    if (restoreToken === appState.navState.urlStateRestoreToken && appState.points?.length > 0) {
                         applyUrlStateFromDeferred();
                     }
                 };
@@ -274,13 +275,13 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
 
         const record = params.get('record') || params.get('lead');
         if (record) {
-            if (!getPoints() || !Array.isArray(getPoints()) || getPoints().length === 0) {
+            if (!appState.points || !Array.isArray(appState.points) || appState.points.length === 0) {
                 urlState._deferredUrlState = { params: Object.fromEntries(params.entries()), timestamp: Date.now() };
-                if (getDeferredUrlStateHandler()) {
-                    document.removeEventListener('semantic-data-loaded', getDeferredUrlStateHandler() as EventListener);
+                if (appState._deferredUrlStateHandler) {
+                    document.removeEventListener('semantic-data-loaded', appState._deferredUrlStateHandler as EventListener);
                 }
                 const handler: EventListener = () => {
-                    if (restoreToken === getUrlStateRestoreToken() && getPoints()?.length > 0) {
+                    if (restoreToken === appState.navState.urlStateRestoreToken && appState.points?.length > 0) {
                         applyUrlStateFromDeferred();
                     }
                 };
@@ -290,7 +291,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
                 return;
             }
             restoreRecordFocusFromParams(params, options);
-        } else if (getSelectedPoint() || Number.isFinite(getFocusedNode())) {
+        } else if (appState.selectedPoint || Number.isFinite(appState.focusedNode)) {
             restoreDepthFromUrlAfterFocus(params);
         }
 
@@ -313,7 +314,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             updateUrlState({}, { reason: 'apply-url', force: true });
         }
     } finally {
-        if (restoreToken === getUrlStateRestoreToken()) {
+        if (restoreToken === appState.navState.urlStateRestoreToken) {
             state.applyingUrlState = false;
             state.restoringBrowserHistory = priorRestoringBrowserHistory;
         }
@@ -321,12 +322,12 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
 }
 
 export function updateUrlState(extra: Record<string, unknown> = {}, options: UpdateUrlStateOptions = {}): void {
-    if (getApplyingUrlState() && !options.force) return;
-    if (getRestoringBrowserHistory()) return;
+    if (appState.applyingUrlState && !options.force) return;
+    if (appState.restoringBrowserHistory) return;
     if (typeof window === 'undefined' || !window.location || !window.history) return;
 
     const params = new URLSearchParams(getLocation()?.search || '');
-    params.set('view', getCurrentView());
+    params.set('view', appState.currentView);
     if (getSemanticLaneOpsMode()) params.set('ops', '1');
     else params.delete('ops');
 
@@ -336,10 +337,10 @@ export function updateUrlState(extra: Record<string, unknown> = {}, options: Upd
     else params.delete('q');
 
     const anchorIndex = currentSearchSummary?.anchorIndex as number | undefined;
-    if (!Number.isFinite(anchorIndex) || anchorIndex! < 0 || anchorIndex! >= (getPoints()?.length ?? 0)) {
+    if (!Number.isFinite(anchorIndex) || anchorIndex! < 0 || anchorIndex! >= (appState.points?.length ?? 0)) {
         params.delete('anchor');
     } else {
-        const anchorLeadId = (getPoints() as Point[])[anchorIndex!]?.lead_id;
+        const anchorLeadId = (appState.points as Point[])[anchorIndex!]?.lead_id;
         if (anchorLeadId !== null && anchorLeadId !== undefined && anchorLeadId !== '') {
             params.set('anchor', String(anchorLeadId));
         } else {
@@ -347,28 +348,28 @@ export function updateUrlState(extra: Record<string, unknown> = {}, options: Upd
         }
     }
 
-    if (getActiveFilters().status !== 'all') params.set('status', getActiveFilters().status);
+    if (appState.activeFilters.status !== 'all') params.set('status', appState.activeFilters.status);
     else params.delete('status');
 
-    if (getActiveFilters().city !== 'all') params.set('city', getActiveFilters().city);
+    if (appState.activeFilters.city !== 'all') params.set('city', appState.activeFilters.city);
     else params.delete('city');
 
     (['website', 'email', 'geocoded'] as const).forEach((key) => {
-        if (getActiveFilters()[key]) params.set(key, '1');
+        if (appState.activeFilters[key]) params.set(key, '1');
         else params.delete(key);
     });
 
-    if (getMyceliumMode() !== 'default') params.set('mode', getMyceliumMode());
+    if (appState.myceliumMode !== 'default') params.set('mode', appState.myceliumMode);
     else params.delete('mode');
 
-    if (getTrailDepth() > 0) params.set('depth', String(getTrailDepth()));
+    if (appState.trailDepth > 0) params.set('depth', String(appState.trailDepth));
     else params.delete('depth');
 
-    const activeStoryPrompt = getActiveStoryPrompt();
+    const activeStoryPrompt = appState.activeStoryPrompt;
     if (activeStoryPrompt) params.set('story', String(activeStoryPrompt));
     else params.delete('story');
 
-    if (getActiveClusterFilter() !== null) params.set('cluster', String(getActiveClusterFilter()));
+    if (appState.activeClusterFilter !== null) params.set('cluster', String(appState.activeClusterFilter));
     else params.delete('cluster');
 
     const selectedPoint = getSelectedPointView();
@@ -396,7 +397,7 @@ export function updateUrlState(extra: Record<string, unknown> = {}, options: Upd
     }
 
     try {
-        if (options.mode === 'push' && !getApplyingUrlState()) {
+        if (options.mode === 'push' && !appState.applyingUrlState) {
             window.history.pushState(historyState, '', next);
         } else {
             window.history.replaceState(historyState, '', next);
@@ -408,17 +409,17 @@ export function updateUrlState(extra: Record<string, unknown> = {}, options: Upd
 
 function restoreRecordFocusFromParams(params: URLSearchParams, options: UrlStateOptions = {}): boolean {
     const record = params.get('record') || params.get('lead');
-    if (!record || !getPoints() || !Array.isArray(getPoints()) || getPoints().length === 0) return false;
+    if (!record || !appState.points || !Array.isArray(appState.points) || appState.points.length === 0) return false;
 
-    const target = (getPoints() as Point[]).find((point: Point) => String(point.lead_id) === record);
+    const target = (appState.points as Point[]).find((point: Point) => String(point.lead_id) === record);
     if (!target) {
         showExperienceToast('Record not found', `No record matching '${escapeHtml(record)}' was found in the dataset.`);
         return false;
     }
 
-    const points = getPoints() as Point[];
+    const points = appState.points as Point[];
     const targetIndex = points.indexOf(target);
-    if (!isPointVisible(targetIndex, points as GeoPoint[], getActiveClusterFilter(), getActiveFilters())) {
+    if (!isPointVisible(targetIndex, points as GeoPoint[], appState.activeClusterFilter, appState.activeFilters)) {
         return false;
     }
 
@@ -428,7 +429,7 @@ function restoreRecordFocusFromParams(params: URLSearchParams, options: UrlState
         ? currentSearchSummary.resultIndices as number[]
         : [];
     const resultsEl = document.getElementById('search-results');
-    if (resultsEl && getCurrentSearchSummary()) {
+    if (resultsEl && appState.currentSearchSummary) {
         setActiveSearchResultRow(
             resultsEl,
             resultIndices.includes(targetIndex) ? targetIndex : null,
@@ -449,7 +450,7 @@ function restoreRecordFocusFromParams(params: URLSearchParams, options: UrlState
 
     if (options.fromHistory && target) {
         const query = params.get('q');
-        if (query && getCurrentSearchSummary()) {
+        if (query && appState.currentSearchSummary) {
             syncSearchStatusForFocus(target);
         } else {
             const statusEl = document.getElementById('search-status');
@@ -466,7 +467,7 @@ function restoreRecordFocusFromParams(params: URLSearchParams, options: UrlState
         }
     }
 
-    if (params.get('q') && !getCurrentSearchSummary()) {
+    if (params.get('q') && !appState.currentSearchSummary) {
         const indices = getFilteredIndices();
         updateSearchStatusMessage(Array.isArray(indices) ? indices.length : 0);
     }
@@ -484,14 +485,14 @@ export async function copyCurrentViewLink(): Promise<string | null> {
     }
     shareUrl.searchParams.delete('cb');
     shareUrl.searchParams.delete('lead');
-    shareUrl.searchParams.set('view', getCurrentView() || 'galaxy');
+    shareUrl.searchParams.set('view', appState.currentView || 'galaxy');
 
     const selectedPoint = getSelectedPointView();
     if (selectedPoint?.lead_id) {
         shareUrl.searchParams.set('record', String(selectedPoint.lead_id));
     }
-    if (getMyceliumMode() && getMyceliumMode() !== 'default') {
-        shareUrl.searchParams.set('mode', getMyceliumMode());
+    if (appState.myceliumMode && appState.myceliumMode !== 'default') {
+        shareUrl.searchParams.set('mode', appState.myceliumMode);
     }
     const currentSearchSummary = getSearchSummaryView();
     if (currentSearchSummary?.query) {

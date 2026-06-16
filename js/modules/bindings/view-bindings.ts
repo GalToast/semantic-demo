@@ -8,7 +8,7 @@ import { state as _state } from '../../state.ts';
 const state = _state as any;
 import { switchView } from '../view-controller.ts';
 import { toggleAutoRotate } from '../camera-controls.ts';
-import { debugWarn } from '../diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { resetExperienceState, copyCurrentViewLink } from '../lifecycle.ts';
 import { showExperienceToast } from '@lib/ui/ui-feedback';
 import { zoomMap } from '../map-state.ts';

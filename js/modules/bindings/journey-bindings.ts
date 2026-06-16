@@ -10,10 +10,10 @@ import { bindClick } from './view-bindings.ts';
 import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge';
 import { setSemanticDiveMode, pinThreadNeighbor, unpinThreadInspection, walkThreadNeighbor } from '../journey.ts';
 import { traverseNeighbor } from '../../../src/lib/journey/thread-settler-adapter';
-import { applyLocalNeighborhoodFocus } from '../focus-pocket.ts';
+import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
 import { animateCameraToNode } from '../camera-controls.ts';
 import { resetExplorationFocus, exploreInsideToNextStop, clearClusterFilter } from '../lifecycle.ts';
-import { showExperienceToast } from '../ui-feedback.ts';
+import { showExperienceToast } from '@lib/ui/ui-feedback';
 
 export function expandNeighborhoodFromCurrentNode(): void {
     const index = state.focusedNode;

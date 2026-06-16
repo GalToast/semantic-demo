@@ -7,7 +7,7 @@
 import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from './utils/dom-formatters.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { getViewportSize } from './environment.ts';
-import { subscribeKeyed, EVENTS } from './event-bus.ts';
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import type { Point } from '../state.ts';
 
 let tooltipRevealFrame: number | null = null;

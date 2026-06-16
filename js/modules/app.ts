@@ -3,7 +3,7 @@ import * as journeyModule from './journey.ts';
 import { cancelMicroDemo, initMicroDemo, isMicroDemoRunning } from '../../src/lib/demo/choreography.ts';
 import * as searchModule from './search-state.ts';
 import * as cameraModule from '@lib/engine/camera-controls';
-import * as focusModule from './focus-pocket.ts';
+import * as focusModule from '@lib/journey/focus-pocket';
 import * as dataModule from '@lib/data-loader';
 import * as audioModule from './audio-scape.ts';
 // PATCH: Explicit import to satisfy tests/three-visual-polish-contract.mjs

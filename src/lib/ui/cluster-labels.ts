@@ -5,19 +5,11 @@
  * Renders and animates per-cluster text labels in the 3D galaxy view.
  */
 import * as THREE from 'three';
-import {
-    getSemanticDiveMode,
-    getFocusedNode,
-    getCurrentView,
-    getCurrentSearchSummary,
-    getPoints,
-    getNodePositions,
-    getColors,
-    getClusterNames,
-    getCamera,
-} from '@lib/engine/state-selectors-bridge';
+
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { getViewportSize, isMobileViewport } from '@lib/utils/environment';
+import { appState } from '@lib/state/app.svelte';
+import { CONFIG } from '@lib/engine/config';
 
 interface ClusterStats {
     count: number;
@@ -40,21 +32,21 @@ let _clusterStats: Map<number, ClusterStats> = new Map();
 let _clusterIndices: Map<number, number[]> = new Map();
 
 function getLabelMode(): string {
-    if (getSemanticDiveMode()) return 'inside';
-    if (getFocusedNode() !== null && getFocusedNode() !== undefined) return 'focus';
-    if (getCurrentSearchSummary()) return 'search';
+    if (appState.semanticDiveMode) return 'inside';
+    if (appState.focusedNode !== null && appState.focusedNode !== undefined) return 'focus';
+    if (appState.currentSearchSummary) return 'search';
     return 'overview';
 }
 
 function getActiveCluster(): number | null {
-    const focusedNode = getFocusedNode();
-    const searchSummary = getCurrentSearchSummary() as unknown as { anchorIndex?: number } | null;
+    const focusedNode = appState.focusedNode;
+    const searchSummary = appState.currentSearchSummary as unknown as { anchorIndex?: number } | null;
     const focusIndex = Number.isFinite(focusedNode)
         ? focusedNode
         : Number.isFinite(searchSummary?.anchorIndex)
             ? searchSummary!.anchorIndex
             : null;
-    const points = getPoints() as Array<{ cluster?: number }> | undefined;
+    const points = appState.points as Array<{ cluster?: number }> | undefined;
     const point = Number.isFinite(focusIndex) && points ? points[focusIndex as number] : null;
     return Number.isFinite(point?.cluster) ? point!.cluster! : null;
 }
@@ -93,7 +85,7 @@ function formatLabelText(text: string): string {
 }
 
 export function initClusterLabels(): void {
-    const points = getPoints() as Array<{ cluster: number }> | undefined;
+    const points = appState.points as Array<{ cluster: number }> | undefined;
     if (!points || !points.length) return;
 
     const container = document.getElementById('scene-container');
@@ -103,7 +95,7 @@ export function initClusterLabels(): void {
     _clusterCentroids.clear();
     _clusterStats.clear();
     _clusterIndices.clear();
-    const positions = getNodePositions() as Array<{ x: number; y: number; z: number }> | undefined;
+    const positions = appState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined;
     points.forEach((point, i) => {
         const pos = positions?.[i];
         if (!pos) return;
@@ -134,8 +126,8 @@ export function initClusterLabels(): void {
     _labelElements.clear();
 
     _clusterCentroids.forEach((_pos, cluster) => {
-        const clusterNames = getClusterNames() as unknown as string[];
-        const colors = getColors() as string[];
+        const clusterNames = CONFIG.CLUSTER_NAMES as unknown as string[];
+        const colors = CONFIG.COLORS as string[];
         const labelText = clusterNames[cluster] || `Cluster ${cluster}`;
         const color = colors?.[cluster % colors.length] || '#ffffff';
 
@@ -158,8 +150,8 @@ export function initClusterLabels(): void {
 }
 
 export function updateClusterLabels(): void {
-    const camera = getCamera() as THREE.PerspectiveCamera | null;
-    if (getCurrentView() !== 'galaxy' || !_labelElements.size || !camera) {
+    const camera = appState.camera as THREE.PerspectiveCamera | null;
+    if (appState.currentView !== 'galaxy' || !_labelElements.size || !camera) {
         _labelElements.forEach(el => {
             el.classList.toggle('visible', false);
         });

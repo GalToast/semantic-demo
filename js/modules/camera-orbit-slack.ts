@@ -4,13 +4,10 @@
 
 import * as THREE from 'three';
 import { state, withStateMutation, type CameraLike, type ControlsLike, type NodePosition, type SemanticState } from '../state.ts';
-import {
-    getNavState, getNodePositions, getOriginalPositions, getFocusedNode,
-    getCurrentView, getSemanticDiveMode, getCurrentSearchSummary,
-    getCamera, getControls, getOrbitMaxDistanceDefault, getOrbitMaxDistanceFree,
-    getOrbitRotateSpeedFree, getOrbitPanSpeedFree, getOrbitRotateSpeedDefault, getOrbitPanSpeedDefault
-} from '../state/selectors/index.ts';
+import { getOriginalPositions } from '../state/selectors/index.ts'
 import { isMobile, prefersReducedMotion } from './environment.ts';
+import { appState } from '@lib/state/app.svelte';
+import { CONFIG } from '@lib/engine/config';
 
 interface OrbitSlackCamera extends CameraLike {
     position: THREE.Vector3;
@@ -24,15 +21,15 @@ interface OrbitSlackControls extends ControlsLike {
 const _s = state as unknown as SemanticState;
 
 function getTypedCamera(): OrbitSlackCamera | null {
-    return getCamera() as unknown as OrbitSlackCamera | null;
+    return appState.camera as unknown as OrbitSlackCamera | null;
 }
 
 function getTypedControls(): OrbitSlackControls | null {
-    return getControls() as unknown as OrbitSlackControls | null;
+    return appState.controls as unknown as OrbitSlackControls | null;
 }
 
 function getTypedNodePositions(): NodePosition[] {
-    return getNodePositions() as unknown as NodePosition[];
+    return appState.nodePositions as unknown as NodePosition[];
 }
 
 function getTypedOriginalPositions(): NodePosition[] {
@@ -40,8 +37,8 @@ function getTypedOriginalPositions(): NodePosition[] {
 }
 
 function getRouteEmbodimentIndices(): number[] {
-    const routeIndices = (getNavState().trailNeighborIndices || []).slice(0, 6);
-    const seedIndex = getNavState().trailSeedIndex;
+    const routeIndices = (appState.navState.trailNeighborIndices || []).slice(0, 6);
+    const seedIndex = appState.navState.trailSeedIndex;
     if (seedIndex !== null && seedIndex !== undefined) routeIndices.unshift(seedIndex);
     return routeIndices;
 }
@@ -68,13 +65,13 @@ function getRoutePositionBounds(routeIndices: number[] = []): { center: THREE.Ve
 }
 
 export function isSearchRouteFocusActive(): boolean {
-    const hasFocus = getFocusedNode() !== null && getFocusedNode() !== undefined;
-    const walkDepth = Math.max(0, (getNavState().walkHistoryIndices || []).length - 1);
+    const hasFocus = appState.focusedNode !== null && appState.focusedNode !== undefined;
+    const walkDepth = Math.max(0, (appState.navState.walkHistoryIndices || []).length - 1);
     return (
-        getCurrentView() === 'galaxy' &&
-        !getSemanticDiveMode() &&
+        appState.currentView === 'galaxy' &&
+        !appState.semanticDiveMode &&
         hasFocus &&
-        !!getCurrentSearchSummary() &&
+        !!appState.currentSearchSummary &&
         walkDepth === 0
     );
 }
@@ -82,7 +79,7 @@ export function isSearchRouteFocusActive(): boolean {
 export function getFocusOrbitSlackPivot(): THREE.Vector3 | null {
     const camera = getTypedCamera();
     const controls = getTypedControls();
-    const focusedNode = getFocusedNode();
+    const focusedNode = appState.focusedNode;
     if (!camera || !controls || focusedNode === null || focusedNode === undefined) return null;
     const focusPosition =
         getTypedNodePositions()[focusedNode] ||
@@ -106,7 +103,7 @@ export function getFocusOrbitSlackPivot(): THREE.Vector3 | null {
 export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
     const camera = getTypedCamera();
     const controls = getTypedControls();
-    if (!isSearchRouteFocusActive() || getSemanticDiveMode() || !camera || !controls) return false;
+    if (!isSearchRouteFocusActive() || appState.semanticDiveMode || !camera || !controls) return false;
     if (prefersReducedMotion()) {
         return false;
     }
@@ -124,11 +121,11 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
     const cameraDelta = targetDelta.clone().multiplyScalar(0.72);
     camera.position.add(cameraDelta);
     controls.maxDistance = Math.max(
-        controls.maxDistance || getOrbitMaxDistanceDefault(),
-        getOrbitMaxDistanceFree()
+        controls.maxDistance || CONFIG.ORBIT_MAX_DISTANCE_DEFAULT,
+        CONFIG.ORBIT_MAX_DISTANCE_FREE
     );
-    controls.rotateSpeed = getOrbitRotateSpeedFree();
-    controls.panSpeed = getOrbitPanSpeedFree();
+    controls.rotateSpeed = CONFIG.ORBIT_ROTATE_SPEED_FREE;
+    controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_FREE;
     controls.update();
 
     withStateMutation(() => {
@@ -140,9 +137,9 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
             cameraShift: Number(cameraDelta.length().toFixed(4)),
             distanceBefore: Number(distanceBefore.toFixed(4)),
             distanceAfter: Number(camera.position.distanceTo(controls.target).toFixed(4)),
-            maxDistance: Number((controls.maxDistance || getOrbitMaxDistanceFree()).toFixed(2)),
-            rotateSpeed: Number((controls.rotateSpeed || getOrbitRotateSpeedFree()).toFixed(2)),
-            panSpeed: Number((controls.panSpeed || getOrbitPanSpeedFree()).toFixed(2))
+            maxDistance: Number((controls.maxDistance || CONFIG.ORBIT_MAX_DISTANCE_FREE).toFixed(2)),
+            rotateSpeed: Number((controls.rotateSpeed || CONFIG.ORBIT_ROTATE_SPEED_FREE).toFixed(2)),
+            panSpeed: Number((controls.panSpeed || CONFIG.ORBIT_PAN_SPEED_FREE).toFixed(2))
         };
     });
     document.body.dataset.cameraSlack = 'free-pivot';
@@ -164,9 +161,9 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
                 cameraShift: 0,
                 distanceBefore: 0,
                 distanceAfter: 0,
-                maxDistance: getOrbitMaxDistanceDefault(),
-                rotateSpeed: getOrbitRotateSpeedDefault(),
-                panSpeed: getOrbitPanSpeedDefault()
+                maxDistance: CONFIG.ORBIT_MAX_DISTANCE_DEFAULT,
+                rotateSpeed: CONFIG.ORBIT_ROTATE_SPEED_DEFAULT,
+                panSpeed: CONFIG.ORBIT_PAN_SPEED_DEFAULT
             };
         });
         if (document.body) {
@@ -185,16 +182,16 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
             cameraShift: 0,
             distanceBefore: Number(dist.toFixed(4)),
             distanceAfter: Number(dist.toFixed(4)),
-            maxDistance: getOrbitMaxDistanceDefault(),
-            rotateSpeed: getOrbitRotateSpeedDefault(),
-            panSpeed: getOrbitPanSpeedDefault()
+            maxDistance: CONFIG.ORBIT_MAX_DISTANCE_DEFAULT,
+            rotateSpeed: CONFIG.ORBIT_ROTATE_SPEED_DEFAULT,
+            panSpeed: CONFIG.ORBIT_PAN_SPEED_DEFAULT
         };
     });
     document.body.dataset.cameraSlack = 'idle';
     document.body.dataset.cameraSlackReason = reason;
-    if (controls && !getSemanticDiveMode()) {
-        controls.maxDistance = getOrbitMaxDistanceDefault();
-        controls.rotateSpeed = getOrbitRotateSpeedDefault();
-        controls.panSpeed = getOrbitPanSpeedDefault();
+    if (controls && !appState.semanticDiveMode) {
+        controls.maxDistance = CONFIG.ORBIT_MAX_DISTANCE_DEFAULT;
+        controls.rotateSpeed = CONFIG.ORBIT_ROTATE_SPEED_DEFAULT;
+        controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_DEFAULT;
     }
 }

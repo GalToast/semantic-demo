@@ -6,7 +6,7 @@
  * Thin facade: re-exports from extracted sub-modules + remaining local logic.
  */
 import { state, withStateMutation } from '../state.ts';
-import { publish, subscribe, EVENTS } from './event-bus.ts';
+import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import {
     setLoadingPhase,
     hideLoadingOverlay,

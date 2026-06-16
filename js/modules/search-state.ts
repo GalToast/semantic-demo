@@ -13,19 +13,7 @@
  */
 
 import { state, type Point, type SemanticState } from '../state.ts';
-import {
-    getCurrentSearchSummary,
-    getSemanticTrailCue,
-    getSearchAbortController,
-    getNavState,
-    getFocusedNode,
-    getTrailDepth,
-    getMyceliumMode,
-    getSearchRequestSequence,
-    getCurrentView,
-    getSearchFocusTransitionToken,
-    getTrailIndices
-} from '../state/selectors/index.ts';
+import { getSearchAbortController, getSearchRequestSequence, getSearchFocusTransitionToken, getTrailIndices } from '../state/selectors/index.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName } from './utils/dom-formatters.ts';
 import { isCompactSearchViewport } from './utils/ui-presentation.ts';
@@ -54,6 +42,7 @@ import type { ServiceResultRow } from './search-mapper.ts';
 import * as resultsUiModule from './search-results-ui.ts';
 import * as filterCoreModule from './search-filter-core.ts';
 import * as renderersModule from './ui-renderers.ts';
+import { appState } from '@lib/state/app.svelte';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -106,7 +95,7 @@ export function recordEmptySearch(query: string): void {
 
 export function setSearchPanelState(options: Record<string, unknown> = {}): void {
     if (typeof options.searching === 'boolean' || typeof options.focusing === 'boolean') {
-        const currentCue = getSemanticTrailCue() || 'idle';
+        const currentCue = appState.semanticTrailCue || 'idle';
         const nextSearching = typeof options.searching === 'boolean' ? options.searching : currentCue === 'searching';
         const nextFocusing = typeof options.focusing === 'boolean' ? options.focusing : currentCue === 'focusing';
         state.semanticTrailCue = nextFocusing ? 'focusing' : nextSearching ? 'searching' : 'idle';
@@ -213,7 +202,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         if (trimmedQuery && trimmedQuery.length > 0 && trimmedQuery.length < 2) {
             statusEl.textContent = 'Type at least 2 characters to search';
             setTimeout(() => {
-                if (statusEl && getCurrentSearchSummary() === null) {
+                if (statusEl && appState.currentSearchSummary === null) {
                     statusEl.textContent = 'Type to find businesses by need, place, or trade.';
                 }
             }, 2000);
@@ -235,8 +224,8 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         return;
     }
 
-    const replacingPriorQuery = getCurrentSearchSummary()?.query
-        && getCurrentSearchSummary()!.query !== trimmedQuery;
+    const replacingPriorQuery = appState.currentSearchSummary?.query
+        && appState.currentSearchSummary!.query !== trimmedQuery;
     if (replacingPriorQuery) {
         _s.currentSearchSummary = null;
         _s.searchAnchorIndex = null;
@@ -244,10 +233,10 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     }
 
     const hasExplorationFocus =
-        getNavState()?.focusedIndex !== null
-        || getFocusedNode() !== null
-        || getTrailDepth() > 0
-        || getMyceliumMode() !== 'default';
+        appState.navState?.focusedIndex !== null
+        || appState.focusedNode !== null
+        || appState.trailDepth > 0
+        || appState.myceliumMode !== 'default';
     if (hasExplorationFocus) {
         publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true });
     }
@@ -387,7 +376,7 @@ export function beginSearchFocusTransition(
     point: SearchResult['point'] | undefined,
     el: HTMLElement
 ): void {
-    if (!point || !getCurrentSearchSummary()) return;
+    if (!point || !appState.currentSearchSummary) return;
     if (!el) return;
     _clearSearchFocusTimers();
     const token = (state.searchFocusTransitionToken = (state.searchFocusTransitionToken || 0) + 1);
@@ -410,7 +399,7 @@ export function beginSearchFocusTransition(
         const input = document.getElementById('search-input') as HTMLInputElement | null;
         if (input) input.blur();
 
-        if (getCurrentView() === 'map') {
+        if (appState.currentView === 'map') {
             _searchFocusTransitionTimers.push(setTimeout(() => {
                 if (token !== getSearchFocusTransitionToken()) return;
                 publish(EVENTS.VIEW_CHANGED, { view: 'galaxy' });
@@ -426,7 +415,7 @@ export function beginSearchFocusTransition(
 
 export function clearSearch(options: SearchOptions = {}): void {
     _clearSearchFocusTimers();
-    const priorSummary = getCurrentSearchSummary();
+    const priorSummary = appState.currentSearchSummary;
 
     if (!options.skipResetFocus) {
         publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true, skipSearchClearEvent: true });

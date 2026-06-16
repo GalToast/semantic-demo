@@ -5,7 +5,7 @@
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
 import { state, withStateMutation } from '@lib/engine/state-bridge'
-import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '@lib/engine/state-selectors-bridge'
+
 import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
     resetRouteTraceDiagnostics,
@@ -96,6 +96,7 @@ import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from '@lib/engine/journey-point-color-bridge'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/engine/lifecycle-bridge'
+import { appState } from '@lib/state/app.svelte';
 
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
     const index = typeof payload.index === 'number' ? payload.index : NaN
@@ -199,21 +200,21 @@ export function setTrailDepth(depth: number, options: Record<string, unknown> = 
     publish(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, { depth, options })
 }
 
-function restoreFocusTrailState(priorFocused: number | null = getFocusedNode()): void {
-    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= getPoints().length) return
+function restoreFocusTrailState(priorFocused: number | null = appState.focusedNode): void {
+    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= appState.points.length) return
     setTrailFromSeed(priorFocused!)
 
     publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! } as never)
 
     withStateMutation(() => {
-        state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
+        state.navState.lastTraversalReason = appState.navState?.lastTraversalReason || null
     })
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)
     applyPointFilterColors()
-    const priorPoint = getPoints()[priorFocused!] || null
-    syncFocusStage((priorPoint || getSelectedPoint() || null) as never)
+    const priorPoint = appState.points[priorFocused!] || null
+    syncFocusStage((priorPoint || appState.selectedPoint || null) as never)
     updateTraversalUi()
 }
 

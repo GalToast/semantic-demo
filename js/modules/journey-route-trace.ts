@@ -3,12 +3,8 @@
  * Route trace overlay rendering, subscriptions, and frame updates.
  */
 import { state } from '../state.ts';
-import {
-    getCurrentView, getNavState, getPoints, getActiveFilters, getSemanticDiveMode,
-    getCurrentSearchSummary,
-    getMyceliumGroup
-} from '../state/selectors/index.ts';
-import { subscribeKeyed, EVENTS } from './event-bus.ts';
+
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import * as THREE from 'three';
 import { isPointVisible } from './utils/geo-data.ts';
 import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';
@@ -21,6 +17,7 @@ import {
     pushArcSegments
 } from './journey-webgl-utils.ts';
 import { debounceRAF } from './utils/timer-utils.ts';
+import { appState } from '@lib/state/app.svelte';
 
 // ShaderMaterial with glow effect for route trace lines (LineSegments-based overview lines)
 function buildRouteTraceMaterial(): THREE.ShaderMaterial {
@@ -108,15 +105,15 @@ export function removeRouteTraceOverlay(): void {
 function getRouteEmbodimentIndices(): number[] {
     const indices: number[] = [];
     const push = (index: number): void => {
-        if (!Number.isFinite(index) || index < 0 || index >= getPoints().length) return;
+        if (!Number.isFinite(index) || index < 0 || index >= appState.points.length) return;
         if (!indices.includes(index)) indices.push(index);
     };
-    if (Number.isFinite(getNavState().focusedIndex)) push(getNavState().focusedIndex!);
-    (getNavState().walkHistoryIndices || []).forEach(push);
-    const summary = getCurrentSearchSummary() as any;
+    if (Number.isFinite(appState.navState.focusedIndex)) push(appState.navState.focusedIndex!);
+    (appState.navState.walkHistoryIndices || []).forEach(push);
+    const summary = appState.currentSearchSummary as any;
     if (summary?.anchorIndex !== undefined) push(summary.anchorIndex);
     (summary?.resultIndices || []).slice(0, 7).forEach(push);
-    (getNavState().threadCandidates || []).slice(0, 6).forEach((candidate: any) => push(candidate?.index));
+    (appState.navState.threadCandidates || []).slice(0, 6).forEach((candidate: any) => push(candidate?.index));
     return indices;
 }
 
@@ -129,7 +126,7 @@ export function setRouteChoreographyPhase(phase: string = 'overview', details: R
         startedAt: performance.now()
     };
     if (document.body?.dataset) {
-        (document.body.dataset as any).routeMotion = getCurrentView() === 'galaxy' ? phase : 'inactive';
+        (document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? phase : 'inactive';
     }
     refreshRouteTraceOverlay({ reason: details.reason || phase });
 }
@@ -152,12 +149,12 @@ export function initRouteTraceSubscriptions(): void {
 
 function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): void {
     removeRouteTraceOverlay();
-    if (!getMyceliumGroup() || getCurrentView() !== 'galaxy') {
+    if (!appState.myceliumGroup || appState.currentView !== 'galaxy') {
         resetRouteTraceDiagnostics('inactive-view');
         return;
     }
-    const indices = getRouteEmbodimentIndices().filter((index: number) => isPointVisible(index, getPoints(), null, getActiveFilters()));
-    const rawAnchor = Number.isFinite(getNavState().focusedIndex) ? getNavState().focusedIndex : indices[0];
+    const indices = getRouteEmbodimentIndices().filter((index: number) => isPointVisible(index, appState.points, null, appState.activeFilters));
+    const rawAnchor = Number.isFinite(appState.navState.focusedIndex) ? appState.navState.focusedIndex : indices[0];
     if (!Number.isFinite(rawAnchor) || indices.length < 2) {
         resetRouteTraceDiagnostics(indices.length ? 'single-node' : 'not-built');
         return;
@@ -189,7 +186,7 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
     const material = buildRouteTraceMaterial();
-    if (getSemanticDiveMode()) {
+    if (appState.semanticDiveMode) {
         (material.uniforms as any).baseOpacity.value = 0.34;
         (material.uniforms as any).opacity.value = 0.34;
     }
@@ -210,7 +207,7 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         mapPathActive: !!(state as any).routeTraceDiagnostics?.mapPathActive
     };
     if (document.body?.dataset) {
-        (document.body.dataset as any).routeMotion = getCurrentView() === 'galaxy' ? 'focus' : 'inactive';
+        (document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? 'focus' : 'inactive';
     }
 }
 

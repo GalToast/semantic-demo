@@ -10,14 +10,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import { state, withStateMutation } from '../state.ts';
-import {
-    getCurrentView, getNavState, getSelectedPoint,
-    getStrandContinuityState,
-    getPinnedThreadIndex, getInspectedThreadIndex,
-    getThreadInspectorPointerInside,
-    getPoints, getInspectedStrandDiagnostics
-} from '../state/selectors/index.ts';
-
+import { getInspectedThreadIndex } from '../state/selectors/index.ts'
 import { formatBusinessName, stripTerminalPunctuation } from './utils/dom-formatters.ts';
 import {
     getGeometricThreadCandidates,
@@ -43,8 +36,9 @@ import {
     adapter_getInsideRelationshipLabel,
     adapter_getCurrentTrailFocusIndex
 } from './thread-inspector-adapter.ts';
-import { subscribe, EVENTS } from './event-bus.ts';
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { truncateMicrocopy } from './journey-text-helpers.ts';
+import { appState } from '@lib/state/app.svelte';
 
 export { getGeometricThreadCandidates, getSemanticThreadCandidates, getThreadCandidatesForIndex };
 export { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote };
@@ -110,12 +104,12 @@ function getInsideRelationshipLabel(candidate: any, point: any, focusPoint: any)
 }
 
 export function getThreadInspectionState(index: number | null = getInspectedThreadIndex(), options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
-    const pts = getPoints();
+    const pts = appState.points;
     if (!pts || !Array.isArray(pts) || pts.length === 0) return null;
-    const focusedIndex = Number.isFinite(getNavState()?.focusedIndex) ? getNavState()?.focusedIndex : null;
+    const focusedIndex = Number.isFinite(appState.navState?.focusedIndex) ? appState.navState?.focusedIndex : null;
     const focusPoint = (focusedIndex !== null && focusedIndex >= 0 && focusedIndex < pts.length) ? pts[focusedIndex] : null;
     const candidate = Number.isFinite(index)
-        ? (getNavState()?.threadCandidates as any[])?.find((item: any) => item && item.index === index)
+        ? (appState.navState?.threadCandidates as any[])?.find((item: any) => item && item.index === index)
         : null;
     const point = candidate ? pts[candidate.index] : null;
     const active = !!(candidate && point && focusPoint);
@@ -126,17 +120,17 @@ export function getThreadInspectionState(index: number | null = getInspectedThre
     const relationshipTitle = active && relationshipRole
         ? getRelationshipRoleLabel(relationshipRole, 'title')
         : '';
-    const role = active ? (getNavState()?.focusPocketRoleByIndex instanceof Map ? getNavState()?.focusPocketRoleByIndex.get(candidate.index) : undefined) || candidate.role || 'trail' : '';
+    const role = active ? (appState.navState?.focusPocketRoleByIndex instanceof Map ? appState.navState?.focusPocketRoleByIndex.get(candidate.index) : undefined) || candidate.role || 'trail' : '';
     const source = active
-        ? candidate.source === 'semantic' || getNavState()?.threadSource === 'semantic'
+        ? candidate.source === 'semantic' || appState.navState?.threadSource === 'semantic'
             ? 'semantic relationship'
             : 'current cloud fallback'
         : '';
     const title = active ? `${focusName} -> ${targetName}` : 'Select a nearby stop';
-    const pinned = active && getPinnedThreadIndex() === candidate.index;
+    const pinned = active && appState.pinnedThreadIndex === candidate.index;
     const journeyPhase =
-        active && getStrandContinuityState()?.targetIndex === candidate.index
-            ? getStrandContinuityState()?.phase
+        active && appState.strandContinuityState?.targetIndex === candidate.index
+            ? appState.strandContinuityState?.phase
             : pinned
               ? 'pinned'
               : active
@@ -182,13 +176,13 @@ export function getThreadInspectionState(index: number | null = getInspectedThre
         copy,
         meta,
         strandVisual: {
-            active: !!(getInspectedStrandDiagnostics() as any)?.active,
-            source: (getInspectedStrandDiagnostics() as any)?.source || 'none',
-            segmentCount: (getInspectedStrandDiagnostics() as any)?.segmentCount || 0,
-            braidCount: (getInspectedStrandDiagnostics() as any)?.braidCount || 0,
-            endpointCount: (getInspectedStrandDiagnostics() as any)?.endpointCount || 0
+            active: !!(appState.inspectedStrandDiagnostics as any)?.active,
+            source: (appState.inspectedStrandDiagnostics as any)?.source || 'none',
+            segmentCount: (appState.inspectedStrandDiagnostics as any)?.segmentCount || 0,
+            braidCount: (appState.inspectedStrandDiagnostics as any)?.braidCount || 0,
+            endpointCount: (appState.inspectedStrandDiagnostics as any)?.endpointCount || 0
         },
-        threadSource: getNavState()?.threadSource || null
+        threadSource: appState.navState?.threadSource || null
     };
 }
 
@@ -226,7 +220,7 @@ export function renderThreadInspection(index: number | null = getInspectedThread
         };
         const pointerLeave = (): void => {
             state.threadInspectorPointerInside = false;
-            if (document.body.dataset.threadInspectSurface === 'canvas' && getPinnedThreadIndex() === null) {
+            if (document.body.dataset.threadInspectSurface === 'canvas' && appState.pinnedThreadIndex === null) {
                 scheduleCanvasThreadInspectionClear(1800);
             }
         };
@@ -277,7 +271,7 @@ export function renderThreadInspection(index: number | null = getInspectedThread
         const followTargetsCurrent =
             !!inspectionState?.active &&
             Number.isFinite(inspectionState?.index) &&
-            inspectionState?.index === getNavState()?.focusedIndex;
+            inspectionState?.index === appState.navState?.focusedIndex;
         followBtn.disabled = !inspectionState?.active || !!followTargetsCurrent || inspectionState?.journeyPhase === 'exploring';
         followBtn.setAttribute('aria-disabled', String(followBtn.disabled));
         followBtn.setAttribute('aria-busy', String(inspectionState?.journeyPhase === 'exploring'));
@@ -296,11 +290,11 @@ export function renderThreadInspection(index: number | null = getInspectedThread
         );
     }
     if (clearBtn) {
-        clearBtn.disabled = !inspectionState?.active && getPinnedThreadIndex() === null;
+        clearBtn.disabled = !inspectionState?.active && appState.pinnedThreadIndex === null;
         clearBtn.setAttribute('aria-disabled', String(clearBtn.disabled));
         clearBtn.setAttribute(
             'aria-label',
-            getPinnedThreadIndex() !== null ? 'Clear pinned connection' : 'Clear connection preview'
+            appState.pinnedThreadIndex !== null ? 'Clear pinned connection' : 'Clear connection preview'
         );
     }
     document.querySelectorAll<HTMLElement>('.focus-stage-neighbor-pill.is-inspected')
@@ -319,14 +313,14 @@ export function renderThreadInspection(index: number | null = getInspectedThread
 }
 
 export function inspectThreadNeighbor(index: number, options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
-    if (getPinnedThreadIndex() !== null && !options.force) {
-        return renderThreadInspection(getPinnedThreadIndex(), { surface: 'pinned', pinned: true });
+    if (appState.pinnedThreadIndex !== null && !options.force) {
+        return renderThreadInspection(appState.pinnedThreadIndex, { surface: 'pinned', pinned: true });
     }
     state.inspectedThreadIndex = Number.isFinite(index) ? index : null;
     if (Number.isFinite(getInspectedThreadIndex()) && !options.preserveJourney) {
         setStrandContinuityState('preview', {
             targetIndex: getInspectedThreadIndex(),
-            fromIndex: getNavState()?.focusedIndex,
+            fromIndex: appState.navState?.focusedIndex,
             reason: options.surface || 'inspect'
         });
     }
@@ -343,7 +337,7 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
     state.inspectedThreadIndex = index;
     setStrandContinuityState('pinned', {
         targetIndex: index,
-        fromIndex: getNavState()?.focusedIndex,
+        fromIndex: appState.navState?.focusedIndex,
         reason: options.reason || 'pin'
     });
     const inspectionState = renderThreadInspection(index, { ...options, surface: 'pinned', pinned: true });
@@ -370,7 +364,7 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
     if (state.canvasThreadInspectionClearTimer) window.clearTimeout(state.canvasThreadInspectionClearTimer!);
     state.canvasThreadInspectionClearTimer = window.setTimeout(() => {
         state.canvasThreadInspectionClearTimer = null;
-        if (getThreadInspectorPointerInside() || getPinnedThreadIndex() !== null) return;
+        if (appState.threadInspectorPointerInside || appState.pinnedThreadIndex !== null) return;
         if (document.body.dataset.threadInspectSurface === 'canvas') {
             clearThreadInspection();
         }
@@ -394,15 +388,15 @@ export function clearThreadInspection(options: ThreadInspectionOptions = {}): Th
         state.pinnedThreadIndex = null;
         state.inspectedThreadIndex = null;
         state.threadInspectorPointerInside = false;
-        syncFocusStage(getSelectedPoint());
+        syncFocusStage(appState.selectedPoint);
         syncSemanticDiveUi();
         if (!options.preserveJourney) clearStrandContinuityState('force-clear');
         disposeTimers();
     }
-    if (getPinnedThreadIndex() !== null && !options.force) {
-        return renderThreadInspection(getPinnedThreadIndex(), { surface: 'pinned', pinned: true });
+    if (appState.pinnedThreadIndex !== null && !options.force) {
+        return renderThreadInspection(appState.pinnedThreadIndex, { surface: 'pinned', pinned: true });
     }
-    if (!options.preserveJourney && getStrandContinuityState()?.phase === 'preview') {
+    if (!options.preserveJourney && appState.strandContinuityState?.phase === 'preview') {
         clearStrandContinuityState('preview-clear');
         disposeTimers();
     }
@@ -415,7 +409,7 @@ export function clearThreadInspection(options: ThreadInspectionOptions = {}): Th
 }
 
 export function exploreThreadNeighbor(index: number, options: ThreadInspectionOptions = {}): { targetIndex: number; fromIndex: number | null; reason: string } | null {
-    const pts = getPoints();
+    const pts = appState.points;
     if (!pts || !Array.isArray(pts) || pts.length === 0) return null;
     if (!Number.isFinite(index)) return null;
     const fromIndex = Number.isFinite(options.fromIndex)
@@ -423,7 +417,7 @@ export function exploreThreadNeighbor(index: number, options: ThreadInspectionOp
         : adapter_getCurrentTrailFocusIndex() !== null
           ? adapter_getCurrentTrailFocusIndex()
           : null;
-    const candidate = (getNavState()?.threadCandidates as any[])?.find((item: any) => item && item.index === index);
+    const candidate = (appState.navState?.threadCandidates as any[])?.find((item: any) => item && item.index === index);
     const targetPoint = (Number.isFinite(index) && index >= 0 && index < pts.length) ? pts[index] : null;
     if (!targetPoint) return null;
     const reason =
@@ -442,7 +436,7 @@ export function exploreThreadNeighbor(index: number, options: ThreadInspectionOp
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, { index, fromIndex, appendHistory: !options.restoreHistory } as any);
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' });
     withStateMutation(() => { state.navState.lastTraversalReason = reason; });
-    if (getCurrentView() === 'map') {
+    if (appState.currentView === 'map') {
         focusOnPoint(targetPoint, {
             fromTraversal: true,
             appendHistory: !options.restoreHistory,
@@ -467,21 +461,21 @@ export function exploreThreadNeighbor(index: number, options: ThreadInspectionOp
     const capturedFromIndex = fromIndex;
     const capturedReason = reason;
     setTimer('arrival', arrivalDelay, () => {
-        const s2 = getStrandContinuityState();
+        const s2 = appState.strandContinuityState;
         if (s2?.phase === 'exploring' && s2?.targetIndex === capturedIndex) {
             setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
             const pointAtArrival = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < pts.length) ? pts[capturedIndex] : null;
-            syncFocusStage(pointAtArrival || getSelectedPoint() || null);
+            syncFocusStage(pointAtArrival || appState.selectedPoint || null);
             updateJourneyCompass();
         }
     });
     const settleDelay = options.settleDelay || 5200;
     setTimer('settle', settleDelay, () => {
-        const s3 = getStrandContinuityState();
+        const s3 = appState.strandContinuityState;
         if (s3?.phase === 'arrived' && s3?.targetIndex === capturedIndex) {
             clearStrandContinuityState('arrival-settled');
             const pointAtSettle = (Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < pts.length) ? pts[capturedIndex] : null;
-            syncFocusStage(pointAtSettle || getSelectedPoint() || null);
+            syncFocusStage(pointAtSettle || appState.selectedPoint || null);
         }
     });
     return { targetIndex: index, fromIndex: fromIndex ?? null, reason };

@@ -6,14 +6,14 @@
  * terrain handoff, and route director state synchronization.
  */
 import { state, withStateMutation, type Point } from '../state.ts';
-import { subscribeKeyed, EVENTS } from './event-bus.ts';
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { pointHasGeocode, isPointVisible } from './utils/geo-data.ts';
 import { formatBusinessName } from './utils/dom-formatters.ts';
 import { showExperienceToast, focusOnPoint } from './lifecycle.ts';
 import { hideTooltip } from './tooltip.ts';
 import { hideViewHandoff } from './view-controller.ts';
 import { isMobileViewport } from './environment.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // js/modules/map-state.ts
 

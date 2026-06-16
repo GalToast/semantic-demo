@@ -5,7 +5,7 @@
  */
 
 import { state, withStateMutation, type LoadingPhaseKey, type SemanticState } from '../state.ts';
-import { subscribe, EVENTS } from './event-bus.ts';
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { restoreFocusTrailState, updateSelectedBusiness } from './journey.ts';
 import { SCENE_READY } from './scene-events.ts';
 import { loadSemanticThreads } from './semantic-threads.ts';

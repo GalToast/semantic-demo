@@ -3,7 +3,7 @@
  * Focus-stage semantic thread overlay rendering with GLSL-enhanced Line2 material.
  */
 import { state } from '../state.ts';
-import { subscribe, EVENTS } from './event-bus.ts';
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import * as THREE from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -11,11 +11,11 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getThreadCandidatesForIndex } from './journey-thread-model.ts';
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey.ts';
-import { getFocusThreadCurvePoint } from './focus-pocket.ts';
+import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket';
 import { prefersReducedMotion } from './environment.ts';
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens';
 import { getLineSegmentCount } from './journey-webgl-utils.ts';
-import { registerDiagnosticProbe } from './diagnostic-adapter.ts';
+import { registerDiagnosticProbe } from '@lib/utils/diagnostic-adapter';
 
 // Phase 3: Declarative synchronization
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, () => {

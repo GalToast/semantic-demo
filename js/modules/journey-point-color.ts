@@ -6,7 +6,7 @@
  */
 import * as THREE from 'three';
 import { state as _state } from '../state.ts';
-import { publish, EVENTS } from './event-bus.ts';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { formatBusinessName } from './utils/dom-formatters.ts';
 import { isPointVisible } from './utils/geo-data.ts';

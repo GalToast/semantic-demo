@@ -6,8 +6,9 @@
  */
 
 import { state, type Point } from '../state.ts';
-import { getCurrentView, getWeather, getWeatherInitialized } from '../state/selectors/index.ts';
+import { getWeather, getWeatherInitialized } from '../state/selectors/index.ts'
 import { weatherStateStore } from './stores.ts';
+import { appState } from '@lib/state/app.svelte';
 import {
     applyWeatherEffects as applyWeatherEffectsForWeather,
     clearWeatherEffects,
@@ -117,7 +118,7 @@ export function updateWeatherStaleness(): void {
 }
 
 export function applyWeatherEffects(): void {
-    if (getCurrentView() !== 'map' || !getWeather()) return;
+    if (appState.currentView !== 'map' || !getWeather()) return;
     applyWeatherEffectsForWeather(getWeather() as unknown as Record<string, unknown>);
 }
 

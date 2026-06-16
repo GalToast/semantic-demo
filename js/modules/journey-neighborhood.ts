@@ -6,10 +6,7 @@
  */
 
 import { state, withStateMutation } from '../state.ts';
-import {
-    getCurrentView, getNavState, getPoints, getActiveFilters, getNodePositions,
-    getSemanticNeighborMapByLeadId, getPointIndexByLeadId, getFocusedNode
-} from '../state/selectors/index.ts';
+
 import { isCompactFocusStageViewport } from './utils/ui-presentation.ts';
 import { isPointVisible } from './utils/geo-data.ts';
 import {
@@ -20,13 +17,14 @@ import {
     type ThreadCandidate
 } from './journey-thread-model.ts';
 import { setTrailNavState } from './navigation-state.ts';
-import { setFocusPocketMeta } from './focus-pocket.ts';
+import { setFocusPocketMeta } from '@lib/journey/focus-pocket';
 import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
+import { appState } from '@lib/state/app.svelte';
 
 // Boundary cast: neighborhood-specific nav fields are not in the typed NavState
 // interface yet. These accessors narrow the cast to a readable shape.
 function navNeighborhood(): any {
-    return getNavState() as any;
+    return appState.navState as any;
 }
 
 function toIndexSet(value: unknown): Set<number> {
@@ -75,7 +73,7 @@ initJourneyNeighborhoodAdapter.adapter = {
 } as NeighborhoodAdapter;
 
 function isCondensedFocusStageViewport(): boolean {
-    return getCurrentView() === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
+    return appState.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
 }
 
 export function getSemanticThreadDisplayLimit(): number {
@@ -101,7 +99,7 @@ export function getNeighborhoodRouteIndices(): number[] {
 
 export function isBoundedNeighborhoodActive(): boolean {
     return (
-        getCurrentView() === 'galaxy' &&
+        appState.currentView === 'galaxy' &&
         navNeighborhood().neighborhoodSource === 'semantic' &&
         getNeighborhoodRouteIndices().length > 1
     );
@@ -136,17 +134,17 @@ export function getNeighborhoodCandidateForIndex(index: number): ThreadCandidate
 }
 
 export function getSemanticNeighborRecordBetween(sourceIndex: number, targetIndex: number): any {
-    if (!Number.isFinite(sourceIndex) || sourceIndex < 0 || sourceIndex >= (getPoints()?.length ?? 0)) return null;
-    const points = getPoints()!;
+    if (!Number.isFinite(sourceIndex) || sourceIndex < 0 || sourceIndex >= (appState.points?.length ?? 0)) return null;
+    const points = appState.points!;
     const sourcePoint = points[sourceIndex];
     if (!sourcePoint) return null;
     const sourceLeadId = normalizeLeadId((sourcePoint as any).lead_id);
     if (!sourceLeadId || !Number.isFinite(targetIndex)) return null;
-    const sourceNode = getSemanticNeighborMapByLeadId().get(sourceLeadId);
+    const sourceNode = appState.semanticNeighborMapByLeadId.get(sourceLeadId);
     if (!sourceNode?.neighbors?.length) return null;
     return (
         sourceNode.neighbors.find((neighbor: any) => {
-            const candidateIndex = getPointIndexByLeadId().get(neighbor.leadId);
+            const candidateIndex = appState.pointIndexByLeadId.get(neighbor.leadId);
             return candidateIndex === targetIndex;
         }) || null
     );
@@ -182,7 +180,7 @@ interface NeighborhoodManifest {
 }
 
 export function buildNeighborhoodManifest(anchorIndex: number, routeIndices: number[], options: { displayLimit?: number } = {}): NeighborhoodManifest | null {
-    if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= (getPoints()?.length ?? 0)) return null;
+    if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= (appState.points?.length ?? 0)) return null;
     const displayLimit: number = Number.isFinite(options.displayLimit)
         ? Math.max(0, options.displayLimit!)
         : getSemanticThreadDisplayLimit();
@@ -193,8 +191,8 @@ export function buildNeighborhoodManifest(anchorIndex: number, routeIndices: num
             !Number.isFinite(candidateIndex) ||
             seen.has(candidateIndex) ||
             candidateIndex === anchorIndex ||
-            !isPointVisible(candidateIndex, getPoints()!, null, getActiveFilters()) ||
-            !(getNodePositions() as any)[candidateIndex]
+            !isPointVisible(candidateIndex, appState.points!, null, appState.activeFilters) ||
+            !(appState.nodePositions as any)[candidateIndex]
         ) {
             return;
         }
@@ -204,7 +202,7 @@ export function buildNeighborhoodManifest(anchorIndex: number, routeIndices: num
 
     const candidates = new Map<number, NeighborhoodManifestCandidate>();
     const edges: Array<{ a: number; b: number; score: number; role: string; reason: string }> = [];
-    const anchorLeadId = normalizeLeadId((getPoints()![anchorIndex] as any)?.lead_id);
+    const anchorLeadId = normalizeLeadId((appState.points![anchorIndex] as any)?.lead_id);
     candidates.set(anchorIndex, {
         index: anchorIndex,
         role: 'anchor',
@@ -338,7 +336,7 @@ export function buildNeighborhoodManifest(anchorIndex: number, routeIndices: num
     };
 }
 
-export function getBoundedNeighborhoodWalkCandidate(step: number = 1, currentIndex: number = (getNavState() as any).focusedIndex, options: { commit?: boolean } = {}): ThreadCandidate | null {
+export function getBoundedNeighborhoodWalkCandidate(step: number = 1, currentIndex: number = (appState.navState as any).focusedIndex, options: { commit?: boolean } = {}): ThreadCandidate | null {
     if (!isBoundedNeighborhoodActive()) return null;
     const route = getNeighborhoodRouteIndices();
     if (route.length === 0) return null;
@@ -379,9 +377,9 @@ export function getNextWalkCandidateForIndex(currentIndex: number, options: { al
         : allCandidates;
     const visibleCandidatePool = requireOnCanvas
         ? candidatePool
-            .filter((candidate: ThreadCandidate) => isPointVisible(candidate.index, getPoints()!, null, getActiveFilters()))
+            .filter((candidate: ThreadCandidate) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters))
             .filter((candidate: ThreadCandidate) => initJourneyNeighborhoodAdapter.adapter.isThreadCandidateVisibleOnCanvas(candidate.index))
-        : candidatePool.filter((candidate: ThreadCandidate) => isPointVisible(candidate.index, getPoints()!, null, getActiveFilters()));
+        : candidatePool.filter((candidate: ThreadCandidate) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters));
     const nextCandidate =
         visibleCandidatePool.find((candidate: ThreadCandidate) => !historySet.has(candidate.index)) ||
         visibleCandidatePool[0] ||
@@ -402,15 +400,15 @@ export function getCurrentTrailFocusIndex(): number | null {
         }
         return (state.navState as any).focusedIndex ?? null;
     }
-    return getFocusedNode();
+    return appState.focusedNode;
 }
 
 export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): void {
     if (!Number.isFinite(seedIndex)) return;
     if (isBoundedNeighborhoodActive()) {
-        if (getNavState()?.focusPocketMeta && !(getNavState()!.focusPocketMeta as any).boundedLoop) {
+        if (appState.navState?.focusPocketMeta && !(appState.navState!.focusPocketMeta as any).boundedLoop) {
             setFocusPocketMeta({
-            ...(getNavState()!.focusPocketMeta as any),
+            ...(appState.navState!.focusPocketMeta as any),
                 boundedLoop: true,
                 motifLabel: navNeighborhood().focusPocketMeta?.motifLabel || 'selected neighborhood loop'
             });
@@ -462,7 +460,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
         navNeighborhood().neighborhoodManifest = manifest;
     });
     setFocusPocketMeta({
-            ...((getNavState() as any).focusPocketMeta || {}),
+            ...((appState.navState as any).focusPocketMeta || {}),
         boundedLoop: true,
         motifLabel: 'selected neighborhood loop'
     });
@@ -494,7 +492,7 @@ export function setTrailFromSeed(seedIndex: number): void {
             return a.index - b.index;
         });
     const candidates = allCandidates
-        .filter((candidate: ThreadCandidate) => isPointVisible(candidate.index, getPoints()!, null, getActiveFilters()))
+        .filter((candidate: ThreadCandidate) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters))
         .slice(0, limit);
     const source = semanticCandidates.length ? 'semantic' : ((candidates[0] as any)?.source || 'geometric-fallback');
     const reasonByIndex = new Map<number, string>(candidates.map((candidate: ThreadCandidate) => [candidate.index, (candidate as any).reason]));
@@ -513,6 +511,6 @@ export function updateTrailIndices(seedIndex: number | null = getCurrentTrailFoc
     state.trailIndices.add(seedIndex);
     const limit = getSemanticThreadDisplayLimit();
     ((state.navState as any).threadCandidates.length ? (state.navState as any).threadCandidates : getThreadCandidatesForIndex(seedIndex).slice(0, limit))
-        .filter((candidate: any) => isPointVisible(candidate.index, getPoints()!, null, getActiveFilters()))
+        .filter((candidate: any) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters))
         .forEach((candidate: any) => state.trailIndices.add(candidate.index));
 }

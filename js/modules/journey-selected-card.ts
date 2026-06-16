@@ -36,8 +36,7 @@
  */
 const CASCADE_VECTOR_LINE_SALT = 0xCA5C;
 
-import { getPoints, getSelectedPoint, getFocusedNode, getCurrentView } from '../state/selectors/index.ts';
-import { getActiveClusterFilter, getActiveFilters } from '../state/selectors/index.ts';
+
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from './journey-lifecycle-adapter.ts';
@@ -53,6 +52,7 @@ import { applyClusterUiAccent } from './cluster-ui-accent.ts';
 import { isMapSummarySurface } from './environment.ts';
 import { selectedPointStore } from './stores.ts';
 import { seededUnit } from './utils/seeded-random.ts';
+import { appState } from '@lib/state/app.svelte';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -81,7 +81,7 @@ export function initJourneySelectedCard(deps: Record<string, unknown> = {}): voi
 
     // Phase 3: Declarative synchronization
     const sync = (): void => {
-        updateSelectedBusiness(getSelectedPoint() || null, { skipHydrate: true });
+        updateSelectedBusiness(appState.selectedPoint || null, { skipHydrate: true });
     };
 
     subscribeKeyed('journey-selected-card:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
@@ -111,7 +111,7 @@ export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {
 }
 
 export function syncFocusStage(point: any): void {
-    const points: any[] = Array.isArray(getPoints()) ? (getPoints() as any[]) : [];
+    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : [];
     if (points.length === 0 && point !== null) return;
     const stage = document.getElementById('focus-stage');
     const stageCard = stage?.querySelector('.focus-stage-card') as HTMLElement | null;
@@ -141,9 +141,9 @@ export function syncFocusStage(point: any): void {
         return;
     }
 
-    const focusedNode = getFocusedNode();
+    const focusedNode = appState.focusedNode;
     const effectivePoint = point
-        || getSelectedPoint()
+        || appState.selectedPoint
         || ((focusedNode !== null && focusedNode !== undefined && Number.isFinite(focusedNode) && focusedNode >= 0 && focusedNode < points.length) ? points[focusedNode] : null);
 
     let effectiveIndex: number | null = null;
@@ -154,9 +154,9 @@ export function syncFocusStage(point: any): void {
     }
     const isFilteredOut = effectiveIndex !== null
         && effectiveIndex >= 0
-        && !isPointVisible(effectiveIndex, points, getActiveClusterFilter(), getActiveFilters());
+        && !isPointVisible(effectiveIndex, points, appState.activeClusterFilter, appState.activeFilters);
 
-    if (!effectivePoint || getCurrentView() !== 'galaxy' || focusedNode === null || isFilteredOut) {
+    if (!effectivePoint || appState.currentView !== 'galaxy' || focusedNode === null || isFilteredOut) {
         applyClusterUiAccent(stageCard, null);
         stageCard.hidden = true;
         stage.hidden = true;

@@ -10,7 +10,7 @@
 
 import { appState } from '@lib/state/app.svelte';
 import type { Point } from '../../../../js/state.ts'
-import { getPoints, getTrailDepth } from '../../../../js/state/selectors/index.ts'
+
 import { isMobile } from '../../../../js/modules/environment.ts'
 import { refreshMapRouteEmbodiment } from '../../../../js/modules/map-state.ts'
 import {
@@ -25,7 +25,7 @@ import {
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { applyPointFilterColors, syncFocusStage } from '../../../../js/modules/journey.ts'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
-import { publish, EVENTS } from '../../../../js/modules/event-bus.ts'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../../../../js/modules/camera-controls-core.ts'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 import { animateCameraToNode } from './focus'
@@ -55,7 +55,7 @@ export interface FocusOnNodeOptions {
 // -----------------------------------------------------------------------------
 
 export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): boolean {
-  const points = getPoints() as Point[]
+  const points = appState.points as Point[]
   if (!Number.isFinite(index) || index < 0 || !points || index >= points.length) return false
   const point = points[index]
   if (!point) return false
@@ -79,7 +79,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     restoreHistory: !!options.restoreHistory
   })
 
-  if (getTrailDepth() === 0) {
+  if (appState.trailDepth === 0) {
     setTrailDepth(1, { skipUrlSync: true })
   }
 

@@ -9,10 +9,11 @@
 
 import * as THREE from 'three';
 import { appState } from '@lib/state/app.svelte';
-import { getSemanticDiveMode, getFocusedNode, getCurrentView, getPoints } from '../state/selectors/index.ts';
-import { getColors, getClusterNames, getCamera } from '../state/selectors/index.ts';
-import { subscribe, EVENTS } from './event-bus.ts';
+
+
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { getViewportSize, isMobileViewport } from './environment.ts';
+import { CONFIG } from '@lib/engine/config';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,9 +43,9 @@ let _clusterIndices: Map<number, number[]> = new Map();
 
 function getLabelMode(): string {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (getSemanticDiveMode() as any) return 'inside';
+    if (appState.semanticDiveMode as any) return 'inside';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((getFocusedNode() as any) !== null && (getFocusedNode() as any) !== undefined) return 'focus';
+    if ((appState.focusedNode as any) !== null && (appState.focusedNode as any) !== undefined) return 'focus';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (appState.currentSearchSummary as any) return 'search';
     return 'overview';
@@ -53,7 +54,7 @@ function getLabelMode(): string {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function getActiveCluster(): number | null {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const focusedNode = getFocusedNode() as any;
+    const focusedNode = appState.focusedNode as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const searchSummary = appState.currentSearchSummary as any;
     const focusIndex = Number.isFinite(focusedNode)
@@ -62,7 +63,7 @@ function getActiveCluster(): number | null {
             ? searchSummary.anchorIndex
             : null;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const points = getPoints() as any[];
+    const points = appState.points as any[];
     const point = Number.isFinite(focusIndex) ? points?.[focusIndex] : null;
     return Number.isFinite(point?.cluster) ? point.cluster : null;
 }
@@ -114,7 +115,7 @@ function formatLabelText(text: string): string {
 
 export function initClusterLabels(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const points = getPoints() as any[];
+    const points = appState.points as any[];
     if (!points || !points.length) return;
 
     const container = document.getElementById('scene-container');
@@ -160,9 +161,9 @@ export function initClusterLabels(): void {
 
     _clusterCentroids.forEach((_pos, cluster) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const clusterNames = getClusterNames() as unknown as string[];
+        const clusterNames = CONFIG.CLUSTER_NAMES as unknown as string[];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const colors = getColors() as string[];
+        const colors = CONFIG.COLORS as string[];
         const labelText = clusterNames[cluster] || `Cluster ${cluster}`;
         const color = colors?.[cluster % colors.length] || '#ffffff';
 
@@ -186,9 +187,9 @@ export function initClusterLabels(): void {
 
 export function updateClusterLabels(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const camera = getCamera() as any;
+    const camera = appState.camera as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((getCurrentView() as any) !== 'galaxy' || !_labelElements.size || !camera) {
+    if ((appState.currentView as any) !== 'galaxy' || !_labelElements.size || !camera) {
         _labelElements.forEach(el => {
             el.classList.toggle('visible', false);
         });

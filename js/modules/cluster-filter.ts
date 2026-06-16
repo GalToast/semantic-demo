@@ -3,7 +3,7 @@
 // Cluster filter management, list rendering, city filter, and story prompts.
 
 import { state } from '../state.ts';
-import { publish, EVENTS } from './event-bus.ts';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { el, setChildren } from './utils/dom-builder.ts';

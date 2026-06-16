@@ -4,12 +4,8 @@
  * TypeScript shadow of journey-compass-controller.js.
  * Journey compass state, actions, and map trail strip management.
  */
-import {
-    getStrandContinuityState, getCurrentView, getCurrentSearchSummary,
-    getNavState, getFocusedNode, getTerrainHandoffState,
-    getJourneyCompassPhaseOrder, getMapHandoffPreludeMs, getMapTrailRefreshLateDelayMs
-} from '../state/selectors/index.ts';
-import { subscribeKeyed, EVENTS } from './event-bus.ts';
+
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName, cleanPublicNoteText } from './utils/dom-formatters.ts';
 import { isMapSummarySurface, isSemanticDiveSurface } from './environment.ts';
 import { getFocusedJourneyPoint, getJourneyCompassState, JOURNEY_ACTIONS } from './journey-compass-state.ts';
@@ -25,6 +21,8 @@ import { setSemanticDiveMode } from './journey.ts';
 import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts';
 import { recenterFocusedNode } from './bindings/journey-bindings.ts';
 import { exploreInsideToNextStop, resetExplorationFocus, setTrailDepth } from './lifecycle.ts';
+import { appState } from '@lib/state/app.svelte';
+import { CONFIG } from '@lib/engine/config';
 
 let _switchView: (view: string) => void = () => {};
 
@@ -113,7 +111,7 @@ export function syncJourneyCompassActions(compassState: any = {}): void {
             delete button.dataset.fullLabel;
         }
         button.dataset.journeyAction = action?.action || '';
-        const disabled = !action?.action || (action.action === JOURNEY_ACTIONS.NEXT_STOP && getStrandContinuityState()?.phase === 'exploring');
+        const disabled = !action?.action || (action.action === JOURNEY_ACTIONS.NEXT_STOP && appState.strandContinuityState?.phase === 'exploring');
         (button as HTMLButtonElement).disabled = false;
         button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions));
         button.hidden = suppressInsideDiveActions || !action?.action;
@@ -141,7 +139,7 @@ export function syncMapTrailStrip(compassState: any = {}, presentationState: any
     const strip = document.getElementById('map-trail-strip');
     if (!strip) return;
     const shouldShow =
-        getCurrentView() === 'map' &&
+        appState.currentView === 'map' &&
         presentationState.navigationOwner === 'map-trail-strip';
 
     strip.hidden = !shouldShow;
@@ -166,7 +164,7 @@ export function executeJourneyCompassAction(action: string): void {
             const focusSearchInput = () => window.requestAnimationFrame(() => {
                 document.getElementById('search-input')?.focus();
             });
-            const isMapFocusSearch = getCurrentView() === 'map' && isMapSummarySurface();
+            const isMapFocusSearch = appState.currentView === 'map' && isMapSummarySurface();
 
             if (isMapFocusSearch) {
                 resetExplorationFocus({ preserveSearch: true, skipUrlSync: true });
@@ -178,16 +176,16 @@ export function executeJourneyCompassAction(action: string): void {
             return;
         }
         case JOURNEY_ACTIONS.CENTER_ANCHOR: {
-            const anchorIndex = Number.isFinite(getCurrentSearchSummary()?.anchorIndex)
-                ? (getCurrentSearchSummary() as any).anchorIndex
-                : Number.isFinite(getNavState()?.focusedIndex)
-                    ? getNavState()!.focusedIndex
-                    : Number.isFinite(getFocusedNode())
-                        ? getFocusedNode()
+            const anchorIndex = Number.isFinite(appState.currentSearchSummary?.anchorIndex)
+                ? (appState.currentSearchSummary as any).anchorIndex
+                : Number.isFinite(appState.navState?.focusedIndex)
+                    ? appState.navState!.focusedIndex
+                    : Number.isFinite(appState.focusedNode)
+                        ? appState.focusedNode
                         : null;
             if (Number.isFinite(anchorIndex)) {
                 if (typeof setTrailDepth === 'function') setTrailDepth(1, { fromUserGesture: true, skipUrlSync: true });
-                focusOnNode(anchorIndex!, { fromSearchResult: !!getCurrentSearchSummary() });
+                focusOnNode(anchorIndex!, { fromSearchResult: !!appState.currentSearchSummary });
                 if (typeof recenterFocusedNode === 'function') {
                     recenterFocusedNode();
                 }
@@ -203,7 +201,7 @@ export function executeJourneyCompassAction(action: string): void {
             syncSemanticDiveUi();
             return;
         case JOURNEY_ACTIONS.NEXT_STOP:
-            if (getStrandContinuityState()?.phase === 'exploring') return;
+            if (appState.strandContinuityState?.phase === 'exploring') return;
             if (typeof exploreInsideToNextStop === 'function') exploreInsideToNextStop();
             return;
 
@@ -262,7 +260,7 @@ export function updateJourneyCompass(): void {
     syncJourneyCompassActions(compassState);
     syncMapTrailStrip(compassState, presentationState);
 
-    const order = [...(getJourneyCompassPhaseOrder() || ['overview', 'search', 'focus', 'inside', 'map'])] as string[];
+    const order = [...(CONFIG.JOURNEY_COMPASS_PHASE_ORDER || ['overview', 'search', 'focus', 'inside', 'map'])] as string[];
     const activeOrderIndex = order.indexOf(phase);
     const stepDescriptions: Record<string, string> = {
         overview: 'See the whole county.',
@@ -297,13 +295,13 @@ export function invokeClearMobileRouteFieldPeek(): void {
 
 export function scheduleMapRouteRefresh(): void {
     const refresh = () => {
-        if (getCurrentView() !== 'map') return;
+        if (appState.currentView !== 'map') return;
         refreshMapRouteEmbodiment();
         centerMapOnRouteAnchor();
     };
     refresh();
     window.requestAnimationFrame(() => window.requestAnimationFrame(refresh));
-    [120, 450, getMapHandoffPreludeMs() + getMapTrailRefreshLateDelayMs()].forEach((delay) => {
+    [120, 450, CONFIG.MAP_HANDOFF_PRELUDE_MS + CONFIG.MAP_TRAIL_REFRESH_LATE_DELAY_MS].forEach((delay) => {
         window.setTimeout(refresh, delay);
     });
 }
@@ -311,14 +309,14 @@ export function scheduleMapRouteRefresh(): void {
 export function getViewHandoffModel(view: string): any {
     const focusPoint = getFocusedJourneyPoint();
     const focusName = focusPoint ? formatBusinessName(focusPoint.name || 'this business') : '';
-    const hasSearch = !!getCurrentSearchSummary();
+    const hasSearch = !!appState.currentSearchSummary;
     const searchLabel = hasSearch
-        ? cleanPublicNoteText((getCurrentSearchSummary() as any).query || (getCurrentSearchSummary() as any).label || 'current trail')
+        ? cleanPublicNoteText((appState.currentSearchSummary as any).query || (appState.currentSearchSummary as any).label || 'current trail')
         : '';
 
     if (view === 'map') {
         const routeCount = getRouteEmbodimentIndices().length;
-        const origin = getTerrainHandoffState()?.from || (typeof getRouteLayerOrigin === 'function' ? getRouteLayerOrigin() : 'galaxy');
+        const origin = appState.terrainHandoffState?.from || (typeof getRouteLayerOrigin === 'function' ? getRouteLayerOrigin() : 'galaxy');
         if (focusName && hasSearch) {
             return {
                 icon: 'map',

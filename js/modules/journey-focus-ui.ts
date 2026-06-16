@@ -5,12 +5,8 @@
  * Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals.
  */
 
-import {
-    getCurrentView, getNavState, getStrandContinuityState, getPoints,
-    getActiveFilters, getSelectedPoint, getTrailDepth,
-    getSemanticLaneSnapshot, getSemanticThreadsStatus
-} from '../state/selectors/index.ts';
-import { subscribeKeyed, EVENTS } from './event-bus.ts';
+import { getSemanticThreadsStatus } from '../state/selectors/index.ts'
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName, escapeHtml, cleanOptionalValue } from './utils/dom-formatters.ts';
 import { isCompactFocusStageViewport } from './utils/ui-presentation.ts';
 import { isPointVisible } from './utils/geo-data.ts';
@@ -42,9 +38,10 @@ import { isCompactLandscape, isUltraCompactPortrait } from './environment.ts';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import type { RelationshipRole } from '@lib/utils/relationship-roles';
 import type { Point, StrandContinuityState } from '../state.ts';
+import { appState } from '@lib/state/app.svelte';
 
 export function isCondensedFocusStageViewport(): boolean {
-    return getCurrentView() === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
+    return appState.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait());
 }
 
 function supportsHoverPreview(): boolean {
@@ -74,7 +71,7 @@ function shouldSuppressSelectedBusinessNeighborRail(): boolean {
     const shortLandscapeFocusViewport: boolean = typeof window !== 'undefined' &&
         typeof window.matchMedia === 'function' &&
         window.matchMedia('(max-width: 900px) and (max-height: 420px) and (orientation: landscape)').matches;
-    return getCurrentView() === 'galaxy' && (isCompactLandscape() || shortLandscapeFocusViewport);
+    return appState.currentView === 'galaxy' && (isCompactLandscape() || shortLandscapeFocusViewport);
 }
 
 export function hasColdDegradedSemanticFallback(): boolean {
@@ -117,11 +114,11 @@ export function updateFocusNeighborRail(): void {
     rail.hidden = false;
     rail.setAttribute('aria-hidden', 'false');
 
-    if (!Number.isFinite(getNavState()?.focusedIndex) || hasColdDegradedSemanticFallback()) {
+    if (!Number.isFinite(appState.navState?.focusedIndex) || hasColdDegradedSemanticFallback()) {
         rail.classList.remove('active');
         list.innerHTML = '';
         if (countEl) countEl.textContent = '0 visible neighbors';
-        clearThreadInspection({ force: true, preserveJourney: ['exploring', 'arrived'].includes((getStrandContinuityState() as StrandContinuityState).phase) });
+        clearThreadInspection({ force: true, preserveJourney: ['exploring', 'arrived'].includes((appState.strandContinuityState as StrandContinuityState).phase) });
         return;
     }
 
@@ -137,17 +134,17 @@ export function updateFocusNeighborRail(): void {
     const candidateLimit: number = shouldUseSingleNeighborFocusRail()
         ? 1
         : (isCondensedFocusStageViewport() ? 2 : (isCompactFocusStageViewport() ? 4 : 5));
-    const nav = getNavState()!;
+    const nav = appState.navState!;
     const candidates = (nav.threadCandidates || [])
         .filter((candidate: any) => candidate && candidate.index !== nav.focusedIndex)
-        .filter((candidate: any) => isPointVisible(candidate.index, getPoints()!, null, getActiveFilters()))
+        .filter((candidate: any) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters))
         .slice(0, candidateLimit);
 
     if (!candidates.length) {
         rail.classList.remove('active');
         list.innerHTML = '<div class="empty-state">No neighboring stops found in this area.</div>';
         if (countEl) countEl.textContent = '0 visible neighbors';
-        clearThreadInspection({ force: true, preserveJourney: ['exploring', 'arrived'].includes((getStrandContinuityState() as StrandContinuityState).phase) });
+        clearThreadInspection({ force: true, preserveJourney: ['exploring', 'arrived'].includes((appState.strandContinuityState as StrandContinuityState).phase) });
         return;
     }
 
@@ -158,7 +155,7 @@ export function updateFocusNeighborRail(): void {
     }
 
     candidates.forEach((candidate: any, order: number) => {
-        const points = getPoints()!;
+        const points = appState.points!;
         const point: Point | null = (Number.isFinite(candidate.index) && candidate.index >= 0 && candidate.index < points.length)
             ? points[candidate.index] as Point
             : null;
@@ -242,7 +239,7 @@ export function updateFocusNeighborRail(): void {
             if (!Number.isFinite(nextIndex)) return;
             setStrandContinuityState('preview', {
                 targetIndex: nextIndex,
-                fromIndex: getNavState()?.focusedIndex ?? null,
+                fromIndex: appState.navState?.focusedIndex ?? null,
                 reason: 'rail-inspect'
             });
             inspectThreadNeighbor(nextIndex, { force: true, surface: 'rail' });
@@ -310,7 +307,7 @@ export function updateFocusNeighborRail(): void {
                 } else {
                     setStrandContinuityState('preview', {
                         targetIndex: nextIndex,
-                        fromIndex: getNavState()?.focusedIndex ?? null,
+                        fromIndex: appState.navState?.focusedIndex ?? null,
                         reason: 'rail-inspect'
                     });
                     inspectThreadNeighbor(nextIndex, { force: true, surface: 'rail' });
@@ -326,8 +323,8 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
     const breadcrumb = document.getElementById('walk-breadcrumb');
     if (!breadcrumb) return;
 
-    const points = getPoints()!;
-    const history: number[] = ((getNavState()?.walkHistoryIndices || []) as number[])
+    const points = appState.points!;
+    const history: number[] = ((appState.navState?.walkHistoryIndices || []) as number[])
         .filter((index: number) => Number.isFinite(index) && points[index])
         .filter((index: number, order: number, list: number[]) => list.indexOf(index) === order || order === list.length - 1);
 
@@ -389,10 +386,10 @@ export function updateTraversalUi(): void {
     const focusNextEl = document.getElementById('focus-stage-next');
     const focusRouteEl = document.getElementById('focus-stage-route');
     const focusCenterBtn = document.getElementById('btn-focus-center') as HTMLButtonElement | null;
-    const points = getPoints()!;
-    const nav = getNavState()!;
-    const currentFocusPoint: Point | null = getCurrentView() === 'map'
-        ? getSelectedPoint()
+    const points = appState.points!;
+    const nav = appState.navState!;
+    const currentFocusPoint: Point | null = appState.currentView === 'map'
+        ? appState.selectedPoint
         : (Number.isFinite(nav.focusedIndex) ? points[nav.focusedIndex!] ?? null : null);
     const hasFocus: boolean = !!currentFocusPoint;
     const neighborCount: number = nav.trailNeighborIndices?.length ?? 0;
@@ -400,9 +397,9 @@ export function updateTraversalUi(): void {
 
     if (!controlsEl || !contextEl || !prevBtn || !nextBtn || !focusJourneyEl || !focusPrevBtn || !focusNextBtn || !focusProgressEl) return;
 
-    controlsEl.classList.toggle('active', hasFocus && (getCurrentView() === 'map' || !shouldUseFloatingFocusJourneyOnly()));
+    controlsEl.classList.toggle('active', hasFocus && (appState.currentView === 'map' || !shouldUseFloatingFocusJourneyOnly()));
     contextEl.classList.toggle('active', hasFocus);
-    focusJourneyEl.classList.toggle('active', hasFocus && getCurrentView() === 'galaxy');
+    focusJourneyEl.classList.toggle('active', hasFocus && appState.currentView === 'galaxy');
     if (focusCenterBtn) {
         focusCenterBtn.setAttribute('aria-disabled', String(!hasFocus));
         focusCenterBtn.title = hasFocus
@@ -454,7 +451,7 @@ export function updateTraversalUi(): void {
     if (focusRouteEl) focusRouteEl.dataset.state = neighborCount ? (nav.mode === 'trail' ? 'walking' : 'ready') : 'empty';
 
     if (coldDegradedNoRail) {
-        const queryLabel: string = (getSemanticLaneSnapshot() as any)?.query ? `"${(getSemanticLaneSnapshot() as any).query}"` : 'this semantic trail';
+        const queryLabel: string = (appState.semanticLaneSnapshot as any)?.query ? `"${(appState.semanticLaneSnapshot as any).query}"` : 'this semantic trail';
         prevBtn.disabled = true;
         nextBtn.disabled = true;
         focusPrevBtn.disabled = true;
@@ -469,7 +466,7 @@ export function updateTraversalUi(): void {
         return;
     }
 
-    if ((getTrailDepth() ?? 0) >= 1 && (nav.walkHistoryIndices || []).length >= 0) {
+    if ((appState.trailDepth ?? 0) >= 1 && (nav.walkHistoryIndices || []).length >= 0) {
         const reason: string = nav.lastTraversalReason || currentCandidate?.reason || 'nearby business relationship';
         const walkLength: number = (nav.walkHistoryIndices || []).length;
         const stepNumber: number = walkLength + 1;

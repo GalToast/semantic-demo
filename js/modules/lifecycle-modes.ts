@@ -1,13 +1,10 @@
 // lifecycle-modes.js — Mode/depth setters, descriptions, bloom/bridge recomputation,
 // composition refresh, exploration UI sync, and declarative event subscriptions
 import { state, withStateMutation } from '../state.ts';
-import { publish, subscribe, EVENTS } from './event-bus.ts';
+import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { applyCompositionState } from './composition-state.ts';
 import { applyPointFilterColors } from './journey.ts';
-import {
-  getMyceliumMode, getTrailDepth, getNavState,
-  getSemanticDiveMode, getPoints
-} from '../state/selectors/index.ts';
+import { appState } from '@lib/state/app.svelte';
 
 interface ModeOptions {
   skipUrlSync?: boolean;
@@ -59,7 +56,7 @@ export function updateExplorationUi() {
 // ── Mode setters ────────────────────────────────────────────────────────────
 
 export function setMyceliumMode(mode: string, options: ModeOptions = {}) {
-  if (getMyceliumMode() === mode) return;
+  if (appState.myceliumMode === mode) return;
   state.myceliumMode = mode;
   if (mode === 'bloom') {
     recomputeBloomIndices();
@@ -81,7 +78,7 @@ export function setMyceliumMode(mode: string, options: ModeOptions = {}) {
 }
 
 export function setTrailDepth(depth: number | string, options: ModeOptions = {}) {
-  const prevDepth = Number(getTrailDepth() || 0);
+  const prevDepth = Number(appState.trailDepth || 0);
   const nextDepth = Number.isFinite(Number(depth)) ? Number(depth) : 0;
   const enteringSemanticDive = nextDepth === 2 && prevDepth < 2;
   const leavingSemanticDive = prevDepth >= 2 && nextDepth < 2;
@@ -95,7 +92,7 @@ export function setTrailDepth(depth: number | string, options: ModeOptions = {})
   withStateMutation(() => {
     state.navState.trailDepth = nextDepth;
     if (nextDepth >= 2) state.navState.mode = 'inside';
-    else if (nextDepth > 0 && getNavState()?.mode !== 'focus') state.navState.mode = 'trail';
+    else if (nextDepth > 0 && appState.navState?.mode !== 'focus') state.navState.mode = 'trail';
   });
   if (!options.skipUrlSync) {
     publish(EVENTS.EXPLORATION_DEPTH_CHANGED, { depth: nextDepth });
@@ -110,7 +107,7 @@ export function setSemanticDiveMode(enabled: boolean) {
     if (document.body) document.body.dataset.semanticDive = 'transitioning';
     setTrailDepth(2, { fromUserGesture: true });
     window.setTimeout(() => {
-      if (getSemanticDiveMode() && document.body?.dataset.semanticDive === 'transitioning') {
+      if (appState.semanticDiveMode && document.body?.dataset.semanticDive === 'transitioning') {
         document.body.dataset.semanticDive = 'active';
       }
     }, 820);
@@ -124,7 +121,7 @@ export function setSemanticDiveMode(enabled: boolean) {
 
 function recomputeBloomIndices() {
   state.bloomIndices = new Set(
-    ((getPoints() || []) as PointLike[])
+    ((appState.points || []) as PointLike[])
       .map((point, index) => ({ point, index }))
       .filter(({ point }) => point.status === 'active' && point.website)
       .map(({ index }) => index)
@@ -134,7 +131,7 @@ function recomputeBloomIndices() {
 
 function recomputeBridgeIndices() {
   state.bridgeIndices = new Set(
-    ((getPoints() || []) as PointLike[])
+    ((appState.points || []) as PointLike[])
       .map((point, index) => ({ point, index }))
       .filter(({ point }) => {
         const text = `${point?.what || ''} ${point?.public_note || ''} ${point?.public_detail || ''}`.toLowerCase();

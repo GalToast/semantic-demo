@@ -5,7 +5,7 @@
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
 import { state, withStateMutation } from '../state.ts'
-import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '../state/selectors/index.ts'
+
 import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
     resetRouteTraceDiagnostics,
@@ -92,10 +92,11 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin: number =
 export function ensureCanvasNodeInteractionBindings(): void {
     ensureCanvasNodeInteractionBindingsImpl();
 }
-import { applyLocalNeighborhoodFocus } from './focus-pocket.ts'
+import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.ts';
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.ts'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from './lifecycle.ts'
+import { appState } from '@lib/state/app.svelte';
 
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: any) => {
     const index = payload.index
@@ -181,21 +182,21 @@ export function setTrailDepth(depth: number, options: any = {}): void {
     publish(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, { depth, options })
 }
 
-function restoreFocusTrailState(priorFocused: number | null = getFocusedNode()): void {
-    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= getPoints().length) return
+function restoreFocusTrailState(priorFocused: number | null = appState.focusedNode): void {
+    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= appState.points.length) return
     setTrailFromSeed(priorFocused!)
 
-    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: getPoints()[priorFocused!] })
+    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused, point: appState.points[priorFocused!] })
 
     withStateMutation(() => {
-        state.navState.lastTraversalReason = getNavState()?.lastTraversalReason || null
+        state.navState.lastTraversalReason = appState.navState?.lastTraversalReason || null
     })
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)
     applyPointFilterColors()
-    const priorPoint = getPoints()[priorFocused!] || null
-    syncFocusStage(priorPoint || getSelectedPoint() || null)
+    const priorPoint = appState.points[priorFocused!] || null
+    syncFocusStage(priorPoint || appState.selectedPoint || null)
     updateTraversalUi()
 }
 

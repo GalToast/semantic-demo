@@ -25,9 +25,9 @@ import * as lifecycleStaticModule from '../../../js/modules/lifecycle';
 import * as journeyCompassStaticModule from '@lib/engine/journey-compass-controller-bridge';
 import * as journeyStaticModule from '../../../js/modules/journey';
 import * as panelBindingsStaticModule from '../../../js/modules/bindings/panel-bindings';
-import * as microDemoGuardsStaticModule from '../../../js/modules/micro-demo-guards';
-import * as microDemoCameraStaticModule from '../../../js/modules/micro-demo-camera';
-import * as microDemoUiStaticModule from '../../../js/modules/micro-demo-ui';
+import * as microDemoGuardsStaticModule from '@lib/demo/guards';
+import * as microDemoCameraStaticModule from '@lib/demo/camera';
+import * as microDemoUiStaticModule from '@lib/demo/ui';
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //

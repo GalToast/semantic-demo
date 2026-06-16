@@ -1,6 +1,6 @@
 // lifecycle-reset.ts — Reset/overview functions and their declarative event subscriptions
 import { state, withStateMutation } from '../state.ts';
-import { publish, subscribe, EVENTS } from './event-bus.ts';
+import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { clearExplorationFocusSelection } from './url-state.ts';
 import { switchView } from './view-controller.ts';
 import { syncFocusStage } from './journey.ts';
@@ -13,17 +13,16 @@ import {
   updateSearchStatusMessage
 } from './search-state.ts';
 import { settleCameraToOverviewPose } from './camera-controls.ts';
-import {
-  getCurrentView, getCurrentSearchSummary, getSearchGlowIndices
-} from '../state/selectors/index.ts';
+import { getSearchGlowIndices } from '../state/selectors/index.ts'
 import { refreshCompositionState, updateExplorationUi } from './lifecycle-modes.ts';
+import { appState } from '@lib/state/app.svelte';
 
 // ── Reset functions ─────────────────────────────────────────────────────────
 
 export function resetExplorationFocus(options: { preserveSearch?: boolean; skipSearchClearEvent?: boolean; skipUrlSync?: boolean } = { preserveSearch: true }) {
   const preservedSearchSummary = options.preserveSearch === false
     ? null
-    : getCurrentSearchSummary();
+    : appState.currentSearchSummary;
 
   withStateMutation(() => {
     state.navState.mode = 'overview';
@@ -91,7 +90,7 @@ export function resetExperienceState(options = {}) {
 
 export function returnToOverview() {
   resetExperienceState();
-  if (getCurrentView() !== 'galaxy') {
+  if (appState.currentView !== 'galaxy') {
     switchView('galaxy');
   }
   settleCameraToOverviewPose();

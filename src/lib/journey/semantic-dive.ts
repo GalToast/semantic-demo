@@ -15,10 +15,6 @@
  *   - ../../../js/modules/focus-stage-dom.ts (ensureFocusStageAuxiliaryDom, ensureDiveButton)
  */
 
-import {
-    getFocusedNode, getNavState, getCurrentView, getSemanticDiveMode,
-    getStrandContinuityState, getTrailDepth, getPoints
-} from '@lib/engine/state-selectors-bridge';
 import { state } from '@lib/engine/state-bridge';
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import type { BusinessRecord } from '@lib/types/business';
@@ -26,6 +22,7 @@ import { cleanOptionalValue, formatBusinessName } from '@lib/utils/dom-formatter
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { getNextExploreCandidateForIndex } from './thread-model';
 import { summarizeNeighborReason } from './thread-settler';
+import { appState } from '@lib/state/app.svelte';
 import {
   getNextWalkCandidateForIndex,
   ensureFocusStageAuxiliaryDom,
@@ -59,9 +56,9 @@ function getShortConnectionCue(reason: any): string {
 
 function getStepInsideConnectionCopy(candidate: any, focusIndex: number | null): string | null {
     if (!candidate || !Number.isFinite(candidate.index)) return null;
-    const point = getPoints()?.[candidate.index] || null;
+    const point = appState.points?.[candidate.index] || null;
     if (!point) return null;
-    const focusPoint = Number.isFinite(focusIndex) ? getPoints()?.[focusIndex as number] || null : null;
+    const focusPoint = Number.isFinite(focusIndex) ? appState.points?.[focusIndex as number] || null : null;
     const targetName = truncateDiveStatusCopy(formatBusinessName(point.name || 'next stop'), 42);
     const reason =
         typeof summarizeNeighborReason === 'function'
@@ -93,16 +90,16 @@ export function syncSemanticDiveUi(): void {
     ensureFocusStageAuxiliaryDom();
     ensureDiveButton();
     const publicFocusedNode = Number(document.body?.dataset?.focusedNode);
-    const hasFocus = getFocusedNode() !== null && getFocusedNode() !== undefined
-        || Number.isFinite(getNavState()?.focusedIndex)
+    const hasFocus = appState.focusedNode !== null && appState.focusedNode !== undefined
+        || Number.isFinite(appState.navState?.focusedIndex)
         || Number.isFinite(publicFocusedNode);
-    const canDive = getCurrentView() === 'galaxy' && hasFocus;
+    const canDive = appState.currentView === 'galaxy' && hasFocus;
 
     const publicSemanticDiveActive =
         document.body?.dataset?.semanticDive === 'active'
         || document.body?.dataset?.panelSurface === 'semantic-dive'
         || Number(document.body?.dataset?.trailDepth || 0) >= 2;
-    const active = publicSemanticDiveActive || (getSemanticDiveMode() && canDive);
+    const active = publicSemanticDiveActive || (appState.semanticDiveMode && canDive);
     const deadline = state._semanticDiveTransitionDeadline || 0;
     const isTransitioning = active && deadline > 0 && Date.now() < deadline;
     if (active && !isTransitioning && document.body) {
@@ -118,7 +115,7 @@ export function syncSemanticDiveUi(): void {
     const insideCountyButton = document.getElementById('btn-inside-county') as HTMLButtonElement | null;
     const focusKicker = document.getElementById('focus-stage-kicker');
     const journeyCompass = document.getElementById('journey-compass');
-    const journeyPhase = getStrandContinuityState()?.phase;
+    const journeyPhase = appState.strandContinuityState?.phase;
     const isExploring = journeyPhase === 'walking' || journeyPhase === 'exploring';
     if (document.body) {
         document.body.dataset.insideWalkState = active ? (journeyPhase || 'idle') : 'idle';
@@ -126,14 +123,14 @@ export function syncSemanticDiveUi(): void {
     if (document.body && !active) {
         document.body.dataset.semanticDive = 'inactive';
     }
-    const currentFocusIndex = Number.isFinite(getNavState()?.focusedIndex)
-        ? getNavState().focusedIndex
-        : getFocusedNode();
+    const currentFocusIndex = Number.isFinite(appState.navState?.focusedIndex)
+        ? appState.navState.focusedIndex
+        : appState.focusedNode;
     const nextExploreCandidate = active && currentFocusIndex !== null
         ? getNextExploreCandidateForIndex(currentFocusIndex, getNextWalkCandidateForIndex)
         : null;
     const hasNextCandidate = active && Number.isFinite(nextExploreCandidate?.index);
-    const hasWalked = (getNavState()?.explorationHistoryIndices || []).length > 1;
+    const hasWalked = (appState.navState?.explorationHistoryIndices || []).length > 1;
 
     if (insideControls) {
         if (active) {
@@ -190,7 +187,7 @@ export function syncSemanticDiveUi(): void {
                 ? hasWalked && !hasNextCandidate
                     ? 'Path Mapped'
                     : 'Inside Neighborhood'
-                : getTrailDepth() >= 1
+                : appState.trailDepth >= 1
                     ? 'Selected match'
                     : 'Focused Business';
     }
@@ -234,7 +231,7 @@ export function syncSemanticDiveUi(): void {
     }
     if (!diveButton) return;
 
-    const showDiveButton = getTrailDepth() >= 1 && hasFocus && !active;
+    const showDiveButton = appState.trailDepth >= 1 && hasFocus && !active;
     if (diveButton) diveButton.hidden = !showDiveButton;
     if (diveButton) diveButton.inert = !showDiveButton;
 

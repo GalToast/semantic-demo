@@ -9,14 +9,15 @@
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 import { appState } from '@lib/state/app.svelte';
-import { getActiveClusterFilter as _getActiveClusterFilter, getColors as _getColors, getClusterNames as _getClusterNames } from '../state/selectors/index.ts';
-import { subscribeKeyed, EVENTS } from './event-bus.ts';
+
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { escapeHtml } from './utils/dom-formatters.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { getSemanticGuideTitle } from '../../src/lib/journey/semantic-guide.ts';
 import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.ts';
 import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts';
 import { getViewportSize } from './environment.ts';
+import { CONFIG } from '@lib/engine/config';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

@@ -3,7 +3,7 @@
 // Single-responsibility composers that derive document.body dataset fields.
 
 import { state as _defaultState, type SemanticState } from '../state.ts';
-import { publish, EVENTS } from './event-bus.ts';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts';
 import { clearMobileRouteFieldPeek } from './search-state.ts';
 import { compositionStore } from './stores.ts';
