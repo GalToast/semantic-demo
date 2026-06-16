@@ -12,7 +12,7 @@
 // boundary, matching the established pattern in three-engine.ts.
 import { state as _state } from '../state.ts';
 const state = _state as any;
-import { publish, EVENTS } from './event-bus.ts';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { isMapSummarySurface } from './environment.ts';
 import {
     animateCameraToTerrainPrelude,

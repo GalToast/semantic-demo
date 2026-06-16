@@ -8,7 +8,7 @@ import { state as _state } from '../../state.ts';
 const state = _state as any;
 import { applyStoryPrompt } from '../lifecycle.ts';
 import { focusSearchInputForReplacement, search } from '../search-state.ts';
-import { showExperienceToast } from '../ui-feedback.ts';
+import { showExperienceToast } from '@lib/ui/ui-feedback';
 
 type SetMyceliumMode = (mode: string) => void;
 

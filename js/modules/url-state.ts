@@ -8,7 +8,7 @@
 
 import { state } from '../state.ts';
 import { withStateMutation } from '../state.ts';
-import { subscribe, publish, EVENTS } from './event-bus.ts';
+import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus';
 import {
     MODE_DESCRIPTIONS,
     STORY_DESCRIPTIONS,

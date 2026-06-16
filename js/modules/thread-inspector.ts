@@ -26,8 +26,8 @@ import {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,
     disposeInspectedStrandOverlay
-} from './thread-inspector-webgl.ts';
-import { setInspectedStrandOverlayUpdater } from './inspected-strand-overlay-adapter.ts';
+} from '@lib/journey/thread-inspector-webgl';
+import { setInspectedStrandOverlayUpdater } from '@lib/journey/inspected-strand-overlay-adapter';
 import { setStrandContinuityState, clearStrandContinuityState, setTimer, disposeTimers, clearTimer } from './strand-continuity.ts';
 import { getStrandArrivalNote } from './strand-continuity.ts';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';

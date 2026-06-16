@@ -10,7 +10,7 @@
 import { state } from '../state.ts';
 import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from './utils/ui-presentation.ts';
 import { updateSemanticLaneState } from './state-mutators.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 // ── Window augmentation (semantic-lane helpers attached by lifecycle.js) ────
 

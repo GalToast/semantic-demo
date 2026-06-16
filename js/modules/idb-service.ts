@@ -7,7 +7,7 @@
 // timeout fires, aborts the transaction, and resets `dbPromise` so the
 // next call re-opens the database instead of permanently blocking.
 
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 const DB_NAME = 'SemanticExplorerDB';
 const STORE_NAME = 'SearchCache';

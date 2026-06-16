@@ -8,7 +8,7 @@ import { state, type SemanticNode } from '../state.ts';
 import { updateSemanticThreadsStatus } from './state-mutators.ts';
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import { recordSemanticLaneSnapshot } from './semantic-lane.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000];
 

@@ -2,7 +2,7 @@
     import { onDestroy } from 'svelte';
     import { state as appState } from '../../state.js';
     import { activeFiltersStore } from '../stores.js';
-    import { publish, EVENTS } from '../event-bus.js';
+    import { publish, EVENTS } from '@lib/orchestration/event-bus';
     import { applyFilters, clearSearchGlow } from '../search-state.ts';
     import {
         setActiveFilter,

@@ -7,7 +7,7 @@
  */
 
 import { state, type SemanticNeighbor } from '../state.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 
 export function findSemanticPath(startLeadId: string | number, targetLeadId: string | number): string[] | null {
     if (!state.semanticNeighborMapByLeadId || !state.pointIndexByLeadId) {

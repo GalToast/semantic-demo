@@ -10,7 +10,7 @@
  */
 
 import { state } from '../state.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { seededUnit } from './utils/seeded-random.ts';
 
 // ── Local boundary types ────────────────────────────────────────────────────

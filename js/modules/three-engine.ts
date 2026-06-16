@@ -1,7 +1,7 @@
 import { webglContext, getLiveResourceCounts } from '@lib/engine/webgl-context';
 import { switchView } from './view-controller.ts';
 import { updateClusterLabels } from './cluster-labels.ts';
-import { applyFocusPocketBreathing } from './focus-pocket.ts';
+import { applyFocusPocketBreathing } from '@lib/journey/focus-pocket';
 import { getSceneRevealProgress, setSceneRevealDataset } from '@lib/engine/scene-reveal';
 import * as THREE from 'three';
 if (typeof window !== 'undefined') {
