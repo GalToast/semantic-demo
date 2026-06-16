@@ -8,7 +8,7 @@
 
 export { state, withStateMutation } from './state-bridge';
 export { focusOnNode } from './camera-controls';
-export { search, clearSearch } from '../../../js/modules/search-state.ts';
+export { search, clearSearch } from './search-state-bridge';
 export {
   switchView,
   setTrailDepth,

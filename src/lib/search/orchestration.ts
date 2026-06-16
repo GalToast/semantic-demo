@@ -54,6 +54,7 @@ import {
   focusSearchInputForReplacement,
   updateSearchStatusMessage
 } from './results-ui';
+import { setActiveSearchResultRow } from './result-renderer';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -304,31 +305,6 @@ export function beginSearchFocusTransition(
 
   // Focus the result in the 3D scene
   publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: targetIndex } as any);
-}
-
-/**
- * Set the active search result row in the DOM.
- */
-export function setActiveSearchResultRow(resultsEl: HTMLElement, activeIndex: number | null): void {
-  if (!resultsEl) return;
-  
-  // Remove existing active classes
-  resultsEl.querySelectorAll('.search-result-item.active').forEach((el) => {
-    el.classList.remove('active');
-    el.setAttribute('aria-selected', 'false');
-  });
-
-  if (activeIndex === null) return;
-
-  // Add active class to the target row
-  const targetRow = resultsEl.querySelector(`.search-result-item[data-index="${activeIndex}"]`);
-  if (targetRow) {
-    targetRow.classList.add('active');
-    targetRow.setAttribute('aria-selected', 'true');
-    
-    // Scroll into view if needed
-    targetRow.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
-  }
 }
 
 /**

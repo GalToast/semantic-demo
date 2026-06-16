@@ -101,3 +101,24 @@ export {
 // `Point` as a name from the legacy state module; we now surface the
 // canonical `SearchResultPoint` under the same name.
 export type { SearchResultPoint as Point, ServiceResultRow };
+
+// ── Focus reset (search-state side-effect shim) ──────────────────────────
+
+import { state as _legacyState } from '../engine/state-bridge';
+import { getTrailIndices } from '../../../js/state/selectors/index.ts';
+import { clearTrailThreadState as _clearTrailThreadState } from '../../../js/modules/navigation-state';
+
+/** Reset the focus-related state and publish a STATE_RESET event. The
+ *  legacy kernel implementation walks the live `state.selectedPoint`,
+ *  trail indices, and trail-thread state, then notifies the event bus.
+ *  We preserve the side-effect ordering so legacy consumers see the
+ *  same shape and signal flow.
+ */
+export function clearSearchRelatedFocusState(context: Record<string, unknown> = {}): Record<string, unknown> {
+  const reason = (context && typeof context.reason === 'string') ? context.reason : 'filter-invalidate';
+  _legacyState.selectedPoint = null;
+  publish(EVENTS.STATE_RESET, { reason, silent: true });
+  _clearTrailThreadState();
+  getTrailIndices()?.clear?.();
+  return { reason };
+}

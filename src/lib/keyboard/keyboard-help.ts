@@ -50,6 +50,21 @@ export function initKeyboardResetOwnership(
     if (typeof resetExplorationFocus === 'function') _resetExplorationFocus = resetExplorationFocus;
 }
 
+export function handleGalaxyKeydown(e: KeyboardEvent): void {
+    if (isKeyboardTextEntryTarget(e.target) || isKeyboardControlTarget(e.target)) return;
+
+    if (e.key === 'Home') {
+        e.preventDefault();
+        _returnToOverview();
+        return;
+    }
+
+    if (e.key === 'Escape') {
+        e.preventDefault();
+        _resetExplorationFocus();
+    }
+}
+
 let _shortcutsPanelArrowToastShown = false;
 let _previouslyFocused: HTMLElement | null = null;
 
