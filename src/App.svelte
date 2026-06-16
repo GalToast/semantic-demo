@@ -213,6 +213,12 @@
         return;
       }
 
+      if (e.key === 'w' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
+        e.preventDefault();
+        weatherVisible = !weatherVisible;
+        return;
+      }
+
       if (e.key === 'Escape') {
         // A2-4: Escape always returns to Overview from any non-idle mode.
         // If the search input is focused, clear its text as a side effect.
@@ -278,6 +284,7 @@
   let navSurface = $state('idle');
   let navMode = $state('overview');
   let navView = $state('galaxy');
+  let weatherVisible = $state(true);
   let navFocusedIndex = $state<number | null>(null);
 
   let _navUnsub: (() => void) | null = null;
@@ -350,7 +357,7 @@
   <Legend open={$legendOpen} mapView={mapModeActive} concealedByFocus={focusActive} />
 
   <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
-  <WeatherWidget visible={true} />
+  <WeatherWidget visible={weatherVisible} />
 
   <!-- Layer 80: Info panel -->
   <InfoPanel open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
