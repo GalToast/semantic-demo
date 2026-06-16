@@ -1,11 +1,11 @@
-import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import * as svelte from 'svelte';
-import * as eventBindings from '../../js/modules/event-bindings';
-import { state, withStateMutation } from '../../js/state';
-import * as viewController from '../../js/modules/view-controller';
-import * as cameraControls from '../../js/modules/camera-controls';
-import * as searchState from '../../js/modules/search-state.ts';
-import * as journey from '../../js/modules/journey';
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
+import * as svelte from 'svelte'
+import * as eventBindings from '../../js/modules/event-bindings'
+import { state, withStateMutation } from '../../js/state'
+import * as viewController from '../../js/modules/view-controller'
+import * as cameraControls from '../../js/modules/camera-controls'
+import * as searchState from '../../src/lib/engine/search-state-bridge'
+import * as journey from '../../js/modules/journey'
 
 vi.mock('../../src/lib/utils/environment', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
@@ -28,18 +28,18 @@ vi.mock('../../src/lib/utils/environment', () => ({
     isMobileViewport: vi.fn(() => false),
     getInfoSurface: vi.fn(() => null),
     getAspectRatio: vi.fn(() => 1.33)
-}));
+}))
 
 vi.mock('../../js/modules/view-controller', () => ({
     switchView: vi.fn()
-}));
+}))
 
 vi.mock('../../js/modules/camera-controls', () => ({
     toggleAutoRotate: vi.fn(),
     focusOnNode: vi.fn(),
     animateCameraToNode: vi.fn(),
     settleCameraToOverviewPose: vi.fn()
-}));
+}))
 
 vi.mock('../../js/modules/search-state.ts', () => ({
     clearSearch: vi.fn(),
@@ -49,7 +49,7 @@ vi.mock('../../js/modules/search-state.ts', () => ({
     focusSearchInputForReplacement: vi.fn(),
     setSearchPanelState: vi.fn(),
     updateSearchStatusMessage: vi.fn()
-}));
+}))
 
 vi.mock('../../js/modules/journey', () => ({
     traverseNeighbor: vi.fn(),
@@ -58,20 +58,20 @@ vi.mock('../../js/modules/journey', () => ({
     unpinThreadInspection: vi.fn(),
     walkThreadNeighbor: vi.fn(),
     syncFocusStage: vi.fn()
-}));
+}))
 
 describe('event-bindings', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
-        vi.spyOn(console, 'warn').mockImplementation(() => {});
+        vi.clearAllMocks()
+        vi.spyOn(console, 'warn').mockImplementation(() => {})
 
         // Unit test of bind logic only; full DOM coverage is the e2e test's job.
         // Opt the unit test into prod-like bind behavior so missing required
         // buttons warn rather than throw, keeping fixture scope tractable.
-        window.__semanticDemoProd = true;
+        window.__semanticDemoProd = true
 
-        eventBindings.disposeEventListeners();
-        
+        eventBindings.disposeEventListeners()
+
         withStateMutation(() => {
             Object.assign(state, {
                 registeredEvents: new Set(),
@@ -81,8 +81,8 @@ describe('event-bindings', () => {
                 inspectedThreadIndex: null,
                 pinnedThreadIndex: null,
                 navState: { focusedIndex: null }
-            });
-        });
+            })
+        })
 
         document.body.innerHTML = `
             <button id="btn-galaxy"></button>
@@ -93,14 +93,14 @@ describe('event-bindings', () => {
             <button id="btn-thread-pin"></button>
             <input id="search-input" />
             <button id="search-clear-btn"></button>
-        `;
-    });
+        `
+    })
 
     afterEach(() => {
-        eventBindings.disposeEventListeners();
-        delete window.__semanticDemoProd;
-        vi.restoreAllMocks();
-    });
+        eventBindings.disposeEventListeners()
+        delete window.__semanticDemoProd
+        vi.restoreAllMocks()
+    })
 
     it('should initialize successfully', () => {
         const mocks = {
@@ -109,77 +109,80 @@ describe('event-bindings', () => {
             setMyceliumMode: vi.fn(),
             setSemanticLaneUiState: vi.fn(),
             updateUrlState: vi.fn()
-        };
+        }
 
-        eventBindings.initEventListeners(mocks);
-        expect(state.eventListenersInitialized).toBe(true);
-        expect(state.registeredEvents.has('global-interaction')).toBe(true);
-    });
+        eventBindings.initEventListeners(mocks)
+        expect(state.eventListenersInitialized).toBe(true)
+        expect(state.registeredEvents.has('global-interaction')).toBe(true)
+    })
 
     it('should bind basic view controls', () => {
-        eventBindings.initEventListeners({});
-        
-        document.getElementById('btn-galaxy').click();
-        expect(viewController.switchView).toHaveBeenCalledWith('galaxy');
+        eventBindings.initEventListeners({})
 
-        document.getElementById('btn-map').click();
-        expect(viewController.switchView).toHaveBeenCalledWith('map');
+        document.getElementById('btn-galaxy').click()
+        expect(viewController.switchView).toHaveBeenCalledWith('galaxy')
 
-        document.getElementById('btn-rotate').click();
-        expect(cameraControls.toggleAutoRotate).toHaveBeenCalled();
-    });
+        document.getElementById('btn-map').click()
+        expect(viewController.switchView).toHaveBeenCalledWith('map')
+
+        document.getElementById('btn-rotate').click()
+        expect(cameraControls.toggleAutoRotate).toHaveBeenCalled()
+    })
 
     it('should bind focus controls', () => {
-        eventBindings.initEventListeners({});
-        
-        document.getElementById('btn-focus-prev').click();
-        expect(journey.traverseNeighbor).toHaveBeenCalledWith(-1);
+        eventBindings.initEventListeners({})
 
-        document.getElementById('btn-focus-next').click();
-        expect(journey.traverseNeighbor).toHaveBeenCalledWith(1);
-    });
+        document.getElementById('btn-focus-prev').click()
+        expect(journey.traverseNeighbor).toHaveBeenCalledWith(-1)
+
+        document.getElementById('btn-focus-next').click()
+        expect(journey.traverseNeighbor).toHaveBeenCalledWith(1)
+    })
 
     it('should handle thread pin logic', () => {
-        eventBindings.initEventListeners({});
-        
+        eventBindings.initEventListeners({})
+
         withStateMutation(() => {
-            state.inspectedThreadIndex = 5;
-            state.pinnedThreadIndex = null;
-        });
-        
-        document.getElementById('btn-thread-pin').click();
-        expect(journey.pinThreadNeighbor).toHaveBeenCalledWith(5, { surface: 'pinned' });
-        
-        vi.clearAllMocks();
+            state.inspectedThreadIndex = 5
+            state.pinnedThreadIndex = null
+        })
+
+        document.getElementById('btn-thread-pin').click()
+        expect(journey.pinThreadNeighbor).toHaveBeenCalledWith(5, { surface: 'pinned' })
+
+        vi.clearAllMocks()
         withStateMutation(() => {
-            state.pinnedThreadIndex = 5;
-        });
-        
-        document.getElementById('btn-thread-pin').click();
-        expect(journey.unpinThreadInspection).toHaveBeenCalled();
-    });
+            state.pinnedThreadIndex = 5
+        })
+
+        document.getElementById('btn-thread-pin').click()
+        expect(journey.unpinThreadInspection).toHaveBeenCalled()
+    })
 
     it('should delegate search chrome controls to the Svelte island', { timeout: 30000 }, async () => {
-        const mountSpy = vi.spyOn(svelte, 'mount');
-        const original = document.getElementById('search-chrome-slot');
-        const slot = document.createElement('div');
-        slot.id = 'search-chrome-slot';
-        document.body.appendChild(slot);
+        const mountSpy = vi.spyOn(svelte, 'mount')
+        const original = document.getElementById('search-chrome-slot')
+        const slot = document.createElement('div')
+        slot.id = 'search-chrome-slot'
+        document.body.appendChild(slot)
 
         try {
-            const promise = eventBindings.initEventListeners({});
-            await vi.waitFor(() => {
-                expect(mountSpy).toHaveBeenCalled();
-            }, { timeout: 25000 });
-            await promise;
+            const promise = eventBindings.initEventListeners({})
+            await vi.waitFor(
+                () => {
+                    expect(mountSpy).toHaveBeenCalled()
+                },
+                { timeout: 25000 }
+            )
+            await promise
         } finally {
             if (original) {
-                slot.replaceWith(original);
+                slot.replaceWith(original)
             } else {
-                slot.remove();
+                slot.remove()
             }
-            mountSpy.mockRestore();
+            mountSpy.mockRestore()
         }
-        expect(searchState.clearSearch).not.toHaveBeenCalled();
-    });
-});
+        expect(searchState.clearSearch).not.toHaveBeenCalled()
+    })
+})

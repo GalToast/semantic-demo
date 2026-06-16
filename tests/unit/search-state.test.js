@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import * as searchState from '../../js/modules/search-state.ts';
+import * as searchState from '../../src/lib/engine/search-state-bridge';
 import { subscribe, EVENTS } from '../../js/modules/event-bus';
 import { state, withStateMutation } from '../../js/state';
 import { fetchSemanticSearchResults } from '../../js/modules/semantic-search-api-cache.js';
