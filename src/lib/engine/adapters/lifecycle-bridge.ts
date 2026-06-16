@@ -37,7 +37,7 @@ import { appState } from '@lib/state/app.svelte.ts';
 import * as legacyStateModule from '../../../../js/state';
 import * as legacyViewControllerModule from '../../../../js/modules/view-controller';
 import * as legacyFilterStateModule from '../../../../js/modules/filter-state';
-import * as legacyEventBusModule from '../../../../js/modules/event-bus';
+import * as legacyEventBusModule from '@lib/orchestration/event-bus';
 import {
   ensureCanvasNodeInteractionBindings,
   removeCanvasNodeInteractionBindings,

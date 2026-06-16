@@ -5,4 +5,4 @@
  * _ensureModules(). The Svelte 5 port @lib/focus/pocket exists but the render
  * loop's namespace-import + typecast pattern is deferred to Wave 3.
  */
-export * from '../../../js/modules/focus-pocket';
+export * from '@lib/journey/focus-pocket';

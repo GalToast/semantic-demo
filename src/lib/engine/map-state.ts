@@ -7,7 +7,7 @@
  */
 import { appState as state } from '@lib/state/app.svelte.ts';
 import type { Point } from '../../../js/state';
-import { subscribeKeyed, EVENTS } from '../../../js/modules/event-bus';
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { showExperienceToast } from '@lib/ui/ui-feedback';

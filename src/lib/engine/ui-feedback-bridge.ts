@@ -3,5 +3,5 @@
  * Re-exports the legacy ui-feedback module. Will retire when T10-Wave 3
  * ports the module natively.
  */
-export { showExperienceToast, syncSearchStatusForFocus } from '../../../js/modules/ui-feedback';
-export type { SyncSearchStatusOptions } from '../../../js/modules/ui-feedback';
+export { showExperienceToast, syncSearchStatusForFocus } from '@lib/ui/ui-feedback';
+export type { SyncSearchStatusOptions } from '@lib/ui/ui-feedback';
