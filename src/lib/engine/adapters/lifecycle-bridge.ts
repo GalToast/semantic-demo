@@ -36,7 +36,7 @@ import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
 import { appState } from '@lib/state/app.svelte.ts';
 import { state as legacyState } from '@lib/engine/state-bridge';
 import * as legacyViewControllerModule from '../../../../js/modules/view-controller';
-import * as legacyFilterStateModule from '../../../../js/modules/filter-state';
+import * as legacyFilterStateModule from '@lib/stores/filter.svelte';
 import * as legacyEventBusModule from '@lib/orchestration/event-bus';
 import {
   ensureCanvasNodeInteractionBindings,
