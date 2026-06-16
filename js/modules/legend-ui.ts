@@ -8,7 +8,8 @@
 // ── Imports (reference JS siblings for runtime) ────────────────────────────
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-import { getCurrentSemanticGuide as _getCurrentSemanticGuide, getActiveClusterFilter as _getActiveClusterFilter, getColors as _getColors, getClusterNames as _getClusterNames } from '../state/selectors/index.ts';
+import { appState } from '@lib/state/app.svelte';
+import { getActiveClusterFilter as _getActiveClusterFilter, getColors as _getColors, getClusterNames as _getClusterNames } from '../state/selectors/index.ts';
 import { subscribeKeyed, EVENTS } from './event-bus.ts';
 import { escapeHtml } from './utils/dom-formatters.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
@@ -122,7 +123,7 @@ export function buildLegend(): void {
         .sort((a, b) => b[1] - a[1] || a[0] - b[0]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const guide = _getCurrentSemanticGuide() as SemanticGuide | null;
+    const guide = appState.currentSemanticGuide as SemanticGuide | null;
     const guideTitle = guide ? getSemanticGuideTitle(guide as Record<string, unknown>) : 'Read the scene';
     const guideNote: string = guide?.text || 'Neighborhood colors group records by shared language, trade, civic role, and business texture.';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -175,7 +176,7 @@ export function buildLegend(): void {
 
 export function updateLegendGuideState(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const guide = _getCurrentSemanticGuide() as SemanticGuide | null;
+    const guide = appState.currentSemanticGuide as SemanticGuide | null;
     if (!guide) {
         if (isLegendPanelOpen()) closeLegendPanel();
         // Don't wipe innerHTML here. This function is called from many event
@@ -230,7 +231,7 @@ export function buildCanvasColorLegend(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const colors: string[] = Array.isArray(_getColors()) ? (_getColors() as string[]) : [];
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const names: string[] = Array.isArray(_getClusterNames()) ? (_getClusterNames() as string[]) : [];
+    const names: string[] = Array.isArray(_getClusterNames()) ? (_getClusterNames() as unknown as string[]) : [];
 
     let top: number[] | null = counts && counts.size > 0
         ? Array.from(counts.entries())

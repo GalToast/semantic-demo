@@ -8,8 +8,8 @@
 // ── Imports (reference JS siblings for runtime) ────────────────────────────
 
 import * as THREE from 'three';
-import { getSemanticDiveMode, getFocusedNode, getCurrentView } from '../state/selectors/index.ts';
-import { getCurrentSearchSummary, getPoints, getNodePositions } from '../state/selectors/index.ts';
+import { appState } from '@lib/state/app.svelte';
+import { getSemanticDiveMode, getFocusedNode, getCurrentView, getPoints } from '../state/selectors/index.ts';
 import { getColors, getClusterNames, getCamera } from '../state/selectors/index.ts';
 import { subscribe, EVENTS } from './event-bus.ts';
 import { getViewportSize, isMobileViewport } from './environment.ts';
@@ -46,7 +46,7 @@ function getLabelMode(): string {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((getFocusedNode() as any) !== null && (getFocusedNode() as any) !== undefined) return 'focus';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (getCurrentSearchSummary() as any) return 'search';
+    if (appState.currentSearchSummary as any) return 'search';
     return 'overview';
 }
 
@@ -55,7 +55,7 @@ function getActiveCluster(): number | null {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const focusedNode = getFocusedNode() as any;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const searchSummary = getCurrentSearchSummary() as any;
+    const searchSummary = appState.currentSearchSummary as any;
     const focusIndex = Number.isFinite(focusedNode)
         ? focusedNode
         : Number.isFinite(searchSummary?.anchorIndex)
@@ -126,7 +126,7 @@ export function initClusterLabels(): void {
     _clusterStats.clear();
     _clusterIndices.clear();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const positions = getNodePositions() as any[];
+    const positions = appState.nodePositions as any[];
     points.forEach((point: any, i: number) => {
         const pos = positions[i];
         if (!pos) return;
@@ -160,7 +160,7 @@ export function initClusterLabels(): void {
 
     _clusterCentroids.forEach((_pos, cluster) => {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const clusterNames = getClusterNames() as string[];
+        const clusterNames = getClusterNames() as unknown as string[];
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const colors = getColors() as string[];
         const labelText = clusterNames[cluster] || `Cluster ${cluster}`;

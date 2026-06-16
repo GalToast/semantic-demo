@@ -134,7 +134,7 @@ export function initClusterLabels(): void {
     _labelElements.clear();
 
     _clusterCentroids.forEach((_pos, cluster) => {
-        const clusterNames = getClusterNames() as string[];
+        const clusterNames = getClusterNames() as unknown as string[];
         const colors = getColors() as string[];
         const labelText = clusterNames[cluster] || `Cluster ${cluster}`;
         const color = colors?.[cluster % colors.length] || '#ffffff';
