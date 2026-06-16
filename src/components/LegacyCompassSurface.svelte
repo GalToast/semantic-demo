@@ -50,6 +50,13 @@
   } from '@lib/orchestration/compass-controller';
   import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
 
+  interface Props {
+    /** Suppress the compass in overview mode when URL has ?nodemo=1 */
+    noDemo?: boolean;
+  }
+
+  let { noDemo = false }: Props = $props();
+
   // ── Reactive state ────────────────────────────────────────────────────────
 
   // We re-read the derived compass state every store change. This is the
@@ -338,6 +345,17 @@
     bodyPanelSurface === 'search' ||
     bodyPanelSurface === 'focus-search'
   );
+
+  // Hide compass in overview phase when ?nodemo=1 is set.
+  // In search/focus/inside/map phases the compass is needed for navigation.
+  let hideCompassForNoDemo = $derived(
+    noDemo && phase === 'overview'
+  );
+
+  // Hide compass when search results are active to avoid overlap.
+  let hideCompassForSearch = $derived(
+    searchSurface && navState.currentView !== 'map'
+  );
   let visibleTitle = $derived(
     searchSurface
       ? (compass.title || 'Search results')
@@ -356,6 +374,8 @@
 <section
   id="journey-compass"
   class="journey-compass glass-heavy"
+  class:hidden-by-nodemo={hideCompassForNoDemo}
+  class:hidden-by-search={hideCompassForSearch}
   data-phase={phase}
   data-density={density}
   data-copy={copy}
@@ -577,6 +597,14 @@
     clip: rect(0, 0, 0, 0);
     white-space: nowrap;
     border: 0;
+  }
+  /* Hide compass in overview when ?nodemo=1 */
+  .journey-compass.hidden-by-nodemo {
+    display: none !important;
+  }
+  /* Hide compass when search results are active to prevent overlap */
+  .journey-compass.hidden-by-search {
+    display: none !important;
   }
   .journey-compass-title {
     overflow: visible;

@@ -5,11 +5,4 @@
  * Canonical source: src/lib/audio/audio-scape.ts
  */
 
-export {
-    initAudio,
-    setAudioMuted,
-    triggerCorridorBloom,
-    trigger,
-    play,
-    disposeAudio
-} from '@lib/audio/audio-scape';
+export { initAudio, setAudioMuted, triggerCorridorBloom, trigger, play, disposeAudio } from '@lib/audio/audio-scape'

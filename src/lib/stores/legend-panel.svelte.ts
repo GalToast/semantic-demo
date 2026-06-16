@@ -1,28 +1,27 @@
 /**
- * legend-ui.ts
+ * @lib/stores/legend-panel.svelte.ts — Legend panel state & action functions
  *
- * Typechecked sibling of legend-ui.js.
- * Legend panel structural state, guide UI, and canvas color key.
+ * Replaces js/modules/legend-ui.ts kernel (308 LOC).
+ * Panel state lives in the existing `legendOpen` store (legend.svelte.ts).
+ * This module provides the imperative action surface that legacy importers
+ * need: open/close transitions, guide management, canvas color key, and
+ * focus tracking.
  */
 
-// ── Imports (reference JS siblings for runtime) ────────────────────────────
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
+import { get } from 'svelte/store';
+import { legendOpen, setLegendOpen } from './legend.svelte';
 import { appState } from '@lib/state/app.svelte';
-
-import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
-import { escapeHtml } from './utils/dom-formatters.ts';
-import { describeCluster } from './utils/ui-presentation.ts';
-import { getSemanticGuideTitle } from '../../src/lib/journey/semantic-guide.ts';
+import { escapeHtml } from '@lib/utils/dom-formatters';
+import { describeCluster, isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
+import { getSemanticGuideTitle } from '@lib/journey/semantic-guide';
 import { getFilteredClusterCounts, setClusterFilter } from '@lib/orchestration/cluster-filter-controller';
 import { getActiveClusterFilter } from '@lib/stores/filter.svelte';
-import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
-import { getViewportSize } from '@lib/utils/environment'
+import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode';
 import { CONFIG } from '@lib/engine/config';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-/** Minimal shape for the current semantic guide — JS runtime returns `unknown`. */
+/** Minimal shape for the current semantic guide */
 interface SemanticGuide {
     text?: string;
     laneStatus?: string;
@@ -36,77 +35,68 @@ interface CloseLegendGuideOptions {
     restoreFocus?: boolean;
 }
 
-// ── Viewport helper ────────────────────────────────────────────────────────
+// ── Module-scoped focus scrap ───────────────────────────────────────────────
 
-function isCompactFocusStage(): boolean {
-    return getViewportSize().width <= 768;
-}
+let _previouslyFocusedLegend: HTMLElement | null = null;
 
-// ── Legend panel structural state transitions ───────────────────────────────
+// ── Panel state queries & transitions ───────────────────────────────────────
 
-/**
- * Returns true if the legend panel is currently open (has .active class).
- * Does not read document.documentElement.dataset.legendActive — uses classList only.
- */
+/** Returns true if the legend panel is currently open. */
 export function isLegendPanelOpen(): boolean {
-    if (typeof document === 'undefined' || !document.documentElement) return false;
-    return document.documentElement.dataset.legendActive === 'true';
+    return get(legendOpen);
 }
 
-/**
- * Opens the legend panel (adds .active class, clears aria-hidden, sets toggle aria).
- * Safe to call when already open — early-returns.
- */
+/** Opens the legend panel. Safe to call when already open. */
 export function openLegendPanel(): void {
-    if (typeof document === 'undefined' || !document.documentElement) return;
-    const panel = document.getElementById('legend-panel');
-    const toggle = document.getElementById('btn-legend');
-    if (!panel || !toggle) return;
-    if (document.documentElement.dataset.legendActive === 'true') return; // already open
+    if (get(legendOpen)) return;
+    setLegendOpen(true);
 
-    panel.setAttribute('aria-hidden', 'false');
-    panel.classList.add('active');
-    document.documentElement.dataset.legendActive = 'true';
-    toggle.setAttribute('aria-expanded', 'true');
-    toggle.setAttribute('aria-pressed', 'true');
-    toggle.setAttribute('aria-label', 'Hide field guide');
+    if (typeof document !== 'undefined' && document.documentElement) {
+        const panel = document.getElementById('legend-panel');
+        const toggle = document.getElementById('btn-legend');
+        if (panel) {
+            panel.setAttribute('aria-hidden', 'false');
+            panel.classList.add('active');
+        }
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'true');
+            toggle.setAttribute('aria-pressed', 'true');
+            toggle.setAttribute('aria-label', 'Hide field guide');
+        }
+    }
+
     // Always (re)build so the panel has content even when no semantic guide is active.
     buildLegend();
 }
 
-/**
- * Closes the legend panel (removes .active class, sets aria-hidden, resets toggle aria).
- * Safe to call when already closed — early-returns.
- *
- * Does NOT restore compact focus-stage info panel — use restoreLegendCollapsedPanel()
- * in the caller if that restoration is needed (as lifecycle.closeLegendGuide does).
- */
+/** Closes the legend panel. Safe to call when already closed. */
 export function closeLegendPanel(): void {
-    if (typeof document === 'undefined' || !document.documentElement) return;
-    const panel = document.getElementById('legend-panel');
-    const toggle = document.getElementById('btn-legend');
-    if (!panel || !toggle) return;
-    if (document.documentElement.dataset.legendActive !== 'true') return; // already closed
+    if (!get(legendOpen)) return;
+    setLegendOpen(false);
 
-    panel.setAttribute('aria-hidden', 'true');
-    panel.classList.remove('active');
-    document.documentElement.dataset.legendActive = 'false';
-    toggle.setAttribute('aria-expanded', 'false');
-    toggle.setAttribute('aria-pressed', 'false');
-    toggle.setAttribute('aria-label', 'Show field guide');
+    if (typeof document !== 'undefined' && document.documentElement) {
+        const panel = document.getElementById('legend-panel');
+        const toggle = document.getElementById('btn-legend');
+        if (panel) {
+            panel.setAttribute('aria-hidden', 'true');
+            panel.classList.remove('active');
+        }
+        if (toggle) {
+            toggle.setAttribute('aria-expanded', 'false');
+            toggle.setAttribute('aria-pressed', 'false');
+            toggle.setAttribute('aria-label', 'Show field guide');
+        }
+    }
 }
 
 // ── Compact focus-stage restore (cross-module bridge) ───────────────────────
 
-/**
- * Restores the info panel after the legend is closed in compact focus-stage view.
- * Safe to call when not in compact mode — early-returns.
- */
+/** Restores the info panel after the legend is closed in compact focus-stage view. */
 export function restoreLegendCollapsedPanel(
     infoPanel: HTMLElement | null,
     panelBtn: HTMLElement | null
 ): void {
-    if (!isCompactFocusStage()) return;
+    if (!isCompactFocusStageViewport()) return;
     if (getFocusPanelMode() !== FOCUS_PANEL_MODE.LEGEND_OPEN) return;
     if (infoPanel) infoPanel.classList.add('active');
     setFocusPanelMode(FOCUS_PANEL_MODE.OVERVIEW);
@@ -171,8 +161,7 @@ export function buildLegend(): void {
     legendPanel.querySelectorAll('[data-legend-cluster]').forEach((item) => {
         item.addEventListener('click', () => setClusterFilter(Number((item as HTMLElement).dataset.legendCluster)));
     });
-    // Rebuild the always-visible compact key from current cluster counts so it
-    // tracks the same data the panel shows.
+    // Rebuild the always-visible compact key from current cluster counts.
     buildCanvasColorLegend();
 }
 
@@ -181,12 +170,6 @@ export function updateLegendGuideState(): void {
     const guide = appState.currentSemanticGuide as SemanticGuide | null;
     if (!guide) {
         if (isLegendPanelOpen()) closeLegendPanel();
-        // Don't wipe innerHTML here. This function is called from many event
-        // subscribers (VIEW_CHANGED, FILTER_CHANGED, STATE_RESET, SEARCH_*);
-        // wiping the panel makes the field guide's content flash in and out
-        // when the user opens it. buildLegend() always replaces the content
-        // when the panel is next opened, so an empty state at the path
-        // level is fine.
         return;
     }
     // Auto-open the legend panel when guide data is available
@@ -216,16 +199,6 @@ export function closeLegendGuide(options: CloseLegendGuideOptions = {}): void {
 
 // ── Compact canvas-anchored color key ──────────────────────────────────────
 
-/**
- * Build the small always-visible "Network" color key that hangs off the top-left
- * of the canvas. The old version had 4 hard-coded swatches (Anchor / Match /
- * Cluster / Highlight) that did not match the actual 3D palette — the cluster
- * dots use 30 colors from `state.COLORS` keyed by `state.CLUSTER_NAMES`.
- *
- * We pick the 4 most-populated clusters so the key shows what's actually
- * visible in the cloud. If a cluster has 0 records (data is empty) we fall
- * back to the first 4 names+colors.
- */
 export function buildCanvasColorLegend(): void {
     const root = document.getElementById('canvas-color-legend-rows');
     if (!root) return;
@@ -244,7 +217,6 @@ export function buildCanvasColorLegend(): void {
         : null;
 
     if (!top || top.length < 4) {
-        // Pad with first-N clusters so we always render 4 rows.
         const padded = Array.from(new Set([...(top || []), 0, 1, 2, 3])).slice(0, 4);
         top = padded;
     }
@@ -267,42 +239,7 @@ export function buildCanvasColorLegend(): void {
     );
 }
 
-// ── Module-scoped focus scrap (replaces window._previouslyFocusedLegend) ────
-let _previouslyFocusedLegend: HTMLElement | null = null;
+// ── Focus tracking ─────────────────────────────────────────────────────────
 
 export function setPreviouslyFocusedLegend(el: HTMLElement | null): void { _previouslyFocusedLegend = el; }
 export function getPreviouslyFocusedLegend(): HTMLElement | null { return _previouslyFocusedLegend; }
-
-// ── Unused import suppressor ────────────────────────────────────────────────
-// The selector imports from '../state/selectors/index.ts' are aliased with _
-// prefix and used directly in buildLegend/updateLegendGuideState/buildCanvasColorLegend.
-// The _ prefix signals these are untyped boundary imports from a JS-only module.
-
-// ── Event Bus Subscriptions ─────────────────────────────────────────────────
-const syncLegend = (): void => {
-    updateLegendGuideState();
-};
-
-/**
- * Registers all legend event-bus subscriptions.
- * Must be called once during app init (after DOM is ready).
- *
- * Called from src/components/Legend.svelte onMount (Svelte-track owner).
- * The previous app.js / lifecycle.js caller is off-limits; the Svelte
- * component lifecycle now drives this initialization.
- */
-export function initLegendEventBusSubscriptions(): void {
-    subscribeKeyed('legend:view-changed', EVENTS.VIEW_CHANGED, () => {
-        closeLegendPanel();
-        syncLegend();
-    });
-    subscribeKeyed('legend:filter-changed', EVENTS.FILTER_CHANGED, syncLegend);
-    subscribeKeyed('legend:state-reset', EVENTS.STATE_RESET, syncLegend);
-    subscribeKeyed('legend:search-success', EVENTS.SEARCH_SUCCESS, syncLegend);
-    subscribeKeyed('legend:search-cleared', EVENTS.SEARCH_CLEARED, syncLegend);
-}
-
-// ── Unused import suppressor ────────────────────────────────────────────────
-// ensure the selector imports referenced in the JS sibling are accounted for
-// (getCurrentSemanticGuide, getActiveClusterFilter, getColors, getClusterNames)
-// are accessed via the local wrapper or inline casts above.

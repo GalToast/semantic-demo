@@ -10,7 +10,7 @@ import { formatBusinessName, escapeHtml, cleanOptionalValue } from './utils/dom-
 import { isCompactFocusStageViewport } from './utils/ui-presentation.ts'
 import { isPointVisible } from './utils/geo-data.ts'
 import { truncateMicrocopy } from './journey-text-helpers.ts'
-import { setStrandContinuityState } from './strand-continuity.ts'
+import { setStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
 import { summarizeNeighborReason, walkThreadNeighbor } from './journey-thread-settler.ts'
 import { inspectThreadNeighbor, pinThreadNeighbor, clearThreadInspection } from './thread-inspector.ts'
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey-neighborhood.ts'

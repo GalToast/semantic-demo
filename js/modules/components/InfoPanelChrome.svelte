@@ -1,7 +1,7 @@
 <script lang="ts">
     import { isInfoPanelOpenStore, isLegendPanelOpenStore, compositionStore } from '../stores.js';
     import { cancelMicroDemo } from '../../../src/lib/engine/demo-choreography.ts';
-    import { closeLegendPanel } from '../legend-ui.js';
+    import { closeLegendPanel } from '@lib/stores/legend-panel';
     import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
     import { setFocusPanelMode, FOCUS_PANEL_MODE } from "@lib/utils/focus-panel-mode";
 

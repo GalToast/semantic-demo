@@ -30,7 +30,7 @@ import { bindGlobalEvents, disposeEventListeners } from './bindings/global-bindi
 import { scheduleOnboardingHint } from './bindings/onboarding-bindings.ts'
 import { bindFocusTrapObserver } from './bindings/focus-trap-bindings.ts'
 
-import { buildLegend } from './legend-ui.ts'
+import { buildLegend } from '@lib/stores/legend-panel'
 import { syncClusterSectionState } from '@lib/ui/cluster-labels'
 
 export function revealSelectedBusinessCard(): void {

@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { isLegendPanelOpenStore, isInfoPanelOpenStore } from '../stores.js';
   import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
-  import { buildLegend, closeLegendGuide } from '../legend-ui.js';
+  import { buildLegend, closeLegendGuide } from '@lib/stores/legend-panel';
   import { getFocusPanelMode, setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode';
 
   interface Props {

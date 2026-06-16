@@ -7,7 +7,7 @@
 import { bindClick } from './view-bindings.ts';
 import { hideSummaryCard, resetExplorationFocus } from '../lifecycle.ts';
 import { hideExploreTrailReview } from '@lib/stores/lifecycle';
-import { closeLegendGuide } from '../legend-ui.ts';
+import { closeLegendGuide } from '@lib/stores/legend-panel';
 import { requestSemanticGuide } from '../../../src/lib/journey/semantic-guide.ts';
 import { traverseNeighbor } from '../../../src/lib/journey/thread-settler-adapter';
 

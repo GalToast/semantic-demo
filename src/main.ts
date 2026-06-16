@@ -49,7 +49,8 @@ if (mountTarget) {
 
 if (overlayTarget) {
   legacyCompassSurface = mount(LegacyCompassSurface, {
-    target: overlayTarget
+    target: overlayTarget,
+    props: { noDemo }
   });
 }
 

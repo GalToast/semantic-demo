@@ -7,4 +7,11 @@
  * from js/ or bypass the bridge seam.
  */
 
-export { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
+export {
+    setStrandContinuityState,
+    clearStrandContinuityState,
+    setTimer,
+    clearTimer,
+    disposeTimers,
+    getStrandArrivalNote
+} from '@lib/utils/strand-continuity'

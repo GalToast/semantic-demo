@@ -76,7 +76,6 @@ function read(mod) {
     return fs.readFileSync(MODULES[mod], 'utf-8')
 }
 
-
 // ── EXTRACTION CANDIDATES (documented residual debt) ────────────────────────
 // These are window calls that COULD be direct module imports instead.
 // They are NOT failures — just documented residual debt.
@@ -739,10 +738,7 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
     )
     // The function was relocated to src/lib/stores/legend-panel.svelte.ts during the
     // W14-T2 closeout (W15 Wave E). The legacy `legend-ui.ts` no longer owns it.
-    const legendPanelSrc = fs.readFileSync(
-        path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts'),
-        'utf-8'
-    )
+    const legendPanelSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts'), 'utf-8')
     assert(
         /export function restoreLegendCollapsedPanel/.test(legendPanelSrc),
         'src/lib/stores/legend-panel.svelte.ts should keep restoreLegendCollapsedPanel as a named export'

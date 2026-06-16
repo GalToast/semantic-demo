@@ -6,8 +6,8 @@
  */
 
 import { state } from '../engine/state-bridge';
-import { sanitizePublicFacingNote, cleanPublicNoteText } from '../engine/dom-formatters-bridge';
-import { isPointVisible } from '../engine/geo-data-bridge';
+import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters';
+import { isPointVisible } from '../utils/geo-data';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

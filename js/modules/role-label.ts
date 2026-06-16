@@ -9,29 +9,26 @@ import type { Point, SemanticState } from '@lib/state/state-types'
  * application context (search anchor, trail step, or generic record).
  */
 export function _getSelectedBusinessRoleLabel(point: Point): string {
-    const _s = state as unknown as SemanticState;
-    let index = _s.points && Array.isArray(_s.points) ? _s.points.indexOf(point) : -1;
+    const _s = state as unknown as SemanticState
+    let index = _s.points && Array.isArray(_s.points) ? _s.points.indexOf(point) : -1
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {
-        const leadId = String(point.lead_id);
-        index = (_s.points && Array.isArray(_s.points))
-            ? _s.points.findIndex((candidate) => String(candidate.lead_id) === leadId)
-            : -1;
+        const leadId = String(point.lead_id)
+        index =
+            _s.points && Array.isArray(_s.points)
+                ? _s.points.findIndex((candidate) => String(candidate.lead_id) === leadId)
+                : -1
     }
     if (index >= 0 && _s.currentSearchSummary) {
-        const summary = _s.currentSearchSummary as { anchorIndex?: number; topIndex?: number; resultIndices?: number[] };
+        const summary = _s.currentSearchSummary as { anchorIndex?: number; topIndex?: number; resultIndices?: number[] }
         if (summary.anchorIndex === index || summary.topIndex === index) {
-            return 'Search Anchor';
+            return 'Search Anchor'
         }
         if ((summary.resultIndices || []).includes(index)) {
-            return 'Trail Step';
+            return 'Trail Step'
         }
     }
-    if (
-        index >= 0
-        && _s.navState?.mode === 'trail'
-        && (_s.navState.walkHistoryIndices || []).includes(index)
-    ) {
-        return 'Trail Step';
+    if (index >= 0 && _s.navState?.mode === 'trail' && (_s.navState.walkHistoryIndices || []).includes(index)) {
+        return 'Trail Step'
     }
-    return 'Record';
+    return 'Record'
 }

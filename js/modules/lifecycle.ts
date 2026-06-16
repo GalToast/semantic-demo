@@ -27,7 +27,7 @@ import {
     closeLegendPanel,
     openLegendPanel,
     restoreLegendCollapsedPanel
-} from './legend-ui.ts'
+} from '@lib/stores/legend-panel'
 import { hideSummaryCard as hideSummaryCardImpl } from '../../src/lib/journey/semantic-guide.ts'
 import {
     showExperienceToast as showExperienceToastImpl,

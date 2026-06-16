@@ -32,9 +32,9 @@ import {
     clearStrandContinuityState,
     setTimer,
     disposeTimers,
-    clearTimer
-} from './strand-continuity.ts'
-import { getStrandArrivalNote } from './strand-continuity.ts'
+    clearTimer,
+    getStrandArrivalNote
+} from '@lib/engine/strand-continuity-bridge'
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles'
 import {
     adapter_summarizeNeighborReason,

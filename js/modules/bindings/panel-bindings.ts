@@ -6,7 +6,7 @@
 
 import { bindClick } from './view-bindings.ts';
 import { isCompactFocusStageViewport } from '../utils/ui-presentation.ts';
-import { closeLegendPanel } from '../legend-ui.ts';
+import { closeLegendPanel } from '@lib/stores/legend-panel';
 import { cancelMicroDemo } from '@lib/demo/choreography';
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 

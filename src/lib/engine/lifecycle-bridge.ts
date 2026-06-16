@@ -13,7 +13,7 @@ export { selectedPointStore as legacySelectedPointStore } from '../../../js/modu
 
 // Relocated legacy re-exports from semantic-guide-bridge & semantic-dive-bridge
 export { buildSemanticGuideRequestPayload } from '../../../js/modules/semantic-guide-payload';
-export { updateLegendGuideState } from '../../../js/modules/legend-ui';
+export { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts';
 export { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis';
 export { semanticGuideStateStore } from '../../../js/modules/stores';
 export { getNextWalkCandidateForIndex } from '../../../js/modules/journey-lifecycle-adapter';

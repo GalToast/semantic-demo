@@ -236,11 +236,14 @@ export function computeParityAttributes(): ParityAttributeMap {
     || filters.email
     || filters.geocoded;
 
-  const isLoading = loadingPhaseValue !== 'launch';
-  const loadingOverlay = isLoading ? 'visible' : 'hidden';
-  const sceneReady = isLoading ? 'false' : 'true';
-  const viewHandoffActive = isLoading ? 'true' : 'false';
-  const cameraAssist = isLoading ? 'loading' : 'free';
+  // Use positive equality here. This file is compiled by Svelte 5, and
+  // nearby parity logic documents a strict-mode compiler bug where `!==`
+  // can invert under rune compilation.
+  const launchReady = loadingPhaseValue === 'launch';
+  const loadingOverlay = launchReady ? 'hidden' : 'visible';
+  const sceneReady = launchReady ? 'true' : 'false';
+  const viewHandoffActive = launchReady ? 'false' : 'true';
+  const cameraAssist = launchReady ? 'free' : 'loading';
 
   return {
     journeyCompass: journey.compass?.phase ?? 'idle',

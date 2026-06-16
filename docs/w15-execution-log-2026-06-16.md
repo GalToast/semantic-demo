@@ -60,13 +60,13 @@
 
 ### Remaining backlog
 
-| Candidate                   | Consumers | LOC   | Blocker                               |
-| --------------------------- | --------- | ----- | ------------------------------------- |
-| `lifecycle`                 | 20        | 250   | Heavy — defer to dedicated session    |
-| `semantic-lane`             | 1         | 503   | Needs porting subagent                |
-| `three-interaction-visuals` | 1         | 680   | Three.js + WebGL — complex            |
-| `three-search-animations`   | 1         | 525   | Three.js + WebGL — complex            |
-| `event-bindings` bindings   | 12        | n/a   | Unblock after `bindings/*` ports      |
+| Candidate                   | Consumers | LOC | Blocker                            |
+| --------------------------- | --------- | --- | ---------------------------------- |
+| `lifecycle`                 | 20        | 250 | Heavy — defer to dedicated session |
+| `semantic-lane`             | 1         | 503 | Needs porting subagent             |
+| `three-interaction-visuals` | 1         | 680 | Three.js + WebGL — complex         |
+| `three-search-animations`   | 1         | 525 | Three.js + WebGL — complex         |
+| `event-bindings` bindings   | 12        | n/a | Unblock after `bindings/*` ports   |
 
 **Strand-continuity:** canonical complete, but `src/lib/utils/strand-continuity.ts` is in parallel session WIP — blocked from retirement.
 
@@ -84,18 +84,18 @@
 
 ## Session Summary
 
-| Track            | Status                  | Key Commits                             |
-| ---------------- | ----------------------- | --------------------------------------- |
-| 1. Visual QA     | ⚠️ Blocked (dev server) | Screenshots from Round 3 exist          |
-| 2. A11y          | ✅ Done                 | `3192fec`, `8b5bc3b`                    |
-| 3. Legacy Wave A | ✅ Done                 | `c767713` (2 files, 106 LOC)            |
-| 3. Legacy Wave B | ✅ Done                 | `e4e5e2a`, `2198a8f`                    |
-| 3. Legacy Wave C | ✅ Done                 | `f07696f`                               |
-| 3. Legacy Wave D | ✅ Done                 | `5083c27`                               |
-| 3. Legacy Wave E | ⚠️ Partial              | `300453e` (2 clean + 1 partial)         |
-| 3. Legacy Wave F | 🔄 In flight            | `ocw_549f255d`                          |
-| 3. Legacy Wave G | 🔄 In flight            | `ocw_ab2911e0`                          |
-| 4. CI            | ✅ Done                 | `29490cb`                               |
+| Track            | Status                  | Key Commits                     |
+| ---------------- | ----------------------- | ------------------------------- |
+| 1. Visual QA     | ⚠️ Blocked (dev server) | Screenshots from Round 3 exist  |
+| 2. A11y          | ✅ Done                 | `3192fec`, `8b5bc3b`            |
+| 3. Legacy Wave A | ✅ Done                 | `c767713` (2 files, 106 LOC)    |
+| 3. Legacy Wave B | ✅ Done                 | `e4e5e2a`, `2198a8f`            |
+| 3. Legacy Wave C | ✅ Done                 | `f07696f`                       |
+| 3. Legacy Wave D | ✅ Done                 | `5083c27`                       |
+| 3. Legacy Wave E | ⚠️ Partial              | `300453e` (2 clean + 1 partial) |
+| 3. Legacy Wave F | 🔄 In flight            | `ocw_549f255d`                  |
+| 3. Legacy Wave G | 🔄 In flight            | `ocw_ab2911e0`                  |
+| 4. CI            | ✅ Done                 | `29490cb`                       |
 
 **Total commits this session:** 7 (`8b5bc3b`, `3192fec`, `c767713`, `e4e5e2a`, `2198a8f`, `f07696f`, `5083c27`, `29490cb`, `300453e`)
 

@@ -19,7 +19,7 @@ import {
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.ts'
-import { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote } from './strand-continuity.ts'
+import { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote } from '@lib/engine/strand-continuity-bridge'
 import {
     getRelationshipRoleCopy,
     getRelationshipRoleLabel,

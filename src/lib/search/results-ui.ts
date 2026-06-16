@@ -21,7 +21,7 @@ import {
     searchErrorStore,
     searchVisibleCountStore
 } from '../engine/stores-bridge';
-import { formatBusinessName } from '../engine/dom-formatters-bridge';
+import { formatBusinessName } from '../utils/dom-formatters';
 import {
     getSearchResultStrength,
     getSearchResultStrengthLabel,

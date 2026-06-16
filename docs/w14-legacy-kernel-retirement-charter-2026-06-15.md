@@ -487,10 +487,10 @@ Visual QA Round 3 flagged two keyboard regressions. After investigation:
 
 **A2-7 Targeted Verification (all green):**
 
-| Test | Result |
-|---|---|
-| '?' key opens keyboard help | ✅ PASS |
-| Escape in map mode → no about:blank | ✅ PASS |
+| Test                                     | Result  |
+| ---------------------------------------- | ------- |
+| '?' key opens keyboard help              | ✅ PASS |
+| Escape in map mode → no about:blank      | ✅ PASS |
 | Escape in map mode → returns to overview | ✅ PASS |
 
 ### Contract Test Snapshot (2026-06-16)

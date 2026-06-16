@@ -293,3 +293,52 @@ export function clearStrandContinuityState(reason: string = 'clear'): StrandCont
         settleTimeoutId: undefined
     }
 }
+
+// ── Standalone timer wrappers (legacy kernel import-API) ───────────────────
+//
+// The legacy kernel (`js/modules/strand-continuity.ts`) exported top-level
+// `setTimer`, `clearTimer`, and `disposeTimers` consumed by thread-inspector
+// and journey-thread-settler. These thin wrappers delegate to the wrapper
+// manager so consumers can switch import paths without touching call sites.
+
+/**
+ * Set a named timer via the wrapper manager. Drop-in for the kernel's
+ * `setTimer(key, ms, callback)`.
+ */
+export function setTimer(key: string, ms: number, callback: () => void): void {
+    getWrapperManager().setTimer(key, ms, callback)
+}
+
+/**
+ * Clear a named timer via the wrapper manager. Drop-in for the kernel's
+ * `clearTimer(key)`.
+ */
+export function clearTimer(key: string): void {
+    getWrapperManager().clearTimer(key)
+}
+
+/**
+ * Clear ALL tracked timers via the wrapper manager. Drop-in for the
+ * kernel's `disposeTimers()` (maps to the manager's `cancelAll()`).
+ */
+export function disposeTimers(): void {
+    getWrapperManager().cancelAll()
+}
+
+// ── Standalone getStrandArrivalNote ────────────────────────────────────────
+//
+// The legacy kernel exported `getStrandArrivalNote(point?: Point)` but all
+// callers invoke it with zero arguments. The canonical no-arg version uses
+// the manager state directly, matching the downstream `() => string` type
+// contract used by journey-selected-card adapter deps.
+
+/**
+ * Get a human-readable arrival note if the strand phase is 'arrived'.
+ * Returns empty string otherwise.
+ */
+export function getStrandArrivalNote(): string {
+    const manager = getWrapperManager()
+    const s = manager.state
+    if (s.phase !== 'arrived') return ''
+    return `Arrived at ${s.reason || 'the next stop'}.`
+}

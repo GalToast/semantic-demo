@@ -6,9 +6,9 @@
  */
 
 import { state } from '../engine/state-bridge';
-import { getViewportSize } from '../engine/environment-bridge';
+import { getViewportSize } from '../utils/environment';
 import { isCompactSearchViewport } from '../engine/ui-presentation-bridge';
-import { sanitizePublicFacingNote, cleanPublicNoteText } from '../engine/dom-formatters-bridge';
+import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

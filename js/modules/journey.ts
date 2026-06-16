@@ -47,7 +47,7 @@ import {
     scheduleCanvasThreadInspectionClear,
     clearThreadInspection
 } from './thread-inspector.ts'
-import { setStrandContinuityState, clearStrandContinuityState } from './strand-continuity.ts'
+import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
 import {
     initJourneyNeighborhoodAdapter,
     getSemanticThreadDisplayLimit,

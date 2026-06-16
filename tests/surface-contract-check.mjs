@@ -522,9 +522,28 @@ async function assert_launch_focus(page, ctx) {
     await page
         .waitForFunction(
             () => {
+                // Wait for the body dataset to settle to a focus state. Both
+                // graphContext and panelSurface need to reflect the focus
+                // intent — the previous OR condition returned early on
+                // graphContext alone, before the Svelte parity-attrs $effect
+                // had flushed panelSurface, producing a flaky false failure
+                // on the panel-surface regression pin.
                 const context = document.body?.dataset?.graphContext || ''
                 const panel = document.body?.dataset?.panelSurface || ''
-                return context.includes('focus') || panel.includes('focus')
+                const navSurface = document.body?.dataset?.navSurface || ''
+                const focusedNode = document.body?.dataset?.focusedNode || ''
+                const graphFocus = context.includes('focus')
+                const panelFocus =
+                    panel === 'focus' ||
+                    panel === 'focus-search' ||
+                    panel === 'semantic-dive' ||
+                    panel === 'inside'
+                const navFocus =
+                    navSurface === 'focus' ||
+                    navSurface === 'focus-search' ||
+                    navSurface === 'semantic-dive' ||
+                    navSurface === 'inside'
+                return graphFocus && panelFocus && navFocus && focusedNode !== ''
             },
             { timeout: 5000 }
         )
