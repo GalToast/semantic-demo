@@ -190,7 +190,28 @@ async function closePageContext(page) {
 async function loadAndWait(page, url) {
     await page.goto(url, { waitUntil: 'domcontentloaded' })
     await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {})
-    await page.evaluate(() => document.fonts?.ready).catch(() => {})
+    // Cap document.fonts.ready at 5s — a stalled Google Fonts request can pin
+    // page.evaluate() for the full 30s default, stacking with the waitForFunction
+    // below to push the per-surface budget past 90s. The DOM contract is font-agnostic,
+    // so we don't need to wait for fonts to settle the Svelte hydration check.
+    await page
+        .evaluate(
+            () =>
+                new Promise((resolve) => {
+                    const timer = setTimeout(resolve, 5000)
+                    const ready = document.fonts?.ready
+                    if (ready && typeof ready.then === 'function') {
+                        ready.then(() => {
+                            clearTimeout(timer)
+                            resolve(undefined)
+                        }, resolve)
+                    } else {
+                        clearTimeout(timer)
+                        resolve(undefined)
+                    }
+                })
+        )
+        .catch(() => {})
     await page
         .waitForFunction(
             () => {
