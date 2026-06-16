@@ -10,7 +10,7 @@ import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { restoreFocusTrailState, updateSelectedBusiness } from './journey.ts';
 import { SCENE_READY } from './scene-events.ts';
 import { loadSemanticThreads } from './semantic-threads.ts';
-import { applyFilters } from './search-state.ts';
+import { applyFilters } from '@lib/engine/search-state-bridge';
 import { createMycelium } from './three-thread-manager.ts';
 import { updateLoadingPhaseKey } from './state-mutators.ts';
 import { initWeather } from './weather.ts';

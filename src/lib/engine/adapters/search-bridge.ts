@@ -17,19 +17,13 @@
  *    in this module.
  */
 
-import type {
-  BridgeContext,
-  EngineBridge,
-  RawSearchRow,
-  BridgeSearchResult,
-  SearchCorridorOptions,
-} from './types';
+import type { BridgeContext, EngineBridge, RawSearchRow, BridgeSearchResult, SearchCorridorOptions } from './types'
 
-import { setSearchGlow, clearSearchGlow } from '@lib/stores/search.svelte';
+import { setSearchGlow, clearSearchGlow } from '@lib/stores/search.svelte'
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 
-import { animateCameraToSearchCorridor as _animateCameraToSearchCorridor } from '@lib/engine/camera-choreography';
+import { animateCameraToSearchCorridor as _animateCameraToSearchCorridor } from '@lib/engine/camera-choreography'
 
 // ── Pure Helpers ─────────────────────────────────────────────────────────────
 
@@ -39,20 +33,17 @@ import { animateCameraToSearchCorridor as _animateCameraToSearchCorridor } from 
  * Pure function — no state dependency.  Returns `null` when the row is
  * empty or has no identifiable `name` or `lead_id`.
  */
-export function mapBridgeSearchResult(
-  row: RawSearchRow,
-  order: number
-): BridgeSearchResult | null {
-  if (!row || (!row.name && !row.lead_id)) return null;
+export function mapBridgeSearchResult(row: RawSearchRow, order: number): BridgeSearchResult | null {
+    if (!row || (!row.name && !row.lead_id)) return null
 
-  return {
-    id: String(row.lead_id ?? row.name ?? `result-${order}`),
-    name: String(row.name || row.lead_id || 'Unknown'),
-    index: Number.isFinite(row.index) ? Number(row.index) : order,
-    score: Number(row.score ?? row.semantic_score ?? 0),
-    category: String(row.category ?? ''),
-    snippet: String(row.public_note ?? row.public_detail ?? row.address ?? ''),
-  };
+    return {
+        id: String(row.lead_id ?? row.name ?? `result-${order}`),
+        name: String(row.name || row.lead_id || 'Unknown'),
+        index: Number.isFinite(row.index) ? Number(row.index) : order,
+        score: Number(row.score ?? row.semantic_score ?? 0),
+        category: String(row.category ?? ''),
+        snippet: String(row.public_note ?? row.public_detail ?? row.address ?? '')
+    }
 }
 
 // ── State Helpers (shared between search methods) ──────────────────────────
@@ -65,17 +56,17 @@ export function mapBridgeSearchResult(
  * `setSearchResults` and `focusSearchCorridor` stay consistent.
  */
 function _applyGlow(ctx: BridgeContext, indices: number[]): void {
-  if (!ctx._state) return;
+    if (!ctx._state) return
 
-  ctx._state.searchGlowIndices.clear();
-  for (const i of indices) {
-    ctx._state.searchGlowIndices.add(i);
-  }
-  ctx._state.searchGlowTopIndex = indices[0] ?? null;
-  ctx._state.searchGlowActive = indices.length > 0;
+    ctx._state.searchGlowIndices.clear()
+    for (const i of indices) {
+        ctx._state.searchGlowIndices.add(i)
+    }
+    ctx._state.searchGlowTopIndex = indices[0] ?? null
+    ctx._state.searchGlowActive = indices.length > 0
 
-  // Sync the Svelte search-glow store so UI components see the glow state
-  setSearchGlow(indices, indices[0] ?? null);
+    // Sync the Svelte search-glow store so UI components see the glow state
+    setSearchGlow(indices, indices[0] ?? null)
 }
 
 // ── Public Factory ───────────────────────────────────────────────────────────
@@ -86,63 +77,50 @@ function _applyGlow(ctx: BridgeContext, indices: number[]): void {
  * The returned object is spread into the final bridge by the core factory.
  */
 export function createSearchMethods(
-  ctx: BridgeContext
-): Pick<
-  EngineBridge,
-  'setSearchResults' | 'clearSearchResults' | 'focusSearchCorridor'
-> {
-  function _assertReady(method: string): void {
-    if (ctx.status !== 'ready') {
-      throw new Error(
-        `EngineBridge.${method}: engine status is "${ctx.status}", expected "ready"`
-      );
-    }
-  }
-
-  return {
-    // ── Search Glow ───────────────────────────────────────────────────────
-
-    setSearchResults(indices: number[]): void {
-      _assertReady('setSearchResults');
-      _applyGlow(ctx, indices);
-    },
-
-    // ── Search Corridor ───────────────────────────────────────────────────
-
-    focusSearchCorridor(
-      anchorIndex: number,
-      resultIndices: number[],
-      options: SearchCorridorOptions = {}
-    ): void {
-      _assertReady('focusSearchCorridor');
-
-      // Apply glow for the full set (anchor + results) so the corridor
-      // is visible during the camera fly-to animation.
-      _applyGlow(ctx, [anchorIndex, ...resultIndices]);
-
-      _animateCameraToSearchCorridor(
-        anchorIndex,
-        resultIndices,
-        {
-          duration: options.durationMs,
-          reason: options.reason ?? 'svelte-search',
+    ctx: BridgeContext
+): Pick<EngineBridge, 'setSearchResults' | 'clearSearchResults' | 'focusSearchCorridor'> {
+    function _assertReady(method: string): void {
+        if (ctx.status !== 'ready') {
+            throw new Error(`EngineBridge.${method}: engine status is "${ctx.status}", expected "ready"`)
         }
-      );
-    },
+    }
 
-    // ── Clear Search ──────────────────────────────────────────────────────
+    return {
+        // ── Search Glow ───────────────────────────────────────────────────────
 
-    clearSearchResults(): void {
-      _assertReady('clearSearchResults');
+        setSearchResults(indices: number[]): void {
+            _assertReady('setSearchResults')
+            _applyGlow(ctx, indices)
+        },
 
-      if (!ctx._state) return;
+        // ── Search Corridor ───────────────────────────────────────────────────
 
-      ctx._state.searchGlowIndices.clear();
-      ctx._state.searchGlowTopIndex = null;
-      ctx._state.searchGlowActive = false;
+        focusSearchCorridor(anchorIndex: number, resultIndices: number[], options: SearchCorridorOptions = {}): void {
+            _assertReady('focusSearchCorridor')
 
-      // Sync the Svelte store so UI components see the clear
-      clearSearchGlow();
-    },
-  };
+            // Apply glow for the full set (anchor + results) so the corridor
+            // is visible during the camera fly-to animation.
+            _applyGlow(ctx, [anchorIndex, ...resultIndices])
+
+            _animateCameraToSearchCorridor(anchorIndex, resultIndices, {
+                duration: options.durationMs,
+                reason: options.reason ?? 'svelte-search'
+            })
+        },
+
+        // ── Clear Search ──────────────────────────────────────────────────────
+
+        clearSearchResults(): void {
+            _assertReady('clearSearchResults')
+
+            if (!ctx._state) return
+
+            ctx._state.searchGlowIndices.clear()
+            ctx._state.searchGlowTopIndex = null
+            ctx._state.searchGlowActive = false
+
+            // Sync the Svelte store so UI components see the clear
+            clearSearchGlow()
+        }
+    }
 }

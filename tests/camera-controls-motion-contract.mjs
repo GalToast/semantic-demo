@@ -69,6 +69,7 @@ globalThis.clearTimeout = window.clearTimeout.bind(window);
 
 globalThis.document = {
   body: new FakeElement(),
+  getElementById() { return null; },
 };
 
 globalThis.performance = {
@@ -79,6 +80,15 @@ globalThis.performance = {
 globalThis.THREE = {
   Vector3: MockVector3,
 };
+
+// Raw Node contracts do not run through the Svelte compiler. These identity
+// shims let Svelte 5 rune class state load for deterministic state tests.
+globalThis.$state = Object.assign((value) => value, {
+  snapshot: (value) => value,
+});
+globalThis.$derived = Object.assign((value) => value, {
+  by: (derive) => derive(),
+});
 
 // ---------------------------------------------------------------------------
 // Imports
@@ -97,7 +107,8 @@ const {
   focusCameraAssistIsActive,
   releaseFocusCameraAssist,
   syncCameraAssistDataset,
-} = await import('../js/modules/camera-controls.ts');
+  toggleAutoRotate,
+} = await import('../src/lib/engine/camera-controls.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -141,6 +152,41 @@ function setReducedMotion(enabled) {
   });
 }
 
+function ensureIdleAutoRotateEnabled() {
+  setReducedMotion(false);
+  withStateMutation(() => {
+    state.currentView = 'galaxy';
+    state.focusedNode = null;
+    state.selectedPoint = null;
+    state.navState.mode = 'overview';
+    state.navState.focusPocketMeta = null;
+    state.trailDepth = 0;
+    state.sceneRevealActive = false;
+    state.searchGlowActive = false;
+  });
+  setAutoRotateSuspended(false);
+  if (!isCameraIdleOrbitAllowed()) {
+    toggleAutoRotate();
+  }
+}
+
+function ensureIdleAutoRotateDisabled() {
+  setReducedMotion(false);
+  withStateMutation(() => {
+    state.currentView = 'galaxy';
+    state.focusedNode = null;
+    state.selectedPoint = null;
+    state.navState.mode = 'overview';
+    state.navState.focusPocketMeta = null;
+    state.trailDepth = 0;
+    state.sceneRevealActive = false;
+    state.searchGlowActive = false;
+  });
+  if (isCameraIdleOrbitAllowed()) {
+    toggleAutoRotate();
+  }
+}
+
 // ---------------------------------------------------------------------------
 // TEST: reduced-motion behavior
 // ---------------------------------------------------------------------------
@@ -164,6 +210,7 @@ assert(
 );
 
 setReducedMotion(false);
+toggleAutoRotate();
 // Same conditions now allow
 assert(
   isCameraIdleOrbitAllowed() === true,
@@ -202,36 +249,34 @@ assert(
 
 // scheduleAutoRotateResume: no-op when autoRotate is off
 resetState();
-withStateMutation(() => {
-  state.autoRotate = false;
-});
+ensureIdleAutoRotateDisabled();
 scheduleAutoRotateResume(500);
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: no timer when autoRotate is off');
+assert(timers.size === 0, 'scheduleAutoRotateResume: no timer when autoRotate is off');
 
 // scheduleAutoRotateResume: no-op when currentView != 'galaxy'
 resetState();
+ensureIdleAutoRotateEnabled();
 withStateMutation(() => {
-  state.autoRotate = true;
   state.currentView = 'map';
 });
 scheduleAutoRotateResume(500);
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: no timer when currentView is not galaxy');
+assert(timers.size === 0, 'scheduleAutoRotateResume: no timer when currentView is not galaxy');
 
 // scheduleAutoRotateResume: no-op when focusedNode is set
 resetState();
+ensureIdleAutoRotateEnabled();
 withStateMutation(() => {
-  state.autoRotate = true;
   state.currentView = 'galaxy';
   state.focusedNode = 3;
 });
 scheduleAutoRotateResume(500);
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: no timer when focusedNode is set');
+assert(timers.size === 0, 'scheduleAutoRotateResume: no timer when focusedNode is set');
 
 // scheduleAutoRotateResume: no-op under reduced motion
 resetState();
+ensureIdleAutoRotateEnabled();
 setReducedMotion(true);
 withStateMutation(() => {
-  state.autoRotate = true;
   state.currentView = 'galaxy';
   state.focusedNode = null;
   state.selectedPoint = null;
@@ -239,52 +284,53 @@ withStateMutation(() => {
   state.sceneRevealActive = false;
 });
 scheduleAutoRotateResume(500);
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: no timer under reduced motion');
+assert(timers.size === 0, 'scheduleAutoRotateResume: no timer under reduced motion');
 setReducedMotion(false);
 
 // scheduleAutoRotateResume: no-op when navigation is not true overview idle
 resetState();
+ensureIdleAutoRotateEnabled();
 withStateMutation(() => {
-  state.autoRotate = true;
   state.currentView = 'galaxy';
   state.navState.mode = 'trail';
 });
 scheduleAutoRotateResume(500);
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: no timer outside overview nav mode');
+assert(timers.size === 0, 'scheduleAutoRotateResume: no timer outside overview nav mode');
 
 // scheduleAutoRotateResume: no-op while focus pocket is active
 resetState();
+ensureIdleAutoRotateEnabled();
 withStateMutation(() => {
-  state.autoRotate = true;
   state.currentView = 'galaxy';
   state.navState.mode = 'overview';
   state.navState.focusPocketMeta = { active: true };
 });
 scheduleAutoRotateResume(500);
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: no timer while focus pocket is active');
+assert(timers.size === 0, 'scheduleAutoRotateResume: no timer while focus pocket is active');
 
 // scheduleAutoRotateResume: no-op while trail depth is nonzero
 resetState();
+ensureIdleAutoRotateEnabled();
 withStateMutation(() => {
-  state.autoRotate = true;
   state.currentView = 'galaxy';
   state.navState.mode = 'overview';
   state.trailDepth = 1;
 });
 scheduleAutoRotateResume(500);
-assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: no timer while trailDepth is nonzero');
+assert(timers.size === 0, 'scheduleAutoRotateResume: no timer while trailDepth is nonzero');
 
 // scheduleAutoRotateResume: sets timer when all gates pass
 resetState();
+ensureIdleAutoRotateEnabled();
 withStateMutation(() => {
-  state.autoRotate = true;
   state.currentView = 'galaxy';
   state.focusedNode = null;
   state.selectedPoint = null;
   state.sceneRevealActive = false;
 });
 scheduleAutoRotateResume(2000);
-assert(state.autoRotateResumeTimer !== null, 'scheduleAutoRotateResume: timer set when all gates pass');
+assert(timers.size === 1, 'scheduleAutoRotateResume: timer set when all gates pass');
+const resumeTimerId = Array.from(timers.keys())[0];
 assert(state.autoRotateResumeDueAt > globalThis._now, 'scheduleAutoRotateResume: dueAt is in the future');
 
 // timer callback rechecks overview/focus-pocket/trail-depth gates before unsuspending
@@ -292,16 +338,15 @@ withStateMutation(() => {
   state.autoRotateSuspended = true;
   state.navState.focusPocketMeta = { active: true };
 });
-timers.get(state.autoRotateResumeTimer).fn();
+timers.get(resumeTimerId).fn();
 assert(state.autoRotateSuspended === true, 'scheduleAutoRotateResume: callback keeps suspension while focus pocket active');
 assert(state.autoRotateResumeTimer === null, 'scheduleAutoRotateResume: callback clears consumed timer id');
 
 // clearAutoRotateResumeTimer: clears and nulls
 resetState();
-withStateMutation(() => {
-  state.autoRotateResumeTimer = 42;
-  state.autoRotateResumeDueAt = 9999;
-});
+ensureIdleAutoRotateEnabled();
+scheduleAutoRotateResume(500);
+assert(timers.size === 1, 'clearAutoRotateResumeTimer: precondition schedules timer');
 clearAutoRotateResumeTimer();
 assert(state.autoRotateResumeTimer === null, 'clearAutoRotateResumeTimer: timer nulled');
 assert(state.autoRotateResumeDueAt === 0, 'clearAutoRotateResumeTimer: dueAt zeroed');
@@ -429,18 +474,13 @@ assert(state.focusCameraOffset === null, 'releaseFocusCameraAssist: clears camer
 
 // syncCameraAssistDataset: reflects active state on body.dataset
 resetState();
-withStateMutation(() => {
-  state.focusCameraAssistActive = true;
-  state.focusCameraAssistReason = 'focus';
-});
+startFocusCameraAssist(900, 'focus');
 syncCameraAssistDataset();
 assert(document.body.dataset.cameraAssist === 'arriving', 'syncCameraAssistDataset: arriving when active');
 assert(document.body.dataset.cameraAssistReason === 'focus', 'syncCameraAssistDataset: reason is reflected');
 
 resetState();
-withStateMutation(() => {
-  state.focusCameraAssistActive = false;
-});
+releaseFocusCameraAssist('idle');
 syncCameraAssistDataset();
 assert(document.body.dataset.cameraAssist === 'free', 'syncCameraAssistDataset: free when inactive');
 assert(document.body.dataset.cameraAssistReason === 'idle', 'syncCameraAssistDataset: idle reason when inactive');
@@ -469,12 +509,13 @@ assert(duration2 === baseDuration, 'animateCameraToNode: normal motion uses base
 // TEST: noteSceneInteraction direct owner API
 // ---------------------------------------------------------------------------
 resetState();
+ensureIdleAutoRotateEnabled();
 globalThis._now = 250;
 noteSceneInteraction(1234);
 assert(state.autoRotateSuspended === true, 'noteSceneInteraction: suspends auto-rotate');
 assert(state.autoRotateResumeDueAt === 1484, 'noteSceneInteraction: sets resume due time from delay');
-assert(state.autoRotateResumeTimer !== null, 'noteSceneInteraction: schedules resume timer');
-const scheduledResume = timers.get(state.autoRotateResumeTimer);
+assert(timers.size === 1, 'noteSceneInteraction: schedules resume timer');
+const scheduledResume = timers.get(Array.from(timers.keys())[0]);
 assert(scheduledResume?.delay === 1234, 'noteSceneInteraction: schedules timer with requested delay');
 
 // ---------------------------------------------------------------------------

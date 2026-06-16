@@ -14,24 +14,20 @@
  *    No business logic or animation math lives here.
  */
 
-import type {
-  BridgeContext,
-  EngineBridge,
-  FocusNodeOptions,
-} from './types';
+import type { BridgeContext, EngineBridge, FocusNodeOptions } from './types'
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 // These replace direct ctx._cameraControls references.  Each function
 // delegates to the TS port's internal lazy-loaded legacy modules.
 
-import { focusOnNode as _focusOnNode, zoomCamera as _zoomCamera } from '@lib/engine/camera-choreography';
+import { focusOnNode as _focusOnNode, zoomCamera as _zoomCamera } from '@lib/engine/camera-choreography'
 import {
-  settleCameraToOverviewPose as _settleCameraToOverviewPose,
-  setAutoRotateSuspended as _setAutoRotateSuspended,
-  syncOrbitAutoRotate as _syncOrbitAutoRotate,
-} from '@lib/engine/camera-controls-restore-bridge';
+    settleCameraToOverviewPose as _settleCameraToOverviewPose,
+    setAutoRotateSuspended as _setAutoRotateSuspended,
+    syncOrbitAutoRotate as _syncOrbitAutoRotate
+} from '@lib/engine/camera-controls-restore-bridge'
 
-import { updateCameraViewportOffset as _updateCameraViewportOffset } from '../three-engine';
+import { updateCameraViewportOffset as _updateCameraViewportOffset } from '../three-engine'
 
 // ── Public Factory ───────────────────────────────────────────────────────────
 
@@ -43,65 +39,62 @@ import { updateCameraViewportOffset as _updateCameraViewportOffset } from '../th
  * populated during init/loadModules.
  */
 export function createCameraMethods(
-  ctx: BridgeContext
+    ctx: BridgeContext
 ): Pick<EngineBridge, 'focusNode' | 'clearFocus' | 'resize' | 'setAutoRotate' | 'zoomCamera' | 'settleToOverview'> {
-
-  function _assertReady(method: string): void {
-    if (ctx.status !== 'ready') {
-      throw new Error(
-        `EngineBridge.${method}: engine status is "${ctx.status}", expected "ready"`
-      );
+    function _assertReady(method: string): void {
+        if (ctx.status !== 'ready') {
+            throw new Error(`EngineBridge.${method}: engine status is "${ctx.status}", expected "ready"`)
+        }
     }
-  }
 
-  return {
-    // ── Node Interaction (camera side) ──────────────────────────────────
+    return {
+        // ── Node Interaction (camera side) ──────────────────────────────────
 
-    focusNode(index: number, options: FocusNodeOptions = {}): void {
-      _assertReady('focusNode');
+        focusNode(index: number, options: FocusNodeOptions = {}): void {
+            _assertReady('focusNode')
 
-      _focusOnNode(index, {
-        duration: options.durationMs,
-        reason: options.reason ?? 'svelte-focus',
-      });
-    },
+            _focusOnNode(index, {
+                duration: options.durationMs,
+                reason: options.reason ?? 'svelte-focus'
+            })
+        },
 
-    clearFocus(): void {
-      _assertReady('clearFocus');
+        clearFocus(): void {
+            _assertReady('clearFocus')
 
-      _settleCameraToOverviewPose();
-    },
+            _settleCameraToOverviewPose()
+        },
 
-    // ── Viewport & Orbit ────────────────────────────────────────────────
+        // ── Viewport & Orbit ────────────────────────────────────────────────
 
-    resize(width: number, height: number): void {
-      _assertReady('resize');
+        resize(width: number, height: number): void {
+            _assertReady('resize')
 
-      if (!ctx._state?.camera || !ctx._state?.renderer) return;
+            if (!ctx._state?.camera || !ctx._state?.renderer) return
 
-      ctx._state.camera.aspect = width / height;
-      ctx._state.camera.updateProjectionMatrix();
-      ctx._state.renderer.setSize(width, height);
-      _updateCameraViewportOffset();
-    },
+            ctx._state.camera.aspect = width / height
+            ctx._state.camera.updateProjectionMatrix()
+            ctx._state.renderer.setSize(width, height)
+            _updateCameraViewportOffset()
+        },
 
-    setAutoRotate(enabled: boolean): void {
-      _assertReady('setAutoRotate');
+        setAutoRotate(enabled: boolean): void {
+            _assertReady('setAutoRotate')
 
-      _setAutoRotateSuspended(!enabled);
-      _syncOrbitAutoRotate();
-    },
+            _setAutoRotateSuspended(!enabled)
+            _syncOrbitAutoRotate()
+        },
 
-    zoomCamera(multiplier: number): void {
-      _assertReady('zoomCamera');
+        zoomCamera(multiplier: number): void {
+            _assertReady('zoomCamera')
 
-      _zoomCamera(multiplier);
-    },
+            _zoomCamera(multiplier)
+        },
 
-    settleToOverview(): void {
-      _assertReady('settleToOverview');
+        settleToOverview(): void {
+            _assertReady('settleToOverview')
 
-      _settleCameraToOverviewPose();
-    },
-  };
+            _settleCameraToOverviewPose()
+        }
+    }
 }

@@ -12,7 +12,7 @@
  *   - requestSemanticGuide()                  — async request + render cycle
  *
  * Dependencies still in legacy path (will migrate later):
- *   - ../../../js/state.ts (global state singleton)
+ *   - @lib/engine/state-bridge (canonical AppState compatibility state)
  *   - ../../../js/modules/semantic-guide-payload.ts (buildSemanticGuideRequestPayload)
  *   - ../../../js/modules/legend-ui.ts (updateLegendGuideState)
  *   - ../../../js/modules/connection-analysis.ts (showSemanticThreadsDetail)

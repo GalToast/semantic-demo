@@ -2,24 +2,24 @@
 
 ## Outcome: 4 retired, 1 skipped, 1 filed for W15
 
-| File | LOC | Status | Commit | Notes |
-|---|---|---|---|---|
-| `js/modules/config.ts` | 107 | ✅ Retired | `7a0a25e` | 1 importer + 1 test contract rewired |
-| `js/modules/environment.ts` | 144 | ✅ Retired | `127523e` | 28 files rewired (3 src, 1 bridge, 16 kernel-side, 8 test mocks) |
-| `js/modules/focus-panel-mode.ts` | 31 | ✅ Retired | `adbc6fe` | 6 importers (5 TS, 1 Svelte). Commit also absorbed parallel session's `cluster-labels.ts` deletion |
-| `js/modules/cluster-labels.ts` | 275 | ✅ Retired | `705e9b7` | 4 importers + 2 test contracts rewired |
-| `js/modules/strand-continuity.ts` | 96 | ⚠️ Skipped | — | **API mismatch finding** (see below) |
-| `js/modules/legend-ui.ts` | 308 | 📋 W15 candidate | — | Port-completion arc, separate work (see `docs/w14-tier2/legend-ui-port-completion-2026-06-16.md`) |
+| File                              | LOC | Status           | Commit    | Notes                                                                                              |
+| --------------------------------- | --- | ---------------- | --------- | -------------------------------------------------------------------------------------------------- |
+| `js/modules/config.ts`            | 107 | ✅ Retired       | `7a0a25e` | 1 importer + 1 test contract rewired                                                               |
+| `js/modules/environment.ts`       | 144 | ✅ Retired       | `127523e` | 28 files rewired (3 src, 1 bridge, 16 kernel-side, 8 test mocks)                                   |
+| `js/modules/focus-panel-mode.ts`  | 31  | ✅ Retired       | `adbc6fe` | 6 importers (5 TS, 1 Svelte). Commit also absorbed parallel session's `cluster-labels.ts` deletion |
+| `js/modules/cluster-labels.ts`    | 275 | ✅ Retired       | `705e9b7` | 4 importers + 2 test contracts rewired                                                             |
+| `js/modules/strand-continuity.ts` | 96  | ⚠️ Skipped       | —         | **API mismatch finding** (see below)                                                               |
+| `js/modules/legend-ui.ts`         | 308 | 📋 W15 candidate | —         | Port-completion arc, separate work (see `docs/w14-tier2/legend-ui-port-completion-2026-06-16.md`)  |
 
 **Net reduction: 557 LOC of legacy kernel deleted (4 of 6 in-scope files), 0 build breakages.**
 
 ## Workers
 
-| Worker | Files | Time | Cost | Status |
-|---|---|---|---|---|
-| `ocw_57eaeffe` (Wave 1) | config + environment + focus-panel-mode | 25 min | $0.0005 | Completed |
-| `ocw_fd51de49` (Wave 2) | cluster-labels + legend-ui finding | 5 min | $0.0005 | Completed |
-| **Combined** | **4 retirements** | **~30 min** | **$0.001** | **Done** |
+| Worker                  | Files                                   | Time        | Cost       | Status    |
+| ----------------------- | --------------------------------------- | ----------- | ---------- | --------- |
+| `ocw_57eaeffe` (Wave 1) | config + environment + focus-panel-mode | 25 min      | $0.0005    | Completed |
+| `ocw_fd51de49` (Wave 2) | cluster-labels + legend-ui finding      | 5 min       | $0.0005    | Completed |
+| **Combined**            | **4 retirements**                       | **~30 min** | **$0.001** | **Done**  |
 
 ## Findings
 

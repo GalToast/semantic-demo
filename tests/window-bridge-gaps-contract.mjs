@@ -36,6 +36,8 @@ const CAMERA_CONTROLS_PATH = resolveSource('js/modules/camera-controls.ts', SEMD
 const SEARCH_STATE_PATH = resolveSource('js/modules/search-state.ts', SEMDEMO_ROOT);
 const SEARCH_ORCHESTRATION_PATH = resolveSource('src/lib/search/orchestration.ts', SEMDEMO_ROOT);
 const APP_PATH = resolveSource('src/lib/orchestration/adapters.ts', SEMDEMO_ROOT);
+const ADAPTER_DEPS_PATH = resolveSource('src/lib/orchestration/adapter-deps.ts', SEMDEMO_ROOT);
+const APP_INIT_PATH = resolveSource('src/lib/orchestration/app-init.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -147,7 +149,7 @@ function testGap3a_hydrateLeadContext() {
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
   const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
-  const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
+  const appSrc = fs.readFileSync(ADAPTER_DEPS_PATH, 'utf-8');
 
   assert(
     /export\s+function\s+hydrateLeadContext\s*\(/.test(lifecycleSrc),
@@ -166,8 +168,9 @@ function testGap3a_hydrateLeadContext() {
   );
 
   assert(
-    /hydrateLeadContext:\s*\(point(?:\s*:\s*[^,\)]+)?,\s*options(?:\s*:\s*[^,\)]+)?\)\s*=>[\s\S]{0,160}hydrateLeadContext\(point,\s*options\)/.test(appSrc),
-    'Gap 3a: app.ts must inject lifecycle.hydrateLeadContext into the journey adapter'
+    appSrc.includes('hydrateLeadContext: (point: unknown) =>') &&
+      appSrc.includes('hydrateLeadContext(point as never)'),
+    'Gap 3a: adapter-deps.ts must inject lifecycle.hydrateLeadContext into the journey selected-card adapter'
   );
 
   console.log('  OK — hydrateLeadContext: RESOLVED by lifecycle adapter');
@@ -277,7 +280,7 @@ function testGap5_focusOnNode() {
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const searchStateSrc = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
   const searchOrchestrationSrc = fs.readFileSync(SEARCH_ORCHESTRATION_PATH, 'utf-8');
-  const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
+  const appSrc = fs.readFileSync(APP_INIT_PATH, 'utf-8');
   const eventBusSrc = fs.readFileSync(resolveSource('src/lib/orchestration/event-bus.ts', SEMDEMO_ROOT), 'utf-8');
 
   assert(
@@ -306,8 +309,8 @@ function testGap5_focusOnNode() {
     'search-state.js must not call window.focusOnNode after dewindowing'
   );
   assert(
-    /subscribeKeyed\s*\(\s*['"]app:search-focus-requested['"]\s*,\s*EVENTS\.SEARCH_FOCUS_REQUESTED[\s\S]{0,320}cameraModule\.focusOnNode\s*\(\s*index\s*,\s*\{\s*fromSearchResult:\s*true\s*\}/.test(appSrc),
-    'app.ts must key-subscribe to SEARCH_FOCUS_REQUESTED and call cameraModule.focusOnNode(index, { fromSearchResult: true })'
+    /focusOnNode\s*:\s*\(index:\s*number,\s*options\?:\s*Record<string,\s*unknown>\)\s*=>[\s\S]{0,180}focusOnNodeAction\(index,\s*options\)/.test(appSrc),
+    'app-init.ts must inject focusOnNodeAction as the compat focusOnNode action'
   );
 
   console.log('  OK — focusOnNode: export verified and search focus flows through event-owned app camera call');

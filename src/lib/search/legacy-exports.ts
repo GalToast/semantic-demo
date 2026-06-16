@@ -95,7 +95,7 @@ export {
   toggleActiveFilterSignal,
   resetActiveFilters,
   restoreActiveFiltersFromUrl
-} from '../../../js/modules/filter-state';
+} from '@lib/stores/filter.svelte';
 
 // Type re-exports for downstream consumers. The legacy kernel exposed
 // `Point` as a name from the legacy state module; we now surface the

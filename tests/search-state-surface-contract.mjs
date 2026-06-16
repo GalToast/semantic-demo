@@ -147,8 +147,8 @@ const {
   getSearchResultStrength,
   getSearchResultStrengthLabel,
   applySemanticSearchDegradedState,
-} = await import('../js/modules/search-state.ts');
-const { subscribe, EVENTS } = await import('../js/modules/event-bus.ts');
+} = await import('../src/lib/engine/search-state-bridge.ts');
+const { subscribe, EVENTS } = await import('../src/lib/orchestration/event-bus.ts');
 
 window.recordSemanticLaneSnapshotCalls = [];
 window.semanticLaneStates = [];

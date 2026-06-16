@@ -17,6 +17,10 @@ const SOURCE = fs.readFileSync(
     path.resolve(__dirname, '../js/modules/lifecycle.ts'),
     'utf8'
 );
+const LIFECYCLE_RESET_SOURCE = fs.readFileSync(
+    path.resolve(__dirname, '../js/modules/lifecycle-reset.ts'),
+    'utf8'
+);
 const URL_STATE_SOURCE = fs.readFileSync(
     path.resolve(__dirname, '../js/modules/url-state.ts'),
     'utf8'
@@ -186,7 +190,7 @@ console.log('  PASS — resetStateBeforeUrlRestore routes through clearExplorati
 
 // Verify the helper is called from resetNodePositions
 console.log('\nVerifying resetNodePositions routes through clearExplorationFocusSelection...');
-const resetNodeMatch = SOURCE.match(/export\s+function\s+resetNodePositions[\s\S]*?\n}(?=\n|$)/m);
+const resetNodeMatch = LIFECYCLE_RESET_SOURCE.match(/export\s+function\s+resetNodePositions[\s\S]*?\n}(?=\n|$)/m);
 assert(resetNodeMatch, 'Could not extract resetNodePositions body');
 const resetNodeBody = resetNodeMatch[0];
 assert(

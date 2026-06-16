@@ -5,16 +5,16 @@
 - kernel `js/modules/legend-ui.ts`: 308 LOC, 11 exports
 - canonical `src/lib/journey/legend-ui.ts`: 20 LOC, 1 export
 - **10 missing exports:**
-  1. `isLegendPanelOpen`
-  2. `openLegendPanel`
-  3. `closeLegendPanel`
-  4. `restoreLegendCollapsedPanel`
-  5. `buildLegend`
-  6. `updateLegendGuideState`
-  7. `closeLegendGuide`
-  8. `buildCanvasColorLegend`
-  9. `setPreviouslyFocusedLegend`
-  10. `getPreviouslyFocusedLegend`
+    1. `isLegendPanelOpen`
+    2. `openLegendPanel`
+    3. `closeLegendPanel`
+    4. `restoreLegendCollapsedPanel`
+    5. `buildLegend`
+    6. `updateLegendGuideState`
+    7. `closeLegendGuide`
+    8. `buildCanvasColorLegend`
+    9. `setPreviouslyFocusedLegend`
+    10. `getPreviouslyFocusedLegend`
 
 ## Live importers
 
@@ -48,8 +48,8 @@
 - This is **port-completion work**, not a retirement rewiring.
 - W14-T2 retirements are files where the canonical Svelte 5 port already has equivalent exports and importers just need path rewiring. Here the port is 1/11th the coverage.
 - Two approaches:
-  1. **Port-completion**: Extend `src/lib/journey/legend-ui.ts` from 20 → ~308 LOC to cover all 11 exports. Preserve the same module-scoped state pattern. ~2-3 hours.
-  2. **Rewire to Legend.svelte**: Update all 10 live importers to use the Svelte 5 `Legend.svelte` component and Svelte stores for panel state. Eliminates the kernel entirely. ~1-2 hours.
+    1. **Port-completion**: Extend `src/lib/journey/legend-ui.ts` from 20 → ~308 LOC to cover all 11 exports. Preserve the same module-scoped state pattern. ~2-3 hours.
+    2. **Rewire to Legend.svelte**: Update all 10 live importers to use the Svelte 5 `Legend.svelte` component and Svelte stores for panel state. Eliminates the kernel entirely. ~1-2 hours.
 - Need main-lane decision on approach before dispatching W15 worker.
 
 ## Effort estimate

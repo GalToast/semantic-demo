@@ -3,13 +3,13 @@
     import { state as appState } from '@lib/engine/state-bridge';
     import { activeFiltersStore } from '../stores.js';
     import { publish, EVENTS } from '@lib/orchestration/event-bus';
-    import { applyFilters, clearSearchGlow } from '../search-state.ts';
+    import { applyFilters, clearSearchGlow } from '@lib/engine/search-state-bridge';
     import {
         setActiveFilter,
         toggleActiveFilterSignal,
         resetActiveFilters,
         incrementFilterVersion
-    } from '../filter-state.js';
+    } from '@lib/stores/filter.svelte';
     import { normalizeCityForFilter } from '../utils/geo-data.js';
     import { FILTER_DEBOUNCE_MS } from '@lib/utils/chrome-timing';
 

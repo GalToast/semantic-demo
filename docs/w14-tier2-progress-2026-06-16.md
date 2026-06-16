@@ -6,16 +6,16 @@
 
 The 131-LOC `js/modules/camera-controls.ts` death-bridge (left from W16 #4) is now FULLY RETIRED. 14 of 14 source consumers were rewired to canonical Svelte 5 paths and the death-bridge file itself was deleted.
 
-| Commit    | What                                                                | Files                               | Δ        |
-| --------- | ------------------------------------------------------------------- | ----------------------------------- | -------- |
-| `4c1d166` | **w14-dea-1**: 3 `js/modules/bindings/*` consumers                  | 3                                   | +3/-3    |
-| `3e6ca58` | **w14-dea-2**: 5 single-function consumers                          | 6 (+config.ts deletion side-effect) | +5/-112  |
-| `4898ec3` | **w14-dea-3**: 3 multi-function consumers (2-7 funcs each)          | 4 (+environment.ts deletion)        | +12/-151 |
-| `d322cf7` | **w14-dea-4**: `demo-choreography` namespace refactor + test update | 2                                   | +6/-2    |
-| `f0c9803` | **w14-tier2-progress doc** (this file)                              | 1                                   | +95      |
-| `67133ed` | **w14-dea-5**: rewired final consumer `src/lib/engine/index.ts` (24 funcs) | 1                            | +28/-2   |
-| `4534cb3` | **w14-dea-5b**: DELETED `js/modules/camera-controls.ts` (131 LOC)    | 1 (deletion)                        | -131     |
-| `3879da5` | **w14-dea-6**: rewired `view-bindings` map-state import              | 1                                   | +1/-1    |
+| Commit    | What                                                                       | Files                               | Δ        |
+| --------- | -------------------------------------------------------------------------- | ----------------------------------- | -------- |
+| `4c1d166` | **w14-dea-1**: 3 `js/modules/bindings/*` consumers                         | 3                                   | +3/-3    |
+| `3e6ca58` | **w14-dea-2**: 5 single-function consumers                                 | 6 (+config.ts deletion side-effect) | +5/-112  |
+| `4898ec3` | **w14-dea-3**: 3 multi-function consumers (2-7 funcs each)                 | 4 (+environment.ts deletion)        | +12/-151 |
+| `d322cf7` | **w14-dea-4**: `demo-choreography` namespace refactor + test update        | 2                                   | +6/-2    |
+| `f0c9803` | **w14-tier2-progress doc** (this file)                                     | 1                                   | +95      |
+| `67133ed` | **w14-dea-5**: rewired final consumer `src/lib/engine/index.ts` (24 funcs) | 1                                   | +28/-2   |
+| `4534cb3` | **w14-dea-5b**: DELETED `js/modules/camera-controls.ts` (131 LOC)          | 1 (deletion)                        | -131     |
+| `3879da5` | **w14-dea-6**: rewired `view-bindings` map-state import                    | 1                                   | +1/-1    |
 
 **Net effect:** 14 of 14 source consumers rewired. Death-bridge file deleted (131 LOC removed). W16 #4 follow-up COMPLETE.
 

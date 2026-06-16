@@ -301,3 +301,49 @@ export function getActiveFilters(): ActiveFilters {
 export function getActiveClusterFilter(): string | null {
   return get(activeClusterFilter);
 }
+
+const FILTER_KEYS = new Set<keyof ActiveFilters>(['status', 'city', 'website', 'email', 'geocoded']);
+
+/** Backwards-compatible owner API from retired js/modules/filter-state.ts. */
+export function setActiveFilter<K extends keyof ActiveFilters>(key: K, value: ActiveFilters[K]): boolean {
+  if (!FILTER_KEYS.has(key)) return false;
+  setFilter(key, value);
+  return true;
+}
+
+/** Backwards-compatible boolean signal toggle from retired js/modules/filter-state.ts. */
+export function toggleActiveFilterSignal(key: keyof Pick<ActiveFilters, 'website' | 'email' | 'geocoded'>): boolean {
+  if (key !== 'website' && key !== 'email' && key !== 'geocoded') return false;
+  const filters = getFilterState();
+  setFilter(key, !filters[key]);
+  return true;
+}
+
+/** Backwards-compatible reset alias from retired js/modules/filter-state.ts. */
+export const resetActiveFilters = resetFilters;
+
+/** Restore filters from URL params using the canonical filter store owner. */
+export function restoreActiveFiltersFromUrl(params: URLSearchParams): void {
+  const status = params.get('status');
+  const city = params.get('city');
+  const website = params.get('website');
+  const email = params.get('email');
+  const geocoded = params.get('geocoded');
+
+  if (status) setActiveFilter('status', status);
+  if (city !== null) setActiveFilter('city', city === 'all' ? '' : city);
+  if (website !== null) setActiveFilter('website', website === '1' || website === 'true');
+  if (email !== null) setActiveFilter('email', email === '1' || email === 'true');
+  if (geocoded !== null) setActiveFilter('geocoded', geocoded === '1' || geocoded === 'true');
+
+  const cityFilter = typeof document !== 'undefined'
+    ? document.getElementById('city-filter') as HTMLSelectElement | null
+    : null;
+  if (cityFilter && city !== null) cityFilter.value = city;
+}
+
+/** Restore cluster filter from URL params using the canonical filter store owner. */
+export function restoreActiveClusterFilterFromUrl(params: URLSearchParams): void {
+  const cluster = params.get('cluster');
+  setActiveClusterFilter(cluster);
+}

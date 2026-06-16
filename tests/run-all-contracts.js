@@ -609,9 +609,10 @@ function runContract(filename, timeoutMs, baseUrl = null) {
     const isPlaywrightSpec = isPlaywrightTestFile(filename, entry);
     const exec = process.execPath;
     const TS_LOADER = './' + join('tests', 'helpers', 'ts-resolve-loader.mjs').replace(/\\/g, '/');
+    const SVELTE_RUNE_SHIM = './' + join('tests', 'helpers', 'svelte-rune-shim.mjs').replace(/\\/g, '/');
     const execArgs = isPlaywrightSpec
       ? [PLAYWRIGHT_CLI, 'test', `tests/${filename}`, ...PLAYWRIGHT_FLAGS]
-      : ['--loader', TS_LOADER, entry];
+      : ['--import', SVELTE_RUNE_SHIM, '--loader', TS_LOADER, entry];
 
     const child = spawn(exec, execArgs, {
       stdio: ['ignore', 'pipe', 'pipe'],

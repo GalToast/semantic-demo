@@ -53,7 +53,9 @@ export async function resolve(specifier, context, nextResolve) {
         if (aliased) {
             // Try as-is first, then with .ts appended (handles @lib/state/app.svelte → app.svelte.ts).
             const candidates = [aliased]
-            if (!/\.[a-z]+$/i.test(new URL(aliased).pathname)) {
+            const aliasedPathname = new URL(aliased).pathname
+            if (!/\.[a-z]+$/i.test(aliasedPathname) || aliasedPathname.endsWith('.svelte')) {
+                candidates.push(aliased.replace(/\/?$/, '/index.ts'))
                 candidates.push(aliased.replace(/\/?$/, '.ts'))
             }
             for (const candidate of candidates) {
@@ -76,7 +78,7 @@ export async function resolve(specifier, context, nextResolve) {
     try {
         return await nextResolve(specifier, context)
     } catch (err) {
-        if (err.code !== 'ERR_MODULE_NOT_FOUND') throw err
+        if (!['ERR_MODULE_NOT_FOUND', 'ERR_UNSUPPORTED_DIR_IMPORT'].includes(err.code)) throw err
 
         // Only retry for relative/absolute specifiers (not bare imports like 'node:fs')
         if (specifier.startsWith('node:') || specifier.startsWith('npm:')) throw err
@@ -97,9 +99,16 @@ export async function resolve(specifier, context, nextResolve) {
             }
         }
 
-        // Try appending .ts if specifier has no extension
+        // Try resolving directory imports the way Vite/TypeScript do.
         const ext = specifier.split('.').pop()
         if (!['js', 'ts', 'mjs', 'mts', 'json', 'cjs'].includes(ext)) {
+            try {
+                return await nextResolve(specifier.replace(/\/?$/, '/index.ts'), context)
+            } catch {
+                // ignore
+            }
+
+            // Try appending .ts if specifier has no extension
             try {
                 return await nextResolve(specifier + '.ts', context)
             } catch {
@@ -109,4 +118,16 @@ export async function resolve(specifier, context, nextResolve) {
 
         throw err
     }
+}
+
+export async function load(url, context, nextLoad) {
+    if (url.includes('?worker&url')) {
+        return {
+            format: 'module',
+            shortCircuit: true,
+            source: `export default ${JSON.stringify(url)};\n`
+        }
+    }
+
+    return nextLoad(url, context)
 }

@@ -24,7 +24,7 @@ import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLane
 import { isPointVisible, type GeoPoint } from './utils/geo-data.ts';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { formatBusinessName, escapeHtml } from './utils/dom-formatters.ts';
-import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from './filter-state.ts';
+import { restoreActiveFiltersFromUrl, restoreActiveClusterFilterFromUrl } from '@lib/stores/filter.svelte';
 import {
     activateSearchGlow,
     applyFilters,
@@ -156,6 +156,7 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
     state.currentSearchSummary = null;
     setCurrentView('galaxy');
     state.trailDepth = 0;
+    state.semanticDiveMode = false;
     state.myceliumMode = 'default';
 
     if (options.clearSearchInput) {

@@ -7,7 +7,7 @@
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { applyStoryPrompt } from '../lifecycle.ts';
-import { focusSearchInputForReplacement, search } from '../search-state.ts';
+import { focusSearchInputForReplacement, search } from '@lib/engine/search-state-bridge';
 import { showExperienceToast } from '@lib/ui/ui-feedback';
 
 type SetMyceliumMode = (mode: string) => void;

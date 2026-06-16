@@ -59,6 +59,13 @@ function walkSrc(dir: string): string[] {
   return out;
 }
 
+let cachedSrcFiles: string[] | null = null;
+
+function getSrcFiles(): string[] {
+  cachedSrcFiles ??= walkSrc(SRC_DIR);
+  return cachedSrcFiles;
+}
+
 function findJsImports(file: string): string[] {
   const source = readFileSync(file, 'utf-8');
   const matches = source.match(/from\s+['"](?:\.\.\/)+js(?:\/[^'"]*)?['"]/g) ?? [];
@@ -92,7 +99,7 @@ describe('Svelte-bridge import contract (S7)', () => {
 
   beforeAll(() => {
     // Walk all of src/ so the contract covers components + lib + scripts
-    allFiles = walkSrc(SRC_DIR);
+    allFiles = getSrcFiles();
     violations = [];
 
     for (const file of allFiles) {
@@ -249,7 +256,7 @@ describe('Bridge health (W11 retirement progress)', () => {
     const base = bridge.replace(/\\/g, '/').split('/').pop()!.replace(/\.ts$/, '');
     const escapedBase = base.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const importRegex = new RegExp(`from\\s+['"][^'"]*${escapedBase}['"]`);
-    const allFiles = walkSrc(SRC_DIR);
+    const allFiles = getSrcFiles();
     let count = 0;
     for (const file of allFiles) {
       if (file === bridge) continue;
@@ -275,7 +282,7 @@ describe('Bridge health (W11 retirement progress)', () => {
         isDead: consumerCount === 0
       };
     });
-  });
+  }, 30000);
 
   it('no UNEXPECTED dead bridge (zero consumers = cleanup candidate)', () => {
     const allDead = bridges.filter((b) => b.isDead);

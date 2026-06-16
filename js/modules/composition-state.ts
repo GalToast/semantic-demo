@@ -6,7 +6,7 @@ import { state as _defaultState } from '@lib/engine/state-bridge';
 import type { SemanticState } from '@lib/state/state-types';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts';
-import { clearMobileRouteFieldPeek } from './search-state.ts';
+import { clearMobileRouteFieldPeek } from '@lib/engine/search-state-bridge';
 import { compositionStore } from './stores.ts';
 
 export interface PanelSurfaceParams {
@@ -155,7 +155,7 @@ export function applyCompositionState(params: { state?: any; root?: HTMLElement 
     const { state: ctxParam, root = document.body } = params;
     if (!root?.dataset) return;
     const ctx = ctxParam || _defaultState;
-    const forcedFocusSearchSurface = root.dataset.focusSearchForced === 'true'
+    const hasForcedFocusSearchSurface = root.dataset.focusSearchForced === 'true'
         || (root.dataset.panelSurface === 'focus-search'
             && (root.dataset.graphContext === 'focus-search'
                 || root.dataset.journeyPhase === 'search'));
@@ -177,6 +177,10 @@ export function applyCompositionState(params: { state?: any; root?: HTMLElement 
     };
 
     const isLiveRoute = ctx.currentSearchSummary || hasFocusRecord;
+    const forcedFocusSearchSurface = hasForcedFocusSearchSurface
+        && activeView === 'galaxy'
+        && isLiveRoute
+        && !ctx.semanticDiveMode;
     if (forcedFocusSearchSurface) {
         root.classList.add('is-active');
         if (!root.dataset.panelSurfaceDetail) {

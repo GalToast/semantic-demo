@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { state } from '../../js/state';
-import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, setMyceliumMode } from '../../js/modules/lifecycle';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { state } from '../../js/state'
+import { MODE_DESCRIPTIONS, STORY_DESCRIPTIONS, setMyceliumMode } from '../../js/modules/lifecycle'
 
 const stateMock = vi.hoisted(() => ({
-  state: {
-    myceliumMode: 'default',
-    trailDepth: 0,
-    navState: { trailDepth: 0, mode: 'overview' }
-  },
-  withStateMutation: (fn) => fn()
-}));
+    state: {
+        myceliumMode: 'default',
+        trailDepth: 0,
+        navState: { trailDepth: 0, mode: 'overview' }
+    },
+    withStateMutation: (fn) => fn()
+}))
 
 vi.mock('../../src/lib/utils/environment', () => ({
     getLocation: vi.fn(() => ({ hostname: 'localhost', search: '', href: 'http://localhost/' })),
@@ -32,29 +32,29 @@ vi.mock('../../src/lib/utils/environment', () => ({
     isMobileViewport: vi.fn(() => false),
     getInfoSurface: vi.fn(() => null),
     getAspectRatio: vi.fn(() => 1.33)
-}));
+}))
 
-vi.mock('../../js/state', () => stateMock);
-vi.mock('../../src/lib/engine/state-bridge.ts', () => stateMock);
+vi.mock('../../js/state', () => stateMock)
+vi.mock('../../src/lib/engine/state-bridge.ts', () => stateMock)
 
 // Mock the internal methods that setMyceliumMode calls
 vi.mock('../../js/modules/journey-point-color.js', () => ({
     applyPointFilterColors: vi.fn()
-}));
+}))
 vi.mock('../../js/modules/journey.js', () => ({
-  updateSelectedBusiness: vi.fn(),
-  syncFocusStage: vi.fn(),
-  traverseNeighbor: vi.fn(),
-  walkThreadNeighbor: vi.fn(),
-  applyPointFilterColors: vi.fn()
-}));
+    updateSelectedBusiness: vi.fn(),
+    syncFocusStage: vi.fn(),
+    traverseNeighbor: vi.fn(),
+    walkThreadNeighbor: vi.fn(),
+    applyPointFilterColors: vi.fn()
+}))
 
 vi.mock('../../js/modules/url-state.js', () => ({
     updateUrlState: vi.fn(),
     copyCurrentViewLink: vi.fn(),
     resetStateBeforeUrlRestore: vi.fn(),
     clearExplorationFocusSelection: vi.fn()
-}));
+}))
 
 vi.mock('../../js/modules/event-bus.js', () => ({
     publish: vi.fn(),
@@ -67,70 +67,67 @@ vi.mock('../../js/modules/event-bus.js', () => ({
         STATE_RESET: 'STATE_RESET',
         CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED'
     }
-}));
+}))
 
 describe('lifecycle.js', () => {
     beforeEach(() => {
-        vi.clearAllMocks();
-        state.myceliumMode = 'default';
-        state.trailDepth = 0;
-        
+        vi.clearAllMocks()
+        state.myceliumMode = 'default'
+        state.trailDepth = 0
+
         // Let's mock window to prevent errors if UI relies on it
         vi.stubGlobal('window', {
             setTimeout: vi.fn()
-        });
-    });
+        })
+    })
 
     afterEach(() => {
-        vi.restoreAllMocks();
-        vi.unstubAllGlobals();
-    });
+        vi.restoreAllMocks()
+        vi.unstubAllGlobals()
+    })
 
     describe('Constants', () => {
         it('should export MODE_DESCRIPTIONS correctly', () => {
-            expect(MODE_DESCRIPTIONS).toHaveProperty('default');
-            expect(MODE_DESCRIPTIONS).toHaveProperty('bloom');
-            expect(MODE_DESCRIPTIONS).toHaveProperty('trail');
-            expect(MODE_DESCRIPTIONS).toHaveProperty('inside');
-        });
+            expect(MODE_DESCRIPTIONS).toHaveProperty('default')
+            expect(MODE_DESCRIPTIONS).toHaveProperty('bloom')
+            expect(MODE_DESCRIPTIONS).toHaveProperty('trail')
+            expect(MODE_DESCRIPTIONS).toHaveProperty('inside')
+        })
 
         it('should export STORY_DESCRIPTIONS correctly', () => {
-            expect(STORY_DESCRIPTIONS).toHaveProperty('standard');
-            expect(STORY_DESCRIPTIONS).toHaveProperty('market');
-            expect(STORY_DESCRIPTIONS).toHaveProperty('civic');
-        });
-    });
+            expect(STORY_DESCRIPTIONS).toHaveProperty('standard')
+            expect(STORY_DESCRIPTIONS).toHaveProperty('market')
+            expect(STORY_DESCRIPTIONS).toHaveProperty('civic')
+        })
+    })
 
     describe('setMyceliumMode', () => {
-  it('should correctly set trail mode', async () => {
-    const eventBus = await import('../../js/modules/event-bus.js');
-    const journey = await import('../../js/modules/journey.js');
+        it('should correctly set trail mode', async () => {
+            const eventBus = await import('../../js/modules/event-bus.js')
+            const journey = await import('../../js/modules/journey.js')
 
-    setMyceliumMode('trail');
+            setMyceliumMode('trail')
 
-    expect(state.myceliumMode).toBe('trail');
-    expect(journey.applyPointFilterColors).toHaveBeenCalled();
-    expect(eventBus.publish).toHaveBeenCalledWith(eventBus.EVENTS.VIEW_CHANGED, { myceliumMode: 'trail' });
-  });
+            expect(state.myceliumMode).toBe('trail')
+            expect(journey.applyPointFilterColors).toHaveBeenCalled()
+            expect(eventBus.publish).toHaveBeenCalledWith(eventBus.EVENTS.VIEW_CHANGED, { myceliumMode: 'trail' })
+        })
 
         it('should not sync URL if skipUrlSync option is true', async () => {
-            const eventBus = await import('../../js/modules/event-bus.js');
+            const eventBus = await import('../../js/modules/event-bus.js')
 
-            setMyceliumMode('trail', { skipUrlSync: true });
+            setMyceliumMode('trail', { skipUrlSync: true })
 
-            expect(eventBus.publish).not.toHaveBeenCalledWith(
-                eventBus.EVENTS.URL_SYNC_REQUESTED,
-                expect.anything()
-            );
-        });
+            expect(eventBus.publish).not.toHaveBeenCalledWith(eventBus.EVENTS.URL_SYNC_REQUESTED, expect.anything())
+        })
 
         it('should return early if the mode is already active', async () => {
-            const eventBus = await import('../../js/modules/event-bus.js');
-            
-            state.myceliumMode = 'bloom';
-            setMyceliumMode('bloom');
+            const eventBus = await import('../../js/modules/event-bus.js')
 
-            expect(eventBus.publish).not.toHaveBeenCalled();
-        });
-    });
-});
+            state.myceliumMode = 'bloom'
+            setMyceliumMode('bloom')
+
+            expect(eventBus.publish).not.toHaveBeenCalled()
+        })
+    })
+})

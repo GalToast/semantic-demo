@@ -76,17 +76,13 @@ import {
   positionTooltip,
   updateTooltipContent
 } from '../search/legacy-exports';
-// Filter-state legacy exports. These live in `js/modules/filter-state.ts`
-// and are not yet ported to a Svelte store. The bridge re-exports them
-// so the W14-T8 search port can retire the search-state kernel without
-// forcing a parallel filter-state port. The bridge remains the single
-// seam that legacy consumers should depend on.
+// Filter-state legacy API now lives on the canonical filter store.
 import {
   setActiveFilter,
   toggleActiveFilterSignal,
   resetActiveFilters,
   restoreActiveFiltersFromUrl
-} from '../../../js/modules/filter-state';
+} from '@lib/stores/filter.svelte';
 // `clearSearchRelatedFocusState` is a legacy-side-effect helper. The
 // canonical implementation lives in legacy-exports.ts for now (see
 // that module for the side-effect contract). Re-export it here so the

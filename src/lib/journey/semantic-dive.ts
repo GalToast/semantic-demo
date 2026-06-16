@@ -10,7 +10,7 @@
  *
  * Dependencies that are still in the legacy path (will migrate later):
  *   - ../../../js/state/selectors/index (state selectors)
- *   - ../../../js/state.ts (global state singleton)
+ *   - @lib/engine/state-bridge (canonical AppState compatibility state)
  *   - ../../../js/modules/journey-lifecycle-adapter.ts (getNextWalkCandidateForIndex)
  *   - ../../../js/modules/focus-stage-dom.ts (ensureFocusStageAuxiliaryDom, ensureDiveButton)
  */

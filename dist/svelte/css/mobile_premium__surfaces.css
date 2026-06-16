@@ -292,10 +292,7 @@ body.is-active #selected-details.active:not([hidden]) {
         padding-left: 8px;
     }
 
-    body.is-active:is(
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='focus'][data-focus-panel-mode='field-node']
-        )
+    body.is-active:is([data-panel-surface='focus-search'], [data-panel-surface='focus'][data-focus-panel-mode='field-node'])
         .journey-compass-actions {
         z-index: var(--z-compass);
         z-index: var(--z-compass);
@@ -308,22 +305,17 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: auto;
     }
 
-    body.is-active:is(
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='focus'][data-focus-panel-mode='field-node']
-        )
+    body.is-active:is([data-panel-surface='focus-search'], [data-panel-surface='focus'][data-focus-panel-mode='field-node'])
         .journey-compass-action:not(.primary) {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.is-active:is(
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='focus'][data-focus-panel-mode='field-node']
-        )
+    body.is-active:is([data-panel-surface='focus-search'], [data-panel-surface='focus'][data-focus-panel-mode='field-node'])
         .journey-compass-action.primary[data-journey-action='enter-inside'],
-    body.is-active[data-panel-surface='focus-search'] .journey-compass-action.primary[data-journey-action='open-map'] {
+    body.is-active[data-panel-surface='focus-search']
+        .journey-compass-action.primary[data-journey-action='open-map'] {
         width: 48px;
         min-width: 48px;
         max-width: 48px;
@@ -412,9 +404,7 @@ body.is-active #selected-details.active:not([hidden]) {
         border-bottom: none;
         border-left: none;
         border-right: none;
-        box-shadow:
-            0 -8px 32px rgba(0, 0, 0, 0.4),
-            inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        box-shadow: 0 -8px 32px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.1);
         padding: 0;
         margin: 0;
         transform: none;
@@ -845,15 +835,8 @@ body.is-active #selected-details.active:not([hidden]) {
         max-height: min(22dvh, 180px);
     }
 
-    /* Product-route final guards: once the real mobile route has handed off
-       to search, focus, preview, or dive, stale lower-surface chrome must not
-       remain as a second drawer. */
-    body.is-active:is([data-panel-surface='search'], [data-panel-surface='focus-search']) #mode-chips,
-    body.is-active:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .mode-chips {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
+    /* A2-4: Mode chips (#mode-chips) are always visible per UX audit closure.
+       Previous rule hid them in search/focus-search; removed 2026-06-16. */
 
     body.is-active[data-panel-surface='focus-search'][data-trail-state='active'][data-thread-inspect-surface='walk-next']
         #thread-inspector.active {
@@ -898,6 +881,7 @@ body.is-active #selected-details.active:not([hidden]) {
         display: grid;
     }
 
+
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
@@ -926,18 +910,26 @@ body.is-active #selected-details.active:not([hidden]) {
        visible journey navigation; legacy focus-stage journey fragments must
        not draw inside or over the selected-business card. This belongs in
        surfaces.css because it loads after the focus-dive owner rules. */
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-panel-surface^='map-']
+        )
         .focus-stage-journey,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-panel-surface^='map-']
+        )
         .focus-stage-neighbors,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-panel-surface^='map-']
+        )
         .focus-stage-actions {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-panel-surface^='map-']
+        )
         #journey-chrome
         .focus-stage-journey {
         display: contents;
@@ -945,7 +937,9 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: auto;
     }
 
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-panel-surface^='map-']
+        )
         #journey-chrome
         .focus-stage-neighbors {
         display: flex;
@@ -1058,6 +1052,7 @@ body.is-active #selected-details.active:not([hidden]) {
         padding-inline: 5px;
         border-radius: 10px;
     }
+
 
     /* Map-focus-search owns the selected-card drawer; search chrome and
        legacy info-panel content must not become competing map drawers. */

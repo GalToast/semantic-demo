@@ -63,8 +63,8 @@ export function buildAdapterDeps(): AdapterDeps {
     journeySelectedCard: {
       getStrandArrivalNote,
       updateTraversalUi,
-      hydrateLeadContext: (point: unknown, options?: Record<string, unknown>) =>
-        hydrateLeadContext(point as never, options as never),
+      hydrateLeadContext: (point: unknown) =>
+        hydrateLeadContext(point as never),
     },
     threadInspector: {
       summarizeNeighborReason: (candidate: unknown, point: unknown, focusPoint: unknown) =>

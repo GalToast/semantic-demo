@@ -134,6 +134,7 @@ function resetState() {
     state.navState.trailNeighborIndices = [];
     state.navState.walkHistoryIndices = [];
     state.navState.threadCandidates = [];
+    state.navState.trailDepth = 0;
     state.trailDepth = 0;
     state.semanticDiveMode = false;
     state.currentSearchSummary = null;
@@ -142,6 +143,14 @@ function resetState() {
   });
   fakeBody.dataset = {};
   _rafNow = 0;
+}
+
+function setTestTrailDepth(depth) {
+  state.navState.trailDepth = depth;
+  state.trailDepth = depth;
+  // Raw Node contracts use a minimal non-reactive Svelte rune shim, so mirror
+  // the derived value that the real Svelte runtime computes from navState.
+  state.semanticDiveMode = depth === 2;
 }
 
 function commit(label) {
@@ -172,8 +181,10 @@ assert(state.semanticDiveMode === false, 'focus: semanticDiveMode is false');
 console.log('  PASS: focus state is correct\n');
 
 // Trigger semantic-dive: trailDepth jumps to 2, search context cleared to isolate inside-walk
-state.trailDepth = 2;
-state.currentSearchSummary = null;
+withStateMutation(() => {
+  setTestTrailDepth(2);
+  state.currentSearchSummary = null;
+});
 commit('semantic-dive-state');
 
 assert(ds('graphContext') === 'focus', 'semantic-dive: graphContext is focus');
@@ -211,12 +222,10 @@ console.log('[BOUNDARY 2b] map-trail -> galaxy (semantic-dive reactivation)');
 // Set up semantic-dive state first (trailDepth=2, focusedNode, galaxy view)
 withStateMutation(() => {
   state.currentView = 'galaxy';
-  state.trailDepth = 2;
+  setTestTrailDepth(2);
   state.currentSearchSummary = null;
   state.focusedNode = 4;
   state.navState.focusedIndex = 4;
-  // Ensure semanticDiveMode is set (the getter setter will set trailDepth=2 when true)
-  state.semanticDiveMode = true;
 });
 commit('semantic-dive-active');
 assert(ds('semanticDive') === 'active', 'BOUNDARY 2b pre: semanticDive is active in galaxy with trailDepth=2');
@@ -232,8 +241,7 @@ assert(ds('semanticDive') === 'inactive', 'BOUNDARY 2b: map view forces semantic
 // Return to galaxy - semanticDive must reactivate when trailDepth=2 and focusedNode is set
 withStateMutation(() => {
   state.currentView = 'galaxy';
-  state.trailDepth = 2; // preserve trailDepth
-  state.semanticDiveMode = true; // restore (setter will set trailDepth=2)
+  setTestTrailDepth(2); // preserve trailDepth
 });
 commit('galaxy-reactivates');
 assert(ds('activeView') === 'galaxy', 'BOUNDARY 2b: activeView is galaxy on return');
@@ -249,8 +257,7 @@ withStateMutation(() => {
   state.navState.focusedIndex = 4;
   state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
   state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-  state.trailDepth = 2;
-  state.semanticDiveMode = true;
+  setTestTrailDepth(2);
 });
 elementsById.set('search-input', new FakeElement('input'));
 commit('pre-reset');
@@ -276,7 +283,7 @@ resetState();
 withStateMutation(() => {
   state.focusedNode = null;
   state.navState.focusedIndex = null;
-  state.trailDepth = 2;
+  setTestTrailDepth(2);
   state.currentSearchSummary = null;
 });
 commit('semantic-dive-no-focus');

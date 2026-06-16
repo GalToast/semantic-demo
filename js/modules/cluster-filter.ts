@@ -7,7 +7,7 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { el, setChildren } from './utils/dom-builder.ts';
-import { resetActiveFilters, setActiveFilter, getActiveFilters, getActiveClusterFilter, setActiveClusterFilter, overwriteActiveFilters } from './filter-state.ts';
+import { resetActiveFilters, setActiveFilter, getActiveFilters, getActiveClusterFilter, setActiveClusterFilter, overwriteActiveFilters } from '@lib/stores/filter.svelte';
 import { applyFilters, clearSearchGlow, updateUrlState, clearShortSemanticSearchState } from '../../src/lib/orchestration/cluster-filter-controller.ts';
 import { getFilteredClusterCounts } from "@lib/orchestration/search-filter-core";
 import { CONFIG } from "@lib/engine/config";

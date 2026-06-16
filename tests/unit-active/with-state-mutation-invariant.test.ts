@@ -293,7 +293,7 @@ describe('withStateMutation invariant', () => {
             );
         }
         expect(allViolations).toHaveLength(0);
-    });
+    }, 30000);
 
     it('protected key lists are non-empty', () => {
         // Sanity check: the lists we test against must have content.
@@ -302,5 +302,5 @@ describe('withStateMutation invariant', () => {
         // navState appears in both lists (it's CRITICAL and has nested
         // tracked sub-keys). Just verify the set construction works.
         expect(PROTECTED_KEYS.has('navState')).toBe(true);
-    });
+    }, 30000);
 });

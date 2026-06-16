@@ -8,7 +8,7 @@ import {
     setActiveFilter,
     toggleActiveFilterSignal,
     resetActiveFilters
-} from '../filter-state.ts';
+} from '@lib/stores/filter.svelte';
 
 let initialized = false;
 

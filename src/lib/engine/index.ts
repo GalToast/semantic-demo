@@ -22,149 +22,149 @@
 
 // ── Bridge factory and types ─────────────────────────────────────────────────
 
-export { createEngineBridge } from './bridge';
+export { createEngineBridge } from './bridge'
 
 export type {
-  EngineBridge,
-  EngineCallbacks,
-  EngineStatus,
-  FocusNodeOptions,
-  SearchCorridorOptions,
-  FilterOptions,
-  SceneDiagnostics,
-} from './bridge';
+    EngineBridge,
+    EngineCallbacks,
+    EngineStatus,
+    FocusNodeOptions,
+    SearchCorridorOptions,
+    FilterOptions,
+    SceneDiagnostics
+} from './bridge'
 
 // ── TS port re-exports: three-engine ─────────────────────────────────────────
 
 export {
-  initThreeJS,
-  deinit,
-  animate,
-  onWindowResize,
-  cancelAnimate,
-  getSceneRenderableDiagnostics,
-  updateCameraViewportOffset,
-  updateMyceliumThreads,
-  applyMapFlatteningLayout,
-  triggerSearchHeroMoment,
-  triggerCorridorNodeGlow,
-  updateCorridorNodeGlow,
-  triggerSearchCorridorAnimation,
-  updateSearchCorridorAnimation,
-  disposeSearchCorridorAnimation,
-  updateInteractionVisuals,
-  disposeInteractionVisuals,
-  initSemanticLens,
-  initSemanticManifold,
-  shouldRenderThreads,
-  shouldRenderBridgeThreads,
-  createPoints,
-  createMycelium,
-  SCENE_ATMOSPHERE,
-  MYCELIUM_FIELD_SCALE,
-} from './three-engine';
+    initThreeJS,
+    deinit,
+    animate,
+    onWindowResize,
+    cancelAnimate,
+    getSceneRenderableDiagnostics,
+    updateCameraViewportOffset,
+    updateMyceliumThreads,
+    applyMapFlatteningLayout,
+    triggerSearchHeroMoment,
+    triggerCorridorNodeGlow,
+    updateCorridorNodeGlow,
+    triggerSearchCorridorAnimation,
+    updateSearchCorridorAnimation,
+    disposeSearchCorridorAnimation,
+    updateInteractionVisuals,
+    disposeInteractionVisuals,
+    initSemanticLens,
+    initSemanticManifold,
+    shouldRenderThreads,
+    shouldRenderBridgeThreads,
+    createPoints,
+    createMycelium,
+    SCENE_ATMOSPHERE,
+    MYCELIUM_FIELD_SCALE
+} from './three-engine'
 
-import { cancelFocusCameraAnimation } from '@lib/engine/camera-choreography';
+import { cancelFocusCameraAnimation } from '@lib/engine/camera-choreography'
 import {
-  settleCameraToOverviewPose,
-  isCameraIdleOrbitAllowed,
-  syncOrbitAutoRotate,
-  setAutoRotateSuspended,
-  clearAutoRotateResumeTimer,
-  scheduleAutoRotateResume,
-  noteSceneInteraction,
-  updateAutoRotateSoftResume,
-  toggleAutoRotate,
-  OVERVIEW_CAMERA_POSE,
-} from '@lib/engine/camera-controls-restore-bridge';
+    settleCameraToOverviewPose,
+    isCameraIdleOrbitAllowed,
+    syncOrbitAutoRotate,
+    setAutoRotateSuspended,
+    clearAutoRotateResumeTimer,
+    scheduleAutoRotateResume,
+    noteSceneInteraction,
+    updateAutoRotateSoftResume,
+    toggleAutoRotate,
+    OVERVIEW_CAMERA_POSE
+} from '@lib/engine/camera-controls-restore-bridge'
 import {
-  setFocusTransitionMode,
-  getFocusTransitionProgress,
-  startFocusCameraAssist,
-  releaseFocusCameraAssist,
-  focusCameraAssistIsActive,
-  syncCameraAssistDataset,
-  setCameraAssistChoreography,
-  setRouteExplorationState,
-  clearRouteExploration,
-  markRouteExploration,
-  shouldMarkRouteExploration,
-  getRouteLayerOrigin,
-} from '@lib/engine/camera-controls-core';
+    setFocusTransitionMode,
+    getFocusTransitionProgress,
+    startFocusCameraAssist,
+    releaseFocusCameraAssist,
+    focusCameraAssistIsActive,
+    syncCameraAssistDataset,
+    setCameraAssistChoreography,
+    setRouteExplorationState,
+    clearRouteExploration,
+    markRouteExploration,
+    shouldMarkRouteExploration,
+    getRouteLayerOrigin
+} from '@lib/engine/camera-controls-core'
 
 export {
-  cancelFocusCameraAnimation,
-  settleCameraToOverviewPose,
-  isCameraIdleOrbitAllowed,
-  syncOrbitAutoRotate,
-  setAutoRotateSuspended,
-  clearAutoRotateResumeTimer,
-  scheduleAutoRotateResume,
-  noteSceneInteraction,
-  updateAutoRotateSoftResume,
-  toggleAutoRotate,
-  setFocusTransitionMode,
-  getFocusTransitionProgress,
-  startFocusCameraAssist,
-  releaseFocusCameraAssist,
-  focusCameraAssistIsActive,
-  syncCameraAssistDataset,
-  setCameraAssistChoreography,
-  setRouteExplorationState,
-  clearRouteExploration,
-  markRouteExploration,
-  shouldMarkRouteExploration,
-  getRouteLayerOrigin,
-  OVERVIEW_CAMERA_POSE,
-};
+    cancelFocusCameraAnimation,
+    settleCameraToOverviewPose,
+    isCameraIdleOrbitAllowed,
+    syncOrbitAutoRotate,
+    setAutoRotateSuspended,
+    clearAutoRotateResumeTimer,
+    scheduleAutoRotateResume,
+    noteSceneInteraction,
+    updateAutoRotateSoftResume,
+    toggleAutoRotate,
+    setFocusTransitionMode,
+    getFocusTransitionProgress,
+    startFocusCameraAssist,
+    releaseFocusCameraAssist,
+    focusCameraAssistIsActive,
+    syncCameraAssistDataset,
+    setCameraAssistChoreography,
+    setRouteExplorationState,
+    clearRouteExploration,
+    markRouteExploration,
+    shouldMarkRouteExploration,
+    getRouteLayerOrigin,
+    OVERVIEW_CAMERA_POSE
+}
 
 // ── TS port re-exports: node-manager ─────────────────────────────────────────
 
 export {
-  disposeNodeVisuals,
-  createNodeSporeLayer,
-  getNodeSporeScale,
-  setNodeSporeInstanceMatrix,
-  getNodeSporeColor,
-  getPointBoundsCenter,
-  compilePointMaterialForReadiness,
-  disposeTextures,
-} from './node-manager';
+    disposeNodeVisuals,
+    createNodeSporeLayer,
+    getNodeSporeScale,
+    setNodeSporeInstanceMatrix,
+    getNodeSporeColor,
+    getPointBoundsCenter,
+    compilePointMaterialForReadiness,
+    disposeTextures
+} from './node-manager'
 
 // ── TS port re-exports: thread-manager ───────────────────────────────────────
 
 export {
-  disposeMycelium,
-  getThreadPulseOpacity,
-  getMyceliumPresentationProfile,
-  getGroupLineSegmentCount,
-} from './thread-manager';
+    disposeMycelium,
+    getThreadPulseOpacity,
+    getMyceliumPresentationProfile,
+    getGroupLineSegmentCount
+} from './thread-manager'
 
 // ── Demo choreography ────────────────────────────────────────────────────────
 
 export {
-  PHASE as DemoChoreographyPhase,
-  getDemoPhase,
-  getDemoNodeIndex,
-  isDemoCancelled,
-  setDemoNodeIndex,
-  clearDemoTimers,
-  resetRetryState,
-  runDemo,
-  cancelChoreography,
-  isMicroDemoRunning,
-} from './demo-choreography';
+    PHASE as DemoChoreographyPhase,
+    getDemoPhase,
+    getDemoNodeIndex,
+    isDemoCancelled,
+    setDemoNodeIndex,
+    clearDemoTimers,
+    resetRetryState,
+    runDemo,
+    cancelChoreography,
+    isMicroDemoRunning
+} from './demo-choreography'
 
 // ── Camera choreography (legacy wrappers) ────────────────────────────────────
 
 export {
-  focusOnNode,
-  animateCameraToNode,
-  animateCameraToSearchCorridor,
-  animateCameraToTerrainPrelude,
-  applySemanticCentroidCamera,
-  zoomCamera,
-  clearInsideCentroid,
-} from './camera-choreography';
+    focusOnNode,
+    animateCameraToNode,
+    animateCameraToSearchCorridor,
+    animateCameraToTerrainPrelude,
+    applySemanticCentroidCamera,
+    zoomCamera,
+    clearInsideCentroid
+} from './camera-choreography'
 
-export type { FocusOnNodeOptions, AnimateCameraToNodeOptions } from './camera-choreography';
+export type { FocusOnNodeOptions, AnimateCameraToNodeOptions } from './camera-choreography'

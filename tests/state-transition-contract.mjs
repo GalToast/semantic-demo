@@ -154,6 +154,7 @@ function resetState() {
     state.navState.trailNeighborIndices = [];
     state.navState.walkHistoryIndices = [];
     state.navState.threadCandidates = [];
+    state.navState.trailDepth = 0;
     state.trailDepth = 0;
     state.semanticDiveMode = false;
     state.currentSearchSummary = null;
@@ -163,6 +164,14 @@ function resetState() {
   fakeBody.dataset = {};
   activeResultsIntentEl = null;
   _rafQueue = [];
+}
+
+function setTestTrailDepth(depth) {
+  state.navState.trailDepth = depth;
+  state.trailDepth = depth;
+  // Raw Node contracts use a minimal non-reactive Svelte rune shim, so mirror
+  // the derived value that the real Svelte runtime computes from navState.
+  state.semanticDiveMode = depth === 2;
 }
 
 function commitTransition(label) {
@@ -253,8 +262,8 @@ resetState();
 withStateMutation(() => {
   state.focusedNode = 4;
   state.navState.focusedIndex = 4;
-  state.trailDepth = 2;
-  // semanticDiveMode getter derives from trailDepth, so trailDepth=2 → semanticDiveMode=true
+  setTestTrailDepth(2);
+  // semanticDiveMode derives from navState.trailDepth, mirrored to legacy trailDepth for bridge consumers.
   state.currentSearchSummary = null; // isolate the inside-walk; no search context
 });
 commitTransition('semantic-dive');
@@ -431,7 +440,7 @@ withStateMutation(() => {
   state.currentView = 'map';
   state.focusedNode = 4;
   state.navState.focusedIndex = 4;
-  state.trailDepth = 2;
+  setTestTrailDepth(2);
   state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
 });
 elementsById.set('search-input', new FakeElement('input'));
@@ -456,7 +465,7 @@ withStateMutation(() => {
   state.navState.focusedIndex = 4;
   state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
   state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-  state.trailDepth = 1; // trail active but not yet at dive depth
+  setTestTrailDepth(1); // trail active but not yet at dive depth
 });
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('focus-pre-map');
@@ -488,8 +497,7 @@ withStateMutation(() => {
   state.navState.focusedIndex = 4;
   state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
   state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-  state.trailDepth = 2;
-  state.semanticDiveMode = true; // deep dive state
+  setTestTrailDepth(2); // deep dive state
 });
 elementsById.set('search-input', new FakeElement('input'));
 commitTransition('pre-reset-deep');

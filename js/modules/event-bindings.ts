@@ -5,33 +5,42 @@
  * dispatches its bind function during app initialization.
  */
 
-import { state as _state } from '@lib/engine/state-bridge';
-const state = _state as any;
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
-import { bindViewControls, zoomCamera } from './bindings/view-bindings.ts';
-import { bindFocusControls, expandNeighborhoodFromCurrentNode, recenterFocusedNode, returnToCountyView } from './bindings/journey-bindings.ts';
-import { updateHasQuery, bindSearchControls } from './bindings/search-bindings.ts';
-import { bindSuggestionControls } from './bindings/suggestion-bindings.ts';
-import { bindSemanticLaneControls } from './bindings/semantic-lane-bindings.ts';
-import { bindModeAndPromptControls } from './bindings/mode-bindings.ts';
-import { bindFilterControls } from './bindings/filter-bindings.ts';
-import { bindPanelControls, revealSelectedBusinessCard as _revealSelectedBusinessCard, setInfoPanelOpen as _setInfoPanelOpen } from './bindings/panel-bindings.ts';
-import { bindLegendControls } from './bindings/legend-bindings.ts';
-import { bindUtilityButtons } from './bindings/utility-bindings.ts';
-import { bindGlobalEvents, disposeEventListeners } from './bindings/global-bindings.ts';
-import { scheduleOnboardingHint } from './bindings/onboarding-bindings.ts';
-import { bindFocusTrapObserver } from './bindings/focus-trap-bindings.ts';
+import { state as _state } from '@lib/engine/state-bridge'
+const state = _state as any
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { bindViewControls, zoomCamera } from './bindings/view-bindings.ts'
+import {
+    bindFocusControls,
+    expandNeighborhoodFromCurrentNode,
+    recenterFocusedNode,
+    returnToCountyView
+} from './bindings/journey-bindings.ts'
+import { updateHasQuery, bindSearchControls } from './bindings/search-bindings.ts'
+import { bindSuggestionControls } from './bindings/suggestion-bindings.ts'
+import { bindSemanticLaneControls } from './bindings/semantic-lane-bindings.ts'
+import { bindModeAndPromptControls } from './bindings/mode-bindings.ts'
+import { bindFilterControls } from './bindings/filter-bindings.ts'
+import {
+    bindPanelControls,
+    revealSelectedBusinessCard as _revealSelectedBusinessCard,
+    setInfoPanelOpen as _setInfoPanelOpen
+} from './bindings/panel-bindings.ts'
+import { bindLegendControls } from './bindings/legend-bindings.ts'
+import { bindUtilityButtons } from './bindings/utility-bindings.ts'
+import { bindGlobalEvents, disposeEventListeners } from './bindings/global-bindings.ts'
+import { scheduleOnboardingHint } from './bindings/onboarding-bindings.ts'
+import { bindFocusTrapObserver } from './bindings/focus-trap-bindings.ts'
 
-import { buildLegend } from './legend-ui.ts';
-import { syncClusterSectionState } from '@lib/ui/cluster-labels';
+import { buildLegend } from './legend-ui.ts'
+import { syncClusterSectionState } from '@lib/ui/cluster-labels'
 
 export function revealSelectedBusinessCard(): void {
-    setInfoPanelOpen(true);
-    return _revealSelectedBusinessCard();
+    setInfoPanelOpen(true)
+    return _revealSelectedBusinessCard()
 }
 
 export function setInfoPanelOpen(open?: boolean | undefined, options: { restoreFocus?: boolean } = {}): boolean {
-    return _setInfoPanelOpen(open, options);
+    return _setInfoPanelOpen(open, options)
 }
 
 export {
@@ -41,14 +50,14 @@ export {
     recenterFocusedNode,
     returnToCountyView,
     updateHasQuery
-};
+}
 
 interface InitEventListenersOptions {
-    onWindowResize?: () => void;
-    recordSemanticLaneSnapshot?: (snapshot: { state: string; attempted_warm: boolean }) => void;
-    setMyceliumMode?: (mode: string) => void;
-    setSemanticLaneUiState?: (state: string, options: { label: string; title: string }) => void;
-    updateUrlState?: (...args: any[]) => void;
+    onWindowResize?: () => void
+    recordSemanticLaneSnapshot?: (snapshot: { state: string; attempted_warm: boolean }) => void
+    setMyceliumMode?: (mode: string) => void
+    setSemanticLaneUiState?: (state: string, options: { label: string; title: string }) => void
+    updateUrlState?: (...args: any[]) => void
 }
 
 export async function initEventListeners({
@@ -56,27 +65,27 @@ export async function initEventListeners({
     recordSemanticLaneSnapshot = () => {},
     setMyceliumMode = () => {},
     setSemanticLaneUiState = () => {},
-    updateUrlState = () => {},
+    updateUrlState = () => {}
 }: InitEventListenersOptions = {}): Promise<void> {
-    if (state.eventListenersInitialized) return;
-    state.eventListenersInitialized = true;
+    if (state.eventListenersInitialized) return
+    state.eventListenersInitialized = true
 
-    bindViewControls();
-    bindFocusControls();
-    bindSuggestionControls();
-    bindSearchControls();
-    bindSemanticLaneControls(recordSemanticLaneSnapshot, setSemanticLaneUiState);
-    bindGlobalEvents();
-    bindModeAndPromptControls(setMyceliumMode);
-    bindUtilityButtons();
-    bindFilterControls();
-    bindPanelControls(onWindowResize);
-    bindLegendControls();
-    bindFocusTrapObserver();
+    bindViewControls()
+    bindFocusControls()
+    bindSuggestionControls()
+    bindSearchControls()
+    bindSemanticLaneControls(recordSemanticLaneSnapshot, setSemanticLaneUiState)
+    bindGlobalEvents()
+    bindModeAndPromptControls(setMyceliumMode)
+    bindUtilityButtons()
+    bindFilterControls()
+    bindPanelControls(onWindowResize)
+    bindLegendControls()
+    bindFocusTrapObserver()
 
-    if (typeof buildLegend === 'function') buildLegend();
-    if (typeof syncClusterSectionState === 'function') syncClusterSectionState();
-    scheduleOnboardingHint();
+    if (typeof buildLegend === 'function') buildLegend()
+    if (typeof syncClusterSectionState === 'function') syncClusterSectionState()
+    scheduleOnboardingHint()
 
     // Svelte islands are loaded on demand so Node-side test imports of
     // this module (which never call initEventListeners) don't need a
@@ -87,10 +96,12 @@ export async function initEventListeners({
         const [searchChrome, filterChrome] = await Promise.all([
             import('./search-chrome-island.ts'),
             import('./filter-chrome-island.ts')
-        ]);
-        if (typeof (searchChrome as any)?.initSearchChromeSvelteIsland === 'function') (searchChrome as any).initSearchChromeSvelteIsland();
-        if (typeof (filterChrome as any)?.initFilterChromeSvelteIsland === 'function') (filterChrome as any).initFilterChromeSvelteIsland();
+        ])
+        if (typeof (searchChrome as any)?.initSearchChromeSvelteIsland === 'function')
+            (searchChrome as any).initSearchChromeSvelteIsland()
+        if (typeof (filterChrome as any)?.initFilterChromeSvelteIsland === 'function')
+            (filterChrome as any).initFilterChromeSvelteIsland()
     } catch (e) {
-        debugWarn('[event-bindings] failed to load svelte islands', (e as Error)?.message);
+        debugWarn('[event-bindings] failed to load svelte islands', (e as Error)?.message)
     }
 }

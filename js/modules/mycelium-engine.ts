@@ -5,7 +5,7 @@ import * as THREE from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { getThreadCategoryColor } from './utils/ui-presentation.ts';
-import { CONFIG } from './config.ts';
+import { CONFIG } from '@lib/engine/config';
 
 interface EdgePair {
     a: number;
