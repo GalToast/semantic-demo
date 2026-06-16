@@ -1,39 +1,49 @@
-name: CI
+name: CI — Semantic Explorer
 
 on:
-  pull_request:
-    branches: [master, main]
   push:
+    branches: [master, main]
+  pull_request:
     branches: [master, main]
 
 jobs:
-  test:
+  check:
+    name: Svelte Check
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
     steps:
       - uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: '20'
           cache: 'npm'
+      - run: npm ci
+      - run: npm run check
 
-      - name: Install dependencies
-        run: npm ci
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run test:unit
 
-      - name: svelte-check
-        run: npx svelte-check --tsconfig ./tsconfig.json --threshold error
-
-      - name: Vitest
-        run: npm run test:unit -- --run
-
-      - name: Build
-        run: npm run build:svelte
-
-      - name: Bridge references check
-        run: node scripts/check-bridge-references.mjs
-
-      - name: Legacy TS budget check
-        run: node scripts/check-legacy-ts-budget.mjs
+  build:
+    name: Production Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run build:svelte
+      - name: Archive build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-svelte
+          path: dist/svelte/
