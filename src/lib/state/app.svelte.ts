@@ -62,6 +62,7 @@ class AppState {
   searchVectorScrambleTimer = $state<ReturnType<typeof setTimeout> | null>(null);
   compactSearchRevealToken = $state<number>(0);
   compactSearchRevealTimers = $state<Array<ReturnType<typeof setTimeout>>>([]);
+  mobileRouteFieldPeekToken = $state<number>(0);
   semanticLaneMonitorTimer = $state<ReturnType<typeof setTimeout> | null>(null);
   semanticLaneProbePromise = $state<Promise<unknown> | null>(null);
   semanticLaneOpsMode = $state<boolean>(false);
