@@ -45,7 +45,7 @@ import { setupMobileSearchSheetToggle } from './search-panel-adapter.ts';
 import { getInterestingBusinessNote, buildSelectedMatchNarrative } from './focus-stage-renderer.ts';
 import { describeThreadLensForPoint } from './journey-point-color.ts';
 import { hydrateLeadContext } from './lifecycle.ts';
-import { subscribeKeyed, EVENTS, publish } from './event-bus.ts';
+import { subscribeKeyed, EVENTS, publish } from '@lib/orchestration/event-bus';
 // Cross-bus bridge: the legacy event bus (this module) and the Svelte
 // orchestration bus are separate module instances. Re-publish key events
 // on the Svelte bus so Svelte subscribers (e.g. triggers.ts → addTrailStop)

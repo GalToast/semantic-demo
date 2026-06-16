@@ -38,7 +38,7 @@ const CASCADE_VECTOR_LINE_SALT = 0xCA5C;
 
 import { getPoints, getSelectedPoint, getFocusedNode, getCurrentView } from '../state/selectors/index.ts';
 import { getActiveClusterFilter, getActiveFilters } from '../state/selectors/index.ts';
-import { subscribeKeyed, EVENTS } from './event-bus.ts';
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from './journey-lifecycle-adapter.ts';
 import { revealSelectedBusinessCard } from './bindings/panel-bindings.ts';

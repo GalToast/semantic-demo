@@ -10,7 +10,7 @@
  */
 
 import { state } from '../state.ts';
-import { publish, EVENTS } from './event-bus.ts';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { isCompactSearchViewport } from './utils/ui-presentation.ts';
 import { setSearchContainerState, setupMobileSearchSheetToggle } from './search-panel-adapter.ts';
 import { recordSemanticLaneSnapshot } from './semantic-lane.ts';

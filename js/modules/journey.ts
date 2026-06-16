@@ -6,7 +6,7 @@
  */
 import { state, withStateMutation } from '../state.ts'
 import { getFocusedNode, getPoints, getNavState, getSelectedPoint } from '../state/selectors/index.ts'
-import { subscribe, publish, EVENTS } from './event-bus.ts'
+import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
     resetRouteTraceDiagnostics,
     removeRouteTraceOverlay,

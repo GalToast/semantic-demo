@@ -26,7 +26,7 @@ import {
     getSearchFocusTransitionToken,
     getTrailIndices
 } from '../state/selectors/index.ts';
-import { publish, EVENTS } from './event-bus.ts';
+import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName } from './utils/dom-formatters.ts';
 import { isCompactSearchViewport } from './utils/ui-presentation.ts';
 import { performSearch } from '../../src/lib/search-engine.ts';
