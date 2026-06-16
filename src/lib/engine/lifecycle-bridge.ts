@@ -20,12 +20,13 @@ export { getNextWalkCandidateForIndex } from '../../../js/modules/journey-lifecy
 export { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '../../../js/modules/focus-stage-dom';
 
 // Relocated legacy re-exports from ui-renderers-bridge
+// (directly from source modules since the ui-renderers shim is retired)
+export { setActiveSearchResultRow } from '../../../js/modules/search-result-renderer';
+export { updateSearchTrailCue } from '../../../js/modules/search-trail-cue-renderer';
 export {
-  setActiveSearchResultRow,
-  updateSearchTrailCue,
   updateSelectedCardHeading,
   renderSelectedMetaStrip,
   renderSelectedMatchPanel,
   renderSelectedActionRow,
   syncSelectedCardContentVariant,
-} from '../../../js/modules/ui-renderers';
+} from '../../../js/modules/focus-stage-renderer';

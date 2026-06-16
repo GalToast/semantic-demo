@@ -10,7 +10,7 @@ import { switchView } from '../view-controller.ts';
 import { toggleAutoRotate } from '../camera-controls.ts';
 import { debugWarn } from '../diagnostic-adapter.ts';
 import { resetExperienceState, copyCurrentViewLink } from '../lifecycle.ts';
-import { showExperienceToast } from '../ui-feedback.ts';
+import { showExperienceToast } from '@lib/ui/ui-feedback';
 import { zoomMap } from '../map-state.ts';
 
 interface BindClickOptions {
