@@ -1,77 +1,83 @@
 // js/state/selectors/renderer.js
 // Read-only selectors for Three.js scene refs, WebGL objects, textures, lights.
 // Writes to these keys remain direct state.X = ... mutations.
-import { state } from '../../state.js';
+//
+// W13-T4 wave 4b (2026-06-15): Ported all 47 renderer selectors from the
+// legacy state singleton to appState (Svelte 5 rune-class). The selector
+// functions now read from appState directly — same contract, same return types.
+// Three.js object refs return null for uninitialized objects (legacy behavior);
+// null checks are the consumer's responsibility, not the selector's.
+import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Core Scene ──
-export const getScene = () => state.scene;
-export const getCamera = () => state.camera;
-export const getControls = () => state.controls;
-export const getRenderer = () => state.renderer;
-export const getHemiLight = () => state.hemiLight;
-export const getDirLight = () => state.dirLight;
+export const getScene = () => appState.scene;
+export const getCamera = () => appState.camera;
+export const getControls = () => appState.controls;
+export const getRenderer = () => appState.renderer;
+export const getHemiLight = () => appState.hemiLight;
+export const getDirLight = () => appState.dirLight;
 
 // ── Points / Instanced Mesh ──
-export const getPoints = () => state.points;
-export const getPointsMesh = () => state.pointsMesh;
-export const getPointsMaterial = () => state.pointsMaterial;
+export const getPoints = () => appState.points;
+export const getPointsMesh = () => appState.pointsMesh;
+export const getPointsMaterial = () => appState.pointsMaterial;
 
 // ── Node Spore ──
-export const getNodeSporeMesh = () => state.nodeSporeMesh;
-export const getNodeSporeHitMesh = () => state.nodeSporeHitMesh;
-export const getNodeSporeMaterial = () => state.nodeSporeMaterial;
+export const getNodeSporeMesh = () => appState.nodeSporeMesh;
+export const getNodeSporeHitMesh = () => appState.nodeSporeHitMesh;
+export const getNodeSporeMaterial = () => appState.nodeSporeMaterial;
 
 // ── Position Buffers ──
-export const getRawPositionsBuffer = () => state.rawPositionsBuffer;
-export const getRawClustersBuffer = () => state.rawClustersBuffer;
+export const getRawPositionsBuffer = () => appState.rawPositionsBuffer;
+export const getRawClustersBuffer = () => appState.rawClustersBuffer;
 
 // ── Mycelium Lines ──
-export const getMyceliumLines = () => state.myceliumLines;
-export const getMyceliumGroup = () => state.myceliumGroup;
-export const getMyceliumCoreLines = () => state.myceliumCoreLines;
-export const getMyceliumWispyLines = () => state.myceliumWispyLines;
-export const getMyceliumBridgeLines = () => state.myceliumBridgeLines;
-export const getMyceliumConnectionPairs = () => state.myceliumConnectionPairs;
-export const getMyceliumDirty = () => state.myceliumDirty;
+export const getMyceliumLines = () => appState.myceliumLines;
+export const getMyceliumGroup = () => appState.myceliumGroup;
+export const getMyceliumCoreLines = () => appState.myceliumCoreLines;
+export const getMyceliumWispyLines = () => appState.myceliumWispyLines;
+export const getMyceliumBridgeLines = () => appState.myceliumBridgeLines;
+export const getMyceliumConnectionPairs = () => appState.myceliumConnectionPairs;
+export const getMyceliumDirty = () => appState.myceliumDirty;
 
 // ── Focus Semantic Lines ──
-export const getFocusSemanticLines = () => state.focusSemanticLines;
-export const getFocusSemanticConnectionPairs = () => state.focusSemanticConnectionPairs;
+export const getFocusSemanticLines = () => appState.focusSemanticLines;
+export const getFocusSemanticConnectionPairs = () => appState.focusSemanticConnectionPairs;
 
 // ── Semantic Lens ──
-export const getSemanticLensGroup = () => state.semanticLensGroup;
-export const getSemanticLensGlow = () => state.semanticLensGlow;
-export const getSemanticLensSpokes = () => state.semanticLensSpokes;
+export const getSemanticLensGroup = () => appState.semanticLensGroup;
+export const getSemanticLensGlow = () => appState.semanticLensGlow;
+export const getSemanticLensSpokes = () => appState.semanticLensSpokes;
 
 // ── Semantic Manifold / Route Trace ──
-export const getSemanticManifold = () => state.semanticManifold;
-export const getRouteTraceLines = () => state.routeTraceLines;
-export const getArrivalHandoffGroup = () => state.arrivalHandoffGroup;
+export const getSemanticManifold = () => appState.semanticManifold;
+export const getRouteTraceLines = () => appState.routeTraceLines;
+export const getArrivalHandoffGroup = () => appState.arrivalHandoffGroup;
 
 // ── Focus Anchor ──
-export const getFocusAnchorGroup = () => state.focusAnchorGroup;
-export const getFocusAnchorRingMesh = () => state.focusAnchorRingMesh;
-export const getFocusAnchorHaloSprite = () => state.focusAnchorHaloSprite;
+export const getFocusAnchorGroup = () => appState.focusAnchorGroup;
+export const getFocusAnchorRingMesh = () => appState.focusAnchorRingMesh;
+export const getFocusAnchorHaloSprite = () => appState.focusAnchorHaloSprite;
 
 // ── Focus Halo / Textures ──
-export const getHoverHalo = () => state.hoverHalo;
-export const getFocusBeaconTexture = () => state.focusBeaconTexture;
-export const getFocusRingTexture = () => state.focusRingTexture;
-export const getFocusNextCueTexture = () => state.focusNextCueTexture;
+export const getHoverHalo = () => appState.hoverHalo;
+export const getFocusBeaconTexture = () => appState.focusBeaconTexture;
+export const getFocusRingTexture = () => appState.focusRingTexture;
+export const getFocusNextCueTexture = () => appState.focusNextCueTexture;
 
 // ── Focus Lens / Halo / Core / Motes / Petals ──
-export const getFocusLens = () => state.focusLens;
-export const getFocusHalo = () => state.focusHalo;
-export const getFocusCore = () => state.focusCore;
-export const getFocusMoteGroup = () => state.focusMoteGroup;
-export const getFocusMotes = () => state.focusMotes;
-export const getFocusPetalGroup = () => state.focusPetalGroup;
-export const getFocusPetals = () => state.focusPetals;
-export const getFocusFilaments = () => state.focusFilaments;
+export const getFocusLens = () => appState.focusLens;
+export const getFocusHalo = () => appState.focusHalo;
+export const getFocusCore = () => appState.focusCore;
+export const getFocusMoteGroup = () => appState.focusMoteGroup;
+export const getFocusMotes = () => appState.focusMotes;
+export const getFocusPetalGroup = () => appState.focusPetalGroup;
+export const getFocusPetals = () => appState.focusPetals;
+export const getFocusFilaments = () => appState.focusFilaments;
 
 // ── Inspected Strand ──
-export const getInspectedStrandGroup = () => state.inspectedStrandGroup;
+export const getInspectedStrandGroup = () => appState.inspectedStrandGroup;
 
 // ── Projected Neighbor ──
-export const getProjectedNeighborGrid = () => state.projectedNeighborGrid;
-export const getProjectedNeighborCache = () => state.projectedNeighborCache;
+export const getProjectedNeighborGrid = () => appState.projectedNeighborGrid;
+export const getProjectedNeighborCache = () => appState.projectedNeighborCache;
