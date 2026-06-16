@@ -8,7 +8,7 @@ import {
     updateFocusAnchorIndicator,
     disposeFocusAnchorIndicator
 } from './focus-anchor-indicator.ts';
-import { disposeObject3D } from './resource-tracker.ts';
+import { disposeObject3D } from '@lib/engine/resource-tracker';
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 

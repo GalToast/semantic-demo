@@ -8,7 +8,7 @@
 
 import { updateRouteTraceOverlayPositions } from './journey-route-trace.ts';
 import { updateArrivalHandoffOverlay } from './journey-arrival-handoff.ts';
-import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter.ts';
+import { setRouteArrivalOverlayUpdaters } from '@lib/journey/route-arrival-overlay-adapter';
 
 export {
     resetRouteTraceDiagnostics,

@@ -5,4 +5,4 @@
  * _ensureModules(). The Svelte 5 port @lib/engine/scene-reveal exists but the
  * render loop's namespace-import + typecast pattern is deferred to Wave 3.
  */
-export * from '../../../js/modules/scene-reveal';
+export * from './scene-reveal';

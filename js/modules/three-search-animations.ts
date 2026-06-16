@@ -1,9 +1,9 @@
-import { webglContext } from './webgl-context.ts';
+import { webglContext } from '@lib/engine/webgl-context';
 import * as THREE from 'three';
 import { state as _state } from '../state.ts';
 const state = _state as any;
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
-import { disposeObject3D } from './resource-tracker.ts';
+import { disposeObject3D } from '@lib/engine/resource-tracker';
 import { triggerCorridorBloom } from './audio-scape.ts';
 import { seededUnit } from './utils/seeded-random.ts';
 

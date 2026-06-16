@@ -29,7 +29,7 @@ import {
     buildSearchResultSnippet,
     buildSearchRankLabel
 } from './search-result-renderer.ts';
-import { updateSearchTrailCue } from './ui-renderers.ts';
+import { updateSearchTrailCue } from './search-trail-cue-renderer.ts';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

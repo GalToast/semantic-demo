@@ -1,14 +1,14 @@
 import * as THREE from 'three';
 import { state as _state } from '../state.ts';
 const state = _state as any;
-import { webglContext } from './webgl-context.ts';
+import { webglContext } from '@lib/engine/webgl-context';
 import { SCENE_PALETTE } from '@lib/utils/design-tokens';
 import { computeOverviewScatterOffsets } from './utils/geo-data.ts';
 import { getThreadCategoryColor } from './utils/ui-presentation.ts';
 import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './utils/three-textures.ts';
 import { seededUnit } from './utils/seeded-random.ts';
 import { CONFIG } from './config.ts';
-import { disposeObject3D } from './resource-tracker.ts';
+import { disposeObject3D } from '@lib/engine/resource-tracker';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 

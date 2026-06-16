@@ -7,7 +7,7 @@
 
 import { state as _state } from '../state.ts';
 const state = _state as any;
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { bindViewControls, zoomCamera } from './bindings/view-bindings.ts';
 import { bindFocusControls, expandNeighborhoodFromCurrentNode, recenterFocusedNode, returnToCountyView } from './bindings/journey-bindings.ts';
 import { updateHasQuery, bindSearchControls } from './bindings/search-bindings.ts';
@@ -22,7 +22,7 @@ import { bindGlobalEvents, disposeEventListeners } from './bindings/global-bindi
 import { scheduleOnboardingHint } from './bindings/onboarding-bindings.ts';
 import { bindFocusTrapObserver } from './bindings/focus-trap-bindings.ts';
 
-import { buildLegend } from './ui-renderers.ts';
+import { buildLegend } from './legend-ui.ts';
 import { syncClusterSectionState } from './cluster-labels.ts';
 
 export function revealSelectedBusinessCard(): void {

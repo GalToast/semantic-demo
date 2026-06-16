@@ -1,4 +1,4 @@
-import { webglContext } from './webgl-context.ts';
+import { webglContext } from '@lib/engine/webgl-context';
 import * as THREE from 'three';
 import { state as _state, withStateMutation } from '../state.ts';
 const state = _state as any;
@@ -7,7 +7,7 @@ import {
     buildSemanticMyceliumEdges,
     pushBezierLinePair
 } from './mycelium-engine.ts';
-import { disposeObject3D } from './resource-tracker.ts';
+import { disposeObject3D } from '@lib/engine/resource-tracker';
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js';
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';

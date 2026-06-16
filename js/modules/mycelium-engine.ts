@@ -1,4 +1,4 @@
-import { webglContext } from './webgl-context.ts';
+import { webglContext } from '@lib/engine/webgl-context';
 'use strict';
 
 import * as THREE from 'three';
