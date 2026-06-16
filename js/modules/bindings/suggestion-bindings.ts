@@ -7,7 +7,7 @@
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { bindClick } from './view-bindings.ts';
-import { focusOnNode } from '../camera-controls.ts';
+import { focusOnNode } from '@lib/engine/camera-choreography';
 import { clearShortSemanticSearchState } from '@lib/engine/search-state-bridge';
 import { showSemanticThreadsDetail } from '../connection-analysis.ts';
 

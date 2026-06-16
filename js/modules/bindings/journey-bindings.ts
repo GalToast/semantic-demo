@@ -11,7 +11,7 @@ import { executeJourneyCompassAction } from '@lib/engine/journey-compass-control
 import { setSemanticDiveMode, pinThreadNeighbor, unpinThreadInspection, walkThreadNeighbor } from '../journey.ts';
 import { traverseNeighbor } from '../../../src/lib/journey/thread-settler-adapter';
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
-import { animateCameraToNode } from '../camera-controls.ts';
+import { animateCameraToNode } from '@lib/engine/camera-choreography';
 import { resetExplorationFocus, exploreInsideToNextStop, clearClusterFilter } from '../lifecycle.ts';
 import { showExperienceToast } from '@lib/ui/ui-feedback';
 

@@ -7,7 +7,7 @@
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
 import { switchView } from '../view-controller.ts'
-import { toggleAutoRotate } from '../camera-controls.ts'
+import { toggleAutoRotate } from '@lib/engine/camera-controls-restore-bridge'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { resetExperienceState, copyCurrentViewLink } from '../lifecycle.ts'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
