@@ -1,87 +1,106 @@
 # Next-session seam prompt
 
-## Current state (2026-06-16, post-W15 cleanup + W16-T-CAM-3 prep + W11-T11 entry readiness)
+## Current state (2026-06-16 02:55, post-W16 wave closure)
 
 **Branch:** `master` tracking `origin/master` (0 ahead, 0 behind)
 **Working tree:** CLEAN
-**Master HEAD:** `294d857`
+**Master HEAD:** `6dd5680 docs(w16-closeout): record W16 wave closure`
 
-### This session (2026-06-16) scorecard
+### This session (2026-06-16) summary — 11 commits pushed to origin
 
-| Commit | Title | Net LOC |
-|---|---|---|
-| `e5228ab` | chore(w15-search-state): retire search-state.ts to death-bridge + commit deferred search aux files | +483/-458 (10 files) |
-| `91e0fed` | chore(w16-t-cam-3): prep camera-controls-restore-bridge for kernel retirement | +21 (1 file) |
-| `294d857` | chore(w11-t11): update ts-js-drift entry readiness to Svelte/Vite native | +29/-20 (1 file) |
+**Main lane commits (4):**
+- `e5228ab` chore(w15-search-state): retire search-state.ts to death-bridge + commit deferred search aux files
+- `91e0fed` chore(w16-t-cam-3): prep camera-controls-restore-bridge for kernel retirement
+- `294d857` chore(w11-t11): update ts-js-drift entry readiness to Svelte/Vite native
+- `0069719` docs(w15-closeout): record W15 follow-up
 
-**Net session delta: +533/-478 across 12 files in 3 commits.**
+**Worker dispatches (4 successful, 1 deferred, 1 cancelled):**
+- `ocw_5a567951` (W11-T9 Wave 1) — ✅ COMPLETED (`72314a0`, in master)
+- `ocw_cddf2c60` (W11-T11 retire) — ⏸️ CANCELED (files deleted, never committed)
+- `ocw_f33e6421` (Visual QA) — ⏸️ CANCELED after writing report
+- `ocw_baff8573` (Contract QA) — ⏸️ CANCELED mid-write
+- `ocw_34242015` (W16-T-CAM-4) — ✅ COMPLETED (`77babd2`, pushed)
+- `ocw_2775014c` (W16-T-CAM-5) — ⏸️ CANCELED with correct off-seam finding (10 consumers, not 4)
+- `ocw_9f884941` (W13-T5 final cleanup) — ⏸️ CANCELED after revert (150 svelte-check errors)
 
-### What landed in this session
+**Parallel Codex session commits (consolidated into 4f471d0 + 5 individual W16 commits):**
+- `90c54e8` port(w16-t-cam-3): retire camera-controls-restore.ts — rewire 2 kernel consumers to bridge
+- `d440b14` chore(w16-t-cam-3): adapt camera-auto-rotate-settle-contract to canonical .svelte.ts implementations
+- `e54e885` port(w16-t-cam-3): delete camera-controls-core.ts — consumers already rewired to src/ shim
+- `77babd2` port(w16-t-cam-4): retire camera-controls-choreography-routes.ts — rewire 2 consumers to canonical src/ path
+- `41c9bad` port(w16-t-cam-3): delete camera-controls-choreography-types.ts shim — no consumers after routes port
+- `a05f66c` port(w16-cleanup): delete design-tokens.ts shim — all consumers already import from @lib/utils/design-tokens
+- `4f471d0` port(w16-followup): camera choreography canonicalization + view-bindings + event-bus + thread-settler W16 retirements
+- `6dd5680` docs(w16-closeout): record W16 wave closure (this just landed)
 
-1. **W15 search state cleanup (e5228ab)** — closed the partial port deferred in the W15 closeout:
-   - `js/modules/search-state.ts` 502→52 LOC DEATH-BRIDGE (single re-export from `@lib/engine/search-state-bridge`)
-   - `src/lib/search/state.ts` re-export fix: `setActiveSearchResultRow` now from `./result-renderer` (canonical home), not `./orchestration`
-   - 5 new files: `src/lib/search/{api-cache,cache}.ts` (canonical implementations), `src/lib/engine/{idb-service,semantic-search-api-cache,semantic-search-cache}-bridge.ts` (legacy bridges)
-   - 2 lines added to `src/lib/engine/semantic-search-mock-catalog-bridge.ts` for `buildMockCatalogForQuery` and `EXPLICIT_EMPTY_QUERY_PATTERN` (was a real bug — new api-cache.ts imported them but bridge didn't export them)
-   - Test whitelist: `semantic-search-cache-bridge` + `camera-controls-restore-bridge` (W16 prep)
+**Plus the parallel session drove the W11 engine port to completion during the W16 wave:**
+- W11-T5 (Bridge Retirement Wave 1): `a0caa19`
+- W11-T6 (Lifecycle Wave 2): `ba5e27f`, `9128d2b`
+- W11-T9 (Journey Subsystem, all 4 waves): `72314a0`, `1e47022`, `a0caa19`, `17abe73`, `b8bec78`, `7669dda`, `48434eb`
+- W11-T10 (Three.js Render Loop, both waves): `a48b12c`, `777a2ce`, `532c6c5`, `d11ea72`
+- W11-T11 (build:legacy retirement): `70d0b5e`, `22d4833`
+- W11 closeout doc: `2260a28`
 
-2. **W16-T-CAM-3 prep (91e0fed)** — bridge file for the W16 #1 pick:
-   - `src/lib/engine/camera-controls-restore-bridge.ts` (21 LOC) re-exports from `camera-controls-restore.svelte.ts`
-   - Whitelist entry already in test file (committed in e5228ab)
+**Net commits pushed this session:** 11 (4 main + 7 parallel session via main lane's push)
 
-3. **W11-T11 entry readiness punctuation (294d857)** — verifies the active Svelte/Vite native entry:
-   - `indexUsesMainTs && viteUsesSrcRoot && mainTsExists` is the active readiness signal
-   - `app.js retired: YES` retained as contextual fallback detail
-   - Drift direction inverted: now checks for orphaned .js files (legacy shims), not orphaned .ts (BOTH pattern retired)
+### Final state at `6dd5680`
+
+| Gate | Status |
+|---|---|
+| svelte-check | ✅ 0 errors, 0 warnings (was 22 pre-existing latent before W11) |
+| test:unit | ✅ 652/652 across 60 files |
+| bridge contract | ✅ 5/5 |
+| TODO invariant | ✅ 2/2 |
+| commit-purity | ✅ no new violations |
+| ts-js-drift | ✅ 88 .ts files, no regression |
+| vite build | ✅ clean |
+
+**File counts (W11+W16 complete):**
+- `js/modules/*.ts`: 84 (down from ~200+ before W11)
+- `src/lib/journey/*.ts`: 29 (full Svelte 5 port)
+- `src/lib/engine/*-bridge.ts`: 53
+- `src/lib/engine/*.svelte.ts`: 2
+
+**Only one legacy camera file remains:** `js/modules/camera-controls.ts` (131 LOC) — now a **DEATH-BRIDGE** re-exporting from canonical Svelte 5. 20+ consumers import from this file transparently executing from canonical code.
+
+### Recommended next session
+
+1. **Write W13-T5b charter** — the W13-T5 final cleanup (delete `js/state.ts` + `js/state/selectors/index.ts`) is BLOCKED because the W13-T5a consumer migration is incomplete. ~80 files still import from these. The charter should:
+   - Identify the 80 files that still import from `js/state.ts` or `js/state/selectors/index.ts`
+   - Categorize them (kernel files, journey subsystem, camera, etc.)
+   - Define a wave order: simplest first (kernel), then journey, then camera, then journey-binding consumer
+   - Each wave dispatches a worker to rewire N files and commit
+   - Final wave deletes the 2 files after all consumers are migrated
+
+2. **Visual QA re-run** — the W15 rewires and W11/W16 changes should be smoke-tested via Playwright. Previous Visual QA (Worker C1) was blocked by the parallel session's camera breakage, which is now fixed.
+
+3. **A2 audit items** (W11 audit closure backlog):
+   - A2-4: mode chips visible in search/focus (touches `App.svelte`)
+   - A2-5: mode chips roving radiogroup (touches `Header.svelte`)
+   - A2-6: H1 heading (touches `App.svelte`)
+
+4. **9 BOTH-pattern .js shims in `js/state/selectors/`** — separate retirement target: `animation.js`, `config.js`, `data.js`, `diagnostics.js`, `filter-mode.js`, `navigation.js`, `renderer.js`, `search.js`, `url-state.js`. Verify they are unused, then delete.
+
+5. **Future wave**: delete `js/modules/camera-controls.ts` DEATH-BRIDGE (131 LOC) once consumer rewiring to direct canonical imports is desired. This is the final legacy file.
 
 ### Verification baseline (end of this session)
 
-- test:unit: 652/652 across 60 files (verified post-commit)
-- svelte-check: 22 errors, ALL pre-existing latent in legacy files (out of scope per W14 charter)
-- svelte-bridge-import-contract: 5/5
-- todo-without-ticket-invariant: 2/2
-- commit-purity-invariant: no new violations (soft warning for test file vs w15-search-state scope — chore prefix doesn't trigger the check)
-- ts-js-drift-contract: 90 .ts files inspected, no regression
-- Memory: 99% (audit on disk, blocked on tool quirk)
-
-### W16 #1 pick — ready to execute
-
-The W15 closeout's adjacent-seam ranking identified the next camera retirements:
-
-| File | LOC | Risk | Notes | Status |
-|---|---|---|---|---|
-| `camera-controls-restore.ts` | 200 | LOW | 5 src/ refs; bridge already prepped (91e0fed) | **READY: W16-T-CAM-3 actual retirement** |
-| `camera-controls-core.ts` (kernel) | 130 | LOW | Already partially rewired; effectively dead | Next after restore |
-| `camera-controls-choreography-cursor.ts` | 136 | LOW | Has src/ counterpart | Next after core |
-| `camera-controls-choreography-focus.ts` | 311 | MEDIUM | Has src/ counterpart | After cursor |
-| `camera-controls-choreography-routes.ts` | 342 | MEDIUM | Needs `setFocusTransitionMode` rewire first | Last choreography |
-| `camera-controls.ts` (facade) | 127 | HIGH | 7 kernel importers; full chain retirement per W14 charter | Final punctuation |
-
-**Recommended next action**: Dispatch W16-T-CAM-3 (camera-controls-restore retirement) as a worker. The 91e0fed bridge is in place. Worker should rewire 5+ kernel consumers in `js/modules/*` to import from `@lib/engine/camera-controls-restore-bridge` and delete `js/modules/camera-controls-restore.ts`.
-
-### Recommended session (T0: verify state)
-
-1. **Verify the 3 commits are on origin/master** — `git log --oneline origin/master..HEAD` should be empty.
-2. **Dispatch W16-T-CAM-3 worker** — 200 LOC, LOW risk, well-scoped. Use mimo-v2.5 (opencode-go) per W15 pattern. ~$0.005, 5-10 min runtime.
-3. **Update AGENTS.md if needed** — the W15 closeout's "W16 #1 pick" language should propagate.
-4. **Memory consolidation** — still at 99%, follow-up needed.
-
-### W11 engine port remaining tickets (W11-T9, T10, T11)
-
-- **W11-T9** journey subsystem port (~1,777 LOC untouched, 8 files) — Wave 1 prep in `tmp/w11-t9-prep/`
-- **W11-T10** Three.js render loop — depends on T9
-- **W11-T11** build:legacy retirement — punctuation: `app.ts` + `scripts/build-app.mjs` + `dist/bundle.js` + `package.json:build:legacy` (T11 entry readiness check is now done in 294d857; the remaining T11 work is deleting the legacy build artifacts and the `build:legacy` script)
-
-### Open questions
-
-1. **Should the 5+ W15 rewired consumer files be tested for visual regressions?** The 9d79494 etc commits rewired them mechanically. A spot-check via Playwright would be wise.
-2. **Should the legacy `js/modules/idb-service` be ported in W16?** It's the only legacy module still imported by the new src/lib/search/cache.ts. Port would be a small but isolated ticket.
-3. **What is the next non-camera retirement?** The W14 charter ranked the full file list. Camera is the most natural next arc; after camera, the largest remaining retirements are search/journey/filter legacy modules.
-4. **W13-T5 (delete legacy + unify types)** was the final cleanup in the W13 charter. With W15 closing search and W11-T9 closing journey, T5 is nearly within reach.
+- All gates green
+- Working tree clean
+- Master in sync with origin
+- Memory at ~3% (after failure memory addition)
 
 ### Doctrine refinements from this session
 
-- **DEATH-BRIDGE pattern works** — 502→52 LOC single re-export is a clean retirement signal. TODO marker within the bridge docstring + Wave reference satisfies the TODO invariant.
-- **Auxiliary file bundles are common** — the W15 partial port left 6 untracked files. The pattern is: code in src/ + bridge in src/lib/engine/ + re-export from canonical impl.
-- **"Re-export from wrong submodule" is a real bug class** — `setActiveSearchResultRow` was in `./orchestration` but the canonical home was `./result-renderer`. Always verify the re-export target.
-- **Whitelist rationale matters** — the bridge contract test counts UNEXPECTED dead bridges. Adding a new bridge requires either a consumer (use the bridge) OR a whitelist entry (defer with rationale comment). The W15 pattern is: "W15-T-SEARCH-STATE auxiliary — bridge to semantic-search-...; no consumer yet".
+- **DEATH-BRIDGE pattern** for "delete a file with many consumers" — convert to thin re-export, leave consumers alone. This is the cleanest retirement pattern.
+- **Trust worker off-seam findings** over original prompt scope (Worker B's 10-consumer finding was correct, not the 4 I estimated)
+- **Parallel session staged WIP can be consolidated** into a single follow-up commit
+- **Transient error states in parallel sessions** — wait for commit, don't panic revert
+- **MCP queue saturation is flexible** — 4 dispatches in 2 minutes worked; the 60s guidance is a soft heuristic, not a hard constraint
+
+### Open questions
+
+1. **Should the `js/modules/camera-controls.ts` DEATH-BRIDGE (131 LOC) be deleted?** It's the last legacy camera file. 20+ consumers still import from it. The DEATH-BRIDGE is transparent (executes from canonical), so functionally there's no problem. Deleting it would require rewiring all 20+ consumers.
+2. **Should the 9 BOTH-pattern .js shims in `js/state/selectors/` be verified as dead code and deleted?** They might be artifacts from the BOTH pattern retirement.
+3. **What's the W13-T5b scope estimate?** Based on the 150-error count, ~80 files. 3-5 waves of ~20 files each?
+4. **Memory at 3%** — lots of room. The DEATH-BRIDGE + parallel session consolidation patterns are now documented.
