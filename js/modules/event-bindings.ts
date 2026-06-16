@@ -23,7 +23,7 @@ import { scheduleOnboardingHint } from './bindings/onboarding-bindings.ts';
 import { bindFocusTrapObserver } from './bindings/focus-trap-bindings.ts';
 
 import { buildLegend } from './legend-ui.ts';
-import { syncClusterSectionState } from './cluster-labels.ts';
+import { syncClusterSectionState } from '@lib/ui/cluster-labels';
 
 export function revealSelectedBusinessCard(): void {
     setInfoPanelOpen(true);

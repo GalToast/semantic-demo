@@ -15,7 +15,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const clusterLabelsPath = resolve(CWD, 'js/modules/cluster-labels.ts');
+const clusterLabelsPath = resolve(CWD, 'src/lib/ui/cluster-labels.ts');
 const clustersCssPath  = resolve(CWD, 'css/clusters.css');
 
 // --------------------------------------------------------------------------

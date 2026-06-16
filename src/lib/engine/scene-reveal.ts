@@ -10,7 +10,7 @@ import { appState as state } from '@lib/state/app.svelte.ts';
 import type { SemanticState } from '@lib/state/state-types';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from '../engine/camera-controls';
 import { updateCameraViewportOffset } from './three-engine';
-import { syncClusterSectionState } from '../../../js/modules/cluster-labels';
+import { syncClusterSectionState } from '@lib/ui/cluster-labels';
 import { updateTraversalUi } from '../../../js/modules/journey';
 import { getViewportSize, prefersReducedMotion, isMobileViewport } from '@lib/utils/environment';
 

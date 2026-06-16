@@ -50,7 +50,7 @@ const MODULES = {
     strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.ts'),
     journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.ts'),
     journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.ts'),
-    clusterLabels: path.join(SEMDEMO_ROOT, 'js/modules/cluster-labels.ts'),
+    clusterLabels: path.join(SEMDEMO_ROOT, 'src/lib/ui/cluster-labels.ts'),
     audio: path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.ts'),
     viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts'),
     navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.ts'),
@@ -769,8 +769,8 @@ function testJourneyArrivalHandoffDewindowed() {
     )
     assert(
         threeSetupSrc.includes("from '@lib/engine/route-arrival-overlay-bridge'") &&
-            threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow);') &&
-            threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow);'),
+            threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow)') &&
+            threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)'),
         'three-engine.js should update route/arrival overlays through the adapter'
     )
     assert(
@@ -833,7 +833,7 @@ function testInspectedStrandTopLevelBridgesRetired() {
         'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.ts'
     )
     assert(
-        threeSetupSrc.includes('_inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow);'),
+        threeSetupSrc.includes('_inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)'),
         'three-engine.js should update inspected strand overlay through the adapter'
     )
     assert(
@@ -1064,7 +1064,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'three-engine.js should import the camera-controls bridge'
     )
     assert(
-        threeSetupSrc.includes('_cameraControls?.applySemanticCentroidCamera(frameNow);'),
+        threeSetupSrc.includes('_cameraControls?.applySemanticCentroidCamera(frameNow)'),
         'three-engine.js should call applySemanticCentroidCamera through the camera-controls bridge during the animation loop'
     )
     assert(
