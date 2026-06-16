@@ -285,7 +285,7 @@ async function testGetAnchorPointViaAdapter() {
 async function testPayloadHelpersHonorExplicitSummary() {
   console.log('\n[RUNTIME] payload helpers — honor explicit summary arguments');
 
-  const { state, withStateMutation } = await import('../js/state.ts');
+  const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
   const {
     getSemanticGuidePayloadResults,
     getSemanticGuideAnchorPoint
@@ -328,7 +328,7 @@ async function testPayloadHelpersHonorExplicitSummary() {
 async function testSearchContextSnapshotReturnsCurrentState() {
   console.log('\n[RUNTIME] getSearchContextSnapshot — returns current state values');
 
-  const { state, withStateMutation } = await import('../js/state.ts');
+  const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
   const { getSearchContextSnapshot } = await import('../js/modules/semantic-guide-payload-adapter.ts');
 
   // Set up state

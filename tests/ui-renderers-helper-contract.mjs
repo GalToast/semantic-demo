@@ -9,7 +9,7 @@ import './helpers/node-window-shim.mjs';
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { state } from '../js/state.ts';
+import { state } from '../src/lib/engine/state-bridge.ts';
 import {
   buildSelectedMatchNarrative,
   getInterestingBusinessNote

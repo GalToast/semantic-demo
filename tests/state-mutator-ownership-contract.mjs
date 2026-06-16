@@ -39,22 +39,25 @@ function collectJsFiles(dir) {
   return files;
 }
 
-const stateSrc = read('js/state.ts');
-const stateShimSrc = read('js/state.ts');
+const appStateSrc = read('src/lib/state/app.svelte.ts');
+const stateBridgeSrc = read('src/lib/engine/state-bridge.ts');
 const mutatorSrc = read('js/modules/state-mutators.ts');
 const withStateMutationSrc = read('src/lib/state/with-state-mutation.ts');
 
-const combinedStateSrc = stateSrc + '\n' + stateShimSrc + '\n' + withStateMutationSrc;
+const combinedStateSrc = appStateSrc + '\n' + stateBridgeSrc + '\n' + withStateMutationSrc;
 
 assert(
   /export\s+function\s+withStateMutation\s*\(/.test(combinedStateSrc) ||
-  /export\s*\{\s*withStateMutation,/.test(combinedStateSrc),
-  'state.js must export withStateMutation()'
+  /export\s*\{[\s\S]*\bwithStateMutation\b[\s\S]*\}/.test(combinedStateSrc),
+  'canonical state bridge must export withStateMutation()'
 );
-assert(/export\s+const\s+state(?:\s*:\s*[^=]+)?\s*=\s*new\s+Proxy\s*\(/.test(combinedStateSrc), 'state.js must expose state through a proxy');
+assert(
+  /export\s+const\s+state\s*=\s*appState/.test(stateBridgeSrc),
+  'state bridge must expose appState as the compatibility state export'
+);
 
 for (const field of OWNED_FIELDS) {
-  assert(combinedStateSrc.includes(`'${field}'`), `state.js critical-key set should include ${field}`);
+  assert(combinedStateSrc.includes(`'${field}'`), `mutation critical-key set should include ${field}`);
 }
 
 for (const exportName of EXPECTED_EXPORTS) {
@@ -65,8 +68,8 @@ for (const exportName of EXPECTED_EXPORTS) {
 }
 
 assert(
-  /import\s+\{[^}]*\bstate\b[^}]*\bwithStateMutation\b[^}]*\}\s+from\s+['"]\.\.\/state\.(?:js|ts)['"]/.test(mutatorSrc),
-  'state-mutators.js must be the module boundary that imports withStateMutation()'
+  /import\s+\{[^}]*\bstate\b[^}]*\bwithStateMutation\b[^}]*\}\s+from\s+['"]@lib\/engine\/state-bridge['"]/.test(mutatorSrc),
+  'state-mutators.ts must import state and withStateMutation from the canonical state bridge'
 );
 
 const offenders = [];

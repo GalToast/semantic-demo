@@ -115,6 +115,7 @@ export interface AdapterDeps {
   journeySelectedCard: {
     getStrandArrivalNote: (...args: unknown[]) => unknown;
     updateTraversalUi: (...args: unknown[]) => void;
+    hydrateLeadContext: (point: unknown, options?: Record<string, unknown>) => void;
   };
   /** 4-function deps bag for thread inspector */
   threadInspector: ThreadInspectorDeps;
@@ -158,7 +159,7 @@ export function initAdapters(deps: AdapterDeps): void {
   // 3. Journey compass adapter (view-switch)
   initJourneyCompassAdapter({ switchView: deps.switchView });
 
-  // 4. Journey selected card adapter (2 deps)
+  // 4. Journey selected card adapter (3 deps)
   initJourneySelectedCard(deps.journeySelectedCard);
 
   // 5. Semantic dive UI subscriptions (no deps)

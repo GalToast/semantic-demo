@@ -123,7 +123,7 @@ function ds(key) {
 
 // ── Import modules ─────────────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('../js/state.ts');
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 
 // We call refreshCompositionState() directly — it lives in lifecycle.js and is
 // exported as a named export.

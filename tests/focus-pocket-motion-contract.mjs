@@ -90,7 +90,7 @@ globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame.bind(gl
 // modules run their top-level browser debug exports.
 // ---------------------------------------------------------------------------
 
-const { state, withStateMutation } = await import('../js/state.ts');
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 const {
   getFocusConstellationViewportProfile,
   getFocusConstellationPlacement,

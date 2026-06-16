@@ -132,7 +132,7 @@ function rejectFetch(reason) {
 // State helper
 // ---------------------------------------------------------------------------
 
-const { state } = await import('../js/state.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 
 function resetState() {
   state.currentSearchSummary = null;

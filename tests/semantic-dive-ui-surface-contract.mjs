@@ -64,7 +64,7 @@ globalThis.document = {
 
 let state, withStateMutation, initJourneyLifecycleAdapter, syncSemanticDiveUi;
 try {
-  ({ state, withStateMutation } = await import('../js/state.ts'));
+  ({ state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts'));
   ({ initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.ts'));
   ({ syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.ts'));
 } catch (err) {

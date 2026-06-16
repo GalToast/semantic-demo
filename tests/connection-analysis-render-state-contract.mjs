@@ -143,7 +143,7 @@ function rejectFetch(reason) {
 // State + adapter import
 // ---------------------------------------------------------------------------
 
-const { state } = await import('../js/state.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 const {
   getConnectionStateSnapshot,
 } = await import('../js/modules/connection-analysis-adapter.ts');

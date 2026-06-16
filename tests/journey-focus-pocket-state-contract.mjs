@@ -32,7 +32,7 @@ globalThis.performance = globalThis.window.performance;
 globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
-const { state, withStateMutation } = await import('../js/state.ts');
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 const {
   getFocusPocketIndices,
   setFocusPocketIndices,

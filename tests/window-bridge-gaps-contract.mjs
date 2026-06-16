@@ -35,7 +35,7 @@ const EVENT_BINDINGS_PATH = resolveSource('js/modules/event-bindings.ts', SEMDEM
 const CAMERA_CONTROLS_PATH = resolveSource('js/modules/camera-controls.ts', SEMDEMO_ROOT);
 const SEARCH_STATE_PATH = resolveSource('js/modules/search-state.ts', SEMDEMO_ROOT);
 const SEARCH_ORCHESTRATION_PATH = resolveSource('src/lib/search/orchestration.ts', SEMDEMO_ROOT);
-const APP_PATH = resolveSource('js/modules/app.ts', SEMDEMO_ROOT);
+const APP_PATH = resolveSource('src/lib/orchestration/adapters.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -147,7 +147,7 @@ function testGap3a_hydrateLeadContext() {
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
   const selectedCardSrc = fs.readFileSync(JOURNEY_SELECTED_CARD_PATH, 'utf-8');
-  const appSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/modules/app.ts'), 'utf-8');
+  const appSrc = fs.readFileSync(APP_PATH, 'utf-8');
 
   assert(
     /export\s+function\s+hydrateLeadContext\s*\(/.test(lifecycleSrc),

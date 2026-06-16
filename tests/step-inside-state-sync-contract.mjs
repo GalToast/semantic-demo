@@ -66,7 +66,7 @@ Object.defineProperty(globalThis, 'navigator', {
 });
 
 // Now safe to import modules
-const { state, withStateMutation } = await import('../js/state.ts');
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 const { setSemanticDiveMode, refreshCompositionState } = await import('../js/modules/lifecycle.ts');
 
 function resetState() {

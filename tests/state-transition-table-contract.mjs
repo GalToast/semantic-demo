@@ -16,11 +16,14 @@ import path from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const ROOT = process.cwd();
-const stateSrc = fs.readFileSync(resolveSource('js/state.ts', ROOT), 'utf8');
+const appStateSrc = fs.readFileSync(resolveSource('src/lib/state/app.svelte.ts', ROOT), 'utf8');
+const stateTypesSrc = fs.readFileSync(resolveSource('src/lib/state/state-types.ts', ROOT), 'utf8');
+const stateSrc = `${appStateSrc}\n${stateTypesSrc}`;
 const configSrc = fs.readFileSync(resolveSource('js/modules/config.ts', ROOT), 'utf8');
 const lifecycleSrc = fs.readFileSync(resolveSource('js/modules/lifecycle.ts', ROOT), 'utf8');
 const lifecycleModesSrc = fs.readFileSync(resolveSource('js/modules/lifecycle-modes.ts', ROOT), 'utf8');
 const navigationStateSrc = fs.readFileSync(resolveSource('js/modules/navigation-state.ts', ROOT), 'utf8');
+const navigationActionsSrc = fs.readFileSync(resolveSource('src/lib/navigation-actions.ts', ROOT), 'utf8');
 const urlStateSrc = fs.readFileSync(resolveSource('js/modules/url-state.ts', ROOT), 'utf8');
 
 function assert(condition, message) {
@@ -64,8 +67,13 @@ console.log('CONTRACT 1: JOURNEY_COMPASS_PHASE_ORDER');
 // JOURNEY_COMPASS_PHASE_ORDER may be a standalone export or a property of the state object.
 const phaseOrderExport = extractExportedObject(stateSrc, 'JOURNEY_COMPASS_PHASE_ORDER');
 const phaseOrderProp = /JOURNEY_COMPASS_PHASE_ORDER\s*:\s*\[([^\]]+)\]/.exec(stateSrc);
-const phaseOrder = phaseOrderExport || (phaseOrderProp ? phaseOrderProp[1] : null);
-assert(phaseOrder, 'JOURNEY_COMPASS_PHASE_ORDER must be defined in state.ts');
+const phaseOrderState = /JOURNEY_COMPASS_PHASE_ORDER\s*=\s*\$state(?:<[^>]+>)?\(\s*\[([^\]]+)\]/.exec(stateSrc);
+const phaseOrderConfig = /JOURNEY_COMPASS_PHASE_ORDER\s*:\s*\[([^\]]+)\]/.exec(configSrc);
+const phaseOrder = phaseOrderExport ||
+  (phaseOrderProp ? phaseOrderProp[1] : null) ||
+  (phaseOrderState ? phaseOrderState[1] : null) ||
+  (phaseOrderConfig ? phaseOrderConfig[1] : null);
+assert(phaseOrder, 'JOURNEY_COMPASS_PHASE_ORDER must be defined in canonical state');
 assert(phaseOrder.includes("'overview'") || phaseOrder.includes('"overview"'), 'phase order includes overview');
 assert(phaseOrder.includes("'search'") || phaseOrder.includes('"search"'), 'phase order includes search');
 assert(phaseOrder.includes("'focus'") || phaseOrder.includes('"focus"'), 'phase order includes focus');
@@ -179,7 +187,7 @@ console.log('CONTRACT 17: FOCUS_CONSTELLATION_MOTIFS');
 const motifs = extractExportedObject(stateSrc, 'FOCUS_CONSTELLATION_MOTIFS') ||
   extractExportedObject(configSrc, 'FOCUS_CONSTELLATION_MOTIFS') ||
   extractObjectPropertyBlock(configSrc, 'FOCUS_CONSTELLATION_MOTIFS');
-assert(motifs, 'FOCUS_CONSTELLATION_MOTIFS must be exported from state.js or config.ts');
+assert(motifs, 'FOCUS_CONSTELLATION_MOTIFS must be exported from canonical state or config.ts');
 const motifKeys = ['rosette', 'lattice', 'delta', 'market', 'civic'];
 for (const k of motifKeys) {
   assert(motifs.includes(`'${k}'`) || motifs.includes(`"${k}"`) || motifs.includes(`${k}:`),
@@ -335,8 +343,10 @@ console.log('  PASS');
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 35: NAV_TRANSITION_ACTIONS');
 assert(lifecycleSrc.includes('NAV_TRANSITION_ACTIONS'), 'lifecycle.js must expose NAV_TRANSITION_ACTIONS facade');
-assert(/export\s+const\s+NAV_TRANSITION_ACTIONS\s*=\s*Object\.freeze/.test(navigationStateSrc),
-  'navigation-state.js must own NAV_TRANSITION_ACTIONS');
+assert(/export\s+const\s+NAV_TRANSITION_ACTIONS\s*=\s*Object\.freeze/.test(navigationActionsSrc),
+  'navigation-actions.ts must own NAV_TRANSITION_ACTIONS');
+assert(/export\s*\{\s*NAV_TRANSITION_ACTIONS\s*\}/.test(navigationStateSrc),
+  'navigation-state.js must re-export NAV_TRANSITION_ACTIONS');
 const requiredActions = ['FOCUS_NODE', 'SET_DEPTH', 'WALK_TO', 'BACKTRACK', 'RESET_FOCUS', 'RESET_EXPERIENCE', 'ENTER_INSIDE', 'EXIT_INSIDE', 'RESTORE_EXPLORATION_HISTORY'];
 for (const a of requiredActions) {
   assert(navigationStateSrc.includes(`${a}:`) || navigationStateSrc.includes(`'${a}'`) || navigationStateSrc.includes(`"${a}"`),

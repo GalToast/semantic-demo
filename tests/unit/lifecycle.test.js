@@ -35,7 +35,7 @@ vi.mock('../../js/modules/environment.js', () => ({
 }));
 
 vi.mock('../../js/state', () => stateMock);
-vi.mock('../../js/state.ts', () => stateMock);
+vi.mock('../../src/lib/engine/state-bridge.ts', () => stateMock);
 
 // Mock the internal methods that setMyceliumMode calls
 vi.mock('../../js/modules/journey-point-color.js', () => ({

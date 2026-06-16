@@ -1,14 +1,16 @@
 /**
- * @lib/engine/three-engine.ts — Three.js engine orchestration
+ * @lib/engine/three-engine.ts — Canonical Three.js engine orchestration
  *
- * Port of js/modules/three-engine.ts.
+ * Single source of truth for the WebGL render loop, scene lifecycle, and
+ * renderer management.  Legacy `js/modules/three-engine.ts` was deleted in
+ * W13-T5b Wave 7 (commit 00eb691).
  *
- * Preserves the exact public API of the legacy module:
+ * Public API:
  *   initThreeJS, deinit, animate, onWindowResize, cancelAnimate,
  *   getSceneRenderableDiagnostics, updateCameraViewportOffset,
  *   plus re-exported helpers from legacy modules.
  *
- * Legacy module dependencies are lazy-loaded at module init time via
+ * Remaining legacy module dependencies are lazy-loaded at module init time via
  * _ensureModules(). Exported functions are synchronous with defensive guards.
  */
 

@@ -39,8 +39,8 @@ const MODULES = {
     searchState: path.join(SEMDEMO_ROOT, 'js/modules/search-state.ts'),
     eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.ts'),
     sceneReveal: path.join(SEMDEMO_ROOT, 'src/lib/engine/scene-reveal.ts'),
-    app: path.join(SEMDEMO_ROOT, 'js/modules/app.ts'),
-    appRuntime: path.join(SEMDEMO_ROOT, 'js/modules/app.ts'),
+    app: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
+    appRuntime: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
     mapState: path.join(SEMDEMO_ROOT, 'js/modules/map-state.ts'),
     clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts'),
     journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts'),
@@ -61,7 +61,7 @@ const MODULES = {
     mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.ts'),
     inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/inspected-strand-overlay-adapter.ts'),
     routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/route-arrival-overlay-adapter.ts'),
-    threeSetup: path.join(SEMDEMO_ROOT, 'js/modules/three-engine.ts'),
+    threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine.ts'),
     threeSearchAnimations: path.join(SEMDEMO_ROOT, 'js/modules/three-search-animations.ts'),
     threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.ts')
 }
@@ -768,10 +768,9 @@ function testJourneyArrivalHandoffDewindowed() {
         'journey-webgl.js should register route/arrival overlay frame updaters with the adapter'
     )
     assert(
-        (threeSetupSrc.includes("from './route-arrival-overlay-adapter.ts'") ||
-            threeSetupSrc.includes("from '@lib/journey/route-arrival-overlay-adapter'")) &&
-            threeSetupSrc.includes('updateRouteTraceOverlayFrame(frameNow);') &&
-            threeSetupSrc.includes('updateArrivalHandoffOverlayFrame(frameNow);'),
+        threeSetupSrc.includes("from '@lib/engine/route-arrival-overlay-bridge'") &&
+            threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow);') &&
+            threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow);'),
         'three-engine.js should update route/arrival overlays through the adapter'
     )
     assert(
@@ -830,13 +829,11 @@ function testInspectedStrandTopLevelBridgesRetired() {
         'journey/thread-settler modules must not call window.syncInspectedStrandOverlay'
     )
     assert(
-        threeSetupSrc.includes(
-            "import { updateInspectedStrandOverlayFrame } from './inspected-strand-overlay-adapter.ts';"
-        ),
+        threeSetupSrc.includes("from '@lib/engine/inspected-strand-overlay-bridge'"),
         'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.ts'
     )
     assert(
-        threeSetupSrc.includes('updateInspectedStrandOverlayFrame(frameNow);'),
+        threeSetupSrc.includes('_inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow);'),
         'three-engine.js should update inspected strand overlay through the adapter'
     )
     assert(
@@ -923,7 +920,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
         'three-engine.js must not expose the retired window.applyMapFlatteningLayout bridge'
     )
     assert(
-        /import\s+\{\s*state(?:\s+as\s+_state)?\s*\}\s+from\s+['"]\.\.\/state\.ts['"]/.test(mapFlatteningLayoutSrc) &&
+        /import\s+\{\s*state(?:\s+as\s+_state)?\s*\}\s+from\s+['"]@lib\/engine\/state-bridge['"]/.test(mapFlatteningLayoutSrc) &&
             /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
         'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
     )
@@ -988,9 +985,9 @@ function testCanvasPickGlobalsRetiredFromWindow() {
         }
     }
 
-    const stateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'js/state.ts'), 'utf-8')
+    const stateSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'src/lib/state/app.svelte.ts'), 'utf-8')
     for (const name of ['lastCanvasNodePick', 'lastCanvasNodeHover', 'lastCanvasNodeFocusPick']) {
-        assert(stateSrc.includes(`${name}: null`), `state.js should own ${name} diagnostic state`)
+        assert(stateSrc.includes(`${name} = $state`), `AppState should own ${name} diagnostic state`)
     }
 
     assert(
@@ -1063,14 +1060,12 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'camera-controls.js must not expose window.applySemanticCentroidCamera'
     )
     assert(
-        /import\s+\{[^}]*\bapplySemanticCentroidCamera\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/camera-controls)['"]/.test(
-            threeSetupSrc
-        ),
-        'three-engine.js should import applySemanticCentroidCamera directly from camera-controls.ts'
+        threeSetupSrc.includes("from '@lib/engine/camera-controls'"),
+        'three-engine.js should import the camera-controls bridge'
     )
     assert(
-        threeSetupSrc.includes('applySemanticCentroidCamera(frameNow);'),
-        'three-engine.js should call applySemanticCentroidCamera directly during the animation loop'
+        threeSetupSrc.includes('_cameraControls?.applySemanticCentroidCamera(frameNow);'),
+        'three-engine.js should call applySemanticCentroidCamera through the camera-controls bridge during the animation loop'
     )
     assert(
         !threeSetupSrc.includes('window.applySemanticCentroidCamera'),

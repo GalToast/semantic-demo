@@ -11,7 +11,7 @@ globalThis.window = {
   getRouteEmbodimentIndices: () => [],
 };
 
-const { state, withStateMutation } = await import('../js/state.ts');
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 const {
   getFocusedJourneyPoint,
   getJourneyCompassState,

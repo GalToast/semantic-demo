@@ -96,7 +96,7 @@ function ds(key) {
 
 /* ─── Imports ─────────────────────────────────────────────────────────────────── */
 
-const { state } = await import('../js/state.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 const { refreshCompositionState, updateExplorationUi } = await import('../js/modules/lifecycle.ts');
 const { setStrandContinuityState, clearStrandContinuityState } = await import('../js/modules/journey.ts');
 const { setTerrainHandoffState, getRouteDirectorState, syncRouteDirectorState } = await import('../js/modules/map-state.ts');

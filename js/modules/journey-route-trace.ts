@@ -2,12 +2,12 @@
  * journey-route-trace.ts — TypeScript shadow of journey-route-trace.js
  * Route trace overlay rendering, subscriptions, and frame updates.
  */
-import { state } from '@lib/engine/state-bridge';
+import { state } from '@lib/engine/state-bridge'
 
-import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
-import * as THREE from 'three';
-import { isPointVisible } from './utils/geo-data.ts';
-import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
+import * as THREE from 'three'
+import { isPointVisible } from './utils/geo-data.ts'
+import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens'
 import {
     ROUTE_TRACE_SEGMENT_STEPS,
     getLineSegmentCount,
@@ -15,9 +15,9 @@ import {
     getNodeVector,
     getArcPoint,
     pushArcSegments
-} from './journey-webgl-utils.ts';
-import { debounceRAF } from './utils/timer-utils.ts';
-import { appState } from '@lib/state/app.svelte';
+} from './journey-webgl-utils.ts'
+import { debounceRAF } from './utils/timer-utils.ts'
+import { appState } from '@lib/state/app.svelte'
 
 // ShaderMaterial with glow effect for route trace lines (LineSegments-based overview lines)
 function buildRouteTraceMaterial(): THREE.ShaderMaterial {
@@ -77,11 +77,11 @@ function buildRouteTraceMaterial(): THREE.ShaderMaterial {
         depthWrite: false,
         depthTest: false,
         blending: THREE.AdditiveBlending
-    });
+    })
 }
 
 export function resetRouteTraceDiagnostics(reason: string = 'inactive'): void {
-    (state as any).routeTraceDiagnostics = {
+    ;(state as any).routeTraceDiagnostics = {
         active: false,
         reason,
         phase: document.body?.dataset?.journeyPhase || 'overview',
@@ -91,111 +91,117 @@ export function resetRouteTraceDiagnostics(reason: string = 'inactive'): void {
         anchorIndex: null,
         mapPointCount: (state as any).routeTraceDiagnostics?.mapPointCount || 0,
         mapPathActive: !!(state as any).routeTraceDiagnostics?.mapPathActive
-    };
+    }
 }
 
 export function removeRouteTraceOverlay(): void {
-    if (!(state as any).routeTraceLines) return;
-    if ((state as any).myceliumGroup) (state as any).myceliumGroup.remove((state as any).routeTraceLines);
-    disposeLineObject((state as any).routeTraceLines);
-    (state as any).routeTraceLines = null;
-    (state as any).routeTraceConnectionPairs = [];
+    if (!(state as any).routeTraceLines) return
+    if ((state as any).myceliumGroup) (state as any).myceliumGroup.remove((state as any).routeTraceLines)
+    disposeLineObject((state as any).routeTraceLines)
+    ;(state as any).routeTraceLines = null
+    ;(state as any).routeTraceConnectionPairs = []
 }
 
 function getRouteEmbodimentIndices(): number[] {
-    const indices: number[] = [];
+    const indices: number[] = []
     const push = (index: number): void => {
-        if (!Number.isFinite(index) || index < 0 || index >= appState.points.length) return;
-        if (!indices.includes(index)) indices.push(index);
-    };
-    if (Number.isFinite(appState.navState.focusedIndex)) push(appState.navState.focusedIndex!);
-    (appState.navState.walkHistoryIndices || []).forEach(push);
-    const summary = appState.currentSearchSummary as any;
-    if (summary?.anchorIndex !== undefined) push(summary.anchorIndex);
-    (summary?.resultIndices || []).slice(0, 7).forEach(push);
-    (appState.navState.threadCandidates || []).slice(0, 6).forEach((candidate: any) => push(candidate?.index));
-    return indices;
+        if (!Number.isFinite(index) || index < 0 || index >= appState.points.length) return
+        if (!indices.includes(index)) indices.push(index)
+    }
+    if (Number.isFinite(appState.navState.focusedIndex)) push(appState.navState.focusedIndex!)
+    ;(appState.navState.walkHistoryIndices || []).forEach(push)
+    const summary = appState.currentSearchSummary as any
+    if (summary?.anchorIndex !== undefined) push(summary.anchorIndex)
+    ;(summary?.resultIndices || []).slice(0, 7).forEach(push)
+    ;(appState.navState.threadCandidates || []).slice(0, 6).forEach((candidate: any) => push(candidate?.index))
+    return indices
 }
 
 export function setRouteChoreographyPhase(phase: string = 'overview', details: Record<string, unknown> = {}): void {
-    (state as any).routeChoreographyState = {
+    ;(state as any).routeChoreographyState = {
         ...((state as any).routeChoreographyState || {}),
         ...details,
         phase,
         reason: details.reason || (state as any).routeChoreographyState?.reason || 'state',
         startedAt: performance.now()
-    };
-    if (document.body?.dataset) {
-        (document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? phase : 'inactive';
     }
-    refreshRouteTraceOverlay({ reason: details.reason || phase });
+    if (document.body?.dataset) {
+        ;(document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? phase : 'inactive'
+    }
+    refreshRouteTraceOverlay({ reason: details.reason || phase })
 }
 
 export function initRouteTraceSubscriptions(): void {
     // Phase 3: Declarative synchronization
-    const sync = (payload: Record<string, unknown> = {}): void => refreshRouteTraceOverlay(payload);
-    subscribeKeyed('route-trace:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync);
-    subscribeKeyed('route-trace:search-success', EVENTS.SEARCH_SUCCESS, sync);
-    subscribeKeyed('route-trace:search-cleared', EVENTS.SEARCH_CLEARED, sync);
-    subscribeKeyed('route-trace:view-changed', EVENTS.VIEW_CHANGED, sync);
-    subscribeKeyed('route-trace:state-reset', EVENTS.STATE_RESET, sync);
-    subscribeKeyed('route-trace:filter-changed', EVENTS.FILTER_CHANGED, sync);
-    subscribeKeyed('route-trace:composition-updated', EVENTS.COMPOSITION_UPDATED, sync);
-    subscribeKeyed('route-trace:transition-phase-changed', EVENTS.TRANSITION_PHASE_CHANGED, (payload: Record<string, unknown>) => {
-        setRouteChoreographyPhase(payload.phase as string, (payload.details as Record<string, unknown>) || {});
-    });
-    subscribeKeyed('route-trace:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync);
+    const sync = (payload: Record<string, unknown> = {}): void => refreshRouteTraceOverlay(payload)
+    subscribeKeyed('route-trace:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync)
+    subscribeKeyed('route-trace:search-success', EVENTS.SEARCH_SUCCESS, sync)
+    subscribeKeyed('route-trace:search-cleared', EVENTS.SEARCH_CLEARED, sync)
+    subscribeKeyed('route-trace:view-changed', EVENTS.VIEW_CHANGED, sync)
+    subscribeKeyed('route-trace:state-reset', EVENTS.STATE_RESET, sync)
+    subscribeKeyed('route-trace:filter-changed', EVENTS.FILTER_CHANGED, sync)
+    subscribeKeyed('route-trace:composition-updated', EVENTS.COMPOSITION_UPDATED, sync)
+    subscribeKeyed(
+        'route-trace:transition-phase-changed',
+        EVENTS.TRANSITION_PHASE_CHANGED,
+        (payload: Record<string, unknown>) => {
+            setRouteChoreographyPhase(payload.phase as string, (payload.details as Record<string, unknown>) || {})
+        }
+    )
+    subscribeKeyed('route-trace:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync)
 }
 
 function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): void {
-    removeRouteTraceOverlay();
+    removeRouteTraceOverlay()
     if (!appState.myceliumGroup || appState.currentView !== 'galaxy') {
-        resetRouteTraceDiagnostics('inactive-view');
-        return;
+        resetRouteTraceDiagnostics('inactive-view')
+        return
     }
-    const indices = getRouteEmbodimentIndices().filter((index: number) => isPointVisible(index, appState.points, null, appState.activeFilters));
-    const rawAnchor = Number.isFinite(appState.navState.focusedIndex) ? appState.navState.focusedIndex : indices[0];
+    const indices = getRouteEmbodimentIndices().filter((index: number) =>
+        isPointVisible(index, appState.points, null, appState.activeFilters)
+    )
+    const rawAnchor = Number.isFinite(appState.navState.focusedIndex) ? appState.navState.focusedIndex : indices[0]
     if (!Number.isFinite(rawAnchor) || indices.length < 2) {
-        resetRouteTraceDiagnostics(indices.length ? 'single-node' : 'not-built');
-        return;
+        resetRouteTraceDiagnostics(indices.length ? 'single-node' : 'not-built')
+        return
     }
-    const anchorIndex = rawAnchor as number;
+    const anchorIndex = rawAnchor as number
 
-    const routeColor = new THREE.Color(ROUTE_TRACE_COLORS.route);
-    const cueColor = new THREE.Color(ROUTE_TRACE_COLORS.cue);
-    const positions: number[] = [];
-    const colors: number[] = [];
-    let edgeCount = 0;
-    let segmentCount = 0;
+    const routeColor = new THREE.Color(ROUTE_TRACE_COLORS.route)
+    const cueColor = new THREE.Color(ROUTE_TRACE_COLORS.cue)
+    const positions: number[] = []
+    const colors: number[] = []
+    let edgeCount = 0
+    let segmentCount = 0
     indices.forEach((index: number, order: number) => {
-        if (index === anchorIndex) return;
-        const color = order <= 2 ? cueColor : routeColor;
-        const side = (order % 3) - 1;
-        const added = pushArcSegments(positions, colors, anchorIndex, index, color, { lift: 0.11, side });
+        if (index === anchorIndex) return
+        const color = order <= 2 ? cueColor : routeColor
+        const side = (order % 3) - 1
+        const added = pushArcSegments(positions, colors, anchorIndex, index, color, { lift: 0.11, side })
         if (added) {
-            edgeCount += 1;
-            segmentCount += added;
+            edgeCount += 1
+            segmentCount += added
         }
-    });
+    })
     if (!segmentCount) {
-        resetRouteTraceDiagnostics('empty');
-        return;
+        resetRouteTraceDiagnostics('empty')
+        return
     }
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    const material = buildRouteTraceMaterial();
+    const geometry = new THREE.BufferGeometry()
+    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3))
+    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3))
+    const material = buildRouteTraceMaterial()
     if (appState.semanticDiveMode) {
-        (material.uniforms as any).baseOpacity.value = 0.34;
-        (material.uniforms as any).opacity.value = 0.34;
+        ;(material.uniforms as any).baseOpacity.value = 0.34
+        ;(material.uniforms as any).opacity.value = 0.34
     }
-    (state as any).routeTraceLines = new THREE.LineSegments(geometry, material);
-    (state as any).routeTraceConnectionPairs = indices
+    ;(state as any).routeTraceLines = new THREE.LineSegments(geometry, material)
+    ;(state as any).routeTraceConnectionPairs = indices
         .filter((index: number) => index !== anchorIndex)
-        .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }));
-    (state as any).myceliumGroup.add((state as any).routeTraceLines);
-    (state as any).routeTraceDiagnostics = {
+        .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }))
+    ;(state as any).myceliumGroup.add((state as any).routeTraceLines)
+    ;(state as any).routeTraceDiagnostics = {
         active: true,
         reason: options.reason || (state as any).routeChoreographyState?.reason || 'route',
         phase: document.body?.dataset?.journeyPhase || (state as any).routeChoreographyState?.phase || 'focus',
@@ -205,44 +211,44 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         anchorIndex,
         mapPointCount: (state as any).routeTraceDiagnostics?.mapPointCount || 0,
         mapPathActive: !!(state as any).routeTraceDiagnostics?.mapPathActive
-    };
+    }
     if (document.body?.dataset) {
-        (document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? 'focus' : 'inactive';
+        ;(document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? 'focus' : 'inactive'
     }
 }
 
 export function updateRouteTraceOverlayPositions(now: number = performance.now()): void {
-    const line = (state as any).routeTraceLines;
-    const pairs = (state as any).routeTraceConnectionPairs || [];
-    if (!line?.geometry?.attributes?.position || !pairs.length) return;
-    const positions = line.geometry.attributes.position.array;
-    let offset = 0;
+    const line = (state as any).routeTraceLines
+    const pairs = (state as any).routeTraceConnectionPairs || []
+    if (!line?.geometry?.attributes?.position || !pairs.length) return
+    const positions = line.geometry.attributes.position.array
+    let offset = 0
     pairs.forEach((pair: { a: number; b: number; side: number }) => {
-        const from = getNodeVector(pair.a);
-        const to = getNodeVector(pair.b);
-        if (!from || !to) return;
+        const from = getNodeVector(pair.a)
+        const to = getNodeVector(pair.b)
+        if (!from || !to) return
         for (let segment = 0; segment < ROUTE_TRACE_SEGMENT_STEPS; segment += 1) {
-            const p0 = getArcPoint(from, to, segment / ROUTE_TRACE_SEGMENT_STEPS, 0.11, pair.side);
-            const p1 = getArcPoint(from, to, (segment + 1) / ROUTE_TRACE_SEGMENT_STEPS, 0.11, pair.side);
+            const p0 = getArcPoint(from, to, segment / ROUTE_TRACE_SEGMENT_STEPS, 0.11, pair.side)
+            const p1 = getArcPoint(from, to, (segment + 1) / ROUTE_TRACE_SEGMENT_STEPS, 0.11, pair.side)
             if (p0 && p1) {
-                positions[offset++] = p0.x;
-                positions[offset++] = p0.y;
-                positions[offset++] = p0.z;
-                positions[offset++] = p1.x;
-                positions[offset++] = p1.y;
-                positions[offset++] = p1.z;
+                positions[offset++] = p0.x
+                positions[offset++] = p0.y
+                positions[offset++] = p0.z
+                positions[offset++] = p1.x
+                positions[offset++] = p1.y
+                positions[offset++] = p1.z
             }
         }
-    });
-    line.geometry.attributes.position.needsUpdate = true;
+    })
+    line.geometry.attributes.position.needsUpdate = true
     // Update ShaderMaterial uniforms for glow animation
     if (line.material?.uniforms) {
-        line.material.uniforms.time.value = now / 1000;
-        const targetOpacity = (state as any).semanticDiveMode ? 0.34 : 0.22;
-        line.material.uniforms.baseOpacity.value = targetOpacity;
-        line.material.uniforms.opacity.value = targetOpacity;
+        line.material.uniforms.time.value = now / 1000
+        const targetOpacity = (state as any).semanticDiveMode ? 0.34 : 0.22
+        line.material.uniforms.baseOpacity.value = targetOpacity
+        line.material.uniforms.opacity.value = targetOpacity
     }
-    (state as any).routeTraceDiagnostics.segmentCount = getLineSegmentCount(line);
+    ;(state as any).routeTraceDiagnostics.segmentCount = getLineSegmentCount(line)
 }
 
-export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw);
+export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw)

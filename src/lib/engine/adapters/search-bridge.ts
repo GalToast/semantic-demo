@@ -29,7 +29,7 @@ import { setSearchGlow, clearSearchGlow } from '@lib/stores/search.svelte';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 
-import { animateCameraToSearchCorridor as _animateCameraToSearchCorridor } from '../camera-controls';
+import { animateCameraToSearchCorridor as _animateCameraToSearchCorridor } from '@lib/engine/camera-choreography';
 
 // ── Pure Helpers ─────────────────────────────────────────────────────────────
 

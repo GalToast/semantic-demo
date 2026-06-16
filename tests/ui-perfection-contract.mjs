@@ -6,7 +6,7 @@
  * 2. Smartpagination reveal (automatic scrolling).
  */
 
-import { state, withStateMutation } from '../js/state.ts';
+import { state, withStateMutation } from '../src/lib/engine/state-bridge.ts';
 
 function assert(condition, message) {
   if (!condition) throw new Error('ASSERTION FAILED: ' + message);

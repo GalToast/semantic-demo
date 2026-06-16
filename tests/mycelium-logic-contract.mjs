@@ -80,7 +80,7 @@ Object.defineProperty(globalThis, 'crypto', {
 // State
 // ---------------------------------------------------------------------------
 
-const { state } = await import('../js/state.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 
 function resetState() {
   state.points = [];

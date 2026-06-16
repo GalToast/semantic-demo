@@ -26,7 +26,7 @@ globalThis.performance = globalThis.window.performance;
 globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
-const { state } = await import('../js/state.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 const { syncRuntimeState, getRuntimeStateSnapshot } = await import('../js/modules/focus-pocket.ts');
 
 const original = getRuntimeStateSnapshot();

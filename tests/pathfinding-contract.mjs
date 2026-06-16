@@ -13,7 +13,7 @@
  */
 
 import assert from 'node:assert/strict';
-import { state } from '../js/state.ts';
+import { state } from '../src/lib/engine/state-bridge.ts';
 import { findSemanticPath } from '../js/modules/pathfinding.ts';
 
 const original = {

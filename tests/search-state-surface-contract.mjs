@@ -142,7 +142,7 @@ Object.defineProperty(globalThis, 'navigator', {
 
 elementsById.set('search-spinner', new FakeElement('div'));
 
-const { state } = await import('../js/state.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 const {
   getSearchResultStrength,
   getSearchResultStrengthLabel,

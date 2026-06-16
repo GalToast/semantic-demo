@@ -212,7 +212,7 @@ async function testSyncCityFilterUiBehavior() {
 
   try {
     // Mutate state and call the function
-    const { state } = await import('../js/state.ts');
+    const { state } = await import('../src/lib/engine/state-bridge.ts');
     const originalCity = state.activeFilters.city;
     state.activeFilters.city = 'Rockville';
     try {

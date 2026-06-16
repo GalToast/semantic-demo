@@ -110,7 +110,7 @@ function assert(cond, msg) {
 
 // ─── Load modules under test (after fake DOM is set up) ──────────────────────
 
-const { state } = await import('../js/state.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts');
 const {
     activeFiltersStore,
     activeClusterFilterStore

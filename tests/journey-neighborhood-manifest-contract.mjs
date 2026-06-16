@@ -12,7 +12,7 @@ globalThis.document = {
 globalThis.window = {};
 globalThis.performance = { now: () => 0 };
 
-const { state, withStateMutation } = await import('../js/state.ts');
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 const { buildNeighborhoodManifest } = await import('../js/modules/journey.ts');
 
 const original = {

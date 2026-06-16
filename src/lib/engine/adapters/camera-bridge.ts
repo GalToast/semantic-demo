@@ -24,13 +24,12 @@ import type {
 // These replace direct ctx._cameraControls references.  Each function
 // delegates to the TS port's internal lazy-loaded legacy modules.
 
+import { focusOnNode as _focusOnNode, zoomCamera as _zoomCamera } from '@lib/engine/camera-choreography';
 import {
-  focusOnNode as _focusOnNode,
   settleCameraToOverviewPose as _settleCameraToOverviewPose,
   setAutoRotateSuspended as _setAutoRotateSuspended,
   syncOrbitAutoRotate as _syncOrbitAutoRotate,
-  zoomCamera as _zoomCamera,
-} from '../camera-controls';
+} from '@lib/engine/camera-controls-restore-bridge';
 
 import { updateCameraViewportOffset as _updateCameraViewportOffset } from '../three-engine';
 
