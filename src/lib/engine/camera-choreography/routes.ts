@@ -2,7 +2,7 @@
  * @lib/engine/camera-choreography/routes.ts
  * Search corridor, terrain prelude, semantic centroid, zoom animations
  *
- * Port of js/modules/camera-controls-choreography-routes.ts
+ * Canonical Svelte 5 implementation (legacy js/modules/ version retired in W16-T-CAM-4)
  */
 import * as THREE from 'three';
 import type {

@@ -10,4 +10,4 @@ export {
   applySemanticCentroidCamera,
   zoomCamera,
   clearInsideCentroid
-} from './camera-controls-choreography-routes.ts';
+} from '../../src/lib/engine/camera-choreography/routes.ts';
