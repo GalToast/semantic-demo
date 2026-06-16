@@ -7,7 +7,7 @@ import { computeOverviewScatterOffsets } from './utils/geo-data.ts';
 import { getThreadCategoryColor } from './utils/ui-presentation.ts';
 import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from './utils/three-textures.ts';
 import { seededUnit } from './utils/seeded-random.ts';
-import { CONFIG } from './config.ts';
+import { CONFIG } from '@lib/engine/config';
 import { disposeObject3D } from '@lib/engine/resource-tracker';
 
 // ── Constants ───────────────────────────────────────────────────────────────
