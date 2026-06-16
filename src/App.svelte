@@ -36,7 +36,7 @@
 </script>
 
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, type Snippet } from 'svelte';
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
@@ -333,7 +333,7 @@
   <WeatherWidget visible={true} />
 
   <!-- Layer 80: Info panel -->
-  <InfoPanel open={infoPanelOpen} content={searchPanelContent} />
+  <InfoPanel open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
 
   {#if idleSearchVisible}
     <!--
