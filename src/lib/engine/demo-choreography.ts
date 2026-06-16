@@ -19,8 +19,8 @@
 
 import type { DemoPhase } from '@lib/types/state';
 import { appState } from '@lib/state/app.svelte';
-import * as cameraControlsStaticModule from '../../../js/modules/camera-controls';
-import * as focusPocketStaticModule from '../../../js/modules/focus-pocket';
+import * as cameraControlsStaticModule from './camera-controls';
+import * as focusPocketStaticModule from '@lib/journey/focus-pocket';
 import * as lifecycleStaticModule from '../../../js/modules/lifecycle';
 import * as journeyCompassStaticModule from '@lib/engine/journey-compass-controller-bridge';
 import * as journeyStaticModule from '../../../js/modules/journey';

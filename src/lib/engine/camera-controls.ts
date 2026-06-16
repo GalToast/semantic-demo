@@ -22,19 +22,12 @@ export {
 
 export type { FocusOnNodeOptions, AnimateCameraToNodeOptions } from './camera-choreography';
 
-// ── Re-export from choreography module for cancelFocusCameraAnimation ────────
+// ── Re-export cancelFocusCameraAnimation from ported choreography focus ─────
 
-import * as cameraControlsChoreographyModule from '../../../js/modules/camera-controls-choreography.ts';
+import { cancelFocusCameraAnimation as _cancelFocusCameraAnimation } from './camera-choreography/focus';
 
-interface CameraControlsChoreographyModule {
-  cancelFocusCameraAnimation(): void;
-}
-
-const _choreography: CameraControlsChoreographyModule | null =
-  cameraControlsChoreographyModule as unknown as CameraControlsChoreographyModule;
-
-export function cancelFocusCameraAnimation(): any {
-  return _choreography?.cancelFocusCameraAnimation();
+export function cancelFocusCameraAnimation(): void {
+  _cancelFocusCameraAnimation();
 }
 
 // ── Re-export core functions (ported to local) ───────────────────────────────

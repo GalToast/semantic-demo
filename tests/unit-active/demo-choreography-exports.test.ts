@@ -58,15 +58,12 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     expect(legacyDynamic).toHaveLength(0);
   });
 
-  it('statically imports all 7 legacy modules via relative paths (extensionless, Vite resolves to .ts)', () => {
+  it('statically imports remaining legacy modules via relative paths (extensionless, Vite resolves to .ts)', () => {
     const src = readSource();
     const expectedModules = [
       'lifecycle',
       'journey',
       'bindings/panel-bindings',
-      'micro-demo-guards',
-      'micro-demo-camera',
-      'micro-demo-ui',
     ];
     for (const mod of expectedModules) {
       expect(src).toContain(`from '../../../js/modules/${mod}'`);
@@ -82,8 +79,11 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     const src = readSource();
     // Ticket W11-T5: state import migrated to appState
     expect(src).toContain("from '@lib/state/app.svelte'");
-    expect(src).toContain("from '../../../js/modules/camera-controls'");
-    expect(src).toContain("from '../../../js/modules/focus-pocket'");
+    expect(src).toContain("from './camera-controls'");
+    expect(src).toContain("from '@lib/journey/focus-pocket'");
+    expect(src).toContain("from '@lib/demo/guards'");
+    expect(src).toContain("from '@lib/demo/camera'");
+    expect(src).toContain("from '@lib/demo/ui'");
   });
 });
 

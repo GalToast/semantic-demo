@@ -13,7 +13,7 @@ import {
   getCanvasUnobstructedRegion,
   computeFocusPocketScreenBounds,
   computeSafeAreaCameraTargetOffset
-} from '../../../../js/modules/camera-framing-utils.ts'
+} from './framing-utils'
 import {
   type FramingParams,
   type PocketProfile,
@@ -28,12 +28,12 @@ import {
   easeOutBack,
   easeOutQuint
 } from '@lib/utils/math-easing'
-import { setFocusTransitionMode, startFocusCameraAssist } from '../../../../js/modules/camera-controls-core.ts'
+import { setFocusTransitionMode, startFocusCameraAssist } from '../camera-controls-core'
 import type {
   ChoreographyCamera,
   ChoreographyControls,
   ChoreographyPersonality
-} from '../../../../js/modules/camera-controls-choreography-types.ts'
+} from './types'
 
 interface FocusFramingOptions extends FramingParams {
   transitionStyle?: string

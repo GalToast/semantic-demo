@@ -26,7 +26,7 @@ import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bri
 import { applyPointFilterColors, syncFocusStage } from '../../../../js/modules/journey.ts'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { clearRouteExploration } from '../../../../js/modules/camera-controls-core.ts'
+import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 import { animateCameraToNode } from './focus'
 
