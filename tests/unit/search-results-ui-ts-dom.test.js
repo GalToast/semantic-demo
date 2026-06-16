@@ -3,7 +3,7 @@ import {
     applyEmptySemanticSearchState,
     applySemanticSearchErrorState,
     renderSearchResultItems
-} from '../../js/modules/search-results-ui.ts';
+} from '../../src/lib/search/results-ui.ts';
 
 function makeResult(index, name, city, score = 1, extra = {}) {
     return {

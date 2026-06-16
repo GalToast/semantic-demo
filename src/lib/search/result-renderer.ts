@@ -1,14 +1,14 @@
 /**
- * search-result-renderer.ts
+ * @lib/search/result-renderer.ts — Dedicated module for rendering search result
+ * HTML and managing the result list DOM.
  *
- * Typed sibling of search-result-renderer.js.
- * Dedicated module for rendering search result HTML and managing the result list DOM.
+ * Port of js/modules/search-result-renderer.ts
  */
 
-import { state } from '../state.ts';
-import { getViewportSize } from './environment.ts';
-import { isCompactSearchViewport } from './utils/ui-presentation.ts';
-import { sanitizePublicFacingNote, cleanPublicNoteText } from './utils/dom-formatters.ts';
+import { state } from '../engine/state-bridge';
+import { getViewportSize } from '../engine/environment-bridge';
+import { isCompactSearchViewport } from '../engine/ui-presentation-bridge';
+import { sanitizePublicFacingNote, cleanPublicNoteText } from '../engine/dom-formatters-bridge';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

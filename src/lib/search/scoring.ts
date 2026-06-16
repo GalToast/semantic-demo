@@ -1,13 +1,11 @@
 /**
- * semantic-search-scoring.ts
+ * @lib/search/scoring.ts — Field-weighted scoring for mock/dev semantic search results.
  *
- * Field-weighted scoring for mock/dev semantic search results.
- * Canonical TS module — preserves export/import parity with the prior
- * semantic-search-scoring.js twin.
+ * Port of js/modules/semantic-search-scoring.ts
  */
 
-import { state, type Point } from '../state.ts';
-import { normalizeMockSearchText, MOCK_QUERY_ALIASES, MOCK_QUERY_NAICS_PREFIX, MOCK_QUERY_NAICS_DENY } from './semantic-search-mock-catalog.ts';
+import { state, type Point } from '../engine/state-bridge';
+import { normalizeMockSearchText, MOCK_QUERY_ALIASES, MOCK_QUERY_NAICS_PREFIX, MOCK_QUERY_NAICS_DENY } from '../engine/semantic-search-mock-catalog-bridge';
 
 interface FieldWeights {
     snapshot: number;

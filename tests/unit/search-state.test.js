@@ -7,7 +7,7 @@ import {
     getSemanticSearchServiceResults,
     getSemanticSearchTotalMatches,
     mapSemanticSearchResults
-} from '../../js/modules/search-mapper.js';
+} from '../../src/lib/search/mapper.ts';
 
 // Mock dependencies
 vi.mock('../../js/modules/search-tokenizer.js', () => ({

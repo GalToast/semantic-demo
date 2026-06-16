@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import { setActiveSearchResultRow } from '../../js/modules/search-result-renderer.js';
+import { setActiveSearchResultRow } from '../../src/lib/search/result-renderer.ts';
 import { state, withStateMutation } from '../../js/state';
 
 describe('search-result-renderer', () => {

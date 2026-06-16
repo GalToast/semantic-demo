@@ -21,7 +21,7 @@ export { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '../../../js/modu
 
 // Relocated legacy re-exports from ui-renderers-bridge
 // (directly from source modules since the ui-renderers shim is retired)
-export { setActiveSearchResultRow } from '../../../js/modules/search-result-renderer';
+export { setActiveSearchResultRow } from '../search/result-renderer';
 export { updateSearchTrailCue } from '../../../js/modules/search-trail-cue-renderer';
 export {
   updateSelectedCardHeading,

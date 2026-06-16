@@ -13,7 +13,7 @@ import {
     tokenizeSearchText,
     expandSearchIntent,
     countTokenMatches
-} from '../../js/modules/search-tokenizer.js';
+} from '../../src/lib/search/tokenizer.ts';
 import {
     buildMockCatalogForQuery,
     normalizeMockSearchText,
@@ -24,7 +24,7 @@ import {
 } from '../../js/modules/semantic-search-mock-catalog.js';
 import {
     buildDatasetBackedMockResults
-} from '../../js/modules/semantic-search-scoring.js';
+} from '../../src/lib/search/scoring.ts';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // 1. STRESS TEST: 100+ CHARACTER QUERIES & UNUSUAL CHARACTERS

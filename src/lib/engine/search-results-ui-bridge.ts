@@ -26,4 +26,4 @@ export {
 	clearSearchPreviewHoverTimer,
 	focusSearchInputForReplacement,
 	updateSearchStatusMessage
-} from '../../../js/modules/search-results-ui';
+} from '../search/results-ui';

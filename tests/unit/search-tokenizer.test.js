@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { tokenizeSearchText, expandSearchIntent, countTokenMatches } from '../../js/modules/search-tokenizer.js';
+import { tokenizeSearchText, expandSearchIntent, countTokenMatches } from '../../src/lib/search/tokenizer.ts';
 
 describe('search-tokenizer', () => {
     describe('tokenizeSearchText', () => {

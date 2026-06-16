@@ -1,13 +1,13 @@
 /**
- * search-mapper.ts
+ * @lib/search/mapper.ts — Pure functions for transforming API search results
+ * into hydrated application models.
  *
- * Pure functions for transforming API search results into hydrated application models.
- * Typed sibling of search-mapper.js.
+ * Port of js/modules/search-mapper.ts
  */
 
-import { state } from '../state.ts';
-import { sanitizePublicFacingNote, cleanPublicNoteText } from './utils/dom-formatters.ts';
-import { isPointVisible } from './utils/geo-data.ts';
+import { state } from '../engine/state-bridge';
+import { sanitizePublicFacingNote, cleanPublicNoteText } from '../engine/dom-formatters-bridge';
+import { isPointVisible } from '../engine/geo-data-bridge';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

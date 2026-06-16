@@ -10,13 +10,9 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { tokenizeSearchText as jsTokenize } from '../../js/modules/search-tokenizer.js';
-import { tokenizeSearchText as shadowTokenize } from '../../js/modules/search-tokenizer.ts';
 import { tokenizeSearchText as srcTokenize } from '../../src/lib/search/tokenizer.ts';
 
 const allTokenizers = [
-  ['js-canonical', jsTokenize],
-  ['js-ts-shadow', shadowTokenize],
   ['src-lib-port', srcTokenize]
 ];
 
