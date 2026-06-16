@@ -15,7 +15,7 @@ import { resolve } from 'path';
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const APP_INIT_PATH = resolve(import.meta.dirname, '../../src/lib/orchestration/app-init.ts');
-const LEGACY_APP_PATH = resolve(import.meta.dirname, '../../js/modules/app.ts');
+
 
 function readSource(path: string): string {
   return readFileSync(path, 'utf-8');
@@ -158,20 +158,34 @@ describe('W11-T8: app-init.ts imports the new bridge modules', () => {
 });
 
 describe('W11-T8: Legacy parity — all legacy actions present in Svelte', () => {
-  const legacySrc = readSource(LEGACY_APP_PATH);
-  const svelteSrc = readSource(APP_INIT_PATH);
-
-  // Extract action keys from legacy __APP_ACTIONS__ block
-  const legacyMatch = legacySrc.match(/__APP_ACTIONS__\s*=\s*\{([\s\S]*?)\n\s*\};/);
-  expect(legacyMatch).not.toBeNull();
-
-  const legacyKeys = [...legacyMatch![1].matchAll(/\b(\w+)\s*:/g)].map((m) => m[1]);
+  // Inline legacy action keys (extracted from the retired js/modules/app.ts __APP_ACTIONS__ block)
+  const EXPECTED_LEGACY_ACTIONS = [
+    'search',
+    'clearSearch',
+    'switchView',
+    'focusOnNode',
+    'setTrailFromSeed',
+    'setTrailDepth',
+    'setSemanticDiveMode',
+    'returnToOverview',
+    'resetExperienceState',
+    'resetExplorationFocus',
+    'refreshCompositionState',
+    'traverseNeighbor',
+    'inspectThreadNeighbor',
+    'pinThreadNeighbor',
+    'unpinThreadInspection',
+    'clearThreadInspection',
+    'walkThreadNeighbor',
+    'requestSemanticGuide',
+    'showSemanticThreadsDetail',
+  ];
 
   it('every legacy action key is present in Svelte app-init.ts', () => {
-    for (const key of legacyKeys) {
+    for (const key of EXPECTED_LEGACY_ACTIONS) {
       // Check either object literal or property assignment
-      const inLiteral = svelteSrc.includes(`${key}:`);
-      const inAssignment = svelteSrc.includes(`__APP_ACTIONS__.${key}`);
+      const inLiteral = src.includes(`${key}:`);
+      const inAssignment = src.includes(`__APP_ACTIONS__.${key}`);
       expect(inLiteral || inAssignment).toBe(true);
     }
   });
