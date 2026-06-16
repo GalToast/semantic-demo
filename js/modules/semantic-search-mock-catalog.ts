@@ -5,7 +5,7 @@
  * Mock catalog for development/fallback semantic search.
  */
 
-import { buildDatasetBackedMockResults } from './semantic-search-scoring.ts';
+import { buildDatasetBackedMockResults } from '../../src/lib/search/scoring';
 
 interface MockCatalogEntry {
     name: string;

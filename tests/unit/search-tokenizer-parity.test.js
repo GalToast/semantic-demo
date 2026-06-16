@@ -1,12 +1,13 @@
 /**
  * Focused parity tests for the special-character preprocessing and
- * Intl.Segmenter fallback added to the TS tokenizer paths. Mirrors the
- * .js canonical behavior so the .js, .ts-shadow, and src/lib ports stay
- * in agreement.
+ * Intl.Segmenter fallback in the src/lib/search tokenizer.
  *
  * Note: the canonical tokenizeSearchText filters out tokens of length 1
  * (e.g., the surviving "t" from "AT&T" is dropped). Test expectations
  * account for that.
+ *
+ * W14-T2: The old JS and shadow tokenizer implementations have been
+ * retired. Only the src/lib/search/tokenizer.ts port remains.
  */
 
 import { describe, it, expect } from 'vitest';
@@ -56,22 +57,4 @@ describe('tokenizer special-char parity', () => {
     });
   }
 
-  it('all three implementations agree on the canonical O\'Brien case', () => {
-    expect(jsTokenize("O'Brien")).toEqual(shadowTokenize("O'Brien"));
-    expect(jsTokenize("O'Brien")).toEqual(srcTokenize("O'Brien"));
-  });
-
-  it('all three implementations agree on the canonical co-op case', () => {
-    expect(jsTokenize('co-op')).toEqual(shadowTokenize('co-op'));
-    expect(jsTokenize('co-op')).toEqual(srcTokenize('co-op'));
-  });
-
-  it('all three implementations agree on a multi-special-char business name', () => {
-    // "O'Brien & Co." exercises quote strip, ampersand, period, length filter
-    const a = jsTokenize("O'Brien & Co.");
-    const b = shadowTokenize("O'Brien & Co.");
-    const c = srcTokenize("O'Brien & Co.");
-    expect(b).toEqual(a);
-    expect(c).toEqual(a);
-  });
 });

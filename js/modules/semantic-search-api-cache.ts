@@ -7,7 +7,7 @@
  */
 
 import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from './utils/ui-presentation.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { buildMockCatalogForQuery, EXPLICIT_EMPTY_QUERY_PATTERN } from './semantic-search-mock-catalog.ts';
 import {
     initSearchCache,

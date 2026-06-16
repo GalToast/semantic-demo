@@ -6,7 +6,7 @@
  */
 
 import { state, withStateMutation, type SemanticSearchCacheDiagnostics } from '../state.ts';
-import { debugWarn } from './diagnostic-adapter.ts';
+import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import * as idb from './idb-service.ts';
 
 export const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES: number = 8;
