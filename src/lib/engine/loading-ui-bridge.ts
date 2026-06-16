@@ -5,4 +5,4 @@
  * _ensureModules(). Native port is deferred to W11-T10 Wave 3
  * (frame budget critical, 1-2 days).
  */
-export * from '../../../js/modules/loading-ui';
+export * from '../ui/loading';

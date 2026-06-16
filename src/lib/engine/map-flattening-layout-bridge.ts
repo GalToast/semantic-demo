@@ -3,4 +3,4 @@
  * Re-exports the legacy map-flattening-layout module. Will retire when T10-Wave 3
  * ports the module natively.
  */
-export { applyMapFlatteningLayout } from '../../../js/modules/map-flattening-layout';
+export { applyMapFlatteningLayout } from '../utils/map-flattening-layout';
