@@ -18,7 +18,7 @@
     import { describeCluster } from '../utils/ui-presentation.js';
     import { buildSearchResultProps } from '../view-models/search-results-view-model.js';
     import { publish, EVENTS } from '../event-bus.js';
-    import { state } from '../../state.js';
+    import { state } from '@lib/engine/state-bridge';
 
     interface SearchResult {
         index: number | string;

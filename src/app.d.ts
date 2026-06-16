@@ -23,4 +23,11 @@ interface Window {
   __initTimings?: Array<{ step: string; ms: number }>;
   /** Mutation guard for state.js compatibility */
   withStateMutation?: <T>(fn: () => T) => T;
+  /**
+   * Leaflet global injected at runtime by the asset loader
+   * (js/modules/map-state.ts:loadLeafletAssets). The local LeafletApi
+   * interface narrows the cast site; declaring it as `unknown` here
+   * keeps the global permissive without pulling the upstream @types/leaflet.
+   */
+  L?: unknown;
 }

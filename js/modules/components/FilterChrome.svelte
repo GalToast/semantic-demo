@@ -1,6 +1,6 @@
 <script lang="ts">
     import { onDestroy } from 'svelte';
-    import { state as appState } from '../../state.js';
+    import { state as appState } from '@lib/engine/state-bridge';
     import { activeFiltersStore } from '../stores.js';
     import { publish, EVENTS } from '@lib/orchestration/event-bus';
     import { applyFilters, clearSearchGlow } from '../search-state.ts';
