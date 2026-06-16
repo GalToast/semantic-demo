@@ -23,6 +23,7 @@
  */
 import { state, withStateMutation } from '@lib/engine/state-bridge'
 import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/engine/journey-webgl-bridge'
+import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import type { StrandContinuityState } from '@lib/state/state-types'
 
 /** Phase value type (simple string, but kept as alias for clarity) */
@@ -217,7 +218,11 @@ function getWrapperManager(): StrandContinuityManager {
                     phase: managerState.phase,
                     targetIndex: managerState.targetIndex,
                     fromIndex: managerState.fromIndex,
-                    reason: managerState.reason,
+                    // Match legacy kernel's `cleanOptionalValue(options.reason) || ''`
+                    // so body `data-strand-journey-reason` and downstream CSS don't
+                    // carry unsanitized whitespace or sentinel strings (`'unknown'`,
+                    // `'n/a'`, etc.).
+                    reason: cleanOptionalValue(managerState.reason) || '',
                     startedAt: managerState.startedAt,
                     arrivalTimeoutId: undefined,
                     settleTimeoutId: undefined
