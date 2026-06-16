@@ -119,7 +119,7 @@ const {
     setActiveFilter,
     setActiveClusterFilter,
     resetActiveFilters
-} = await import('../js/modules/filter-state.ts');
+} = await import('../src/lib/stores/filter.svelte.ts');
 
 // ─── CONTRACT 1: setActiveFilter mirrors state.activeFilters → activeFiltersStore ──
 

@@ -9,4 +9,5 @@ export {
   initJourneyCanvasInteractionAdapter,
   isThreadCandidateVisibleOnCanvas,
   ensureCanvasNodeInteractionBindings,
+  disposeCanvasNodeInteractionBindings,
 } from '@lib/journey/canvas-interaction';

@@ -40,8 +40,8 @@ import * as legacyFilterStateModule from '@lib/stores/filter.svelte';
 import * as legacyEventBusModule from '@lib/orchestration/event-bus';
 import {
   ensureCanvasNodeInteractionBindings,
-  removeCanvasNodeInteractionBindings,
-} from '../../../../js/modules/journey-canvas-interaction';
+  disposeCanvasNodeInteractionBindings,
+} from '@lib/journey/canvas-interaction';
 import { initTooltipEventBusSubscriptions } from '../../../../js/modules/tooltip';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
@@ -287,7 +287,7 @@ export function createLifecycleMethods(
           ensureCanvasNodeInteractionBindings();
           ctx._canvasInteractionBound = true;
           ctx._removeCanvasInteraction =
-            removeCanvasNodeInteractionBindings;
+            disposeCanvasNodeInteractionBindings;
         } catch (interactionErr) {
           console.warn(
             '[EngineBridge] Canvas interaction binding failed:',
