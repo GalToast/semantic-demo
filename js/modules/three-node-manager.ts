@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { state as _state } from '../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { webglContext } from '@lib/engine/webgl-context';
 import { SCENE_PALETTE } from '@lib/utils/design-tokens';

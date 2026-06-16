@@ -1,6 +1,6 @@
 // lifecycle-modes.js — Mode/depth setters, descriptions, bloom/bridge recomputation,
 // composition refresh, exploration UI sync, and declarative event subscriptions
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { applyCompositionState } from './composition-state.ts';
 import { applyPointFilterColors } from './journey.ts';

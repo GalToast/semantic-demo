@@ -6,7 +6,8 @@
  * through withStateMutation().
  */
 
-import { state, withStateMutation, type ViewName, type NavState } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge'
+import type { ViewName, NavState } from '@lib/state/state-types'
 
 export function setCurrentView(view: string): void {
     withStateMutation(() => {

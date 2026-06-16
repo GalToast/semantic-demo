@@ -3,8 +3,8 @@
 // Focus constellation geometry, seeded placement, screen-bounds, thread curve points.
 
 import * as THREE from 'three';
-import { state } from '../state.ts';
-import type { SemanticState, ConstellationMotifName } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
+import type { SemanticState, ConstellationMotifName } from '@lib/state/state-types';
 import { getViewportSize } from './environment.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';

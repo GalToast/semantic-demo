@@ -3,7 +3,7 @@
 // Focus anchor visual treatment: ring + pulse + size cues.
 
 import * as THREE from 'three';
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { prefersReducedMotion } from './environment.ts';
 
 const RING_BASE_SCALE = 0.13;

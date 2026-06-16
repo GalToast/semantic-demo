@@ -9,7 +9,7 @@ if (typeof window !== 'undefined') {
 }
 
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import { state as _state, withStateMutation } from '../state.ts';
+import { state as _state, withStateMutation } from '@lib/engine/state-bridge';
 import { appState } from '@lib/state/app.svelte.ts';
 const state = _state as any;
 import { debugWarn } from '@lib/utils/diagnostic-adapter';

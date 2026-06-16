@@ -2,7 +2,7 @@
  * navigation-state.ts — TypeScript shadow of navigation-state.js
  * Nav transition reducer and state mutation helpers.
  */
-import { state, withStateMutation } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
 import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '../../src/lib/navigation-actions.ts';
 
 export { NAV_TRANSITION_ACTIONS };

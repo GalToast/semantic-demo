@@ -10,7 +10,7 @@
 // Boundary cast: state carries many dynamic/untyped properties (currentSearchSummary,
 // map, weather, etc.) that are `unknown` in state.d.ts. Cast to any at the import
 // boundary, matching the established pattern in three-engine.ts.
-import { state as _state } from '../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { isMapSummarySurface } from './environment.ts';

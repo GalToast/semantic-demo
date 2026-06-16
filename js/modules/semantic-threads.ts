@@ -4,7 +4,8 @@
  * TypeScript shadow of semantic-threads.js.
  * Semantic thread artifact loading with worker and main-thread fallback.
  */
-import { state, type SemanticNode } from '../state.ts';
+import { state } from '@lib/engine/state-bridge'
+import type { SemanticNode } from '@lib/state/state-types'
 import { updateSemanticThreadsStatus } from './state-mutators.ts';
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import { recordSemanticLaneSnapshot } from './semantic-lane.ts';

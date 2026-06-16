@@ -5,7 +5,8 @@
  * In-memory + IDB cache for semantic search payloads.
  */
 
-import { state, withStateMutation, type SemanticSearchCacheDiagnostics } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge'
+import type { SemanticSearchCacheDiagnostics } from '@lib/state/state-types'
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import * as idb from './idb-service.ts';
 

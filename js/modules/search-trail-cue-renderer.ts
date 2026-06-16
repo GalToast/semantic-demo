@@ -5,7 +5,7 @@
  * Dedicated module for updating the search-trail-cue DOM overlay with narrative framing.
  */
 
-import { state as _state } from '../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 
 const state = _state as any;
 

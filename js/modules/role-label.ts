@@ -1,4 +1,5 @@
-import { state, type Point, type SemanticState } from '../state.ts';
+import { state } from '@lib/engine/state-bridge'
+import type { Point, SemanticState } from '@lib/state/state-types'
 
 /**
  * role-label.js

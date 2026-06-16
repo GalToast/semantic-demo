@@ -1,6 +1,6 @@
 import { webglContext } from '@lib/engine/webgl-context';
 import * as THREE from 'three';
-import { state as _state } from '../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { disposeObject3D } from '@lib/engine/resource-tracker';

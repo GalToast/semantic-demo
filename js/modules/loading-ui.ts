@@ -4,7 +4,8 @@
  * Loading overlay lifecycle, phase management, and deferred hydration.
  */
 
-import { state, withStateMutation, type LoadingPhaseKey, type SemanticState } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge'
+import type { LoadingPhaseKey, SemanticState } from '@lib/state/state-types'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { restoreFocusTrailState, updateSelectedBusiness } from './journey.ts';
 import { SCENE_READY } from './scene-events.ts';

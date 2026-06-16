@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { state as _state } from '../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations.ts';
 import { calculateSignalScore } from './utils/geo-data.ts';

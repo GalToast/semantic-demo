@@ -5,7 +5,8 @@
  * Manages Leaflet map initialization, marker refresh, route embodiment,
  * terrain handoff, and route director state synchronization.
  */
-import { state, withStateMutation, type Point } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge'
+import type { Point } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { pointHasGeocode, isPointVisible } from './utils/geo-data.ts';
 import { formatBusinessName } from './utils/dom-formatters.ts';

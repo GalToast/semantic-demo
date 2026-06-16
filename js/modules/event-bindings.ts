@@ -5,7 +5,7 @@
  * dispatches its bind function during app initialization.
  */
 
-import { state as _state } from '../state.ts';
+import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { bindViewControls, zoomCamera } from './bindings/view-bindings.ts';

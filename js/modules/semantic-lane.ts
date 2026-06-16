@@ -7,7 +7,7 @@
  *
  * All window/document accesses are guarded with typeof checks.
  */
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from './utils/ui-presentation.ts';
 import { updateSemanticLaneState } from './state-mutators.ts';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';

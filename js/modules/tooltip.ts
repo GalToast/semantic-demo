@@ -8,7 +8,7 @@ import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } fro
 import { describeCluster } from './utils/ui-presentation.ts';
 import { getViewportSize } from './environment.ts';
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
-import type { Point } from '../state.ts';
+import type { Point } from '@lib/state/state-types';
 
 let tooltipRevealFrame: number | null = null;
 let tooltipHideTimer: ReturnType<typeof setTimeout> | null = null;

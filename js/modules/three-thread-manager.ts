@@ -1,6 +1,6 @@
 import { webglContext } from '@lib/engine/webgl-context';
 import * as THREE from 'three';
-import { state as _state, withStateMutation } from '../state.ts';
+import { state as _state, withStateMutation } from '@lib/engine/state-bridge';
 const state = _state as any;
 import {
     buildGeometricMyceliumEdges,
