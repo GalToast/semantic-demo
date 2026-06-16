@@ -835,15 +835,8 @@ body.is-active #selected-details.active:not([hidden]) {
         max-height: min(22dvh, 180px);
     }
 
-    /* Product-route final guards: once the real mobile route has handed off
-       to search, focus, preview, or dive, stale lower-surface chrome must not
-       remain as a second drawer. */
-    body.is-active:is([data-panel-surface='search'], [data-panel-surface='focus-search']) #mode-chips,
-    body.is-active:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .mode-chips {
-        display: none;
-        visibility: hidden;
-        pointer-events: none;
-    }
+    /* A2-4: Mode chips (#mode-chips) are always visible per UX audit closure.
+       Previous rule hid them in search/focus-search; removed 2026-06-16. */
 
     body.is-active[data-panel-surface='focus-search'][data-trail-state='active'][data-thread-inspect-surface='walk-next']
         #thread-inspector.active {
