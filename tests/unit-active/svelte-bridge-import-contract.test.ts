@@ -192,9 +192,12 @@ describe('Bridge health (W11 retirement progress)', () => {
     'src/lib/engine/route-arrival-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
     'src/lib/engine/three-search-animations-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
     'src/lib/engine/three-interaction-visuals-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
+    'src/lib/engine/search-state-bridge.ts', // W15-T1 — search-state port; bridge created, consumers not yet wired
     // ── W11-T5 Wave 2 ─────────────────────────────────────────
     'src/lib/engine/event-bus-bridge.ts', // W11-T5 Wave 2 — T9 retires when journey files land
     'src/lib/engine/micro-demo-choreography-bridge.ts', // W11-T5 Wave 2 — sanctioned passthrough (micro-demo legacy)
+    // ── W15-T-SEARCH-STATE (partial port, 2026-06-15) ────────
+    'src/lib/engine/search-state-bridge.ts', // W15-T-SEARCH-STATE — bridge created with clearSearch(options) signature fix; consumers in js/modules/* still use the old path; rewiring is a follow-up ticket
   ]);
 
   function listBridgeFiles(): string[] {
