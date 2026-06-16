@@ -4,7 +4,7 @@
  * TypeScript shadow of exploration-mode.js.
  * Exploration mode state management (mycelium modes, trails, stories).
  */
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.ts';
 import { setMyceliumMode as setMyceliumModeImpl, setTrailDepth as setTrailDepthImpl } from './lifecycle.ts';
 

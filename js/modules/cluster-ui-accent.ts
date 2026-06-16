@@ -2,7 +2,7 @@
 // TypeScript shadow of cluster-ui-accent.js
 // Applies cluster-based CSS custom properties to DOM elements.
 
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 
 const DEFAULT_CLUSTER_RGB = '78 205 196';
 

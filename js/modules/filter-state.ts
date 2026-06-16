@@ -2,7 +2,8 @@
 // TypeScript shadow of filter-state.js
 // Canonical filter state management with Svelte store sync.
 
-import { state, withStateMutation, type ActiveFilters } from '../state.ts';
+import { state, withStateMutation } from '@lib/engine/state-bridge';
+import type { ActiveFilters } from '@lib/state/state-types';
 import { activeClusterFilterStore, activeFiltersStore } from './stores.ts';
 
 const FILTER_DEFAULTS: ActiveFilters = Object.freeze({

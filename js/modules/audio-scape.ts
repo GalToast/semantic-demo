@@ -9,7 +9,7 @@
  * Runtime imports still target the JS shadow.
  */
 
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { seededUnit } from './utils/seeded-random.ts';
 

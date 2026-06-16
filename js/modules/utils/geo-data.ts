@@ -26,7 +26,7 @@ export type { ActiveFilters } from '@lib/utils/geo-data';
 // ── Backward-compatible computeOverviewScatterOffsets ──────────────────────────
 // js/ callers pass (points) or (points, threshold); src/ version expects
 // (points, rawPositionsBuffer, threshold). This wrapper bridges the gap.
-import { state } from '../../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { computeOverviewScatterOffsets as _computeScatter } from '@lib/utils/geo-data';
 
 export function computeOverviewScatterOffsets(sourcePoints: any[], threshold: number = 0.055) {

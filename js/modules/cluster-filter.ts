@@ -2,7 +2,7 @@
 // TypeScript shadow of cluster-filter.js
 // Cluster filter management, list rendering, city filter, and story prompts.
 
-import { state } from '../state.ts';
+import { state } from '@lib/engine/state-bridge';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { describeCluster } from './utils/ui-presentation.ts';
