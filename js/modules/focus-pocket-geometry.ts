@@ -9,7 +9,7 @@ import { getViewportSize } from '@lib/utils/environment'
 import { describeCluster } from './utils/ui-presentation.ts';
 import { normalizeCityForFilter } from './utils/geo-data.ts';
 import { getSemanticCandidateSlice, type NeighborhoodPersonality, type SemanticCandidate } from './focus-pocket-personality.ts';
-import { getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts';
+import { getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 
 // === Pure geometry/easing utilities ===
 

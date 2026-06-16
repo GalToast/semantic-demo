@@ -8,7 +8,7 @@ import { bindClick } from './view-bindings.ts';
 import { isCompactFocusStageViewport } from '../utils/ui-presentation.ts';
 import { closeLegendPanel } from '../legend-ui.ts';
 import { cancelMicroDemo } from '@lib/demo/choreography';
-import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.ts';
+import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 
 let _previouslyFocusedInfoPanel: Element | null = null;
 

@@ -3,7 +3,7 @@
   import { isLegendPanelOpenStore, isInfoPanelOpenStore } from '../stores.js';
   import { isCompactFocusStageViewport } from '../utils/ui-presentation.js';
   import { buildLegend, closeLegendGuide } from '../legend-ui.js';
-  import { getFocusPanelMode, setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.js';
+  import { getFocusPanelMode, setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode';
 
   interface Props {
     children?: import('svelte').Snippet;

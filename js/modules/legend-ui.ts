@@ -16,7 +16,7 @@ import { describeCluster } from './utils/ui-presentation.ts';
 import { getSemanticGuideTitle } from '../../src/lib/journey/semantic-guide.ts';
 import { getFilteredClusterCounts, setClusterFilter } from './cluster-filter.ts';
 import { getActiveClusterFilter } from './filter-state.ts';
-import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from './focus-panel-mode.ts';
+import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 import { getViewportSize } from '@lib/utils/environment'
 import { CONFIG } from '@lib/engine/config';
 

@@ -8,7 +8,7 @@ import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { isCompactFocusStageViewport } from '../utils/ui-presentation.ts';
 import { closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel, setPreviouslyFocusedLegend, getPreviouslyFocusedLegend, closeLegendGuide } from '../legend-ui.ts';
-import { setFocusPanelMode, FOCUS_PANEL_MODE } from '../focus-panel-mode.ts';
+import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 
 export function bindLegendControls(): void {
     const infoPanel = document.querySelector('.info-panel') as HTMLElement | null;
