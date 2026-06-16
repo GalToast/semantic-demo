@@ -23,3 +23,10 @@ export {
   zoomCamera,
   clearInsideCentroid,
 } from './routes';
+
+export {
+  isSearchRouteFocusActive,
+  getFocusOrbitSlackPivot,
+  applyFocusOrbitSlack,
+  clearFocusOrbitSlack,
+} from './orbit-slack';

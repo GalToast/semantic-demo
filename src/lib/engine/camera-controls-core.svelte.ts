@@ -15,7 +15,7 @@
  */
 
 import { state, withStateMutation, type SemanticState } from '../../../js/state.ts';
-import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from '../../../js/modules/camera-orbit-slack.ts';
+import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-orbit-slack-bridge';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

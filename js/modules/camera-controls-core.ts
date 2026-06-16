@@ -3,7 +3,7 @@
 // Focus transition state, camera assist, and route exploration.
 
 import { state, withStateMutation, type SemanticState } from '../state.ts';
-import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-orbit-slack.ts';
+import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from '@lib/engine/camera-orbit-slack-bridge';
 
 interface TransitionOptions {
     duration?: number;
