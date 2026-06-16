@@ -1,10 +1,9 @@
 /**
  * @lib/search/cache.ts — In-memory + IDB cache for semantic search payloads.
  *
- * Canonical home of the semantic search cache. Replaces the deprecated
- * `js/modules/semantic-search-cache.ts` shim. Public surface is re-exported
- * through `src/lib/engine/semantic-search-cache-bridge.ts` for legacy
- * consumers during the W14 kernel retirement arc.
+ * Canonical home of the semantic search cache. The deprecated
+ * `js/modules/semantic-search-cache.ts` shim and engine bridge were retired
+ * after consumers moved to this module.
  */
 
 import { state, withStateMutation, type SemanticSearchCacheDiagnostics } from '../engine/state-bridge';

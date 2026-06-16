@@ -89,12 +89,12 @@ if (hasSvelte) {
 
   test('App.svelte installs parity sync for demoPhase body data attribute', () => {
     const appSource = fs.readFileSync(path.join(ROOT, 'src/App.svelte'), 'utf8');
-    const paritySource = fs.readFileSync(path.join(ROOT, 'src/lib/orchestration/parity-attrs.ts'), 'utf8');
+    const paritySource = fs.readFileSync(path.join(ROOT, 'src/lib/orchestration/parity-attrs.svelte.ts'), 'utf8');
     assert(/installParityAttributeSync/.test(appSource),
       'App.svelte must install the parity attribute sync');
     assert(/key:\s*['"]demoPhase['"]/.test(paritySource)
       && /demoPhaseStore\.subscribe\(recomputeAndApply\)/.test(paritySource),
-      'parity-attrs.ts must sync demoPhase from the demo store to body.dataset.demoPhase');
+      'parity-attrs.svelte.ts must sync demoPhase from the demo store to body.dataset.demoPhase');
   });
 
   test('demo store defines SHOWCASE_POOL', () => {

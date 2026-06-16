@@ -8,7 +8,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { getNextExploreCandidateForIndex } from '../js/modules/journey-thread-model.ts';
+import { getNextExploreCandidateForIndex } from '../src/lib/journey/thread-model.ts';
 
 const ROOT = process.cwd();
 const THREAD_MODEL = join(ROOT, 'js/modules/journey-thread-model.ts');

@@ -14,7 +14,7 @@ vi.mock('../../js/modules/map-state.js', () => ({
     getRouteEmbodimentIndices: vi.fn(() => [])
 }));
 
-vi.mock('../../js/modules/journey-thread-model.js', () => ({
+vi.mock('../../src/lib/journey/thread-model.js', () => ({
     getNextExploreCandidateForIndex: vi.fn(),
     getSemanticThreadCandidates: vi.fn(),
     getGeometricThreadCandidates: vi.fn(),

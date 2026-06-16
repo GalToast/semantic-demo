@@ -1,5 +1,8 @@
 <script lang="ts">
     import { activeFiltersStore } from '../stores.js';
+    import { publish, EVENTS } from '@lib/orchestration/event-bus';
+    import { bindClusterListDelegation } from '../cluster-list-delegate.ts';
+    import FilterChrome from './FilterChrome.svelte';
 
     interface ActiveFilters {
         status: string;
@@ -17,6 +20,10 @@
         activeFilters.email || 
         activeFilters.geocoded
     );
+
+    $effect(() => {
+        bindClusterListDelegation();
+    });
 </script>
 
 <section class="info-panel-surface info-panel-surface-discovery" data-surface-owner="discovery-filters" data-ownership-lane="surface interaction content" aria-label="Discovery filters surface">
@@ -45,7 +52,9 @@
             </span>
         </summary>
         <div class="rail-section-body">
-            <div class="filter-chrome-slot" id="filter-chrome-slot"></div>
+            <div class="filter-chrome-slot" id="filter-chrome-slot" data-svelte-mounted="filter-chrome">
+                <FilterChrome requestUrlStateUpdate={(reason) => publish(EVENTS.URL_SYNC_REQUESTED, { params: {}, reason })} />
+            </div>
         </div>
     </details>
 </section>

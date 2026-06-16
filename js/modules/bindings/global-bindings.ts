@@ -67,7 +67,7 @@ export function bindGlobalEvents(): void {
         )
         initKeyboardResetOwnership({
             returnToOverview,
-            resetExplorationFocus,
+            resetExplorationFocus
         })
         initKeyboardShortcutsHint()
     }

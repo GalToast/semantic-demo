@@ -12,7 +12,7 @@
 
 import { state, withStateMutation } from '../engine/state-bridge';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
-import { buildMockCatalogForQuery, EXPLICIT_EMPTY_QUERY_PATTERN } from '../engine/semantic-search-mock-catalog-bridge';
+import { buildMockCatalogForQuery, EXPLICIT_EMPTY_QUERY_PATTERN } from './mock-catalog';
 import {
     initSearchCache,
     getCachedSemanticSearchPayload,

@@ -4,13 +4,13 @@
 
 **Status:** Started (2026-06-16 ~19:20 UTC)
 
-| State | Method | Result | Notes |
-|-------|--------|--------|-------|
-| `search` | Screenshot captured (`w15-track1-search-state.png`) | ✅ Verified | Search mode chip clickable, canvas renders |
-| `focus` | Click on canvas node | ⚠️ Attempted | Canvas click didn't trigger focus state (needs specific node hit, not just canvas click) |
-| `trail` | Pending | — | Navigate to trail mode + select thread |
-| `journey-inside` | Pending | — | Navigate to inside view |
-| `arrival-overlay` | Pending | — | Trigger strand arrival |
+| State             | Method                                              | Result       | Notes                                                                                    |
+| ----------------- | --------------------------------------------------- | ------------ | ---------------------------------------------------------------------------------------- |
+| `search`          | Screenshot captured (`w15-track1-search-state.png`) | ✅ Verified  | Search mode chip clickable, canvas renders                                               |
+| `focus`           | Click on canvas node                                | ⚠️ Attempted | Canvas click didn't trigger focus state (needs specific node hit, not just canvas click) |
+| `trail`           | Pending                                             | —            | Navigate to trail mode + select thread                                                   |
+| `journey-inside`  | Pending                                             | —            | Navigate to inside view                                                                  |
+| `arrival-overlay` | Pending                                             | —            | Trigger strand arrival                                                                   |
 
 **Next:** Dispatch a subagent for the full headed pass (focus/trail/journey states require interaction choreography).
 
@@ -20,11 +20,11 @@
 
 **Status:** Mostly complete (2026-06-16 ~19:20 UTC)
 
-| Ticket | Location | Status | Finding |
-|--------|----------|--------|---------|
-| A2-5 | `src/components/Header.svelte:76,91,125,160,231,244` | ✅ Already implemented | Roving tabindex, radiogroup, aria-checked all present |
-| A2-6 | `src/App.svelte:322` | ✅ Already implemented | `<h1>` heading present |
-| Weather shortcut | `src/App.svelte:70,352-353` | ⚠️ Missing | `WeatherWidget` has no keyboard shortcut (no `$w` handler in `App.svelte`) |
+| Ticket           | Location                                             | Status                 | Finding                                                                    |
+| ---------------- | ---------------------------------------------------- | ---------------------- | -------------------------------------------------------------------------- |
+| A2-5             | `src/components/Header.svelte:76,91,125,160,231,244` | ✅ Already implemented | Roving tabindex, radiogroup, aria-checked all present                      |
+| A2-6             | `src/App.svelte:322`                                 | ✅ Already implemented | `<h1>` heading present                                                     |
+| Weather shortcut | `src/App.svelte:70,352-353`                          | ⚠️ Missing             | `WeatherWidget` has no keyboard shortcut (no `$w` handler in `App.svelte`) |
 
 **Next:** Add `w` key handler in `App.svelte` to toggle `WeatherWidget` visibility.
 

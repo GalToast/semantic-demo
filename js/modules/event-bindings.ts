@@ -7,7 +7,6 @@
 
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { bindViewControls, zoomCamera } from './bindings/view-bindings.ts'
 import {
     bindFocusControls,
@@ -86,22 +85,4 @@ export async function initEventListeners({
     if (typeof buildLegend === 'function') buildLegend()
     if (typeof syncClusterSectionState === 'function') syncClusterSectionState()
     scheduleOnboardingHint()
-
-    // Svelte islands are loaded on demand so Node-side test imports of
-    // this module (which never call initEventListeners) don't need a
-    // .svelte loader. In the browser, the islands mount here; the small
-    // extra latency is unobservable because the user is still seeing
-    // the loading overlay.
-    try {
-        const [searchChrome, filterChrome] = await Promise.all([
-            import('./search-chrome-island.ts'),
-            import('./filter-chrome-island.ts')
-        ])
-        if (typeof (searchChrome as any)?.initSearchChromeSvelteIsland === 'function')
-            (searchChrome as any).initSearchChromeSvelteIsland()
-        if (typeof (filterChrome as any)?.initFilterChromeSvelteIsland === 'function')
-            (filterChrome as any).initFilterChromeSvelteIsland()
-    } catch (e) {
-        debugWarn('[event-bindings] failed to load svelte islands', (e as Error)?.message)
-    }
 }

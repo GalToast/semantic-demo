@@ -98,6 +98,17 @@ export function clearExplorationFocusSelection(): void {
     trailNeighborIndices: [],
     trailCursor: -1,
   }));
+  appState.withMutation(() => {
+    appState.focusedNode = null;
+    appState.selectedPoint = null;
+    appState.navState.focusedIndex = null;
+    appState.navState.mode = 'overview';
+    appState.navState.trailDepth = 0;
+    appState.navState.trailSeedIndex = null;
+    appState.navState.trailNeighborIndices = [];
+    appState.navState.trailCursor = -1;
+    appState.trailIndices?.clear?.();
+  });
 }
 
 /**
@@ -113,12 +124,22 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
     myceliumMode: 'default',
     trailDepthFromExploration: 0,
   }));
+  appState.withMutation(() => {
+    appState.currentView = 'galaxy';
+    appState.currentSearchSummary = null;
+    appState.trailDepth = 0;
+    appState.semanticDiveMode = false;
+    appState.myceliumMode = 'default';
+    appState.navState.trailDepth = 0;
+  });
 
   if (options.clearSearchInput) {
     const input = document.getElementById('search-input') as HTMLInputElement | null;
     if (input) {
       input.value = '';
-      input.dispatchEvent(new Event('input', { bubbles: true }));
+      if (typeof input.dispatchEvent === 'function') {
+        input.dispatchEvent(new Event('input', { bubbles: true }));
+      }
     }
   }
 }

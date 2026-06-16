@@ -5,7 +5,7 @@
  */
 
 import { state, type Point } from '../engine/state-bridge';
-import { normalizeMockSearchText, MOCK_QUERY_ALIASES, MOCK_QUERY_NAICS_PREFIX, MOCK_QUERY_NAICS_DENY } from '../engine/semantic-search-mock-catalog-bridge';
+import { normalizeMockSearchText, MOCK_QUERY_ALIASES, MOCK_QUERY_NAICS_PREFIX, MOCK_QUERY_NAICS_DENY } from './mock-catalog';
 
 interface FieldWeights {
     snapshot: number;

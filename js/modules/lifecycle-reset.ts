@@ -1,7 +1,7 @@
 // lifecycle-reset.ts — Reset/overview functions and their declarative event subscriptions
 import { state, withStateMutation } from '@lib/engine/state-bridge'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { clearExplorationFocusSelection } from './url-state.ts'
+import { clearExplorationFocusSelection } from '@lib/orchestration/url-state'
 import { switchView } from './view-controller.ts'
 import { syncFocusStage } from './journey.ts'
 import { clearSearch } from '@lib/engine/search-state-bridge'

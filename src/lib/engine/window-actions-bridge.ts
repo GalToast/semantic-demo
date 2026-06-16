@@ -18,7 +18,7 @@ export {
     resetExplorationFocus,
     refreshCompositionState
 } from '../../../js/modules/lifecycle.ts'
-export { setTrailFromSeed } from '../../../js/modules/journey-neighborhood.ts'
+export { setTrailFromSeed } from '@lib/journey/neighborhood'
 export { traverseNeighbor, walkThreadNeighbor } from './journey-thread-settler-bridge'
 export {
     inspectThreadNeighbor,

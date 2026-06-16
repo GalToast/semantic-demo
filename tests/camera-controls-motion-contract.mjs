@@ -9,6 +9,15 @@
  *   - camera assist lifecycle (start → active-check → auto-release on expiry)
  */
 
+import { register } from 'node:module'
+import { pathToFileURL } from 'node:url'
+import { fileURLToPath } from 'node:url'
+
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const tsResolve = new URL('./helpers/ts-resolve-loader.mjs', __dirname)
+register(tsResolve, import.meta.url)
+
 class FakeElement {
   constructor() {
     this.dataset = {};

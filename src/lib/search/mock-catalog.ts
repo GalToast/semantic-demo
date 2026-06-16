@@ -1,11 +1,11 @@
 /**
- * semantic-search-mock-catalog.ts
+ * @lib/search/mock-catalog.ts — Mock catalog for development/fallback semantic search.
  *
- * TypeScript shadow for semantic-search-mock-catalog.js
- * Mock catalog for development/fallback semantic search.
+ * Canonical home for the mock catalog previously exposed through
+ * `js/modules/semantic-search-mock-catalog.ts` and its bridge.
  */
 
-import { buildDatasetBackedMockResults } from '../../src/lib/search/scoring';
+import { buildDatasetBackedMockResults } from './scoring';
 
 interface MockCatalogEntry {
     name: string;

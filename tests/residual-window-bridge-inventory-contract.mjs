@@ -34,9 +34,9 @@ const SEMDEMO_ROOT = path.resolve(process.cwd())
 const MODULES = {
     lifecycle: path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts'),
     journey: path.join(SEMDEMO_ROOT, 'js/modules/journey.ts'),
-    camera: path.join(SEMDEMO_ROOT, 'js/modules/camera-controls.ts'),
+    camera: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-controls.ts'),
     cameraChoreography: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-choreography/routes.ts'),
-    searchState: path.join(SEMDEMO_ROOT, 'js/modules/search-state.ts'),
+    searchState: path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts'),
     eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.ts'),
     sceneReveal: path.join(SEMDEMO_ROOT, 'src/lib/engine/scene-reveal.ts'),
     app: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
@@ -49,7 +49,7 @@ const MODULES = {
     threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts'),
     strandContinuity: path.join(SEMDEMO_ROOT, 'js/modules/strand-continuity.ts'),
     journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.ts'),
-    journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'js/modules/journey-canvas-interaction.ts'),
+    journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'src/lib/journey/canvas-interaction.ts'),
     clusterLabels: path.join(SEMDEMO_ROOT, 'src/lib/ui/cluster-labels.ts'),
     audio: path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.ts'),
     viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts'),
@@ -920,8 +920,9 @@ function testViewHandoffCameraPreludeBridgeRetired() {
         'three-engine.js must not expose the retired window.applyMapFlatteningLayout bridge'
     )
     assert(
-        /import\s+\{\s*state(?:\s+as\s+_state)?\s*\}\s+from\s+['"]@lib\/engine\/state-bridge['"]/.test(mapFlatteningLayoutSrc) &&
-            /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
+        /import\s+\{\s*state(?:\s+as\s+_state)?\s*\}\s+from\s+['"]@lib\/engine\/state-bridge['"]/.test(
+            mapFlatteningLayoutSrc
+        ) && /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
         'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
     )
     assert(

@@ -23,7 +23,7 @@ function assert(condition, message) {
 }
 
 const lifecycleSrc = read('src/lib/stores/lifecycle.ts');
-const parityAttrsSrc = read('src/lib/orchestration/parity-attrs.ts');
+const parityAttrsSrc = read('src/lib/orchestration/parity-attrs.svelte.ts');
 const appSrc = read('src/App.svelte');
 
 function readSourceFiles(dir, extensions = new Set(['.ts', '.svelte'])) {
@@ -73,7 +73,7 @@ for (const field of [
 
 assert(
   /export function installParityAttributeSync\s*\(/.test(parityAttrsSrc),
-  'parity-attrs.ts must export installParityAttributeSync()'
+  'parity-attrs.svelte.ts must export installParityAttributeSync()'
 );
 
 assert(
@@ -100,4 +100,4 @@ assert(
   `src/ must not import legacy composition-state ownership: ${legacyCompositionImporters.join(', ')}`
 );
 
-console.log('Composition state owner contract OK: Svelte lifecycle + parity-attrs own production body composition.');
+console.log('Composition state owner contract OK: Svelte lifecycle + parity-attrs.svelte own production body composition.');

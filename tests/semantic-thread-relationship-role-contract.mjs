@@ -28,7 +28,7 @@ const VALID_ROLES = new Set([
 ]);
 
 const CODE_PROPAGATION_FILES = [
-  'js/workers/data-worker.js',
+  'js/workers/data-worker.ts',
   'src/lib/data-loader.ts',
   'src/lib/semantic-threads.ts',
   'src/lib/journey/thread-model.ts',
@@ -130,10 +130,10 @@ assert(
   'data-loader.ts must propagate relationship_role through the shared relationship role normalizer'
 );
 
-const workerSource = read('js/workers/data-worker.js');
+const workerSource = read('js/workers/data-worker.ts');
 assert(
   !/relationshipRole:\s*String\(neighbor\?\.relationship_role\s*\|\|\s*['"]bridge['"]/.test(workerSource),
-  'data-worker.js must not own relationship-role fallback classification'
+  'data-worker.ts must not own relationship-role fallback classification'
 );
 
 console.log(JSON.stringify({ edgeCount, activeRoleCount, counts }, null, 2));

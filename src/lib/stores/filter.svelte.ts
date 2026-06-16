@@ -8,6 +8,10 @@
 import { derived, get, writable, type Readable } from 'svelte/store';
 import { appState } from '@lib/state/app.svelte.ts';
 import type { ActiveFilters } from '@lib/types/state';
+import {
+  activeClusterFilterStore as legacyActiveClusterFilterStore,
+  activeFiltersStore as legacyActiveFiltersStore
+} from '../../../js/modules/stores.ts';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -18,6 +22,22 @@ const INITIAL_FILTERS: ActiveFilters = {
   email: false,
   geocoded: false
 };
+
+function toLegacyFilterStoreValue(filters: ActiveFilters): ActiveFilters {
+  return {
+    ...filters,
+    city: filters.city || 'all'
+  };
+}
+
+function syncLegacyFilterStore(filters: ActiveFilters): void {
+  legacyActiveFiltersStore.set({ ...toLegacyFilterStoreValue(filters) });
+}
+
+function syncLegacyClusterFilterStore(value: string | null): void {
+  const numericValue = value !== null ? Number(value) : null;
+  legacyActiveClusterFilterStore.set(Number.isFinite(numericValue) ? numericValue : null);
+}
 
 // ── Core Stores ───────────────────────────────────────────────────────────────
 
@@ -50,6 +70,7 @@ export const activeClusterFilter: Readable<string | null> & { set(value: string 
   subscribe: _activeClusterFilterWritable.subscribe,
   set: (value: string | null) => {
     _activeClusterFilterWritable.set(value);
+    syncLegacyClusterFilterStore(value);
     appState.withMutation(() => {
       appState.activeClusterFilter = value !== null ? Number(value) : null;
     });
@@ -66,6 +87,7 @@ const _filterStateWritable = writable<ActiveFilters>({ ...INITIAL_FILTERS });
 function withFilterStateNotify(updater: (s: ActiveFilters) => ActiveFilters): void {
   const next = updater(get(_filterStateWritable));
   _filterStateWritable.set(next);
+  syncLegacyFilterStore(next);
   appState.withMutation(() => {
     appState.activeFilters = next;
   });
@@ -80,6 +102,7 @@ export const filterState: Readable<ActiveFilters> & {
   update: (updater: (s: ActiveFilters) => ActiveFilters) => withFilterStateNotify(updater),
   set: (value: ActiveFilters) => {
     _filterStateWritable.set(value);
+    syncLegacyFilterStore(value);
     appState.withMutation(() => {
       appState.activeFilters = value;
     });
@@ -240,8 +263,10 @@ export function setClusterFilter(cluster: string | null): void {
   activeClusterFilter.set(cluster);
 }
 
-/** Backward-compatible alias used by the store barrel. */
-export const setActiveClusterFilter = setClusterFilter;
+/** Backward-compatible alias used by retired js/modules/filter-state.ts consumers. */
+export function setActiveClusterFilter(cluster: string | number | null): void {
+  setClusterFilter(cluster === null ? null : String(cluster));
+}
 
 /** Reset all filters to their initial (inactive) state. */
 export function resetFilters(): void {
@@ -298,8 +323,10 @@ export function getActiveFilters(): ActiveFilters {
 }
 
 /** Backwards-compatible getter for the active cluster filter. */
-export function getActiveClusterFilter(): string | null {
-  return get(activeClusterFilter);
+export function getActiveClusterFilter(): number | null {
+  const value = get(activeClusterFilter);
+  const numericValue = value !== null ? Number(value) : null;
+  return Number.isFinite(numericValue) ? numericValue : null;
 }
 
 const FILTER_KEYS = new Set<keyof ActiveFilters>(['status', 'city', 'website', 'email', 'geocoded']);
@@ -312,7 +339,7 @@ export function setActiveFilter<K extends keyof ActiveFilters>(key: K, value: Ac
 }
 
 /** Backwards-compatible boolean signal toggle from retired js/modules/filter-state.ts. */
-export function toggleActiveFilterSignal(key: keyof Pick<ActiveFilters, 'website' | 'email' | 'geocoded'>): boolean {
+export function toggleActiveFilterSignal(key: string): boolean {
   if (key !== 'website' && key !== 'email' && key !== 'geocoded') return false;
   const filters = getFilterState();
   setFilter(key, !filters[key]);

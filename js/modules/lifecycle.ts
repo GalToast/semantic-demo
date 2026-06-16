@@ -5,51 +5,34 @@
  * Semantic Demo Lifecycle & Global State Bridge.
  * Thin facade: re-exports from extracted sub-modules + remaining local logic.
  */
-import { state, withStateMutation } from '@lib/engine/state-bridge';
-import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus';
-import {
-    setLoadingPhase,
-    hideLoadingOverlay,
-    startDeferredHydration,
-    scheduleWeatherHydration
-} from './loading-ui.ts';
-import {
-    startSceneReveal,
-    getSceneRevealProgress,
-    onWindowResize
-} from '@lib/engine/scene-reveal';
+import { state, withStateMutation } from '@lib/engine/state-bridge'
+import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
+import { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration } from './loading-ui.ts'
+import { startSceneReveal, getSceneRevealProgress, onWindowResize } from '@lib/engine/scene-reveal'
 import {
     copyCurrentViewLink,
     resetStateBeforeUrlRestore,
     clearExplorationFocusSelection
-} from './url-state.ts';
-import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.ts';
-import {
-    updateSelectedBusiness,
-    syncFocusStage,
-    walkThreadNeighbor
-} from './journey.ts';
-import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter';
-import { clearSearch } from '@lib/engine/search-state-bridge';
-import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts';
-import { applyCompositionState, derivePanelSurface } from './composition-state.ts';
-import {
-    focusOnNode
-} from '@lib/engine/camera-controls';
+} from '@lib/orchestration/url-state'
+import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.ts'
+import { updateSelectedBusiness, syncFocusStage, walkThreadNeighbor } from './journey.ts'
+import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter'
+import { clearSearch } from '@lib/engine/search-state-bridge'
+import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts'
+import { applyCompositionState, derivePanelSurface } from './composition-state.ts'
+import { focusOnNode } from '@lib/engine/camera-controls'
 import {
     updateLegendGuideState,
     closeLegendGuide,
     closeLegendPanel,
     openLegendPanel,
     restoreLegendCollapsedPanel
-} from './legend-ui.ts';
-import {
-    hideSummaryCard as hideSummaryCardImpl
-} from '../../src/lib/journey/semantic-guide.ts';
+} from './legend-ui.ts'
+import { hideSummaryCard as hideSummaryCardImpl } from '../../src/lib/journey/semantic-guide.ts'
 import {
     showExperienceToast as showExperienceToastImpl,
     syncSearchStatusForFocus as syncSearchStatusForFocusImpl
-} from '@lib/ui/ui-feedback';
+} from '@lib/ui/ui-feedback'
 import {
     fetchSemanticLaneHealth,
     applySemanticLaneHealthPayload,
@@ -61,12 +44,12 @@ import {
     recordSemanticLaneSnapshot,
     setSemanticLaneOpsMode,
     refreshSemanticLaneOpsSummary
-} from './semantic-lane.ts';
+} from './semantic-lane.ts'
 import {
     dispatchNavTransition as dispatchNavTransitionImpl,
     NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL
-} from './navigation-state.ts';
-import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.ts';
+} from './navigation-state.ts'
+import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.ts'
 import {
     executeJourneyCompassAction,
     updateJourneyCompass,
@@ -75,8 +58,8 @@ import {
     getViewHandoffModel,
     getJourneyCompassPresentationState,
     invokeClearMobileRouteFieldPeek
-} from './journey-compass-controller.ts';
-import { appState } from '@lib/state/app.svelte';
+} from './journey-compass-controller.ts'
+import { appState } from '@lib/state/app.svelte'
 import {
     clearClusterFilter,
     updateClusterList,
@@ -85,7 +68,7 @@ import {
     populateCityFilter,
     syncFilterControls,
     applyStoryPrompt as applyStoryPromptImpl
-} from './cluster-filter.ts';
+} from './cluster-filter.ts'
 
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
 import {
@@ -96,19 +79,19 @@ import {
     setMyceliumMode,
     setTrailDepth,
     setSemanticDiveMode as _setSemanticDiveModeImpl
-} from './lifecycle-modes.ts';
+} from './lifecycle-modes.ts'
 import {
     resetExplorationFocus as _resetExplorationFocusImpl,
     resetNodePositions,
     resetExperienceState,
     returnToOverview as _returnToOverviewImpl
-} from './lifecycle-reset.ts';
+} from './lifecycle-reset.ts'
 import {
     activateSearchGlow,
     recordEmptySearch,
     showExploreTrailReview,
     hideExploreTrailReview
-} from './lifecycle-search-sync.ts';
+} from './lifecycle-search-sync.ts'
 
 // ── Pass-through re-exports ─────────────────────────────────────────────────
 export { applyCompositionState };
@@ -172,120 +155,121 @@ export {
 // ── Thin proxy wrappers ─────────────────────────────────────────────────────
 
 export function updateExplorationUi(): void {
-    refreshCompositionState();
+    refreshCompositionState()
 }
 
 export function setSemanticDiveMode(enabled: boolean): void {
-    const nextActive = !!enabled;
-    state.semanticDiveMode = nextActive;
+    const nextActive = !!enabled
+    state.semanticDiveMode = nextActive
     if (nextActive) {
-        if (document.body) document.body.dataset.semanticDive = 'transitioning';
-        setTrailDepth(2, { fromUserGesture: true });
+        if (document.body) document.body.dataset.semanticDive = 'transitioning'
+        setTrailDepth(2, { fromUserGesture: true })
         window.setTimeout(() => {
             if (appState.semanticDiveMode && document.body?.dataset.semanticDive === 'transitioning') {
-                document.body.dataset.semanticDive = 'active';
+                document.body.dataset.semanticDive = 'active'
             }
-        }, 820);
+        }, 820)
     } else {
-        setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true });
+        setTrailDepth(1, { allowDiveExit: true, skipUrlSync: true })
     }
-    updateExplorationUi();
+    updateExplorationUi()
 }
 
 export function returnToOverview(): void {
-    _returnToOverviewImpl();
+    _returnToOverviewImpl()
 }
 
 export function resetExplorationFocus(options: any = { preserveSearch: true }): void {
-    _resetExplorationFocusImpl(options);
+    _resetExplorationFocusImpl(options)
 }
 
 export function dispatchNavTransition(action: string, payload: any = {}): any {
     if (typeof dispatchNavTransitionImpl === 'function') {
-        return dispatchNavTransitionImpl(action, payload);
+        return dispatchNavTransitionImpl(action, payload)
     }
-    return { handled: false, noOp: true, reason: 'uninitialized' };
+    return { handled: false, noOp: true, reason: 'uninitialized' }
 }
 
-export const NAV_TRANSITION_ACTIONS = NAV_TRANSITION_ACTIONS_IMPL;
+export const NAV_TRANSITION_ACTIONS = NAV_TRANSITION_ACTIONS_IMPL
 
 export { switchView, showViewHandoff, hideViewHandoff };
 
 export function getMobileSearchSheetDetail(): any {
-    return getPanelSurfaceDetailFromMobileSheet();
+    return getPanelSurfaceDetailFromMobileSheet()
 }
 
 export { derivePanelSurface };
 
 export function deriveLifecyclePanelSurfaceContext({ hasSearchIntent = false, hasFocus = false } = {}): string {
-    let context = 'idle';
-    if (hasFocus) context = 'focus';
-    if (hasSearchIntent && hasFocus) context = 'focus-search';
-    if (hasSearchIntent) return hasFocus ? 'focus-search' : 'search';
-    return context;
+    let context = 'idle'
+    if (hasFocus) context = 'focus'
+    if (hasSearchIntent && hasFocus) context = 'focus-search'
+    if (hasSearchIntent) return hasFocus ? 'focus-search' : 'search'
+    return context
 }
 
 export function probeSemanticLane(options: any = {}): Promise<any> {
     if (typeof probeSemanticLaneImpl === 'function') {
-        return probeSemanticLaneImpl(options);
+        return probeSemanticLaneImpl(options)
     }
-    return Promise.resolve(null);
+    return Promise.resolve(null)
 }
 
 export function scheduleSemanticLaneMonitor(): void {
     if (typeof scheduleSemanticLaneMonitorImpl === 'function') {
-        scheduleSemanticLaneMonitorImpl();
+        scheduleSemanticLaneMonitorImpl()
     }
 }
 
 export function setSemanticLaneUiState(laneState: string, options: any = {}): void {
     if (typeof setSemanticLaneUiStateImpl === 'function') {
-        setSemanticLaneUiStateImpl(laneState, options);
+        setSemanticLaneUiStateImpl(laneState, options)
     }
 }
 
 export function syncSearchStatusForFocus(point: any, options: any = {}): void {
-    syncSearchStatusForFocusImpl(point, options);
+    syncSearchStatusForFocusImpl(point, options)
 }
 
 export function hideSummaryCard(): void {
-    return hideSummaryCardImpl();
+    return hideSummaryCardImpl()
 }
 
 export function showExperienceToast(message: string, detail: string): void {
-    return showExperienceToastImpl(message, detail);
+    return showExperienceToastImpl(message, detail)
 }
 
 export function hydrateLeadContext(point: any): void {
-    if (!point) return;
-    syncFocusStage(point);
-    updateSelectedBusiness(point, { revealCard: true });
-    publish(EVENTS.COMPOSITION_UPDATED);
+    if (!point) return
+    syncFocusStage(point)
+    updateSelectedBusiness(point, { revealCard: true })
+    publish(EVENTS.COMPOSITION_UPDATED)
 }
 
 export function exploreInsideToNextStop(): void {
-    if (appState.strandContinuityState?.phase === 'exploring') return;
+    if (appState.strandContinuityState?.phase === 'exploring') return
     if (
-        appState.semanticDiveMode
-        && Number.isFinite(appState.inspectedThreadIndex)
-        && document.body?.dataset.threadInspectSurface === 'inside-cue'
+        appState.semanticDiveMode &&
+        Number.isFinite(appState.inspectedThreadIndex) &&
+        document.body?.dataset.threadInspectSurface === 'inside-cue'
     ) {
-        if (typeof walkThreadNeighbor === 'function') walkThreadNeighbor(appState.inspectedThreadIndex!, { surface: 'inside-cue' });
-        return;
+        if (typeof walkThreadNeighbor === 'function')
+            walkThreadNeighbor(appState.inspectedThreadIndex!, { surface: 'inside-cue' })
+        return
     }
-    if (typeof traverseNeighbor === 'function') traverseNeighbor(1);
+    if (typeof traverseNeighbor === 'function') traverseNeighbor(1)
 }
 
 export function focusOnPoint(point: any, options: any = {}): boolean {
-    if (!point) return false;
-    const pointIndex = appState.points.indexOf(point);
-    state.selectedPoint = point;
-    if (pointIndex >= 0) return focusOnNode(pointIndex, options);
-    updateSelectedBusiness(point, options);
+    if (!point) return false
+    const pointIndex = appState.points.indexOf(point)
+    state.selectedPoint = point
+    if (pointIndex >= 0) return focusOnNode(pointIndex, options)
+    updateSelectedBusiness(point, options)
     if (!options.skipUrlSync) {
-        publish(EVENTS.CAMERA_NODE_FOCUSED, { point, options });
+        publish(EVENTS.CAMERA_NODE_FOCUSED, { point, options })
     }
-    return true;
+    return true
 }
 
 export { applyStoryPromptImpl as applyStoryPrompt };

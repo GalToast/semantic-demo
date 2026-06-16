@@ -9,7 +9,7 @@ import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
-const POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-point-color.ts');
+const POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/point-color.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
