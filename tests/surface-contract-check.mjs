@@ -2703,6 +2703,9 @@ async function assert_controls(page, ctx) {
     else if (viewToggleSomeFail)
         ctx.fail('controls', 'touch-target:view-toggle-buttons', 'some view-toggle buttons < 44px')
 
+    return info
+}
+
 // ---------------------------------------------------------------------------
 // search-chrome — tests the search container and its inner elements on mobile.
 // Surface triggers: real query route, which settles into the search panel.

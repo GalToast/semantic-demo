@@ -42,7 +42,7 @@ const MODULES = {
     app: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
     appRuntime: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
     mapState: path.join(SEMDEMO_ROOT, 'js/modules/map-state.ts'),
-    clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts'),
+    // clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts'),  // REMOVED — file does not exist
     journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts'),
     journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.ts'),
     focusPocket: path.join(SEMDEMO_ROOT, 'src/lib/journey/focus-pocket.ts'),
@@ -874,7 +874,7 @@ function testCameraInteractionBridgesRetired() {
         'camera choreography routes should call noteSceneInteraction directly for search corridor animation'
     )
     assert(
-        /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(
+        /import\s+\{[^}]*\bfocusOnNode\b[^}]*\bnoteSceneInteraction\b[^}]*\breleaseFocusCameraAssist\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/camera-controls)['"]/.test(
             canvasInteractionSrc
         ),
         'journey-canvas-interaction.js should import camera interaction functions directly from camera-controls.ts'
@@ -894,7 +894,7 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     const mapFlatteningLayoutSrc = read('mapFlatteningLayout')
 
     assert(
-        /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(
+        /import\s+\{[^}]*\banimateCameraToTerrainPrelude\b[^}]*\bfocusOnNode\b[^}]*\}\s+from\s+['"](?:\.\/camera-controls\.(?:js|ts)|@lib\/engine\/camera-choreography)['"]/.test(
             viewControllerSrc
         ),
         'view-controller.js should import animateCameraToTerrainPrelude directly from camera-controls.ts'
@@ -1053,7 +1053,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
     const appRuntimeSrc = read('appRuntime')
 
     assert(
-        /export function applySemanticCentroidCamera/.test(cameraSrc),
+        /(?:export function|export \{[^}]*\bapplySemanticCentroidCamera\b[^}]*\})/.test(cameraSrc),
         'camera-controls.js should keep applySemanticCentroidCamera as a named export'
     )
     assert(

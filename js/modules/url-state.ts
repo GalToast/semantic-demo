@@ -12,13 +12,12 @@ import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus';
 import {
     MODE_DESCRIPTIONS,
     STORY_DESCRIPTIONS,
-    applyStoryPrompt,
     focusOnPoint,
     showExperienceToast,
-    syncFilterControls,
     setMyceliumMode,
     syncSearchStatusForFocus,
 } from './lifecycle.ts';
+import { applyStoryPrompt, syncFilterControls } from '@lib/orchestration/cluster-filter-controller';
 import { switchView } from './view-controller.ts';
 import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.ts';
 import { isPointVisible, type GeoPoint } from './utils/geo-data.ts';

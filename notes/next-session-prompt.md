@@ -1,118 +1,54 @@
 # Next-session seam prompt
 
-## Current state (2026-06-16 11:50 UTC, post-W14-T2 closeout)
+## Current state (2026-06-16 20:00 UTC, W15 mid-flight)
 
-**Branch:** `master` tracking `origin/master`
-**Master HEAD:** `76c1748 docs(w14-t2): closeout + legend-ui W15 candidate finding` (pushed, 0 ahead)
-**Working tree:** ~33 uncommitted modifications (parallel session W14-DEATH-BRIDGE mid-flight on `camera-controls` consumers + dist/ regenerated artifacts)
+**Branch:** `master` tracking `origin/master`  
+**Master HEAD:** `29490cb ci(w15): add GitHub Actions workflow for svelte-check, tests, and build`  
+**Working tree:** ~25 uncommitted modifications (parallel session W14-T3 search-domain retirement mid-flight — **DO NOT COMMIT**)
 
-### This session (2026-06-16, 09:30–11:50 UTC) summary
+### This session (2026-06-16, afternoon UTC) summary
 
-**Arc closures landed:**
+**Tracks 1–4 are in flight or done:**
 
-- **W11 + W13 + W16 engine port arc sealed** (Visual QA Round 3, `f75a26a` + `a94c0fe`) — engine functional, initSemanticLens null-ref GONE, 3D canvas renders.
-- **A2-7 keyboard fix** (`f75a26a`) — `?` keybinding wired to keyboard help overlay + `e.preventDefault()` on Escape handler (was overwriting to about:blank).
-- **Visual QA Round 3 REPORT** (`a94c0fe`, `docs/w15-visual-qa/round3-2026-06-16.md`) — durable in `docs/`.
-- **W14 Tier 2 teardown** (`7a0a25e`, `127523e`, `adbc6fe`, `705e9b7`, `76c1748`) — 4 of 6 in-scope kernel files retired.
+| Track            | Status                                                           | Commit                                                                                |
+| ---------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| **1. Visual QA** | 🔄 Subagent running (`ocw_78bce3ab-d462-44fb-88c3-20ed1ce3da26`) | In progress — read-only QA pass, no edits                                             |
+| **2. A11y**      | ✅ Complete                                                      | `8b5bc3b` — `w` weather shortcut, `?` help, Escape reset                              |
+| **3. Legacy**    | ✅ Wave A done                                                   | `c767713` — deleted `cluster-list-delegate` + `connection-analysis-adapter` (106 LOC) |
+| **4. CI**        | ✅ Drafted + pushed                                              | `29490cb` — GitHub Actions `ci.yml`                                                   |
 
-**W14 Tier 2 final tally:**
+### Open items for next session
 
-| File                              | LOC | Status                             | Commit    |
-| --------------------------------- | --- | ---------------------------------- | --------- |
-| `js/modules/config.ts`            | 107 | ✅ Retired                         | `7a0a25e` |
-| `js/modules/environment.ts`       | 144 | ✅ Retired                         | `127523e` |
-| `js/modules/focus-panel-mode.ts`  | 31  | ✅ Retired                         | `adbc6fe` |
-| `js/modules/cluster-labels.ts`    | 275 | ✅ Retired                         | `705e9b7` |
-| `js/modules/strand-continuity.ts` | 96  | ⚠️ Skipped (API mismatch finding)  | —         |
-| `js/modules/legend-ui.ts`         | 308 | 📋 W15 candidate (port-completion) | —         |
-
-Total retired: 557 LOC. 2 findings documented.
-
-**Workers this session:**
-
-- `ocw_6650e9bf` + `ocw_fc1f194d` (Visual QA Round 3) — $0.007
-- `ocw_57eaeffe` (W14-T2 Wave 1: config + environment + focus-panel-mode + strand-continuity finding) — $0.0005
-- `ocw_fd51de49` (W14-T2 Wave 2: cluster-labels + legend-ui finding) — $0.0005
-- `ocw_0c514d28` (A2-5, cancelled) — $0.0003
-- `ocw_98b9cef7` (A2-6, cancelled) — $0.0003
-- `ocw_db5feb88` (init-semantic-lens fix, no-op) — $0.003
-- **Combined**: ~$0.015
-
-**Memory at 14%** (45 entries, 70,764 / 500,000 chars).
-
-### Open W14 findings
-
-#### 1. strand-continuity API mismatch (skipped, needs main-lane decision)
-
-**Kernel** (`js/modules/strand-continuity.ts`): standalone functions — `setStrandContinuityState`, `clearStrandContinuityState`, `setTimer`, `clearTimer`, `disposeTimers`, `getStrandArrivalNote`.
-
-**Canonical** (`src/lib/utils/strand-continuity.ts`): class-based API — `StrandContinuityManager`, `getStrandContinuityManager`, `resetStrandContinuityManager`.
-
-**Bridge**: re-exports kernel's standalone functions to 4 journey-layer consumers.
-
-**Two paths forward**:
-
-- **(a)** Add standalone function wrappers to canonical that delegate to the singleton manager. ~1-2 hour worker, ~$0.003.
-- **(b)** Port the 4 journey consumers to use the class API. ~1-2 hour worker, ~$0.003.
-- **(c)** File as W16 candidate if other priorities take precedence.
-
-#### 2. legend-ui port-completion (W15 candidate, scoped)
-
-**Kernel** (`js/modules/legend-ui.ts`): 308 LOC, 11 exports.
-**Canonical** (`src/lib/journey/legend-ui.ts`): 20 LOC, 1 export (`initLegendEventBusSubscriptions`).
-**Gap**: 10 missing exports + 10 live code importers (7 .ts + 3 .svelte).
-
-**Two approaches**:
-
-- **(1)** Port-completion: extend canonical from 20 → ~308 LOC. ~2-3 hours, ~$0.005.
-- **(2)** Rewire to `Legend.svelte`: update all 10 live importers. ~1-2 hours, ~$0.003.
-
-Full finding: `docs/w14-tier2/legend-ui-port-completion-2026-06-16.md`.
-
-### Parallel session in flight (do not fight)
-
-The parallel Codex session is mid-refactor on `src/lib/engine/camera-controls.ts`, splitting it into:
-
-- `camera-choreography`
-- `camera-controls-restore-bridge`
-- `camera-controls-core`
-
-This leaves `src/lib/engine/index.ts` with **23 svelte-check errors** (export block at lines 67-92 lists names that no longer exist in camera-controls). This is **not W14-T2 scope** — will resolve when parallel session lands the camera-controls split. Bridge contract (5/5), vitest (652/652), ts-js-drift clean, build (`npm run build:svelte`) succeeds.
-
-**If svelte-check needs to be green for a worker**: wait for parallel session to land the camera-controls split first, or run svelte-check excluding `src/lib/engine/index.ts` temporarily.
-
-### Recommended next session
-
-1. **W14 Tier 3 recon** (search domain, 8 files, ~3,000 LOC) — biggest W14 arc remaining. Pre-stage a recon worker that maps the 8 files + their importers + the canonical Svelte 5 port coverage. Output: ready-to-fire T3 prompt with explicit per-file scope. ~30-45 min, ~$0.005.
-2. **Decide on strand-continuity approach** — main-lane decision. Option (a) or (b) above, or file as W16. (c) is fine if T3 is higher priority.
-3. **Legend-ui W15 worker** (if strand-continuity is in W16 and T3 recon lands): dispatch the port-completion OR rewire-to-Legend approach. Decide based on time budget and desired cleanup depth.
-4. **`camera-controls.ts` DEATH-BRIDGE final retirement** (W16) — when parallel session lands the split, the 131 LOC `camera-controls.ts` file can be deleted (currently a DEATH-BRIDGE with 20+ consumers).
+1. **Review Visual QA subagent report** — `tmp/w15-visual-qa/REPORT.md` (expected when worker finishes). If findings require fixes, scope them and either dispatch a fix worker or handle in-lane.
+2. **Continue Track 3 (Legacy) Wave B** — The remaining 66 `js/modules/*.ts` files still in place are all referenced through bridge re-exports. None are zero-consumer after the Wave A deletions. Bridge-flip or port is required before further deletion. A consumer audit (searching `src/lib/engine/*-bridge.ts` for `from '../../../js/modules/...'`) would identify which bridges still point to legacy files.
+3. **Resolve strand-continuity API mismatch** — Still open from W14. `StrandContinuityState` type added to working tree `src/lib/utils/strand-continuity.ts`. Either wrap canonical class API in standalone functions or port the 4 journey consumers.
+4. **Resolve parallel session WIP** — The 25-file working tree drift is from the parallel session's W14-T3 search-domain retirement. Do not commit or stage these edits. Let the parallel session resolve its own work. Before any commit from this lane, always `git status` to verify only intended files are staged.
 
 ### Verification baseline (end of this session)
 
-- W14 Tier 2 CLOSED — 4 files retired, 2 findings documented
-- Master 0 ahead of origin (pushed)
-- Working tree has 33+ uncommitted modifications (parallel session W14-DEATH-BRIDGE mid-flight)
-- svelte-check: 23 errors (all in `src/lib/engine/index.ts` from parallel session's mid-refactor, not W14-T2 work)
+- Master 9 ahead of origin (pushed up through `29490cb`)
+- Working tree has 25+ uncommitted modifications (parallel session WIP — **do not stage**)
+- svelte-check: 0 errors, 0 warnings (verified on working tree)
 - vitest: 652/652 ✓
+- build (`npm run build:svelte`): green ✓ (7.7s)
 - bridge contract: 5/5 ✓
 - ts-js-drift: 78 .ts files clean ✓
-- build (`npm run build:svelte`): green ✓
 
-### Doctrine refinements from this session
+### Critical handoff notes
 
-- **Cross-check audit closures before dispatching workers** — the `next-session-prompt.md` listed A2-4/5/6 as "remaining" but `docs/a2-audit-closure-2026-06-14.md` showed all 8 A2 tickets were shipped. Cancelled 2 workers before they re-implemented shipped work. Lesson: the next-session-prompt is NOT a source of truth for in-flight tickets; audit closures + `git log` are.
-- **Always baseline svelte-check on the pre-edit state** before assuming your edit caused new errors.
-- **Live steer protocol is fast and cheap** — used 3+ times this session, all landed in <2s.
-- **The "1 test straggler" was a false positive** — `tests/semantic-guide-payload-contract.mjs` matched `rg "from.*['\"]\.\./state"` because of `assertNotContains` string literals. Tighter pattern: `rg "from\s+['\"][^'\"]*\.\./state" --type ts --type svelte`.
-- **mimo-v2.5 is the productive default** for focused refactors in this repo. $0.001-0.005 per ticket, ~5-30 min wall time.
-- **2 workers in parallel works** when scopes are in different `src/lib/` subtrees (Wave 1 = engine + utils, Wave 2 = ui). ~30 min total wall time vs ~60 min sequential. Collision risk was zero.
-- **Workers can land commits to files outside their scope** — `adbc6fe` (focus-panel-mode retirement) accidentally absorbed the parallel session's `cluster-labels.ts` kernel deletion. End state correct, but commit message hygiene slightly off. Always check `git show --stat` for each commit to confirm.
-- **Parallel session mid-refactors can leave svelte-check broken** — the camera-controls split is in flight, causing 23 svelte-check errors. This is OK if vitest + bridge + drift are still green. Don't try to fix the parallel session's WIP in main lane.
+- **Do NOT commit parallel session WIP.** The 25 uncommitted files are mid-flight and partially broken. Re-audit `git status --short` before every commit.
+- **Do NOT push master until the parallel session's commits are verified** (ci.yml is fine, but any subsequent commits must wait for the parallel stream to quiesce per `AGENTS.md` parallel-session-watch).
+- **Subagent report is pending:** `ocw_78bce3ab-d462-44fb-88c3-20ed1ce3da26` is expected to write `tmp/w15-visual-qa/REPORT.md`.
 
-### Open questions
+### Recommended next session order
 
-1. **Will the parallel session land the camera-controls split in this session or the next?** If this session, the svelte-check errors will resolve and W14-T3 recon can run. If next session, wait or skip svelte-check in T3 worker.
-2. **Should strand-continuity be resolved in W14-T2 follow-up, or filed as W16?** This is a main-lane decision.
-3. **Legend-ui approach: port-completion or rewire-to-Legend?** Approach 1 (port-completion) preserves the kernel pattern, approach 2 (rewire) is cleaner long-term. Time and risk trade-off.
-4. **What's the W14-T3 batch size?** 8 files / ~3,000 LOC could be 1 big worker or 2-3 smaller waves. Recommend 2 waves: 4 search files + 4 search-adjacent files.
+1. **Read subagent report** — `tmp/w15-visual-qa/REPORT.md` + any screenshot attachments. Note findings and classify (blocker/warning/observation).
+2. **Decide on strand-continuity approach** — If subagent fixes are small, batch them with strand-continuity. If subagent finds are large, pop strand-continuity to W16.
+3. **Legacy Wave B prep** — Run a bridge-point consumer audit (which bridge files still import from `js/modules/`), then dispatch a worker to flip low-risk bridges.
+4. **Update charter + execution log** — Reflect actual W15 closeout in `docs/w15-charter-2026-06-16.md` and `docs/w15-execution-log-2026-06-16.md`.
+
+### Open questions (for main lane)
+
+1. Should W15 Track 3 (Legacy) continue in this session, or be filed as W16 given the subagent results may consume the remainder?
+2. Is the parallel session's WIP expected to land today, or is it a multi-session arc?
+3. Do we want to tighten the CI workflow (add build artifacts to releases, add pre-commit hooks)?

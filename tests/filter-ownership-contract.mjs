@@ -255,7 +255,7 @@ const MODULES_DIR = join(PROJECT_ROOT, 'js', 'modules');
 const MODULE_PATHS = {
   'filter-state.ts':     join(PROJECT_ROOT, 'src', 'lib', 'stores', 'filter.svelte.ts'),
   'search-state.ts':     join(PROJECT_ROOT, 'src', 'lib', 'search', 'state.ts'),
-  'cluster-filter.ts':    join(MODULES_DIR, 'cluster-filter.ts'),
+  'cluster-filter.ts':    join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'cluster-filter-controller.ts'),
   'event-bindings.ts':   join(MODULES_DIR, 'bindings', 'filter-bindings.ts'),
   'filter-chrome.svelte': join(MODULES_DIR, 'components', 'FilterChrome.svelte'),
   'url-state.ts':         join(MODULES_DIR, 'url-state.ts'),
@@ -447,12 +447,12 @@ assert(
 
 // Verify setClusterFilter uses filter-state for cluster filter mutations
 assert(
-  cfSource.includes('resetActiveFilters'),
-  'cluster-filter.ts clearClusterFilter must call resetActiveFilters from filter-state'
+  cfSource.includes('resetActiveFilters') || cfSource.includes('resetFilters'),
+  'cluster-filter.ts clearClusterFilter must call resetActiveFilters/resetFilters from the filter owner'
 );
 assert(
-  cfSource.includes('setActiveFilter'),
-  'cluster-filter.ts populateCityFilter must call setActiveFilter from filter-state'
+  cfSource.includes('setActiveFilter') || cfSource.includes('toggleFilter'),
+  'cluster-filter.ts populateCityFilter must call setActiveFilter/toggleFilter from the filter owner'
 );
 
 console.log('PASS CONTRACT 7: cluster-filter.ts uses filter-state owner APIs for all mutations');
@@ -493,20 +493,16 @@ assert(
 
 console.log('PASS CONTRACT 8: search-state.ts reads activeFilters but does not write it');
 
-// ─── CONTRACT 9: lifecycle.ts uses syncFilterControls (re-export from cluster-filter) ───
-// lifecycle.ts orchestrates filter UI sync via cluster-filter's syncFilterControls
-// (which chains to filter-state). It also directly assigns state.activeFilters in
-// reset orchestration — those writes are ALLOWED per Contract 3 allowlist.
-// This contract verifies lifecycle calls syncFilterControls for UI sync.
-
-const lcSource = readFileSync(MODULE_PATHS['lifecycle.ts'], 'utf8');
-// Verify lifecycle calls syncFilterControls (the re-export from cluster-filter/filter-state)
+// ─── CONTRACT 9: url-state.ts synchronizes filter UI after restore ─────────────
+// URL restoration orchestrates filter UI sync via lifecycle's syncFilterControls
+// import. This is the active filter restore path after lifecycle was slimmed
+// into a facade.
 assert(
-  lcSource.includes('syncFilterControls'),
-  'lifecycle.ts must call syncFilterControls (re-exported from cluster-filter -> filter-state)'
+  usSource.includes('syncFilterControls') && usSource.includes('applyFilters'),
+  'url-state.ts must call syncFilterControls and applyFilters after restoring filter state'
 );
 
-console.log('PASS CONTRACT 9: lifecycle.ts orchestrates filter UI via syncFilterControls (re-export chain)');
+console.log('PASS CONTRACT 9: url-state.ts synchronizes filter UI after URL restore');
 
 // ─── CONTRACT 10: withFilterStateNotify is internal to filter-state ─────────────
 // withFilterStateNotify is the private notification helper. No other module
@@ -561,7 +557,7 @@ console.log('                        Does NOT import search-state.ts (no bad cyc
 console.log('  search-state.ts     — READER: reads state.activeFilters in getFilteredIndices()');
 console.log('                        and applyFilters() for filter-aware search operations.');
 console.log('                        Imports pointMatchesActiveFilters. Does NOT write activeFilters.');
-console.log('  lifecycle.ts        — HELPER: imports filter-state APIs for reset orchestration');
+console.log('  url-state.ts        — HELPER: syncs filter UI after URL restoration');
 console.log('  camera-controls.ts  — READER: reads activeFilters for focus decisions only');
 console.log('');
 console.log('Invariant: activeFilters and activeClusterFilter writes are centralized in');

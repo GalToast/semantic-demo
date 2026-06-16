@@ -36,7 +36,7 @@ import {
     getViewHandoffModel
 } from '@lib/engine/journey-compass-controller-bridge'
 import { semanticGuideIcon } from '../../src/lib/journey/semantic-guide.ts'
-import { applyMapFlatteningLayout } from './map-flattening-layout.ts'
+import { applyMapFlatteningLayout } from './map-flattening-layout.ts';
 import { setCurrentView } from './state-mutators.ts'
 
 // ── Types ──────────────────────────────────────────────────────────────────

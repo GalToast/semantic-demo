@@ -207,10 +207,10 @@ export function executeJourneyCompassAction(action: string): void {
             return
 
         case JOURNEY_ACTIONS.OPEN_MAP:
-            _switchView('map')
+            _switchView('map');
             return
         case JOURNEY_ACTIONS.OPEN_MYCELIUM:
-            _switchView('galaxy')
+            _switchView('galaxy');
             return
         case JOURNEY_ACTIONS.COUNTY_OVERVIEW:
             resetExplorationFocus({ preserveSearch: false })

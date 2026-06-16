@@ -1,49 +1,49 @@
 name: CI — Semantic Explorer
 
 on:
-  push:
-    branches: [master, main]
-  pull_request:
-    branches: [master, main]
+    push:
+        branches: [master, main]
+    pull_request:
+        branches: [master, main]
 
 jobs:
-  check:
-    name: Svelte Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run check
+    check:
+        name: Svelte Check
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run check
 
-  test:
-    name: Unit Tests
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run test:unit
+    test:
+        name: Unit Tests
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run test:unit
 
-  build:
-    name: Production Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-          cache: 'npm'
-      - run: npm ci
-      - run: npm run build:svelte
-      - name: Archive build artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: dist-svelte
-          path: dist/svelte/
+    build:
+        name: Production Build
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: '20'
+                  cache: 'npm'
+            - run: npm ci
+            - run: npm run build:svelte
+            - name: Archive build artifacts
+              uses: actions/upload-artifact@v4
+              with:
+                  name: dist-svelte
+                  path: dist/svelte/

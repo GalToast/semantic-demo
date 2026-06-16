@@ -12,7 +12,8 @@ import { setSemanticDiveMode, pinThreadNeighbor, unpinThreadInspection, walkThre
 import { traverseNeighbor } from '../../../src/lib/journey/thread-settler-adapter'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'
-import { resetExplorationFocus, exploreInsideToNextStop, clearClusterFilter } from '../lifecycle.ts'
+import { resetExplorationFocus, exploreInsideToNextStop } from '../lifecycle.ts'
+import { clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 
 export function expandNeighborhoodFromCurrentNode(): void {

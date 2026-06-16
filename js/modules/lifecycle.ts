@@ -60,16 +60,6 @@ import {
     invokeClearMobileRouteFieldPeek
 } from './journey-compass-controller.ts'
 import { appState } from '@lib/state/app.svelte'
-import {
-    clearClusterFilter,
-    updateClusterList,
-    getFilteredClusterCounts,
-    syncCityFilterUi,
-    populateCityFilter,
-    syncFilterControls,
-    applyStoryPrompt as applyStoryPromptImpl
-} from './cluster-filter.ts'
-
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
 import {
     MODE_DESCRIPTIONS,
@@ -86,12 +76,7 @@ import {
     resetExperienceState,
     returnToOverview as _returnToOverviewImpl
 } from './lifecycle-reset.ts'
-import {
-    activateSearchGlow,
-    recordEmptySearch,
-    showExploreTrailReview,
-    hideExploreTrailReview
-} from './lifecycle-search-sync.ts'
+
 
 // ── Pass-through re-exports ─────────────────────────────────────────────────
 export { applyCompositionState };
@@ -126,12 +111,6 @@ export {
     openLegendPanel,
     restoreLegendCollapsedPanel,
     clearSearch,
-    clearClusterFilter,
-    updateClusterList,
-    getFilteredClusterCounts,
-    syncCityFilterUi,
-    populateCityFilter,
-    syncFilterControls,
     executeJourneyCompassAction,
     updateJourneyCompass,
     getJourneyCompassState
@@ -146,10 +125,6 @@ export {
     setTrailDepth,
     resetNodePositions,
     resetExperienceState,
-    activateSearchGlow,
-    recordEmptySearch,
-    showExploreTrailReview,
-    hideExploreTrailReview
 };
 
 // ── Thin proxy wrappers ─────────────────────────────────────────────────────
@@ -272,4 +247,4 @@ export function focusOnPoint(point: any, options: any = {}): boolean {
     return true
 }
 
-export { applyStoryPromptImpl as applyStoryPrompt };
+

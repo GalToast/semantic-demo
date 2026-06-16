@@ -5,7 +5,7 @@
  * Exploration mode state management (mycelium modes, trails, stories).
  */
 import { state } from '@lib/engine/state-bridge';
-import { applyStoryPrompt as applyStoryPromptImpl } from './cluster-filter.ts';
+import { applyStoryPrompt as applyStoryPromptImpl } from '@lib/orchestration/cluster-filter-controller';
 import { setMyceliumMode as setMyceliumModeImpl, setTrailDepth as setTrailDepthImpl } from './lifecycle.ts';
 
 export const MODE_DESCRIPTIONS: Record<string, string> = {

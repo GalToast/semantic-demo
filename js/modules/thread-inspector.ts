@@ -49,7 +49,7 @@ export { getGeometricThreadCandidates, getSemanticThreadCandidates, getThreadCan
 export { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote }
 export { syncInspectedStrandOverlay, updateInspectedStrandOverlay, disposeInspectedStrandOverlay }
 
-setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay)
+setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay);
 
 export interface ThreadInspectionState {
     active: boolean

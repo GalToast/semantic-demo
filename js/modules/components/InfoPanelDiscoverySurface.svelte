@@ -1,7 +1,7 @@
 <script lang="ts">
     import { activeFiltersStore } from '../stores.js';
     import { publish, EVENTS } from '@lib/orchestration/event-bus';
-    import { bindClusterListDelegation } from '../cluster-list-delegate.ts';
+    import { setClusterFilter, clearClusterFilter } from '@lib/orchestration/cluster-filter-controller';
     import FilterChrome from './FilterChrome.svelte';
 
     interface ActiveFilters {
@@ -21,9 +21,22 @@
         activeFilters.geocoded
     );
 
-    $effect(() => {
-        bindClusterListDelegation();
-    });
+    function handleClusterListClick(event: MouseEvent): void {
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) return;
+
+        if (target.closest('.cluster-clear-btn') || target.closest('.cluster-empty-clear')) {
+            event.stopPropagation();
+            clearClusterFilter();
+            return;
+        }
+
+        const clusterItem = target.closest('[data-cluster]');
+        if (clusterItem instanceof HTMLElement) {
+            const clusterIndex = Number(clusterItem.dataset.cluster);
+            if (Number.isFinite(clusterIndex)) setClusterFilter(clusterIndex);
+        }
+    }
 </script>
 
 <section class="info-panel-surface info-panel-surface-discovery" data-surface-owner="discovery-filters" data-ownership-lane="surface interaction content" aria-label="Discovery filters surface">
@@ -34,7 +47,7 @@
             </span>
         </summary>
         <div class="rail-section-body">
-            <ul class="cluster-list" id="cluster-list" role="group" aria-label="Semantic neighborhood filters"></ul>
+            <ul class="cluster-list" id="cluster-list" role="group" aria-label="Semantic neighborhood filters" onclick={handleClusterListClick}></ul>
         </div>
     </details>
 
