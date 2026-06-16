@@ -224,38 +224,37 @@
       </button>
     </div>
 
-    {#if !utilityOnly}
-      <div
-        class="mode-chips"
-        id="mode-chips"
-        role="radiogroup"
-        aria-label="View mode"
-        aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Control+1 Control+2 Control+3 Control+4 Control+5 Control+6"
-        tabindex="-1"
-        onkeydown={handleModeKeydown}
-        onfocusin={handleModeFocusin}
-      >
-        {#each modes as mode (mode.id)}
-          <button
-            class="mode-chip"
-            class:active={isActive(mode.id)}
-            role="radio"
-            tabindex={isActive(mode.id) ? 0 : -1}
-            aria-checked={isActive(mode.id)}
-            aria-label={mode.label}
-            title={mode.description}
-            data-mode={mode.id}
-            onclick={() => selectMode(mode.id)}
-          >
-            <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
-            <span class="chip-label">{mode.label}</span>
-          </button>
-        {/each}
-      </div>
+    <!-- A2-4: Mode chips are always rendered for accessibility. CSS controls visibility per state. -->
+    <div
+      class="mode-chips"
+      id="mode-chips"
+      role="radiogroup"
+      aria-label="View mode"
+      aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Control+1 Control+2 Control+3 Control+4 Control+5 Control+6"
+      tabindex="-1"
+      onkeydown={handleModeKeydown}
+      onfocusin={handleModeFocusin}
+    >
+      {#each modes as mode (mode.id)}
+        <button
+          class="mode-chip"
+          class:active={isActive(mode.id)}
+          role="radio"
+          tabindex={isActive(mode.id) ? 0 : -1}
+          aria-checked={isActive(mode.id)}
+          aria-label={mode.label}
+          title={mode.description}
+          data-mode={mode.id}
+          onclick={() => selectMode(mode.id)}
+        >
+          <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
+          <span class="chip-label">{mode.label}</span>
+        </button>
+      {/each}
+    </div>
 
-      {#if activeDescription && !$viewport.isCompact}
-        <span class="header-description">{activeDescription}</span>
-      {/if}
+    {#if activeDescription && !$viewport.isCompact}
+      <span class="header-description">{activeDescription}</span>
     {/if}
   </header>
 {/if}

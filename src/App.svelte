@@ -304,7 +304,8 @@
 
 {#if headerVisible}
   <!-- Header with mode chips — outside <main> as its own banner landmark -->
-  <Header visible={true} utilityOnly={!idleSurfaceActive} />
+  <!-- A2-4: Always render mode chips for accessibility; CSS controls visibility per state -->
+  <Header visible={true} utilityOnly={false} />
 {/if}
 
 <main id="main-content" class="semantic-main" tabindex="-1" aria-label="Semantic explorer application">
