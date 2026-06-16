@@ -6,7 +6,7 @@
 
 import { state as _state } from '../../state.ts';
 const state = _state as any;
-import { handleGalaxyKeydown } from '../keyboard-help.ts';
+import { handleGalaxyKeydown } from '@lib/keyboard/keyboard-help';
 import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } from './semantic-lane-bindings.ts';
 import { applyUrlState } from '../url-state.ts';
 

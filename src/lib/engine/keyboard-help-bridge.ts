@@ -8,4 +8,5 @@ export {
   initKeyboardShortcutsHint,
   showKeyboardShortcutsHint,
   initKeyboardResetOwnership,
-} from '../../../js/modules/keyboard-help';
+  handleGalaxyKeydown,
+} from '@lib/keyboard/keyboard-help';
