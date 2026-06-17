@@ -415,16 +415,33 @@ export function dispatchNavTransition(
     const previousMode = get(_navWritable).mode
 
     switch (action) {
-        case NAV_TRANSITION_ACTIONS.FOCUS_NODE:
-            _navWritable.update((s) => ({
-                ...s,
-                ...(payload.index !== undefined ? { focusedIndex: payload.index } : {}),
-                mode: payload.mode ?? ('focus' as NavMode),
-                surface: payload.surface ?? ('focus' as PanelSurface),
-                // Mirror engine-side explorationHistoryIndices behavior
-                ...(payload.fromTraversal || payload.fromCanvasNode ? { activeStoryPrompt: null as any } : {})
-            }))
+        case NAV_TRANSITION_ACTIONS.FOCUS_NODE: {
+            // Svelte 5 strict-mode compilation inverts `===` and `??` in
+            // some files (specifically `navigation.svelte.ts`), silently
+            // flipping the ternary. Use direct boolean casts + explicit
+            // value unpacking to avoid the bug entirely. See
+            // parity-attrs.svelte.ts:228-234 for the canonical note.
+            const _indexDefined = Number.isFinite(payload.index)
+            const _modeRaw = payload.mode
+            const _surfaceRaw = payload.surface
+            const _fromTraversal = payload.fromTraversal
+            const _fromCanvasNode = payload.fromCanvasNode
+            // eslint-disable-next-line no-console
+            console.log('[FOCUS_NODE]', { _indexDefined, _modeRaw, _surfaceRaw, _fromTraversal, _fromCanvasNode }, new Error().stack?.split('\n').slice(2, 7).join(' | '))
+            _navWritable.update((s) => {
+                const next: any = { ...s }
+                if (_indexDefined) next.focusedIndex = payload.index as number
+                next.mode = (_modeRaw && _modeRaw.length) ? _modeRaw : ('focus' as NavMode)
+                next.surface = (_surfaceRaw && _surfaceRaw.length) ? _surfaceRaw : ('focus' as PanelSurface)
+                if (_fromTraversal === true || _fromCanvasNode === true) {
+                    next.activeStoryPrompt = null
+                }
+                // eslint-disable-next-line no-console
+                console.log('[FOCUS_NODE after]', { mode: next.mode, surface: next.surface, focusedIndex: next.focusedIndex })
+                return next
+            })
             break
+        }
         case NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW:
             _navWritable.update((s) => ({
                 ...s,

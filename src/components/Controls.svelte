@@ -41,13 +41,13 @@
   }
 </script>
 
-{#if visible}
-  <div
+<div
     class="controls"
     class:compact={$viewport.isCompact}
     id="camera-controls"
     role="toolbar"
     aria-label="Camera controls"
+    hidden={!visible}
   >
     <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
@@ -96,8 +96,7 @@
         <path d="m8.8 11 6.4-4M8.8 13l6.4 4" fill="none" stroke="currentColor" stroke-width="2"/>
       </svg>
     </button>
-  </div>
-{/if}
+</div>
 
 <style>
   .controls {

@@ -2,7 +2,7 @@
   import { onMount, onDestroy } from 'svelte';
   import { viewport, viewportWidth, viewportHeight, dpr } from '@lib/stores/viewport.svelte.ts';
   import { completeCameraTransition } from '@lib/stores/camera.svelte.ts';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
   import type { EngineBridge, EngineCallbacks } from '@lib/engine';
   import type { LoadingPhase } from '@lib/types/state';
@@ -20,7 +20,18 @@
 
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, { index });
+      // W15+ parity-attrs fix: preserve the current surface (especially
+      // 'focus-search') when re-dispatching FOCUS_NODE. Without this, the
+      // canvas CAMERA_NODE_FOCUSED → lifecycle-bridge → onNodePicked chain
+      // re-fires dispatchNavTransition with no surface and clobbers
+      // 'focus-search' → 'focus' in the Svelte navStore. The Svelte track's
+      // cursor.ts focusOnNode is the canonical writer for surface; this
+      // bridge re-dispatch should defer to whatever surface is current.
+      const _currentSurface = navStore().surface
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
+        index,
+        surface: _currentSurface && _currentSurface !== 'idle' ? _currentSurface : undefined
+      })
     },
     onCameraArrived: () => {
       completeCameraTransition();

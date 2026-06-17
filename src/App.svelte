@@ -407,7 +407,7 @@
       rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
       changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
     -->
-    <FocusPocket visible={true} />
+    <FocusPocket />
   </div>
 
   <!-- Mini-map trail (self-gates via visible && hasTrail() && trail.length > 0) -->
