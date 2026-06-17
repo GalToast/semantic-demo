@@ -12,4 +12,4 @@ export {
     renderWeatherFallback,
     updateWeatherStaleness,
     updateWeatherUi
-} from '../../../js/modules/weather-ui'
+} from '@lib/ui/weather-ui'
