@@ -46,7 +46,7 @@
     class:compact={$viewport.isCompact}
     id="camera-controls"
     role="toolbar"
-    aria-label="Camera controls"
+    aria-label="Map controls"
     hidden={!visible}
   >
     <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in">

@@ -328,6 +328,9 @@
 <!-- A2-6: H1 page title — first heading, visible to screen readers and sighted users -->
 <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
 
+<!-- Screen-reader-only live region for dynamic announcements -->
+<div class="sr-only" aria-live="polite" aria-atomic="true" id="sr-announcer"></div>
+
 {#if headerVisible}
   <!-- Header with mode chips — outside <main> as its own banner landmark -->
   <!-- A2-4: Always render mode chips for accessibility; CSS controls visibility per state -->
@@ -491,6 +494,19 @@
   controls are not trapped under the WebGL/root stacking context.
 -->
 <style>
+  /* Screen-reader-only utility */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   /* Global app styles */
   .semantic-explorer {
     position: relative;

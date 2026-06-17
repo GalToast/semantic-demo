@@ -191,6 +191,7 @@
 
 {#if visible}
   <!-- lil-gui injects its own DOM; the visible prop is just a mount gate. -->
+  <div role="complementary" aria-label="Developer tools"></div>
 {/if}
 
 <style>
