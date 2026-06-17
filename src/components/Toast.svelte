@@ -12,6 +12,9 @@
 <script lang="ts">
   import { onMount } from 'svelte';
 
+  interface Props {}
+  let {} = $props<Props>();
+
   let toastMessage = $state('');
   let toastActive = $state(false);
   let toastVariant = $state<'info' | 'error'>('info');

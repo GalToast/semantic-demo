@@ -25,6 +25,9 @@
     map?: RuntimeMap | null;
   }
 
+  interface Props {}
+  let {} = $props<Props>();
+
   let status = $state<MapStatus>('loading');
   let statusDetail = $state('Loading county terrain');
   let mounted = false;

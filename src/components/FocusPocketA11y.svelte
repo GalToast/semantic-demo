@@ -22,6 +22,9 @@
   import { setFocusedIndex } from '@lib/stores/navigation.svelte.ts';
   import type { FocusPocketNode } from '@lib/types/state';
 
+  interface Props {}
+  let {} = $props<Props>();
+
   function focusOnNode(node: FocusPocketNode): void {
     setFocusedIndex(node.index);
   }
