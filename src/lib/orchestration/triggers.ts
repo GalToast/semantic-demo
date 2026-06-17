@@ -150,13 +150,25 @@ subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {} as any) => {
   const index = Number((payload as any)?.index);
   if (Number.isFinite(index) && index >= 0) {
-    navStore.update((s) => ({
-      ...s,
-      focusedIndex: index,
-      mode: 'focus',
-      surface: s.surface === 'focus-search' ? s.surface : 'focus',
-      trailDepth: Math.max(1, s.trailDepth ?? 0)
-    }));
+    // Guard: when SEARCH_FOCUS_REQUESTED fires just before this event (the
+    // search-click hot path), it has already set focusedIndex, mode, surface
+    // ('focus-search'), and trailDepth to the same values this subscriber
+    // would set. Re-running navStore.update() is functionally a no-op but
+    // triggers a redundant Svelte reactivity cascade that compounds the
+    // 200-500ms sync work in the focus-click pipeline (W15-T1 diagnosis
+    // in tmp/w15-focus-deadlock-diagnosis.md). Skip the update when the
+    // index is already current; updateJourneyCompass() below still runs
+    // (idempotent for the same focus context).
+    const current = get(navStore) as { focusedIndex?: number | null };
+    if (current.focusedIndex !== index) {
+      navStore.update((s) => ({
+        ...s,
+        focusedIndex: index,
+        mode: 'focus',
+        surface: s.surface === 'focus-search' ? s.surface : 'focus',
+        trailDepth: Math.max(1, s.trailDepth ?? 0)
+      }));
+    }
   }
   updateJourneyCompass();
 });
