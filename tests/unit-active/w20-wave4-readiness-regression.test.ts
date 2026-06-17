@@ -29,16 +29,12 @@ import { join, relative, resolve } from 'node:path'
 // ── Project roots ────────────────────────────────────────────────────────────
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '../..')
-const JS_MODULES  = join(PROJECT_ROOT, 'js/modules')
+const JS_MODULES = join(PROJECT_ROOT, 'js/modules')
 
 // ── Wave 4 cleanup targets ───────────────────────────────────────────────────
 
 /** Files that MUST be deleted by the parallel session's W20 arc */
-const PENDING_DELETIONS = [
-    'lifecycle.ts',
-    'lifecycle-modes.ts',
-    'lifecycle-reset.ts',
-] as const
+const PENDING_DELETIONS = ['lifecycle.ts', 'lifecycle-modes.ts', 'lifecycle-reset.ts'] as const
 
 /** Canonical files that MUST exist after Wave 4 (already wired) */
 const MUST_EXIST_FILES = [
@@ -46,7 +42,7 @@ const MUST_EXIST_FILES = [
     join('src', 'lib', 'orchestration', 'lifecycle.ts'),
     join('tests', 'unit-active', 'lifecycle-bridge-canonical-regression.test.ts'),
     join('tests', 'unit-active', 'lifecycle-canonical-semantic-dive-mode-regression.test.ts'),
-    join('tests', 'unit-active', 'composition-state-canonical-regression.test.ts'),
+    join('tests', 'unit-active', 'composition-state-canonical-regression.test.ts')
 ] as const
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -69,7 +65,9 @@ function collectTsFiles(dir: string, files: string[] = []): string[] {
             } else if (/\.ts$/.test(entry)) {
                 files.push(fullPath)
             }
-        } catch { /* skip unreadable entries */ }
+        } catch {
+            /* skip unreadable entries */
+        }
     }
     return files
 }
@@ -106,7 +104,6 @@ function isCrossModuleRelativeImport(source: string): boolean {
 // ══════════════════════════════════════════════════════════════════════════════
 
 describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
-
     // ── Section 1: Hard invariants (must always pass) ────────────────────────
     // These test things that SHOULD already be true. If they fail,
     // it's a regression, not pending cleanup.
@@ -135,10 +132,7 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
         for (const relPath of MUST_EXIST_FILES) {
             it(`${relPath} exists`, () => {
                 const fullPath = join(PROJECT_ROOT, relPath)
-                expect(
-                    existsSync(fullPath),
-                    `${relPath} does not exist — W20 canonical not wired`
-                ).toBe(true)
+                expect(existsSync(fullPath), `${relPath} does not exist — W20 canonical not wired`).toBe(true)
             })
         }
 
@@ -181,9 +175,9 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
             if (pending.length > 0) {
                 console.log(
                     `\n⚠ PENDING WAVE 4 CLEANUP — ${pending.length} file(s) still exist:\n` +
-                    pending.map(f => `  • js/modules/${f}`).join('\n') +
-                    `\n\nThese should be deleted by the parallel session's W20 arc.\n` +
-                    `Once deleted, these assertions will pass automatically.\n`
+                        pending.map((f) => `  • js/modules/${f}`).join('\n') +
+                        `\n\nThese should be deleted by the parallel session's W20 arc.\n` +
+                        `Once deleted, these assertions will pass automatically.\n`
                 )
             }
         })
@@ -215,9 +209,9 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
             if (lifecycleImporters.length > 0) {
                 console.log(
                     `\n⚠ PENDING WAVE 4 CLEANUP — ${lifecycleImporters.length} file(s) still import from ./lifecycle.ts:\n` +
-                    lifecycleImporters.map(f => `  • ${f}`).join('\n') +
-                    `\n\nThese imports must be rewritten to @lib/orchestration/lifecycle\n` +
-                    `before js/modules/lifecycle.ts can be deleted.\n`
+                        lifecycleImporters.map((f) => `  • ${f}`).join('\n') +
+                        `\n\nThese imports must be rewritten to @lib/orchestration/lifecycle\n` +
+                        `before js/modules/lifecycle.ts can be deleted.\n`
                 )
             }
         })
@@ -226,7 +220,7 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
             expect(
                 lifecycleImporters,
                 `Found ${lifecycleImporters.length} import(s) from deleted ./lifecycle.ts:\n` +
-                lifecycleImporters.join('\n')
+                    lifecycleImporters.join('\n')
             ).toHaveLength(0)
         })
     })
@@ -236,26 +230,22 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
 
         beforeAll(() => {
             const tsFiles = collectTsFiles(JS_MODULES)
-            const journeyFiles = tsFiles.filter(f =>
-                /journey-.*\.ts$/.test(f) && !f.includes('journey.ts')
-            )
+            const journeyFiles = tsFiles.filter((f) => /journey-.*\.ts$/.test(f) && !f.includes('journey.ts'))
 
             for (const file of journeyFiles) {
                 const content = readFileSync(file, 'utf-8')
                 const sources = extractImportSources(content)
                 for (const src of sources) {
                     if (isCrossModuleRelativeImport(src)) {
-                        violations.push(
-                            `${relFromRoot(file)} imports '${src}'`
-                        )
+                        violations.push(`${relFromRoot(file)} imports '${src}'`)
                     }
                 }
             }
             if (violations.length > 0) {
                 console.log(
                     `\n⚠ CROSS-MODULE IMPORTS — ${violations.length} violation(s) in journey-* files:\n` +
-                    violations.map(v => `  • ${v}`).join('\n') +
-                    `\n\nThese should use @lib/ aliases or ./utils/* shims.\n`
+                        violations.map((v) => `  • ${v}`).join('\n') +
+                        `\n\nThese should use @lib/ aliases or ./utils/* shims.\n`
                 )
             }
         })
@@ -263,8 +253,7 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
         it('journey-* files have zero cross-module ./ relative imports', () => {
             expect(
                 violations,
-                `Found ${violations.length} cross-module import(s) in journey-* files:\n` +
-                violations.join('\n')
+                `Found ${violations.length} cross-module import(s) in journey-* files:\n` + violations.join('\n')
             ).toHaveLength(0)
         })
     })
