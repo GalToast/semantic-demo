@@ -71,7 +71,7 @@ function deriveGraphContext(
  * search intent, and focus state.
  * Matches the legacy `derivePanelSurface` in lifecycle.js.
  */
-function derivePanelSurface(opts: {
+export function derivePanelSurface(opts: {
     view: string
     graphContext: string
     mapContext: string
@@ -99,7 +99,7 @@ function derivePanelSurface(opts: {
  * Apply current state to body data-attributes for CSS composition.
  * Matches the legacy `applyCompositionState` in lifecycle.js.
  */
-function applyCompositionState(): void {
+export function applyCompositionState(): void {
     const $nav = get(navStore)
     const $focus = get(focusStore)
     const $search = get(searchStore)

@@ -27,8 +27,8 @@ import {
 } from '@lib/engine/camera-controls-core'
 import { updateSelectedBusiness, setTrailFromSeed, syncFocusStage, setRouteChoreographyPhase } from './journey.ts'
 import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.ts'
-import { scheduleWeatherHydration } from './loading-ui.ts'
-import { applyCompositionState } from './composition-state.ts'
+import { scheduleWeatherHydration } from '@lib/ui/loading'
+import { applyCompositionState } from '@lib/orchestration/composition-state'
 import { initMap, getRouteEmbodimentIndices, setTerrainHandoffState } from './map-state.ts'
 import {
     invokeClearMobileRouteFieldPeek,
@@ -36,7 +36,7 @@ import {
     getViewHandoffModel
 } from '@lib/engine/journey-compass-controller-bridge'
 import { semanticGuideIcon } from '../../src/lib/journey/semantic-guide.ts'
-import { applyMapFlatteningLayout } from './map-flattening-layout.ts';
+import { applyMapFlatteningLayout } from './map-flattening-layout.ts'
 import { setCurrentView } from './state-mutators.ts'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -186,7 +186,7 @@ export function switchView(view: string, options: SwitchViewOptions = {}): void 
     document.body.classList.add('view-transitioning')
     // Boundary: applyCompositionState accepts { state, root } at runtime but
     // its JS-only type only exposes { root? }. Cast the whole arg to any.
-    ;(applyCompositionState as (arg: any) => void)({ state, root: document.body })
+    applyCompositionState()
     setCameraAssistChoreography('arriving', 'view-handoff')
 
     // Auto-remove transitioning class after animation completes

@@ -13,7 +13,7 @@ import { walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter'
 import { clearSearch } from '@lib/engine/search-state-bridge'
 import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts'
-import { derivePanelSurface } from './composition-state.ts'
+import { derivePanelSurface } from '@lib/orchestration/composition-state'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { hideSummaryCard as hideSummaryCardImpl } from '../../src/lib/journey/semantic-guide.ts'
 import {
