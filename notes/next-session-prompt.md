@@ -1,48 +1,52 @@
-# Next Session Prompt — W17 2026-06-17
+# Next Session Prompt — W17 2026-06-17 (Updated)
 
-**Status:** Session complete, W15 and W16 work landed cleanly. svelte-check: 0 errors, 0 warnings.
+**Status:** Session complete. All 7 non-bridge import edges repointed to canonical `src/lib/`. svelte-check clean (from subagent verification).
 
 ## What was done this session
 
-| Commit    | Work                                                                                                                                                             |
-| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `662a315` | Ported inline binding files to canonical `src/lib/ui/` (filter, legend, mode, onboarding, suggestion, utility) — fixing svelte-check from stale subagent imports |
-| `a910138` | Inline 6 simple + port 6 canonical bindings; deleted `js/modules/bindings/` entirely                                                                             |
-| `0ca4c0f` | Created `docs/ROADMAP-to-completion.md` — full Svelte migration finish plan                                                                                      |
-| `49551a5` | Pruned 37 dead re-exports from `lifecycle.ts` + fixed `cursor.ts` canonical import                                                                               |
-| `1779a42` | Ported three-interaction-visuals + three-search-animations to canonical                                                                                          |
+| Commit | Work |
+|---|---|
+| `2d410bc` | chore(kernel): repoint 7 non-bridge imports to canonical src/lib/ |
+| (from prior session, along with multiple commits in between) | |
+| `4164f90` | docs: next-session-prompt.md with W17 handoff |
+| `87ba74c` | docs: W17 charter — DAG explorer + legacy cleanup roadmap |
+| `662a315` | chore(bindings): port inline files to canonical src/lib/ui/ + fix svelte-check |
+| `a910138` | chore(bindings): inline 6 simple, port 6 canonical, delete legacy js/modules/bindings/ |
+| `0ca4c0f` | docs: ROADMAP to completion — Svelte migration finish line |
+| `49551a5` | chore(lifecycle): prune 37 dead re-exports + fix cursor.ts canonical import |
+| `1779a42` | chore(port): three-interaction-visuals + three-search-animations to canonical src/ |
 
 ## Key finding (durable)
 
-**Inline subagent work can be partially overwritten.** The high-port subagent overwrote 2 import blocks in `event-bindings.ts` that the inline subagent had already updated. Fix: the inline subagent's edits were recreated manually by the main lane.
+**Only 7 non-bridge import edges existed** from `src/` to `js/modules/`. All have been repointed. The remaining `src/lib/engine/*-bridge.ts` files are the designed architecture — they are NOT technical debt.
 
-**Future inline prompts should include**: "After editing, verify no stale imports remain in this file before reporting completion."
+## Remaining work
 
-## Next session
+Per `docs/ROADMAP-to-completion.md`, the next steps are:
 
-Start with `docs/w17-charter-2026-06-17.md`. Priority sequence:
+1. **Thin bridges** (Wave 3) — Delete any bridge files with zero consumers. A subagent was dispatched for this but appears to have stalled. Run `grep -r "from.*-bridge" src/ tests/` to check.
+2. **Test modernization** (Phase III from roadmap) — Update `tests/unit-active/` to use canonical paths
+3. **Final purge** (Phase IV) — Delete `js/modules/` when empty
 
-1. Wave 1: Recon remaining `js/modules/` kernel files (recon subagent)
-2. Wave 2: Port top 3 kernel files (port subagents)
-3. Wave 3: Thin dead bridges
-4. Wave 4: Fix remaining direct imports
-
-Target: reduce `js/modules/` from ~30 to < 20 files, and `src/` legacy imports from ~20 to < 10.
-
-## Data for next session
-
-Current `svelte-check` status: **✅ 0 errors, 0 warnings**
+## Health check commands
 
 ```bash
-# Verify before starting
+# Verify svelte-check
 npx svelte-check --tsconfig ./tsconfig.json 2>&1 | tail -3
-# Should output: svelte-check found 0 errors and 0 warnings
 
-# Quick health check
-grep -r "from.*js/modules" src/ tests/ --include="*.ts" --include="*.svelte" | grep -v "adapters-bridge\|lifecycle-bridge" | wc -l
-# Current: ~12 (depends on git HEAD)
+# Count remaining non-bridge imports
+grep -r "from.*js/modules" src/ tests/ --include="*.ts" --include="*.svelte" | grep -v "engine/.*-bridge\|lifecycle-bridge" | wc -l
+
+# Count js/modules files
+find js/modules -type f -name "*.ts" 2>/dev/null | wc -l
 ```
 
----
+## Expected state at start of next session
 
-_Generated: 2026-06-17 00:42 UTC_
+- `svelte-check`: 0 errors, 0 warnings
+- Non-bridge imports: 0 (all repointed)
+- `js/modules/` files: ~77 (some may still have bridge consumers, that's expected)
+
+---
+*Generated: 2026-06-17 02:22 UTC*
+*Last updated: 2026-06-17 02:30 UTC*
