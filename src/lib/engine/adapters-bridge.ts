@@ -16,12 +16,12 @@
 
 // ── Engine-kernel adapter re-exports (js/modules/) ───────────────────────────
 
-export { initJourneyLifecycleAdapter } from '../../../js/modules/journey-lifecycle-adapter';
+export { initJourneyLifecycleAdapter } from '../journey/lifecycle-adapter';
 export { initClusterFilterAdapter } from '../orchestration/cluster-filter-controller';
 export { initJourneyCompassAdapter } from '@lib/engine/journey-compass-controller-bridge';
-export { initJourneySelectedCard } from '../../../js/modules/journey-selected-card';
-export { initFocusNeighborRailSubscriptions } from '../../../js/modules/journey-focus-ui';
-export { initRouteTraceSubscriptions } from '../../../js/modules/journey-route-trace';
+export { initJourneySelectedCard } from '../journey/selected-card';
+export { initFocusNeighborRailSubscriptions } from '../journey/focus-ui';
+export { initRouteTraceSubscriptions } from '../journey/route-trace';
 export { initThreadInspectorAdapter } from '../journey/thread-inspector-adapter';
 export { initMapStateSubscriptions } from '@lib/engine/map-state';
 export { initViewControllerAdapter } from '@lib/orchestration/view-controller';

@@ -23,18 +23,18 @@ export {
 export {
     getPreviouslyFocusedFocusStage,
     setPreviouslyFocusedFocusStage
-} from '../../../js/modules/journey-lifecycle-adapter'
+} from '../journey/lifecycle-adapter'
 export { revealSelectedBusinessCard } from '@lib/ui/panel-bindings'
-export { applyClusterUiAccent } from '../../../js/modules/cluster-ui-accent'
-export { selectedPointStore as legacySelectedPointStore } from '../../../js/modules/stores'
+export { applyClusterUiAccent } from '../ui/cluster-ui-accent'
+export { selectedPointStore as legacySelectedPointStore } from '../stores/legacy-stores'
 
 // Relocated legacy re-exports from semantic-guide-bridge & semantic-dive-bridge
 export { buildSemanticGuideRequestPayload } from '../journey/semantic-guide-payload'
 export { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts'
-export { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis'
-export { semanticGuideStateStore } from '../../../js/modules/stores'
-export { getNextWalkCandidateForIndex } from '../../../js/modules/journey-lifecycle-adapter'
-export { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '../../../js/modules/focus-stage-dom'
+export { showSemanticThreadsDetail } from '../journey/connection-analysis'
+export { semanticGuideStateStore } from '../stores/legacy-stores'
+export { getNextWalkCandidateForIndex } from '../journey/lifecycle-adapter'
+export { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '../journey/focus-stage-dom'
 
 // Relocated legacy re-exports from ui-renderers-bridge
 // (directly from source modules since the ui-renderers shim is retired)
@@ -46,4 +46,4 @@ export {
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant
-} from '../../../js/modules/focus-stage-renderer'
+} from '../journey/focus-stage-renderer'
