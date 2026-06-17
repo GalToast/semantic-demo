@@ -10,6 +10,7 @@
 
 import { appState } from '@lib/state/app.svelte';
 import type { Point } from '@lib/state/state-types'
+import type { PanelSurface } from '@lib/types/state'
 
 import { isMobile } from '@lib/utils/environment'
 import { refreshMapRouteEmbodiment } from '@lib/engine/map-state'
@@ -70,8 +71,18 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     appState.pinnedThreadIndex = null
   })
 
+  // Preserve the 'focus-search' surface that the SEARCH_FOCUS_REQUESTED
+  // subscriber (triggers.ts:176-203) sets just before this orchestrator
+  // runs. dispatchNavTransition's FOCUS_NODE branch defaults surface to
+  // 'focus' when the payload omits it, which clobbers the search context
+  // and leaves body data-attrs (panelSurface, navSurface, mode) reading as
+  // "idle" / "overview". See tmp/w15-body-attr-gap-2026-06-17.md for the
+  // full diagnosis and root-cause trace.
+  const focusSurface: PanelSurface = options.fromSearchResult ? 'focus-search' : 'focus'
+
   dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
     index,
+    surface: focusSurface,
     preserveMode: !!options.preserveMode,
     fromTraversal: !!options.fromTraversal,
     fromCanvasNode: !!options.fromCanvasNode,
