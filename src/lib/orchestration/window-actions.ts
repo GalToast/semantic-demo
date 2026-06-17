@@ -175,10 +175,14 @@ function syncSvelteNavFromLegacy(): void {
   if (!navState) return;
 
   const focusedIndex = asFiniteNumber(navState.focusedIndex);
+  // W15+ parity-attrs fix: the legacy state.navState.mode and surface fields are
+  // not updated by the Svelte track's cursor.ts focusOnNode path (cursor.ts only
+  // writes to _navWritable, not the legacy object). Mirroring them from legacy
+  // here would clobber the correct 'focus'/'focus-search' values with 'overview'/'idle'.
+  // The Svelte track owns mode/surface exclusively; this mirror only handles
+  // focusedIndex + trail/thread bookkeeping.
   navStore.update((state) => ({
     ...state,
-    mode: (navState.mode as typeof state.mode | undefined) ?? state.mode,
-    surface: (navState.surface as typeof state.surface | undefined) ?? state.surface,
     focusedIndex,
     trailSeedIndex: asFiniteNumber(navState.trailSeedIndex),
     trailNeighborIndices: finiteIndexList(navState.trailNeighborIndices),
