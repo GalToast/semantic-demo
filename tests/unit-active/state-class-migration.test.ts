@@ -61,6 +61,10 @@ const _searchState = vi.hoisted(() => ({
     summaryCardTypeToken: 0
 }))
 
+const _engineBridgeState = vi.hoisted(() => ({
+    engineBridge: null as any
+}))
+
 // ── Mock factories ───────────────────────────────────────────────────────────
 // vi.mock is hoisted to the top of this file. The factories read from the
 // hoisted state objects above, which helpers reset in beforeEach.
@@ -149,7 +153,10 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         get currentSemanticGuide() { return _searchState.currentSemanticGuide },
         set currentSemanticGuide(v: string | null) { _searchState.currentSemanticGuide = v },
         get summaryCardTypeToken() { return _searchState.summaryCardTypeToken },
-        set summaryCardTypeToken(v: number) { _searchState.summaryCardTypeToken = v }
+        set summaryCardTypeToken(v: number) { _searchState.summaryCardTypeToken = v },
+        // Engine-bridge mock shape
+        get engineBridge() { return _engineBridgeState.engineBridge },
+        set engineBridge(v: any) { _engineBridgeState.engineBridge = v }
     }
 }))
 
@@ -230,6 +237,8 @@ import {
     isSearching,
     activeResult
 } from '@lib/stores/search.svelte.ts'
+
+import { engineBridgeStore, setEngineBridge, getEngineBridge } from '@lib/stores/engine-bridge.svelte.ts'
 
 // ── Compass tests ────────────────────────────────────────────────────────────
 
@@ -917,5 +926,87 @@ describe('search store — T4 writable + withSearchNotify migration', () => {
     it('search constants are positive when available', () => {
         expect(200).toBeGreaterThan(0)
         expect(2).toBeGreaterThan(0)
+    })
+})
+
+// ── Engine-bridge tests ──────────────────────────────────────────────────────
+
+describe('engine-bridge store — T4 writable + withEngineBridgeNotify migration', () => {
+    const FAKE_BRIDGE = { id: 'fake-engine-1' }
+    beforeEach(() => {
+        engineBridgeStore.set(null)
+        _engineBridgeState.engineBridge = null
+    })
+
+    it('engineBridgeStore.set(null) stores null', () => {
+        engineBridgeStore.set(null)
+        expect(get(engineBridgeStore)).toBeNull()
+    })
+
+    it('engineBridgeStore.set(fakeBridge) stores bridge', () => {
+        engineBridgeStore.set(FAKE_BRIDGE as any)
+        expect(get(engineBridgeStore)).toBe(FAKE_BRIDGE)
+    })
+
+    it('engineBridgeStore.update returns same value if updater is identity', () => {
+        engineBridgeStore.set(FAKE_BRIDGE as any)
+        engineBridgeStore.update((existing) => existing)
+        expect(get(engineBridgeStore)).toBe(FAKE_BRIDGE)
+    })
+
+    it('engineBridgeStore.update replaces value', () => {
+        const OLD_BRIDGE = { id: 'old' }
+        const NB = { id: 'new' }
+        engineBridgeStore.set(OLD_BRIDGE as any)
+        engineBridgeStore.update(() => NB as any)
+        expect(get(engineBridgeStore)).toBe(NB)
+    })
+
+    it('setEngineBridge updates writable AND appState', () => {
+        setEngineBridge(FAKE_BRIDGE as any)
+        expect(get(engineBridgeStore)).toBe(FAKE_BRIDGE)
+        expect(_engineBridgeState.engineBridge).toBe(FAKE_BRIDGE)
+    })
+
+    it('setEngineBridge(null) clears both writable + appState', () => {
+        setEngineBridge(FAKE_BRIDGE as any)
+        setEngineBridge(null)
+        expect(get(engineBridgeStore)).toBeNull()
+        expect(_engineBridgeState.engineBridge).toBeNull()
+    })
+
+    it('subscriber fires when engineBridgeStore.set() is called', () => {
+        const cb = vi.fn()
+        const unsub = engineBridgeStore.subscribe(cb)
+        engineBridgeStore.set(FAKE_BRIDGE as any)
+        unsub()
+        expect(cb).toHaveBeenCalledWith(FAKE_BRIDGE)
+    })
+
+    it('subscriber fires when engineBridgeStore.update() changes value', () => {
+        const cb = vi.fn()
+        const unsub = engineBridgeStore.subscribe(cb)
+        engineBridgeStore.update(() => FAKE_BRIDGE as any)
+        unsub()
+        expect(cb).toHaveBeenCalledWith(FAKE_BRIDGE)
+    })
+
+    it('subscriber fires when setEngineBridge is called', () => {
+        const cb = vi.fn()
+        const unsub = engineBridgeStore.subscribe(cb)
+        setEngineBridge(FAKE_BRIDGE as any)
+        unsub()
+        expect(cb).toHaveBeenCalledWith(FAKE_BRIDGE)
+    })
+
+    it('getEngineBridge reads current writable state', () => {
+        engineBridgeStore.set(FAKE_BRIDGE as any)
+        expect(getEngineBridge()).toBe(FAKE_BRIDGE)
+    })
+
+    it('getEngineBridge returns null after reset', () => {
+        engineBridgeStore.set(FAKE_BRIDGE as any)
+        engineBridgeStore.set(null)
+        expect(getEngineBridge()).toBeNull()
     })
 })
