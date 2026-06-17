@@ -63,6 +63,15 @@ const _appState = vi.hoisted(() => ({
 
 const _dispatchedPayloads = vi.hoisted(() => [] as Array<{ action: string; payload: any }>);
 
+// ── Mutable current-surface (W15+ surface-preservation case) ───────────────
+//
+// cursor.ts::focusOnNode now reads currentSurface() from
+// @lib/stores/navigation.svelte to preserve 'focus-search' across
+// canvas/traversal/breadcrumb/thread-inspector call sites. The hoisted
+// ref lets per-test cases set the value the mock returns.
+
+const _currentSurface = vi.hoisted(() => ({ value: 'idle' as string }));
+
 // ── Stub modules that focusOnNode touches at import time or runtime ─────────
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
@@ -84,6 +93,21 @@ vi.mock('@lib/engine/map-state', () => ({
 vi.mock('@lib/engine/journey-compass-controller-bridge', () => ({
   updateJourneyCompass: () => {}
 }));
+
+// cursor.ts::focusOnNode calls currentSurface() to preserve the existing
+// 'focus-search' surface when the new focus call doesn't originate from
+// search (canvas click, thread traversal, breadcrumb, thread inspector).
+// The hoisted _currentSurface ref lets each test set the value returned.
+// We use importOriginal to keep all other navigation.svelte exports
+// (setMyceliumMode, updateNavState, etc.) for transitive consumers like
+// stores/lifecycle.ts.
+vi.mock('@lib/stores/navigation.svelte', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('@lib/stores/navigation.svelte')>()
+  return {
+    ...actual,
+    currentSurface: () => _currentSurface.value
+  }
+});
 
 vi.mock('@lib/orchestration/lifecycle', () => ({
   dispatchNavTransition: (action: string, payload: any) => {
@@ -153,6 +177,10 @@ function resetCallLog() {
   _dispatchedPayloads.length = 0;
 }
 
+function setCurrentSurface(value: string): void {
+  _currentSurface.value = value;
+}
+
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe('focusOnNode surface preservation (W15 body-attr-gap regression)', () => {
@@ -216,5 +244,81 @@ describe('focusOnNode surface preservation (W15 body-attr-gap regression)', () =
     const ok = focusOnNode(-1, { fromSearchResult: true });
     expect(ok).toBe(false);
     expect(focusNodeCall()).toBeUndefined();
+  });
+
+  // ── W15+ surface-preservation (canvas/traversal/breadcrumb/thread-inspector) ──
+  //
+  // When the user is already in 'focus-search' surface (e.g., just clicked a
+  // search result) and then triggers a non-search focus (canvas click,
+  // arrow-key traversal, breadcrumb click, thread inspector explore), the
+  // focus surface should be preserved as 'focus-search' rather than clobbered
+  // to 'focus'. Closes the surface clobber class in
+  // tmp/canvas-node-audit-2026-06-17.md (4 HIGH-risk call sites).
+
+  it('preserves focus-search surface when fromCanvasNode is true and current surface is focus-search', () => {
+    setCurrentSurface('focus-search');
+    const ok = focusOnNode(1, { fromCanvasNode: true });
+    expect(ok).toBe(true);
+
+    const call = focusNodeCall();
+    expect(call).toBeDefined();
+    expect(call!.payload.surface).toBe('focus-search');
+  });
+
+  it('preserves focus-search surface when fromTraversal is true and current surface is focus-search', () => {
+    setCurrentSurface('focus-search');
+    const ok = focusOnNode(1, { fromTraversal: true });
+    expect(ok).toBe(true);
+
+    const call = focusNodeCall();
+    expect(call).toBeDefined();
+    expect(call!.payload.surface).toBe('focus-search');
+  });
+
+  it('preserves focus-search surface when no source flag is provided and current surface is focus-search', () => {
+    setCurrentSurface('focus-search');
+    // Mirrors src/lib/journey/focus-ui.ts:368 (breadcrumb click) and
+    // src/lib/journey/thread-inspector.ts:491 (thread explore) which call
+    // focusOnNode with restoreHistory/fromTraversal but no fromSearchResult.
+    const ok = focusOnNode(1, { fromTraversal: true, restoreHistory: true });
+    expect(ok).toBe(true);
+
+    const call = focusNodeCall();
+    expect(call).toBeDefined();
+    expect(call!.payload.surface).toBe('focus-search');
+  });
+
+  it('uses focus surface (not focus-search) when current surface is focus and fromCanvasNode is true', () => {
+    setCurrentSurface('focus');
+    const ok = focusOnNode(1, { fromCanvasNode: true });
+    expect(ok).toBe(true);
+
+    const call = focusNodeCall();
+    expect(call).toBeDefined();
+    expect(call!.payload.surface).toBe('focus');
+  });
+
+  it('uses focus surface (not focus-search) when current surface is idle and fromCanvasNode is true', () => {
+    setCurrentSurface('idle');
+    const ok = focusOnNode(1, { fromCanvasNode: true });
+    expect(ok).toBe(true);
+
+    const call = focusNodeCall();
+    expect(call).toBeDefined();
+    expect(call!.payload.surface).toBe('focus');
+  });
+
+  it('fromSearchResult: true still wins over current surface (explicit override)', () => {
+    // Even if current surface is 'focus' or 'idle', an explicit
+    // fromSearchResult: true should set focus-search. The new logic
+    // preserves the existing W15 contract: fromSearchResult is the
+    // explicit signal that overrides the current-surface check.
+    setCurrentSurface('focus');
+    const ok = focusOnNode(1, { fromSearchResult: true });
+    expect(ok).toBe(true);
+
+    const call = focusNodeCall();
+    expect(call).toBeDefined();
+    expect(call!.payload.surface).toBe('focus-search');
   });
 });

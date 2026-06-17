@@ -24,6 +24,7 @@ import {
   syncSearchStatusForFocus
 } from '@lib/orchestration/lifecycle'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
+import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyPointFilterColors } from '@lib/journey/point-color'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
@@ -74,12 +75,31 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
 
   // Preserve the 'focus-search' surface that the SEARCH_FOCUS_REQUESTED
   // subscriber (triggers.ts:176-203) sets just before this orchestrator
-  // runs. dispatchNavTransition's FOCUS_NODE branch defaults surface to
-  // 'focus' when the payload omits it, which clobbers the search context
-  // and leaves body data-attrs (panelSurface, navSurface, mode) reading as
-  // "idle" / "overview". See tmp/w15-body-attr-gap-2026-06-17.md for the
-  // full diagnosis and root-cause trace.
-  const focusSurface: PanelSurface = options.fromSearchResult ? 'focus-search' : 'focus'
+  // runs, AND across any subsequent focus call (canvas click, thread
+  // traversal, breadcrumb click, thread inspector explore) — not just the
+  // direct fromSearchResult path. The dispatchNavTransition FOCUS_NODE
+  // branch defaults surface to 'focus' when the payload omits it, which
+  // clobbers the search context and leaves body data-attrs
+  // (panelSurface, navSurface, mode) reading as "idle" / "overview".
+  //
+  // The original W15 fix only handled fromSearchResult: true. This W15+
+  // supersede reads the current Svelte 5 surface (with legacy fallback)
+  // before dispatching, so canvas/traversal/breadcrumb/thread-inspector
+  // callers preserve the user's existing focus-search context. Closes
+  // the surface clobber class identified in
+  // tmp/canvas-node-audit-2026-06-17.md (4 HIGH-risk call sites:
+  // canvas-interaction.ts:107, thread-settler.ts:243, focus-ui.ts:368,
+  // thread-inspector.ts:491).
+  //
+  // See tmp/w15-body-attr-gap-2026-06-17.md for the original diagnosis
+  // and tmp/w15-live-probe-finding-2026-06-17.md for the live-browser
+  // verification of the remaining parity-attrs gap.
+  const currentNavSurface = currentSurface()
+  const focusSurface: PanelSurface = options.fromSearchResult
+    ? 'focus-search'
+    : currentNavSurface === 'focus-search'
+      ? 'focus-search'
+      : 'focus'
 
   dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
     index,
