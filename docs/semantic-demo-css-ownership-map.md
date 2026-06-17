@@ -264,11 +264,13 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 
 - The prior 2026-06-02 collapse notes above describe historical movement. The active edit target for those owners is the corresponding named file in the 7-file `css/mobile_premium__*.css` split.
 
-## Shared Modifiers: `.is-active` (1,584 occurrences, 15 files)
+## Shared Modifiers: `.is-active` (816 source occurrences, 15 files)
 
 The `.is-active` class is the single most common modifier in the codebase. It is a **shared state modifier** — it pairs with an element-specific selector to indicate that element is in its active state. There is no single owner; ownership is per-element-pair.
 
-### Per-file occurrence counts
+The audit (`notes/w21-css-ownership-investigation-2026-06-17.md`) reported 1,584 total occurrences including `dist/svelte/` build output copies; the source-only count across 15 CSS files is 816.
+
+### Per-file occurrence counts (source only)
 
 | File | Count | Notes |
 |---|---|---|
@@ -277,6 +279,7 @@ The `.is-active` class is the single most common modifier in the codebase. It is
 | `css/mobile_premium__state.css` | 132 | Mobile state-machine active states |
 | `css/mobile_premium__chrome.css` | 111 | Mode chips, header chrome active states |
 | `css/mobile_premium__narrow.css` | 47 | Narrow viewport overrides |
+| `css/modules/focus_stage.css` | 24 | Focus stage base structure & desktop |
 | `css/mobile_premium__idle.css` | 16 | Idle/overview active states |
 | `css/mobile_premium__map.css` | 13 | Map summary active states |
 | `css/strands.css` | 11 | Galaxy view visibility |
