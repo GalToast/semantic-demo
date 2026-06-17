@@ -1,15 +1,14 @@
 /**
- * @lib/journey/webgl.ts
+ * js/modules/journey-webgl.ts
  *
- * Ported from: js/modules/journey-webgl.ts
- * Barrel re-exports from route-trace, arrival-handoff, and semantic-overlay.
- * Side effect at module scope wires the route-trace and arrival-handoff updaters
- * into the overlay system.
+ * Re-exports from journey-route-trace, journey-arrival-handoff, and journey-semantic-overlay.
+ * Canonical TS module — preserves export/import parity with the prior
+ * journey-webgl.js twin.
  */
 
-import { updateRouteTraceOverlayPositions } from './route-trace';
-import { updateArrivalHandoffOverlay } from './arrival-handoff';
-import { setRouteArrivalOverlayUpdaters } from './route-arrival-overlay-adapter';
+import { updateRouteTraceOverlayPositions } from '@lib/journey/route-trace';
+import { updateArrivalHandoffOverlay } from '@lib/journey/arrival-handoff';
+import { setRouteArrivalOverlayUpdaters } from '@lib/journey/route-arrival-overlay-adapter';
 
 export {
     resetRouteTraceDiagnostics,
@@ -18,7 +17,7 @@ export {
     refreshRouteTraceOverlay,
     updateRouteTraceOverlayPositions,
     initRouteTraceSubscriptions
-} from './route-trace';
+} from '@lib/journey/route-trace'
 
 export {
     removeArrivalHandoffOverlay,
@@ -26,7 +25,7 @@ export {
     disposeArrivalHandoffOverlay,
     syncArrivalHandoffOverlay,
     updateArrivalHandoffOverlay
-} from './arrival-handoff';
+} from '@lib/journey/arrival-handoff'
 
 export {
     resetFocusThreadDiagnostics,
@@ -34,7 +33,7 @@ export {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
     getSemanticFocusCueProbeSnapshot
-} from './semantic-overlay';
+} from '@lib/journey/semantic-overlay'
 
 setRouteArrivalOverlayUpdaters({
     updateRouteTraceOverlayPositions,
