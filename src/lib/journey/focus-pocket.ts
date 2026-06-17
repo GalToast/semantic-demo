@@ -14,7 +14,7 @@
  */
 import * as THREE from 'three'
 import { appState } from '@lib/state/app.svelte'
-import { focusStore } from '@lib/stores/focus.svelte'
+import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import {
     buildFocusedPocketStagedPositions,
@@ -64,10 +64,7 @@ export function getFocusPocketIndices(): number[] {
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
-    appState.withMutation(() => {
-        appState.navState.focusPocketIndices = indices
-    })
-    focusStore.update((s) => ({ ...s, pocketNodes: indices as any[] }))
+    writeFocusPocketMirror({ pocketNodes: indices as any[] })
 }
 
 export function getFocusPocketRoleByIndex(): Map<number, string> {
@@ -75,10 +72,7 @@ export function getFocusPocketRoleByIndex(): Map<number, string> {
 }
 
 export function setFocusPocketRoleByIndex(map: Map<number, string>): void {
-    appState.withMutation(() => {
-        appState.navState.focusPocketRoleByIndex = map
-    })
-    focusStore.update((s) => ({ ...s, pocketRoleByIndex: new Map(map) }))
+    writeFocusPocketMirror({ pocketRoleByIndex: new Map(map) })
 }
 
 export function setFocusPocketRoleForIndex(index: number, role: string): void {
@@ -92,9 +86,7 @@ export function setFocusPocketRoleForIndex(index: number, role: string): void {
 }
 
 export function clearFocusPocketRoleByIndex(): void {
-    appState.withMutation(() => {
-        appState.navState.focusPocketRoleByIndex = new Map()
-    })
+    writeFocusPocketMirror({ pocketRoleByIndex: new Map() })
 }
 
 export function getFocusPocketMotionByIndex(): Map<number, unknown> {
@@ -124,10 +116,7 @@ export function clearFocusPocketMotionByIndex(): void {
 }
 
 export function clearFocusPocketIndices(): void {
-    appState.withMutation(() => {
-        appState.navState.focusPocketIndices = []
-    })
-    focusStore.update((s) => ({ ...s, pocketNodes: [] as any[] }))
+    writeFocusPocketMirror({ pocketNodes: [] as any[] })
 }
 
 export function getFocusPocketMeta(): unknown {
@@ -135,16 +124,11 @@ export function getFocusPocketMeta(): unknown {
 }
 
 export function setFocusPocketMeta(meta: FocusPocketMeta): void {
-    appState.withMutation(() => {
-        appState.navState.focusPocketMeta = meta as any
-    })
-    focusStore.update((s) => ({ ...s, pocketMeta: meta as any }))
+    writeFocusPocketMirror({ pocketMeta: meta as any })
 }
 
 export function clearFocusPocketMeta(): void {
-    appState.withMutation(() => {
-        appState.navState.focusPocketMeta = null
-    })
+    writeFocusPocketMirror({ pocketMeta: null })
 }
 
 export function applyLocalNeighborhoodFocus(index: number): void {

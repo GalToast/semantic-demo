@@ -27,7 +27,10 @@ export default defineConfig({
   },
   test: {
     environment: 'jsdom',
-    include: ['tests/unit-active/**/*.{test,spec}.{js,mjs,ts}'],
+    include: [
+      'tests/unit-active/**/*.{test,spec}.{js,mjs,ts}',
+      'tests/scripts/**/*.{test,spec}.{js,mjs,ts}',
+    ],
     globals: true,
     // setupFiles runs before any test file. Store tests import modules that
     // call window.matchMedia during module initialization.

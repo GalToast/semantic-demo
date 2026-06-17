@@ -6,14 +6,18 @@
  * (or `legacyState.navState.<field>`) only occur inside canonical mirror
  * helpers — not bare in arbitrary call-sites.
  *
+ * Covers nav-state fields AND focus-pocket fields (`focusPocketIndices`,
+ * `focusPocketRoleByIndex`, `focusPocketMeta`).
+ *
  * Allowed patterns (not flagged):
  *   1. writeNavStateMirror(...)              — the canonical batch helper
- *   2. appState.withMutation(() => { ... })  — legacy-compatible mutation block
- *   3. _navWritable.update(...)              — Svelte store update callback
- *   4. _journeyWritable.update(...) / withJourneyNotify — journey store bridge
- *   5. _focusWritable.update(...) / withFocusNotify     — focus store bridge
- *   6. _searchWritable.update(...) / withSearchNotify   — search store bridge
- *   7. Entries in the allowlist file (known-good line ranges)
+ *   2. writeFocusPocketMirror(...)           — focus-pocket mirror helper
+ *   3. appState.withMutation(() => { ... })  — legacy-compatible mutation block
+ *   4. _navWritable.update(...)              — Svelte store update callback
+ *   5. _journeyWritable.update(...) / withJourneyNotify — journey store bridge
+ *   6. _focusWritable.update(...) / withFocusNotify     — focus store bridge
+ *   7. _searchWritable.update(...) / withSearchNotify   — search store bridge
+ *   8. Entries in the allowlist file (known-good line ranges)
  *
  * Usage:
  *   node scripts/ci-check-nav-mirror-pattern.mjs
@@ -23,10 +27,9 @@
  *   1 — one or more violations (printed to stdout)
  */
 
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, readdirSync } from 'node:fs';
 import { resolve, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { execSync } from 'node:child_process';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
@@ -57,76 +60,57 @@ function isAllowlisted(absPath, line) {
 }
 
 // ---------------------------------------------------------------------------
-// 2. Use ast-grep (sg) to find all appState.navState.<field> = … assignments
+// 2. Find all appState.navState.<field> = ... assignments
 // ---------------------------------------------------------------------------
-// We search for assignment expressions where the left-hand side is
-// `<expr>.navState.<field>` and <expr> is appState or legacyState.
-//
-// ast-grep rule: match the assignment expression structurally so we don't
-// false-positive on reads (===, !==, etc.).
+// Keep this in-process instead of shelling out. This guard is run from several
+// Windows agent shells, and synthetic fixture tests need deterministic output.
 
-const RULE_YAML = `
-id: direct-navstate-mutation
-language: typescript
-message: "Direct mutation of $EXPR.navState.$FIELD outside canonical mirror helper"
-rule:
-  pattern: $EXPR.navState.$FIELD = $VALUE
-  inside:
-    any:
-      - pattern: $EXPR.navState.$FIELD = $VALUE
-constraints:
-  EXPR:
-    regex: "^(appState|legacyState)$"
-`;
+const DIRECT_NAV_MUTATION_RE = /\b(appState|legacyState)\.navState\.(\w+)\s*=(?!=)/;
 
-// Write a temp rule file
-const tmpRulePath = resolve(PROJECT_ROOT, 'tmp', '_nav-mirror-rule.yaml');
-import { mkdirSync, writeFileSync, unlinkSync } from 'node:fs';
-try { mkdirSync(resolve(PROJECT_ROOT, 'tmp'), { recursive: true }); } catch {}
-writeFileSync(tmpRulePath, RULE_YAML.trim() + '\n');
+function shouldScanFile(absPath) {
+  return (
+    absPath.endsWith('.ts') ||
+    absPath.endsWith('.js') ||
+    absPath.endsWith('.svelte')
+  );
+}
+
+function listSourceFiles(dir) {
+  /** @type {string[]} */
+  const files = [];
+  for (const entry of readdirSync(dir, { withFileTypes: true })) {
+    const abs = resolve(dir, entry.name);
+    if (entry.isDirectory()) {
+      files.push(...listSourceFiles(abs));
+    } else if (entry.isFile() && shouldScanFile(abs)) {
+      files.push(abs);
+    }
+  }
+  return files;
+}
 
 /** @type {{file: string, line: number, field: string, text: string}[]} */
 let matches = [];
 
-try {
-  const output = execSync(
-    `sg scan --inline-rules "${RULE_YAML.replace(/"/g, '\\"').replace(/\n/g, ' ')}" "${SRC_DIR}" --report-style github 2>&1`,
-    { encoding: 'utf-8', maxBuffer: 10 * 1024 * 1024, cwd: PROJECT_ROOT },
-  );
-  // Parse sg output: lines like "src/lib/stores/foo.ts:42:5:    appState.navState.mode = 'overview';"
-  const lines = output.split('\n').filter(Boolean);
-  for (const line of lines) {
-    // Match file:line:col: text
-    const m = line.match(/^(.+?):(\d+):\d+:\s*(.*)$/);
-    if (!m) continue;
-    const [, file, lineNumStr, text] = m;
-    const absFile = resolve(PROJECT_ROOT, file);
-    const lineNum = parseInt(lineNumStr, 10);
-    // Extract field name from the text
-    const fieldMatch = text.match(/(?:appState|legacyState)\.navState\.(\w+)\s*=/);
-    const field = fieldMatch ? fieldMatch[1] : '(unknown)';
-    matches.push({ file: file.replace(/\\/g, '/'), line: lineNum, field, text: text.trim() });
-  }
-} catch (err) {
-  // sg exits non-zero when matches are found — that's expected
-  if (err.stdout) {
-    const lines = err.stdout.split('\n').filter(Boolean);
-    for (const line of lines) {
-      const m = line.match(/^(.+?):(\d+):\d+:\s*(.*)$/);
-      if (!m) continue;
-      const [, file, lineNumStr, text] = m;
-      const absFile = resolve(PROJECT_ROOT, file);
-      const lineNum = parseInt(lineNumStr, 10);
-      const fieldMatch = text.match(/(?:appState|legacyState)\.navState\.(\w+)\s*=/);
-      const field = fieldMatch ? fieldMatch[1] : '(unknown)';
-      matches.push({ file: file.replace(/\\/g, '/'), line: lineNum, field, text: text.trim() });
-    }
-  } else {
-    console.error('[nav-mirror-check] sg scan failed:', err.message);
-    process.exit(2);
-  }
-} finally {
-  try { unlinkSync(tmpRulePath); } catch {}
+for (const absFile of listSourceFiles(SRC_DIR)) {
+  const source = readFileSync(absFile, 'utf-8');
+  const tracksAppState = /import\s*\{[^}]*\bappState\b[^}]*\}/.test(source);
+  const tracksLegacyState = /import\s*\{[^}]*\blegacyState\b[^}]*\}/.test(source);
+  if (!tracksAppState && !tracksLegacyState) continue;
+
+  source.split('\n').forEach((text, index) => {
+    const mutationMatch = text.match(DIRECT_NAV_MUTATION_RE);
+    if (!mutationMatch) return;
+    const receiver = mutationMatch[1];
+    if (receiver === 'appState' && !tracksAppState) return;
+    if (receiver === 'legacyState' && !tracksLegacyState) return;
+    matches.push({
+      file: relative(PROJECT_ROOT, absFile).replace(/\\/g, '/'),
+      line: index + 1,
+      field: mutationMatch[2],
+      text: text.trim(),
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
@@ -166,6 +150,9 @@ function isInsideAllowedContext(absPath, line) {
   // Check for writeNavStateMirror call (the entire assignment may be inside
   // a withMutation block that's inside writeNavStateMirror)
   if (/writeNavStateMirror\s*\(/.test(context)) return true;
+
+  // Check for writeFocusPocketMirror call (focus-pocket mirror helper)
+  if (/writeFocusPocketMirror\s*\(/.test(context)) return true;
 
   // Check for appState.withMutation(() => { ... })
   if (/appState\.withMutation\s*\(/.test(context)) return true;

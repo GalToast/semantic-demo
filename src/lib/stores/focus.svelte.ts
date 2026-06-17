@@ -106,6 +106,8 @@ function withFocusNotify(updater: (s: FocusStoreState) => FocusStoreState): void
   // Sync all bridged properties back to appState
   appState.withMutation(() => {
     appState.navState.focusPocketIndices = next.pocketNodes;
+    appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex;
+    appState.navState.focusPocketMeta = next.pocketMeta as any;
     appState.selectedPoint = next.selectedBusiness;
     appState.inspectedThreadIndex = next.inspectedStrandIndex;
     appState.pinnedThreadIndex = next.pinnedThreadIndex;
@@ -131,6 +133,23 @@ function withFocusNotify(updater: (s: FocusStoreState) => FocusStoreState): void
   });
 }
 
+/**
+ * Write focus-pocket fields to both the focus writable and appState in one call.
+ *
+ * Mirrors the discipline of `writeNavStateMirror`: callers must never mutate
+ * `appState.navState.focusPocket*` directly — instead pass a patch here so the
+ * writable + appState stay in sync and subscribers are notified.
+ *
+ * Uses `withFocusNotify` which bumps `_focusWritable`, syncs all bridged fields
+ * (including pocketNodes/pocketRoleByIndex/pocketMeta) back to appState, and
+ * triggers Svelte subscriber notifications.
+ */
+export function writeFocusPocketMirror(
+  patch: Partial<Pick<FocusStoreState, 'pocketNodes' | 'pocketMeta' | 'pocketRoleByIndex'>>,
+): void {
+  withFocusNotify((s) => ({ ...s, ...patch }));
+}
+
 /** FocusStore type: callable function + Readable + actions. */
 export type FocusStoreApi = (() => FocusStoreState) &
   Readable<FocusStoreState> & {
@@ -150,6 +169,8 @@ function _createFocusStore(): FocusStoreApi {
     // Sync all bridged properties back to appState (same as withFocusNotify)
     appState.withMutation(() => {
       appState.navState.focusPocketIndices = value.pocketNodes;
+      appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex;
+      appState.navState.focusPocketMeta = value.pocketMeta as any;
       appState.selectedPoint = value.selectedBusiness;
       appState.inspectedThreadIndex = value.inspectedStrandIndex;
       appState.pinnedThreadIndex = value.pinnedThreadIndex;
