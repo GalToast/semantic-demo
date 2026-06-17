@@ -11,11 +11,11 @@ import { resolveSource } from './source-path.mjs';
 
 const root = process.cwd();
 const source = {
-  search: readFileSync(resolveSource('js/modules/search-state.ts', root), 'utf8'),
+  search: readFileSync(resolveSource('src/lib/search/state.ts', root), 'utf8'),
   searchAdapter: readFileSync(resolveSource('js/modules/search-panel-adapter.ts', root), 'utf8'),
-  sceneReveal: readFileSync(resolveSource('js/modules/scene-reveal.ts', root), 'utf8'),
-  threeSetup: readFileSync(resolveSource('js/modules/three-engine.ts', root), 'utf8'),
-  journey: readFileSync(resolveSource('js/modules/journey.ts', root), 'utf8'),
+  sceneReveal: readFileSync(resolveSource('src/lib/engine/scene-reveal.ts', root), 'utf8'),
+  threeSetup: readFileSync(resolveSource('src/lib/engine/three-engine.ts', root), 'utf8'),
+  journey: readFileSync(resolveSource('src/lib/journey/journey.ts', root), 'utf8'),
   journeyWebgl: readFileSync(resolveSource('js/modules/journey-route-trace.ts', root), 'utf8'),
   lifecycle: readFileSync(resolveSource('js/modules/lifecycle.ts', root), 'utf8'),
   journeyCompassController: readFileSync(resolveSource('js/modules/journey-compass-controller.ts', root), 'utf8'),

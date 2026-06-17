@@ -33,7 +33,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd())
 
 const MODULES = {
     lifecycle: path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts'),
-    journey: path.join(SEMDEMO_ROOT, 'js/modules/journey.ts'),
+    journey: path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts'),
     camera: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-controls.ts'),
     cameraChoreography: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-choreography/routes.ts'),
     searchState: path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts'),

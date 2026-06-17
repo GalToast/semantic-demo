@@ -19,7 +19,7 @@ import path from 'path';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.ts');
 const APP_PATH            = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
-const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts');
 const LIFECYCLE_PATH      = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
 const JOURNEY_COMPASS_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts');
 
