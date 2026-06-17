@@ -152,10 +152,12 @@ The journey-compass cascade is distributed across base/supporting files plus the
 | `css/modules/focus_stage.css` | 7 | Focus-stage base file (loaded last in link cascade); has journey-compass selectors for search-view hide/show |
 
 **Canonical owners:**
+
 - `css/journey_active.css` owns `.journey-compass` base styling (lines 155–327), phase/density states (`[data-phase]`, `[data-density]`), and active-view map behavior.
 - The 7 split files `css/mobile_premium__*.css` own final mobile compass normalization and variants: focus/dive (`focus-dive.css`), chrome (`chrome.css`), state-machine (`state.css`), idle (`idle.css`), map (`map.css`), surface correction (`surfaces.css`), narrow viewport (`narrow.css`). Edit the named file matching the state.
 
 **Supporting roles:**
+
 - `css/strands.css` owns mobile bottom sheet journey-compass field-node action buttons and route surfaces; do not add new journey-compass geometry here without updating this map.
 - `css/layout_base.css` owns map-focus and map-trail info-panel overrides for journey-compass; those rules must not be moved without verifying map-focus/map-trail contracts.
 - `css/mobile_base.css` only provides reduced-motion support for journey-compass selectors; it must not own mobile journey-compass layout.
@@ -167,10 +169,12 @@ The journey-compass cascade is distributed across base/supporting files plus the
 **Ownership drift guard:** `css/search.css` has **0 focus-stage selectors** and `css/layout_base.css` has **0 focus-stage selectors**. Both lost their lone `body[data-panel-surface="search"] .focus-stage` rule since the 2026-06-03 update. Do not reintroduce focus-stage selectors into either file. Focus-stage search-state hide is now owned by `css/progressive_disclosure.css` (line 885: `body[data-panel-surface='search'] .focus-stage, #focus-stage`).
 
 2026-06-01 focus/dive refinement pass:
+
 - Moved focus-search / semantic-dive journey-compass compact and glass-heavy state refinements from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
 - `tests/focus-stage-css-ownership-contract.mjs` now blocks those state refinements from returning to the late surfaces file.
 
 2026-06-03 mobile split (un-collapse) pass:
+
 - The collapsed `css/mobile_premium.css` is retired; the 7-file split (`css/mobile_premium__*.css`) is the current edit target. `tests/focus-stage-css-ownership-contract.mjs` and `tests/surface-redundancy-contract.mjs` were updated to register the split files.
 
 ## Required Proof For Movement Or Dedupe
@@ -247,15 +251,61 @@ The `.focus-stage` selector family is distributed across **10 CSS files** (410+ 
 - Touch target minimum: all `.focus-stage-*-btn` elements must maintain `min-height: 44px` and `flex-shrink: 0` (enforced in `css/modules/focus_stage.css`; verified by `global-spacing` contract).
 
 2026-06-01 compact route-chip pass:
+
 - Moved non-field-node `focus-search` `.focus-stage-journey.active` compact layout, route progress/next copy, and hidden prev/next controls from `css/mobile_premium_surfaces.css` to `css/mobile_premium_focus.css`.
 - `css/mobile_premium_surfaces.css` now keeps only field-node/late backstops for this family; ordinary focus-search journey chip composition belongs to the focus owner.
 
 2026-06-01 field-node canopy pass:
+
 - Moved active `focus-search` field-node focus-stage suppression and journey-chip composition into `css/mobile_premium_focus.css`.
 - Active field-node journey-compass action sizing/pseudo-label typography now belongs to `css/mobile_premium_focus.css`; `css/mobile_premium_surfaces.css` keeps non-active fallback/backstop selectors only.
 
 2026-06-03 mobile split (un-collapse) pass:
+
 - The prior 2026-06-02 collapse notes above describe historical movement. The active edit target for those owners is the corresponding named file in the 7-file `css/mobile_premium__*.css` split.
+
+## Shared Modifiers: `.is-active` (1,584 occurrences, 15 files)
+
+The `.is-active` class is the single most common modifier in the codebase. It is a **shared state modifier** — it pairs with an element-specific selector to indicate that element is in its active state. There is no single owner; ownership is per-element-pair.
+
+### Per-file occurrence counts
+
+| File | Count | Notes |
+|---|---|---|
+| `css/mobile_premium__focus-dive.css` | 305 | Primary carrier — mobile focus/semantic-dive active states |
+| `css/mobile_premium__surfaces.css` | 148 | Late-cascade geometry corrections |
+| `css/mobile_premium__state.css` | 132 | Mobile state-machine active states |
+| `css/mobile_premium__chrome.css` | 111 | Mode chips, header chrome active states |
+| `css/mobile_premium__narrow.css` | 47 | Narrow viewport overrides |
+| `css/mobile_premium__idle.css` | 16 | Idle/overview active states |
+| `css/mobile_premium__map.css` | 13 | Map summary active states |
+| `css/strands.css` | 11 | Galaxy view visibility |
+| `css/time_weather.css` | 3 | Weather widget active |
+| `css/journey_active.css` | 2 | Journey/chip active |
+| `css/shell.css` | 1 | Shell-level active |
+| `css/loading.css` | 1 | Loading overlay active |
+| `css/clusters.css` | 1 | Cluster card active |
+| `css/animations.css` | 1 | Animation trigger |
+
+### Per-element ownership (key examples)
+
+| Element + `.is-active` | Owning file | Notes |
+|---|---|---|
+| `.search-results.is-active` | `css/search.css` | Search results panel active state |
+| `.info-panel.is-active` | `css/layout_base.css` | Info panel open |
+| `.mode-chip.is-active` | `css/mobile_premium__chrome.css` | Active mode chip |
+| `.legend-item.is-active` | `css/clusters.css` | Legend entry active |
+| `.focus-stage.is-active` | `css/modules/focus_stage.css` | Focus stage active |
+| `.field-node.is-active` | `css/mobile_premium__focus-dive.css` | Field node focus state |
+| `.compass-step.is-active` | `css/journey_steps.css` | Compass step active |
+
+### Usage rule
+
+When adding a new `.is-active` rule, document it in this table. Do NOT add a generic `.is-active { ... }` rule anywhere — always pair with the element selector.
+
+### Origin
+
+This shared modifier pattern was documented in `notes/w21-css-ownership-investigation-2026-06-17.md` Smell 3 (MEDIUM severity, S effort). The audit recommended adding this section to make ownership discoverable.
 
 ## Minimal QA Matrix For CSS Edits
 
