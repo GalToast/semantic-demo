@@ -99,6 +99,14 @@ const EXEMPTED_SHAS = new Set<string>([
     // grant; future W13 commits must use feat() or chore() prefixes when
     // touching code.
     '59d0471923fd96f3378ecd24ac65bdcccc3a4bbf',
+    // 54dac4f — docs(postmortem): W14-T2 → W15 strand-continuity + legend-ui
+    // retirement arc — Bundled 2 Svelte 5 state-class file touches
+    // (filter-bindings.ts: 4-line single-import reformat, onboarding-bindings.ts:
+    // 38-line Prettier multiline-type-cast rewrap) under a docs prefix.
+    // The bundled changes are pure mechanical formatting co-located with
+    // the postmortem capture; no logic delta, no functional change. Same
+    // co-located-formatting failure mode as b5ad93e (companion doc commit).
+    '54dac4f0c0e08a28ed810424a5f1b57621d48daa',
 ]);
 
 // Conventional-commit prefix regex. Captures:
