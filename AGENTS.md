@@ -1,9 +1,11 @@
 # Agents - Semantic Explorer
 
 ## Project Overview
+
 3D semantic mycelium visualization for exploring Montgomery County TX business relationships.
 
 ## Harness Self-Improvement
+
 - Pi harness self-upgrade is an explicit operating requirement here too. Keep `AGENTS.md`, Pi memory docs, USER.md, and the skill registry current as durable operating truth.
 - If the Pi harness, tooling, prompts, switchboard workflow, MCP setup, browser resource policy, or agent instructions create friction and there is a safe upgrade path, improve the harness rather than repeatedly working around it.
 - Avoid broad recursive filesystem searches in this workspace; prefer shallow, scoped probes and exact path checks unless a full inventory is requested. If a command hangs, stop and switch to narrower checks.
@@ -18,16 +20,20 @@
 When multiple Pi / Codex / subagent sessions share this repo, a parallel session worker may continuously commit to `master` while the main lane performs reads and edits. This creates race conditions, phantom diffs, and overwritten work.
 
 ### Rule
+
 1. Before any non-trivial `git commit` or `git push`, run:
+
    ```bash
    git log --since="3 hours ago" --oneline
    git status --short
    ```
+
 2. If 5+ unseen commits exist since your last verified `HEAD` → **queue work but DO NOT commit** until the parallel stream quiesces.
 3. If `git status --short` shows tracked-file modifications that you did not create → **pause and pick a different seam**.
 4. Only commit after `git log` stabilizes (no new commits in ~60 seconds) AND your working tree matches intended changes.
 
 ### Why
+
 The wave-absorption pattern (parallel session closing tickets faster than main lane reads) creates stale-HEAD commits. The serial gate prevents the main lane from landing on outdated ground truth.
 
 ## Subagent Throughput Doctrine
@@ -35,12 +41,14 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 **We use subagents aggressively — for throughput AND quality, not just speed.** Default to decomposition: any meaningful work should be sliced and dispatched in parallel unless it is quick enough, safe enough, and cheap enough to do in-lane. The main lane coordinates, verifies, and synthesizes; subagents do the focused work.
 
 **Subagents increase quality, not just speed:**
+
 - Isolated scope prevents cross-seam drift (worker can't see the rest of the codebase to drift into)
 - Forced evidence (worker writes reports to `tmp/`, main lane reviews the diff + reruns checks)
 - Parallel investigation (multiple hypotheses in flight at once beats serial "tried it, didn't work, try next")
 - Focused context (a 50K-token worker prompt beats a 500K-token main-lane context for deep dives)
 
 **When to dispatch (project examples):**
+
 - Verification: "run svelte-check + test:unit on the orphan tip in a worktree, report pass/fail counts"
 - Investigation: "find the commit that introduced the garbage filenames `'` and `'+s.slice(Math.max(0`"
 - Comparison: "diff `fix/seam-X` against master and report which commits are subsumed by W11 work"
@@ -48,6 +56,7 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 - "Haven't tried" research: "rg src/lib/orchestration/ for Svelte 5 ports that might exist for any W12 pre-emption sweep"
 
 **When to do in-lane:**
+
 - Quick file reads / 1-line edits
 - Coordinating, synthesizing, making a decision
 - Anything that needs the user's input or context the subagent can't see
@@ -63,6 +72,7 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 **Stale worktrees block T9 (fix/* branch cleanup) and T-style porting work.** This pattern bit W12: 4 parallel-session worktrees had 11+1 uncommitted items, blocking `git worktree remove --force` + `git branch -D` for ~30 minutes.
 
 **The protocol:**
+
 1. **Before any T9 work**, run `git worktree list --porcelain` to see all worktrees + their HEAD.
 2. **For each worktree**, run `cd <path> && git status --short | wc -l` to count uncommitted items.
 3. **Clean worktrees (0 uncommitted)** are safe to `git worktree remove --force` + `git branch -D` immediately.
@@ -83,6 +93,7 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 - **Multi-line `old_text` may need exact whitespace**. Trailing newlines or leading spaces break the match.
 
 **The protocol:**
+
 1. For duplicate entries, use a short, unique **first line** as the `old_text` anchor.
 2. If that fails, use `replace` with a short unique phrase to mark one duplicate, then `remove` the marked one.
 3. If both fail, the audit is on disk (`tmp/memory-triage/AUDIT.md`) and can be re-attempted in a future session.
@@ -90,10 +101,12 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 **Why this matters:** memory is at 99% capacity (50K of 50K chars), so consolidation is required to save new lessons. Tool quirk blocks the obvious path; the protocol above unblocks it.
 
 ## Dev Environment Hardening
+
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
 - **Hardware Resilience**: GPU textures are tracked and disposed in `js/modules/three-node-manager.js` (`_trackedTextures` + `disposeTextures()`). Event listeners in `event-bindings.js` use an `AbortController` for `global-bindings.js`. As of 2026-06-05 sweep, 4 binding modules (legend, onboarding, journey, panel) registered listeners outside the signal — all fixed in the binding-listeners fix wave (verified resolved).
 
 ## Key Files
+
 | Path | Role |
 |---|---|
 | `js/modules/app.js` | Main entry; imports all modules |
@@ -143,11 +156,13 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 | `js/modules/loading-ui.js` | Loading overlay, phases, deferred hydration |
 
 ## Demo Spec
+
 - **MICRO-DEMO-SPEC.md** - camera choreography, timing, node selection for `micro-demo.js` (living spec)
 
 `micro-demo.js` is the sole demo entry point; it owns both the first-visit eligibility guard and the choreography. `app.js` imports it for the launch path.
 
 ## 3D Network Framing
+
 The 8,406-point mycelium data lives in `state.rawPositionsBuffer` (Float32Array) in `[0,1]³` unit-cube space (UMAP/PCA projection). `getPointBoundsCenter(points, positionBuffer)` in `js/modules/three-node-manager.js:103` is the canonical bounds reader. It must be called with the raw buffer, not just the points array (the data objects don't carry x/y/z). With the buffer, `state.overviewBounds.renderCenterOffset` correctly centers the network on origin, and `MYCELIUM_FIELD_SCALE = (3.2, 2.6, 3.7)` scales it to fill the camera frustum. Bug history: prior to the fix, the call site passed only `state.points`, so `getPointBoundsCenter` saw count=0 and the network sat at its raw (0.5, 0.5, 0.5) centroid scaled up — visible as the network in the upper-right of the canvas. Always pass the buffer to bounds readers.
 
 ## State Machine Reference
@@ -155,6 +170,7 @@ The 8,406-point mycelium data lives in `state.rawPositionsBuffer` (Float32Array)
 Verified state machine integrity: `docs/semantic-demo-bugsweep-2026-06-05.md`
 
 ### micro-demo.js (`js/modules/micro-demo.js`)
+
 ```
 IDLE -> GLIDING -> ARRIVED -> CARD_VISIBLE -> PULLBACK -> WIDE_VIEW -> RETURNING -> COMPLETE
     |           |            |              |            |            |            |
@@ -162,21 +178,26 @@ IDLE -> GLIDING -> ARRIVED -> CARD_VISIBLE -> PULLBACK -> WIDE_VIEW -> RETURNING
                 |            |              |            |            |            |
                 +---> CANCELLED <-----------+------------+------------+------------+
 ```
+
 CANCELLED can branch from **any non-terminal phase** (GLIDING, ARRIVED, CARD_VISIBLE, PULLBACK, WIDE_VIEW, or RETURNING); the `cancelMicroDemo()` guard only blocks IDLE, COMPLETE, and already-cancelled.
 Phase timing targets: GLIDING 1400ms, ARRIVED immediate, CARD_VISIBLE 1800ms hold, PULLBACK 1200ms, RETURNING 1000ms.
 
 ### journey-compass-state.js (`js/modules/journey-compass-state.js`)
+
 `journey-compass-state.js` is a pure derivation function (no FSM). `getJourneyCompassState()` returns a descriptor with `phase ∈ {'map', 'inside', 'focus', 'search', 'overview'}` derived from current view and journey state. Driven by `data-panel-surface` and `data-active-view` body attributes via the controller.
 
 ## Storage
+
 - `localStorage.moco_mycelium_demo_v1` - lifetime per-browser flag (set by micro-demo on completion/cancel)
 - `sessionStorage.moco_mycelium_demo_session_v1` - per-session guard preventing duplicate choreography within an active browsing session
 
 ## CSS Architecture
+
 CSS is split into ordered modules in `css/`. The root `semantic-demo.css` is an import manifest that loads modules in cascade order. The final premium mobile owner is the ordered split loaded directly by the app shell:
 `css/mobile_premium__focus-dive.css`, `css/mobile_premium__chrome.css`, `css/mobile_premium__state.css`, `css/mobile_premium__idle.css`, `css/mobile_premium__map.css`, `css/mobile_premium__surfaces.css`, and `css/mobile_premium__narrow.css`.
 
 Key modules:
+
 - `css/layout_base.css` - info panel, legend, mode chips, broad layout
 - `css/journey_active.css` - active journey, field-node, route, mobile focus cockpit
 - `css/mobile_premium__*.css` - split mobile final owner: focus/dive, chrome, state-machine, idle, map summary, surface corrections, and narrow viewport corrections
@@ -185,6 +206,7 @@ Key modules:
 Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-state-ownership.md` to find the owning module before editing.
 
 ## Quick Dev Commands
+
 ```bash
 npm run build         # Vite/Svelte production build to dist/svelte/
 npm run lint          # ESLint js/modules/
@@ -199,7 +221,9 @@ npm run serve          # static dev server on 127.0.0.1:8795
 ```
 
 ## Surface/Contract Tests (Playwright)
+
 `tests/surface-contract-check.mjs` runs fast DOM/layout assertions for named surfaces:
+
 - `mobile-idle`, `desktop-idle`, `launch-focus`, `search-error`, `map-trail`, `focus-pocket`, `field-node`, `info-panel-empty`, `compass-rail`, `loading-overlay`, `mode-grid`, `filters`, `thread-inspector`, `controls`, `search-chrome`, `info-panel-populated`, `global-spacing`
 
 `tests/visual-state-audit.mjs` captures screenshots for visual QA across the full named surface matrix.
@@ -209,6 +233,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 **Contract test status** — All 225 contract tests now pass. Some surfaces have slower execution times (e.g., search-no-results at 33.7s). Visual critique deferred focus/trail/journey states to follow-up due to interaction requirements, not tooling limits.
 
 ## UI Critic Operating Contract
+
 - Diagnose before editing: identify the owning surface, winning selector/state writer, and whether transitions, inline style, `!important`, media queries, or late imports control the bug.
 - For every UI fix, capture failing geometry before and passing geometry after; include overlap, clipping, stale hidden-layout elements, z-index/occlusion, and visible screenshot/snapshot evidence when composition matters.
 - When Codex or a worker lacks native vision/audio/generative media capability, NVIDIA NIM multimodal models may be used as a fallback for visual QA, screenshot critique, text-to-speech, image generation, or video generation. Verify the specific NIM model is present and callable before relying on it, and never record API keys in prompts, reports, docs, or memory.
@@ -218,10 +243,12 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 - Final UI handoffs must state verified checks, unverified surfaces, known unrelated failures, and the next suspicious seam.
 
 ## Debug Flags
+
 - `?demo=force` - re-trigger demo even if already seen
 - `?nodemo=1` - suppress demo entirely
 
 ## Edit Safety
+
 - Keep edits inside the assigned slice; do not opportunistically reformat or clean unrelated files.
 - Treat `js/state.js`, `js/modules/app.js`, `js/modules/journey.js`, `js/modules/lifecycle.js`, and deploy scripts as high-risk surfaces that need explicit ownership and targeted tests.
 - CSS is split into ordered modules in `css/`; `semantic-demo.css` is an import manifest, while the `css/mobile_premium__*.css` files are loaded by the Svelte app shell (`src/index.html` -> `dist/svelte/index.html`).
@@ -245,6 +272,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 **Launcher invariant:** Shared launchers under `C:\Users\HP\.codex\mcp-runtimes\` must assign session-scoped, client-tagged browser profiles by default (`playwright-<client>-session-*`, `chrome-devtools-<client>-session-*`) and pass broad MCP flags. Do not switch to persistent profile scope unless intentional shared login state is more important than concurrent subagent safety. Do not auto-open a docked DevTools panel during visual QA; it changes `window.innerWidth` and invalidates viewport/aspect-ratio evidence. DevTools-panel automation is opt-in via `CODEX_MCP_OPEN_DEVTOOLS_PANEL=1` or `CLAUDE_MCP_OPEN_DEVTOOLS_PANEL=1`.
 
 **Recovery:**
+
 1. Run `npm run mcp:recover` (or `pwsh -NoProfile -File scripts/mcp-recover.ps1`). This:
    - Removes Chrome's stale `Singleton{Lock,Cookie,Socket}` lock files tied to MCP profiles
    - Sets force-clean-start env vars for the next Playwright launch validation
@@ -256,6 +284,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 **Multi-session caveat:** If multiple Claude Code/Codex/subagent sessions share the machine, each has its own MCP node process and session-scoped browser profile. `npm run mcp:recover` cleans shared stale Chrome state, but the client restart is per-session, not global.
 
 ## Delegated Team Pattern
+
 - Prefer end-to-end seam owners for substantial work: each worker should diagnose, edit, run focused verification, and return changed paths plus risks.
 - Workers do not all need isolated product seams. It is valid to build a small team with distinct roles such as implementer, adversarial reviewer, visual designer, test author, documentation mapper, or release/checkpoint planner.
 - Overlapping read scope is fine. Overlapping write scope needs an explicit lead, a file owner, or a serial handoff so patches do not trample each other.
@@ -268,6 +297,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 **Role distinction.** Workers assigned to "diagnose-and-report" must not edit any source files — return the finding with a path reference. Workers assigned to "diagnose-and-fix" must stay inside the explicitly scoped seam; they do not gain license to fix adjacent surface bugs they discover in passing.
 
 **Off-limits write surface (all require explicit lead approval to touch):**
+
 - CSS mobile cascade — `css/journey_active.css`, `css/journey_steps.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/mobile_premium_*.css`
 - Journey/UI state writers — `js/modules/journey.js`, `js/modules/lifecycle.js`, `js/modules/ui-renderers.js`
 - App shell — `js/modules/app.js`, `js/state.js`
@@ -282,6 +312,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 The Svelte migration lives under `src/`. Vite root is set to `src/` so `npm run dev:svelte` serves the new app directly at `http://localhost:5173/`.
 
 ### Quick Commands
+
 ```bash
 npm run dev:svelte   # vite dev server on port 5173
 npm run build:svelte # vite build to dist/svelte/
@@ -289,6 +320,7 @@ npm run check        # svelte-check + tsc
 ```
 
 ### Scaffold Layout
+
 | Path | Role |
 |---|---|
 | `src/index.html` | Vite entry (root: src/), has all body data-attrs for CSS coexistence |
@@ -303,7 +335,9 @@ npm run check        # svelte-check + tsc
 | `src/components/` | Svelte component directory |
 
 ### Component Status (`src/components/`)
+
 Verified files on disk: 21 components. `JourneyCanvas.svelte` is retired/deleted and not included below.
+
 | File | Status | Lines | Ported from | Notes |
 |---|---|---|---|---|
 | `Canvas.svelte` | **Complete** | 130 | `three-engine.js` + `camera-controls.js` | Creates engine bridge, manages lifecycle |
@@ -329,7 +363,9 @@ Verified files on disk: 21 components. `JourneyCanvas.svelte` is retired/deleted
 | `WeatherWidget.svelte` | **Complete** | 177 | `weather-widget.js` | Weather fetch, display, icons, forecast |
 
 ### Dev Server Behavior
+
 With `root: 'src'` in vite.config.ts:
+
 - `http://localhost:5173/` serves `src/index.html` (Svelte app)
 - `/main.ts` resolves to `src/main.ts` (relative to root)
 - The old root `index.html` (case study redirect) is untouched
@@ -337,9 +373,11 @@ With `root: 'src'` in vite.config.ts:
 - Production builds use `npm run build` / `npm run build:svelte` and write the canonical app shell to `dist/svelte/index.html`; deploy scripts publish that file as both `/semantic-demo/index.html` and the legacy `/semantic-demo/vector-explorer-polished.html` URL.
 
 ### Z-Index Layer Architecture
+
 All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` -> `src/index.html` inline `<style>`. Do NOT hardcode z-index values in component `<style>` blocks — always use `var(--z-*)`.
 
 ### Key Migration Principles
+
 1. **Stores replace state.js slices** — stores are the single source of truth for UI state. Legacy code reads `window.__semanticState` via bridge.ts.
 2. **Skeleton components are migration targets** — each `.svelte` component has a TODO block at the top listing the legacy JS files to port.
 3. **Imperative-only bridge** — `@lib/engine/bridge.ts` calls legacy functions directly. No reactive state, no Three.js types in the bridge.
@@ -351,6 +389,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 9. **Do not introduce lazy dynamic imports (`{#await import()}`) in Svelte components during hot refactoring waves.** Vite HMR and Svelte 5 runes make deferred import default-export resolution fragile; runtime `TypeError: Cannot read properties of undefined (reading 'default')` is a common failure mode. If async loading is truly needed, guard it with a fallback UI, verify the component resolves under both `npm run dev:svelte` and `npm run build:svelte`, and land it on a stable branch — not mid-wave.
 
 ### Bugsweep Findings (fix during migration, not separately)
+
 **JS HIGH:** ~~strand-continuity timer-ID drop (verified fixed via `_trackedTextures` + `disposeTextures()`); three-interaction-visuals un-cleaned listeners (verified partially fixed at lines 168-177; three-lifecycle worker to dispose `anchorBloomLight` in same module); state.js Proxy bypass (confirmed at state.js:460-497 sub-object mutation gap; state-proxy worker fixing nested-Proxy return from `get()`); three-node-manager texture leak (verified fixed via `_trackedTextures` + `disposeTextures()`).~~ **RESOLVED:** all 4 items fixed — strand-continuity Map-based, three-interaction-visuals fully disposed, state.js nested Proxy at state.js:530-531, three-node-manager textures tracked.
 **JS MEDIUM:** micro-demo skip-guard (open — no verified finding in slice-2); journey-thread-settler race (fixed: dual-timer-pool unified onto strand-continuity's `_timers` Map — see `docs/semantic-demo-bugsweep-2026-06-05.md` for fix wave details); search-state tokenization edge case (open — no verified finding in slice-2).
 **CSS HIGH:** focus-dive.css dead journey-chip block (RESOLVED — class does not exist anywhere in repo as of 2026-06-05 sweep; stale reference removed); narrow.css escape-hatch scope leak (fixed: css-fixes worker added ≤360px escape-hatch block).
@@ -358,6 +397,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 **Constellation sweep (2026-06-06):** 1 HIGH (focus-pocket.js:202 missing return — fixed in separate commit), 2 MEDIUM (focus-pocket.js:88,93,99 state writes without withStateMutation; three-search-animations.js:126,135,137 Math.random() breaks determinism), 3 LOW (dead code, non-navState writes, lens dispose without explicit call).
 
 ### Scaffold Status
+
 - Dev server runs: `npm run dev:svelte` → `https://localhost:5173/`
 - `svelte-check`: 0 errors in `src/` code (50 errors are all in legacy `js/modules/*.ts` — out of scope for scaffold)
 - **Islands track:** 12/12 complete (all `js/modules/components/` mounted via helpers)
@@ -388,6 +428,7 @@ The Svelte UI calls into the bridge, which calls into the kernel. This is the sa
 ### Rule for future "is this dead?" sweeps on `js/`
 
 A file under `js/` is NOT dead if ANY of these hold:
+
 1. It's a `.ts` file in `js/modules/*` (engine kernel — active runtime)
 2. It's a `.ts` file in `js/state/*` (state kernel — active runtime)
 3. It's a `.js` file in `js/workers/*` (worker kernel — active runtime)
@@ -395,6 +436,7 @@ A file under `js/` is NOT dead if ANY of these hold:
 5. It has a commit in the last 60 days
 
 A file under `js/` IS dead and can be removed if:
+
 - No `.ts` sibling (i.e., not a BOTH pattern)
 - No imports in `src/`, `docs/`, `tests/`
 - No recent commits
@@ -402,6 +444,7 @@ A file under `js/` IS dead and can be removed if:
 ### BOTH-pattern history (preserved for reference)
 
 The BOTH pattern was the original migration design:
+
 - `.ts` is the typed source (Vite resolves it first when an import has no extension)
 - `.js` is the runtime stub (thin `export * from './X.ts'` re-export)
 - The `@legacy/*` path alias pointed to the `.ts` (retired in 9D-Option-B, commit `cbc6509`)
@@ -416,3 +459,72 @@ The `pi_background_jobs` tool and the `/jobs`, `/job`, `/kill-job`, `/clear-jobs
 **Do not "fix" the summarized output by re-injecting the raw list.** The transcript flood was the original bug. If a more verbose output is genuinely needed for one specific job, query the underlying helpers directly via `node -e` against the package, or extend the `summarizeJob` / `summarizeJobs` previews with explicit fields — never bypass the summarize contract.
 
 `/tail-job <jobId>` and `pi_background_jobs action=tail` stay raw because the user asked for that specific log.
+
+---
+
+## Subagent Friction Patterns (W20-W23 learnings)
+
+This section captures friction patterns observed when dispatching subagents (mimo-v2.5 model on opencode-go) during the W20-W23 cleanup and migration arcs. Apply these guard rails in future subagent prompts.
+
+### 1. mimo-v2.5 file-size degeneration
+
+**Symptom:** Worker stuck in write phase for 10+ min with no progress; `output_tokens: 0` in stream_summary.
+**Cause:** Model attempts to generate files >800 lines in a single Write call.
+**Fix:** Use Edit tool with small targeted changes, OR split work across multiple files (e.g., separate scaffold per store).
+**When to apply:** Any subagent prompt that involves writing >300 line files. Prefer Edit over Write, or split into per-store files.
+
+### 2. `pi_background_jobs` log-reading trap
+
+**Symptom:** Worker stuck in `pi_background_jobs` poll loop, trying to read JSONL log file.
+**Cause:** Worker uses `pi_background_jobs action: "poll"` (which is invalid) or loops on log reading.
+**Fix:** Steer with explicit instruction: "do NOT use pi_background_jobs to read logs; use bash directly with timeout". Or cancel and manual main-lane commit.
+**When to apply:** Any subagent prompt that runs long-running bash commands (>30s).
+
+### 3. Cross-file race conditions
+
+**Symptom:** Multiple workers on same file produce conflicting commits; one succeeds, others fail with rebase conflicts.
+**Cause:** Workers dispatched in parallel to modify the same file (e.g., main scaffold).
+**Fix:** Decompose work to use SEPARATE files per worker (e.g., state-class-migration-2-viewport, -3-focus, -4-demo instead of appending to -1-main).
+**When to apply:** Any parallel subagent dispatch where work could touch the same file.
+
+### 4. Stale audit data
+
+**Symptom:** Worker reports "nothing to do" — work was already done in a previous bug-sweep.
+**Cause:** Audit doc referenced state that no longer exists (e.g., 7 dead CSS selectors already deleted 2026-06-06).
+**Fix:** Always verify current state with `rg "^export"` or `ls -la` before acting on doc claims. The W20 retrospective lesson "verify before trust" applies here.
+**When to apply:** Any subagent prompt based on an audit or doc. Add a pre-flight verification step.
+
+### 5. Parallel session force-push drops commits
+
+**Symptom:** Local commit disappears from `git log` after `git pull --rebase origin master`.
+**Cause:** Parallel session rebased and the local commit was dropped.
+**Fix:** Recover with `git reflog | grep <sha>` then `git cherry-pick <lost-sha>`. Then `git reset --hard <sha>` to update local branch.
+**When to apply:** If a worker reports its commit SHA but `git log` doesn't show it, check reflog.
+
+### 6. Parallel session speed dominance
+
+**Symptom:** Subagent dispatches produce 1 net commit while parallel session lands 10+ in the same window.
+**Cause:** Parallel session is actively executing W21/W22/W23 work and beating subagents to commits.
+**Fix:** When parallel session is moving fast, decompose into seams that COMPLEMENT (not duplicate) their work. Or step back and let them finish, then verify.
+**When to apply:** Check `git log --since="30 minutes ago"` before dispatching — if parallel session is landing commits in the same area, pivot.
+
+### Worker prompt template additions
+
+When dispatching subagents for parallel work, prepend these lines:
+
+```
+BEFORE EACH WORK:
+- Verify tool surface (Read/Write/Edit/Bash/Grep)
+- Verify target file is CLEAN (not M-flagged via `git status --short`)
+- Verify pre-flight data (rg/ls/cat the source before editing)
+
+AFTER EACH WORK:
+- Commit with `--only pathspec` to avoid parallel session WIP
+- Push to origin
+- Report: pre-flight results + commit SHA + push result + any surprises
+
+NEVER:
+- Use `pi_background_jobs action: "poll"` (invalid)
+- Write a single file >800 lines (model degeneration)
+- Modify the same file as another active worker (race condition)
+```
