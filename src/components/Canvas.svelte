@@ -17,6 +17,7 @@
   let containerEl: HTMLDivElement | undefined = $state(undefined);
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
   let mounted = $state(false);
+
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
       // W15+ parity-attrs fix: preserve the current surface (especially
@@ -65,6 +66,7 @@
     if (!canvasEl) return;
     try {
       await initEngine(canvasEl, callbacks);
+      resizeEngine(viewportWidth(), viewportHeight());
     } catch (err) {
       console.error('[Canvas] Engine init failed:', err);
     }

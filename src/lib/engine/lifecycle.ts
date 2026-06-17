@@ -15,70 +15,57 @@
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-export type { EngineStatus } from '@lib/stores/engine.svelte';
+export type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 
 /** Callbacks for engine → Svelte communication. */
 export interface EngineCallbacks {
-    onNodePicked?: (index: number) => void;
-    onNodeHovered?: (index: number | null) => void;
-    onCameraArrived?: () => void;
-    onLoadingPhase?: (phase: string, progress: number) => void;
-    onGraphicsStateChange?: (state: 'lost' | 'restored' | 'fallback') => void;
-    onViewChanged?: (view: string) => void;
+    onNodePicked?: (index: number) => void
+    onNodeHovered?: (index: number | null) => void
+    onCameraArrived?: () => void
+    onLoadingPhase?: (phase: string, progress: number) => void
+    onGraphicsStateChange?: (state: 'lost' | 'restored' | 'fallback') => void
+    onViewChanged?: (view: string) => void
 }
 
 // ── Imports ──────────────────────────────────────────────────────────────────
 
-import { get } from 'svelte/store';
+import { get } from 'svelte/store'
 import {
     isDataReady,
     businessRecords,
     positionBuffer,
     clustersBuffer,
     leadEnrichment,
-    pointIndexByLeadId,
-} from '@lib/data-store';
-import { appState } from '@lib/state/app.svelte';
-import { setEngineStatus, getEngineStatus as _getEngineStatus } from '@lib/stores/engine.svelte';
-import type { EngineStatus } from '@lib/stores/engine.svelte';
+    pointIndexByLeadId
+} from '@lib/data-store'
+import { appState } from '@lib/state/app.svelte'
+import { setEngineStatus, getEngineStatus as _getEngineStatus } from '@lib/stores/engine.svelte.ts'
+import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 
 // Engine sub-modules
-import {
-    initThreeJS,
-    onWindowResize,
-    cancelAnimate,
-} from '@lib/engine/three-engine';
-import { createMycelium } from '@lib/engine/thread-manager';
-import {
-    updateCameraViewportOffset,
-} from '@lib/engine/camera-controls';
-import { resizePostProcessing } from '@lib/engine/three-postprocessing';
+import { initThreeJS, onWindowResize, cancelAnimate, updateCameraViewportOffset } from '@lib/engine/three-engine'
+import { createMycelium } from '@lib/engine/thread-manager'
+import { resizePostProcessing } from '@lib/engine/three-postprocessing'
 
 // Interaction & UI
 import {
     ensureCanvasNodeInteractionBindings,
-    disposeCanvasNodeInteractionBindings,
-} from '@lib/journey/canvas-interaction';
-import {
-    initTooltipEventBusSubscriptions,
-    disposeTooltipEventBusSubscriptions,
-} from '@lib/ui/tooltip';
+    disposeCanvasNodeInteractionBindings
+} from '@lib/journey/canvas-interaction'
+import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
 
 // Semantic threads
-import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
+import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads'
 
 // Event bus
-import {
-    subscribe,
-    EVENTS,
-} from '@lib/orchestration/event-bus';
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── Module-scoped State ──────────────────────────────────────────────────────
 
-let _eventUnsubs: Array<() => void> = [];
-let _sceneReadyHandler: (() => void) | null = null;
-let _canvasInteractionBound = false;
-let _destroyed = false;
+let _eventUnsubs: Array<() => void> = []
+let _sceneReadyHandler: (() => void) | null = null
+let _canvasInteractionBound = false
+let _destroyed = false
 
 // ── Data Sync (temporary — mirrors adapters/data-bridge.ts) ──────────────────
 
@@ -91,48 +78,46 @@ let _destroyed = false;
  */
 async function syncDataToLegacyState(): Promise<void> {
     if (get(isDataReady)) {
-        _syncDataFields();
-        return;
+        _syncDataFields()
+        return
     }
 
-    const start = Date.now();
+    const start = Date.now()
     while (!get(isDataReady) && Date.now() - start < 15_000) {
-        await new Promise((r) => setTimeout(r, 200));
+        await new Promise((r) => setTimeout(r, 200))
     }
 
     if (!get(isDataReady)) {
-        console.warn(
-            '[engine/lifecycle] syncDataToLegacyState: data not ready after 15s, proceeding anyway'
-        );
+        console.warn('[engine/lifecycle] syncDataToLegacyState: data not ready after 15s, proceeding anyway')
     }
 
-    _syncDataFields();
+    _syncDataFields()
 }
 
 function _syncDataFields(): void {
-    const records = get(businessRecords);
-    const posBuf = get(positionBuffer);
-    const clustBuf = get(clustersBuffer);
-    const enrichment = get(leadEnrichment);
-    const indexMap = get(pointIndexByLeadId);
+    const records = get(businessRecords)
+    const posBuf = get(positionBuffer)
+    const clustBuf = get(clustersBuffer)
+    const enrichment = get(leadEnrichment)
+    const indexMap = get(pointIndexByLeadId)
 
     appState.withMutation(() => {
         if (records.length > 0) {
-            appState.points = records as unknown as typeof appState.points;
+            appState.points = records as unknown as typeof appState.points
         }
         if (posBuf) {
-            appState.rawPositionsBuffer = posBuf;
+            appState.rawPositionsBuffer = posBuf
         }
         if (clustBuf) {
-            appState.rawClustersBuffer = clustBuf;
+            appState.rawClustersBuffer = clustBuf as unknown as typeof appState.rawClustersBuffer
         }
-    });
+    })
 
     if (enrichment) {
-        (appState as Record<string, unknown>).leadEnrichment = enrichment;
+        ;(appState as unknown as Record<string, unknown>).leadEnrichment = enrichment
     }
     if (indexMap) {
-        (appState as Record<string, unknown>).pointIndexByLeadId = indexMap;
+        ;(appState as unknown as Record<string, unknown>).pointIndexByLeadId = indexMap
     }
 }
 
@@ -142,63 +127,65 @@ function _syncDataFields(): void {
  * Subscribe to the legacy event bus and forward events to EngineCallbacks.
  */
 function bindEventBridge(callbacks: EngineCallbacks): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined') return
 
     try {
         _eventUnsubs.push(
             subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
-                let index = payload.index as number | undefined;
+                let index = payload.index as number | undefined
                 if (!Number.isFinite(index)) {
-                    const point = payload.point as { x: number; y: number; z: number } | undefined;
+                    const point = payload.point as { x: number; y: number; z: number } | undefined
                     if (point && appState.points) {
-                        index = appState.points.findIndex(
-                            (p) => p.x === point.x && p.y === point.y && p.z === point.z
-                        );
+                        index = appState.points.findIndex((p) => p.x === point.x && p.y === point.y && p.z === point.z)
                     }
                 }
                 if (Number.isFinite(index) && index! >= 0) {
-                    callbacks.onNodePicked?.(index!);
+                    callbacks.onNodePicked?.(index!)
                 }
             })
-        );
+        )
 
         _eventUnsubs.push(
             subscribe(EVENTS.TRANSITION_PHASE_CHANGED, (payload: Record<string, unknown>) => {
-                const phase = payload.phase as string | undefined;
+                const phase = payload.phase as string | undefined
                 if (phase === 'arrived' || phase === 'idle') {
-                    callbacks.onCameraArrived?.();
+                    callbacks.onCameraArrived?.()
                 }
             })
-        );
+        )
 
         _eventUnsubs.push(
             subscribe(EVENTS.VIEW_CHANGED, (payload: Record<string, unknown>) => {
-                const view = payload.view as string | undefined;
+                const view = payload.view as string | undefined
                 if (view) {
-                    callbacks.onViewChanged?.(view);
+                    callbacks.onViewChanged?.(view)
                 }
             })
-        );
+        )
     } catch (busErr) {
-        console.warn('[engine/lifecycle] Event bus subscription failed:', busErr);
+        console.warn('[engine/lifecycle] Event bus subscription failed:', busErr)
     }
 
     _sceneReadyHandler = (): void => {
-        callbacks.onLoadingPhase?.('launch', 1);
-    };
-    window.addEventListener('scene-ready', _sceneReadyHandler as EventListener);
+        callbacks.onLoadingPhase?.('launch', 1)
+    }
+    window.addEventListener('scene-ready', _sceneReadyHandler as EventListener)
 }
 
 /** Tear down all event-bus and DOM event subscriptions. */
 function unbindEventBridge(): void {
     for (const unsub of _eventUnsubs) {
-        try { unsub(); } catch (_) { /* best-effort */ }
+        try {
+            unsub()
+        } catch (_) {
+            /* best-effort */
+        }
     }
-    _eventUnsubs = [];
+    _eventUnsubs = []
 
     if (_sceneReadyHandler) {
-        window.removeEventListener('scene-ready', _sceneReadyHandler as EventListener);
-        _sceneReadyHandler = null;
+        window.removeEventListener('scene-ready', _sceneReadyHandler as EventListener)
+        _sceneReadyHandler = null
     }
 }
 
@@ -213,116 +200,114 @@ function unbindEventBridge(): void {
  * @param canvas - The canvas element to render into (must be in the DOM).
  * @param callbacks - Optional callbacks for engine → Svelte events.
  */
-export async function initEngine(
-    canvas: HTMLCanvasElement,
-    callbacks: EngineCallbacks = {}
-): Promise<void> {
-    const currentStatus = _getEngineStatus();
+export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCallbacks = {}): Promise<void> {
+    const currentStatus = _getEngineStatus()
     if (currentStatus === 'ready' || currentStatus === 'loading') {
-        console.warn('[engine/lifecycle] initEngine: already initialized, ignoring');
-        return;
+        console.warn('[engine/lifecycle] initEngine: already initialized, ignoring')
+        return
     }
 
-    _destroyed = false;
-    setEngineStatus('loading');
+    _destroyed = false
+    setEngineStatus('loading')
 
     try {
         // 1. Sync Svelte data stores into the legacy state singleton
-        await syncDataToLegacyState();
+        await syncDataToLegacyState()
 
         // 2. Ensure #canvas-container exists for initThreeJS()
-        const parentEl = canvas.parentElement;
-        let container = document.getElementById('canvas-container');
+        const parentEl = canvas.parentElement
+        let container = document.getElementById('canvas-container')
         if (!container && parentEl) {
-            container = document.createElement('div');
-            container.id = 'canvas-container';
-            container.style.cssText =
-                'position:absolute;top:0;left:0;width:100%;height:100%;';
-            parentEl.insertBefore(container, canvas);
-            container.appendChild(canvas);
+            container = document.createElement('div')
+            container.id = 'canvas-container'
+            container.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;'
+            parentEl.insertBefore(container, canvas)
+            container.appendChild(canvas)
         }
 
         // 3. Initialise the Three.js scene
-        const success = initThreeJS();
+        const success = initThreeJS()
         if (!success) {
-            setEngineStatus('degraded');
-            callbacks.onGraphicsStateChange?.('fallback');
-            return;
+            setEngineStatus('degraded')
+            callbacks.onGraphicsStateChange?.('fallback')
+            return
         }
 
         // 4. Sync geometry from legacy state to Svelte appState
-        const legacyState = appState as unknown as Record<string, unknown>;
-        const nodePositions = legacyState.nodePositions;
-        const targetPositions = legacyState.targetPositions;
-        const originalPositions = legacyState.originalPositions;
-        if (Array.isArray(nodePositions)) appState.nodePositions = nodePositions as typeof appState.nodePositions;
-        if (Array.isArray(targetPositions)) appState.targetPositions = targetPositions as typeof appState.targetPositions;
-        if (Array.isArray(originalPositions)) appState.originalPositions = originalPositions as typeof appState.originalPositions;
+        const legacyState = appState as unknown as Record<string, unknown>
+        const nodePositions = legacyState.nodePositions
+        const targetPositions = legacyState.targetPositions
+        const originalPositions = legacyState.originalPositions
+        if (Array.isArray(nodePositions)) appState.nodePositions = nodePositions as typeof appState.nodePositions
+        if (Array.isArray(targetPositions))
+            appState.targetPositions = targetPositions as typeof appState.targetPositions
+        if (Array.isArray(originalPositions))
+            appState.originalPositions = originalPositions as typeof appState.originalPositions
 
         // 5. Set canvas CSS sizing
         if (appState.renderer?.domElement) {
-            const liveCanvas = appState.renderer.domElement;
-            liveCanvas.style.width = '100%';
-            liveCanvas.style.height = '100%';
-            liveCanvas.style.display = 'block';
+            const liveCanvas = appState.renderer.domElement
+            liveCanvas.style.width = '100%'
+            liveCanvas.style.height = '100%'
+            liveCanvas.style.display = 'block'
         }
 
         // 6. Create mycelium thread geometry
         if (appState.points?.length && appState.nodePositions?.length) {
             try {
-                createMycelium();
+                createMycelium()
             } catch (threadErr) {
-                console.warn('[engine/lifecycle] mycelium creation failed:', threadErr);
+                console.warn('[engine/lifecycle] mycelium creation failed:', threadErr)
             }
         }
 
         // 7. Wire canvas click/hover interaction bindings
         try {
-            ensureCanvasNodeInteractionBindings();
-            _canvasInteractionBound = true;
+            ensureCanvasNodeInteractionBindings()
+            _canvasInteractionBound = true
         } catch (interactionErr) {
-            console.warn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr);
-            setEngineStatus('degraded');
-            callbacks.onGraphicsStateChange?.('fallback');
-            return;
+            console.warn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
+            setEngineStatus('degraded')
+            callbacks.onGraphicsStateChange?.('fallback')
+            return
         }
 
         // 8. Expose engine handle for tests and visual audit tools
         if (typeof window !== 'undefined') {
-            const w = window as unknown as Record<string, unknown>;
+            const w = window as unknown as Record<string, unknown>
             w.__THREE_APP__ = {
                 renderer: appState.renderer,
                 scene: appState.scene,
-                camera: (appState as Record<string, unknown>).camera,
-            };
-            w.__LEGACY_APP_STATE__ = appState;
+                camera: (appState as unknown as Record<string, unknown>).camera
+            }
+            w.__LEGACY_APP_STATE__ = appState
             if (typeof w.__refreshTestCompatState__ === 'function') {
-                (w.__refreshTestCompatState__ as () => void)();
+                ;(w.__refreshTestCompatState__ as () => void)()
             }
         }
 
         // 9. Attach legacy state to semantic threads + kick off background load
-        attachLegacyState(appState as unknown as Record<string, unknown>);
+        attachLegacyState(appState as unknown as Record<string, unknown>)
         loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
-            console.warn('[engine/lifecycle] Semantic threads background load failed:', err);
-        });
+            console.warn('[engine/lifecycle] Semantic threads background load failed:', err)
+        })
 
         // 10. Subscribe to the legacy event bus
-        bindEventBridge(callbacks);
+        bindEventBridge(callbacks)
 
         // 11. Wire tooltip event-bus subscriptions
-        initTooltipEventBusSubscriptions();
+        initTooltipEventBusSubscriptions()
 
         // 12. Start the animation loop
         // _animate() is started internally by initThreeJS on success
 
         // 13. Mark ready
-        setEngineStatus('ready');
+        setEngineStatus('ready')
     } catch (err) {
-        console.error('[engine/lifecycle] initEngine: initialization failed', err);
-        unbindEventBridge();
-        setEngineStatus('degraded');
-        callbacks.onGraphicsStateChange?.('fallback');
+        console.error('[engine/lifecycle] initEngine: initialization failed', err)
+        unbindEventBridge()
+        setEngineStatus('degraded')
+        callbacks.onGraphicsStateChange?.('fallback')
     }
 }
 
@@ -335,16 +320,16 @@ export async function initEngine(
  * @param height - New viewport height in CSS pixels.
  */
 export function resizeEngine(width: number, height: number): void {
-    if (_getEngineStatus() !== 'ready') return;
+    if (_getEngineStatus() !== 'ready') return
 
     // Update camera viewport offset for panel-aware framing
-    updateCameraViewportOffset(width, height);
+    updateCameraViewportOffset()
 
     // Resize camera aspect ratio + renderer
-    onWindowResize();
+    onWindowResize()
 
     // FIX #1: Resize postprocessing composer (was missing in bridge resize)
-    resizePostProcessing(width, height);
+    resizePostProcessing(width, height)
 }
 
 /**
@@ -354,39 +339,43 @@ export function resizeEngine(width: number, height: number): void {
  * in the bridge destroy.
  */
 export function destroyEngine(): void {
-    if (_destroyed) return;
-    _destroyed = true;
+    if (_destroyed) return
+    _destroyed = true
 
     // 1. Cancel the animation loop
-    cancelAnimate();
+    cancelAnimate()
 
     // 2. Unbind event bridge
-    unbindEventBridge();
+    unbindEventBridge()
 
     // 3. Remove canvas interaction bindings
     if (_canvasInteractionBound) {
         try {
-            disposeCanvasNodeInteractionBindings();
-        } catch (_) { /* best-effort */ }
-        _canvasInteractionBound = false;
+            disposeCanvasNodeInteractionBindings()
+        } catch (_) {
+            /* best-effort */
+        }
+        _canvasInteractionBound = false
     }
 
     // FIX #2: Dispose tooltip event-bus subscriptions (was missing in bridge)
     try {
-        disposeTooltipEventBusSubscriptions();
-    } catch (_) { /* best-effort */ }
+        disposeTooltipEventBusSubscriptions()
+    } catch (_) {
+        /* best-effort */
+    }
 
     // 4. Clear engine handle from window
     if (typeof window !== 'undefined') {
-        const w = window as unknown as Record<string, unknown>;
-        w.__THREE_APP__ = null;
+        const w = window as unknown as Record<string, unknown>
+        w.__THREE_APP__ = null
     }
 
     // 5. Null out scene references
-    appState.scene = null as unknown as typeof appState.scene;
+    appState.scene = null as unknown as typeof appState.scene
 
     // 6. Set status to idle
-    setEngineStatus('idle');
+    setEngineStatus('idle')
 }
 
 /**
@@ -395,5 +384,5 @@ export function destroyEngine(): void {
  * @returns The current lifecycle status.
  */
 export function getEngineStatus(): EngineStatus {
-    return _getEngineStatus();
+    return _getEngineStatus()
 }
