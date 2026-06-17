@@ -37,7 +37,7 @@ const MODULES = {
     camera: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-controls.ts'),
     cameraChoreography: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-choreography/routes.ts'),
     searchState: path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts'),
-    eventBindings: path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.ts'),
+    eventBindings: path.join(SEMDEMO_ROOT, 'src/lib/ui/legend-bindings.ts'),
     sceneReveal: path.join(SEMDEMO_ROOT, 'src/lib/engine/scene-reveal.ts'),
     app: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
     appRuntime: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
@@ -728,38 +728,43 @@ function testViewHandoffCameraPreludeBridgeRetired() {
 function testRestoreLegendCollapsedPanelBridgeRetired() {
     console.log('\n[TEST 11] restoreLegendCollapsedPanel window bridge is retired')
 
-    const legendUiSrc = read('legendUi')
     const lifecycleSrc = read('lifecycle')
     const eventBindingsSrc = read('eventBindings')
 
-    assert(
-        !legendUiSrc.includes('window.restoreLegendCollapsedPanel'),
-        'legend-ui.js must not expose window.restoreLegendCollapsedPanel'
-    )
-    // The function was relocated to src/lib/stores/legend-panel.svelte.ts during the
-    // W14-T2 closeout (W15 Wave E). The legacy `legend-ui.ts` no longer owns it.
+    // The legacy js/modules/legend-ui.ts kernel is deleted.
+    // The canonical owner is now src/lib/stores/legend-panel.svelte.ts.
     const legendPanelSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts'), 'utf-8')
     assert(
         /export function restoreLegendCollapsedPanel/.test(legendPanelSrc),
         'src/lib/stores/legend-panel.svelte.ts should keep restoreLegendCollapsedPanel as a named export'
     )
     assert(
-        lifecycleSrc.includes('restoreLegendCollapsedPanel') &&
-            (lifecycleSrc.includes("from './legend-ui.ts'") ||
-                lifecycleSrc.includes("from '@lib/stores/legend-panel'") ||
-                lifecycleSrc.includes("from '@lib/engine/legend-ui-bridge'")),
-        'lifecycle.js should import restoreLegendCollapsedPanel from the shared owner (legacy or bridge alias)'
-    )
-    assert(
-        eventBindingsSrc.includes('restoreLegendCollapsedPanel') &&
-            (eventBindingsSrc.includes("from './legend-ui.ts'") ||
-                eventBindingsSrc.includes("from '../legend-ui.ts'") ||
-                eventBindingsSrc.includes("from '@lib/stores/legend-panel'") ||
-                eventBindingsSrc.includes("from '@lib/engine/legend-ui-bridge'")),
-        'event-bindings.js should import restoreLegendCollapsedPanel from the shared owner (legacy or bridge alias)'
+        !legendPanelSrc.includes('window.restoreLegendCollapsedPanel'),
+        'legend-panel.svelte.ts must not expose window.restoreLegendCollapsedPanel'
     )
 
-    console.log('  OK — restoreLegendCollapsedPanel bridge retired; direct imports remain')
+    // lifecycle.ts must NOT import restoreLegendCollapsedPanel from the deleted kernel
+    assert(
+        !lifecycleSrc.includes("from './legend-ui.ts'"),
+        'lifecycle.js must not import from the deleted legend-ui.ts kernel'
+    )
+    // lifecycle.ts does NOT directly import restoreLegendCollapsedPanel — it's used by
+    // legend-bindings.ts (the event-bindings layer), not by lifecycle itself.
+    assert(
+        !lifecycleSrc.includes('restoreLegendCollapsedPanel'),
+        'lifecycle.js does not import restoreLegendCollapsedPanel (used by legend-bindings layer)'
+    )
+
+    // event-bindings (legend-bindings.ts) imports from the canonical store
+    assert(
+        eventBindingsSrc.includes('restoreLegendCollapsedPanel') &&
+            (eventBindingsSrc.includes("from '@lib/stores/legend-panel'") ||
+                eventBindingsSrc.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
+                eventBindingsSrc.includes("from '@lib/engine/legend-ui-bridge'")),
+        'event-bindings.js should import restoreLegendCollapsedPanel from the canonical store'
+    )
+
+    console.log('  OK — restoreLegendCollapsedPanel bridge retired; canonical store is the owner')
 }
 
 // ── TEST 12 — Canvas/focus pick globals are retired from window ────────────

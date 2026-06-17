@@ -1,9 +1,10 @@
 /**
  * legend-ui-ownership-contract.mjs
  *
- * Verifies the legend-ui.js adapter owns the legend panel structural transitions
- * and that lifecycle.js and event-bindings.js both import it without creating
- * import cycles.
+ * Verifies the post-W15 legend panel ownership graph:
+ *   - src/lib/stores/legend-panel.svelte.ts owns the 10 legend-panel ports
+ *   - src/lib/engine/legend-ui-bridge.ts re-exports from the canonical store
+ *   - No live source file imports from the retired js/modules/legend-ui.ts kernel
  *
  * Runs in Node. No Playwright, no live network.
  *
@@ -13,13 +14,13 @@
 
 import fs from 'node:fs'
 import path from 'node:path'
+import { execSync } from 'node:child_process'
 
 const SEMDEMO_ROOT = path.resolve(process.cwd())
 
-const LEGEND_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts')
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts')
-const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts')
-const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/bindings/legend-bindings.ts')
+const LEGEND_PANEL_STORE = path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts')
+const LEGEND_UI_BRIDGE = path.join(SEMDEMO_ROOT, 'src/lib/engine/legend-ui-bridge.ts')
+const DELETED_KERNEL = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts')
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
@@ -29,213 +30,207 @@ function readSrc(p) {
     return fs.readFileSync(p, 'utf-8')
 }
 
-// ── TEST 1: legend-ui.js exports the structural transition functions ──────────────────────
+// ── TEST 1: legend-panel.svelte.ts exists and exports the 10 ports ─────────────────
 
-function testLegendUiExportsStructuralTransitions() {
-    console.log('\n[TEST 1] legend-ui.js exports structural transition functions')
+function testLegendPanelStoreExportsPorts() {
+    console.log('\n[TEST 1] legend-panel.svelte.ts exports the 10 canonical ports')
 
-    const src = readSrc(LEGEND_UI_PATH)
+    const src = readSrc(LEGEND_PANEL_STORE)
 
-    assert(src.includes('export function closeLegendPanel'), 'exports closeLegendPanel')
-    assert(src.includes('export function openLegendPanel'), 'exports openLegendPanel')
-    assert(src.includes('export function isLegendPanelOpen'), 'exports isLegendPanelOpen')
-    assert(src.includes('export function restoreLegendCollapsedPanel'), 'exports restoreLegendCollapsedPanel')
+    const requiredExports = [
+        'closeLegendPanel',
+        'openLegendPanel',
+        'isLegendPanelOpen',
+        'restoreLegendCollapsedPanel',
+        'buildLegend',
+        'updateLegendGuideState',
+        'closeLegendGuide',
+        'buildCanvasColorLegend',
+        'setPreviouslyFocusedLegend',
+        'getPreviouslyFocusedLegend'
+    ]
 
-    console.log(
-        '  OK — legend-ui.js exports closeLegendPanel, openLegendPanel, isLegendPanelOpen, restoreLegendCollapsedPanel'
-    )
-}
-
-// ── TEST 2: legend-ui.js does not import lifecycle, event-bindings, or stateful owners ────
-
-function testLegendUiDoesNotImportLifecycleOrEventBindings() {
-    console.log('\n[TEST 2] legend-ui.js does NOT import lifecycle.js or event-bindings.ts')
-
-    const src = readSrc(LEGEND_UI_PATH)
-
-    assert(!src.includes('from ./lifecycle.ts'), 'does not import lifecycle.ts')
-    assert(!src.includes('from ./event-bindings.ts'), 'does not import event-bindings.ts')
-
-    // Verify that only safe non-monolithic modules are imported
-    const imports = src.match(/^import .+? from/gm) || []
-    for (const imp of imports) {
-        assert(!imp.includes('lifecycle.ts') && !imp.includes('event-bindings.ts'), `unauthorized import: ${imp}`)
+    for (const name of requiredExports) {
+        assert(
+            src.includes(`export function ${name}`) || src.includes(`export { ${name}`),
+            `legend-panel.svelte.ts must export ${name}`
+        )
     }
 
-    console.log('  OK — legend-ui.js is neutral and does not import lifecycle or event-bindings')
+    console.log('  OK — legend-panel.svelte.ts exports all 10 canonical ports')
 }
 
-// ── TEST 3: lifecycle.js imports from legend-ui.js ───────────────────────────────────────
+// ── TEST 2: legend-ui-bridge.ts re-exports from the canonical store ─────────────
 
-function testLifecycleImportsFromLegendUi() {
-    console.log('\n[TEST 3] lifecycle.js imports from legend-ui.ts')
+function testBridgeReexportsFromCanonicalStore() {
+    console.log('\n[TEST 2] legend-ui-bridge.ts re-exports from legend-panel.svelte.ts')
 
-    const src = readSrc(LIFECYCLE_PATH)
+    const src = readSrc(LEGEND_UI_BRIDGE)
 
-    assert(src.includes("from './legend-ui.ts'"), 'lifecycle.js imports from legend-ui.ts')
     assert(
-        src.includes('closeLegendPanel') &&
-            src.includes('openLegendPanel') &&
-            src.includes('restoreLegendCollapsedPanel'),
-        'lifecycle.js imports closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel'
+        src.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
+            src.includes("from '@lib/stores/legend-panel'"),
+        'legend-ui-bridge.ts must re-export from the canonical store'
     )
 
-    console.log('  OK — lifecycle.js imports legend-ui.ts')
+    // Must NOT re-export from the deleted kernel
+    assert(
+        !src.includes("from '../../../js/modules/legend-ui.ts'") &&
+            !src.includes("from './js/modules/legend-ui.ts'") &&
+            !src.includes("from 'js/modules/legend-ui.ts'"),
+        'legend-ui-bridge.ts must not re-export from the deleted kernel'
+    )
+
+    const requiredReexports = [
+        'isLegendPanelOpen',
+        'openLegendPanel',
+        'closeLegendPanel',
+        'restoreLegendCollapsedPanel',
+        'buildLegend',
+        'updateLegendGuideState',
+        'closeLegendGuide',
+        'buildCanvasColorLegend',
+        'setPreviouslyFocusedLegend',
+        'getPreviouslyFocusedLegend'
+    ]
+
+    for (const name of requiredReexports) {
+        assert(
+            src.includes(name),
+            `legend-ui-bridge.ts must re-export ${name}`
+        )
+    }
+
+    console.log('  OK — legend-ui-bridge.ts re-exports all 10 ports from the canonical store')
 }
 
-// ── TEST 4: event-bindings.js imports from legend-ui.js ───────────────────────────────────
+// ── TEST 3: No live source imports from the deleted kernel ──────────────────────
 
-function testEventBindingsImportsFromLegendUi() {
-    console.log('\n[TEST 4] event-bindings.js imports from legend-ui.ts')
+function testNoLiveSourceImportsFromDeletedKernel() {
+    console.log('\n[TEST 3] No live source file imports from deleted js/modules/legend-ui.ts')
 
-    const src = readSrc(EVENT_BINDINGS_PATH)
+    // Use ripgrep to find any imports from the deleted kernel path
+    try {
+        const result = execSync(
+            'rg -l "from.*js/modules/legend-ui" --glob "!tests/" --glob "!legacy-reference/" --glob "!docs/" src/ js/',
+            { cwd: SEMDEMO_ROOT, encoding: 'utf-8', timeout: 15000 }
+        ).trim()
 
-    assert(
-        src.includes("from './legend-ui.ts'") || src.includes("from '../legend-ui.ts'"),
-        'event-bindings.js imports from legend-ui.ts'
-    )
-    assert(
-        src.includes('closeLegendPanel') &&
-            src.includes('openLegendPanel') &&
-            src.includes('restoreLegendCollapsedPanel'),
-        'event-bindings.js imports closeLegendPanel, openLegendPanel, restoreLegendCollapsedPanel'
-    )
+        assert(
+            result === '',
+            `Found live imports from deleted kernel js/modules/legend-ui.ts:\n${result}`
+        )
+    } catch (err) {
+        // rg exits 1 when no matches — that's success
+        if (err.status !== 1) throw err
+    }
 
-    console.log('  OK — event-bindings.js imports legend-ui.ts')
+    console.log('  OK — no live source imports from the deleted kernel')
 }
 
-// ── TEST 5: No new lifecycle ↔ event-bindings import cycle ───────────────────────────────
-// lifecycle → legend-ui → (nothing else)
-// event-bindings → legend-ui → (nothing else)
-// lifecycle → event-bindings (pre-existing via initSemanticDemoEventListeners)
-// No new cycle introduced.
+// ── TEST 4: legend-panel.svelte.ts does not expose window globals ───────────────
 
-function testNoNewImportCycle() {
-    console.log('\n[TEST 5] No new import cycle introduced via legend-ui.ts')
+function testNoWindowExports() {
+    console.log('\n[TEST 4] legend-panel.svelte.ts does not export to window')
 
-    const lifecycleSrc = readSrc(LIFECYCLE_PATH)
-    const eventBindingsSrc = readSrc(EVENT_BINDINGS_PATH)
-    const legendUiSrc = readSrc(LEGEND_UI_PATH)
-
-    // legend-ui imports nothing; it is a DOM-only adapter with no state-owner dependencies.
-    const imports = legendUiSrc.match(/^import .+? from/gm) || []
-    const importedModules = imports
-        .map((i) => {
-            const m = i.match(/from\s+['"](.+?)['"]/)
-            return m ? m[1] : null
-        })
-        .filter(Boolean)
-
-    assert(importedModules.length === 0, `legend-ui.js should not import owner modules: ${importedModules.join(', ')}`)
-
-    // event-bindings does not import lifecycle (already has that cycle via initSemanticDemoEventListeners)
-    // but doesn't deepen it by importing lifecycle's legend-ui-dependent functions
-    const eventBindingsImports = eventBindingsSrc.match(/^import .+? from ['"]\.\/lifecycle\.js['"]/)
-    // The existing cycle is fine; we just verify no new direct lifecycle import
-    // (event-bindings already imports from lifecycle, we don't add more)
-
-    console.log('  OK — no new import cycle: legend-ui is neutral, lifecycle and event-bindings both import it')
-}
-
-// ── TEST 6: closeLegendGuide uses closeLegendPanel from legend-ui ───────────────
-
-function testCloseLegendGuideUsesAdapter() {
-    console.log('\n[TEST 6] closeLegendGuide delegates to legend-ui adapter')
-
-    const legendUiSrc = readSrc(LEGEND_UI_PATH)
-
-    // closeLegendGuide body should call closeLegendPanel() (from legend-ui)
-    // and NOT do direct DOM manipulation for panel class/aria
-    const closeMatch = legendUiSrc.match(/export function closeLegendGuide[\s\S]*?^}/m)
-    assert(closeMatch, 'legend-ui.js defines closeLegendGuide')
-
-    const body = closeMatch[0]
-    assert(body.includes('closeLegendPanel()'), 'closeLegendGuide calls closeLegendPanel()')
-    // Should NOT have direct .classList.remove('active') / setAttribute pattern
-    assert(
-        !body.includes('classList.remove'),
-        'closeLegendGuide does not do direct DOM class manipulation (delegated to closeLegendPanel)'
-    )
-
-    console.log('  OK — closeLegendGuide delegates to closeLegendPanel')
-}
-
-// ── TEST 7: view-controller.switchView uses Event Bus for decoupling ─────────────────
-
-function testSwitchViewUsesEventBus() {
-    console.log('\n[TEST 7] view-controller.switchView uses Event Bus instead of direct UI calls')
-
-    const viewControllerSrc = readSrc(VIEW_CONTROLLER_PATH)
-
-    // switchView should call publish(EVENTS.VIEW_CHANGED, ...)
-    assert(viewControllerSrc.includes('publish(EVENTS.VIEW_CHANGED'), 'switchView must publish VIEW_CHANGED event')
-
-    // It should NOT call closeLegendPanel directly anymore
-    assert(
-        !viewControllerSrc.includes('closeLegendPanel()'),
-        'switchView should NOT call closeLegendPanel() directly (now event-driven)'
-    )
-
-    console.log('  OK — switchView uses Event Bus for UI decoupling')
-}
-
-// ── TEST 8: updateLegendGuideState uses openLegendPanel/closeLegendPanel ────────
-
-function testUpdateLegendGuideStateUsesAdapter() {
-    console.log('\n[TEST 8] updateLegendGuideState uses openLegendPanel/closeLegendPanel')
-
-    const legendUiSrc = readSrc(LEGEND_UI_PATH)
-
-    const updateMatch = legendUiSrc.match(/export function updateLegendGuideState[\s\S]*?^}/m)
-    assert(updateMatch, 'legend-ui.js defines updateLegendGuideState')
-
-    const body = updateMatch[0]
-    assert(
-        body.includes('openLegendPanel()') || body.includes('closeLegendPanel()'),
-        'updateLegendGuideState calls openLegendPanel() or closeLegendPanel()'
-    )
-
-    console.log('  OK — updateLegendGuideState uses openLegendPanel/closeLegendPanel')
-}
-
-// ── TEST 9: legend-ui.js subscribes to VIEW_CHANGED ───────────────────────────
-
-function testLegendUiSubscribesToViewChanged() {
-    console.log('\n[TEST 9] legend-ui.js subscribes to VIEW_CHANGED event')
-
-    const src = readSrc(LEGEND_UI_PATH)
+    const src = readSrc(LEGEND_PANEL_STORE)
 
     assert(
-        src.includes('subscribe(EVENTS.VIEW_CHANGED') ||
-            (src.includes('subscribeKeyed(') && src.includes('EVENTS.VIEW_CHANGED')),
-        'legend-ui.js must subscribe to VIEW_CHANGED'
+        !src.includes('window.closeLegendPanel') &&
+            !src.includes('window.openLegendPanel') &&
+            !src.includes('window.restoreLegendCollapsedPanel') &&
+            !src.includes('window.buildLegend'),
+        'legend-panel.svelte.ts must not expose functions to window'
     )
 
-    console.log('  OK — legend-ui.js subscribes to Event Bus')
+    console.log('  OK — legend-panel.svelte.ts has no window exports')
+}
+
+// ── TEST 5: legend-panel.svelte.ts does not import lifecycle or event-bindings ────
+
+function testStoreDoesNotImportLifecycleOrEventBindings() {
+    console.log('\n[TEST 5] legend-panel.svelte.ts does NOT import lifecycle or event-bindings')
+
+    const src = readSrc(LEGEND_PANEL_STORE)
+
+    assert(!src.includes('from') || !src.includes('lifecycle'), 'does not import lifecycle')
+    assert(!src.includes('from') || !src.includes('event-bindings'), 'does not import event-bindings')
+
+    console.log('  OK — legend-panel.svelte.ts is neutral (no lifecycle/event-bindings imports)')
+}
+
+// ── TEST 6: event-bindings imports from the canonical store ─────────────────────
+
+function testEventBindingsImportsFromCanonicalStore() {
+    console.log('\n[TEST 6] event-bindings imports from the canonical store')
+
+    const eventBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/event-bindings.ts')
+    const legendBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/legend-bindings.ts')
+
+    // event-bindings.ts imports buildLegend from the store
+    const ebSrc = readSrc(eventBindingsPath)
+    assert(
+        ebSrc.includes("from '@lib/stores/legend-panel") ||
+            ebSrc.includes("from '@lib/engine/legend-ui-bridge'"),
+        'event-bindings.ts imports from the canonical store or bridge'
+    )
+
+    // legend-bindings.ts imports from the store
+    const lbSrc = readSrc(legendBindingsPath)
+    assert(
+        lbSrc.includes("from '@lib/stores/legend-panel'") ||
+            lbSrc.includes("from '@lib/stores/legend-panel.svelte.ts'"),
+        'legend-bindings.ts imports from the canonical store'
+    )
+
+    // Neither should import from the deleted kernel
+    assert(
+        !ebSrc.includes("from '../../../js/modules/legend-ui") &&
+            !lbSrc.includes("from '../../../js/modules/legend-ui"),
+        'event-bindings/legend-bindings must not import from the deleted kernel'
+    )
+
+    console.log('  OK — event-bindings imports from the canonical store')
+}
+
+// ── TEST 7: lifecycle.ts does not import from the deleted legend-ui kernel ────────
+
+function testLifecycleDoesNotImportFromDeletedKernel() {
+    console.log('\n[TEST 7] lifecycle.ts does NOT import from deleted legend-ui kernel')
+
+    const lifecyclePath = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts')
+    const src = readSrc(lifecyclePath)
+
+    assert(
+        !src.includes("from './legend-ui.ts'") &&
+            !src.includes("from '../legend-ui.ts'") &&
+            !src.includes("from '../../js/modules/legend-ui.ts'"),
+        'lifecycle.ts must not import from the deleted legend-ui.ts kernel'
+    )
+
+    console.log('  OK — lifecycle.ts does not import from the deleted kernel')
 }
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
 
 console.log('=================================================================')
 console.log('legend-ui-ownership-contract.mjs')
-console.log('Verifies: legend-ui.js owns structural transitions')
-console.log('          lifecycle.js and event-bindings.js import it')
-console.log('          no new import cycles introduced')
+console.log('Verifies: legend-panel.svelte.ts owns the 10 canonical ports')
+console.log('          legend-ui-bridge.ts re-exports from the canonical store')
+console.log('          no live source imports from the deleted kernel')
 console.log('=================================================================')
 
 try {
-    testLegendUiExportsStructuralTransitions()
-    testLegendUiDoesNotImportLifecycleOrEventBindings()
-    testLifecycleImportsFromLegendUi()
-    testEventBindingsImportsFromLegendUi()
-    testNoNewImportCycle()
-    testCloseLegendGuideUsesAdapter()
-    testSwitchViewUsesEventBus()
-    testUpdateLegendGuideStateUsesAdapter()
-    testLegendUiSubscribesToViewChanged()
+    testLegendPanelStoreExportsPorts()
+    testBridgeReexportsFromCanonicalStore()
+    testNoLiveSourceImportsFromDeletedKernel()
+    testNoWindowExports()
+    testStoreDoesNotImportLifecycleOrEventBindings()
+    testEventBindingsImportsFromCanonicalStore()
+    testLifecycleDoesNotImportFromDeletedKernel()
 
     console.log('\n=================================================================')
-    console.log('ALL TESTS PASSED — legend-ui adapter ownership verified')
+    console.log('ALL TESTS PASSED — legend panel ownership verified')
     console.log('=================================================================')
     process.exit(0)
 } catch (err) {
