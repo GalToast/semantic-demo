@@ -18,7 +18,7 @@ import {
 import { clearMobileRouteFieldPeek as clearMobileRouteFieldPeekState } from '@lib/engine/search-state-bridge'
 import { focusOnNode } from '@lib/engine/camera-choreography'
 import { getRouteLayerOrigin } from '@lib/engine/camera-controls-core'
-import { setSemanticDiveMode } from './journey.ts'
+import { setSemanticDiveMode } from '@lib/journey/journey'
 import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts'
 import { recenterFocusedNode } from '@lib/ui/journey-bindings'
 import { exploreInsideToNextStop, resetExplorationFocus, setTrailDepth } from './lifecycle.ts'

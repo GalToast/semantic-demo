@@ -25,7 +25,9 @@ import {
     clearRouteExploration,
     setCameraAssistChoreography
 } from '@lib/engine/camera-controls-core'
-import { updateSelectedBusiness, setTrailFromSeed, syncFocusStage, setRouteChoreographyPhase } from './journey.ts'
+import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
+import { setTrailFromSeed } from '@lib/journey/neighborhood'
+import { setRouteChoreographyPhase } from '@lib/journey/route-trace'
 import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.ts'
 import { scheduleWeatherHydration } from '@lib/ui/loading'
 import { applyCompositionState } from '@lib/orchestration/composition-state'

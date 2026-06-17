@@ -10,7 +10,7 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getThreadCandidatesForIndex } from './journey-thread-model.ts';
-import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey.ts';
+import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/journey/neighborhood';
 import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket';
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens';
