@@ -36,8 +36,6 @@ import {
   setTrailDepth,
   resetNodePositions,
   refreshCompositionState,
-  resetExplorationFocus,
-  returnToOverview,
   showExploreTrailReview,
   hideExploreTrailReview
 } from "@lib/stores/lifecycle";
