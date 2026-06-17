@@ -1,0 +1,462 @@
+/**
+ * engine-lifecycle.test.ts — Unit tests for the new engine lifecycle module
+ *
+ * Coverage (W23 Canvas Engine Bridge Elimination):
+ *  1. Module exports — initEngine, resizeEngine, destroyEngine, getEngineStatus, engineStatusStore
+ *  2. initEngine behavior — accepts canvas + callbacks, returns Promise, sets status to 'ready', updates store
+ *  3. resizeEngine behavior — accepts width/height, calls updateCameraViewportOffset, calls _resizePostProcessing
+ *  4. destroyEngine behavior — sets status to 'idle', calls disposeTooltipEventBusSubscriptions, updates store
+ *  5. Callback wiring — initEngine forwards onNodePicked, onCameraArrived, etc. to event bus
+ *
+ * Mock strategy: all heavy GPU/engine modules are mocked. Tests verify contracts
+ * and call ordering, not actual Three.js/WebGL behavior.
+ *
+ * NOTE: src/lib/engine/lifecycle.ts does not exist yet (test-first). Tests will
+ * fail at import time until the module is scaffolded. That's expected.
+ */
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import type { EngineCallbacks, EngineStatus } from '@lib/engine/adapters/types'
+
+// ── Mock the heavy engine modules ────────────────────────────────────────────
+
+// Mock three-engine: initThreeJS returns true on success
+vi.mock('@lib/engine/three-engine', () => ({
+  initThreeJS: vi.fn(() => true),
+  deinit: vi.fn(),
+  onWindowResize: vi.fn(),
+  updateCameraViewportOffset: vi.fn(),
+  _resizePostProcessing: vi.fn(),
+  animate: vi.fn(),
+  cancelAnimate: vi.fn(),
+  getSceneRenderableDiagnostics: vi.fn(() => ({
+    active: true, fps: 60, drawCalls: 10, triangles: 1000,
+    points: 8406, myceliumCoreSegments: 100,
+    myceliumWispySegments: 50, myceliumBridgeSegments: 25,
+    memory: { geometries: 10, textures: 5 }
+  })),
+}))
+
+// Mock thread-manager: createMycelium / disposeMycelium
+vi.mock('@lib/engine/thread-manager', () => ({
+  createMycelium: vi.fn(),
+  disposeMycelium: vi.fn(),
+  shouldRenderThreads: vi.fn(() => true),
+  shouldRenderBridgeThreads: vi.fn(() => false),
+  getThreadPulseOpacity: vi.fn(() => 0.8),
+  getMyceliumPresentationProfile: vi.fn(() => ({ core: 1, wispy: 0.5, bridge: 0.3, pulse: 0.1 })),
+  getGroupLineSegmentCount: vi.fn(() => 100),
+}))
+
+// Mock canvas-interaction bindings
+vi.mock('@lib/journey/canvas-interaction', () => ({
+  ensureCanvasNodeInteractionBindings: vi.fn(() => vi.fn()),  // returns cleanup
+  disposeCanvasNodeInteractionBindings: vi.fn(),
+}))
+
+// Mock semantic-threads loader
+vi.mock('@lib/semantic-threads', () => ({
+  loadSemanticThreads: vi.fn(async () => {}),
+  attachLegacyState: vi.fn(),
+}))
+
+// Mock tooltip event bus subscriptions
+vi.mock('@lib/ui/tooltip', () => ({
+  initTooltipEventBusSubscriptions: vi.fn(),
+  disposeTooltipEventBusSubscriptions: vi.fn(),
+}))
+
+// Mock event bus
+vi.mock('@lib/orchestration/event-bus', () => ({
+  publish: vi.fn(),
+  subscribe: vi.fn(() => vi.fn()),  // returns unsubscribe
+  EVENTS: {
+    CAMERA_NODE_FOCUSED: 'CAMERA_NODE_FOCUSED',
+    TRANSITION_PHASE_CHANGED: 'TRANSITION_PHASE_CHANGED',
+    VIEW_CHANGED: 'VIEW_CHANGED',
+  },
+}))
+
+// Mock the engine status store (will be created as @lib/stores/engine.svelte.ts)
+vi.mock('@lib/stores/engine.svelte', () => {
+  let _value: EngineStatus = 'idle'
+  const subscribers: Array<(v: EngineStatus) => void> = []
+  return {
+    engineStatusStore: {
+      subscribe(fn: (v: EngineStatus) => void) {
+        subscribers.push(fn)
+        fn(_value)
+        return () => {
+          const idx = subscribers.indexOf(fn)
+          if (idx >= 0) subscribers.splice(idx, 1)
+        }
+      },
+      set(v: EngineStatus) {
+        _value = v
+        subscribers.forEach((fn) => fn(v))
+      },
+      update(fn: (v: EngineStatus) => EngineStatus) {
+        _value = fn(_value)
+        subscribers.forEach((s) => s(_value))
+      },
+    },
+    setEngineStatus: (v: EngineStatus) => {
+      _value = v
+      subscribers.forEach((fn) => fn(v))
+    },
+    getEngineStatusValue: () => _value,
+  }
+})
+
+// Mock app state (used by lifecycle for withMutation)
+vi.mock('@lib/state/app.svelte', () => ({
+  appState: {
+    withMutation: <T>(fn: () => T) => fn(),
+    engineBridge: null,
+    nodePositions: [],
+    targetPositions: [],
+    originalPositions: [],
+  },
+}))
+
+// Mock legacy state bridge
+vi.mock('@lib/engine/state-bridge', () => ({
+  state: {
+    points: [],
+    renderer: null,
+    nodePositions: [],
+  },
+}))
+
+// Mock camera-controls for updateCameraViewportOffset
+vi.mock('@lib/engine/camera-controls', () => ({
+  focusOnNode: vi.fn(),
+  settleCameraToOverviewPose: vi.fn(),
+  zoomCamera: vi.fn(),
+  updateCameraViewportOffset: vi.fn(),
+}))
+
+// Mock view-controller
+vi.mock('@lib/orchestration/view-controller', () => ({
+  switchView: vi.fn(),
+}))
+
+// ── Import the module under test ─────────────────────────────────────────────
+// This import will fail until src/lib/engine/lifecycle.ts is scaffolded.
+// That's expected for test-first development.
+
+import {
+  initEngine,
+  resizeEngine,
+  destroyEngine,
+  getEngineStatus,
+} from '../../src/lib/engine/lifecycle'
+
+import { engineStatusStore } from '@lib/stores/engine.svelte'
+
+// Also import mocked modules to verify call behavior
+import { initThreeJS, updateCameraViewportOffset, _resizePostProcessing } from '@lib/engine/three-engine'
+import { createMycelium } from '@lib/engine/thread-manager'
+import {
+  ensureCanvasNodeInteractionBindings,
+  disposeCanvasNodeInteractionBindings,
+} from '@lib/journey/canvas-interaction'
+import { loadSemanticThreads } from '@lib/semantic-threads'
+import {
+  initTooltipEventBusSubscriptions,
+  disposeTooltipEventBusSubscriptions,
+} from '@lib/ui/tooltip'
+
+// ── Test Helpers ─────────────────────────────────────────────────────────────
+
+function createMockCanvas(): HTMLCanvasElement {
+  const canvas = document.createElement('canvas')
+  canvas.width = 1920
+  canvas.height = 1080
+  return canvas
+}
+
+function createMockCallbacks(): EngineCallbacks {
+  return {
+    onNodePicked: vi.fn(),
+    onCameraArrived: vi.fn(),
+    onNodeHovered: vi.fn(),
+    onViewChanged: vi.fn(),
+    onLoadingPhase: vi.fn(),
+    onGraphicsStateChange: vi.fn(),
+  }
+}
+
+// ── Tests ────────────────────────────────────────────────────────────────────
+
+describe('engine-lifecycle — module exports', () => {
+  it('exports initEngine as a function', () => {
+    expect(typeof initEngine).toBe('function')
+  })
+
+  it('exports resizeEngine as a function', () => {
+    expect(typeof resizeEngine).toBe('function')
+  })
+
+  it('exports destroyEngine as a function', () => {
+    expect(typeof destroyEngine).toBe('function')
+  })
+
+  it('exports getEngineStatus as a function', () => {
+    expect(typeof getEngineStatus).toBe('function')
+  })
+
+  it('exports engineStatusStore from @lib/stores/engine.svelte', () => {
+    expect(engineStatusStore).toBeDefined()
+    expect(typeof engineStatusStore.subscribe).toBe('function')
+  })
+})
+
+describe('engine-lifecycle — initEngine behavior', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('accepts an HTMLCanvasElement and EngineCallbacks', async () => {
+    const canvas = createMockCanvas()
+    const callbacks = createMockCallbacks()
+
+    // Should not throw
+    await expect(initEngine(canvas, callbacks)).resolves.toBeUndefined()
+  })
+
+  it('returns a Promise', () => {
+    const canvas = createMockCanvas()
+    const callbacks = createMockCallbacks()
+    const result = initEngine(canvas, callbacks)
+
+    expect(result).toBeInstanceOf(Promise)
+  })
+
+  it('calls initThreeJS from three-engine', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(initThreeJS).toHaveBeenCalledOnce()
+  })
+
+  it('calls loadSemanticThreads', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(loadSemanticThreads).toHaveBeenCalledOnce()
+  })
+
+  it('calls createMycelium from thread-manager', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(createMycelium).toHaveBeenCalledOnce()
+  })
+
+  it('calls ensureCanvasNodeInteractionBindings', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(ensureCanvasNodeInteractionBindings).toHaveBeenCalledOnce()
+  })
+
+  it('calls initTooltipEventBusSubscriptions', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(initTooltipEventBusSubscriptions).toHaveBeenCalledOnce()
+  })
+
+  it('sets getEngineStatus() to "ready" after successful init', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(getEngineStatus()).toBe('ready')
+  })
+
+  it('updates engineStatusStore to "ready" after successful init', async () => {
+    const canvas = createMockCanvas()
+    let storeValue: EngineStatus = 'idle'
+
+    engineStatusStore.subscribe((v: EngineStatus) => {
+      storeValue = v
+    })
+
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(storeValue).toBe('ready')
+  })
+})
+
+describe('engine-lifecycle — resizeEngine behavior', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    // Initialize engine first so resize has something to work with
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+    vi.clearAllMocks()  // clear init mocks so resize assertions are clean
+  })
+
+  it('accepts width and height parameters', () => {
+    // Should not throw
+    expect(() => resizeEngine(1920, 1080)).not.toThrow()
+  })
+
+  it('calls updateCameraViewportOffset from camera-controls', () => {
+    resizeEngine(1920, 1080)
+
+    expect(updateCameraViewportOffset).toHaveBeenCalledOnce()
+  })
+
+  it('calls _resizePostProcessing from three-engine (BUG FIX)', () => {
+    resizeEngine(1920, 1080)
+
+    expect(_resizePostProcessing).toHaveBeenCalledOnce()
+  })
+
+  it('passes width and height to updateCameraViewportOffset', () => {
+    resizeEngine(800, 600)
+
+    expect(updateCameraViewportOffset).toHaveBeenCalledWith(800, 600)
+  })
+})
+
+describe('engine-lifecycle — destroyEngine behavior', () => {
+  beforeEach(async () => {
+    vi.clearAllMocks()
+    // Initialize engine first so destroy has something to tear down
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+    vi.clearAllMocks()
+  })
+
+  it('sets getEngineStatus() to "idle" after destroy', () => {
+    destroyEngine()
+
+    expect(getEngineStatus()).toBe('idle')
+  })
+
+  it('updates engineStatusStore to "idle" after destroy', () => {
+    let storeValue: EngineStatus = 'ready'
+
+    engineStatusStore.subscribe((v: EngineStatus) => {
+      storeValue = v
+    })
+
+    destroyEngine()
+
+    expect(storeValue).toBe('idle')
+  })
+
+  it('calls disposeTooltipEventBusSubscriptions (BUG FIX)', () => {
+    destroyEngine()
+
+    expect(disposeTooltipEventBusSubscriptions).toHaveBeenCalledOnce()
+  })
+
+  it('calls disposeCanvasNodeInteractionBindings', () => {
+    destroyEngine()
+
+    expect(disposeCanvasNodeInteractionBindings).toHaveBeenCalledOnce()
+  })
+})
+
+describe('engine-lifecycle — callback wiring', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('forwards onNodePicked callback to event bus wiring', async () => {
+    const callbacks = createMockCallbacks()
+    const canvas = createMockCanvas()
+
+    await initEngine(canvas, callbacks)
+
+    // The event bus subscribe should have been called with CAMERA_NODE_FOCUSED
+    // which wires the onNodePicked callback. We verify through the mock that
+    // the event bus subscription was established.
+    const eventBus = await import('@lib/orchestration/event-bus')
+    expect(eventBus.subscribe).toHaveBeenCalled()
+  })
+
+  it('forwards onCameraArrived callback via TRANSITION_PHASE_CHANGED', async () => {
+    const callbacks = createMockCallbacks()
+    const canvas = createMockCanvas()
+
+    await initEngine(canvas, callbacks)
+
+    const eventBus = await import('@lib/orchestration/event-bus')
+    const subscribeCalls = (eventBus.subscribe as ReturnType<typeof vi.fn>).mock.calls
+
+    // Should have a subscription for TRANSITION_PHASE_CHANGED
+    const transitionSub = subscribeCalls.find(
+      (call: unknown[]) => call[0] === 'TRANSITION_PHASE_CHANGED'
+    )
+    expect(transitionSub).toBeDefined()
+  })
+
+  it('forwards onViewChanged callback via VIEW_CHANGED event', async () => {
+    const callbacks = createMockCallbacks()
+    const canvas = createMockCanvas()
+
+    await initEngine(canvas, callbacks)
+
+    const eventBus = await import('@lib/orchestration/event-bus')
+    const subscribeCalls = (eventBus.subscribe as ReturnType<typeof vi.fn>).mock.calls
+
+    // Should have a subscription for VIEW_CHANGED
+    const viewSub = subscribeCalls.find(
+      (call: unknown[]) => call[0] === 'VIEW_CHANGED'
+    )
+    expect(viewSub).toBeDefined()
+  })
+
+  it('works with empty callbacks object', async () => {
+    const canvas = createMockCanvas()
+    // Empty callbacks — should not throw
+    await expect(initEngine(canvas, {})).resolves.toBeUndefined()
+  })
+
+  it('works with undefined callbacks', async () => {
+    const canvas = createMockCanvas()
+    // No callbacks at all — should not throw
+    await expect(initEngine(canvas)).resolves.toBeUndefined()
+  })
+})
+
+describe('engine-lifecycle — status transitions', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  it('starts at "idle" before init', () => {
+    expect(getEngineStatus()).toBe('idle')
+  })
+
+  it('transitions idle → ready via initEngine', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+
+    expect(getEngineStatus()).toBe('ready')
+  })
+
+  it('transitions ready → idle via destroyEngine', async () => {
+    const canvas = createMockCanvas()
+    await initEngine(canvas, createMockCallbacks())
+    destroyEngine()
+
+    expect(getEngineStatus()).toBe('idle')
+  })
+
+  it('full lifecycle: idle → ready → idle', async () => {
+    const canvas = createMockCanvas()
+
+    expect(getEngineStatus()).toBe('idle')
+
+    await initEngine(canvas, createMockCallbacks())
+    expect(getEngineStatus()).toBe('ready')
+
+    destroyEngine()
+    expect(getEngineStatus()).toBe('idle')
+  })
+})
