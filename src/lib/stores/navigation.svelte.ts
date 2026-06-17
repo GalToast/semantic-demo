@@ -426,15 +426,34 @@ export function dispatchNavTransition(
             const _surfaceRaw = payload.surface
             const _fromTraversal = payload.fromTraversal
             const _fromCanvasNode = payload.fromCanvasNode
+            // Resolve final mode/surface values
+            const _finalMode: NavMode = (_modeRaw && (_modeRaw as string).length) ? _modeRaw as NavMode : ('focus' as NavMode)
+            const _finalSurface: PanelSurface = (_surfaceRaw && (_surfaceRaw as string).length) ? _surfaceRaw as PanelSurface : ('focus' as PanelSurface)
             _navWritable.update((s) => {
                 const next: any = { ...s }
                 if (_indexDefined) next.focusedIndex = payload.index as number
-                next.mode = (_modeRaw && _modeRaw.length) ? _modeRaw : ('focus' as NavMode)
-                next.surface = (_surfaceRaw && _surfaceRaw.length) ? _surfaceRaw : ('focus' as PanelSurface)
+                next.mode = _finalMode
+                next.surface = _finalSurface
                 if (_fromTraversal === true || _fromCanvasNode === true) {
                     next.activeStoryPrompt = null
                 }
                 return next
+            })
+            // W15+ parity-attrs fix: also update appState.navState (Svelte 5 class)
+            // so legacy readers and the bundled updateJourneyCompass (which
+            // reads journey.phase from appState.navState.mode) see the new
+            // values. Without this mirror, appState.navState.mode stays at
+            // its initial 'overview' even after a focus click, breaking
+            // compass presentation + the data-journey-phase parity attr.
+            appState.withMutation(() => {
+                const _legacyMode: any = _finalMode
+                const _legacySurface: any = _finalSurface
+                if (_indexDefined) appState.navState.focusedIndex = payload.index as number
+                if (_legacyMode) appState.navState.mode = _legacyMode
+                if (_legacySurface) appState.navState.surface = _legacySurface
+                if (_fromTraversal === true || _fromCanvasNode === true) {
+                    ;(appState.navState as any).activeStoryPrompt = null
+                }
             })
             break
         }
