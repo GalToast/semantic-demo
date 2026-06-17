@@ -14,7 +14,7 @@ import { setStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
 import { summarizeNeighborReason, walkThreadNeighbor } from './journey-thread-settler.ts'
 import { inspectThreadNeighbor, pinThreadNeighbor, clearThreadInspection } from '@lib/journey/thread-inspector'
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey-neighborhood.ts'
-import { ensureCanvasNodeInteractionBindings } from './journey-canvas-interaction.ts'
+import { ensureCanvasNodeInteractionBindings } from '@lib/journey/canvas-interaction'
 import { focusOnNode } from '@lib/engine/camera-choreography'
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/orchestration/lifecycle'
 import {
