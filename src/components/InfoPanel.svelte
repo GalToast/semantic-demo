@@ -418,10 +418,11 @@
   <div class="info-panel-content" id="info-panel-content">
     {@render content?.()}
 
-    <!-- Info header (always rendered; CSS hides it in search mode per contract) -->
-    <div class="info-header" hidden={!contentDescriptor.headerVisible}>
-      <h3>{contentDescriptor.headerText}</h3>
-    </div>
+    {#if contentDescriptor.headerVisible}
+      <div class="info-header">
+        <h3>{contentDescriptor.headerText}</h3>
+      </div>
+    {/if}
 
     <!-- Selected card container -->
     <div
