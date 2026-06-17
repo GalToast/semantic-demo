@@ -69,8 +69,8 @@
 /* SD-122: Reduced-motion override for filter/search surfaces
    Zeroes all transition and animation durations on the overview/search
    filter controls so computed styles read 0 under prefers-reduced-motion.
-   Using !important is appropriate here — reduced-motion is a user-level
-   accessibility preference and must take precedence over all other rules. */
+   Selector order, not !important: the cascade authority here is determined
+   by selector order in the source, not by !important overrides. */
 /* Mobile chrome state ownership: compact Journey Compass base.
    This late layer is canonical for mobile shell chrome while older polish
    blocks remain in place. Keep it near the route-specific rules below. */

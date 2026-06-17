@@ -1,10 +1,8 @@
 /* Demo UI: micro-demo overlay tag and demo-mode indicators. */
 
-/* Dead selectors removed 2026-06-06 (bug-sweep):
-   .demo-overlay-tag, .demo-tag-dot, .demo-end-toast, .demo-starter-chip,
-   .glass-panel, .demo-toast-glyph, .demo-toast-text, .demo-toast-dismiss,
-   @keyframes fadeInOut, @keyframes pulse, @keyframes slideUp —
-   none referenced in JS/TS/HTML/Svelte. Verified via grep. */
+/* Previously contained dead selectors removed 2026-06-06 (bug-sweep).
+   Only .demo-starter-chip survived (referenced in strands.css, search.css,
+   mobile_base.css, and mobile_premium__state.css). */
 
 /* Hide view toggle switcher when micro-demo is active to prevent overlapping with the demo progress pill */
 body[data-demo-active='true'] .view-toggle {
