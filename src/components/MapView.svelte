@@ -157,7 +157,7 @@
     </div>
   {/if}
 
-  {#if status !== 'ready'}
+  {#if !(status === 'ready')}
     <div class="map-status" class:is-error={status === 'error'} role="status" aria-live="polite">
       <span class="map-status-dot" aria-hidden="true"></span>
       <span>{statusDetail}</span>

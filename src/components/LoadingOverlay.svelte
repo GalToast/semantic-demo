@@ -43,7 +43,9 @@
   let progress = $derived(phaseMeta[phase as LoadingPhase]?.progress ?? 0);
   let note = $derived(phaseMeta[phase as LoadingPhase]?.note ?? '');
   let foot = $derived(phaseMeta[phase as LoadingPhase]?.foot ?? '');
-  let actuallyVisible = $derived(visible && phase !== 'launch');
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use positive equality + negation instead.
+  let actuallyVisible = $derived(visible && !(phase === 'launch'));
 
   /** Derive the active index for chip highlighting */
   let activePhaseIndex = $derived(PHASE_ORDER.indexOf(phase));

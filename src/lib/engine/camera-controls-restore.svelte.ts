@@ -46,10 +46,14 @@ class CameraControlsRestore {
         const _s = state as unknown as SemanticState;
         if (_s.camera == null || _s.controls == null) return false;
         if (_s.sceneRevealActive) return false;
-        if (_s.focusedNode !== null) return false;
-        if (_s.selectedPoint !== null) return false;
-        if (_s.navState?.mode !== 'overview') return false;
-        if (_s.trailDepth !== 0) return false;
+        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
+        // compiler bug inverts `!==` to `===`. Use `!= null` (Pattern 3) and
+        // positive equality (Pattern 2) instead.
+        if (_s.focusedNode != null) return false;
+        if (_s.selectedPoint != null) return false;
+        const _mode = _s.navState?.mode;
+        if (_mode === 'overview') { /* ok — fall through */ } else return false;
+        if (_s.trailDepth === 0) { /* ok — fall through */ } else return false;
 
         const cam = _s.camera as CameraLike;
         const ctrl = _s.controls as ControlsLike;
@@ -129,15 +133,24 @@ class CameraControlsRestore {
         this.clearAutoRotateResumeTimer();
         if (prefersReducedMotion()) return;
         const _s = state as unknown as SemanticState;
+        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
+        // compiler bug inverts `!==` to `===`. Use positive equality (Pattern 2)
+        // and `!= null` (Pattern 3) instead.
+        const _isGalaxy = _s.currentView === 'galaxy';
+        const _noFocus = _s.focusedNode == null;
+        const _noSelection = _s.selectedPoint == null;
+        const _isOverview = _s.navState.mode === 'overview';
+        const _pocketActive = (_s.navState.focusPocketMeta as { active?: boolean } | null)?.active === true;
+        const _trailZero = _s.trailDepth === 0;
         if (
             !this.autoRotate ||
-            _s.currentView !== 'galaxy' ||
-            _s.focusedNode !== null ||
-            _s.selectedPoint !== null ||
+            !_isGalaxy ||
+            !_noFocus ||
+            !_noSelection ||
             _s.sceneRevealActive ||
-            _s.navState.mode !== 'overview' ||
-            (_s.navState.focusPocketMeta as { active?: boolean } | null)?.active === true ||
-            _s.trailDepth !== 0
+            !_isOverview ||
+            _pocketActive ||
+            !_trailZero
         )
             return;
         this.autoRotateResumeDueAt = performance.now() + delay;
@@ -150,8 +163,8 @@ class CameraControlsRestore {
             if (
                 this.autoRotate &&
                 _s.currentView === 'galaxy' &&
-                _s.focusedNode === null &&
-                _s.selectedPoint === null &&
+                _s.focusedNode == null &&
+                _s.selectedPoint == null &&
                 _s.navState.mode === 'overview' &&
                 !_s.sceneRevealActive &&
                 (_s.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true &&

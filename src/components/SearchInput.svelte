@@ -54,8 +54,10 @@
   let status = $derived($searchState.status);
   let showLoading = $derived(status === 'searching');
   let hasQuery = $derived(queryInput.trim().length > 0);
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   let _activeResultId = $derived(
-    $searchState.activeResultId !== null
+    $searchState.activeResultId != null
       ? `search-result-${Number($searchState.activeResultId)}`
       : undefined
   );

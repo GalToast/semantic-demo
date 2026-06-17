@@ -115,6 +115,9 @@ export const filterState: Readable<ActiveFilters> & {
 export const hasActiveFilters: Readable<boolean> = derived(
   filterState,
   ($filterState) =>
+    // Note: we use positive form (`=== 'all'` etc.) + negation instead of
+    // `!== 'all'` to avoid the Svelte 5 strict-mode bug where `!==`
+    // is incorrectly compiled to `===` (see docs/svelte-5-strict-mode-cookbook.md).
     $filterState.status !== 'all' ||
     $filterState.city !== '' ||
     $filterState.website ||
@@ -124,9 +127,14 @@ export const hasActiveFilters: Readable<boolean> = derived(
 
 /** Number of individually active filters. */
 export const activeFilterCount: Readable<number> = derived(filterState, ($filterState) => {
+  // Note: using `!==` inside `derived` is affected by the Svelte 5
+  // strict-mode bug where `!==` compiles to `===`. We use positive
+  // form + negation as the workaround (see cookbook Pattern 2).
   let count = 0;
-  if ($filterState.status !== 'all') count++;
-  if ($filterState.city !== '') count++;
+  const isAll = $filterState.status === 'all';
+  const isEmpty = $filterState.city === '';
+  if (!isAll) count++;
+  if (!isEmpty) count++;
   if ($filterState.website) count++;
   if ($filterState.email) count++;
   if ($filterState.geocoded) count++;

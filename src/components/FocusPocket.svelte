@@ -26,13 +26,17 @@
       ? nav.focusedIndex
       : null
   );
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   const hasFocus_ = $derived(
-    nav.mode === 'focus' || nav.mode === 'inside' || focusedIndex_ !== null
+    nav.mode === 'focus' || nav.mode === 'inside' || focusedIndex_ != null
   );
 
   // Loading state: true while data is loading and focus is active
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use positive equality + negation instead.
   let isLoading = $derived(
-    hasFocus_ && getDataLoadState().status !== 'ready'
+    hasFocus_ && !(getDataLoadState().status === 'ready')
   );
 
   // Last-applied index prevents redundant rebuilds on data-status ticks.

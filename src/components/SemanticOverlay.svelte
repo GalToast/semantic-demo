@@ -71,7 +71,7 @@
     </div>
 
     <!-- Node indicator -->
-    {#if currentIdx !== null}
+    {#if currentIdx != null}
       <div class="overlay-node-indicator">
         <span class="node-idx">#{currentIdx}</span>
       </div>

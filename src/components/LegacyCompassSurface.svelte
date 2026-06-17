@@ -239,7 +239,9 @@
     bodyPanelSurface === 'semantic-dive' ||
     (navState.currentView === 'galaxy' && activeTrailDepth >= 2)
   );
-  let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex !== null || Number.isFinite(bodyFocusedIndex));
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
+  let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex != null || Number.isFinite(bodyFocusedIndex));
   let canDive = $derived(
     navState.currentView === 'galaxy'
       && hasDiveFocus
@@ -354,7 +356,9 @@
 
   // Hide compass when search results are active to avoid overlap.
   let hideCompassForSearch = $derived(
-    searchSurface && navState.currentView !== 'map'
+    // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+    // inverts `!==` to `===`. Use positive equality + negation instead.
+    searchSurface && !(navState.currentView === 'map')
   );
   let visibleTitle = $derived(
     searchSurface

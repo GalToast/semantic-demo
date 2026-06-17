@@ -128,7 +128,9 @@
     const list: string[] = liveSuggestions.length > 0
       ? liveSuggestions.slice(0, 5)
       : ['Coffee', 'Roof repair', 'Childcare', 'Dog friendly'];
-    if ($activeClusterFilter !== null) {
+    // Note: avoid `!==` with reactive store values — Svelte 5 strict-mode
+    // compiler bug inverts `!==` to `===`. Use `!= null` (Pattern 3).
+    if ($activeClusterFilter != null) {
       const label = describeCluster(Number($activeClusterFilter)).toLowerCase();
       if (!list.includes(label)) list.push(label);
     }

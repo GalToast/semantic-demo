@@ -16,49 +16,49 @@ Document the dev-mode vs production-preview parity for the body data-attr layer.
 
 ### Before search-result click (overview/idle state)
 
-| Attr | Value |
-|------|-------|
-| `data-mode` | `overview` |
-| `data-nav-mode` | `overview` |
-| `data-nav-surface` | `idle` |
-| `data-panel-surface` | `idle` |
-| `data-panel-surface-mode` | `idle` |
-| `data-panel-surface-detail` | `none` |
-| `data-journey-phase` | `overview` |
-| `data-graph-context` | `overview` |
-| `data-search-status` | `idle` |
-| `data-trail-depth` | `0` |
-| `data-trail-state` | `inactive` |
-| `data-semantic-dive` | `inactive` |
-| `data-focused-node` | (absent) |
-| `data-focus-origin` | (absent) |
-| `data-loading-overlay` | `hidden` |
-| `data-scene-ready` | `true` |
+| Attr                        | Value      |
+| --------------------------- | ---------- |
+| `data-mode`                 | `overview` |
+| `data-nav-mode`             | `overview` |
+| `data-nav-surface`          | `idle`     |
+| `data-panel-surface`        | `idle`     |
+| `data-panel-surface-mode`   | `idle`     |
+| `data-panel-surface-detail` | `none`     |
+| `data-journey-phase`        | `overview` |
+| `data-graph-context`        | `overview` |
+| `data-search-status`        | `idle`     |
+| `data-trail-depth`          | `0`        |
+| `data-trail-state`          | `inactive` |
+| `data-semantic-dive`        | `inactive` |
+| `data-focused-node`         | (absent)   |
+| `data-focus-origin`         | (absent)   |
+| `data-loading-overlay`      | `hidden`   |
+| `data-scene-ready`          | `true`     |
 
 ### After search-result click (focus-search state)
 
-| Attr | Value | Expected | Pass |
-|------|-------|----------|------|
-| `data-mode` | `focus` | `focus` | ✓ |
-| `data-nav-mode` | `focus` | `focus` | ✓ |
-| `data-nav-surface` | `focus-search` | `focus-search` | ✓ |
-| `data-panel-surface` | `focus-search` | `focus-search` | ✓ |
-| `data-panel-surface-mode` | `focus-search` | `focus-search` | ✓ |
-| `data-panel-surface-detail` | `none` | `none` | ✓ |
-| `data-journey-phase` | `focus-search` | `focus-search` | ✓ **W15 fix verified** |
-| `data-graph-context` | `focus` | `focus` | ✓ |
-| `data-search-status` | `focusing` | `focusing` | ✓ |
-| `data-trail-depth` | `1` | `1` | ✓ |
-| `data-trail-state` | `active` | `active` | ✓ |
-| `data-semantic-dive` | `inactive` | `inactive` | ✓ |
-| `data-focused-node` | `522` | `522` | ✓ |
-| `data-focus-origin` | `search-result` | `search-result` | ✓ |
-| `data-search-glow` | `inactive` | (set by cursor.ts) | ✓ |
-| `data-focus-search-forced` | `true` | `true` | ✓ |
-| `data-route-exploration` | `idle` | `idle` | ✓ |
-| `data-strand-journey` | `idle` | `idle` | ✓ |
-| `data-loading-overlay` | `hidden` | `hidden` | ✓ |
-| `data-scene-ready` | `true` | `true` | ✓ |
+| Attr                        | Value           | Expected           | Pass                   |
+| --------------------------- | --------------- | ------------------ | ---------------------- |
+| `data-mode`                 | `focus`         | `focus`            | ✓                      |
+| `data-nav-mode`             | `focus`         | `focus`            | ✓                      |
+| `data-nav-surface`          | `focus-search`  | `focus-search`     | ✓                      |
+| `data-panel-surface`        | `focus-search`  | `focus-search`     | ✓                      |
+| `data-panel-surface-mode`   | `focus-search`  | `focus-search`     | ✓                      |
+| `data-panel-surface-detail` | `none`          | `none`             | ✓                      |
+| `data-journey-phase`        | `focus-search`  | `focus-search`     | ✓ **W15 fix verified** |
+| `data-graph-context`        | `focus`         | `focus`            | ✓                      |
+| `data-search-status`        | `focusing`      | `focusing`         | ✓                      |
+| `data-trail-depth`          | `1`             | `1`                | ✓                      |
+| `data-trail-state`          | `active`        | `active`           | ✓                      |
+| `data-semantic-dive`        | `inactive`      | `inactive`         | ✓                      |
+| `data-focused-node`         | `522`           | `522`              | ✓                      |
+| `data-focus-origin`         | `search-result` | `search-result`    | ✓                      |
+| `data-search-glow`          | `inactive`      | (set by cursor.ts) | ✓                      |
+| `data-focus-search-forced`  | `true`          | `true`             | ✓                      |
+| `data-route-exploration`    | `idle`          | `idle`             | ✓                      |
+| `data-strand-journey`       | `idle`          | `idle`             | ✓                      |
+| `data-loading-overlay`      | `hidden`        | `hidden`           | ✓                      |
+| `data-scene-ready`          | `true`          | `true`             | ✓                      |
 
 ## Result
 

@@ -158,7 +158,7 @@
       <button
         bind:this={legendButtons[i]}
         class="legend-item"
-        class:inactive={$activeClusterFilter !== null && Number($activeClusterFilter) === entry.index}
+        class:inactive={$activeClusterFilter != null && Number($activeClusterFilter) === entry.index}
         onclick={() => toggleCluster(entry.name, entry.index)}
         onfocus={() => {
           activeLegendButtonIndex = i;
@@ -166,7 +166,7 @@
         onkeydown={(event) => handleLegendKeydown(event, i)}
         type="button"
         tabindex={open && !concealedByFocus && i === activeLegendButtonIndex ? 0 : -1}
-        aria-pressed={$activeClusterFilter !== null && Number($activeClusterFilter) === entry.index}
+        aria-pressed={$activeClusterFilter != null && Number($activeClusterFilter) === entry.index}
       >
         <span
           class="legend-swatch"

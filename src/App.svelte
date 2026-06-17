@@ -308,14 +308,18 @@
   let idleSearchVisible = $derived(idleSurfaceActive);
 
   // Focus stage: only when in focus/inside/trail or a node is explicitly focused
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   let focusActive = $derived(
-    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex !== null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'focus' || bodyPanelSurface === 'inside' || bodyPanelSurface === 'trail' || focusSearchForced || bodyPanelSurface === 'semantic-dive'
+    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex != null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'focus' || bodyPanelSurface === 'inside' || bodyPanelSurface === 'trail' || focusSearchForced || bodyPanelSurface === 'semantic-dive'
   );
 
   // Idle owns the full header. Search/focus keep only utility chrome so the
   // escape affordances exist for the mobile/short-landscape CSS contracts.
   let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
-  let controlsVisible = $derived(navSurface !== 'focus-search' && !focusSearchForced);
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use positive equality + negation instead.
+  let controlsVisible = $derived(!(navSurface === 'focus-search') && !focusSearchForced);
   let infoPanelOpen = $derived((idleSurfaceActive || searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
 </script>
 

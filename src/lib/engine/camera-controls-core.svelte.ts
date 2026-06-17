@@ -54,7 +54,9 @@ class CameraControlsCore {
     focusCameraOffset = $state<any>(null);
 
     // ── Derived helpers ───────────────────────────────────────────────────
-    isTransitioning = $derived(this.focusTransitionMode !== 'idle');
+    // Note: avoid `!==` on $state properties — Svelte 5 strict-mode compiler
+    // bug inverts `!==` to `===`. Use positive equality + negation instead.
+    isTransitioning = $derived(!(this.focusTransitionMode === 'idle'));
     isCameraAssistActive = $derived(
         this.focusCameraAssistActive && this.focusCameraAssistUntil > performance.now()
     );
@@ -81,7 +83,9 @@ class CameraControlsCore {
         const duration = Math.max(0, Number.isFinite(options.duration) ? options.duration! : 720);
         if (normalizedMode === 'idle') return;
         this.focusTransitionSettleTimer = window.setTimeout(() => {
-            if (this.focusTransitionMode !== normalizedMode) return;
+            // Note: avoid `!==` on $state properties — Svelte 5 strict-mode compiler
+            // bug inverts `!==` to `===`. Use positive equality + negation instead.
+            if (this.focusTransitionMode === normalizedMode) { /* still current */ } else return;
             if (document.body) document.body.dataset.focusTransitionPhase = 'settled';
         }, duration + 180) as unknown as number;
     }
@@ -183,7 +187,11 @@ class CameraControlsCore {
     markRouteExploration(reason: string = 'user-control'): boolean {
         if (!isSearchRouteFocusActive()) return false;
         const _s = state as unknown as SemanticState;
-        if (_s.routeExplorationState.phase !== 'free' || _s.routeExplorationState.reason !== reason) {
+        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
+        // compiler bug inverts `!==` to `===`. Use positive equality + negation.
+        const _phaseIsFree = _s.routeExplorationState.phase === 'free';
+        const _reasonMatches = _s.routeExplorationState.reason === reason;
+        if (!_phaseIsFree || !_reasonMatches) {
             this.setRouteExplorationState('free', reason);
             applyFocusOrbitSlack(reason);
         }

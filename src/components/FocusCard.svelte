@@ -87,8 +87,10 @@
     return null;
   });
   let currentActiveResult = $derived(activeResult());
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   let isFocused = $derived(
-    nav.mode === 'focus' || nav.mode === 'inside' || currentFocusedIdx !== null
+    nav.mode === 'focus' || nav.mode === 'inside' || currentFocusedIdx != null
   );
   let surface = $derived(nav.surface ?? 'idle');
 
@@ -142,12 +144,14 @@
     if (_records.length === 0) return null;
 
     // Use search result if available
-    if (currentActiveResult !== null) {
+    // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+    // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
+    if (currentActiveResult != null) {
       return _records[Number(currentActiveResult)] ?? null;
     }
 
     // Otherwise use field focus
-    if (currentFocusedIdx !== null && currentFocusedIdx >= 0) {
+    if (currentFocusedIdx != null && currentFocusedIdx >= 0) {
       return _records[currentFocusedIdx] ?? null;
     }
 
@@ -155,8 +159,8 @@
   });
 
   let selectionSource = $derived.by((): 'search' | 'field' | null => {
-    if (currentActiveResult !== null && selectedRecord !== null) return 'search';
-    if (currentFocusedIdx !== null && currentFocusedIdx >= 0 && selectedRecord !== null) return 'field';
+    if (currentActiveResult != null && selectedRecord != null) return 'search';
+    if (currentFocusedIdx != null && currentFocusedIdx >= 0 && selectedRecord != null) return 'field';
     return null;
   });
 
@@ -168,7 +172,7 @@
       isFocusedReactive ||
       semanticDiveActive ||
       bodyPanelSurface === 'focus' ||
-      (String(surface) !== 'search' && bodyPanelSurface !== 'search' && bodyPanelSurface !== 'focus-search')
+      (!(String(surface) === 'search') && !(bodyPanelSurface === 'search') && !(bodyPanelSurface === 'focus-search'))
     )
   );
 

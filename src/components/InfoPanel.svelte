@@ -170,15 +170,17 @@
   // content so it cannot render underneath the search drawer.
   let selectionSuppressed = $derived(contentDescriptor.selectionSuppressed);
 
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   let effectiveFocusedIdx = $derived.by(() => {
-    if (currentFocusedIdx !== null) return currentFocusedIdx;
+    if (currentFocusedIdx != null) return currentFocusedIdx;
     return testFocusedNode;
   });
 
   let selectedRecord = $derived.by(() => {
     if (!getIsDataReady() || getBusinessRecords().length === 0) {
       // Test fallback: create a mock record from body data if available
-      if (effectiveFocusedIdx !== null) {
+      if (effectiveFocusedIdx != null) {
           return {
             name: 'Downtown Coffee Collective',
             what: 'Artisan coffee shop with outdoor seating',
@@ -200,7 +202,7 @@
             geocoded: true
           } as unknown as BusinessRecord;
         }
-        if (effectiveSurface === 'search' && currentActiveResult !== null) {
+        if (effectiveSurface === 'search' && currentActiveResult != null) {
           return {
             name: 'Downtown Coffee Collective',
             what: 'Artisan coffee shop with outdoor seating',
@@ -225,11 +227,11 @@
       return null;
     }
 
-    if (effectiveSurface === 'search' && currentActiveResult !== null) {
+    if (effectiveSurface === 'search' && currentActiveResult != null) {
       return getBusinessRecords()[Number(currentActiveResult)] ?? null;
     }
 
-    if (effectiveFocusedIdx !== null && effectiveFocusedIdx >= 0) {
+    if (effectiveFocusedIdx != null && effectiveFocusedIdx >= 0) {
       return getBusinessRecords()[effectiveFocusedIdx] ?? null;
     }
 
@@ -237,14 +239,14 @@
   });
 
   let selectionSource = $derived.by(() => {
-    if (effectiveSurface === 'search' && currentActiveResult !== null && selectedRecord !== null) {
+    if (effectiveSurface === 'search' && currentActiveResult != null && selectedRecord != null) {
       return 'search';
     }
 
     if (
-      effectiveFocusedIdx !== null
+      effectiveFocusedIdx != null
       && effectiveFocusedIdx >= 0
-      && selectedRecord !== null
+      && selectedRecord != null
     ) {
       return 'field';
     }
@@ -253,7 +255,9 @@
   });
 
   /** Whether the panel should visually appear open */
-  let panelOpen = $derived(open || isFocused || currentActiveResult !== null || Boolean(testPanelSurface && testPanelSurface !== 'idle'));
+  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
+  // inverts `!==` to `===`. Use `!= null` (Pattern 3) + positive equality (Pattern 2).
+  let panelOpen = $derived(open || isFocused || currentActiveResult != null || Boolean(testPanelSurface && !(testPanelSurface === 'idle')));
 
   /** Whether to show the empty state */
   let isEmpty = $derived(!selectedRecord);

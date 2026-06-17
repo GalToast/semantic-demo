@@ -112,7 +112,7 @@
 {#if visible && focusSnapshot.threadInspector.active}
   {@const inspector = focusSnapshot.threadInspector}
   {@const inspectedIndex = inspector.inspectedIndex ?? bodyInspectedIndex()}
-  {@const pinned = inspectedIndex !== null && inspector.pinnedIndex === inspectedIndex}
+  {@const pinned = inspectedIndex != null && inspector.pinnedIndex === inspectedIndex}
   <div
     class="thread-inspector"
     id="thread-inspector"
