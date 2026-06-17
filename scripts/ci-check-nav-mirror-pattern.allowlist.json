@@ -1,0 +1,5 @@
+{
+  "src/lib/stores/navigation.svelte.ts": [
+    [418, 460, "FOCUS_NODE branch: direct appState.navState.* writes inside appState.withMutation() — the canonical mirror path for focusedIndex/mode/surface/activeStoryPrompt"]
+  ]
+}

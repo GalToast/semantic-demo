@@ -9,6 +9,7 @@
     "lint:fix": "eslint \"{js,tests}/**/*.{js,ts}\" --fix",
     "lint:tests": "eslint \"tests/**/*.{js,ts}\" --no-warn-ignored",
     "lint:all": "npm run lint",
+    "lint:nav-mirror": "node scripts/ci-check-nav-mirror-pattern.mjs",
     "sg": "ast-grep",
     "mcp:recover": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/mcp-recover.ps1",
     "mcp:doctor": "powershell -NoProfile -ExecutionPolicy Bypass -File scripts/browser-mcp-doctor.ps1",
