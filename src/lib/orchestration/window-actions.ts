@@ -27,6 +27,7 @@ import {
   clearThreadInspection,
 } from '@lib/engine/window-actions-bridge';
 import { showSemanticThreadsDetail } from '@lib/engine/window-actions-bridge';
+import type { ViewName, SwitchViewOptions } from '@lib/orchestration/view-controller';
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
 import {
   resetExperienceState as resetSvelteExperienceState,
@@ -43,7 +44,7 @@ type LegacyActionModules = {
     focusOnNode?: (index: number, options?: Record<string, unknown>) => boolean;
   };
   lifecycle?: {
-    switchView?: (view: string, options?: Record<string, unknown>) => void;
+    switchView?: (view: ViewName, options?: SwitchViewOptions) => void;
     setTrailDepth?: (depth: number, options?: Record<string, unknown>) => void;
     setSemanticDiveMode?: (enabled: boolean) => void;
     returnToOverview?: () => void;
@@ -249,7 +250,7 @@ export function installWindowActions(): () => void {
     },
     switchView: (view: string, options?: Record<string, unknown>) => {
       normalizeLegacyNavState();
-      getLegacyModules()?.lifecycle?.switchView?.(view, options);
+      getLegacyModules()?.lifecycle?.switchView?.(view as ViewName, options as SwitchViewOptions);
       syncSvelteNavFromLegacy();
     },
     focusOnNode: (index: number, options?: Record<string, unknown>) => {
