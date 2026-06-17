@@ -12,7 +12,7 @@ import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-ca
 import { walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter'
 import { clearSearch } from '@lib/engine/search-state-bridge'
-import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts'
+import { getPanelSurfaceDetailFromMobileSheet } from '@lib/search/search-panel-adapter'
 import { derivePanelSurface } from '@lib/orchestration/composition-state'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { hideSummaryCard as hideSummaryCardImpl } from '../../src/lib/journey/semantic-guide.ts'
@@ -24,11 +24,11 @@ import {
     probeSemanticLane as probeSemanticLaneImpl,
     scheduleSemanticLaneMonitor as scheduleSemanticLaneMonitorImpl,
     setSemanticLaneUiState as setSemanticLaneUiStateImpl
-} from './semantic-lane.ts'
+} from '@lib/orchestration/semantic-lane'
 import {
     dispatchNavTransition as dispatchNavTransitionImpl,
     NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL
-} from './navigation-state.ts'
+} from '@lib/stores/navigation.svelte'
 import { appState } from '@lib/state/app.svelte'
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
 import {
@@ -36,21 +36,24 @@ import {
     STORY_DESCRIPTIONS,
     refreshCompositionState,
     setMyceliumMode,
-    setTrailDepth
-} from './lifecycle-modes.ts'
-import {
+    setTrailDepth,
     resetExplorationFocus as _resetExplorationFocusImpl,
     resetNodePositions,
     resetExperienceState,
     returnToOverview as _returnToOverviewImpl
-} from './lifecycle-reset.ts'
+} from '@lib/stores/lifecycle'
 
 // ── Pass-through re-exports ─────────────────────────────────────────────────
 
 export { syncFocusStage, clearSearch }
 
 export { copyCurrentViewLink } from '@lib/orchestration/url-state'
-export { updateJourneyCompass } from './journey-compass-controller.ts'
+export { clearExplorationFocusSelection } from '@lib/orchestration/url-state'
+export {
+    executeJourneyCompassAction,
+    updateJourneyCompass
+} from '@lib/orchestration/compass-controller'
+export { getJourneyCompassState } from '@lib/orchestration/compass-state'
 
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
 export {
@@ -61,7 +64,7 @@ export {
     setTrailDepth,
     resetNodePositions,
     resetExperienceState
-}
+};
 
 // ── Thin proxy wrappers ─────────────────────────────────────────────────────
 
