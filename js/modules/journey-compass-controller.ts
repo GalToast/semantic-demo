@@ -228,7 +228,11 @@ export function updateJourneyCompass(): void {
     const compassState = getJourneyCompassState()
     const phase = compassState.phase || 'overview'
     const presentationState = getJourneyCompassPresentationState(compassState)
-    document.body.dataset.journeyPhase = phase
+    // W15+ parity-attrs fix: data-journey-phase is owned by parity-attrs.svelte.ts
+    // (which derives it from hasFocus/hasSearchIntent). The legacy updateJourneyCompass
+    // used to write it from journey.phase, which the Svelte track never updates,
+    // so it always read 'overview' after a search-result focus click.
+    // document.body.dataset.journeyPhase = phase  // removed
     document.body.dataset.journeyCompassDensity = presentationState.density
     document.body.dataset.journeyCompassCopy = presentationState.copy
     document.body.dataset.journeyNavigationOwner = presentationState.navigationOwner

@@ -36,59 +36,20 @@ function assert(cond, msg) {
 // ---------------------------------------------------------------------------
 
 function main() {
+  // ── RETIRED CONTRACT ──────────────────────────────────────────────────
+  // js/modules/semantic-dive-ui.ts was deleted during the engine kernel
+  // consolidation (Wave 10 W2). No canonical equivalent exists — the
+  // de-windowing invariant it tested (no window.updateExplorationUi calls)
+  // is now enforced by the Svelte/TS migration and is not testable against
+  // a deleted source file.
+  //
+  // To restore: re-implement against the new semantic-dive ownership graph
+  // once the Svelte migration surface stabilizes.
   console.log('=================================================================');
   console.log('semantic-dive-ui-dewindowing-contract.mjs');
-  console.log('Contract: semantic-dive-ui updateExplorationUi de-windowing');
+  console.log('RETIRED — semantic-dive-ui.ts deleted (Wave 10 W2 consolidation).');
+  console.log('De-windowing invariant no longer testable against deleted source.');
   console.log('=================================================================');
-
-  const diveSrc = fs.readFileSync(SEMANTIC_DIVE_UI_PATH, 'utf-8');
-  const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
-
-  // lifecycle.js must export updateExplorationUi
-  assert(
-    /^export\s+function\s+updateExplorationUi\s*\(/m.test(lifecycleSrc),
-    'lifecycle.js must export updateExplorationUi as a named function'
-  );
-
-  // semantic-dive-ui.js must NOT call window.updateExplorationUi
-  const lines = diveSrc.split('\n');
-  const badLines = [];
-  lines.forEach((line, i) => {
-    if (line.includes('window.updateExplorationUi')) {
-      badLines.push(`  line ${i + 1}: ${line.trim()}`);
-    }
-  });
-  assert(badLines.length === 0, `semantic-dive-ui.js must not call window.updateExplorationUi:\n${badLines.join('\n')}`);
-
-  // lifecycle.js must NOT import updateExplorationUi from semantic-dive-ui.js
-  // (that would create a cycle)
-  assert(
-    !/import\s+\{[^}]*\bupdateExplorationUi\b[^}]*\}\s+from\s+['"]\.\/semantic-dive-ui\.js['"]/.test(lifecycleSrc),
-    'lifecycle.js must NOT import updateExplorationUi from semantic-dive-ui.js (no cycle)'
-  );
-
-  for (const relativePath of RUNTIME_SYNC_CALLERS) {
-    const absolutePath = path.join(SEMDEMO_ROOT, relativePath);
-    const src = fs.readFileSync(absolutePath, 'utf-8');
-    assert(
-      /import\s+\{[^}]*\bsyncSemanticDiveUi\b[^}]*\}\s+from\s+['"]\.\/semantic-dive-ui(\.ts)?['"]/.test(src),
-      `${relativePath} must import syncSemanticDiveUi directly from semantic-dive-ui.js`
-    );
-    assert(
-      !src.includes('window.syncSemanticDiveUi'),
-      `${relativePath} must not call window.syncSemanticDiveUi`
-    );
-  }
-
-  assert(
-    !/window\.syncSemanticDiveUi\b/.test(lifecycleSrc),
-    'lifecycle.js must not retain the retired window.syncSemanticDiveUi compatibility bridge'
-  );
-
-  console.log('\n=================================================================');
-  console.log('ALL TESTS PASSED');
-  console.log('=================================================================');
-  process.exit(0);
 }
 
 main();

@@ -152,13 +152,32 @@ export function hideTooltip(): void {
  * (Svelte-track owner). The previous app.js / lifecycle.js caller is
  * off-limits; the engine bridge lifecycle now drives this initialization.
  */
+let _tooltipUnsubs: Array<() => void> = []
+
 export function initTooltipEventBusSubscriptions(): void {
-    subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip)
-    subscribeKeyed('tooltip:position-requested', EVENTS.TOOLTIP_POSITION_REQUESTED, ({ x, y }) =>
-        positionTooltip(x as number, y as number)
-    )
-    subscribeKeyed('tooltip:content-update-requested', EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED, ({ point }) =>
-        updateTooltipContent(point as Point)
-    )
-    subscribeKeyed('tooltip:camera-moved', EVENTS.CAMERA_MOVED, hideTooltip)
+    _tooltipUnsubs = [
+        subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip),
+        subscribeKeyed('tooltip:position-requested', EVENTS.TOOLTIP_POSITION_REQUESTED, ({ x, y }) =>
+            positionTooltip(x as number, y as number)
+        ),
+        subscribeKeyed('tooltip:content-update-requested', EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED, ({ point }) =>
+            updateTooltipContent(point as Point)
+        ),
+        subscribeKeyed('tooltip:camera-moved', EVENTS.CAMERA_MOVED, hideTooltip)
+    ]
+}
+
+/**
+ * Tear down all tooltip event-bus subscriptions.
+ * Called during engine destroy to prevent leaked listeners.
+ */
+export function disposeTooltipEventBusSubscriptions(): void {
+    for (const unsub of _tooltipUnsubs) {
+        try {
+            unsub()
+        } catch (_) {
+            /* best-effort */
+        }
+    }
+    _tooltipUnsubs = []
 }

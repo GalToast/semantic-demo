@@ -25,6 +25,7 @@ import {
 } from '@lib/orchestration/lifecycle'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { currentSurface } from '@lib/stores/navigation.svelte'
+import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
 import { applyPointFilterColors } from '@lib/journey/point-color'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
@@ -175,5 +176,14 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     })
   }
   updateJourneyCompass()
+  // W15+ parity-attrs fix: the legacy updateJourneyCompass in
+  // dist/svelte/assets/panel-bindings-* still writes data-journeyPhase
+  // from journey.phase (legacy state, never updated to 'focus').
+  // Re-write the parity attributes AFTER updateJourneyCompass AND after
+  // any deferred event subscribers re-fire. setTimeout(0) runs after all
+  // microtasks of the current task.
+  setTimeout(() => {
+    applyParityAttributes(computeParityAttributes())
+  }, 0)
   return true
 }

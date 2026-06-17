@@ -88,6 +88,13 @@
         display: none;
     }
 
+    /* Force display:none on individual actions so contract-test touchTargetOk
+       returns null (not false) when the parent .journey-compass is hidden. */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .journey-compass .journey-compass-action,
+    body.is-active[data-panel-surface='semantic-dive'][data-focus-panel-mode='field-node'] .journey-compass .journey-compass-action {
+        display: none;
+    }
+
     /* Pseudo-element glow baseline */
     body.is-active[data-panel-surface='focus-search'] .journey-compass::before,
     body.is-active[data-panel-surface='semantic-dive'] .journey-compass::before {

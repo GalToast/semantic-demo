@@ -7,34 +7,34 @@
 
 import { state } from '@lib/engine/state-bridge'
 import type { Point } from '@lib/state/state-types'
-import { formatBusinessName, cleanPublicNoteText, getPublicRecordStatusLabel } from '@lib/utils/dom-formatters.ts';
-import { describeCluster } from '@lib/utils/ui-presentation.ts';
+import { formatBusinessName, cleanPublicNoteText, getPublicRecordStatusLabel } from '@lib/utils/dom-formatters.ts'
+import { describeCluster } from '@lib/utils/ui-presentation.ts'
 
-export { formatBusinessName };
+export { formatBusinessName }
 
 export interface SearchContextSnapshot {
-    currentSearchSummary: SearchSummarySnapshot | null;
-    currentView: string;
+    currentSearchSummary: SearchSummarySnapshot | null
+    currentView: string
 }
 
 export interface SearchSummarySnapshot {
-    query: string;
-    resultIndices: number[];
-    anchorIndex?: number;
-    visibleMatches?: number;
-    [key: string]: unknown;
+    query: string
+    resultIndices: number[]
+    anchorIndex?: number
+    visibleMatches?: number
+    [key: string]: unknown
 }
 
 export interface PayloadResult {
-    lead_id: string | number;
-    name: string;
-    city: string;
-    cluster_label: string;
-    status: string;
-    public_note: string;
-    public_detail: string;
-    address: string;
-    naics: string;
+    lead_id: string | number
+    name: string
+    city: string
+    cluster_label: string
+    status: string
+    public_note: string
+    public_detail: string
+    address: string
+    naics: string
 }
 
 /**
@@ -43,22 +43,22 @@ export interface PayloadResult {
 export function getSearchContextSnapshot(): SearchContextSnapshot {
     return {
         currentSearchSummary: state.currentSearchSummary as SearchSummarySnapshot | null,
-        currentView: state.currentView,
-    };
+        currentView: state.currentView
+    }
 }
 
 /**
  * Returns the points array reference.
  */
 export function getPoints(): Point[] {
-    return state.points;
+    return state.points
 }
 
 /**
  * Returns the semanticResultContextByLeadId map reference.
  */
 export function getResultContextMap(): Map<string, unknown> {
-    return state.semanticResultContextByLeadId as Map<string, unknown>;
+    return state.semanticResultContextByLeadId as Map<string, unknown>
 }
 
 /**
@@ -69,11 +69,11 @@ export function buildSemanticGuidePayloadResult(
     points: Point[],
     contextMap: Map<string, unknown>
 ): PayloadResult | null {
-    if (!points) return null;
-    if (!(Number.isFinite(index) && index >= 0 && index < points.length)) return null;
-    const point = points[index];
-    if (!point) return null;
-    const context = (contextMap?.get?.(String(point.lead_id)) || {}) as Record<string, unknown>;
+    if (!points) return null
+    if (!(Number.isFinite(index) && index >= 0 && index < points.length)) return null
+    const point = points[index]
+    if (!point) return null
+    const context = (contextMap?.get?.(String(point.lead_id)) || {}) as Record<string, unknown>
 
     return {
         lead_id: point.lead_id ?? '',
@@ -85,7 +85,7 @@ export function buildSemanticGuidePayloadResult(
         public_detail: cleanPublicNoteText((context.public_detail || '') as string),
         address: cleanPublicNoteText((context.address || '') as string),
         naics: cleanPublicNoteText((context.naics || '') as string)
-    };
+    }
 }
 
 /**
@@ -96,18 +96,18 @@ export function mapResultIndicesToPayloadResults(
     points: Point[],
     contextMap: Map<string, unknown>
 ): PayloadResult[] {
-    if (!resultIndices?.length) return [];
-    return resultIndices.slice(0, 6).map(idx => buildSemanticGuidePayloadResult(idx, points, contextMap)).filter((r): r is PayloadResult => r !== null);
+    if (!resultIndices?.length) return []
+    return resultIndices
+        .slice(0, 6)
+        .map((idx) => buildSemanticGuidePayloadResult(idx, points, contextMap))
+        .filter((r): r is PayloadResult => r !== null)
 }
 
 /**
  * Returns the anchor point for the current search summary.
  */
-export function getAnchorPoint(
-    currentSearchSummary: SearchSummarySnapshot | null,
-    points: Point[]
-): Point | null {
-    const idx = currentSearchSummary?.anchorIndex as number | undefined;
-    if (!Number.isFinite(idx) || !points) return null;
-    return points[idx as number] || null;
+export function getAnchorPoint(currentSearchSummary: SearchSummarySnapshot | null, points: Point[]): Point | null {
+    const idx = currentSearchSummary?.anchorIndex as number | undefined
+    if (!Number.isFinite(idx) || !points) return null
+    return points[idx as number] || null
 }

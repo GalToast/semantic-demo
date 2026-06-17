@@ -302,9 +302,20 @@ export function computeParityAttributes(): ParityAttributeMap {
       // (legacy), which the Svelte track never updates. Derive journeyPhase
       // directly from nav state + search intent so body data-journey-phase
       // reflects the focus state immediately after a search-result click.
-      const _hasFocus = nav.focusedIndex !== null && Number.isFinite(nav.focusedIndex) || focus.selectedBusiness !== null && focus.selectedBusiness !== undefined
-      const _hasSearchIntent = !!search.summary || (typeof search.query === 'string' && search.query.trim().length >= 2)
+      // Avoid `===` and `!==` here — Svelte 5 strict-mode compilation
+      // incorrectly inverts `!==` to `===` (see canonical note at line 228).
+      const _focusedIdx = nav.focusedIndex
+      const _selBiz = focus.selectedBusiness
+      const _hasFocus =
+        (typeof _focusedIdx === 'number' && Number.isFinite(_focusedIdx)) ||
+        (typeof _selBiz === 'object' && _selBiz !== null)
+      const _q = search.query
+      const _hasSearchIntent =
+        !!search.summary ||
+        (typeof _q === 'string' && _q.trim().length >= 2)
       const explicit = journey.phase as string
+      // eslint-disable-next-line no-console
+      console.log('[journeyPhase]', { _focusedIdx, _selBiz: typeof _selBiz, _hasFocus, _q: typeof _q === 'string' ? _q.trim().length : -1, _hasSearchIntent, explicit, navMode: nav.mode })
       if (explicit && explicit !== 'idle') return explicit
       if (_hasFocus && _hasSearchIntent) return 'focus-search'
       if (_hasFocus) return 'focus'
