@@ -19,7 +19,7 @@ export {
   setTrailDepth,
   switchView,
   updateExplorationUi,
-} from '../../../js/modules/lifecycle';
+} from '@lib/orchestration/lifecycle';
 export {
   getPreviouslyFocusedFocusStage,
   setPreviouslyFocusedFocusStage,
