@@ -199,13 +199,6 @@ export {
   getRouteLayerOrigin
 } from './camera.svelte.ts';
 
-// ── Engine Bridge ────────────────────────────────────────────────────────────
-export {
-  engineBridgeStore,
-  setEngineBridge,
-  getEngineBridge
-} from './engine-bridge.svelte.ts';
-
 // ── Test Compatibility ───────────────────────────────────────────────────────
 export {
   testCompatStore,
