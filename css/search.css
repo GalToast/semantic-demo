@@ -2099,6 +2099,7 @@ body[data-panel-surface='map-focus-search'] .semantic-lane-assist-meta {
     }
 }
 
+/* canonical: --bp-landscape-tall */
 @media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
     body[data-panel-surface='search'] .search-result-item,
     body[data-panel-surface='search'] .search-result-item:not(:first-child) {

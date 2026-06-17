@@ -28,6 +28,7 @@
         pointer-events: none;
     }
 
+    /* canonical: --bp-landscape */
     @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
         body.is-active[data-panel-surface='idle'] :is(.controls.controls-rail, .controls.controls-info) {
             display: contents;

@@ -1459,6 +1459,7 @@
     }
 } /* end @media focus/dive states */
 
+/* canonical: --bp-landscape-compact */
 @media (max-width: 900px) and (max-height: 420px) and (orientation: landscape) {
     body.is-active:is(
             [data-panel-surface='focus'],
@@ -1937,6 +1938,7 @@
    via its own ID-scoped rule so the share button is hidden without
    inflating the .controls selector's specificity. Contract:
    tests/mobile-chrome-ownership-contract.mjs. */
+/* canonical: --bp-landscape */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
     body.is-active:is(
             [data-panel-surface='focus'],

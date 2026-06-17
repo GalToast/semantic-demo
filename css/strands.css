@@ -167,6 +167,7 @@
 
 /* Landscape/short-height mobile: keep the route controls and active task
    reachable instead of letting secondary status panels consume the viewport. */
+/* canonical: --bp-landscape-tall */
 @media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
     body[data-active-view='galaxy'] .view-toggle {
         display: none;
@@ -444,6 +445,7 @@
     }
 }
 
+/* canonical: --bp-landscape-tall */
 @media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
     /* Action visibility handled by global mobile actions */
     /* Action visibility handled by global mobile actions */
@@ -717,6 +719,7 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
     pointer-events: auto;
 }
 
+/* canonical: --bp-landscape-tablet */
 @media (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
     html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-rail.controls,
     html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-info.controls,
@@ -1410,6 +1413,7 @@ body[data-active-view='map'] .mode-grid .mode-chip.active {
 }
 
 /* Relocated short-landscape mobile layout overrides from animations.css */
+/* canonical: --bp-landscape-tall */
 @media (max-width: 900px) and (max-height: 480px) and (orientation: landscape) {
     /* Short-landscape transitions: faster curves to avoid sluggish panel
        slides on constrained viewports. Override base 500ms to 180ms so

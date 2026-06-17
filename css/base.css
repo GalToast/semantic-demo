@@ -163,6 +163,18 @@
     --landscape-weather-widget-height: 62px;
     --landscape-focus-stage-card-max-height: min(72vh, 282px);
 
+    /* ─── Canonical Landscape Breakpoints (W24+ consolidation) ─────
+       NOTE: CSS custom properties cannot be used inside @media rules.
+       These are defined here as the single source of truth for
+       breakpoint values. @media rules in other files reference these
+       values via inline comments. When updating a breakpoint, update
+       BOTH this definition and all referencing @media rules.
+       See: notes/w21-css-ownership-investigation-2026-06-17.md Smell 4 */
+    --bp-landscape:           (max-width: 900px) and (max-height: 430px) and (orientation: landscape);
+    --bp-landscape-tall:      (max-width: 900px) and (max-height: 480px) and (orientation: landscape);
+    --bp-landscape-compact:   (max-width: 900px) and (max-height: 420px) and (orientation: landscape);
+    --bp-landscape-tablet:    (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape);
+
     /* UI Positioning Tokens */
     --top-chrome-mobile: 82px;
     --compass-top: 78px;

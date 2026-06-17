@@ -723,6 +723,7 @@
    Short-landscape: clear overflow at mobile-landscape widths such as
    896x414, which are wider than the standard max-width:768 mobile gate.
    ---------------------------------------------------------------- */
+/* canonical: --bp-landscape */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
     body.is-active .journey-compass {
         left: 376px;
