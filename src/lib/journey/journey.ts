@@ -84,7 +84,7 @@ import {
     ensureCanvasNodeInteractionBindings as _ensureCanvasNodeInteractionBindings,
     isThreadCandidateVisibleOnCanvas as _isThreadCandidateVisibleOnCanvas,
     initJourneyCanvasInteractionAdapter
-} from '@lib/engine/journey-canvas-interaction-bridge'
+} from '@lib/journey/canvas-interaction'
 
 export function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
     return _isThreadCandidateVisibleOnCanvas(index, margin)

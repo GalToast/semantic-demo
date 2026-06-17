@@ -62,5 +62,5 @@ export { applyFilters, getFilteredIndices } from '@lib/orchestration/search-filt
 export { pointMatchesActiveFilters };
 
 export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics } from '@lib/search-cache';
-export { searchResultsStore, searchSummaryStore, isSearchingStore, searchErrorStore, searchVisibleCountStore } from '@lib/engine/stores-bridge';
+export { searchResultsStore, searchSummaryStore, isSearchingStore, searchErrorStore, searchVisibleCountStore } from '@lib/stores/legacy-stores';
 export { publish, EVENTS } from '@lib/orchestration/event-bus';

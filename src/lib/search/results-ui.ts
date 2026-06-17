@@ -20,7 +20,7 @@ import {
     isSearchingStore,
     searchErrorStore,
     searchVisibleCountStore
-} from '../engine/stores-bridge';
+} from '../stores/legacy-stores';
 import { formatBusinessName } from '../utils/dom-formatters';
 import {
     getSearchResultStrength,
