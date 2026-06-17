@@ -10,7 +10,7 @@ import { resolveSource } from './source-path.mjs';
 
 const CWD = process.cwd();
 const src = readFileSync(resolveSource('js/modules/three-engine.ts', CWD), 'utf8');
-const nodeManagerSrc = readFileSync(resolveSource('js/modules/three-node-manager.ts', CWD), 'utf8');
+const nodeManagerSrc = readFileSync(resolveSource('src/lib/engine/node-manager.ts', CWD), 'utf8');
 const interactionSrc = readFileSync(resolveSource('js/modules/three-interaction-visuals.ts', CWD), 'utf8');
 const shellCss = readFileSync(resolve(CWD, 'css/shell.css'), 'utf8');
 

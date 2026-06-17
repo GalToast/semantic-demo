@@ -10,7 +10,7 @@ import path from 'node:path';
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const WEBGL_CONTEXT_PATH = path.join(SEMDEMO_ROOT, 'js/modules/webgl-context.ts');
 const THREE_ENGINE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/three-engine.ts');
-const NODE_MANAGER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/three-node-manager.ts');
+const NODE_MANAGER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/node-manager.ts');
 const THREAD_MANAGER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/three-thread-manager.ts');
 const VISUALS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.ts');
 

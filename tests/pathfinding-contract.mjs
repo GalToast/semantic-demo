@@ -14,7 +14,7 @@
 
 import assert from 'node:assert/strict';
 import { state } from '../src/lib/engine/state-bridge.ts';
-import { findSemanticPath } from '../js/modules/pathfinding.ts';
+import { findSemanticPath } from '../legacy-reference/pathfinding.ts';
 
 const original = {
   points: state.points,

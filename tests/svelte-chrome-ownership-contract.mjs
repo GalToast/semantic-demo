@@ -26,7 +26,7 @@ function walk(dir, files = []) {
 }
 
 const appSource = read('js/modules/components/App.svelte');
-const appIslandSource = read('js/modules/app-svelte-island.ts');
+const appIslandSource = read('src/main.ts');
 const shellSource = read('vector-explorer-polished.html');
 
 assert(
@@ -41,8 +41,8 @@ assert(appSource.includes('<InfoPanelChrome />'), 'App.svelte should render Info
 assert(appSource.includes('<LegendPanelChrome />'), 'App.svelte should render LegendPanelChrome');
 
 assert(
-  appIslandSource.includes("import App from './components/App.svelte'"),
-  'app-svelte-island.js should mount the unified App.svelte root'
+  appIslandSource.includes("import App from './App.svelte'"),
+  'src/main.ts should mount the unified App.svelte root'
 );
 assert(
   !appIslandSource.includes('InfoPanelChrome') && !appIslandSource.includes('LegendPanelChrome'),
