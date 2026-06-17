@@ -17,6 +17,7 @@ import {
     currentView,
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
+import { applyParityAttributes, computeParityAttributes } from '../orchestration/parity-attrs.svelte'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
@@ -146,6 +147,12 @@ export function applyCompositionState(): void {
  */
 export function refreshCompositionState(): void {
     applyCompositionState()
+    // W15+ parity-attrs fix: the $effect.root() subscription in parity-attrs
+    // doesn't fire reliably in the live browser. Force-write the full
+    // parity attribute set on every composition refresh so body data-attrs
+    // (mode, navMode, navSurface, panelSurfaceMode, journeyPhase, etc.) always
+    // reflect the current Svelte 5 navStore. See tmp/parity-attrs-diagnostic-2026-06-17.md.
+    applyParityAttributes(computeParityAttributes())
     publish(EVENTS.COMPOSITION_UPDATED)
 }
 
