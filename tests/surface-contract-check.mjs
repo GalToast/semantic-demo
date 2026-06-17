@@ -1735,6 +1735,17 @@ async function assert_info_panel_empty(page, ctx) {
             results.infoPanelVisibility = style.visibility
         }
 
+        // Structural container always present when panel renders
+        const infoPanelContent = document.querySelector('#info-panel-content')
+        results.infoPanelContentPresent = infoPanelContent !== null
+
+        // Info header (always rendered; CSS hides it in search mode per contract)
+        const infoHeader = document.querySelector('.info-header')
+        results.infoHeaderPresent = infoHeader !== null
+        results.infoHeaderVisible = infoHeader
+            ? getComputedStyle(infoHeader).display !== 'none' && getComputedStyle(infoHeader).visibility !== 'hidden'
+            : null
+
         // Dual-selector: legacy #selected-card OR Svelte .focus-card-empty
         const selectedCard = document.querySelector('#selected-card') || document.querySelector('.selected-card-empty')
         results.selectedCardPresent = selectedCard !== null
@@ -1769,6 +1780,14 @@ async function assert_info_panel_empty(page, ctx) {
 
     if (info.infoPanelPresent) ctx.pass('info-panel-empty', 'dom:info-panel')
     else ctx.fail('info-panel-empty', 'dom:info-panel', 'missing #info-panel')
+
+    // Structural container always present when panel renders
+    if (info.infoPanelContentPresent) ctx.pass('info-panel-empty', 'dom:info-panel-content')
+    else ctx.fail('info-panel-empty', 'dom:info-panel-content', 'missing #info-panel-content')
+
+    // Info header always rendered (CSS-hidden in search mode)
+    if (info.infoHeaderPresent) ctx.pass('info-panel-empty', 'dom:info-header')
+    else ctx.fail('info-panel-empty', 'dom:info-header', 'missing .info-header')
 
     // InfoPanel hides itself when no business is selected (panelOpen=false)
     // in the Svelte implementation. Accept hidden as valid empty state.
@@ -3431,6 +3450,14 @@ async function assert_info_panel_populated(page, ctx) {
             results.selectedCardBlackOnDark = blackOnDark(style.backgroundColor, style.color)
         }
 
+        // Structural container always present when panel renders
+        const infoPanelContent = document.querySelector('#info-panel-content')
+        results.infoPanelContentPresent = infoPanelContent !== null
+
+        // Info header (always rendered; CSS hides it in search mode per contract)
+        const infoHeader = document.querySelector('.info-header')
+        results.infoHeaderPresent = infoHeader !== null
+
         const selectedDetails = document.querySelector('#selected-details')
         results.selectedDetailsPresent = selectedDetails !== null
         results.selectedDetailsVisible = selectedDetails
@@ -3458,6 +3485,47 @@ async function assert_info_panel_populated(page, ctx) {
 
         const selectedRoleBadge = document.querySelector('#selected-role-badge')
         results.selectedRoleBadgePresent = selectedRoleBadge !== null
+
+        // ── Non-conditional populated-state surface elements ────────────────
+        // These elements are always rendered inside #selected-details when
+        // the panel has a selected record (!isEmpty). Assertions below close
+        // contract-test gaps identified in the Wave 3 hardening sweep.
+
+        const selectedMetaStrip = document.querySelector('#selected-meta-strip')
+        results.selectedMetaStripPresent = selectedMetaStrip !== null
+        results.selectedMetaStripClipped = selectedMetaStrip ? textClipped(selectedMetaStrip) : null
+
+        const selectedBadges = document.querySelector('#selected-badges')
+        results.selectedBadgesPresent = selectedBadges !== null
+
+        const selectedFacts = document.querySelector('#selected-facts')
+        results.selectedFactsPresent = selectedFacts !== null
+        results.selectedFactsClipped = selectedFacts ? textClipped(selectedFacts) : null
+
+        const selectedActionRow = document.querySelector('#selected-action-row')
+        results.selectedActionRowPresent = selectedActionRow !== null
+
+        const btnSelectedMap = document.querySelector('#btn-selected-map')
+        results.btnSelectedMapPresent = btnSelectedMap !== null
+        if (btnSelectedMap) {
+            const style = getComputedStyle(btnSelectedMap)
+            if (style.display !== 'none' && style.visibility !== 'hidden') {
+                const rect = btnSelectedMap.getBoundingClientRect()
+                results.btnSelectedMapTouchTarget = rect.width >= 43.5 && rect.height >= 43.5
+            } else {
+                results.btnSelectedMapTouchTarget = null
+            }
+        }
+
+        const selectedGrid = document.querySelector('.selected-grid')
+        results.selectedGridPresent = selectedGrid !== null
+
+        const selectedMap = document.querySelector('#selected-map')
+        results.selectedMapPresent = selectedMap !== null
+        results.selectedMapClipped = selectedMap ? textClipped(selectedMap) : null
+
+        const selectedThread = document.querySelector('#selected-thread')
+        results.selectedThreadPresent = selectedThread !== null
 
         results.overflowX = document.documentElement.scrollWidth > window.innerWidth
         results.overflowY = document.documentElement.scrollHeight > window.innerHeight
@@ -3523,6 +3591,54 @@ async function assert_info_panel_populated(page, ctx) {
 
     if (info.selectedRoleBadgePresent) ctx.pass('info-panel-populated', 'dom:#selected-role-badge')
     else ctx.fail('info-panel-populated', 'dom:#selected-role-badge', 'missing #selected-role-badge')
+
+    // ── Wave 3 hardening: non-conditional populated-state surface elements ──
+
+    if (info.infoPanelContentPresent) ctx.pass('info-panel-populated', 'dom:#info-panel-content')
+    else ctx.fail('info-panel-populated', 'dom:#info-panel-content', 'missing #info-panel-content')
+
+    if (info.infoHeaderPresent) ctx.pass('info-panel-populated', 'dom:.info-header')
+    else ctx.fail('info-panel-populated', 'dom:.info-header', 'missing .info-header')
+
+    if (info.selectedMetaStripPresent) ctx.pass('info-panel-populated', 'dom:#selected-meta-strip')
+    else ctx.fail('info-panel-populated', 'dom:#selected-meta-strip', 'missing #selected-meta-strip')
+
+    if (info.selectedMetaStripClipped)
+        ctx.fail('info-panel-populated', 'text-clipping:#selected-meta-strip', '#selected-meta-strip text is clipped')
+    else if (info.selectedMetaStripClipped === false) ctx.pass('info-panel-populated', 'text-clipping:#selected-meta-strip')
+
+    if (info.selectedBadgesPresent) ctx.pass('info-panel-populated', 'dom:#selected-badges')
+    else ctx.fail('info-panel-populated', 'dom:#selected-badges', 'missing #selected-badges')
+
+    if (info.selectedFactsPresent) ctx.pass('info-panel-populated', 'dom:#selected-facts')
+    else ctx.fail('info-panel-populated', 'dom:#selected-facts', 'missing #selected-facts')
+
+    if (info.selectedFactsClipped)
+        ctx.fail('info-panel-populated', 'text-clipping:#selected-facts', '#selected-facts text is clipped')
+    else if (info.selectedFactsClipped === false) ctx.pass('info-panel-populated', 'text-clipping:#selected-facts')
+
+    if (info.selectedActionRowPresent) ctx.pass('info-panel-populated', 'dom:#selected-action-row')
+    else ctx.fail('info-panel-populated', 'dom:#selected-action-row', 'missing #selected-action-row')
+
+    if (info.btnSelectedMapPresent) ctx.pass('info-panel-populated', 'dom:#btn-selected-map')
+    else ctx.fail('info-panel-populated', 'dom:#btn-selected-map', 'missing #btn-selected-map')
+
+    if (info.btnSelectedMapTouchTarget === false)
+        ctx.fail('info-panel-populated', 'touch-target:#btn-selected-map', '#btn-selected-map button < 44px')
+    else if (info.btnSelectedMapTouchTarget) ctx.pass('info-panel-populated', 'touch-target:#btn-selected-map')
+
+    if (info.selectedGridPresent) ctx.pass('info-panel-populated', 'dom:.selected-grid')
+    else ctx.fail('info-panel-populated', 'dom:.selected-grid', 'missing .selected-grid')
+
+    if (info.selectedMapPresent) ctx.pass('info-panel-populated', 'dom:#selected-map')
+    else ctx.fail('info-panel-populated', 'dom:#selected-map', 'missing #selected-map')
+
+    if (info.selectedMapClipped)
+        ctx.fail('info-panel-populated', 'text-clipping:#selected-map', '#selected-map text is clipped')
+    else if (info.selectedMapClipped === false) ctx.pass('info-panel-populated', 'text-clipping:#selected-map')
+
+    if (info.selectedThreadPresent) ctx.pass('info-panel-populated', 'dom:#selected-thread')
+    else ctx.fail('info-panel-populated', 'dom:#selected-thread', 'missing #selected-thread')
 
     if (info.overflowX)
         ctx.fail('info-panel-populated', 'viewport-crowding:overflow-x', 'horizontal overflow in info-panel-populated')
