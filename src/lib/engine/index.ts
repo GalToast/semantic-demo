@@ -22,7 +22,7 @@
 
 // ── Bridge factory and types ─────────────────────────────────────────────────
 
-export { createEngineBridge } from './bridge'
+export { createEngineBridge } from './adapters/core'
 
 export type {
     EngineBridge,
@@ -32,7 +32,7 @@ export type {
     SearchCorridorOptions,
     FilterOptions,
     SceneDiagnostics
-} from './bridge'
+} from './adapters/types'
 
 // ── TS port re-exports: three-engine ─────────────────────────────────────────
 
