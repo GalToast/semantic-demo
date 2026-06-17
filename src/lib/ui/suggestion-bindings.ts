@@ -8,7 +8,7 @@ const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
 import { focusOnNode } from '@lib/engine/camera-choreography'
 import { clearShortSemanticSearchState } from '@lib/engine/search-state-bridge'
-import { showSemanticThreadsDetail } from '@lib/engine/semantic-guide-bridge'
+import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
 
 interface SuggestionEvent extends MouseEvent {
     target: HTMLElement
