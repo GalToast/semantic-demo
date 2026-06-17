@@ -10,12 +10,12 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { switchView, showViewHandoff, hideViewHandoff } from '@lib/orchestration/view-controller'
 import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
 import { walkThreadNeighbor } from '@lib/journey/thread-settler'
-import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter'
+import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import { clearSearch } from '@lib/engine/search-state-bridge'
 import { getPanelSurfaceDetailFromMobileSheet } from '@lib/search/search-panel-adapter'
 import { derivePanelSurface } from '@lib/orchestration/composition-state'
 import { focusOnNode } from '@lib/engine/camera-controls'
-import { hideSummaryCard as hideSummaryCardImpl } from '../../src/lib/journey/semantic-guide.ts'
+import { hideSummaryCard as hideSummaryCardImpl } from '@lib/journey/semantic-guide'
 import {
     showExperienceToast as showExperienceToastImpl,
     syncSearchStatusForFocus as syncSearchStatusForFocusImpl
@@ -50,10 +50,7 @@ export { syncFocusStage, clearSearch }
 
 export { copyCurrentViewLink } from '@lib/orchestration/url-state'
 export { clearExplorationFocusSelection } from '@lib/orchestration/url-state'
-export {
-    executeJourneyCompassAction,
-    updateJourneyCompass
-} from '@lib/orchestration/compass-controller'
+export { executeJourneyCompassAction, updateJourneyCompass } from '@lib/orchestration/compass-controller'
 export { getJourneyCompassState } from '@lib/orchestration/compass-state'
 
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
@@ -66,7 +63,7 @@ export {
     _resetExplorationFocusImpl as resetExplorationFocus,
     resetNodePositions,
     resetExperienceState
-};
+}
 
 // ── Thin proxy wrappers ─────────────────────────────────────────────────────
 
