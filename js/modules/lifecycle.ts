@@ -8,7 +8,8 @@
 import { state } from '@lib/engine/state-bridge'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.ts'
-import { updateSelectedBusiness, syncFocusStage, walkThreadNeighbor } from './journey.ts'
+import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
+import { walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter'
 import { clearSearch } from '@lib/engine/search-state-bridge'
 import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts'
@@ -35,7 +36,7 @@ import {
     STORY_DESCRIPTIONS,
     refreshCompositionState,
     setMyceliumMode,
-    setTrailDepth,
+    setTrailDepth
 } from './lifecycle-modes.ts'
 import {
     resetExplorationFocus as _resetExplorationFocusImpl,
@@ -44,13 +45,9 @@ import {
     returnToOverview as _returnToOverviewImpl
 } from './lifecycle-reset.ts'
 
-
 // ── Pass-through re-exports ─────────────────────────────────────────────────
 
-export {
-syncFocusStage,
-    clearSearch
-};
+export { syncFocusStage, clearSearch }
 
 export { copyCurrentViewLink } from '@lib/orchestration/url-state'
 export { updateJourneyCompass } from './journey-compass-controller.ts'
@@ -63,8 +60,8 @@ export {
     setMyceliumMode,
     setTrailDepth,
     resetNodePositions,
-    resetExperienceState,
-};
+    resetExperienceState
+}
 
 // ── Thin proxy wrappers ─────────────────────────────────────────────────────
 
@@ -106,13 +103,13 @@ export function dispatchNavTransition(action: string, payload: any = {}): any {
 
 export const NAV_TRANSITION_ACTIONS = NAV_TRANSITION_ACTIONS_IMPL
 
-export { switchView, showViewHandoff, hideViewHandoff };
+export { switchView, showViewHandoff, hideViewHandoff }
 
 export function getMobileSearchSheetDetail(): any {
     return getPanelSurfaceDetailFromMobileSheet()
 }
 
-export { derivePanelSurface };
+export { derivePanelSurface }
 
 export function deriveLifecyclePanelSurfaceContext({ hasSearchIntent = false, hasFocus = false } = {}): string {
     let context = 'idle'

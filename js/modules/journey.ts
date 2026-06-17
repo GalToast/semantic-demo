@@ -87,16 +87,16 @@ import {
 } from './journey-canvas-interaction.ts'
 
 export function isThreadCandidateVisibleOnCanvas(index: number, margin: number = 18): boolean {
-    return isCanvasThreadCandidateVisibleOnCanvas(index, margin);
+    return isCanvasThreadCandidateVisibleOnCanvas(index, margin)
 }
 export function ensureCanvasNodeInteractionBindings(): void {
-    ensureCanvasNodeInteractionBindingsImpl();
+    ensureCanvasNodeInteractionBindingsImpl()
 }
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
-import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.ts';
+import { applyPointFilterColors, describeThreadLensForPoint } from './journey-point-color.ts'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.ts'
-import { setSemanticDiveMode as setSemanticDiveModeImpl } from './lifecycle.ts'
-import { appState } from '@lib/state/app.svelte';
+import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/stores/lifecycle'
+import { appState } from '@lib/state/app.svelte'
 
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: any) => {
     const index = payload.index
@@ -130,7 +130,13 @@ export function initJourneyState(): void {
         endpointCount: 0,
         opacity: 0
     }
-    ;(state as any).strandContinuityState ??= { phase: 'idle', targetIndex: null, fromIndex: null, reason: '', startedAt: 0 }
+    ;(state as any).strandContinuityState ??= {
+        phase: 'idle',
+        targetIndex: null,
+        fromIndex: null,
+        reason: '',
+        startedAt: 0
+    }
     state.myceliumMode ??= 'default'
     ;(state as any).bloomIndices ??= new Set()
     ;(state as any).bridgeIndices ??= new Set()
@@ -269,4 +275,4 @@ export {
     walkThreadNeighbor,
     traverseNeighbor,
     previewInsideNextThread
-};
+}
