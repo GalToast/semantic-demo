@@ -152,3 +152,83 @@ These are working hypotheses from one session, not yet confirmed:
 - The user is comfortable with harness-self-upgrade mid-task
   (saving skills, memory, tool-quirks). They explicitly
   acknowledged the MCP-bash-syntax gotcha as worth fixing.
+
+## W24-W29 Collaboration Observations (post-W23 update)
+
+Updated after extended W24-W29 session work.
+
+### Subagent Dispatch Pattern (validated)
+
+**Best fits (100% success rate observed):**
+- DOCS-only changes (no conflict with code work)
+- Pure new file creation in clean directories
+- TEST-only work with pre-verified clean source files
+- Out-of-repo work (different cwd = zero race risk)
+
+**Avoid:**
+- Touching files M-flagged by parallel session
+- Re-running work already in flight
+- Multi-file imports that race parallel session rewires
+
+### Worker Prompt Template (proven this session)
+
+When dispatching mimo-2.5 workers, prepend these sections:
+
+```
+PRE-FLIGHT CHECKS (REQUIRED):
+1. Verify tool surface (Read/Write/Edit/Bash/Grep)
+2. Verify target file is CLEAN (not M-flagged)
+3. Verify pre-flight data (rg/ls/cat source before editing)
+
+NEVER:
+- Use pi_background_jobs action: "poll" (invalid)
+- Write a single file >800 lines (model degeneration)
+- Modify the same file as another active worker (race condition)
+
+AFTER EACH WORK:
+- Commit with --only pathspec to avoid parallel session WIP
+- Push to origin
+- Report: pre-flight results + commit SHA + push result + any surprises
+```
+
+### Parallel Session Coordination (refined)
+
+**Always before committing:**
+```bash
+git log --since="3 hours ago" --oneline
+git status --short
+```
+
+**Rules:**
+- 5+ unseen commits in 3 hours → queue work, do not commit
+- M-flagged files I didn't create → pause and pick different seam
+- Use `git commit --only <pathspec>` to avoid pulling parallel session WIP
+- After rebase drops commits: `git reflog | grep <sha>` → `git cherry-pick <sha>`
+
+### Worker Pivot Patterns (observed)
+
+When workers encounter obstacles, smart workers pivot to alternate approaches:
+- **Source-inspection pattern** (readFileSync) when render() fails due to circular store deps
+- **Pattern adaptation** (Match the established pattern in existing similar tests)
+- **Smart assertions** (regex matching for variable text, lowercase DOM vs CSS capitalize)
+
+### Session Rhythm (user preference)
+
+- User says "hit it" / "let's hit it" → ready to dispatch
+- User says "decompose and delegate" → ready for parallel workers
+- User asks "status" → poll workers and report concisely
+- User says "leave X" / "what's left" → strategic decision point
+
+### Confirmed Tools
+
+- `mcp__external_subagents_external_subagent_start` — primary dispatch
+- `mcp__external_subagents_external_subagent_poll` — check status
+- `mcp__external_subagents_external_subagent_cancel` — stop workers
+- `git commit --only pathspec` — race-safe commits
+- `git reflog | grep sha` — recover dropped commits
+
+### Open Questions (for next session)
+
+- Does user prefer opencode-go/mimo-v2.5 over other models for ALL work?
+- Should subagent prompts always include the full template above?
+- Is the "dispatch everything" pattern sustainable at this pace?
