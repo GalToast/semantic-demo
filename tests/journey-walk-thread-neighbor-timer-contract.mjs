@@ -10,7 +10,7 @@ function assert(condition, message) {
 }
 
 const root = resolve(fileURLToPath(new URL('../', import.meta.url)));
-const source = readFileSync(resolveSource('js/modules/journey-thread-settler.ts', root), 'utf8');
+const source = readFileSync(resolveSource('src/lib/journey/thread-settler.ts', root), 'utf8');
 
 function extractFunctionBody(name) {
   const signature = `export function ${name}`;

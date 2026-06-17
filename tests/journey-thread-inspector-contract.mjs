@@ -22,16 +22,16 @@ import path from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = resolveSource('js/modules/journey.ts', SEMDEMO_ROOT);
+const JOURNEY_PATH = resolveSource('src/lib/journey/journey.ts', SEMDEMO_ROOT);
 const JOURNEY_POINT_COLOR_PATH = resolveSource('src/lib/journey/point-color.ts', SEMDEMO_ROOT);
 const JOURNEY_CANVAS_INTERACTION_PATH = resolveSource('src/lib/journey/canvas-interaction.ts', SEMDEMO_ROOT);
-const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('js/modules/journey-canvas-node-picking.ts', SEMDEMO_ROOT);
-const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('js/modules/journey-canvas-hit-test.ts', SEMDEMO_ROOT);
+const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('src/lib/journey/canvas-node-picking.ts', SEMDEMO_ROOT);
+const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('src/lib/journey/canvas-hit-test.ts', SEMDEMO_ROOT);
 const THREAD_INSPECTOR_PATH = resolveSource('js/modules/thread-inspector.ts', SEMDEMO_ROOT);
 const JOURNEY_THREAD_MODEL_PATH = resolveSource('src/lib/journey/thread-model.ts', SEMDEMO_ROOT);
 const JOURNEY_WEBGL_PATH = resolveSource('js/modules/journey-webgl.ts', SEMDEMO_ROOT);
 const JOURNEY_ROUTE_TRACE_PATH = resolveSource('js/modules/journey-route-trace.ts', SEMDEMO_ROOT);
-const JOURNEY_SEMANTIC_OVERLAY_PATH = resolveSource('js/modules/journey-semantic-overlay.ts', SEMDEMO_ROOT);
+const JOURNEY_SEMANTIC_OVERLAY_PATH = resolveSource('src/lib/journey/semantic-overlay.ts', SEMDEMO_ROOT);
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -294,7 +294,7 @@ function testSharedStrandContinuityOwner() {
 
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
   const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
-  const strandContinuityPath = resolveSource('js/modules/strand-continuity.ts', SEMDEMO_ROOT);
+  const strandContinuityPath = resolveSource('src/lib/utils/strand-continuity.ts', SEMDEMO_ROOT);
   const strandContinuitySrc = fs.readFileSync(strandContinuityPath, 'utf-8');
 
   assertContains(strandContinuitySrc, 'export function setStrandContinuityState', 'strand-continuity exports setter');
@@ -380,7 +380,7 @@ function testJourneyTextHelpersExtraction() {
   console.log('\n[TEST] journey-text-helpers extraction');
 
   const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8');
-  const jthPath = resolveSource('js/modules/journey-text-helpers.ts', SEMDEMO_ROOT);
+  const jthPath = resolveSource('src/lib/journey/text-helpers.ts', SEMDEMO_ROOT);
   const jthSrc = fs.readFileSync(jthPath, 'utf-8');
 
   // journey.js must import from journey-text-helpers.js
@@ -413,7 +413,7 @@ function testThreadInspectorTextHelpersExtraction() {
   console.log('\n[TEST] thread-inspector text helpers extraction (via journey-text-helpers)');
 
   const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
-  const helperSrc = fs.readFileSync(resolveSource('js/modules/journey-text-helpers.ts', SEMDEMO_ROOT), 'utf-8');
+  const helperSrc = fs.readFileSync(resolveSource('src/lib/journey/text-helpers.ts', SEMDEMO_ROOT), 'utf-8');
 
   assertContains(threadInspectorSrc, "from './journey-text-helpers.ts'", 'thread-inspector imports truncateMicrocopy from journey-text-helpers');
   assertNotContains(threadInspectorSrc, 'function truncateMicrocopy(text, limit)', 'thread-inspector inline truncateMicrocopy removed');
