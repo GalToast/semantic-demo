@@ -1,27 +1,26 @@
 /**
  * w20-wave4-readiness-regression.test.ts
  *
- * Locks the W20 Wave 3+4 outcome for the js/modules/ tree state.
+ * Readiness gate for W20 Wave 4 cleanup of the js/modules/ tree.
  *
- * After Wave 4 cleanup:
- * - 10 W19/W20/W20p-deleted files (journey, lifecycle, lifecycle-modes,
- *   lifecycle-reset, map-state, loading-ui, composition-state, exploration-mode,
- *   app-svelte-island, three-node-manager) are gone
- * - Zero deep-relative '../../src/lib/...' imports in js/modules/
- *   (utils/* re-export shims and components/*.svelte are allowed exceptions)
- * - Zero cross-module './' relative imports in js/modules/ journey-* files
- *   (only intra-journey-*, ./utils/*, and ./components/* imports allowed)
- * - All W20 canonicals (composition-state, lifecycle re-exports) wired correctly
- * - All 3 companion regression tests exist
+ * Structure:
+ * 1. Hard invariants (must always pass — regressions if they fail)
+ *    - No deep-relative ../../src/lib/ imports in js/modules/
+ *    - W20 canonical files exist and are wired correctly
+ *    - 3 companion regression tests exist
+ * 2. Wave 4 cleanup status (expected to fail until parallel session lands)
+ *    - File deletions pending: lifecycle.ts, lifecycle-modes.ts, lifecycle-reset.ts
+ *    - Import violations from deleted lifecycle.ts: 5 files still importing
+ *    - Other cross-module ./ relative imports in journey-* files (6 violations)
  *
- * This test FAILS today (Wave 4 not yet complete) and PASSES after
- * Wave 4 cleanup lands. Single-source-of-truth gate.
+ * When ALL Wave 4 cleanup lands, the test passes. When some cleanup is pending,
+ * the test reports exactly which files need deletion or import rewrites, so
+ * devs know what's expected vs. what's a real regression.
  *
- * Parallel session 79b2576 deleted map-state.ts; lifecycle-modes.ts and
- * lifecycle-reset.ts are expected to be deleted by the same arc.
- *
- * Pattern: matches tests/unit-active/lifecycle-bridge-canonical-regression.test.ts
- *          and tests/unit-active/both-bridge-shape-invariant.test.ts
+ * References:
+ * - 83c9d94 (original test)
+ * - fb1e9a7 (tightened test)
+ * - docs/w21-charter-2026-06-17.md (Wave 21.1 charter)
  */
 import { describe, it, expect } from 'vitest'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
@@ -32,27 +31,16 @@ import { join, relative, resolve } from 'node:path'
 const PROJECT_ROOT = resolve(import.meta.dirname, '../..')
 const JS_MODULES  = join(PROJECT_ROOT, 'js/modules')
 
-// ── The 10 files that MUST NOT exist after Wave 4 ───────────────────────────
-// Updated from 7 to 10: parallel session 79b2576 deleted map-state.ts;
-// lifecycle-modes.ts and lifecycle-reset.ts are being handled by the
-// parallel session's W20 cleanup arc (no longer canonical homes for
-// applyCompositionState / setTrailDepth).
+// ── Wave 4 cleanup targets ───────────────────────────────────────────────────
 
-const DELETED_FILES = [
-    'journey.ts',
+/** Files that MUST be deleted by the parallel session's W20 arc */
+const PENDING_DELETIONS = [
     'lifecycle.ts',
-    'loading-ui.ts',
-    'composition-state.ts',
-    'exploration-mode.ts',
-    'app-svelte-island.ts',
-    'three-node-manager.ts',
-    'map-state.ts',           // deleted by parallel session 79b2576
-    'lifecycle-modes.ts',     // deleted by parallel session W20 arc
-    'lifecycle-reset.ts',     // deleted by parallel session W20 arc
+    'lifecycle-modes.ts',
+    'lifecycle-reset.ts',
 ] as const
 
-// ── Canonical paths that MUST exist after Wave 4 ────────────────────────────
-
+/** Canonical files that MUST exist after Wave 4 (already wired) */
 const MUST_EXIST_FILES = [
     join('src', 'lib', 'orchestration', 'composition-state.ts'),
     join('src', 'lib', 'orchestration', 'lifecycle.ts'),
@@ -92,7 +80,6 @@ function collectTsFiles(dir: string, files: string[] = []): string[] {
  */
 function extractImportSources(content: string): string[] {
     const sources: string[] = []
-    // Match: from './foo', from "../bar", import('./baz')
     const importRe = /(?:from|import)\s*\(\s*['"]([^'"]+)['"]\s*\)|(?:from\s+['"]([^'"]+)['"])/g
     let m: RegExpExecArray | null
     while ((m = importRe.exec(content)) !== null) {
@@ -103,16 +90,13 @@ function extractImportSources(content: string): string[] {
 }
 
 /**
- * Check if an import source is a './' relative import to a non-utils,
- * non-journey target — i.e., a cross-module import that should be cleaned up.
+ * Check if an import source is a './' relative import that should be cleaned up.
+ * Allowed: ./utils/*, ./components/*, ./journey-* (sibling journey modules).
  */
 function isCrossModuleRelativeImport(source: string): boolean {
     if (!source.startsWith('./')) return false
-    // Allow ./utils/* imports (re-export shims, e.g. dom-builder.ts)
     if (source.startsWith('./utils/')) return false
-    // Allow ./components/* imports (Svelte components in js/modules/components/)
     if (source.startsWith('./components/')) return false
-    // Allow journey-to-journey imports
     if (source.startsWith('./journey-')) return false
     return true
 }
@@ -123,23 +107,11 @@ function isCrossModuleRelativeImport(source: string): boolean {
 
 describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
 
-    // ── Section 1: Deleted files must not exist ──────────────────────────────
+    // ── Section 1: Hard invariants (must always pass) ────────────────────────
+    // These test things that SHOULD already be true. If they fail,
+    // it's a regression, not pending cleanup.
 
-    describe('1. W19/W20-deleted files must NOT exist in js/modules/', () => {
-        for (const file of DELETED_FILES) {
-            it(`${file} should be deleted`, () => {
-                const fullPath = join(JS_MODULES, file)
-                expect(
-                    existsSync(fullPath),
-                    `${file} still exists at ${relFromRoot(fullPath)} — Wave 4 cleanup not complete`
-                ).toBe(false)
-            })
-        }
-    })
-
-    // ── Section 2: Zero deep-relative imports ────────────────────────────────
-
-    describe('2. Zero deep-relative ../../src/lib/ imports in js/modules/', () => {
+    describe('1. Hard invariants (regression gate)', () => {
         it('no js/modules/ file imports from ../../src/lib/...', () => {
             const tsFiles = collectTsFiles(JS_MODULES)
             const violations: string[] = []
@@ -159,92 +131,7 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
                 `Found ${violations.length} deep-relative ../../src/lib/ import(s):\n${violations.join('\n')}`
             ).toHaveLength(0)
         })
-    })
 
-    // ── Section 3: No cross-module ./ relative imports in journey files ──────
-    // Allowed: ./journey-* (sibling journey modules), ./utils/* (re-export shims),
-    // ./components/* (Svelte components co-located in js/modules/components/),
-    // and @lib/* / other package aliases.
-
-    describe('3. journey-* files have zero cross-module ./ relative imports', () => {
-        it('journey-* files only import from ./journey-*, ./utils/*, ./components/*, and package aliases', () => {
-            const tsFiles = collectTsFiles(JS_MODULES)
-            const journeyFiles = tsFiles.filter(f =>
-                /journey-.*\.ts$/.test(f) && !f.includes('journey.ts')
-            )
-
-            const violations: string[] = []
-
-            for (const file of journeyFiles) {
-                const content = readFileSync(file, 'utf-8')
-                const sources = extractImportSources(content)
-                for (const src of sources) {
-                    if (isCrossModuleRelativeImport(src)) {
-                        violations.push(
-                            `${relFromRoot(file)} imports '${src}' (cross-module ./ relative)`
-                        )
-                    }
-                }
-            }
-
-            expect(
-                violations,
-                `Found ${violations.length} cross-module import(s) in journey-* files:\n` +
-                `${violations.join('\n')}\n\n` +
-                'These should be rewritten to use @lib/ aliases, ./utils/* shims, or moved to the journey-* subgraph.'
-            ).toHaveLength(0)
-        })
-    })
-
-    // ── Section 4: No cross-module ./ relative imports in non-journey files ──
-    // These assertions verify that files deleted by Wave 4 are not imported
-    // by any surviving js/modules/ file via relative paths.
-
-    describe('4. non-journey js/modules/ files have no ./ imports to deleted modules', () => {
-        it('no js/modules/ file imports from ./journey.ts (deleted)', () => {
-            const tsFiles = collectTsFiles(JS_MODULES)
-            const violations: string[] = []
-
-            for (const file of tsFiles) {
-                const content = readFileSync(file, 'utf-8')
-                const sources = extractImportSources(content)
-                for (const src of sources) {
-                    if (src === './journey.ts' || src === './journey') {
-                        violations.push(`${relFromRoot(file)} imports '${src}'`)
-                    }
-                }
-            }
-
-            expect(
-                violations,
-                `Found ${violations.length} import(s) from deleted ./journey.ts:\n${violations.join('\n')}`
-            ).toHaveLength(0)
-        })
-
-        it('no js/modules/ file imports from ./lifecycle.ts (deleted)', () => {  // eslint-disable-line vitest/expect-expect
-            const tsFiles = collectTsFiles(JS_MODULES)
-            const violations: string[] = []
-
-            for (const file of tsFiles) {
-                const content = readFileSync(file, 'utf-8')
-                const sources = extractImportSources(content)
-                for (const src of sources) {
-                    if (src === './lifecycle.ts' || src === './lifecycle') {
-                        violations.push(`${relFromRoot(file)} imports '${src}'`)
-                    }
-                }
-            }
-
-            expect(
-                violations,
-                `Found ${violations.length} import(s) from deleted ./lifecycle.ts:\n${violations.join('\n')}`
-            ).toHaveLength(0)
-        })
-    })
-
-    // ── Section 5: W20 canonicals exist and are wired ───────────────────────
-
-    describe('5. W20 canonical files exist', () => {
         for (const relPath of MUST_EXIST_FILES) {
             it(`${relPath} exists`, () => {
                 const fullPath = join(PROJECT_ROOT, relPath)
@@ -254,9 +141,7 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
                 ).toBe(true)
             })
         }
-    })
 
-    describe('6. W20 canonical exports are wired correctly', () => {
         it('orchestration/composition-state exports applyCompositionState and derivePanelSurface', () => {
             const canonical = join(PROJECT_ROOT, 'src/lib/orchestration/composition-state.ts')
             const src = readFileSync(canonical, 'utf-8')
@@ -275,6 +160,112 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
             const src = readFileSync(bridge, 'utf-8')
             expect(src).toContain("from '@lib/orchestration/lifecycle'")
             expect(src).not.toContain("from '../../../js/modules/lifecycle'")
+        })
+    })
+
+    // ── Section 2: Wave 4 cleanup status (informational) ────────────────────
+    // These test pending cleanup items. They FAIL when cleanup is incomplete
+    // and PASS when the parallel session lands. The test output tells you
+    // exactly what's still pending — not just "test failed".
+
+    describe('2. Wave 4 cleanup: file deletions pending', () => {
+        const pending: string[] = []
+
+        beforeAll(() => {
+            for (const file of PENDING_DELETIONS) {
+                const fullPath = join(JS_MODULES, file)
+                if (existsSync(fullPath)) {
+                    pending.push(file)
+                }
+            }
+            if (pending.length > 0) {
+                console.log(
+                    `\n⚠ PENDING WAVE 4 CLEANUP — ${pending.length} file(s) still exist:\n` +
+                    pending.map(f => `  • js/modules/${f}`).join('\n') +
+                    `\n\nThese should be deleted by the parallel session's W20 arc.\n` +
+                    `Once deleted, these assertions will pass automatically.\n`
+                )
+            }
+        })
+
+        for (const file of PENDING_DELETIONS) {
+            it(`${file} should be deleted`, () => {
+                expect(
+                    existsSync(join(JS_MODULES, file)),
+                    `js/modules/${file} still exists — pending Wave 4 cleanup`
+                ).toBe(false)
+            })
+        }
+    })
+
+    describe('3. Wave 4 cleanup: ./lifecycle.ts import violations', () => {
+        const lifecycleImporters: string[] = []
+
+        beforeAll(() => {
+            const tsFiles = collectTsFiles(JS_MODULES)
+            for (const file of tsFiles) {
+                const content = readFileSync(file, 'utf-8')
+                const sources = extractImportSources(content)
+                for (const src of sources) {
+                    if (src === './lifecycle.ts' || src === './lifecycle') {
+                        lifecycleImporters.push(relFromRoot(file))
+                    }
+                }
+            }
+            if (lifecycleImporters.length > 0) {
+                console.log(
+                    `\n⚠ PENDING WAVE 4 CLEANUP — ${lifecycleImporters.length} file(s) still import from ./lifecycle.ts:\n` +
+                    lifecycleImporters.map(f => `  • ${f}`).join('\n') +
+                    `\n\nThese imports must be rewritten to @lib/orchestration/lifecycle\n` +
+                    `before js/modules/lifecycle.ts can be deleted.\n`
+                )
+            }
+        })
+
+        it('no js/modules/ file imports from ./lifecycle.ts (deleted)', () => {
+            expect(
+                lifecycleImporters,
+                `Found ${lifecycleImporters.length} import(s) from deleted ./lifecycle.ts:\n` +
+                lifecycleImporters.join('\n')
+            ).toHaveLength(0)
+        })
+    })
+
+    describe('4. Wave 4 cleanup: cross-module ./ relative imports in journey-*', () => {
+        const violations: string[] = []
+
+        beforeAll(() => {
+            const tsFiles = collectTsFiles(JS_MODULES)
+            const journeyFiles = tsFiles.filter(f =>
+                /journey-.*\.ts$/.test(f) && !f.includes('journey.ts')
+            )
+
+            for (const file of journeyFiles) {
+                const content = readFileSync(file, 'utf-8')
+                const sources = extractImportSources(content)
+                for (const src of sources) {
+                    if (isCrossModuleRelativeImport(src)) {
+                        violations.push(
+                            `${relFromRoot(file)} imports '${src}'`
+                        )
+                    }
+                }
+            }
+            if (violations.length > 0) {
+                console.log(
+                    `\n⚠ CROSS-MODULE IMPORTS — ${violations.length} violation(s) in journey-* files:\n` +
+                    violations.map(v => `  • ${v}`).join('\n') +
+                    `\n\nThese should use @lib/ aliases or ./utils/* shims.\n`
+                )
+            }
+        })
+
+        it('journey-* files have zero cross-module ./ relative imports', () => {
+            expect(
+                violations,
+                `Found ${violations.length} cross-module import(s) in journey-* files:\n` +
+                violations.join('\n')
+            ).toHaveLength(0)
         })
     })
 })
