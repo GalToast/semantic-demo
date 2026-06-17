@@ -16,7 +16,7 @@ import { inspectThreadNeighbor, pinThreadNeighbor, clearThreadInspection } from 
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from './journey-neighborhood.ts'
 import { ensureCanvasNodeInteractionBindings } from './journey-canvas-interaction.ts'
 import { focusOnNode } from '@lib/engine/camera-choreography'
-import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from './lifecycle.ts'
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/orchestration/lifecycle'
 import {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,

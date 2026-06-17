@@ -17,7 +17,8 @@ import {
     getThreadCandidatesForIndex
 } from './journey-thread-model.ts'
 import { focusOnNode } from '@lib/engine/camera-choreography'
-import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, focusOnPoint, syncFocusStage } from './lifecycle.ts'
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, focusOnPoint } from '@lib/orchestration/lifecycle'
+import { syncFocusStage } from '@lib/journey/selected-card'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'

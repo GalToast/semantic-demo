@@ -12,11 +12,13 @@ import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus';
 import {
     MODE_DESCRIPTIONS,
     STORY_DESCRIPTIONS,
+    setMyceliumMode,
+} from '@lib/stores/lifecycle';
+import {
     focusOnPoint,
     showExperienceToast,
-    setMyceliumMode,
     syncSearchStatusForFocus,
-} from './lifecycle.ts';
+} from '@lib/orchestration/lifecycle';
 import { applyStoryPrompt, syncFilterControls } from '@lib/orchestration/cluster-filter-controller';
 import { switchView } from '@lib/orchestration/view-controller';
 import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.ts';
