@@ -8,26 +8,26 @@
 
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
-import { bindViewControls, zoomCamera } from '../../../js/modules/bindings/view-bindings'
+import { bindViewControls, zoomCamera } from '@lib/ui/view-bindings'
 import {
     bindFocusControls,
     expandNeighborhoodFromCurrentNode,
     recenterFocusedNode,
     returnToCountyView
 } from '../../../js/modules/bindings/journey-bindings'
-import { updateHasQuery, bindSearchControls } from '../../../js/modules/bindings/search-bindings'
+import { updateHasQuery, bindSearchControls } from '@lib/ui/search-bindings'
 import { bindSuggestionControls } from '../../../js/modules/bindings/suggestion-bindings'
-import { bindSemanticLaneControls } from '../../../js/modules/bindings/semantic-lane-bindings'
+import { bindSemanticLaneControls } from '@lib/ui/semantic-lane-bindings'
 import { bindModeAndPromptControls } from '../../../js/modules/bindings/mode-bindings'
 import { bindFilterControls } from '../../../js/modules/bindings/filter-bindings'
 import {
     bindPanelControls,
     revealSelectedBusinessCard as _revealSelectedBusinessCard,
     setInfoPanelOpen as _setInfoPanelOpen
-} from '../../../js/modules/bindings/panel-bindings'
+} from '@lib/ui/panel-bindings'
 import { bindLegendControls } from '../../../js/modules/bindings/legend-bindings'
 import { bindUtilityButtons } from '../../../js/modules/bindings/utility-bindings'
-import { bindGlobalEvents, disposeEventListeners } from '../../../js/modules/bindings/global-bindings'
+import { bindGlobalEvents, disposeEventListeners } from '@lib/ui/global-bindings'
 import { scheduleOnboardingHint } from '../../../js/modules/bindings/onboarding-bindings'
 import { bindFocusTrapObserver } from '../../../js/modules/bindings/focus-trap-bindings'
 

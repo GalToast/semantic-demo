@@ -1,14 +1,14 @@
 /**
  * global-bindings.ts
- * Typechecked sibling for global-bindings.js
+ * Canonical location (ported from js/modules/bindings/global-bindings.ts — W15).
  * Global keyboard, focus, popstate, and visibility bindings.
  */
 
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
 import { handleGalaxyKeydown, initKeyboardResetOwnership, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help'
-import { returnToOverview, resetExplorationFocus } from '../lifecycle.ts'
-import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } from './semantic-lane-bindings.ts'
+import { returnToOverview, resetExplorationFocus } from '../../../js/modules/lifecycle.ts'
+import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } from '@lib/ui/semantic-lane-bindings'
 import { applyUrlState } from '@lib/orchestration/url-state'
 
 export let _globalEventController: AbortController = new AbortController()

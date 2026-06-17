@@ -1,11 +1,11 @@
 /**
  * semantic-lane-bindings.ts
- * Typechecked sibling for semantic-lane-bindings.js
+ * Canonical location (ported from js/modules/bindings/semantic-lane-bindings.ts — W15).
  * Semantic lane retry, focus, and visibility controls.
  */
 
-import { probeSemanticLane } from '../lifecycle.ts';
-import { loadSemanticThreads } from '../semantic-threads.ts';
+import { probeSemanticLane } from '../../../js/modules/lifecycle.ts';
+import { loadSemanticThreads } from '../../../js/modules/semantic-threads.ts';
 
 type RecordSemanticLaneSnapshot = (snapshot: { state: string; attempted_warm: boolean }) => void;
 type SetSemanticLaneUiState = (state: string, options: { label: string; title: string }) => void;

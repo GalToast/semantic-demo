@@ -5,8 +5,8 @@
  */
 
 export {
-  initKeyboardShortcutsHint,
-  showKeyboardShortcutsHint,
-  initKeyboardResetOwnership,
-  handleGalaxyKeydown,
-} from '@lib/keyboard/keyboard-help';
+    initKeyboardShortcutsHint,
+    showKeyboardShortcutsHint,
+    initKeyboardResetOwnership,
+    handleGalaxyKeydown
+} from '@lib/keyboard/keyboard-help'

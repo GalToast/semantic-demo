@@ -1,11 +1,11 @@
 /**
  * panel-bindings.ts
- * Typechecked sibling for panel-bindings.js
+ * Canonical location (ported from js/modules/bindings/panel-bindings.ts — W15).
  * Info panel toggle, resize, and state management.
  */
 
-import { bindClick } from './view-bindings.ts';
-import { isCompactFocusStageViewport } from '../utils/ui-presentation.ts';
+import { bindClick } from '@lib/ui/view-bindings';
+import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { closeLegendPanel } from '@lib/stores/legend-panel';
 import { cancelMicroDemo } from '@lib/demo/choreography';
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'

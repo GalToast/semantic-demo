@@ -58,6 +58,9 @@ let _ditherEffect: DitherEffect | null = null;
 let _renderPass: RenderPass | null = null;
 let _initialized = false;
 let _premiumMode = false;
+let _rendererRef: THREE.WebGLRenderer | null = null;
+let _sceneRef: THREE.Scene | null = null;
+let _cameraRef: THREE.PerspectiveCamera | null = null;
 
 // ── Default effect parameters ────────────────────────────────────────────────
 
@@ -104,6 +107,10 @@ export function setPremiumMode(enabled: boolean): void {
     if (_premiumMode === enabled) return;
     _premiumMode = enabled;
 
+    if (enabled && !_initialized && _rendererRef && _sceneRef && _cameraRef) {
+        initPostProcessing(_rendererRef, _sceneRef, _cameraRef);
+    }
+
     if (typeof document !== 'undefined' && document.body) {
         if (enabled) {
             document.body.dataset.premiumMode = 'true';
@@ -135,7 +142,28 @@ export function initPostProcessing(
     scene: THREE.Scene,
     camera: THREE.PerspectiveCamera,
 ): void {
+    _rendererRef = renderer;
+    _sceneRef = scene;
+    _cameraRef = camera;
     disposePostProcessing();
+
+    // Expose API on window for DevGui bridge even when the heavy composer is
+    // deferred. The composer is created lazily by setPremiumMode(true).
+    if (typeof window !== 'undefined') {
+        (window as any).__semanticPostprocessing = {
+            setPremiumMode,
+            updateBloomParams,
+            updateVignetteParams,
+            updateChromaticAberrationParams,
+            setDofEnabled,
+            isPremiumMode,
+        };
+    }
+
+    if (!_premiumMode) {
+        console.debug('[postprocessing] deferred until premium mode is enabled');
+        return;
+    }
 
     try {
         _composer = new EffectComposer(renderer);

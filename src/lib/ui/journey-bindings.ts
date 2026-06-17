@@ -1,18 +1,18 @@
 /**
  * journey-bindings.ts
- * Typechecked sibling for journey-bindings.js
+ * Canonical location (ported from js/modules/bindings/journey-bindings.ts — W15).
  * Journey navigation, focus controls, thread inspector, and compass delegation.
  */
 
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
-import { bindClick } from './view-bindings.ts'
+import { bindClick } from '@lib/ui/view-bindings'
 import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge'
-import { setSemanticDiveMode, pinThreadNeighbor, unpinThreadInspection, walkThreadNeighbor } from '../journey.ts'
-import { traverseNeighbor } from '../../../src/lib/journey/thread-settler-adapter'
+import { setSemanticDiveMode, pinThreadNeighbor, unpinThreadInspection, walkThreadNeighbor } from '../../../js/modules/journey'
+import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'
-import { resetExplorationFocus, exploreInsideToNextStop } from '../lifecycle.ts'
+import { resetExplorationFocus, exploreInsideToNextStop } from '../../../js/modules/lifecycle'
 import { clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 

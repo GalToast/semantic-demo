@@ -373,7 +373,7 @@ export function createPoints() {
     state.searchGlowRenderStateKey = ''
     const rawPositionsBuffer = webglContext.rawPositionsBuffer || state.rawPositionsBuffer
     const rawClustersBuffer = webglContext.rawClustersBuffer || state.rawClustersBuffer
-    const scatterOffsets = computeOverviewScatterOffsets(state.points)
+    const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer)
     const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer)
     const renderCenter = bounds.center
     state.overviewBounds = {

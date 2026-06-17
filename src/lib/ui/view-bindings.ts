@@ -1,15 +1,15 @@
 /**
  * view-bindings.ts
- * Typechecked sibling for view-bindings.js
+ * Canonical location (ported from js/modules/bindings/view-bindings.ts — W15).
  * Core click helper, zoom, and view controls.
  */
 
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
-import { switchView } from '../view-controller.ts'
+import { switchView } from '../../../js/modules/view-controller.ts'
 import { toggleAutoRotate } from '@lib/engine/camera-controls-restore-bridge'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
-import { resetExperienceState, copyCurrentViewLink } from '../lifecycle.ts'
+import { resetExperienceState, copyCurrentViewLink } from '../../../js/modules/lifecycle.ts'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 import { zoomMap } from '@lib/engine/map-state'
 

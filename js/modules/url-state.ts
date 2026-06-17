@@ -33,7 +33,7 @@ import {
     updateSearchStatusMessage,
     updateSearchTrailCue,
 } from '@lib/engine/search-state-bridge';
-import { updateHasQuery } from './bindings/search-bindings.ts';
+import { updateHasQuery } from '@lib/ui/search-bindings';
 import { setCurrentView } from './state-mutators.ts';
 import { getLocation } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte';

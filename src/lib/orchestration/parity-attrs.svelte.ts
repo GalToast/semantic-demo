@@ -28,6 +28,7 @@ import { filterState } from '@lib/stores/filter.svelte';
 import { viewport } from '@lib/stores/viewport.svelte';
 import { cameraStore } from '@lib/stores/camera.svelte';
 import { demoStore, demoPhase as demoPhaseGetter } from '@lib/stores/demo.svelte';
+import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store';
 import {
   getJourneyCompassState
 } from './compass-state';
@@ -153,9 +154,11 @@ export function computeParityAttributes(): ParityAttributeMap {
   const compassStateVal = getJourneyCompassState();
   const presentation: CompassPresentationState = getJourneyCompassPresentationState(compassStateVal);
 
-  // Loading/graphics state derived from nav and camera stores
-  const loadingPhaseValue: LoadingPhase = (nav.loadingPhaseKey as LoadingPhase) || 'launch';
-  const graphicsModeValue = 'webgl';
+  // Loading/graphics state comes from the Svelte data-store. Canvas.svelte
+  // advances this store to `launch` when WebGL is ready; nav.loadingPhaseKey
+  // is a legacy mirror and can lag behind.
+  const loadingPhaseValue: LoadingPhase = get(loadingPhaseStore);
+  const graphicsModeValue = get(graphicsModeStore);
 
   // graph-context: legacy uses these values across CSS hooks
   const graphContext = (() => {
@@ -443,6 +446,8 @@ export function installParityAttributeSync(
     const unsubViewport = (viewport as any).subscribe(scheduleSync);
     const unsubDemo = (demoStore as any).subscribe(scheduleSync);
     const unsubCamera = (cameraStore as any).subscribe(scheduleSync);
+    const unsubLoadingPhase = loadingPhaseStore.subscribe(scheduleSync);
+    const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync);
 
     if (initialSync) {
       // Force an initial compute on install
@@ -458,6 +463,8 @@ export function installParityAttributeSync(
       unsubViewport();
       unsubDemo();
       unsubCamera();
+      unsubLoadingPhase();
+      unsubGraphicsMode();
     };
   });
 

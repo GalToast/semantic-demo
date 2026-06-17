@@ -11,7 +11,7 @@ import {
   businessRecords,
   loadingPhaseStore,
   graphicsModeStore,
-} from './data-store';
+} from './data-store.ts';
 import type {
   BusinessRecord,
   BusinessDataResult,
