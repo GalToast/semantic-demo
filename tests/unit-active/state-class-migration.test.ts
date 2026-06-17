@@ -65,6 +65,11 @@ const _engineBridgeState = vi.hoisted(() => ({
     engineBridge: null as any
 }))
 
+const _weatherState = vi.hoisted(() => ({
+    weather: null as any,
+    weatherInitialized: false
+}))
+
 // ── Mock factories ───────────────────────────────────────────────────────────
 // vi.mock is hoisted to the top of this file. The factories read from the
 // hoisted state objects above, which helpers reset in beforeEach.
@@ -156,7 +161,12 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         set summaryCardTypeToken(v: number) { _searchState.summaryCardTypeToken = v },
         // Engine-bridge mock shape
         get engineBridge() { return _engineBridgeState.engineBridge },
-        set engineBridge(v: any) { _engineBridgeState.engineBridge = v }
+        set engineBridge(v: any) { _engineBridgeState.engineBridge = v },
+        // Weather mock shape
+        get weather() { return _weatherState.weather },
+        set weather(v: any) { _weatherState.weather = v },
+        get weatherInitialized() { return _weatherState.weatherInitialized },
+        set weatherInitialized(v: boolean) { _weatherState.weatherInitialized = v }
     }
 }))
 
@@ -239,6 +249,21 @@ import {
 } from '@lib/stores/search.svelte.ts'
 
 import { engineBridgeStore, setEngineBridge, getEngineBridge } from '@lib/stores/engine-bridge.svelte.ts'
+
+import {
+    weatherData,
+    weatherCondition,
+    weatherLabel,
+    weatherForecast,
+    weatherTemperature,
+    hasWeather,
+    isWeatherInitialized,
+    setWeatherInitialized,
+    updateWeather,
+    CONDITION_ICONS,
+    type WeatherData,
+    type WeatherCondition
+} from '@lib/stores/weather.svelte.ts'
 
 // ── Compass tests ────────────────────────────────────────────────────────────
 
@@ -1008,5 +1033,100 @@ describe('engine-bridge store — T4 writable + withEngineBridgeNotify migration
         engineBridgeStore.set(FAKE_BRIDGE as any)
         engineBridgeStore.set(null)
         expect(getEngineBridge()).toBeNull()
+    })
+})
+
+// ── Weather tests ────────────────────────────────────────────────────────────
+
+describe('weather store — state-class appState regression', () => {
+    const FAKE_WEATHER: WeatherData = {
+        temperature: 72,
+        feelsLike: 74,
+        condition: 'clear' as WeatherCondition,
+        label: 'Clear Sky',
+        humidity: 55,
+        windSpeed: 5,
+        windDirection: 'N',
+        forecast: 'Clear skies today',
+        location: 'Montgomery County, TX',
+        updatedAt: 1,
+    }
+    beforeEach(() => {
+        _weatherState.weather = null
+        _weatherState.weatherInitialized = false
+    })
+
+    it('weatherData getters return defaults when appState.weather is null', () => {
+        expect(weatherData.temperature).toBe(0)
+        expect(weatherData.condition).toBe('clear')
+        expect(weatherData.label).toBe('--')
+        expect(weatherData.forecast).toBe('')
+        expect(weatherData.updatedAt).toBe(0)
+    })
+
+    it('weatherData getters read from appState when set', () => {
+        _weatherState.weather = FAKE_WEATHER
+        expect(weatherData.temperature).toBe(72)
+        expect(weatherData.condition).toBe('clear')
+        expect(weatherData.label).toBe('Clear Sky')
+        expect(weatherData.forecast).toBe('Clear skies today')
+        expect(weatherData.updatedAt).toBe(1)
+    })
+
+    it('derived getters read from appState', () => {
+        _weatherState.weather = FAKE_WEATHER
+        expect(weatherTemperature()).toBe(72)
+        expect(weatherCondition()).toBe('clear')
+        expect(weatherLabel()).toBe('Clear Sky')
+        expect(weatherForecast()).toBe('Clear skies today')
+    })
+
+    it('hasWeather returns false when weather is null', () => {
+        expect(hasWeather()).toBe(false)
+    })
+
+    it('hasWeather returns true when updatedAt > 0', () => {
+        _weatherState.weather = FAKE_WEATHER
+        expect(hasWeather()).toBe(true)
+    })
+
+    it('isWeatherInitialized reflects appState flag', () => {
+        expect(isWeatherInitialized()).toBe(false)
+        _weatherState.weatherInitialized = true
+        expect(isWeatherInitialized()).toBe(true)
+    })
+
+    it('setWeatherInitialized writes to appState', () => {
+        setWeatherInitialized(true)
+        expect(_weatherState.weatherInitialized).toBe(true)
+        setWeatherInitialized(false)
+        expect(_weatherState.weatherInitialized).toBe(false)
+    })
+
+    it('updateWeather merges into appState and sets initialized', () => {
+        updateWeather({ temperature: 85, condition: 'rain', label: 'Light Rain' })
+        const w = _weatherState.weather as WeatherData
+        expect(w.temperature).toBe(85)
+        expect(w.condition).toBe('rain')
+        expect(w.label).toBe('Light Rain')
+        expect(_weatherState.weatherInitialized).toBe(true)
+    })
+
+    it('updateWeather preserves untouched fields', () => {
+        _weatherState.weather = FAKE_WEATHER
+        updateWeather({ temperature: 90 })
+        const w = _weatherState.weather as WeatherData
+        expect(w.temperature).toBe(90)
+        expect(w.condition).toBe('clear')
+        expect(w.windSpeed).toBe(5)
+    })
+
+    it('CONDITION_ICONS contains unicode icons for each condition', () => {
+        expect(CONDITION_ICONS.clear).toBeTruthy()
+        expect(CONDITION_ICONS.clouds).toBeTruthy()
+        expect(CONDITION_ICONS.rain).toBeTruthy()
+        expect(CONDITION_ICONS.storm).toBeTruthy()
+        expect(CONDITION_ICONS.fog).toBeTruthy()
+        expect(CONDITION_ICONS.wind).toBeTruthy()
     })
 })
