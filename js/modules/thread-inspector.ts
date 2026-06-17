@@ -20,7 +20,7 @@ import { focusOnNode } from '@lib/engine/camera-choreography'
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, focusOnPoint, syncFocusStage } from './lifecycle.ts'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
-import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts'
+import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,

@@ -17,7 +17,7 @@ import {
     syncInspectedStrandOverlay
 } from './thread-inspector.ts'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
-import { syncSemanticDiveUi } from '../../src/lib/journey/semantic-dive.ts'
+import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.ts'
 import { setStrandContinuityState, clearStrandContinuityState, getStrandArrivalNote } from '@lib/engine/strand-continuity-bridge'
 import {
