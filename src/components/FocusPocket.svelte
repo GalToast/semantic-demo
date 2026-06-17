@@ -30,6 +30,11 @@
     nav.mode === 'focus' || nav.mode === 'inside' || focusedIndex_ !== null
   );
 
+  // Loading state: true while data is loading and focus is active
+  let isLoading = $derived(
+    hasFocus_ && getDataLoadState().status !== 'ready'
+  );
+
   // Last-applied index prevents redundant rebuilds on data-status ticks.
   let lastFocusIndex: number | null = null;
 
@@ -47,6 +52,51 @@
 </script>
 
 {#if hasFocus_}
-  <div id="focus-pocket" aria-hidden="true"></div>
+  <div
+    id="focus-pocket"
+    role="region"
+    aria-label="Focus pocket — neighborhood constellation"
+    tabindex="-1"
+  >
+    {#if isLoading}
+      <div class="focus-pocket-loading" aria-label="Loading neighborhood data" role="status">
+        <div class="pocket-shimmer"></div>
+        <div class="pocket-shimmer short"></div>
+      </div>
+    {/if}
+  </div>
 {/if}
 
+<style>
+  .focus-pocket-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.5rem;
+    pointer-events: none;
+  }
+  .pocket-shimmer {
+    width: 60px;
+    height: 6px;
+    border-radius: 3px;
+    background: linear-gradient(
+      90deg,
+      rgba(78, 205, 196, 0.06) 0%,
+      rgba(78, 205, 196, 0.18) 40%,
+      rgba(78, 205, 196, 0.06) 80%
+    );
+    background-size: 200% 100%;
+    animation: pocketShimmer 1.4s ease-in-out infinite;
+  }
+  .pocket-shimmer.short {
+    width: 40px;
+    animation-delay: 0.2s;
+  }
+  @keyframes pocketShimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+  }
+</style>

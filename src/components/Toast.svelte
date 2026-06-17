@@ -14,8 +14,10 @@
 
   let toastMessage = $state('');
   let toastActive = $state(false);
+  let toastVariant = $state<'info' | 'error'>('info');
   let toastTitle = $derived(toastMessage.split('\n')[0] || '');
   let toastCopy = $derived(toastMessage.split('\n').slice(1).join('\n') || '');
+  let isError = $derived(toastVariant === 'error');
 
   onMount(() => {
     if (typeof document === 'undefined' || !document.body) return;
@@ -24,12 +26,13 @@
       const body = document.body;
       toastMessage = body.dataset.toastMessage || '';
       toastActive = body.dataset.toastState === 'active';
+      toastVariant = (body.dataset.toastVariant as 'info' | 'error') || 'info';
     };
 
     const obs = new MutationObserver(sync);
     obs.observe(document.body, {
       attributes: true,
-      attributeFilter: ['data-toast-message', 'data-toast-state'],
+      attributeFilter: ['data-toast-message', 'data-toast-state', 'data-toast-variant'],
     });
     sync();
 
@@ -41,9 +44,10 @@
   id="experience-reset-toast"
   class="experience-reset-toast"
   class:active={toastActive}
+  class:error={isError}
   aria-hidden={toastActive ? 'false' : 'true'}
-  aria-live="polite"
-  role="status"
+  aria-live={isError ? 'assertive' : 'polite'}
+  role={isError ? 'alert' : 'status'}
 >
   <div id="experience-toast-title" class="experience-toast-title">{toastTitle}</div>
   <div id="experience-toast-copy" class="experience-toast-copy">{toastCopy}</div>
@@ -86,5 +90,17 @@
     color: rgba(224, 240, 240, 0.7);
     line-height: 1.4;
     overflow-wrap: break-word;
+  }
+
+  /* Error variant */
+  .experience-reset-toast.error {
+    border-color: rgba(255, 107, 107, 0.35);
+    background: rgba(30, 12, 12, 0.94);
+  }
+  .experience-reset-toast.error .experience-toast-title {
+    color: #ff6b6b;
+  }
+  .experience-reset-toast.error .experience-toast-copy {
+    color: rgba(255, 200, 200, 0.7);
   }
 </style>

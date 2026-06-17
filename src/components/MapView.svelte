@@ -11,7 +11,8 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { switchView } from '@lib/orchestration/view-controller';
-  import { state as engineState, withStateMutation } from '@lib/engine/state-bridge';
+  import { appState } from '@lib/state/app.svelte';
+  import { withStateMutation } from '@lib/state/with-state-mutation';
 
   type MapStatus = 'loading' | 'ready' | 'error';
 
@@ -49,7 +50,7 @@
 
   function setLegacyView(view: 'galaxy' | 'map'): void {
     withStateMutation(() => {
-      (engineState as RuntimeState).currentView = view;
+      (appState as unknown as RuntimeState).currentView = view;
     });
   }
 
@@ -96,7 +97,7 @@
       mapEngine.centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = (engineState as any).map;
+        const map = (appState as any).map;
         map?.invalidateSize?.();
         setTimeout(() => map?.invalidateSize?.(), 120);
       });
@@ -137,7 +138,8 @@
   class:is-compact={$viewport.isCompact}
   class:is-loading={status === 'loading'}
   class:is-error={status === 'error'}
-  aria-label="Geographic map view of Montgomery County"
+  role="application"
+  aria-label="Interactive business map of Montgomery County"
 >
   <header class="map-view-header">
     <div class="map-view-kicker">MAP | MONTGOMERY COUNTY</div>
