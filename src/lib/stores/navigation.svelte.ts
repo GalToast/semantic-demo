@@ -385,6 +385,26 @@ export function clearFocusPocketMeta(): void {
 }
 
 /**
+ * Write a partial NavState patch to BOTH legacy appState.navState AND the
+ * Svelte 5 navStore in a single call.  Use this instead of direct
+ * `appState.withMutation(() => { appState.navState.X = ... })` writes so that
+ * the Svelte 5 store — and therefore body data-attrs — stay in sync.
+ *
+ * Pattern reference: the SEARCH_FOCUS_REQUESTED subscriber in triggers.ts
+ * (lines 187-203) calls `navStore.update(...)` for the Svelte side and
+ * `withStateMutation(...)` for legacy.  `writeNavStateMirror` collapses
+ * those two calls into one.
+ */
+export function writeNavStateMirror(patch: Partial<NavState>): void {
+    // Update legacy state (mirrors what withMutation/Object.assign does)
+    appState.withMutation(() => {
+        Object.assign(appState.navState, patch)
+    })
+    // Update Svelte 5 store so parity-attrs and derived getters reflect immediately
+    _navWritable.update((s) => ({ ...s, ...patch }))
+}
+
+/**
  * Dispatch a navigation transition (the core orchestrator).
  * Replaces the heavy logic in js/modules/lifecycle.js.
  */

@@ -7,90 +7,91 @@
  * Fixes Bug #6: Race between walkThreadNeighbor and stale arrival callbacks.
  */
 
-import { get } from 'svelte/store';
-import type { BusinessRecord } from '@lib/types/business';
-import { formatBusinessName, cleanOptionalValue } from '@lib/utils/dom-formatters';
-import { getStrandContinuityManager } from '@lib/utils/strand-continuity';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
-import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions';
-import { navStore, dispatchNavTransition } from '@lib/stores/navigation.svelte';
-import { appState } from '@lib/state/app.svelte.ts';
-import { getBusinessRecords } from '@lib/data-store';
-import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
+import { get } from 'svelte/store'
+import type { BusinessRecord } from '@lib/types/business'
+import { formatBusinessName, cleanOptionalValue } from '@lib/utils/dom-formatters'
+import { getStrandContinuityManager } from '@lib/utils/strand-continuity'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions'
+import { navStore, dispatchNavTransition, writeNavStateMirror } from '@lib/stores/navigation.svelte'
+import { appState } from '@lib/state/app.svelte.ts'
+import { getBusinessRecords } from '@lib/data-store'
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
 import {
-	getCurrentTrailFocusIndex,
-	isBoundedNeighborhoodActive,
-	primeBoundedSemanticNeighborhoodForTraversal,
-	getBoundedNeighborhoodWalkCandidate,
-	getNextWalkCandidateForIndex
-} from '@lib/journey/neighborhood';
+    getCurrentTrailFocusIndex,
+    isBoundedNeighborhoodActive,
+    primeBoundedSemanticNeighborhoodForTraversal,
+    getBoundedNeighborhoodWalkCandidate,
+    getNextWalkCandidateForIndex
+} from '@lib/journey/neighborhood'
+import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
+import { focusOnNode } from '@lib/engine/camera-controls'
+import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import {
-	setStrandContinuityState,
-	clearStrandContinuityState
-} from '@lib/engine/strand-continuity-bridge';
-import { focusOnNode } from '@lib/engine/camera-controls';
-import { focusOnPoint } from '@lib/orchestration/lifecycle';
-import { inspectThreadNeighbor, clearThreadInspection, renderThreadInspection } from '@lib/engine/thread-inspector-bridge';
-import { syncFocusStage } from '@lib/journey/selected-card';
-import { syncSemanticDiveUi } from '@lib/journey/semantic-dive';
-import { updateJourneyCompass } from '@lib/orchestration/compass-controller';
-import { showExperienceToast } from '@lib/orchestration/toast';
+    inspectThreadNeighbor,
+    clearThreadInspection,
+    renderThreadInspection
+} from '@lib/engine/thread-inspector-bridge'
+import { syncFocusStage } from '@lib/journey/selected-card'
+import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
+import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
+import { showExperienceToast } from '@lib/orchestration/toast'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 export interface WalkOptions {
-	fromIndex?: number;
-	fromCanvasNode?: boolean;
-	fromTraversal?: boolean;
-	preserveNeighborhood?: boolean;
-	appendHistory?: boolean;
-	restoreHistory?: boolean;
-	surface?: string;
-	reason?: string;
-	arrivalDelay?: number;
-	settleDelay?: number;
-	expandNeighborhood?: boolean;
+    fromIndex?: number
+    fromCanvasNode?: boolean
+    fromTraversal?: boolean
+    preserveNeighborhood?: boolean
+    appendHistory?: boolean
+    restoreHistory?: boolean
+    surface?: string
+    reason?: string
+    arrivalDelay?: number
+    settleDelay?: number
+    expandNeighborhood?: boolean
 }
 
 export interface WalkResult {
-	targetIndex: number;
-	fromIndex: number | null;
-	reason: string;
+    targetIndex: number
+    fromIndex: number | null
+    reason: string
 }
 
 export interface PreviewInsideOptions {
-	force?: boolean;
-	[key: string]: unknown;
+    force?: boolean
+    [key: string]: unknown
 }
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function copyFiniteIndexHistory(value: unknown): number[] {
-	if (!value || typeof (value as { length?: unknown }).length !== 'number') return [];
-	const length = Math.max(0, Number((value as { length: number }).length) || 0);
-	const history: number[] = [];
-	for (let i = 0; i < length; i += 1) {
-		const index = Number((value as Record<number, unknown>)[i]);
-		if (Number.isFinite(index)) history.push(index);
-	}
-	return history;
+    if (!value || typeof (value as { length?: unknown }).length !== 'number') return []
+    const length = Math.max(0, Number((value as { length: number }).length) || 0)
+    const history: number[] = []
+    for (let i = 0; i < length; i += 1) {
+        const index = Number((value as Record<number, unknown>)[i])
+        if (Number.isFinite(index)) history.push(index)
+    }
+    return history
 }
 
 // ── Timer Helpers ────────────────────────────────────────────────────────────
 
 export function setTimer(purpose: string, ms: number, callback: () => void): void {
-	const manager = getStrandContinuityManager();
-	manager.setTimer(purpose, ms, callback);
+    const manager = getStrandContinuityManager()
+    manager.setTimer(purpose, ms, callback)
 }
 
 export function clearTimer(purpose: string): void {
-	const manager = getStrandContinuityManager();
-	manager.clearTimer(purpose);
+    const manager = getStrandContinuityManager()
+    manager.clearTimer(purpose)
 }
 
 export function cancelAllThreadTimers(): void {
-	const manager = getStrandContinuityManager();
-	manager.cancelAll();
+    const manager = getStrandContinuityManager()
+    manager.cancelAll()
 }
 
 export function initJourneyTimerAdapter(_deps: unknown = {}): void {}
@@ -98,350 +99,393 @@ export function initJourneyTimerAdapter(_deps: unknown = {}): void {}
 // ── Neighbor Reason Summaries ─────────────────────────────────────────────────
 
 export function summarizeNeighborReason(
-	candidate: { index?: number; reason?: string; threadType?: string; source?: string; relationshipRole?: string; roleReason?: string; sameCity?: boolean; sameStatus?: boolean } = {},
-	_point?: BusinessRecord | null,
-	_focusPoint?: BusinessRecord | null
+    candidate: {
+        index?: number
+        reason?: string
+        threadType?: string
+        source?: string
+        relationshipRole?: string
+        roleReason?: string
+        sameCity?: boolean
+        sameStatus?: boolean
+    } = {},
+    _point?: BusinessRecord | null,
+    _focusPoint?: BusinessRecord | null
 ): string {
-	if (!candidate || Object.keys(candidate).length === 0) {
-		return 'Nearby cloud stop.';
-	}
+    if (!candidate || Object.keys(candidate).length === 0) {
+        return 'Nearby cloud stop.'
+    }
 
-	if (candidate.relationshipRole) {
-		if (candidate.roleReason) {
-			const match = candidate.roleReason.match(/^(?:candidate looks like an |acts as an |serves as an )(.+)$/i);
-			if (match) return `An ${match[1]}`;
-			return candidate.roleReason.charAt(0).toUpperCase() + candidate.roleReason.slice(1);
-		}
-		const roleLabels: Record<string, string> = {
-			upstream: 'An input provider',
-			downstream: 'A downstream consumer',
-			peer: 'A peer in the network',
-		};
-		const label = roleLabels[candidate.relationshipRole];
-		if (label) return label;
-	}
+    if (candidate.relationshipRole) {
+        if (candidate.roleReason) {
+            const match = candidate.roleReason.match(/^(?:candidate looks like an |acts as an |serves as an )(.+)$/i)
+            if (match) return `An ${match[1]}`
+            return candidate.roleReason.charAt(0).toUpperCase() + candidate.roleReason.slice(1)
+        }
+        const roleLabels: Record<string, string> = {
+            upstream: 'An input provider',
+            downstream: 'A downstream consumer',
+            peer: 'A peer in the network'
+        }
+        const label = roleLabels[candidate.relationshipRole]
+        if (label) return label
+    }
 
-	if (candidate.reason && candidate.reason.includes('close semantic neighbor')) {
-		if (candidate.sameCity) return 'Same-city relationship grounded in shared record language';
-		return 'Deep record relationship grounded in shared record language';
-	}
+    if (candidate.reason && candidate.reason.includes('close semantic neighbor')) {
+        if (candidate.sameCity) return 'Same-city relationship grounded in shared record language'
+        return 'Deep record relationship grounded in shared record language'
+    }
 
-	if (candidate.sameCity && candidate.reason?.includes('semantic neighbor')) {
-		return 'Same-city relationship grounded in semantic link';
-	}
+    if (candidate.sameCity && candidate.reason?.includes('semantic neighbor')) {
+        return 'Same-city relationship grounded in semantic link'
+    }
 
-	if (candidate.reason) return candidate.reason;
+    if (candidate.reason) return candidate.reason
 
-	if (candidate.threadType === 'approximate_projected_neighbor') return 'approximate cloud projection neighbor';
-	if (candidate.source === 'semantic') return 'semantic business relationship';
-	return 'nearby business relationship';
+    if (candidate.threadType === 'approximate_projected_neighbor') return 'approximate cloud projection neighbor'
+    if (candidate.source === 'semantic') return 'semantic business relationship'
+    return 'nearby business relationship'
 }
 
 export function getInsideRelationshipLabel(
-	candidate: { index?: number; reason?: string; threadType?: string; source?: string; relationshipRole?: string; sameCity?: boolean; sameStatus?: boolean } = {},
-	_point?: BusinessRecord | null,
-	_focusPoint?: BusinessRecord | null
+    candidate: {
+        index?: number
+        reason?: string
+        threadType?: string
+        source?: string
+        relationshipRole?: string
+        sameCity?: boolean
+        sameStatus?: boolean
+    } = {},
+    _point?: BusinessRecord | null,
+    _focusPoint?: BusinessRecord | null
 ): string {
-	if (!candidate || Object.keys(candidate).length === 0) return 'Nearby connection';
+    if (!candidate || Object.keys(candidate).length === 0) return 'Nearby connection'
 
-	if (candidate.relationshipRole) {
-		const roleLabels: Record<string, string> = {
-			upstream: 'serves trail',
-			downstream: 'served by trail',
-			peer: 'trail peer',
-		};
-		const label = roleLabels[candidate.relationshipRole];
-		if (label) return label;
-		return candidate.relationshipRole;
-	}
+    if (candidate.relationshipRole) {
+        const roleLabels: Record<string, string> = {
+            upstream: 'serves trail',
+            downstream: 'served by trail',
+            peer: 'trail peer'
+        }
+        const label = roleLabels[candidate.relationshipRole]
+        if (label) return label
+        return candidate.relationshipRole
+    }
 
-	if (candidate.sameCity) return 'On the same trail';
-	if (candidate.source === 'semantic') return 'related connection';
-	if (candidate.sameStatus) return 'Same trail layer';
+    if (candidate.sameCity) return 'On the same trail'
+    if (candidate.source === 'semantic') return 'related connection'
+    if (candidate.sameStatus) return 'Same trail layer'
 
-	return 'Nearby connection';
+    return 'Nearby connection'
 }
 
 export function getStrandArrivalNote(): string {
-	const manager = getStrandContinuityManager();
-	const state = manager.state;
-	if (state.phase === 'arrived') {
-		return `Arrived at ${state.reason || 'the next stop'}.`;
-	}
-	return '';
+    const manager = getStrandContinuityManager()
+    const state = manager.state
+    if (state.phase === 'arrived') {
+        return `Arrived at ${state.reason || 'the next stop'}.`
+    }
+    return ''
 }
 
 // ── ThreadSettler Class ──────────────────────────────────────────────────────
 
 export class ThreadSettler {
-	private manager = getStrandContinuityManager();
-	private callbacks: {
-		onWalk?: (index: number, options: WalkOptions) => void;
-		onFocus?: (point: BusinessRecord | null) => void;
-		onCompassUpdate?: () => void;
-		onSemanticDiveSync?: () => void;
-		onShowToast?: (title: string, message: string) => void;
-	} = {};
+    private manager = getStrandContinuityManager()
+    private callbacks: {
+        onWalk?: (index: number, options: WalkOptions) => void
+        onFocus?: (point: BusinessRecord | null) => void
+        onCompassUpdate?: () => void
+        onSemanticDiveSync?: () => void
+        onShowToast?: (title: string, message: string) => void
+    } = {}
 
-	setCallbacks(cb: ThreadSettler['callbacks']): void {
-		this.callbacks = { ...this.callbacks, ...cb };
-	}
+    setCallbacks(cb: ThreadSettler['callbacks']): void {
+        this.callbacks = { ...this.callbacks, ...cb }
+    }
 
-	walkThreadNeighbor(index: number, options: WalkOptions = {}): WalkResult | null {
-		if (!Number.isFinite(index)) return null;
-		const focusedIndex = get(navStore).focusedIndex;
-		const fromIndex = Number.isFinite(options.fromIndex) ? (options.fromIndex as number) : getCurrentTrailFocusIndex(focusedIndex);
+    walkThreadNeighbor(index: number, options: WalkOptions = {}): WalkResult | null {
+        if (!Number.isFinite(index)) return null
+        const focusedIndex = get(navStore).focusedIndex
+        const fromIndex = Number.isFinite(options.fromIndex)
+            ? (options.fromIndex as number)
+            : getCurrentTrailFocusIndex(focusedIndex)
 
-		const nav = get(navStore);
-		const candidate = (nav.threadCandidates || []).find((item: any) => item && (typeof item === 'number' ? item === index : item.index === index));
-		const records = getBusinessRecords();
-		const targetPoint: BusinessRecord | null = (index >= 0 && index < records.length) ? (records[index] ?? null) : null;
-		const fromPoint = (fromIndex !== null && fromIndex >= 0 && fromIndex < records.length) ? (records[fromIndex] ?? null) : null;
+        const nav = get(navStore)
+        const candidate = (nav.threadCandidates || []).find(
+            (item: any) => item && (typeof item === 'number' ? item === index : item.index === index)
+        )
+        const records = getBusinessRecords()
+        const targetPoint: BusinessRecord | null =
+            index >= 0 && index < records.length ? (records[index] ?? null) : null
+        const fromPoint =
+            fromIndex !== null && fromIndex >= 0 && fromIndex < records.length ? (records[fromIndex] ?? null) : null
 
-		const reason =
-			options.reason ||
-			summarizeNeighborReason(
-				candidate && typeof candidate === 'object' ? candidate : {},
-				targetPoint,
-				fromPoint
-			) ||
-			(candidate && typeof candidate === 'object' ? candidate.reason : null) ||
-			'nearby business relationship';
+        const reason =
+            options.reason ||
+            summarizeNeighborReason(
+                candidate && typeof candidate === 'object' ? candidate : {},
+                targetPoint,
+                fromPoint
+            ) ||
+            (candidate && typeof candidate === 'object' ? candidate.reason : null) ||
+            'nearby business relationship'
 
-		withStateMutation(() => {
-			(legacyState as any).pinnedThreadIndex = null;
-			(legacyState as any).inspectedThreadIndex = null;
-			(legacyState as any).suppressCanvasFocusUntil =
-				typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200;
-		});
+        withStateMutation(() => {
+            ;(legacyState as any).pinnedThreadIndex = null
+            ;(legacyState as any).inspectedThreadIndex = null
+            ;(legacyState as any).suppressCanvasFocusUntil =
+                typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
+        })
 
-		appState.pinnedThreadIndex = null;
-		appState.inspectedThreadIndex = null;
+        appState.pinnedThreadIndex = null
+        appState.inspectedThreadIndex = null
 
-		cancelAllThreadTimers();
-		setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason });
-		this.manager.setPhase('exploring', { targetIndex: index, fromIndex, reason });
+        cancelAllThreadTimers()
+        setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason })
+        this.manager.setPhase('exploring', { targetIndex: index, fromIndex, reason })
 
-		dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, { index, fromIndex: fromIndex ?? undefined, appendHistory: !options.restoreHistory });
-		renderThreadInspection(null, { force: true, surface: 'idle' } as any);
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, {
+            index,
+            fromIndex: fromIndex ?? undefined,
+            appendHistory: !options.restoreHistory
+        })
+        renderThreadInspection(null, { force: true, surface: 'idle' } as any)
 
-		withStateMutation(() => {
-			(legacyState.navState as any).lastTraversalReason = reason;
-		});
+        withStateMutation(() => {
+            ;(legacyState.navState as any).lastTraversalReason = reason
+        })
 
-		const preserveNeighborhood =
-			legacyState.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood;
+        const preserveNeighborhood =
+            legacyState.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood
 
-		if (legacyState.currentView === 'map') {
-			focusOnPoint(targetPoint, {
-				fromTraversal: true,
-				appendHistory: !options.restoreHistory,
-				restoreHistory: !!options.restoreHistory,
-				fromIndex: fromIndex ?? undefined
-			} as any);
-		} else {
-			focusOnNode(index, {
-				fromCanvasNode: !!options.fromCanvasNode,
-				fromTraversal: true,
-				preserveNeighborhood,
-				appendHistory: !options.restoreHistory,
-				restoreHistory: !!options.restoreHistory,
-				fromIndex: fromIndex ?? undefined
-			});
-		}
+        if (legacyState.currentView === 'map') {
+            focusOnPoint(targetPoint, {
+                fromTraversal: true,
+                appendHistory: !options.restoreHistory,
+                restoreHistory: !!options.restoreHistory,
+                fromIndex: fromIndex ?? undefined
+            } as any)
+        } else {
+            focusOnNode(index, {
+                fromCanvasNode: !!options.fromCanvasNode,
+                fromTraversal: true,
+                preserveNeighborhood,
+                appendHistory: !options.restoreHistory,
+                restoreHistory: !!options.restoreHistory,
+                fromIndex: fromIndex ?? undefined
+            })
+        }
 
-		withStateMutation(() => {
-			const navState = legacyState.navState as any;
-			const nextHistory = copyFiniteIndexHistory(navState.walkHistoryIndices);
-			if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && nextHistory.length === 0) {
-				nextHistory.push(fromIndex);
-			}
-			if (nextHistory[nextHistory.length - 1] !== index) {
-				nextHistory.push(index);
-			}
-			navState.focusedIndex = index;
-			navState.mode = 'trail';
-			navState.surface = 'focus';
-			navState.trailDepth = Math.max(1, Number(navState.trailDepth) || 0);
-			navState.walkHistoryIndices = nextHistory;
-			navState.lastTraversalReason = reason;
-			(legacyState as any).focusedNode = index;
-			(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0);
-			(legacyState as any).inspectedThreadIndex = null;
-			(legacyState as any).pinnedThreadIndex = null;
-		});
+        const nextHistory = copyFiniteIndexHistory((legacyState.navState as any).walkHistoryIndices)
+        if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && nextHistory.length === 0) {
+            nextHistory.push(fromIndex)
+        }
+        if (nextHistory[nextHistory.length - 1] !== index) {
+            nextHistory.push(index)
+        }
+        writeNavStateMirror({
+            focusedIndex: index,
+            mode: 'trail',
+            surface: 'focus',
+            trailDepth: Math.max(1, Number((legacyState.navState as any).trailDepth) || 0),
+            walkHistoryIndices: nextHistory,
+            lastTraversalReason: reason
+        })
+        withStateMutation(() => {
+            ;(legacyState as any).focusedNode = index
+            ;(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0)
+            ;(legacyState as any).inspectedThreadIndex = null
+            ;(legacyState as any).pinnedThreadIndex = null
+        })
 
-		const reassertThreadTarget = (): void => {
-			const point = (index >= 0 && index < records.length) ? records[index] : null;
-			withStateMutation(() => {
-				const navState = legacyState.navState as any;
-				const nextHistory = copyFiniteIndexHistory(navState.walkHistoryIndices);
-				if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && nextHistory.length === 0) {
-					nextHistory.push(fromIndex);
-				}
-				if (nextHistory[nextHistory.length - 1] !== index) nextHistory.push(index);
-				navState.focusedIndex = index;
-				navState.mode = 'trail';
-				navState.surface = 'focus';
-				navState.trailDepth = Math.max(1, Number(navState.trailDepth) || 0);
-				navState.walkHistoryIndices = nextHistory;
-				navState.lastTraversalReason = reason;
-				(legacyState as any).focusedNode = index;
-				(legacyState as any).selectedPoint = point || (legacyState as any).selectedPoint;
-				(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0);
-				(legacyState as any).inspectedThreadIndex = null;
-				(legacyState as any).pinnedThreadIndex = null;
-			});
-			syncFocusStage(point || legacyState.selectedPoint || null);
-			syncSemanticDiveUi();
-			updateJourneyCompass();
-		};
+        const reassertThreadTarget = (): void => {
+            const point = index >= 0 && index < records.length ? records[index] : null
+            const reassertHistory = copyFiniteIndexHistory((legacyState.navState as any).walkHistoryIndices)
+            if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && reassertHistory.length === 0) {
+                reassertHistory.push(fromIndex)
+            }
+            if (reassertHistory[reassertHistory.length - 1] !== index) reassertHistory.push(index)
+            writeNavStateMirror({
+                focusedIndex: index,
+                mode: 'trail',
+                surface: 'focus',
+                trailDepth: Math.max(1, Number((legacyState.navState as any).trailDepth) || 0),
+                walkHistoryIndices: reassertHistory,
+                lastTraversalReason: reason
+            })
+            withStateMutation(() => {
+                ;(legacyState as any).focusedNode = index
+                ;(legacyState as any).selectedPoint = point || (legacyState as any).selectedPoint
+                ;(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0)
+                ;(legacyState as any).inspectedThreadIndex = null
+                ;(legacyState as any).pinnedThreadIndex = null
+            })
+            syncFocusStage(point || legacyState.selectedPoint || null)
+            syncSemanticDiveUi()
+            updateJourneyCompass()
+        }
 
-		setTimer('reassert-early', 120, reassertThreadTarget);
-		setTimer('reassert-late', 420, reassertThreadTarget);
-		clearThreadInspection({ preserveJourney: true });
-		syncSemanticDiveUi();
-		updateJourneyCompass();
+        setTimer('reassert-early', 120, reassertThreadTarget)
+        setTimer('reassert-late', 420, reassertThreadTarget)
+        clearThreadInspection({ preserveJourney: true })
+        syncSemanticDiveUi()
+        updateJourneyCompass()
 
-		showExperienceToast(
-			'Following connection',
-			`Moving along the semantic trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
-		);
+        showExperienceToast(
+            'Following connection',
+            `Moving along the semantic trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
+        )
 
-		const capturedIndex = index;
-		const capturedFromIndex = fromIndex;
-		const capturedReason = reason;
+        const capturedIndex = index
+        const capturedFromIndex = fromIndex
+        const capturedReason = reason
 
-		this.manager.setTimer('arrival', options.arrivalDelay || 820, () => {
-			const recordsList = getBusinessRecords();
-			if (recordsList.length === 0) return;
-			const managerState = this.manager.state;
-			if (managerState.phase === 'exploring' && managerState.targetIndex === capturedIndex) {
-				this.manager.clearTimer('arrival');
-				setStrandContinuityState('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
-				this.manager.setPhase('arrived', { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason });
+        this.manager.setTimer('arrival', options.arrivalDelay || 820, () => {
+            const recordsList = getBusinessRecords()
+            if (recordsList.length === 0) return
+            const managerState = this.manager.state
+            if (managerState.phase === 'exploring' && managerState.targetIndex === capturedIndex) {
+                this.manager.clearTimer('arrival')
+                setStrandContinuityState('arrived', {
+                    targetIndex: capturedIndex,
+                    fromIndex: capturedFromIndex,
+                    reason: capturedReason
+                })
+                this.manager.setPhase('arrived', {
+                    targetIndex: capturedIndex,
+                    fromIndex: capturedFromIndex,
+                    reason: capturedReason
+                })
 
-				const pointAtArrival = (capturedIndex >= 0 && capturedIndex < recordsList.length) ? recordsList[capturedIndex] : null;
-				syncFocusStage(pointAtArrival || legacyState.selectedPoint || null);
-				updateJourneyCompass();
+                const pointAtArrival =
+                    capturedIndex >= 0 && capturedIndex < recordsList.length ? recordsList[capturedIndex] : null
+                syncFocusStage(pointAtArrival || legacyState.selectedPoint || null)
+                updateJourneyCompass()
 
-				if (appState.semanticDiveMode) {
-					this.previewInsideNextThread({ force: true });
-					syncSemanticDiveUi();
-				} else {
-					clearThreadInspection({ force: true, preserveJourney: true });
-				}
-			}
-		});
+                if (appState.semanticDiveMode) {
+                    this.previewInsideNextThread({ force: true })
+                    syncSemanticDiveUi()
+                } else {
+                    clearThreadInspection({ force: true, preserveJourney: true })
+                }
+            }
+        })
 
-		this.manager.setTimer('settle', options.settleDelay || 5200, () => {
-			const recordsList = getBusinessRecords();
-			if (recordsList.length === 0) return;
-			const managerState = this.manager.state;
-			if (managerState.phase === 'arrived' && managerState.targetIndex === capturedIndex) {
-				this.manager.clearTimer('settle');
-				clearStrandContinuityState('arrival-settled');
-				this.manager.setPhase('idle', { reason: 'arrival-settled' });
+        this.manager.setTimer('settle', options.settleDelay || 5200, () => {
+            const recordsList = getBusinessRecords()
+            if (recordsList.length === 0) return
+            const managerState = this.manager.state
+            if (managerState.phase === 'arrived' && managerState.targetIndex === capturedIndex) {
+                this.manager.clearTimer('settle')
+                clearStrandContinuityState('arrival-settled')
+                this.manager.setPhase('idle', { reason: 'arrival-settled' })
 
-				const pointAtSettle = (capturedIndex >= 0 && capturedIndex < recordsList.length) ? recordsList[capturedIndex] : null;
-				syncFocusStage(pointAtSettle || legacyState.selectedPoint || null);
-			}
-		});
+                const pointAtSettle =
+                    capturedIndex >= 0 && capturedIndex < recordsList.length ? recordsList[capturedIndex] : null
+                syncFocusStage(pointAtSettle || legacyState.selectedPoint || null)
+            }
+        })
 
-		return { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason };
-	}
+        return { targetIndex: capturedIndex, fromIndex: capturedFromIndex, reason: capturedReason }
+    }
 
-	traverseNeighbor(step: number): void {
-		const currentIndex = getCurrentTrailFocusIndex(get(navStore).focusedIndex);
-		if (currentIndex === null || currentIndex === undefined) return;
-		if (!primeBoundedSemanticNeighborhoodForTraversal(currentIndex)) return;
+    traverseNeighbor(step: number): void {
+        const currentIndex = getCurrentTrailFocusIndex(get(navStore).focusedIndex)
+        if (currentIndex === null || currentIndex === undefined) return
+        if (!primeBoundedSemanticNeighborhoodForTraversal(currentIndex)) return
 
-		if (step < 0) {
-			const previousCandidate = getBoundedNeighborhoodWalkCandidate(-1, currentIndex, { commit: true });
-			if (previousCandidate) {
-				this.walkThreadNeighbor(previousCandidate.index, {
-					fromIndex: currentIndex,
-					surface: 'neighborhood-loop',
-					reason: previousCandidate.reason || 'previous stop in this bounded neighborhood'
-				});
-				return;
-			}
-			const walkHistory = copyFiniteIndexHistory(get(navStore).walkHistoryIndices);
-			if (walkHistory.length <= 1) return;
-			const previousIndex = walkHistory[walkHistory.length - 2];
-			if (typeof previousIndex !== 'number' || !Number.isFinite(previousIndex)) return;
-			dispatchNavTransition(NAV_TRANSITION_ACTIONS.BACKTRACK, { step: -1, fromIndex: currentIndex, targetIndex: previousIndex, restoreHistory: true });
-			this.walkThreadNeighbor(previousIndex, {
-				fromIndex: currentIndex,
-				restoreHistory: true,
-				surface: 'backtrack',
-				reason: 'backtracked to the previous business in your walk'
-			});
-			return;
-		}
+        if (step < 0) {
+            const previousCandidate = getBoundedNeighborhoodWalkCandidate(-1, currentIndex, { commit: true })
+            if (previousCandidate) {
+                this.walkThreadNeighbor(previousCandidate.index, {
+                    fromIndex: currentIndex,
+                    surface: 'neighborhood-loop',
+                    reason: previousCandidate.reason || 'previous stop in this bounded neighborhood'
+                })
+                return
+            }
+            const walkHistory = copyFiniteIndexHistory(get(navStore).walkHistoryIndices)
+            if (walkHistory.length <= 1) return
+            const previousIndex = walkHistory[walkHistory.length - 2]
+            if (typeof previousIndex !== 'number' || !Number.isFinite(previousIndex)) return
+            dispatchNavTransition(NAV_TRANSITION_ACTIONS.BACKTRACK, {
+                step: -1,
+                fromIndex: currentIndex,
+                targetIndex: previousIndex,
+                restoreHistory: true
+            })
+            this.walkThreadNeighbor(previousIndex, {
+                fromIndex: currentIndex,
+                restoreHistory: true,
+                surface: 'backtrack',
+                reason: 'backtracked to the previous business in your walk'
+            })
+            return
+        }
 
-		const nextCandidate = getNextWalkCandidateForIndex(currentIndex, {
-			requireSemantic: legacyState.currentView === 'galaxy',
-			requireOnCanvas: legacyState.currentView === 'galaxy',
-			commitNeighborhood: true
-		});
-		if (!nextCandidate) {
-			showExperienceToast(
-				'End of path',
-				'No more connected neighbors are ready.'
-			);
-			return;
-		}
-		this.walkThreadNeighbor(nextCandidate.index, {
-			fromIndex: currentIndex,
-			surface: isBoundedNeighborhoodActive() ? 'neighborhood-loop' : 'walk',
-			reason: nextCandidate.reason || 'nearby business relationship'
-		});
-	}
+        const nextCandidate = getNextWalkCandidateForIndex(currentIndex, {
+            requireSemantic: legacyState.currentView === 'galaxy',
+            requireOnCanvas: legacyState.currentView === 'galaxy',
+            commitNeighborhood: true
+        })
+        if (!nextCandidate) {
+            showExperienceToast('End of path', 'No more connected neighbors are ready.')
+            return
+        }
+        this.walkThreadNeighbor(nextCandidate.index, {
+            fromIndex: currentIndex,
+            surface: isBoundedNeighborhoodActive() ? 'neighborhood-loop' : 'walk',
+            reason: nextCandidate.reason || 'nearby business relationship'
+        })
+    }
 
-	previewInsideNextThread(options: PreviewInsideOptions = {}): any {
-		if (!appState.semanticDiveMode || legacyState.currentView !== 'galaxy') return null;
-		const currentIndex = getCurrentTrailFocusIndex(get(navStore).focusedIndex);
-		if (currentIndex === null || !Number.isFinite(currentIndex)) return null;
-		const nextCandidate = getNextWalkCandidateForIndex(currentIndex!, {
-			requireSemantic: true,
-			requireOnCanvas: true,
-			commitNeighborhood: false
-		}) || getNextWalkCandidateForIndex(currentIndex!, {
-			requireSemantic: false,
-			requireOnCanvas: false,
-			commitNeighborhood: false
-		});
-		if (!nextCandidate || !Number.isFinite(nextCandidate.index)) return null;
-		return inspectThreadNeighbor(nextCandidate.index, {
-			...options,
-			force: true,
-			preserveJourney: true,
-			surface: 'inside-cue'
-		} as any);
-	}
+    previewInsideNextThread(options: PreviewInsideOptions = {}): any {
+        if (!appState.semanticDiveMode || legacyState.currentView !== 'galaxy') return null
+        const currentIndex = getCurrentTrailFocusIndex(get(navStore).focusedIndex)
+        if (currentIndex === null || !Number.isFinite(currentIndex)) return null
+        const nextCandidate =
+            getNextWalkCandidateForIndex(currentIndex!, {
+                requireSemantic: true,
+                requireOnCanvas: true,
+                commitNeighborhood: false
+            }) ||
+            getNextWalkCandidateForIndex(currentIndex!, {
+                requireSemantic: false,
+                requireOnCanvas: false,
+                commitNeighborhood: false
+            })
+        if (!nextCandidate || !Number.isFinite(nextCandidate.index)) return null
+        return inspectThreadNeighbor(nextCandidate.index, {
+            ...options,
+            force: true,
+            preserveJourney: true,
+            surface: 'inside-cue'
+        } as any)
+    }
 
-	clearAllTimers(): void {
-		this.manager.cancelAll();
-	}
+    clearAllTimers(): void {
+        this.manager.cancelAll()
+    }
 }
 
 // ── Functional Exports ───────────────────────────────────────────────────────
 
-let _threadSettler: ThreadSettler | null = null;
+let _threadSettler: ThreadSettler | null = null
 export function getThreadSettler(): ThreadSettler {
-	if (!_threadSettler) _threadSettler = new ThreadSettler();
-	return _threadSettler;
+    if (!_threadSettler) _threadSettler = new ThreadSettler()
+    return _threadSettler
 }
 
 export function walkThreadNeighbor(index: number, options: WalkOptions = {}): WalkResult | null {
-	return getThreadSettler().walkThreadNeighbor(index, options);
+    return getThreadSettler().walkThreadNeighbor(index, options)
 }
 
 export function traverseNeighbor(step: number): void {
-	getThreadSettler().traverseNeighbor(step);
+    getThreadSettler().traverseNeighbor(step)
 }
 
 export function previewInsideNextThread(options: PreviewInsideOptions = {}): any {
-	return getThreadSettler().previewInsideNextThread(options);
+    return getThreadSettler().previewInsideNextThread(options)
 }

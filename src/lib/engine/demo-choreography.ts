@@ -19,6 +19,7 @@
 
 import type { DemoPhase } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
+import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'
 import { setAutoRotateSuspended } from '@lib/engine/camera-controls-restore-bridge'
 const cameraControlsStaticModule = { animateCameraToNode, setAutoRotateSuspended }
@@ -201,15 +202,14 @@ async function demoReset(): Promise<void> {
     ])
 
     appState.selectedPoint = null
-    // navState is a TRACKED_SUB_KEY; batch mutations under withMutation
-    // to avoid the production Proxy throwing on direct sub-property writes.
-    appState.withMutation(() => {
-        appState.navState.mode = 'overview'
-        appState.navState.focusedIndex = null
-        appState.navState.trailSeedIndex = null
-        appState.navState.trailNeighborIndices = []
-        appState.navState.trailCursor = -1
-        appState.navState.walkHistoryIndices = []
+    // Write to both legacy navState and Svelte 5 navStore in one call.
+    writeNavStateMirror({
+        mode: 'overview',
+        focusedIndex: null,
+        trailSeedIndex: null,
+        trailNeighborIndices: [],
+        trailCursor: -1,
+        walkHistoryIndices: []
     })
 
     focusPocket.clearFocusPocketIndices()
@@ -243,11 +243,11 @@ async function demoFocusSetup(demoNode: number): Promise<void> {
 
     const point = appState.points?.[demoNode] ?? null
     appState.selectedPoint = point
-    // navState is a TRACKED_SUB_KEY; batch mutations under withMutation.
-    appState.withMutation(() => {
-        appState.navState.mode = 'focus'
-        appState.navState.focusedIndex = demoNode
-        appState.navState.walkHistoryIndices = [demoNode]
+    // Write to both legacy navState and Svelte 5 navStore in one call.
+    writeNavStateMirror({
+        mode: 'focus',
+        focusedIndex: demoNode,
+        walkHistoryIndices: [demoNode]
     })
 
     updateSelectedBusiness(point, { revealCard: true })
