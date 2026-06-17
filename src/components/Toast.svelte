@@ -13,7 +13,7 @@
   import { onMount } from 'svelte';
 
   interface Props {}
-  let {} = $props<Props>();
+  let {} = $props();
 
   let toastMessage = $state('');
   let toastActive = $state(false);

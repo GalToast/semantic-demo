@@ -26,7 +26,7 @@
   }
 
   interface Props {}
-  let {} = $props<Props>();
+  let {} = $props();
 
   let status = $state<MapStatus>('loading');
   let statusDetail = $state('Loading county terrain');

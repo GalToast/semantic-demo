@@ -23,7 +23,7 @@
   import type { FocusPocketNode } from '@lib/types/state';
 
   interface Props {}
-  let {} = $props<Props>();
+  let {} = $props();
 
   function focusOnNode(node: FocusPocketNode): void {
     setFocusedIndex(node.index);
