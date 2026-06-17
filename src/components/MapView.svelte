@@ -146,6 +146,14 @@
     <h2 class="map-view-title">County terrain</h2>
   </header>
 
+  {#if status === 'loading'}
+    <div class="map-shimmer" aria-hidden="true">
+      <div class="shimmer-row"></div>
+      <div class="shimmer-row short"></div>
+      <div class="shimmer-row medium"></div>
+    </div>
+  {/if}
+
   {#if status !== 'ready'}
     <div class="map-status" class:is-error={status === 'error'} role="status" aria-live="polite">
       <span class="map-status-dot" aria-hidden="true"></span>
@@ -363,5 +371,45 @@
       opacity: 1;
       transform: scale(1);
     }
+  }
+
+  /* ── Loading shimmer ──────────────────────────────────────────────────────── */
+  .map-shimmer {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2rem;
+    pointer-events: none;
+  }
+  .shimmer-row {
+    width: min(320px, 70vw);
+    height: 10px;
+    border-radius: 5px;
+    background: linear-gradient(
+      90deg,
+      rgba(78, 205, 196, 0.04) 0%,
+      rgba(78, 205, 196, 0.12) 40%,
+      rgba(78, 205, 196, 0.04) 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmerSlide 1.6s ease-in-out infinite;
+  }
+  .shimmer-row.short {
+    width: min(200px, 50vw);
+    animation-delay: 0.15s;
+  }
+  .shimmer-row.medium {
+    width: min(260px, 60vw);
+    animation-delay: 0.3s;
+  }
+
+  @keyframes shimmerSlide {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
   }
 </style>
