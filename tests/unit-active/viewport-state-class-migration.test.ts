@@ -124,6 +124,64 @@ describe('viewport store — T4 writable + withViewportNotify migration', () => 
     expect(mockState.viewportDpr).toBe(2);
   });
 
+  it('syncViewport notifies store subscribers (regression: canvas resize)', () => {
+    // Regression test for the mobile canvas resize seam.
+    // syncViewport() must update _viewportWritable so that $viewport
+    // subscribers (e.g. Canvas.svelte $effect → bridge.resize()) fire.
+    // Reset store to known state first (previous test's syncViewport may
+    // have left stale values in the writable).
+    viewport.set({
+      width: 1280, height: 720, dpr: 1, reducedMotion: false,
+      isCompact: false, isMobile: false, isLandscape: true,
+      isCompactLandscape: false, isUltraCompactPortrait: false,
+    });
+
+    Object.defineProperty(window, 'innerWidth', { value: 390, writable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 844, writable: true });
+    Object.defineProperty(window, 'devicePixelRatio', { value: 2, writable: true });
+
+    const cb = vi.fn();
+    const unsub = viewport.subscribe(cb);
+
+    // First call is the subscribe snapshot (should be reset 1280)
+    expect(cb).toHaveBeenCalledTimes(1);
+    expect(cb.mock.calls[0][0].width).toBe(1280);
+
+    syncViewport();
+
+    // Subscriber should have been notified with the new dimensions
+    expect(cb).toHaveBeenCalledTimes(2);
+    const updated = cb.mock.calls[1][0];
+    expect(updated.width).toBe(390);
+    expect(updated.height).toBe(844);
+    expect(updated.isCompact).toBe(true);
+    expect(updated.isMobile).toBe(true);
+    expect(updated.isLandscape).toBe(false);
+
+    // Also verify get() reflects the updated values
+    const s = get(viewport) as any;
+    expect(s.width).toBe(390);
+    expect(s.height).toBe(844);
+
+    unsub();
+  });
+
+  it('syncViewport derived fields match writable after resize', () => {
+    Object.defineProperty(window, 'innerWidth', { value: 390, writable: true });
+    Object.defineProperty(window, 'innerHeight', { value: 844, writable: true });
+    Object.defineProperty(window, 'devicePixelRatio', { value: 2, writable: true });
+
+    syncViewport();
+
+    // Derived store fields should reflect the compact mobile viewport
+    const s = get(viewport) as any;
+    expect(s.isCompact).toBe(true);
+    expect(s.isMobile).toBe(true);
+    expect(s.isLandscape).toBe(false);
+    expect(s.isCompactLandscape).toBe(false); // height 844 > 740
+    expect(s.isUltraCompactPortrait).toBe(true); // 390 <= 430 && 741 <= 844 <= 860
+  });
+
   it('derived getters read directly from appState', () => {
     mockState.viewportWidth = 1024;
     mockState.viewportHeight = 768;

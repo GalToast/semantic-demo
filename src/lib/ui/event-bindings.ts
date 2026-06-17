@@ -14,22 +14,22 @@ import {
     expandNeighborhoodFromCurrentNode,
     recenterFocusedNode,
     returnToCountyView
-} from '../../../js/modules/bindings/journey-bindings'
+} from '@lib/ui/journey-bindings'
 import { updateHasQuery, bindSearchControls } from '@lib/ui/search-bindings'
-import { bindSuggestionControls } from '../../../js/modules/bindings/suggestion-bindings'
+import { bindSuggestionControls } from '@lib/ui/suggestion-bindings'
 import { bindSemanticLaneControls } from '@lib/ui/semantic-lane-bindings'
-import { bindModeAndPromptControls } from '../../../js/modules/bindings/mode-bindings'
-import { bindFilterControls } from '../../../js/modules/bindings/filter-bindings'
+import { bindModeAndPromptControls } from '@lib/ui/mode-bindings'
+import { bindFilterControls } from '@lib/ui/filter-bindings'
 import {
     bindPanelControls,
     revealSelectedBusinessCard as _revealSelectedBusinessCard,
     setInfoPanelOpen as _setInfoPanelOpen
 } from '@lib/ui/panel-bindings'
-import { bindLegendControls } from '../../../js/modules/bindings/legend-bindings'
-import { bindUtilityButtons } from '../../../js/modules/bindings/utility-bindings'
+import { bindLegendControls } from '@lib/ui/legend-bindings'
+import { bindUtilityButtons } from '@lib/ui/utility-bindings'
 import { bindGlobalEvents, disposeEventListeners } from '@lib/ui/global-bindings'
-import { scheduleOnboardingHint } from '../../../js/modules/bindings/onboarding-bindings'
-import { bindFocusTrapObserver } from '../../../js/modules/bindings/focus-trap-bindings'
+import { scheduleOnboardingHint } from '@lib/ui/onboarding-bindings'
+import { bindFocusTrapObserver } from '@lib/utils/focus-trap-bindings'
 
 import { buildLegend } from '@lib/stores/legend-panel.svelte.ts'
 import { syncClusterSectionState } from '@lib/ui/cluster-labels'

@@ -41,15 +41,15 @@ describe('traverseNeighbor import routing', () => {
 		expect(src).toMatch(adapterImport);
 	});
 
-	it('js/modules/bindings/journey-bindings.ts imports traverseNeighbor from adapter', () => {
-		const src = readFile('js/modules/bindings/journey-bindings.ts');
-		const adapterImport = /import\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]\.\.\/\.\.\/\.\.\/src\/lib\/journey\/thread-settler-adapter['"]/;
+	it('src/lib/ui/journey-bindings.ts imports traverseNeighbor from adapter', () => {
+		const src = readFile('src/lib/ui/journey-bindings.ts');
+		const adapterImport = /import\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]@lib\/journey\/thread-settler-adapter['"]/;
 		expect(src).toMatch(adapterImport);
 	});
 
-	it('js/modules/bindings/utility-bindings.ts imports traverseNeighbor from adapter', () => {
-		const src = readFile('js/modules/bindings/utility-bindings.ts');
-		const adapterImport = /import\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]\.\.\/\.\.\/\.\.\/src\/lib\/journey\/thread-settler-adapter['"]/;
+	it('src/lib/ui/utility-bindings.ts imports traverseNeighbor from adapter', () => {
+		const src = readFile('src/lib/ui/utility-bindings.ts');
+		const adapterImport = /import\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]@lib\/journey\/thread-settler-adapter['"]/;
 		expect(src).toMatch(adapterImport);
 	});
 
