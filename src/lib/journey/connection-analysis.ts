@@ -21,7 +21,7 @@ import {
 import {
     buildSemanticGuidePayloadResult,
     buildSemanticGuideRequestPayload
-} from '../../../js/modules/semantic-guide-payload';
+} from './semantic-guide-payload';
 
 // ── Local boundary types ────────────────────────────────────────────────────
 

@@ -22,10 +22,10 @@ export { initJourneyCompassAdapter } from '@lib/engine/journey-compass-controlle
 export { initJourneySelectedCard } from '../../../js/modules/journey-selected-card';
 export { initFocusNeighborRailSubscriptions } from '../../../js/modules/journey-focus-ui';
 export { initRouteTraceSubscriptions } from '../../../js/modules/journey-route-trace';
-export { initThreadInspectorAdapter } from '../../../js/modules/thread-inspector-adapter';
+export { initThreadInspectorAdapter } from '../journey/thread-inspector-adapter';
 export { initMapStateSubscriptions } from '@lib/engine/map-state';
 export { initViewControllerAdapter } from '@lib/orchestration/view-controller';
-export { setupMobileSearchSheetToggle } from '../../../js/modules/search-panel-adapter';
+export { setupMobileSearchSheetToggle } from '../search/search-panel-adapter';
 
 // ── Svelte-track adapter re-export ───────────────────────────────────────────
 // initSemanticDiveUiSubscriptions already lives in src/lib/; re-exported

@@ -29,7 +29,7 @@ export { applyClusterUiAccent } from '../../../js/modules/cluster-ui-accent'
 export { selectedPointStore as legacySelectedPointStore } from '../../../js/modules/stores'
 
 // Relocated legacy re-exports from semantic-guide-bridge & semantic-dive-bridge
-export { buildSemanticGuideRequestPayload } from '../../../js/modules/semantic-guide-payload'
+export { buildSemanticGuideRequestPayload } from '../journey/semantic-guide-payload'
 export { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts'
 export { showSemanticThreadsDetail } from '../../../js/modules/connection-analysis'
 export { semanticGuideStateStore } from '../../../js/modules/stores'
