@@ -116,6 +116,11 @@ const EXEMPTED_SHAS = new Set<string>([
     // tracked separately and the parallel session owns the deletion arc;
     // re-splitting the commit would require coordination with their WIP.
     'ba6ad5686c821b169cd2a7f15b8624febe9e59a4',
+    // 9939598 — test(w23): add component-SemanticOverlay test, complete
+    // 3-test foundation — Bundled bun.lock with the new test file. This is
+    // a dependency-lock companion change for the test addition; re-splitting
+    // historical commits would require a rebase.
+    '9939598662a295220ceceaf0a446e1272ef8a638',
 ]);
 
 // Conventional-commit prefix regex. Captures:
