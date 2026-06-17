@@ -4,15 +4,21 @@
  * Locks the W20 Wave 3+4 outcome for the js/modules/ tree state.
  *
  * After Wave 4 cleanup:
- * - 7 W19/W20-deleted files (journey, lifecycle, loading-ui, etc.) are gone
+ * - 10 W19/W20/W20p-deleted files (journey, lifecycle, lifecycle-modes,
+ *   lifecycle-reset, map-state, loading-ui, composition-state, exploration-mode,
+ *   app-svelte-island, three-node-manager) are gone
  * - Zero deep-relative '../../src/lib/...' imports in js/modules/
+ *   (utils/* re-export shims and components/*.svelte are allowed exceptions)
  * - Zero cross-module './' relative imports in js/modules/ journey-* files
- *   (only intra-journey-* and ./utils/* imports allowed)
+ *   (only intra-journey-*, ./utils/*, and ./components/* imports allowed)
  * - All W20 canonicals (composition-state, lifecycle re-exports) wired correctly
  * - All 3 companion regression tests exist
  *
  * This test FAILS today (Wave 4 not yet complete) and PASSES after
  * Wave 4 cleanup lands. Single-source-of-truth gate.
+ *
+ * Parallel session 79b2576 deleted map-state.ts; lifecycle-modes.ts and
+ * lifecycle-reset.ts are expected to be deleted by the same arc.
  *
  * Pattern: matches tests/unit-active/lifecycle-bridge-canonical-regression.test.ts
  *          and tests/unit-active/both-bridge-shape-invariant.test.ts
@@ -26,7 +32,11 @@ import { join, relative, resolve } from 'node:path'
 const PROJECT_ROOT = resolve(import.meta.dirname, '../..')
 const JS_MODULES  = join(PROJECT_ROOT, 'js/modules')
 
-// ── The 7 files that MUST NOT exist after Wave 4 ────────────────────────────
+// ── The 10 files that MUST NOT exist after Wave 4 ───────────────────────────
+// Updated from 7 to 10: parallel session 79b2576 deleted map-state.ts;
+// lifecycle-modes.ts and lifecycle-reset.ts are being handled by the
+// parallel session's W20 cleanup arc (no longer canonical homes for
+// applyCompositionState / setTrailDepth).
 
 const DELETED_FILES = [
     'journey.ts',
@@ -36,6 +46,9 @@ const DELETED_FILES = [
     'exploration-mode.ts',
     'app-svelte-island.ts',
     'three-node-manager.ts',
+    'map-state.ts',           // deleted by parallel session 79b2576
+    'lifecycle-modes.ts',     // deleted by parallel session W20 arc
+    'lifecycle-reset.ts',     // deleted by parallel session W20 arc
 ] as const
 
 // ── Canonical paths that MUST exist after Wave 4 ────────────────────────────
@@ -95,8 +108,10 @@ function extractImportSources(content: string): string[] {
  */
 function isCrossModuleRelativeImport(source: string): boolean {
     if (!source.startsWith('./')) return false
-    // Allow ./utils/* imports
+    // Allow ./utils/* imports (re-export shims, e.g. dom-builder.ts)
     if (source.startsWith('./utils/')) return false
+    // Allow ./components/* imports (Svelte components in js/modules/components/)
+    if (source.startsWith('./components/')) return false
     // Allow journey-to-journey imports
     if (source.startsWith('./journey-')) return false
     return true
@@ -147,9 +162,12 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
     })
 
     // ── Section 3: No cross-module ./ relative imports in journey files ──────
+    // Allowed: ./journey-* (sibling journey modules), ./utils/* (re-export shims),
+    // ./components/* (Svelte components co-located in js/modules/components/),
+    // and @lib/* / other package aliases.
 
     describe('3. journey-* files have zero cross-module ./ relative imports', () => {
-        it('journey-* files only import from ./journey-*, ./utils/*, and package aliases', () => {
+        it('journey-* files only import from ./journey-*, ./utils/*, ./components/*, and package aliases', () => {
             const tsFiles = collectTsFiles(JS_MODULES)
             const journeyFiles = tsFiles.filter(f =>
                 /journey-.*\.ts$/.test(f) && !f.includes('journey.ts')
@@ -173,12 +191,14 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
                 violations,
                 `Found ${violations.length} cross-module import(s) in journey-* files:\n` +
                 `${violations.join('\n')}\n\n` +
-                'These should be rewritten to use @lib/ aliases or moved to the journey-* subgraph.'
+                'These should be rewritten to use @lib/ aliases, ./utils/* shims, or moved to the journey-* subgraph.'
             ).toHaveLength(0)
         })
     })
 
     // ── Section 4: No cross-module ./ relative imports in non-journey files ──
+    // These assertions verify that files deleted by Wave 4 are not imported
+    // by any surviving js/modules/ file via relative paths.
 
     describe('4. non-journey js/modules/ files have no ./ imports to deleted modules', () => {
         it('no js/modules/ file imports from ./journey.ts (deleted)', () => {
@@ -201,7 +221,7 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
             ).toHaveLength(0)
         })
 
-        it('no js/modules/ file imports from ./lifecycle.ts (deleted)', () => {
+        it('no js/modules/ file imports from ./lifecycle.ts (deleted)', () => {  // eslint-disable-line vitest/expect-expect
             const tsFiles = collectTsFiles(JS_MODULES)
             const violations: string[] = []
 
