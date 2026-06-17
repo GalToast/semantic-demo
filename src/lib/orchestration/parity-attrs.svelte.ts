@@ -297,7 +297,22 @@ export function computeParityAttributes(): ParityAttributeMap {
     inspectedThreadIndex: threadInspectionActive && inspectedThreadIndex !== null
       ? String(inspectedThreadIndex)
       : null,
-    journeyPhase: journey.phase || 'idle',
+    journeyPhase: ((): string => {
+      // W15+ parity-attrs fix: journey.phase reads appState.navState.mode
+      // (legacy), which the Svelte track never updates. Derive journeyPhase
+      // directly from nav state + search intent so body data-journey-phase
+      // reflects the focus state immediately after a search-result click.
+      const _hasFocus = nav.focusedIndex !== null && Number.isFinite(nav.focusedIndex) || focus.selectedBusiness !== null && focus.selectedBusiness !== undefined
+      const _hasSearchIntent = !!search.summary || (typeof search.query === 'string' && search.query.trim().length >= 2)
+      const explicit = journey.phase as string
+      if (explicit && explicit !== 'idle') return explicit
+      if (_hasFocus && _hasSearchIntent) return 'focus-search'
+      if (_hasFocus) return 'focus'
+      if (_hasSearchIntent) return 'search'
+      if (nav.mode === 'inside') return 'inside'
+      if (nav.mode === 'trail') return 'walking'
+      return nav.mode
+    })(),
     terrainHandoff: journey.terrainHandoffPhase || 'idle',
     demoPhase,
 

@@ -426,8 +426,6 @@ export function dispatchNavTransition(
             const _surfaceRaw = payload.surface
             const _fromTraversal = payload.fromTraversal
             const _fromCanvasNode = payload.fromCanvasNode
-            // eslint-disable-next-line no-console
-            console.log('[FOCUS_NODE]', { _indexDefined, _modeRaw, _surfaceRaw, _fromTraversal, _fromCanvasNode }, new Error().stack?.split('\n').slice(2, 7).join(' | '))
             _navWritable.update((s) => {
                 const next: any = { ...s }
                 if (_indexDefined) next.focusedIndex = payload.index as number
@@ -436,8 +434,6 @@ export function dispatchNavTransition(
                 if (_fromTraversal === true || _fromCanvasNode === true) {
                     next.activeStoryPrompt = null
                 }
-                // eslint-disable-next-line no-console
-                console.log('[FOCUS_NODE after]', { mode: next.mode, surface: next.surface, focusedIndex: next.focusedIndex })
                 return next
             })
             break
