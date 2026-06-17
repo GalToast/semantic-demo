@@ -257,6 +257,7 @@
 
   /** Whether to show the empty state */
   let isEmpty = $derived(!selectedRecord);
+  let hasError = $derived(false); // Extensible: set when record fetch fails
 
   // Sync test state on mount and watch for body attribute changes
   onMount(() => {
@@ -417,12 +418,10 @@
   <div class="info-panel-content" id="info-panel-content">
     {@render content?.()}
 
-    <!-- Info header (hidden in search mode per contract; text varies by surface) -->
-    {#if contentDescriptor.headerVisible}
-    <div class="info-header">
+    <!-- Info header (always rendered; CSS hides it in search mode per contract) -->
+    <div class="info-header" hidden={!contentDescriptor.headerVisible}>
       <h3>{contentDescriptor.headerText}</h3>
     </div>
-    {/if}
 
     <!-- Selected card container -->
     <div
@@ -440,6 +439,17 @@
       data-debug-selected-record={selectedRecord?.name ?? ''}
     >
 
+      <!-- Loading spinner -->
+      {#if !getIsDataReady() && getBusinessRecords().length === 0}
+        <div class="info-panel-loading" role="status" aria-label="Loading business information">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10" opacity="0.25"/>
+            <path d="M12 2a10 10 0 0 1 10 10" stroke-linecap="round"/>
+          </svg>
+          <span>Loading...</span>
+        </div>
+      {/if}
+
       <!-- Empty state (copy adapts to panel surface) -->
       {#if isEmpty}
         <div id="selected-empty" class="selected-empty">
@@ -449,6 +459,19 @@
           </svg>
           <p class="selected-empty-headline">{contentDescriptor.emptyHeadline}</p>
           <p class="selected-empty-sub">{contentDescriptor.emptySubtext}</p>
+        </div>
+      {/if}
+
+      <!-- Error state -->
+      {#if hasError}
+        <div class="info-panel-error" role="alert" aria-live="polite">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <p class="error-headline">Unable to load details</p>
+          <p class="error-sub">Please try again later</p>
         </div>
       {/if}
 
@@ -813,6 +836,44 @@
       opacity: 0;
       pointer-events: none;
     }
+    /* ── Loading spinner ─────────────────────────────────────────────────────────── */
+    /* ── Error state ────────────────────────────────────────────────────────────── */
+  .info-panel-error {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.5rem 1rem;
+    gap: 0.35rem;
+    color: rgba(255, 107, 107, 0.8);
+  }
+  .info-panel-error .error-headline {
+    font-size: 0.85rem;
+    color: #e0f0f0;
+    margin: 0;
+  }
+  .info-panel-error .error-sub {
+    font-size: 0.75rem;
+    color: rgba(224, 240, 240, 0.35);
+    margin: 0;
+  }
+
+  .info-panel-loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      padding: 1.5rem;
+      color: rgba(224, 240, 240, 0.5);
+      font-size: 0.8rem;
+    }
+    .info-panel-loading svg {
+      animation: spin 1s linear infinite;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
     .info-panel-content {
       padding-top: 1rem;
     }

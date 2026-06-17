@@ -22,7 +22,7 @@
   import { getBusinessRecords, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import { viewport, isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport.svelte.ts';
   import { searchSummary, isSearching } from '@lib/stores/search.svelte';
-  import { walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge';
+  import { walkThreadNeighbor } from '@lib/journey/thread-settler';
   import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
   import type { BusinessRecord } from '@lib/types/business';
   import type { RelationshipRole } from '@lib/utils/relationship-roles';
@@ -104,6 +104,7 @@
       : normalizeCandidates(navSnapshot.threadCandidates);
   });
   const currentThreadSource = $derived(journeySnapshot.threadSource || navSnapshot.threadSource);
+  const isLoading = $derived(false); // Extensible: set true when trail data is loading
   const chromeHasFocus = $derived(
     navSnapshot.mode === 'focus' ||
     navSnapshot.mode === 'inside' ||
@@ -339,6 +340,8 @@
     role="group"
     tabindex="-1"
     aria-label="Journey navigation"
+    aria-live="polite"
+    aria-busy={isLoading ? 'true' : 'false'}
     onpointerdown={stopRailSurfaceEvent}
     onpointerup={stopRailSurfaceEvent}
     onmousedown={stopRailSurfaceEvent}

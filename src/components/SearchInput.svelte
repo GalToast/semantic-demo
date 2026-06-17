@@ -54,6 +54,11 @@
   let status = $derived($searchState.status);
   let showLoading = $derived(status === 'searching');
   let hasQuery = $derived(queryInput.trim().length > 0);
+  let _activeResultId = $derived(
+    $searchState.activeResultId !== null
+      ? `search-result-${Number($searchState.activeResultId)}`
+      : undefined
+  );
 
   $effect(() => {
     const storeQuery = $searchState.query ?? '';
@@ -219,8 +224,12 @@
       autocorrect="off"
       autocapitalize="off"
       spellcheck="false"
+      role="combobox"
       aria-label="Search businesses"
       aria-controls="search-result-list"
+      aria-haspopup="listbox"
+      aria-expanded={hasQuery}
+      aria-activedescendant={_activeResultId}
     />
     <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
     {#if hasQuery}

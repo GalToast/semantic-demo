@@ -90,6 +90,24 @@
   function handleReset(): void {
     resetFilters();
   }
+
+  // ── Keyboard navigation ─────────────────────────────────────────────────────
+  function handleChipKeydown(event: KeyboardEvent, filterId: string, group: 'status' | 'contact') {
+    const chips = Array.from(
+      (event.currentTarget as HTMLElement).closest('.filter-group')?.querySelectorAll('.filter-chip') ?? []
+    ) as HTMLElement[];
+    const idx = chips.findIndex((c) => c.dataset.statusFilter === filterId || c.dataset.contactFilter === filterId);
+    if (idx === -1) return;
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      const next = chips[(idx + 1) % chips.length];
+      next?.focus();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      const prev = chips[(idx - 1 + chips.length) % chips.length];
+      prev?.focus();
+    }
+  }
 </script>
 
 <details
@@ -108,6 +126,7 @@
           class:active={isStatusActive(filter.id)}
           data-status-filter={filter.id}
           onclick={() => handleStatusToggle(filter.id)}
+          onkeydown={(e) => handleChipKeydown(e, filter.id, 'status')}
           aria-pressed={isStatusActive(filter.id)}
           type="button"
         >
@@ -123,8 +142,9 @@
         <button
           class="filter-chip"
           class:active={isContactActive(filter.id)}
-          data-signal-filter={filter.id}
+          data-contact-filter={filter.id}
           onclick={() => handleContactToggle(filter.id)}
+          onkeydown={(e) => handleChipKeydown(e, filter.id, 'contact')}
           aria-pressed={isContactActive(filter.id)}
           type="button"
         >
