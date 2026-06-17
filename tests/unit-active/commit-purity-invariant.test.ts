@@ -107,6 +107,15 @@ const EXEMPTED_SHAS = new Set<string>([
     // the postmortem capture; no logic delta, no functional change. Same
     // co-located-formatting failure mode as b5ad93e (companion doc commit).
     '54dac4f0c0e08a28ed810424a5f1b57621d48daa',
+    // ba6ad56 — docs(legacy): corrected cross-reference matrix for 64
+    // js/modules files — Bundled 2 source-file touches (keyboard-help-bridge.ts:
+    // 12 deletions, search-results-ui-bridge.ts: 29 deletions) under a docs
+    // prefix. Both deletions are from a parallel-session arc that shipped
+    // W19 legacy-deletion co-located with the matrix doc. Same co-located
+    // code-removal failure mode as b5ad93e / 59d0471. Both deletions were
+    // tracked separately and the parallel session owns the deletion arc;
+    // re-splitting the commit would require coordination with their WIP.
+    'ba6ad5686c821b169cd2a7f15b8624febe9e59a4',
 ]);
 
 // Conventional-commit prefix regex. Captures:
