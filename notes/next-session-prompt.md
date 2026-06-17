@@ -1,54 +1,47 @@
-# Next-session seam prompt
+# Next Session Prompt — W17 2026-06-17
 
-## Current state (2026-06-16 20:00 UTC, W15 mid-flight)
+**Status:** Session complete, W15 and W16 work landed cleanly. svelte-check: 0 errors, 0 warnings.
 
-**Branch:** `master` tracking `origin/master`  
-**Master HEAD:** `29490cb ci(w15): add GitHub Actions workflow for svelte-check, tests, and build`  
-**Working tree:** ~25 uncommitted modifications (parallel session W14-T3 search-domain retirement mid-flight — **DO NOT COMMIT**)
+## What was done this session
 
-### This session (2026-06-16, afternoon UTC) summary
+| Commit | Work |
+|---|---|
+| `662a315` | Ported inline binding files to canonical `src/lib/ui/` (filter, legend, mode, onboarding, suggestion, utility) — fixing svelte-check from stale subagent imports |
+| `a910138` | Inline 6 simple + port 6 canonical bindings; deleted `js/modules/bindings/` entirely |
+| `0ca4c0f` | Created `docs/ROADMAP-to-completion.md` — full Svelte migration finish plan |
+| `49551a5` | Pruned 37 dead re-exports from `lifecycle.ts` + fixed `cursor.ts` canonical import |
+| `1779a42` | Ported three-interaction-visuals + three-search-animations to canonical |
 
-**Tracks 1–4 are in flight or done:**
+## Key finding (durable)
 
-| Track            | Status                                                           | Commit                                                                                |
-| ---------------- | ---------------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| **1. Visual QA** | 🔄 Subagent running (`ocw_78bce3ab-d462-44fb-88c3-20ed1ce3da26`) | In progress — read-only QA pass, no edits                                             |
-| **2. A11y**      | ✅ Complete                                                      | `8b5bc3b` — `w` weather shortcut, `?` help, Escape reset                              |
-| **3. Legacy**    | ✅ Wave A done                                                   | `c767713` — deleted `cluster-list-delegate` + `connection-analysis-adapter` (106 LOC) |
-| **4. CI**        | ✅ Drafted + pushed                                              | `29490cb` — GitHub Actions `ci.yml`                                                   |
+**Inline subagent work can be partially overwritten.** The high-port subagent overwrote 2 import blocks in `event-bindings.ts` that the inline subagent had already updated. Fix: the inline subagent's edits were recreated manually by the main lane.
 
-### Open items for next session
+**Future inline prompts should include**: "After editing, verify no stale imports remain in this file before reporting completion."
 
-1. **Review Visual QA subagent report** — `tmp/w15-visual-qa/REPORT.md` (expected when worker finishes). If findings require fixes, scope them and either dispatch a fix worker or handle in-lane.
-2. **Continue Track 3 (Legacy) Wave B** — The remaining 66 `js/modules/*.ts` files still in place are all referenced through bridge re-exports. None are zero-consumer after the Wave A deletions. Bridge-flip or port is required before further deletion. A consumer audit (searching `src/lib/engine/*-bridge.ts` for `from '../../../js/modules/...'`) would identify which bridges still point to legacy files.
-3. **Resolve strand-continuity API mismatch** — Still open from W14. `StrandContinuityState` type added to working tree `src/lib/utils/strand-continuity.ts`. Either wrap canonical class API in standalone functions or port the 4 journey consumers.
-4. **Resolve parallel session WIP** — The 25-file working tree drift is from the parallel session's W14-T3 search-domain retirement. Do not commit or stage these edits. Let the parallel session resolve its own work. Before any commit from this lane, always `git status` to verify only intended files are staged.
+## Next session
 
-### Verification baseline (end of this session)
+Start with `docs/w17-charter-2026-06-17.md`. Priority sequence:
 
-- Master 9 ahead of origin (pushed up through `29490cb`)
-- Working tree has 25+ uncommitted modifications (parallel session WIP — **do not stage**)
-- svelte-check: 0 errors, 0 warnings (verified on working tree)
-- vitest: 652/652 ✓
-- build (`npm run build:svelte`): green ✓ (7.7s)
-- bridge contract: 5/5 ✓
-- ts-js-drift: 78 .ts files clean ✓
+1. Wave 1: Recon remaining `js/modules/` kernel files (recon subagent)
+2. Wave 2: Port top 3 kernel files (port subagents)
+3. Wave 3: Thin dead bridges
+4. Wave 4: Fix remaining direct imports
 
-### Critical handoff notes
+Target: reduce `js/modules/` from ~30 to < 20 files, and `src/` legacy imports from ~20 to < 10.
 
-- **Do NOT commit parallel session WIP.** The 25 uncommitted files are mid-flight and partially broken. Re-audit `git status --short` before every commit.
-- **Do NOT push master until the parallel session's commits are verified** (ci.yml is fine, but any subsequent commits must wait for the parallel stream to quiesce per `AGENTS.md` parallel-session-watch).
-- **Subagent report is pending:** `ocw_78bce3ab-d462-44fb-88c3-20ed1ce3da26` is expected to write `tmp/w15-visual-qa/REPORT.md`.
+## Data for next session
 
-### Recommended next session order
+Current `svelte-check` status: **✅ 0 errors, 0 warnings**
 
-1. **Read subagent report** — `tmp/w15-visual-qa/REPORT.md` + any screenshot attachments. Note findings and classify (blocker/warning/observation).
-2. **Decide on strand-continuity approach** — If subagent fixes are small, batch them with strand-continuity. If subagent finds are large, pop strand-continuity to W16.
-3. **Legacy Wave B prep** — Run a bridge-point consumer audit (which bridge files still import from `js/modules/`), then dispatch a worker to flip low-risk bridges.
-4. **Update charter + execution log** — Reflect actual W15 closeout in `docs/w15-charter-2026-06-16.md` and `docs/w15-execution-log-2026-06-16.md`.
+```bash
+# Verify before starting
+npx svelte-check --tsconfig ./tsconfig.json 2>&1 | tail -3
+# Should output: svelte-check found 0 errors and 0 warnings
 
-### Open questions (for main lane)
+# Quick health check
+grep -r "from.*js/modules" src/ tests/ --include="*.ts" --include="*.svelte" | grep -v "adapters-bridge\|lifecycle-bridge" | wc -l
+# Current: ~12 (depends on git HEAD)
+```
 
-1. Should W15 Track 3 (Legacy) continue in this session, or be filed as W16 given the subagent results may consume the remainder?
-2. Is the parallel session's WIP expected to land today, or is it a multi-session arc?
-3. Do we want to tighten the CI workflow (add build artifacts to releases, add pre-commit hooks)?
+---
+*Generated: 2026-06-17 00:42 UTC*
