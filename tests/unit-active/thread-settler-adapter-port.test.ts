@@ -22,8 +22,6 @@ describe('traverseNeighbor import routing', () => {
 		'src/lib/orchestration/triggers.ts',
 		'src/lib/journey/journey.ts',
 		'src/lib/journey/thread-settler.ts',
-		'js/modules/lifecycle.ts',
-		'src/lib/orchestration/window-actions.ts',
 	];
 
 	for (const file of files) {
@@ -35,9 +33,9 @@ describe('traverseNeighbor import routing', () => {
 		});
 	}
 
-	it('js/modules/journey.ts imports traverseNeighbor from adapter, not journey-thread-settler', () => {
-		const src = readFile('js/modules/journey.ts');
-		const adapterImport = /import\s*\{[^}]*traverseNeighbor[^}]*\}\s*from\s*['"]\.\.\/\.\.\/src\/lib\/journey\/thread-settler-adapter['"]/;
+	it('src/lib/orchestration/triggers.ts imports traverseNeighbor from adapter', () => {
+		const src = readFile('src/lib/orchestration/triggers.ts');
+		const adapterImport = /import\s*\{[^}]*traverseNeighbor[^}]*\}\s*from\s*['"]@lib\/journey\/thread-settler-adapter['"]/;
 		expect(src).toMatch(adapterImport);
 	});
 
@@ -53,18 +51,10 @@ describe('traverseNeighbor import routing', () => {
 		expect(src).toMatch(adapterImport);
 	});
 
-	it('js/modules/keyboard-help.ts was retired to src/lib/keyboard/keyboard-help.ts (no traverseNeighbor needed)', () => {
-		// js/modules/keyboard-help.ts was deleted as part of W14-Tier-1 retirement
-		// (commit b8a50ba, then individual retirement). The new
-		// src/lib/keyboard/keyboard-help.ts is a pure utility port that
-		// does NOT use traverseNeighbor. This test is a no-op sentinel.
-		expect(true).toBe(true);
-	});
-
-	it('js/modules/lifecycle.ts imports traverseNeighbor from adapter', () => {
-		const src = readFile('js/modules/lifecycle.ts');
-		const adapterImport = /import\s*\{\s*traverseNeighbor\s*\}\s*from\s*['"]\.\.\/\.\.\/src\/lib\/journey\/thread-settler-adapter['"]/;
-		expect(src).toMatch(adapterImport);
+	it('src/lib/orchestration/window-actions.ts imports traverseNeighbor from window-actions-bridge', () => {
+		const src = readFile('src/lib/orchestration/window-actions.ts');
+		const bridgeImport = /import\s*\{[^}]*traverseNeighbor[^}]*\}\s*from\s*['"]@lib\/engine\/window-actions-bridge['"]/;
+		expect(src).toMatch(bridgeImport);
 	});
 });
 
@@ -72,12 +62,6 @@ describe('previewInsideNextThread import routing', () => {
 	it('src/lib/journey/journey.ts imports previewInsideNextThread from adapter, not @legacy', () => {
 		const src = readFile('src/lib/journey/journey.ts');
 		const adapterImport = /import\s*\{[^}]*previewInsideNextThread[^}]*\}\s*from\s*['"]\.\/thread-settler-adapter['"]/;
-		expect(src).toMatch(adapterImport);
-	});
-
-	it('js/modules/journey.ts imports previewInsideNextThread from adapter', () => {
-		const src = readFile('js/modules/journey.ts');
-		const adapterImport = /import\s*\{[^}]*previewInsideNextThread[^}]*\}\s*from\s*['"]\.\.\/\.\.\/src\/lib\/journey\/thread-settler-adapter['"]/;
 		expect(src).toMatch(adapterImport);
 	});
 

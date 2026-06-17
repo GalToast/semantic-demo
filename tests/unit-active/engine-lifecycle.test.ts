@@ -4,7 +4,7 @@
  * Coverage (W23 Canvas Engine Bridge Elimination):
  *  1. Module exports — initEngine, resizeEngine, destroyEngine, getEngineStatus, engineStatusStore
  *  2. initEngine behavior — accepts canvas + callbacks, returns Promise, sets status to 'ready', updates store
- *  3. resizeEngine behavior — accepts width/height, calls updateCameraViewportOffset, calls _resizePostProcessing
+ *  3. resizeEngine behavior — accepts width/height, calls updateCameraViewportOffset, calls resizePostProcessing
  *  4. destroyEngine behavior — sets status to 'idle', calls disposeTooltipEventBusSubscriptions, updates store
  *  5. Callback wiring — initEngine forwards onNodePicked, onCameraArrived, etc. to event bus
  *
@@ -25,7 +25,6 @@ vi.mock('@lib/engine/three-engine', () => ({
   deinit: vi.fn(),
   onWindowResize: vi.fn(),
   updateCameraViewportOffset: vi.fn(),
-  _resizePostProcessing: vi.fn(),
   animate: vi.fn(),
   cancelAnimate: vi.fn(),
   getSceneRenderableDiagnostics: vi.fn(() => ({
@@ -34,6 +33,11 @@ vi.mock('@lib/engine/three-engine', () => ({
     myceliumWispySegments: 50, myceliumBridgeSegments: 25,
     memory: { geometries: 10, textures: 5 }
   })),
+}))
+
+// Mock postprocessing resize owner
+vi.mock('@lib/engine/three-postprocessing', () => ({
+  resizePostProcessing: vi.fn(),
 }))
 
 // Mock thread-manager: createMycelium / disposeMycelium
@@ -58,6 +62,19 @@ vi.mock('@lib/semantic-threads', () => ({
   loadSemanticThreads: vi.fn(async () => {}),
   attachLegacyState: vi.fn(),
 }))
+
+// Mock data stores so initEngine does not wait for the 15s readiness ceiling.
+vi.mock('@lib/data-store', async () => {
+  const { writable } = await import('svelte/store')
+  return {
+    isDataReady: writable(true),
+    businessRecords: writable([{ id: 'test-1', x: 0, y: 0, z: 0 }]),
+    positionBuffer: writable(new Float32Array([0, 0, 0])),
+    clustersBuffer: writable(new Float32Array([0])),
+    leadEnrichment: writable({}),
+    pointIndexByLeadId: writable(new Map([['test-1', 0]])),
+  }
+})
 
 // Mock tooltip event bus subscriptions
 vi.mock('@lib/ui/tooltip', () => ({
@@ -103,7 +120,7 @@ vi.mock('@lib/stores/engine.svelte', () => {
       _value = v
       subscribers.forEach((fn) => fn(v))
     },
-    getEngineStatusValue: () => _value,
+    getEngineStatus: () => _value,
   }
 })
 
@@ -112,9 +129,14 @@ vi.mock('@lib/state/app.svelte', () => ({
   appState: {
     withMutation: <T>(fn: () => T) => fn(),
     engineBridge: null,
-    nodePositions: [],
-    targetPositions: [],
-    originalPositions: [],
+    points: [{ id: 'test-1', x: 0, y: 0, z: 0 }],
+    nodePositions: [{ x: 0, y: 0, z: 0 }],
+    targetPositions: [{ x: 0, y: 0, z: 0 }],
+    originalPositions: [{ x: 0, y: 0, z: 0 }],
+    rawPositionsBuffer: new Float32Array([0, 0, 0]),
+    rawClustersBuffer: new Float32Array([0]),
+    renderer: null,
+    scene: null,
   },
 }))
 
@@ -151,10 +173,11 @@ import {
   getEngineStatus,
 } from '../../src/lib/engine/lifecycle'
 
-import { engineStatusStore } from '@lib/stores/engine.svelte'
+import { engineStatusStore, setEngineStatus } from '@lib/stores/engine.svelte'
 
 // Also import mocked modules to verify call behavior
-import { initThreeJS, updateCameraViewportOffset, _resizePostProcessing } from '@lib/engine/three-engine'
+import { initThreeJS, updateCameraViewportOffset } from '@lib/engine/three-engine'
+import { resizePostProcessing } from '@lib/engine/three-postprocessing'
 import { createMycelium } from '@lib/engine/thread-manager'
 import {
   ensureCanvasNodeInteractionBindings,
@@ -185,6 +208,17 @@ function createMockCallbacks(): EngineCallbacks {
     onGraphicsStateChange: vi.fn(),
   }
 }
+
+beforeEach(() => {
+  destroyEngine()
+  setEngineStatus('idle')
+  vi.clearAllMocks()
+})
+
+afterEach(() => {
+  destroyEngine()
+  setEngineStatus('idle')
+})
 
 // ── Tests ────────────────────────────────────────────────────────────────────
 
@@ -308,16 +342,16 @@ describe('engine-lifecycle — resizeEngine behavior', () => {
     expect(updateCameraViewportOffset).toHaveBeenCalledOnce()
   })
 
-  it('calls _resizePostProcessing from three-engine (BUG FIX)', () => {
+  it('calls resizePostProcessing from three-postprocessing (BUG FIX)', () => {
     resizeEngine(1920, 1080)
 
-    expect(_resizePostProcessing).toHaveBeenCalledOnce()
+    expect(resizePostProcessing).toHaveBeenCalledOnce()
   })
 
-  it('passes width and height to updateCameraViewportOffset', () => {
+  it('passes width and height to resizePostProcessing', () => {
     resizeEngine(800, 600)
 
-    expect(updateCameraViewportOffset).toHaveBeenCalledWith(800, 600)
+    expect(resizePostProcessing).toHaveBeenCalledWith(800, 600)
   })
 })
 

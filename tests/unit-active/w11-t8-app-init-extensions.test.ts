@@ -152,8 +152,8 @@ describe('W11-T8: app-init.ts imports the new bridge modules', () => {
     expect(src).toMatch(/import.*requestSemanticGuide.*from.*journey\/semantic-guide/);
   });
 
-  it('imports showSemanticThreadsDetail from semantic-guide-bridge', () => {
-    expect(src).toMatch(/import.*showSemanticThreadsDetail.*from.*semantic-guide-bridge/);
+  it('imports showSemanticThreadsDetail from journey/connection-analysis (canonical path)', () => {
+    expect(src).toMatch(/import.*showSemanticThreadsDetail.*from.*journey\/connection-analysis/);
   });
 });
 
