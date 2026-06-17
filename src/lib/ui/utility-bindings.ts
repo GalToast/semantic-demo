@@ -1,5 +1,5 @@
 import { bindClick } from '@lib/ui/view-bindings'
-import { hideSummaryCard, resetExplorationFocus } from '../../../js/modules/lifecycle.ts'
+import { hideSummaryCard, resetExplorationFocus } from '@lib/engine/lifecycle-bridge'
 import { hideExploreTrailReview } from '@lib/stores/lifecycle'
 import { closeLegendGuide } from '@lib/stores/legend-panel'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'

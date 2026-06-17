@@ -6,10 +6,10 @@
 
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
-import { switchView } from '../../../js/modules/view-controller.ts'
+import { switchView } from '@lib/orchestration/view-controller'
 import { toggleAutoRotate } from '@lib/engine/camera-controls-restore-bridge'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
-import { resetExperienceState, copyCurrentViewLink } from '../../../js/modules/lifecycle.ts'
+import { resetExperienceState, copyCurrentViewLink } from '@lib/engine/lifecycle-bridge'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 import { zoomMap } from '@lib/engine/map-state'
 

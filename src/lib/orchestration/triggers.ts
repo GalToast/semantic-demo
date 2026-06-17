@@ -25,44 +25,42 @@
  * are the new canonical handlers. Once all callers publish to the
  * Svelte bus, the legacy `subscribeKeyed` calls can be retired.
  */
-import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
-import { updateJourneyCompass } from '@lib/orchestration/compass-controller';
-import { refreshCompositionState } from '@lib/stores/lifecycle/modes';
-import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync';
-import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte';
-import { returnToOverview, recenterFocusedNode, resetExplorationFocus, hideSummaryCard, setSemanticLaneUiState } from './lifecycle';
-import { updateUrlState } from '@lib/orchestration/url-state';
-import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback';
-import { traverseNeighbor } from '@lib/journey/thread-settler-adapter';
-import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
-import { activeClusterFilter } from '@lib/stores/filter.svelte';
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
+import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
+import { refreshCompositionState } from '@lib/stores/lifecycle/modes'
+import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync'
+import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte'
 import {
-  addTrailStop,
-  setThreadCandidates,
-  setTrailDepth,
-  setTrailNeighborIndices
-} from '@lib/stores/journey.svelte';
-import { getBusinessRecords } from '@lib/data-store';
-import { appState } from '@lib/state/app.svelte.ts';
-import {
-  buildNeighborhoodManifest,
-  getSemanticThreadDisplayLimit
-} from '@lib/journey/neighborhood';
-import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
-import { bindSearchResultInteractions } from '@lib/search/orchestration';
-import { get } from 'svelte/store';
+    returnToOverview,
+    recenterFocusedNode,
+    resetExplorationFocus,
+    hideSummaryCard,
+    setSemanticLaneUiState
+} from './lifecycle'
+import { updateUrlState } from '@lib/orchestration/url-state'
+import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
+import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
+import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte'
+import { activeClusterFilter } from '@lib/stores/filter.svelte'
+import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
+import { getBusinessRecords } from '@lib/data-store'
+import { appState } from '@lib/state/app.svelte.ts'
+import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
+import { bindSearchResultInteractions } from '@lib/search/orchestration'
+import { get } from 'svelte/store'
 
 // ── Keyboard Support ──────────────────────────────────────────────────────────
 
 function isKeyboardTextEntryTarget(target: HTMLElement): boolean {
-  if (!target || typeof target.tagName !== 'string') return false;
-  const tagName = target.tagName.toLowerCase();
-  const type = (target as HTMLInputElement).type?.toLowerCase() ?? '';
-  return (
-    (tagName === 'input' && ['text', 'search', 'email', 'url', 'password'].includes(type)) ||
-    tagName === 'textarea' ||
-    target.isContentEditable
-  );
+    if (!target || typeof target.tagName !== 'string') return false
+    const tagName = target.tagName.toLowerCase()
+    const type = (target as HTMLInputElement).type?.toLowerCase() ?? ''
+    return (
+        (tagName === 'input' && ['text', 'search', 'email', 'url', 'password'].includes(type)) ||
+        tagName === 'textarea' ||
+        target.isContentEditable
+    )
 }
 
 /**
@@ -70,34 +68,34 @@ function isKeyboardTextEntryTarget(target: HTMLElement): boolean {
  * Replaces the imperative listeners from global-bindings.js.
  */
 export function handleGlobalKeydown(event: KeyboardEvent): void {
-  const target = event.target as HTMLElement;
-  if (isKeyboardTextEntryTarget(target)) return;
+    const target = event.target as HTMLElement
+    if (isKeyboardTextEntryTarget(target)) return
 
-  const key = event.key;
+    const key = event.key
 
-  if (key === 'Escape') {
-    // Check if we have anything to reset
-    const nav = get(navStore);
-    if (nav.focusedIndex !== null || nav.currentView !== 'galaxy' || get(activeClusterFilter) !== null) {
-      event.preventDefault();
-      returnToOverview();
+    if (key === 'Escape') {
+        // Check if we have anything to reset
+        const nav = get(navStore)
+        if (nav.focusedIndex !== null || nav.currentView !== 'galaxy' || get(activeClusterFilter) !== null) {
+            event.preventDefault()
+            returnToOverview()
+        }
+        return
     }
-    return;
-  }
 
-  if (key === 'ArrowLeft' || key === 'ArrowUp') {
-    event.preventDefault();
-    traverseNeighbor(-1);
-  } else if (key === 'ArrowRight' || key === 'ArrowDown') {
-    event.preventDefault();
-    traverseNeighbor(1);
-  } else if (key === 'Home') {
-    event.preventDefault();
-    returnToOverview();
-  } else if (key === 'End' || (key === 'c' && !event.ctrlKey && !event.metaKey)) {
-    event.preventDefault();
-    recenterFocusedNode();
-  }
+    if (key === 'ArrowLeft' || key === 'ArrowUp') {
+        event.preventDefault()
+        traverseNeighbor(-1)
+    } else if (key === 'ArrowRight' || key === 'ArrowDown') {
+        event.preventDefault()
+        traverseNeighbor(1)
+    } else if (key === 'Home') {
+        event.preventDefault()
+        returnToOverview()
+    } else if (key === 'End' || (key === 'c' && !event.ctrlKey && !event.metaKey)) {
+        event.preventDefault()
+        recenterFocusedNode()
+    }
 }
 
 // ── Search → Compass Subscriptions ────────────────────────────────────────────
@@ -107,34 +105,34 @@ export function handleGlobalKeydown(event: KeyboardEvent): void {
 // the reverse edge of the cycle.
 
 subscribe(EVENTS.SEARCH_SUCCESS, () => {
-  refreshCompositionState();
-  updateJourneyCompass();
-});
+    refreshCompositionState()
+    updateJourneyCompass()
+})
 
 subscribe(EVENTS.SEARCH_EMPTY, ({ query }) => {
-  refreshCompositionState();
-  updateJourneyCompass();
-  recordEmptySearch(query);
-});
+    refreshCompositionState()
+    updateJourneyCompass()
+    recordEmptySearch(query)
+})
 
 subscribe(EVENTS.SEARCH_STARTED, () => {
-  refreshCompositionState();
-});
+    refreshCompositionState()
+})
 
 subscribe(EVENTS.SEARCH_CLEARED, () => {
-  refreshCompositionState();
-  updateJourneyCompass();
-});
+    refreshCompositionState()
+    updateJourneyCompass()
+})
 
 subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, () => {
-  refreshCompositionState();
-  updateJourneyCompass();
-});
+    refreshCompositionState()
+    updateJourneyCompass()
+})
 
 subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
-  refreshCompositionState();
-  updateJourneyCompass();
-});
+    refreshCompositionState()
+    updateJourneyCompass()
+})
 
 // ── Engine → Compass Subscriptions ───────────────────────────────────────────
 //
@@ -147,33 +145,36 @@ subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
 // stage render with the new anchor. We preserve an existing 'focus-search'
 // surface so a search-result click that emits CAMERA_NODE_FOCUSED right
 // after SEARCH_FOCUS_REQUESTED keeps its search context.
-subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {} as any) => {
-  const index = Number((payload as any)?.index);
-  if (Number.isFinite(index) && index >= 0) {
-    // Guard: when SEARCH_FOCUS_REQUESTED fires just before this event (the
-    // search-click hot path), it has already set focusedIndex, mode, surface
-    // ('focus-search'), and trailDepth to the same values this subscriber
-    // would set. Re-running navStore.update() is functionally a no-op but
-    // triggers a redundant Svelte reactivity cascade that compounds the
-    // 200-500ms sync work in the focus-click pipeline (W15-T1 diagnosis
-    // in tmp/w15-focus-deadlock-diagnosis.md). Skip the update when the
-    // index is already current; updateJourneyCompass() below still runs
-    // (idempotent for the same focus context).
-    const current = get(navStore) as { focusedIndex?: number | null };
-    if (current.focusedIndex !== index) {
-      navStore.update((s) => ({
-        ...s,
-        focusedIndex: index,
-        mode: 'focus',
-        surface: s.surface === 'focus-search' ? s.surface : 'focus',
-        trailDepth: Math.max(1, s.trailDepth ?? 0)
-      }));
+subscribe(
+    EVENTS.CAMERA_NODE_FOCUSED,
+    (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {} as any) => {
+        const index = Number((payload as any)?.index)
+        if (Number.isFinite(index) && index >= 0) {
+            // Guard: when SEARCH_FOCUS_REQUESTED fires just before this event (the
+            // search-click hot path), it has already set focusedIndex, mode, surface
+            // ('focus-search'), and trailDepth to the same values this subscriber
+            // would set. Re-running navStore.update() is functionally a no-op but
+            // triggers a redundant Svelte reactivity cascade that compounds the
+            // 200-500ms sync work in the focus-click pipeline (W15-T1 diagnosis
+            // in tmp/w15-focus-deadlock-diagnosis.md). Skip the update when the
+            // index is already current; updateJourneyCompass() below still runs
+            // (idempotent for the same focus context).
+            const current = get(navStore) as { focusedIndex?: number | null }
+            if (current.focusedIndex !== index) {
+                navStore.update((s) => ({
+                    ...s,
+                    focusedIndex: index,
+                    mode: 'focus',
+                    surface: s.surface === 'focus-search' ? s.surface : 'focus',
+                    trailDepth: Math.max(1, s.trailDepth ?? 0)
+                }))
+            }
+        }
+        updateJourneyCompass()
     }
-  }
-  updateJourneyCompass();
-});
-subscribe(EVENTS.EXPLORATION_DEPTH_CHANGED, updateJourneyCompass);
-subscribe(EVENTS.STATE_RESET, updateJourneyCompass);
+)
+subscribe(EVENTS.EXPLORATION_DEPTH_CHANGED, updateJourneyCompass)
+subscribe(EVENTS.STATE_RESET, updateJourneyCompass)
 
 // ── Search Focus → Nav Subscriptions ─────────────────────────────────────────
 //
@@ -184,69 +185,69 @@ subscribe(EVENTS.STATE_RESET, updateJourneyCompass);
 // own state mirror.
 
 subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
-  if (typeof index !== 'number' || !Number.isFinite(index)) return;
-  const focusIndex = index;
-  const searchSummary = appState.currentSearchSummary;
-  const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || [];
-  const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
-    displayLimit: getSemanticThreadDisplayLimit()
-  });
-  const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])];
-  const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback';
-  const threadReasonByIndex = new Map<number, string>(
-    candidateIndices.map((candidateIndex: number) => [
-      candidateIndex,
-      threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
-    ])
-  );
-  navStore.update((s) => ({
-    ...s,
-    focusedIndex: focusIndex,
-    mode: 'focus',
-    surface: 'focus-search',
-    trailDepth: 1,
-    trailSeedIndex: focusIndex,
-    trailNeighborIndices: candidateIndices,
-    threadCandidates: candidateIndices,
-    threadReasonByIndex,
-    threadSource
-  }));
-  withStateMutation(() => {
-    const nav = legacyState.navState as unknown as {
-      trailSeedIndex?: number | null;
-      trailNeighborIndices?: number[];
-      threadCandidates?: Array<{ index: number; source: string; reason: string }>;
-      threadReasonByIndex?: Map<number, string>;
-      threadSource?: string;
-    };
-    nav.trailSeedIndex = index;
-    nav.trailNeighborIndices = [...candidateIndices];
-    nav.threadCandidates = candidateIndices.map((candidateIndex: number) => ({
-      index: candidateIndex,
-      source: threadSource,
-      reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
-    }));
-    nav.threadReasonByIndex = threadReasonByIndex;
-    nav.threadSource = threadSource;
-  });
-  // Add the focused node as the first trail stop so MapSummary
-  // (which gates on hasTrail() && trail.length > 0) renders.
-  const records = getBusinessRecords();
-  const record = records[Number(index)];
-  addTrailStop({
-    index: Number(index),
-    name: record?.name ?? `Node ${index}`,
-    reason: 'search-focus',
-    visitedAt: Date.now()
-  });
-  setTrailNeighborIndices(candidateIndices);
-  setThreadCandidates(candidateIndices);
-  setTrailDepth(1);
-  setActiveResult(String(index));
-  setSearchStatus('focusing');
-  refreshCompositionState();
-  updateJourneyCompass();
-});
+    if (typeof index !== 'number' || !Number.isFinite(index)) return
+    const focusIndex = index
+    const searchSummary = appState.currentSearchSummary
+    const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
+    const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
+        displayLimit: getSemanticThreadDisplayLimit()
+    })
+    const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])]
+    const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
+    const threadReasonByIndex = new Map<number, string>(
+        candidateIndices.map((candidateIndex: number) => [
+            candidateIndex,
+            threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
+        ])
+    )
+    navStore.update((s) => ({
+        ...s,
+        focusedIndex: focusIndex,
+        mode: 'focus',
+        surface: 'focus-search',
+        trailDepth: 1,
+        trailSeedIndex: focusIndex,
+        trailNeighborIndices: candidateIndices,
+        threadCandidates: candidateIndices,
+        threadReasonByIndex,
+        threadSource
+    }))
+    withStateMutation(() => {
+        const nav = legacyState.navState as unknown as {
+            trailSeedIndex?: number | null
+            trailNeighborIndices?: number[]
+            threadCandidates?: Array<{ index: number; source: string; reason: string }>
+            threadReasonByIndex?: Map<number, string>
+            threadSource?: string
+        }
+        nav.trailSeedIndex = index
+        nav.trailNeighborIndices = [...candidateIndices]
+        nav.threadCandidates = candidateIndices.map((candidateIndex: number) => ({
+            index: candidateIndex,
+            source: threadSource,
+            reason: threadReasonByIndex.get(candidateIndex) ?? 'nearby business relationship'
+        }))
+        nav.threadReasonByIndex = threadReasonByIndex
+        nav.threadSource = threadSource
+    })
+    // Add the focused node as the first trail stop so MapSummary
+    // (which gates on hasTrail() && trail.length > 0) renders.
+    const records = getBusinessRecords()
+    const record = records[Number(index)]
+    addTrailStop({
+        index: Number(index),
+        name: record?.name ?? `Node ${index}`,
+        reason: 'search-focus',
+        visitedAt: Date.now()
+    })
+    setTrailNeighborIndices(candidateIndices)
+    setThreadCandidates(candidateIndices)
+    setTrailDepth(1)
+    setActiveResult(String(index))
+    setSearchStatus('focusing')
+    refreshCompositionState()
+    updateJourneyCompass()
+})
 
 // ── Engine → Nav Sync Subscriptions ──────────────────────────────────────────
 //
@@ -265,17 +266,17 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
  * branch of dispatchNavTransition, so we mirror that here.
  */
 subscribe(EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index: number; skipHistory?: boolean } = {} as any) => {
-  const index = Number((payload as any)?.index);
-  if (!Number.isFinite(index) || index < 0) return;
-  dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
-    index,
-    // The Svelte navStore does not have a skipHistory flag, but
-    // appendHistory:false is the closest equivalent and prevents
-    // duplicate history entries when the engine has already recorded
-    // the focus.
-    appendHistory: (payload as any)?.skipHistory === true ? false : true
-  });
-});
+    const index = Number((payload as any)?.index)
+    if (!Number.isFinite(index) || index < 0) return
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
+        index,
+        // The Svelte navStore does not have a skipHistory flag, but
+        // appendHistory:false is the closest equivalent and prevents
+        // duplicate history entries when the engine has already recorded
+        // the focus.
+        appendHistory: (payload as any)?.skipHistory === true ? false : true
+    })
+})
 
 /**
  * SEARCH_STATE_RESET_REQUESTED is published by the search pipeline when
@@ -284,8 +285,8 @@ subscribe(EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index: number; skipHistory?
  * matching the legacy preserveSearch:true default in lifecycle-reset.ts.
  */
 subscribe(EVENTS.SEARCH_STATE_RESET_REQUESTED, (options: Record<string, unknown> = {}) => {
-  resetExplorationFocus(options as Parameters<typeof resetExplorationFocus>[0]);
-});
+    resetExplorationFocus(options as Parameters<typeof resetExplorationFocus>[0])
+})
 
 /**
  * SUMMARY_CARD_HIDE_REQUESTED is published when the summary card should
@@ -294,8 +295,8 @@ subscribe(EVENTS.SEARCH_STATE_RESET_REQUESTED, (options: Record<string, unknown>
  * layer for API symmetry with the legacy event-bus contract.
  */
 subscribe(EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
-  hideSummaryCard();
-});
+    hideSummaryCard()
+})
 
 /**
  * SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED is published when the semantic
@@ -304,8 +305,8 @@ subscribe(EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
  * documented no-op (matches the legacy stub at app.ts:228-231).
  */
 subscribe(EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, () => {
-  // Handled reactively by the Svelte focus store and semantic-guide component.
-});
+    // Handled reactively by the Svelte focus store and semantic-guide component.
+})
 
 // ── W11-T6 Wave 2: Remaining event-bus subscriptions ────────────────────────
 //
@@ -320,9 +321,9 @@ subscribe(EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, () => {
  * forward params and options directly.
  */
 subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-  const { params, reason, mode } = payload as any;
-  updateUrlState(params ?? {}, { reason, mode });
-});
+    const { params, reason, mode } = payload as any
+    updateUrlState(params ?? {}, { reason, mode })
+})
 
 /**
  * SEARCH_UI_SYNC_REQUESTED is published when search result DOM elements
@@ -332,10 +333,10 @@ subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => 
  * rendered outside the component lifecycle.
  */
 subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-  const { resultsEl, statusEl, results, renderContext } = payload as any;
-  if (!resultsEl || !statusEl || !Array.isArray(results) || !renderContext) return;
-  bindSearchResultInteractions(resultsEl, statusEl, results, renderContext);
-});
+    const { resultsEl, statusEl, results, renderContext } = payload as any
+    if (!resultsEl || !statusEl || !Array.isArray(results) || !renderContext) return
+    bindSearchResultInteractions(resultsEl, statusEl, results, renderContext)
+})
 
 /**
  * SEARCH_STATUS_SYNC_REQUESTED is published when the search status
@@ -343,9 +344,9 @@ subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, (payload: Record<string, unknown> = {
  * ui-feedback module owns the status DOM sync.
  */
 subscribe(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-  const { point, options } = payload as any;
-  syncSearchStatusForFocus(point, options);
-});
+    const { point, options } = payload as any
+    syncSearchStatusForFocus(point, options)
+})
 
 /**
  * SEMANTIC_LANE_STATE_REQUESTED is published when the semantic lane
@@ -353,9 +354,9 @@ subscribe(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, (payload: Record<string, unknown>
  * as a no-op (state is managed reactively in the Svelte store).
  */
 subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, (payload: Record<string, unknown> = {}) => {
-  const { laneState, options } = payload as any;
-  setSemanticLaneUiState(laneState, options);
-});
+    const { laneState, options } = payload as any
+    setSemanticLaneUiState(laneState, options)
+})
 
 /**
  * TOOLTIP_HIDE_REQUESTED is published when the tooltip should be hidden.
@@ -364,6 +365,6 @@ subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, (payload: Record<string, unknown
  * src/lib/, replace this no-op with the imported function.
  */
 subscribe(EVENTS.TOOLTIP_HIDE_REQUESTED, () => {
-  // TODO (Wave 2): legacy function — engine bridge not yet wired.
-  // hideTooltip();
-});
+    // TODO (Wave 2): legacy function — engine bridge not yet wired.
+    // hideTooltip();
+})

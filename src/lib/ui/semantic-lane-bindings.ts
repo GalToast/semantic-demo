@@ -4,8 +4,8 @@
  * Semantic lane retry, focus, and visibility controls.
  */
 
-import { probeSemanticLane } from '../../../js/modules/lifecycle.ts';
-import { loadSemanticThreads } from '../../../js/modules/semantic-threads.ts';
+import { probeSemanticLane } from '@lib/engine/lifecycle-bridge';
+import { loadSemanticThreads } from '@lib/semantic-threads';
 
 type RecordSemanticLaneSnapshot = (snapshot: { state: string; attempted_warm: boolean }) => void;
 type SetSemanticLaneUiState = (state: string, options: { label: string; title: string }) => void;

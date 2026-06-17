@@ -12,7 +12,7 @@ import { appState } from '@lib/state/app.svelte';
 import type { Point } from '@lib/state/state-types'
 
 import { isMobile } from '@lib/utils/environment'
-import { refreshMapRouteEmbodiment } from '../../../../js/modules/map-state.ts'
+import { refreshMapRouteEmbodiment } from '@lib/engine/map-state'
 import {
   refreshCompositionState,
   dispatchNavTransition,

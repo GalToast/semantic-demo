@@ -55,7 +55,7 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
 
     it('statically imports remaining legacy modules via relative paths (extensionless, Vite resolves to .ts)', () => {
         const src = readSource()
-        const expectedModules = ['lifecycle', 'journey', 'bindings/panel-bindings']
+        const expectedModules = ['journey']
         for (const mod of expectedModules) {
             expect(src).toContain(`from '../../../js/modules/${mod}'`)
         }
@@ -64,6 +64,18 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     it('imports journey-compass-controller via the bridge (not direct legacy path)', () => {
         const src = readSource()
         expect(src).toContain("from '@lib/engine/journey-compass-controller-bridge'")
+    })
+
+    it('imports panel bindings via the UI binding port (not direct legacy path)', () => {
+        const src = readSource()
+        expect(src).toContain("from '@lib/ui/panel-bindings'")
+        expect(src).not.toContain("from '../../../js/modules/bindings/panel-bindings'")
+    })
+
+    it('imports lifecycle via the bridge (not direct legacy path)', () => {
+        const src = readSource()
+        expect(src).toContain("from '@lib/engine/lifecycle-bridge'")
+        expect(src).not.toContain("from '../../../js/modules/lifecycle'")
     })
 
     it('also statically imports the previously-converted modules via relative paths (extensionless)', () => {

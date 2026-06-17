@@ -68,8 +68,7 @@ function testBridgeReexportsFromCanonicalStore() {
     const src = readSrc(LEGEND_UI_BRIDGE)
 
     assert(
-        src.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
-            src.includes("from '@lib/stores/legend-panel'"),
+        src.includes("from '@lib/stores/legend-panel.svelte.ts'") || src.includes("from '@lib/stores/legend-panel'"),
         'legend-ui-bridge.ts must re-export from the canonical store'
     )
 
@@ -95,10 +94,7 @@ function testBridgeReexportsFromCanonicalStore() {
     ]
 
     for (const name of requiredReexports) {
-        assert(
-            src.includes(name),
-            `legend-ui-bridge.ts must re-export ${name}`
-        )
+        assert(src.includes(name), `legend-ui-bridge.ts must re-export ${name}`)
     }
 
     console.log('  OK — legend-ui-bridge.ts re-exports all 10 ports from the canonical store')
@@ -116,10 +112,7 @@ function testNoLiveSourceImportsFromDeletedKernel() {
             { cwd: SEMDEMO_ROOT, encoding: 'utf-8', timeout: 15000 }
         ).trim()
 
-        assert(
-            result === '',
-            `Found live imports from deleted kernel js/modules/legend-ui.ts:\n${result}`
-        )
+        assert(result === '', `Found live imports from deleted kernel js/modules/legend-ui.ts:\n${result}`)
     } catch (err) {
         // rg exits 1 when no matches — that's success
         if (err.status !== 1) throw err
@@ -170,8 +163,7 @@ function testEventBindingsImportsFromCanonicalStore() {
     // event-bindings.ts imports buildLegend from the store
     const ebSrc = readSrc(eventBindingsPath)
     assert(
-        ebSrc.includes("from '@lib/stores/legend-panel") ||
-            ebSrc.includes("from '@lib/engine/legend-ui-bridge'"),
+        ebSrc.includes("from '@lib/stores/legend-panel") || ebSrc.includes("from '@lib/engine/legend-ui-bridge'"),
         'event-bindings.ts imports from the canonical store or bridge'
     )
 

@@ -362,6 +362,7 @@
     body.is-active[data-panel-surface='focus'] .focus-stage,
     body.is-active[data-panel-surface='focus-search'] .focus-stage,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage {
+        position: fixed;
         left: 10px;
         right: 10px;
         bottom: 0;
@@ -520,7 +521,6 @@
     body.is-active[data-panel-surface='focus-search'] #focus-stage-auxiliary-surfaces {
         order: 30;
     }
-
 
     /* ----------------------------------------------------------------
        4. Focus stage — focus-search journey block
@@ -724,18 +724,24 @@
         overflow-y: visible;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-focus-panel-mode='field-node'])
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-focus-panel-mode='field-node']
+        )
         .focus-stage-neighbor-count {
         display: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-focus-panel-mode='field-node'])
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-focus-panel-mode='field-node']
+        )
         .focus-stage-neighbor-list {
         max-height: 54px;
         overflow: hidden;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-focus-panel-mode='field-node'])
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-focus-panel-mode='field-node']
+        )
         .focus-stage-neighbor-list
         > :nth-child(n + 2) {
         display: none;
@@ -1051,14 +1057,10 @@
     body.is-active[data-panel-surface='semantic-dive'] #canvas-container::after {
         opacity: 0.58;
         background:
-            radial-gradient(circle, rgba(var(--color-primary-tint-rgb), 0.18) 0 2.4px, transparent 3.6px) 0 0 / 26px 26px,
+            radial-gradient(circle, rgba(var(--color-primary-tint-rgb), 0.18) 0 2.4px, transparent 3.6px) 0 0 / 26px
+                26px,
             radial-gradient(circle, rgba(90, 150, 255, 0.14) 0 2px, transparent 3.2px) 13px 9px / 34px 34px,
-            linear-gradient(
-                90deg,
-                rgba(6, 9, 13, 0.42) 0%,
-                rgba(6, 9, 13, 0.22) 18%,
-                rgba(6, 9, 13, 0) 48%
-            );
+            linear-gradient(90deg, rgba(6, 9, 13, 0.42) 0%, rgba(6, 9, 13, 0.22) 18%, rgba(6, 9, 13, 0) 48%);
         mix-blend-mode: screen;
     }
 
@@ -1305,6 +1307,7 @@
     @media (max-width: 390px) {
         body.is-active[data-panel-surface='focus-search'] .focus-stage,
         body.is-active[data-panel-surface='semantic-dive'] .focus-stage {
+            position: fixed;
             bottom: 0;
         }
 
@@ -1367,7 +1370,9 @@
     }
 
     /* When trail is active, info-panel is hidden, so focus-stage returns to bottom */
-    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])[data-trail-state='active']
+    body.is-active[data-panel-surface='focus-search']:not(
+            [data-focus-panel-mode='field-node']
+        )[data-trail-state='active']
         #focus-stage.focus-stage {
         bottom: max(0px, env(safe-area-inset-bottom, 0px));
         max-height: min(39dvh, 330px);
@@ -1379,8 +1384,7 @@
        chrome starts below it. Without this explicit contract the fixed
        focus card can be clipped above the viewport while journey chrome
        cuts across the card footer/contact rows. */
-    body[data-panel-surface='focus-search'][data-trail-state='active']
-        .focus-card.focus-stage-card {
+    body[data-panel-surface='focus-search'][data-trail-state='active'] .focus-card.focus-stage-card {
         top: max(10px, env(safe-area-inset-top, 0px));
         bottom: auto;
         max-height: min(22dvh, 186px);
@@ -1388,8 +1392,7 @@
         overscroll-behavior: contain;
     }
 
-    body[data-panel-surface='focus-search'][data-trail-state='active']
-        #journey-chrome.journey-chrome {
+    body[data-panel-surface='focus-search'][data-trail-state='active'] #journey-chrome.journey-chrome {
         position: fixed;
         top: clamp(214px, 27dvh, 240px);
         bottom: auto;
@@ -1501,6 +1504,7 @@
     body.is-active[data-panel-surface='focus-search'] .focus-stage,
     body.is-active[data-panel-surface='semantic-dive'] .focus-stage,
     body.is-active #focus-stage.active {
+        position: fixed;
         left: 10px;
         right: 10px;
         top: auto;
@@ -1524,8 +1528,7 @@
     /* Field-node flex-column override: must appear after the display:block
        Svelte override above so cascade order restores flex layout.
        margin-top:auto on the card anchors it to the viewport bottom. */
-    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
-        #focus-stage.focus-stage {
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] #focus-stage.focus-stage {
         display: flex;
         flex-direction: column;
     }
@@ -1569,9 +1572,11 @@
     body.is-active[data-panel-surface='focus'] .focus-stage-meta,
     body.is-active[data-panel-surface='focus-search'] .focus-stage-meta,
     body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-meta,
-    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-meta,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+        .focus-stage-journey-meta,
     body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-progress,
-    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-journey-progress,
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node'])
+        .focus-stage-journey-progress,
     body.is-active[data-panel-surface='focus']:not([data-focus-panel-mode='field-node']) .focus-stage-next,
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) .focus-stage-next,
     body.is-active[data-panel-surface='focus'] .focus-thread-inspector,

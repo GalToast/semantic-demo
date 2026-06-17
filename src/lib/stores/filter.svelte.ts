@@ -11,7 +11,7 @@ import type { ActiveFilters } from '@lib/types/state';
 import {
   activeClusterFilterStore as legacyActiveClusterFilterStore,
   activeFiltersStore as legacyActiveFiltersStore
-} from '../../../js/modules/stores.ts';
+} from './legacy-stores';
 
 // ── Constants ────────────────────────────────────────────────────────────────
 

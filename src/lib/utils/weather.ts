@@ -6,7 +6,7 @@
  */
 
 import { state } from '@lib/engine/state-bridge'
-import { weatherStateStore } from '../../../js/modules/stores';
+import { weatherStateStore } from '@lib/stores/legacy-stores';
 import { appState } from '@lib/state/app.svelte';
 import {
     applyWeatherEffects as applyWeatherEffectsForWeather,
@@ -14,7 +14,7 @@ import {
     renderWeatherFallback as renderWeatherFallbackState,
     updateWeatherStaleness as updateWeatherStalenessForTimestamp,
     updateWeatherUi as updateWeatherUiState
-} from '../../../js/modules/weather-ui';
+} from '@lib/engine/weather-ui-bridge';
 
 const WEATHER_REFRESH_MS: number = 5 * 60 * 1000;
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 } as const;

@@ -26,7 +26,6 @@ import type {
   ActiveFilters,
   FilterOptions,
   SceneDiagnostics,
-  ViewControllerModule,
   FilterStateModule,
   EventBusModule,
 } from './types';
@@ -35,7 +34,7 @@ import { syncDataToLegacyState } from './data-bridge';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
 import { appState } from '@lib/state/app.svelte.ts';
 import { state as legacyState } from '@lib/engine/state-bridge';
-import * as legacyViewControllerModule from '../../../../js/modules/view-controller';
+import { switchView as switchCanonicalView } from '@lib/orchestration/view-controller';
 import * as legacyFilterStateModule from '@lib/stores/filter.svelte';
 import * as legacyEventBusModule from '@lib/orchestration/event-bus';
 import {
@@ -74,8 +73,6 @@ import {
  */
 async function loadModules(ctx: BridgeContext): Promise<void> {
   ctx._state = legacyState as unknown as LegacyState;
-  ctx._viewController =
-    legacyViewControllerModule as unknown as ViewControllerModule;
   ctx._filterState = legacyFilterStateModule as unknown as FilterStateModule;
 
   _acquireWithMutation(ctx);
@@ -393,11 +390,7 @@ export function createLifecycleMethods(
         ctx._state!.currentView = view;
       });
 
-      if (ctx._viewController) {
-        ctx._viewController.switchView(view, { reason: 'svelte-switch' });
-      } else {
-        ctx.callbacks.onViewChanged?.(view);
-      }
+      switchCanonicalView(view);
     },
 
     // ── Filters ───────────────────────────────────────────────────────────

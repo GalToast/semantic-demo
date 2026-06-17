@@ -5,9 +5,26 @@
  * so that journey-layer code does not import directly from js/.
  */
 
-export { setSemanticDiveMode } from '../../../js/modules/lifecycle';
-export { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from '../../../js/modules/journey-lifecycle-adapter';
-export { revealSelectedBusinessCard } from '../../../js/modules/bindings/panel-bindings';
+export {
+  copyCurrentViewLink,
+  exploreInsideToNextStop,
+  hideSummaryCard,
+  probeSemanticLane,
+  refreshCompositionState,
+  resetExperienceState,
+  resetExplorationFocus,
+  resetNodePositions,
+  returnToOverview,
+  setSemanticDiveMode,
+  setTrailDepth,
+  switchView,
+  updateExplorationUi,
+} from '../../../js/modules/lifecycle';
+export {
+  getPreviouslyFocusedFocusStage,
+  setPreviouslyFocusedFocusStage,
+} from '../../../js/modules/journey-lifecycle-adapter';
+export { revealSelectedBusinessCard } from '@lib/ui/panel-bindings';
 export { applyClusterUiAccent } from '../../../js/modules/cluster-ui-accent';
 export { selectedPointStore as legacySelectedPointStore } from '../../../js/modules/stores';
 

@@ -40,7 +40,7 @@ const CASCADE_VECTOR_LINE_SALT = 0xCA5C;
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { isPointVisible } from './utils/geo-data.ts';
 import { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from './journey-lifecycle-adapter.ts';
-import { revealSelectedBusinessCard } from './bindings/panel-bindings.ts';
+import { revealSelectedBusinessCard } from '@lib/ui/panel-bindings';
 import { sanitizePublicFacingNote, getBusinessNamePresentation } from './utils/dom-formatters.ts';
 import { updateDocumentMeta } from './utils/ui-presentation.ts';
 import {

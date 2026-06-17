@@ -106,7 +106,7 @@ export type { SearchResultPoint as Point, ServiceResultRow };
 
 import { state as _legacyState } from '../engine/state-bridge';
 import { appState } from '@lib/state/app.svelte';
-import { clearTrailThreadState as _clearTrailThreadState } from '../../../js/modules/navigation-state';
+import { clearTrailThreadState as _clearTrailThreadState } from '@lib/orchestration/navigation-state';
 
 /** Reset the focus-related state and publish a STATE_RESET event. The
  *  legacy kernel implementation walks the live `state.selectedPoint`,
