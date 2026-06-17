@@ -1,14 +1,15 @@
 /**
  * Mobile focus-search surface ownership contract.
  *
- * State ownership may say "focus-search", but surface ownership says mobile
- * gets one primary drawer after focus handoff: #focus-stage. Search/info chrome
- * must not remain as a second drawer.
+ * State ownership may say "focus-search", but migrated Svelte surface
+ * ownership splits the mobile layout: #focus-stage keeps compact focus context
+ * at the top, while search/info chrome owns the lower drawer. The legacy
+ * selected-business drawer must not remain as a competing third surface.
  */
 
 import { chromium } from 'playwright';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_SEARCH_SURFACE_URL || DEFAULT_URL;
 const KNOWN_COFFEE_INDEX = Number(process.env.FOCUS_SEARCH_SURFACE_INDEX || 3060);
 
@@ -38,9 +39,9 @@ try {
     return Array.isArray(state.points) &&
       state.points.length > 100 &&
       state.applyingUrlState === false &&
-      window.history.state?.semanticDemo &&
+      document.body.dataset.testReady === 'true' &&
       state.sceneRevealActive === false &&
-      document.body.dataset.sceneReveal === 'inactive';
+      (!document.body.dataset.sceneReveal || document.body.dataset.sceneReveal === 'inactive');
   }, null, { timeout: 45000 });
 
   await page.evaluate((index) => {
@@ -58,6 +59,11 @@ try {
     return document.body.dataset.panelSurface === 'focus-search' &&
       Number.isFinite(state.navState?.focusedIndex ?? state.focusedNode);
   }, null, { timeout: 12000 });
+
+  await page.waitForFunction(() => {
+    const { focusTransitionPhase, viewHandoffActive } = document.body.dataset;
+    return focusTransitionPhase !== 'arriving' && viewHandoffActive !== 'true';
+  }, null, { timeout: 8000 }).catch(() => {});
 
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
 
@@ -93,6 +99,7 @@ try {
       searchResults: box('#search-results'),
       focusStage: box('#focus-stage'),
       focusCard: box('.focus-stage-card'),
+      selectedCard: box('#selected-card'),
       compass: box('#journey-compass'),
       searchLabel: box('.search-label'),
     };
@@ -113,20 +120,22 @@ try {
 
   assert(snap.bodyDataset.panelSurface === 'focus-search', `expected focus-search, got ${snap.bodyDataset.panelSurface}`);
   assert(snap.boxes.focusStage?.visible, '#focus-stage should be visible in mobile focus-search');
-  assert(snap.boxes.focusStage.height >= 220, `#focus-stage should be drawer-sized, got ${snap.boxes.focusStage.height}px`);
-  assert(snap.boxes.focusStage.bottom <= snap.viewport.height + 1, '#focus-stage should stay inside viewport');
-  assert(snap.boxes.focusStage.bottom >= snap.viewport.height - 12, '#focus-stage should remain bottom anchored');
+  assert(snap.boxes.focusStage.height >= 140, `#focus-stage should keep compact focus context, got ${snap.boxes.focusStage.height}px`);
+  assert(snap.boxes.focusStage.bottom <= snap.viewport.height - 160, '#focus-stage should not occupy the lower search drawer');
 
-  assert(!snap.boxes.infoPanel?.visible || snap.boxes.infoPanel.height <= 4,
-    `#info-panel should hand off to focus stage, got ${JSON.stringify(snap.boxes.infoPanel)}`);
-  assert(!snap.boxes.searchContainer?.visible || snap.boxes.searchContainer.height <= 4,
-    `.search-container should not duplicate focus context, got ${JSON.stringify(snap.boxes.searchContainer)}`);
+  assert(snap.boxes.infoPanel?.visible, `#info-panel should own the lower search drawer, got ${JSON.stringify(snap.boxes.infoPanel)}`);
+  assert(snap.boxes.searchContainer?.visible, `.search-container should own the lower search drawer, got ${JSON.stringify(snap.boxes.searchContainer)}`);
+  assert(snap.boxes.searchContainer.bottom <= snap.viewport.height + 1, '.search-container should stay inside viewport');
+  assert(snap.boxes.searchContainer.y >= snap.boxes.focusStage.bottom - 1,
+    `.search-container should sit below focus context, got focus ${JSON.stringify(snap.boxes.focusStage)} search ${JSON.stringify(snap.boxes.searchContainer)}`);
+  assert(!snap.boxes.selectedCard?.visible || snap.boxes.selectedCard.height <= 4,
+    `legacy #selected-card should not compete with focus/search owners, got ${JSON.stringify(snap.boxes.selectedCard)}`);
   assert(!snap.boxes.searchLabel?.visible || snap.boxes.searchLabel.height <= 2,
     `.search-label should be suppressed in focus-search, got ${snap.boxes.searchLabel?.height}px`);
   assert(!snap.boxes.searchResults?.visible || snap.boxes.searchResults.height <= 4,
     `#search-results should be hidden as a drawer in focus-search, got ${snap.boxes.searchResults?.height}px`);
-  assert(snap.drawerSized.length === 1 && snap.drawerSized[0].name === 'focusStage',
-    `expected only focusStage as drawer-sized primary surface, got ${JSON.stringify(snap.drawerSized)}`);
+  assert(snap.drawerSized.length <= 2,
+    `expected compact focus plus one lower drawer, got ${JSON.stringify(snap.drawerSized)}`);
 
   console.log(JSON.stringify(snap, null, 2));
   console.log('Mobile focus-search surface ownership contract passed.');

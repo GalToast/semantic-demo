@@ -88,10 +88,23 @@
         display: none;
     }
 
+    /* Field-node: also suppress #info-panel so focus-stage-card sits flush at bottom. */
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] #info-panel.info-panel,
+    body.is-active[data-panel-surface='semantic-dive'][data-focus-panel-mode='field-node'] #info-panel.info-panel {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
     /* Force display:none on individual actions so contract-test touchTargetOk
        returns null (not false) when the parent .journey-compass is hidden. */
-    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .journey-compass .journey-compass-action,
-    body.is-active[data-panel-surface='semantic-dive'][data-focus-panel-mode='field-node'] .journey-compass .journey-compass-action {
+    body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']
+        .journey-compass
+        .journey-compass-action,
+    body.is-active[data-panel-surface='semantic-dive'][data-focus-panel-mode='field-node']
+        .journey-compass
+        .journey-compass-action {
         display: none;
     }
 
@@ -1391,7 +1404,8 @@
        chrome starts below it. Without this explicit contract the fixed
        focus card can be clipped above the viewport while journey chrome
        cuts across the card footer/contact rows. */
-    body[data-panel-surface='focus-search'][data-trail-state='active'] .focus-card.focus-stage-card {
+    body[data-panel-surface='focus-search'][data-trail-state='active']:not([data-focus-panel-mode='field-node'])
+        .focus-card.focus-stage-card {
         top: max(10px, env(safe-area-inset-top, 0px));
         bottom: auto;
         max-height: min(22dvh, 186px);

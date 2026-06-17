@@ -872,16 +872,14 @@ body.is-active #selected-details.active:not([hidden]) {
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
-    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'] #info-panel.info-panel {
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) .search-container,
-    body.is-active[data-panel-surface='focus-search'][data-trail-state='active'] .search-container {
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) .search-container {
         display: none;
         visibility: hidden;
         opacity: 0;
@@ -1336,5 +1334,25 @@ body.is-active #selected-details.active:not([hidden]) {
         body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-kicker {
             display: none;
         }
+    }
+
+    /* In focus-search peek mode the search container is intentionally
+       suppressed so the focus stage owns the lower chrome. */
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    /* In focus-search the legacy selected-business drawer is intentionally
+       suppressed so the search/focus surfaces do not duplicate ownership. */
+    body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) #selected-card,
+    body[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) #selected-card {
+        display: none;
+        visibility: hidden;
+        opacity: 0;
+        pointer-events: none;
     }
 }
