@@ -47,10 +47,10 @@ import {
     triggerSelectedCardFade,
     updateSelectedCardHeading,
     syncSelectedCardContentVariant,
-} from './focus-stage-renderer.ts';
-import { applyClusterUiAccent } from './cluster-ui-accent.ts';
+} from '@lib/focus/stage-renderer';
+import { applyClusterUiAccent } from '@lib/engine/lifecycle-bridge';
 import { isMapSummarySurface } from '@lib/utils/environment'
-import { selectedPointStore } from './stores.ts';
+import { focusOnPoint } from '@lib/orchestration/lifecycle';
 import { seededUnit } from './utils/seeded-random.ts';
 import { appState } from '@lib/state/app.svelte';
 
@@ -227,8 +227,10 @@ export function syncFocusStage(point: any): void {
 }
 
 export function updateSelectedBusiness(point: any, options: UpdateSelectedBusinessOptions = {}): void {
-    // Push to Svelte store — Svelte component reacts declaratively
-    selectedPointStore.set(point || null);
+    // Push to Svelte store via canonical focusOnPoint (selectedPointStore is now a getter, not a writable)
+    if (point) {
+        focusOnPoint(point, { revealCard: true });
+    }
 
     if (!point) {
         // Delegate structural container visibility to focus-stage-renderer

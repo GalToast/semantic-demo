@@ -16,7 +16,7 @@ import {
     getThreadCandidatesForIndex,
     type ThreadCandidate
 } from './journey-thread-model.ts';
-import { setTrailNavState } from './navigation-state.ts';
+import { setTrailNavState } from '@lib/orchestration/navigation-state';
 import { setFocusPocketMeta } from '@lib/journey/focus-pocket';
 import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte';

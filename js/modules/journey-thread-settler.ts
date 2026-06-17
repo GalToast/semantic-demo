@@ -15,8 +15,8 @@ import {
     renderThreadInspection,
     inspectThreadNeighbor,
     clearThreadInspection,
-    syncInspectedStrandOverlay
-} from './thread-inspector.ts'
+} from '@lib/journey/thread-inspector'
+import { syncInspectedStrandOverlay } from '@lib/journey/thread-inspector-webgl'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from './journey-text-helpers.ts'
@@ -233,7 +233,7 @@ export function walkThreadNeighbor(
         typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
     cancelAllThreadTimers()
     setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason })
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, { index, fromIndex, appendHistory: !options.restoreHistory })
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, { index, fromIndex: fromIndex as number | undefined, appendHistory: !options.restoreHistory })
     renderThreadInspection(null, { force: true, surface: 'idle' })
     withStateMutation(() => {
         ;(state.navState as any).lastTraversalReason = reason
@@ -241,11 +241,8 @@ export function walkThreadNeighbor(
     const preserveNeighborhood: boolean =
         state.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood
     if (state.currentView === 'map') {
-        focusOnPoint(targetPoint, {
-            fromTraversal: true,
-            appendHistory: !options.restoreHistory,
-            restoreHistory: !!options.restoreHistory,
-            fromIndex
+        focusOnPoint(targetPoint as any, {
+            revealCard: true,
         })
     } else {
         focusOnNode(index, {
