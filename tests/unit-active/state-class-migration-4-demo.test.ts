@@ -1,5 +1,5 @@
 /**
- * demo-state-class-migration.test.ts
+ * state-class-migration-4-demo.test.ts
  *
  * Regression test for src/lib/stores/demo.svelte.ts (writable + withDemoNotify).
  * Validates:
@@ -12,7 +12,7 @@
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// ── Local type replica so we don't need to import from .svelte.ts ────────────
+// ── Local type replica ───────────────────────────────────────────────────────
 type DemoPhase =
   | 'IDLE'
   | 'GLIDING'
@@ -30,19 +30,19 @@ interface DemoStoreState {
   lastPhaseChangeAt: number;
 }
 
-// ── Mock factory for appState (plain JS object, no Svelte 5 runes) ──────────
+// ── Hoisted mock state ───────────────────────────────────────────────────────
 
-const mockState = vi.hoisted(() => ({
+const _demoState = vi.hoisted(() => ({
   demoPhase: 'IDLE' as DemoPhase,
 }));
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
     get demoPhase() {
-      return mockState.demoPhase;
+      return _demoState.demoPhase;
     },
     set demoPhase(v: DemoPhase) {
-      mockState.demoPhase = v;
+      _demoState.demoPhase = v;
     },
     withMutation: (fn: () => unknown) => fn(),
   },
@@ -84,11 +84,12 @@ function makeState(overrides: Partial<DemoStoreState> = {}): DemoStoreState {
   };
 }
 
-describe('Demo store — T4 writable + withDemoNotify migration', () => {
+// ── Tests ───────────────────────────────────────────────────────────────────
+
+describe('Demo store — state-class appState regression', () => {
   beforeEach(() => {
-    // Clean slate for every test: timers, writable, guard, storage, mock.
     resetDemo();
-    mockState.demoPhase = 'IDLE';
+    _demoState.demoPhase = 'IDLE';
 
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(DEMO_LIFETIME_KEY);
@@ -132,35 +133,34 @@ describe('Demo store — T4 writable + withDemoNotify migration', () => {
 
   it('setDemoPhase pushes the new phase to appState', () => {
     setDemoPhase('PULLBACK');
-    expect(mockState.demoPhase).toBe('PULLBACK');
+    expect(_demoState.demoPhase).toBe('PULLBACK');
   });
 
   it('startDemo pushes GLIDING to appState', () => {
     startDemo();
-    expect(mockState.demoPhase).toBe('GLIDING');
+    expect(_demoState.demoPhase).toBe('GLIDING');
   });
 
   it('cancelDemo pushes CANCELLED to appState', () => {
     cancelDemo();
-    expect(mockState.demoPhase).toBe('CANCELLED');
+    expect(_demoState.demoPhase).toBe('CANCELLED');
   });
 
   it('markDemoCompleted pushes COMPLETE to appState', () => {
     markDemoCompleted();
-    expect(mockState.demoPhase).toBe('COMPLETE');
+    expect(_demoState.demoPhase).toBe('COMPLETE');
   });
 
   it('markDemoSessionSkipped pushes IDLE to appState', () => {
     markDemoSessionSkipped();
-    expect(mockState.demoPhase).toBe('IDLE');
+    expect(_demoState.demoPhase).toBe('IDLE');
   });
 
   it('demoPhase() reads directly from appState', () => {
-    mockState.demoPhase = 'ARRIVED';
+    _demoState.demoPhase = 'ARRIVED';
     expect(demoPhase()).toBe('ARRIVED');
   });
 
-  // Also verify that setDemoPhase changes the writable, not just appState.
   it('writable phase stays in sync with setDemoPhase', () => {
     setDemoPhase('RETURNING');
     expect(demoStore().phase).toBe('RETURNING');
@@ -174,8 +174,6 @@ describe('Demo store — T4 writable + withDemoNotify migration', () => {
     demoStore.set(makeState({ phase: 'CARD_VISIBLE' }));
     unsub();
 
-    // Svelte writable calls subscriber immediately with current value,
-    // then again on each .set() — so 2 total calls here.
     expect(cb).toHaveBeenCalledTimes(2);
     expect(cb).toHaveBeenLastCalledWith(
       expect.objectContaining({ phase: 'CARD_VISIBLE' })
@@ -188,7 +186,6 @@ describe('Demo store — T4 writable + withDemoNotify migration', () => {
     demoStore.update((s: DemoStoreState) => ({ ...s, phase: 'RETURNING' }));
     unsub();
 
-    // Svelte writable fires immediately on subscribe, then on .update().
     expect(cb).toHaveBeenCalledTimes(2);
     expect(cb).toHaveBeenLastCalledWith(
       expect.objectContaining({ phase: 'RETURNING' })
@@ -209,30 +206,30 @@ describe('Demo store — T4 writable + withDemoNotify migration', () => {
   // ── 5. isDemoActive / isDemoRunning getters ─────────────────────────────
 
   it('isDemoActive() is false when appState phase is IDLE', () => {
-    mockState.demoPhase = 'IDLE';
+    _demoState.demoPhase = 'IDLE';
     expect(isDemoActive()).toBe(false);
   });
 
   it('isDemoActive() is false when appState phase is COMPLETE', () => {
-    mockState.demoPhase = 'COMPLETE';
+    _demoState.demoPhase = 'COMPLETE';
     expect(isDemoActive()).toBe(false);
   });
 
   it('isDemoActive() is false when appState phase is CANCELLED', () => {
-    mockState.demoPhase = 'CANCELLED';
+    _demoState.demoPhase = 'CANCELLED';
     expect(isDemoActive()).toBe(false);
   });
 
   it('isDemoActive() is true during non-terminal phases', () => {
     const activePhases: DemoPhase[] = ['GLIDING', 'ARRIVED', 'CARD_VISIBLE', 'PULLBACK', 'WIDE_VIEW', 'RETURNING'];
     for (const phase of activePhases) {
-      mockState.demoPhase = phase;
+      _demoState.demoPhase = phase;
       expect(isDemoActive()).toBe(true);
     }
   });
 
   it('isDemoRunning() mirrors isDemoActive()', () => {
-    mockState.demoPhase = 'PULLBACK';
+    _demoState.demoPhase = 'PULLBACK';
     expect(isDemoRunning()).toBe(true);
   });
 
@@ -256,21 +253,18 @@ describe('Demo store — T4 writable + withDemoNotify migration', () => {
   it('resetDemo resets appState.demoPhase to IDLE', () => {
     setDemoPhase('RETURNING');
     resetDemo();
-    expect(mockState.demoPhase).toBe('IDLE');
+    expect(_demoState.demoPhase).toBe('IDLE');
   });
 
   it('resetDemo resets the start guard so startDemo can be called again', () => {
-    // First start claims the guard.
     expect(startDemo()).toBe(true);
-    expect(mockState.demoPhase).toBe('GLIDING');
+    expect(_demoState.demoPhase).toBe('GLIDING');
 
-    // Without reset, a second call would synchronously return false.
     expect(startDemo()).toBe(false);
 
-    // After reset the guard is released.
     resetDemo();
     expect(startDemo()).toBe(true);
-    expect(mockState.demoPhase).toBe('GLIDING');
+    expect(_demoState.demoPhase).toBe('GLIDING');
   });
 
   // ── 7. Storage helpers ──────────────────────────────────────────────────
@@ -327,6 +321,6 @@ describe('Demo store — T4 writable + withDemoNotify migration', () => {
 
   it('transitionDemo is an alias for setDemoPhase', () => {
     transitionDemo('PULLBACK');
-    expect(mockState.demoPhase).toBe('PULLBACK');
+    expect(_demoState.demoPhase).toBe('PULLBACK');
   });
 });
