@@ -24,7 +24,8 @@ import {
   syncSearchStatusForFocus
 } from '@lib/orchestration/lifecycle'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
-import { applyPointFilterColors, syncFocusStage } from '../../../../js/modules/journey.ts'
+import { applyPointFilterColors } from '@lib/journey/point-color'
+import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../camera-controls-core'

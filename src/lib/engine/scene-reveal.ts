@@ -11,7 +11,7 @@ import type { SemanticState } from '@lib/state/state-types';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from '../engine/camera-controls';
 import { updateCameraViewportOffset } from './three-engine';
 import { syncClusterSectionState } from '@lib/ui/cluster-labels';
-import { updateTraversalUi } from '../../../js/modules/journey';
+import { updateTraversalUi } from '@lib/journey/focus-ui';
 import { getViewportSize, prefersReducedMotion, isMobileViewport } from '@lib/utils/environment';
 
 // Note: `state` (Svelte 5 AppState) is structurally a `SemanticState` (the

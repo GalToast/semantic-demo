@@ -25,7 +25,8 @@ const cameraControlsStaticModule = { animateCameraToNode, setAutoRotateSuspended
 import * as focusPocketStaticModule from '@lib/journey/focus-pocket'
 import * as lifecycleStaticModule from '@lib/engine/lifecycle-bridge'
 import * as journeyCompassStaticModule from '@lib/engine/journey-compass-controller-bridge'
-import * as journeyStaticModule from '../../../js/modules/journey'
+import { applyPointFilterColors } from '@lib/journey/point-color'
+import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import * as panelBindingsStaticModule from '@lib/ui/panel-bindings'
 import * as microDemoGuardsStaticModule from '@lib/demo/guards'
 import * as microDemoCameraStaticModule from '@lib/demo/camera'
@@ -66,8 +67,8 @@ interface JourneyCompassModule {
 }
 
 interface JourneyModule {
-    updateSelectedBusiness(point: unknown, options?: { revealCard?: boolean }): void
-    applyPointFilterColors(): void
+    updateSelectedBusiness: typeof updateSelectedBusiness
+    applyPointFilterColors: typeof applyPointFilterColors
 }
 
 interface PanelBindingsModule {
@@ -168,7 +169,7 @@ async function loadJourneyCompass(): Promise<JourneyCompassModule> {
 }
 
 async function loadJourney(): Promise<JourneyModule> {
-    return journeyStaticModule as unknown as JourneyModule
+    return { updateSelectedBusiness, applyPointFilterColors }
 }
 
 async function loadPanelBindings(): Promise<PanelBindingsModule> {
@@ -191,7 +192,7 @@ async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
 // Resets all demo-related state and UI chrome back to overview.
 
 async function demoReset(): Promise<void> {
-    const [focusPocket, lifecycle, compass, journey, panel] = await Promise.all([
+    const [focusPocket, lifecycle, compass, _journey, panel] = await Promise.all([
         loadFocusPocket(),
         loadLifecycle(),
         loadJourneyCompass(),
@@ -222,8 +223,8 @@ async function demoReset(): Promise<void> {
 
     if (appState.controls) appState.controls.enabled = true
 
-    journey.updateSelectedBusiness(null)
-    journey.applyPointFilterColors()
+    updateSelectedBusiness(null)
+    applyPointFilterColors()
     lifecycle.refreshCompositionState()
     compass.updateJourneyCompass()
     panel.setInfoPanelOpen(true)
@@ -233,7 +234,7 @@ async function demoReset(): Promise<void> {
 // Enters focus mode on the given demo node.
 
 async function demoFocusSetup(demoNode: number): Promise<void> {
-    const [focusPocket, lifecycle, compass, journey] = await Promise.all([
+    const [focusPocket, lifecycle, compass, _journey] = await Promise.all([
         loadFocusPocket(),
         loadLifecycle(),
         loadJourneyCompass(),
@@ -249,8 +250,8 @@ async function demoFocusSetup(demoNode: number): Promise<void> {
         appState.navState.walkHistoryIndices = [demoNode]
     })
 
-    journey.updateSelectedBusiness(point, { revealCard: true })
-    journey.applyPointFilterColors()
+    updateSelectedBusiness(point, { revealCard: true })
+    applyPointFilterColors()
     lifecycle.updateExplorationUi()
     compass.updateJourneyCompass('focus')
     lifecycle.refreshCompositionState()

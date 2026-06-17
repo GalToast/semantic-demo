@@ -53,12 +53,11 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
         expect(legacyDynamic).toHaveLength(0)
     })
 
-    it('statically imports remaining legacy modules via relative paths (extensionless, Vite resolves to .ts)', () => {
+    it('statically imports journey modules via split direct paths (point-color + selected-card)', () => {
         const src = readSource()
-        const expectedModules = ['journey']
-        for (const mod of expectedModules) {
-            expect(src).toContain(`from '../../../js/modules/${mod}'`)
-        }
+        expect(src).toContain("from '@lib/journey/point-color'")
+        expect(src).toContain("from '@lib/journey/selected-card'")
+        expect(src).not.toContain("from '../../../js/modules/journey'")
     })
 
     it('imports journey-compass-controller via the bridge (not direct legacy path)', () => {
