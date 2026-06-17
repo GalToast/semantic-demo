@@ -174,7 +174,7 @@ function getActiveNextFocusIndex(): number | null {
         : null;
     const focusedIndex = Number.isFinite((state as any).navState.focusedIndex)
         ? (state as any).navState.focusedIndex
-        : (getCurrentTrailFocus ? getCurrentTrailFocus() : null);
+        : (getCurrentTrailFocus ? getCurrentTrailFocus(null) : null);
     const candidate = getNextWalkCandidate
         ? getNextWalkCandidate(focusedIndex, {
             requireSemantic: (state as any).currentView === 'galaxy',

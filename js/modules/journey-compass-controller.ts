@@ -14,7 +14,7 @@ import {
     centerMapOnRouteAnchor,
     getRouteEmbodimentIndices,
     syncRouteDirectorState
-} from './map-state.ts'
+} from '@lib/engine/map-state'
 import { clearMobileRouteFieldPeek as clearMobileRouteFieldPeekState } from '@lib/engine/search-state-bridge'
 import { focusOnNode } from '@lib/engine/camera-choreography'
 import { getRouteLayerOrigin } from '@lib/engine/camera-controls-core'

@@ -18,7 +18,7 @@ import {
     syncSearchStatusForFocus,
 } from './lifecycle.ts';
 import { applyStoryPrompt, syncFilterControls } from '@lib/orchestration/cluster-filter-controller';
-import { switchView } from './view-controller.ts';
+import { switchView } from '@lib/orchestration/view-controller';
 import { recordSemanticLaneSnapshot, setSemanticLaneOpsMode, refreshSemanticLaneOpsSummary } from './semantic-lane.ts';
 import { isPointVisible, type GeoPoint } from './utils/geo-data.ts';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';

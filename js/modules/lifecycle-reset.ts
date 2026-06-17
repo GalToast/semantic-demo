@@ -2,7 +2,7 @@
 import { state, withStateMutation } from '@lib/engine/state-bridge'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { clearExplorationFocusSelection } from '@lib/orchestration/url-state'
-import { switchView } from './view-controller.ts'
+import { switchView } from '@lib/orchestration/view-controller'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { clearSearch } from '@lib/engine/search-state-bridge'
 import { clearAllTimers } from './utils/timer-utils.ts'

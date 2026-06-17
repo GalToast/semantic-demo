@@ -28,10 +28,10 @@ import {
 import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
 import { setTrailFromSeed } from '@lib/journey/neighborhood'
 import { setRouteChoreographyPhase } from '@lib/journey/route-trace'
-import { clearWeatherRefreshTimer, applyWeatherEffects } from './weather.ts'
+import { clearWeatherRefreshTimer, applyWeatherEffects } from '@lib/utils/weather'
 import { scheduleWeatherHydration } from '@lib/ui/loading'
 import { applyCompositionState } from '@lib/orchestration/composition-state'
-import { initMap, getRouteEmbodimentIndices, setTerrainHandoffState } from './map-state.ts'
+import { initMap, getRouteEmbodimentIndices, setTerrainHandoffState } from '@lib/engine/map-state'
 import {
     invokeClearMobileRouteFieldPeek,
     scheduleMapRouteRefresh,

@@ -27,7 +27,8 @@ import {
 } from '@lib/orchestration/semantic-lane'
 import {
     dispatchNavTransition as dispatchNavTransitionImpl,
-    NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL
+    NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL,
+    type NavTransitionAction
 } from '@lib/stores/navigation.svelte'
 import { appState } from '@lib/state/app.svelte'
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
@@ -62,6 +63,7 @@ export {
     refreshCompositionState,
     setMyceliumMode,
     setTrailDepth,
+    _resetExplorationFocusImpl as resetExplorationFocus,
     resetNodePositions,
     resetExperienceState
 };
@@ -89,17 +91,9 @@ export function setSemanticDiveMode(enabled: boolean): void {
     updateExplorationUi()
 }
 
-export function returnToOverview(): void {
-    _returnToOverviewImpl()
-}
-
-export function resetExplorationFocus(options: any = { preserveSearch: true }): void {
-    _resetExplorationFocusImpl(options)
-}
-
-export function dispatchNavTransition(action: string, payload: any = {}): any {
+export function dispatchNavTransition(action: NavTransitionAction, payload: any = {}): any {
     if (typeof dispatchNavTransitionImpl === 'function') {
-        return dispatchNavTransitionImpl(action, payload)
+        return dispatchNavTransitionImpl(action as any, payload)
     }
     return { handled: false, noOp: true, reason: 'uninitialized' }
 }

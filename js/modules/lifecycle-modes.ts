@@ -3,7 +3,7 @@
 import { state, withStateMutation } from '@lib/engine/state-bridge'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { applyCompositionState } from '@lib/orchestration/composition-state'
-import { applyPointFilterColors } from './journey.ts'
+import { applyPointFilterColors } from '@lib/journey/point-color'
 import { appState } from '@lib/state/app.svelte'
 
 interface ModeOptions {
@@ -29,7 +29,7 @@ export const MODE_DESCRIPTIONS = {
     bridge: 'Connective nodes linking disparate county themes.',
     trail: 'Focused path of related business entities.',
     inside: 'Immersive exploration of local neighborhoods.'
-}
+};
 
 export const STORY_DESCRIPTIONS = {
     standard: 'A semantic journey through Montgomery County.',
@@ -40,7 +40,7 @@ export const STORY_DESCRIPTIONS = {
     'bridge-businesses': 'Explore connectors between business communities.',
     'mapped-food': 'Follow food trails across the county map.',
     'disqualified-ghosts': 'View records that are disqualified but still present in the corpus.'
-}
+};
 
 // ── Composition & exploration UI ────────────────────────────────────────────
 
