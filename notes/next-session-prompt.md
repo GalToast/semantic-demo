@@ -4,13 +4,13 @@
 
 ## What was done this session
 
-| Commit | Work |
-|---|---|
+| Commit    | Work                                                                                                                                                             |
+| --------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `662a315` | Ported inline binding files to canonical `src/lib/ui/` (filter, legend, mode, onboarding, suggestion, utility) — fixing svelte-check from stale subagent imports |
-| `a910138` | Inline 6 simple + port 6 canonical bindings; deleted `js/modules/bindings/` entirely |
-| `0ca4c0f` | Created `docs/ROADMAP-to-completion.md` — full Svelte migration finish plan |
-| `49551a5` | Pruned 37 dead re-exports from `lifecycle.ts` + fixed `cursor.ts` canonical import |
-| `1779a42` | Ported three-interaction-visuals + three-search-animations to canonical |
+| `a910138` | Inline 6 simple + port 6 canonical bindings; deleted `js/modules/bindings/` entirely                                                                             |
+| `0ca4c0f` | Created `docs/ROADMAP-to-completion.md` — full Svelte migration finish plan                                                                                      |
+| `49551a5` | Pruned 37 dead re-exports from `lifecycle.ts` + fixed `cursor.ts` canonical import                                                                               |
+| `1779a42` | Ported three-interaction-visuals + three-search-animations to canonical                                                                                          |
 
 ## Key finding (durable)
 
@@ -44,4 +44,5 @@ grep -r "from.*js/modules" src/ tests/ --include="*.ts" --include="*.svelte" | g
 ```
 
 ---
-*Generated: 2026-06-17 00:42 UTC*
+
+_Generated: 2026-06-17 00:42 UTC_

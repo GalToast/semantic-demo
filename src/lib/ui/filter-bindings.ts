@@ -4,11 +4,7 @@
  * the filter ownership contract.
  */
 
-import {
-    setActiveFilter,
-    toggleActiveFilterSignal,
-    resetActiveFilters
-} from '@lib/stores/filter.svelte'
+import { setActiveFilter, toggleActiveFilterSignal, resetActiveFilters } from '@lib/stores/filter.svelte'
 
 let initialized = false
 

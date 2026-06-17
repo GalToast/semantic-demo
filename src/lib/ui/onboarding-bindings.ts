@@ -9,9 +9,11 @@ function clearOnboardingTimers(): void {
         _onboardingIdleTimer = null
     }
 
-    const onboarding = document.getElementById('onboarding-hint') as (HTMLElement & {
-        _autoHideTimer?: ReturnType<typeof setTimeout> | null
-    }) | null
+    const onboarding = document.getElementById('onboarding-hint') as
+        | (HTMLElement & {
+              _autoHideTimer?: ReturnType<typeof setTimeout> | null
+          })
+        | null
     if (onboarding?._autoHideTimer) {
         clearTimeout(onboarding._autoHideTimer)
         onboarding._autoHideTimer = null
@@ -23,22 +25,32 @@ export function disposeOnboardingBindings(): void {
 }
 
 export function shouldShowOnboardingHint(): boolean {
-    const onboarding = document.getElementById('onboarding-hint') as (HTMLElement & {
-        _dismissedThisSession?: boolean
-        _autoHideTimer?: ReturnType<typeof setTimeout> | null
-    }) | null
-    if (!onboarding || onboarding._dismissedThisSession || state.currentView !== 'galaxy' || state.currentSearchSummary) return false
-    if (state.applyingUrlState || state._deferredUrlState || state.semanticDiveMode || state.restoringBrowserHistory) return false
-    if ((document.body as HTMLElement)?.dataset?.graphContext && (document.body as HTMLElement).dataset.graphContext !== 'idle') return false
+    const onboarding = document.getElementById('onboarding-hint') as
+        | (HTMLElement & {
+              _dismissedThisSession?: boolean
+              _autoHideTimer?: ReturnType<typeof setTimeout> | null
+          })
+        | null
+    if (!onboarding || onboarding._dismissedThisSession || state.currentView !== 'galaxy' || state.currentSearchSummary)
+        return false
+    if (state.applyingUrlState || state._deferredUrlState || state.semanticDiveMode || state.restoringBrowserHistory)
+        return false
+    if (
+        (document.body as HTMLElement)?.dataset?.graphContext &&
+        (document.body as HTMLElement).dataset.graphContext !== 'idle'
+    )
+        return false
     return !(Number.isFinite(state.focusedNode) || Number.isFinite(state.navState?.focusedIndex))
 }
 
 export function resetOnboardingIdleTimer(): void {
     if (_onboardingIdleTimer) clearTimeout(_onboardingIdleTimer)
     _onboardingIdleTimer = setTimeout(() => {
-        const onboarding = document.getElementById('onboarding-hint') as (HTMLElement & {
-            _autoHideTimer?: ReturnType<typeof setTimeout> | null
-        }) | null
+        const onboarding = document.getElementById('onboarding-hint') as
+            | (HTMLElement & {
+                  _autoHideTimer?: ReturnType<typeof setTimeout> | null
+              })
+            | null
         if (onboarding && shouldShowOnboardingHint()) {
             onboarding.classList.add('visible')
             onboarding.setAttribute('aria-hidden', 'false')
