@@ -268,10 +268,10 @@ function makeAssert(name) {
         surface: name,
         checks: [],
         pass(_surface, check) {
-            this.checks.push({ level: 'pass', check })
+            this.checks.push({ level: 'pass', check, surface: name })
         },
         fail(_surface, check, msg) {
-            this.checks.push({ level: 'fail', check, msg })
+            this.checks.push({ level: 'fail', check, msg, surface: name })
         }
     }
 }
