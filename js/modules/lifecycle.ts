@@ -7,7 +7,7 @@
  */
 import { state } from '@lib/engine/state-bridge'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.ts'
+import { switchView, showViewHandoff, hideViewHandoff } from '@lib/orchestration/view-controller'
 import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
 import { walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter'
