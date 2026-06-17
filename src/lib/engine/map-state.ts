@@ -12,7 +12,7 @@ import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { showExperienceToast } from '@lib/ui/ui-feedback';
 import { focusOnPoint } from '@lib/orchestration/lifecycle';
-import { hideTooltip } from '../../../js/modules/tooltip';
+import { hideTooltip } from '@lib/engine/tooltip-bridge';
 import { hideViewHandoff } from '@lib/orchestration/view-controller';
 import { isMobileViewport } from '@lib/utils/environment';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
