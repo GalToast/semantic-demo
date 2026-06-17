@@ -5,4 +5,4 @@
 de tooltip port is done (W20+). No Svelte equivalent justified; this is a
  * tiny DOM-only helper.
  */
-export { hideTooltip } from '../../../js/modules/tooltip'
+export { hideTooltip } from '@lib/ui/tooltip'

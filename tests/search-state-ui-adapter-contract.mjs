@@ -13,7 +13,7 @@ const CWD = process.cwd();
 const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.ts');
 const SEARCH_RESULTS_UI_PATH = resolve(CWD, 'js/modules/search-results-ui.ts');
 const APP_PATH = resolve(CWD, 'js/modules/app.ts');
-const TOOLTIP_PATH = resolve(CWD, 'js/modules/tooltip.ts');
+const TOOLTIP_PATH = resolve(CWD, 'src/lib/ui/tooltip.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);

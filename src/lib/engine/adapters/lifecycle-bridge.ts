@@ -41,7 +41,7 @@ import {
   ensureCanvasNodeInteractionBindings,
   disposeCanvasNodeInteractionBindings,
 } from '@lib/journey/canvas-interaction';
-import { initTooltipEventBusSubscriptions } from '../../../../js/modules/tooltip';
+import { initTooltipEventBusSubscriptions } from '@lib/ui/tooltip';
 
 // ── TS Port Imports (canonical implementations) ─────────────────────────────
 // These replace the legacy module lazy-loading that previously happened in
