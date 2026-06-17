@@ -8,7 +8,7 @@
  */
 
 import { state, withStateMutation } from '../src/lib/engine/state-bridge.ts';
-import * as lane from '../js/modules/semantic-lane.ts';
+import * as lane from '../src/lib/orchestration/semantic-lane.ts';
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);

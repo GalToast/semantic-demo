@@ -86,12 +86,12 @@ async function loadLegacyActionModules(): Promise<LegacyActionModules> {
   if (loadPromise) return loadPromise;
 
   loadPromise = Promise.resolve().then(() => {
-    legacyModules = {
+    const modules: LegacyActionModules = {
       state: legacyState,
       withStateMutation,
       camera: { focusOnNode },
       lifecycle: {
-        switchView,
+        switchView: switchView as typeof switchView,
         setTrailDepth,
         setSemanticDiveMode,
         returnToOverview,
@@ -112,14 +112,15 @@ async function loadLegacyActionModules(): Promise<LegacyActionModules> {
       semanticGuide: semanticGuideModule,
       connectionAnalysis: { showSemanticThreadsDetail }
     };
+    legacyModules = modules;
 
     const w = window as AppActionsWindow;
-    if (legacyModules.state) {
-      w.__APP_STATE__ ??= legacyModules.state;
-      w.__TEST_STATE__ ??= legacyModules.state;
+    if (modules.state) {
+      w.__APP_STATE__ ??= modules.state;
+      w.__TEST_STATE__ ??= modules.state;
     }
 
-    return legacyModules;
+    return modules;
   });
 
   return loadPromise;
