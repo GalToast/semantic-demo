@@ -3,11 +3,23 @@ import { get } from 'svelte/store';
 
 /**
  * @vitest-environment jsdom
+ *
+ * Consolidated viewport state-class-migration test (separate file).
+ * Extracted from viewport-state-class-migration.test.ts as part of
+ * Wave 21.1 — each remaining store gets its own standalone consolidated
+ * file to avoid race conditions when multiple workers edit in parallel.
+ *
+ * Pattern: vi.hoisted mutable state + vi.mock factory with unique name
+ * to avoid collision if both this file and the main scaffold run in the
+ * same process.
+ *
+ * Run: npx vitest run tests/unit-active/state-class-migration-2-viewport.test.ts
  */
 
-// ── Mock appState (plain JS object — NO Svelte 5 $state runes) ─────────────────
+// ── Hoisted mock state (unique name: _viewportState) ─────────────────────────
+// vi.hoisted ensures these exist when vi.mock factories execute at import time.
 
-const mockState = vi.hoisted(() => ({
+const _viewportState = vi.hoisted(() => ({
   viewportWidth: 1280,
   viewportHeight: 720,
   viewportDpr: 1,
@@ -15,18 +27,20 @@ const mockState = vi.hoisted(() => ({
   viewportIsCompact: false,
 }));
 
+// ── Mock factory ─────────────────────────────────────────────────────────────
+
 vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
-    get viewportWidth() { return mockState.viewportWidth; },
-    set viewportWidth(v: number) { mockState.viewportWidth = v; },
-    get viewportHeight() { return mockState.viewportHeight; },
-    set viewportHeight(v: number) { mockState.viewportHeight = v; },
-    get viewportDpr() { return mockState.viewportDpr; },
-    set viewportDpr(v: number) { mockState.viewportDpr = v; },
-    get viewportReducedMotion() { return mockState.viewportReducedMotion; },
-    set viewportReducedMotion(v: boolean) { mockState.viewportReducedMotion = v; },
-    get viewportIsCompact() { return mockState.viewportIsCompact; },
-    set viewportIsCompact(v: boolean) { mockState.viewportIsCompact = v; },
+    get viewportWidth() { return _viewportState.viewportWidth; },
+    set viewportWidth(v: number) { _viewportState.viewportWidth = v; },
+    get viewportHeight() { return _viewportState.viewportHeight; },
+    set viewportHeight(v: number) { _viewportState.viewportHeight = v; },
+    get viewportDpr() { return _viewportState.viewportDpr; },
+    set viewportDpr(v: number) { _viewportState.viewportDpr = v; },
+    get viewportReducedMotion() { return _viewportState.viewportReducedMotion; },
+    set viewportReducedMotion(v: boolean) { _viewportState.viewportReducedMotion = v; },
+    get viewportIsCompact() { return _viewportState.viewportIsCompact; },
+    set viewportIsCompact(v: boolean) { _viewportState.viewportIsCompact = v; },
     withMutation: (fn: () => unknown) => fn(),
   },
 }));
@@ -56,11 +70,11 @@ import {
 
 describe('viewport store — T4 writable + withViewportNotify migration', () => {
   beforeEach(() => {
-    mockState.viewportWidth = 1280;
-    mockState.viewportHeight = 720;
-    mockState.viewportDpr = 1;
-    mockState.viewportReducedMotion = false;
-    mockState.viewportIsCompact = false;
+    _viewportState.viewportWidth = 1280;
+    _viewportState.viewportHeight = 720;
+    _viewportState.viewportDpr = 1;
+    _viewportState.viewportReducedMotion = false;
+    _viewportState.viewportIsCompact = false;
   });
 
   it('viewport() returns current appState dimensions', () => {
@@ -82,11 +96,11 @@ describe('viewport store — T4 writable + withViewportNotify migration', () => 
       isCompactLandscape: false,
       isUltraCompactPortrait: false,
     });
-    expect(mockState.viewportWidth).toBe(375);
-    expect(mockState.viewportHeight).toBe(812);
-    expect(mockState.viewportDpr).toBe(2);
-    expect(mockState.viewportReducedMotion).toBe(true);
-    expect(mockState.viewportIsCompact).toBe(true);
+    expect(_viewportState.viewportWidth).toBe(375);
+    expect(_viewportState.viewportHeight).toBe(812);
+    expect(_viewportState.viewportDpr).toBe(2);
+    expect(_viewportState.viewportReducedMotion).toBe(true);
+    expect(_viewportState.viewportIsCompact).toBe(true);
   });
 
   it('subscriber fires when viewport.set() changes', () => {
@@ -110,7 +124,7 @@ describe('viewport store — T4 writable + withViewportNotify migration', () => 
     });
     viewport.update((s) => ({ ...s, width: 1920 }));
     expect(get(viewport).width).toBe(1920);
-    expect(mockState.viewportWidth).toBe(1920);
+    expect(_viewportState.viewportWidth).toBe(1920);
   });
 
   it('syncViewport reads from window and writes to appState', () => {
@@ -119,9 +133,9 @@ describe('viewport store — T4 writable + withViewportNotify migration', () => 
     Object.defineProperty(window, 'devicePixelRatio', { value: 2, writable: true });
 
     syncViewport();
-    expect(mockState.viewportWidth).toBe(480);
-    expect(mockState.viewportHeight).toBe(800);
-    expect(mockState.viewportDpr).toBe(2);
+    expect(_viewportState.viewportWidth).toBe(480);
+    expect(_viewportState.viewportHeight).toBe(800);
+    expect(_viewportState.viewportDpr).toBe(2);
   });
 
   it('syncViewport notifies store subscribers (regression: canvas resize)', () => {
@@ -183,11 +197,11 @@ describe('viewport store — T4 writable + withViewportNotify migration', () => 
   });
 
   it('derived getters read directly from appState', () => {
-    mockState.viewportWidth = 1024;
-    mockState.viewportHeight = 768;
-    mockState.viewportDpr = 2;
-    mockState.viewportReducedMotion = true;
-    mockState.viewportIsCompact = true;
+    _viewportState.viewportWidth = 1024;
+    _viewportState.viewportHeight = 768;
+    _viewportState.viewportDpr = 2;
+    _viewportState.viewportReducedMotion = true;
+    _viewportState.viewportIsCompact = true;
 
     expect(viewportWidth()).toBe(1024);
     expect(viewportHeight()).toBe(768);
@@ -203,41 +217,41 @@ describe('viewport store — T4 writable + withViewportNotify migration', () => 
   });
 
   it('isLandscape returns true when width > height', () => {
-    mockState.viewportWidth = 1024;
-    mockState.viewportHeight = 768;
+    _viewportState.viewportWidth = 1024;
+    _viewportState.viewportHeight = 768;
     expect(isLandscape()).toBe(true);
   });
 
   it('isLandscape returns false when width <= height', () => {
-    mockState.viewportWidth = 375;
-    mockState.viewportHeight = 812;
+    _viewportState.viewportWidth = 375;
+    _viewportState.viewportHeight = 812;
     expect(isLandscape()).toBe(false);
   });
 
   it('isCompactLandscape true only when compact + short height', () => {
-    mockState.viewportIsCompact = true;
-    mockState.viewportHeight = 700;
+    _viewportState.viewportIsCompact = true;
+    _viewportState.viewportHeight = 700;
     expect(isCompactLandscape()).toBe(true);
-    mockState.viewportHeight = 800;
+    _viewportState.viewportHeight = 800;
     expect(isCompactLandscape()).toBe(false);
-    mockState.viewportIsCompact = false;
-    mockState.viewportHeight = 700;
+    _viewportState.viewportIsCompact = false;
+    _viewportState.viewportHeight = 700;
     expect(isCompactLandscape()).toBe(false);
   });
 
   it('isUltraCompactPortrait detects narrow tall mobile', () => {
-    mockState.viewportWidth = 375;
-    mockState.viewportHeight = 780;
+    _viewportState.viewportWidth = 375;
+    _viewportState.viewportHeight = 780;
     expect(isUltraCompactPortrait()).toBe(true);
 
-    mockState.viewportWidth = 390;
-    mockState.viewportHeight = 820;
+    _viewportState.viewportWidth = 390;
+    _viewportState.viewportHeight = 820;
     expect(isUltraCompactPortrait()).toBe(true);
 
-    mockState.viewportWidth = 450;
+    _viewportState.viewportWidth = 450;
     expect(isUltraCompactPortrait()).toBe(false); // too wide
 
-    mockState.viewportHeight = 700;
+    _viewportState.viewportHeight = 700;
     expect(isUltraCompactPortrait()).toBe(false); // too short
   });
 });
