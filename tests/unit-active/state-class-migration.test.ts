@@ -61,10 +61,6 @@ const _searchState = vi.hoisted(() => ({
     summaryCardTypeToken: 0
 }))
 
-const _engineBridgeState = vi.hoisted(() => ({
-    engineBridge: null as any
-}))
-
 const _weatherState = vi.hoisted(() => ({
     weather: null as any,
     weatherInitialized: false
@@ -159,9 +155,6 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         set currentSemanticGuide(v: string | null) { _searchState.currentSemanticGuide = v },
         get summaryCardTypeToken() { return _searchState.summaryCardTypeToken },
         set summaryCardTypeToken(v: number) { _searchState.summaryCardTypeToken = v },
-        // Engine-bridge mock shape
-        get engineBridge() { return _engineBridgeState.engineBridge },
-        set engineBridge(v: any) { _engineBridgeState.engineBridge = v },
         // Weather mock shape
         get weather() { return _weatherState.weather },
         set weather(v: any) { _weatherState.weather = v },
@@ -248,7 +241,7 @@ import {
     activeResult
 } from '@lib/stores/search.svelte.ts'
 
-import { engineBridgeStore, setEngineBridge, getEngineBridge } from '@lib/stores/engine-bridge.svelte.ts'
+import { engineStatusStore, setEngineStatus, getEngineStatus, type EngineStatus } from '@lib/stores/engine.svelte.ts'
 
 import {
     weatherData,
@@ -954,85 +947,77 @@ describe('search store — T4 writable + withSearchNotify migration', () => {
     })
 })
 
-// ── Engine-bridge tests ──────────────────────────────────────────────────────
+// ── Engine status tests ──────────────────────────────────────────────────────
 
-describe('engine-bridge store — T4 writable + withEngineBridgeNotify migration', () => {
-    const FAKE_BRIDGE = { id: 'fake-engine-1' }
+describe('engine status store — canonical engine lifecycle status', () => {
     beforeEach(() => {
-        engineBridgeStore.set(null)
-        _engineBridgeState.engineBridge = null
+        setEngineStatus('idle')
     })
 
-    it('engineBridgeStore.set(null) stores null', () => {
-        engineBridgeStore.set(null)
-        expect(get(engineBridgeStore)).toBeNull()
+    it('engineStatusStore defaults to idle', () => {
+        expect(get(engineStatusStore)).toBe('idle')
     })
 
-    it('engineBridgeStore.set(fakeBridge) stores bridge', () => {
-        engineBridgeStore.set(FAKE_BRIDGE as any)
-        expect(get(engineBridgeStore)).toBe(FAKE_BRIDGE)
+    it('setEngineStatus updates the store', () => {
+        setEngineStatus('loading')
+        expect(get(engineStatusStore)).toBe('loading')
     })
 
-    it('engineBridgeStore.update returns same value if updater is identity', () => {
-        engineBridgeStore.set(FAKE_BRIDGE as any)
-        engineBridgeStore.update((existing) => existing)
-        expect(get(engineBridgeStore)).toBe(FAKE_BRIDGE)
+    it('setEngineStatus transitions through all valid states', () => {
+        const states: EngineStatus[] = ['loading', 'ready', 'degraded', 'destroyed']
+        for (const s of states) {
+            setEngineStatus(s)
+            expect(get(engineStatusStore)).toBe(s)
+        }
     })
 
-    it('engineBridgeStore.update replaces value', () => {
-        const OLD_BRIDGE = { id: 'old' }
-        const NB = { id: 'new' }
-        engineBridgeStore.set(OLD_BRIDGE as any)
-        engineBridgeStore.update(() => NB as any)
-        expect(get(engineBridgeStore)).toBe(NB)
+    it('setEngineStatus(idle) resets back to idle', () => {
+        setEngineStatus('ready')
+        setEngineStatus('idle')
+        expect(get(engineStatusStore)).toBe('idle')
     })
 
-    it('setEngineBridge updates writable AND appState', () => {
-        setEngineBridge(FAKE_BRIDGE as any)
-        expect(get(engineBridgeStore)).toBe(FAKE_BRIDGE)
-        expect(_engineBridgeState.engineBridge).toBe(FAKE_BRIDGE)
+    it('getEngineStatus reads current value', () => {
+        setEngineStatus('degraded')
+        expect(getEngineStatus()).toBe('degraded')
     })
 
-    it('setEngineBridge(null) clears both writable + appState', () => {
-        setEngineBridge(FAKE_BRIDGE as any)
-        setEngineBridge(null)
-        expect(get(engineBridgeStore)).toBeNull()
-        expect(_engineBridgeState.engineBridge).toBeNull()
+    it('getEngineStatus returns idle after reset', () => {
+        setEngineStatus('ready')
+        setEngineStatus('idle')
+        expect(getEngineStatus()).toBe('idle')
     })
 
-    it('subscriber fires when engineBridgeStore.set() is called', () => {
+    it('subscriber fires when setEngineStatus is called', () => {
         const cb = vi.fn()
-        const unsub = engineBridgeStore.subscribe(cb)
-        engineBridgeStore.set(FAKE_BRIDGE as any)
+        const unsub = engineStatusStore.subscribe(cb)
+        setEngineStatus('loading')
         unsub()
-        expect(cb).toHaveBeenCalledWith(FAKE_BRIDGE)
+        expect(cb).toHaveBeenCalledWith('loading')
     })
 
-    it('subscriber fires when engineBridgeStore.update() changes value', () => {
+    it('subscriber fires on each status change', () => {
+        setEngineStatus('loading')
         const cb = vi.fn()
-        const unsub = engineBridgeStore.subscribe(cb)
-        engineBridgeStore.update(() => FAKE_BRIDGE as any)
+        const unsub = engineStatusStore.subscribe(cb)
+        setEngineStatus('ready')
+        setEngineStatus('destroyed')
         unsub()
-        expect(cb).toHaveBeenCalledWith(FAKE_BRIDGE)
+        // Initial 'loading' emission on subscribe, then 'ready' and 'destroyed'
+        expect(cb).toHaveBeenCalledTimes(3)
+        expect(cb.mock.calls.map((c: any[]) => c[0])).toEqual(['loading', 'ready', 'destroyed'])
     })
 
-    it('subscriber fires when setEngineBridge is called', () => {
-        const cb = vi.fn()
-        const unsub = engineBridgeStore.subscribe(cb)
-        setEngineBridge(FAKE_BRIDGE as any)
-        unsub()
-        expect(cb).toHaveBeenCalledWith(FAKE_BRIDGE)
+    it('engineStatusStore is a readable store', () => {
+        expect(engineStatusStore).toHaveProperty('subscribe')
     })
 
-    it('getEngineBridge reads current writable state', () => {
-        engineBridgeStore.set(FAKE_BRIDGE as any)
-        expect(getEngineBridge()).toBe(FAKE_BRIDGE)
-    })
-
-    it('getEngineBridge returns null after reset', () => {
-        engineBridgeStore.set(FAKE_BRIDGE as any)
-        engineBridgeStore.set(null)
-        expect(getEngineBridge()).toBeNull()
+    it('all EngineStatus literal types are covered', () => {
+        const allStatuses: EngineStatus[] = ['idle', 'loading', 'ready', 'degraded', 'destroyed']
+        for (const s of allStatuses) {
+            setEngineStatus(s)
+            expect(get(engineStatusStore)).toBe(s)
+        }
     })
 })
 

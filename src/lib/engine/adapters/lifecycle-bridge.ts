@@ -30,7 +30,15 @@ import type {
   EventBusModule,
 } from './types';
 
-import { syncDataToLegacyState } from './data-bridge';
+import { get } from 'svelte/store';
+import {
+  isDataReady,
+  businessRecords,
+  positionBuffer,
+  clustersBuffer,
+  leadEnrichment,
+  pointIndexByLeadId,
+} from '@lib/data-store';
 import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads';
 import { appState } from '@lib/state/app.svelte.ts';
 import { state as legacyState } from '@lib/engine/state-bridge';
@@ -60,6 +68,69 @@ import {
   disposeMycelium as _disposeMycelium,
   getGroupLineSegmentCount as _getGroupLineSegmentCount,
 } from '../thread-manager';
+
+// ── Data Sync ──────────────────────────────────────────────────────────────
+
+/**
+ * Ensure the legacy state singleton has the latest data from Svelte stores.
+ *
+ * If data is already loaded, syncs immediately. Otherwise polls every 200ms
+ * up to 15 seconds, then gives up.
+ */
+async function syncDataToLegacyState(ctx: BridgeContext): Promise<void> {
+  if (!ctx._state) return;
+
+  if (get(isDataReady)) {
+    _syncDataFields(ctx);
+    return;
+  }
+
+  const start = Date.now();
+  while (!get(isDataReady) && Date.now() - start < 15_000) {
+    await new Promise((r) => setTimeout(r, 200));
+  }
+
+  if (!get(isDataReady)) {
+    console.warn('[EngineBridge] syncDataToLegacyState: data not ready after 15s, proceeding anyway');
+  }
+
+  _syncDataFields(ctx);
+}
+
+function _syncDataFields(ctx: BridgeContext): void {
+  if (!ctx._state) return;
+
+  const records = get(businessRecords);
+  const posBuf = get(positionBuffer);
+  const clustBuf = get(clustersBuffer);
+  const enrichment = get(leadEnrichment);
+  const indexMap = get(pointIndexByLeadId);
+
+  ctx._withMutation(() => {
+    if (records.length > 0) {
+      ctx._state!.points = records as unknown as Array<{
+        x: number;
+        y: number;
+        z: number;
+        cluster: number;
+        lead_id?: number | null;
+      }>;
+    }
+    if (posBuf) {
+      ctx._state!.rawPositionsBuffer = posBuf;
+    }
+    if (clustBuf) {
+      ctx._state!.rawClustersBuffer = clustBuf;
+    }
+  });
+
+  if (enrichment) {
+    ctx._state.leadEnrichment = enrichment as unknown as Record<string, unknown>;
+  }
+  if (indexMap) {
+    ctx._state.pointIndexByLeadId = indexMap as unknown as Map<string, number>;
+  }
+}
 
 // ── Module Loader ────────────────────────────────────────────────────────────
 
