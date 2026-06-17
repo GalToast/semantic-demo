@@ -80,12 +80,14 @@ test.describe('W15 body-attr live probe', () => {
         })
 
         // 2. Wait for the engine to be ready (data-testReady or fallback)
-        await page.waitForFunction(
-            () => document.body.dataset.testReady === 'true' || document.body.dataset.sceneReady === 'true',
-            { timeout: 10000 }
-        ).catch(() => {
-            // Fallback: wait for the search radio to be enabled
-        })
+        await page
+            .waitForFunction(
+                () => document.body.dataset.testReady === 'true' || document.body.dataset.sceneReady === 'true',
+                { timeout: 10000 }
+            )
+            .catch(() => {
+                // Fallback: wait for the search radio to be enabled
+            })
 
         // 3. Click the Search mode radio
         const searchRadio = page.getByRole('radio', { name: 'Search' })
@@ -93,7 +95,7 @@ test.describe('W15 body-attr live probe', () => {
         await page.waitForTimeout(500)
 
         // 4. Type 'cafe' and press Enter
-        const searchInput = page.getByRole('searchbox', { name: 'Search businesses' })
+        const searchInput = page.locator('#search-input, input[name="q"], input[placeholder*="Search"]').first()
         await searchInput.fill('cafe')
         await searchInput.press('Enter')
 
@@ -140,12 +142,6 @@ test.describe('W15 body-attr live probe', () => {
         expect(dataMode, 'data-mode should be focus after search-result focus click').toBe('focus')
         expect(dataNavSurface, 'data-nav-surface should be focus-search').toBe('focus-search')
         expect(dataPanelSurface, 'data-panel-surface should be focus-search').toBe('focus-search')
-        // data-journey-phase is currently blocked by the legacy updateJourneyCompass
-        // in dist/svelte/assets/panel-bindings-* (it overwrites journey.phase
-        // from the legacy state which is never updated to 'focus'). A full fix
-        // requires rebuilding the Svelte bundle (npm run build:svelte). For now,
-        // we verify the three Svelte-track attrs are correct — journey-phase will
-        // pass once the bundle rebuild includes the parity-attrs ownership fix.
-        expect(dataJourneyPhase, 'data-journey-phase locked behind legacy bundle rebuild').toBe('overview')
+        expect(dataJourneyPhase, 'data-journey-phase should be focus-search').toBe('focus-search')
     })
 })
