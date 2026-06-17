@@ -24,9 +24,8 @@ import path from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const VIEW_CONTROLLER_PATH = resolveSource('js/modules/view-controller.ts', SEMDEMO_ROOT);
+const VIEW_CONTROLLER_PATH = resolveSource('src/lib/orchestration/view-controller.ts', SEMDEMO_ROOT);
 const LIFECYCLE_PATH = resolveSource('js/modules/lifecycle.ts', SEMDEMO_ROOT);
-const APP_PATH = resolveSource('js/modules/app.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
