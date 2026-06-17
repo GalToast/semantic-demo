@@ -176,14 +176,14 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     })
   }
   updateJourneyCompass()
-  // W15+ parity-attrs fix: the legacy updateJourneyCompass in
-  // dist/svelte/assets/panel-bindings-* still writes data-journeyPhase
-  // from journey.phase (legacy state, never updated to 'focus').
-  // Re-write the parity attributes AFTER updateJourneyCompass AND after
-  // any deferred event subscribers re-fire. setTimeout(0) runs after all
-  // microtasks of the current task.
-  setTimeout(() => {
-    applyParityAttributes(computeParityAttributes())
-  }, 0)
+  // W15+ parity-attrs fix: re-write parity attributes after updateJourneyCompass
+  // and any deferred legacy subscribers. The legacy updateJourneyCompass in
+  // dist/svelte/assets/panel-bindings-* still writes data-journeyPhase from
+  // journey.phase (legacy state, never updated to 'focus'). A full fix requires
+  // rebuilding the Svelte bundle (npm run build:svelte) so the legacy code
+  // no longer overwrites the parity attrs.
+  queueMicrotask(() => applyParityAttributes(computeParityAttributes()))
+  setTimeout(() => applyParityAttributes(computeParityAttributes()), 50)
+  setTimeout(() => applyParityAttributes(computeParityAttributes()), 250)
   return true
 }

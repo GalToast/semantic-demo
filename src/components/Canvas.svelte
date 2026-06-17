@@ -4,7 +4,8 @@
   import { completeCameraTransition } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
-  import type { EngineBridge, EngineCallbacks } from '@lib/engine';
+  import type { EngineCallbacks } from '@lib/engine/adapters/types';
+  import { initEngine, resizeEngine, destroyEngine, getEngineStatus } from '@lib/engine/lifecycle';
   import type { LoadingPhase } from '@lib/types/state';
 
   interface Props {
@@ -16,8 +17,6 @@
   let containerEl: HTMLDivElement | undefined = $state(undefined);
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
   let mounted = $state(false);
-  let bridge: EngineBridge | undefined = $state(undefined);
-
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
       // W15+ parity-attrs fix: preserve the current surface (especially
@@ -65,11 +64,7 @@
     mounted = true;
     if (!canvasEl) return;
     try {
-      const { createEngineBridge } = await import('@lib/engine');
-      if (!mounted || !canvasEl) return;
-      bridge = createEngineBridge(callbacks);
-      await bridge.init(canvasEl);
-      bridge.resize(viewportWidth(), viewportHeight());
+      await initEngine(canvasEl, callbacks);
     } catch (err) {
       console.error('[Canvas] Engine init failed:', err);
     }
@@ -83,20 +78,15 @@
     // viewport store on its own. See qa-screenshots/REPORT.md bug 1.
     const w = $viewport.width;
     const h = $viewport.height;
-    if (bridge?.isReady()) {
-      bridge.resize(w, h);
+    if (getEngineStatus() === 'ready') {
+      resizeEngine(w, h);
     }
   });
 
   onDestroy(() => {
-    bridge?.destroy();
-    bridge = undefined;
+    destroyEngine();
     mounted = false;
   });
-
-  export function getBridge(): EngineBridge | undefined {
-    return bridge;
-  }
 </script>
 
   <!--
