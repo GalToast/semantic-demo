@@ -299,3 +299,52 @@ Audit whether `css/strands.css`'s 34 `.info-panel` rules can be moved to `css/la
 | `css/tooltips.css` | 1 |
 
 **Total:** ~101 `@media` rules across 20 files. The mobile premium split files collectively hold ~31.
+
+---
+
+## Resolution Status (W22/W23 update - 2026-06-17)
+
+Status of each smell as of Wave 22/23 completion.
+
+### Smell 1: `.focus-stage` Fragmentation (14 files, 410+ selectors) — HIGH
+- **Status:** PARTIAL
+- **Fix commit:** `69c7ae4` (docs only — tail-load documentation added to `focus_stage.css` header)
+- **Notes:** The recommended rename to `focus-stage-tail-authority.css` was NOT done. The cascade reorder was NOT done. What was done: a 19-line documentation header was added to `css/modules/focus_stage.css` explaining why it is loaded last and its role as the tail-loaded final authority. This makes the architecture explicit for future developers but does not resolve the naming confusion. The rename or cascade reorder is deferred to W24+.
+
+### Smell 2: `.info-panel` Ownership Scatter (13 files, 197 occurrences) — HIGH
+- **Status:** UNRESOLVED
+- **Fix commit:** none
+- **Notes:** `css/strands.css` still holds 34 `.info-panel` rules; `css/layout_base.css` still holds 33. No consolidation was attempted in W22/W23. The mobile premium files collectively hold 60+ rules. This remains the highest-impact smell and requires mobile browser proof at 390×844 for each moved rule. Deferred to W24+.
+
+### Smell 3: `.is-active` Modifier Proliferation (1,584 occurrences, 15 files) — MEDIUM
+- **Status:** RESOLVED
+- **Fix commit:** `9905d86` (docs — added shared modifier section to CSS ownership map)
+- **Notes:** A new `## Shared Modifiers: .is-active` section was added to `docs/semantic-demo-css-ownership-map.md` documenting per-element ownership, per-file occurrence counts, and a usage rule (always pair `.is-active` with an element selector). This was the recommended fix (S effort, docs-only). No CSS changes needed — the proliferation is inherent to the shared modifier pattern and is now discoverable.
+
+### Smell 4: Landscape Breakpoint Proliferation (8+ variants, 6 files) — MEDIUM
+- **Status:** UNRESOLVED
+- **Fix commit:** none
+- **Notes:** 36+ landscape `@media` rules remain across 6 files (`mobile_premium__focus-dive.css` has 20 alone). The `430px` vs `480px` vs `420px` max-height variants were not consolidated. No canonical landscape breakpoints were defined. Requires live landscape proof at each breakpoint. Deferred to W24+.
+
+### Smell 5: `demo_ui.css` Orphan Selectors (6 of 9 selectors unreferenced) — LOW
+- **Status:** RESOLVED
+- **Fix commit:** `b3f9827` (pre-W22 — dead rule purge in `style(css): mobile premium polish, narrow escape-hatch, dead rule purge`)
+- **Notes:** The 6 orphan selectors (`.demo-end-toast`, `.demo-overlay-tag`, `.demo-tag-dot`, `.demo-toast-dismiss`, `.demo-toast-glyph`, `.demo-toast-text`, `.glass-panel`) were deleted along with associated `@keyframes`. `demo_ui.css` is now 12 lines (down from 136) containing only the `body[data-demo-active='true'] .view-toggle` hide rule. The file still exists but is minimal. Consider deleting the module entirely in W24+ if the single rule can be moved to `controls.css`.
+
+## Deferred Items (still W24+)
+
+| Item | Smell | Effort | Notes |
+|---|---|---|---|
+| Rename `focus_stage.css` to `focus-stage-tail-authority.css` | Smell 1 | M | Rename + doc update + ownership contract test update |
+| Consolidate `.info-panel` ownership (strands.css → layout_base + mobile premium) | Smell 2 | L | Highest impact, highest risk — requires mobile proof |
+| Consolidate landscape breakpoints to 2-3 canonical values | Smell 4 | M | Requires live landscape proof at each breakpoint |
+| Clarify `strands.css:72` misleading `!important` comment | Follow-up | S | Comment says `!important` is "appropriate" but rule doesn't use it |
+| Consider deleting `demo_ui.css` entirely | Smell 5 | S | Move single remaining rule to `controls.css` |
+
+## References
+
+- `9905d86` — docs(w22): add .is-active shared modifier section to CSS ownership map
+- `69c7ae4` — css(w23): add tail-load documentation to focus_stage.css
+- `b3f9827` — style(css): mobile premium polish, narrow escape-hatch, dead rule purge (Smell 5 resolution, pre-W22)
+- `docs/semantic-demo-css-ownership-map.md` — updated with .is-active shared modifier section
+- `css/modules/focus_stage.css` — updated with tail-load documentation header
