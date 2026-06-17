@@ -9,37 +9,43 @@
  * The 3 working delegates (setTrailDepth, setMyceliumMode,
  * setSemanticDiveMode) remain unchanged.
  */
-import { get } from 'svelte/store';
-import { navStore, updateNavState, switchView, currentView, setMyceliumMode as _setMyceliumMode } from './navigation.svelte';
-import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte';
-import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte';
-import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte';
-import { publish, EVENTS } from '../orchestration/event-bus';
+import { get } from 'svelte/store'
+import {
+    navStore,
+    updateNavState,
+    switchView,
+    currentView,
+    setMyceliumMode as _setMyceliumMode
+} from './navigation.svelte'
+import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
+import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
+import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
+import { publish, EVENTS } from '../orchestration/event-bus'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
 
-export function setTrailDepth(depth: number): void {
-  const nextDepth = Math.max(0, Number(depth) || 0);
-  _setTrailDepth(nextDepth);
-  updateNavState({ trailDepth: nextDepth });
+export function setTrailDepth(depth: number, _options?: any): void {
+    const nextDepth = Math.max(0, Number(depth) || 0)
+    _setTrailDepth(nextDepth)
+    updateNavState({ trailDepth: nextDepth })
 
-  if (typeof window !== 'undefined') {
-    const stateWindow = window as Window & {
-      __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> };
-      __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> };
-      state?: Record<string, unknown> & { navState?: Record<string, unknown> };
-    };
-    for (const appState of [stateWindow.__LEGACY_APP_STATE__, stateWindow.__semanticState, stateWindow.state]) {
-      if (!appState) continue;
-      appState.trailDepth = nextDepth;
-      if (appState.navState) {
-        appState.navState.trailDepth = nextDepth;
-      }
+    if (typeof window !== 'undefined') {
+        const stateWindow = window as Window & {
+            __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
+        }
+        for (const appState of [stateWindow.__LEGACY_APP_STATE__, stateWindow.__semanticState, stateWindow.state]) {
+            if (!appState) continue
+            appState.trailDepth = nextDepth
+            if (appState.navState) {
+                appState.navState.trailDepth = nextDepth
+            }
+        }
     }
-  }
 }
-export const setSemanticDiveMode = _setSemanticDiveMode;
-export const setMyceliumMode = _setMyceliumMode;
+export const setSemanticDiveMode = _setSemanticDiveMode
+export const setMyceliumMode = _setMyceliumMode
 
 // ── Composition State (ported from js/modules/lifecycle.js) ──────────────────
 
@@ -48,16 +54,16 @@ export const setMyceliumMode = _setMyceliumMode;
  * Matches the legacy `deriveGraphContext` in lifecycle.js.
  */
 function deriveGraphContext(
-  view: string,
-  hasFocus: boolean,
-  hasSearchIntent: boolean,
-  mapContextOverride?: string
+    view: string,
+    hasFocus: boolean,
+    hasSearchIntent: boolean,
+    mapContextOverride?: string
 ): string {
-  if (mapContextOverride !== undefined) return mapContextOverride;
-  if (hasFocus && hasSearchIntent) return 'focus-search';
-  if (hasFocus) return 'focus';
-  if (hasSearchIntent) return 'search';
-  return 'idle';
+    if (mapContextOverride !== undefined) return mapContextOverride
+    if (hasFocus && hasSearchIntent) return 'focus-search'
+    if (hasFocus) return 'focus'
+    if (hasSearchIntent) return 'search'
+    return 'idle'
 }
 
 /**
@@ -66,27 +72,27 @@ function deriveGraphContext(
  * Matches the legacy `derivePanelSurface` in lifecycle.js.
  */
 function derivePanelSurface(opts: {
-  view: string;
-  graphContext: string;
-  mapContext: string;
-  semanticDive: string;
-  hasSearchIntent: boolean;
-  hasFocus: boolean;
-  hasActiveTrailState: boolean;
+    view: string
+    graphContext: string
+    mapContext: string
+    semanticDive: string
+    hasSearchIntent: boolean
+    hasFocus: boolean
+    hasActiveTrailState: boolean
 }): string {
-  const { view, graphContext, mapContext, semanticDive } = opts;
-  if (view !== 'galaxy') {
-    if (mapContext === 'focus-search') return 'map-focus-search';
-    if (mapContext === 'focus') return 'map-focus';
-    if (mapContext === 'search') return 'map-search';
-    if (opts.hasActiveTrailState) return 'map-trail';
-    return 'map-idle';
-  }
-  if (semanticDive === 'active' || semanticDive === 'transitioning') return 'semantic-dive';
-  if (graphContext === 'focus-search') return 'focus-search';
-  if (graphContext === 'focus') return 'focus';
-  if (graphContext === 'search') return 'search';
-  return 'idle';
+    const { view, graphContext, mapContext, semanticDive } = opts
+    if (view !== 'galaxy') {
+        if (mapContext === 'focus-search') return 'map-focus-search'
+        if (mapContext === 'focus') return 'map-focus'
+        if (mapContext === 'search') return 'map-search'
+        if (opts.hasActiveTrailState) return 'map-trail'
+        return 'map-idle'
+    }
+    if (semanticDive === 'active' || semanticDive === 'transitioning') return 'semantic-dive'
+    if (graphContext === 'focus-search') return 'focus-search'
+    if (graphContext === 'focus') return 'focus'
+    if (graphContext === 'search') return 'search'
+    return 'idle'
 }
 
 /**
@@ -94,47 +100,43 @@ function derivePanelSurface(opts: {
  * Matches the legacy `applyCompositionState` in lifecycle.js.
  */
 function applyCompositionState(): void {
-  const $nav = get(navStore);
-  const $focus = get(focusStore);
-  const $search = get(searchStore);
+    const $nav = get(navStore)
+    const $focus = get(focusStore)
+    const $search = get(searchStore)
 
-  const activeView = $nav.currentView || 'galaxy';
-  const hasFocus = !!($nav.focusedIndex != null || $focus.selectedBusiness);
-  const hasSearchIntent = !!($search.summary || $search.query.trim().length >= 2);
-  const hasActiveTrailState = activeView === 'map'
-    ? (hasSearchIntent || hasFocus)
-    : (hasFocus && ($nav.mode === 'trail' || hasSearchIntent));
+    const activeView = $nav.currentView || 'galaxy'
+    const hasFocus = !!($nav.focusedIndex != null || $focus.selectedBusiness)
+    const hasSearchIntent = !!($search.summary || $search.query.trim().length >= 2)
+    const hasActiveTrailState =
+        activeView === 'map' ? hasSearchIntent || hasFocus : hasFocus && ($nav.mode === 'trail' || hasSearchIntent)
 
-  const semanticDive = $focus.semanticDiveMode && hasFocus
-    ? 'active'
-    : 'inactive';
+    const semanticDive = $focus.semanticDiveMode && hasFocus ? 'active' : 'inactive'
 
-  const graphContext = deriveGraphContext(activeView, hasFocus, hasSearchIntent);
-  const mapContext = activeView === 'map'
-    ? deriveGraphContext(activeView, hasFocus, hasSearchIntent, undefined)
-    : 'idle';
+    const graphContext = deriveGraphContext(activeView, hasFocus, hasSearchIntent)
+    const mapContext =
+        activeView === 'map' ? deriveGraphContext(activeView, hasFocus, hasSearchIntent, undefined) : 'idle'
 
-  const panelSurface = derivePanelSurface({
-    view: activeView,
-    graphContext: activeView === 'galaxy' ? graphContext : mapContext,
-    mapContext,
-    semanticDive,
-    hasSearchIntent,
-    hasFocus,
-    hasActiveTrailState,
-  });
+    const panelSurface = derivePanelSurface({
+        view: activeView,
+        graphContext: activeView === 'galaxy' ? graphContext : mapContext,
+        mapContext,
+        semanticDive,
+        hasSearchIntent,
+        hasFocus,
+        hasActiveTrailState
+    })
 
-  const root = document.body;
-  if (root?.dataset) {
-    root.dataset.activeView = activeView;
-    root.dataset.searchGlow = $search.glowActive ? 'active' : 'inactive';
-    root.dataset.trailState = hasActiveTrailState ? 'active' : 'inactive';
-    root.dataset.trailDepth = String($nav.trailDepth ?? 0);
-    root.dataset.graphContext = activeView === 'galaxy' ? graphContext : 'idle';
-    root.dataset.semanticDive = activeView === 'galaxy' ? semanticDive : 'inactive';
-    root.dataset.panelSurface = panelSurface;
-    root.dataset.panelSurfaceDetail = panelSurface;
-  }
+    const root = document.body
+    if (root?.dataset) {
+        root.dataset.activeView = activeView
+        root.dataset.searchGlow = $search.glowActive ? 'active' : 'inactive'
+        root.dataset.trailState = hasActiveTrailState ? 'active' : 'inactive'
+        root.dataset.trailDepth = String($nav.trailDepth ?? 0)
+        root.dataset.graphContext = activeView === 'galaxy' ? graphContext : 'idle'
+        root.dataset.semanticDive = activeView === 'galaxy' ? semanticDive : 'inactive'
+        root.dataset.panelSurface = panelSurface
+        root.dataset.panelSurfaceDetail = panelSurface
+    }
 }
 
 /**
@@ -143,8 +145,8 @@ function applyCompositionState(): void {
  * state mutation that affects the visual composition.
  */
 export function refreshCompositionState(): void {
-  applyCompositionState();
-  publish(EVENTS.COMPOSITION_UPDATED);
+    applyCompositionState()
+    publish(EVENTS.COMPOSITION_UPDATED)
 }
 
 /**
@@ -152,7 +154,7 @@ export function refreshCompositionState(): void {
  * Matches the legacy lifecycle.js where both names pointed to the same impl.
  */
 export function updateExplorationUi(): void {
-  refreshCompositionState();
+    refreshCompositionState()
 }
 
 // ── Bloom / Bridge Indices (legacy state bridge) ────────────────────────────
@@ -163,20 +165,22 @@ export function updateExplorationUi(): void {
  * and operates on the global state.points array, so we bridge through window.
  */
 export function getBloomIndices(): number[] {
-  const s = (window as unknown as Record<string, unknown>).__semanticState as
-    { bloomIndices?: Set<number> } | undefined;
-  if (!s?.bloomIndices) return [];
-  return Array.from(s.bloomIndices);
+    const s = (window as unknown as Record<string, unknown>).__semanticState as
+        | { bloomIndices?: Set<number> }
+        | undefined
+    if (!s?.bloomIndices) return []
+    return Array.from(s.bloomIndices)
 }
 
 /**
  * Get bridge indices from the legacy global state.
  */
 export function getBridgeIndices(): number[] {
-  const s = (window as unknown as Record<string, unknown>).__semanticState as
-    { bridgeIndices?: Set<number> } | undefined;
-  if (!s?.bridgeIndices) return [];
-  return Array.from(s.bridgeIndices);
+    const s = (window as unknown as Record<string, unknown>).__semanticState as
+        | { bridgeIndices?: Set<number> }
+        | undefined
+    if (!s?.bridgeIndices) return []
+    return Array.from(s.bridgeIndices)
 }
 
 // ── Focus Reset (ported from js/modules/lifecycle-reset.js) ─────────────────
@@ -186,74 +190,76 @@ export function getBridgeIndices(): number[] {
  * semantic dive, mycelium mode, and optionally clears the search summary.
  * Matches the legacy `resetExplorationFocus` in lifecycle-reset.js.
  */
-export function resetExplorationFocus(
-  options?: { preserveSearch?: boolean; skipSearchClearEvent?: boolean; skipUrlSync?: boolean }
-): void {
-  const preserveSearch = options?.preserveSearch !== false;
+export function resetExplorationFocus(options?: {
+    preserveSearch?: boolean
+    skipSearchClearEvent?: boolean
+    skipUrlSync?: boolean
+}): void {
+    const preserveSearch = options?.preserveSearch !== false
 
-  updateNavState({
-    focusedIndex: null,
-    trailDepth: 0,
-    trailDepthFromExploration: 0,
-    mode: 'overview',
-    surface: 'idle',
-    previousSurface: 'idle',
-    walkHistoryIndices: [],
-    threadCandidates: [],
-    trailNeighborIndices: [],
-    threadReasonByIndex: new Map(),
-    threadSource: ''
-  });
+    updateNavState({
+        focusedIndex: null,
+        trailDepth: 0,
+        trailDepthFromExploration: 0,
+        mode: 'overview',
+        surface: 'idle',
+        previousSurface: 'idle',
+        walkHistoryIndices: [],
+        threadCandidates: [],
+        trailNeighborIndices: [],
+        threadReasonByIndex: new Map(),
+        threadSource: ''
+    })
 
-  _setSemanticDiveMode(false);
-  _setTrailDepth(0);
-  resetJourney();
+    _setSemanticDiveMode(false)
+    _setTrailDepth(0)
+    resetJourney()
 
-  resetFocus();
-  clearSearchGlow();
+    resetFocus()
+    clearSearchGlow()
 
-  _setMyceliumMode('default');
+    _setMyceliumMode('default')
 
-  if (preserveSearch) {
-    // Keep the search summary intact — only reset the focus/nav state.
-  } else {
-    clearSearch();
-  }
-
-  if (!options?.skipUrlSync) {
-    publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options });
-  }
-
-  if (typeof window !== 'undefined') {
-    const stateWindow = window as Window & {
-      __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> };
-      __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> };
-      state?: Record<string, unknown> & { navState?: Record<string, unknown> };
-    };
-    for (const appState of [stateWindow.__APP_STATE__, stateWindow.__TEST_STATE__, stateWindow.state]) {
-      if (!appState) continue;
-      appState.trailDepth = 0;
-      appState.semanticDiveMode = false;
-      appState.focusedNode = null;
-      if (appState.navState) {
-        appState.navState.focusedIndex = null;
-        appState.navState.trailDepth = 0;
-        appState.navState.walkHistoryIndices = [];
-        appState.navState.threadCandidates = [];
-        appState.navState.trailNeighborIndices = [];
-        appState.navState.surface = 'idle';
-        appState.navState.mode = 'overview';
-      }
+    if (preserveSearch) {
+        // Keep the search summary intact — only reset the focus/nav state.
+    } else {
+        clearSearch()
     }
-  }
 
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.threadInspectSurface = 'idle';
-    document.body.dataset.mapContext = 'idle';
-    document.body.removeAttribute('data-focused-node');
-  }
+    if (!options?.skipUrlSync) {
+        publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options })
+    }
 
-  refreshCompositionState();
+    if (typeof window !== 'undefined') {
+        const stateWindow = window as Window & {
+            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
+        }
+        for (const appState of [stateWindow.__APP_STATE__, stateWindow.__TEST_STATE__, stateWindow.state]) {
+            if (!appState) continue
+            appState.trailDepth = 0
+            appState.semanticDiveMode = false
+            appState.focusedNode = null
+            if (appState.navState) {
+                appState.navState.focusedIndex = null
+                appState.navState.trailDepth = 0
+                appState.navState.walkHistoryIndices = []
+                appState.navState.threadCandidates = []
+                appState.navState.trailNeighborIndices = []
+                appState.navState.surface = 'idle'
+                appState.navState.mode = 'overview'
+            }
+        }
+    }
+
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.threadInspectSurface = 'idle'
+        document.body.dataset.mapContext = 'idle'
+        document.body.removeAttribute('data-focused-node')
+    }
+
+    refreshCompositionState()
 }
 
 /**
@@ -261,8 +267,8 @@ export function resetExplorationFocus(
  * Matches the legacy `resetNodePositions` in lifecycle-reset.js.
  */
 export function resetNodePositions(_options?: object): void {
-  resetFocus();
-  resetExplorationFocus(_options as Parameters<typeof resetExplorationFocus>[0]);
+    resetFocus()
+    resetExplorationFocus(_options as Parameters<typeof resetExplorationFocus>[0])
 }
 
 // ── Experience Reset (ported from js/modules/lifecycle-reset.js) ─────────────
@@ -273,37 +279,37 @@ export function resetNodePositions(_options?: object): void {
  * Matches the legacy `resetExperienceState` in lifecycle-reset.js.
  */
 export function resetExperienceState(): void {
-  resetExplorationFocus({ skipSearchClearEvent: true });
+    resetExplorationFocus({ skipSearchClearEvent: true })
 
-  searchStore.update(s => ({
-    ...s,
-    summary: null,
-    currentEmptyQuery: null,
-    anchorIndex: null,
-    previewIndex: null,
-    glowActive: false,
-    glowIndices: new Set(),
-  }));
-  clearSearchGlow();
+    searchStore.update((s) => ({
+        ...s,
+        summary: null,
+        currentEmptyQuery: null,
+        anchorIndex: null,
+        previewIndex: null,
+        glowActive: false,
+        glowIndices: new Set()
+    }))
+    clearSearchGlow()
 
-  // Clear the search input DOM element
-  const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-  if (searchInput) searchInput.value = '';
+    // Clear the search input DOM element
+    const searchInput = document.getElementById('search-input') as HTMLInputElement | null
+    if (searchInput) searchInput.value = ''
 
-  // Hide search results panel
-  const searchResults = document.getElementById('search-results');
-  if (searchResults) {
-    searchResults.classList.remove('active');
-    setTimeout(() => {
-      if (!searchResults.classList.contains('active')) {
-        searchResults.hidden = true;
-      }
-    }, 450);
-  }
+    // Hide search results panel
+    const searchResults = document.getElementById('search-results')
+    if (searchResults) {
+        searchResults.classList.remove('active')
+        setTimeout(() => {
+            if (!searchResults.classList.contains('active')) {
+                searchResults.hidden = true
+            }
+        }, 450)
+    }
 
-  setSearchStatus('idle');
-  refreshCompositionState();
-  publish(EVENTS.STATE_RESET, { reason: 'manual-reset' });
+    setSearchStatus('idle')
+    refreshCompositionState()
+    publish(EVENTS.STATE_RESET, { reason: 'manual-reset' })
 }
 
 /**
@@ -311,11 +317,11 @@ export function resetExperienceState(): void {
  * Matches the legacy `returnToOverview` in lifecycle-reset.js.
  */
 export function returnToOverview(): void {
-  resetExperienceState();
-  if (currentView() !== 'galaxy') {
-    switchView('galaxy');
-  }
-  refreshCompositionState();
+    resetExperienceState()
+    if (currentView() !== 'galaxy') {
+        switchView('galaxy')
+    }
+    refreshCompositionState()
 }
 
 // ── Search Glow (ported from js/modules/lifecycle-search-sync.js) ────────────
@@ -326,21 +332,23 @@ export function returnToOverview(): void {
  * Matches the legacy `activateSearchGlow` in lifecycle-search-sync.js.
  */
 export function activateSearchGlow(summary?: unknown): void {
-  const s = summary as {
-    resultIndices?: number[];
-    summary?: unknown;
-    [key: string]: unknown;
-  } | undefined;
+    const s = summary as
+        | {
+              resultIndices?: number[]
+              summary?: unknown
+              [key: string]: unknown
+          }
+        | undefined
 
-  searchStore.update(st => ({
-    ...st,
-    summary: (s?.summary as typeof st.summary) ?? st.summary,
-    currentEmptyQuery: null,
-    glowActive: true,
-    glowIndices: new Set(s?.resultIndices ?? []),
-  }));
+    searchStore.update((st) => ({
+        ...st,
+        summary: (s?.summary as typeof st.summary) ?? st.summary,
+        currentEmptyQuery: null,
+        glowActive: true,
+        glowIndices: new Set(s?.resultIndices ?? [])
+    }))
 
-  refreshCompositionState();
+    refreshCompositionState()
 }
 
 // ── Empty Query Tracking (ported from js/modules/lifecycle-search-sync.js) ───
@@ -350,7 +358,7 @@ export function activateSearchGlow(summary?: unknown): void {
  * Matches the legacy `getCurrentEmptyQuery` selector.
  */
 export function getCurrentEmptyQuery(): string | null {
-  return get(searchStore).currentEmptyQuery ?? null;
+    return get(searchStore).currentEmptyQuery ?? null
 }
 
 /**
@@ -366,33 +374,33 @@ export function getCurrentEmptyQuery(): string | null {
  * after the static-dev fallback returned zero results.
  */
 export function recordEmptySearch(query?: string): void {
-  searchStore.update(s => ({
-    ...s,
-    currentEmptyQuery: query ?? null,
-  }));
+    searchStore.update((s) => ({
+        ...s,
+        currentEmptyQuery: query ?? null
+    }))
 }
 
 // ── Trail Review Overlay (ported from js/modules/lifecycle-search-sync.js) ───
 
-let _trailReviewPreviouslyFocused: HTMLElement | null = null;
+let _trailReviewPreviouslyFocused: HTMLElement | null = null
 
 /**
  * Show the trail-review overlay DOM element.
  * Matches the legacy `showExploreTrailReview` in lifecycle-search-sync.js.
  */
 export function showExploreTrailReview(_summary?: unknown): void {
-  const overlay = document.getElementById('trail-review-overlay');
-  if (!overlay) return;
+    const overlay = document.getElementById('trail-review-overlay')
+    if (!overlay) return
 
-  overlay.setAttribute('aria-hidden', 'false');
-  overlay.hidden = false;
-  overlay.classList.add('visible');
+    overlay.setAttribute('aria-hidden', 'false')
+    overlay.hidden = false
+    overlay.classList.add('visible')
 
-  const closeBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null;
-  if (closeBtn) {
-    _trailReviewPreviouslyFocused = document.activeElement as HTMLElement | null;
-    closeBtn.focus();
-  }
+    const closeBtn = overlay.querySelector('.trail-review-close') as HTMLElement | null
+    if (closeBtn) {
+        _trailReviewPreviouslyFocused = document.activeElement as HTMLElement | null
+        closeBtn.focus()
+    }
 }
 
 /**
@@ -400,33 +408,33 @@ export function showExploreTrailReview(_summary?: unknown): void {
  * Matches the legacy `hideExploreTrailReview` in lifecycle-search-sync.js.
  */
 export function hideExploreTrailReview(): void {
-  const overlay = document.getElementById('trail-review-overlay');
-  if (overlay) {
-    overlay.setAttribute('aria-hidden', 'true');
-    overlay.hidden = true;
-    overlay.classList.remove('visible');
+    const overlay = document.getElementById('trail-review-overlay')
+    if (overlay) {
+        overlay.setAttribute('aria-hidden', 'true')
+        overlay.hidden = true
+        overlay.classList.remove('visible')
 
-    if (_trailReviewPreviouslyFocused && typeof _trailReviewPreviouslyFocused.focus === 'function') {
-      _trailReviewPreviouslyFocused.focus();
+        if (_trailReviewPreviouslyFocused && typeof _trailReviewPreviouslyFocused.focus === 'function') {
+            _trailReviewPreviouslyFocused.focus()
+        }
+        _trailReviewPreviouslyFocused = null
     }
-    _trailReviewPreviouslyFocused = null;
-  }
 
-  searchStore.update(s => ({ ...s, summary: null, glowActive: false }));
-  clearSearchGlow();
-  refreshCompositionState();
+    searchStore.update((s) => ({ ...s, summary: null, glowActive: false }))
+    clearSearchGlow()
+    refreshCompositionState()
 }
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
 export const MODE_DESCRIPTIONS = {
-  default: 'County-wide overview across all visible records.',
-  bloom: 'Living records with high relationship potential.',
-  bridge: 'Connective nodes linking disparate county themes.',
-  trail: 'Focused path of related business entities.',
-  inside: 'Immersive exploration of local neighborhoods.'
-};
+    default: 'County-wide overview across all visible records.',
+    bloom: 'Living records with high relationship potential.',
+    bridge: 'Connective nodes linking disparate county themes.',
+    trail: 'Focused path of related business entities.',
+    inside: 'Immersive exploration of local neighborhoods.'
+}
 
 export const STORY_DESCRIPTIONS = {
-  standard: 'A semantic journey through Montgomery County.'
-};
+    standard: 'A semantic journey through Montgomery County.'
+}

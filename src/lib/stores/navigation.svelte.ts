@@ -344,7 +344,7 @@ export function setActiveStoryPrompt(_id: string | null): void {
 }
 
 /** Set the mycelium mode (dormant|active|overdrive). */
-export function setMyceliumMode(mode: string): void {
+export function setMyceliumMode(mode: string, _options?: any): void {
     _navWritable.update((s) => ({ ...s, myceliumMode: mode as any }))
 }
 

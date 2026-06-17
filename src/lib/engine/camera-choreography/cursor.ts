@@ -21,7 +21,7 @@ import {
   setMyceliumMode,
   updateExplorationUi,
   syncSearchStatusForFocus
-} from '../../../../js/modules/lifecycle.ts'
+} from '@lib/orchestration/lifecycle'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { applyPointFilterColors, syncFocusStage } from '../../../../js/modules/journey.ts'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'

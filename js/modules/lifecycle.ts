@@ -5,70 +5,37 @@
  * Semantic Demo Lifecycle & Global State Bridge.
  * Thin facade: re-exports from extracted sub-modules + remaining local logic.
  */
-import { state, withStateMutation } from '@lib/engine/state-bridge'
-import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { setLoadingPhase, hideLoadingOverlay, startDeferredHydration, scheduleWeatherHydration } from './loading-ui.ts'
-import { startSceneReveal, getSceneRevealProgress, onWindowResize } from '@lib/engine/scene-reveal'
-import {
-    copyCurrentViewLink,
-    resetStateBeforeUrlRestore,
-    clearExplorationFocusSelection
-} from '@lib/orchestration/url-state'
+import { state } from '@lib/engine/state-bridge'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { switchView, showViewHandoff, hideViewHandoff } from './view-controller.ts'
 import { updateSelectedBusiness, syncFocusStage, walkThreadNeighbor } from './journey.ts'
 import { traverseNeighbor } from '../../src/lib/journey/thread-settler-adapter'
 import { clearSearch } from '@lib/engine/search-state-bridge'
 import { getPanelSurfaceDetailFromMobileSheet } from './search-panel-adapter.ts'
-import { applyCompositionState, derivePanelSurface } from './composition-state.ts'
+import { derivePanelSurface } from './composition-state.ts'
 import { focusOnNode } from '@lib/engine/camera-controls'
-import {
-    updateLegendGuideState,
-    closeLegendGuide,
-    closeLegendPanel,
-    openLegendPanel,
-    restoreLegendCollapsedPanel
-} from '@lib/stores/legend-panel'
 import { hideSummaryCard as hideSummaryCardImpl } from '../../src/lib/journey/semantic-guide.ts'
 import {
     showExperienceToast as showExperienceToastImpl,
     syncSearchStatusForFocus as syncSearchStatusForFocusImpl
 } from '@lib/ui/ui-feedback'
 import {
-    fetchSemanticLaneHealth,
-    applySemanticLaneHealthPayload,
-    shouldWarmSemanticLane,
-    initSemanticLaneAdapter,
     probeSemanticLane as probeSemanticLaneImpl,
     scheduleSemanticLaneMonitor as scheduleSemanticLaneMonitorImpl,
-    setSemanticLaneUiState as setSemanticLaneUiStateImpl,
-    recordSemanticLaneSnapshot,
-    setSemanticLaneOpsMode,
-    refreshSemanticLaneOpsSummary
+    setSemanticLaneUiState as setSemanticLaneUiStateImpl
 } from './semantic-lane.ts'
 import {
     dispatchNavTransition as dispatchNavTransitionImpl,
     NAV_TRANSITION_ACTIONS as NAV_TRANSITION_ACTIONS_IMPL
 } from './navigation-state.ts'
-import { getFocusedJourneyPoint, getJourneyCompassState } from './journey-compass-state.ts'
-import {
-    executeJourneyCompassAction,
-    updateJourneyCompass,
-    installSemanticJourneyProbe,
-    scheduleMapRouteRefresh,
-    getViewHandoffModel,
-    getJourneyCompassPresentationState,
-    invokeClearMobileRouteFieldPeek
-} from './journey-compass-controller.ts'
 import { appState } from '@lib/state/app.svelte'
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
 import {
     MODE_DESCRIPTIONS,
     STORY_DESCRIPTIONS,
     refreshCompositionState,
-    updateExplorationUi as _updateExplorationUiImpl,
     setMyceliumMode,
     setTrailDepth,
-    setSemanticDiveMode as _setSemanticDiveModeImpl
 } from './lifecycle-modes.ts'
 import {
     resetExplorationFocus as _resetExplorationFocusImpl,
@@ -79,42 +46,14 @@ import {
 
 
 // ── Pass-through re-exports ─────────────────────────────────────────────────
-export { applyCompositionState };
+
 export {
-    getSceneRevealProgress,
-    onWindowResize,
-    setLoadingPhase,
-    hideLoadingOverlay,
-    startSceneReveal,
-    startDeferredHydration,
-    scheduleWeatherHydration,
-    copyCurrentViewLink,
-    resetStateBeforeUrlRestore,
-    clearExplorationFocusSelection,
-    syncFocusStage,
-    fetchSemanticLaneHealth,
-    applySemanticLaneHealthPayload,
-    shouldWarmSemanticLane,
-    initSemanticLaneAdapter,
-    recordSemanticLaneSnapshot,
-    setSemanticLaneOpsMode,
-    refreshSemanticLaneOpsSummary,
-    getFocusedJourneyPoint,
-    installSemanticJourneyProbe,
-    scheduleMapRouteRefresh,
-    getViewHandoffModel,
-    getJourneyCompassPresentationState,
-    invokeClearMobileRouteFieldPeek,
-    updateLegendGuideState,
-    closeLegendGuide,
-    closeLegendPanel,
-    openLegendPanel,
-    restoreLegendCollapsedPanel,
-    clearSearch,
-    executeJourneyCompassAction,
-    updateJourneyCompass,
-    getJourneyCompassState
+syncFocusStage,
+    clearSearch
 };
+
+export { copyCurrentViewLink } from '@lib/orchestration/url-state'
+export { updateJourneyCompass } from './journey-compass-controller.ts'
 
 // ── Re-exports from extracted sub-modules ────────────────────────────────────
 export {
@@ -246,5 +185,3 @@ export function focusOnPoint(point: any, options: any = {}): boolean {
     }
     return true
 }
-
-
