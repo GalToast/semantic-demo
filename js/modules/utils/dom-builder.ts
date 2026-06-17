@@ -5,5 +5,5 @@
  * This shim preserves backward compatibility for engine kernel importers.
  */
 
-export { el, setChildren } from '../../../src/lib/utils/dom-builder';
-export type { DomChild, DomEventHandler, DomAttributes } from '../../../src/lib/utils/dom-builder';
+export { el, setChildren } from '@lib/utils/dom-builder';
+export type { DomChild, DomEventHandler, DomAttributes } from '@lib/utils/dom-builder';

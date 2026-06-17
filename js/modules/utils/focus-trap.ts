@@ -5,4 +5,4 @@
  * This shim preserves backward compatibility for engine kernel importers.
  */
 
-export { FOCUSABLE_SELECTORS, setupFocusTrap, releaseFocusTrap } from '../../../src/lib/utils/focus-trap';
+export { FOCUSABLE_SELECTORS, setupFocusTrap, releaseFocusTrap } from '@lib/utils/focus-trap';

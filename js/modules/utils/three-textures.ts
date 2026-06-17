@@ -9,4 +9,4 @@
  * the extra argument silently ignored — no behavioral change.
  */
 
-export { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from '../../../src/lib/utils/three-textures';
+export { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from '@lib/utils/three-textures';
