@@ -105,7 +105,7 @@ describe('W11-T7: adapters.ts body calls all 11 init functions', () => {
 describe('W11-T7: adapters-bridge.ts imports from correct source modules', () => {
   it('re-exports initJourneyLifecycleAdapter from journey-lifecycle-adapter', () => {
     const src = readBridgeSource();
-    expect(src).toContain("from '../../../js/modules/journey-lifecycle-adapter'");
+    expect(src).toContain("from '../journey/lifecycle-adapter'");
   });
 
   it('re-exports initClusterFilterAdapter from cluster-filter-controller', () => {
