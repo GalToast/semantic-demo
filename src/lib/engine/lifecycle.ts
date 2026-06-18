@@ -226,7 +226,35 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
             container.appendChild(canvas)
         }
 
-        // 3. Initialise the Three.js scene
+        // 3. Schedule heavy GPU init after first paint (off critical path)
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+            window.requestIdleCallback(
+                () => initEngineHeavy(callbacks),
+                { timeout: 5000 }
+            )
+        } else {
+            // Fallback for Node/SSR or browsers without requestIdleCallback
+            Promise.resolve().then(() => initEngineHeavy(callbacks))
+        }
+    } catch (err) {
+        console.error('[engine/lifecycle] initEngine: setup failed', err)
+        unbindEventBridge()
+        setEngineStatus('degraded')
+        callbacks.onGraphicsStateChange?.('fallback')
+    }
+}
+
+/** Heavy GPU + geometry init — runs in requestIdleCallback after first paint. */
+function initEngineHeavy(callbacks: EngineCallbacks): void {
+    // Guard: if engine was destroyed or degraded before we ran, abort
+    const currentStatus = _getEngineStatus()
+    if (_destroyed || currentStatus === 'degraded') {
+        console.warn('[engine/lifecycle] initEngineHeavy: engine not in valid init state, aborting')
+        return
+    }
+
+    try {
+        // 3b. Initialise the Three.js scene
         const success = initThreeJS()
         if (!success) {
             setEngineStatus('degraded')
@@ -315,13 +343,12 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
             window.dispatchEvent(new Event('scene-ready'))
         }
     } catch (err) {
-        console.error('[engine/lifecycle] initEngine: initialization failed', err)
+        console.error('[engine/lifecycle] initEngineHeavy: initialization failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')
     }
 }
-
 /**
  * Resize the engine to match new dimensions.
  *
