@@ -16,12 +16,8 @@
 
 // ── Static @lib/* imports ────────────────────────────────────────────────────
 
-import * as THREE from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, ACESFilmicToneMapping, SRGBColorSpace, HemisphereLight, DirectionalLight, SphereGeometry, MeshBasicMaterial, Mesh, AdditiveBlending, Material, MeshPhongMaterial, BackSide } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-
-if (typeof window !== 'undefined') {
-    ;(window as any).THREE = THREE
-}
 
 import { webglContext, getLiveResourceCounts } from '@lib/engine/webgl-context'
 import { CONFIG } from '@lib/engine/config'
@@ -98,9 +94,9 @@ import * as threeInteractionVisualsMod from '@lib/engine/three-interaction-visua
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
 interface LegacyState {
-    scene: THREE.Scene | null
-    camera: THREE.PerspectiveCamera | null
-    renderer: THREE.WebGLRenderer | null
+    scene: Scene | null
+    camera: PerspectiveCamera | null
+    renderer: WebGLRenderer | null
     controls: any
     pointsMesh: any
     pointsMaterial: any
@@ -130,8 +126,8 @@ interface LegacyState {
     myceliumDirty: boolean
     selectedPoint: any
     sceneRevealActive: boolean
-    sceneRevealCameraStart: THREE.Vector3 | null
-    sceneRevealCameraEnd: THREE.Vector3 | null
+    sceneRevealCameraStart: Vector3 | null
+    sceneRevealCameraEnd: Vector3 | null
     inspectedStrandGroup: any
     scenePerformanceDiagnostics: any
     navState: any
@@ -577,8 +573,8 @@ export function initThreeJS() {
     const width = container.clientWidth || window.innerWidth
     const height = container.clientHeight || window.innerHeight
 
-    const scene = new THREE.Scene()
-    scene.fog = new THREE.FogExp2(
+    const scene = new Scene()
+    scene.fog = new FogExp2(
         (SCENE_ATMOSPHERE as any).fogColor ?? 0x0d2024,
         (SCENE_ATMOSPHERE as any).fogDensity ?? 0.62
     )
@@ -586,16 +582,16 @@ export function initThreeJS() {
     appState.scene = scene
     if (_state) _state.scene = scene
 
-    const camera = new THREE.PerspectiveCamera(60, width / height, 0.1, 1000)
+    const camera = new PerspectiveCamera(60, width / height, 0.1, 1000)
     camera.position.set(2.05, 1.55, 2.75)
     camera.lookAt(0, 0, 0)
     webglContext.camera = camera
     ;(appState as any).camera = camera
     if (_state) _state.camera = camera
 
-    let renderer: THREE.WebGLRenderer
+    let renderer: WebGLRenderer
     try {
-        renderer = new THREE.WebGLRenderer({
+        renderer = new WebGLRenderer({
             antialias: true,
             alpha: true,
             preserveDrawingBuffer: false,
@@ -612,9 +608,9 @@ export function initThreeJS() {
     // Keep the canvas slightly translucent so the subtle radial gradient behind
     // #canvas-container can bleed through without changing scene fog/lighting.
     renderer.setClearColor((SCENE_ATMOSPHERE as any).fogColor ?? 0x0d2024, (SCENE_ATMOSPHERE as any).clearAlpha ?? 0.96)
-    renderer.toneMapping = THREE.ACESFilmicToneMapping
+    renderer.toneMapping = ACESFilmicToneMapping
     renderer.toneMappingExposure = (SCENE_ATMOSPHERE as any).toneExposure ?? 1.0
-    renderer.outputColorSpace = THREE.SRGBColorSpace
+    renderer.outputColorSpace = SRGBColorSpace
     container.querySelectorAll('canvas').forEach((c) => {
         if (c !== renderer.domElement) c.remove()
     })
@@ -686,14 +682,14 @@ export function initThreeJS() {
         _cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
     })
 
-    const hemiLight = new THREE.HemisphereLight(0xe8f4ff, 0x080820, 0)
+    const hemiLight = new HemisphereLight(0xe8f4ff, 0x080820, 0)
     hemiLight.position.set(0, 20, 0)
     scene.add(hemiLight)
     webglContext.hemiLight = hemiLight
     ;(appState as any).hemiLight = hemiLight
     if (_state) _state.hemiLight = hemiLight
 
-    const dirLight = new THREE.DirectionalLight(0xffffff, 0)
+    const dirLight = new DirectionalLight(0xffffff, 0)
     dirLight.position.set(5, 5, 5)
     scene.add(dirLight)
     webglContext.dirLight = dirLight
@@ -713,28 +709,28 @@ export function initThreeJS() {
         }
     })
 
-    const glowGeo = new THREE.SphereGeometry(3.15, 32, 16)
-    const glowMat = new THREE.MeshBasicMaterial({
+    const glowGeo = new SphereGeometry(3.15, 32, 16)
+    const glowMat = new MeshBasicMaterial({
         color: 0x0d2024,
         transparent: true,
         opacity: 0.026,
-        side: THREE.BackSide
+        side: BackSide
     })
-    const glowSphere = new THREE.Mesh(glowGeo, glowMat)
+    const glowSphere = new Mesh(glowGeo, glowMat)
     glowSphere.scale.set(1.16, 0.9, 1.34)
     glowSphere.name = 'semantic-depth-atmosphere'
     scene.add(glowSphere)
 
-    const refGeo = new THREE.SphereGeometry(2.35, 48, 24)
-    const refMat = new THREE.MeshBasicMaterial({
+    const refGeo = new SphereGeometry(2.35, 48, 24)
+    const refMat = new MeshBasicMaterial({
         color: 0x4ecdc4,
         wireframe: true,
         transparent: true,
         opacity: 0.0045,
         depthWrite: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     })
-    const refSphere = new THREE.Mesh(refGeo, refMat)
+    const refSphere = new Mesh(refGeo, refMat)
     refSphere.scale.set(1.12, 0.86, 1.28)
     refSphere.name = 'county-depth-reference'
     scene.add(refSphere)
@@ -1030,7 +1026,7 @@ export function animate() {
         }
 
         if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
-            ;(webglContext.scene.fog as THREE.FogExp2).density =
+            ;(webglContext.scene.fog as FogExp2).density =
                 (SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
         }
         if (webglContext.nodeSporeMaterial) {
@@ -1058,11 +1054,11 @@ export function animate() {
             const baseIntensity = 0.34
             const flashPeak = 1.8
             const targetIntensity = baseIntensity + (flashPeak - baseIntensity) * _hoverEmissiveFlash
-            ;(webglContext.nodeSporeMaterial as THREE.MeshPhongMaterial).emissiveIntensity = targetIntensity
+            ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = targetIntensity
             _hoverEmissiveFlash *= 0.92
             if (_hoverEmissiveFlash < 0.005) {
                 _hoverEmissiveFlash = 0
-                ;(webglContext.nodeSporeMaterial as THREE.MeshPhongMaterial).emissiveIntensity = baseIntensity
+                ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = baseIntensity
             }
         }
 
@@ -1081,7 +1077,7 @@ export function animate() {
         const graphProfile = getMyceliumPresentationProfilePort()
         if (threadsVisible) {
             if (webglContext.myceliumCoreLines)
-                (webglContext.myceliumCoreLines.material as THREE.Material).opacity =
+                (webglContext.myceliumCoreLines.material as Material).opacity =
                     getThreadPulseOpacityPort(
                         (graphProfile as any).core,
                         Math.sin(_state?.pulsePhase ?? 0),
@@ -1089,7 +1085,7 @@ export function animate() {
                         threadRevealProgress
                     ) ?? 0
             if (webglContext.myceliumWispyLines)
-                (webglContext.myceliumWispyLines.material as THREE.Material).opacity =
+                (webglContext.myceliumWispyLines.material as Material).opacity =
                     getThreadPulseOpacityPort(
                         (graphProfile as any).wispy,
                         Math.sin((_state?.pulsePhase ?? 0) * 0.7),
@@ -1097,7 +1093,7 @@ export function animate() {
                         threadRevealProgress
                     ) ?? 0
             if (webglContext.myceliumBridgeLines)
-                (webglContext.myceliumBridgeLines.material as THREE.Material).opacity =
+                (webglContext.myceliumBridgeLines.material as Material).opacity =
                     getThreadPulseOpacityPort(
                         (graphProfile as any).bridge,
                         Math.sin((_state?.pulsePhase ?? 0) * 0.45),
@@ -1105,11 +1101,11 @@ export function animate() {
                         threadRevealProgress
                     ) ?? 0
         } else {
-            if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as THREE.Material).opacity = 0
+            if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as Material).opacity = 0
             if (webglContext.myceliumWispyLines)
-                (webglContext.myceliumWispyLines.material as THREE.Material).opacity = 0
+                (webglContext.myceliumWispyLines.material as Material).opacity = 0
             if (webglContext.myceliumBridgeLines)
-                (webglContext.myceliumBridgeLines.material as THREE.Material).opacity = 0
+                (webglContext.myceliumBridgeLines.material as Material).opacity = 0
         }
 
         if (webglContext.pointsMaterial?.userData?.shader) {

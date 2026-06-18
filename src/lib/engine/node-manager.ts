@@ -9,7 +9,7 @@
  *   - ../../../js/* for modules still owned by the legacy tree
  */
 
-import * as THREE from 'three';
+import { Color, Object3D, Texture, Vector3, MathUtils, InstancedMesh, DynamicDrawUsage, SphereGeometry, MeshPhongMaterial, NormalBlending, BufferGeometry, Float32BufferAttribute, PointsMaterial, Points, LineBasicMaterial, LineLoop, MeshBasicMaterial } from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { webglContext } from './webgl-context';
@@ -39,20 +39,20 @@ export const SCENE_ATMOSPHERE = Object.freeze({
 });
 
 const NODE_SPORE_BASE_RADIUS = 0.0019;
-const NODE_SPORE_COLOR_LIFT = new THREE.Color(SCENE_PALETTE.sporeLift);
-const NODE_SPORE_ROLE_TINT_PRIMARY = new THREE.Color(0x4ecdc4); // teal - .direct
-const NODE_SPORE_ROLE_TINT_SUPPORT = new THREE.Color(0xffd93d); // amber - .support
-const NODE_SPORE_ROLE_TINT_HALO    = new THREE.Color(0xff6b6b); // rose - .civic
+const NODE_SPORE_COLOR_LIFT = new Color(SCENE_PALETTE.sporeLift);
+const NODE_SPORE_ROLE_TINT_PRIMARY = new Color(0x4ecdc4); // teal - .direct
+const NODE_SPORE_ROLE_TINT_SUPPORT = new Color(0xffd93d); // amber - .support
+const NODE_SPORE_ROLE_TINT_HALO    = new Color(0xff6b6b); // rose - .civic
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
 
 const SPORE_SEGMENTS_VISIBLE = 6;
 const SPORE_SEGMENTS_HIT_PROXY = 4;
 
-const _nodeSporeObject = new THREE.Object3D();
-const _nodeSporeColor = new THREE.Color();
-const _trackedTextures: THREE.Texture[] = [];
+const _nodeSporeObject = new Object3D();
+const _nodeSporeColor = new Color();
+const _trackedTextures: Texture[] = [];
 
-function trackTexture<T extends THREE.Texture>(texture: T): T {
+function trackTexture<T extends Texture>(texture: T): T {
     _trackedTextures.push(texture);
     return texture;
 }
@@ -94,7 +94,7 @@ export function getNodeSporeScale(index: any) {
     return NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * emphasis;
 }
 
-export function setNodeSporeInstanceMatrix(index: number, targetMesh: THREE.InstancedMesh | null = webglContext.nodeSporeMesh, scaleMultiplier = 1) {
+export function setNodeSporeInstanceMatrix(index: number, targetMesh: InstancedMesh | null = webglContext.nodeSporeMesh, scaleMultiplier = 1) {
     const pos = state.nodePositions[index];
     if (!targetMesh || !pos) return;
     const base = getNodeSporeScale(index) * scaleMultiplier;
@@ -130,7 +130,7 @@ export function getNodeSporeColor(index: any, factor = 1) {
     _nodeSporeColor
         .setRGB(baseR, baseG, baseB)
         .lerp(NODE_SPORE_COLOR_LIFT, lift)
-        .multiplyScalar(THREE.MathUtils.clamp(factor, 0.04, 2.6));
+        .multiplyScalar(MathUtils.clamp(factor, 0.04, 2.6));
     // Role-based hue tint for focus-pocket nodes. Small lerp (0.18-0.22)
     // preserves the cluster identity underneath while making primary/support/
     // halo roles visually distinct. Non-pocket nodes (no role entry) keep
@@ -143,8 +143,8 @@ export function getNodeSporeColor(index: any, factor = 1) {
 }
 
 export function getPointBoundsCenter(points: Array<{ x?: number; y?: number; z?: number }>, positionBuffer: Float32Array | null = null) {
-    const min = new THREE.Vector3(Infinity, Infinity, Infinity);
-    const max = new THREE.Vector3(-Infinity, -Infinity, -Infinity);
+    const min = new Vector3(Infinity, Infinity, Infinity);
+    const max = new Vector3(-Infinity, -Infinity, -Infinity);
     let count = 0;
 
     if (positionBuffer && positionBuffer.length >= points.length * 3) {
@@ -184,9 +184,9 @@ export function getPointBoundsCenter(points: Array<{ x?: number; y?: number; z?:
 
     if (!count) {
         return {
-            center: new THREE.Vector3(0, 0, 0),
-            min: new THREE.Vector3(0, 0, 0),
-            max: new THREE.Vector3(0, 0, 0),
+            center: new Vector3(0, 0, 0),
+            min: new Vector3(0, 0, 0),
+            max: new Vector3(0, 0, 0),
             count: 0
         };
     }
@@ -218,8 +218,8 @@ function createPointShaderUniforms() {
     return {
         uGlowIntensity: { value: 0.0 },
         uRippleTime: { value: -1000.0 },
-        uRippleCenter: { value: new THREE.Vector3(0, 0, 0) },
-        uHoverNodePos: { value: new THREE.Vector3(0, 0, 0) },
+        uRippleCenter: { value: new Vector3(0, 0, 0) },
+        uHoverNodePos: { value: new Vector3(0, 0, 0) },
         uHoverBoost: { value: 1.0 },
         uHoverRadius: { value: 0.12 },
         uRevealProgress: { value: 1.0 }
@@ -296,8 +296,8 @@ export function disposeNodeVisuals() {
 
 export function createNodeSporeLayer() {
     if (!webglContext.scene || !state.points?.length || !state.nodePositions?.length) return;
-    const sporeGeo = new THREE.SphereGeometry(1, SPORE_SEGMENTS_VISIBLE, SPORE_SEGMENTS_VISIBLE - 1);
-    const sporeMat = new THREE.MeshPhongMaterial({
+    const sporeGeo = new SphereGeometry(1, SPORE_SEGMENTS_VISIBLE, SPORE_SEGMENTS_VISIBLE - 1);
+    const sporeMat = new MeshPhongMaterial({
         color: 0xc8d4d0,
         emissive: 0x16453f,
         emissiveIntensity: 0.34,
@@ -305,13 +305,13 @@ export function createNodeSporeLayer() {
         transparent: true,
         opacity: SCENE_ATMOSPHERE.sporeOpacity,
         vertexColors: true,
-        blending: THREE.NormalBlending,
+        blending: NormalBlending,
         depthWrite: false
     });
-    const sporeMesh = new THREE.InstancedMesh(sporeGeo, sporeMat, state.points.length);
+    const sporeMesh = new InstancedMesh(sporeGeo, sporeMat, state.points.length);
     sporeMesh.name = 'node-spore-instanced-field';
     sporeMesh.frustumCulled = false;
-    sporeMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    sporeMesh.instanceMatrix.setUsage(DynamicDrawUsage);
     webglContext.nodeSporeMesh = sporeMesh;
     webglContext.nodeSporeMaterial = sporeMat;
     const SPORE_INSTANCE_COLOR_FACTOR = 0.85;
@@ -324,17 +324,17 @@ export function createNodeSporeLayer() {
     sporeMesh.visible = true;
     webglContext.scene.add(sporeMesh);
 
-    const hitMat = new THREE.MeshBasicMaterial({
+    const hitMat = new MeshBasicMaterial({
         color: 0xffffff,
         transparent: true,
         opacity: 0.0,
         depthWrite: false
     });
-    const hitGeo = new THREE.SphereGeometry(1, SPORE_SEGMENTS_HIT_PROXY, SPORE_SEGMENTS_HIT_PROXY - 1);
-    const hitMesh = new THREE.InstancedMesh(hitGeo, hitMat, state.points.length);
+    const hitGeo = new SphereGeometry(1, SPORE_SEGMENTS_HIT_PROXY, SPORE_SEGMENTS_HIT_PROXY - 1);
+    const hitMesh = new InstancedMesh(hitGeo, hitMat, state.points.length);
     hitMesh.name = 'node-spore-instanced-hit-proxy';
     hitMesh.frustumCulled = false;
-    hitMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+    hitMesh.instanceMatrix.setUsage(DynamicDrawUsage);
     for (let i = 0; i < state.points.length; i += 1) {
         setNodeSporeInstanceMatrix(i, hitMesh, 1.8);
     }
@@ -346,7 +346,7 @@ export function createNodeSporeLayer() {
 export function createPoints() {
     disposeNodeVisuals();
     if (!state.points || !state.points.length) return;
-    const geometry = new THREE.BufferGeometry();
+    const geometry = new BufferGeometry();
     const positions: any[] = [];
     const colors: any[] = [];
 
@@ -401,9 +401,9 @@ export function createPoints() {
         state.targetPositions.push({x: fx, y: fy, z: fz});
         state.originalPositions.push({x: fx, y: fy, z: fz});
 
-        const color = getThreadCategoryColor(cluster, CONFIG.COLORS).lerp(new THREE.Color(THREAD_TINT_COLOR), 0.005);
+        const color = getThreadCategoryColor(cluster, CONFIG.COLORS).lerp(new Color(THREAD_TINT_COLOR), 0.005);
         const radialDepth = Math.sqrt(fx * fx + fy * fy + fz * fz);
-        const depthFactor = THREE.MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12);
+        const depthFactor = MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12);
         const colorOffset = i * 3;
         color.offsetHSL(0, 0.045, -0.01);
         const baseR = Math.min(1, color.r * depthFactor * 1.18 + 0.018);
@@ -416,21 +416,21 @@ export function createPoints() {
         colors.push(baseR, baseG, baseB);
     });
 
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
 
-    webglContext.pointsMaterial = new THREE.PointsMaterial({
+    webglContext.pointsMaterial = new PointsMaterial({
         size: CONFIG.POINTS_MATERIAL_BASE_SIZE,
         vertexColors: true,
         transparent: true,
         opacity: SCENE_ATMOSPHERE.pointOpacityScale,
         sizeAttenuation: true,
         depthWrite: false,
-        blending: THREE.NormalBlending
+        blending: NormalBlending
     });
     installPointMaterialShader(webglContext.pointsMaterial);
 
-    const pointsMesh = new THREE.Points(geometry, webglContext.pointsMaterial);
+    const pointsMesh = new Points(geometry, webglContext.pointsMaterial);
     pointsMesh.name = 'points-instanced-field';
     pointsMesh.frustumCulled = false;
     webglContext.scene!.add(pointsMesh);
@@ -458,20 +458,20 @@ function createCountyOutline({ min, max, center }: { min: any, max: any, center:
     const maxY = (max.y - center.y) * MYCELIUM_FIELD_SCALE.y - inset;
     const centerZ = 0;
     const points = [
-        new THREE.Vector3(minX, minY, centerZ),
-        new THREE.Vector3(maxX, minY, centerZ),
-        new THREE.Vector3(maxX, maxY, centerZ),
-        new THREE.Vector3(minX, maxY, centerZ),
-        new THREE.Vector3(minX, minY, centerZ)
+        new Vector3(minX, minY, centerZ),
+        new Vector3(maxX, minY, centerZ),
+        new Vector3(maxX, maxY, centerZ),
+        new Vector3(minX, maxY, centerZ),
+        new Vector3(minX, minY, centerZ)
     ];
-    const geometry = new THREE.BufferGeometry().setFromPoints(points);
-    const material = new THREE.LineBasicMaterial({
+    const geometry = new BufferGeometry().setFromPoints(points);
+    const material = new LineBasicMaterial({
         color: 0x4ecdc4,
         transparent: true,
         opacity: 0.18,
         depthWrite: false
     });
-    const line = new THREE.LineLoop(geometry, material);
+    const line = new LineLoop(geometry, material);
     line.name = 'county-outline';
     webglContext.scene.add(line);
 }

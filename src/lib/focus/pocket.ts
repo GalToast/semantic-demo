@@ -8,7 +8,7 @@
  * to focus/personality.ts. All state writes to navState.focusPocket* and
  * related tracked sub-objects are wrapped in appState.withMutation().
  */
-import * as THREE from 'three'
+import { Vector3, PerspectiveCamera } from 'three'
 import { appState } from '@lib/state/app.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { prefersReducedMotion } from '@lib/utils/environment'
@@ -479,10 +479,10 @@ export function applyFocusPocketBreathing(
     if (anchor && !(Number.isFinite(anchor.x) && Number.isFinite(anchor.y) && Number.isFinite(anchor.z))) return false
 
     // Prepare camera view vector for rotation
-    const camera = appState.camera as unknown as THREE.PerspectiveCamera | undefined
-    const viewVec = new THREE.Vector3(0, 0, 1)
+    const camera = appState.camera as unknown as PerspectiveCamera | undefined
+    const viewVec = new Vector3(0, 0, 1)
     if (camera && anchor) {
-        viewVec.subVectors(camera.position, new THREE.Vector3(anchor.x, anchor.y, anchor.z)).normalize()
+        viewVec.subVectors(camera.position, new Vector3(anchor.x, anchor.y, anchor.z)).normalize()
     }
 
     let changed = false
@@ -501,7 +501,7 @@ export function applyFocusPocketBreathing(
         const breatheOffset = Math.sin(age * 0.0015 + phase) * breatheAmp * settle
         if (!Number.isFinite(breatheOffset)) return
 
-        const offset = new THREE.Vector3(
+        const offset = new Vector3(
             basePosition.x - anchor.x,
             basePosition.y - anchor.y,
             basePosition.z - anchor.z

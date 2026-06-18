@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Vector3, PerspectiveCamera, MathUtils } from 'three';
 import { seededUnit } from '@lib/utils/seeded-random';
 import { clampNumber } from '@lib/utils/math-easing';
 import { getViewportSize } from '@lib/utils/environment';
@@ -27,7 +27,7 @@ interface LegacyPoint {
 }
 
 interface LegacyState {
-  camera: THREE.PerspectiveCamera | null;
+  camera: PerspectiveCamera | null;
   points: LegacyPoint[];
   originalPositions: LegacyPoint[] | null;
   nodePositions: LegacyPoint[] | null;
@@ -63,24 +63,24 @@ export function safeUnitScore(value: unknown, fallback = 0): number {
 
 // ── Focus constellation geometry ────────────────────────────────────────────
 
-export function getFocusViewBasis(focusVector: THREE.Vector3): {
-  viewVector: THREE.Vector3;
-  rightVector: THREE.Vector3;
-  upVector: THREE.Vector3;
+export function getFocusViewBasis(focusVector: Vector3): {
+  viewVector: Vector3;
+  rightVector: Vector3;
+  upVector: Vector3;
 } {
   const state = getFocusGeometryState();
   const viewVector = state?.camera
-    ? new THREE.Vector3().subVectors(state.camera.position, focusVector)
-    : new THREE.Vector3(0.28, 0.2, 1);
+    ? new Vector3().subVectors(state.camera.position, focusVector)
+    : new Vector3(0.28, 0.2, 1);
   if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1);
   viewVector.normalize();
 
-  const worldUp = new THREE.Vector3(0, 1, 0);
-  const rightVector = new THREE.Vector3().crossVectors(worldUp, viewVector);
+  const worldUp = new Vector3(0, 1, 0);
+  const rightVector = new Vector3().crossVectors(worldUp, viewVector);
   if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
   rightVector.normalize();
 
-  const upVector = new THREE.Vector3().crossVectors(viewVector, rightVector).normalize();
+  const upVector = new Vector3().crossVectors(viewVector, rightVector).normalize();
   return { viewVector, rightVector, upVector };
 }
 
@@ -468,42 +468,42 @@ export interface ThreadEdge {
   anchorPull?: number;
 }
 
-export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vector3 {
+export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): Vector3 {
   const state = getFocusGeometryState();
-  if (!state?.nodePositions) return new THREE.Vector3();
+  if (!state?.nodePositions) return new Vector3();
   const a = state.nodePositions[edge.a];
   const b = state.nodePositions[edge.b];
   if (!a || !b || edge.a === null || edge.a === undefined || edge.b === null || edge.b === undefined)
-    return new THREE.Vector3();
+    return new Vector3();
   if (
     !Number.isFinite(a.x) || !Number.isFinite(a.y) || !Number.isFinite(a.z) ||
     !Number.isFinite(b.x) || !Number.isFinite(b.y) || !Number.isFinite(b.z)
   )
-    return new THREE.Vector3();
+    return new Vector3();
 
-  const start = new THREE.Vector3(a.x, a.y, a.z);
-  const end = new THREE.Vector3(b.x, b.y, b.z);
+  const start = new Vector3(a.x, a.y, a.z);
+  const end = new Vector3(b.x, b.y, b.z);
   const mid = start.clone().lerp(end, 0.5);
-  const span = new THREE.Vector3().subVectors(end, start);
+  const span = new Vector3().subVectors(end, start);
   const spanLength = Math.max(span.length(), 0.001);
 
   const viewVector = state.camera
-    ? new THREE.Vector3().subVectors(state.camera.position, mid)
-    : new THREE.Vector3(0.28, 0.2, 1);
+    ? new Vector3().subVectors(state.camera.position, mid)
+    : new Vector3(0.28, 0.2, 1);
   if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1);
   viewVector.normalize();
 
-  const worldUp = new THREE.Vector3(0, 1, 0);
-  const rightVector = new THREE.Vector3().crossVectors(worldUp, viewVector);
+  const worldUp = new Vector3(0, 1, 0);
+  const rightVector = new Vector3().crossVectors(worldUp, viewVector);
   if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
   rightVector.normalize();
-  const upVector = new THREE.Vector3().crossVectors(viewVector, rightVector).normalize();
+  const upVector = new Vector3().crossVectors(viewVector, rightVector).normalize();
 
   const motifBraid = Number.isFinite(edge.motifBraid) ? edge.motifBraid! : 0.52;
   const roleLift = edge.role === 'support' ? 0.78 : 1;
   const isFieldNodeWalk = getFocusPanelMode() === FOCUS_PANEL_MODE.FIELD_NODE;
   const longArc = isFieldNodeWalk && edge.role === 'direct'
-    ? THREE.MathUtils.clamp((spanLength - 0.18) / 0.34, 0, 1)
+    ? MathUtils.clamp((spanLength - 0.18) / 0.34, 0, 1)
     : 0;
 
   const bendCap = isFieldNodeWalk ? 0.17 + longArc * 0.14 : 0.16;
@@ -527,7 +527,7 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vec
     state.nodePositions[focusedIdx]
   ) {
     const anchor = state.nodePositions[focusedIdx];
-    const anchorVector = new THREE.Vector3(anchor.x, anchor.y, anchor.z);
+    const anchorVector = new Vector3(anchor.x, anchor.y, anchor.z);
     const stem = anchorVector.lerp(mid, 0.42 + motifBraid * 0.16);
     control.lerp(stem, Math.min(0.44, anchorPull * (1 - longArc * 0.68)));
   }
@@ -617,7 +617,7 @@ export function buildFocusedPocketStagedPositions(
     return { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null };
   }
 
-  const focusVector = new THREE.Vector3(focusOrig.x, focusOrig.y, focusOrig.z);
+  const focusVector = new Vector3(focusOrig.x, focusOrig.y, focusOrig.z);
   const { viewVector, rightVector, upVector } = getFocusViewBasis(focusVector);
 
   const pocketPositions = new Map<number, { x: number; y: number; z: number }>();
@@ -709,7 +709,7 @@ export function buildFocusedPocketStagedPositions(
       );
     }
 
-    const stagedOffset = new THREE.Vector3()
+    const stagedOffset = new Vector3()
       .addScaledVector(rightVector, Math.cos(placement.angle) * placement.radius)
       .addScaledVector(upVector, Math.sin(placement.angle) * placement.radius)
       .addScaledVector(viewVector, placement.zOffset);
@@ -720,7 +720,7 @@ export function buildFocusedPocketStagedPositions(
       stagedOffset.multiplyScalar(microVariation.scale);
     }
 
-    const originalOffset = new THREE.Vector3(
+    const originalOffset = new Vector3(
       original.x - focusOrig.x,
       original.y - focusOrig.y,
       original.z - focusOrig.z,

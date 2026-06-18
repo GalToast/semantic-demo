@@ -4,7 +4,7 @@
  *
  * Canonical Svelte 5 implementation (legacy js/modules/ version retired in W16-T-CAM-4)
  */
-import * as THREE from 'three'
+import { Vector3, Box3 } from 'three'
 import type { ChoreographyCamera, ChoreographyControls, ChoreographyPersonality } from './types'
 import { easeInOutCubic, quadraticBezierComponent } from '@lib/utils/math-easing'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
@@ -81,11 +81,11 @@ export function animateCameraToSearchCorridor(
     const vectors = routeIndices
         .map((index) => allTargetPositions[index] || allNodePositions[index] || allOriginalPositions[index])
         .filter((pos): pos is NodePosition => Boolean(pos))
-        .map((pos) => new THREE.Vector3(pos.x, pos.y, pos.z))
+        .map((pos) => new Vector3(pos.x, pos.y, pos.z))
     if (!vectors.length) return false
-    const box = new THREE.Box3().setFromPoints(vectors)
-    const boundsCenter = new THREE.Vector3()
-    const boundsSize = new THREE.Vector3()
+    const box = new Box3().setFromPoints(vectors)
+    const boundsCenter = new Vector3()
+    const boundsSize = new Vector3()
     box.getCenter(boundsCenter)
     box.getSize(boundsSize)
     const radius = Math.max(0.08, boundsSize.length() * 0.5)
@@ -100,15 +100,15 @@ export function animateCameraToSearchCorridor(
     )
         return false
 
-    const anchorVector = new THREE.Vector3(anchorPosition.x, anchorPosition.y, anchorPosition.z)
+    const anchorVector = new Vector3(anchorPosition.x, anchorPosition.y, anchorPosition.z)
     const startTarget = activeControls.target.clone()
     const startPos = activeCamera.position.clone()
     const currentHeading = startPos.clone().sub(startTarget)
     if (currentHeading.lengthSq() < 0.0001) currentHeading.set(1.4, 1.1, 2)
     currentHeading.normalize()
 
-    const worldUp = new THREE.Vector3(0, 1, 0)
-    const rightVector = new THREE.Vector3().crossVectors(worldUp, currentHeading)
+    const worldUp = new Vector3(0, 1, 0)
+    const rightVector = new Vector3().crossVectors(worldUp, currentHeading)
     if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0)
     rightVector.normalize()
 
@@ -189,7 +189,7 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         const startTarget = activeControls.target.clone()
 
         const heading = startPos.clone().sub(startTarget).normalize()
-        const worldUp = new THREE.Vector3(0, 1, 0)
+        const worldUp = new Vector3(0, 1, 0)
         const desiredPos = startTarget.clone().add(heading.multiplyScalar(0.8)).add(worldUp.multiplyScalar(0.4))
 
         if (reducedMotion) {
@@ -263,7 +263,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
     }
     if (!count) return
 
-    const pocketCentroid = new THREE.Vector3(cx / count, cy / count, cz / count)
+    const pocketCentroid = new Vector3(cx / count, cy / count, cz / count)
 
     const anchorPos =
         anchorIdx !== null && anchorIdx !== undefined
@@ -271,7 +271,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
             : null
     if (!anchorPos) return
 
-    const anchorVec = new THREE.Vector3(
+    const anchorVec = new Vector3(
         Number.isFinite(anchorPos.x) ? anchorPos.x : 0,
         Number.isFinite(anchorPos.y) ? anchorPos.y : 0,
         Number.isFinite(anchorPos.z) ? anchorPos.z : 0

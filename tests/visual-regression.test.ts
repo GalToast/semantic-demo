@@ -760,7 +760,7 @@ function getTestStates(): TestState[] {
                 // Wait for mobile idle chrome to settle
                 await page.waitForTimeout(5000)
             }
-        }
+        },
 
         // 14. thread-inspector — SKIPPED: baseline was invalid (see bug report).
         // The inspector only renders when pinning a real NEIGHBOR (not the focused node).

@@ -6,7 +6,7 @@
  * journey-arrival-handoff.js twin.
  */
 import { state, withStateMutation } from '@lib/engine/state-bridge';
-import * as THREE from 'three';
+import { Group, Color, BufferGeometry, Float32BufferAttribute, LineBasicMaterial, LineSegments, AdditiveBlending, MathUtils } from 'three';
 import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';
 import {
     ARRIVAL_HANDOFF_SEGMENT_STEPS,
@@ -43,12 +43,12 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
     const scene = state.scene as { add?: (obj: any) => void } | null;
     if (!from || !to || !scene?.add) return;
     removeArrivalHandoffOverlay();
-    const group = new THREE.Group();
+    const group = new Group();
     group.name = 'arrival-memory-strand';
     group.userData = { fromIndex, targetIndex };
     const positions: number[] = [];
     const colors: number[] = [];
-    const color = new THREE.Color(ROUTE_TRACE_COLORS.cue);
+    const color = new Color(ROUTE_TRACE_COLORS.cue);
     [-1, 0, 1, 2].forEach((side) => {
         pushArcSegments(positions, colors, fromIndex, targetIndex, color, {
             steps: ARRIVAL_HANDOFF_SEGMENT_STEPS,
@@ -56,18 +56,18 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
             side: side * 0.42
         });
     });
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    const material = new THREE.LineBasicMaterial({
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+    const material = new LineBasicMaterial({
         vertexColors: true,
         transparent: true,
         opacity: 0.48,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     });
-    group.add(new THREE.LineSegments(geometry, material));
+    group.add(new LineSegments(geometry, material));
     scene.add(group);
     state.arrivalHandoffGroup = group;
     withStateMutation(() => {
@@ -139,7 +139,7 @@ export function updateArrivalHandoffOverlay(): void {
     const age = Math.max(0, performance.now() - (state.strandContinuityState.startedAt || performance.now()));
     const opacity = phase === 'exploring'
         ? 0.5
-        : THREE.MathUtils.clamp(0.5 - Math.max(0, age - 650) / 6200, 0.12, 0.5);
+        : MathUtils.clamp(0.5 - Math.max(0, age - 650) / 6200, 0.12, 0.5);
     line.material.opacity = opacity;
     withStateMutation(() => {
         state.arrivalHandoffDiagnostics = {

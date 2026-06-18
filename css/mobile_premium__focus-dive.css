@@ -1553,6 +1553,8 @@
     body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] #focus-stage.focus-stage {
         display: flex;
         flex-direction: column;
+        bottom: 0;
+        max-height: calc(100vh - 96px);
     }
 
     body.is-active[data-panel-surface='focus'] .focus-stage-card,

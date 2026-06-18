@@ -12,7 +12,7 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import * as THREE from 'three';
+import { Vector3, ShaderMaterial, BufferGeometry, Float32BufferAttribute, LineSegments, Group, SpriteMaterial, Texture, Sprite, AdditiveBlending } from 'three';
 import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config';
 import { state, withStateMutation } from '@lib/engine/state-bridge';
 
@@ -104,8 +104,8 @@ export function writeInspectedStrandPositions(lineObject: any): void {
         for (let segment = 0; segment < focusThreadSegments; segment += 1) {
             const t0 = segment / focusThreadSegments;
             const t1 = (segment + 1) / focusThreadSegments;
-            const p0 = adapter_getFocusThreadCurvePoint(edge as any, t0) || new THREE.Vector3();
-            const p1 = adapter_getFocusThreadCurvePoint(edge as any, t1) || new THREE.Vector3();
+            const p0 = adapter_getFocusThreadCurvePoint(edge as any, t0) || new Vector3();
+            const p1 = adapter_getFocusThreadCurvePoint(edge as any, t1) || new Vector3();
             positions[offset] = Number.isFinite(p0.x) ? p0.x! : 0;
             positions[offset + 1] = Number.isFinite(p0.y) ? p0.y! : 0;
             positions[offset + 2] = Number.isFinite(p0.z) ? p0.z! : 0;
@@ -118,8 +118,8 @@ export function writeInspectedStrandPositions(lineObject: any): void {
     positionAttr.needsUpdate = true;
 }
 
-export function createInspectedStrandMaterial({ aura = false } = {}): THREE.ShaderMaterial {
-    return new THREE.ShaderMaterial({
+export function createInspectedStrandMaterial({ aura = false } = {}): ShaderMaterial {
+    return new ShaderMaterial({
         uniforms: {
             time: { value: performance.now() / 1000 },
             opacity: { value: aura ? 0.42 : 0.92 },
@@ -162,7 +162,7 @@ export function createInspectedStrandMaterial({ aura = false } = {}): THREE.Shad
         transparent: true,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     });
 }
 
@@ -180,11 +180,11 @@ export function createInspectedStrandLine(targetIndex: number, lanes: number[], 
             laneValues.push(lane, lane);
         }
     });
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('progress', new THREE.Float32BufferAttribute(progress, 1));
-    geometry.setAttribute('lane', new THREE.Float32BufferAttribute(laneValues, 1));
-    const line = new THREE.LineSegments(geometry, createInspectedStrandMaterial({ aura }));
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('progress', new Float32BufferAttribute(progress, 1));
+    geometry.setAttribute('lane', new Float32BufferAttribute(laneValues, 1));
+    const line = new LineSegments(geometry, createInspectedStrandMaterial({ aura }));
     (line as any).userData = { targetIndex, lanes, aura };
     writeInspectedStrandPositions(line);
     return line;
@@ -229,7 +229,7 @@ export function syncInspectedStrandOverlay(inspectionState: any, options: { surf
         existingStrandGroup.userData?.focusedIndex !== inspectionState.focusedIndex;
     if (needsRebuild) {
         disposeInspectedStrandOverlay();
-        state.inspectedStrandGroup = new THREE.Group();
+        state.inspectedStrandGroup = new Group();
         (state.inspectedStrandGroup as any).name = 'inspected-semantic-strand';
         (state.inspectedStrandGroup as any).userData = {
             targetIndex: inspectionState.index,
@@ -240,16 +240,16 @@ export function syncInspectedStrandOverlay(inspectionState: any, options: { surf
         (state.inspectedStrandGroup as any).add(createInspectedStrandLine(inspectionState.index, [-1, 0, 1], true));
         (state.inspectedStrandGroup as any).add(createInspectedStrandLine(inspectionState.index, [0], false));
         [inspectionState.focusedIndex, inspectionState.index].forEach((endpointIndex: number, order: number) => {
-            const endpointMaterial = new THREE.SpriteMaterial({
-                map: (getFocusRingTexture() || getFocusNextCueTexture() || getFocusBeaconTexture()) as THREE.Texture,
+            const endpointMaterial = new SpriteMaterial({
+                map: (getFocusRingTexture() || getFocusNextCueTexture() || getFocusBeaconTexture()) as Texture,
                 color: order === 0 ? 0xffe27a : 0x7ce7dd,
                 transparent: true,
                 opacity: order === 0 ? 0.42 : 0.58,
                 depthWrite: false,
                 depthTest: false,
-                blending: THREE.AdditiveBlending
+                blending: AdditiveBlending
             });
-            const sprite = new THREE.Sprite(endpointMaterial);
+            const sprite = new Sprite(endpointMaterial);
             (sprite as any).userData = {
                 endpointIndex,
                 baseScale: order === 0 ? 0.052 : 0.06,

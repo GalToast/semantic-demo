@@ -4,7 +4,7 @@
  * Port of js/modules/cluster-labels.ts.
  * Renders and animates per-cluster text labels in the 3D galaxy view.
  */
-import * as THREE from 'three';
+import { Vector3, PerspectiveCamera } from 'three';
 
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { getViewportSize, isMobileViewport } from '@lib/utils/environment';
@@ -27,7 +27,7 @@ interface ModePresentation {
 }
 
 let _labelElements: Map<number, HTMLElement> = new Map();
-let _clusterCentroids: Map<number, THREE.Vector3> = new Map();
+let _clusterCentroids: Map<number, Vector3> = new Map();
 let _clusterStats: Map<number, ClusterStats> = new Map();
 let _clusterIndices: Map<number, number[]> = new Map();
 
@@ -114,7 +114,7 @@ export function initClusterLabels(): void {
     });
 
     sums.forEach((s, cluster) => {
-        _clusterCentroids.set(cluster, new THREE.Vector3(s.x / s.count, s.y / s.count, s.z / s.count));
+        _clusterCentroids.set(cluster, new Vector3(s.x / s.count, s.y / s.count, s.z / s.count));
         _clusterStats.set(cluster, { count: s.count });
     });
 
@@ -150,7 +150,7 @@ export function initClusterLabels(): void {
 }
 
 export function updateClusterLabels(): void {
-    const camera = appState.camera as THREE.PerspectiveCamera | null;
+    const camera = appState.camera as PerspectiveCamera | null;
     if (appState.currentView !== 'galaxy' || !_labelElements.size || !camera) {
         _labelElements.forEach(el => {
             el.classList.toggle('visible', false);

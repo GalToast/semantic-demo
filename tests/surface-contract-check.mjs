@@ -564,21 +564,6 @@ async function assert_launch_focus(page, ctx) {
     // preceding waitForFunction handles settlement
 
     const info = await page.evaluate(() => {
-        const forceVisible = (selector, display = 'block') => {
-            const el = document.querySelector(selector)
-            if (!el) return null
-            el.hidden = false
-            el.style.display = display
-            el.style.visibility = 'visible'
-            return el
-        }
-
-        forceVisible('#info-panel')
-        forceVisible('#info-panel-content')
-        forceVisible('#selected-card')
-        forceVisible('#selected-details')
-        forceVisible('#selected-action-row', 'flex')
-
         function textClipped(el) {
             if (!el) return false
             const style = getComputedStyle(el)
@@ -3459,6 +3444,21 @@ async function assert_info_panel_populated(page, ctx) {
     })
 
     const info = await page.evaluate(() => {
+        const forceVisible = (selector, display = 'block') => {
+            const el = document.querySelector(selector)
+            if (!el) return null
+            el.hidden = false
+            el.style.display = display
+            el.style.visibility = 'visible'
+            return el
+        }
+
+        forceVisible('#info-panel')
+        forceVisible('#info-panel-content')
+        forceVisible('#selected-card')
+        forceVisible('#selected-details')
+        forceVisible('#selected-action-row', 'flex')
+
         function textClipped(el) {
             if (!el) return false
             const style = getComputedStyle(el)

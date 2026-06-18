@@ -6,7 +6,7 @@
  * Provides canvas interaction adapter, thread candidate visibility checking,
  * nearest-thread-candidate lookup, and pointer position utilities.
  */
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import type { Camera, Object3D } from 'three';
 import { appState } from '@lib/state/app.svelte';
 import { isPointVisible } from '@lib/utils/geo-data';
@@ -87,7 +87,7 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin = 18): bo
   if (!position || !camera || !canvas?.getBoundingClientRect) return true;
 
   const rect = canvas.getBoundingClientRect();
-  const worldPosition = new THREE.Vector3(position.x, position.y, position.z);
+  const worldPosition = new Vector3(position.x, position.y, position.z);
   const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   if (pointsMesh?.localToWorld) pointsMesh.localToWorld(worldPosition);
   const projection = worldPosition.project(camera);
@@ -154,7 +154,7 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
       const px = Number.isFinite(pos.x) ? pos.x : 0;
       const py = Number.isFinite(pos.y) ? pos.y : 0;
       const pz = Number.isFinite(pos.z) ? pos.z : 0;
-      const vector = new THREE.Vector3(px, py, pz);
+      const vector = new Vector3(px, py, pz);
       if (pointsMesh?.localToWorld) pointsMesh.localToWorld(vector);
       const projected = vector.clone().project(camera);
       const screenX = ((projected.x + 1) / 2) * rect.width + rect.left;
@@ -170,7 +170,7 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
         : null;
       const focusPos = focusIndex != null ? nodePositions[focusIndex] : undefined;
       const distFocus = focusIndex != null && focusPos
-        ? new THREE.Vector3(px, py, pz).distanceTo(new THREE.Vector3(
+        ? new Vector3(px, py, pz).distanceTo(new Vector3(
             Number.isFinite(focusPos.x) ? focusPos.x : 0,
             Number.isFinite(focusPos.y) ? focusPos.y : 0,
             Number.isFinite(focusPos.z) ? focusPos.z : 0

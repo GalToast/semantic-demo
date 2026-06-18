@@ -4,7 +4,7 @@
  *
  * Port of js/modules/camera-framing-utils.ts
  */
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { getViewportSize } from '@lib/utils/environment';
 import { state } from '@lib/engine/state-bridge';
 
@@ -29,7 +29,7 @@ export interface PocketBounds {
 export interface ProjectedScreen {
   screenX: number;
   screenY: number;
-  projected: THREE.Vector3;
+  projected: Vector3;
 }
 
 export interface AppStateLike {
@@ -155,7 +155,7 @@ function projectToScreen(
   pointsMesh: any = null,
 ): ProjectedScreen | null {
   if (!camera || !renderer) return null;
-  const v = new THREE.Vector3(worldPos.x, worldPos.y, worldPos.z);
+  const v = new Vector3(worldPos.x, worldPos.y, worldPos.z);
   if (pointsMesh?.localToWorld) pointsMesh.localToWorld(v);
   const projected = v.clone().project(camera);
   if (projected.z < -1 || projected.z > 1) return null;
@@ -220,7 +220,7 @@ export function computeSafeAreaCameraTargetOffset(
   focusDistance: number,
   camera: any,
   controls: any,
-): THREE.Vector3 | null {
+): Vector3 | null {
   if (!pocketBounds || !canvasRegion || !camera || !controls) return null;
 
   const regionCenterX = canvasRegion.x + canvasRegion.width / 2;
@@ -249,17 +249,17 @@ export function computeSafeAreaCameraTargetOffset(
 
   const cameraPos = camera.position;
   const target = controls.target;
-  const viewDir = new THREE.Vector3().subVectors(cameraPos, target).normalize();
+  const viewDir = new Vector3().subVectors(cameraPos, target).normalize();
 
-  const worldUp = new THREE.Vector3(0, 1, 0);
-  const rightVec = new THREE.Vector3().crossVectors(worldUp, viewDir);
+  const worldUp = new Vector3(0, 1, 0);
+  const rightVec = new Vector3().crossVectors(worldUp, viewDir);
   if (rightVec.lengthSq() < 0.0001) rightVec.set(1, 0, 0);
   rightVec.normalize();
-  const upVec = new THREE.Vector3().crossVectors(viewDir, rightVec).normalize();
+  const upVec = new Vector3().crossVectors(viewDir, rightVec).normalize();
 
   const pixelsPerUnit = focusDistance * 0.0013;
 
-  const offset = new THREE.Vector3();
+  const offset = new Vector3();
 
   if (isConstrainedX && Math.abs(normX) > 0.1) {
     const correction = Math.max(0, (Math.abs(normX) - (1 - marginFraction)) * pixelsPerUnit * 1.4);

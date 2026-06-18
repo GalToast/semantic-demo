@@ -12,7 +12,7 @@
  * Wave 11 3-step retirement path; the corresponding bridge file in
  * `src/lib/engine/` is dead and a deletion candidate for a follow-up ticket.
  */
-import * as THREE from 'three'
+import { Vector3, PerspectiveCamera } from 'three'
 import { appState } from '@lib/state/app.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
@@ -423,12 +423,12 @@ export function applyFocusPocketBreathing(
         : null
     if (anchor && !(Number.isFinite(anchor.x) && Number.isFinite(anchor.y) && Number.isFinite(anchor.z))) return false
 
-    const viewVec = new THREE.Vector3(0, 0, 1)
+    const viewVec = new Vector3(0, 0, 1)
     if (appState.camera && anchor) {
         viewVec
             .subVectors(
-                (appState.camera as unknown as THREE.PerspectiveCamera).position,
-                new THREE.Vector3(anchor.x, anchor.y, anchor.z)
+                (appState.camera as unknown as PerspectiveCamera).position,
+                new Vector3(anchor.x, anchor.y, anchor.z)
             )
             .normalize()
     }
@@ -453,7 +453,7 @@ export function applyFocusPocketBreathing(
         const breatheOffset = Math.sin(age * 0.0015 + phase) * breatheAmp * settle
         if (!Number.isFinite(breatheOffset)) return
 
-        const offset = new THREE.Vector3(
+        const offset = new Vector3(
             basePosition.x - anchor.x,
             basePosition.y - anchor.y,
             basePosition.z - anchor.z

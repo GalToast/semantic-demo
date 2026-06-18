@@ -7,7 +7,7 @@
 
 import { state } from '@lib/engine/state-bridge';
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
-import * as THREE from 'three';
+import { Vector3, Color, AdditiveBlending, Float32BufferAttribute } from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
@@ -56,20 +56,20 @@ export function removeFocusSemanticOverlay(): void {
     _state.focusSemanticConnectionPairs = [];
 }
 
-function getFocusCurvePointLocal(edge: any, t: number): THREE.Vector3 {
+function getFocusCurvePointLocal(edge: any, t: number): Vector3 {
     if (typeof getFocusThreadCurvePoint === 'function') {
         return getFocusThreadCurvePoint(edge, t);
     }
     const a = _state.nodePositions[edge.a];
     const b = _state.nodePositions[edge.b];
-    if (!a || !b) return new THREE.Vector3();
+    if (!a || !b) return new Vector3();
     const ax = Number.isFinite(a.x) ? a.x : 0;
     const ay = Number.isFinite(a.y) ? a.y : 0;
     const az = Number.isFinite(a.z) ? a.z : 0;
     const bx = Number.isFinite(b.x) ? b.x : 0;
     const by = Number.isFinite(b.y) ? b.y : 0;
     const bz = Number.isFinite(b.z) ? b.z : 0;
-    return new THREE.Vector3(ax, ay, az).lerp(new THREE.Vector3(bx, by, bz), t);
+    return new Vector3(ax, ay, az).lerp(new Vector3(bx, by, bz), t);
 }
 
 function buildFocusThreadLineMaterial(): any {
@@ -81,7 +81,7 @@ function buildFocusThreadLineMaterial(): any {
         vertexColors: true,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     } as any);
     (lineMaterial as any).uniforms.time = { value: performance.now() / 1000 };
     (lineMaterial as any).uniforms.semanticScore = { value: 0.5 };
@@ -255,8 +255,8 @@ export function refreshFocusSemanticOverlay(): void {
     const semanticScore: number[] = [];
     const localEdgeKeys = new Set<string>();
     const pocketSet = new Set(_state.navState.focusPocketIndices || []);
-    const focusColor = new THREE.Color((CLUSTER_COLORS as any)[focusCluster % (CLUSTER_COLORS as any).length]).lerp(new THREE.Color((FOCUS_SEMANTIC_COLORS as any).focusLerp), 0.42);
-    const cueColor = new THREE.Color((FOCUS_SEMANTIC_COLORS as any).cue);
+    const focusColor = new Color((CLUSTER_COLORS as any)[focusCluster % (CLUSTER_COLORS as any).length]).lerp(new Color((FOCUS_SEMANTIC_COLORS as any).focusLerp), 0.42);
+    const cueColor = new Color((FOCUS_SEMANTIC_COLORS as any).cue);
     let nextCueSegments = 0;
     let directEdgeCount = 0;
     let supportEdgeCount = 0;
@@ -274,8 +274,8 @@ export function refreshFocusSemanticOverlay(): void {
         const isNextEdge = Number.isFinite(nextFocusIndex)
             && ((a === focusIndex && b === nextFocusIndex) || (b === focusIndex && a === nextFocusIndex));
         const candidateCluster = _state.points[b]?.cluster ?? focusCluster;
-        const candidateColor = new THREE.Color((CLUSTER_COLORS as any)[candidateCluster % (CLUSTER_COLORS as any).length]).lerp(
-            isNextEdge ? cueColor : new THREE.Color((FOCUS_SEMANTIC_COLORS as any).candidate),
+        const candidateColor = new Color((CLUSTER_COLORS as any)[candidateCluster % (CLUSTER_COLORS as any).length]).lerp(
+            isNextEdge ? cueColor : new Color((FOCUS_SEMANTIC_COLORS as any).candidate),
             isNextEdge ? 0.58 : 0.24
         );
         const edge = {
@@ -341,11 +341,11 @@ export function refreshFocusSemanticOverlay(): void {
     lineGeometry.setPositions(positions);
     lineGeometry.setColors(colors);
 
-    lineGeometry.setAttribute('progress', new THREE.Float32BufferAttribute(progress, 1));
-    lineGeometry.setAttribute('cue', new THREE.Float32BufferAttribute(cue, 1));
-    lineGeometry.setAttribute('priority', new THREE.Float32BufferAttribute(priority, 1));
-    lineGeometry.setAttribute('lane', new THREE.Float32BufferAttribute(lane, 1));
-    lineGeometry.setAttribute('semanticScore', new THREE.Float32BufferAttribute(semanticScore, 1));
+    lineGeometry.setAttribute('progress', new Float32BufferAttribute(progress, 1));
+    lineGeometry.setAttribute('cue', new Float32BufferAttribute(cue, 1));
+    lineGeometry.setAttribute('priority', new Float32BufferAttribute(priority, 1));
+    lineGeometry.setAttribute('lane', new Float32BufferAttribute(lane, 1));
+    lineGeometry.setAttribute('semanticScore', new Float32BufferAttribute(semanticScore, 1));
 
     const denseBundleMode = overlayIndices.length >= 6 ? 1 : 0;
     const lineMaterial = buildFocusThreadLineMaterial();

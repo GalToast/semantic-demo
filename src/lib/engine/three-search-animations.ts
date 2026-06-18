@@ -1,5 +1,5 @@
 import { webglContext } from '@lib/engine/webgl-context';
-import * as THREE from 'three';
+import { Vector3, InstancedBufferAttribute, BufferGeometry, BufferAttribute, ShaderMaterial, AdditiveBlending, Points, LineSegments, Group } from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
@@ -55,7 +55,7 @@ function getCorridorPathPoints(anchorPos: any, targetPos: any, segments = 20) {
         const x = anchorPos.x + (targetPos.x - anchorPos.x) * t;
         const y = anchorPos.y + (targetPos.y - anchorPos.y) * t + Math.sin(t * Math.PI) * 0.04;
         const z = anchorPos.z + (targetPos.z - anchorPos.z) * t;
-        points.push(new THREE.Vector3(x, y, z));
+        points.push(new Vector3(x, y, z));
     }
     return points;
 }
@@ -103,7 +103,7 @@ function buildCorridorLineGeometry(anchorIndex: number, routeIndices: number[]) 
             progressArr[i * (SEGMENTS + 1) + s] = s / SEGMENTS;
         }
     }
-    geometry.setAttribute('progress', new THREE.InstancedBufferAttribute(progressArr, 1));
+    geometry.setAttribute('progress', new InstancedBufferAttribute(progressArr, 1));
 
     return geometry;
 }
@@ -162,14 +162,14 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
         speeds[i] = 1.0;
     }
 
-    const particleGeometry = new THREE.BufferGeometry();
-    particleGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
-    particleGeometry.setAttribute('aProgress', new THREE.BufferAttribute(progressValues, 1));
-    particleGeometry.setAttribute('aLifetime', new THREE.BufferAttribute(lifetimes, 1));
-    particleGeometry.setAttribute('aOffset', new THREE.BufferAttribute(segmentOffsets, 1));
-    particleGeometry.setAttribute('aSpeed', new THREE.BufferAttribute(speeds, 1));
+    const particleGeometry = new BufferGeometry();
+    particleGeometry.setAttribute('position', new BufferAttribute(positions, 3));
+    particleGeometry.setAttribute('aProgress', new BufferAttribute(progressValues, 1));
+    particleGeometry.setAttribute('aLifetime', new BufferAttribute(lifetimes, 1));
+    particleGeometry.setAttribute('aOffset', new BufferAttribute(segmentOffsets, 1));
+    particleGeometry.setAttribute('aSpeed', new BufferAttribute(speeds, 1));
 
-    const particleMaterial = new THREE.ShaderMaterial({
+    const particleMaterial = new ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
             uDrawProgress: { value: 0 },
@@ -218,10 +218,10 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
         `,
         transparent: true,
         depthWrite: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     });
 
-    const particles = new THREE.Points(particleGeometry, particleMaterial);
+    const particles = new Points(particleGeometry, particleMaterial);
     particles.frustumCulled = false;
     return particles;
 }
@@ -383,7 +383,7 @@ export function triggerSearchCorridorAnimation(anchorIndex: any, routeIndices: n
     const lineGeometry = buildCorridorLineGeometry(anchorIndex, routeIndices);
     if (!lineGeometry) return;
 
-    const lineMaterial = new THREE.ShaderMaterial({
+    const lineMaterial = new ShaderMaterial({
         uniforms: {
             uDrawProgress: { value: 0.0 },
             uFadeOpacity: { value: 1.0 },
@@ -427,14 +427,14 @@ export function triggerSearchCorridorAnimation(anchorIndex: any, routeIndices: n
         `,
         transparent: true,
         depthWrite: false,
-        blending: THREE.AdditiveBlending,
+        blending: AdditiveBlending,
         vertexColors: true
     });
 
-    const corridorLine = new THREE.LineSegments(lineGeometry, lineMaterial);
+    const corridorLine = new LineSegments(lineGeometry, lineMaterial);
     const particles = buildCorridorParticleTrail(anchorIndex, routeIndices);
 
-    const corridorGroup = new THREE.Group();
+    const corridorGroup = new Group();
     corridorGroup.name = 'search-corridor-hero';
     corridorGroup.add(corridorLine);
     if (particles) corridorGroup.add(particles);

@@ -4,7 +4,7 @@
  * Native port of js/modules/journey-point-color.ts.
  * Re-exports exactly the API surface consumed by the bridge and journey.ts.
  */
-import * as THREE from 'three';
+import { Color } from 'three';
 import { state } from '@lib/engine/state-bridge';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { describeCluster } from '@lib/utils/ui-presentation';
@@ -12,7 +12,7 @@ import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { isPointVisible } from '@lib/utils/geo-data';
 
 const _state = state as any;
-const nodeSporeSyncColor = new THREE.Color();
+const nodeSporeSyncColor = new Color();
 
 function toIndexArray(value: unknown): number[] {
 	if (Array.isArray(value)) return value.filter(Number.isFinite);

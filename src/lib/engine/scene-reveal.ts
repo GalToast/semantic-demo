@@ -5,7 +5,7 @@
  * Manages the camera pull-in animation that runs when the 3D scene first
  * becomes visible, and resizes the renderer + camera when the window changes.
  */
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { appState as state } from '@lib/state/app.svelte.ts';
 import type { SemanticState } from '@lib/state/state-types';
 import { clearAutoRotateResumeTimer, setAutoRotateSuspended, settleCameraToOverviewPose } from '../engine/camera-controls';
@@ -25,7 +25,7 @@ export function setSceneRevealDataset(active: boolean): void {
 }
 
 export function startSceneReveal(): void {
-    const camera = state.camera as { position: THREE.Vector3 } | null;
+    const camera = state.camera as { position: Vector3 } | null;
     if (!camera || state.currentView !== 'galaxy') return;
     state.sceneRevealActive = true;
     setSceneRevealDataset(true);
@@ -37,9 +37,9 @@ export function startSceneReveal(): void {
         const cy = state.sceneRevealCameraEnd.y;
         const cz = state.sceneRevealCameraEnd.z;
         if (!Number.isFinite(cx) || !Number.isFinite(cy) || !Number.isFinite(cz)) {
-            return new THREE.Vector3(0, 0, 1);
+            return new Vector3(0, 0, 1);
         }
-        return new THREE.Vector3(cx * 0.42, cy * 0.34, Math.max(0.96, cz * 0.58));
+        return new Vector3(cx * 0.42, cy * 0.34, Math.max(0.96, cz * 0.58));
     })();
 
     clearAutoRotateResumeTimer();

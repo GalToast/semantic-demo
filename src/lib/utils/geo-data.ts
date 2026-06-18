@@ -9,7 +9,7 @@
  * from the legacy state bridge until Phase 2+.
  */
 
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { cleanOptionalValue, escapeHtml } from './dom-formatters';
 
 export interface ScatterOffset {
@@ -264,13 +264,13 @@ export function computeOverviewScatterOffsets(
 		groups.get(root)!.push(i);
 	}
 
-	const worldUp = new THREE.Vector3(0, 1, 0);
-	const fallbackAxis = new THREE.Vector3(1, 0, 0);
+	const worldUp = new Vector3(0, 1, 0);
+	const fallbackAxis = new Vector3(1, 0, 0);
 	for (const group of groups.values()) {
 		if (group.length < 2) continue;
 		group.sort((a, b) => a - b);
 
-		const centroid = new THREE.Vector3();
+		const centroid = new Vector3();
 		group.forEach((index) => {
 			const position = getPosition(index);
 			centroid.x += position.x;
@@ -282,20 +282,20 @@ export function computeOverviewScatterOffsets(
 		const normal =
 			centroid.lengthSq() > 1e-8
 				? centroid.clone().normalize()
-				: new THREE.Vector3(0, 0, 1);
-		let tangentA = new THREE.Vector3().crossVectors(normal, worldUp);
+				: new Vector3(0, 0, 1);
+		let tangentA = new Vector3().crossVectors(normal, worldUp);
 		if (tangentA.lengthSq() < 1e-8) {
-			tangentA = new THREE.Vector3().crossVectors(normal, fallbackAxis);
+			tangentA = new Vector3().crossVectors(normal, fallbackAxis);
 		}
 		tangentA.normalize();
-		const tangentB = new THREE.Vector3().crossVectors(normal, tangentA).normalize();
+		const tangentB = new Vector3().crossVectors(normal, tangentA).normalize();
 
 		const goldenAngle = Math.PI * (3 - Math.sqrt(5));
 		const maxRadius = Math.min(0.082, 0.016 + Math.sqrt(group.length) * 0.0072);
 		const minRadius = Math.min(maxRadius * 0.58, 0.012 + group.length * 0.00045);
 		const phase = seededUnit(group[0]!, group.length) * Math.PI * 2;
-		const rawOffsets: { index: number; radial: THREE.Vector3 }[] = [];
-		const groupOffsetCenter = new THREE.Vector3();
+		const rawOffsets: { index: number; radial: Vector3 }[] = [];
+		const groupOffsetCenter = new Vector3();
 
 		group.forEach((index, order) => {
 			const rank = (order + 0.5) / group.length;

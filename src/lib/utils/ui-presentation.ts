@@ -5,7 +5,7 @@
  * Port of js/modules/utils/ui-presentation.js
  */
 
-import * as THREE from 'three';
+import { Camera, Vector3, MathUtils, Color } from 'three';
 import { FOCUS_PANEL_MODE, getFocusPanelMode } from './focus-panel-mode';
 
 export type GraphPresentationState =
@@ -157,8 +157,8 @@ export function getFieldStepSyncLift(): number {
 }
 
 export function getZoomBlend(
-	camera: THREE.Camera | null,
-	controls: { minDistance?: number; maxDistance?: number; target?: THREE.Vector3 } | null
+	camera: Camera | null,
+	controls: { minDistance?: number; maxDistance?: number; target?: Vector3 } | null
 ): number {
 	if (!camera || !controls) return 0.42;
 	const minDistance = Number.isFinite(controls.minDistance as number)
@@ -168,9 +168,9 @@ export function getZoomBlend(
 		? (controls.maxDistance as number)
 		: 8;
 	const range = Math.max(0.001, maxDistance - minDistance);
-	const target = controls.target ?? new THREE.Vector3();
+	const target = controls.target ?? new Vector3();
 	const distance = camera.position.distanceTo(target);
-	return THREE.MathUtils.clamp((distance - minDistance) / range, 0, 1);
+	return MathUtils.clamp((distance - minDistance) / range, 0, 1);
 }
 
 export function getGraphPresentationState(
@@ -335,8 +335,8 @@ export function getGraphPresentationProfile(
 export function getThreadCategoryColor(
 	cluster: number | null | undefined,
 	colors: readonly string[]
-): THREE.Color {
+): Color {
 	if (cluster === null || cluster === undefined || !Number.isFinite(cluster)) cluster = 0;
-	if (!colors || colors.length === 0) return new THREE.Color('#888888');
-	return new THREE.Color(colors[cluster % colors.length]);
+	if (!colors || colors.length === 0) return new Color('#888888');
+	return new Color(colors[cluster % colors.length]);
 }

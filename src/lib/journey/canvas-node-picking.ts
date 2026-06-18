@@ -6,7 +6,7 @@
  * Provides nearest-node finding for canvas pointer events using raycaster
  * (instanced mesh first, then Points threshold) with a screen-space nearest fallback.
  */
-import * as THREE from 'three';
+import { Raycaster, PerspectiveCamera, Vector3, Vector2, MathUtils } from 'three';
 import type { Camera, Intersection, Object3D, InstancedMesh } from 'three';
 import { appState } from '@lib/state/app.svelte';
 import { isPointVisible } from '@lib/utils/geo-data';
@@ -14,7 +14,7 @@ import { getCanvasPointerPosition, getCanvasFieldNodeClickRadius } from './canva
 import type { CanvasPointerPosition } from './canvas-hit-test';
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data';
 
-const canvasFieldRaycaster = new THREE.Raycaster();
+const canvasFieldRaycaster = new Raycaster();
 
 const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
   status: 'all',
@@ -62,14 +62,14 @@ function getCanvasNodePickingMode(): 'nearest' | 'raycast' {
 // ── World Threshold ─────────────────────────────────────────────────────────
 
 function getCanvasPointWorldThreshold(pixelRadius: number, rect: DOMRect): number {
-  const camera = appState.camera as unknown as THREE.PerspectiveCamera | undefined;
+  const camera = appState.camera as unknown as PerspectiveCamera | undefined;
   const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   if (!camera || !rect?.height) return 0.035;
-  const cloudCenter = pointsMesh?.position || new THREE.Vector3(0, 0, 0);
+  const cloudCenter = pointsMesh?.position || new Vector3(0, 0, 0);
   const distance = Math.max(0.25, camera.position.distanceTo(cloudCenter));
-  const fov = Number.isFinite(camera.fov) ? THREE.MathUtils.degToRad(camera.fov) : THREE.MathUtils.degToRad(45);
+  const fov = Number.isFinite(camera.fov) ? MathUtils.degToRad(camera.fov) : MathUtils.degToRad(45);
   const worldPerPixel = (2 * Math.tan(fov / 2) * distance) / rect.height;
-  return THREE.MathUtils.clamp(worldPerPixel * pixelRadius * 0.42, 0.012, 0.09);
+  return MathUtils.clamp(worldPerPixel * pixelRadius * 0.42, 0.012, 0.09);
 }
 
 // ── Screen Candidate ────────────────────────────────────────────────────────
@@ -91,7 +91,7 @@ function getCanvasNodeScreenCandidate(
   const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   if (!position || !camera || !pointsMesh) return null;
 
-  const vector = new THREE.Vector3(position.x, position.y, position.z);
+  const vector = new Vector3(position.x, position.y, position.z);
   if (pointsMesh.localToWorld) pointsMesh.localToWorld(vector);
   const projected = vector.clone().project(camera);
   if ((projected as unknown as { z: number }).z < -1 || (projected as unknown as { z: number }).z > 1) return null;
@@ -111,12 +111,12 @@ function findRaycastCanvasFieldNode(
   pointer: CanvasPointerPosition,
   maxDistance: number
 ): CanvasNodePickCandidate | null {
-  const camera = appState.camera as unknown as THREE.PerspectiveCamera | undefined;
+  const camera = appState.camera as unknown as PerspectiveCamera | undefined;
   const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   const points = appState.points as unknown as GeoPoint[];
   if (!camera || !pointsMesh || !points?.length) return null;
 
-  const ndc = new THREE.Vector2(
+  const ndc = new Vector2(
     ((pointer.x - pointer.rect.left) / pointer.rect.width) * 2 - 1,
     -(((pointer.y - pointer.rect.top) / pointer.rect.height) * 2 - 1)
   );

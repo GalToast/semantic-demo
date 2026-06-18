@@ -2,7 +2,7 @@
 // TypeScript shadow of focus-pocket-geometry.js
 // Focus constellation geometry, seeded placement, screen-bounds, thread curve points.
 
-import * as THREE from 'three'
+import { Vector3, MathUtils } from 'three'
 import { state } from '@lib/engine/state-bridge'
 import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 import type { ConstellationMotifName } from '@lib/state/state-types'
@@ -41,23 +41,23 @@ export function safeUnitScore(value: unknown, fallback: number = 0): number {
 // === Focus constellation geometry ===
 
 export interface FocusViewBasis {
-    viewVector: THREE.Vector3
-    rightVector: THREE.Vector3
-    upVector: THREE.Vector3
+    viewVector: Vector3
+    rightVector: Vector3
+    upVector: Vector3
 }
 
-export function getFocusViewBasis(focusVector: THREE.Vector3): FocusViewBasis {
+export function getFocusViewBasis(focusVector: Vector3): FocusViewBasis {
     const viewVector = state.camera
-        ? new THREE.Vector3().subVectors(state.camera.position, focusVector)
-        : new THREE.Vector3(0.28, 0.2, 1)
+        ? new Vector3().subVectors(state.camera.position, focusVector)
+        : new Vector3(0.28, 0.2, 1)
     if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1)
     viewVector.normalize()
 
-    const worldUp = new THREE.Vector3(0, 1, 0)
-    const rightVector = new THREE.Vector3().crossVectors(worldUp, viewVector)
+    const worldUp = new Vector3(0, 1, 0)
+    const rightVector = new Vector3().crossVectors(worldUp, viewVector)
     if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0)
     rightVector.normalize()
-    const upVector = new THREE.Vector3().crossVectors(viewVector, rightVector).normalize()
+    const upVector = new Vector3().crossVectors(viewVector, rightVector).normalize()
     return { viewVector, rightVector, upVector }
 }
 
@@ -460,12 +460,12 @@ export interface ThreadEdge {
     [key: string]: unknown
 }
 
-export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vector3 {
-    if (!state.nodePositions) return new THREE.Vector3()
+export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): Vector3 {
+    if (!state.nodePositions) return new Vector3()
     const a = state.nodePositions[edge.a]
     const b = state.nodePositions[edge.b]
     if (!a || !b || edge.a === null || edge.a === undefined || edge.b === null || edge.b === undefined)
-        return new THREE.Vector3()
+        return new Vector3()
 
     if (
         !Number.isFinite(a.x) ||
@@ -475,28 +475,28 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vec
         !Number.isFinite(b.y) ||
         !Number.isFinite(b.z)
     )
-        return new THREE.Vector3()
-    const start = new THREE.Vector3(a.x, a.y, a.z)
-    const end = new THREE.Vector3(b.x, b.y, b.z)
+        return new Vector3()
+    const start = new Vector3(a.x, a.y, a.z)
+    const end = new Vector3(b.x, b.y, b.z)
     const mid = start.clone().lerp(end, 0.5)
-    const span = new THREE.Vector3().subVectors(end, start)
+    const span = new Vector3().subVectors(end, start)
     const spanLength = Math.max(span.length(), 0.001)
     const viewVector = state.camera
-        ? new THREE.Vector3().subVectors(state.camera.position, mid)
-        : new THREE.Vector3(0.28, 0.2, 1)
+        ? new Vector3().subVectors(state.camera.position, mid)
+        : new Vector3(0.28, 0.2, 1)
     if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1)
     viewVector.normalize()
 
-    const worldUp = new THREE.Vector3(0, 1, 0)
-    const rightVector = new THREE.Vector3().crossVectors(worldUp, viewVector)
+    const worldUp = new Vector3(0, 1, 0)
+    const rightVector = new Vector3().crossVectors(worldUp, viewVector)
     if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0)
     rightVector.normalize()
-    const upVector = new THREE.Vector3().crossVectors(viewVector, rightVector).normalize()
+    const upVector = new Vector3().crossVectors(viewVector, rightVector).normalize()
     const motifBraid = Number.isFinite(edge.motifBraid) ? edge.motifBraid! : 0.52
     const roleLift = edge.role === 'support' ? 0.78 : 1
     const isFieldNodeWalk = getFocusPanelMode() === FOCUS_PANEL_MODE.FIELD_NODE
     const longArc =
-        isFieldNodeWalk && edge.role === 'direct' ? THREE.MathUtils.clamp((spanLength - 0.18) / 0.34, 0, 1) : 0
+        isFieldNodeWalk && edge.role === 'direct' ? MathUtils.clamp((spanLength - 0.18) / 0.34, 0, 1) : 0
     const bendCap = isFieldNodeWalk ? 0.17 + longArc * 0.14 : 0.16
     const bendFloor = isFieldNodeWalk ? 0.032 + longArc * 0.026 : 0.028
     const bend = Math.min(
@@ -513,7 +513,7 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): THREE.Vec
         const focusedIndex = state.navState.focusedIndex!
         const anchor = state.nodePositions[focusedIndex]
         if (anchor) {
-            const anchorVector = new THREE.Vector3(anchor.x, anchor.y, anchor.z)
+            const anchorVector = new Vector3(anchor.x, anchor.y, anchor.z)
             const stem = anchorVector.lerp(mid, 0.42 + motifBraid * 0.16)
             control.lerp(stem, Math.min(0.44, anchorPull * (1 - longArc * 0.68)))
         }
@@ -579,7 +579,7 @@ export function buildFocusedPocketStagedPositions(
     const focusOrig = state.originalPositions[index]
     if (!focusOrig)
         return { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null }
-    const focusVector = new THREE.Vector3(focusOrig.x, focusOrig.y, focusOrig.z)
+    const focusVector = new Vector3(focusOrig.x, focusOrig.y, focusOrig.z)
     const { viewVector, rightVector, upVector } = getFocusViewBasis(focusVector)
 
     const pocketPositions = new Map<number, { x: number; y: number; z: number }>()
@@ -655,7 +655,7 @@ export function buildFocusedPocketStagedPositions(
             )
         }
 
-        const stagedOffset = new THREE.Vector3()
+        const stagedOffset = new Vector3()
             .addScaledVector(rightVector, Math.cos(placement.angle) * placement.radius)
             .addScaledVector(upVector, Math.sin(placement.angle) * placement.radius)
             .addScaledVector(viewVector, placement.zOffset)
@@ -665,7 +665,7 @@ export function buildFocusedPocketStagedPositions(
             stagedOffset.multiplyScalar(personality.microVariation.scale)
         }
 
-        const originalOffset = new THREE.Vector3(
+        const originalOffset = new Vector3(
             original.x - focusOrig.x,
             original.y - focusOrig.y,
             original.z - focusOrig.z

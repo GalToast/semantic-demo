@@ -9,7 +9,7 @@
  * for freer exploration.
  */
 
-import * as THREE from 'three'
+import { Vector3, Box3 } from 'three'
 import { state, withStateMutation } from '@lib/engine/state-bridge';
 import type { SemanticState } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
@@ -19,11 +19,11 @@ import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface OrbitSlackCamera {
-  position: THREE.Vector3
+  position: Vector3
 }
 
 interface OrbitSlackControls {
-  target: THREE.Vector3
+  target: Vector3
   maxDistance?: number
   rotateSpeed?: number
   panSpeed?: number
@@ -49,7 +49,7 @@ function getRouteEmbodimentIndices(): number[] {
   return routeIndices
 }
 
-function getRoutePositionBounds(routeIndices: number[] = []): { center: THREE.Vector3; size: THREE.Vector3; radius: number } | null {
+function getRoutePositionBounds(routeIndices: number[] = []): { center: Vector3; size: Vector3; radius: number } | null {
   const nodePositions = appState.nodePositions as unknown as { x: number; y: number; z: number }[]
   const originalPositions = appState.originalPositions as unknown as { x: number; y: number; z: number }[]
   const vectors = routeIndices
@@ -58,13 +58,13 @@ function getRoutePositionBounds(routeIndices: number[] = []): { center: THREE.Ve
       if (!pos) return null
       const px = pos.x, py = pos.y, pz = pos.z
       if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) return null
-      return new THREE.Vector3(px, py, pz)
+      return new Vector3(px, py, pz)
     })
-    .filter((v): v is THREE.Vector3 => v !== null)
+    .filter((v): v is Vector3 => v !== null)
   if (!vectors.length) return null
-  const box = new THREE.Box3().setFromPoints(vectors)
-  const center = new THREE.Vector3()
-  const size = new THREE.Vector3()
+  const box = new Box3().setFromPoints(vectors)
+  const center = new Vector3()
+  const size = new Vector3()
   box.getCenter(center)
   box.getSize(size)
   return { center, size, radius: Math.max(0.08, size.length() * 0.5) }
@@ -90,7 +90,7 @@ export function isSearchRouteFocusActive(): boolean {
 /**
  * Get the focus orbit slack pivot point — lerp between focus node and route centroid.
  */
-export function getFocusOrbitSlackPivot(): THREE.Vector3 | null {
+export function getFocusOrbitSlackPivot(): Vector3 | null {
   const camera = getTypedCamera()
   const controls = getTypedControls()
   const focusedNode = appState.focusedNode
@@ -100,7 +100,7 @@ export function getFocusOrbitSlackPivot(): THREE.Vector3 | null {
     (appState.originalPositions as unknown as { x: number; y: number; z: number }[])[focusedNode]
   if (!focusPosition) return null
 
-  const focusVector = new THREE.Vector3(focusPosition.x, focusPosition.y, focusPosition.z)
+  const focusVector = new Vector3(focusPosition.x, focusPosition.y, focusPosition.z)
   const routeBounds = getRoutePositionBounds(getRouteEmbodimentIndices())
   const routeCenter = routeBounds?.center?.clone ? routeBounds.center.clone() : focusVector.clone()
   const compact = isMobile()

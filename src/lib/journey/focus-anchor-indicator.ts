@@ -2,7 +2,7 @@
 // Canonical port of js/modules/focus-anchor-indicator.ts
 // Focus anchor visual treatment: ring + pulse + size cues.
 
-import * as THREE from 'three';
+import { CanvasTexture, Group, RingGeometry, MeshBasicMaterial, Mesh, DoubleSide, AdditiveBlending, SpriteMaterial, Sprite, Vector3, Material } from 'three';
 import { state } from '@lib/engine/state-bridge';
 import { prefersReducedMotion } from '@lib/utils/environment';
 
@@ -19,7 +19,7 @@ let _initialized = false;
 /**
  * Procedural soft radial glow — no external texture dependency.
  */
-function createGlowTexture(): THREE.CanvasTexture {
+function createGlowTexture(): CanvasTexture {
     const size = 256;
     const canvas = document.createElement('canvas');
     canvas.width = size;
@@ -33,7 +33,7 @@ function createGlowTexture(): THREE.CanvasTexture {
     gradient.addColorStop(1.0, 'rgba(255, 255, 255, 0.0)');
     ctx.fillStyle = gradient;
     ctx.fillRect(0, 0, size, size);
-    const texture = new THREE.CanvasTexture(canvas);
+    const texture = new CanvasTexture(canvas);
     texture.needsUpdate = true;
     return texture;
 }
@@ -43,7 +43,7 @@ export function createFocusAnchorIndicator(): void {
     if (!state.scene) return;
     _initialized = true;
 
-    const group = new THREE.Group();
+    const group = new Group();
     group.name = 'focus-anchor-indicator';
     group.userData.isAnchor = true;
     group.userData.kind = 'focus-anchor-group';
@@ -52,21 +52,21 @@ export function createFocusAnchorIndicator(): void {
     state.scene!.add(group);
     state.focusAnchorGroup = group;
 
-    const ringGeo = new THREE.RingGeometry(
+    const ringGeo = new RingGeometry(
         RING_OUTER_RADIUS - RING_OUTER_THICKNESS,
         RING_OUTER_RADIUS,
         64
     );
-    const ringMat = new THREE.MeshBasicMaterial({
+    const ringMat = new MeshBasicMaterial({
         color: 0xfff4ba,
         transparent: true,
         opacity: 0.78,
-        side: THREE.DoubleSide,
+        side: DoubleSide,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     });
-    const ringMesh = new THREE.Mesh(ringGeo, ringMat);
+    const ringMesh = new Mesh(ringGeo, ringMat);
     ringMesh.name = 'focus-anchor-ring-mesh';
     ringMesh.userData.isAnchor = true;
     ringMesh.userData.kind = 'focus-anchor-ring-static';
@@ -75,16 +75,16 @@ export function createFocusAnchorIndicator(): void {
     state.focusAnchorRingMesh = ringMesh;
 
     const glowTexture = createGlowTexture();
-    const spriteMat = new THREE.SpriteMaterial({
+    const spriteMat = new SpriteMaterial({
         map: glowTexture,
         color: 0x8ff8ed,
         transparent: true,
         opacity: 0.0,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     });
-    const haloSprite = new THREE.Sprite(spriteMat);
+    const haloSprite = new Sprite(spriteMat);
     haloSprite.name = 'focus-anchor-halo-sprite';
     haloSprite.userData.isAnchor = true;
     haloSprite.userData.kind = 'focus-anchor-halo-pulse';
@@ -99,9 +99,9 @@ export function createFocusAnchorIndicator(): void {
  */
 export function updateFocusAnchorIndicator(now: number, focusedNode: number | null): boolean {
     if (!_initialized) return false;
-    const group = state.focusAnchorGroup as THREE.Group | null;
-    const ringMesh = state.focusAnchorRingMesh as THREE.Mesh | null;
-    const haloSprite = state.focusAnchorHaloSprite as THREE.Sprite | null;
+    const group = state.focusAnchorGroup as Group | null;
+    const ringMesh = state.focusAnchorRingMesh as Mesh | null;
+    const haloSprite = state.focusAnchorHaloSprite as Sprite | null;
     if (!group || !ringMesh || !haloSprite) return false;
 
     const hasFocus = Number.isFinite(focusedNode)
@@ -109,29 +109,29 @@ export function updateFocusAnchorIndicator(now: number, focusedNode: number | nu
         && state.nodePositions?.[focusedNode!];
 
     if (!hasFocus) {
-        const currentOpacity = (haloSprite.material as THREE.SpriteMaterial).opacity;
+        const currentOpacity = (haloSprite.material as SpriteMaterial).opacity;
         const nextOpacity = currentOpacity - FADE_RATE;
         if (nextOpacity <= 0.01) {
-            (haloSprite.material as THREE.SpriteMaterial).opacity = 0;
-            (ringMesh.material as THREE.MeshBasicMaterial).opacity = 0;
+            (haloSprite.material as SpriteMaterial).opacity = 0;
+            (ringMesh.material as MeshBasicMaterial).opacity = 0;
             group.visible = false;
             return false;
         }
-        (haloSprite.material as THREE.SpriteMaterial).opacity = nextOpacity;
-        (ringMesh.material as THREE.MeshBasicMaterial).opacity = nextOpacity * 0.85;
+        (haloSprite.material as SpriteMaterial).opacity = nextOpacity;
+        (ringMesh.material as MeshBasicMaterial).opacity = nextOpacity * 0.85;
         return true;
     }
 
     const focusedIndex = focusedNode!;
     const pos = state.nodePositions[focusedIndex];
     if (!pos) return false;
-    const worldPos = new THREE.Vector3(pos.x, pos.y, pos.z);
+    const worldPos = new Vector3(pos.x, pos.y, pos.z);
     if (state.pointsMesh?.localToWorld) {
         state.pointsMesh.localToWorld(worldPos);
     }
     group.position.copy(worldPos);
     if (state.camera) {
-        group.lookAt(new THREE.Vector3().copy(state.camera.position as THREE.Vector3));
+        group.lookAt(new Vector3().copy(state.camera.position as Vector3));
     }
     group.visible = true;
 
@@ -139,7 +139,7 @@ export function updateFocusAnchorIndicator(now: number, focusedNode: number | nu
     const time = now / 1000;
 
     const fadeTarget = OPACITY_CEIL;
-    (haloSprite.material as THREE.SpriteMaterial).opacity += (fadeTarget - (haloSprite.material as THREE.SpriteMaterial).opacity) * FADE_RATE;
+    (haloSprite.material as SpriteMaterial).opacity += (fadeTarget - (haloSprite.material as SpriteMaterial).opacity) * FADE_RATE;
     let spriteScale = RING_BASE_SCALE;
     if (!reducedMotion) {
         const pulse = Math.sin(time * Math.PI * 2 * PULSE_FREQUENCY_HZ);
@@ -154,7 +154,7 @@ export function updateFocusAnchorIndicator(now: number, focusedNode: number | nu
         ringScale = 1.0 + slowPulse * 0.05;
     }
     ringMesh.scale.set(ringScale, ringScale, 1);
-    (ringMesh.material as THREE.MeshBasicMaterial).opacity = ringOpacity;
+    (ringMesh.material as MeshBasicMaterial).opacity = ringOpacity;
     return true;
 }
 
@@ -167,13 +167,13 @@ export function disposeFocusAnchorIndicator(): void {
         state.scene.remove(state.focusAnchorGroup);
     }
     if (state.focusAnchorRingMesh) {
-        const ringMesh = state.focusAnchorRingMesh as THREE.Mesh;
-        const material = ringMesh.material as THREE.Material | THREE.Material[] | undefined;
+        const ringMesh = state.focusAnchorRingMesh as Mesh;
+        const material = ringMesh.material as Material | Material[] | undefined;
         ringMesh.geometry?.dispose();
         if (material && !Array.isArray(material)) material.dispose();
     }
     if (state.focusAnchorHaloSprite) {
-        const haloMat = (state.focusAnchorHaloSprite as THREE.Sprite).material as THREE.SpriteMaterial;
+        const haloMat = (state.focusAnchorHaloSprite as Sprite).material as SpriteMaterial;
         if (haloMat.map) {
             haloMat.map.dispose();
             haloMat.map = null;

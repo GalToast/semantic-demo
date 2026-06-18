@@ -6,7 +6,7 @@
  */
 
 import { webglContext } from '@lib/engine/webgl-context';
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation';
 import { CONFIG } from '@lib/engine/config';
@@ -217,21 +217,21 @@ export function buildSemanticMyceliumEdges() {
 // ── Bezier sag control for organic mycelium curves ────────────────────────
 
 export function getBezierControlPoint(a: any, b: any, edgeSide = 0, edgeRise = 0) {
-    const start = new THREE.Vector3(a.x, a.y, a.z);
-    const end = new THREE.Vector3(b.x, b.y, b.z);
+    const start = new Vector3(a.x, a.y, a.z);
+    const end = new Vector3(b.x, b.y, b.z);
     const mid = start.clone().lerp(end, 0.5);
-    const span = new THREE.Vector3().subVectors(end, start);
+    const span = new Vector3().subVectors(end, start);
     const spanLength = Math.max(span.length(), 0.001);
 
     const viewVector = webglContext.camera
-        ? new THREE.Vector3().subVectors(webglContext.camera.position, mid).normalize()
-        : new THREE.Vector3(0.28, 0.2, 1).normalize();
+        ? new Vector3().subVectors(webglContext.camera.position, mid).normalize()
+        : new Vector3(0.28, 0.2, 1).normalize();
 
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const rightVector = new THREE.Vector3().crossVectors(worldUp, viewVector);
+    const worldUp = new Vector3(0, 1, 0);
+    const rightVector = new Vector3().crossVectors(worldUp, viewVector);
     if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
     rightVector.normalize();
-    const upVector = new THREE.Vector3().crossVectors(viewVector, rightVector).normalize();
+    const upVector = new Vector3().crossVectors(viewVector, rightVector).normalize();
 
     const baseSag = Math.min(0.12, Math.max(0.018, spanLength * 0.18));
     const sideOffset = edgeSide * baseSag * 0.52;
@@ -311,10 +311,10 @@ export function updateMyceliumThreads() {
         const spanLength = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2 + (bz - az) ** 2);
 
         const viewVec = webglContext.camera
-            ? new THREE.Vector3().subVectors(webglContext.camera.position, new THREE.Vector3(midX, midY, midZ)).normalize()
-            : new THREE.Vector3(0.28, 0.2, 1).normalize();
-        const worldUp = new THREE.Vector3(0, 1, 0);
-        const right = new THREE.Vector3().crossVectors(worldUp, viewVec);
+            ? new Vector3().subVectors(webglContext.camera.position, new Vector3(midX, midY, midZ)).normalize()
+            : new Vector3(0.28, 0.2, 1).normalize();
+        const worldUp = new Vector3(0, 1, 0);
+        const right = new Vector3().crossVectors(worldUp, viewVec);
         if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
         right.normalize();
 
@@ -322,8 +322,8 @@ export function updateMyceliumThreads() {
         const edgeSide = ((a.index * 31 + b.index * 17) % 2 === 0) ? 1 : -1;
         const edgeRise = (((a.index + b.index) % 5) - 2) / 2 || 0.3;
         const control = (() => {
-            const start = new THREE.Vector3(ax, ay, az);
-            const end = new THREE.Vector3(bx, by, bz);
+            const start = new Vector3(ax, ay, az);
+            const end = new Vector3(bx, by, bz);
             const mid = start.clone().lerp(end, 0.5);
             const baseSag = Math.min(0.06, Math.max(0.012, spanLength * 0.14));
             const sideOffset = edgeSide * baseSag * 0.45;
@@ -331,7 +331,7 @@ export function updateMyceliumThreads() {
             return mid
                 .clone()
                 .addScaledVector(right, sideOffset)
-                .addScaledVector(new THREE.Vector3(0, 1, 0), -(baseSag * 0.7) + riseOffset);
+                .addScaledVector(new Vector3(0, 1, 0), -(baseSag * 0.7) + riseOffset);
         })();
 
         const samples: Array<{ x: number; y: number; z: number }> = [];

@@ -4,7 +4,7 @@
  *
  * Ported from: js/modules/camera-controls-choreography-focus.ts
  */
-import * as THREE from 'three'
+import { Vector3 } from 'three'
 import { appState } from '@lib/state/app.svelte'
 import type { NodePosition, NavFocusPocketMeta } from '@lib/state/state-types'
 import { prefersReducedMotion } from '@lib/utils/environment'
@@ -40,7 +40,7 @@ interface FocusFramingOptions extends FramingParams {
   distance?: number
   verticalLift?: number
   framingDrop?: number
-  targetOffset?: THREE.Vector3
+  targetOffset?: Vector3
   duration?: number
 }
 
@@ -99,7 +99,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
   const transitionStyle = framing.transitionStyle || 'focus'
   const tx = targetPosition.x, ty = targetPosition.y, tz = targetPosition.z
   if (!Number.isFinite(tx) || !Number.isFinite(ty) || !Number.isFinite(tz)) return
-  const nodePos = new THREE.Vector3(tx, ty, tz)
+  const nodePos = new Vector3(tx, ty, tz)
   if (!controls.target || !camera.position) return
   const startTarget = controls.target.clone()
   const startPos = camera.position.clone()
@@ -113,15 +113,15 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
 
   const verticalLift = framing.verticalLift || 0.045
   const framingDrop = framing.framingDrop ?? 0.02
-  const framingOffset = framing.targetOffset?.clone ? framing.targetOffset.clone() : new THREE.Vector3()
+  const framingOffset = framing.targetOffset?.clone ? framing.targetOffset.clone() : new Vector3()
   let focusTarget = nodePos
     .clone()
     .add(framingOffset)
-    .add(new THREE.Vector3(0, -framingDrop, 0))
-  if (!appState.focusCameraTargetOffset?.copy) appState.focusCameraTargetOffset = new THREE.Vector3()
+    .add(new Vector3(0, -framingDrop, 0))
+  if (!appState.focusCameraTargetOffset?.copy) appState.focusCameraTargetOffset = new Vector3()
   let heading = currentHeading.clone()
-  let stageRightVector: THREE.Vector3 | null = null
-  let safeTargetOffset: THREE.Vector3 | null = null
+  let stageRightVector: Vector3 | null = null
+  let safeTargetOffset: Vector3 | null = null
   const navState = getTypedNavState()
   const isSemanticPocketFocus = navState.threadSource === 'semantic' && navState.focusPocketMeta?.active
 
@@ -189,7 +189,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
   const desiredCamPos = focusTarget
     .clone()
     .add(heading.multiplyScalar(distance))
-    .add(new THREE.Vector3(0, verticalLift, 0))
+    .add(new Vector3(0, verticalLift, 0))
 
   const personality = getTypedNavState().currentPersonality || {
     type: 'STANDARD',
@@ -204,7 +204,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
   const animationToken = ++appState.focusCameraAnimationToken
   appState.focusCameraOffset = desiredCamPos.clone().sub(focusTarget)
   if (!appState.focusCameraTargetOffset || typeof appState.focusCameraTargetOffset.copy !== 'function') {
-    appState.focusCameraTargetOffset = new THREE.Vector3()
+    appState.focusCameraTargetOffset = new Vector3()
   }
   if (appState.focusCameraTargetOffset) {
     appState.focusCameraTargetOffset?.copy?.(focusTarget.clone().sub(nodePos))
@@ -244,8 +244,8 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
       transitionStyle === 'walk' ||
       transitionStyle === 'dive' ||
       transitionStyle === 'dive-walk')
-  let cameraControlPoint: THREE.Vector3 | null = null
-  let targetControlPoint: THREE.Vector3 | null = null
+  let cameraControlPoint: Vector3 | null = null
+  let targetControlPoint: Vector3 | null = null
 
   if (stageArcActive) {
     const pocketProfile = (appState.navState as any).focusPocketMeta?.viewportProfile || {}
@@ -295,8 +295,8 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
 
     if (t > 0.85 && stageArcActive && !prefersReducedCameraMotion) {
       const driftIntensity = (t - 0.85) * 0.15
-      const worldUp = new THREE.Vector3(0, 1, 0)
-      const driftDir = new THREE.Vector3().crossVectors(worldUp, currentHeading).normalize()
+      const worldUp = new Vector3(0, 1, 0)
+      const driftDir = new Vector3().crossVectors(worldUp, currentHeading).normalize()
       camera.position.add(driftDir.multiplyScalar(driftIntensity * 0.02))
     }
 

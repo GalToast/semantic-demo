@@ -4,10 +4,10 @@
  * Port of js/modules/camera-math-utils.ts
  */
 
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 
 export interface FramingParams {
-    travelVector?: THREE.Vector3;
+    travelVector?: Vector3;
     [key: string]: unknown;
 }
 
@@ -25,11 +25,11 @@ export interface PocketProfile {
  * Compute the focus target and camera heading based on a travel vector.
  */
 export function computeTravelVectorHeading(
-    focusTarget: THREE.Vector3,
-    currentHeading: THREE.Vector3,
+    focusTarget: Vector3,
+    currentHeading: Vector3,
     transitionStyle: string,
     framing: FramingParams
-): { focusTarget: THREE.Vector3; heading: THREE.Vector3 } {
+): { focusTarget: Vector3; heading: Vector3 } {
     let newFocusTarget = focusTarget.clone();
     let newHeading = currentHeading.clone();
 
@@ -55,14 +55,14 @@ export function computeTravelVectorHeading(
  * or purely lateral views in semantic pockets.
  */
 export function computeOrbitBiasHeading(
-    currentHeading: THREE.Vector3,
+    currentHeading: Vector3,
     transitionStyle: string,
     pocketProfile: PocketProfile
-): { heading: THREE.Vector3; stageRightVector: THREE.Vector3 | null } {
+): { heading: Vector3; stageRightVector: Vector3 | null } {
     const baseOrbitBias = pocketProfile.key === 'roomy' ? 0.11 : (pocketProfile.key === 'compact' || pocketProfile.key === 'condensed' ? 0.04 : 0.075);
     const orbitBias = (transitionStyle === 'dive' || transitionStyle === 'dive-walk') ? baseOrbitBias * 1.55 : baseOrbitBias;
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const right = new THREE.Vector3().crossVectors(worldUp, currentHeading);
+    const worldUp = new Vector3(0, 1, 0);
+    const right = new Vector3().crossVectors(worldUp, currentHeading);
 
     if (right.lengthSq() > 0.000001) {
         right.normalize();
@@ -85,19 +85,19 @@ export function computeOrbitBiasHeading(
  * Compute quadratic bezier control points for a smooth camera arc.
  */
 export function computeCameraArcControlPoints(
-    startPos: THREE.Vector3,
-    startTarget: THREE.Vector3,
-    desiredCamPos: THREE.Vector3,
-    focusTarget: THREE.Vector3,
-    currentHeading: THREE.Vector3,
+    startPos: Vector3,
+    startTarget: Vector3,
+    desiredCamPos: Vector3,
+    focusTarget: Vector3,
+    currentHeading: Vector3,
     distance: number,
     transitionStyle: string,
     personality: PersonalityParams,
     pocketProfile: PocketProfile,
-    stageRightVector: THREE.Vector3 | null
-): { cameraControlPoint: THREE.Vector3; targetControlPoint: THREE.Vector3 } {
-    const worldUp = new THREE.Vector3(0, 1, 0);
-    const rightVector = stageRightVector || new THREE.Vector3().crossVectors(worldUp, currentHeading).normalize();
+    stageRightVector: Vector3 | null
+): { cameraControlPoint: Vector3; targetControlPoint: Vector3 } {
+    const worldUp = new Vector3(0, 1, 0);
+    const rightVector = stageRightVector || new Vector3().crossVectors(worldUp, currentHeading).normalize();
     if (rightVector.lengthSq() < 0.000001) rightVector.set(1, 0, 0);
     const roomyBoost = pocketProfile.key === 'roomy' ? 1.2 : (pocketProfile.key === 'condensed' ? 0.72 : 1);
 

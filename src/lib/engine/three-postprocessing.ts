@@ -15,7 +15,7 @@
  * state, public init/dispose/render functions, no class export.
  */
 
-import * as THREE from 'three';
+import { WebGLRenderer, Scene, PerspectiveCamera, Vector2 } from 'three';
 import {
     EffectComposer,
     RenderPass,
@@ -58,9 +58,9 @@ let _ditherEffect: DitherEffect | null = null;
 let _renderPass: RenderPass | null = null;
 let _initialized = false;
 let _premiumMode = false;
-let _rendererRef: THREE.WebGLRenderer | null = null;
-let _sceneRef: THREE.Scene | null = null;
-let _cameraRef: THREE.PerspectiveCamera | null = null;
+let _rendererRef: WebGLRenderer | null = null;
+let _sceneRef: Scene | null = null;
+let _cameraRef: PerspectiveCamera | null = null;
 
 // ── Default effect parameters ────────────────────────────────────────────────
 
@@ -72,7 +72,7 @@ const VIGNETTE_DEFAULTS = {
 
 /** ChromaticAberration: subtle RGB channel offset (lens distortion feel). */
 const CHROMATIC_ABERRATION_DEFAULTS = {
-    offset: new THREE.Vector2(0.0015, 0.0015),
+    offset: new Vector2(0.0015, 0.0015),
 };
 
 /** Conservative atmospheric glow — subtle on the focus pocket, not Las Vegas. */
@@ -138,9 +138,9 @@ export function setPremiumMode(enabled: boolean): void {
  * Safe to call multiple times — disposes previous state first.
  */
 export function initPostProcessing(
-    renderer: THREE.WebGLRenderer,
-    scene: THREE.Scene,
-    camera: THREE.PerspectiveCamera,
+    renderer: WebGLRenderer,
+    scene: Scene,
+    camera: PerspectiveCamera,
 ): void {
     _rendererRef = renderer;
     _sceneRef = scene;
@@ -311,7 +311,7 @@ export function updateVignetteParams(params: {
  * Update chromatic aberration offset at runtime (for DevGui sliders).
  */
 export function updateChromaticAberrationParams(params: {
-    offset?: THREE.Vector2;
+    offset?: Vector2;
 }): void {
     if (!_chromaticAberrationEffect || !params.offset) return;
     const aberrationAny = _chromaticAberrationEffect as any;

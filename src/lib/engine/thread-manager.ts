@@ -10,7 +10,7 @@
  */
 
 import { webglContext } from './webgl-context';
-import * as THREE from 'three';
+import { Vector3, Object3D, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, NormalBlending, Group, BufferAttribute } from 'three';
 import { state as _state, withStateMutation } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { CONFIG } from './config';
@@ -188,23 +188,23 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
         : null;
 }
 
-function getBezierControlPoint(start: { x: number; y: number; z: number }, end: { x: number; y: number; z: number }, side = 0, rise = 0): THREE.Vector3 {
-    const a = new THREE.Vector3(start.x, start.y, start.z);
-    const b = new THREE.Vector3(end.x, end.y, end.z);
+function getBezierControlPoint(start: { x: number; y: number; z: number }, end: { x: number; y: number; z: number }, side = 0, rise = 0): Vector3 {
+    const a = new Vector3(start.x, start.y, start.z);
+    const b = new Vector3(end.x, end.y, end.z);
     const mid = a.clone().lerp(b, 0.5);
-    const span = new THREE.Vector3().subVectors(b, a);
+    const span = new Vector3().subVectors(b, a);
     const spanLength = Math.max(span.length(), 0.001);
     const viewVector = webglContext.camera
-        ? new THREE.Vector3().subVectors(webglContext.camera.position, mid).normalize()
-        : new THREE.Vector3(0.28, 0.2, 1).normalize();
-    const up = new THREE.Vector3(0, 1, 0);
-    const right = new THREE.Vector3().crossVectors(up, viewVector);
+        ? new Vector3().subVectors(webglContext.camera.position, mid).normalize()
+        : new Vector3(0.28, 0.2, 1).normalize();
+    const up = new Vector3(0, 1, 0);
+    const right = new Vector3().crossVectors(up, viewVector);
     if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
     right.normalize();
     const lift = Math.min(0.12, Math.max(0.018, spanLength * 0.18));
     return mid
         .addScaledVector(right, side * lift * 0.52)
-        .addScaledVector(new THREE.Vector3().crossVectors(viewVector, right).normalize(), -(lift * 0.78) + rise * lift * 0.32)
+        .addScaledVector(new Vector3().crossVectors(viewVector, right).normalize(), -(lift * 0.78) + rise * lift * 0.32)
         .addScaledVector(viewVector, lift * 0.14);
 }
 
@@ -258,7 +258,7 @@ function getLineSegmentCount(line: any) {
 export function getGroupLineSegmentCount(group: any) {
     let total = 0;
     if (group && group.children) {
-        group.children.forEach((child: THREE.Object3D & { isLineSegments?: boolean }) => {
+        group.children.forEach((child: Object3D & { isLineSegments?: boolean }) => {
             if (child.isLineSegments) {
                 total += getLineSegmentCount(child);
             }
@@ -269,16 +269,16 @@ export function getGroupLineSegmentCount(group: any) {
 
 function createLineSegments(positions: any, colors: any, opacity: any) {
     if (!positions.length) return null;
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
-    return new THREE.LineSegments(geometry, new THREE.LineBasicMaterial({
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
+    return new LineSegments(geometry, new LineBasicMaterial({
         vertexColors: true,
         transparent: true,
         opacity,
         linewidth: 1,
         depthWrite: true,
-        blending: THREE.NormalBlending
+        blending: NormalBlending
     }));
 }
 
@@ -398,7 +398,7 @@ export function createMycelium() {
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 });
     });
 
-    webglContext.myceliumGroup = new THREE.Group();
+    webglContext.myceliumGroup = new Group();
     const profile = getMyceliumPresentationProfile();
     webglContext.myceliumCoreLines = createLineSegments(coreConnections, coreColors, profile.core);
     webglContext.myceliumWispyLines = createLineSegments(wispyConnections, wispyColors, profile.wispy);
@@ -420,8 +420,8 @@ export function createMycelium() {
 export function updateMyceliumThreads(): void {
     if (!webglContext.myceliumConnectionPairs?.length) return;
 
-    const updateLayer = (line: THREE.LineSegments | null, layer: number): void => {
-        const positionAttr = line?.geometry?.attributes?.position as THREE.BufferAttribute | undefined;
+    const updateLayer = (line: LineSegments | null, layer: number): void => {
+        const positionAttr = line?.geometry?.attributes?.position as BufferAttribute | undefined;
         if (!positionAttr) return;
 
         const nextPositions: number[] = [];

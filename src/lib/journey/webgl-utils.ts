@@ -4,7 +4,7 @@
  * Ported from: js/modules/journey-webgl-utils.ts
  * Pure utility functions. No side effects.
  */
-import * as THREE from 'three';
+import { Vector3, Color } from 'three';
 import { state } from '@lib/engine/state-bridge';
 
 export const ROUTE_TRACE_SEGMENT_STEPS: number = 7;
@@ -20,23 +20,23 @@ export function disposeLineObject(lineObject: any): void {
     lineObject?.material?.dispose?.();
 }
 
-export function getNodeVector(index: number | null | undefined): THREE.Vector3 | null {
+export function getNodeVector(index: number | null | undefined): Vector3 | null {
     if (!Number.isFinite(index) || index === null || index === undefined) return null;
     const pos = (state.nodePositions as any[])[index] || (state.targetPositions as any[])[index] || (state.originalPositions as any[])[index];
     if (!pos) return null;
     const px = Number.isFinite(pos.x) ? pos.x : 0;
     const py = Number.isFinite(pos.y) ? pos.y : 0;
     const pz = Number.isFinite(pos.z) ? pos.z : 0;
-    return new THREE.Vector3(px, py, pz);
+    return new Vector3(px, py, pz);
 }
 
 export function getArcPoint(
-    from: THREE.Vector3,
-    to: THREE.Vector3,
+    from: Vector3,
+    to: Vector3,
     t: number,
     lift: number = 0.08,
     side: number = 0
-): THREE.Vector3 | null {
+): Vector3 | null {
     if (!from || !to) return null;
     const distance = from.distanceTo(to);
     if (!Number.isFinite(distance)) return null;
@@ -61,7 +61,7 @@ export function pushArcSegments(
     colors: number[],
     fromIndex: number,
     toIndex: number,
-    color: THREE.Color,
+    color: Color,
     options: PushArcOptions = {}
 ): number {
     const from = getNodeVector(fromIndex);

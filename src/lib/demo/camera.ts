@@ -6,21 +6,21 @@
  * Captures overview camera position, provides fallback defaults,
  * animates camera back to overview with easing, and cancels in-progress animations.
  */
-import * as THREE from 'three';
+import { Vector3 } from 'three';
 import { appState } from '@lib/state/app.svelte';
 import { easeInOutSine } from '@lib/utils/math-easing';
 import { prefersReducedMotion } from '@lib/utils/environment';
 
-let _overviewCameraSnapshot: { camera: THREE.Vector3; target: THREE.Vector3 } | null = null;
+let _overviewCameraSnapshot: { camera: Vector3; target: Vector3 } | null = null;
 let _overviewCameraRafId: number | null = null;
 
 interface DemoCameraControls {
-  target: THREE.Vector3;
+  target: Vector3;
   update: () => void;
 }
 
-function isThreeVector(value: unknown): value is THREE.Vector3 {
-  const vector = value as Partial<THREE.Vector3> | null;
+function isThreeVector(value: unknown): value is Vector3 {
+  const vector = value as Partial<Vector3> | null;
   return Boolean(
     vector &&
       typeof vector.x === 'number' &&
@@ -32,7 +32,7 @@ function isThreeVector(value: unknown): value is THREE.Vector3 {
   );
 }
 
-function getDemoCameraPosition(): THREE.Vector3 | null {
+function getDemoCameraPosition(): Vector3 | null {
   const camera = appState.camera as unknown as { position?: unknown } | null;
   return isThreeVector(camera?.position) ? camera.position : null;
 }
@@ -56,16 +56,16 @@ export function captureOverviewCameraSnapshot(): void {
   };
 }
 
-export function getOverviewCameraSnapshot(): { camera: THREE.Vector3; target: THREE.Vector3 } {
+export function getOverviewCameraSnapshot(): { camera: Vector3; target: Vector3 } {
   if (_overviewCameraSnapshot?.camera?.clone && _overviewCameraSnapshot?.target?.clone) {
     return {
-      camera: _overviewCameraSnapshot.camera.clone() as THREE.Vector3,
-      target: _overviewCameraSnapshot.target.clone() as THREE.Vector3
+      camera: _overviewCameraSnapshot.camera.clone() as Vector3,
+      target: _overviewCameraSnapshot.target.clone() as Vector3
     };
   }
   return {
-    camera: new THREE.Vector3(0, 3.5, 5),
-    target: new THREE.Vector3(0, 0, 0)
+    camera: new Vector3(0, 3.5, 5),
+    target: new Vector3(0, 0, 0)
   };
 }
 
@@ -73,7 +73,7 @@ export function animateCameraToOverview(duration = 1000): void {
   const cameraPosition = getDemoCameraPosition();
   const controls = getDemoControls();
   if (!cameraPosition || !controls) return;
-  const animationCameraPosition: THREE.Vector3 = cameraPosition;
+  const animationCameraPosition: Vector3 = cameraPosition;
   const animationControls: DemoCameraControls = controls;
 
   const startPos = animationCameraPosition.clone();

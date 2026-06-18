@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import { Material, Vector3, CircleGeometry, ShaderMaterial, DoubleSide, NormalBlending, Mesh, SphereGeometry, BufferGeometry, BufferAttribute, LineSegments, IcosahedronGeometry, AdditiveBlending, BackSide, PointLight, Color, Group } from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state as any;
 import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations';
@@ -26,9 +26,9 @@ interface SpriteUserData {
 }
 
 interface SpriteLike {
-    material: THREE.Material & { opacity: number; rotation?: number };
-    position: THREE.Vector3;
-    scale: THREE.Vector3;
+    material: Material & { opacity: number; rotation?: number };
+    position: Vector3;
+    scale: Vector3;
     visible: boolean;
     userData: SpriteUserData;
 }
@@ -238,13 +238,13 @@ export function initSemanticManifold() {
         console.warn('[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init');
         return;
     }
-    const manifoldGeo = new THREE.CircleGeometry(4, 64);
-    const manifoldMat = new THREE.ShaderMaterial({
+    const manifoldGeo = new CircleGeometry(4, 64);
+    const manifoldMat = new ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
             uRippleTime: { value: -1000.0 },
-            uRippleCenter: { value: new THREE.Vector3(0, 0, 0) },
-            uColor: { value: new THREE.Color(0x4ecdc4) }
+            uRippleCenter: { value: new Vector3(0, 0, 0) },
+            uColor: { value: new Color(0x4ecdc4) }
         },
         vertexShader: `
             varying vec2 vUv;
@@ -290,11 +290,11 @@ export function initSemanticManifold() {
             }
         `,
         transparent: true,
-        side: THREE.DoubleSide,
+        side: DoubleSide,
         depthWrite: false,
-        blending: THREE.NormalBlending
+        blending: NormalBlending
     });
-    state.semanticManifold = new THREE.Mesh(manifoldGeo, manifoldMat);
+    state.semanticManifold = new Mesh(manifoldGeo, manifoldMat);
     state.semanticManifold.rotation.x = -Math.PI / 2;
     state.semanticManifold.position.y = -0.8;
     state.scene.add(state.semanticManifold);
@@ -306,15 +306,15 @@ export function initSemanticLens() {
         return;
     }
     disposeSemanticLens();
-    state.semanticLensGroup = new THREE.Group();
+    state.semanticLensGroup = new Group();
     state.semanticLensGroup.visible = false;
     state.scene.add(state.semanticLensGroup);
 
-    const glowGeo = new THREE.SphereGeometry(0.12, 32, 32);
-    const glowMat = new THREE.ShaderMaterial({
+    const glowGeo = new SphereGeometry(0.12, 32, 32);
+    const glowMat = new ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
-            uColor: { value: new THREE.Color(0x4ecdc4) },
+            uColor: { value: new Color(0x4ecdc4) },
             uOpacity: { value: 0 },
             uSignalScore: { value: 0 }
         },
@@ -339,24 +339,24 @@ export function initSemanticLens() {
             }
         `,
         transparent: true,
-        side: THREE.BackSide,
-        blending: THREE.NormalBlending,
+        side: BackSide,
+        blending: NormalBlending,
         depthWrite: false
     });
-    state.semanticLensGlow = new THREE.Mesh(glowGeo, glowMat);
+    state.semanticLensGlow = new Mesh(glowGeo, glowMat);
     state.semanticLensGlow.renderOrder = -1;
     state.semanticLensGroup.add(state.semanticLensGlow);
 
-    const spokeGeo = new THREE.BufferGeometry();
+    const spokeGeo = new BufferGeometry();
     const spokePos = new Float32Array(12 * 2 * 3);
     const spokeAlpha = new Float32Array(12 * 2);
-    spokeGeo.setAttribute('position', new THREE.BufferAttribute(spokePos, 3));
-    spokeGeo.setAttribute('alpha', new THREE.BufferAttribute(spokeAlpha, 1));
+    spokeGeo.setAttribute('position', new BufferAttribute(spokePos, 3));
+    spokeGeo.setAttribute('alpha', new BufferAttribute(spokeAlpha, 1));
 
-    const spokeMat = new THREE.ShaderMaterial({
+    const spokeMat = new ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
-            uColor: { value: new THREE.Color(0xfff4ba) }
+            uColor: { value: new Color(0xfff4ba) }
         },
         vertexShader: `
             attribute float alpha;
@@ -376,17 +376,17 @@ export function initSemanticLens() {
             }
         `,
         transparent: true,
-        blending: THREE.NormalBlending,
+        blending: NormalBlending,
         depthWrite: false
     });
-    state.semanticLensSpokes = new THREE.LineSegments(spokeGeo, spokeMat);
+    state.semanticLensSpokes = new LineSegments(spokeGeo, spokeMat);
     state.semanticLensGroup.add(state.semanticLensSpokes);
 
-    const focusLensGeo = new THREE.IcosahedronGeometry(0.08, 3);
-    const focusLensMat = new THREE.ShaderMaterial({
+    const focusLensGeo = new IcosahedronGeometry(0.08, 3);
+    const focusLensMat = new ShaderMaterial({
         uniforms: {
             time: { value: 0 },
-            color: { value: new THREE.Color(0x7ce7dd) },
+            color: { value: new Color(0x7ce7dd) },
             opacity: { value: 0.0 }
         },
         vertexShader: `
@@ -413,9 +413,9 @@ export function initSemanticLens() {
         `,
         transparent: true,
         depthWrite: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     });
-    state.focusLens = new THREE.Mesh(focusLensGeo, focusLensMat);
+    state.focusLens = new Mesh(focusLensGeo, focusLensMat);
     state.focusLens.visible = false;
     state.scene.add(state.focusLens);
 
@@ -425,7 +425,7 @@ export function initSemanticLens() {
         state.anchorBloomLight.dispose?.();
         state.anchorBloomLight = null;
     }
-    const anchorBloomLight = new THREE.PointLight(0xfff4ba, 0, 0.6);
+    const anchorBloomLight = new PointLight(0xfff4ba, 0, 0.6);
     anchorBloomLight.name = 'anchorBloomLight';
     state.scene.add(anchorBloomLight);
     state.anchorBloomLight = anchorBloomLight;
@@ -481,7 +481,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
 
         if (hasFocus && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx];
-            const worldPos = new THREE.Vector3(pos.x, pos.y, pos.z);
+            const worldPos = new Vector3(pos.x, pos.y, pos.z);
             if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);
 
             if (state.focusHalo) {
@@ -519,7 +519,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             spokes.visible = false;
         } else {
             const focusPos = state.nodePositions[focusIdx];
-            const worldPos = new THREE.Vector3(focusPos.x, focusPos.y, focusPos.z);
+            const worldPos = new Vector3(focusPos.x, focusPos.y, focusPos.z);
             if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);
             group.position.copy(worldPos);
             group.visible = true;
@@ -547,7 +547,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
                 let alphaOffset = 0;
                 getSemanticLensNeighborIndices(focusIdx).forEach((neighborIndex: number) => {
                     const neighborPos = state.nodePositions[neighborIndex];
-                    const neighborWorld = new THREE.Vector3(neighborPos.x, neighborPos.y, neighborPos.z);
+                    const neighborWorld = new Vector3(neighborPos.x, neighborPos.y, neighborPos.z);
                     if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(neighborWorld);
                     neighborWorld.sub(worldPos);
                     const distance = neighborWorld.length();
@@ -586,7 +586,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
 
         if (state.focusLens.visible && hasFocus && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx];
-            const worldPos = new THREE.Vector3(pos.x, pos.y, pos.z);
+            const worldPos = new Vector3(pos.x, pos.y, pos.z);
             if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);
             state.focusLens.position.copy(worldPos);
 

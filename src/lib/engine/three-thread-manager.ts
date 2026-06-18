@@ -1,5 +1,5 @@
 import { webglContext } from '@lib/engine/webgl-context';
-import * as THREE from 'three';
+import { Object3D, InstancedBufferAttribute, NormalBlending, Vector2, Group } from 'three';
 import { state as _state, withStateMutation } from '@lib/engine/state-bridge';
 const state = _state as any;
 import {
@@ -33,7 +33,7 @@ function getLineSegmentCount(line: any) {
 export function getGroupLineSegmentCount(group: any) {
     let total = 0;
     if (group && group.children) {
-        group.children.forEach((child: THREE.Object3D & { isLineSegments?: boolean }) => {
+        group.children.forEach((child: Object3D & { isLineSegments?: boolean }) => {
             if (child.isLineSegments) {
                 total += getLineSegmentCount(child);
             }
@@ -55,7 +55,7 @@ function createLineSegments(positions: any, colors: any, opacity: any, linewidth
         progressArr[i * 2] = 0;
         progressArr[i * 2 + 1] = 1;
     }
-    geometry.setAttribute('progress', new THREE.InstancedBufferAttribute(progressArr, 1));
+    geometry.setAttribute('progress', new InstancedBufferAttribute(progressArr, 1));
 
     const material = new LineMaterial({
         color: 0xffffff,
@@ -64,12 +64,12 @@ function createLineSegments(positions: any, colors: any, opacity: any, linewidth
         transparent: true,
         opacity: opacity,
         depthWrite: true,
-        blending: THREE.NormalBlending
+        blending: NormalBlending
     } as any);
 
     const renderer = webglContext.renderer;
     if (renderer) {
-        const size = new THREE.Vector2();
+        const size = new Vector2();
         renderer.getSize(size);
         const dpr = renderer.getPixelRatio();
         (material as any).resolution.set(size.x * dpr, size.y * dpr);
@@ -249,7 +249,7 @@ export function createMycelium() {
         webglContext.myceliumConnectionPairs.push({ a: pair.a, b: pair.b, layer: 2 });
     });
 
-    webglContext.myceliumGroup = new THREE.Group();
+    webglContext.myceliumGroup = new Group();
     const profile = getMyceliumPresentationProfile();
     webglContext.myceliumCoreLines = createLineSegments(coreConnections, coreColors, profile.core, 1.35);
     webglContext.myceliumWispyLines = createLineSegments(wispyConnections, wispyColors, profile.wispy, 0.8);

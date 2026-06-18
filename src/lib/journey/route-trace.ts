@@ -7,7 +7,7 @@
 import { state } from '@lib/engine/state-bridge';
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
-import * as THREE from 'three';
+import { ShaderMaterial, AdditiveBlending, Color, BufferGeometry, Float32BufferAttribute, LineSegments } from 'three';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens';
 import {
@@ -22,8 +22,8 @@ import { debounceRAF } from '@lib/utils/timer-utils';
 import { appState } from '@lib/state/app.svelte';
 
 // ShaderMaterial with glow effect for route trace lines (LineSegments-based overview lines)
-function buildRouteTraceMaterial(): THREE.ShaderMaterial {
-    return new THREE.ShaderMaterial({
+function buildRouteTraceMaterial(): ShaderMaterial {
+    return new ShaderMaterial({
         uniforms: {
             time: { value: performance.now() / 1000 },
             opacity: { value: 0.22 },
@@ -78,7 +78,7 @@ function buildRouteTraceMaterial(): THREE.ShaderMaterial {
         transparent: true,
         depthWrite: false,
         depthTest: false,
-        blending: THREE.AdditiveBlending
+        blending: AdditiveBlending
     });
 }
 
@@ -163,8 +163,8 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
     }
     const anchorIndex = rawAnchor as number;
 
-    const routeColor = new THREE.Color(ROUTE_TRACE_COLORS.route);
-    const cueColor = new THREE.Color(ROUTE_TRACE_COLORS.cue);
+    const routeColor = new Color(ROUTE_TRACE_COLORS.route);
+    const cueColor = new Color(ROUTE_TRACE_COLORS.cue);
     const positions: number[] = [];
     const colors: number[] = [];
     let edgeCount = 0;
@@ -184,15 +184,15 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         return;
     }
 
-    const geometry = new THREE.BufferGeometry();
-    geometry.setAttribute('position', new THREE.Float32BufferAttribute(positions, 3));
-    geometry.setAttribute('color', new THREE.Float32BufferAttribute(colors, 3));
+    const geometry = new BufferGeometry();
+    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3));
+    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3));
     const material = buildRouteTraceMaterial();
     if (appState.semanticDiveMode) {
         (material.uniforms as any).baseOpacity.value = 0.34;
         (material.uniforms as any).opacity.value = 0.34;
     }
-    (state as any).routeTraceLines = new THREE.LineSegments(geometry, material);
+    (state as any).routeTraceLines = new LineSegments(geometry, material);
     (state as any).routeTraceConnectionPairs = indices
         .filter((index: number) => index !== anchorIndex)
         .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }));
