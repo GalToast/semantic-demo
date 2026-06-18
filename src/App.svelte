@@ -61,7 +61,9 @@
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
   import LoadingOverlay from '@components/LoadingOverlay.svelte';
-  import ThreadInspector from '@components/ThreadInspector.svelte';
+  type ThreadInspectorModule = typeof import('@components/ThreadInspector.svelte');
+  let ThreadInspectorComponent: ThreadInspectorModule['default'] | null = $state(null);
+  let threadInspectorImportPending = false;
   import DemoChoreography from '@components/DemoChoreography.svelte';
   import Controls from '@components/Controls.svelte';
   import Header from '@components/Header.svelte';
@@ -86,6 +88,22 @@
         })
         .finally(() => {
           mapViewImportPending = false;
+        });
+    }
+  });
+
+  $effect(() => {
+    if (!ThreadInspectorComponent && !threadInspectorImportPending) {
+      threadInspectorImportPending = true;
+      import('@components/ThreadInspector.svelte')
+        .then((mod) => {
+          ThreadInspectorComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] ThreadInspector lazy-load failed:', err);
+        })
+        .finally(() => {
+          threadInspectorImportPending = false;
         });
     }
   });
@@ -470,7 +488,9 @@
   <Filters open={false} />
 
   <!-- Thread inspector (overlay, self-gates via visible && threadInspectorActive()) -->
-  <ThreadInspector visible={true} />
+  {#if ThreadInspectorComponent}
+    <ThreadInspectorComponent visible={true} />
+  {/if}
 
   <!-- Demo choreography overlay -->
   <DemoChoreography force={forceDemo} suppress={noDemo} />
