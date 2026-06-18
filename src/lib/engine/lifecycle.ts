@@ -233,10 +233,7 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
 
         // 3. Schedule heavy GPU init after first paint (off critical path)
         if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            window.requestIdleCallback(
-                () => initEngineHeavy(callbacks),
-                { timeout: 5000 }
-            )
+            window.requestIdleCallback(() => initEngineHeavy(callbacks), { timeout: 5000 })
         } else {
             // Fallback for Node/SSR or browsers without requestIdleCallback
             Promise.resolve().then(() => initEngineHeavy(callbacks))
@@ -351,7 +348,9 @@ function initEngineHeavy(callbacks: EngineCallbacks): void {
             try {
                 performance.measure('engine-init-total', 'engine-init-start', 'engine-init-ready')
                 performance.measure('engine-init-gpu', 'engine-init-gpu-start', 'engine-init-ready')
-            } catch (_) { /* ignore if marks absent (SSR) */ }
+            } catch (_) {
+                /* ignore if marks absent (SSR) */
+            }
         }
         callbacks.onLoadingPhase?.('launch', 1)
         if (typeof window !== 'undefined') {

@@ -873,14 +873,22 @@ export function cancelAnimate() {
         }
     }
     if (_state?.controls && typeof _state.controls.dispose === 'function') {
-        try { _state.controls.dispose() } catch (_) { /* already disposed */ }
+        try {
+            _state.controls.dispose()
+        } catch (_) {
+            /* already disposed */
+        }
     }
     if (_state) {
         _state.scene = null
         _state.camera = null
         _state.controls = null
     }
-    try { disposeObject3D(scene as any) } catch (_) { /* already cleaned up */ }
+    try {
+        disposeObject3D(scene as any)
+    } catch (_) {
+        /* already cleaned up */
+    }
     _focusAnchor?.disposeFocusAnchorIndicator()
     // Dispose postprocessing composer BEFORE renderer.dispose() so the
     // composer's GL framebuffer/texture resources release cleanly while the
@@ -893,7 +901,11 @@ export function cancelAnimate() {
     if (renderer) {
         renderer.dispose()
         const canvas = renderer.domElement
-        try { canvas?.parentNode?.removeChild(canvas) } catch (_) { /* already removed */ }
+        try {
+            canvas?.parentNode?.removeChild(canvas)
+        } catch (_) {
+            /* already removed */
+        }
     }
     if (_state) {
         _state.renderer = null
