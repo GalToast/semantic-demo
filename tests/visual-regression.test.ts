@@ -309,7 +309,7 @@ async function runVisualRegression(): Promise<TestResult[]> {
                 await state.setup(page)
 
                 // Capture screenshot (full page to match baselines)
-                await page.screenshot({ path: currentPath, fullPage: true })
+                await page.screenshot({ path: currentPath })
                 console.log(`   ✓ Screenshot captured: current-${state.name}.png`)
 
                 // Compare with baseline
@@ -423,7 +423,7 @@ async function main() {
         // Write report
         const reportDir = path.resolve(import.meta.dirname ?? __dirname, '..', 'tmp')
         fs.mkdirSync(reportDir, { recursive: true })
-        const reportPath = path.join(reportDir, 'w36-track-2-report.md')
+        const reportPath = path.join(reportDir, 'w38-track-3-report.md')
         fs.writeFileSync(reportPath, report)
         console.log(`\n📄 Report written to: ${reportPath}`)
 
