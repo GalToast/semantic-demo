@@ -521,16 +521,21 @@ body[data-active-view='map'] .onboarding-hint {
     .biofield-thread,
     .weather-widget,
     .view-toggle,
-    .demo-overlay-tag,
-    .demo-tag-dot,
     .info-panel,
     .search-spinner,
     .summary-field-note,
-    .demo-end-toast,
     svg[class*='weather'],
     .terrain-bridge-veil,
     .terrain-bridge-halo {
         animation-name: none;
+    }
+
+    /* Any active demo-related overlay silenced under reduced-motion.
+       Specific dead selectors removed in commit w31-p2d. */
+    [class*="demo-"] {
+        opacity: 0 !important;
+        transition: none !important;
+        animation: none !important;
     }
 
     /* Broaden transition disable for #950 hardening */
