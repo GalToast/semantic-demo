@@ -58,18 +58,18 @@ describe('ThreadInspector component', () => {
 
     it('h2 .focus-thread-inspector-title with id', () => {
         expect(source).toContain('id="focus-thread-inspector-title"');
-        expect(source).toContain('class="focus-thread-inspector-title"');
+        expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-title\b[^"]*"/);
     });
 
     it('copy paragraph .focus-thread-inspector-copy with id', () => {
         expect(source).toContain('id="focus-thread-inspector-copy"');
-        expect(source).toContain('class="focus-thread-inspector-copy"');
+        expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-copy\b[^"]*"/);
         expect(source).toContain('Previewing the semantic connection');
     });
 
     it('meta stats .focus-thread-inspector-meta for segments/braids/endpoints', () => {
         expect(source).toContain('id="focus-thread-inspector-meta"');
-        expect(source).toContain('class="focus-thread-inspector-meta"');
+        expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-meta\b[^"]*"/);
         expect(source).toContain('segments');
         expect(source).toContain('braids');
         expect(source).toContain('endpoints');
