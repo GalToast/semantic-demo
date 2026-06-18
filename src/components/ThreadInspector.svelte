@@ -174,6 +174,57 @@
       </div>
     </section>
   </div>
+{:else if visible && !focusSnapshot.threadInspector.active}
+  <!-- Empty-state guidance: inspector is requested but no real thread strand exists -->
+  <div
+    class="thread-inspector thread-inspector--empty"
+    id="thread-inspector"
+    aria-label="Thread connection inspector"
+    role="complementary"
+  >
+    <section
+      class="focus-thread-inspector"
+      id="focus-thread-inspector"
+      aria-labelledby="focus-thread-inspector-title"
+    >
+      <div class="inspector-header">
+        <span class="focus-thread-inspector-kicker">Connection Preview</span>
+        <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
+      </div>
+      <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title">
+        Connection Inspector
+      </h2>
+      <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy">
+        Select a nearby stop to preview why it belongs here, then pin or follow.
+      </p>
+      <div class="focus-thread-inspector-actions" aria-label="Thread actions">
+        <button
+          id="btn-thread-pin"
+          type="button"
+          class="thread-action primary"
+          disabled
+        >
+          Pin
+        </button>
+        <button
+          id="btn-thread-follow"
+          type="button"
+          class="thread-action"
+          disabled
+        >
+          Follow
+        </button>
+        <button
+          id="btn-thread-clear"
+          type="button"
+          class="thread-action"
+          onclick={clearThreadInspector}
+        >
+          Clear
+        </button>
+      </div>
+    </section>
+  </div>
 {/if}
 
 <style>
@@ -189,6 +240,11 @@
     padding: 0.6rem 0.75rem;
     max-width: 260px;
     pointer-events: auto;
+  }
+  .thread-inspector--empty {
+    opacity: 0.7;
+    border-style: dashed;
+    border-color: rgba(78, 205, 196, 0.14);
   }
   .focus-thread-inspector {
     display: grid;

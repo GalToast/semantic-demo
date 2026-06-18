@@ -484,6 +484,46 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
     return inspectionState
 }
 
+/**
+ * Pins the first available neighbor of the focused node for thread inspection.
+ *
+ * Picks a real neighbor from the focus pocket / thread-candidate list that is
+ * NOT the focused node itself. This avoids the "mounted-but-invisible"
+ * anti-guard where `pinThreadNeighbor(<focusedIndex>)` returns active:false.
+ *
+ * @param options - Optional pinning options (surface, reason, etc.)
+ * @returns The resulting ThreadInspectionState, or null if no valid neighbor
+ *          is available to pin.
+ */
+export function pinFirstAvailableNeighbor(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
+    const focusedIndex = getFocusedIndex()
+    if (focusedIndex === null || !Number.isFinite(focusedIndex)) return null
+
+    // Prefer thread candidates (semantic/geometric neighbors) — these are
+    // the actual connection targets for the inspector.
+    const candidates = appState.navState.threadCandidates as any[]
+    if (Array.isArray(candidates)) {
+        for (const entry of candidates) {
+            const idx = entry && typeof entry === 'object' ? entry.index : entry
+            if (Number.isFinite(idx) && idx !== focusedIndex) {
+                return pinThreadNeighbor(idx, { ...options, reason: options.reason || 'pinFirstAvailable' })
+            }
+        }
+    }
+
+    // Fall back to focus-pocket indices if thread candidates are empty.
+    const pocket = appState.navState.focusPocketIndices
+    if (Array.isArray(pocket)) {
+        for (const idx of pocket) {
+            if (Number.isFinite(idx) && idx !== focusedIndex) {
+                return pinThreadNeighbor(idx, { ...options, reason: options.reason || 'pinFirstAvailable' })
+            }
+        }
+    }
+
+    return null
+}
+
 export function unpinThreadInspection(): ThreadInspectionState | null {
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)

@@ -10,6 +10,7 @@ export {
   renderThreadInspection,
   inspectThreadNeighbor,
   pinThreadNeighbor,
+  pinFirstAvailableNeighbor,
   unpinThreadInspection,
   scheduleCanvasThreadInspectionClear,
   clearThreadInspection,

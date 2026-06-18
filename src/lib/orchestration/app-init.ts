@@ -41,6 +41,7 @@ import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread
 import {
   inspectThreadNeighbor,
   pinThreadNeighbor,
+  pinFirstAvailableNeighbor,
   unpinThreadInspection,
   clearThreadInspection,
 } from '@lib/engine/thread-inspector-bridge';
@@ -253,6 +254,9 @@ function installWindowGlobals(): () => void {
   };
   (window as any).__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
     return pinThreadNeighbor(index, options);
+  };
+  (window as any).__APP_ACTIONS__.pinFirstAvailableNeighbor = (options?: Record<string, unknown>) => {
+    return pinFirstAvailableNeighbor(options);
   };
   (window as any).__APP_ACTIONS__.unpinThreadInspection = () => {
     return unpinThreadInspection();

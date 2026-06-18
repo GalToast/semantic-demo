@@ -762,27 +762,28 @@ function getTestStates(): TestState[] {
             }
         },
 
-        // 14. thread-inspector — SKIPPED: baseline was invalid (see bug report).
-        // The inspector only renders when pinning a real NEIGHBOR (not the focused node).
-        // pinThreadNeighbor(<focusedIndex>) is now guarded to reject with active:false.
-        // Restore with a deterministic neighbor-pin recipe once the neighbor graph is stable.
+        // 14. thread-inspector — connection preview panel (requires real neighbor pin).
+        // Now unskipped: pinThreadNeighbor rejects index===focusedIndex with active:false,
+        // and pinFirstAvailableNeighbor picks a real neighbor from the focus pocket.
         // See docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md
         {
             name: 'thread-inspector',
             baseline: 'thread-inspector.png',
-            description: 'Thread inspector — connection preview panel (requires real neighbor pin)',
-            skip: true,
+            description: 'Thread inspector — connection preview panel (pinned real neighbor)',
             viewport: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
             setup: async (page) => {
-                // Recipe: anchor to node 519, then pin a real neighbor.
-                // Neighbor indices are dynamic; this entry is skipped until a deterministic
-                // neighbor-pinning recipe is available.
+                // Recipe: anchor to node 519, then pin a real neighbor via pinFirstAvailableNeighbor.
                 const url = `${BASE_URL}?view=galaxy&q=coffee&anchor=519&nodemo=1`
                 await page.goto(url, { waitUntil: 'networkidle' })
                 await page.waitForTimeout(4000)
-                // Pin a real neighbor — find one from the DOM or thread candidates
+                // Pin a real neighbor — try pinFirstAvailableNeighbor first, then DOM fallback
                 await page.evaluate(() => {
                     const actions = (window as unknown as { __APP_ACTIONS__?: Record<string, Function> }).__APP_ACTIONS__
+                    if (actions?.pinFirstAvailableNeighbor) {
+                        actions.pinFirstAvailableNeighbor({ reason: 'visual-regression-baseline' })
+                        return
+                    }
+                    // Fallback: find a real neighbor pill in the DOM
                     if (!actions?.pinThreadNeighbor) return
                     const focused = Number(document.body.dataset.focusedIndex)
                     const pills = Array.from(document.querySelectorAll('.focus-stage-neighbor-pill[data-index]'))
