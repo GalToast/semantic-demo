@@ -520,7 +520,7 @@
         overflow: hidden;
     }
 
-    body[data-panel-surface='search'] .info-header,
+    /* .info-header hidden for search surface — canonical: layout_base.css:876 */
     body[data-panel-surface='search'] .stats-row,
     body[data-panel-surface='search'] .launch-btn,
     body[data-panel-surface='search'] .demo-starters,
@@ -1011,7 +1011,7 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         overflow-x: hidden;
     }
 
-    body[data-panel-surface='search'] .info-header,
+    /* .info-header hidden for search surface — canonical: layout_base.css:876 */
     body[data-panel-surface='search'] .stats-row,
     body[data-panel-surface='search'] .stat-caption,
     body[data-panel-surface='search'] #story-section,
