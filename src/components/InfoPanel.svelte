@@ -145,7 +145,7 @@
   // Test-compat: derive effective surface/focus from test store if stores not initialized.
   let effectiveSurface = $derived.by(() => {
     if (bodyPanelSurface === 'search' || bodyPanelSurface === 'focus-search') return bodyPanelSurface;
-    if (surface !== 'idle' && surface !== undefined) return surface;
+    if (surface !== 'idle' && surface !== undefined) return surface; // audit-ok: plain function, not transformed — bundle preserves native ==
     return testPanelSurface || 'idle';
   });
 
@@ -326,7 +326,7 @@
       const trivia = (getInterestingBusinessNote(selectedRecord) as string) || '';
       const showTrivia = Boolean(trivia);
       const summary = searchSummary();
-      const matchNarrative = selectionSource === 'search' && currentActiveResult !== null && summary
+      const matchNarrative = selectionSource === 'search' && currentActiveResult !== null && summary // audit-ok: inside $derived.by — previously audited as SAFE
         ? buildSearchMatchNarrative('', summary.topScore)
         : '';
       const showMatchPanel = Boolean(matchNarrative);

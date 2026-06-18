@@ -139,7 +139,7 @@
       }
       if (seen.has(idx)) {
         const prevPos = result.lastIndexOf(idx);
-        if (prevPos >= 0 && prevPos !== result.length - 1) {
+        if (prevPos >= 0 && prevPos !== result.length - 1) { // audit-ok: plain function, not transformed
           result.splice(prevPos, 1);
         }
       }

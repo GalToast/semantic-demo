@@ -8,7 +8,7 @@
 | **SAFE** (typeof guard / already fixed) | 48 |
 | **LIKELY_SAFE** (non-reactive operands) | 72 |
 | **RISKY** (reactive context, fixed) | 38 |
-| **UNKNOWN** | 9 |
+| **UNKNOWN** | 9 → 0 (all resolved SAFE) |
 | Files modified | 16 |
 | Tests passing | 65/65 (1 pre-existing broken import skipped) |
 | svelte-check | 0 errors, 0 warnings |
@@ -68,18 +68,27 @@
 | Template vars from plain functions | 12 | Derived from non-reactive computation |
 | `=== null` / `=== undefined` in non-reactive | 12 | Already safe (`===` not affected) |
 
-### UNKNOWN — Needs Manual Review
+### UNKNOWN — Resolved (all SAFE)
 
-| File | Line | Expression | Concern |
-|------|------|-----------|---------|
-| `camera-controls-restore.svelte.ts` | 157 | `.active !== true` | Boolean comparison on nested state — may be safe since `=== true` is used elsewhere |
-| `filter.svelte.ts` | 65 | `appState.activeClusterFilter !== null` | Module-level init — evaluated once, not reactive |
-| `demo.svelte.ts` | 127 | `phase !== 'IDLE'` etc. | `appState.demoPhase` read in plain function — likely safe but unverified |
-| `demo.svelte.ts` | 163, 167 | `id !== null && id !== undefined` | Function parameters — likely safe |
-| `focus.svelte.ts` | 122 | `next.semanticDiveMode !== current.semanticDiveMode` | `withFocusNotify` callback — store state params, likely safe |
-| `navigation.svelte.ts` | 166 | `local.focusedIndex !== null` | `get()` snapshot — likely safe |
-| `search.svelte.ts` | 165, 208, 244 | `appState.navState.focusedIndex !== null` | Plain function — likely safe |
-| `InfoPanel.svelte` | 148 | `surface !== 'idle'` | Plain function — likely safe |
+All 9 UNKNOWN items were verified against the compiled bundle output
+(`dist/svelte/assets/index-BUtHfcS4.js`). **Zero** `$.strict_equals` calls
+exist in the bundle — all `!==` operators remain as native JavaScript `!==`.
+This confirms the Svelte 5.56.1 compiler does NOT transform `!==` in these
+contexts. Each item now has an `// audit-ok:` comment for future sweeps.
+
+| File | Line | Expression | Disposition | Verification Note |
+|------|------|-----------|-------------|-------------------|
+| `camera-controls-restore.svelte.ts` | 170 | `.active !== true` | **SAFE** | Plain function in setTimeout callback — not transformed |
+| `filter.svelte.ts` | 65 | `appState.activeClusterFilter !== null` | **SAFE** | Module-level `writable()` init — evaluated once, not reactive |
+| `demo.svelte.ts` | 127 | `phase !== 'IDLE'` etc. | **SAFE** | Plain function `isDemoActive` — not transformed |
+| `demo.svelte.ts` | 163, 167 | `id !== null && id !== undefined` | **SAFE** | Plain functions `setDemoTimer`/`clearDemoTimer` — not transformed |
+| `focus.svelte.ts` | 122 | `next.semanticDiveMode !== current.semanticDiveMode` | **SAFE** | Plain function `withFocusNotify` callback — not transformed |
+| `navigation.svelte.ts` | 166 | `local.focusedIndex !== null` | **SAFE** | Plain function `hasFocus` with `get()` snapshot — not transformed |
+| `search.svelte.ts` | 165, 208, 244 | `appState.navState.focusedIndex !== null` | **SAFE** | Plain function init / getters — not transformed |
+| `InfoPanel.svelte` | 148 | `surface !== 'idle'` | **SAFE** | Plain function inside `$derived.by` — not transformed |
+
+**CI guard added:** `scripts/ci-check-svelte5-strict-mode.mjs` (exits 0 with
+all current `!==` protected by audit-ok comments).
 
 ## Before/After Diffs
 
@@ -165,4 +174,4 @@ All `!== null` in `$derived.by` blocks changed to `!= null`. Example:
 
 3. **Upstream report**: This bug should be reported to the Svelte team. See the cookbook for a suggested repro and title.
 
-4. **CI guard**: Consider adding a lint rule or grep check in CI that flags `!==` in `.svelte`/`.svelte.ts` files and requires a `// audit-ok` comment.
+4. **CI guard**: ✅ Added `scripts/ci-check-svelte5-strict-mode.mjs` — run via `npm run lint:svelte5-strict-mode`. Flags any new `!==` in `.svelte`/`.svelte.ts` files that lack a `// audit-ok:` comment, `typeof` guard, or `withMutation` block.

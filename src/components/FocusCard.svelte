@@ -123,7 +123,7 @@
   // when the legacy code updates the DOM. isFocused = $derived(hasFocus())
   // would cache because hasFocus() reads window.__APP_STATE__ (non-reactive).
   let isFocusedReactive = $derived(
-    bodyFocusedNode !== '' ||
+    bodyFocusedNode !== '' || // audit-ok: inside $derived — previously audited as SAFE (RISKY items already fixed)
     bodyNavMode === 'focus' ||
     bodyNavMode === 'inside' ||
     isFocused

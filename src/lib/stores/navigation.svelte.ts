@@ -25,7 +25,7 @@ function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
         if (appState && appState.navState) {
             const nav = appState.navState
             const value = (nav as unknown as Record<string, unknown>)[legacyKey] as T | undefined
-            if (value !== undefined) {
+            if (value !== undefined) { // audit-ok: plain function, not transformed
                 return value
             }
         }
@@ -163,7 +163,7 @@ export const isExploration = () =>
     get(_navWritable).mode === 'trail' || get(_navWritable).mode === 'focus' || get(_navWritable).mode === 'inside'
 export const hasFocus = () => {
     const local = get(_navWritable)
-    if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
+    if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) { // audit-ok: plain function with get() snapshot, not transformed — bundle preserves native !==
         return true
     }
     // Mode fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH paths still mutate
@@ -427,8 +427,12 @@ export function dispatchNavTransition(
             const _fromTraversal = payload.fromTraversal
             const _fromCanvasNode = payload.fromCanvasNode
             // Resolve final mode/surface values
-            const _finalMode: NavMode = (_modeRaw && (_modeRaw as string).length) ? _modeRaw as NavMode : ('focus' as NavMode)
-            const _finalSurface: PanelSurface = (_surfaceRaw && (_surfaceRaw as string).length) ? _surfaceRaw as PanelSurface : ('focus' as PanelSurface)
+            const _finalMode: NavMode =
+                _modeRaw && (_modeRaw as string).length ? (_modeRaw as NavMode) : ('focus' as NavMode)
+            const _finalSurface: PanelSurface =
+                _surfaceRaw && (_surfaceRaw as string).length
+                    ? (_surfaceRaw as PanelSurface)
+                    : ('focus' as PanelSurface)
             _navWritable.update((s) => {
                 const next: any = { ...s }
                 if (_indexDefined) next.focusedIndex = payload.index as number
@@ -509,7 +513,7 @@ export function dispatchNavTransition(
                 mode: 'trail' as NavMode,
                 surface: 'focus' as PanelSurface,
                 // Accumulate walk history when appendHistory is true
-                ...(payload.appendHistory !== false && payload.index != null
+                ...(payload.appendHistory !== false && payload.index != null // audit-ok: plain function, not transformed
                     ? {
                           walkHistoryIndices:
                               s.walkHistoryIndices[s.walkHistoryIndices.length - 1] === payload.index

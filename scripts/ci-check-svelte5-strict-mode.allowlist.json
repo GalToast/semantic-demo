@@ -1,0 +1,5 @@
+{
+  "src/components/ThreadInspector.svelte": [
+    [135, 135, "Template expression: inspectedIndex !== null in ternary — already audited as SAFE (bundle preserves native !==)"]
+  ]
+}

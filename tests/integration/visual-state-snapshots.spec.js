@@ -62,6 +62,7 @@ test.describe('Visual state snapshots', () => {
         await expect(page).toHaveScreenshot('idle-overview.png', {
             ...SNAPSHOT_OPTIONS,
             updateSnapshots: UPDATE_SNAPSHOTS ? 'always' : 'missing',
+            fullPage: true,
         })
     })
 
@@ -74,6 +75,7 @@ test.describe('Visual state snapshots', () => {
         await expect(page).toHaveScreenshot('search-mode.png', {
             ...SNAPSHOT_OPTIONS,
             updateSnapshots: UPDATE_SNAPSHOTS ? 'always' : 'missing',
+            fullPage: true,
         })
     })
 
@@ -87,6 +89,7 @@ test.describe('Visual state snapshots', () => {
         await expect(page).toHaveScreenshot('focus-search.png', {
             ...SNAPSHOT_OPTIONS,
             updateSnapshots: UPDATE_SNAPSHOTS ? 'always' : 'missing',
+            fullPage: true,
         })
     })
 
@@ -104,6 +107,7 @@ test.describe('Visual state snapshots', () => {
             await expect(page).toHaveScreenshot('focus-programmatic.png', {
                 ...SNAPSHOT_OPTIONS,
                 updateSnapshots: UPDATE_SNAPSHOTS ? 'always' : 'missing',
+                fullPage: true,
             })
         } else {
             // If no field-node is visible, skip the snapshot

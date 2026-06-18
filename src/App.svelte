@@ -233,7 +233,7 @@
           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
         const { mode, surface } = navStore();
-        if (mode !== 'overview' || surface !== 'idle') {
+        if (mode !== 'overview' || surface !== 'idle') { // audit-ok: plain Ln() callback, not transformed
           dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
           // A2-7: after returning to overview, sync the URL to reflect
           // the galaxy view so the back button works correctly.
@@ -268,7 +268,7 @@
       bodyCompact = document.body.dataset.compact === 'true';
       if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
         document.body.dataset.focusSearchForced = 'true';
-      } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') {
+      } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') { // audit-ok: plain Ln() callback, not transformed
         delete document.body.dataset.focusSearchForced;
       }
     };

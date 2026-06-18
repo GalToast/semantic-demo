@@ -336,7 +336,7 @@ npm run check        # svelte-check + tsc
 
 ### Component Status (`src/components/`)
 
-Verified files on disk: 21 components. `JourneyCanvas.svelte` is retired/deleted and not included below.
+Verified files on disk: 26 components. `JourneyCanvas.svelte` is retired/deleted and not included below. The 5 newest (DevGui, FocusPocketA11y, MapView, SpectorInspector, Toast) were added during the W24–W29 migration arc.
 
 | File | Status | Lines | Ported from | Notes |
 |---|---|---|---|---|
@@ -361,6 +361,11 @@ Verified files on disk: 21 components. `JourneyCanvas.svelte` is retired/deleted
 | `SemanticOverlay.svelte` | **Complete** | 148 | `journey-semantic-overlay.js`, `three-interaction-visuals.js` | Manifold/lens visibility + WebGL delegation |
 | `ThreadInspector.svelte` | **Complete** | 181 | `thread-inspector.js` | Overlay UI with WebGL line integration |
 | `WeatherWidget.svelte` | **Complete** | 177 | `weather-widget.js` | Weather fetch, display, icons, forecast |
+| `DevGui.svelte` | **Complete** | 198 | `dev-gui.js` | Dev-only WebGL tuning (spector, etc.); tree-shaken from prod |
+| `FocusPocketA11y.svelte` | **Complete** | 208 | `focus-pocket.js` | A11y surface listing focus pocket neighbors for screen readers |
+| `MapView.svelte` | **Complete** | 365 | `map-state.ts`, `camera-controls.js` | Backdrop-2D map view; still dynamic-imports `@lib/engine/map-state` (W32 T2-A target) |
+| `SpectorInspector.svelte` | **Complete** | 355 | `spector` | Dev-only WebGL inspector; tree-shaken from prod |
+| `Toast.svelte` | **Complete** | 90 | `toast.js` | Lightweight toast notifications |
 
 ### Dev Server Behavior
 
@@ -401,7 +406,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 - Dev server runs: `npm run dev:svelte` → `https://localhost:5173/`
 - `svelte-check`: 0 errors in `src/` code (50 errors are all in legacy `js/modules/*.ts` — out of scope for scaffold)
 - **Islands track:** 12/12 complete (all `js/modules/components/` mounted via helpers)
-- **src/ scaffold:** 21/21 complete
+- **src/ scaffold:** 26/26 complete (was 21/21 at charter write; W24–W29 added DevGui, FocusPocketA11y, MapView, SpectorInspector, Toast)
 - **Stores+types+orchestration:** 12/12 stores, 4/4 types, 4/4 orchestration, engine/bridge.ts 1212 lines
 - **Architecture state:** InfoPanel is single-track (src/ only — 767L). The legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) were marked 100% orphan by the m3 sweep on 2026-06-07, deleted in `b8a50ba`, then restored by the `ec520da` revert on 2026-06-12. Per the BOTH pattern below, they are part of the in-flight migration, not confirmed dead
 - `docs/migration-plan.md` — being written by migration-architect worker
@@ -528,3 +533,63 @@ NEVER:
 - Write a single file >800 lines (model degeneration)
 - Modify the same file as another active worker (race condition)
 ```
+
+## W15+ Arc Lessons (parity-attrs closure, 2026-06-17)
+
+This section captures patterns and helpers added during the W15 deeper parity-attrs arc closure. The arc shipped 13 commits, 113 tests, 2 mirror helpers, and 1 CI lint check. Key references:
+
+- `docs/nav-state-ownership.md` — field-by-field ownership map for the 35+ NavState fields
+- `docs/svelte-5-strict-mode-cookbook.md` — the canonical `!==` → `===` inversion bug cookbook
+- `docs/latent-!==-bug-sweep-2026-06-17.md` — audit of 167 `!==` usages (38 RISKY + fixed)
+- `docs/production-preview-parity-baseline-2026-06-17.md` — dev-mode vs production preview parity baseline
+- `docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md` — paste-ready Svelte GitHub issue
+- `notes/w15-arc-session-closeout-2026-06-17.md` — full session timeline + open seams
+
+### Dual-store mirror discipline
+
+Nav state lives in TWO places:
+
+1. **Svelte writable** (`_navWritable`) at `src/lib/stores/navigation.svelte.ts` — the reactive store Svelte components subscribe to
+2. **Svelte 5 class** (`appState.navState`) at `src/lib/state/app.svelte.ts` — the legacy class read by `journeyStore`, `compass-state.ts`, and the engine kernel
+
+The canonical helper `writeNavStateMirror(patch: Partial<NavState>)` writes to BOTH stores. Every direct mutation of `appState.navState.X = ...` outside the helper is a smell flagged by `npm run lint:nav-mirror`.
+
+For focus-pocket fields (`focusPocketIndices`, `focusPocketRoleByIndex`, `focusPocketMeta`), use `writeFocusPocketMirror(patch)` which wraps `withFocusNotify` and syncs via the existing bridge.
+
+### Svelte 5 strict-mode `!==` bug
+
+Rune-mode `.svelte` and `.svelte.ts` files have a compiler bug: `!==` is compiled to `$.strict_equals(a, b, false)` (which is `===`), silently inverting the comparison. NO warning at compile time or runtime.
+
+**Three workaround patterns:**
+
+1. `typeof x === 'number'` guards (safest for type checks)
+2. Positive equality + `!` prefix: `!(x === 'idle')` instead of `x !== 'idle'`
+3. Loose `!=` for null/undefined checks (limited applicability)
+
+**Rule of thumb**: any new `.svelte` or `.svelte.ts` file should use one of these patterns instead of raw `!==`. Add a `// audit-ok:` comment if the usage is provably safe (plain function, non-reactive context).
+
+**CI guard**: `npm run lint:svelte5-strict-mode` (added 2026-06-17) flags risky `!==` usages.
+
+### Subagent model selection (W15+ learnings)
+
+| Model | Status | When to use |
+|-------|--------|-------------|
+| `opencode-go/mimo-v2.5` (paid) | Reliable | Multi-step research, test authoring, doc authoring, refactor migrations |
+| `openrouter/owl-alpha` | Unreliable | Bounces on file-content iteration, Playwright selector errors, timeouts mid-write. Avoid. |
+| `kilo/openrouter/owl-alpha` | Unreliable | Same issues as owl-alpha + Kilo rate limits |
+
+**Pattern**: mimo-v2.5 (paid) is the only model that consistently delivers. Budget ~$0.0003-0.001 per worker task.
+
+### Production preview verification
+
+For any body data-attr or visual regression work, verify against BOTH dev mode (Vite 5175) and production preview (Vite preview 4174):
+
+```bash
+# Start production preview
+nohup npx vite preview --config vite.config.ts --port 4174 --host 127.0.0.1 &
+
+# Verify body data-attrs via Playwright MCP
+TEST_BASE_URL=http://127.0.0.1:4174 npx playwright test tests/integration/w15-body-attr-live-probe.spec.js --browser=chromium --timeout=60000
+```
+
+Production preview catches bundle-level bugs that dev mode misses (e.g. the pre-bundled `panel-bindings-*.js` issue that caused the original W15 deeper gap).

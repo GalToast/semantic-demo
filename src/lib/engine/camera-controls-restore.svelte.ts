@@ -167,7 +167,7 @@ class CameraControlsRestore {
                 _s.selectedPoint == null &&
                 _s.navState.mode === 'overview' &&
                 !_s.sceneRevealActive &&
-                (_s.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true &&
+                (_s.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true && // audit-ok: plain function, not transformed — bundle preserves native !==
                 _s.trailDepth === 0
             ) {
                 this.setAutoRotateSuspended(false);

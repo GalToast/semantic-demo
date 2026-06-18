@@ -30,7 +30,7 @@
       const _currentSurface = navStore().surface
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
         index,
-        surface: _currentSurface && _currentSurface !== 'idle' ? _currentSurface : undefined
+        surface: _currentSurface && _currentSurface !== 'idle' ? _currentSurface : undefined // audit-ok: plain function, not transformed
       })
     },
     onCameraArrived: () => {

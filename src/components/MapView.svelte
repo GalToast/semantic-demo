@@ -80,20 +80,20 @@
 
     try {
       await tick();
-      if (!mounted || token !== activationToken) return;
+      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
       activateMapShell();
 
       const mapEngine = await import('@lib/engine/map-state');
 
-      if (!mounted || token !== activationToken) return;
+      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
       setLegacyView('map');
 
       mapEngine.initMapStateSubscriptions();
       await mapEngine.initMap();
 
-      if (!mounted || token !== activationToken) return;
+      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
       mapEngine.refreshMapMarkers();
       mapEngine.refreshMapRouteEmbodiment();

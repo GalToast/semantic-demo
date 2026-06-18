@@ -131,7 +131,7 @@
     // comparison can match. The old code wrote the name string and the
     // engine silently ignored it because it never equaled any cluster id.
     const current = $activeClusterFilter;
-    const isActive = current !== null && Number(current) === index;
+    const isActive = current !== null && Number(current) === index; // audit-ok: plain function, not transformed
     applyClusterFilter(isActive ? null : index);
   }
 

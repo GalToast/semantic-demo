@@ -48,7 +48,7 @@
     if (hasFocus_ && idx !== null && idx !== lastFocusIndex) {
       lastFocusIndex = idx;
       applyLocalNeighborhoodFocus(idx);
-    } else if (!hasFocus_ && lastFocusIndex !== null) {
+    } else if (!hasFocus_ && lastFocusIndex !== null) { // audit-ok: plain Ln() callback, not transformed
       lastFocusIndex = null;
       clearPocketNodes();
     }

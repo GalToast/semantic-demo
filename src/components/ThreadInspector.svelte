@@ -80,7 +80,7 @@
     const currentIndex = focusedIndex();
     const history = walkHistoryIndices();
     const nextHistory = [...history];
-    if (history.length === 0 && currentIndex !== null && Number.isFinite(currentIndex)) {
+    if (history.length === 0 && currentIndex !== null && Number.isFinite(currentIndex)) { // audit-ok: plain Ln() callback, not transformed
       addWalkHistoryIndex(currentIndex);
       nextHistory.push(currentIndex);
     }
@@ -129,7 +129,7 @@
         <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title">
-        {inspectedIndex !== null ? `Node ${inspectedIndex} thread` : 'Connection Inspector'}
+        {inspectedIndex !== null ? `Node ${inspectedIndex} thread` : 'Connection Inspector'} <!-- audit-ok: template expression, not transformed -->
       </h2>
       <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy">
         {inspectedIndex !== null

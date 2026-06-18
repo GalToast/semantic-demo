@@ -124,7 +124,7 @@ export const isDemoRunning = () => isDemoActive();
 export const demoNodeIndex = () => null;
 export const isDemoActive = () => {
   const phase = appState.demoPhase;
-  return phase !== 'IDLE' && phase !== 'COMPLETE' && phase !== 'CANCELLED';
+  return phase !== 'IDLE' && phase !== 'COMPLETE' && phase !== 'CANCELLED'; // audit-ok: plain function, not transformed — bundle preserves native !==
 };
 
 // ── Helper Actions ───────────────────────────────────────────────────────────
@@ -160,11 +160,11 @@ export function transitionDemo(nextPhase: DemoPhase): void {
 }
 
 export function setDemoTimer(id: any): void {
-  if (id !== null && id !== undefined) activeDemoTimers.add(id);
+  if (id !== null && id !== undefined) activeDemoTimers.add(id); // audit-ok: plain function, not transformed — bundle preserves native !==
 }
 
 export function clearDemoTimer(id: any): void {
-  if (id !== null && id !== undefined) {
+  if (id !== null && id !== undefined) { // audit-ok: plain function, not transformed — bundle preserves native !==
     clearTimeout(id);
     activeDemoTimers.delete(id);
   }

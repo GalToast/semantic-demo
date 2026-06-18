@@ -162,7 +162,7 @@ function _createSearchStore(): SearchStoreApi {
     ...INITIAL_SEARCH_STATE,
     query: appState.currentSearchSummary?.query ?? '',
     results: buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
-    activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
+    activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null, // audit-ok: plain function init, not transformed — bundle preserves native !==
     summary: appState.currentSearchSummary ? { ...$state.snapshot(appState.currentSearchSummary) } : null,
     status: appState.searchStatus,
     hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
@@ -205,14 +205,14 @@ export const hasResults = () => (appState.currentSearchSummary?.resultIndices?.l
 export const isSearching = () => appState.searchStatus === 'searching';
 export const searchSummary = () => appState.currentSearchSummary;
 export const activeResult = () => (
-  appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null
+  appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null // audit-ok: plain function getter, not transformed — bundle preserves native !==
 );
 
 /** Returns the current search summary, or null. */
 export function getSearchSummary(): SearchSummary | null {
   if (appState.currentSearchSummary) return appState.currentSearchSummary as SearchSummary;
   const testState = testCompatStore();
-  // @ts-ignore
+  // @ts-ignore — testCompatStore returns TestCompatState which lacks searchState; legacy bridge gap (w32-b)
   return (testState?.searchState?.summary as SearchSummary) ?? null;
 }
 
@@ -241,7 +241,7 @@ function withSearchNotify<T>(fn: () => T): T {
     ...INITIAL_SEARCH_STATE,
     query: appState.currentSearchSummary?.query ?? '',
     results: buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
-    activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
+    activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null, // audit-ok: plain function withSearchNotify, not transformed — bundle preserves native !==
     summary: appState.currentSearchSummary ? { ...appState.currentSearchSummary } : null,
     status: appState.searchStatus,
     hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,

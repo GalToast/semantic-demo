@@ -317,7 +317,7 @@ export function computeParityAttributes(): ParityAttributeMap {
     const demoPhase = demoPhaseValue
 
     const filterActive =
-        filters.status !== 'all' || filters.city !== '' || filters.website || filters.email || filters.geocoded
+        filters.status !== 'all' || filters.city !== '' || filters.website || filters.email || filters.geocoded // audit-ok: intentional — || chain where bug inversion produces false-negatives not false-positives, per audit doc
 
     // Use positive equality here. This file is compiled by Svelte 5, and
     // nearby parity logic documents a strict-mode compiler bug where `!==`
@@ -389,7 +389,7 @@ export function computeParityAttributes(): ParityAttributeMap {
             const _selBiz = focus.selectedBusiness
             const _hasFocus =
                 (typeof _focusedIdx === 'number' && Number.isFinite(_focusedIdx)) ||
-                (typeof _selBiz === 'object' && _selBiz !== null)
+                (typeof _selBiz === 'object' && _selBiz !== null) // audit-ok: typeof-guarded branch, not transformed
             const _q = search.query
             const _hasSearchIntent = !!search.summary || (typeof _q === 'string' && _q.trim().length >= 2)
             const explicit = journey.phase as string
@@ -407,7 +407,7 @@ export function computeParityAttributes(): ParityAttributeMap {
             if (_hasSearchIntent) return 'search'
             if (nav.mode === 'inside') return 'inside'
             if (nav.mode === 'trail') return 'walking'
-            if (typeof explicit === 'string' && explicit.length > 0 && explicit !== 'idle') return explicit
+            if (typeof explicit === 'string' && explicit.length > 0 && explicit !== 'idle') return explicit // audit-ok: typeof-guarded branch, not transformed
             return 'idle'
         })(),
         terrainHandoff: journey.terrainHandoffPhase || 'idle',

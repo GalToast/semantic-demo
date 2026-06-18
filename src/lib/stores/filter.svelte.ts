@@ -62,7 +62,7 @@ export const filterColorVersion = writable(appState.filterColorVersion);
 
 /** Active cluster filter (null = show all clusters). */
 const _activeClusterFilterWritable = writable<string | null>(
-  appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null
+  appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null // audit-ok: module-level init, evaluated once, not transformed — bundle preserves native !==
 );
 
 /** Active cluster filter exposed as a Readable + set action. */
@@ -234,7 +234,7 @@ export function overwriteActiveFilters(filters: ActiveFilters): void {
   if (typeof document !== 'undefined' && document.body) {
     const f = filters;
     const active =
-      f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded;
+      f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded; // audit-ok: plain function, not transformed
     document.body.dataset.filtersActive = String(active);
   }
 }
@@ -304,8 +304,8 @@ export function pointMatchesActiveFilters(
   if (!point) return false;
   const f = filters ?? getFilterState();
 
-  if (f.status !== 'all' && point.status !== f.status) return false;
-  if (f.city !== '' && normalizeCityForFilter(point.city) !== normalizeCityForFilter(f.city)) return false;
+  if (f.status !== 'all' && point.status !== f.status) return false; // audit-ok: plain function pointMatchesActiveFilters, not transformed
+  if (f.city !== '' && normalizeCityForFilter(point.city) !== normalizeCityForFilter(f.city)) return false; // audit-ok: plain function, not transformed
   if (f.website && !point.website) return false;
   if (f.email && !point.email) return false;
   if (f.geocoded && !point.geocoded) return false;
@@ -369,12 +369,12 @@ export function restoreActiveFiltersFromUrl(params: URLSearchParams): void {
   if (city !== null) setActiveFilter('city', city === 'all' ? '' : city);
   if (website !== null) setActiveFilter('website', website === '1' || website === 'true');
   if (email !== null) setActiveFilter('email', email === '1' || email === 'true');
-  if (geocoded !== null) setActiveFilter('geocoded', geocoded === '1' || geocoded === 'true');
+  if (geocoded !== null) setActiveFilter('geocoded', geocoded === '1' || geocoded === 'true'); // audit-ok: plain function, not transformed
 
   const cityFilter = typeof document !== 'undefined'
     ? document.getElementById('city-filter') as HTMLSelectElement | null
     : null;
-  if (cityFilter && city !== null) cityFilter.value = city;
+  if (cityFilter && city !== null) cityFilter.value = city; // audit-ok: plain function, not transformed
 }
 
 /** Restore cluster filter from URL params using the canonical filter store owner. */
