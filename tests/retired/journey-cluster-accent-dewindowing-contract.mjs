@@ -16,9 +16,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
-const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-selected-card.ts');
-const CLUSTER_UI_ACCENT_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-ui-accent.ts');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts');
+const JOURNEY_SELECTED_CARD_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/selected-card.ts');
+const CLUSTER_UI_ACCENT_PATH = path.join(SEMDEMO_ROOT, 'src/lib/ui/cluster-ui-accent.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);

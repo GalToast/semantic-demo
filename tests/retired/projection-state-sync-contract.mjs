@@ -97,9 +97,9 @@ function ds(key) {
 /* ─── Imports ─────────────────────────────────────────────────────────────────── */
 
 const { state } = await import('../src/lib/engine/state-bridge.ts');
-const { refreshCompositionState, updateExplorationUi } = await import('../js/modules/lifecycle.ts');
-const { setStrandContinuityState, clearStrandContinuityState } = await import('../js/modules/journey.ts');
-const { setTerrainHandoffState, getRouteDirectorState, syncRouteDirectorState } = await import('../js/modules/map-state.ts');
+const { refreshCompositionState, updateExplorationUi } = await import('../src/lib/orchestration/lifecycle.ts');
+const { setStrandContinuityState, clearStrandContinuityState } = await import('../src/lib/journey/journey.ts');
+const { setTerrainHandoffState, getRouteDirectorState, syncRouteDirectorState } = await import('../src/lib/engine/map-state.ts');
 
 /* ─── Reset helper ────────────────────────────────────────────────────────────── */
 

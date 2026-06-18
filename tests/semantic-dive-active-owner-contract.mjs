@@ -13,8 +13,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd());
-const LIFECYCLE = path.join(ROOT, 'js/modules/lifecycle.ts');
-const JOURNEY = path.join(ROOT, 'js/modules/journey.ts');
+const LIFECYCLE = path.join(ROOT, 'src/lib/orchestration/lifecycle.ts');
+const JOURNEY = path.join(ROOT, 'src/lib/journey/journey.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`FAIL: ${msg}`);

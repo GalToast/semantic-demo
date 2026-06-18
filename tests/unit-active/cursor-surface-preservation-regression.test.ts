@@ -122,14 +122,6 @@ vi.mock('@lib/orchestration/lifecycle', () => ({
   syncSearchStatusForFocus: () => {}
 }));
 
-// cursor.ts imports `applyPointFilterColors, syncFocusStage` from the legacy
-// `js/modules/journey.ts` via a relative path. Vitest with the @lib alias
-// config resolves that through Vite. Stub the exports so the import resolves
-// without crashing in jsdom.
-vi.mock('../../../../js/modules/journey.ts', () => ({
-  applyPointFilterColors: () => {},
-  syncFocusStage: () => {}
-}));
 
 vi.mock('@lib/journey/semantic-dive', () => ({
   syncSemanticDiveUi: () => {}

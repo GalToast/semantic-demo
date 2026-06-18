@@ -2,8 +2,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
-const FOCUS_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-focus-ui.ts');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts');
+const FOCUS_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/focus-ui.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
