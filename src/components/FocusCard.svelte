@@ -23,7 +23,6 @@
   // ── Business records (reactive store subscription) ─────────────────────
   // Subscribe to the businessRecords writable store directly. The store is
   // populated by hydrateFromLegacyState() or the data loader during init.
-  // This replaces the old window.__APP_STATE__ fallback pattern.
   let _records = $state<readonly BusinessRecord[]>([]);
   $effect(() => {
     const unsub = businessRecords.subscribe(($s) => { _records = $s; });
@@ -71,7 +70,6 @@
   //   legacy code path; reading it registers a dep on bodyFocusedNode so the
   //   $derived re-evaluates when the body attribute changes).
   // Secondary: navStore rune (5c51450 pattern, mirrors FocusPocket.svelte).
-  // Tertiary: legacy __APP_STATE__.navState.focusedIndex for completeness.
 
   let currentFocusedIdx = $derived.by(() => {
     void bodyFocusedNode;
@@ -79,11 +77,6 @@
     if (fromBody !== null && Number.isFinite(fromBody)) return fromBody;
     const fromNav = nav.focusedIndex;
     if (typeof fromNav === 'number' && Number.isFinite(fromNav)) return fromNav;
-    try {
-      const w = window as unknown as { __APP_STATE__?: { navState?: { focusedIndex?: unknown } } };
-      const legacy = w.__APP_STATE__?.navState?.focusedIndex;
-      if (typeof legacy === 'number' && Number.isFinite(legacy)) return legacy;
-    } catch { /* ignore */ }
     return null;
   });
   let currentActiveResult = $derived(activeResult());
@@ -120,8 +113,7 @@
   });
 
   // Reactive focus detection: read from body data-attrs so Svelte re-evaluates
-  // when the legacy code updates the DOM. isFocused = $derived(hasFocus())
-  // would cache because hasFocus() reads window.__APP_STATE__ (non-reactive).
+  // when the legacy code updates the DOM.
   let isFocusedReactive = $derived(
     bodyFocusedNode !== '' || // audit-ok: inside $derived — previously audited as SAFE (RISKY items already fixed)
     bodyNavMode === 'focus' ||
