@@ -132,7 +132,7 @@
     engineLifecycle?.destroyEngine();
     engineLifecycle = null;
     mounted = false;
-    if (overlayTimeout !== undefined) {
+    if (overlayTimeout !== undefined) { // audit-ok: onDestroy is a plain hook, not a reactive block
       clearTimeout(overlayTimeout);
       overlayTimeout = undefined;
     }
