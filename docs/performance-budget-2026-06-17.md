@@ -63,9 +63,24 @@ Measured from `npx vite preview --port 4175 --host 127.0.0.1` serving `dist/svel
 
 ### Browser paint metrics (FCP / LCP / TTI)
 
-**⚠ Methodology gap:** No Playwright MCP or headless browser automation was available in this tool session. FCP, LCP, and TTI **cannot** be measured without a real browser rendering pipeline. This section requires a follow-up pass with Playwright or Lighthouse CLI.
+Measured 2026-06-18 main-lane via Playwright against Vite dev server (`http://127.0.0.1:5173/?nodemo=1&view=galaxy`). Two captures:
 
-Estimated from network waterfall (localhost, sequential load): all critical JS/CSS deliverable in <15 ms network time. First meaningful paint depends on Svelte hydration + three.js initialization — **not measurable without a browser**.
+| Metric | 1st load (cold, caught mid-WebGL-init) | 2nd load (post-HMR settle, warm cache) |
+|--------|----------------------------------------|----------------------------------------|
+| TTFB | 13 ms | 68 ms |
+| **FCP** | 3,932 ms | **928 ms** |
+| LCP | null | null (0 entries) |
+| domContentLoaded | 717 ms | 739 ms |
+| loadEventEnd | 3,297 ms | 757 ms |
+| HTML transfer | 9,319 B | 9,335 B |
+| Resources loaded | 250 | 250 |
+| Resource transfer total | — | 2,057,906 B (~2.06 MB) |
+
+**LCP = null is expected, not a gap.** This is a `<canvas>`-driven Three.js app; the Largest Contentful Paint heuristic fires on text/image blocks and does not apply to WebGL. **FCP + loadEventEnd are the honest paint/load metrics for this app.** Use TTI approximated as loadEventEnd + main-thread idle (dev: ~928 ms FCP / ~757 ms load warm).
+
+The cold-load FCP of ~3.9 s reflects the full Three.js + instanced-mesh initialization on first paint; warm-cache FCP drops to ~0.9 s. Both measured against the Vite **dev** server (unminified, HMR overhead). Production preview (`dist/svelte/`, minified + chunked) should be faster.
+
+**Two development artifacts inflating dev numbers:** (1) Vite HMR injected a `WebSocket`/HMR client and reloaded the SPA on parallel-session source commits during measurement; (2) dev serves unminified modules. Production numbers via `vite preview` + a clean Lighthouse run are the follow-up that would replace these as the budget baseline.
 
 ---
 
