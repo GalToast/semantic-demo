@@ -67,4 +67,24 @@ describe('Canvas component (source-inspection)', () => {
     it('a11y suppression comment present for interactive/noninteractive role', () => {
         expect(source).toContain('a11y_no_interactive_element_to_noninteractive_role');
     });
+
+    // --- Regression coverage for 2026-06-18 fixes ---
+
+    it('onDestroy resets canvasReady to false so loading overlay reappears on remount', () => {
+        // Find onDestroy block
+        const onDestroyStart = source.indexOf('onDestroy(() => {');
+        expect(onDestroyStart).toBeGreaterThanOrEqual(0);
+        const onDestroyEnd = source.indexOf('});', onDestroyStart);
+        const onDestroyBody = source.slice(onDestroyStart, onDestroyEnd);
+        expect(onDestroyBody).toContain('canvasReady = false');
+        expect(onDestroyBody).toContain('overlayVisible = true');
+    });
+
+    it('onDestroy clears overlayTimeout to prevent post-unmount setTimeout leaks', () => {
+        const onDestroyStart = source.indexOf('onDestroy(() => {');
+        const onDestroyEnd = source.indexOf('});', onDestroyStart);
+        const onDestroyBody = source.slice(onDestroyStart, onDestroyEnd);
+        expect(onDestroyBody).toContain('clearTimeout(overlayTimeout)');
+        expect(onDestroyBody).toContain('overlayTimeout = undefined');
+    });
 });
