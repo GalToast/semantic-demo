@@ -2577,8 +2577,12 @@ async function assert_thread_inspector(page, ctx) {
             }
             return false
         }
-        const legacyInspector = document.getElementById('focus-thread-inspector')
-        const legacyPin = document.getElementById('btn-thread-pin')
+        const legacyInspector = Array.from(document.querySelectorAll('#focus-thread-inspector')).find(
+            (el) => !el.closest('#thread-inspector')
+        )
+        const legacyPin = Array.from(document.querySelectorAll('#btn-thread-pin')).find(
+            (el) => !el.closest('#thread-inspector')
+        )
 
         // Visibility
         const svelteVisible = svelteInspector ? getComputedStyle(svelteInspector).display !== 'none' : null

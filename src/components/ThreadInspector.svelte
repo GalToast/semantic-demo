@@ -282,12 +282,17 @@
     color: #b0d0d0;
   }
   .inspector-close {
+    display: inline-grid;
+    place-items: center;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
     background: none;
     border: none;
     color: #6a8a8a;
     font-size: 1rem;
     cursor: pointer;
-    padding: 0 0.25rem;
+    padding: 0;
     line-height: 1;
     transition: color 0.15s;
   }
