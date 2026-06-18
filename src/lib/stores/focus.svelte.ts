@@ -13,7 +13,13 @@
  *   environments get synchronous notification too. (A3-1 fix pattern, canonical
  *   in search.svelte.ts and camera.svelte.ts.)
  */
-import type { FocusState, FocusPocketNode, FocusTransitionMode, FocusOrbitSlackState } from '@lib/types/state'
+import type {
+    FocusState,
+    FocusPocketNode,
+    FocusTransitionMode,
+    FocusOrbitSlackState,
+    PocketMotionWithFrame
+} from '@lib/types/state'
 import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 
@@ -21,11 +27,10 @@ import { appState } from '@lib/state/app.svelte.ts'
 
 /** Internal store state interface. */
 export interface FocusStoreState extends FocusState {
-    pocketMotionByIndex: Map<number, unknown>
+    pocketMotionByIndex: Map<number, PocketMotionWithFrame>
     pocketTransitionStartedAt: number
     infoPanelOpen: boolean
     pocketListVisible: boolean
-    selectedBusiness: any | null // Keep for component compatibility
     strandContinuityPhase: 'idle' | 'exploring' | 'arrived' | 'departing'
 }
 
@@ -78,7 +83,7 @@ const INITIAL_FOCUS: FocusStoreState = {
 function _readFocusSnapshot(): FocusStoreState {
     return {
         ...INITIAL_FOCUS,
-        pocketNodes: [...appState.navState.focusPocketIndices] as any[],
+        pocketNodes: (appState.navState.focusPocketIndices as unknown as readonly FocusPocketNode[]) || [],
         pocketMeta: appState.navState.focusPocketMeta,
         pocketRoleByIndex: new Map(appState.navState.focusPocketRoleByIndex),
         selectedBusiness: appState.selectedPoint as any,
@@ -120,10 +125,10 @@ function withFocusNotify(updater: (s: FocusStoreState) => FocusStoreState): void
     _focusWritable.set(next)
     // Sync all bridged properties back to appState
     appState.withMutation(() => {
-        appState.navState.focusPocketIndices = next.pocketNodes
+        appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
         appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
         appState.navState.focusPocketMeta = next.pocketMeta as any
-        appState.selectedPoint = next.selectedBusiness
+        appState.selectedPoint = next.selectedBusiness as any
         appState.inspectedThreadIndex = next.inspectedStrandIndex
         appState.pinnedThreadIndex = next.pinnedThreadIndex
         appState.nodesAreSettling = next.nodesAreSettling
@@ -184,10 +189,10 @@ function _createFocusStore(): FocusStoreApi {
         _focusWritable.set(value)
         // Sync all bridged properties back to appState (same as withFocusNotify)
         appState.withMutation(() => {
-            appState.navState.focusPocketIndices = value.pocketNodes
+            appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
             appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
             appState.navState.focusPocketMeta = value.pocketMeta as any
-            appState.selectedPoint = value.selectedBusiness
+            appState.selectedPoint = value.selectedBusiness as any
             appState.inspectedThreadIndex = value.inspectedStrandIndex
             appState.pinnedThreadIndex = value.pinnedThreadIndex
             appState.nodesAreSettling = value.nodesAreSettling

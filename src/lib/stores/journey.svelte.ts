@@ -328,8 +328,9 @@ export function clearWalkHistory(): void {
 }
 
 export function setThreadCandidates(candidates: readonly number[]): void {
-  _journeyWritable.update(s => ({ ...s, threadCandidates: [...candidates] }));
-  appState.withMutation(() => { appState.navState.threadCandidates = [...candidates]; });
+  const refs = candidates.map(idx => ({ index: idx, source: '', reason: '' }));
+  _journeyWritable.update(s => ({ ...s, threadCandidates: [...refs] }));
+  appState.withMutation(() => { appState.navState.threadCandidates = [...refs]; });
 }
 
 export function clearThreadCandidates(): void {

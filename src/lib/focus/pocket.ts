@@ -11,6 +11,7 @@
 import { Vector3, PerspectiveCamera } from 'three'
 import { appState } from '@lib/state/app.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
+import type { PocketMotion, PocketMotionWithFrame } from '@lib/types/state'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import { getBusinessRecords } from '@lib/data-store'
@@ -88,11 +89,11 @@ export function clearFocusPocketRoleByIndex(): void {
     writeFocusPocketMirror({ pocketRoleByIndex: new Map() })
 }
 
-export function getFocusPocketMotionByIndex(): Map<number, Record<string, unknown>> {
-    return (appState.pocketMotionByIndex as Map<number, Record<string, unknown>>) ?? new Map()
+export function getFocusPocketMotionByIndex(): Map<number, PocketMotionWithFrame> {
+    return (appState.pocketMotionByIndex as Map<number, PocketMotion>) ?? new Map()
 }
 
-export function setFocusPocketMotionByIndex(map: Map<number, Record<string, unknown>>): void {
+export function setFocusPocketMotionByIndex(map: Map<number, PocketMotionWithFrame>): void {
     appState.withMutation(() => {
         appState.pocketMotionByIndex = map
     })
@@ -214,7 +215,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
                     })
                 }
             })
-            setFocusPocketMotionByIndex(motion)
+            setFocusPocketMotionByIndex(motion as Map<number, PocketMotion>)
 
             setFocusPocketMeta(pocket.meta)
             appState.withMutation(() => {
@@ -292,7 +293,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
         )
         setFocusPocketIndices([...fallbackPocketEntries.keys()])
         setFocusPocketRoleByIndex((fallbackPocket.roles as Map<number, string>) || new Map([[index, 'anchor']]))
-        setFocusPocketMotionByIndex((fallbackPocket.motion as Map<number, Record<string, unknown>>) || new Map())
+        setFocusPocketMotionByIndex((fallbackPocket.motion as unknown as Map<number, PocketMotion>) || new Map())
         setFocusPocketMeta({
             active: true,
             nodeCount: fallbackPocket.positions.size,

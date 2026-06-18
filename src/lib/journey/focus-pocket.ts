@@ -13,6 +13,7 @@
  * `src/lib/engine/` is dead and a deletion candidate for a follow-up ticket.
  */
 import { Vector3, PerspectiveCamera } from 'three'
+import type { PocketMotion, PocketMotionWithFrame } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
@@ -89,11 +90,11 @@ export function clearFocusPocketRoleByIndex(): void {
     writeFocusPocketMirror({ pocketRoleByIndex: new Map() })
 }
 
-export function getFocusPocketMotionByIndex(): Map<number, unknown> {
-    return (appState.pocketMotionByIndex as Map<number, unknown>) ?? new Map()
+export function getFocusPocketMotionByIndex(): Map<number, PocketMotion> {
+    return (appState.pocketMotionByIndex as Map<number, PocketMotion>) ?? new Map()
 }
 
-export function setFocusPocketMotionByIndex(map: Map<number, unknown>): void {
+export function setFocusPocketMotionByIndex(map: Map<number, PocketMotionWithFrame>): void {
     appState.withMutation(() => {
         appState.pocketMotionByIndex = map as Map<number, any>
     })
@@ -201,12 +202,13 @@ export function applyLocalNeighborhoodFocus(index: number): void {
             setFocusPocketRoleByIndex(pocket.roles || new Map())
 
             const newPocketSet = new Set(pocket.indices ?? [])
-            const motion = pocket.motion || new Map<number, Record<string, unknown>>()
+            const motion = (pocket.motion as unknown as Map<number, PocketMotionWithFrame>) || new Map<number, PocketMotionWithFrame>()
             prevTargetByIndex.forEach((prevPos, pocketIndex) => {
                 if (newPocketSet.has(pocketIndex)) {
                     const existing = motion.get(pocketIndex)
+                    const base: PocketMotionWithFrame = existing || { role: 'direct', delay: 0, duration: 0, speed: 0 }
                     motion.set(pocketIndex, {
-                        ...(existing || {}),
+                        ...base,
                         _preservePos: { x: prevPos.x, y: prevPos.y, z: prevPos.z },
                         _firstFrameApplied: false
                     })
@@ -325,7 +327,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     setFocusPocketIndices([...localIndices].filter((candidateIndex: number) => candidateIndex !== index))
     setFocusPocketRoleByIndex(new Map([[index, 'anchor']]))
     setFocusPocketMotionByIndex(
-        new Map<number, Record<string, unknown>>([
+        new Map<number, PocketMotion>([
             [
                 index,
                 {

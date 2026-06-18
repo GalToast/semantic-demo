@@ -132,7 +132,7 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
     ? navState.focusedIndex
     : null;
   const points = appState.points as unknown as GeoPoint[];
-  const threadCandidates = (navState?.threadCandidates as Array<Record<string, unknown>>) ?? [];
+  const threadCandidates = (navState?.threadCandidates as unknown as Array<Record<string, unknown>>) ?? [];
   const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
   const nodePositions = appState.nodePositions;
   const targetPositions = appState.targetPositions;

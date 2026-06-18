@@ -5,6 +5,8 @@
  * Mirrors the slices from js/state.js with proper TS narrowing.
  */
 
+import type { BusinessRecord } from '@lib/types/business'
+
 // ── Navigation State ──────────────────────────────────────────────────────────
 
 export type NavMode = 'overview' | 'search' | 'trail' | 'focus' | 'inside' | 'map' | 'bridge'
@@ -35,7 +37,7 @@ export interface NavState {
     trailDepth: number
     walkHistoryIndices: readonly number[]
     lastTraversalReason: string | null
-    threadCandidates: any[] // Matches kernel and engine
+    threadCandidates: ThreadCandidateRef[] // Matches kernel and engine
     threadReasonByIndex: Map<number, string>
     threadSource: string
     focusPocketIndices: readonly number[]
@@ -146,7 +148,7 @@ export interface JourneyState {
     trail: readonly TrailStop[]
     cursor: number
     depth: number
-    threadCandidates: readonly number[]
+    threadCandidates: readonly ThreadCandidateRef[]
     threadReasonByIndex: Map<number, string>
     threadSource: string
     lastTraversalReason: string | null
@@ -195,11 +197,30 @@ export interface CompassState {
 
 export type FocusTransitionMode = 'idle' | 'entering' | 'settling' | 'inside' | 'exiting'
 
+export interface ThreadCandidateRef {
+    index: number
+    source: string
+    reason: string
+}
+
+export interface PocketMotion {
+    role: string
+    delay: number
+    duration: number
+    speed: number
+    personality?: string
+}
+
+export interface PocketMotionWithFrame extends PocketMotion {
+    _preservePos?: { x: number; y: number; z: number }
+    _firstFrameApplied?: boolean
+}
+
 export interface FocusState {
-    pocketNodes: readonly any[]
+    pocketNodes: readonly FocusPocketNode[]
     pocketMeta: FocusPocketMeta | null
     pocketRoleByIndex: Map<number, string>
-    pocketMotionByIndex: Map<number, any>
+    pocketMotionByIndex: Map<number, PocketMotion>
     pocketTransitionStartedAt: number
     nodesAreSettling: boolean
     semanticDiveMode: boolean
@@ -208,7 +229,7 @@ export interface FocusState {
     pinnedThreadIndex: number | null
     threadInspectorPointerInside: boolean
     canvasThreadInspectionClearTimer: ReturnType<typeof setTimeout> | null
-    selectedBusiness: any | null
+    selectedBusiness: BusinessRecord | null
     infoPanelOpen: boolean
     pocketListVisible: boolean
     settling: boolean
