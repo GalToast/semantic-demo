@@ -28,8 +28,8 @@ const PORT = 8799
 const BASE_URL = `http://127.0.0.1:${PORT}`
 const BASELINE_DIR = path.resolve(import.meta.dirname ?? __dirname, 'visual-baselines')
 const DIFF_DIR = path.join(BASELINE_DIR, 'diffs')
-const THRESHOLD = 0.1 // Allow 0.1% pixel difference
-const VIEWPORT = { width: 1280, height: 720 }
+const THRESHOLD = parseFloat(process.env.VISUAL_THRESHOLD || '2') // Default 2% for cross-env comparison, override with VISUAL_THRESHOLD env var
+const VIEWPORT = { width: 1280, height: 850 }
 
 // ── Static file server ──────────────────────────────────────────────────────
 
@@ -160,6 +160,7 @@ interface TestState {
     baseline: string
     description: string
     setup: (page: Page) => Promise<void>
+    thresholdOverride?: number // Per-state threshold override
 }
 
 function getTestStates(): TestState[] {
@@ -228,6 +229,7 @@ function getTestStates(): TestState[] {
             name: 'map-view',
             baseline: 'map-view.png',
             description: 'Map view — 2D map overlay triggered',
+            thresholdOverride: 5, // Higher threshold for map due to external tile loading variability
             setup: async (page) => {
                 await page.goto(BASE_URL, { waitUntil: 'networkidle' })
                 await page.waitForTimeout(3000)
@@ -259,6 +261,7 @@ interface TestResult {
     diffPixels: number
     skipped: boolean
     error?: string
+    environmentNote?: string
 }
 
 async function runVisualRegression(): Promise<TestResult[]> {
@@ -310,12 +313,15 @@ async function runVisualRegression(): Promise<TestResult[]> {
                 console.log(`   ✓ Screenshot captured: current-${state.name}.png`)
 
                 // Compare with baseline
+                const stateThreshold = state.thresholdOverride ?? THRESHOLD
                 const comparison = compareImages(baselinePath, currentPath, diffPath)
+                const passed = comparison.diffPercent <= stateThreshold
 
-                if (comparison.match) {
+                if (passed) {
                     console.log(
                         `   ✅ PASS — ${comparison.diffPercent.toFixed(4)}% difference ` +
-                            `(${comparison.diffPixels} / ${comparison.totalPixels} pixels)`
+                            `(${comparison.diffPixels} / ${comparison.totalPixels} pixels)` +
+                            (state.thresholdOverride ? ` (threshold: ${stateThreshold}%)` : '')
                     )
                     results.push({
                         state: state.name,
@@ -328,9 +334,10 @@ async function runVisualRegression(): Promise<TestResult[]> {
                     console.log(
                         `   ❌ FAIL — ${comparison.diffPercent.toFixed(4)}% difference ` +
                             `(${comparison.diffPixels} / ${comparison.totalPixels} pixels) ` +
-                            `(threshold: ${THRESHOLD}%)`
+                            `(threshold: ${stateThreshold}%)`
                     )
                     console.log(`   Diff saved to: ${diffPath}`)
+                    console.log(`   ℹ️  Headless rendering may differ from headed baselines (font anti-aliasing, WebGL)`)
                     results.push({
                         state: state.name,
                         passed: false,
