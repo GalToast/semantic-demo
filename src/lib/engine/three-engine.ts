@@ -578,6 +578,10 @@ export function updateCameraViewportOffset() {
 export function initThreeJS() {
     cancelAnimate()
 
+    // Reset circuit breaker so a fresh init can start the loop even if a
+    // previous animate() iteration tripped it.
+    _circuitBreakerTripped = false
+
     const container = document.getElementById('canvas-container')
     if (!container) throw new Error('initThreeJS: #canvas-container element not found in DOM')
 
@@ -869,14 +873,14 @@ export function cancelAnimate() {
         }
     }
     if (_state?.controls && typeof _state.controls.dispose === 'function') {
-        _state.controls.dispose()
+        try { _state.controls.dispose() } catch (_) { /* already disposed */ }
     }
     if (_state) {
         _state.scene = null
         _state.camera = null
         _state.controls = null
     }
-    disposeObject3D(scene as any)
+    try { disposeObject3D(scene as any) } catch (_) { /* already cleaned up */ }
     _focusAnchor?.disposeFocusAnchorIndicator()
     // Dispose postprocessing composer BEFORE renderer.dispose() so the
     // composer's GL framebuffer/texture resources release cleanly while the
@@ -889,7 +893,7 @@ export function cancelAnimate() {
     if (renderer) {
         renderer.dispose()
         const canvas = renderer.domElement
-        if (canvas?.parentNode) canvas.parentNode.removeChild(canvas)
+        try { canvas?.parentNode?.removeChild(canvas) } catch (_) { /* already removed */ }
     }
     if (_state) {
         _state.renderer = null
@@ -949,6 +953,11 @@ export function animate() {
         _rafId = null
         return
     }
+
+    // Duplicate-RAF guard: if a previous requestAnimationFrame is still
+    // pending we already have an active loop — bail out to avoid stacking
+    // independent recursive loops that can't all be cancelled.
+    if (_rafId !== null) return
 
     _rafId = requestAnimationFrame(animate)
     try {
