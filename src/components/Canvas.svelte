@@ -91,6 +91,7 @@
       if (overlayVisible && !canvasReady) {
         console.warn('[Canvas] Overlay fallback timeout — hiding loading overlay');
         overlayVisible = false;
+        overlayTimeout = undefined;
       }
     }, 5000);
 
@@ -133,6 +134,7 @@
     mounted = false;
     if (overlayTimeout !== undefined) {
       clearTimeout(overlayTimeout);
+      overlayTimeout = undefined;
     }
   });
 </script>
