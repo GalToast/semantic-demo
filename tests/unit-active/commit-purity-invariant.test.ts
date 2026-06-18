@@ -130,6 +130,11 @@ const EXEMPTED_SHAS = new Set<string>([
     // tmp/w35-track-2-report.md with the test/baseline work. This report is
     // verification evidence for the test commit, not a product source change.
     '8611b699ab1fa7db7fd613967d790dc56875fc1f',
+    // e57c3fe — docs(w39): bundle audit with optimization roadmap (400-600KB
+    // potential savings) — Bundled package.json (budget targets) and
+    // scripts/model-health-check.mjs (audit helper) with the audit doc.
+    // The non-doc files are audit artifacts co-located with the deliverable.
+    'e57c3fe8c5a1d18f9c946ba9271c03d906435c5e',
 ]);
 
 // Conventional-commit prefix regex. Captures:

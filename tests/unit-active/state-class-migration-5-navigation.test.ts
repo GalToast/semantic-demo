@@ -39,6 +39,9 @@ const mockState = vi.hoisted(() => ({
     trailDepth: 0,
     currentView: 'galaxy',
     myceliumMode: 'default',
+    focusPocketIndices: [],
+    focusPocketMeta: null,
+    focusPocketRoleByIndex: null,
   } as Record<string, unknown>,
 }));
 
@@ -46,6 +49,19 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
     get navState() { return mockState.navState; },
     withMutation: (fn: () => unknown) => fn(),
+    selectedPoint: null,
+    inspectedThreadIndex: null,
+    pinnedThreadIndex: null,
+    nodesAreSettling: false,
+    pocketMotionByIndex: null,
+    pocketTransitionStartedAt: 0,
+    infoPanelOpen: false,
+    pocketListVisible: false,
+    focusTransitionMode: 'none',
+    focusTransitionStartedAt: 0,
+    focusOrbitSlackState: {},
+    inspectedStrandDiagnostics: { active: false, source: 'none', segmentCount: 0, braidCount: 0, endpointCount: 0 },
+    threadInspectorPointerInside: false,
   },
 }));
 
@@ -79,6 +95,9 @@ describe('Navigation store — T4 migration to Svelte 5 state class', () => {
       trailDepth: 0,
       currentView: 'galaxy',
       myceliumMode: 'default',
+      focusPocketIndices: [],
+      focusPocketMeta: null,
+      focusPocketRoleByIndex: null,
     };
   });
 

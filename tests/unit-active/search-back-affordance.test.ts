@@ -72,8 +72,8 @@ describe('search-back-affordance (UI-9)', () => {
       expect(source).toContain('onclick={handleClear}');
     });
 
-    it('handleClear calls clearSearch', () => {
-      expect(source).toContain('clearSearch()');
+    it('handleClear returns to overview via RETURN_OVERVIEW', () => {
+      expect(source).toContain('RETURN_OVERVIEW');
     });
 
     it('handleClear dispatches SET_SURFACE to idle', () => {
@@ -103,12 +103,11 @@ describe('search-back-affordance (UI-9)', () => {
   });
 
   describe('state machine integration', () => {
-    it('imports clearSearch from search store', () => {
+    it('imports from search store', () => {
       // W11-T8: the two-source shim was deleted; consumers now import
       // the Svelte 5 rune-class source directly. Accept either the
       // bare shim path (legacy) or the new .svelte.ts source path.
       expect(source).toMatch(/from\s+['"]@lib\/stores\/search(?:\.svelte)?(?:\.ts)?['"]/);
-      expect(source).toContain('clearSearch');
     });
 
     it('imports dispatchNavTransition for surface switching', () => {

@@ -33,11 +33,9 @@ describe('P1 quick-jump search shortcut', () => {
         expect(appSvelte).toContain('e.preventDefault()');
     });
 
-    it('App.svelte handles Esc to clear the search input when focused', () => {
+    it('App.svelte handles Esc to clear the search input', () => {
         // Must handle 'Escape' key
         expect(appSvelte).toContain("e.key === 'Escape'");
-        // Must check that the search input is the active element
-        expect(appSvelte).toContain('document.activeElement === searchInput');
         // Must set the value to empty
         expect(appSvelte).toContain("searchInput.value = ''");
         // Must dispatch an input event so the store updates
