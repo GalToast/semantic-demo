@@ -1,6 +1,6 @@
 # Performance Budget
 
-> Living document — last updated 2026-06-18 (W38 Charter Closeout).
+> Living document — last updated 2026-06-18 (W43 perf verification).
 > Source data: `docs/w40-bundle-audit-2026-06-18.md`.
 
 This document defines hard performance ceilings for the Semantic Explorer. All PRs that affect bundle size, render performance, or GPU usage must be checked against these budgets.
@@ -9,27 +9,38 @@ This document defines hard performance ceilings for the Semantic Explorer. All P
 
 ## 1. Bundle Size Budget
 
-| Metric | Current | Target | Ceiling |
+| Metric | Current (measured) | Live ceiling (script) | Slack |
 |--------|---------|--------|---------|
-| **Total JS (raw)** | 2,539 KB (2.54 MB) | < 2,000 KB (< 2.0 MB) | 2,500 KB (2.5 MB) |
-| **Total JS (gzip)** | 610 KB | < 500 KB | 650 KB |
-| **Total CSS (raw)** | 54.6 KB | < 50 KB | 60 KB |
-| **Total CSS (gzip)** | 9.7 KB | < 9 KB | 12 KB |
+| **Total JS (raw)** | 1,219.73 KB (1.22 MB) | 2,500 KB (2.5 MB) | 1,280 KB (51%) |
+| **Total JS (gzip)** | 338.09 KB | 650 KB | 312 KB (48%) |
+| **Total CSS (raw)** | 54.55 KB | 60 KB | 5.5 KB (9%) |
+| **Total CSS (gzip)** | 10.76 KB | 12 KB | 1.2 KB (10%) |
 
 ### Budget Rationale
 
-- **Ceiling (2.5 MB raw)**: Current state. Exceeding this is a regression.
-- **Target (2.0 MB raw)**: Achievable after Three.js selective import conversion (W39/40). Estimated 400–600 KB reduction from eliminating unused Three.js exports.
-- **gzip ceiling (650 KB)**: Accounts for Three.js compressibility; JS compresses ~4:1.
+- **Live ceiling (2.5 MB JS raw / 650 KB JS gzip)**: Enforced by `node scripts/check-bundle-size.mjs` in CI. Exceeding this is a regression.
+- **Current headroom**: 51% slack on JS raw, 48% on JS gzip — generous margin after W41 selective-import conversion.
+- **CSS ceiling (60 KB raw / 12 KB gzip)**: Tighter margin (~10% slack). Monitor.
+
+### Proposed Next-Ceiling (requires script + CI update)
+
+Once the current ceiling has proven stable, consider tightening to:
+
+| Metric | Proposed ceiling | Rationale |
+|--------|-----------------|-----------|
+| JS raw | ≤ 1,500 KB | 500 KB above current actual; accounts for growth |
+| JS gzip | ≤ 400 KB | 62 KB above current actual |
+
+These are **not live** — the script still enforces 2,500 / 650.
 
 ### Key Offenders
 
 | Module | Raw | % of Bundle | Action |
 |--------|-----|-------------|--------|
-| Three.js (core + module) | 1,168 KB | 46% | Selective imports → tree-shake unused 250+ exports |
-| Postprocessing | 111 KB | 4.4% | Already tree-shaken; monitor |
-| Svelte runtime | 149 KB | 5.9% | Fixed cost; no action |
-| App source (TS + Svelte) | 1,063 KB | 42% | Lazy-load mode-specific components |
+| Three.js | 561.88 KB | 46.1% | Reduced via selective imports (W41); monitor |
+| Postprocessing | 80.55 KB | 6.6% | Already tree-shaken; monitor |
+| App source (TS + Svelte) | 549.87 KB | 45.1% | Lazy-load mode-specific components |
+| Lazy-loaded chunks | 23.92 KB | 2.0% | SearchResults + JourneyChrome (code-split) |
 
 ---
 
@@ -69,14 +80,14 @@ This document defines hard performance ceilings for the Semantic Explorer. All P
 
 ## 4. Migration Status
 
-### Three.js Selective Import Conversion (W39/40)
+### Three.js Selective Import Conversion (W41 — COMPLETE)
 
 | Status | Detail |
 |--------|--------|
-| **In progress** | 37 files use `import * as THREE from 'three'` (namespace import) |
-| **2 files converted** | `src/lib/utils/three-textures.ts`, `src/lib/engine/three-postprocessing.ts` |
-| **Expected savings** | ~400–600 KB raw (16–24% of total bundle) |
-| **Post-conversion target** | < 2.0 MB raw total |
+| **Complete** | W41 commit `fc0c4bc` converted namespace imports to selective imports |
+| **Savings achieved** | ~1,319 KB raw reduction (52% of original 2,539 KB) |
+| **Current state** | Three.js chunk: 561.88 KB (down from 759.7 KB) |
+| **Post-conversion actual** | 1,219.73 KB total JS (51% under 2,500 KB ceiling) |
 
 ### How Namespace Imports Kill Tree-Shaking
 
@@ -92,22 +103,20 @@ const mesh = new Mesh(...);
 
 Three.js exports 300+ symbols. We use ~50. The other 250+ (VR/XR, loaders, audio, morph targets, skinned meshes, compression formats) ship as dead weight.
 
-### Lazy-Load Candidates (Post-Selective-Import)
+### Lazy-Load Candidates (Implemented in W43)
 
-| Component | Raw | Gzip | Rationale |
-|-----------|-----|------|-----------|
-| `SearchResults.svelte` | 22.4 KB | 5.9 KB | Only visible during search |
-| `JourneyChrome.svelte` | 22.5 KB | 5.5 KB | Only in journey/thread mode |
-| `InfoPanel.svelte` | 22.3 KB | 5.5 KB | Only when node selected |
-| `search-engine.ts` | 20.9 KB | 6.1 KB | Only after first search |
+| Component | Raw | Gzip | Status |
+|-----------|-----|------|--------|
+| `SearchResults.svelte` | 12.40 KB | 4.63 KB | ✅ Code-split |
+| `JourneyChrome.svelte` | 11.52 KB | 4.20 KB | ✅ Code-split |
 
-Potential additional deferral: ~88 KB raw / ~23 KB gzip.
+Potential additional deferral: ~23 KB raw / ~9 KB gzip (remaining non-split components).
 
 ---
 
 ## 5. Enforcement
 
-1. **CI Gate**: Bundle size check against ceiling (2.5 MB raw) should be added to CI.
+1. **CI Gate**: Bundle size check against ceiling (2,500 KB JS raw / 650 KB JS gzip) is live via `node scripts/check-bundle-size.mjs`.
 2. **PR Review**: Any PR that adds >10 KB raw must justify the addition.
 3. **Quarterly Review**: Re-audit bundle with `npx vite build --mode analyze` and update this document.
 4. **Regression Protocol**: If ceiling is exceeded, file a `P1-perf-regression` issue and block release.

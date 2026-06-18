@@ -142,9 +142,20 @@
   let isFocused = $derived(hasFocus());
   let surface = $derived(currentSurface());
 
+  function bodySurfaceOwnsInfoPanel(surfaceValue: string): boolean {
+    return surfaceValue === 'search' ||
+      surfaceValue === 'focus-search' ||
+      surfaceValue === 'map-idle' ||
+      surfaceValue === 'map' ||
+      surfaceValue === 'map-focus' ||
+      surfaceValue === 'map-search' ||
+      surfaceValue === 'map-trail' ||
+      surfaceValue === 'map-focus-search';
+  }
+
   // Test-compat: derive effective surface/focus from test store if stores not initialized.
   let effectiveSurface = $derived.by(() => {
-    if (bodyPanelSurface === 'search' || bodyPanelSurface === 'focus-search') return bodyPanelSurface;
+    if (bodySurfaceOwnsInfoPanel(bodyPanelSurface)) return bodyPanelSurface;
     if (surface !== 'idle' && surface !== undefined) return surface; // audit-ok: plain function, not transformed — bundle preserves native ==
     return testPanelSurface || 'idle';
   });
@@ -178,6 +189,8 @@
   });
 
   let selectedRecord = $derived.by(() => {
+    if (effectiveSurface === 'idle') return null;
+
     if (!getIsDataReady() || getBusinessRecords().length === 0) {
       // Test fallback: create a mock record from body data if available
       if (effectiveFocusedIdx != null) {

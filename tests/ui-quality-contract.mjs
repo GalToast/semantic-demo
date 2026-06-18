@@ -884,9 +884,9 @@ async function auditState(page, name) {
 
       if (panelSurface === 'map-focus-search') {
         const selectedCard = document.querySelector('#selected-card');
-        if (!selectedCard || selectedCard.dataset.contentOwner !== 'selected-map-summary') {
+        if (!selectedCard || selectedCard.dataset.contentOwner !== 'info-panel') {
           failures.push({
-            check: 'composition:map-summary-content-owner',
+            check: 'composition:map-focus-search-content-owner',
             selector: '#selected-card',
             state: name,
             owner: selectedCard?.dataset.contentOwner || '',
@@ -902,9 +902,9 @@ async function auditState(page, name) {
           });
         }
         const selectedMapSummary = document.querySelector('#selected-map-summary');
-        if (!visible(selectedMapSummary)) {
+        if (visible(selectedMapSummary)) {
           failures.push({
-            check: 'composition:map-summary-hidden',
+            check: 'composition:retired-map-summary-visible',
             selector: '#selected-map-summary',
             state: name,
           });

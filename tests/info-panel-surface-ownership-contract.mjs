@@ -373,6 +373,19 @@ function testInfoPanelReadsParityAttrs() {
   console.log('  OK - InfoPanel.svelte reads parity attrs and derives surface state');
 }
 
+// ── Test H: Idle surface releases selected-record ownership ─────────────────
+
+function testIdleSurfaceClearsSelectedRecord() {
+  const src = read(INFO_PANEL);
+
+  assert(
+    /let\s+selectedRecord\s*=\s*\$derived\.by\s*\(\s*\(\)\s*=>\s*\{[\s\S]*?if\s*\(\s*effectiveSurface\s*===\s*['"]idle['"]\s*\)\s*return\s+null\s*;/.test(src),
+    'InfoPanel.svelte must clear selectedRecord on idle surfaces before test/data fallback records can render'
+  );
+
+  console.log('  OK - idle surface clears selectedRecord ownership');
+}
+
 // ── Run all tests ────────────────────────────────────────────────────────────
 
 function run() {
@@ -388,6 +401,7 @@ function run() {
   testStageRendererRespectsSvelteOwnership();
   testHtmlShellNoStaleSlots();
   testInfoPanelReadsParityAttrs();
+  testIdleSurfaceClearsSelectedRecord();
 
   console.log('\n=================================================================');
   console.log('ALL TESTS PASSED');

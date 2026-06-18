@@ -12,7 +12,7 @@
   import type { NavMode } from '@lib/types/state';
   import {
     currentMode,
-    currentSurface,
+    currentView,
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS,
     navStore,
@@ -63,19 +63,19 @@
   // Subscribe to navStore for reactive updates in Svelte 5 runes.
   // Using $derived with get() doesn't work for svelte/store writables.
   let activeMode = $state(currentMode());
-  let activeSurface = $state(currentSurface());
+  let activeView = $state(currentView());
   let activeIndex = $state(Math.max(0, modes.findIndex((m) => {
-    if (m.id === 'map') return currentSurface() === 'map';
+    if (m.id === 'map') return currentView() === 'map';
     return currentMode() === m.id;
   })));
 
   $effect(() => {
     const unsub = navStore.subscribe((s) => {
       activeMode = s.mode;
-      activeSurface = s.surface;
+      activeView = s.currentView;
       // Keep roving tabindex index in sync with the active mode
       const idx = modes.findIndex((m) => {
-        if (m.id === 'map') return s.surface === 'map';
+        if (m.id === 'map') return s.currentView === 'map';
         return s.mode === m.id;
       });
       if (idx >= 0) activeIndex = idx;
@@ -84,7 +84,7 @@
   });
 
   function isActive(modeId: NavMode | 'map'): boolean {
-    if (modeId === 'map') return activeSurface === 'map';
+    if (modeId === 'map') return activeView === 'map';
     return activeMode === modeId;
   }
 
@@ -146,8 +146,8 @@
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any });
     } else if (modeId === 'map') {
       // Map is a view-level switch (galaxy ↔ map), not just a surface change.
-      // SET_VIEW updates currentView; SET_SURFACE sets surface='map' for
-      // isActive('map') which checks $currentSurface.
+      // SET_VIEW updates currentView; SET_SURFACE preserves the map-family
+      // surface for downstream panels that still read navState.surface.
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
     }
@@ -371,6 +371,30 @@
     border-color: rgba(78, 205, 196, 0.4);
     color: #4ecdc4;
     font-weight: 600;
+  }
+  :global(#mode-chips .mode-chip.is-waiting) {
+    opacity: 0.75;
+    border-style: solid;
+    border-color: rgba(255, 176, 30, 0.5);
+    background: rgba(255, 176, 30, 0.08);
+    color: rgba(255, 210, 130, 0.9);
+    box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
+  }
+  :global(#mode-chips .mode-chip.is-locked) {
+    background: rgba(78, 205, 196, 0.18);
+    border-color: rgba(78, 205, 196, 0.55);
+    color: rgba(201, 255, 248, 0.98);
+    box-shadow:
+      0 0 0 1px rgba(78, 205, 196, 0.25),
+      0 0 12px rgba(78, 205, 196, 0.15);
+  }
+  :global(#mode-chips .mode-chip.is-locked .chip-label) {
+    color: rgba(201, 255, 248, 1);
+  }
+  :global(#mode-chips .mode-chip:disabled) {
+    cursor: not-allowed;
+    opacity: 0.45;
+    pointer-events: none;
   }
   .chip-icon {
     display: none;

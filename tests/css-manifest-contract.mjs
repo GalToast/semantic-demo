@@ -67,7 +67,7 @@ const requiredFragments = [
   "data-panel-surface='focus-search'",
   'data-panel-surface="semantic-dive"',
   'data-panel-surface^="map-"',
-  '#selected-map-summary.selected-map-summary:not([hidden])',
+  '.map-trail-strip',
   '.focus-stage-card',
 ];
 

@@ -13,7 +13,6 @@
  *   - `#selected-empty` — empty-state slot visibility
  *   - `#selected-details` — Svelte island mount-point visibility
  *   - `#selected-card-title` — panel section title text
- *   - `#selected-map-summary` — map trail summary slot visibility + content
  *   - `#vector-cascade-bg` — cascade animation background visibility
  *
  * It does NOT write to Svelte-internal child elements owned by
@@ -25,8 +24,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte';
-import { getBusinessNamePresentation, sanitizePublicFacingNote } from '@lib/utils/dom-formatters';
-import { getPanelSurface, isMapSummarySurface } from '@lib/utils/environment';
+import { getPanelSurface } from '@lib/utils/environment';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -125,30 +123,6 @@ function focusStageOwnsSelectedContent(surface: string): boolean {
         && ['focus', 'focus-search', 'semantic-dive'].includes(surface);
 }
 
-function getSelectedMapSummaryRole(point: any): string {
-    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : [];
-    if (!point || points.length === 0) return 'Trail match';
-    const idx = points.indexOf(point);
-    const summary: any = appState.currentSearchSummary || {};
-    if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) return 'Search anchor';
-    if (Array.isArray(summary.resultIndices) && summary.resultIndices.includes(idx)) return 'Related match';
-    return 'Trail match';
-}
-
-function getSelectedMapSummaryCopy(point: any): string {
-    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : [];
-    if (!point || points.length === 0) return 'This record is connected to the current semantic search trail.';
-    const idx = points.indexOf(point);
-    const summary: any = appState.currentSearchSummary || {};
-    if (Number.isFinite(summary.anchorIndex) && idx === summary.anchorIndex) {
-        return 'This record anchors the current semantic trail on the county map.';
-    }
-    if (Array.isArray(summary.resultIndices) && summary.resultIndices.includes(idx)) {
-        return 'This record appeared as a nearby semantic match in the current trail.';
-    }
-    return 'This record is connected to the current semantic search trail.';
-}
-
 /**
  * Synchronize selected-card structural container visibility and metadata.
  *
@@ -158,7 +132,6 @@ function getSelectedMapSummaryCopy(point: any): string {
  * - `#selected-empty` visibility
  * - `#selected-details` visibility
  * - `#selected-card-title` visibility
- * - `#selected-map-summary` visibility + content
  * - `#vector-cascade-bg` visibility
  *
  * journey-selected-card.js delegates container-slot toggling to this function
@@ -169,26 +142,20 @@ export function syncSelectedCardContentVariant(point: any = null): void {
     const emptyEl = document.getElementById('selected-empty');
     const detailsEl = document.getElementById('selected-details');
     const titleEl = document.getElementById('selected-card-title');
-    const summaryEl = document.getElementById('selected-map-summary');
     const cascadeEl = document.getElementById('vector-cascade-bg');
     const surface = getPanelSurface();
-    const isMapSummary = Boolean(point) && appState.currentView === 'map' && isMapSummarySurface();
     const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
 
     if (cardEl) {
-        const isEmpty = !point && !isMapSummary;
-        cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : isMapSummary ? 'map-summary' : (point ? 'detail' : 'empty');
-        cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : isMapSummary ? 'selected-map-summary' : 'selected-detail-card';
+        const isEmpty = !point;
+        cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : 'info-panel';
+        cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : 'info-panel';
         if (isFocusStageOwner || isEmpty) {
             // Empty / focus-stage variants carry only placeholder H3s ("Business
             // Name", "Semantic Connection Path"). Inert keeps them out of the
             // heading outline and tab order until a real point is selected.
             cardEl.setAttribute('aria-hidden', 'true');
             cardEl.inert = true;
-        } else if (isMapSummary) {
-            cardEl.removeAttribute('aria-hidden');
-            cardEl.inert = false;
-            triggerSelectedCardFade(cardEl);
         } else {
             cardEl.removeAttribute('aria-hidden');
             cardEl.inert = false;
@@ -196,7 +163,7 @@ export function syncSelectedCardContentVariant(point: any = null): void {
     }
 
     if (cascadeEl) {
-        const suppressCascade = isFocusStageOwner || isMapSummary || !point;
+        const suppressCascade = isFocusStageOwner || !point;
         cascadeEl.hidden = suppressCascade;
         if (suppressCascade) {
             cascadeEl.classList.remove('active');
@@ -205,40 +172,21 @@ export function syncSelectedCardContentVariant(point: any = null): void {
     }
 
     if (isFocusStageOwner) {
-        setSurfaceHidden(summaryEl as HTMLElement | null, true);
         setSurfaceHidden(titleEl as HTMLElement | null, true);
         setSurfaceHidden(detailsEl as HTMLElement | null, true);
         if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true);
         return;
     }
 
-    setSurfaceHidden(summaryEl as HTMLElement | null, !isMapSummary);
-    setSurfaceHidden(titleEl as HTMLElement | null, isMapSummary);
+    setSurfaceHidden(titleEl as HTMLElement | null, false);
 
     if (point) {
-        setSurfaceHidden(detailsEl as HTMLElement | null, isMapSummary);
+        setSurfaceHidden(detailsEl as HTMLElement | null, false);
         if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true);
     } else {
         setSurfaceHidden(detailsEl as HTMLElement | null, true);
         if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, false);
     }
-
-    if (!isMapSummary) {
-        return;
-    }
-
-    const presentation: any = getBusinessNamePresentation(point.name);
-    const nameEl = document.getElementById('selected-map-summary-name');
-    const whatEl = document.getElementById('selected-map-summary-what');
-    const roleEl = document.getElementById('selected-map-summary-role');
-    const kickerEl = document.getElementById('selected-map-summary-kicker');
-    const matchCopyEl = document.getElementById('selected-map-summary-match-copy');
-
-    if (nameEl) nameEl.textContent = presentation.display;
-    if (whatEl) whatEl.textContent = sanitizePublicFacingNote(point.what) || 'Montgomery County business record';
-    if (roleEl) roleEl.textContent = getSelectedMapSummaryRole(point);
-    if (kickerEl) kickerEl.textContent = 'Map trail match';
-    if (matchCopyEl) matchCopyEl.textContent = getSelectedMapSummaryCopy(point);
 }
 
 /**

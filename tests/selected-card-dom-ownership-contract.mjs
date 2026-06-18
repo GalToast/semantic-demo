@@ -5,7 +5,7 @@
  *
  * The selected-card surface has two layers:
  *   1. **Structural slot management** — visibility, aria, contentVariant on
- *      containers declared by InfoPanelSelectionSurface.svelte. These are
+ *      containers declared by InfoPanel.svelte. These are
  *      managed by vanilla JS (focus-stage-renderer, journey-selected-card)
  *      because they respond to non-Svelte state changes (camera focus, view).
  *   2. **Svelte-internal rendering** — content inside #selected-details, owned
@@ -28,14 +28,13 @@ import assert from 'node:assert/strict';
 const root = process.cwd();
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
-// ── Structural container IDs (declared in InfoPanelSelectionSurface.svelte) ──
+// ── Structural container IDs (declared in InfoPanel.svelte) ─────────────────
 // These are managed by vanilla JS for slot-level visibility orchestration.
 const STRUCTURAL_SLOT_IDS = [
     'selected-card',
     'selected-empty',
     'selected-details',
     'selected-card-title',
-    'selected-map-summary',
     'vector-cascade-bg',
 ];
 
@@ -60,17 +59,20 @@ const SVELTE_OWNED_CHILD_IDS = [
 // ── Authorized structural slot writers ──────────────────────────────────────
 // These modules are allowed to query/write the structural container IDs.
 const AUTHORIZED_SLOT_WRITERS = new Set([
-    'js/modules/focus-stage-renderer.ts',
-    'js/modules/focus-stage-dom.ts',
-    'js/modules/journey-selected-card.ts',
-    'js/modules/selected-details-svelte-island.ts',
-    'js/modules/components/InfoPanelSelectionSurface.svelte',
+    'src/components/InfoPanel.svelte',
+    'src/lib/focus/stage-dom.ts',
+    'src/lib/focus/stage-renderer.ts',
+    'src/lib/journey/focus-stage-dom.ts',
+    'src/lib/journey/focus-stage-renderer.ts',
+    'src/lib/journey/selected-card.ts',
 ]);
 
-// ── Walk js/modules for violations ─────────────────────────────────────────
+// ── Walk migrated src surfaces for violations ──────────────────────────────
 
 function walk(dir, files = []) {
-    for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
+    const absDir = path.join(root, dir);
+    if (!fs.existsSync(absDir)) return files;
+    for (const entry of fs.readdirSync(absDir, { withFileTypes: true })) {
         const rel = path.join(dir, entry.name).replace(/\\/g, '/');
         if (entry.isDirectory()) {
             if (entry.name === 'dist' || entry.name === 'node_modules') continue;
@@ -82,7 +84,7 @@ function walk(dir, files = []) {
     return files;
 }
 
-const allFiles = walk('js/modules').filter(f => /\.(?:js|mjs|svelte|ts)$/.test(f));
+const allFiles = walk('src').filter(f => /\.(?:js|mjs|svelte|ts)$/.test(f));
 
 const violations = [];
 const warnings = [];
@@ -133,28 +135,23 @@ for (const file of allFiles) {
     }
 }
 
-// ── Check C: focus-stage-renderer.js and journey-selected-card.js exist ─────
-// (Runtime JS must exist alongside TS for the dual-source pattern)
-const focusRendererJS = 'js/modules/focus-stage-renderer.ts';
-const focusRendererTS = 'js/modules/focus-stage-renderer.ts';
-const journeySelectedCardJS = 'js/modules/journey-selected-card.ts';
-const journeySelectedCardTS = 'js/modules/journey-selected-card.ts';
+// ── Check C: migrated TS/Svelte ownership files exist ───────────────────────
+const infoPanel = 'src/components/InfoPanel.svelte';
+const focusRendererTS = 'src/lib/focus/stage-renderer.ts';
+const journeyFocusRendererTS = 'src/lib/journey/focus-stage-renderer.ts';
 
-if (!fs.existsSync(path.join(root, focusRendererJS))) {
-    violations.push(`${focusRendererJS} missing — runtime JS required alongside TS`);
+if (!fs.existsSync(path.join(root, infoPanel))) {
+    violations.push(`${infoPanel} missing — InfoPanel.svelte owns selected-card declarative content`);
 }
 if (!fs.existsSync(path.join(root, focusRendererTS))) {
-    violations.push(`${focusRendererTS} missing — TS sibling required for typecheck`);
+    violations.push(`${focusRendererTS} missing — focus stage renderer owns structural slot sync`);
 }
-if (!fs.existsSync(path.join(root, journeySelectedCardJS))) {
-    violations.push(`${journeySelectedCardJS} missing — runtime JS required alongside TS`);
-}
-if (!fs.existsSync(path.join(root, journeySelectedCardTS))) {
-    violations.push(`${journeySelectedCardTS} missing — TS sibling required for typecheck`);
+if (!fs.existsSync(path.join(root, journeyFocusRendererTS))) {
+    violations.push(`${journeyFocusRendererTS} missing — journey focus renderer owns structural slot sync`);
 }
 
-// ── Check D: focus-stage-renderer.js documents the ownership boundary ───────
-const focusRendererSrc = read(focusRendererJS);
+// ── Check D: focus-stage-renderer.ts documents the ownership boundary ───────
+const focusRendererSrc = read(focusRendererTS);
 if (!focusRendererSrc.includes('structural slot management') &&
     !focusRendererSrc.includes('Svelte-owned')) {
     warnings.push(
@@ -182,4 +179,4 @@ if (warnings.length) {
 console.log('selected-card-dom-ownership-contract OK');
 console.log(`  - structural slot writers: ${STRUCTURAL_SLOT_IDS.length} slots, ${AUTHORIZED_SLOT_WRITERS.size} authorized writers`);
 console.log(`  - Svelte-owned children: ${SVELTE_OWNED_CHILD_IDS.length} elements guarded`);
-console.log(`  - TS/JS dual-source: ${focusRendererTS} + ${journeySelectedCardTS} present`);
+console.log(`  - migrated TS/Svelte sources: ${infoPanel}, ${focusRendererTS}, ${journeyFocusRendererTS} present`);

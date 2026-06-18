@@ -18,6 +18,7 @@
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
   let mounted = $state(false);
   let overlayVisible = $state(true);
+  let canvasReady = $state(false);
   let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
   const callbacks: EngineCallbacks = {
@@ -58,6 +59,7 @@
       setLoadingPhase(phase as LoadingPhase);
       if (phase === 'launch') {
         console.log('[Canvas] Scene ready', progress);
+        canvasReady = true;
         hideOverlay();
       }
     },
@@ -67,6 +69,7 @@
   };
 
   function hideOverlay(): void {
+    canvasReady = true; // fallback: ensure canvas is visible even if onLoadingPhase missed
     overlayVisible = false;
     if (overlayTimeout !== undefined) {
       clearTimeout(overlayTimeout);
@@ -132,7 +135,7 @@
     bind:this={containerEl}
     id="canvas-container"
     class="semantic-canvas-container"
-    class:ready={!overlayVisible}
+    class:canvas-ready={canvasReady}
     style="z-index: var(--z-canvas)"
   >
     <canvas
@@ -164,8 +167,8 @@
     touch-action: none;
   }
 
-  .semantic-canvas-container:not(.ready) {
-    content-visibility: hidden;
+  .semantic-canvas-container:not(.canvas-ready) {
+    visibility: hidden;
   }
 
   .semantic-canvas-container .semantic-canvas {
@@ -175,7 +178,7 @@
     touch-action: none;
   }
 
-  .semantic-canvas-container.ready .semantic-canvas {
+  .semantic-canvas-container.canvas-ready .semantic-canvas {
     content-visibility: auto;
   }
 
