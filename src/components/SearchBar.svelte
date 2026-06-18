@@ -43,7 +43,8 @@
   // ── Derived ───────────────────────────────────────────────────────────────────
 
   let hasQuery = $derived($searchState.hasQuery || $searchState.query.trim().length > 0);
-  let showResults = $derived($searchState.resultsRendered || $searchState.results.length > 0);
+  let hasSearchSummary = $derived(Boolean($searchState.summary?.query?.trim()));
+  let showResults = $derived($searchState.resultsRendered || $searchState.results.length > 0 || hasSearchSummary);
   let isExpanded = $derived(expanded || hasQuery || showResults);
   let showLoading = $derived(testLoadingPhase === 'searching');
   let isError = $derived(testLoadingPhase === 'error');

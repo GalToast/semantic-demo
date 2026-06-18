@@ -3186,15 +3186,25 @@ async function assert_search_chrome(page, ctx) {
 async function assert_search_no_results(page, ctx) {
     const query = 'xj9k2l'
     await loadIdleAndTypeSearch(page, query)
-    // Wait for search to settle (may show empty state OR mock results)
+    // Wait for the lazy-loaded SearchResults DOM to mount and settle.
+    // A non-empty #search-status is not enough here: after App/search chunk
+    // splitting it can briefly say "Searching..." before #search-results exists.
     await page
         .waitForFunction(
             () => {
-                const status = document.querySelector('#search-status')
-                const results = document.querySelector('#search-results')
-                return Boolean(results && (results.classList.contains('active') || status?.textContent?.length > 0))
+                const searchContainer =
+                    document.querySelector('.search-container.info-panel-contained') ||
+                    document.querySelector('.search-container')
+                const results = searchContainer?.querySelector('#search-results')
+                if (!results) return false
+                const loading = results.querySelector('.search-loading')
+                const emptyState =
+                    results.querySelector('.search-empty-state') || results.querySelector('.search-status.search-empty')
+                const mockResult = document.querySelector('#search-result-list .search-result-listitem')
+                const settled = document.body.dataset.searchStatus !== 'searching'
+                return Boolean(settled && (emptyState || mockResult || results.classList.contains('active') || !loading))
             },
-            { timeout: 15000 }
+            { timeout: 20000 }
         )
         .catch(() => {})
 
@@ -3233,9 +3243,10 @@ async function assert_search_no_results(page, ctx) {
             }
         }
 
-        const resultsEl = document.querySelector('#search-results')
         const infoPanel = document.querySelector('#info-panel')
-        const searchContainer = document.querySelector('.search-container')
+        const searchContainer =
+            document.querySelector('.search-container.info-panel-contained') || document.querySelector('.search-container')
+        const resultsEl = searchContainer?.querySelector('#search-results') || document.querySelector('#search-results')
         const emptyState =
             document.querySelector('.search-status.search-empty') || document.querySelector('.search-empty-state')
         const spinner = document.querySelector('#search-spinner')
@@ -5169,16 +5180,15 @@ async function run() {
             console.error(`or the server was started from a directory other than the project root.`)
             console.error(``)
             console.error(`Fix:`)
-            console.error(`  1. Kill all stale python http.server processes:`)
-            console.error(
-                `     pwsh -NoProfile -Command "Get-Process python | Where-Object { $_.CommandLine -like '*http.server*' } | Stop-Process -Force"`
-            )
-            console.error(`  2. Start a fresh server from the project root:`)
+            console.error(`  1. Identify the exact listener on 8795:`)
+            console.error(`     Get-NetTCPConnection -LocalPort 8795 -State Listen | Select-Object LocalAddress,LocalPort,OwningProcess`)
+            console.error(`  2. Stop only that exact PID if it is stale and not user-owned.`)
+            console.error(`  3. Start a fresh server from the project root:`)
             console.error(`     cd <project-root> && python -m http.server 8795 --bind 127.0.0.1`)
             console.error(
-                `  3. Verify: iwr http://127.0.0.1:8795/vector-explorer-polished.html -UseBasicParsing should return ~23532 bytes`
+                `  4. Verify: iwr http://127.0.0.1:8795/vector-explorer-polished.html -UseBasicParsing should return HTML`
             )
-            console.error(`  4. Re-run the test.`)
+            console.error(`  5. Re-run the test.`)
             process.exit(1)
         }
     } catch (probeErr) {
