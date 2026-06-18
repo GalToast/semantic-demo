@@ -1,5 +1,9 @@
 # Wave 15 + Smells Gap Plan
 
+> **SUPERSEDED — 2026-06-18**: This plan predates the W20–W32 Svelte 5 migration. All `js/modules/` files referenced in SG.1–SG.8 have been deleted. The CSS slices (2.1–2.3) were addressed during W24–W31. See `docs/phase2-roadmap-w33+.md` for current post-migration work.
+>
+> **Retained for historical reference only.**
+
 **Date:** 2026-06-04
 **Status:** DRAFT, awaiting lead sign-off
 **Author:** Main lane (Codex)
@@ -22,6 +26,7 @@ The smells that were **not** in any plan become a "smells gap" lane (SG.1–SG.8
 ## Phase 0 — Pre-flight (1 session, mandatory first)
 
 **0.1 Capture green baseline.** From a clean `master` checkout (no WIP), record the current state of:
+
 - `npm run test`
 - `npm run test:contract`
 - `npm run test:unit`
@@ -34,6 +39,7 @@ The smells that were **not** in any plan become a "smells gap" lane (SG.1–SG.8
 If anything fails on `master` before WIP, fix it first. The plan assumes a green baseline; we cannot diagnose WIP-induced failures without one.
 
 **0.2 Inventory in-flight work.** Produce a one-page table from the 30 unpushed commits + ~25 uncommitted modifications, grouped by intent:
+
 - TypeScript port (7 `.ts` files: `mycelium-engine.ts`, `three-engine.ts`, `three-interaction-visuals.ts`, `three-node-manager.ts`, `three-search-animations.ts`, `three-thread-manager.ts`, `webgl-context.ts` + `tsconfig.json` + `tsconfig.typecheck.json` + `types/`)
 - Svelte migration (`.svelte` files in `js/modules/components/` + unified `app-svelte-island.js` mount + separately slotted search/filter islands + `view-controller.js`)
 - State-store refactor (`stores.js`, `view-models/`, `composition-state.js`, `state-mutators.js`, `search-panel-adapter.js`, `journey-compass-controller.js`, `semantic-lane.js`)
@@ -59,6 +65,7 @@ Sequenced in four sub-waves so each lands behind a clean test gate.
 Read `tsconfig.json`, `tsconfig.typecheck.json`, and one `.ts` file to determine intent: parallel port (both `.ts` and `.js` exist, pick one) or 1:1 shadow (build emits `.js`, delete source `.js`). Pick the right answer for each module.
 
 **Safe-zone files** (edit freely):
+
 - `js/modules/mycelium-engine.ts` (paired with `mycelium-engine.js`)
 - `js/modules/three-engine.ts` (paired; the `.js` is not in the off-limits list but is high-traffic)
 - `js/modules/three-interaction-visuals.ts`
@@ -75,6 +82,7 @@ Read `tsconfig.json`, `tsconfig.typecheck.json`, and one `.ts` file to determine
 Read `js/modules/components/App.svelte` and the separately slotted search/filter islands to confirm the migration is real (not a stub). Per `app.js:325` ("Svelte UI islands unavailable; using vanilla DOM renderers"), there is a runtime fork — confirm it is the *intentional* one (Svelte load failure → vanilla fallback), not a half-migrated state.
 
 **Safe-zone files:**
+
 - 9 `.svelte` files in `js/modules/components/`
 - `js/modules/app-svelte-island.js`
 - `js/modules/semantic-lane.js`
@@ -83,6 +91,7 @@ Read `js/modules/components/App.svelte` and the separately slotted search/filter
 - `js/modules/view-controller.js`
 
 **Landing order** (smallest first to maximize early signal):
+
 1. `LegendPanelChrome.svelte` under `App.svelte` — smallest surface, easy to verify.
 2. `InfoPanelChrome.svelte` under `App.svelte` — the four `InfoPanel*Surface.svelte` are its children.
 3. `InfoPanelDiscoverySurface.svelte`, `InfoPanelOverviewSurface.svelte`, `InfoPanelSearchSurface.svelte`, `InfoPanelSelectionSurface.svelte` together.
@@ -161,6 +170,7 @@ Write `docs/semantic-demo-wave16-checkpoint.md` documenting 2.1–2.5, following
 The largest god module in the repo. `camera-controls.js:582` is a `console.warn` in `animateCameraToTerrainPrelude`; the module owns defaults, restoration, restore-on-context-loss, and many `animateCameraTo*` choreography functions.
 
 **Target shape:**
+
 - `camera-controls-core.js` — defaults, getters/setters, public API (~200 lines)
 - `camera-controls-choreography.js` — `animateCameraTo*` family (~350 lines)
 - `camera-controls-restore.js` — WebGL context restore, error paths (~150 lines)
@@ -173,6 +183,7 @@ The largest god module in the repo. `camera-controls.js:582` is a `console.warn`
 Per `AGENTS.md:53-67`, `micro-demo.js` is the sole demo entry point and owns the choreography. The state-machine reference at `AGENTS.md:73-81` describes the phases. The module is large because the choreography mixes phase transitions, camera moves, card appearances, and timing — all in one function family.
 
 **Target shape:**
+
 - `micro-demo.js` — entry point, state machine, ~250 lines
 - `micro-demo-timings.js` — `PHASE_DURATIONS`, easing curves, ~100 lines
 - `micro-demo-choreography.js` — phase transition handlers, ~250 lines
@@ -185,6 +196,7 @@ Per `AGENTS.md:53-67`, `micro-demo.js` is the sole demo entry point and owns the
 Module mixes API calls, response cache, and result dedup. `js/modules/semantic-search-api-cache.js:10` and `:581` both carry `TODO(data-regen)` about slug-style names — see SG.4.
 
 **Target shape:**
+
 - `semantic-search-api.js` — `fetchSemanticResults`, request shape, ~150 lines
 - `semantic-search-cache.js` — TTL, key derivation, ~150 lines
 - `semantic-search-dedup.js` — slug-style normalizer + result dedup, ~150 lines
@@ -198,6 +210,7 @@ Module mixes API calls, response cache, and result dedup. `js/modules/semantic-s
 Two TODOs at `js/modules/semantic-search-api-cache.js:10` and `:581` flag that `data.dat` contains slug-style names like `"2-hampton-inn-and-suites"`. The cleanest fix is to migrate the slug → display name during load, not at every search.
 
 **Approach:**
+
 - Add a `slugToDisplayName(slug)` function in `js/modules/utils/data-mapper.js` (already exists per the untracked file list).
 - Apply it in `js/modules/data-loader.js` after `data.dat` loads, mutating the points array in place.
 - Delete both TODO comments.
@@ -214,11 +227,13 @@ For each item in this phase, the protocol is: read the file region → propose d
 ### SG.5 console.warn swallow-and-continue audit (49 calls, mixed zones)
 
 **Categorize every call into:**
+
 - **REAL_FAILURE_KEEP** — actual error that should be loud (network failure, WebGL context loss, init failure)
 - **GRACEFUL_FALLBACK_DEBUG** — expected fallback path (worker unavailable, dev server quirk) → downgrade to `console.debug` or strip
 - **USER_RECOVERABLE_TOAST** — something the user can fix or know about (city filter empty result, no semantic lane health) → route to toast via event bus
 
 **SG.5a Safe-zone files** (edit freely after categorization):
+
 - `js/modules/data-loader.js` (6 calls)
 - `js/modules/semantic-threads.js` (6 calls)
 - `js/modules/semantic-lane.js` (2 calls)
@@ -234,6 +249,7 @@ For each item in this phase, the protocol is: read the file region → propose d
 - `js/modules/camera-controls.js` (1 call)
 
 **SG.5b Off-limits files** (propose diff, await approval per edit):
+
 - `js/modules/app.js` (7 calls: 143 init safety valve, 173 loadSemanticThreads fallback, 217 probeSemanticLane failure, 325 Svelte islands unavailable, 384 applyUrlState, 406 init, 415 critical)
 - `js/modules/lifecycle.js` (3 calls: 240 WebGL context restore, 270/295 WebGL unavailable/create, 592 overlay update)
 - `js/modules/event-bus.js:127` (subscriber error handler — special: this is load-bearing for state-machine debugging; recommend keeping as `console.error`, no change)
@@ -247,6 +263,7 @@ For each item in this phase, the protocol is: read the file region → propose d
 **Pre-step (mandatory):** measure P50/P95 init time in current dev and prod builds, with and without the safety valve. If P95 < 15s, the valve is dead code; if P95 > 15s, there is a real init bug to fix.
 
 **Proposed diff (await approval):**
+
 - Tighten the timeout to a value that excludes normal init but catches real stalls (e.g., 30s or P95+50%).
 - On timeout, emit a `console.error` with diagnostic context (which init step was current).
 - Do not silently hide the overlay — leave it visible with an error state so the user can refresh.
@@ -269,11 +286,13 @@ Pre-requisite: every `bridge-registry` caller has been migrated to a direct impo
 **Confirmed:** `Test-Path "../js/scanner.js"` returns False. Both `deploy.sh:74` (`SCANNER_SRC="../js/scanner.js"`) and `deploy.ps1:22` (`$ScannerSource = "../js/scanner.js"`) reference a file that does not exist in this repo.
 
 **Diagnosis questions to answer first:**
+
 1. Does `scanner.js` exist on the deploy target? If yes, why is it outside the repo? If no, the sync block is dead code.
 2. Is `scanner.js` the canonical source for the production scan pipeline, or is it a build artifact?
 3. Can we vendor `scanner.js` into this repo (e.g., `scripts/scanner.js` or `tools/scanner.js`) so the deploy is self-contained?
 
 **Proposed diff (await approval, depends on diagnosis):**
+
 - **Option A — Vendor:** copy `scanner.js` into `scripts/scanner.js`, update deploy paths to `scripts/scanner.js`.
 - **Option B — Delete:** if `scanner.js` is no longer needed on the deploy target, remove the sync block from both deploy scripts.
 - **Option C — Document:** if the sibling is intentional, add a `docs/deploy-sibling-sources.md` explaining the dependency.
@@ -285,6 +304,7 @@ Pre-requisite: every `bridge-registry` caller has been migrated to a direct impo
 ## Phase 5 — Verification protocol (after every wave)
 
 After each sub-wave (1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4, 4.1, 4.2, 4.3, 4.4) run:
+
 - `npm run build`
 - `npm run test` (fast static: shell + manifest + cache + ownership)
 - `npm run test:contract`
@@ -293,16 +313,19 @@ After each sub-wave (1.1, 1.2, 1.3, 2.1, 2.2, 2.3, 2.4, 2.5, 3.1, 3.2, 3.3, 3.4,
 - `git diff --check`
 
 For sub-waves that touch visual surfaces (1.2 Svelte, 2.1–2.3 CSS slices, 3.1–3.3 module extractions):
+
 - `npm run qa:contract:all` (full 16-surface matrix)
 - `npm run qa:surface:all` (visual screenshots, headed per AGENTS.md)
 - Visual evidence saved to `reports/screenshots/playwright/` (per AGENTS.md MCP recovery guidance)
 
 For sub-waves that touch the off-limits mobile CSS cascade:
+
 - `npm run check:ownership` (explicit verification of CSS ownership)
 - `npm run check:surface-styles`
 - `npm run check:no-self-refs`
 
 For deploy-related sub-waves (4.4):
+
 - `bash deploy.sh --dry-run` (or `pwsh -NoProfile -File deploy.ps1 -DryRun` if the flag exists; otherwise simulate manually)
 
 ---
@@ -310,12 +333,14 @@ For deploy-related sub-waves (4.4):
 ## Off-limits approval protocol
 
 For any edit to:
+
 - `js/modules/app.js`, `js/state.js`, `js/modules/lifecycle.js`, `js/modules/journey.js`, `js/modules/ui-renderers.js`
 - `js/modules/focus-pocket.js`, `js/modules/journey-compass-state.js`
 - `css/journey_active.css`, `css/journey_steps.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/mobile_premium_*.css`
 - `deploy.sh`, `deploy.ps1`
 
 The protocol is:
+
 1. **Read** the file region.
 2. **Propose** the exact diff with file:line refs.
 3. **Show** risk analysis and rollback plan (how to revert the specific hunk).
@@ -340,11 +365,13 @@ No batching of off-limits edits across files. One diff at a time, per file, per 
 | Phase 5 | (continuous) | Verification gates run after every sub-wave |
 
 **Total:** ~10 sessions, sequential. Compression paths:
+
 - Run Phase 2 in parallel with Phase 3 (different file ownerships, mostly).
 - Compress Phase 1.1 + 1.2 by reading the in-flight diffs in one diagnostic pass before landing.
 - Skip Phase 4 sub-waves that turn out to be no-ops after Phase 0's diagnosis (e.g., if `bridge-registry` already has 0 callers).
 
 **Not in scope** (queue for a future pass):
+
 - The remaining `!important` declarations in `strands.css` reduced-motion blanket override (per `docs/semantic-demo-css-ownership-next-pass.md:296-298`).
 - The contract-runner-and-QA-script sprawl noted in `docs/semantic-demo-next-seams-2026-05-20.md:97-110` (replace `test:contract` shell chain with manifest-driven runner).
 - Behavioral proof gaps noted in `docs/semantic-demo-next-seams-2026-05-20.md:127-138` (Gemma/story fallback, overlay focus restoration ARIA, focus-stage visual state, short-landscape transition cleanup).
