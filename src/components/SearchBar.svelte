@@ -14,7 +14,6 @@
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { searchState } from '@lib/stores/search.svelte';
   import SearchInput from './SearchInput.svelte';
-  import SearchResults from './SearchResults.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
@@ -49,6 +48,22 @@
   let showLoading = $derived(testLoadingPhase === 'searching');
   let isError = $derived(testLoadingPhase === 'error');
   let isEmpty = $derived(testLoadingPhase === 'empty');
+
+  // ── Lazy-load SearchResults (27 KB) ─────────────────────────────────────────
+  // Only loaded when search results/loading/error/empty state is active.
+  // Defers ~27 KB chunk until user actually searches.
+  type SearchResultsModule = typeof import('./SearchResults.svelte');
+  let SearchResultsComponent: SearchResultsModule['default'] | null = $state(null);
+
+  $effect(() => {
+    if (showResults || showLoading || isError || isEmpty) {
+      import('./SearchResults.svelte').then(mod => {
+        SearchResultsComponent = mod.default;
+      });
+    } else {
+      SearchResultsComponent = null;
+    }
+  });
 </script>
 
 <div
@@ -63,7 +78,9 @@
   aria-label="Search businesses in the semantic field"
 >
   <SearchInput expanded={isExpanded} />
-  <SearchResults />
+  {#if SearchResultsComponent}
+    <SearchResultsComponent />
+  {/if}
 </div>
 
 <style>

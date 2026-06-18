@@ -54,7 +54,6 @@
   import Legend from '@components/Legend.svelte';
   import MapView from '@components/MapView.svelte';
   import SearchBar from '@components/SearchBar.svelte';
-  import JourneyChrome from '@components/JourneyChrome.svelte';
   import FocusPocket from '@components/FocusPocket.svelte';
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
   import Filters from '@components/Filters.svelte';
@@ -315,6 +314,19 @@
   );
   let focusStageActive = $derived(focusActive && !mapModeActive);
 
+  // Lazy-load JourneyChrome (34 KB source) — only needed in focus/trail/inside mode
+  type JourneyChromeModule = typeof import('@components/JourneyChrome.svelte');
+  let JourneyChrome: JourneyChromeModule['default'] | null = $state(null);
+  $effect(() => {
+    if (focusActive) {
+      import('@components/JourneyChrome.svelte').then(mod => {
+        JourneyChrome = mod.default;
+      });
+    } else {
+      JourneyChrome = null;
+    }
+  });
+
   // Idle owns the full header. Search/focus keep only utility chrome so the
   // escape affordances exist for the mobile/short-landscape CSS contracts.
   let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
@@ -403,7 +415,9 @@
     <FocusCard visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
-    <JourneyChrome visible={true} />
+    {#if JourneyChrome}
+      <JourneyChrome visible={true} />
+    {/if}
 
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
 
