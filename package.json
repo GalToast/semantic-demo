@@ -227,6 +227,7 @@
         "spectorjs": "^0.9.30",
         "svelte": "^5.56.1",
         "svelte-check": "^4.1.0",
+        "terser": "^5.48.0",
         "three": "^0.184.0",
         "typescript": "^6.0.3",
         "vitest": "^4.1.7"
