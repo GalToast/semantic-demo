@@ -3189,24 +3189,22 @@ async function assert_search_no_results(page, ctx) {
     // Wait for the lazy-loaded SearchResults DOM to mount and settle.
     // A non-empty #search-status is not enough here: after App/search chunk
     // splitting it can briefly say "Searching..." before #search-results exists.
-    await page
-        .waitForFunction(
-            () => {
-                const searchContainer =
-                    document.querySelector('.search-container.info-panel-contained') ||
-                    document.querySelector('.search-container')
-                const results = searchContainer?.querySelector('#search-results')
-                if (!results) return false
-                const loading = results.querySelector('.search-loading')
-                const emptyState =
-                    results.querySelector('.search-empty-state') || results.querySelector('.search-status.search-empty')
-                const mockResult = document.querySelector('#search-result-list .search-result-listitem')
-                const settled = document.body.dataset.searchStatus !== 'searching'
-                return Boolean(settled && (emptyState || mockResult || results.classList.contains('active') || !loading))
-            },
-            { timeout: 20000 }
-        )
-        .catch(() => {})
+    await page.waitForFunction(
+        () => {
+            const searchContainer =
+                document.querySelector('.search-container.info-panel-contained') || document.querySelector('.search-container')
+            const results = searchContainer?.querySelector('#search-results')
+            if (!results) return false
+            const loading = results.querySelector('.search-loading')
+            const emptyState =
+                results.querySelector('.search-empty-state') || results.querySelector('.search-status.search-empty')
+            const mockResult = document.querySelector('#search-result-list .search-result-listitem')
+            const settled = document.body.dataset.searchStatus !== 'searching'
+            return Boolean(settled && (emptyState || mockResult || results.classList.contains('active') || !loading))
+        },
+        undefined,
+        { timeout: 20000 }
+    )
 
     const info = await page.evaluate(() => {
         function visible(el) {

@@ -28,6 +28,7 @@ interface LoadRecordsResult {
     pointIndexByLeadId: Record<string, number>;
     positionsBuffer: Float32Array;
     clustersBuffer: Uint16Array;
+    invalidPositionIndices: number[];
 }
 
 interface NeighborEntry {
@@ -110,12 +111,20 @@ async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsR
     const count = raw.length;
     const positionsBuffer = new Float32Array(count * 3);
     const clustersBuffer = new Uint16Array(count);
+    const invalidPositionIndices: number[] = [];
 
     const points: PointRecord[] = raw.map((p: unknown[], i: number) => {
-        const x = p.length > 0 ? parseFiniteNumber(p[0]) : 0;
-        const y = p.length > 1 ? parseFiniteNumber(p[1]) : 0;
-        const z = p.length > 2 ? parseFiniteNumber(p[2]) : 0;
+        const xVal = p.length > 0 ? parseFiniteNumber(p[0]) : null;
+        const yVal = p.length > 1 ? parseFiniteNumber(p[1]) : null;
+        const zVal = p.length > 2 ? parseFiniteNumber(p[2]) : null;
+        const x = xVal ?? 0;
+        const y = yVal ?? 0;
+        const z = zVal ?? 0;
         const cluster = p.length > 3 ? (parseInt(p[3] as string, 10) || 0) : 0;
+
+        if (xVal === null || yVal === null || zVal === null) {
+            invalidPositionIndices.push(i);
+        }
 
         positionsBuffer[i * 3] = x;
         positionsBuffer[i * 3 + 1] = y;
@@ -127,7 +136,7 @@ async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsR
             name: p.length > 4 ? cleanOptionalValue(p[4]) : null,
             what: p.length > 5 ? cleanOptionalValue(p[5]) || 'Montgomery County business' : 'Montgomery County business',
             city: p.length > 6 ? cleanOptionalValue(p[6]) || 'Montgomery County' : 'Montgomery County',
-            lead_id: p.length > 7 ? p[7] as string : null,
+            lead_id: p.length > 7 ? cleanOptionalValue(p[7]) : null,
             lat: p.length > 8 ? parseFiniteNumber(p[8]) : null,
             lng: p.length > 9 ? parseFiniteNumber(p[9]) : null,
             website: p.length > 10 ? cleanOptionalValue(p[10]) : null,
@@ -149,7 +158,7 @@ async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsR
         }
     });
 
-    return { points, pointIndexByLeadId, positionsBuffer, clustersBuffer };
+    return { points, pointIndexByLeadId, positionsBuffer, clustersBuffer, invalidPositionIndices };
 }
 
 async function handleLoadThreads(
