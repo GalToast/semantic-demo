@@ -13,7 +13,6 @@
        through the scroll mask.
        ---------------------------------------------------------------- */
 
-    body.is-active[data-panel-surface='idle'] #mode-grid,
     body.is-active[data-panel-surface='idle'] #selected-card,
     body.is-active[data-panel-surface='idle'] #cluster-section,
     body.is-active[data-panel-surface='idle'] #filters-section:not([open]) {

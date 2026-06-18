@@ -2,9 +2,6 @@
    (state.css, focus-dive.css). Keep this file limited to base/mobile atoms
    and reduced-motion support. */
 
-.surprise-btn:not(.disabled):not(.is-loading):hover {
-    animation: pulse-cyan-glow 2s cubic-bezier(0.4, 0, 0.2, 1) infinite;
-}
 .filter-select {
     width: 100%;
     min-height: 44px;
@@ -43,51 +40,6 @@
     color: #fff;
 }
 
-/* Help Box */
-.help-box {
-    position: fixed;
-    left: 16px;
-    bottom: 16px;
-    width: 280px;
-    background: rgba(15, 15, 25, 0.85);
-    backdrop-filter: blur(12px);
-    border-radius: 12px;
-    border: 1px solid var(--glass-reflection);
-    padding: 14px 16px;
-    z-index: var(--z-panels);
-    font-size: 12px;
-    line-height: 1.6;
-    transition:
-        transform 0.3s ease,
-        opacity 0.3s ease;
-}
-
-.help-box.hidden {
-    transform: translateY(20px);
-    opacity: 0;
-    pointer-events: none;
-}
-
-.help-title {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-weight: 600;
-    margin-bottom: 8px;
-}
-
-.help-box strong {
-    color: var(--color-primary-alt);
-}
-
-.help-box em {
-    background: rgba(var(--color-primary-alt-rgb), 0.2);
-    padding: 1px 6px;
-    border-radius: 4px;
-    font-style: normal;
-    font-size: 11px;
-}
-
 /* Controls - desktop default */
 body[data-panel-surface] .controls {
     position: fixed;
@@ -98,36 +50,7 @@ body[data-panel-surface] .controls {
     z-index: var(--z-overlay);
 }
 
-/* Outer rail container. Holds the view group (top) and the info/overlay
-   group (below), with a hairline divider between them so users read them
-   as two distinct clusters. */
-body[data-panel-surface] .controls-rail {
-    flex-direction: column;
-    gap: 10px;
-    padding: 0;
-    background: transparent;
-    border: 0;
-    align-items: stretch;
-}
 
-/* Each subgroup stacks vertically inside the rail. Selector order, not
-   !important.
-   NOTE: scoped to .controls > .controls-view (direct child) so this reset
-   doesn't apply when controls-view is a modifier on the root .controls
-   element itself (e.g. #camera-controls has class="controls controls-view"). */
-body[data-panel-surface] .controls > .controls-view,
-body[data-panel-surface] .controls > .controls-info,
-body[data-panel-surface] [data-controls-rail] > .controls {
-    flex-direction: column;
-    background: transparent;
-    border: 0;
-    padding: 0;
-    bottom: auto;
-    right: auto;
-    position: static;
-    display: flex;
-    gap: 8px;
-}
 
 /* view-toggle is a direct child of [data-controls-rail] and needs ID-level
    specificity to override the base .controls position:fixed rule. */
@@ -135,25 +58,6 @@ body[data-panel-surface] #view-toggle {
     position: static;
     right: auto;
     bottom: auto;
-}
-
-/* The legend/share/help/help-toggle buttons each have their own
-   position:fixed in layout_base.css. We override that here so they sit
-   inside the rail container as flex children. */
-body[data-panel-surface] .controls-view .control-btn,
-body[data-panel-surface] .controls-info .legend-toggle,
-body[data-panel-surface] .controls-info .share-toggle,
-body[data-panel-surface] .controls-info .help-toggle {
-    position: static;
-}
-
-/* Hairline divider between view and overlay groups. aria-hidden so it
-   doesn't pollute the screen-reader tree. */
-body[data-panel-surface] .controls-divider {
-    height: 1px;
-    width: 28px;
-    margin: 2px auto;
-    background: linear-gradient(90deg, transparent, var(--glass-reflection-glow), transparent);
 }
 
 body[data-panel-surface] .control-btn {

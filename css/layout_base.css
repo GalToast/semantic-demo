@@ -130,28 +130,12 @@ transition: var(--transition-premium);
     transform: rotate(-90deg);
 }
 
-.info-subtitle {
-    font-size: 11px;
-    font-weight: 400;
-    color: rgba(255, 255, 255, 0.4);
-    letter-spacing: 0.3px;
-}
 
-.info-content {
-    padding: 16px 24px 24px;
-    flex: 1 1 0;
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
-}
 
 .info-panel-surface {
     display: contents;
 }
 
-.info-content,
 .search-results,
 .legend-panel,
 .journey-compass {
@@ -159,7 +143,6 @@ transition: var(--transition-premium);
     scrollbar-color: rgba(var(--color-primary-rgb), 0.25) transparent;
 }
 
-.info-content::-webkit-scrollbar,
 .search-results::-webkit-scrollbar,
 .legend-panel::-webkit-scrollbar,
 .journey-compass::-webkit-scrollbar,
@@ -168,7 +151,6 @@ transition: var(--transition-premium);
     height: 0;
 }
 
-.info-content::-webkit-scrollbar-track,
 .search-results::-webkit-scrollbar-track,
 .legend-panel::-webkit-scrollbar-track,
 .journey-compass::-webkit-scrollbar-track,
@@ -176,7 +158,6 @@ transition: var(--transition-premium);
     background: transparent;
 }
 
-.info-content::-webkit-scrollbar-thumb,
 .search-results::-webkit-scrollbar-thumb,
 .legend-panel::-webkit-scrollbar-thumb,
 .journey-compass::-webkit-scrollbar-thumb,
@@ -739,11 +720,6 @@ body:has(.info-panel.active) .panel-toggle {
         border-radius: 18px;
     }
 
-    .info-content {
-        max-height: calc(100vh - 236px - env(safe-area-inset-top, 0px));
-        padding: 14px 14px calc(118px + env(safe-area-inset-bottom, 0px));
-    }
-
     .legend-toggle {
         top: calc(86px + env(safe-area-inset-top, 0px));
         right: 12px;
@@ -798,17 +774,6 @@ body:has(.info-panel.active) .panel-toggle {
         padding: 10px 13px;
         font-size: 12px;
         background: rgba(255, 255, 255, 0.018);
-    }
-
-    body[data-mobile-route-peek='active'][data-panel-surface]:not([data-panel-surface^='map-']) .info-subtitle {
-        display: none;
-    }
-
-    body[data-mobile-route-peek='active'][data-panel-surface]:not([data-panel-surface^='map-']) .info-content {
-        max-height: min(17vh, 132px);
-        padding: 10px 12px 12px;
-        overflow-y: auto;
-        overflow-x: hidden;
     }
 
     body[data-mobile-route-peek='active'][data-panel-surface]:not([data-panel-surface^='map-']) .search-input-wrapper,
@@ -875,13 +840,6 @@ body:has(.info-panel.active) .panel-toggle {
 
     body[data-panel-surface='search'] .info-header {
         display: none;
-    }
-
-    body[data-panel-surface='search'] .info-content {
-        max-height: min(20vh, 166px);
-        padding: 8px 10px 10px;
-        overflow-y: auto;
-        overflow-x: hidden;
     }
 
     body[data-panel-surface='search'] .search-trail-cue {
@@ -1063,10 +1021,6 @@ body:has(.info-panel.active) .panel-toggle {
         pointer-events: none;
     }
 
-    body[data-panel-surface^='map-'] .info-content {
-        padding-bottom: var(--map-panel-content-pad);
-    }
-
     body[data-panel-surface^='map-'] .info-panel {
         top: var(--map-panel-top);
     }
@@ -1081,11 +1035,6 @@ body:has(.info-panel.active) .panel-toggle {
         width: 24px;
         height: 24px;
         font-size: 12px;
-    }
-
-    body[data-panel-surface^='map-'] .info-content {
-        max-height: calc(100vh - var(--map-panel-content-reserve));
-        padding-top: 12px;
     }
 
     body[data-panel-surface^='map-'] .legend-toggle {
@@ -1200,13 +1149,6 @@ body:has(.info-panel.active) .panel-toggle {
         display: none;
     }
 
-    body[data-panel-surface='map-trail'] .info-content {
-        max-height: min(22vh, 172px);
-        padding: 10px 11px 12px;
-        overflow-y: auto;
-        overflow-x: hidden;
-    }
-
     body[data-panel-surface="map-trail"] .stats-row,
     body[data-panel-surface="map-trail"] .surprise-btn,
     body[data-panel-surface="map-trail"] .launch-btn {
@@ -1303,8 +1245,4 @@ body:has(.info-panel.active) .panel-toggle {
         bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     }
 
-    body[data-panel-surface='map-trail'] .info-content {
-        max-height: min(27vh, 190px);
-        padding: 11px;
-    }
 }

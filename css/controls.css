@@ -12,9 +12,7 @@
     vertical-align: -0.16em;
 }
 
-.icon-label {
-    margin-left: 6px;
-}
+
 
 .view-toggle {
     position: fixed;
@@ -72,10 +70,7 @@
     transform: translateY(1px);
 }
 
-.view-toggle button .icon-label {
-    margin-left: 0; /* Remove double gap since button has gap: 6px */
-    transform: translateY(0.5px);
-}
+
 
 .view-toggle button::before {
     content: '';
