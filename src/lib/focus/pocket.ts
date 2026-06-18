@@ -76,13 +76,12 @@ export function setFocusPocketRoleByIndex(map: Map<number, string>): void {
 }
 
 export function setFocusPocketRoleForIndex(index: number, role: string): void {
-    appState.withMutation(() => {
-        const navState = appState.navState as unknown as Record<string, unknown>
-        if (!(navState.focusPocketRoleByIndex instanceof Map)) {
-            navState.focusPocketRoleByIndex = new Map()
-        }
-        ;(navState.focusPocketRoleByIndex as Map<number, string>).set(index, role)
-    })
+    // Route through writeFocusPocketMirror (not a direct navState mutation) so the
+    // focus writable + appState stay in sync and subscribers are notified.
+    // Matches the pattern in setFocusPocketRoleByIndex above.
+    const next = new Map(getFocusPocketRoleByIndex())
+    next.set(index, role)
+    writeFocusPocketMirror({ pocketRoleByIndex: next })
 }
 
 export function clearFocusPocketRoleByIndex(): void {
