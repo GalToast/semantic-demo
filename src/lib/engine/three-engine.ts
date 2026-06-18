@@ -16,7 +16,24 @@
 
 // ── Static @lib/* imports ────────────────────────────────────────────────────
 
-import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, ACESFilmicToneMapping, SRGBColorSpace, HemisphereLight, DirectionalLight, SphereGeometry, MeshBasicMaterial, Mesh, AdditiveBlending, Material, MeshPhongMaterial, BackSide } from 'three'
+import {
+    Scene,
+    PerspectiveCamera,
+    WebGLRenderer,
+    Vector3,
+    FogExp2,
+    ACESFilmicToneMapping,
+    SRGBColorSpace,
+    HemisphereLight,
+    DirectionalLight,
+    SphereGeometry,
+    MeshBasicMaterial,
+    Mesh,
+    AdditiveBlending,
+    Material,
+    MeshPhongMaterial,
+    BackSide
+} from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 
 import { webglContext, getLiveResourceCounts } from '@lib/engine/webgl-context'
@@ -58,7 +75,7 @@ async function _loadPostProcessing(): Promise<PostProcessingModule> {
             initPostProcessing: m.initPostProcessing,
             renderPostProcessing: m.renderPostProcessing,
             disposePostProcessing: m.disposePostProcessing,
-            resizePostProcessing: m.resizePostProcessing,
+            resizePostProcessing: m.resizePostProcessing
         }
         return _ppModule
     })
@@ -767,6 +784,11 @@ export function initThreeJS() {
     document.body.dataset.graphicsMode = 'webgl'
     updateCameraViewportOffset()
 
+    // Start the render loop explicitly. The new Svelte lifecycle no longer
+    // receives the legacy DOM scene-ready path, and without this the renderer
+    // exposes a populated scene but never issues its first draw.
+    animate()
+
     // Postprocessing composer: wraps renderer/scene/camera in an EffectComposer
     // (vignette + chromatic aberration + bloom + DOF). Effects stay disabled
     // until premium mode is toggled on via the body data-attribute. The
@@ -1026,8 +1048,7 @@ export function animate() {
         }
 
         if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
-            ;(webglContext.scene.fog as FogExp2).density =
-                (SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
+            ;(webglContext.scene.fog as FogExp2).density = (SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
         }
         if (webglContext.nodeSporeMaterial) {
             const focusBoost = Number.isFinite(_state?.focusedNode)
@@ -1102,10 +1123,8 @@ export function animate() {
                     ) ?? 0
         } else {
             if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as Material).opacity = 0
-            if (webglContext.myceliumWispyLines)
-                (webglContext.myceliumWispyLines.material as Material).opacity = 0
-            if (webglContext.myceliumBridgeLines)
-                (webglContext.myceliumBridgeLines.material as Material).opacity = 0
+            if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as Material).opacity = 0
+            if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as Material).opacity = 0
         }
 
         if (webglContext.pointsMaterial?.userData?.shader) {
