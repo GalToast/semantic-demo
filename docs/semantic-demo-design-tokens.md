@@ -159,6 +159,10 @@ Policy: motion should clarify state change and respect reduced-motion preference
 
 | Token | Value | Use |
 |---|---:|---|
+| `--bp-landscape` | `(max-width: 900px) and (max-height: 430px) and (orientation: landscape)` | Canonical short-landscape breakpoint reference |
+| `--bp-landscape-tall` | `(max-width: 900px) and (max-height: 480px) and (orientation: landscape)` | Taller short-landscape breakpoint reference |
+| `--bp-landscape-compact` | `(max-width: 900px) and (max-height: 420px) and (orientation: landscape)` | Compact short-landscape breakpoint reference |
+| `--bp-landscape-tablet` | `(min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape)` | Tablet-width short-landscape breakpoint reference |
 | `--landscape-info-panel-idle-max-height` | `min(calc(100vh - 86px), 178px)` | Short-landscape idle info panel |
 | `--landscape-info-content-idle-max-height` | `calc(var(--landscape-info-panel-idle-max-height) - 42px)` | Short-landscape idle info content |
 | `--landscape-search-panel-height` | `min(calc(100vh - 82px), 308px)` | Short-landscape search panel |
@@ -194,6 +198,8 @@ Policy: motion should clarify state change and respect reduced-motion preference
 | `--z-max` | `9999` | Last-resort diagnostic or emergency layer |
 
 Policy: docked bottom panel shells should be flush to the viewport bottom. Safe-area comfort should be handled with internal padding or content insets, not by detaching the shell with an exterior bottom gutter.
+
+Note: CSS custom properties cannot be used directly inside `@media` rules. The `--bp-*` tokens document canonical breakpoint values; matching `@media` rules must be updated in CSS at the same time.
 
 ## CSS Governance
 

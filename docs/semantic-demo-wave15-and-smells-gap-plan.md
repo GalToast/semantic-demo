@@ -79,7 +79,7 @@ Read `tsconfig.json`, `tsconfig.typecheck.json`, and one `.ts` file to determine
 
 ### 1.2 Svelte migration
 
-Read `js/modules/components/App.svelte` and the separately slotted search/filter islands to confirm the migration is real (not a stub). Per `app.js:325` ("Svelte UI islands unavailable; using vanilla DOM renderers"), there is a runtime fork — confirm it is the *intentional* one (Svelte load failure → vanilla fallback), not a half-migrated state.
+Read `js/modules/components/App.svelte` and the separately slotted search/filter islands to confirm the migration is real (not a stub). Per `app.js:325` ("Svelte UI islands unavailable; using vanilla DOM renderers"), there is a runtime fork — confirm it is the _intentional_ one (Svelte load failure → vanilla fallback), not a half-migrated state.
 
 **Safe-zone files:**
 
@@ -355,14 +355,14 @@ No batching of off-limits edits across files. One diff at a time, per file, per 
 
 ## Sequencing summary
 
-| Phase | Sessions | Output |
-|---|---|---|
-| Phase 0 | 1 | `docs/semantic-demo-wave15-checkpoint.md` + green baseline record |
-| Phase 1 (1.1–1.4) | 2–3 | Wave 15 landed + pushed; DEPLOY_STATUS + changelog updated |
-| Phase 2 (2.1–2.6) | 2–3 | `docs/semantic-demo-wave16-checkpoint.md` |
-| Phase 3 (SG.1–SG.4) | 2–3 | Three god modules split; TODO data-regen closed |
-| Phase 4 (SG.5–SG.8) | 2–3 | console.warn audited; init safety valve tightened; bridge-registry removed (or migrated); deploy script path fixed |
-| Phase 5 | (continuous) | Verification gates run after every sub-wave |
+| Phase               | Sessions     | Output                                                                                                             |
+| ------------------- | ------------ | ------------------------------------------------------------------------------------------------------------------ |
+| Phase 0             | 1            | `docs/semantic-demo-wave15-checkpoint.md` + green baseline record                                                  |
+| Phase 1 (1.1–1.4)   | 2–3          | Wave 15 landed + pushed; DEPLOY_STATUS + changelog updated                                                         |
+| Phase 2 (2.1–2.6)   | 2–3          | `docs/semantic-demo-wave16-checkpoint.md`                                                                          |
+| Phase 3 (SG.1–SG.4) | 2–3          | Three god modules split; TODO data-regen closed                                                                    |
+| Phase 4 (SG.5–SG.8) | 2–3          | console.warn audited; init safety valve tightened; bridge-registry removed (or migrated); deploy script path fixed |
+| Phase 5             | (continuous) | Verification gates run after every sub-wave                                                                        |
 
 **Total:** ~10 sessions, sequential. Compression paths:
 
