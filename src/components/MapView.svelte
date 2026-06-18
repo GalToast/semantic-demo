@@ -13,6 +13,13 @@
   import { switchView } from '@lib/orchestration/view-controller';
   import { appState } from '@lib/state/app.svelte';
   import { withStateMutation } from '@lib/state/with-state-mutation';
+  import {
+    centerMapOnRouteAnchor,
+    initMap,
+    initMapStateSubscriptions,
+    refreshMapMarkers,
+    refreshMapRouteEmbodiment
+  } from '@lib/engine/map-state';
 
   type MapStatus = 'loading' | 'ready' | 'error';
 
@@ -84,20 +91,18 @@
 
       activateMapShell();
 
-      const mapEngine = await import('@lib/engine/map-state');
-
       if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
       setLegacyView('map');
 
-      mapEngine.initMapStateSubscriptions();
-      await mapEngine.initMap();
+      initMapStateSubscriptions();
+      await initMap();
 
       if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
 
-      mapEngine.refreshMapMarkers();
-      mapEngine.refreshMapRouteEmbodiment();
-      mapEngine.centerMapOnRouteAnchor();
+      refreshMapMarkers();
+      refreshMapRouteEmbodiment();
+      centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
         const map = (appState as any).map;
