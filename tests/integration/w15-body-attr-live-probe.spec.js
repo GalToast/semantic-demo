@@ -24,6 +24,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import AxeBuilder from '@axe-core/playwright'
 import {
     installMockFetch,
     captureConsoleErrors,
@@ -62,6 +63,18 @@ test.describe('W15 body-attr live probe', () => {
             expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
         }, { maxAttempts: 3, backoffMs: 1000, label: 'idle' })
 
+        // ── a11y baseline scan (idle state) ─
+        const axeResultsIdle = await new AxeBuilder({ page }).analyze()
+        console.log(`  [idle] a11y: ${axeResultsIdle.violations.length} violation(s)`) // eslint-disable-line no-console
+        if (axeResultsIdle.violations.length > 0) {
+            for (const v of axeResultsIdle.violations) {
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+            }
+        }
+        if (axeResultsIdle.violations.length > 5) {
+            throw new Error(`a11y regression: idle state has ${axeResultsIdle.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+        }
+
         // Surface console errors in failure output
         if (consoleCapture.errors.length > 0) {
             console.log(`  [idle] ${consoleCapture.summary()}`)
@@ -86,6 +99,18 @@ test.describe('W15 body-attr live probe', () => {
             expect(attrs.searchStatus, 'data-search-status should be searching or idle').toMatch(/searching|idle/)
             expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
         }, { maxAttempts: 3, backoffMs: 1000, label: 'search' })
+
+        // ── a11y baseline scan (search state) ─
+        const axeResultsSearch = await new AxeBuilder({ page }).analyze()
+        console.log(`  [search] a11y: ${axeResultsSearch.violations.length} violation(s)`) // eslint-disable-line no-console
+        if (axeResultsSearch.violations.length > 0) {
+            for (const v of axeResultsSearch.violations) {
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+            }
+        }
+        if (axeResultsSearch.violations.length > 5) {
+            throw new Error(`a11y regression: search state has ${axeResultsSearch.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+        }
 
         if (consoleCapture.errors.length > 0) {
             console.log(`  [search] ${consoleCapture.summary()}`)
@@ -123,6 +148,18 @@ test.describe('W15 body-attr live probe', () => {
             expect(attrs.trailState, 'data-trail-state should be active').toBe('active')
         }, { maxAttempts: 3, backoffMs: 1000, label: 'focus-search' })
 
+        // ── a11y baseline scan (focus-search state) ─
+        const axeResultsFocusSearch = await new AxeBuilder({ page }).analyze()
+        console.log(`  [focus-search] a11y: ${axeResultsFocusSearch.violations.length} violation(s)`) // eslint-disable-line no-console
+        if (axeResultsFocusSearch.violations.length > 0) {
+            for (const v of axeResultsFocusSearch.violations) {
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+            }
+        }
+        if (axeResultsFocusSearch.violations.length > 5) {
+            throw new Error(`a11y regression: focus-search state has ${axeResultsFocusSearch.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+        }
+
         if (consoleCapture.errors.length > 0) {
             console.log(`  [focus-search] ${consoleCapture.summary()}`)
         }
@@ -157,6 +194,18 @@ test.describe('W15 body-attr live probe', () => {
                 test.skip()
             }
         }, { maxAttempts: 2, backoffMs: 1000, label: 'focus (programmatic)' })
+
+        // ── a11y baseline scan (focus state) ─
+        const axeResultsFocus = await new AxeBuilder({ page }).analyze()
+        console.log(`  [focus] a11y: ${axeResultsFocus.violations.length} violation(s)`) // eslint-disable-line no-console
+        if (axeResultsFocus.violations.length > 0) {
+            for (const v of axeResultsFocus.violations) {
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+            }
+        }
+        if (axeResultsFocus.violations.length > 5) {
+            throw new Error(`a11y regression: focus state has ${axeResultsFocus.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+        }
 
         if (consoleCapture.errors.length > 0) {
             console.log(`  [focus] ${consoleCapture.summary()}`)

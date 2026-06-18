@@ -6,6 +6,10 @@ on:
   pull_request:
     branches: [master]
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   svelte-check:
     name: Svelte Check
@@ -43,11 +47,70 @@ jobs:
       - run: npm ci
       - run: npm run build:svelte
 
+  lint-nav-mirror:
+    name: Lint Nav Mirror Pattern
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint:nav-mirror
+
+  lint-svelte5-strict-mode:
+    name: Lint Svelte 5 Strict Mode
+    runs-on: ubuntu-latest
+    timeout-minutes: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - run: npm run lint:svelte5-strict-mode
+
+  test-integration:
+    name: Integration Tests (Playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Restore Playwright browser cache
+        uses: actions/cache@v4
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-${{ runner.os }}-${{ hashFiles('package-lock.json') }}
+      - name: Install Playwright browsers
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
+        run: npx playwright install --with-deps chromium
+      - name: Build app for preview server
+        run: npm run build:svelte
+      - name: Start preview server
+        run: npx vite preview --config vite.config.ts --port 4174 --host 127.0.0.1 &
+      - name: Wait for server
+        run: for i in $(seq 1 30); do curl -s http://127.0.0.1:4174 > /dev/null 2>&1 && exit 0; sleep 1; done; echo 'Server did not start'; exit 1
+      - name: Run Playwright integration tests
+        env:
+          TEST_BASE_URL: http://127.0.0.1:4174
+          INTEGRATION_HEADLESS: 'true'
+        run: npx playwright test
+
   deploy:
     name: Deploy Artifacts
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    needs: [svelte-check, test-unit, build]
+    needs: [svelte-check, test-unit, build, lint-nav-mirror, lint-svelte5-strict-mode]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4

@@ -1,5 +1,7 @@
 # Semantic Explorer
 
+![CI Status](https://github.com/GalToast/semantic-demo/actions/workflows/ci.yml/badge.svg)
+
 ## Overview
 A 3D semantic mycelium visualization for exploring business relationships in Montgomery County.
 

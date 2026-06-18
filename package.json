@@ -183,6 +183,7 @@
         "deploy:dryrun": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -DryRun",
         "test:visual": "npx playwright test tests/integration/visual-state-snapshots.spec.js --browser=chromium --timeout=60000",
         "test:visual:update": "UPDATE_SNAPSHOTS=true npx playwright test tests/integration/visual-state-snapshots.spec.js --browser=chromium --timeout=60000",
+        "test:a11y": "playwright test tests/integration/a11y-baseline.spec.js --browser=chromium",
         "test:e2e:click-flow": "npx playwright test tests/e2e-click-flow.spec.js --browser=chromium --headed",
         "test:svelte-migration": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/verify-svelte-migration.mjs",
         "test:microdemo": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/micro-demo-verify.js",
@@ -200,6 +201,7 @@
     "license": "ISC",
     "devDependencies": {
         "@ast-grep/cli": "^0.43.0",
+        "@axe-core/playwright": "^4.11.3",
         "@eslint/js": "^10.0.1",
         "@playwright/test": "^1.60.0",
         "@sveltejs/vite-plugin-svelte": "^7.1.2",
