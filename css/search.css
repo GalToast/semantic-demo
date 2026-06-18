@@ -383,23 +383,6 @@ body:is(
    Cool gray — deliberately not amber so the chip doesn't compete with the
    primary amber CTA (Step Inside, the rail's main action). Restrained
    outline, no fill: "not real data" without shouting. */
-.search-result-mock-pill {
-    display: inline-block;
-    margin-left: 6px;
-    padding: 1px 4px 2px;
-    border: 1px solid rgba(255, 255, 255, 0.12);
-    border-radius: 3px;
-    color: rgba(255, 255, 255, 0.42);
-    background: transparent;
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 8px;
-    font-weight: 700;
-    line-height: 1;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-    vertical-align: 2px;
-    white-space: nowrap;
-}
 
 body:is(
         [data-panel-surface='search'],
@@ -1044,23 +1027,6 @@ body.searching .search-container.has-query .search-clear-btn {
     display: none;
 }
 
-.search-spinner-overlay {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 32px;
-    height: 32px;
-    border: 2px solid rgba(var(--color-primary-rgb), 0.12);
-    border-top-color: var(--color-primary);
-    border-radius: 50%;
-    opacity: 0;
-    pointer-events: none;
-    z-index: var(--z-tooltips);
-    transition: opacity 0.25s ease;
-    box-shadow: 0 0 12px rgba(var(--color-primary-rgb), 0.1);
-}
-
 .search-results.searching {
     pointer-events: none;
 }
@@ -1128,13 +1094,6 @@ body.searching .search-container.has-query .search-clear-btn {
 }
 
 .rail-section summary .summary-note,
-.exploration-secondary summary .summary-note {
-    font-size: 10px;
-    line-height: 1.35;
-    color: rgba(255, 255, 255, 0.72);
-    text-transform: none;
-    letter-spacing: 0;
-}
 
 .filter-preview {
     font-size: 9px;
@@ -1153,15 +1112,8 @@ body.searching .search-container.has-query .search-clear-btn {
     text-overflow: ellipsis;
 }
 
-.rail-section-body {
-    padding: 0 12px 12px;
-}
-
 .rail-section summary::-webkit-details-marker,
 .cluster-section summary::-webkit-details-marker,
-.exploration-secondary summary::-webkit-details-marker {
-    display: none;
-}
 
 .rail-section summary::after {
     content: '';
@@ -1383,28 +1335,8 @@ body.searching .search-container.has-query .search-clear-btn {
     line-height: 1.45;
 }
 
-.error-container {
-    padding: 8px 12px;
-    border-radius: 9px;
-    border: 1px solid rgba(255, 100, 80, 0.22);
-    background: rgba(50, 14, 10, 0.38);
-    color: rgba(200, 255, 220, 0.92);
-}
-
 .empty-state,
 .no-results,
-.empty-search-results {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    padding: 24px 16px;
-    text-align: center;
-    color: rgba(180, 195, 200, 0.7);
-    font-size: 13px;
-    line-height: 1.5;
-}
 
 .search-loading {
     display: flex;
@@ -1599,60 +1531,6 @@ body[data-panel-surface='focus-search'] .search-container.search-degraded .searc
     z-index: var(--z-base);
 }
 
-.demo-starters-kicker {
-    font-size: 9px;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgba(255, 225, 139, 0.9);
-    margin-bottom: 4px;
-}
-
-.demo-starters-copy {
-    font-size: 11px;
-    line-height: 1.42;
-    color: rgba(238, 248, 250, 0.76);
-}
-
-.demo-starters-copy strong {
-    color: rgba(255, 249, 221, 0.94);
-    font-weight: 800;
-}
-
-.demo-journey-steps {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 5px;
-    margin-top: 8px;
-}
-
-.demo-journey-steps span {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
-    min-width: 0;
-    padding: 5px 4px;
-    border-radius: 999px;
-    background: var(--glass-reflection-soft);
-    border: 1px solid rgba(255, 255, 255, 0.065);
-    color: rgba(230, 247, 244, 0.72);
-    font-size: 8.5px;
-    line-height: 1;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-}
-
-.demo-journey-steps b {
-    display: inline-grid;
-    place-items: center;
-    width: 15px;
-    height: 15px;
-    border-radius: 999px;
-    background: rgba(var(--color-primary-tint-rgb), 0.12);
-    color: rgba(201, 255, 248, 0.94);
-    font-size: 9px;
-}
-
 .demo-starter-row {
     display: flex;
     flex-wrap: wrap;
@@ -1781,13 +1659,6 @@ body[data-panel-surface='map-focus-search'] .semantic-lane-assist-copy {
 body[data-panel-surface='search'] .semantic-lane-assist-row,
 body[data-panel-surface='focus-search'] .semantic-lane-assist-row,
 body[data-panel-surface='map-search'] .semantic-lane-assist-row,
-body[data-panel-surface='map-focus-search'] .semantic-lane-assist-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-    margin-top: 8px;
-}
 
 body[data-panel-surface='search'] .semantic-lane-assist-meta,
 body[data-panel-surface='focus-search'] .semantic-lane-assist-meta,
@@ -1797,37 +1668,6 @@ body[data-panel-surface='map-focus-search'] .semantic-lane-assist-meta {
     font-size: 10px;
     color: rgba(255, 255, 255, 0.6);
     line-height: 1.4;
-}
-
-.semantic-lane-retry-btn {
-    border: 1px solid var(--glass-reflection);
-    border-radius: 999px;
-    padding: 6px 10px;
-    min-height: 44px;
-    background: var(--glass-reflection-muted);
-    color: var(--color-text-primary);
-    font-family: inherit;
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.2px;
-    cursor: pointer;
-    transition:
-        background 0.18s ease,
-        border-color 0.18s ease,
-        transform 0.18s ease,
-        opacity 0.18s ease;
-}
-
-.semantic-lane-retry-btn:hover:not(:disabled) {
-    background: rgba(var(--color-primary-alt-rgb), 0.12);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.26);
-    transform: translateY(-1px);
-}
-
-.semantic-lane-retry-btn:disabled {
-    cursor: wait;
-    opacity: 0.62;
-    transform: none;
 }
 
 .search-error-state {
@@ -1946,102 +1786,11 @@ body[data-panel-surface='map-focus-search'] .semantic-lane-assist-meta {
     display: none;
 }
 
-.semantic-lane-ops-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 10px;
-}
-
-.semantic-lane-ops-title {
-    font-size: 11px;
-    font-weight: 700;
-    letter-spacing: 0.42px;
-    text-transform: uppercase;
-    color: rgba(214, 231, 255, 0.9);
-}
-
-.semantic-lane-ops-badge {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: rgba(173, 212, 255, 0.78);
-    background: rgba(90, 160, 255, 0.1);
-    border: 1px solid rgba(110, 176, 255, 0.18);
-    border-radius: 999px;
-    padding: 4px 8px;
-}
-
-.semantic-lane-ops-grid {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    margin-top: 9px;
-}
-
-.semantic-lane-ops-stat {
-    padding: 8px 9px;
-    border-radius: 9px;
-    background: var(--glass-reflection-fade);
-    border: 1px solid var(--glass-reflection-muted);
-}
-
-.semantic-lane-ops-stat-label {
-    font-size: 10px;
-    letter-spacing: 0.25px;
-    text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.6);
-}
-
-.semantic-lane-ops-stat-value {
-    margin-top: 4px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 12px;
-    color: rgba(245, 250, 255, 0.92);
-    line-height: 1.4;
-}
-
 .semantic-lane-ops-meta {
     margin-top: 9px;
     font-size: 10px;
     line-height: 1.45;
     color: rgba(214, 225, 242, 0.6);
-}
-
-.semantic-lane-ops-list {
-    margin-top: 9px;
-    display: grid;
-    gap: 7px;
-}
-
-.semantic-lane-ops-row {
-    display: grid;
-    grid-template-columns: 68px minmax(0, 1fr);
-    gap: 8px;
-    align-items: start;
-}
-
-.semantic-lane-ops-row-time {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 10px;
-    color: rgba(255, 255, 255, 0.55);
-    white-space: nowrap;
-}
-
-.semantic-lane-ops-row-body {
-    min-width: 0;
-}
-
-.semantic-lane-ops-row-label {
-    font-size: 11px;
-    color: rgba(247, 252, 255, 0.88);
-    line-height: 1.3;
-}
-
-.semantic-lane-ops-row-detail {
-    margin-top: 2px;
-    font-size: 10px;
-    color: rgba(213, 223, 240, 0.55);
-    line-height: 1.35;
 }
 
 /* ──────────────────────────────────────────────────────────────────────────

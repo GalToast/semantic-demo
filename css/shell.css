@@ -410,15 +410,6 @@ body[data-active-view='map'] .canvas-color-legend {
     display: none;
 }
 
-.canvas-color-legend-title {
-    font-size: 10px;
-    font-weight: 800;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: rgba(255, 255, 255, 0.55);
-    margin-bottom: 3px;
-}
-
 .canvas-color-legend-row {
     display: flex;
     align-items: center;
@@ -638,26 +629,6 @@ body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .lea
         filter 0.24s ease;
 }
 
-#map-container .leaflet-interactive.map-marker-secondary {
-    filter: saturate(0.86);
-}
-
-#map-container .leaflet-interactive.map-marker-search {
-    filter: drop-shadow(0 0 10px rgba(80, 216, 202, 0.12));
-}
-
-#map-container .leaflet-interactive.map-marker-trail {
-    filter: drop-shadow(0 0 14px rgba(84, 229, 214, 0.2));
-}
-
-#map-container .leaflet-interactive.map-marker-anchor {
-    filter: drop-shadow(0 0 16px rgba(255, 223, 133, 0.32)) drop-shadow(0 0 28px rgba(255, 223, 133, 0.16));
-}
-
-#map-container .leaflet-interactive.map-marker-focus {
-    filter: drop-shadow(0 0 18px rgba(202, 255, 246, 0.26));
-}
-
 #map-container .leaflet-interactive.semantic-map-route-line {
     filter: drop-shadow(0 0 10px rgba(255, 226, 132, 0.24))
         drop-shadow(0 0 18px rgba(var(--color-primary-tint-rgb), 0.18));
@@ -834,28 +805,6 @@ body[data-active-view='map'][data-terrain-handoff='landing']
     animation: biofield-spore-float 18s ease-in-out infinite;
 }
 
-.biofield-orb-a {
-    --orb-size: 8px;
-    left: 12%;
-    top: 68%;
-}
-
-.biofield-orb-b {
-    --orb-size: 11px;
-    right: 18%;
-    top: 22%;
-    animation-duration: 24s;
-    animation-delay: -7s;
-}
-
-.biofield-orb-c {
-    --orb-size: 7px;
-    right: 32%;
-    bottom: 16%;
-    animation-duration: 21s;
-    animation-delay: -12s;
-}
-
 .biofield-thread {
     width: min(52vw, 620px);
     height: 1px;
@@ -869,19 +818,6 @@ body[data-active-view='map'][data-terrain-handoff='landing']
     filter: blur(0.3px) drop-shadow(0 0 10px rgba(var(--color-primary-tint-rgb), 0.14));
     opacity: 0.32;
     animation: biofield-thread-breathe 20s ease-in-out infinite alternate;
-}
-
-.biofield-thread-a {
-    left: 18%;
-    top: 30%;
-    transform: rotate(-12deg);
-}
-
-.biofield-thread-b {
-    right: 8%;
-    bottom: 28%;
-    transform: rotate(16deg);
-    animation-delay: -8s;
 }
 
 body[data-active-view='map'] .biofield-atmosphere {
