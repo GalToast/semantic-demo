@@ -325,7 +325,7 @@ export function computeParityAttributes(): ParityAttributeMap {
 
     const hasMapTrailIntent =
         nav.currentView === 'map' &&
-        (nav.focusedIndex !== null || Boolean(search.summary) || nav.surface === 'map-focus-search' || nav.surface === 'map-trail')
+        (nav.focusedIndex != null || Boolean(search.summary) || nav.surface === 'map-focus-search' || nav.surface === 'map-trail')
     const trailState =
         journey.depth > 0 || hasMapTrailIntent || presentation.navigationOwner === 'map-trail-strip'
             ? 'active'

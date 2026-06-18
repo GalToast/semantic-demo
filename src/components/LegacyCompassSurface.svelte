@@ -562,6 +562,7 @@
     hidden={!showInsideControls}
     aria-hidden={!showInsideControls ? 'true' : 'false'}
     aria-disabled={buttonDisabled({ label: 'Next Stop', action: JOURNEY_ACTIONS.NEXT_STOP })}
+    tabindex={showInsideControls ? 0 : -1}
     onclick={handleInsideNext}
   >
     Next Stop
@@ -574,6 +575,7 @@
     hidden={!showInsideControls}
     aria-hidden={!showInsideControls ? 'true' : 'false'}
     aria-disabled={!showInsideControls ? 'true' : 'false'}
+    tabindex={showInsideControls ? 0 : -1}
     onclick={handleInsideMap}
   >
     Map
@@ -586,6 +588,7 @@
     hidden={!showInsideControls}
     aria-hidden={!showInsideControls ? 'true' : 'false'}
     aria-disabled={!showInsideControls ? 'true' : 'false'}
+    tabindex={showInsideControls ? 0 : -1}
     onclick={handleInsideCounty}
   >
     County

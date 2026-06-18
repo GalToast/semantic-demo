@@ -595,84 +595,38 @@ export async function loadSemanticThreads(
     try {
       _clearSemanticThreadsRetryTimer();
 
-      // 1. Attempt Worker-Based Loading
+      // Worker is mandatory — .dat files are >40 MB; main-thread JSON.parse
+      // blocks the UI for 500-750 ms. We rely on the Worker for all parsing.
       const worker = getWorker();
-      if (worker) {
-        try {
-          const { neighborEntries, artifactName, bundle } = await callWorker(
-            'LOAD_THREADS',
-            { urls: requestUrls, attemptConfigs },
-          );
-          await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust);
-          withStateMutation(() => {
-            state.semanticThreadBundle = bundle;
-            state.semanticThreadArtifactName = artifactName;
-            state.semanticNeighborMapByLeadId = new Map(
-              _normalizeSemanticNeighborEntries(neighborEntries),
-            );
-          });
-          finalizeThreadLoad();
-          return true;
-        } catch (err) {
-          console.warn(
-            'Worker-based thread loading failed, falling back to main thread.',
-            err,
-          );
-          _dataWorker = null;
-        }
+      if (!worker) {
+        throw new Error(
+          'Web Worker unavailable and semantic thread artifacts exceed main-thread budget.',
+        );
       }
 
-      // 2. Main-Thread Fallback
-      let bundle: SemanticThreadBundle | null = null;
-      let loadedArtifactName: string | null = null;
-      let lastError: Error | null = null;
-
-      outer: for (
-        let requestIndex = 0;
-        requestIndex < requestUrls.length;
-        requestIndex++
-      ) {
-        const requestUrl = requestUrls[requestIndex]!;
-        const threadArtifactName = artifactNameFromUrl(requestUrl);
-        for (let attempt = 0; attempt < attemptConfigs.length; attempt++) {
-          try {
-            const response = await fetch(requestUrl, {
-              cache: attemptConfigs[attempt],
-            });
-            if (!response.ok)
-              throw new Error(
-                `semantic thread artifact unavailable (${response.status})`,
-              );
-            bundle = (await response.json()) as SemanticThreadBundle;
-            loadedArtifactName = threadArtifactName;
-            break outer;
-          } catch (error) {
-            lastError =
-              error instanceof Error ? error : new Error(String(error));
-            if (attempt < attemptConfigs.length - 1) {
-              await new Promise((resolve) =>
-                setTimeout(resolve, 220 * (attempt + 1)),
-              );
-            }
-          }
-        }
+      try {
+        const { neighborEntries, artifactName, bundle } = await callWorker(
+          'LOAD_THREADS',
+          { urls: requestUrls, attemptConfigs },
+        );
+        await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust);
+        withStateMutation(() => {
+          state.semanticThreadBundle = bundle;
+          state.semanticThreadArtifactName = artifactName;
+          state.semanticNeighborMapByLeadId = new Map(
+            _normalizeSemanticNeighborEntries(neighborEntries),
+          );
+        });
+        finalizeThreadLoad();
+        return true;
+      } catch (err) {
+        // Worker failed — do not fall back to main thread for >40 MB files.
+        _dataWorker = null;
+        throw new Error(
+          'Worker-based thread loading failed (artifacts exceed main-thread budget).',
+          { cause: err },
+        );
       }
-
-      if (!bundle)
-        throw lastError || new Error('semantic thread artifact unavailable');
-
-      withStateMutation(() => {
-        state.semanticThreadBundle = bundle;
-        state.semanticThreadArtifactName = loadedArtifactName;
-      });
-      await _guardSemanticSpaceLayout(
-        bundle,
-        loadedArtifactName,
-        cacheBust,
-      );
-      _buildSemanticNeighborMap(bundle);
-      finalizeThreadLoad();
-      return state.semanticNeighborMapByLeadId.size > 0;
     } catch (error) {
       console.warn(
         'Failed to load semantic thread artifact; using geometric fallback.',

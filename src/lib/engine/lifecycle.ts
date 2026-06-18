@@ -304,6 +304,16 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
 
         // 13. Mark ready
         setEngineStatus('ready')
+
+        // 14. Notify Canvas.svelte and other consumers that the scene is ready.
+        //     bindEventBridge wires a listener for 'scene-ready', but nothing
+        //     on the new path dispatches it. We fire both the direct callback
+        //     and the window event so both in-process callers and legacy
+        //     listeners receive the signal.
+        callbacks.onLoadingPhase?.('launch', 1)
+        if (typeof window !== 'undefined') {
+            window.dispatchEvent(new Event('scene-ready'))
+        }
     } catch (err) {
         console.error('[engine/lifecycle] initEngine: initialization failed', err)
         unbindEventBridge()

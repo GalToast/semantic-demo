@@ -25,14 +25,10 @@
         "journey-compass-state-contract.mjs",
         "journey-thread-inspector-contract.mjs",
         "thread-inspector-dewindowing-contract.mjs",
-        "journey-window-surface-contract.mjs",
-        "journey-cluster-accent-dewindowing-contract.mjs",
         "journey-event-bindings-contract.mjs",
         "trail-review-focus-contract.mjs",
         "journey-walk-candidate-contract.mjs",
         "journey-walk-thread-neighbor-timer-contract.mjs",
-        "journey-focus-ui-extraction-contract.mjs",
-        "journey-point-color-contract.mjs",
         "journey-ui-ownership-contract.mjs"
       ]
     },
@@ -123,7 +119,6 @@
         "reset-callsite-routing-contract.mjs",
         "demo-camera-retirement-contract.mjs",
         "cluster-labels-contract.mjs",
-        "window-bridge-gaps-contract.mjs",
         "loading-ui-contract.mjs",
         "short-landscape-layout-contract.mjs",
         "mobile-visual-qa-contract.mjs",
@@ -159,7 +154,6 @@
         "demo-state-sync-contract.mjs",
         "micro-demo-state-owner-contract.mjs",
         "weather-lifecycle-contract.mjs",
-        "window-bridge-gaps-contract.mjs",
         "residual-window-bridge-inventory-contract.mjs",
         "app-node-import-contract.mjs",
         "next-explore-candidate-contract.mjs",
@@ -480,8 +474,6 @@
         "journey-thread-inspector-contract.mjs",
         "trail-review-focus-contract.mjs",
         "journey-walk-thread-neighbor-timer-contract.mjs",
-        "journey-focus-ui-extraction-contract.mjs",
-        "journey-point-color-contract.mjs",
         "journey-ui-ownership-contract.mjs",
         "share-view-clipboard-contract.mjs",
         "keyboard-help-aria-contract.mjs",
@@ -489,10 +481,7 @@
         "weather-surface-ownership-contract.mjs",
         "camera-auto-rotate-settle-contract.mjs",
         "semantic-dive-reverse-contract.mjs",
-        "journey-window-surface-contract.mjs",
         "thread-inspector-dewindowing-contract.mjs",
-        "journey-cluster-accent-dewindowing-contract.mjs",
-        "window-bridge-gaps-contract.mjs",
         "residual-window-bridge-inventory-contract.mjs",
         "next-explore-candidate-contract.mjs",
         "ui-renderers-helper-contract.mjs",
@@ -534,9 +523,7 @@
     },
     "projection": {
       "description": "Siloed projection field contracts - strandJourney, terrainHandoff, routeDirector, semanticDive/trailDepth mutual consistency.",
-      "contracts": [
-        "projection-state-sync-contract.mjs"
-      ]
+      "contracts": []
     },
     "visual-smoke": {
       "description": "Fast visual smoke and layout regression specs - btn layout, camera motion, demo seam, micro-demo sequence, ui renderers.",

@@ -102,7 +102,7 @@ function appendInsideControls(root: HTMLElement): void {
             id: 'btn-inside-next',
             className: 'focus-stage-inside-btn',
             text: 'Next Stop',
-            attributes: { type: 'button', 'data-journey-action': 'next-stop' }
+            attributes: { type: 'button', 'data-journey-action': 'next-stop', tabindex: '-1' }
         }),
         makeElement('button', {
             id: 'btn-inside-map',
@@ -111,7 +111,8 @@ function appendInsideControls(root: HTMLElement): void {
             attributes: {
                 type: 'button',
                 'data-journey-action': 'open-map',
-                'aria-label': 'Project this trail onto the map'
+                'aria-label': 'Project this trail onto the map',
+                tabindex: '-1'
             }
         }),
         makeElement('button', {
@@ -121,7 +122,8 @@ function appendInsideControls(root: HTMLElement): void {
             attributes: {
                 type: 'button',
                 'data-journey-action': 'county-overview',
-                'aria-label': 'Exit Step Inside and return to County View'
+                'aria-label': 'Exit Step Inside and return to County View',
+                tabindex: '-1'
             }
         })
     );

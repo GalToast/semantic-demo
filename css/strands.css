@@ -1382,7 +1382,8 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
 }
 
 /* Mode chip state variants must survive legacy cluster/strand styling at every viewport. */
-body .mode-grid .mode-chip.is-waiting {
+body .mode-grid .mode-chip.is-waiting,
+body #mode-chips .mode-chip.is-waiting {
     opacity: 0.75;
     border-style: solid;
     border-color: rgba(255, 176, 30, 0.5);
@@ -1391,7 +1392,8 @@ body .mode-grid .mode-chip.is-waiting {
     box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
 }
 
-body .mode-grid .mode-chip.is-locked {
+body .mode-grid .mode-chip.is-locked,
+body #mode-chips .mode-chip.is-locked {
     border-color: rgba(var(--color-primary-rgb), 0.55);
     background: rgba(var(--color-primary-rgb), 0.18);
     color: rgba(201, 255, 248, 0.98);
@@ -1400,13 +1402,15 @@ body .mode-grid .mode-chip.is-locked {
         0 0 12px rgba(var(--color-primary-rgb), 0.15);
 }
 
-body .mode-grid .mode-chip:disabled {
+body .mode-grid .mode-chip:disabled,
+body #mode-chips .mode-chip:disabled {
     cursor: not-allowed;
     opacity: 0.45;
     pointer-events: none;
 }
 
-body[data-active-view='map'] .mode-grid .mode-chip.active {
+body[data-active-view='map'] .mode-grid .mode-chip.active,
+body[data-active-view='map'] #mode-chips .mode-chip.active {
     border-color: rgba(120, 200, 255, 0.4);
     background: rgba(120, 200, 255, 0.15);
     color: rgba(30, 130, 220, 1);

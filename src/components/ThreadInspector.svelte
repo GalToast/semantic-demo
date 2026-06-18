@@ -130,10 +130,10 @@
         <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title">
-        {inspectedIndex !== null ? `Thread connection to node ${inspectedIndex}` : 'Connection Inspector'}
+        {inspectedIndex != null ? `Thread connection to node ${inspectedIndex}` : 'Connection Inspector'}
       </h2>
       <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy">
-        {inspectedIndex !== null
+        {inspectedIndex != null
           ? `Previewing the semantic connection from ${localizeSource(inspector.source)} to node ${inspectedIndex}.`
           : 'Preview why this nearby stop belongs in the current focus path.'}
       </p>

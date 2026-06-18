@@ -190,10 +190,13 @@
 </script>
 
 {#if cardVisible}
+  <!-- svelte-ignore a11y_no_noninteractive_tabindex: focusable scroll region for keyboard users -->
   <div
     class="focus-card selected-card focus-stage-card"
     id="selected-card"
     class:selected-card-empty={isEmpty}
+    role="region"
+    tabindex="0"
     aria-label="Selected business"
   >
     <!-- Empty state -->

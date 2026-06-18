@@ -196,6 +196,7 @@ export function syncSemanticDiveUi(): void {
         const showNextAction = hasNextCandidate || isExploring;
         insideNextButton.hidden = !showNextAction;
         insideNextButton.disabled = isDisabled;
+        insideNextButton.tabIndex = active && showNextAction && !isDisabled ? 0 : -1;
         insideNextButton.setAttribute('aria-disabled', String(isDisabled));
         insideNextButton.setAttribute('aria-busy', String(isExploring));
 
@@ -215,6 +216,7 @@ export function syncSemanticDiveUi(): void {
     }
     if (insideMapButton) {
         insideMapButton.hidden = !active;
+        insideMapButton.tabIndex = active ? 0 : -1;
         insideMapButton.setAttribute('aria-hidden', active ? 'false' : 'true');
         insideMapButton.disabled = !active;
         insideMapButton.setAttribute('aria-disabled', String(!active));
@@ -223,6 +225,7 @@ export function syncSemanticDiveUi(): void {
     }
     if (insideCountyButton) {
         insideCountyButton.hidden = !active;
+        insideCountyButton.tabIndex = active ? 0 : -1;
         insideCountyButton.setAttribute('aria-hidden', active ? 'false' : 'true');
         insideCountyButton.disabled = !active;
         insideCountyButton.setAttribute('aria-disabled', String(!active));
