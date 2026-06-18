@@ -177,7 +177,6 @@
         "test:all": "npm run test:fast && npm run test:unit && npm run test:contract && npm run test:e2e:click-flow",
         "test:unit": "vitest run --config vitest.config.js",
         "test:unit:watch": "vitest --config vitest.config.js",
-        "test:unit:legacy": "vitest run --config vitest.legacy.config.js",
         "test:help": "node -e \"console.log('npm run test       - fast static checks (shell, manifest, cache, ownership, tokens, surface styles)\\nnpm run test:fast   - alias for test\\nnpm run test:contract - Node contracts for semantic-dive-ui, search-state, camera-controls, focus-pocket, journey/event-bindings, micro-demo, cluster-labels, journey/thread-inspector\\nnpm run test:all   - fast + contract + e2e click flow\\n')\"",
         "deploy": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1",
         "deploy:dryrun": "powershell -NoProfile -ExecutionPolicy Bypass -File deploy.ps1 -DryRun",

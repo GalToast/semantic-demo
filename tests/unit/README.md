@@ -1,9 +1,13 @@
-# Cached Legacy Unit Suite
+# Legacy Unit Suite (Phase 4 Retirement Complete)
 
-This directory preserves the pre-Svelte Vitest unit suite as reference material.
-The files are intentionally not deleted, but many target retired `js/modules/*`
-owners or legacy behavior and are not part of the active unit gate.
+This directory previously held the pre-Svelte Vitest unit suite as reference material.
 
-Use `npm run test:unit:legacy` when intentionally mining or revalidating these
-old assertions. Convert useful assertions into `tests/unit-active/` before
-making them part of the normal `npm run test:unit` signal.
+**Status (W24, 2026-06-17):** Phase 4 retirement COMPLETE. All test files were
+migrated to `tests/unit-active/` or deleted as they had equivalent active coverage.
+
+Current contents:
+- `README.md` (this file)
+- `setup/` directory (infrastructure; verify usage before removal)
+
+For active unit tests, see: `tests/unit-active/`
+For audit history, see: `notes/w24-tests-unit-audit.md`
