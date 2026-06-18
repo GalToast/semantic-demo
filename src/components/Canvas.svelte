@@ -129,6 +129,8 @@
   onDestroy(() => {
     componentDestroyed = true;
     engineReady = false;
+    canvasReady = false;
+    overlayVisible = true;
     engineLifecycle?.destroyEngine();
     engineLifecycle = null;
     mounted = false;
