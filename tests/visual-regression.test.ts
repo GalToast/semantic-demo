@@ -176,6 +176,8 @@ interface TestState {
     /** Optional viewport override (for mobile surfaces). Omit for default 1280x850. */
     viewport?: { width: number; height: number; isMobile?: boolean; deviceScaleFactor?: number }
     thresholdOverride?: number // Per-state threshold override
+    /** When true, the state is skipped entirely (no screenshot, no comparison). */
+    skip?: boolean
 }
 
 function getTestStates(): TestState[] {
@@ -760,13 +762,42 @@ function getTestStates(): TestState[] {
             }
         }
 
-        // 14. thread-inspector — REMOVED: baseline was invalid.
-        // The inspector never renders under any focus-only URL recipe
-        // (ThreadInspector.svelte:112 requires `visible && threadInspector.active`,
-        // and pinThreadNeighbor(<focused index>) returns active:false). The 120KB baseline
-        // captured a focus view with the inspector UNMOUNTED; the 8% threshold anti-guarded it.
-        // Restore only with a recipe that pins a real NEIGHBOR of the focused node.
+        // 14. thread-inspector — SKIPPED: baseline was invalid (see bug report).
+        // The inspector only renders when pinning a real NEIGHBOR (not the focused node).
+        // pinThreadNeighbor(<focusedIndex>) is now guarded to reject with active:false.
+        // Restore with a deterministic neighbor-pin recipe once the neighbor graph is stable.
         // See docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md
+        {
+            name: 'thread-inspector',
+            baseline: 'thread-inspector.png',
+            description: 'Thread inspector — connection preview panel (requires real neighbor pin)',
+            skip: true,
+            viewport: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
+            setup: async (page) => {
+                // Recipe: anchor to node 519, then pin a real neighbor.
+                // Neighbor indices are dynamic; this entry is skipped until a deterministic
+                // neighbor-pinning recipe is available.
+                const url = `${BASE_URL}?view=galaxy&q=coffee&anchor=519&nodemo=1`
+                await page.goto(url, { waitUntil: 'networkidle' })
+                await page.waitForTimeout(4000)
+                // Pin a real neighbor — find one from the DOM or thread candidates
+                await page.evaluate(() => {
+                    const actions = (window as unknown as { __APP_ACTIONS__?: Record<string, Function> }).__APP_ACTIONS__
+                    if (!actions?.pinThreadNeighbor) return
+                    const focused = Number(document.body.dataset.focusedIndex)
+                    const pills = Array.from(document.querySelectorAll('.focus-stage-neighbor-pill[data-index]'))
+                    const neighbor = pills.find(p => {
+                        const idx = Number((p as HTMLElement).dataset.index)
+                        return Number.isFinite(idx) && idx !== focused
+                    })
+                    if (neighbor) {
+                        const idx = Number((neighbor as HTMLElement).dataset.index)
+                        actions.pinThreadNeighbor(idx, { reason: 'visual-regression-baseline' })
+                    }
+                })
+                await page.waitForTimeout(2000)
+            }
+        }
     ]
 }
 
@@ -806,6 +837,20 @@ async function runVisualRegression(): Promise<TestResult[]> {
         browser = await chromium.launch({ headless: true })
 
         for (const state of states) {
+            if (state.skip) {
+                console.log(`\n⏭️  Skipping: ${state.name}`)
+                console.log(`   ${state.description}`)
+                results.push({
+                    state: state.name,
+                    passed: true,
+                    diffPercent: 0,
+                    diffPixels: 0,
+                    skipped: true,
+                    environmentNote: 'Skipped by design'
+                })
+                continue
+            }
+
             console.log(`\n📸 Testing: ${state.name}`)
             console.log(`   ${state.description}`)
 

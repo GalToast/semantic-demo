@@ -413,8 +413,45 @@ export function inspectThreadNeighbor(
     return renderThreadInspection(appState.inspectedThreadIndex, options)
 }
 
+/**
+ * Pins a neighbor of the focused node for comparison in the thread inspector.
+ *
+ * **Contract:** `index` MUST refer to a *neighbor* of the currently focused node,
+ * NOT the focused node itself. A thread is a connection between the focus and a
+ * neighbor — pinning the focused node produces no thread strand and is rejected.
+ *
+ * @param index - The neighbor index to pin. Must differ from the focused index.
+ * @param options - Optional pinning options (surface, reason, etc.)
+ * @returns The resulting ThreadInspectionState, or a rejected state with
+ *          `active:false, pinned:false` when `index === focusedIndex`.
+ */
 export function pinThreadNeighbor(index: number, options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
     if (!Number.isFinite(index)) return clearThreadInspection({ force: true })
+
+    // Guard: pinning the focused node itself produces no thread strand.
+    const focusedIndex = getFocusedIndex()
+    if (index === focusedIndex) {
+        return {
+            active: false,
+            index: null,
+            focusedIndex,
+            focusName: '',
+            targetName: '',
+            reason: 'Cannot pin the focused node itself; pass a neighbor index.',
+            relationshipRole: '',
+            relationshipTitle: '',
+            role: '',
+            source: '',
+            pinned: false,
+            journeyPhase: 'idle',
+            surface: null,
+            title: 'Connection Inspector',
+            copy: 'Select a nearby stop to preview why it belongs here, then pin or follow.',
+            meta: 'Preview connection',
+            strandVisual: { active: false, source: 'none', segmentCount: 0, braidCount: 0, endpointCount: 0 },
+            threadSource: null
+        }
+    }
 
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
