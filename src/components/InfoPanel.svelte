@@ -432,7 +432,7 @@
   -->
 
   <!-- Surface wrapper for selection state (empty vs populated) -->
-  <div class="info-panel-content" id="info-panel-content">
+  <div class="info-panel-content info-content" id="info-panel-content">
     {@render content?.()}
 
     {#if contentDescriptor.headerVisible}

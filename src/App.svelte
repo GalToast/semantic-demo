@@ -38,7 +38,7 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
-  import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
+  import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
   import { initData } from '@lib/data-store';
   import { state as legacyState } from '@lib/engine/state-bridge';
@@ -601,7 +601,7 @@
 
   <!-- Thread inspector (overlay, self-gates via visible && threadInspectorActive()) -->
   {#if ThreadInspectorComponent}
-    <ThreadInspectorComponent visible={true} />
+    <ThreadInspectorComponent visible={threadInspectorActive()} />
   {/if}
 
   <!-- Demo choreography overlay -->

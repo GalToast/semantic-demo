@@ -103,6 +103,6 @@ describe('InfoPanel component', () => {
 
     it('#info-panel-content container exists with .info-panel-content class', () => {
         expect(source).toContain('id="info-panel-content"');
-        expect(source).toContain('class="info-panel-content"');
+        expect(source).toMatch(/class="info-panel-content[^"]*"/);
     });
 });
