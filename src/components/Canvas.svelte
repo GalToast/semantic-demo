@@ -132,6 +132,7 @@
     bind:this={containerEl}
     id="canvas-container"
     class="semantic-canvas-container"
+    class:ready={!overlayVisible}
     style="z-index: var(--z-canvas)"
   >
     <canvas
@@ -163,17 +164,25 @@
     touch-action: none;
   }
 
-  .semantic-canvas-container :global(canvas) {
-    display: block;
-    width: 100%;
-    height: 100%;
+  .semantic-canvas-container:not(.ready) {
+    content-visibility: hidden;
   }
 
-  .semantic-canvas {
+  .semantic-canvas-container .semantic-canvas {
     display: block;
     width: 100%;
     height: 100%;
     touch-action: none;
+  }
+
+  .semantic-canvas-container.ready .semantic-canvas {
+    content-visibility: auto;
+  }
+
+  /* A11y: visible focus ring for keyboard users on the 3D canvas (WCAG 2.4.7) */
+  .semantic-canvas:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.8);
+    outline-offset: -2px;
   }
 
   .canvas-loading-overlay {

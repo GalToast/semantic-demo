@@ -178,6 +178,21 @@
     }
   });
 
+  // ── Screen reader live announcement for active result (WCAG 4.1.3) ──────────
+  let liveAnnouncement = $state('');
+  $effect(() => {
+    const idx = activeIndex;
+    if (idx < 0 || resultSlice.length === 0) {
+      liveAnnouncement = '';
+      return;
+    }
+    const active = (resultSlice as SearchResult[])[idx];
+    if (active) {
+      const model = itemModel(active, idx);
+      liveAnnouncement = `${model.ariaLabel} (${idx + 1} of ${resultSlice.length})`;
+    }
+  });
+
   // Sync DOM focus with the roving active index (runs after each render).
   $effect(() => {
     const idx = activeIndex;
@@ -359,6 +374,10 @@
 </script>
 
 {#if visible}
+  <!-- Screen reader live region for announcing active result during keyboard navigation (WCAG 4.1.3) -->
+  <div class="sr-only" aria-live="assertive" aria-atomic="true" role="status">
+    {liveAnnouncement}
+  </div>
   <div id="search-results" class="search-results-wrapper" class:active={total > 0}>
     <!-- Loading state -->
     {#if isSearching}
@@ -537,6 +556,19 @@
    * z-index sits one notch below --z-search so the result panel never covers
    * the input it belongs to.
    */
+  /* Screen-reader-only utility class for live announcement region */
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
+
   .search-results-wrapper {
     position: absolute;
     top: calc(1rem + 44px + 0.35rem);

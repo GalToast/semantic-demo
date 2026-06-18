@@ -118,6 +118,7 @@
     id="thread-inspector"
     aria-label="Thread connection inspector"
     role="complementary"
+    aria-live="polite"
   >
     <section
       class="focus-thread-inspector active"
@@ -129,7 +130,7 @@
         <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title">
-        {inspectedIndex !== null ? `Node ${inspectedIndex} thread` : 'Connection Inspector'} <!-- audit-ok: template expression, not transformed -->
+        {inspectedIndex !== null ? `Thread connection to node ${inspectedIndex}` : 'Connection Inspector'}
       </h2>
       <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy">
         {inspectedIndex !== null
@@ -137,10 +138,10 @@
           : 'Preview why this nearby stop belongs in the current focus path.'}
       </p>
       {#if inspector.segmentCount > 0 || inspector.braidCount > 0 || inspector.endpointCount > 0}
-        <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta">
-          <span>{inspector.segmentCount} segments</span>
-          <span>{inspector.braidCount} braids</span>
-          <span>{inspector.endpointCount} endpoints</span>
+        <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta" role="list" aria-label="Connection statistics: {inspector.segmentCount} segments, {inspector.braidCount} braids, {inspector.endpointCount} endpoints">
+          <span role="listitem">{inspector.segmentCount} segments</span>
+          <span role="listitem">{inspector.braidCount} braids</span>
+          <span role="listitem">{inspector.endpointCount} endpoints</span>
         </div>
       {/if}
       <div class="focus-thread-inspector-actions" aria-label="Thread actions">
