@@ -5,7 +5,6 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
   import type { EngineCallbacks } from '@lib/engine/adapters/types';
-  import { initEngine, resizeEngine, destroyEngine, getEngineStatus } from '@lib/engine/lifecycle';
   import type { LoadingPhase } from '@lib/types/state';
 
   interface Props {
@@ -19,6 +18,9 @@
   let mounted = $state(false);
   let overlayVisible = $state(true);
   let canvasReady = $state(false);
+  let engineReady = $state(false);
+  let engineLifecycle: typeof import('@lib/engine/lifecycle') | null = null;
+  let componentDestroyed = false;
   let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
   const callbacks: EngineCallbacks = {
@@ -77,24 +79,37 @@
     }
   }
 
-  onMount(async () => {
+  onMount(() => {
     mounted = true;
     if (!canvasEl) return;
 
-    // Fallback: hide overlay after 5 seconds even if engine never signals ready
+    // Fallback: hide overlay after 5 seconds if engine hasn't signalled ready.
+    // Gate on !canvasReady so a fast scene-ready path (onLoadingPhase →
+    // hideOverlay) that already cleared the timeout is never retroactively
+    // warned about.
     overlayTimeout = setTimeout(() => {
-      if (overlayVisible) {
+      if (overlayVisible && !canvasReady) {
         console.warn('[Canvas] Overlay fallback timeout — hiding loading overlay');
         overlayVisible = false;
       }
     }, 5000);
 
-    try {
-      await initEngine(canvasEl, callbacks);
-      resizeEngine(viewportWidth(), viewportHeight());
-    } catch (err) {
-      console.error('[Canvas] Engine init failed:', err);
-    }
+    void (async () => {
+      try {
+        const lifecycle = await import('@lib/engine/lifecycle');
+        if (componentDestroyed || !canvasEl) return;
+        engineLifecycle = lifecycle;
+        await lifecycle.initEngine(canvasEl, callbacks);
+        if (componentDestroyed) {
+          lifecycle.destroyEngine();
+          return;
+        }
+        engineReady = true;
+        lifecycle.resizeEngine(viewportWidth(), viewportHeight());
+      } catch (err) {
+        console.error('[Canvas] Engine init failed:', err);
+      }
+    })();
   });
 
   $effect(() => {
@@ -105,13 +120,16 @@
     // viewport store on its own. See qa-screenshots/REPORT.md bug 1.
     const w = $viewport.width;
     const h = $viewport.height;
-    if (getEngineStatus() === 'ready') {
-      resizeEngine(w, h);
+    if (engineReady && engineLifecycle?.getEngineStatus() === 'ready') {
+      engineLifecycle.resizeEngine(w, h);
     }
   });
 
   onDestroy(() => {
-    destroyEngine();
+    componentDestroyed = true;
+    engineReady = false;
+    engineLifecycle?.destroyEngine();
+    engineLifecycle = null;
     mounted = false;
     if (overlayTimeout !== undefined) {
       clearTimeout(overlayTimeout);
