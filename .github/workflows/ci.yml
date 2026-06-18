@@ -47,6 +47,25 @@ jobs:
       - run: npm ci
       - run: npm run build:svelte
 
+  bundle-size:
+    name: Bundle Size Gate
+    runs-on: ubuntu-latest
+    needs: [build]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      - run: npm ci
+      - name: Restore build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: dist-svelte
+          path: dist/svelte/
+      - name: Check bundle size against performance budget
+        run: node scripts/check-bundle-size.mjs
+
   lint-nav-mirror:
     name: Lint Nav Mirror Pattern
     runs-on: ubuntu-latest
