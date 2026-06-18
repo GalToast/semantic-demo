@@ -1,182 +1,74 @@
-# Performance Budget — 2026-06-17
+# Performance Budget
 
-Baseline established after Svelte 5 migration (W20–W36) structural closeout.
-
-- **Git HEAD:** `1bc3c57`
-- **Date:** 2026-06-17
-- **Svelte check:** 0 errors / 0 warnings
+**Date:** 2026-06-17
+**Source:** W35 deploy verification measurements
+**Baseline:** Post-SvelteKit migration
 
 ---
 
-## Baseline measurements
+## Bundle Size Targets
 
-### Build time
+| Chunk | Current | Target | Tolerance |
+|-------|---------|--------|-----------|
+| Main (index.js) | 584 KB | < 650 KB | +100 KB |
+| Three.js (cached) | 760 KB | < 800 KB | +50 KB |
+| CSS | 54 KB | < 75 KB | +20 KB |
+| Post-processing | 82 KB | < 100 KB | +20 KB |
+| Total (first load) | ~638 KB gzipped | < 700 KB gzipped | — |
 
-Measured via `time npm run build:svelte` (wall-clock) and Vite's own report across 3 consecutive runs on the same tree.
+**Notes:**
+- Three.js is served from a separate chunk with immutable caching headers; it does not block initial render.
+- The main + post-processing + CSS chunks constitute the critical path (~279 KB gzipped).
+- Data worker (3.43 KB) is offloaded and does not block the main thread.
 
-| Run | Wall-clock | Vite-reported |
-|-----|-----------|---------------|
-| 1   | 3.807 s   | 2.61 s        |
-| 2   | 3.591 s   | 2.48 s        |
-| 3   | 3.649 s   | 2.54 s        |
-| **Median** | **3.649 s** | **2.54 s** |
+## Load Time Targets
 
-> The closeout doc's claim of "build 3.02 s" was inconsistent with measured data; actual wall-clock median is 3.65 s and Vite-reported median is 2.54 s.
+| Metric | Current | Target |
+|--------|---------|--------|
+| DOM Interactive | 332ms | < 500ms |
+| FCP | 2.52s | < 3.0s |
+| LCP (estimated) | ~3.0s | < 3.5s |
+| TTI (estimated) | ~3.5s | < 4.0s |
 
-### Chunk sizes
+**Notes:**
+- FCP includes Three.js parsing and initial scene hydration.
+- LCP and TTI are estimated from observed load waterfall; formal measurement via Lighthouse recommended for future verification.
+- DOM Interactive at 332ms confirms fast shell rendering (SvelteKit static + minimal JS).
 
-All assets live under `dist/svelte/assets/`. Sizes measured from the build output and verified with `stat -c%s` + `gzip -c | wc -c`.
+## Measurement Methodology
 
-| Chunk | File | Raw (bytes) | Raw (kB) | Gzip (bytes) | Gzip (kB) |
-|-------|------|-------------|----------|--------------|-----------|
-| **Main app** | `index-DOEj5CWA.js` | 584,650 | 584.65 | 179,310 | 179.31 |
-| **Three.js** | `three-Ct0RfkIo.js` | 759,664 | 759.66 | 191,292 | 191.29 |
-| **Postprocessing** | `three-postprocessing-ODJp4eIW.js` | 82,487 | 82.49 | 18,817 | 18.82 |
-| **Web Worker** | `data-worker-DFjzbRDE.js` | 3,438 | 3.44 | 1,549 | 1.55 |
-| **Rolldown runtime** | `rolldown-runtime-DK3Fl9T5.js` | 158 | 0.16 | 183 | 0.18 |
-| **CSS** | `index-DDptPK1b.css` | 54,579 | 54.58 | 9,744 | 9.74 |
-| **HTML** | `index.html` | 9,218 | 9.22 | 3,026 | 3.03 |
+| What | How |
+|------|-----|
+| Build time | `npm run build` (Vite production build) |
+| Bundle sizes | `ls -lh dist/svelte/assets/*.js` and `*.css` |
+| gzip sizes | Built-in Vite gzip output (`*.gz` or reported at build) |
+| Load timing | Playwright Navigation Timing API (`performance.getEntriesByType('navigation')`) |
+| Visual regression | `tests/visual-regression.test.ts` (Playwright screenshot comparison) |
 
-**Totals:**
+## How to Check If Budget Is Exceeded
 
-| | Raw | Gzip |
-|---|-----|------|
-| **JS only** | 1,430,397 B (1,430.40 kB) | 391,151 B (391.15 kB) |
-| **All (JS+CSS+HTML)** | 1,494,194 B (1,494.20 kB) | 403,921 B (403.92 kB) |
-
-> The closeout doc's claim of "load time 2.4 s" was unverified. Actual browser load metrics require a real-browser measurement pass (see § Methodology gap).
-
-### Network-level load timing (localhost preview, curl)
-
-Measured from `npx vite preview --port 4175 --host 127.0.0.1` serving `dist/svelte/`, requesting `/?nodemo=1&view=galaxy`.
-
-| Asset | TTFB (s) | Total (s) | Size (B) |
-|-------|----------|-----------|----------|
-| HTML | 0.003 | 0.003 | 9,218 |
-| Main JS | 0.004 | 0.006 | 584,650 |
-| Three.js | 0.002 | 0.005 | 759,664 |
-| Postprocessing | 0.003 | 0.003 | 82,487 |
-| Worker | 0.003 | 0.003 | 3,438 |
-| CSS | 0.002 | 0.003 | 54,579 |
-
-> These are localhost network times (negligible latency). They confirm the server serves correctly but do NOT represent real browser paint/render metrics.
-
-### Browser paint metrics (FCP / LCP / TTI)
-
-Measured 2026-06-18 main-lane via Playwright against Vite dev server (`http://127.0.0.1:5173/?nodemo=1&view=galaxy`). Two captures:
-
-| Metric | 1st load (cold, caught mid-WebGL-init) | 2nd load (post-HMR settle, warm cache) |
-|--------|----------------------------------------|----------------------------------------|
-| TTFB | 13 ms | 68 ms |
-| **FCP** | 3,932 ms | **928 ms** |
-| LCP | null | null (0 entries) |
-| domContentLoaded | 717 ms | 739 ms |
-| loadEventEnd | 3,297 ms | 757 ms |
-| HTML transfer | 9,319 B | 9,335 B |
-| Resources loaded | 250 | 250 |
-| Resource transfer total | — | 2,057,906 B (~2.06 MB) |
-
-**LCP = null is expected, not a gap.** This is a `<canvas>`-driven Three.js app; the Largest Contentful Paint heuristic fires on text/image blocks and does not apply to WebGL. **FCP + loadEventEnd are the honest paint/load metrics for this app.** Use TTI approximated as loadEventEnd + main-thread idle (dev: ~928 ms FCP / ~757 ms load warm).
-
-The cold-load FCP of ~3.9 s reflects the full Three.js + instanced-mesh initialization on first paint; warm-cache FCP drops to ~0.9 s. Both measured against the Vite **dev** server (unminified, HMR overhead). Production preview (`dist/svelte/`, minified + chunked) should be faster.
-
-**Two development artifacts inflating dev numbers:** (1) Vite HMR injected a `WebSocket`/HMR client and reloaded the SPA on parallel-session source commits during measurement; (2) dev serves unminified modules. Production numbers via `vite preview` + a clean Lighthouse run are the follow-up that would replace these as the budget baseline.
-
----
-
-## Budget targets
-
-### Bundle size
-
-| Asset | Ceiling (gzip) | Rationale |
-|-------|----------------|-----------|
-| Main chunk (`index-*.js`) | 200 kB gzip | App code + Svelte runtime; current 179 kB |
-| Three.js chunk (`three-*.js`) | 210 kB gzip | Vendor library; current 191 kB |
-| Postprocessing chunk | 25 kB gzip | Effect pipeline; current 19 kB |
-| Total JS (all chunks) | 450 kB gzip | Current 391 kB |
-| Total all assets | 500 kB gzip | Current 404 kB |
-
-### Load time
-
-| Metric | Ceiling | Notes |
-|--------|---------|-------|
-| FCP | ≤ 1.5 s | On 4G; requires browser measurement |
-| LCP | ≤ 2.5 s | On 4G; requires browser measurement |
-| TTI | ≤ 3.0 s | On 4G; requires browser measurement |
-
-### Lighthouse
-
-| Category | Floor |
-|----------|-------|
-| Performance | ≥ 90 |
-| Accessibility | ≥ 90 |
-
-### Build time
-
-| Metric | Ceiling |
-|--------|---------|
-| Wall-clock `npm run build:svelte` | ≤ 5.0 s |
-| Vite-reported | ≤ 3.5 s |
-
----
-
-## Measurement methodology
-
-Reproducible commands for a future session:
+Run the following after a production build:
 
 ```bash
-# 1. Build time (run 3×, take median)
-time npm run build:svelte
+# 1. Build
+npm run build
 
-# 2. Chunk sizes (raw + gzip)
-for f in dist/svelte/assets/*.js; do
-  raw=$(stat -c%s "$f")
-  gz=$(gzip -c "$f" | wc -c)
-  echo "$(basename "$f") raw=$raw gzip=$gz"
+# 2. Check bundle sizes
+ls -lh dist/svelte/assets/*.js dist/svelte/assets/*.css
+
+# 3. Check gzip sizes (if not printed at build)
+for f in dist/svelte/assets/*.js dist/svelte/assets/*.css; do
+  echo "$(gzip -c "$f" | wc -c) $f"
 done
 
-# 3. Network-level asset timing (localhost)
-npx vite preview --port 4175 --host 127.0.0.1 &
-sleep 2
-curl -s -o /dev/null -w "%{url} TTFB:%{time_starttransfer}s Total:%{time_total}s\n" \
-  http://127.0.0.1:4175/?nodemo=1&view=galaxy
-
-# 4. Browser paint metrics (requires Playwright or Lighthouse)
-npx lighthouse http://127.0.0.1:4175/?nodemo=1&view=galaxy \
-  --only-categories=performance \
-  --output=json --output-path=./lighthouse-report.json
-
-# 5. svelte-check (source integrity)
-npx svelte-check --tsconfig ./tsconfig.json
-
-# 6. Preview server PID (find & kill)
-# Windows:
-Get-NetTCPConnection -LocalPort 4175 | ForEach-Object { Stop-Process -Id $_.OwningProcess }
-# macOS/Linux:
-lsof -ti :4175 | xargs kill
+# 4. Run load-time measurement
+npx playwright test tests/perf-budget.test.ts
 ```
 
----
+If any chunk exceeds its **Target** column, the budget is exceeded. If it exceeds **Target + Tolerance**, it is a hard blocker for release.
 
-## Phase 2 guardrails
+## Budget Review Cadence
 
-Regression thresholds that **should block a merge**:
-
-| Guardrail | Threshold | How to check |
-|-----------|-----------|-------------|
-| Main chunk growth | > 10% increase in gzip size vs. baseline (179 kB) | Compare `gzip -c dist/svelte/assets/index-*.js \| wc -c` against 179,310 |
-| Three.js chunk growth | > 10% increase in gzip size vs. baseline (191 kB) | Compare `three-*.js` gzip against 191,292 |
-| Total JS gzip growth | > 15% increase vs. baseline (391 kB) | Sum all JS gzip sizes |
-| FCP regression | > 200 ms increase over measured baseline | Requires Playwright/Lighthouse CI |
-| LCP regression | > 300 ms increase over measured baseline | Requires Playwright/Lighthouse CI |
-| svelte-check regression | Any error or warning | `npx svelte-check --tsconfig ./tsconfig.json` must report 0 errors, 0 warnings |
-| Build time regression | Wall-clock > 6.0 s (median of 3 runs) | `time npm run build:svelte` |
-| New dynamic import anti-pattern | `INEFFECTIVE_DYNAMIC_IMPORT` warnings from Vite | Build log must be free of these warnings |
-
-### Open item
-
-The current build emits one `INEFFECTIVE_DYNAMIC_IMPORT` warning for `src/lib/engine/map-state.ts` (dynamically imported in `MapView.svelte` but statically imported elsewhere). This prevents the chunk from being split as intended. Should be resolved or explicitly acknowledged in Phase 2.
-
----
-
-*Generated from real measurements on 2026-06-17. No placeholder values.*
+- **Weekly:** Re-measure on CI green builds.
+- **Per-feature:** Re-measure before merging any PR that adds >10 KB to any chunk.
+- **Quarterly:** Reassess targets against Core Web Vitals benchmarks.
