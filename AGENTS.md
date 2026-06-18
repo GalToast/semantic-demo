@@ -103,57 +103,135 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 ## Dev Environment Hardening
 
 - **Static Dev Mode**: The app includes a JS-side fallback for static Python development servers. If `api.php` returns raw PHP source code, the `detectStaticDevPHP` utility triggers a mock healthy state and provides high-synergy search results.
-- **Hardware Resilience**: GPU textures are tracked and disposed in `js/modules/three-node-manager.js` (`_trackedTextures` + `disposeTextures()`). Event listeners in `event-bindings.js` use an `AbortController` for `global-bindings.js`. As of 2026-06-05 sweep, 4 binding modules (legend, onboarding, journey, panel) registered listeners outside the signal — all fixed in the binding-listeners fix wave (verified resolved).
+- **Hardware Resilience**: GPU textures are tracked and disposed in `src/lib/engine/resource-tracker.ts` (`disposeObject3D`) and `src/lib/utils/three-textures.ts`. Event listeners in `src/lib/orchestration/event-bus.ts` use an `AbortController`. As of 2026-06-05 sweep, 4 binding modules (legend, onboarding, journey, panel) registered listeners outside the signal — all fixed in the binding-listeners fix wave (verified resolved).
 
 ## Key Files
 
-| Path                                        | Role                                                                                                                                                                    |
-| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `js/modules/app.js`                         | Main entry; imports all modules                                                                                                                                         |
-| `js/state.js`                               | Single source of truth for all global state                                                                                                                             |
-| `js/modules/bridge-registry.js`             | Legacy global action/state compatibility registry                                                                                                                       |
-| `js/modules/diagnostic-adapter.js`          | Central gate for debug/devtool probes such as `_ti`                                                                                                                     |
-| `js/modules/environment.js`                 | Shared viewport, pointer, DPR, and reduced-motion helpers                                                                                                               |
-| `js/modules/lifecycle.js`                   | App orchestration, view handoff, window bindings, scene-reveal logic                                                                                                    |
-| `js/modules/micro-demo.js`                  | 9-second guided choreography                                                                                                                                            |
-| `js/modules/journey.js`                     | Thin journey orchestration layer; delegates extracted journey owners and preserves the public surface                                                                   |
-| `js/modules/journey-neighborhood.js`        | Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation                                                                                  |
-| `js/modules/journey-selected-card.js`       | Focus-stage sync, selected-card rendering, and selected business DOM hydration                                                                                          |
-| `js/modules/journey-canvas-interaction.js`  | Thin facade: re-exports from extracted canvas interaction modules + inline event binding orchestrator                                                                   |
-| `js/modules/journey-canvas-hit-test.js`     | Canvas node hit testing, pointer position, thread candidate visibility                                                                                                  |
-| `js/modules/journey-canvas-node-picking.js` | Raycaster-based canvas field node picking and candidate comparison                                                                                                      |
-| `js/modules/journey-canvas-hover.js`        | Canvas field hover state (set/clear)                                                                                                                                    |
-| `js/modules/journey-focus-ui.js`            | Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals                                                                                          |
-| `js/modules/journey-thread-settler.js`      | Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state                                                                                |
-| `js/modules/journey-thread-model.js`        | Thread state model and trail seed derivation shared across journey and thread inspector                                                                                 |
-| `js/modules/journey-webgl.js`               | Journey-side WebGL overlay orchestration (delegates to extracted modules below)                                                                                         |
-| `js/modules/journey-arrival-handoff.js`     | Camera handoff overlay for journey thread arrival (orchestrates arrival frame lifecycle)                                                                                |
-| `js/modules/journey-route-trace.js`         | Route trace overlay rendering and frame updates for trail visualization                                                                                                 |
-| `js/modules/journey-semantic-overlay.js`    | Semantic-overlay (manifold + lens) rendering tied to journey focus state                                                                                                |
-| `js/modules/journey-webgl-utils.js`         | Shared WebGL utilities for journey overlays (texture lookups, geometry helpers)                                                                                         |
-| `js/modules/relationship-roles.js`          | Shared relationship role normalization used by journey, thread inspector, and semantic threads                                                                          |
-| `js/modules/strand-continuity.js`           | Shared strand phase and arrival continuity state for journey and thread inspector                                                                                       |
-| `js/modules/thread-inspector.js`            | Inspecting connections: pulsing, score-reactive WebGL lines between nodes when exploring semantic neighborhoods                                                         |
-| `js/modules/thread-inspector-webgl.js`      | WebGL line geometry and shader setup for the thread inspector (extracted from monolithic inspector)                                                                     |
-| `js/modules/focus-pocket.js`                | Focus pocket node layout and animation (delegates to extracted geometry/personality modules)                                                                            |
-| `js/modules/focus-pocket-geometry.js`       | Focus pocket constellation geometry, seeded placement, screen-bounds, thread curve points                                                                               |
-| `js/modules/focus-pocket-personality.js`    | Per-focus personality variants (rotation/scale seeds, neighborhood shape) driving focus pocket variation                                                                |
-| `js/modules/ui-renderers.js`                | Window-bound DOM renderers for legend, search rows, and selected-card chrome                                                                                            |
-| `js/modules/search-state.js`                | Search engine, query tokenization, result rendering                                                                                                                     |
-| `js/modules/three-engine.js`                | WebGL engine: scene, camera, renderer, shaders, instanced meshes                                                                                                        |
-| `js/modules/three-node-manager.js`          | Node/spore instancing, per-node spore scales, points buffer lifecycle                                                                                                   |
-| `js/modules/three-thread-manager.js`        | Mycelium/thread line geometry, pulse opacity, presentation profile                                                                                                      |
-| `js/modules/three-interaction-visuals.js`   | Semantic manifold + lens overlays, interaction-driven uniforms                                                                                                          |
-| `js/modules/three-search-animations.js`     | Hero moment, corridor glow, search corridor animation lifecycle                                                                                                         |
-| `js/modules/utils/seeded-random.js`         | GLSL-portable `seededUnit(index, salt)` for deterministic per-node variation                                                                                            |
-| `js/modules/camera-controls.js`             | Camera choreography: transitions, auto-rotation, orbit slack                                                                                                            |
-| `js/modules/camera-framing-utils.js`        | Canvas unobstructed region, focus-pocket screen bounds, safe-area target offset                                                                                         |
-| `js/modules/camera-orbit-slack.js`          | Search-route focus active, focus orbit slack pivot and apply/clear                                                                                                      |
-| `js/modules/focus-pocket.js`                | Focus pocket node layout and animation                                                                                                                                  |
-| `js/modules/event-bindings.js`              | Thin orchestrator: imports each `bindings/` module and dispatches its `bind*` function via `initEventListeners`                                                         |
-| `js/modules/bindings/`                      | Per-surface DOM event listeners (filter, journey, legend, mode, panel, search, view, etc.) — replaces the monolithic event-bindings.js with focused per-feature modules |
-| `js/modules/journey-compass-state.js`       | Journey compass derivation function (pure computation, not an FSM). Returns descriptor with `phase ∈ {'map', 'inside', 'focus', 'search', 'overview'}`                  |
-| `js/modules/loading-ui.js`                  | Loading overlay, phases, deferred hydration                                                                                                                             |
+### Engine kernel (`src/lib/engine/`)
+
+| Path                                         | Role                                                                                                            |
+| -------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/engine/three-engine.ts`             | WebGL render loop, scene lifecycle, renderer management (canonical engine entry)                                 |
+| `src/lib/engine/node-manager.ts`             | Node/spore instancing, per-node spore scales, points buffer lifecycle                                           |
+| `src/lib/engine/mycelium-engine.ts`          | Mathematical line generation and thread updates for mycelium visualization                                      |
+| `src/lib/engine/three-thread-manager.ts`     | Mycelium/thread line geometry, pulse opacity, presentation profile                                              |
+| `src/lib/engine/three-interaction-visuals.ts`| Semantic manifold + lens overlays, interaction-driven uniforms                                                   |
+| `src/lib/engine/three-search-animations.ts`  | Hero moment, corridor glow, search corridor animation lifecycle                                                  |
+| `src/lib/engine/camera-controls.ts`          | Camera choreography: transitions, auto-rotation, orbit slack                                                     |
+| `src/lib/engine/camera-controls-core.ts`     | Core camera math and state                                                                                       |
+| `src/lib/engine/config.ts`                   | Engine configuration constants                                                                                   |
+| `src/lib/engine/webgl-context.ts`            | WebGL context state management                                                                                   |
+| `src/lib/engine/resource-tracker.ts`         | GPU resource tracking and disposal                                                                               |
+| `src/lib/engine/lifecycle.ts`                | Engine lifecycle management                                                                                      |
+| `src/lib/engine/state-bridge.ts`             | Bridge between engine kernel and Svelte state class                                                              |
+| `src/lib/engine/webgl-context.ts`            | WebGL context state management                                                                                   |
+
+### Journey (`src/lib/journey/`)
+
+| Path                                              | Role                                                                                                            |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/journey/journey.ts`                      | Journey orchestration layer                                                                                      |
+| `src/lib/journey/compass-state.ts`                | Journey compass derivation (pure computation, not FSM). `phase ∈ {'map', 'inside', 'focus', 'search', 'overview'}` |
+| `src/lib/journey/neighborhood.ts`                 | Neighborhood manifest, bounded walk candidates, trail seed, route index derivation                              |
+| `src/lib/journey/selected-card.ts`                | Focus-stage sync, selected-card rendering, selected business DOM hydration                                      |
+| `src/lib/journey/canvas-interaction.ts`           | Canvas interaction modules + event binding orchestrator                                                         |
+| `src/lib/journey/canvas-hit-test.ts`              | Canvas node hit testing, pointer position, thread candidate visibility                                          |
+| `src/lib/journey/canvas-node-picking.ts`          | Raycaster-based canvas field node picking and candidate comparison                                              |
+| `src/lib/journey/canvas-hover.ts`                 | Canvas field hover state (set/clear)                                                                            |
+| `src/lib/journey/focus-ui.ts`                     | Focus/traversal DOM UI, neighbor rail rendering, walk breadcrumb internals                                      |
+| `src/lib/journey/thread-settler.ts`               | Thread walk traversal, neighbor timers, inspection settle flow, inside preview state                            |
+| `src/lib/journey/thread-model.ts`                 | Thread state model and trail seed derivation                                                                    |
+| `src/lib/journey/thread-inspector.ts`             | Inspecting connections: pulsing, score-reactive WebGL lines between nodes                                       |
+| `src/lib/journey/thread-inspector-webgl.ts`       | WebGL line geometry and shader setup for thread inspector                                                       |
+| `src/lib/journey/focus-pocket.ts`                 | Focus pocket node layout and animation                                                                          |
+| `src/lib/journey/focus-pocket-geometry.ts`        | Focus pocket constellation geometry, seeded placement, screen-bounds, thread curve points                       |
+| `src/lib/journey/focus-pocket-personality.ts`     | Per-focus personality variants (rotation/scale seeds, neighborhood shape)                                       |
+| `src/lib/journey/semantic-overlay.ts`             | Semantic-overlay (manifold + lens) rendering tied to journey focus state                                        |
+| `src/lib/journey/webgl.ts`                        | Journey-side WebGL overlay orchestration                                                                        |
+| `src/lib/journey/webgl-utils.ts`                  | Shared WebGL utilities for journey overlays (texture lookups, geometry helpers)                                 |
+| `src/lib/journey/arrival-handoff.ts`              | Camera handoff overlay for journey thread arrival                                                               |
+| `src/lib/journey/route-trace.ts`                  | Route trace overlay rendering and frame updates for trail visualization                                         |
+| `src/lib/journey/connection-analysis.ts`          | Connection analysis logic                                                                                       |
+| `src/lib/journey/legend-ui.ts`                    | Legend UI rendering                                                                                              |
+
+### Focus (`src/lib/focus/`)
+
+| Path                                   | Role                                                                                                            |
+| -------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/focus/pocket.ts`              | Focus pocket constellation layout and animation                                                                 |
+| `src/lib/focus/geometry.ts`            | Focus pocket constellation geometry, seeded placement, screen-bounds                                            |
+| `src/lib/focus/personality.ts`         | Per-focus personality variants (rotation/scale seeds, neighborhood shape)                                       |
+| `src/lib/focus/anchor-indicator.ts`    | Focus anchor indicator rendering                                                                                 |
+| `src/lib/focus/stage-dom.ts`           | Focus stage DOM helpers                                                                                         |
+| `src/lib/focus/stage-renderer.ts`      | Focus stage renderer                                                                                            |
+
+### Orchestration (`src/lib/orchestration/`)
+
+| Path                                              | Role                                                                                                            |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/orchestration/app-init.ts`               | Svelte-first app initialization orchestration (replaces `js/modules/app.ts`)                                    |
+| `src/lib/orchestration/lifecycle.ts`              | App orchestration, view handoff, window bindings, scene-reveal logic                                            |
+| `src/lib/orchestration/view-controller.ts`        | View switching and transition logic                                                                             |
+| `src/lib/orchestration/compass-state.ts`          | Compass state derivation                                                                                        |
+| `src/lib/orchestration/url-state.ts`              | URL state synchronization                                                                                       |
+| `src/lib/orchestration/window-actions.ts`         | Window-bound global actions                                                                                     |
+| `src/lib/orchestration/triggers.ts`               | Event triggers and dispatchers                                                                                  |
+| `src/lib/orchestration/parity-attrs.svelte.ts`    | Body data-attribute synchronization for CSS coexistence                                                         |
+| `src/lib/orchestration/adapters.ts`               | Adapter initialization for bridge layer                                                                         |
+| `src/lib/orchestration/event-bus.ts`              | Event bus for cross-module communication                                                                        |
+
+### State, stores & data
+
+| Path                                              | Role                                                                                                            |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/state/app.svelte.ts`                     | Svelte 5 state class (`appState`) — single source of truth for all global state                                 |
+| `src/lib/state/state-types.ts`                    | Type definitions for the Svelte 5 state class (39 types, no runtime values)                                     |
+| `src/lib/stores/navigation.svelte.ts`             | Navigation state store (view mode, surface, focus index, trail/thread state)                                    |
+| `src/lib/data-store.ts`                           | Data stores for business records and semantic threads (Svelte writable stores)                                  |
+| `src/lib/data-store.svelte.ts`                    | Svelte 5 runes version of data stores                                                                           |
+| `src/lib/data-loader.ts`                          | Data loading orchestration                                                                                      |
+| `src/lib/semantic-threads.ts`                     | Semantic thread artifact loading (typed port, uses web worker for parsing)                                      |
+| `src/lib/search-engine.ts`                        | Real search engine: API search with local fallback, tokenization, reranking                                     |
+
+### Utilities (`src/lib/utils/`)
+
+| Path                                              | Role                                                                                                            |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/utils/seeded-random.ts`                  | GLSL-portable `seededUnit(index, salt)` for deterministic per-node variation                                    |
+| `src/lib/utils/diagnostic-adapter.ts`             | Central gate for debug/devtool probes such as `_ti`                                                             |
+| `src/lib/utils/environment.ts`                    | Shared viewport, pointer, DPR, and reduced-motion helpers                                                       |
+| `src/lib/utils/relationship-roles.ts`             | Relationship role normalization used by journey, thread inspector, and semantic threads                         |
+| `src/lib/utils/strand-continuity.ts`              | Strand phase and arrival continuity state for journey and thread inspector                                      |
+| `src/lib/utils/ui-presentation.ts`                | UI presentation helpers and static dev fallback                                                                |
+| `src/lib/utils/three-textures.ts`                 | GPU texture management and disposal                                                                             |
+| `src/lib/utils/dom-formatters.ts`                 | DOM text formatting helpers                                                                                     |
+| `src/lib/utils/math-easing.ts`                    | Easing functions and math utilities                                                                             |
+| `src/lib/utils/rerank.ts`                         | Search result reranking logic                                                                                   |
+| `src/lib/utils/idb-service.ts`                    | IndexedDB service for local storage                                                                             |
+
+### Search (`src/lib/search/`)
+
+| Path                                              | Role                                                                                                            |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/search/index.ts`                         | Search module exports                                                                                            |
+| `src/lib/search/tokenizer.ts`                     | Query tokenization                                                                                               |
+| `src/lib/search/scoring.ts`                       | Search result scoring                                                                                            |
+| `src/lib/search/mapper.ts`                        | Result mapping                                                                                                   |
+| `src/lib/search/orchestration.ts`                 | Search orchestration                                                                                             |
+| `src/lib/search/panel-adapter.ts`                 | Search panel adapter                                                                                             |
+| `src/lib/search/cache.ts`                         | Search cache                                                                                                     |
+
+### Other modules
+
+| Path                                              | Role                                                                                                            |
+| ------------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| `src/lib/ui-renderers.ts`                         | Window-bound DOM renderers for legend, search rows, selected-card chrome                                         |
+| `src/lib/navigation-actions.ts`                   | Navigation transition action definitions                                                                        |
+| `src/lib/z-index.ts`                              | Managed `Z_LAYERS` constant — single source for all z-index values                                             |
+| `src/lib/demo/choreography.ts`                    | 9-second guided choreography (micro-demo)                                                                       |
+| `src/lib/demo/camera.ts`                          | Demo camera choreography                                                                                        |
+| `src/lib/audio/audio-scape.ts`                    | Audio scape (ambient sound)                                                                                     |
+| `js/workers/data-worker.ts`                       | Web worker for background data parsing (active runtime — imported by `data-worker-url-bridge.ts`)               |
 
 ## Demo Spec
 
@@ -163,13 +241,13 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 
 ## 3D Network Framing
 
-The 8,406-point mycelium data lives in `state.rawPositionsBuffer` (Float32Array) in `[0,1]³` unit-cube space (UMAP/PCA projection). `getPointBoundsCenter(points, positionBuffer)` in `js/modules/three-node-manager.js:103` is the canonical bounds reader. It must be called with the raw buffer, not just the points array (the data objects don't carry x/y/z). With the buffer, `state.overviewBounds.renderCenterOffset` correctly centers the network on origin, and `MYCELIUM_FIELD_SCALE = (3.2, 2.6, 3.7)` scales it to fill the camera frustum. Bug history: prior to the fix, the call site passed only `state.points`, so `getPointBoundsCenter` saw count=0 and the network sat at its raw (0.5, 0.5, 0.5) centroid scaled up — visible as the network in the upper-right of the canvas. Always pass the buffer to bounds readers.
+The 8,406-point mycelium data lives in `state.rawPositionsBuffer` (Float32Array) in `[0,1]³` unit-cube space (UMAP/PCA projection). `getPointBoundsCenter(points, positionBuffer)` in `src/lib/engine/node-manager.ts` is the canonical bounds reader. It must be called with the raw buffer, not just the points array (the data objects don't carry x/y/z). With the buffer, `state.overviewBounds.renderCenterOffset` correctly centers the network on origin, and `MYCELIUM_FIELD_SCALE = (3.2, 2.6, 3.7)` scales it to fill the camera frustum. Bug history: prior to the fix, the call site passed only `state.points`, so `getPointBoundsCenter` saw count=0 and the network sat at its raw (0.5, 0.5, 0.5) centroid scaled up — visible as the network in the upper-right of the canvas. Always pass the buffer to bounds readers.
 
 ## State Machine Reference
 
 Verified state machine integrity: `docs/semantic-demo-bugsweep-2026-06-05.md`
 
-### micro-demo.js (`js/modules/micro-demo.js`)
+### micro-demo.js (`src/lib/demo/choreography.ts`)
 
 ```
 IDLE -> GLIDING -> ARRIVED -> CARD_VISIBLE -> PULLBACK -> WIDE_VIEW -> RETURNING -> COMPLETE
@@ -182,7 +260,7 @@ IDLE -> GLIDING -> ARRIVED -> CARD_VISIBLE -> PULLBACK -> WIDE_VIEW -> RETURNING
 CANCELLED can branch from **any non-terminal phase** (GLIDING, ARRIVED, CARD_VISIBLE, PULLBACK, WIDE_VIEW, or RETURNING); the `cancelMicroDemo()` guard only blocks IDLE, COMPLETE, and already-cancelled.
 Phase timing targets: GLIDING 1400ms, ARRIVED immediate, CARD_VISIBLE 1800ms hold, PULLBACK 1200ms, RETURNING 1000ms.
 
-### journey-compass-state.js (`js/modules/journey-compass-state.js`)
+### journey-compass-state.js (`src/lib/journey/compass-state.ts`)
 
 `journey-compass-state.js` is a pure derivation function (no FSM). `getJourneyCompassState()` returns a descriptor with `phase ∈ {'map', 'inside', 'focus', 'search', 'overview'}` derived from current view and journey state. Driven by `data-panel-surface` and `data-active-view` body attributes via the controller.
 
@@ -209,7 +287,7 @@ Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-sta
 
 ```bash
 npm run build         # Vite/Svelte production build to dist/svelte/
-npm run lint          # ESLint js/modules/
+npm run lint          # ESLint src/lib/
 npm run test          # shell/cache/CSS ownership checks
 npm run test:unit     # Vitest unit tests under tests/unit/
 npm run test:contract # structural JS/DOM contract tests
@@ -250,7 +328,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 ## Edit Safety
 
 - Keep edits inside the assigned slice; do not opportunistically reformat or clean unrelated files.
-- Treat `js/state.js`, `js/modules/app.js`, `js/modules/journey.js`, `js/modules/lifecycle.js`, and deploy scripts as high-risk surfaces that need explicit ownership and targeted tests.
+- Treat `src/lib/state/app.svelte.ts`, `src/lib/orchestration/app-init.ts`, `src/lib/journey/journey.ts`, `src/lib/orchestration/lifecycle.ts`, `src/lib/engine/three-engine.ts`, and deploy scripts as high-risk surfaces that need explicit ownership and targeted tests.
 - CSS is split into ordered modules in `css/`; `semantic-demo.css` is an import manifest, while the `css/mobile_premium__*.css` files are loaded by the Svelte app shell (`src/index.html` -> `dist/svelte/index.html`).
 - Do not move the app root until `deploy.sh` and `deploy.ps1` no longer depend on the sibling `../js/scanner.js` path.
 - **CSS state ownership**: Use `docs/semantic-demo-mobile-state-ownership.md` and `docs/semantic-demo-css-ownership-map.md` to trace which `data-*` attribute and CSS module owns a visual surface before editing.
@@ -261,7 +339,7 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 - **`withStateMutation()` required for tracked sub-objects** — `_makeProdProxy` throws in production when `!_isMutating`. All mutations to `navState`, `strandContinuityState`, and other `TRACKED_SUB_KEYS` in `state.js` MUST be wrapped in `withStateMutation()`. Failure to do so causes a production throw. Applied to `focus-pocket.js` state writes during the constellation sweep.
 - **Dead CSS selectors are deleted outright** — When grep confirms zero references in any JS/TS/HTML/Svelte file, delete the dead selectors without TODO comments. Established pattern from `clusters.css` and `demo_ui.css` cleanup.
 - **`initSemanticLens()` disposes before reinit** — Both the `.js` and `.ts` paths for `initSemanticLens()` now call `disposeSemanticLens()` first. Any future lens/manifold reinit must keep both paths in sync.
-- **Deterministic geometry via `seededUnit()`** — `Math.random()` in WebGL/geometry code breaks determinism. Use `seededUnit(index, salt)` from `js/modules/utils/seeded-random.js` instead. Applied to `three-search-animations.js` particle trails.
+- **Deterministic geometry via `seededUnit()`** — `Math.random()` in WebGL/geometry code breaks determinism. Use `seededUnit(index, salt)` from `src/lib/utils/seeded-random.ts` instead. Applied to `three-search-animations.ts` particle trails.
 
 ## MCP Recovery
 
@@ -299,9 +377,9 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 **Off-limits write surface (all require explicit lead approval to touch):**
 
 - CSS mobile cascade — `css/journey_active.css`, `css/journey_steps.css`, `css/strands.css`, `css/progressive_disclosure.css`, `css/mobile_premium_*.css`
-- Journey/UI state writers — `js/modules/journey.js`, `js/modules/lifecycle.js`, `js/modules/ui-renderers.js`
-- App shell — `js/modules/app.js`, `js/state.js`
-- Focus stage — `js/modules/focus-pocket.js`, `js/modules/journey-compass-state.js`
+- Journey/UI state writers — `src/lib/journey/journey.ts`, `src/lib/orchestration/lifecycle.ts`, `src/lib/ui-renderers.ts`
+- App shell — `src/lib/orchestration/app-init.ts`, `src/lib/state/app.svelte.ts`
+- Focus stage — `src/lib/journey/focus-pocket.ts`, `src/lib/journey/compass-state.ts`
 - Deploy scripts — `deploy.sh`, `deploy.ps1`
 - **Exception:** During active migration phases, these files may be touched with explicit lead approval to port logic to `src/`.
 
@@ -389,7 +467,7 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 4. **CSS coexistence** — body `data-*` attributes are synced from stores via `$effect()` blocks in `App.svelte`, enabling legacy CSS to style Svelte components during phased migration.
 5. **Bugs fixed in transit** — known bugs are resolved as code is ported to Svelte/TS, not patched in-place in the legacy tree.
 6. **The src/ Svelte track is canonical.** The legacy islands track (`selected-details-svelte-island`, `search-results-svelte-island`, `island-mount-helper`) was deleted in the m3 sweep on 2026-06-07. All rendering now flows through `src/components/`.
-7. **Production entry is Svelte/Vite.** Do not restore `js/modules/app.ts` or `dist/bundle.js` as the production path unless intentionally doing a legacy rollback; use `build:legacy` only for reference/rollback work.
+7. **Production entry is Svelte/Vite.** Do not restore legacy `dist/bundle.js` as the production path unless intentionally doing a legacy rollback; use `build:legacy` only for reference/rollback work.
 8. **Bridge files are the canonical seam manifest — do not mass-delete them during active migration.** The `src/lib/engine/*` bridge files define the contract between the reactive Svelte UI and the imperative engine kernel. Bridge files are load-bearing even when they seem under-utilized; removing them risks creating dangling imports (see `scripts/check-bridge-references.mjs`). Inlining and then immediately re-creating bridge files has caused 3+ direction reversals. Keep bridge files stable during a migration wave; only remove a bridge file after (a) all its callers are inlined or repointed, AND (b) the file is verified gone by `npm run check:bridges`.
 9. **Do not introduce lazy dynamic imports (`{#await import()}`) in Svelte components during hot refactoring waves.** Vite HMR and Svelte 5 runes make deferred import default-export resolution fragile; runtime `TypeError: Cannot read properties of undefined (reading 'default')` is a common failure mode. If async loading is truly needed, guard it with a fallback UI, verify the component resolves under both `npm run dev:svelte` and `npm run build:svelte`, and land it on a stable branch — not mid-wave.
 
@@ -404,47 +482,54 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 ### Scaffold Status
 
 - Dev server runs: `npm run dev:svelte` → `https://localhost:5173/`
-- `svelte-check`: 0 errors in `src/` code (50 errors are all in legacy `js/modules/*.ts` — out of scope for scaffold)
-- **Islands track:** 12/12 complete (all `js/modules/components/` mounted via helpers)
+- `svelte-check`: 0 errors in `src/` code
+- **Islands track:** retired (replaced by src/ Svelte components)
 - **src/ scaffold:** 26/26 complete (was 21/21 at charter write; W24–W29 added DevGui, FocusPocketA11y, MapView, SpectorInspector, Toast)
 - **Stores+types+orchestration:** 12/12 stores, 4/4 types, 4/4 orchestration, engine/bridge.ts 1212 lines
 - **Architecture state:** InfoPanel is single-track (src/ only — 767L). The legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) were marked 100% orphan by the m3 sweep on 2026-06-07, deleted in `b8a50ba`, then restored by the `ec520da` revert on 2026-06-12. Per the BOTH pattern below, they are part of the in-flight migration, not confirmed dead
 - `docs/migration-plan.md` — being written by migration-architect worker
 
-## Engine Kernel Architecture (replaces old BOTH-pattern section)
+## Engine Kernel Architecture
 
-**As of Wave 10 W2 (commit `7fc7b9d`, 2026-06-13):** The BOTH-pattern shadows are retired. The `.ts` files in `js/modules/*` are now the **single source of truth** for the engine kernel. The `.js` siblings have been moved to `legacy-reference/js-both-shadows-2026-06-13/` for reference (preserved via `git mv`).
+**As of 2026-06-18:** The engine kernel has fully migrated to `src/lib/`. The only remaining active file under `js/` is `js/workers/data-worker.ts` (web worker for background data parsing, imported via `src/lib/engine/data-worker-url-bridge.ts`). The old `js/modules/*.ts` files referenced by earlier documentation are no longer present on disk.
 
 ### What lives where
 
-| Layer                | Path                                                                        | Role                                                                                                        |
-| -------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
-| **Svelte UI**        | `src/lib/components/*`, `src/lib/stores/*`                                  | Reactive UI shell (Svelte 5 runes)                                                                          |
-| **Svelte bridge**    | `src/lib/engine/*`                                                          | Imperative wrapper that calls into the engine kernel (12 of 14 files have 0 js/ imports; the rest delegate) |
-| **Engine kernel**    | `js/modules/*.ts` (125+ files), `js/state.ts`, `js/state/*`, `js/workers/*` | Three.js scene, camera, shaders, instanced meshes, journey, search, weather — the active runtime            |
-| **Archived shadows** | `legacy-reference/js-both-shadows-2026-06-13/*`                             | 50 BOTH-pattern `.js` files; reference material only                                                        |
+| Layer                | Path                                                              | Role                                                                                                        |
+| -------------------- | ----------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Svelte UI**        | `src/components/*`, `src/lib/stores/*.svelte.ts`                  | Reactive UI shell (Svelte 5 runes)                                                                          |
+| **Svelte bridge**    | `src/lib/engine/*-bridge.ts`                                      | Imperative wrapper that calls into the engine kernel                                                         |
+| **Engine kernel**    | `src/lib/engine/` (Three.js), `src/lib/focus/`, `src/lib/journey/` | Three.js scene, camera, shaders, instanced meshes, focus pocket, journey orchestration                      |
+| **Orchestration**    | `src/lib/orchestration/`                                          | App init, lifecycle, view transitions, URL state, compass, events                                           |
+| **State & stores**   | `src/lib/state/`, `src/lib/stores/`                               | Svelte 5 state class (`appState`), typed stores (navigation, focus, journey, search, etc.)                  |
+| **Search**           | `src/lib/search/`, `src/lib/search-engine.ts`                    | API search, local fallback, tokenization, reranking, caching                                                |
+| **Data**             | `src/lib/data-store.ts`, `src/lib/data-store.svelte.ts`, `src/lib/data-loader.ts`, `src/lib/semantic-threads.ts` | Business records, semantic threads, loading orchestration                                          |
+| **Utilities**        | `src/lib/utils/`                                                  | Seeded random, diagnostics, DOM helpers, math, WebGL restore, relationship roles, UI presentation           |
+| **Worker**           | `js/workers/data-worker.ts`                                       | Web worker for background data parsing (active runtime — imported by `data-worker-url-bridge.ts`)            |
+| **Legacy reference** | `legacy-reference/`                                               | Frozen archive of retired BOTH-pattern shadow files (reference only, not built)                             |
 
 ### Why this is intentional architecture
 
-The Svelte UI is reactive; the engine kernel is imperative + WebGL-bound. Wrapping one with the other requires an **imperative seam** — the bridge. Calling it "legacy" implied it should be replaced. The W1 audit (`3df8336`) proved otherwise: 38 src/ files import from `js/`, ~80 unique import paths, the entire bridge layer is built on the kernel. **The kernel is not stale coupling; it's the working system.**
+The Svelte UI is reactive; the engine kernel is imperative + WebGL-bound. Wrapping one with the other requires an **imperative seam** — the bridge. The `src/lib/engine/*-bridge.ts` files define this contract. This is the same shape as the Svelte → adapter → engine pattern in many production apps. Future "engine port" work (if desired) is a separate multi-week arc, not this project's scope.
 
-The Svelte UI calls into the bridge, which calls into the kernel. This is the same shape as the Svelte → adapter → engine pattern in many production apps. Future "engine port" work (if desired) is a separate multi-week arc, not this project's scope.
+### Rule for future dead-code sweeps on `src/lib/`
 
-### Rule for future "is this dead?" sweeps on `js/`
+A file under `src/lib/` is NOT dead if ANY of these hold:
 
-A file under `js/` is NOT dead if ANY of these hold:
+1. It's imported by another `src/lib/` or `src/` file (runtime dependency)
+2. It's imported by name in `docs/`, `tests/`, or `legacy-reference/` (any reference)
+3. It exports public types or functions used by `src/components/`
+4. It has a commit in the last 60 days
+5. It's a `*-bridge.ts` file with active callers (bridge files are load-bearing during migration)
 
-1. It's a `.ts` file in `js/modules/*` (engine kernel — active runtime)
-2. It's a `.ts` file in `js/state/*` (state kernel — active runtime)
-3. It's a `.js` file in `js/workers/*` (worker kernel — active runtime)
-4. It's imported by name in `src/`, `docs/`, `tests/`, or `legacy-reference/` (any reference)
-5. It has a commit in the last 60 days
+A file under `src/lib/` IS dead and can be removed if:
 
-A file under `js/` IS dead and can be removed if:
-
-- No `.ts` sibling (i.e., not a BOTH pattern)
-- No imports in `src/`, `docs/`, `tests/`
+- Zero imports in `src/`, `docs/`, `tests/`
+- Zero exports consumed by any active module
+- Verified removed from all import maps via `rg <filename> src/ docs/ tests/`
 - No recent commits
+
+**Bridge file caution:** `src/lib/engine/*-bridge.ts` files are the canonical seam manifest. Do not mass-delete them during active migration — they define the contract between reactive Svelte UI and imperative engine kernel. Remove a bridge file only after (a) all its callers are inlined or repointed, AND (b) the file is verified gone by `npm run check:bridges`.
 
 ### BOTH-pattern history (preserved for reference)
 
@@ -455,7 +540,7 @@ The BOTH pattern was the original migration design:
 - The `@legacy/*` path alias pointed to the `.ts` (retired in 9D-Option-B, commit `cbc6509`)
 - The `.js` shadows were the only vestigial part after 9D-Option-B; retired in Wave 10 W2 (commit `7fc7b9d`)
 
-**Never repeat the blanket-deleted pattern.** The 2026-06-12 M3 bugsweep H2 was wrong to blanket-call 145 .ts files "dead shadows" based on "zero explicit .ts importers + tsconfig excludes js." Both signals are real but neither is conclusive. Use the 4-signal audit before any future "dead code" sweep on `js/`.
+**Never repeat the blanket-deleted pattern.** The 2026-06-12 M3 bugsweep H2 was wrong to blanket-call 145 .ts files "dead shadows" based on "zero explicit .ts importers + tsconfig excludes js." Both signals are real but neither is conclusive. Use the 4-signal audit before any future "dead code" sweep.
 
 ## Pi Tool Output Hygiene
 
