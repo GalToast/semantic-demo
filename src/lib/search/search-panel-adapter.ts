@@ -13,6 +13,7 @@ interface SearchContainerState {
     focusing?: boolean;
     hasQuery?: boolean;
     resultsRendered?: boolean;
+    resultsExpanded?: boolean;
     degraded?: boolean;
 }
 
@@ -39,6 +40,7 @@ export function setSearchContainerState({
     focusing,
     hasQuery,
     resultsRendered,
+    resultsExpanded,
     degraded
 }: SearchContainerState = {}): void {
     const searchContainer = getSearchContainer();
@@ -55,6 +57,9 @@ export function setSearchContainerState({
     }
     if (typeof resultsRendered === 'boolean') {
         searchContainer.classList.toggle('results-rendered', resultsRendered);
+    }
+    if (typeof resultsExpanded === 'boolean') {
+        searchContainer.classList.toggle('has-expanded-results', resultsExpanded);
     }
     if (typeof degraded === 'boolean') {
         searchContainer.classList.toggle('search-degraded', degraded);

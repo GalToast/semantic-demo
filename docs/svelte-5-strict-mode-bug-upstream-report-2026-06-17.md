@@ -48,7 +48,7 @@ Minimal `.svelte` file (Svelte 5, rune mode):
 Svelte 5 compiles the above to (in dev mode):
 
 ```js
-console.log('a !== b:', $.strict_equals(a, b, false));
+console.log('a !== b:', $.strict_equals(a, b, false))
 ```
 
 The `strict_equals` helper is defined in
@@ -56,15 +56,15 @@ The `strict_equals` helper is defined in
 
 ```js
 export function strict_equals(a, b, equal = true) {
-  return (a === b) === equal;
+    return (a === b) === equal
 }
 ```
 
 The third argument `equal` controls the result:
 
-| Call | Returns | Meaning |
-|------|---------|---------|
-| `$.strict_equals(a, b, true)` | `(a === b) === true` → `a === b` | Correct for `===` |
+| Call                           | Returns                           | Meaning           |
+| ------------------------------ | --------------------------------- | ----------------- |
+| `$.strict_equals(a, b, true)`  | `(a === b) === true` → `a === b`  | Correct for `===` |
 | `$.strict_equals(a, b, false)` | `(a === b) === false` → `a !== b` | Correct for `!==` |
 
 The issue is in the **compiler's BinaryExpression visitor**
@@ -108,41 +108,41 @@ We apply three workaround patterns across our codebase. All avoid the
 
 ```ts
 // BEFORE (buggy):
-if (status !== 'idle') doSomething();
+if (status !== 'idle') doSomething()
 
 // AFTER (workaround):
-if (!(status === 'idle')) doSomething();
+if (!(status === 'idle')) doSomething()
 ```
 
 **Pattern 2: Positive equality + early return (De Morgan's)**
 
 ```ts
 // BEFORE (buggy):
-if (panelSurfaceMode !== 'search' && panelSurfaceMode !== 'focus-search') return 'none';
+if (panelSurfaceMode !== 'search' && panelSurfaceMode !== 'focus-search') return 'none'
 
 // AFTER (workaround):
-const isSearchContext = panelSurfaceMode === 'search' || panelSurfaceMode === 'focus-search';
-if (!isSearchContext) return 'none';
+const isSearchContext = panelSurfaceMode === 'search' || panelSurfaceMode === 'focus-search'
+if (!isSearchContext) return 'none'
 ```
 
 **Pattern 3: Loose `!=` for null/undefined checks (limited)**
 
 ```ts
 // BEFORE (buggy):
-if (x !== null && x !== undefined) doSomething(x);
+if (x !== null && x !== undefined) doSomething(x)
 
 // AFTER (workaround):
-if (x != null) doSomething(x);
+if (x != null) doSomething(x)
 ```
 
 **Pattern 4: `typeof` guard with `===` (safest for type checks)**
 
 ```ts
 // BEFORE (buggy):
-const _hasFocus = _focusedIdx !== null && Number.isFinite(_focusedIdx);
+const _hasFocus = _focusedIdx !== null && Number.isFinite(_focusedIdx)
 
 // AFTER (workaround):
-const _hasFocus = typeof _focusedIdx === 'number' && Number.isFinite(_focusedIdx);
+const _hasFocus = typeof _focusedIdx === 'number' && Number.isFinite(_focusedIdx)
 ```
 
 We have applied **38 of these workarounds** across **16 files**. The
@@ -203,14 +203,14 @@ reproduction repository if helpful.
 
 The issue was filed on 2026-06-18 using `gh issue create --repo sveltejs/svelte` from the GalToast account. The full body (5,335 bytes) was uploaded as-is. No edits were made by the Svelte team at filing time.
 
-| Field | Value |
-|-------|-------|
-| Issue number | [#18439](https://github.com/sveltejs/svelte/issues/18439) |
-| Title | `[bug] Rune mode compiles \`!==\` to $.strict_equals(a, b, false) — inverted comparison` |
-| State | OPEN |
-| Author | Fred McCullough (GalToast) |
-| Created | 2026-06-18T01:04:38Z |
-| Body size | 5,335 bytes (full body uploaded) |
+| Field        | Value                                                                                    |
+| ------------ | ---------------------------------------------------------------------------------------- |
+| Issue number | [#18439](https://github.com/sveltejs/svelte/issues/18439)                                |
+| Title        | `[bug] Rune mode compiles \`!==\` to $.strict_equals(a, b, false) — inverted comparison` |
+| State        | OPEN                                                                                     |
+| Author       | Fred McCullough (GalToast)                                                               |
+| Created      | 2026-06-18T01:04:38Z                                                                     |
+| Body size    | 5,335 bytes (full body uploaded)                                                         |
 
 **To follow up:**
 
@@ -231,13 +231,13 @@ If the Svelte team requests additional context (e.g. a minimal reproduction repo
 
 The following was verified before producing this report:
 
-| Check | Result |
-|-------|--------|
-| `strict_equals` found in Svelte source | Yes — `node_modules/svelte/src/internal/client/dev/equality.js:77` |
-| BinaryExpression visitor found | Yes — `node_modules/svelte/src/compiler/phases/3-transform/client/visitors/BinaryExpression.js` |
-| Svelte version confirmed | 5.56.2 (`package.json` → `^5.56.1`) |
-| Cookbook patterns matched | Yes — all 3 workaround patterns verified against `docs/svelte-5-strict-mode-cookbook.md` |
-| Sweep audit numbers match | Yes — 167 total, 38 RISKY, 16 files modified (from `docs/latent-!==-bug-sweep-2026-06-17.md`) |
-| Known call sites verified | Yes — `parity-attrs.svelte.ts:228-234`, `parity-attrs.svelte.ts:381-410`, `navigation.svelte.ts:418-465` |
-| Reproduction example is minimal | Yes — 5 lines of code |
-| Report is markdown-clean | Yes — no lint issues |
+| Check                                  | Result                                                                                                   |
+| -------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `strict_equals` found in Svelte source | Yes — `node_modules/svelte/src/internal/client/dev/equality.js:77`                                       |
+| BinaryExpression visitor found         | Yes — `node_modules/svelte/src/compiler/phases/3-transform/client/visitors/BinaryExpression.js`          |
+| Svelte version confirmed               | 5.56.2 (`package.json` → `^5.56.1`)                                                                      |
+| Cookbook patterns matched              | Yes — all 3 workaround patterns verified against `docs/svelte-5-strict-mode-cookbook.md`                 |
+| Sweep audit numbers match              | Yes — 167 total, 38 RISKY, 16 files modified (from `docs/latent-!==-bug-sweep-2026-06-17.md`)            |
+| Known call sites verified              | Yes — `parity-attrs.svelte.ts:228-234`, `parity-attrs.svelte.ts:381-410`, `navigation.svelte.ts:418-465` |
+| Reproduction example is minimal        | Yes — 5 lines of code                                                                                    |
+| Report is markdown-clean               | Yes — no lint issues                                                                                     |

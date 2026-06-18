@@ -6,12 +6,15 @@
  *   Canonical owner: src/lib/stores/legend-panel.svelte.ts
  *     - updateLegendGuideState, closeLegendGuide, restoreLegendCollapsedPanel
  *
- *   Bridge re-export: src/lib/engine/legend-ui-bridge.ts
- *     - re-exports all 10 ports from the canonical store
+ *   No-resurrection guards:
+ *     - lifecycle must NOT import updateLegendGuideState
+ *     - view-controller must NOT call updateLegendGuideState directly
+ *     - legend-ui-bridge.ts has been absorbed (no longer exists)
  *
  *   Deleted kernels (no longer exist):
  *     - js/modules/legend-ui.ts
  *     - js/modules/semantic-guide.ts
+ *     - src/lib/engine/legend-ui-bridge.ts (absorbed into canonical store)
  *
  * Design:
  *   - Verifies the canonical store owns the legend panel functions
@@ -30,12 +33,12 @@ import path from 'node:path'
 
 const SEMDEMO_ROOT = path.resolve(process.cwd())
 
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts')
-const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts')
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts')
+const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/view-controller.ts')
 const LEGEND_PANEL_STORE = path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts')
-const LEGEND_UI_BRIDGE = path.join(SEMDEMO_ROOT, 'src/lib/engine/legend-ui-bridge.ts')
 const DELETED_LEGEND_UI = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts')
 const DELETED_SEMANTIC_GUIDE = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide.ts')
+const DELETED_BRIDGE = path.join(SEMDEMO_ROOT, 'src/lib/engine/legend-ui-bridge.ts')
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
@@ -67,22 +70,23 @@ function testUpdateLegendGuideStateOwner() {
         'legend-panel.svelte.ts does not export updateLegendGuideState to window'
     )
 
-    // The call site in view-controller.switchView must use the Event Bus.
+    // view-controller uses Svelte stores for view transitions (not event bus).
+    // It must NOT call updateLegendGuideState directly — that is the store's job.
     assert(
-        viewControllerSrc.includes('publish(EVENTS.VIEW_CHANGED'),
-        'view-controller.switchView uses Event Bus for view transitions'
+        !viewControllerSrc.includes('updateLegendGuideState()'),
+        'view-controller must NOT call updateLegendGuideState directly'
     )
 
+    // No-resurrection guard: lifecycle must not import updateLegendGuideState
+    const lifecycleSrc = readSrc(LIFECYCLE_PATH)
+    const importDeclarations = lifecycleSrc.match(/^import[\s\S]*?;$/gm) || []
+    const badImport = importDeclarations.some((d) => d.includes('updateLegendGuideState'))
     assert(
-        !viewControllerSrc.includes('updateLegendGuideState();'),
-        'view-controller.switchView should NOT call updateLegendGuideState directly (now event-driven)'
+        !badImport,
+        'lifecycle must NOT import updateLegendGuideState (legend-panel.svelte.ts owns it)'
     )
 
-    // legend-panel.svelte.ts is a pure function module — it doesn't subscribe to events
-    // itself; event subscriptions are handled by legend-ui.ts (@lib/journey/legend-ui.ts)
-    // which calls setLegendOpen on VIEW_CHANGED. The store just provides the imperative surface.
-
-    console.log('  OK — updateLegendGuideState: legend-panel.svelte.ts owns it, reached via Event Bus')
+    console.log('  OK — updateLegendGuideState: legend-panel.svelte.ts owns it; no direct call from view-controller or lifecycle')
 }
 
 // ── TEST 2: restoreLegendCollapsedPanel is owned by legend-panel.svelte.ts ──
@@ -193,25 +197,28 @@ function testDeletedKernelsNotExist() {
 
 // ── TEST 7: legend-ui-bridge.ts re-exports from canonical store ──
 
-function testBridgeReexportsFromCanonicalStore() {
-    console.log('\n[TEST 7] legend-ui-bridge.ts re-exports from the canonical store')
+function testBridgeAbsorbedNoResurrection() {
+    console.log('\n[TEST 7] legend-ui-bridge.ts absorbed — no resurrection')
 
-    const bridgeSrc = readSrc(LEGEND_UI_BRIDGE)
-
+    // The bridge file has been absorbed into the canonical store.
+    // Guard against re-creating it as a stale re-export layer.
     assert(
-        bridgeSrc.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
-            bridgeSrc.includes("from '@lib/stores/legend-panel'"),
-        'legend-ui-bridge.ts must re-export from the canonical store'
+        !fs.existsSync(DELETED_BRIDGE),
+        'src/lib/engine/legend-ui-bridge.ts must not exist (absorbed into canonical store)'
     )
 
-    // Must NOT re-export from the deleted kernel
+    // The canonical store must still own the functions directly.
+    const storeSrc = readSrc(LEGEND_PANEL_STORE)
     assert(
-        !bridgeSrc.includes("from '../../../js/modules/legend-ui.ts'") &&
-            !bridgeSrc.includes("from './js/modules/legend-ui.ts'"),
-        'legend-ui-bridge.ts must not re-export from the deleted kernel'
+        storeSrc.includes('export function updateLegendGuideState'),
+        'legend-panel.svelte.ts still exports updateLegendGuideState directly'
+    )
+    assert(
+        storeSrc.includes('export function closeLegendGuide'),
+        'legend-panel.svelte.ts still exports closeLegendGuide directly'
     )
 
-    console.log('  OK — legend-ui-bridge.ts re-exports from the canonical store, not the deleted kernel')
+    console.log('  OK — legend-ui-bridge.ts absent; canonical store owns all functions directly')
 }
 
 // ── MAIN ────────────────────────────────────────────────────────────────────
@@ -220,8 +227,8 @@ console.log('=================================================================')
 console.log('lifecycle-semantic-guide-residual-bridge-contract.mjs')
 console.log('Documents: legend-panel.svelte.ts owns updateLegendGuideState,')
 console.log('          closeLegendGuide, restoreLegendCollapsedPanel')
-console.log('          bridge re-exports from the canonical store')
-console.log('          deleted kernels are confirmed absent')
+console.log('          absorbed bridge must not resurrect')
+console.log('          deleted kernels + bridge confirmed absent')
 console.log('=================================================================')
 
 try {
@@ -231,10 +238,10 @@ try {
     testLifecycleDoesNotImportUpdateLegendGuideStateFromSemanticGuide()
     testCloseLegendGuideOwnership()
     testDeletedKernelsNotExist()
-    testBridgeReexportsFromCanonicalStore()
+    testBridgeAbsorbedNoResurrection()
 
     console.log('\n=================================================================')
-    console.log('ALL TESTS PASSED — residual bridge state documented and guarded')
+    console.log('ALL TESTS PASSED — no-resurrection guards and ownership verified')
     console.log('=================================================================')
     process.exit(0)
 } catch (err) {

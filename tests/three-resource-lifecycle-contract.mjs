@@ -8,11 +8,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const WEBGL_CONTEXT_PATH = path.join(SEMDEMO_ROOT, 'js/modules/webgl-context.ts');
-const THREE_ENGINE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/three-engine.ts');
+const WEBGL_CONTEXT_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/webgl-context.ts');
+const THREE_ENGINE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine.ts');
 const NODE_MANAGER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/node-manager.ts');
-const THREAD_MANAGER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/three-thread-manager.ts');
-const VISUALS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.ts');
+const THREAD_MANAGER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/thread-manager.ts');
+const VISUALS_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/three-interaction-visuals.ts');
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -54,8 +54,8 @@ function testEngineTeardownPath() {
 
     const engineSrc = fs.readFileSync(THREE_ENGINE_PATH, 'utf-8');
     
-    assertContains(engineSrc, 'disposeNodeVisuals()', 'Teardown calls disposeNodeVisuals');
-    assertContains(engineSrc, 'disposeMycelium()', 'Teardown calls disposeMycelium');
+    assertContains(engineSrc, 'disposeNodeVisualsPort()', 'Teardown calls disposeNodeVisuals');
+    assertContains(engineSrc, 'disposeMyceliumPort()', 'Teardown calls disposeMycelium');
     assertContains(engineSrc, 'disposeInteractionVisuals()', 'Teardown calls disposeInteractionVisuals');
     assertContains(engineSrc, 'disposeSearchCorridorAnimation()', 'Teardown calls disposeSearchCorridorAnimation');
 

@@ -8,54 +8,33 @@ function read(relativePath) {
   return fs.readFileSync(path.join(root, relativePath), 'utf8');
 }
 
-const legacyComponentPath = 'js/modules/components/SearchResultsList.svelte';
 const retiredIslandPath = 'js/modules/search-results-svelte-island.ts';
-const surfacePath = 'js/modules/components/InfoPanelSearchSurface.svelte';
+const retiredLegacyComponentPath = 'js/modules/components/SearchResultsList.svelte';
+const retiredSurfacePath = 'js/modules/components/InfoPanelSearchSurface.svelte';
+const searchBarPath = 'src/components/SearchBar.svelte';
 const srcComponentPath = 'src/components/SearchResults.svelte';
-const searchStatePath = 'js/modules/search-state.ts';
-const searchResultsUiPath = 'js/modules/search-results-ui.ts';
-const eventBindingsPath = 'js/modules/event-bindings.ts';
 
-const legacyComponentSrc = read(legacyComponentPath);
-const surfaceSrc = read(surfacePath);
+const searchBarSrc = read(searchBarPath);
 const srcComponentSrc = read(srcComponentPath);
-const searchStateSrc = read(searchStatePath);
-const searchResultsUiSrc = read(searchResultsUiPath);
-const eventBindingsSrc = read(eventBindingsPath);
 
 assert(
-  surfaceSrc.includes('id="search-results"'),
-  'InfoPanelSearchSurface.svelte should declare the search results slot'
+  !fs.existsSync(path.join(root, retiredLegacyComponentPath)),
+  'retired legacy SearchResultsList.svelte should not be restored'
 );
 assert(
-  surfaceSrc.includes("import SearchChrome from './SearchChrome.svelte'") &&
-    surfaceSrc.includes('<SearchChrome />') &&
-    surfaceSrc.includes('data-svelte-mounted="search-chrome"'),
-  'InfoPanelSearchSurface.svelte should mount SearchChrome directly in the served shell'
+  !fs.existsSync(path.join(root, retiredSurfacePath)),
+  'retired InfoPanelSearchSurface.svelte should not be restored'
 );
 assert(
   !fs.existsSync(path.join(root, retiredIslandPath)),
   'retired search-results-svelte-island.ts should not be restored'
 );
 assert(
-  !eventBindingsSrc.includes('search-results-svelte-island') &&
-    !eventBindingsSrc.includes('initSearchResultsSvelteIsland'),
-  'event-bindings.ts should not initialize the retired search results island'
-);
-assert(
-  searchResultsUiSrc.includes('legacy DOM is rendered directly into #search-results') &&
-    searchResultsUiSrc.includes('Svelte stores are also updated'),
-  'search-results-ui.ts should document the served-shell legacy renderer and Svelte store bridge'
-);
-assert(
-  searchStateSrc.includes('document.getElementById(\'search-results\')'),
-  'search-state.ts should still route served-shell results through #search-results'
-);
-assert(
-  legacyComponentSrc.includes('class="search-result-listitem"') &&
-    legacyComponentSrc.includes('class={item.cardClasses}') &&
-    legacyComponentSrc.includes('id={`search-result-${Number(result.index)}`}'),
-  'legacy SearchResultsList.svelte should retain DOM parity for migration reference'
+  searchBarSrc.includes("import SearchInput from './SearchInput.svelte'") &&
+    searchBarSrc.includes("import SearchResults from './SearchResults.svelte'") &&
+    searchBarSrc.includes('<SearchInput ') &&
+    searchBarSrc.includes('<SearchResults />'),
+  'src/components/SearchBar.svelte should compose the canonical search input and results components'
 );
 assert(
   srcComponentSrc.includes('id="search-results"') &&

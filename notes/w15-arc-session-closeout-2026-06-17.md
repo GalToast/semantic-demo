@@ -27,15 +27,15 @@ The arc is **complete**. The only remaining seam with broad value is filing the 
 | `891cf21` | 2026-06-17 | feat(tests+docs): parity-attrs derivation vitest + Svelte 5 compiler bug cookbook        | Tests + Docs           |
 | `6503759` | 2026-06-17 | docs: production preview parity baseline + nav-state-ownership cross-refs                | Docs                   |
 | `c584809` | 2026-06-17 | fix(svelte5): sweep latent !== usages + Playwright test reliability                      | Source + Tests         |
-| `c80345b` | 2026-06-17 | docs: Svelte 5 upstream bug report + W15-arc session closeout                          | Docs                   |
-| `a09dd52` | 2026-06-17 | feat(ci+visual): !== CI guard closes the W15 arc + real visual baselines                | CI + Tests + Docs      |
+| `c80345b` | 2026-06-17 | docs: Svelte 5 upstream bug report + W15-arc session closeout                            | Docs                   |
+| `a09dd52` | 2026-06-17 | feat(ci+visual): !== CI guard closes the W15 arc + real visual baselines                 | CI + Tests + Docs      |
 
 **14 commits** in the W15+ session, all McCullough digital authored.
 
 ### W15+ follow-up wave (2026-06-18, post-closeout)
 
-| Date       | Title                                                                                                                  | Outcome                                                  |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| Date       | Title                                                                                                                                                             | Outcome                                                           |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------- |
 | 2026-06-18 | [Svelte issue #18439](https://github.com/sveltejs/svelte/issues/18439) — `[bug] Rune mode compiles \`!==\` to $.strict_equals(a, b, false) — inverted comparison` | ✅ **FILED** upstream via `gh issue create` from GalToast account |
 
 ## Final Test Counts

@@ -36,17 +36,38 @@ import {
 } from '@lib/engine/node-manager'
 import {
     createMycelium as createMyceliumPort,
+    disposeMycelium as disposeMyceliumPort,
     getMyceliumPresentationProfile as getMyceliumPresentationProfilePort,
     getThreadPulseOpacity as getThreadPulseOpacityPort,
     shouldRenderBridgeThreads as shouldRenderBridgeThreadsPort,
     shouldRenderThreads as shouldRenderThreadsPort
 } from '@lib/engine/thread-manager'
-import {
-    initPostProcessing as _initPostProcessing,
-    renderPostProcessing as _renderPostProcessing,
-    disposePostProcessing as _disposePostProcessing,
-    resizePostProcessing as _resizePostProcessing
-} from '@lib/engine/three-postprocessing'
+// Postprocessing is dynamically imported to save ~150-200 kB from the main
+// chunk. The module is only needed when premium mode is toggled ON.
+type PostProcessingModule = {
+    initPostProcessing: typeof import('@lib/engine/three-postprocessing').initPostProcessing
+    renderPostProcessing: typeof import('@lib/engine/three-postprocessing').renderPostProcessing
+    disposePostProcessing: typeof import('@lib/engine/three-postprocessing').disposePostProcessing
+    resizePostProcessing: typeof import('@lib/engine/three-postprocessing').resizePostProcessing
+}
+
+let _ppModule: PostProcessingModule | null = null
+let _ppLoading: Promise<PostProcessingModule> | null = null
+
+async function _loadPostProcessing(): Promise<PostProcessingModule> {
+    if (_ppModule) return _ppModule
+    if (_ppLoading) return _ppLoading
+    _ppLoading = import('@lib/engine/three-postprocessing').then((m) => {
+        _ppModule = {
+            initPostProcessing: m.initPostProcessing,
+            renderPostProcessing: m.renderPostProcessing,
+            disposePostProcessing: m.disposePostProcessing,
+            resizePostProcessing: m.resizePostProcessing,
+        }
+        return _ppModule
+    })
+    return _ppLoading
+}
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { appState } from '@lib/state/app.svelte'
@@ -755,11 +776,13 @@ export function initThreeJS() {
     // until premium mode is toggled on via the body data-attribute. The
     // composer's render path is invoked from the animate loop below; if
     // premium mode is off, the loop falls through to vanilla renderer.render().
-    try {
-        _initPostProcessing(renderer, scene, camera)
-    } catch (ppErr) {
-        debugWarn('[three-engine] postprocessing init failed, vanilla render will be used:', ppErr)
-    }
+    _loadPostProcessing().then((pp) => {
+        try {
+            pp.initPostProcessing(renderer, scene, camera)
+        } catch (ppErr) {
+            debugWarn('[three-engine] postprocessing init failed, vanilla render will be used:', ppErr)
+        }
+    })
 
     // Dev-only: expose engine handle for the Spector.js frame-capture bridge.
     // Lets SpectorInspector force a render call before captureContext() so
@@ -803,7 +826,7 @@ export function onWindowResize() {
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
-    _resizePostProcessing(width, height)
+    _ppModule?.resizePostProcessing(width, height)
 }
 
 export function cancelAnimate() {
@@ -841,7 +864,7 @@ export function cancelAnimate() {
     // composer's GL framebuffer/texture resources release cleanly while the
     // underlying WebGL context is still valid.
     try {
-        _disposePostProcessing()
+        _ppModule?.disposePostProcessing()
     } catch (ppErr) {
         debugWarn('[three-engine] postprocessing dispose failed:', ppErr)
     }
@@ -885,6 +908,7 @@ export function deinit() {
         }
     }
     disposeNodeVisualsPort()
+    disposeMyceliumPort()
     _threeInteractionVisuals?.disposeInteractionVisuals()
     _audioScape?.disposeAudio()
     _eventBindings?.disposeEventListeners()
@@ -1131,7 +1155,8 @@ export function animate() {
             // Premium mode: render through EffectComposer. When premium mode is off
             // (or composer is not yet initialized), renderPostProcessing() returns
             // false and we fall through to the vanilla renderer.render() path.
-            const renderedViaComposer = _renderPostProcessing()
+            const pp = _ppModule
+            const renderedViaComposer = pp ? pp.renderPostProcessing() : false
             if (!renderedViaComposer) {
                 webglContext.renderer.render(webglContext.scene, webglContext.camera)
             }

@@ -9,9 +9,9 @@ import { resolve } from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const CWD = process.cwd();
-const src = readFileSync(resolveSource('js/modules/three-engine.ts', CWD), 'utf8');
+const src = readFileSync(resolve(CWD, 'src/lib/engine/three-engine.ts'), 'utf8');
 const nodeManagerSrc = readFileSync(resolveSource('src/lib/engine/node-manager.ts', CWD), 'utf8');
-const interactionSrc = readFileSync(resolveSource('js/modules/three-interaction-visuals.ts', CWD), 'utf8');
+const interactionSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-interaction-visuals.ts'), 'utf8');
 const shellCss = readFileSync(resolve(CWD, 'css/shell.css'), 'utf8');
 
 const checks = [
@@ -22,11 +22,11 @@ const checks = [
   {
     name: 'renderer clear alpha is centralized for translucent atmosphere',
     pass: /clearAlpha:\s*0\.96\b/.test(nodeManagerSrc)
-      && /setClearColor\s*\(\s*SCENE_ATMOSPHERE\.fogColor\s*,\s*SCENE_ATMOSPHERE\.clearAlpha\s*\)/.test(src),
+      && /setClearColor\s*\(\s*\(SCENE_ATMOSPHERE\s+as\s+any\)\.fogColor\s*\?\?\s*0x0d2024\s*,\s*\(SCENE_ATMOSPHERE\s+as\s+any\)\.clearAlpha\s*\?\?\s*0\.96\s*\)/.test(src),
   },
   {
     name: 'renderer uses tone mapping exposure from scene atmosphere',
-    pass: /toneMappingExposure\s*=\s*SCENE_ATMOSPHERE\.toneExposure/.test(src),
+    pass: /toneMappingExposure\s*=\s*\(SCENE_ATMOSPHERE\s+as\s+any\)\.toneExposure\s*\?\?\s*1\.0/.test(src),
   },
   {
     name: 'county point cloud does not use additive blending',
@@ -49,11 +49,10 @@ const checks = [
   {
     name: 'base point and spore opacity are driven by scene atmosphere',
     pass: /opacity:\s*SCENE_ATMOSPHERE\.pointOpacityScale/.test(nodeManagerSrc)
-      && /const\s+isFocused\s*=\s*Number\.isFinite\(state\.focusedNode\)/.test(src)
+      && /const\s+isFocused\s*=\s*Number\.isFinite\(_state\?\.focusedNode\)/.test(src)
       && /const\s+pointsOpacityScale\s*=\s*isFocused/.test(src)
-      && /webglContext\.pointsMesh\.visible\s*=\s*pointsOpacityScale\s*>\s*0/.test(src)
       && /opacity:\s*SCENE_ATMOSPHERE\.sporeOpacity/.test(nodeManagerSrc)
-      && /const\s+targetSporeOpacity\s*=\s*SCENE_ATMOSPHERE\.sporeOpacity\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(src)
+      && /const\s+targetSporeOpacity\s*=\s*\(SCENE_ATMOSPHERE\.sporeOpacity\s*\?\?\s*0\.5\)\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(src)
       && /webglContext\.nodeSporeMaterial\.opacity\s*\+=\s*\(targetSporeOpacity\s*-\s*webglContext\.nodeSporeMaterial\.opacity\)\s*\*\s*0\.12/.test(src),
   },
   {

@@ -26,6 +26,28 @@ export function resolveSource(legacyPath, root) {
   const base = root ?? process.cwd();
   const absolute = path.resolve(base, legacyPath);
 
+  // Remap deleted js/modules/*.ts to current canonical src/lib locations.
+  const mm = legacyPath.match(/^(?:\.\.?\/)*js\/modules\/([\w-]+)(?:\.ts|\.js)?$/);
+  if (mm) {
+    const stem = mm[1];
+    // Explicit remap table for non-trivial stem→target mappings.
+    const REMAP = {
+      'journey-compass-state': 'src/lib/journey/compass-state.ts',
+      'journey-route-trace':   'src/lib/journey/route-trace.ts',
+      'journey-webgl':         'src/lib/engine/journey-webgl-bridge.ts',
+      'strand-continuity':     'src/lib/utils/strand-continuity.ts',
+      'weather':               'src/lib/utils/weather.ts',
+      'weather-ui':            'src/lib/ui/weather-ui.ts',
+      'lifecycle':             'src/lib/orchestration/lifecycle.ts',
+      'navigation-state':      'src/lib/orchestration/navigation-state.ts',
+      'url-state':             'src/lib/orchestration/url-state.ts',
+      'cluster-filter':        'src/lib/orchestration/cluster-filter-controller.ts',
+    };
+    const target = REMAP[stem] ?? `src/lib/journey/${stem}.ts`;
+    const canonicalTs = path.resolve(base, target);
+    if (fs.existsSync(canonicalTs)) return canonicalTs;
+  }
+
   // Prefer .ts sibling — canonical implementation during TS migration
   const tsPath = absolute.replace(/\.js$/, '.ts');
   if (fs.existsSync(tsPath)) return tsPath;

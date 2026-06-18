@@ -13,12 +13,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 import * as THREE from 'three';
+import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config';
 import { state, withStateMutation } from '@lib/engine/state-bridge';
 
 // ── Local selectors (replacing js/state/selectors/index.ts imports) ─────────
 
 const getNavState = () => state.navState;
-const getFocusConstellationMotifs = () => (state as any).FOCUS_CONSTELLATION_MOTIFS;
+const getFocusConstellationMotifs = () => (state as any).FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS;
 const getFocusThreadSegments = () => (state as any).FOCUS_THREAD_SEGMENTS;
 const getInspectedStrandGroup = () => state.inspectedStrandGroup;
 const getNodePositions = () => state.nodePositions;
@@ -67,7 +68,8 @@ export function getInspectedStrandEdge(index: number, lane: number = 0): Inspect
     const focusIndex = Number.isFinite(getNavState()?.focusedIndex) ? getNavState()?.focusedIndex : null;
     if (focusIndex === null || !Number.isFinite(index) || index === focusIndex) return null;
     const motifKey = (getNavState()?.focusPocketMeta as Record<string, unknown>)?.motif || 'market';
-    const motifConfig = { ...((getFocusConstellationMotifs() as Record<string, any>)[motifKey as string] || (getFocusConstellationMotifs() as Record<string, any>).market || {}) };
+    const motifs = getFocusConstellationMotifs() as Record<string, any>;
+    const motifConfig = { ...(motifs[motifKey as string] || motifs.market || FOCUS_CONSTELLATION_MOTIFS.market || {}) };
     const directLift = Number.isFinite(motifConfig.directLift) ? motifConfig.directLift : 0.6;
     const braid = Number.isFinite(motifConfig.braid) ? motifConfig.braid : 0.3;
     const side = ((focusIndex * 31 + index * 17) % 2) === 0 ? 1 : -1;

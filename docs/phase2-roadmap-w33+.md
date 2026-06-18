@@ -27,10 +27,10 @@ This roadmap picks up where the migration left off.
 
 **Goal:** Close the 2 pre-existing test failures so `npm test` is fully green.
 
-| Task | File | Issue | Approach |
-|---|---|---|---|
-| Fix stale test | `tests/unit-active/w20-wave4-readiness-regression.test.ts` | Expects `js/modules/` directory to exist for scanning | Update assertion: if directory missing, test should pass (zero cross-track imports is the actual invariant) |
-| Fix CSS baseline | `tests/unit-active/css-important-invariant.test.ts` | 3 `!important` uses in `css/mobile_base.css` exceed `APPROVED_BASELINE` | Either raise baseline if CSS team approves, or refactor the 3 selectors to avoid `!important` |
+| Task             | File                                                       | Issue                                                                   | Approach                                                                                                    |
+| ---------------- | ---------------------------------------------------------- | ----------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| Fix stale test   | `tests/unit-active/w20-wave4-readiness-regression.test.ts` | Expects `js/modules/` directory to exist for scanning                   | Update assertion: if directory missing, test should pass (zero cross-track imports is the actual invariant) |
+| Fix CSS baseline | `tests/unit-active/css-important-invariant.test.ts`        | 3 `!important` uses in `css/mobile_base.css` exceed `APPROVED_BASELINE` | Either raise baseline if CSS team approves, or refactor the 3 selectors to avoid `!important`               |
 
 **Verification:** `npm test` → 0 failures, 90/90 files pass
 **Effort:** 1-2 hours  
@@ -42,11 +42,11 @@ This roadmap picks up where the migration left off.
 
 **Goal:** Audit and resolve remaining CSS architectural smells.
 
-| Smell | Status | Owner File | Action |
-|---|---|---|---|
-| **Smell 1** | ❌ NOT YET AUDITED | Unknown | Audit all `css/` modules for selector scatter, specificity wars, z-index leakage. Document findings. |
-| **Smell 2** | 🟡 IN PROGRESS (parallel session) | `.info-panel` scatter | Parallel session already auditing in `0238426`. Wait for their findings or help close. |
-| **`!important` uses** | 🟡 3 uses over baseline | `css/mobile_base.css` | Resolve via specificity refactoring or documented approval. |
+| Smell                 | Status                            | Owner File            | Action                                                                                               |
+| --------------------- | --------------------------------- | --------------------- | ---------------------------------------------------------------------------------------------------- |
+| **Smell 1**           | ❌ NOT YET AUDITED                | Unknown               | Audit all `css/` modules for selector scatter, specificity wars, z-index leakage. Document findings. |
+| **Smell 2**           | 🟡 IN PROGRESS (parallel session) | `.info-panel` scatter | Parallel session already auditing in `0238426`. Wait for their findings or help close.               |
+| **`!important` uses** | 🟡 3 uses over baseline           | `css/mobile_base.css` | Resolve via specificity refactoring or documented approval.                                          |
 
 **Verification:** `npm test` CSS invariants pass, `svelte-check` 0/0  
 **Effort:** 2-4 hours  
@@ -58,13 +58,13 @@ This roadmap picks up where the migration left off.
 
 **Goal:** Every one of the 27 surfaces has a visual baseline screenshot.
 
-| Surface Group | Count | Has Baseline? | Gap |
-|---|---|---|---|
-| Overview surfaces | ~8 | Partial | Need full matrix |
-| Focus surfaces | ~6 | Partial | Need full matrix |
-| Search surfaces | ~5 | Partial | Need full matrix |
-| Mobile surfaces | ~4 | Partial | Need full matrix |
-| Transition states | ~4 | None | Critical gap |
+| Surface Group     | Count | Has Baseline? | Gap              |
+| ----------------- | ----- | ------------- | ---------------- |
+| Overview surfaces | ~8    | Partial       | Need full matrix |
+| Focus surfaces    | ~6    | Partial       | Need full matrix |
+| Search surfaces   | ~5    | Partial       | Need full matrix |
+| Mobile surfaces   | ~4    | Partial       | Need full matrix |
+| Transition states | ~4    | None          | Critical gap     |
 
 **Approach:**
 
@@ -83,12 +83,12 @@ This roadmap picks up where the migration left off.
 
 **Goal:** Resolve remaining accessibility audit gaps.
 
-| Component | Gap | Action |
-|---|---|---|
-| `ThreadInspector.svelte` | Not yet audited | Run ARIA contract test; add keyboard nav, focus trap, screen-reader labels |
-| `SearchInput.svelte` | Partial audit | Complete roving tabindex, aria-activedescendant, live-region announcements |
-| `Canvas.svelte` | Already fixed (W24) | Verify no regressions |
-| `InfoPanel.svelte` | Already fixed (W24) | Verify no regressions |
+| Component                | Gap                 | Action                                                                     |
+| ------------------------ | ------------------- | -------------------------------------------------------------------------- |
+| `ThreadInspector.svelte` | Not yet audited     | Run ARIA contract test; add keyboard nav, focus trap, screen-reader labels |
+| `SearchInput.svelte`     | Partial audit       | Complete roving tabindex, aria-activedescendant, live-region announcements |
+| `Canvas.svelte`          | Already fixed (W24) | Verify no regressions                                                      |
+| `InfoPanel.svelte`       | Already fixed (W24) | Verify no regressions                                                      |
 
 **Verification:** `tests/aria-sync-contract.mjs` passes for all components  
 **Effort:** 3-5 hours  
@@ -100,13 +100,13 @@ This roadmap picks up where the migration left off.
 
 **Goal:** Measure and optimize rendering FPS, bundle size, memory.
 
-| Metric | Current | Target | Approach |
-|---|---|---|---|
-| **Build size** | `index.js` 584KB + `three.js` 759KB | Reduce `index.js` to <400KB | Tree-shake unused Svelte components; lazy-load non-critical modules |
-| **First paint** | Unknown | <2s on 3G | Audit `copyRuntimeAssetsPlugin`; preconnect hints; font preload |
-| **FPS (desktop)** | Unknown | 60fps stable | Profile `animate()` loop; reduce `drawCalls` in dense clusters |
-| **FPS (mobile)** | Unknown | 30fps stable | Cap particle count; reduce shadow map res; throttle `requestAnimationFrame` |
-| **Memory** | Unknown | <200MB heap | Dispose Three.js textures/geometries on unmount; avoid closure leaks |
+| Metric            | Current                             | Target                      | Approach                                                                    |
+| ----------------- | ----------------------------------- | --------------------------- | --------------------------------------------------------------------------- |
+| **Build size**    | `index.js` 584KB + `three.js` 759KB | Reduce `index.js` to <400KB | Tree-shake unused Svelte components; lazy-load non-critical modules         |
+| **First paint**   | Unknown                             | <2s on 3G                   | Audit `copyRuntimeAssetsPlugin`; preconnect hints; font preload             |
+| **FPS (desktop)** | Unknown                             | 60fps stable                | Profile `animate()` loop; reduce `drawCalls` in dense clusters              |
+| **FPS (mobile)**  | Unknown                             | 30fps stable                | Cap particle count; reduce shadow map res; throttle `requestAnimationFrame` |
+| **Memory**        | Unknown                             | <200MB heap                 | Dispose Three.js textures/geometries on unmount; avoid closure leaks        |
 
 **Approach:**
 
@@ -125,13 +125,13 @@ This roadmap picks up where the migration left off.
 
 **Goal:** Inline or retire the 5 remaining pure-living bridges.
 
-| Bridge | Consumers | Strategy |
-|---|---|---|
-| `src/lib/engine/adapters/core.ts` | Orchestrates all adapters | **KEEP** — this is the engine API surface, not a bridge to legacy |
-| `src/lib/engine/adapters/lifecycle-bridge.ts` | `core.ts` | Evaluate: can `core.ts` import from `@lib/engine/lifecycle.ts` directly? |
-| `src/lib/engine/adapters/camera-bridge.ts` | `core.ts` | Evaluate: can `core.ts` import from `@lib/engine/camera-controls` directly? |
-| `src/lib/engine/adapters/search-bridge.ts` | `core.ts` | Evaluate: can `core.ts` import from `@lib/engine/search-animations` directly? |
-| `src/lib/orchestration/adapter-deps.ts` | `app-init.ts` | Evaluate: can `app-init.ts` build deps inline? |
+| Bridge                                        | Consumers                 | Strategy                                                                      |
+| --------------------------------------------- | ------------------------- | ----------------------------------------------------------------------------- |
+| `src/lib/engine/adapters/core.ts`             | Orchestrates all adapters | **KEEP** — this is the engine API surface, not a bridge to legacy             |
+| `src/lib/engine/adapters/lifecycle-bridge.ts` | `core.ts`                 | Evaluate: can `core.ts` import from `@lib/engine/lifecycle.ts` directly?      |
+| `src/lib/engine/adapters/camera-bridge.ts`    | `core.ts`                 | Evaluate: can `core.ts` import from `@lib/engine/camera-controls` directly?   |
+| `src/lib/engine/adapters/search-bridge.ts`    | `core.ts`                 | Evaluate: can `core.ts` import from `@lib/engine/search-animations` directly? |
+| `src/lib/orchestration/adapter-deps.ts`       | `app-init.ts`             | Evaluate: can `app-init.ts` build deps inline?                                |
 
 **Approach:**
 
@@ -148,14 +148,14 @@ This roadmap picks up where the migration left off.
 
 ## Wave Ordering Rationale
 
-| Wave | Priority | Why |
-|---|---|---|
-| **W33** Production Hardening | 🔴 **HIGHEST** | Unblocks CI. Every downstream wave depends on green tests. |
-| **W34** CSS Smell | 🟡 HIGH | Parallel session already on Smell 2. Smell 1 is the last big architectural gap. |
-| **W35** Visual QA | 🟡 HIGH | User-facing. Protects against visual regression. |
-| **W36** A11y | 🟡 HIGH | User-facing. Required for production deployment. |
-| **W37** Performance | 🟢 MEDIUM | Important but not blocking. Can ship without it. |
-| **W38** Bridge Retirement | 🟢 MEDIUM | Code hygiene. No user impact. Do last. |
+| Wave                         | Priority       | Why                                                                             |
+| ---------------------------- | -------------- | ------------------------------------------------------------------------------- |
+| **W33** Production Hardening | 🔴 **HIGHEST** | Unblocks CI. Every downstream wave depends on green tests.                      |
+| **W34** CSS Smell            | 🟡 HIGH        | Parallel session already on Smell 2. Smell 1 is the last big architectural gap. |
+| **W35** Visual QA            | 🟡 HIGH        | User-facing. Protects against visual regression.                                |
+| **W36** A11y                 | 🟡 HIGH        | User-facing. Required for production deployment.                                |
+| **W37** Performance          | 🟢 MEDIUM      | Important but not blocking. Can ship without it.                                |
+| **W38** Bridge Retirement    | 🟢 MEDIUM      | Code hygiene. No user impact. Do last.                                          |
 
 ---
 
@@ -202,15 +202,15 @@ Phase 2 is "done" when:
 
 ## Appendix: Current Open Files for Reference
 
-| File | Why It Matters |
-|---|---|
+| File                                                       | Why It Matters                                          |
+| ---------------------------------------------------------- | ------------------------------------------------------- |
 | `tests/unit-active/w20-wave4-readiness-regression.test.ts` | Stale — expects `js/modules/` to exist. W33 fixes this. |
-| `tests/unit-active/css-important-invariant.test.ts` | Baseline mismatch. W33 or W34 fixes this. |
-| `css/mobile_base.css` | Contains 3 `!important` uses. W34 resolves. |
-| `src/lib/engine/adapters/core.ts` | Last bridge aggregator. W38 evaluates retirement. |
-| `tests/visual-state-audit.mjs` | Entry point for W35 visual QA. |
-| `tests/aria-sync-contract.mjs` | Entry point for W36 a11y. |
+| `tests/unit-active/css-important-invariant.test.ts`        | Baseline mismatch. W33 or W34 fixes this.               |
+| `css/mobile_base.css`                                      | Contains 3 `!important` uses. W34 resolves.             |
+| `src/lib/engine/adapters/core.ts`                          | Last bridge aggregator. W38 evaluates retirement.       |
+| `tests/visual-state-audit.mjs`                             | Entry point for W35 visual QA.                          |
+| `tests/aria-sync-contract.mjs`                             | Entry point for W36 a11y.                               |
 
 ---
 
-*End of Phase 2 roadmap. Ready for W33 when you are.*
+_End of Phase 2 roadmap. Ready for W33 when you are._

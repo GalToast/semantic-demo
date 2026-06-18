@@ -45,7 +45,8 @@ import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 // Engine sub-modules
 import { initThreeJS, onWindowResize, cancelAnimate, updateCameraViewportOffset } from '@lib/engine/three-engine'
 import { createMycelium } from '@lib/engine/thread-manager'
-import { resizePostProcessing } from '@lib/engine/three-postprocessing'
+// Dynamic import: postprocessing is code-split to save ~150-200 kB
+let _ppResize: ((w: number, h: number) => void) | null = null
 
 // Interaction & UI
 import {
@@ -329,7 +330,15 @@ export function resizeEngine(width: number, height: number): void {
     onWindowResize()
 
     // FIX #1: Resize postprocessing composer (was missing in bridge resize)
-    resizePostProcessing(width, height)
+    // Lazy-load to keep postprocessing out of the main chunk.
+    if (!_ppResize) {
+        import('@lib/engine/three-postprocessing').then((m) => {
+            _ppResize = m.resizePostProcessing
+            _ppResize?.(width, height)
+        })
+    } else {
+        _ppResize(width, height)
+    }
 }
 
 /**

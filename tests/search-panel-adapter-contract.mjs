@@ -1,94 +1,88 @@
 /**
  * search-panel-adapter-contract.mjs
  *
- * Fast Node contract for the search-state -> search-panel-adapter boundary.
+ * No-resurrection guard and current-owner boundary for the search panel adapter.
+ *
+ * The old adapter lived at `js/modules/search-panel-adapter.ts` (MISSING).
+ * This contract ensures:
+ * 1. The new adapter at `src/lib/search/search-panel-adapter.ts` is leaf-like.
+ * 2. No code outside the adapter toggles `.search-container` state classes.
+ * 3. No code outside the adapter sets `document.body.dataset.searchGlow`.
+ * 4. Search UI owners actually delegate container/glow writes to the adapter.
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import fs from 'node:fs';
+import path from 'node:path';
 
-const CWD = process.cwd();
-const SEARCH_STATE_PATH = resolve(CWD, 'js/modules/search-state.ts');
-const PANEL_ADAPTER_PATH = resolve(CWD, 'js/modules/search-panel-adapter.ts');
+const ROOT = process.cwd();
+const ADAPTER_PATH = path.join(ROOT, 'src/lib/search/search-panel-adapter.ts');
+const SEARCH_SRC = path.join(ROOT, 'src/lib/search');
+const SEARCH_OWNER_FILES = [
+  'state.ts',
+  'orchestration.ts',
+  'results-ui.ts'
+];
 
-function assert(cond, msg) {
-  if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+function readFileSync(p) {
+  if (!fs.existsSync(p)) throw new Error(`ASSERTION FAILED: Source file missing: ${p}`);
+  return fs.readFileSync(p, 'utf8');
 }
 
-function assertContains(source, needle, label) {
-  assert(source.includes(needle), `${label}: expected "${needle}"`);
+function assert(condition, message) {
+  if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
 }
 
-function assertNotContains(source, needle, label) {
-  assert(!source.includes(needle), `${label}: should not contain "${needle}"`);
-}
+console.log('\n[TEST 1] search-panel-adapter.ts is leaf-like (no imports)');
+const adapterSrc = readFileSync(ADAPTER_PATH);
+const importLines = adapterSrc.split('\n').filter(line => line.trim().startsWith('import'));
+assert(importLines.length === 0, `Adapter must be leaf-like; found imports:\n${importLines.join('\n')}`);
+assert(!adapterSrc.includes('require('), 'Adapter must not use CommonJS require');
+console.log('  PASS');
 
-function extractFunction(source, functionName) {
-  const marker = `export function ${functionName}`;
-  const start = source.indexOf(marker);
-  assert(start >= 0, `missing export function ${functionName}`);
+console.log('\n[TEST 2] search-panel-adapter.ts exports required boundary functions');
+assert(adapterSrc.includes('export function getSearchContainer'), 'Missing getSearchContainer');
+assert(adapterSrc.includes('export function setSearchContainerState'), 'Missing setSearchContainerState');
+assert(adapterSrc.includes('export function setSearchGlowState'), 'Missing setSearchGlowState');
+assert(adapterSrc.includes('resultsExpanded?: boolean'), 'Missing typed resultsExpanded container state');
+assert(adapterSrc.includes("classList.toggle('has-expanded-results', resultsExpanded)"), 'Adapter must own has-expanded-results container class');
+console.log('  PASS');
 
-  const open = source.indexOf('{', start);
-  assert(open >= 0, `missing body for ${functionName}`);
-
-  let depth = 0;
-  for (let i = open; i < source.length; i++) {
-    const ch = source[i];
-    if (ch === '{') depth += 1;
-    if (ch === '}') {
-      depth -= 1;
-      if (depth === 0) return source.slice(start, i + 1);
-    }
+console.log('\n[TEST 3] search owners do not directly toggle .search-container state classes');
+const forbiddenContainerClassToggles = [
+  'searching',
+  'focusing',
+  'has-query',
+  'results-rendered',
+  'has-expanded-results',
+  'search-degraded'
+];
+for (const fileName of SEARCH_OWNER_FILES) {
+  const src = readFileSync(path.join(SEARCH_SRC, fileName));
+  for (const className of forbiddenContainerClassToggles) {
+    assert(
+      !src.includes(`classList.toggle('${className}'`) && !src.includes(`classList.toggle("${className}"`),
+      `${fileName} must not directly toggle ${className}; delegate through setSearchContainerState`
+    );
   }
-  throw new Error(`Could not extract ${functionName}`);
 }
+console.log('  PASS');
 
-function testAdapterExports() {
-  const adapter = readFileSync(PANEL_ADAPTER_PATH, 'utf8');
-  assertContains(adapter, 'export function getSearchContainer', 'panel adapter exports search container lookup');
-  assertContains(adapter, 'export function setSearchContainerState', 'panel adapter exports container state');
-  assertContains(adapter, 'export function setSearchGlowState', 'panel adapter exports search glow state');
-  assertContains(adapter, 'export function setMobileSearchSheetMode', 'panel adapter exports mobile sheet state');
-  assertContains(adapter, 'export function clearMobileSearchSheetState', 'panel adapter exports mobile sheet clear state');
-  assertContains(adapter, 'export function setupMobileSearchSheetToggle', 'panel adapter exports mobile sheet toggle setup');
+console.log('\n[TEST 4] search owners do not set document.body.dataset.searchGlow directly');
+for (const fileName of SEARCH_OWNER_FILES) {
+  const src = readFileSync(path.join(SEARCH_SRC, fileName));
+  assert(!src.includes('document.body.dataset.searchGlow'), `${fileName} must not set searchGlow directly; delegate through setSearchGlowState`);
 }
+console.log('  PASS');
 
-function testSearchStateDelegatesPanelDomWrites() {
-  const searchState = readFileSync(SEARCH_STATE_PATH, 'utf8');
-  assertContains(searchState, "from './search-panel-adapter.ts'", 'search-state imports panel adapter');
-  assertContains(searchState, 'setSearchContainerState({', 'search-state delegates container classes');
-  assertContains(searchState, 'setSearchGlowState(true)', 'search-state delegates active glow');
-  assertContains(searchState, 'setSearchGlowState(false)', 'search-state delegates inactive glow');
-  assertContains(searchState, 'setupMobileSearchSheetToggle({ isCompactSearchViewport })', 'search-state delegates mobile sheet setup');
+console.log('\n[TEST 5] results-ui.ts delegates expanded container and glow writes to adapter');
+const resultsUiSrc = readFileSync(path.join(SEARCH_SRC, 'results-ui.ts'));
+assert(
+  /import\s*\{[^}]*setSearchContainerState[^}]*setSearchGlowState[^}]*\}\s*from\s*['"][^'"]*search-panel-adapter-bridge['"]/.test(resultsUiSrc),
+  'results-ui.ts must import setSearchContainerState and setSearchGlowState from the adapter bridge'
+);
+assert(resultsUiSrc.includes('setSearchContainerState({ resultsExpanded: isExpanded })'), 'results-ui.ts must delegate expanded-results container state');
+assert(resultsUiSrc.includes('setSearchGlowState(true)'), 'activateSearchGlow must delegate active glow DOM state');
+assert(resultsUiSrc.includes('setSearchGlowState(false)'), 'clearSearchGlow must delegate inactive glow DOM state');
+console.log('  PASS');
 
-  const setPanel = extractFunction(searchState, 'setSearchPanelState');
-  assertNotContains(setPanel, 'classList.toggle', 'setSearchPanelState delegates class toggles');
-
-  const activateGlow = extractFunction(searchState, 'activateSearchGlow');
-  const clearGlow = extractFunction(searchState, 'clearSearchGlow');
-  assertNotContains(activateGlow, 'document.body.dataset.searchGlow', 'activateSearchGlow delegates body dataset');
-  assertNotContains(clearGlow, 'document.body.dataset.searchGlow', 'clearSearchGlow delegates body dataset');
-  assert(!/function\s+setMobileSearchSheetMode/.test(searchState), 'search-state.js must not define mobile sheet DOM state helper');
-  assert(!/function\s+setupMobileSearchSheetToggle/.test(searchState), 'search-state.js must not define mobile sheet DOM setup helper');
-  assertNotContains(searchState, 'document.body.dataset.mobileSearchSheet =', 'search-state delegates mobile sheet dataset writes');
-  assertNotContains(searchState, 'document.body.dataset.panelSurfaceDetail =', 'search-state delegates panel surface detail writes');
-
-  const successPath = searchState.slice(searchState.indexOf('renderSearchResultItems(resultsEl, results'));
-  assert(
-    /setSearchPanelState\(\{\s*searching:\s*false,\s*focusing:\s*false,\s*hasQuery:\s*true,\s*resultsRendered:\s*true\s*\}\);\s*setupMobileSearchSheetToggle\(\{\s*isCompactSearchViewport\s*\}\);/.test(successPath),
-    'successful multi-result search must refresh mobile sheet setup after has-query/results-rendered classes are set'
-  );
-}
-
-function testAdapterIsLeaf() {
-  const adapter = readFileSync(PANEL_ADAPTER_PATH, 'utf8');
-  const importLines = adapter.split('\n').filter(line => line.trim().startsWith('import'));
-  assert(importLines.length === 0, `search-panel-adapter.js must stay leaf-like; found imports:\n${importLines.join('\n')}`);
-  assertNotContains(adapter, 'require(', 'search-panel-adapter.js must not use CommonJS require');
-}
-
-testAdapterExports();
-testSearchStateDelegatesPanelDomWrites();
-testAdapterIsLeaf();
-
-console.log('PASS: search panel DOM state is routed through search-panel-adapter.ts');
+console.log('\nsearch-panel-adapter-contract.mjs passed');

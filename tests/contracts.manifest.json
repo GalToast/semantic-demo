@@ -20,7 +20,7 @@
       ]
     },
     "navigation": {
-      "description": "Journey and wayfinding contracts - compass, thread-inspector, window surface, event bindings, trail review, pathfinding.",
+      "description": "Journey and wayfinding contracts - compass, thread-inspector, window surface, event bindings, trail review.",
       "contracts": [
         "journey-compass-state-contract.mjs",
         "journey-thread-inspector-contract.mjs",
@@ -29,7 +29,6 @@
         "journey-cluster-accent-dewindowing-contract.mjs",
         "journey-event-bindings-contract.mjs",
         "trail-review-focus-contract.mjs",
-        "pathfinding-contract.mjs",
         "journey-walk-candidate-contract.mjs",
         "journey-walk-thread-neighbor-timer-contract.mjs",
         "journey-focus-ui-extraction-contract.mjs",
@@ -486,7 +485,6 @@
         "journey-ui-ownership-contract.mjs",
         "share-view-clipboard-contract.mjs",
         "keyboard-help-aria-contract.mjs",
-        "pathfinding-contract.mjs",
         "weather-lifecycle-contract.mjs",
         "weather-surface-ownership-contract.mjs",
         "camera-auto-rotate-settle-contract.mjs",

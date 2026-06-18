@@ -12,7 +12,7 @@
 import { state } from '../engine/state-bridge';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { isCompactSearchViewport } from '../engine/ui-presentation-bridge';
-import { setSearchContainerState, setupMobileSearchSheetToggle } from '../engine/search-panel-adapter-bridge';
+import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from '../engine/search-panel-adapter-bridge';
 import { recordSemanticLaneSnapshot } from '../engine/semantic-lane-bridge';
 import {
     searchResultsStore,
@@ -500,8 +500,7 @@ export function renderSearchResultItems(
     const isExpanded = total > INITIAL_SHOW && visibleCount >= total;
     if (resultsEl) {
         resultsEl.classList.toggle('is-expanded', isExpanded);
-        const searchContainer = resultsEl.closest?.('.search-container') as HTMLElement | null;
-        if (searchContainer) searchContainer.classList.toggle('has-expanded-results', isExpanded);
+        setSearchContainerState({ resultsExpanded: isExpanded });
         resultsEl.classList.add('active');
         if (!(resultsEl as HTMLElement & { _legacyShowMoreBound?: boolean })._legacyShowMoreBound) {
             resultsEl.addEventListener('click', handleLegacyShowMoreClick);
@@ -723,6 +722,7 @@ export function activateSearchGlow(resultIndices: number[] = [], anchorIndex: nu
     state.searchGlowActive = true;
     state.searchGlowIndices = new Set(Array.isArray(resultIndices) ? resultIndices : []);
     state.searchGlowTopIndex = Number.isFinite(anchorIndex) ? anchorIndex : state.searchGlowIndices.values().next().value ?? null;
+    setSearchGlowState(true);
     publish(EVENTS.COMPOSITION_UPDATED, { reason: 'search-glow' });
 }
 
@@ -810,5 +810,6 @@ export function clearSearchGlow(): void {
     if (state.searchGlowIndices && typeof state.searchGlowIndices.clear === 'function') {
         state.searchGlowIndices.clear();
     }
+    setSearchGlowState(false);
     publish(EVENTS.COMPOSITION_UPDATED);
 }

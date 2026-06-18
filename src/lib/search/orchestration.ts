@@ -305,6 +305,14 @@ export function beginSearchFocusTransition(
 
   // Focus the result in the 3D scene
   publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: targetIndex } as any);
+  publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, {
+    resultsEl,
+    statusEl,
+    resultIndices,
+    targetIndex,
+    point,
+    transitionToken: token
+  } as any);
 }
 
 /**

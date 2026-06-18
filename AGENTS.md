@@ -23,10 +23,10 @@ When multiple Pi / Codex / subagent sessions share this repo, a parallel session
 
 1. Before any non-trivial `git commit` or `git push`, run:
 
-   ```bash
-   git log --since="3 hours ago" --oneline
-   git status --short
-   ```
+    ```bash
+    git log --since="3 hours ago" --oneline
+    git status --short
+    ```
 
 2. If 5+ unseen commits exist since your last verified `HEAD` → **queue work but DO NOT commit** until the parallel stream quiesces.
 3. If `git status --short` shows tracked-file modifications that you did not create → **pause and pick a different seam**.
@@ -69,7 +69,7 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 
 ## Worktree Coordination (added 2026-06-15)
 
-**Stale worktrees block T9 (fix/* branch cleanup) and T-style porting work.** This pattern bit W12: 4 parallel-session worktrees had 11+1 uncommitted items, blocking `git worktree remove --force` + `git branch -D` for ~30 minutes.
+**Stale worktrees block T9 (fix/\* branch cleanup) and T-style porting work.** This pattern bit W12: 4 parallel-session worktrees had 11+1 uncommitted items, blocking `git worktree remove --force` + `git branch -D` for ~30 minutes.
 
 **The protocol:**
 
@@ -77,9 +77,9 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 2. **For each worktree**, run `cd <path> && git status --short | wc -l` to count uncommitted items.
 3. **Clean worktrees (0 uncommitted)** are safe to `git worktree remove --force` + `git branch -D` immediately.
 4. **Dirty worktrees (uncommitted)** need coordination with the parallel session before removal:
-   - If the uncommitted work is real (modified M files), the parallel session needs to commit first.
-   - If the uncommitted work is build artifacts (dist/, .svelte-check), the worktree owner can `git checkout HEAD -- <path>` to discard.
-   - Untracked files (?? in status) can be deleted with `git worktree remove --force` only if you've verified they're not load-bearing scratch (e.g., vitest.legacy.config.js written by a worker).
+    - If the uncommitted work is real (modified M files), the parallel session needs to commit first.
+    - If the uncommitted work is build artifacts (dist/, .svelte-check), the worktree owner can `git checkout HEAD -- <path>` to discard.
+    - Untracked files (?? in status) can be deleted with `git worktree remove --force` only if you've verified they're not load-bearing scratch (e.g., vitest.legacy.config.js written by a worker).
 5. **Document the partial state** in the next-session-prompt so the next session knows what's left.
 
 **Why:** `git worktree remove` on a dirty worktree fails by default; `--force` discards uncommitted work. Force-remove is destructive. The cost of waiting for the parallel session to land is 5 min; the cost of force-removing a parallel session's WIP is hours of regression hunting.
@@ -107,53 +107,53 @@ The wave-absorption pattern (parallel session closing tickets faster than main l
 
 ## Key Files
 
-| Path | Role |
-|---|---|
-| `js/modules/app.js` | Main entry; imports all modules |
-| `js/state.js` | Single source of truth for all global state |
-| `js/modules/bridge-registry.js` | Legacy global action/state compatibility registry |
-| `js/modules/diagnostic-adapter.js` | Central gate for debug/devtool probes such as `_ti` |
-| `js/modules/environment.js` | Shared viewport, pointer, DPR, and reduced-motion helpers |
-| `js/modules/lifecycle.js` | App orchestration, view handoff, window bindings, scene-reveal logic |
-| `js/modules/micro-demo.js` | 9-second guided choreography |
-| `js/modules/journey.js` | Thin journey orchestration layer; delegates extracted journey owners and preserves the public surface |
-| `js/modules/journey-neighborhood.js` | Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation |
-| `js/modules/journey-selected-card.js` | Focus-stage sync, selected-card rendering, and selected business DOM hydration |
-| `js/modules/journey-canvas-interaction.js` | Thin facade: re-exports from extracted canvas interaction modules + inline event binding orchestrator |
-| `js/modules/journey-canvas-hit-test.js` | Canvas node hit testing, pointer position, thread candidate visibility |
-| `js/modules/journey-canvas-node-picking.js` | Raycaster-based canvas field node picking and candidate comparison |
-| `js/modules/journey-canvas-hover.js` | Canvas field hover state (set/clear) |
-| `js/modules/journey-focus-ui.js` | Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals |
-| `js/modules/journey-thread-settler.js` | Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state |
-| `js/modules/journey-thread-model.js` | Thread state model and trail seed derivation shared across journey and thread inspector |
-| `js/modules/journey-webgl.js` | Journey-side WebGL overlay orchestration (delegates to extracted modules below) |
-| `js/modules/journey-arrival-handoff.js` | Camera handoff overlay for journey thread arrival (orchestrates arrival frame lifecycle) |
-| `js/modules/journey-route-trace.js` | Route trace overlay rendering and frame updates for trail visualization |
-| `js/modules/journey-semantic-overlay.js` | Semantic-overlay (manifold + lens) rendering tied to journey focus state |
-| `js/modules/journey-webgl-utils.js` | Shared WebGL utilities for journey overlays (texture lookups, geometry helpers) |
-| `js/modules/relationship-roles.js` | Shared relationship role normalization used by journey, thread inspector, and semantic threads |
-| `js/modules/strand-continuity.js` | Shared strand phase and arrival continuity state for journey and thread inspector |
-| `js/modules/thread-inspector.js` | Inspecting connections: pulsing, score-reactive WebGL lines between nodes when exploring semantic neighborhoods |
-| `js/modules/thread-inspector-webgl.js` | WebGL line geometry and shader setup for the thread inspector (extracted from monolithic inspector) |
-| `js/modules/focus-pocket.js` | Focus pocket node layout and animation (delegates to extracted geometry/personality modules) |
-| `js/modules/focus-pocket-geometry.js` | Focus pocket constellation geometry, seeded placement, screen-bounds, thread curve points |
-| `js/modules/focus-pocket-personality.js` | Per-focus personality variants (rotation/scale seeds, neighborhood shape) driving focus pocket variation |
-| `js/modules/ui-renderers.js` | Window-bound DOM renderers for legend, search rows, and selected-card chrome |
-| `js/modules/search-state.js` | Search engine, query tokenization, result rendering |
-| `js/modules/three-engine.js` | WebGL engine: scene, camera, renderer, shaders, instanced meshes |
-| `js/modules/three-node-manager.js` | Node/spore instancing, per-node spore scales, points buffer lifecycle |
-| `js/modules/three-thread-manager.js` | Mycelium/thread line geometry, pulse opacity, presentation profile |
-| `js/modules/three-interaction-visuals.js` | Semantic manifold + lens overlays, interaction-driven uniforms |
-| `js/modules/three-search-animations.js` | Hero moment, corridor glow, search corridor animation lifecycle |
-| `js/modules/utils/seeded-random.js` | GLSL-portable `seededUnit(index, salt)` for deterministic per-node variation |
-| `js/modules/camera-controls.js` | Camera choreography: transitions, auto-rotation, orbit slack |
-| `js/modules/camera-framing-utils.js` | Canvas unobstructed region, focus-pocket screen bounds, safe-area target offset |
-| `js/modules/camera-orbit-slack.js` | Search-route focus active, focus orbit slack pivot and apply/clear |
-| `js/modules/focus-pocket.js` | Focus pocket node layout and animation |
-| `js/modules/event-bindings.js` | Thin orchestrator: imports each `bindings/` module and dispatches its `bind*` function via `initEventListeners` |
-| `js/modules/bindings/` | Per-surface DOM event listeners (filter, journey, legend, mode, panel, search, view, etc.) — replaces the monolithic event-bindings.js with focused per-feature modules |
-| `js/modules/journey-compass-state.js` | Journey compass derivation function (pure computation, not an FSM). Returns descriptor with `phase ∈ {'map', 'inside', 'focus', 'search', 'overview'}` |
-| `js/modules/loading-ui.js` | Loading overlay, phases, deferred hydration |
+| Path                                        | Role                                                                                                                                                                    |
+| ------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `js/modules/app.js`                         | Main entry; imports all modules                                                                                                                                         |
+| `js/state.js`                               | Single source of truth for all global state                                                                                                                             |
+| `js/modules/bridge-registry.js`             | Legacy global action/state compatibility registry                                                                                                                       |
+| `js/modules/diagnostic-adapter.js`          | Central gate for debug/devtool probes such as `_ti`                                                                                                                     |
+| `js/modules/environment.js`                 | Shared viewport, pointer, DPR, and reduced-motion helpers                                                                                                               |
+| `js/modules/lifecycle.js`                   | App orchestration, view handoff, window bindings, scene-reveal logic                                                                                                    |
+| `js/modules/micro-demo.js`                  | 9-second guided choreography                                                                                                                                            |
+| `js/modules/journey.js`                     | Thin journey orchestration layer; delegates extracted journey owners and preserves the public surface                                                                   |
+| `js/modules/journey-neighborhood.js`        | Neighborhood manifest, bounded walk candidates, trail seed, and route index derivation                                                                                  |
+| `js/modules/journey-selected-card.js`       | Focus-stage sync, selected-card rendering, and selected business DOM hydration                                                                                          |
+| `js/modules/journey-canvas-interaction.js`  | Thin facade: re-exports from extracted canvas interaction modules + inline event binding orchestrator                                                                   |
+| `js/modules/journey-canvas-hit-test.js`     | Canvas node hit testing, pointer position, thread candidate visibility                                                                                                  |
+| `js/modules/journey-canvas-node-picking.js` | Raycaster-based canvas field node picking and candidate comparison                                                                                                      |
+| `js/modules/journey-canvas-hover.js`        | Canvas field hover state (set/clear)                                                                                                                                    |
+| `js/modules/journey-focus-ui.js`            | Focus/traversal DOM UI, neighbor rail rendering, and walk breadcrumb internals                                                                                          |
+| `js/modules/journey-thread-settler.js`      | Thread walk traversal, neighbor timers, inspection settle flow, and inside preview state                                                                                |
+| `js/modules/journey-thread-model.js`        | Thread state model and trail seed derivation shared across journey and thread inspector                                                                                 |
+| `js/modules/journey-webgl.js`               | Journey-side WebGL overlay orchestration (delegates to extracted modules below)                                                                                         |
+| `js/modules/journey-arrival-handoff.js`     | Camera handoff overlay for journey thread arrival (orchestrates arrival frame lifecycle)                                                                                |
+| `js/modules/journey-route-trace.js`         | Route trace overlay rendering and frame updates for trail visualization                                                                                                 |
+| `js/modules/journey-semantic-overlay.js`    | Semantic-overlay (manifold + lens) rendering tied to journey focus state                                                                                                |
+| `js/modules/journey-webgl-utils.js`         | Shared WebGL utilities for journey overlays (texture lookups, geometry helpers)                                                                                         |
+| `js/modules/relationship-roles.js`          | Shared relationship role normalization used by journey, thread inspector, and semantic threads                                                                          |
+| `js/modules/strand-continuity.js`           | Shared strand phase and arrival continuity state for journey and thread inspector                                                                                       |
+| `js/modules/thread-inspector.js`            | Inspecting connections: pulsing, score-reactive WebGL lines between nodes when exploring semantic neighborhoods                                                         |
+| `js/modules/thread-inspector-webgl.js`      | WebGL line geometry and shader setup for the thread inspector (extracted from monolithic inspector)                                                                     |
+| `js/modules/focus-pocket.js`                | Focus pocket node layout and animation (delegates to extracted geometry/personality modules)                                                                            |
+| `js/modules/focus-pocket-geometry.js`       | Focus pocket constellation geometry, seeded placement, screen-bounds, thread curve points                                                                               |
+| `js/modules/focus-pocket-personality.js`    | Per-focus personality variants (rotation/scale seeds, neighborhood shape) driving focus pocket variation                                                                |
+| `js/modules/ui-renderers.js`                | Window-bound DOM renderers for legend, search rows, and selected-card chrome                                                                                            |
+| `js/modules/search-state.js`                | Search engine, query tokenization, result rendering                                                                                                                     |
+| `js/modules/three-engine.js`                | WebGL engine: scene, camera, renderer, shaders, instanced meshes                                                                                                        |
+| `js/modules/three-node-manager.js`          | Node/spore instancing, per-node spore scales, points buffer lifecycle                                                                                                   |
+| `js/modules/three-thread-manager.js`        | Mycelium/thread line geometry, pulse opacity, presentation profile                                                                                                      |
+| `js/modules/three-interaction-visuals.js`   | Semantic manifold + lens overlays, interaction-driven uniforms                                                                                                          |
+| `js/modules/three-search-animations.js`     | Hero moment, corridor glow, search corridor animation lifecycle                                                                                                         |
+| `js/modules/utils/seeded-random.js`         | GLSL-portable `seededUnit(index, salt)` for deterministic per-node variation                                                                                            |
+| `js/modules/camera-controls.js`             | Camera choreography: transitions, auto-rotation, orbit slack                                                                                                            |
+| `js/modules/camera-framing-utils.js`        | Canvas unobstructed region, focus-pocket screen bounds, safe-area target offset                                                                                         |
+| `js/modules/camera-orbit-slack.js`          | Search-route focus active, focus orbit slack pivot and apply/clear                                                                                                      |
+| `js/modules/focus-pocket.js`                | Focus pocket node layout and animation                                                                                                                                  |
+| `js/modules/event-bindings.js`              | Thin orchestrator: imports each `bindings/` module and dispatches its `bind*` function via `initEventListeners`                                                         |
+| `js/modules/bindings/`                      | Per-surface DOM event listeners (filter, journey, legend, mode, panel, search, view, etc.) — replaces the monolithic event-bindings.js with focused per-feature modules |
+| `js/modules/journey-compass-state.js`       | Journey compass derivation function (pure computation, not an FSM). Returns descriptor with `phase ∈ {'map', 'inside', 'focus', 'search', 'overview'}`                  |
+| `js/modules/loading-ui.js`                  | Loading overlay, phases, deferred hydration                                                                                                                             |
 
 ## Demo Spec
 
@@ -274,8 +274,8 @@ Additional contract tests: `tests/demo-init-seam-contract.mjs`, `tests/micro-dem
 **Recovery:**
 
 1. Run `npm run mcp:recover` (or `pwsh -NoProfile -File scripts/mcp-recover.ps1`). This:
-   - Removes Chrome's stale `Singleton{Lock,Cookie,Socket}` lock files tied to MCP profiles
-   - Sets force-clean-start env vars for the next Playwright launch validation
+    - Removes Chrome's stale `Singleton{Lock,Cookie,Socket}` lock files tied to MCP profiles
+    - Sets force-clean-start env vars for the next Playwright launch validation
 2. **Restart Claude Code/Codex** (Ctrl+C, then re-launch). The MCP node process is owned by the client and is only respawned on a fresh client start.
 3. The first browser-automation tool call after restart spawns a fresh chrome against the cleaned profile dir.
 
@@ -321,51 +321,51 @@ npm run check        # svelte-check + tsc
 
 ### Scaffold Layout
 
-| Path | Role |
-|---|---|
-| `src/index.html` | Vite entry (root: src/), has all body data-attrs for CSS coexistence |
-| `src/main.ts` | App mount, URL param init (?demo=force, ?nodemo=1) |
-| `src/App.svelte` | Root component, composes all skeletons, syncs body data-attrs |
-| `src/lib/stores/` | 12 typed Svelte stores replacing state.js slices |
-| `src/lib/types/` | Full TS types (state.ts, business.ts, webgl.ts, events.ts) — no `any` |
-| `src/lib/z-index.ts` | Managed `Z_LAYERS` constant — single source for all z-index values |
-| `src/lib/css/z-layers.css` | CSS custom properties mirroring z-index.ts |
-| `src/lib/utils/strand-continuity.ts` | Bug-fixed strand continuity with Map-based timer tracking |
-| `src/lib/engine/` | Imperative bridge to legacy Three.js engine (dynamic imports) |
-| `src/components/` | Svelte component directory |
+| Path                                 | Role                                                                  |
+| ------------------------------------ | --------------------------------------------------------------------- |
+| `src/index.html`                     | Vite entry (root: src/), has all body data-attrs for CSS coexistence  |
+| `src/main.ts`                        | App mount, URL param init (?demo=force, ?nodemo=1)                    |
+| `src/App.svelte`                     | Root component, composes all skeletons, syncs body data-attrs         |
+| `src/lib/stores/`                    | 12 typed Svelte stores replacing state.js slices                      |
+| `src/lib/types/`                     | Full TS types (state.ts, business.ts, webgl.ts, events.ts) — no `any` |
+| `src/lib/z-index.ts`                 | Managed `Z_LAYERS` constant — single source for all z-index values    |
+| `src/lib/css/z-layers.css`           | CSS custom properties mirroring z-index.ts                            |
+| `src/lib/utils/strand-continuity.ts` | Bug-fixed strand continuity with Map-based timer tracking             |
+| `src/lib/engine/`                    | Imperative bridge to legacy Three.js engine (dynamic imports)         |
+| `src/components/`                    | Svelte component directory                                            |
 
 ### Component Status (`src/components/`)
 
 Verified files on disk: 26 components. `JourneyCanvas.svelte` is retired/deleted and not included below. The 5 newest (DevGui, FocusPocketA11y, MapView, SpectorInspector, Toast) were added during the W24–W29 migration arc.
 
-| File | Status | Lines | Ported from | Notes |
-|---|---|---|---|---|
-| `Canvas.svelte` | **Complete** | 130 | `three-engine.js` + `camera-controls.js` | Creates engine bridge, manages lifecycle |
-| `CompassRail.svelte` | **Complete** | 186 | `journey-compass-state.js`, `journey-compass-controller.js` | Full compass step rendering with animation SM |
-| `Controls.svelte` | **Complete** | 146 | — | Zoom, auto-rotate, reset, debug overlay |
-| `DemoChoreography.svelte` | **Complete** | 169 | `micro-demo.js` | Full demo orchestration with store-based SM |
-| `Filters.svelte` | **Complete** | 275 | `filter-state.js` | Status/signal/city filters, clear, count badge |
-| `FocusCard.svelte` | **Complete** | 373 | `journey-selected-card.js`, `ui-renderers.js` | Full business detail card with all contract IDs |
-| `FocusPocket.svelte` | **Complete** | 117 | `focus-pocket.js` | Self-populating constellation via applyLocalNeighborhoodFocus; renders pocket nodes + anchor indicator |
-| `Header.svelte` | **Complete** | 229 | `bindings/mode.js`, `ui-renderers.js` | Mode chips, app title, mode descriptions |
-| `InfoPanel.svelte` | **Complete** | 764 | `journey-selected-card.js`, `ui-renderers.js` | Single-track (src/ only); full info panel with all contract DOM IDs |
-| `JourneyChrome.svelte` | **Complete** | 780 | `journey-focus-ui.js`, `journey-compass-state.js`, `journey-compass-controller.js` | Full compass header, breadcrumb, trail controls, neighbor rail; rendered with `visible={false}` in App.svelte (gated by legacy shell) |
-| `LegacyCompassSurface.svelte` | **Complete** | 333 | `journey-compass-controller.js`, `semantic-dive-ui.js` | Legacy-compatible journey compass and focus-dive DOM IDs rendered in Svelte |
-| `Legend.svelte` | **Complete** | 196 | `legend-ui.js` | Cluster legend with color swatches, toggle |
-| `LoadingOverlay.svelte` | **Complete** | 214 | `loading-ui.js` | Phase chips, progress bar, fade transition |
-| `MapSummary.svelte` | **Complete** | 170 | `journey-route-trace.js`, `journey-neighborhood.js` | Mini-map trail with SVG rendering |
-| `ModeChips.svelte` | **Complete** | 134 | `bindings/mode.js` | Mode selection buttons with descriptions |
-| `SearchBar.svelte` | **Complete** | 82 | — | Composes SearchInput + SearchResults |
-| `SearchInput.svelte` | **Complete** | 323 | `search-state.js` | Input with debounce, clear, keyboard handling |
-| `SearchResults.svelte` | **Complete** | 516 | `search-results-ui.js` | Results list, empty state, pagination |
-| `SemanticOverlay.svelte` | **Complete** | 148 | `journey-semantic-overlay.js`, `three-interaction-visuals.js` | Manifold/lens visibility + WebGL delegation |
-| `ThreadInspector.svelte` | **Complete** | 181 | `thread-inspector.js` | Overlay UI with WebGL line integration |
-| `WeatherWidget.svelte` | **Complete** | 177 | `weather-widget.js` | Weather fetch, display, icons, forecast |
-| `DevGui.svelte` | **Complete** | 198 | `dev-gui.js` | Dev-only WebGL tuning (spector, etc.); tree-shaken from prod |
-| `FocusPocketA11y.svelte` | **Complete** | 208 | `focus-pocket.js` | A11y surface listing focus pocket neighbors for screen readers |
-| `MapView.svelte` | **Complete** | 365 | `map-state.ts`, `camera-controls.js` | Backdrop-2D map view; still dynamic-imports `@lib/engine/map-state` (W32 T2-A target) |
-| `SpectorInspector.svelte` | **Complete** | 355 | `spector` | Dev-only WebGL inspector; tree-shaken from prod |
-| `Toast.svelte` | **Complete** | 90 | `toast.js` | Lightweight toast notifications |
+| File                          | Status       | Lines | Ported from                                                                        | Notes                                                                                                                                 |
+| ----------------------------- | ------------ | ----- | ---------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| `Canvas.svelte`               | **Complete** | 130   | `three-engine.js` + `camera-controls.js`                                           | Creates engine bridge, manages lifecycle                                                                                              |
+| `CompassRail.svelte`          | **Complete** | 186   | `journey-compass-state.js`, `journey-compass-controller.js`                        | Full compass step rendering with animation SM                                                                                         |
+| `Controls.svelte`             | **Complete** | 146   | —                                                                                  | Zoom, auto-rotate, reset, debug overlay                                                                                               |
+| `DemoChoreography.svelte`     | **Complete** | 169   | `micro-demo.js`                                                                    | Full demo orchestration with store-based SM                                                                                           |
+| `Filters.svelte`              | **Complete** | 275   | `filter-state.js`                                                                  | Status/signal/city filters, clear, count badge                                                                                        |
+| `FocusCard.svelte`            | **Complete** | 373   | `journey-selected-card.js`, `ui-renderers.js`                                      | Full business detail card with all contract IDs                                                                                       |
+| `FocusPocket.svelte`          | **Complete** | 117   | `focus-pocket.js`                                                                  | Self-populating constellation via applyLocalNeighborhoodFocus; renders pocket nodes + anchor indicator                                |
+| `Header.svelte`               | **Complete** | 229   | `bindings/mode.js`, `ui-renderers.js`                                              | Mode chips, app title, mode descriptions                                                                                              |
+| `InfoPanel.svelte`            | **Complete** | 764   | `journey-selected-card.js`, `ui-renderers.js`                                      | Single-track (src/ only); full info panel with all contract DOM IDs                                                                   |
+| `JourneyChrome.svelte`        | **Complete** | 780   | `journey-focus-ui.js`, `journey-compass-state.js`, `journey-compass-controller.js` | Full compass header, breadcrumb, trail controls, neighbor rail; rendered with `visible={false}` in App.svelte (gated by legacy shell) |
+| `LegacyCompassSurface.svelte` | **Complete** | 333   | `journey-compass-controller.js`, `semantic-dive-ui.js`                             | Legacy-compatible journey compass and focus-dive DOM IDs rendered in Svelte                                                           |
+| `Legend.svelte`               | **Complete** | 196   | `legend-ui.js`                                                                     | Cluster legend with color swatches, toggle                                                                                            |
+| `LoadingOverlay.svelte`       | **Complete** | 214   | `loading-ui.js`                                                                    | Phase chips, progress bar, fade transition                                                                                            |
+| `MapSummary.svelte`           | **Complete** | 170   | `journey-route-trace.js`, `journey-neighborhood.js`                                | Mini-map trail with SVG rendering                                                                                                     |
+| `ModeChips.svelte`            | **Complete** | 134   | `bindings/mode.js`                                                                 | Mode selection buttons with descriptions                                                                                              |
+| `SearchBar.svelte`            | **Complete** | 82    | —                                                                                  | Composes SearchInput + SearchResults                                                                                                  |
+| `SearchInput.svelte`          | **Complete** | 323   | `search-state.js`                                                                  | Input with debounce, clear, keyboard handling                                                                                         |
+| `SearchResults.svelte`        | **Complete** | 516   | `search-results-ui.js`                                                             | Results list, empty state, pagination                                                                                                 |
+| `SemanticOverlay.svelte`      | **Complete** | 148   | `journey-semantic-overlay.js`, `three-interaction-visuals.js`                      | Manifold/lens visibility + WebGL delegation                                                                                           |
+| `ThreadInspector.svelte`      | **Complete** | 181   | `thread-inspector.js`                                                              | Overlay UI with WebGL line integration                                                                                                |
+| `WeatherWidget.svelte`        | **Complete** | 177   | `weather-widget.js`                                                                | Weather fetch, display, icons, forecast                                                                                               |
+| `DevGui.svelte`               | **Complete** | 198   | `dev-gui.js`                                                                       | Dev-only WebGL tuning (spector, etc.); tree-shaken from prod                                                                          |
+| `FocusPocketA11y.svelte`      | **Complete** | 208   | `focus-pocket.js`                                                                  | A11y surface listing focus pocket neighbors for screen readers                                                                        |
+| `MapView.svelte`              | **Complete** | 365   | `map-state.ts`, `camera-controls.js`                                               | Backdrop-2D map view; still dynamic-imports `@lib/engine/map-state` (W32 T2-A target)                                                 |
+| `SpectorInspector.svelte`     | **Complete** | 355   | `spector`                                                                          | Dev-only WebGL inspector; tree-shaken from prod                                                                                       |
+| `Toast.svelte`                | **Complete** | 90    | `toast.js`                                                                         | Lightweight toast notifications                                                                                                       |
 
 ### Dev Server Behavior
 
@@ -417,12 +417,12 @@ All z-index values flow from `src/lib/z-index.ts` -> `src/lib/css/z-layers.css` 
 
 ### What lives where
 
-| Layer | Path | Role |
-|---|---|---|
-| **Svelte UI** | `src/lib/components/*`, `src/lib/stores/*` | Reactive UI shell (Svelte 5 runes) |
-| **Svelte bridge** | `src/lib/engine/*` | Imperative wrapper that calls into the engine kernel (12 of 14 files have 0 js/ imports; the rest delegate) |
-| **Engine kernel** | `js/modules/*.ts` (125+ files), `js/state.ts`, `js/state/*`, `js/workers/*` | Three.js scene, camera, shaders, instanced meshes, journey, search, weather — the active runtime |
-| **Archived shadows** | `legacy-reference/js-both-shadows-2026-06-13/*` | 50 BOTH-pattern `.js` files; reference material only |
+| Layer                | Path                                                                        | Role                                                                                                        |
+| -------------------- | --------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- |
+| **Svelte UI**        | `src/lib/components/*`, `src/lib/stores/*`                                  | Reactive UI shell (Svelte 5 runes)                                                                          |
+| **Svelte bridge**    | `src/lib/engine/*`                                                          | Imperative wrapper that calls into the engine kernel (12 of 14 files have 0 js/ imports; the rest delegate) |
+| **Engine kernel**    | `js/modules/*.ts` (125+ files), `js/state.ts`, `js/state/*`, `js/workers/*` | Three.js scene, camera, shaders, instanced meshes, journey, search, weather — the active runtime            |
+| **Archived shadows** | `legacy-reference/js-both-shadows-2026-06-13/*`                             | 50 BOTH-pattern `.js` files; reference material only                                                        |
 
 ### Why this is intentional architecture
 
@@ -572,11 +572,11 @@ Rune-mode `.svelte` and `.svelte.ts` files have a compiler bug: `!==` is compile
 
 ### Subagent model selection (W15+ learnings)
 
-| Model | Status | When to use |
-|-------|--------|-------------|
-| `opencode-go/mimo-v2.5` (paid) | Reliable | Multi-step research, test authoring, doc authoring, refactor migrations |
-| `openrouter/owl-alpha` | Unreliable | Bounces on file-content iteration, Playwright selector errors, timeouts mid-write. Avoid. |
-| `kilo/openrouter/owl-alpha` | Unreliable | Same issues as owl-alpha + Kilo rate limits |
+| Model                          | Status     | When to use                                                                               |
+| ------------------------------ | ---------- | ----------------------------------------------------------------------------------------- |
+| `opencode-go/mimo-v2.5` (paid) | Reliable   | Multi-step research, test authoring, doc authoring, refactor migrations                   |
+| `openrouter/owl-alpha`         | Unreliable | Bounces on file-content iteration, Playwright selector errors, timeouts mid-write. Avoid. |
+| `kilo/openrouter/owl-alpha`    | Unreliable | Same issues as owl-alpha + Kilo rate limits                                               |
 
 **Pattern**: mimo-v2.5 (paid) is the only model that consistently delivers. Budget ~$0.0003-0.001 per worker task.
 

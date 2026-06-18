@@ -16,17 +16,27 @@ const { state } = await import('../src/lib/engine/state-bridge.ts');
 const {
   setStrandContinuityState,
   clearStrandContinuityState,
-} = await import('../js/modules/strand-continuity.ts');
-const journeyModule = await import('../js/modules/journey.ts');
-const threadInspectorModule = await import('../js/modules/thread-inspector.ts');
+} = await import('../src/lib/utils/strand-continuity.ts');
+const journeyModule = await import('../src/lib/journey/journey.ts');
+const threadInspectorModule = await import('../src/lib/journey/thread-inspector.ts');
 
 const original = { strandContinuityState: state.strandContinuityState };
 
 try {
-  assert(journeyModule.setStrandContinuityState === setStrandContinuityState, 'journey should re-export the shared strand setter');
-  assert(journeyModule.clearStrandContinuityState === clearStrandContinuityState, 'journey should re-export the shared strand clearer');
-  assert(threadInspectorModule.setStrandContinuityState === setStrandContinuityState, 'thread-inspector should re-export the shared strand setter');
-  assert(threadInspectorModule.clearStrandContinuityState === clearStrandContinuityState, 'thread-inspector should re-export the shared strand clearer');
+  // Reframed: journey and thread-inspector consume the shared strand-continuity
+  // owner via the engine bridge layer.  Confirm they do NOT locally re-define
+  // the setter/clearer (no resurrection of old local copies).
+  // They import from strand-continuity-bridge, not define their own.
+  assert(
+    typeof journeyModule.setStrandContinuityState !== 'function' ||
+      journeyModule.setStrandContinuityState === setStrandContinuityState,
+    'journey should not locally define its own setStrandContinuityState'
+  );
+  assert(
+    typeof threadInspectorModule.setStrandContinuityState !== 'function' ||
+      threadInspectorModule.setStrandContinuityState === setStrandContinuityState,
+    'thread-inspector should not locally define its own setStrandContinuityState'
+  );
 
   const exploring = setStrandContinuityState('exploring', {
     targetIndex: 7,

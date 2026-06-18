@@ -15,8 +15,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
-const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey.ts');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts');
+const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts');
 const JOURNEY_POINT_COLOR_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/point-color.ts');
 
 function assert(cond, msg) {
@@ -77,8 +77,8 @@ function testPointColorAdapterSyncSearchStatusForFocus() {
   const src = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8');
 
   assert(
-    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"]\.\/event-bus\.(?:js|ts)['"]/.test(src),
-    'journey-point-color.js must import publish and EVENTS from event-bus.ts'
+    /import\s+\{\s*publish,\s*EVENTS\s*\}\s+from\s+['"][^'"]*event-bus['"]/.test(src),
+    'journey-point-color.js must import publish and EVENTS from event-bus'
   );
 
   const hasPublication = /searchGlowActive[\s\S]{0,650}\bpublish\(EVENTS\.SEARCH_STATUS_SYNC_REQUESTED/.test(src);
@@ -120,7 +120,7 @@ function testPointColorDoesNotDirectImportSyncSearchStatusForFocus() {
 
   // syncSearchStatusForFocus should NOT be imported from lifecycle; the event
   // bus request is the decoupled boundary.
-  const hasDirectImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(src);
+  const hasDirectImport = /import\s+\{[^}]*\bsyncSearchStatusForFocus\b[^}]*\}\s+from\s+['"][^'"]*lifecycle['"]/.test(src);
   assert(!hasDirectImport,
     'journey-point-color.js must NOT directly import syncSearchStatusForFocus from lifecycle');
 

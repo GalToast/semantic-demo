@@ -266,7 +266,6 @@ const PINNED_FILES = [
   'journey-ui-ownership-contract.mjs',
   'share-view-clipboard-contract.mjs',
   'keyboard-help-aria-contract.mjs',
-  'pathfinding-contract.mjs',
   'weather-lifecycle-contract.mjs',
   'weather-surface-ownership-contract.mjs',
   'camera-auto-rotate-settle-contract.mjs',

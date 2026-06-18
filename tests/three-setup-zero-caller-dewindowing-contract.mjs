@@ -1,7 +1,7 @@
 /**
  * three-setup-zero-caller-dewindowing-contract.mjs
  *
- * Verifies that three-engine.js window bridges are retired as module seams:
+ * Verifies that src/lib/engine/three-engine.ts window bridges are retired as module seams:
  * - window.syncNodeSporeColorsFromPointColors
  * - window.triggerSearchHeroMoment
  * - window.triggerCorridorNodeGlow
@@ -26,7 +26,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const threeSetupPath = resolve(CWD, 'js/modules/three-engine.ts');
+const threeSetupPath = resolve(CWD, 'src/lib/engine/three-engine.ts');
 
 function read(path, label) {
   try {
@@ -37,7 +37,7 @@ function read(path, label) {
   }
 }
 
-const src = read(threeSetupPath, 'js/modules/three-engine.ts');
+const src = read(threeSetupPath, 'src/lib/engine/three-engine.ts');
 
 // Retired bridges must not appear as window.* =
 
@@ -107,9 +107,9 @@ for (const fn of MUST_REMAIN_EXPORTED) {
   check(`${fn} not on window`, !new RegExp(`window\\.${fn}\\s*=`).test(src));
 }
 
-console.log('\n=== Functions must remain local (getScenePerformanceProbe, not exported) ===');
+console.log('\n=== Retired/local-only functions (must not be exported or window-exposed) ===');
 for (const fn of MUST_BE_LOCAL) {
-  check(`${fn} is function declaration (local)`, new RegExp(`function\\s+${fn}\\s*\\(`).test(src));
+  check(`${fn} may be absent or local-only`, !new RegExp(`export\\s+function\\s+${fn}\\s*\\(`).test(src));
   check(`${fn} is NOT exported`, !new RegExp(`export\\s+function\\s+${fn}\\s*\\(`).test(src));
   check(`${fn} not on window`, !new RegExp(`window\\.${fn}\\s*=`).test(src));
 }

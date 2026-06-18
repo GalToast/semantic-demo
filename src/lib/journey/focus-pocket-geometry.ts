@@ -4,6 +4,7 @@
 
 import * as THREE from 'three'
 import { state } from '@lib/engine/state-bridge'
+import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 import type { ConstellationMotifName } from '@lib/state/state-types'
 import { getViewportSize } from '@lib/utils/environment'
 import { describeCluster } from '@lib/utils/ui-presentation'
@@ -89,7 +90,8 @@ export function getFocusConstellationMotif(index: number): ConstellationMotif {
         key = 'civic'
     }
     const motifKey = key as ConstellationMotifName
-    const motif = state.FOCUS_CONSTELLATION_MOTIFS[motifKey] || state.FOCUS_CONSTELLATION_MOTIFS.market
+    const motifs = state.FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS
+    const motif = motifs[motifKey] || motifs.market || FOCUS_CONSTELLATION_MOTIFS.market
     return {
         key,
         ...motif,
@@ -105,7 +107,8 @@ export function getFocusConstellationMotifForPersonality(
     const overrideKey = personality?.motifOverride
     if (!overrideKey) return fallback
     const overrideMotifKey = overrideKey as ConstellationMotifName
-    const override = state.FOCUS_CONSTELLATION_MOTIFS[overrideMotifKey]
+    const motifs = state.FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS
+    const override = motifs[overrideMotifKey]
     if (!override) return fallback
     return {
         ...fallback,

@@ -1,12 +1,12 @@
 /**
  * focus-pocket-motion-contract.mjs
  *
- * Focused Node contract test for semantic-demo js/modules/focus-pocket.js
+ * Focused Node contract test for semantic-demo src/lib/journey/focus-pocket.ts
  * covering: viewport profiles, Step Inside/deep-dive personality, placement
  * geometry/compression, and reduced-motion breathing contract.
  *
  * Runs in Node with a tiny DOM/window/performance/requestAnimationFrame shim.
- * Imports real ../js/state.js and ../js/modules/focus-pocket.js and asserts
+ * Imports real state bridge and src/lib/journey/focus-pocket.ts and asserts
  * source behavior against mocked points / originalPositions / targetPositions.
  *
  * Usage:
@@ -100,12 +100,12 @@ const {
   getFocusThreadCurvePoint,
   syncRuntimeState,
   getRuntimeStateSnapshot
-} = await import('../js/modules/focus-pocket.ts');
+} = await import('../src/lib/journey/focus-pocket.ts');
 
 const {
   buildFocusedPocketStagedPositions,
   buildFocusedSemanticPocket
-} = await import('../js/modules/focus-pocket-geometry.ts');
+} = await import('../src/lib/journey/focus-pocket-geometry.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -155,9 +155,9 @@ function setupMinimalState(pointsCount = 12) {
     state.navState.focusPocketRoleByIndex = new Map();
     state.navState.threadCandidates = [];
     state.navState.threadSource = 'semantic';
-    state.focusPocketMotionByIndex = new Map();
+    state.pocketMotionByIndex = new Map();
     state.focusPocketAnimationFrameId = undefined;
-    state.focusPocketTransitionStartedAt = 0;
+    state.pocketTransitionStartedAt = 0;
     state.nodesAreSettling = false;
     state.camera = null;
     state.navState.focusPocketAnimationFrameId = undefined;
@@ -419,11 +419,11 @@ function testReducedMotionBreathing() {
     state.navState.focusedIndex = 0;
     state.navState.focusPocketMeta = { active: true };
   });
-  state.focusPocketMotionByIndex = new Map([
+  state.pocketMotionByIndex = new Map([
     [0, { role: 'anchor', delay: 0, duration: 800, speed: 0.42, breatheAmp: 0.0022, phase: 0 }],
     [1, { role: 'primary', delay: 52, duration: 980, speed: 0.24, breatheAmp: 0.0024, phase: 1.2 }],
   ]);
-  state.focusPocketTransitionStartedAt = 0;
+  state.pocketTransitionStartedAt = 0;
   _clockNow = 500; // mid-animation
 
   // positions buffer (flat x,y,z per node)
@@ -563,9 +563,9 @@ function teardownState() {
     state.navState.threadCandidates = [];
     state.navState.threadSource = 'semantic';
   });
-  state.focusPocketMotionByIndex  = new Map();
+  state.pocketMotionByIndex  = new Map();
   state.focusPocketAnimationFrameId = undefined;
-  state.focusPocketTransitionStartedAt = 0;
+  state.pocketTransitionStartedAt = 0;
   state.nodesAreSettling          = false;
   state.camera                    = null;
 }

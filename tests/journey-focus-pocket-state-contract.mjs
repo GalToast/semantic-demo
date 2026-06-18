@@ -48,15 +48,15 @@ const {
   getFocusPocketMeta,
   setFocusPocketMeta,
   clearFocusPocketMeta,
-} = await import('../js/modules/focus-pocket.ts');
+} = await import('../src/lib/journey/focus-pocket.ts');
 
 const originalNavState = state.navState;
-const originalMotion = state.focusPocketMotionByIndex;
+const originalMotion = state.pocketMotionByIndex;
 
 try {
   withStateMutation(() => {
     state.navState = { ...originalNavState, focusPocketIndices: null, focusPocketRoleByIndex: null, focusPocketMeta: null };
-    state.focusPocketMotionByIndex = null;
+    state.pocketMotionByIndex = null;
   });
 
   assertDeepEqual(getFocusPocketIndices(), [], 'indices getter should fall back to empty array');
@@ -76,7 +76,7 @@ try {
 
   assert(getFocusPocketMotionByIndex() instanceof Map, 'motion getter should fall back to a Map');
   setFocusPocketMotionForIndex(2, { role: 'halo', delay: 120 });
-  assert(state.focusPocketMotionByIndex instanceof Map, 'motion item setter should initialize owner Map');
+  assert(state.pocketMotionByIndex instanceof Map, 'motion item setter should initialize owner Map');
   assert(getFocusPocketMotionByIndex().get(2).delay === 120, 'motion item setter should round-trip');
   setFocusPocketMotionByIndex(new Map([[3, { role: 'primary', delay: 40 }]]));
   assert(getFocusPocketMotionByIndex().get(3).role === 'primary', 'motion map setter should replace Map');
@@ -91,7 +91,7 @@ try {
 } finally {
   withStateMutation(() => {
     state.navState = originalNavState;
-    state.focusPocketMotionByIndex = originalMotion;
+    state.pocketMotionByIndex = originalMotion;
   });
 }
 

@@ -15,7 +15,7 @@ const { state, withStateMutation } = await import('../src/lib/engine/state-bridg
 const {
   getFocusedJourneyPoint,
   getJourneyCompassState,
-} = await import('../js/modules/journey-compass-state.ts');
+} = await import('../src/lib/journey/compass-state.ts');
 
 function resetState() {
   withStateMutation(() => {

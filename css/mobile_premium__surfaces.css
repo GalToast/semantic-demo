@@ -1339,7 +1339,9 @@ body.is-active #selected-details.active:not([hidden]) {
     /* In focus-search peek mode the search container is intentionally
        suppressed so the focus stage owns the lower chrome. */
     body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container,
-    body[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container {
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container,
+    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] #info-panel.info-panel,
+    body[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;

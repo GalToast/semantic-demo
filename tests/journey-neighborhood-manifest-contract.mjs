@@ -13,7 +13,13 @@ globalThis.window = {};
 globalThis.performance = { now: () => 0 };
 
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
-const { buildNeighborhoodManifest } = await import('../js/modules/journey.ts');
+const { buildNeighborhoodManifest } = await import('../src/lib/journey/journey.ts');
+const { get } = await import('svelte/store');
+const {
+  businessRecords,
+  pointIndexByLeadId: pointIndexByLeadIdStore,
+  semanticNeighborMap,
+} = await import('../src/lib/data-store.ts');
 
 const original = {
   points: state.points,
@@ -21,6 +27,10 @@ const original = {
   semanticNeighborMapByLeadId: state.semanticNeighborMapByLeadId,
   nodePositions: state.nodePositions,
   navState: state.navState,
+  activeFilters: state.activeFilters,
+  businessRecords: get(businessRecords),
+  pointIndexByLeadIdStore: get(pointIndexByLeadIdStore),
+  semanticNeighborMap: get(semanticNeighborMap),
 };
 
 function seedNeighborhood() {
@@ -32,10 +42,36 @@ function seedNeighborhood() {
     city: index % 2 === 0 ? 'Conroe' : 'Magnolia',
     status: 'active',
   }));
+  const indexMap = new Map(points.map((point, index) => [point.lead_id, index]));
+  const neighborMap = new Map([
+    ['lead-0', {
+      neighbors: [
+        { leadId: 'lead-1', score: 0.82, semanticScore: 0.82, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-one' },
+        { leadId: 'lead-2', score: 0.94, semanticScore: 0.94, sameCity: true, sameStatus: true, threadType: 'fixture', reason: 'anchor-two' },
+        { leadId: 'lead-3', score: 0.76, semanticScore: 0.76, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-three' },
+      ],
+    }],
+    ['lead-1', {
+      neighbors: [
+        { leadId: 'lead-2', score: 0.71, semanticScore: 0.71, reason: 'peer one two' },
+        { leadId: 'lead-3', score: 0.55, semanticScore: 0.55, reason: 'peer one three' },
+      ],
+    }],
+    ['lead-2', {
+      neighbors: [
+        { leadId: 'lead-1', score: 0.71, semanticScore: 0.71, reason: 'peer two one' },
+        { leadId: 'lead-3', score: 0.64, semanticScore: 0.64, reason: 'peer two three' },
+      ],
+    }],
+  ]);
+  businessRecords.set(points);
+  pointIndexByLeadIdStore.set(indexMap);
+  semanticNeighborMap.set(neighborMap);
   withStateMutation(() => {
     state.points = points;
-    state.pointIndexByLeadId = new Map(points.map((point, index) => [point.lead_id, index]));
+    state.pointIndexByLeadId = indexMap;
     state.nodePositions = points.map((_, index) => ({ x: index * 0.1, y: index * 0.05, z: index * 0.02 }));
+    state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
     state.navState = {
       ...state.navState,
       neighborhoodAnchorIndex: 0,
@@ -47,27 +83,7 @@ function seedNeighborhood() {
         { index: 3, score: 0.76, semanticScore: 0.76, source: 'semantic' },
       ],
     };
-    state.semanticNeighborMapByLeadId = new Map([
-      ['lead-0', {
-        neighbors: [
-          { leadId: 'lead-1', score: 0.82, semanticScore: 0.82, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-one' },
-          { leadId: 'lead-2', score: 0.94, semanticScore: 0.94, sameCity: true, sameStatus: true, threadType: 'fixture', reason: 'anchor-two' },
-          { leadId: 'lead-3', score: 0.76, semanticScore: 0.76, sameCity: false, sameStatus: true, threadType: 'fixture', reason: 'anchor-three' },
-        ],
-      }],
-      ['lead-1', {
-        neighbors: [
-          { leadId: 'lead-2', score: 0.71, semanticScore: 0.71, reason: 'peer one two' },
-          { leadId: 'lead-3', score: 0.55, semanticScore: 0.55, reason: 'peer one three' },
-        ],
-      }],
-      ['lead-2', {
-        neighbors: [
-          { leadId: 'lead-1', score: 0.71, semanticScore: 0.71, reason: 'peer two one' },
-          { leadId: 'lead-3', score: 0.64, semanticScore: 0.64, reason: 'peer two three' },
-        ],
-      }],
-    ]);
+    state.semanticNeighborMapByLeadId = neighborMap;
   });
 }
 
@@ -100,7 +116,11 @@ try {
     state.semanticNeighborMapByLeadId = original.semanticNeighborMapByLeadId;
     state.nodePositions = original.nodePositions;
     state.navState = original.navState;
+    state.activeFilters = original.activeFilters;
   });
+  businessRecords.set(original.businessRecords);
+  pointIndexByLeadIdStore.set(original.pointIndexByLeadIdStore);
+  semanticNeighborMap.set(original.semanticNeighborMap);
 }
 
 console.log('PASS journey-neighborhood-manifest-contract');

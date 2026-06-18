@@ -27,7 +27,7 @@ globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
 const { state } = await import('../src/lib/engine/state-bridge.ts');
-const { getNeighborhoodPersonality } = await import('../js/modules/focus-pocket.ts');
+const { getNeighborhoodPersonality } = await import('../src/lib/journey/focus-pocket.ts');
 
 const original = {
   points: state.points,

@@ -126,7 +126,8 @@ The allowlist at `scripts/ci-check-nav-mirror-pattern.allowlist.json` permits th
 The parity layer has direct unit test coverage:
 
 - **`tests/unit-active/parity-attrs-derivation.test.ts`** — 84 vitest cases covering all IIFE derivations inside `computeParityAttributes()` (journeyPhase, graphContext, panelSurfaceMode, panelSurfaceDetail, focusedNode, searchStatus, etc.). Includes the W15 regression test: `focusedIndex=522 + search.summary + journey.phase=overview → journeyPhase='focus-search'` (would have caught the W15 deeper gap at the unit level).
-- **`tests/integration/w15-body-attr-live-probe.spec.js`** — Playwright integration test that runs against a Vite dev server or production preview, asserts the 8 critical body data-attrs after a search-result focus click.
+- **`tests/integration/w15-body-attr-live-probe.spec.js`** — Playwright integration test that runs against a Vite dev server or production preview. Covers 4 primary body data-attr states (idle, search, focus-search, focus) with auto-retry, configurable timeout, console error capture, and exported mock fetch helpers. Remaining states (trail, inside, semantic-dive, returning) documented as TODO.
+- **`tests/integration/visual-state-snapshots.spec.js`** — Playwright visual snapshot test capturing baseline screenshots for the 4 primary body data-attr states (`idle-overview.png`, `search-mode.png`, `focus-search.png`, `focus-programmatic.png`). Uses `toHaveScreenshot()` for pixel-diff regression detection. Update baselines with `UPDATE_SNAPSHOTS=true`. Snapshots stored relative to the test file.
 - **`scripts/ci-check-nav-mirror-pattern.mjs` + `tests/scripts/ci-check-nav-mirror-pattern.test.mjs`** — CI lint check + 21 vitest cases ensuring no direct nav-state mutations outside canonical mirror helpers.
 
 ## Related Documents

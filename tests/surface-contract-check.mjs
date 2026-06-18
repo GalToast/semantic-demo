@@ -4414,7 +4414,27 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
             focusStage.setAttribute('aria-hidden', 'false')
         }
 
-        let inspector = document.querySelector('#thread-inspector')
+        if (preview) {
+            const actions = window.__APP_ACTIONS__
+            if (actions && typeof actions.inspectThreadNeighbor === 'function') {
+                let candidates = window.__APP_STATE__?.state?.navState?.threadCandidates || []
+                if (!candidates.length && typeof actions.setTrailFromSeed === 'function') {
+                    actions.setTrailFromSeed(1)
+                    candidates = window.__APP_STATE__?.state?.navState?.threadCandidates || []
+                }
+                const candidate = candidates.find((item) => item && Number.isFinite(typeof item === 'number' ? item : item.index))
+                const candidateIndex = typeof candidate === 'number' ? candidate : candidate?.index
+                if (Number.isFinite(candidateIndex)) {
+                    actions.inspectThreadNeighbor(candidateIndex, {
+                        force: true,
+                        preserveJourney: true,
+                        surface: 'walk-next'
+                    })
+                }
+            }
+        }
+
+        let inspector = document.querySelector('#thread-inspector, #focus-thread-inspector')
         if (!inspector && preview) {
             inspector = document.createElement('div')
             inspector.id = 'focus-thread-inspector'
@@ -4441,9 +4461,30 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
         if (neighbors) neighbors.classList.add('active')
     }
 
+    if (preview) {
+        await page
+            .waitForFunction(() => typeof window.__APP_ACTIONS__?.inspectThreadNeighbor === 'function', undefined, {
+                timeout: 5000
+            })
+            .catch(() => {})
+    }
+
     await page.evaluate(forceSurface, { preview })
     await page.waitForTimeout(25)
     await page.evaluate(forceSurface, { preview })
+    if (preview) {
+        await page
+            .waitForFunction(
+                () => {
+                    const inspector = document.querySelector('#thread-inspector')
+                    const rect = inspector?.getBoundingClientRect()
+                    return document.body.dataset.threadInspectSurface !== 'idle' || (!!rect && rect.width > 0 && rect.height > 0)
+                },
+                undefined,
+                { timeout: 1500 }
+            )
+            .catch(() => {})
+    }
     // preceding waitForFunction handles settlement
 }
 

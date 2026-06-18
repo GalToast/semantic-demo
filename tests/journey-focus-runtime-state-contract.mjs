@@ -27,20 +27,20 @@ globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
 const { state } = await import('../src/lib/engine/state-bridge.ts');
-const { syncRuntimeState, getRuntimeStateSnapshot } = await import('../js/modules/focus-pocket.ts');
+const { syncRuntimeState, getRuntimeStateSnapshot } = await import('../src/lib/journey/focus-pocket.ts');
 
 const original = getRuntimeStateSnapshot();
 
 try {
   const navState = { ...state.navState, focusedIndex: 7, focusPocketIndices: [7, 8] };
   const targetPositions = [{ x: 1, y: 2, z: 3 }];
-  const focusPocketMotionByIndex = new Map([[8, { role: 'primary', delay: 64 }]]);
+  const pocketMotionByIndex = new Map([[8, { role: 'primary', delay: 64 }]]);
 
   syncRuntimeState({
     navState,
     targetPositions,
-    focusPocketMotionByIndex,
-    focusPocketTransitionStartedAt: 1234,
+    pocketMotionByIndex,
+    pocketTransitionStartedAt: 1234,
     nodesAreSettling: true,
     autoRotate: false,
   });
@@ -48,8 +48,8 @@ try {
   const snapshot = getRuntimeStateSnapshot();
   assert(snapshot.navState === navState, 'snapshot should expose current navState reference');
   assert(snapshot.targetPositions === targetPositions, 'snapshot should expose current targetPositions reference');
-  assert(snapshot.focusPocketMotionByIndex === focusPocketMotionByIndex, 'snapshot should expose current motion Map reference');
-  assert(snapshot.focusPocketTransitionStartedAt === 1234, 'snapshot should expose transition start time');
+  assert(snapshot.pocketMotionByIndex === pocketMotionByIndex, 'snapshot should expose current motion Map reference');
+  assert(snapshot.pocketTransitionStartedAt === 1234, 'snapshot should expose transition start time');
   assert(snapshot.nodesAreSettling === true, 'snapshot should expose settling flag');
   assert(snapshot.autoRotate === false, 'snapshot should expose autoRotate flag');
 

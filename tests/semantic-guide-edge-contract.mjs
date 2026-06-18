@@ -1,7 +1,7 @@
 /**
  * semantic-guide-edge-contract.mjs
  *
- * Static source analysis contract for js/modules/semantic-guide.js edge behaviors.
+ * Static source analysis contract for src/lib/journey/semantic-guide.ts edge behaviors.
  *
  * Since semantic-guide.js requires `window` and `document` globals that are
  * unavailable in Node, this contract uses three strategies:
@@ -36,7 +36,7 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = join(__dirname, '..');
-const MODULE_PATH = join(PROJECT_ROOT, 'js/modules/semantic-guide.ts');
+const MODULE_PATH = join(PROJECT_ROOT, 'src/lib/journey/semantic-guide.ts');
 
 // ---------------------------------------------------------------------------
 // Assertions
@@ -294,7 +294,7 @@ async function testPrivateHelpersRemainPrivateWithFakeWindow() {
     globalThis.document = fakeWindow.document;
     globalThis.state = fakeState;
 
-    const mod = await import('../js/modules/semantic-guide.ts');
+    const mod = await import('../src/lib/journey/semantic-guide.ts');
 
     assert(
       typeof mod.buildClientSemanticGuideFallback === 'undefined',
@@ -336,7 +336,7 @@ async function testPrivateHelpersRemainPrivateWithFakeWindow() {
 async function testExistingPlaywrightSpecCoversEdgeCases() {
   console.log('\n[STATIC A] existing Playwright spec — verifies DOM edge cases are covered');
 
-  const specPath = join(__dirname, 'semantic-guide-fallback-contract.spec.ts');
+  const specPath = join(__dirname, 'semantic-guide-fallback-contract.spec.js');
   const spec = readFileSync(specPath, 'utf-8');
 
   // Must cover 500 error path

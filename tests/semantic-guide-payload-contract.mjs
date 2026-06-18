@@ -1,7 +1,7 @@
 /**
  * semantic-guide-payload-contract.mjs
  *
- * Fast Node contract test for js/modules/semantic-guide-payload.js
+ * Fast Node contract test for src/lib/journey/semantic-guide-payload.ts
  *
  * Proves the payload builders no longer read raw global state — all state
  * access is routed through semantic-guide-payload-adapter.js boundary.
@@ -17,8 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const PAYLOAD_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide-payload.ts');
-const ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide-payload-adapter.ts');
+const PAYLOAD_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/semantic-guide-payload.ts');
+const ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/semantic-guide-payload-adapter.ts');
 
 // ---------------------------------------------------------------------------
 // Assertions
@@ -62,7 +62,8 @@ async function testPayloadDelegatesToAdapter() {
 
   // Must import from semantic-guide-payload-adapter
   assert(
-    srcCode.includes("from './semantic-guide-payload-adapter.ts'"),
+    srcCode.includes("from '@lib/journey/semantic-guide-payload-adapter'") ||
+    srcCode.includes('semantic-guide-payload-adapter'),
     'payload imports from semantic-guide-payload-adapter'
   );
 
@@ -134,7 +135,7 @@ async function testAdapterSnapshotStructure() {
     buildSemanticGuidePayloadResult,
     mapResultIndicesToPayloadResults,
     getAnchorPoint
-  } = await import('../js/modules/semantic-guide-payload-adapter.ts');
+  } = await import('../src/lib/journey/semantic-guide-payload-adapter.ts');
 
   // getSearchContextSnapshot returns an object with currentSearchSummary and currentView
   const snap = getSearchContextSnapshot();
@@ -165,7 +166,7 @@ async function testAdapterSnapshotStructure() {
 async function testBuildResultWithProvidedSnapshot() {
   console.log('\n[RUNTIME] buildSemanticGuidePayloadResult — works with provided snapshot');
 
-  const { buildSemanticGuidePayloadResult } = await import('../js/modules/semantic-guide-payload-adapter.ts');
+  const { buildSemanticGuidePayloadResult } = await import('../src/lib/journey/semantic-guide-payload-adapter.ts');
 
   // Simulate a snapshot with points and context
   const fakePoints = [
@@ -208,7 +209,7 @@ async function testBuildResultWithProvidedSnapshot() {
 async function testMapResultIndicesToPayloadResults() {
   console.log('\n[RUNTIME] mapResultIndicesToPayloadResults — works via adapter');
 
-  const { mapResultIndicesToPayloadResults } = await import('../js/modules/semantic-guide-payload-adapter.ts');
+  const { mapResultIndicesToPayloadResults } = await import('../src/lib/journey/semantic-guide-payload-adapter.ts');
 
   const fakePoints = [
     { lead_id: 'LI_001', name: 'Biz A', city: 'Austin', cluster: 1, status: 'active', what: 'Note A' },
@@ -250,7 +251,7 @@ async function testMapResultIndicesToPayloadResults() {
 async function testGetAnchorPointViaAdapter() {
   console.log('\n[RUNTIME] getAnchorPoint — works via adapter');
 
-  const { getAnchorPoint } = await import('../js/modules/semantic-guide-payload-adapter.ts');
+  const { getAnchorPoint } = await import('../src/lib/journey/semantic-guide-payload-adapter.ts');
 
   const fakePoints = [
     { lead_id: 'LI_001', name: 'Biz A' },
@@ -289,7 +290,7 @@ async function testPayloadHelpersHonorExplicitSummary() {
   const {
     getSemanticGuidePayloadResults,
     getSemanticGuideAnchorPoint
-  } = await import('../js/modules/semantic-guide-payload.ts');
+  } = await import('../src/lib/journey/semantic-guide-payload.ts');
 
   const originalPoints = state.points;
   const originalSummary = state.currentSearchSummary;
@@ -329,7 +330,7 @@ async function testSearchContextSnapshotReturnsCurrentState() {
   console.log('\n[RUNTIME] getSearchContextSnapshot — returns current state values');
 
   const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
-  const { getSearchContextSnapshot } = await import('../js/modules/semantic-guide-payload-adapter.ts');
+  const { getSearchContextSnapshot } = await import('../src/lib/journey/semantic-guide-payload-adapter.ts');
 
   // Set up state
   const originalSummary = state.currentSearchSummary;

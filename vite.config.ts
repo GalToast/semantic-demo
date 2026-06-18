@@ -216,10 +216,6 @@ export default defineConfig({
   css: {
     devSourcemap: true
   },
-  // TypeScript strict mode is enforced via tsconfig.json
-  esbuild: {
-    target: 'es2022'
-  },
   build: {
     target: 'es2022',
     outDir: SVELTE_OUT_DIR,

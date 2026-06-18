@@ -8,17 +8,17 @@
 
 ## TL;DR
 
-| Metric | Before (W20 start) | After (W32 close) |
-|---|---|---|
-| `js/modules/` files | 64+ legacy files | **GONE — directory deleted** |
-| `legacy-reference/` size | 232K, 86 files | **1 README** only |
-| Svelte components in `src/components/` | ~21 | **27** (some decomposed) |
-| Components with dedicated tests | 0 | **27** (every component tested) |
-| Cross-track src/ → legacy imports | 54+ | **2 doc comments only, 0 active** |
-| Active bridge files | 14+ | **5 pure-living bridges with consumers** |
-| `svelte-check` | many errors | **0 errors, 0 warnings** |
-| `vite build` | unknown | **4.85s** (three.js chunked separately for cache locality) |
-| `vitest` failures | many | **2 pre-existing** (`css-important-invariant` + stale `w20-wave4-readiness-regression` exceeded by deletion) |
+| Metric                                 | Before (W20 start) | After (W32 close)                                                                                            |
+| -------------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------ |
+| `js/modules/` files                    | 64+ legacy files   | **GONE — directory deleted**                                                                                 |
+| `legacy-reference/` size               | 232K, 86 files     | **1 README** only                                                                                            |
+| Svelte components in `src/components/` | ~21                | **27** (some decomposed)                                                                                     |
+| Components with dedicated tests        | 0                  | **27** (every component tested)                                                                              |
+| Cross-track src/ → legacy imports      | 54+                | **2 doc comments only, 0 active**                                                                            |
+| Active bridge files                    | 14+                | **5 pure-living bridges with consumers**                                                                     |
+| `svelte-check`                         | many errors        | **0 errors, 0 warnings**                                                                                     |
+| `vite build`                           | unknown            | **4.85s** (three.js chunked separately for cache locality)                                                   |
+| `vitest` failures                      | many               | **2 pre-existing** (`css-important-invariant` + stale `w20-wave4-readiness-regression` exceeded by deletion) |
 
 ---
 
@@ -59,8 +59,8 @@
 ### W30 — Cross-Track Pollution Cleanup
 
 - **17 files deleted** in single commit (`7f440f7`):
-  - 12 orphan components (App, FilterChrome, InfoPanelChrome, 6 InfoPanel surfaces, LegendPanelChrome, SearchChrome, SearchResultsList, SelectedBusinessDetails, SemanticGuideOverlay)
-  - 5 cross-track legacy: `journey-compass-controller.ts`, `journey-focus-ui.ts`, `journey-lifecycle-adapter.ts`, `journey-selected-card.ts`, `journey-thread-settler.ts`
+    - 12 orphan components (App, FilterChrome, InfoPanelChrome, 6 InfoPanel surfaces, LegendPanelChrome, SearchChrome, SearchResultsList, SelectedBusinessDetails, SemanticGuideOverlay)
+    - 5 cross-track legacy: `journey-compass-controller.ts`, `journey-focus-ui.ts`, `journey-lifecycle-adapter.ts`, `journey-selected-card.ts`, `journey-thread-settler.ts`
 - All had canonical counterparts reachable via existing bridge paths
 - `js/modules/` directory: **29 files → 12 files**
 
@@ -89,21 +89,21 @@
 ### Library Layer
 
 - **`src/lib/`**: 254 .ts files organized into:
-  - `engine/` — Render loop, lifecycle, postprocessing
-  - `journey/` — Trail walker, neighborhood, compass, semantic-guide/dive (40 files)
-  - `orchestration/` — View controller, adapter deps, app init
-  - `stores/` — Reactive state (8 stores, all `writable + notify` per W11-T4)
-  - `state/` — `app.svelte.ts` (single source of truth, Svelte 5 class)
-  - `ui/`, `search/`, `keyboard/`, `focus/`, `utils/`, `view-models/`
+    - `engine/` — Render loop, lifecycle, postprocessing
+    - `journey/` — Trail walker, neighborhood, compass, semantic-guide/dive (40 files)
+    - `orchestration/` — View controller, adapter deps, app init
+    - `stores/` — Reactive state (8 stores, all `writable + notify` per W11-T4)
+    - `state/` — `app.svelte.ts` (single source of truth, Svelte 5 class)
+    - `ui/`, `search/`, `keyboard/`, `focus/`, `utils/`, `view-models/`
 
 ### Bridge Layer (Internal Engine Implementation Detail)
 
 - 5 pure-living bridges kept (consumed by `engine/adapters/core.ts` and `app-init.ts`):
-  - `src/lib/engine/adapters/core.ts` — orchestrates
-  - `src/lib/engine/adapters/lifecycle-bridge.ts`
-  - `src/lib/engine/adapters/camera-bridge.ts`
-  - `src/lib/engine/adapters/search-bridge.ts`
-  - `src/lib/orchestration/adapter-deps.ts`
+    - `src/lib/engine/adapters/core.ts` — orchestrates
+    - `src/lib/engine/adapters/lifecycle-bridge.ts`
+    - `src/lib/engine/adapters/camera-bridge.ts`
+    - `src/lib/engine/adapters/search-bridge.ts`
+    - `src/lib/orchestration/adapter-deps.ts`
 
 ### Legacy Layer (Archived)
 
@@ -171,4 +171,4 @@ The migration is **not just code-complete** — it's resilient:
 
 The next session can focus on **production hardening**, **CSS smell closure**, or **feature work** — the foundation is solid.
 
-— *End of W20–W32 retrospective*
+— _End of W20–W32 retrospective_

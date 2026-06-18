@@ -26,7 +26,7 @@ globalThis.performance = globalThis.window.performance;
 globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
-const { getFocusConstellationViewportProfile } = await import('../js/modules/focus-pocket.ts');
+const { getFocusConstellationViewportProfile } = await import('../src/lib/journey/focus-pocket.ts');
 
 function profileFor(width, height) {
   globalThis.window.innerWidth = width;

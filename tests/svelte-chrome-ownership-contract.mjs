@@ -25,20 +25,20 @@ function walk(dir, files = []) {
   return files;
 }
 
-const appSource = read('js/modules/components/App.svelte');
+const appSource = read('src/App.svelte');
 const appIslandSource = read('src/main.ts');
 const shellSource = read('vector-explorer-polished.html');
 
 assert(
-  appSource.includes("import InfoPanelChrome from './InfoPanelChrome.svelte'"),
-  'App.svelte should import InfoPanelChrome directly'
+  appSource.includes("import InfoPanel from '@components/InfoPanel.svelte'"),
+  'src/App.svelte should import the canonical InfoPanel component directly'
 );
 assert(
-  appSource.includes("import LegendPanelChrome from './LegendPanelChrome.svelte'"),
-  'App.svelte should import LegendPanelChrome directly'
+  appSource.includes("import Legend from '@components/Legend.svelte'"),
+  'src/App.svelte should import the canonical Legend component directly'
 );
-assert(appSource.includes('<InfoPanelChrome />'), 'App.svelte should render InfoPanelChrome');
-assert(appSource.includes('<LegendPanelChrome />'), 'App.svelte should render LegendPanelChrome');
+assert(appSource.includes('<InfoPanel '), 'src/App.svelte should render InfoPanel');
+assert(appSource.includes('<Legend '), 'src/App.svelte should render Legend');
 
 assert(
   appIslandSource.includes("import App from './App.svelte'"),
@@ -46,11 +46,14 @@ assert(
 );
 assert(
   !appIslandSource.includes('InfoPanelChrome') && !appIslandSource.includes('LegendPanelChrome'),
-  'app-svelte-island.js should not mount chrome panels separately'
+  'src/main.ts should not mount retired chrome panels separately'
 );
 
 assert(!exists('js/modules/info-panel-chrome-island.ts'), 'obsolete info-panel-chrome-island.js should not exist');
 assert(!exists('js/modules/legend-panel-chrome-island.ts'), 'obsolete legend-panel-chrome-island.js should not exist');
+assert(!exists('js/modules/components/App.svelte'), 'retired js/modules/components/App.svelte should not be restored');
+assert(!exists('js/modules/components/InfoPanelChrome.svelte'), 'retired InfoPanelChrome.svelte should not be restored');
+assert(!exists('js/modules/components/LegendPanelChrome.svelte'), 'retired LegendPanelChrome.svelte should not be restored');
 assert(!shellSource.includes('info-panel-chrome-island'), 'HTML shell should not expose obsolete info-panel chrome slot');
 assert(!shellSource.includes('legend-panel-chrome-island'), 'HTML shell should not expose obsolete legend-panel chrome slot');
 
@@ -67,4 +70,4 @@ for (const file of sourceFiles) {
   assert(!source.includes('initLegendPanelChromeIsland'), `${file} should not import or call initLegendPanelChromeIsland`);
 }
 
-console.log('Svelte chrome ownership contract OK: App.svelte is the single info/legend chrome owner.');
+console.log('Svelte chrome ownership contract OK: src/App.svelte is the single info/legend chrome owner.');

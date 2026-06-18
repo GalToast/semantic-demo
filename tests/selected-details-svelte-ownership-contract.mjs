@@ -21,37 +21,37 @@ function walk(dir, files = []) {
   return files;
 }
 
-const componentPath = 'js/modules/components/SelectedBusinessDetails.svelte';
-const islandPath = 'js/modules/selected-details-svelte-island.ts';
-const surfacePath = 'js/modules/components/InfoPanelSelectionSurface.svelte';
-const viewModelPath = 'js/modules/view-models/selected-business-view-model.ts';
-const focusRendererPath = 'js/modules/focus-stage-renderer.ts';
+const componentPath = 'src/components/InfoPanel.svelte';
+const retiredComponentPath = 'js/modules/components/SelectedBusinessDetails.svelte';
+const retiredIslandPath = 'js/modules/selected-details-svelte-island.ts';
+const retiredSurfacePath = 'js/modules/components/InfoPanelSelectionSurface.svelte';
+const viewModelPath = 'src/lib/view-models/selected-business-view-model.ts';
+const focusRendererPath = 'src/lib/focus/stage-renderer.ts';
 
 const componentSrc = read(componentPath);
-const islandSrc = read(islandPath);
-const surfaceSrc = read(surfacePath);
 const viewModelSrc = read(viewModelPath);
 const focusRendererSrc = read(focusRendererPath);
 
 assert(
-  surfaceSrc.includes('id="selected-details"'),
-  'InfoPanelSelectionSurface.svelte should declare the selected details slot'
+  !fs.existsSync(path.join(root, retiredComponentPath)),
+  'retired SelectedBusinessDetails.svelte should not be restored'
 );
 assert(
-  islandSrc.includes("import SelectedBusinessDetails from './components/SelectedBusinessDetails.svelte'"),
-  'selected-details-svelte-island.js should mount SelectedBusinessDetails.svelte'
+  !fs.existsSync(path.join(root, retiredIslandPath)),
+  'retired selected-details-svelte-island.ts should not be restored'
 );
 assert(
-  islandSrc.includes("const SELECTED_DETAILS_SLOT_ID = 'selected-details'"),
-  'selected-details-svelte-island.js should target #selected-details'
+  !fs.existsSync(path.join(root, retiredSurfacePath)),
+  'retired InfoPanelSelectionSurface.svelte should not be restored'
 );
 assert(
+  componentSrc.includes('id="selected-details"') &&
   componentSrc.includes('id="selected-action-row"') && componentSrc.includes('id="btn-selected-map"'),
-  'SelectedBusinessDetails.svelte should own the selected action row markup'
+  'src/components/InfoPanel.svelte should own the selected details action row markup'
 );
 assert(
   componentSrc.includes('id="selected-match-panel"') && componentSrc.includes('{viewModel.matchNarrative}'),
-  'SelectedBusinessDetails.svelte should own the selected match panel copy'
+  'src/components/InfoPanel.svelte should own the selected match panel copy'
 );
 assert(
   viewModelSrc.includes('matchNarrative') && viewModelSrc.includes('showMatchPanel'),
@@ -88,12 +88,10 @@ const svelteOwnedIds = [
 
 const allowedFiles = new Set([
   componentPath,
-  islandPath,
-  surfacePath,
   viewModelPath
 ]);
 
-for (const file of walk('js/modules').filter((candidate) => /\.(?:js|mjs|svelte|ts)$/.test(candidate))) {
+for (const file of walk('src/lib').filter((candidate) => /\.(?:js|mjs|svelte|ts)$/.test(candidate))) {
   if (allowedFiles.has(file)) continue;
   const source = read(file);
   for (const id of svelteOwnedIds) {

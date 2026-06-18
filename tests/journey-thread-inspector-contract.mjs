@@ -29,6 +29,7 @@ const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('src/lib/journey/canvas-n
 const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('src/lib/journey/canvas-hit-test.ts', SEMDEMO_ROOT)
 const THREAD_INSPECTOR_PATH = resolveSource('js/modules/thread-inspector.ts', SEMDEMO_ROOT)
 const JOURNEY_THREAD_MODEL_PATH = resolveSource('src/lib/journey/thread-model.ts', SEMDEMO_ROOT)
+const JOURNEY_THREAD_MODEL_BRIDGE_PATH = resolveSource('src/lib/engine/journey-thread-model-bridge.ts', SEMDEMO_ROOT)
 const JOURNEY_WEBGL_PATH = resolveSource('js/modules/journey-webgl.ts', SEMDEMO_ROOT)
 const JOURNEY_ROUTE_TRACE_PATH = resolveSource('js/modules/journey-route-trace.ts', SEMDEMO_ROOT)
 const JOURNEY_SEMANTIC_OVERLAY_PATH = resolveSource('src/lib/journey/semantic-overlay.ts', SEMDEMO_ROOT)
@@ -192,7 +193,7 @@ function testApplyPointFilterColorsFactorRanges() {
     assertContains(pointColorSrc, 'visible ? 1 : 0.08', 'invisible factor is 0.08')
 
     // Focus anchor factor must be brightest (> 2.0)
-    assertContains(pointColorSrc, 'i === state.navState.focusedIndex ? 2.14', 'focus anchor factor 2.14')
+    assertContains(pointColorSrc, 'i === _state.navState.focusedIndex ? 2.14', 'focus anchor factor 2.14')
 
     console.log('  OK applyPointFilterColors factor ranges verified')
 }
@@ -278,6 +279,7 @@ function testThreadInspectorSemanticFirst() {
 
     const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const journeyModelSrc = fs.readFileSync(JOURNEY_THREAD_MODEL_PATH, 'utf-8')
+    const journeyModelBridgeSrc = fs.readFileSync(JOURNEY_THREAD_MODEL_BRIDGE_PATH, 'utf-8')
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
 
     // Both files must have getSemanticThreadCandidates
@@ -309,8 +311,18 @@ function testThreadInspectorSemanticFirst() {
         'journey-thread-model: semantic-first strategy'
     )
 
-    // journey.js must import from journey-thread-model.js, not thread-inspector.js
-    assertContains(journeySrc, "from './journey-thread-model.ts'", 'journey.js imports from journey-thread-model.ts')
+    // journey.ts must consume the thread model through the engine bridge, not
+    // through thread-inspector or a resurrected direct legacy import.
+    assertContains(
+        journeySrc,
+        "from '@lib/engine/journey-thread-model-bridge'",
+        'journey.ts imports from journey-thread-model bridge'
+    )
+    assertContains(
+        journeyModelBridgeSrc,
+        "from '@lib/journey/thread-model'",
+        'journey-thread-model bridge re-exports canonical thread model'
+    )
 
     // thread-inspector.js must NOT re-implement normalizeLeadId; it must use the shared version.
     assert(journeyModelSrc.includes('function normalizeLeadId'), 'journey-thread-model has canonical normalizeLeadId')
@@ -334,13 +346,7 @@ function testThreadInspectorSemanticFirst() {
         assert(tiBlock.includes('exploreThreadNeighbor'), 'window._ti.exploreThreadNeighbor diagnostic access')
     }
 
-    // Journey imports normalizeLeadId from journey-thread-model
-    const importBlockEnd = journeySrc.indexOf("} from './journey-thread-model.ts'")
-    const normalizeLeadIdNear = journeySrc.indexOf('normalizeLeadId,')
-    assert(importBlockEnd !== -1, 'journey-thread-model.js import block closing found')
-    assert(normalizeLeadIdNear !== -1, 'normalizeLeadId, token found in journey.ts')
-    // normalizeLeadId must appear before the import block closes - part of the same import statement
-    assert(normalizeLeadIdNear < importBlockEnd, 'normalizeLeadId is imported from journey-thread-model.ts')
+    assertContains(journeyModelBridgeSrc, 'normalizeLeadId,', 'bridge exports normalizeLeadId from thread-model')
 
     console.log('  OK thread-inspector dual candidates strategy verified')
 }
@@ -365,21 +371,27 @@ function testSharedStrandContinuityOwner() {
     )
     assertContains(
         strandContinuitySrc,
-        "from './journey-webgl",
+        "from '@lib/engine/journey-webgl-bridge'",
         'strand-continuity owns arrival handoff overlay imports'
     )
 
     assert(
         /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity(?:\.ts)?['"]/.test(
             journeySrc
-        ),
-        'journey imports shared strand-continuity owner'
+        ) ||
+            /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/engine\/strand-continuity-bridge['"]/.test(
+                journeySrc
+            ),
+        'journey imports shared strand-continuity bridge'
     )
     assert(
         /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity(?:\.ts)?['"]/.test(
             threadInspectorSrc
-        ),
-        'thread-inspector imports shared strand-continuity owner'
+        ) ||
+            /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/engine\/strand-continuity-bridge['"]/.test(
+                threadInspectorSrc
+            ),
+        'thread-inspector imports shared strand-continuity bridge'
     )
     assertNotContains(journeySrc, 'export function setStrandContinuityState', 'journey local strand setter removed')
     assertNotContains(journeySrc, 'export function clearStrandContinuityState', 'journey local strand clearer removed')
@@ -406,19 +418,16 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
 
     const tiSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
-    // exploreThreadNeighbor must clear existing strand timers before setting phase='exploring'.
-    // Timer storage is centralized in strand-continuity.ts via disposeTimers/setTimer.
-    assertContains(
-        tiSrc,
-        'disposeTimers()',
-        'exploreThreadNeighbor clears existing strand timers through strand-continuity owner'
-    )
-
-    const clearTimersIdx = tiSrc.indexOf('disposeTimers()')
+    // Timer storage is centralized behind named setTimer/clearTimer helpers.
+    // setTimer replaces any existing timer for the same purpose before scheduling.
+    const arrivalTimerIdx = tiSrc.indexOf("setTimer('arrival', arrivalDelay")
+    const settleTimerIdx = tiSrc.indexOf("setTimer('settle', settleDelay")
     const exploringIdx = tiSrc.indexOf("setStrandContinuityState('exploring'")
-    assert(clearTimersIdx !== -1, 'disposeTimers call found')
     assert(exploringIdx !== -1, "setStrandContinuityState('exploring') found")
-    assert(clearTimersIdx < exploringIdx, 'strand timers are disposed before exploring phase')
+    assert(arrivalTimerIdx !== -1, 'arrival setTimer call found')
+    assert(settleTimerIdx !== -1, 'settle setTimer call found')
+    assert(exploringIdx < arrivalTimerIdx, 'arrival timer is scheduled after exploring phase')
+    assert(arrivalTimerIdx < settleTimerIdx, 'settle timer is scheduled after arrival timer')
 
     // exploreThreadNeighbor must schedule a settle-timeout that transitions phase='arrived' -> 'idle'
     assertContains(tiSrc, "s3?.phase === 'arrived'", 'settle-timeout checks phase === arrived')
@@ -442,11 +451,11 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
     // renderThreadInspection followBtn must guard on followTargetsCurrent
     assertContains(tiSrc, 'const followTargetsCurrent =', 'renderThreadInspection defines followTargetsCurrent')
     assert(
-        /inspectionState\??\.index\s*===\s*getNavState\(\)\??\.focusedIndex/.test(tiSrc),
+        /inspectionState\??\.index\s*===\s*getFocusedIndex\(\)/.test(tiSrc),
         'followTargetsCurrent checks index === focusedIndex'
     )
     assert(
-        /followBtn\.disabled\s*=\s*!inspectionState\??\.active\s*\|\|\s*!!?followTargetsCurrent/.test(tiSrc),
+        /followBtn\.disabled\s*=\s*!inspectionState\??\.active\s*\|\|\s*!!?followTargetsCurrent\s*\|\|\s*inspectionState\??\.journeyPhase\s*===\s*['"]exploring['"]/.test(tiSrc),
         'followTargetsCurrent disables followBtn'
     )
     assertContains(tiSrc, 'Current Stop', 'followTargetsCurrent changes button text to Current Stop')
@@ -465,8 +474,8 @@ function testJourneyTextHelpersExtraction() {
     const jthPath = resolveSource('src/lib/journey/text-helpers.ts', SEMDEMO_ROOT)
     const jthSrc = fs.readFileSync(jthPath, 'utf-8')
 
-    // journey.js must import from journey-text-helpers.js
-    assertContains(journeySrc, "from './journey-text-helpers.ts'", 'journey.js imports journey-text-helpers')
+    // journey.ts must import from the canonical text helper owner.
+    assertContains(journeySrc, "from '@lib/journey/text-helpers'", 'journey.ts imports journey text helpers')
 
     // journey.js must NOT contain inline truncateMicrocopy definition
     assertNotContains(journeySrc, 'function truncateMicrocopy(text, max = 74)', 'truncateMicrocopy inline removed')
@@ -485,7 +494,7 @@ function testJourneyTextHelpersExtraction() {
     )
 
     // journey.js previously exported these helpers; the extraction must preserve that public surface.
-    const textReExport = journeySrc.match(/export\s*\{[^}]*truncateMicrocopy[^}]*getSharedTrailTopicLabel[^}]*\}\s*;/s)
+    const textReExport = journeySrc.match(/export\s*\{[^}]*truncateMicrocopy[^}]*getSharedTrailTopicLabel[^}]*\}/s)
     assert(textReExport, 'journey.js re-exports journey-text-helpers public helpers')
 
     console.log('  OK journey-text-helpers extraction verified')
@@ -503,7 +512,7 @@ function testThreadInspectorTextHelpersExtraction() {
 
     assertContains(
         threadInspectorSrc,
-        "from './journey-text-helpers.ts'",
+        "from '@lib/journey/text-helpers'",
         'thread-inspector imports truncateMicrocopy from journey-text-helpers'
     )
     assertNotContains(

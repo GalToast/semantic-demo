@@ -10,7 +10,7 @@
  *  4. DEEP_DIVE (Step Inside) compression does not collapse geometry
  *
  * Runs in Node with a minimal DOM/performance shim. Imports the real
- * js/state.js and js/modules/focus-pocket.js.
+ * state bridge and src/lib/journey/focus-pocket.ts.
  *
  * Usage:
  *   node tests/focus-pocket-composition-contract.mjs
@@ -94,12 +94,12 @@ const {
     getFocusConstellationPlacement,
     getFocusConstellationMotif,
     getNeighborhoodPersonality
-} = await import('../js/modules/focus-pocket.ts');
+} = await import('../src/lib/journey/focus-pocket.ts');
 
 const {
     buildFocusedPocketStagedPositions,
     buildFocusedSemanticPocket
-} = await import('../js/modules/focus-pocket-geometry.ts');
+} = await import('../src/lib/journey/focus-pocket-geometry.ts');
 
 // ---------------------------------------------------------------------------
 // Assertion helpers
@@ -152,9 +152,9 @@ function setupState(pointsCount = 12) {
   state.navState.focusPocketRoleByIndex = new Map();
   state.navState.threadCandidates = [];
   state.navState.threadSource = 'semantic';
-  state.focusPocketMotionByIndex = new Map();
+  state.pocketMotionByIndex = new Map();
   state.focusPocketAnimationFrameId = undefined;
-  state.focusPocketTransitionStartedAt = 0;
+  state.pocketTransitionStartedAt = 0;
   state.nodesAreSettling = false;
   state.camera = null;
   });
@@ -178,9 +178,9 @@ function teardownState() {
         state.navState.threadCandidates = [];
         state.navState.threadSource     = 'geometric-fallback';
     });
-    state.focusPocketMotionByIndex  = new Map();
+    state.pocketMotionByIndex  = new Map();
     state.focusPocketAnimationFrameId = null;
-    state.focusPocketTransitionStartedAt = 0;
+    state.pocketTransitionStartedAt = 0;
     state.nodesAreSettling          = false;
 }
 
@@ -557,10 +557,10 @@ function testBreathingAmplitudeContract() {
   state.navState.focusedIndex = 0;
   state.navState.focusPocketMeta = { active: true };
   });
-  state.focusPocketTransitionStartedAt = 0;
+  state.pocketTransitionStartedAt = 0;
     _clockNow = 500;
 
-    state.focusPocketMotionByIndex = new Map([
+    state.pocketMotionByIndex = new Map([
         [0, { role: 'anchor',  delay: 0,   duration: 800, speed: 0.42, breatheAmp: 0.0022, phase: 0 }],
         [1, { role: 'primary', delay: 52,  duration: 980, speed: 0.24, breatheAmp: 0.003,  phase: 1.2 }],
         [2, { role: 'halo',    delay: 310, duration: 1280, speed: 0.14, breatheAmp: 0.0028, phase: 2.1 }]
@@ -576,9 +576,9 @@ function testBreathingAmplitudeContract() {
     }
 
     // All breatheAmp values should be > 0 (otherwise breathing is dead)
-    const anchorBreathAmp = state.focusPocketMotionByIndex.get(0)?.breatheAmp ?? 0;
-    const primaryBreathAmp = state.focusPocketMotionByIndex.get(1)?.breatheAmp ?? 0;
-    const haloBreathAmp    = state.focusPocketMotionByIndex.get(2)?.breatheAmp ?? 0;
+    const anchorBreathAmp = state.pocketMotionByIndex.get(0)?.breatheAmp ?? 0;
+    const primaryBreathAmp = state.pocketMotionByIndex.get(1)?.breatheAmp ?? 0;
+    const haloBreathAmp    = state.pocketMotionByIndex.get(2)?.breatheAmp ?? 0;
 
     assert(anchorBreathAmp > 0,  `anchor breatheAmp should be > 0, got ${anchorBreathAmp}`);
     assert(primaryBreathAmp > 0, `primary breatheAmp should be > 0, got ${primaryBreathAmp}`);
