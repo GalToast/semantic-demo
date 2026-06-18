@@ -243,7 +243,8 @@ export default defineConfig({
         terserOptions: {
             compress: {
                 drop_console: ['log', 'info'],
-                drop_debugger: true
+                drop_debugger: true,
+                passes: 2
             },
             mangle: {
                 safari10: true

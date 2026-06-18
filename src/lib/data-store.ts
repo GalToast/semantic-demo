@@ -2,48 +2,45 @@
  * @lib/data-store.ts — Data stores for business records and semantic threads
  *
  * Replaces the data slices from js/state.js with Svelte stores.
- * The stores are populated by loadBusinessData() and loadSemanticThreads()
- * from data-loader.ts, orchestrated by initData().
+ * Required business records are populated by initData(); large optional
+ * enrichment and semantic thread artifacts hydrate after launch.
  */
 
-import { writable, derived, get } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store'
 import type {
-  BusinessRecord,
-  BusinessDataResult,
-  SemanticThreadBundle,
-  SemanticThreadDataResult,
-  SemanticNeighborEntry,
-  LayoutManifest,
-  PositionBufferDescriptor,
-} from '@lib/types/business';
-import type { LoadingPhase } from '@lib/types/state';
-import {
-  loadBusinessData,
-  loadSemanticThreads,
-  loadLayoutManifest,
-} from '@lib/data-loader';
-import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter';
-import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
+    BusinessRecord,
+    BusinessDataResult,
+    LeadEnrichment,
+    SemanticThreadBundle,
+    SemanticThreadDataResult,
+    SemanticNeighborEntry,
+    LayoutManifest,
+    PositionBufferDescriptor
+} from '@lib/types/business'
+import type { LoadingPhase } from '@lib/types/state'
+import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
+import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
+import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
 
 // ── Status Types ──────────────────────────────────────────────────────────────
 
-export type DataLoadStatus = 'idle' | 'loading' | 'ready' | 'error';
+export type DataLoadStatus = 'idle' | 'loading' | 'ready' | 'error'
 
 export interface DataLoadState {
-  /** Overall loading status */
-  status: DataLoadStatus;
-  /** Business records loaded successfully */
-  businessLoaded: boolean;
-  /** Semantic threads loaded successfully */
-  threadsLoaded: boolean;
-  /** Error message if status is 'error' */
-  error: string | null;
+    /** Overall loading status */
+    status: DataLoadStatus
+    /** Business records loaded successfully */
+    businessLoaded: boolean
+    /** Semantic threads loaded successfully */
+    threadsLoaded: boolean
+    /** Error message if status is 'error' */
+    error: string | null
 }
 
 // ── Stores ────────────────────────────────────────────────────────────────────
 
 /** Raw business records loaded from data.dat */
-export const businessRecords = writable<readonly BusinessRecord[]>([]);
+export const businessRecords = writable<readonly BusinessRecord[]>([])
 
 /**
  * Hydrate the Svelte stores from the legacy state.
@@ -53,77 +50,94 @@ export const businessRecords = writable<readonly BusinessRecord[]>([]);
  * components can read the data.
  */
 export function hydrateFromLegacyState(): void {
-  if (typeof window === 'undefined') return;
-  const w = window as unknown as {
-    __APP_STATE__?: {
-      points?: readonly BusinessRecord[];
-      semanticNeighborMapByLeadId?: Map<string, unknown>;
-      semanticThreadsStatus?: string;
-      semanticSpaceLayoutManifest?: unknown;
-      threadCandidates?: readonly number[];
-      threadSource?: string;
-    };
-  };
-  const appState = w.__APP_STATE__;
-  if (!appState) return;
-  if (Array.isArray(appState.points) && appState.points.length > 0) {
-    businessRecords.set(appState.points as BusinessRecord[]);
-  }
-  if (appState.semanticNeighborMapByLeadId instanceof Map) {
-    semanticNeighborMap.set(appState.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>);
-  }
+    if (typeof window === 'undefined') return
+    const w = window as unknown as {
+        __APP_STATE__?: {
+            points?: readonly BusinessRecord[]
+            semanticNeighborMapByLeadId?: Map<string, unknown>
+            semanticThreadBundle?: unknown
+            semanticThreadArtifactName?: unknown
+            semanticThreadsStatus?: string
+            semanticSpaceLayoutManifest?: unknown
+            threadCandidates?: readonly number[]
+            threadSource?: string
+        }
+    }
+    const appState = w.__APP_STATE__
+    if (!appState) return
+    const legacy = appState as Record<string, unknown>
+    if (Array.isArray(appState.points) && appState.points.length > 0) {
+        businessRecords.set(appState.points as BusinessRecord[])
+    }
+    if (legacy.semanticNeighborMapByLeadId instanceof Map) {
+        semanticNeighborMap.set(legacy.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>)
+    }
+    if (legacy.semanticThreadBundle !== undefined) {
+        semanticThreadBundle.set(legacy.semanticThreadBundle as SemanticThreadBundle | null)
+    }
+    if (legacy.semanticThreadArtifactName !== undefined) {
+        semanticThreadArtifactName.set(legacy.semanticThreadArtifactName as string | null)
+    }
+    if (legacy.semanticSpaceLayoutManifest !== undefined) {
+        layoutManifest.set(legacy.semanticSpaceLayoutManifest as LayoutManifest | null)
+    }
 }
 
 /** Synchronous snapshot of business records. */
 export function getBusinessRecords(): readonly BusinessRecord[] {
-  let result: readonly BusinessRecord[] = [];
-  const unsub = businessRecords.subscribe((v) => { result = v; });
-  unsub();
-  if (result.length > 0) return result;
-  // Fallback: read from the legacy state when the Svelte store is empty.
-  // (Hydration may not have run yet for components created before main.ts calls
-  // hydrateFromLegacyState.)
-  if (typeof window !== 'undefined') {
-    const w = window as unknown as { __APP_STATE__?: { points?: readonly BusinessRecord[] } };
-    const points = w.__APP_STATE__?.points;
-    if (Array.isArray(points) && points.length > 0) {
-      return points;
+    let result: readonly BusinessRecord[] = []
+    const unsub = businessRecords.subscribe((v) => {
+        result = v
+    })
+    unsub()
+    if (result.length > 0) return result
+    // Fallback: read from the legacy state when the Svelte store is empty.
+    // (Hydration may not have run yet for components created before main.ts calls
+    // hydrateFromLegacyState.)
+    if (typeof window !== 'undefined') {
+        const w = window as unknown as { __APP_STATE__?: { points?: readonly BusinessRecord[] } }
+        const points = w.__APP_STATE__?.points
+        if (Array.isArray(points) && points.length > 0) {
+            return points
+        }
     }
-  }
-  return result;
+    return result
 }
 
 /** Float32Array of interleaved [x,y,z] positions in [0,1] unit cube */
-export const positionBuffer = writable<Float32Array | null>(null);
+export const positionBuffer = writable<Float32Array | null>(null)
 
 /** Uint16Array of cluster assignments per point (parallel to positions) */
-export const clustersBuffer = writable<Uint16Array | null>(null);
+export const clustersBuffer = writable<Uint16Array | null>(null)
 
 /** Map from lead_id to point index for O(1) lookup */
-export const pointIndexByLeadId = writable<Map<string, number>>(new Map());
+export const pointIndexByLeadId = writable<Map<string, number>>(new Map())
 
 /** Enrichment data keyed by lead_id */
-export const leadEnrichment = writable<Record<string, import('@lib/types/business').LeadEnrichment> | null>(null);
+export const leadEnrichment = writable<Record<string, import('@lib/types/business').LeadEnrichment> | null>(null)
 
 /** Raw semantic thread bundle */
-export const semanticThreadBundle = writable<SemanticThreadBundle | null>(null);
+export const semanticThreadBundle = writable<SemanticThreadBundle | null>(null)
 
 /** Name of the loaded thread artifact file */
-export const semanticThreadArtifactName = writable<string | null>(null);
+export const semanticThreadArtifactName = writable<string | null>(null)
 
 /** Normalized neighbor map keyed by lead_id */
-export const semanticNeighborMap = writable<Map<string, SemanticNeighborEntry>>(new Map());
+export const semanticNeighborMap = writable<Map<string, SemanticNeighborEntry>>(new Map())
 
 /** Semantic space layout manifest (validation metadata) */
-export const layoutManifest = writable<LayoutManifest | null>(null);
+export const layoutManifest = writable<LayoutManifest | null>(null)
 
 /** Overall data loading state */
 export const dataLoadState = writable<DataLoadState>({
-  status: 'idle',
-  businessLoaded: false,
-  threadsLoaded: false,
-  error: null,
-});
+    status: 'idle',
+    businessLoaded: false,
+    threadsLoaded: false,
+    error: null
+})
+
+let leadEnrichmentLoadPromise: Promise<Record<string, LeadEnrichment> | null> | null = null
+let leadEnrichmentLoadScheduled = false
 
 // ── Loading Phase Store ─────────────────────────────────────────────────────
 
@@ -132,105 +146,133 @@ export const dataLoadState = writable<DataLoadState>({
  * The LoadingOverlay and parity-attrs.svelte.ts layer read from this store.
  * Replaces the collapsed 2-state derivation that only had records/launch.
  */
-export const loadingPhaseStore = writable<LoadingPhase>('records');
+export const loadingPhaseStore = writable<LoadingPhase>('records')
 
 /**
  * Graphics mode: 'webgl' when GPU rendering is available, 'fallback' otherwise.
  * The engine bridge should set this during init; parity-attrs.svelte.ts reads it.
  */
-export const graphicsModeStore = writable<'webgl' | 'fallback'>('webgl');
+export const graphicsModeStore = writable<'webgl' | 'fallback'>('webgl')
 
 /**
  * Set the loading phase and sync body.dataset for legacy test compat.
  */
 export function setLoadingPhase(phase: LoadingPhase): void {
-  loadingPhaseStore.set(phase);
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.loadingPhase = phase;
-  }
+    loadingPhaseStore.set(phase)
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.loadingPhase = phase
+    }
 }
 
 /**
  * Set the graphics mode and sync body.dataset.
  */
 export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
-  graphicsModeStore.set(mode);
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.graphicsMode = mode;
-  }
+    graphicsModeStore.set(mode)
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.graphicsMode = mode
+    }
 }
 
 // ── Derived Stores ────────────────────────────────────────────────────────────
 
 /** Number of loaded business records */
-export const recordCount = derived(businessRecords, ($r) => $r.length);
+export const recordCount = derived(businessRecords, ($r) => $r.length)
 
 /** Whether all data is ready */
-export const isDataReady = derived(dataLoadState, ($s) => $s.status === 'ready');
+export const isDataReady = derived(dataLoadState, ($s) => $s.status === 'ready')
 
 /** Whether data is currently loading */
-export const isLoading = derived(dataLoadState, ($s) => $s.status === 'loading');
+export const isLoading = derived(dataLoadState, ($s) => $s.status === 'loading')
 
 // ── Getter wrappers (match the .svelte.ts API for compatibility) ──────────
 
-export function getPositionBuffer(): Float32Array | null { return get(positionBuffer); }
-export function getClustersBuffer(): Uint16Array | null { return get(clustersBuffer); }
-export function getPointIndexByLeadId(): Map<string, number> { return get(pointIndexByLeadId); }
-export function getLeadEnrichment(): Record<string, import('@lib/types/business').LeadEnrichment> | null { return get(leadEnrichment); }
-export function getSemanticThreadBundle(): SemanticThreadBundle | null { return get(semanticThreadBundle); }
-export function getSemanticThreadArtifactName(): string | null { return get(semanticThreadArtifactName); }
-export function getSemanticNeighborMap(): Map<string, SemanticNeighborEntry> { return get(semanticNeighborMap); }
-export function getLayoutManifest(): LayoutManifest | null { return get(layoutManifest); }
-export function getDataLoadState(): DataLoadState { return get(dataLoadState); }
-export function getLoadingPhaseStore(): LoadingPhase { return get(loadingPhaseStore); }
-export function getGraphicsModeStore(): 'webgl' | 'fallback' { return get(graphicsModeStore); }
-export function getRecordCount(): number { return get(recordCount); }
-export function getIsDataReady(): boolean {
-  const local = get(isDataReady);
-  if (local) return true;
-  // Fallback: if the Svelte dataLoadState hasn't been initialized but the
-  // legacy state has the data loaded, treat the data as ready.
-  if (typeof window !== 'undefined') {
-    const w = window as unknown as { __APP_STATE__?: { points?: readonly unknown[] } };
-    if (Array.isArray(w.__APP_STATE__?.points) && (w.__APP_STATE__?.points?.length ?? 0) > 0) {
-      return true;
-    }
-  }
-  return false;
+export function getPositionBuffer(): Float32Array | null {
+    return get(positionBuffer)
 }
-export function getIsLoading(): boolean { return get(isLoading); }
-export function getPositionDescriptor(): PositionBufferDescriptor | null { return get(positionDescriptor); }
-export function getThreadEdgeCount(): number { return get(threadEdgeCount); }
-export function getNeighborMapSize(): number { return get(neighborMapSize); }
+export function getClustersBuffer(): Uint16Array | null {
+    return get(clustersBuffer)
+}
+export function getPointIndexByLeadId(): Map<string, number> {
+    return get(pointIndexByLeadId)
+}
+export function getLeadEnrichment(): Record<string, import('@lib/types/business').LeadEnrichment> | null {
+    return get(leadEnrichment)
+}
+export function getSemanticThreadBundle(): SemanticThreadBundle | null {
+    return get(semanticThreadBundle)
+}
+export function getSemanticThreadArtifactName(): string | null {
+    return get(semanticThreadArtifactName)
+}
+export function getSemanticNeighborMap(): Map<string, SemanticNeighborEntry> {
+    return get(semanticNeighborMap)
+}
+export function getLayoutManifest(): LayoutManifest | null {
+    return get(layoutManifest)
+}
+export function getDataLoadState(): DataLoadState {
+    return get(dataLoadState)
+}
+export function getLoadingPhaseStore(): LoadingPhase {
+    return get(loadingPhaseStore)
+}
+export function getGraphicsModeStore(): 'webgl' | 'fallback' {
+    return get(graphicsModeStore)
+}
+export function getRecordCount(): number {
+    return get(recordCount)
+}
+export function getIsDataReady(): boolean {
+    const local = get(isDataReady)
+    if (local) return true
+    // Fallback: if the Svelte dataLoadState hasn't been initialized but the
+    // legacy state has the data loaded, treat the data as ready.
+    if (typeof window !== 'undefined') {
+        const w = window as unknown as { __APP_STATE__?: { points?: readonly unknown[] } }
+        if (Array.isArray(w.__APP_STATE__?.points) && (w.__APP_STATE__?.points?.length ?? 0) > 0) {
+            return true
+        }
+    }
+    return false
+}
+export function getIsLoading(): boolean {
+    return get(isLoading)
+}
+export function getPositionDescriptor(): PositionBufferDescriptor | null {
+    return get(positionDescriptor)
+}
+export function getThreadEdgeCount(): number {
+    return get(threadEdgeCount)
+}
+export function getNeighborMapSize(): number {
+    return get(neighborMapSize)
+}
 
 /** Position buffer as a PositionBufferDescriptor (ready for WebGL) */
 export const positionDescriptor = derived(
-  [positionBuffer, clustersBuffer],
-  ([$pos, $clust]): PositionBufferDescriptor | null => {
-    if (!$pos || !$clust) return null;
-    return {
-      buffer: $pos,
-      count: $pos.length / 3,
-      clusters: $clust,
-    };
-  }
-);
+    [positionBuffer, clustersBuffer],
+    ([$pos, $clust]): PositionBufferDescriptor | null => {
+        if (!$pos || !$clust) return null
+        return {
+            buffer: $pos,
+            count: $pos.length / 3,
+            clusters: $clust
+        }
+    }
+)
 
 /** Total number of semantic thread edges */
 export const threadEdgeCount = derived(semanticThreadBundle, ($bundle) => {
-  if (!$bundle?.nodes) return 0;
-  return Object.values($bundle.nodes).reduce(
-    (sum, node) =>
-      sum + (Array.isArray(node?.neighbors) ? node.neighbors.length : 0),
-    0
-  );
-});
+    if (!$bundle?.nodes) return 0
+    return Object.values($bundle.nodes).reduce(
+        (sum, node) => sum + (Array.isArray(node?.neighbors) ? node.neighbors.length : 0),
+        0
+    )
+})
 
 /** Number of entries in the semantic neighbor map */
-export const neighborMapSize = derived(
-  semanticNeighborMap,
-  ($map) => $map.size
-);
+export const neighborMapSize = derived(semanticNeighborMap, ($map) => $map.size)
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
@@ -238,185 +280,238 @@ export const neighborMapSize = derived(
  * Set business data from a load result.
  */
 export function setBusinessData(result: BusinessDataResult): void {
-  businessRecords.set(result.records);
-  positionBuffer.set(result.positionsBuffer);
-  clustersBuffer.set(result.clustersBuffer);
-  pointIndexByLeadId.set(result.pointIndexByLeadId);
-  leadEnrichment.set(result.enrichment);
+    businessRecords.set(result.records)
+    positionBuffer.set(result.positionsBuffer)
+    clustersBuffer.set(result.clustersBuffer)
+    pointIndexByLeadId.set(result.pointIndexByLeadId)
+    leadEnrichment.set(result.enrichment)
 
-  // Sync back to legacy state so legacy engine selectors (getPoints())
-  // and focus flows (focusOnNode) see the data.
-  try {
-    withStateMutation(() => {
-      (legacyState as any).points = result.records;
-      (legacyState as any).rawPositionsBuffer = result.positionsBuffer;
-      (legacyState as any).rawClustersBuffer = result.clustersBuffer;
-      (legacyState as any).leadEnrichment = result.enrichment;
-      (legacyState as any).pointIndexByLeadId = result.pointIndexByLeadId;
-    });
-  } catch (e) {
-    console.warn('[data-store] Legacy state sync failed:', e);
-  }
-  dataLoadState.update((s) => ({
-    ...s,
-    businessLoaded: true,
-    error: null,
-  }));
+    // Sync back to legacy state so legacy engine selectors (getPoints())
+    // and focus flows (focusOnNode) see the data.
+    try {
+        withStateMutation(() => {
+            ;(legacyState as any).points = result.records
+            ;(legacyState as any).rawPositionsBuffer = result.positionsBuffer
+            ;(legacyState as any).rawClustersBuffer = result.clustersBuffer
+            ;(legacyState as any).leadEnrichment = result.enrichment
+            ;(legacyState as any).pointIndexByLeadId = result.pointIndexByLeadId
+        })
+    } catch (e) {
+        console.warn('[data-store] Legacy state sync failed:', e)
+    }
+    dataLoadState.update((s) => ({
+        ...s,
+        businessLoaded: true,
+        error: null
+    }))
+}
+
+/**
+ * Set optional lead enrichment after the required record load has already
+ * launched the app.
+ */
+export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment> | null): void {
+    leadEnrichment.set(enrichment)
+    try {
+        withStateMutation(() => {
+            ;(legacyState as any).leadEnrichment = enrichment
+        })
+    } catch (e) {
+        console.warn('[data-store] Legacy enrichment sync failed:', e)
+    }
+}
+
+/**
+ * Hydrate optional lead enrichment without blocking first paint.
+ */
+export async function loadLeadEnrichment(): Promise<Record<string, LeadEnrichment> | null> {
+    const existing = get(leadEnrichment)
+    if (existing) return existing
+
+    if (!leadEnrichmentLoadPromise) {
+        leadEnrichmentLoadPromise = loadLeadEnrichmentData()
+            .then((enrichment) => {
+                if (enrichment) {
+                    setLeadEnrichmentData(enrichment)
+                    debugInfo(`[data-store] Lead enrichment loaded for ${Object.keys(enrichment).length.toLocaleString()} records.`)
+                }
+                return enrichment
+            })
+            .catch((err: unknown) => {
+                debugWarn('[data-store] Lead enrichment failed; continuing without it.', err)
+                return null
+            })
+            .finally(() => {
+                leadEnrichmentLoadPromise = null
+            })
+    }
+
+    return leadEnrichmentLoadPromise
+}
+
+function scheduleLeadEnrichmentLoad(): void {
+    if (leadEnrichmentLoadScheduled || get(leadEnrichment)) return
+    leadEnrichmentLoadScheduled = true
+    const run = (): void => {
+        void loadLeadEnrichment()
+    }
+
+    if (typeof window === 'undefined') {
+        run()
+        return
+    }
+
+    if ('requestIdleCallback' in window) {
+        ;(window as Window & {
+            requestIdleCallback: (callback: () => void, options?: { timeout?: number }) => number
+        }).requestIdleCallback(run, { timeout: 6000 })
+        return
+    }
+
+    globalThis.setTimeout(run, 2500)
 }
 
 /**
  * Set semantic thread data from a load result.
  */
-export function setSemanticThreadData(
-  result: SemanticThreadDataResult
-): void {
-  semanticThreadBundle.set(result.bundle);
-  semanticThreadArtifactName.set(result.artifactName);
-  semanticNeighborMap.set(result.neighborMap);
-  layoutManifest.set(result.layoutManifest);
+export function setSemanticThreadData(result: SemanticThreadDataResult): void {
+    semanticThreadBundle.set(result.bundle)
+    semanticThreadArtifactName.set(result.artifactName)
+    semanticNeighborMap.set(result.neighborMap)
+    layoutManifest.set(result.layoutManifest)
 
-  // Sync back to legacy state so legacy neighborhood / thread builders see the data.
-  try {
-    withStateMutation(() => {
-      (legacyState as any).semanticNeighborMapByLeadId = result.neighborMap;
-      (legacyState as any).semanticThreadBundle = result.bundle;
-      (legacyState as any).semanticThreadArtifactName = result.artifactName;
-    });
-  } catch (e) {
-    console.warn('[data-store] Legacy semantic thread sync failed:', e);
-  }
+    // Sync back to legacy state so legacy neighborhood / thread builders see the data.
+    try {
+        withStateMutation(() => {
+            ;(legacyState as any).semanticNeighborMapByLeadId = result.neighborMap
+            ;(legacyState as any).semanticThreadBundle = result.bundle
+            ;(legacyState as any).semanticThreadArtifactName = result.artifactName
+        })
+    } catch (e) {
+        console.warn('[data-store] Legacy semantic thread sync failed:', e)
+    }
 
-  dataLoadState.update((s) => ({
-    ...s,
-    threadsLoaded: true,
-    error: null,
-  }));
+    dataLoadState.update((s) => ({
+        ...s,
+        threadsLoaded: true,
+        error: null
+    }))
+}
+
+/**
+ * Mark optional semantic thread hydration as settled after a worker failure.
+ * This keeps the Svelte store mirror in sync with legacy state while preserving
+ * the graceful fallback behavior used by the field rendering path.
+ */
+export function setSemanticThreadFailure(error: string): void {
+    semanticThreadBundle.set(null)
+    semanticThreadArtifactName.set(null)
+    semanticNeighborMap.set(new Map())
+    layoutManifest.set(null)
+
+    console.warn('[data-store] Semantic threads failed; using geometric fallback.', error)
+
+    dataLoadState.update((s) => ({
+        ...s,
+        threadsLoaded: true,
+        error: null
+    }))
 }
 
 /**
  * Set the loading status.
  */
 export function setDataLoadStatus(status: DataLoadStatus): void {
-  dataLoadState.update((s) => ({ ...s, status }));
+    dataLoadState.update((s) => ({ ...s, status }))
 }
 
 /**
  * Set a data loading error.
  */
 export function setDataLoadError(error: string): void {
-  dataLoadState.set({
-    status: 'error',
-    businessLoaded: get(dataLoadState).businessLoaded,
-    threadsLoaded: get(dataLoadState).threadsLoaded,
-    error,
-  });
+    dataLoadState.set({
+        status: 'error',
+        businessLoaded: get(dataLoadState).businessLoaded,
+        threadsLoaded: get(dataLoadState).threadsLoaded,
+        error
+    })
 }
 
 /**
  * Reset all data stores to initial state.
  */
 export function resetDataStores(): void {
-  businessRecords.set([]);
-  positionBuffer.set(null);
-  clustersBuffer.set(null);
-  pointIndexByLeadId.set(new Map());
-  leadEnrichment.set(null);
-  semanticThreadBundle.set(null);
-  semanticThreadArtifactName.set(null);
-  semanticNeighborMap.set(new Map());
-  layoutManifest.set(null);
-  dataLoadState.set({
-    status: 'idle',
-    businessLoaded: false,
-    threadsLoaded: false,
-    error: null,
-  });
-  setLoadingPhase('records');
-  setGraphicsMode('webgl');
+    leadEnrichmentLoadPromise = null
+    leadEnrichmentLoadScheduled = false
+    businessRecords.set([])
+    positionBuffer.set(null)
+    clustersBuffer.set(null)
+    pointIndexByLeadId.set(new Map())
+    leadEnrichment.set(null)
+    semanticThreadBundle.set(null)
+    semanticThreadArtifactName.set(null)
+    semanticNeighborMap.set(new Map())
+    layoutManifest.set(null)
+    dataLoadState.set({
+        status: 'idle',
+        businessLoaded: false,
+        threadsLoaded: false,
+        error: null
+    })
+    setLoadingPhase('records')
+    setGraphicsMode('webgl')
 }
 
 // ── Orchestration ─────────────────────────────────────────────────────────────
 
 /**
- * Initialize all data by loading business records and semantic threads.
+ * Initialize required data by loading business records.
  *
- * Business records load first (required for rendering). Semantic threads
- * load in parallel (non-blocking — the app degrades gracefully without them).
+ * Business records remain on the critical path. Large optional semantic thread
+ * hydration is worker-backed and is triggered later by engine/lifecycle.ts.
  *
  * Call this once at app startup, typically from main.ts or App.svelte.
  */
 export async function initData(): Promise<void> {
-  const current = get(dataLoadState);
-  if (current.status === 'loading' || current.status === 'ready') {
-    debugWarn('[data-store] initData() called while', current.status);
-    return;
-  }
-
-  setDataLoadStatus('loading');
-  setLoadingPhase('records');
-  debugInfo('[data-store] Starting data initialization...');
-
-  try {
-    // Load business records (required) and semantic threads (optional) in parallel.
-    // Business records must be loaded first for thread normalization,
-    // but the loader itself is stateless so parallel is fine.
-    const [businessResult, threadResult, manifestResult] = await Promise.allSettled([
-      loadBusinessData(),
-      loadSemanticThreads(),
-      loadLayoutManifest(),
-    ]);
-
-    // Business records are required
-    if (businessResult.status === 'fulfilled') {
-      setBusinessData(businessResult.value);
-      setLoadingPhase('scene');
-      debugInfo('[data-store] Business records loaded.');
-    } else {
-      const msg =
-        businessResult.reason instanceof Error
-          ? businessResult.reason.message
-          : String(businessResult.reason);
-      console.error('[data-store] Failed to load business records:', msg);
-      setDataLoadError(`Business data failed: ${msg}`);
-      setLoadingPhase('launch'); // dismiss overlay on error
-      return; // Can't continue without business data
+    const current = get(dataLoadState)
+    if (current.status === 'loading' || current.status === 'ready') {
+        debugWarn('[data-store] initData() called while', current.status)
+        return
     }
 
-    // Semantic threads are optional (degrade gracefully)
-    if (threadResult.status === 'fulfilled') {
-      const threadData = threadResult.value;
-      // Attach layout manifest if loaded separately
-      if (manifestResult.status === 'fulfilled' && manifestResult.value) {
-        threadData.layoutManifest = manifestResult.value;
-      }
-      setSemanticThreadData(threadData);
-      setLoadingPhase('restore');
-      debugInfo('[data-store] Semantic threads loaded.');
-    } else {
-      const msg =
-        threadResult.reason instanceof Error
-          ? threadResult.reason.message
-          : String(threadResult.reason);
-      debugWarn(
-        '[data-store] Semantic threads failed (geometric fallback):',
-        msg
-      );
-      setLoadingPhase('restore'); // still progress even without threads
-      // Don't error — threads are optional
-    }
+    setDataLoadStatus('loading')
+    setLoadingPhase('records')
+    debugInfo('[data-store] Starting data initialization...')
 
-    // Final phase: launch
-    setLoadingPhase('launch');
-    dataLoadState.update((s) => ({
-      ...s,
-      status: 'ready',
-      error: null,
-    }));
-    debugInfo('[data-store] Data initialization complete.');
-  } catch (err) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[data-store] Unexpected error during init:', msg);
-    setDataLoadError(msg);
-    setLoadingPhase('launch'); // dismiss overlay on error
-  }
+    try {
+        const businessResult = await loadBusinessData()
+
+        // Business records are required.
+        setBusinessData(businessResult)
+        setLoadingPhase('scene')
+        debugInfo('[data-store] Business records loaded.')
+
+        // Semantic threads are optional and worker-backed. They are loaded later by
+        // engine/lifecycle.ts so the main startup path does not block on the 40 MB
+        // thread artifact while the field is still becoming interactive.
+        setLoadingPhase('restore')
+        debugInfo('[data-store] Semantic threads deferred to worker lifecycle hydration.')
+
+        // Final phase: launch
+        setLoadingPhase('launch')
+        dataLoadState.update((s) => ({
+            ...s,
+            status: 'ready',
+            businessLoaded: true,
+            threadsLoaded: true,
+            error: null
+        }))
+        scheduleLeadEnrichmentLoad()
+        debugInfo('[data-store] Data initialization complete.')
+    } catch (err) {
+        const msg = err instanceof Error ? err.message : String(err)
+        console.error('[data-store] Unexpected error during init:', msg)
+        setDataLoadError(msg)
+        setLoadingPhase('launch') // dismiss overlay on error
+    }
 }

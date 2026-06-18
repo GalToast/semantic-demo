@@ -88,6 +88,25 @@
   let spectorInspectorImportPending = false;
   import { legendOpen } from '@lib/stores/legend.svelte';
 
+  function scheduleIdleComponentImport<T>(
+    load: () => Promise<T>,
+  ): Promise<T> {
+    const run = (): Promise<T> => load();
+
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      return new Promise((resolve, reject) => {
+        window.requestIdleCallback(
+          () => run().then(resolve, reject),
+          { timeout: 1500 }
+        );
+      });
+    }
+
+    return new Promise((resolve, reject) => {
+      setTimeout(() => run().then(resolve, reject), 0);
+    });
+  }
+
   $effect(() => {
     if (mapModeActive && !MapViewComponent && !mapViewImportPending) {
       mapViewImportPending = true;
@@ -123,16 +142,14 @@
   $effect(() => {
     if (!DemoChoreographyComponent && !demoChoreographyImportPending) {
       demoChoreographyImportPending = true;
-      import('@components/DemoChoreography.svelte')
-        .then((mod) => {
+      scheduleIdleComponentImport(() =>
+        import('@components/DemoChoreography.svelte').then((mod) => {
           DemoChoreographyComponent = mod.default;
+          return mod.default;
         })
-        .catch((err) => {
-          console.error('[App] DemoChoreography lazy-load failed:', err);
-        })
-        .finally(() => {
-          demoChoreographyImportPending = false;
-        });
+      ).finally(() => {
+        demoChoreographyImportPending = false;
+      });
     }
   });
 
@@ -155,16 +172,14 @@
   $effect(() => {
     if (weatherVisible && !WeatherWidgetComponent && !weatherWidgetImportPending) {
       weatherWidgetImportPending = true;
-      import('@components/WeatherWidget.svelte')
-        .then((mod) => {
+      scheduleIdleComponentImport(() =>
+        import('@components/WeatherWidget.svelte').then((mod) => {
           WeatherWidgetComponent = mod.default;
+          return mod.default;
         })
-        .catch((err) => {
-          console.error('[App] WeatherWidget lazy-load failed:', err);
-        })
-        .finally(() => {
-          weatherWidgetImportPending = false;
-        });
+      ).finally(() => {
+        weatherWidgetImportPending = false;
+      });
     }
   });
 

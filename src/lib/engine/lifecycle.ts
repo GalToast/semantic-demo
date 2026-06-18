@@ -55,8 +55,8 @@ import {
 } from '@lib/journey/canvas-interaction'
 import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
 
-// Semantic threads
-import { attachLegacyState, loadSemanticThreads } from '@lib/semantic-threads'
+// Semantic threads are loaded in the heavy idle path to keep this chunk out of
+// the first-paint bundle.
 
 // Event bus
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
@@ -232,12 +232,18 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
         }
 
         // 3. Schedule heavy GPU init after first paint (off critical path)
-        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-            window.requestIdleCallback(() => initEngineHeavy(callbacks), { timeout: 5000 })
-        } else {
-            // Fallback for Node/SSR or browsers without requestIdleCallback
-            Promise.resolve().then(() => initEngineHeavy(callbacks))
-        }
+        const heavyInit = new Promise<void>((resolve) => {
+            const run = (): void => {
+                initEngineHeavy(callbacks).finally(resolve)
+            }
+            if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+                window.requestIdleCallback(run, { timeout: 5000 })
+            } else {
+                // Fallback for Node/SSR or browsers without requestIdleCallback
+                Promise.resolve().then(run)
+            }
+        })
+        await heavyInit
     } catch (err) {
         if (typeof performance !== 'undefined') performance.mark('engine-init-failed')
         console.error('[engine/lifecycle] initEngine: setup failed', err)
@@ -248,7 +254,7 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
 }
 
 /** Heavy GPU + geometry init — runs in requestIdleCallback after first paint. */
-function initEngineHeavy(callbacks: EngineCallbacks): void {
+async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     // Guard: if engine was destroyed or degraded before we ran, abort
     const currentStatus = _getEngineStatus()
     if (_destroyed || currentStatus === 'degraded') {
@@ -321,8 +327,9 @@ function initEngineHeavy(callbacks: EngineCallbacks): void {
         }
 
         // 9. Attach legacy state to semantic threads + kick off background load
-        attachLegacyState(appState as unknown as Record<string, unknown>)
-        loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
+        const semanticThreads = await import('@lib/semantic-threads')
+        semanticThreads.attachLegacyState(appState as unknown as Record<string, unknown>)
+        semanticThreads.loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
             console.warn('[engine/lifecycle] Semantic threads background load failed:', err)
         })
 

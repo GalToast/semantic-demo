@@ -23,6 +23,7 @@ import type {
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { cleanOptionalValue } from '@lib/utils/dom-formatters';
+import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store';
 
 // ── Legacy state singleton ────────────────────────────────────────────────────
 // The state reference is injected by the engine bridge during init via
@@ -50,28 +51,18 @@ export function attachLegacyState(stateRef: Record<string, unknown> | unknown): 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000] as const;
+const SEMANTIC_THREAD_WORKER_TIMEOUT_MS = 75_000;
 
 // ── Worker singleton ──────────────────────────────────────────────────────────
 
 let _dataWorker: Worker | null = null;
+let _semanticThreadRequestId = 0;
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function buildAssetUrl(path: string): string {
   if (typeof window === 'undefined') return path;
   return new URL(path, window.location.href).href;
-}
-
-function artifactNameFromUrl(url: string): string {
-  try {
-    return (
-      (new URL(url, window.location.href).pathname.split('/').pop() ||
-        url.split('?')[0]) ??
-      url
-    );
-  } catch {
-    return url.split('?')[0] ?? url;
-  }
 }
 
 function getWorker(): Worker | null {
@@ -91,6 +82,13 @@ function getWorker(): Worker | null {
     );
     return null;
   }
+}
+
+export function resetSemanticThreadWorker(): void {
+  if (_dataWorker) {
+    _dataWorker.terminate();
+  }
+  _dataWorker = null;
 }
 
 // ── Layout manifest loading ───────────────────────────────────────────────────
@@ -139,8 +137,14 @@ interface LayoutValidationSummary {
   threadArtifact: string | null;
 }
 
+function isLayoutManifest(value: unknown): value is LayoutManifest {
+  if (!value || typeof value !== 'object') return false;
+  const manifest = value as { rows?: unknown; edges?: unknown };
+  return Number.isFinite(Number(manifest.rows)) && Number.isFinite(Number(manifest.edges));
+}
+
 function _validateSemanticSpaceLayoutManifest(
-  manifest: Record<string, unknown>,
+  manifest: LayoutManifest,
   bundle: SemanticThreadBundle,
   artifactName: string | null,
 ): LayoutValidationSummary {
@@ -199,8 +203,12 @@ async function _guardSemanticSpaceLayout(
   bundle: SemanticThreadBundle,
   artifactName: string | null,
   cacheBust: number,
-): Promise<LayoutValidationSummary> {
-  const manifest = await _loadSemanticSpaceLayoutManifest(cacheBust);
+): Promise<{ summary: LayoutValidationSummary; manifest: LayoutManifest }> {
+  const rawManifest = await _loadSemanticSpaceLayoutManifest(cacheBust);
+  if (!isLayoutManifest(rawManifest)) {
+    throw new Error('semantic space manifest is missing numeric rows/edges');
+  }
+  const manifest = rawManifest;
   const summary = _validateSemanticSpaceLayoutManifest(
     manifest,
     bundle,
@@ -219,7 +227,7 @@ async function _guardSemanticSpaceLayout(
     semantic_space_layout_thread_artifact: summary.threadArtifact,
     semantic_space_layout_generated_at: summary.generatedAt,
   });
-  return summary;
+  return { summary, manifest };
 }
 
 // ── Worker communication ──────────────────────────────────────────────────────
@@ -227,6 +235,7 @@ async function _guardSemanticSpaceLayout(
 interface WorkerResponse {
   type: string;
   payload: unknown;
+  requestId?: number;
 }
 
 interface WorkerThreadResult {
@@ -246,15 +255,36 @@ function callWorker(
       return;
     }
 
+    const requestId = ++_semanticThreadRequestId;
+    let settled = false;
+    let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
+
+    const cleanup = (): void => {
+      if (timeoutId !== null) globalThis.clearTimeout(timeoutId);
+      worker.removeEventListener('message', handler);
+      worker.removeEventListener('error', errorHandler);
+    };
+
+    const settleReject = (err: Error): void => {
+      if (settled) return;
+      settled = true;
+      cleanup();
+      resetSemanticThreadWorker();
+      reject(err);
+    };
+
     const handler = (event: MessageEvent<WorkerResponse>): void => {
-      const { type: resType, payload: resPayload } = event.data;
+      const { type: resType, payload: resPayload, requestId: resRequestId } = event.data;
+      if (resRequestId !== requestId) return;
       if (resType === `${type}_SUCCESS`) {
-        worker.removeEventListener('message', handler);
+        settled = true;
+        cleanup();
+        if (type === 'LOAD_THREADS') {
+          resetSemanticThreadWorker();
+        }
         resolve(resPayload as WorkerThreadResult);
       } else if (resType === 'ERROR') {
-        worker.removeEventListener('message', handler);
-        _dataWorker = null;
-        reject(
+        settleReject(
           new Error(
             (resPayload as { message?: string })?.message || 'Worker failed',
           ),
@@ -262,8 +292,21 @@ function callWorker(
       }
     };
 
+    const errorHandler = (): void => {
+      settleReject(new Error('Semantic thread worker crashed'));
+    };
+
+    timeoutId = globalThis.setTimeout(() => {
+      settleReject(
+        new Error(
+          `Semantic thread worker timed out after ${SEMANTIC_THREAD_WORKER_TIMEOUT_MS}ms`,
+        ),
+      );
+    }, SEMANTIC_THREAD_WORKER_TIMEOUT_MS);
+
     worker.addEventListener('message', handler);
-    worker.postMessage({ type, payload });
+    worker.addEventListener('error', errorHandler);
+    worker.postMessage({ type, payload, requestId });
   });
 }
 
@@ -273,68 +316,6 @@ function _normalizeLeadId(id: unknown): string | null {
   if (id === null || id === undefined) return null;
   const s = String(id).trim();
   return s.length > 0 ? s : null;
-}
-
-/**
- * Build a Map<leadId, SemanticNeighborEntry> from a raw SemanticThreadBundle.
- * Writes the result into state.semanticNeighborMapByLeadId.
- */
-function _buildSemanticNeighborMap(
-  bundle: SemanticThreadBundle,
-): void {
-  const state = getState();
-  withStateMutation(() => {
-    state.semanticNeighborMapByLeadId = new Map<
-      string,
-      SemanticNeighborEntry
-    >();
-  });
-  if (!bundle?.nodes || typeof bundle.nodes !== 'object') return;
-
-  Object.entries(bundle.nodes).forEach(([fallbackLeadId, node]) => {
-    const leadId = _normalizeLeadId(node?.lead_id ?? fallbackLeadId);
-    if (!leadId) return;
-
-    const neighbors: SemanticNeighborDetail[] = Array.isArray(node?.neighbors)
-      ? node.neighbors
-          .map((neighbor) => {
-            const nLeadId = _normalizeLeadId(neighbor?.lead_id);
-            if (!nLeadId) return null;
-            return {
-              leadId: nLeadId,
-              score: Number(neighbor?.score ?? 0),
-              semanticScore: Number(neighbor?.semantic_score ?? 0),
-              sameCity: Boolean(neighbor?.same_city),
-              sameStatus: Boolean(neighbor?.same_status),
-              bridgeScore: Number(neighbor?.bridge_score ?? 0),
-              signalScore: Number(neighbor?.signal_score ?? 0),
-              threadType:
-                cleanOptionalValue(neighbor?.thread_type) ||
-                'local_semantic_neighbor',
-              relationshipRole: normalizeRelationshipRole(
-                neighbor?.relationship_role,
-              ) as SemanticNeighborDetail['relationshipRole'],
-              relationshipAxis:
-                cleanOptionalValue(neighbor?.relationship_axis) || '',
-              roleReason:
-                cleanOptionalValue(neighbor?.role_reason) || '',
-              reason:
-                cleanOptionalValue(neighbor?.reason) ||
-                'semantic neighbor',
-            };
-          })
-          .filter((n): n is SemanticNeighborDetail => n !== null)
-      : [];
-
-    state.semanticNeighborMapByLeadId.set(leadId, {
-      leadId,
-      name: node?.name || null,
-      city: node?.city || null,
-      status: node?.status || null,
-      signalScore: Number(node?.signal_score ?? 0),
-      neighbors,
-    });
-  });
 }
 
 function _normalizeSemanticNeighborEntries(
@@ -394,6 +375,24 @@ function _recordSemanticLaneSnapshot(
 function _refreshFocusedSemanticState(): void {
   // No-op in the direct port.  Focused state refresh is handled by
   // the Svelte store subscriptions in the UI layer.
+}
+
+function _syncSemanticThreadDataToStores(
+  bundle: SemanticThreadBundle,
+  artifactName: string,
+  neighborMap: Map<string, SemanticNeighborEntry>,
+  layoutManifestValue: LayoutManifest | null,
+): void {
+  setSemanticThreadData({
+    bundle,
+    artifactName,
+    neighborMap,
+    layoutManifest: layoutManifestValue,
+  });
+}
+
+function _syncSemanticThreadFailureToStores(errMessage: string): void {
+  setSemanticThreadFailure(errMessage);
 }
 
 // ── Retry timer management ────────────────────────────────────────────────────
@@ -609,14 +608,25 @@ export async function loadSemanticThreads(
           'LOAD_THREADS',
           { urls: requestUrls, attemptConfigs },
         );
-        await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust);
+        const { manifest } = await _guardSemanticSpaceLayout(
+          bundle,
+          artifactName,
+          cacheBust,
+        );
+        const neighborMap = new Map(
+          _normalizeSemanticNeighborEntries(neighborEntries),
+        );
         withStateMutation(() => {
           state.semanticThreadBundle = bundle;
           state.semanticThreadArtifactName = artifactName;
-          state.semanticNeighborMapByLeadId = new Map(
-            _normalizeSemanticNeighborEntries(neighborEntries),
-          );
+          state.semanticNeighborMapByLeadId = neighborMap;
         });
+        _syncSemanticThreadDataToStores(
+          bundle,
+          artifactName,
+          neighborMap,
+          manifest,
+        );
         finalizeThreadLoad();
         return true;
       } catch (err) {
@@ -652,6 +662,7 @@ export async function loadSemanticThreads(
         thread_retry_source: options.reason || 'artifact-load',
         thread_retry_count: state.semanticThreadsRetryAttempt,
       });
+      _syncSemanticThreadFailureToStores(errMessage);
       _scheduleSemanticThreadsRetry(options.reason || 'artifact-load');
       _refreshFocusedSemanticState();
       return false;
