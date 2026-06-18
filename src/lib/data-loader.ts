@@ -162,26 +162,18 @@ interface LoadThreadsWorkerResult {
 
 export async function loadBusinessData(): Promise<BusinessDataResult> {
     const dataUrl = buildAssetUrl(`data.dat?${cacheBustParam()}`)
-    const enrichmentUrl = buildAssetUrl(`scripts/leadEnrichment.public.json?${cacheBustParam()}`)
 
     // Offload the heavy JSON.parse + typed-array construction to the Web Worker.
-    // The enrichment (small JSON) stays on the main thread.
-    const [workerResult, enrichment] = await Promise.all([
-        callDataWorker('LOAD_RECORDS', { url: dataUrl }).catch((err: unknown) => {
-            debugWarn('[data-loader] Worker load failed, falling back to main thread:', err)
-            return null
-        }),
-        fetchEnrichment(enrichmentUrl).catch((err) => {
-            debugWarn('[data-loader] Enrichment fetch failed, continuing without it.', err)
-            return null
-        })
-    ])
+    const workerResult = await callDataWorker('LOAD_RECORDS', { url: dataUrl }).catch((err: unknown) => {
+        debugWarn('[data-loader] Worker load failed, falling back to main thread:', err)
+        return null
+    })
 
     if (workerResult) {
-        return buildBusinessDataResult(workerResult, enrichment)
+        return buildBusinessDataResult(workerResult, null)
     }
 
-    return loadBusinessDataMainThread(dataUrl, enrichment)
+    return loadBusinessDataMainThread(dataUrl, null)
 }
 
 /** Build BusinessDataResult from the worker's raw result. */
@@ -531,6 +523,13 @@ async function fetchEnrichment(url: string): Promise<Record<string, LeadEnrichme
     } catch {
         return null
     }
+}
+
+export async function loadLeadEnrichmentData(): Promise<Record<string, LeadEnrichment> | null> {
+    const enrichmentUrl = buildAssetUrl(
+        `scripts/leadEnrichment.public.json?${cacheBustParam()}`,
+    )
+    return fetchEnrichment(enrichmentUrl)
 }
 
 function checkDataBounds(buffer: Float32Array): void {

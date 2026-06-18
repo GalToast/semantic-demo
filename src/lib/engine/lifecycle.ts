@@ -326,12 +326,15 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             }
         }
 
-        // 9. Attach legacy state to semantic threads + kick off background load
+        // 9. Attach legacy state to semantic threads (thread loading is deferred to
+        // the deferred-hydration phase in ui/loading.ts to avoid blocking startup).
         const semanticThreads = await import('@lib/semantic-threads')
         semanticThreads.attachLegacyState(appState as unknown as Record<string, unknown>)
-        semanticThreads.loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
-            console.warn('[engine/lifecycle] Semantic threads background load failed:', err)
-        })
+        semanticThreads
+            .loadSemanticThreads({ reason: 'lifecycle-init' })
+            .catch((err: unknown) => {
+                console.warn('[engine/lifecycle] semantic-thread load failed:', err)
+            })
 
         // 10. Subscribe to the legacy event bus
         bindEventBridge(callbacks)

@@ -137,7 +137,6 @@ export const dataLoadState = writable<DataLoadState>({
 })
 
 let leadEnrichmentLoadPromise: Promise<Record<string, LeadEnrichment> | null> | null = null
-let leadEnrichmentLoadScheduled = false
 
 // ── Loading Phase Store ─────────────────────────────────────────────────────
 
@@ -333,7 +332,9 @@ export async function loadLeadEnrichment(): Promise<Record<string, LeadEnrichmen
             .then((enrichment) => {
                 if (enrichment) {
                     setLeadEnrichmentData(enrichment)
-                    debugInfo(`[data-store] Lead enrichment loaded for ${Object.keys(enrichment).length.toLocaleString()} records.`)
+                    debugInfo(
+                        `[data-store] Lead enrichment loaded for ${Object.keys(enrichment).length.toLocaleString()} records.`
+                    )
                 }
                 return enrichment
             })
@@ -347,28 +348,6 @@ export async function loadLeadEnrichment(): Promise<Record<string, LeadEnrichmen
     }
 
     return leadEnrichmentLoadPromise
-}
-
-function scheduleLeadEnrichmentLoad(): void {
-    if (leadEnrichmentLoadScheduled || get(leadEnrichment)) return
-    leadEnrichmentLoadScheduled = true
-    const run = (): void => {
-        void loadLeadEnrichment()
-    }
-
-    if (typeof window === 'undefined') {
-        run()
-        return
-    }
-
-    if ('requestIdleCallback' in window) {
-        ;(window as Window & {
-            requestIdleCallback: (callback: () => void, options?: { timeout?: number }) => number
-        }).requestIdleCallback(run, { timeout: 6000 })
-        return
-    }
-
-    globalThis.setTimeout(run, 2500)
 }
 
 /**
@@ -442,7 +421,6 @@ export function setDataLoadError(error: string): void {
  */
 export function resetDataStores(): void {
     leadEnrichmentLoadPromise = null
-    leadEnrichmentLoadScheduled = false
     businessRecords.set([])
     positionBuffer.set(null)
     clustersBuffer.set(null)
@@ -506,7 +484,8 @@ export async function initData(): Promise<void> {
             threadsLoaded: true,
             error: null
         }))
-        scheduleLeadEnrichmentLoad()
+        // Lead enrichment is loaded on-demand when the user first selects a
+        // business card, not at startup, to keep the initial paint light.
         debugInfo('[data-store] Data initialization complete.')
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
