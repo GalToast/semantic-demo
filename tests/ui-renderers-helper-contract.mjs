@@ -13,12 +13,12 @@ import { state } from '../src/lib/engine/state-bridge.ts';
 import {
   buildSelectedMatchNarrative,
   getInterestingBusinessNote
-} from '../js/modules/ui-renderers.ts';
+} from '../src/lib/ui-renderers.ts';
 
 const ROOT = process.cwd();
-const UI_RENDERERS = join(ROOT, 'js/modules/ui-renderers.ts');
-const FOCUS_STAGE_RENDERER = join(ROOT, 'js/modules/focus-stage-renderer.ts');
-const LIFECYCLE = join(ROOT, 'js/modules/lifecycle.ts');
+const UI_RENDERERS = join(ROOT, 'src/lib/ui-renderers.ts');
+const FOCUS_STAGE_RENDERER = join(ROOT, 'src/lib/journey/focus-stage-renderer.ts');
+const LIFECYCLE = join(ROOT, 'src/lib/orchestration/lifecycle.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);
