@@ -74,10 +74,16 @@
   let focusCardImportPending = false;
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
-  import WeatherWidget from '@components/WeatherWidget.svelte';
+  type WeatherWidgetModule = typeof import('@components/WeatherWidget.svelte');
+  let WeatherWidgetComponent: WeatherWidgetModule['default'] | null = $state(null);
+  let weatherWidgetImportPending = false;
   import Toast from '@components/Toast.svelte';
-  import DevGui from '@components/DevGui.svelte';
-  import SpectorInspector from '@components/SpectorInspector.svelte';
+  type DevGuiModule = typeof import('@components/DevGui.svelte');
+  let DevGuiComponent: DevGuiModule['default'] | null = $state(null);
+  let devGuiImportPending = false;
+  type SpectorInspectorModule = typeof import('@components/SpectorInspector.svelte');
+  let SpectorInspectorComponent: SpectorInspectorModule['default'] | null = $state(null);
+  let spectorInspectorImportPending = false;
   import { legendOpen } from '@lib/stores/legend.svelte';
 
   $effect(() => {
@@ -140,6 +146,52 @@
         })
         .finally(() => {
           focusCardImportPending = false;
+        });
+    }
+  });
+
+  $effect(() => {
+    if (weatherVisible && !WeatherWidgetComponent && !weatherWidgetImportPending) {
+      weatherWidgetImportPending = true;
+      import('@components/WeatherWidget.svelte')
+        .then((mod) => {
+          WeatherWidgetComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] WeatherWidget lazy-load failed:', err);
+        })
+        .finally(() => {
+          weatherWidgetImportPending = false;
+        });
+    }
+  });
+
+  $effect(() => {
+    if (devToolsVisible && !DevGuiComponent && !devGuiImportPending) {
+      devGuiImportPending = true;
+      import('@components/DevGui.svelte')
+        .then((mod) => {
+          DevGuiComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] DevGui lazy-load failed:', err);
+        })
+        .finally(() => {
+          devGuiImportPending = false;
+        });
+    }
+
+    if (devToolsVisible && !SpectorInspectorComponent && !spectorInspectorImportPending) {
+      spectorInspectorImportPending = true;
+      import('@components/SpectorInspector.svelte')
+        .then((mod) => {
+          SpectorInspectorComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] SpectorInspector lazy-load failed:', err);
+        })
+        .finally(() => {
+          spectorInspectorImportPending = false;
         });
     }
   });
@@ -449,7 +501,9 @@
   <Legend open={$legendOpen} mapView={mapModeActive} concealedByFocus={focusActive} />
 
   <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
-  <WeatherWidget visible={weatherVisible} />
+  {#if WeatherWidgetComponent}
+    <WeatherWidgetComponent visible={weatherVisible} />
+  {/if}
 
   <!-- Layer 80: Info panel -->
   <InfoPanel open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
@@ -536,17 +590,18 @@
   {/if}
 
   <!--
-    Dev-only runtime tooling (lil-gui + Spector). Wrapped in
-    {#if import.meta.env.DEV} so Vite/Rollup tree-shake the entire
-    component imports (including the dynamic `import('lil-gui')` and
-    `import('spectorjs')` calls inside them) out of production builds.
-    Bundle win: ~189 kB gzip (180 kB spectorjs + 9 kB lil-gui).
-    The runtime `visible` prop on each component still controls whether
-    the UI panel is shown in dev (gated by ?dev URL param).
+    Dev-only runtime tooling (lil-gui + Spector). The component chunks
+    are dynamic-imported only when the devtools URL gate is active; the
+    nested `import('lil-gui')` and `import('spectorjs')` calls stay out
+    of normal app startup.
   -->
   {#if import.meta.env.DEV}
-    <DevGui visible={devToolsVisible} />
-    <SpectorInspector visible={devToolsVisible} />
+    {#if DevGuiComponent}
+      <DevGuiComponent visible={devToolsVisible} />
+    {/if}
+    {#if SpectorInspectorComponent}
+      <SpectorInspectorComponent visible={devToolsVisible} />
+    {/if}
   {/if}
 
   <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-hidden="true" hidden></div>
