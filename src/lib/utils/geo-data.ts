@@ -137,8 +137,10 @@ export function tokenizeSearchText(text: unknown, stopWords: Set<string> = new S
 		...[
 			...new Set(
 				(String(text || '')
+					.normalize('NFC')
 					.toLowerCase()
-					.match(/[a-z0-9]+/g) || []) as string[]
+					// \p{L} = any Unicode letter (é, ñ, ü, etc.), \p{N} = any Unicode number, u flag enables Unicode property escapes
+					.match(/[\p{L}\p{N}]+/gu) || []) as string[]
 			)
 		].filter(Boolean)
 		.filter((token) => token.length > 1 && !stopWords.has(token))
