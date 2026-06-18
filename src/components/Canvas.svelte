@@ -17,6 +17,8 @@
   let containerEl: HTMLDivElement | undefined = $state(undefined);
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
   let mounted = $state(false);
+  let overlayVisible = $state(true);
+  let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
 
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
@@ -54,16 +56,36 @@
     },
     onLoadingPhase: (phase, progress) => {
       setLoadingPhase(phase as LoadingPhase);
-      if (phase === 'launch') console.log('[Canvas] Scene ready', progress);
+      if (phase === 'launch') {
+        console.log('[Canvas] Scene ready', progress);
+        hideOverlay();
+      }
     },
     onGraphicsStateChange: (state) => {
       setGraphicsMode(state === 'fallback' ? 'fallback' : 'webgl');
     },
   };
 
+  function hideOverlay(): void {
+    overlayVisible = false;
+    if (overlayTimeout !== undefined) {
+      clearTimeout(overlayTimeout);
+      overlayTimeout = undefined;
+    }
+  }
+
   onMount(async () => {
     mounted = true;
     if (!canvasEl) return;
+
+    // Fallback: hide overlay after 5 seconds even if engine never signals ready
+    overlayTimeout = setTimeout(() => {
+      if (overlayVisible) {
+        console.warn('[Canvas] Overlay fallback timeout — hiding loading overlay');
+        overlayVisible = false;
+      }
+    }, 5000);
+
     try {
       await initEngine(canvasEl, callbacks);
       resizeEngine(viewportWidth(), viewportHeight());
@@ -88,6 +110,9 @@
   onDestroy(() => {
     destroyEngine();
     mounted = false;
+    if (overlayTimeout !== undefined) {
+      clearTimeout(overlayTimeout);
+    }
   });
 </script>
 
@@ -121,6 +146,13 @@
     ></canvas>
   </div>
 
+  <!-- Loading overlay: visible during engine init, hides on scene-ready or 5s timeout -->
+  {#if overlayVisible}
+    <div class="canvas-loading-overlay" aria-live="polite">
+      <span class="loading-pulse">Loading mycelium…</span>
+    </div>
+  {/if}
+
 <style>
   .semantic-canvas-container {
     position: absolute;
@@ -142,5 +174,35 @@
     width: 100%;
     height: 100%;
     touch-action: none;
+  }
+
+  .canvas-loading-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: calc(var(--z-canvas, 10) + 1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.6);
+    pointer-events: none;
+    animation: overlay-fade-out 0.4s ease-in 4.6s forwards;
+  }
+
+  .loading-pulse {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    color: rgba(255, 255, 255, 0.85);
+    letter-spacing: 0.04em;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%, 100% { opacity: 0.5; }
+    50%      { opacity: 1; }
+  }
+
+  @keyframes overlay-fade-out {
+    from { opacity: 1; }
+    to   { opacity: 0; }
   }
 </style>
