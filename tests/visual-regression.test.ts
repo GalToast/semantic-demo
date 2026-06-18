@@ -747,22 +747,13 @@ function getTestStates(): TestState[] {
             },
         },
 
-        // 14. thread-inspector — Svelte thread inspector (hidden by default)
-        {
-            name: 'thread-inspector',
-            baseline: 'thread-inspector.png',
-            description: 'Thread inspector — Svelte component (hidden default)',
-            viewport: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
-            thresholdOverride: 8, // Thread inspector is Svelte-only and may not render in legacy shell
-            setup: async (page) => {
-                const focusedUrl = `${BASE_URL}?view=galaxy&q=coffee&anchor=519&nodemo=1`
-                await page.goto(focusedUrl, { waitUntil: 'networkidle' })
-                await page.waitForTimeout(4000)
-                // The thread-inspector is Svelte-only and renders when
-                // visible && threadInspectorActive(). In the legacy shell,
-                // this component may not mount — capture whatever state is present.
-            },
-        },
+        // 14. thread-inspector — REMOVED: baseline was invalid.
+        // The inspector never renders under any focus-only URL recipe
+        // (ThreadInspector.svelte:112 requires `visible && threadInspector.active`,
+        // and pinThreadNeighbor(<focused index>) returns active:false). The 120KB baseline
+        // captured a focus view with the inspector UNMOUNTED; the 8% threshold anti-guarded it.
+        // Restore only with a recipe that pins a real NEIGHBOR of the focused node.
+        // See docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md
     ]
 }
 
