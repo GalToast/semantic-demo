@@ -152,6 +152,13 @@
   function handleKeydown(e: KeyboardEvent): void {
     if (e.key === 'Escape' && queryInput.length > 0) {
       handleClear();
+    } else if (e.key === 'ArrowDown') {
+      // Move focus to first search result if results are visible
+      const list = document.getElementById('search-result-list');
+      if (list) {
+        const first = list.querySelector('[data-order="0"]') as HTMLElement | null;
+        first?.focus();
+      }
     }
   }
 

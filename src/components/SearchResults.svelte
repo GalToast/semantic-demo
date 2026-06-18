@@ -239,6 +239,14 @@
       setActiveResultByIndex(activeIndex < count - 1 ? activeIndex + 1 : 0);
     } else if (key === 'ArrowUp' || key === 'ArrowLeft') {
       event.preventDefault();
+      if (activeIndex === 0) {
+        // Return focus to search input when moving up from first result
+        const input = document.getElementById('search-input');
+        if (input) {
+          input.focus();
+          return;
+        }
+      }
       setActiveResultByIndex(activeIndex > 0 ? activeIndex - 1 : count - 1);
     } else if (key === 'Home') {
       event.preventDefault();
