@@ -390,8 +390,10 @@ export function destroyEngine(): void {
         w.__THREE_APP__ = null
     }
 
-    // 5. Null out scene references
+    // 5. Null out scene/renderer/camera references so reinit starts clean
     appState.scene = null as unknown as typeof appState.scene
+    appState.renderer = null as unknown as typeof appState.renderer
+    ;(appState as any).camera = null
 
     // 6. Set status to idle
     setEngineStatus('idle')
