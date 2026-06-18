@@ -14,6 +14,9 @@ import type { NavState, NavMode, PanelSurface } from '@lib/types/state'
 import { writable, get, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '@lib/navigation-actions'
+import { clearSearch } from './search.svelte.ts'
+import { resetFocus } from './focus.svelte.ts'
+import { resetJourney } from './journey.svelte.ts'
 
 // Legacy state fallback (transitional). The legacy js/state.js is the
 // single source of truth during the migration. When the Svelte navigation
@@ -255,14 +258,37 @@ export function resetNavState(): void {
     _navWritable.set({ ...INITIAL_NAV_STATE })
 }
 
+function returnToOverviewState(): void {
+    clearSearch()
+    resetFocus()
+    resetJourney()
+    writeNavStateMirror({
+        focusedIndex: null,
+        trailSeedIndex: null,
+        trailNeighborIndices: [],
+        trailCursor: -1,
+        trailDepth: 0,
+        walkHistoryIndices: [],
+        lastTraversalReason: null,
+        threadCandidates: [],
+        threadReasonByIndex: new Map(),
+        threadSource: '',
+        neighborhoodIndices: [],
+        mode: 'overview' as NavMode,
+        surface: 'idle' as PanelSurface,
+        previousSurface: 'idle' as PanelSurface,
+        currentView: 'galaxy'
+    })
+}
+
 /** Generic state update (wrapped in $state assignment). */
 export function updateNavState(patch: Partial<NavState>): void {
-    _navWritable.update((s) => ({ ...s, ...patch }))
+    writeNavStateMirror(patch)
 }
 
 /** Switch the primary view (galaxy/map). */
 export function switchView(view: 'galaxy' | 'map'): void {
-    _navWritable.update((s) => ({ ...s, currentView: view }))
+    writeNavStateMirror({ currentView: view })
 }
 
 /** Backward-compatible alias for callers that still use the state mutator name. */
@@ -399,6 +425,12 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
     // Update legacy state (mirrors what withMutation/Object.assign does)
     appState.withMutation(() => {
         Object.assign(appState.navState, patch)
+        if (typeof patch.trailDepth === 'number') {
+            appState.trailDepth = patch.trailDepth
+        }
+        if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
+            appState.currentView = patch.currentView
+        }
     })
     // Update Svelte 5 store so parity-attrs and derived getters reflect immediately
     _navWritable.update((s) => ({ ...s, ...patch }))
@@ -462,18 +494,12 @@ export function dispatchNavTransition(
             break
         }
         case NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW:
-            _navWritable.update((s) => ({
-                ...s,
-                focusedIndex: null,
-                mode: 'overview' as NavMode,
-                surface: 'idle' as PanelSurface,
-                currentView: 'galaxy'
-            }))
+            returnToOverviewState()
             break
         case NAV_TRANSITION_ACTIONS.SET_VIEW:
             if (payload.view) {
                 const view: 'galaxy' | 'map' = payload.view
-                _navWritable.update((s) => ({ ...s, currentView: view }))
+                writeNavStateMirror({ currentView: view })
             }
             break
         case NAV_TRANSITION_ACTIONS.SET_SURFACE: {

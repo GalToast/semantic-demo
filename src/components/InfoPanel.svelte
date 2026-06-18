@@ -665,6 +665,15 @@
   .selected-action-row[hidden] {
     display: none;
   }
+  .selected-action-row .action-btn {
+    box-sizing: border-box;
+    height: 44px;
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1.1;
+  }
   .selected-hero {
     display: flex;
     align-items: center;
@@ -823,11 +832,15 @@
   /* ── Mobile: bottom sheet ────────────────────────────────────────────────── */
   @media (max-width: 768px) {
     .info-panel {
+      position: fixed;
+      left: 0;
+      right: 0;
       width: 100%;
       height: auto;
       max-height: 50vh;
       top: auto;
       bottom: 0;
+      z-index: var(--z-overlay, var(--z-panels, 80));
       transform: translateY(100%);
       border-radius: 1rem 1rem 0 0;
     }
@@ -840,6 +853,9 @@
       visibility: hidden;
       opacity: 0;
       pointer-events: none;
+    }
+    :global(body[data-panel-surface='idle'][data-compact='true']) .selected-card {
+      display: none;
     }
     /* ── Loading spinner ─────────────────────────────────────────────────────────── */
     /* ── Error state ────────────────────────────────────────────────────────────── */

@@ -228,7 +228,7 @@
         // app-side return-to-overview behavior.
         e.preventDefault();
         const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-        if (searchInput && document.activeElement === searchInput) {
+        if (searchInput) {
           searchInput.value = '';
           searchInput.dispatchEvent(new Event('input', { bubbles: true }));
         }
@@ -313,6 +313,7 @@
   let focusActive = $derived(
     navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex != null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'focus' || bodyPanelSurface === 'inside' || bodyPanelSurface === 'trail' || focusSearchForced || bodyPanelSurface === 'semantic-dive'
   );
+  let focusStageActive = $derived(focusActive && !mapModeActive);
 
   // Idle owns the full header. Search/focus keep only utility chrome so the
   // escape affordances exist for the mobile/short-landscape CSS contracts.
@@ -394,12 +395,12 @@
   <div
     id="focus-stage"
     class="focus-stage"
-    class:active={focusActive}
-    aria-hidden={!focusActive ? 'true' : undefined}
-    style:pointer-events={focusActive ? 'none' : undefined}
+    class:active={focusStageActive}
+    aria-hidden={!focusStageActive ? 'true' : undefined}
+    style:pointer-events={focusStageActive ? 'none' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    <FocusCard visible={focusActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+    <FocusCard visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
     <JourneyChrome visible={true} />

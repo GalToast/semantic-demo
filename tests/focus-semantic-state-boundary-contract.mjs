@@ -331,7 +331,7 @@ assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null
 assert(state.navState.focusedIndex === null, 'reset: focusedIndex is null');
 assert(state.trailDepth === 0, 'reset: trailDepth is 0');
 assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false');
-assert(ds('graphContext') === 'overview', 'reset: graphContext is overview');
+assert(ds('graphContext') === 'idle', 'reset: graphContext is idle');
 assert(ds('panelSurface') === 'idle', 'reset: panelSurface is idle');
 assert(ds('semanticDive') === 'inactive', 'reset: semanticDive is inactive');
 console.log('  PASS: reset boundary transition correct\n');
@@ -347,7 +347,7 @@ withStateMutation(() => {
 });
 commit('semantic-dive-no-focus');
 
-assert(ds('graphContext') === 'overview', 'semantic-dive-no-focus: graphContext is overview (no focus)');
+assert(ds('graphContext') === 'idle', 'semantic-dive-no-focus: graphContext is idle (no focus)');
 assert(ds('panelSurface') === 'idle', 'semantic-dive-no-focus: panelSurface is idle');
 console.log('  PASS: no-focusedNode during semantic-dive guards correctly\n');
 

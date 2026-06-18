@@ -58,7 +58,7 @@ function startServer(distDir: string): Promise<http.Server> {
         '.woff': 'font/woff',
         '.ttf': 'font/ttf',
         '.dat': 'application/octet-stream',
-        '.gz': 'application/gzip',
+        '.gz': 'application/gzip'
     }
 
     const server = http.createServer((req, res) => {
@@ -162,7 +162,7 @@ function compareImages(
         match: diffPercent <= THRESHOLD,
         diffPercent,
         diffPixels,
-        totalPixels,
+        totalPixels
     }
 }
 
@@ -189,7 +189,7 @@ function getTestStates(): TestState[] {
                 await page.goto(BASE_URL, { waitUntil: 'networkidle' })
                 // Wait for WebGL to initialize and first frame to render
                 await page.waitForTimeout(5000)
-            },
+            }
         },
         {
             name: 'search-open',
@@ -203,7 +203,10 @@ function getTestStates(): TestState[] {
                 const searchButton = page.locator(
                     '[data-testid="search-toggle"], button[aria-label*="search" i], .search-button, [class*="search"] button'
                 )
-                const found = await searchButton.first().isVisible().catch(() => false)
+                const found = await searchButton
+                    .first()
+                    .isVisible()
+                    .catch(() => false)
                 if (found) {
                     await searchButton.first().click()
                 } else {
@@ -219,7 +222,7 @@ function getTestStates(): TestState[] {
                     })
                 }
                 await page.waitForTimeout(1000)
-            },
+            }
         },
         {
             name: 'focus-mode',
@@ -239,7 +242,7 @@ function getTestStates(): TestState[] {
                     }
                 }
                 await page.waitForTimeout(2000)
-            },
+            }
         },
         {
             name: 'map-view',
@@ -255,7 +258,10 @@ function getTestStates(): TestState[] {
                 const mapButton = page.locator(
                     '[data-testid="map-toggle"], button[aria-label*="map" i], [class*="map-toggle"], [class*="compass"]'
                 )
-                const found = await mapButton.first().isVisible().catch(() => false)
+                const found = await mapButton
+                    .first()
+                    .isVisible()
+                    .catch(() => false)
                 if (found) {
                     await mapButton.first().click()
                 } else {
@@ -263,7 +269,7 @@ function getTestStates(): TestState[] {
                     await page.keyboard.press('m')
                 }
                 await page.waitForTimeout(2000)
-            },
+            }
         },
 
         // ── W35: New mobile baselines (14 contract surfaces) ──────────────────
@@ -278,7 +284,7 @@ function getTestStates(): TestState[] {
                 await page.goto(BASE_URL, { waitUntil: 'networkidle' })
                 // Wait for WebGL init and mobile chrome to settle
                 await page.waitForTimeout(5000)
-            },
+            }
         },
 
         // 2. search-error — forced search error state via route mocking
@@ -304,7 +310,10 @@ function getTestStates(): TestState[] {
                             body: JSON.stringify({
                                 ok: false,
                                 state: 'degraded',
-                                provenance: { label: 'Search paused', detail: 'Forced surface-contract health degradation.' }
+                                provenance: {
+                                    label: 'Search paused',
+                                    detail: 'Forced surface-contract health degradation.'
+                                }
                             })
                         })
                     }
@@ -330,7 +339,7 @@ function getTestStates(): TestState[] {
                 await page.waitForTimeout(5000)
                 // Wait for the error state to become visible
                 await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 10000 }).catch(() => {})
-            },
+            }
         },
 
         // 3. search-no-results — search with unmatchable query
@@ -345,15 +354,17 @@ function getTestStates(): TestState[] {
                 // Wait for search to settle (may show empty state or mock results)
                 await page.waitForTimeout(5000)
                 // Wait for search-results to be active or status to have text
-                await page.waitForFunction(
-                    () => {
-                        const results = document.querySelector('#search-results')
-                        const status = document.querySelector('#search-status')
-                        return Boolean(results?.classList.contains('active') || status?.textContent?.length)
-                    },
-                    { timeout: 15000 }
-                ).catch(() => {})
-            },
+                await page
+                    .waitForFunction(
+                        () => {
+                            const results = document.querySelector('#search-results')
+                            const status = document.querySelector('#search-status')
+                            return Boolean(results?.classList.contains('active') || status?.textContent?.length)
+                        },
+                        { timeout: 15000 }
+                    )
+                    .catch(() => {})
+            }
         },
 
         // 4. focus-pocket — focus stage with dive/inside state
@@ -401,7 +412,7 @@ function getTestStates(): TestState[] {
                     }
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 5. field-node — field-node canopy HUD
@@ -438,7 +449,7 @@ function getTestStates(): TestState[] {
                     }
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 6. info-panel-empty — info panel in empty/idle state
@@ -456,7 +467,7 @@ function getTestStates(): TestState[] {
                     document.body.dataset.panelSurface = 'focus'
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 7. compass-rail — journey compass rail visible
@@ -525,7 +536,9 @@ function getTestStates(): TestState[] {
                     }
 
                     // Set compass title
-                    const title = document.querySelector('#journey-compass-title, .compass-step .step-label') as HTMLElement | null
+                    const title = document.querySelector(
+                        '#journey-compass-title, .compass-step .step-label'
+                    ) as HTMLElement | null
                     if (title) {
                         title.textContent = 'Map View'
                         title.style.display = 'block'
@@ -533,7 +546,7 @@ function getTestStates(): TestState[] {
                     }
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 8. loading-overlay — captured during initial load
@@ -559,7 +572,7 @@ function getTestStates(): TestState[] {
                     }
                 })
                 await page.waitForTimeout(500)
-            },
+            }
         },
 
         // 9. mode-grid — mode chip grid visible
@@ -598,7 +611,7 @@ function getTestStates(): TestState[] {
                     })
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 10. filters — filter toolbar open
@@ -645,7 +658,7 @@ function getTestStates(): TestState[] {
                     }
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 11. controls — camera controls visible
@@ -685,7 +698,7 @@ function getTestStates(): TestState[] {
                     })
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 12. info-panel-populated — info panel with business data (desktop)
@@ -731,7 +744,7 @@ function getTestStates(): TestState[] {
                     if (selectedFiledAs) selectedFiledAs.style.display = 'none'
                 })
                 await page.waitForTimeout(1000)
-            },
+            }
         },
 
         // 13. global-spacing — global spacing check at mobile width
@@ -744,8 +757,8 @@ function getTestStates(): TestState[] {
                 await page.goto(BASE_URL, { waitUntil: 'networkidle' })
                 // Wait for mobile idle chrome to settle
                 await page.waitForTimeout(5000)
-            },
-        },
+            }
+        }
 
         // 14. thread-inspector — REMOVED: baseline was invalid.
         // The inspector never renders under any focus-only URL recipe
@@ -801,7 +814,7 @@ async function runVisualRegression(): Promise<TestResult[]> {
 
             // Create a fresh context with the appropriate viewport
             const contextOptions: any = {
-                viewport: { width: viewport.width, height: viewport.height },
+                viewport: { width: viewport.width, height: viewport.height }
             }
             if (viewport.deviceScaleFactor) {
                 contextOptions.deviceScaleFactor = viewport.deviceScaleFactor
@@ -825,7 +838,9 @@ async function runVisualRegression(): Promise<TestResult[]> {
 
                 // Capture screenshot
                 await page.screenshot({ path: currentPath })
-                console.log(`   ✓ Screenshot captured: current-${state.name}.png (${viewport.width}x${viewport.height})`)
+                console.log(
+                    `   ✓ Screenshot captured: current-${state.name}.png (${viewport.width}x${viewport.height})`
+                )
 
                 if (!baselineExists) {
                     // First run — copy current screenshot as baseline
@@ -838,7 +853,7 @@ async function runVisualRegression(): Promise<TestResult[]> {
                         diffPercent: 0,
                         diffPixels: 0,
                         skipped: false,
-                        environmentNote: 'Baseline captured (first run)',
+                        environmentNote: 'Baseline captured (first run)'
                     })
                 } else {
                     // Compare with baseline
@@ -857,7 +872,7 @@ async function runVisualRegression(): Promise<TestResult[]> {
                             passed: true,
                             diffPercent: comparison.diffPercent,
                             diffPixels: comparison.diffPixels,
-                            skipped: false,
+                            skipped: false
                         })
                     } else {
                         console.log(
@@ -866,13 +881,15 @@ async function runVisualRegression(): Promise<TestResult[]> {
                                 `(threshold: ${stateThreshold}%)`
                         )
                         console.log(`   Diff saved to: ${diffPath}`)
-                        console.log(`   ℹ️  Headless rendering may differ from headed baselines (font anti-aliasing, WebGL)`)
+                        console.log(
+                            `   ℹ️  Headless rendering may differ from headed baselines (font anti-aliasing, WebGL)`
+                        )
                         results.push({
                             state: state.name,
                             passed: false,
                             diffPercent: comparison.diffPercent,
                             diffPixels: comparison.diffPixels,
-                            skipped: false,
+                            skipped: false
                         })
                     }
                 }
@@ -885,7 +902,7 @@ async function runVisualRegression(): Promise<TestResult[]> {
                     diffPercent: 0,
                     diffPixels: 0,
                     skipped: true,
-                    error: msg,
+                    error: msg
                 })
             } finally {
                 await page.close()
@@ -932,7 +949,8 @@ function generateReport(results: TestResult[]): string {
     for (const r of results) {
         const icon = r.passed ? '✅' : r.skipped ? '⚠️' : '❌'
         const result = r.passed ? 'PASS' : r.skipped ? 'SKIP' : 'FAIL'
-        const notes = r.error || r.environmentNote || (r.passed ? 'Within threshold' : `Exceeds ${THRESHOLD}% threshold`)
+        const notes =
+            r.error || r.environmentNote || (r.passed ? 'Within threshold' : `Exceeds ${THRESHOLD}% threshold`)
         report += `| ${r.state} | ${icon} ${result} | ${r.diffPercent.toFixed(4)}% | ${r.diffPixels} | ${notes} |\n`
     }
 

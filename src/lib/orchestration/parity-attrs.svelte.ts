@@ -102,7 +102,12 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
     },
     {
         key: 'graphContext',
-        description: 'Graph context label (overview|counties|corridor|focus|inside|map)',
+        description: 'Graph context label (idle|counties|corridor|focus|inside|map)',
+        source: 'derived'
+    },
+    {
+        key: 'mapContext',
+        description: 'Map context label (idle|search|focus|focus-search|trail)',
         source: 'derived'
     },
     { key: 'routeExploration', description: 'Route exploration phase', source: 'journeyStore.routeExplorationPhase' },
@@ -248,6 +253,34 @@ export function computeParityAttributes(): ParityAttributeMap {
     const loadingPhaseValue: LoadingPhase = get(loadingPhaseStore)
     const graphicsModeValue = get(graphicsModeStore)
 
+    const focusedNodeForAttrs = (() => {
+        // Primary: Svelte navStore rune (set by Svelte-side focus flows).
+        if (nav.focusedIndex !== null && Number.isFinite(nav.focusedIndex)) {
+            return String(nav.focusedIndex)
+        }
+        // Fallback: legacy `__APP_STATE__.navState.focusedIndex`. Legacy
+        // `applyLocalNeighborhoodFocus` writes to the legacy state but the
+        // Svelte navStore is not updated by the legacy code path, so this
+        // fallback is what actually carries the focus index in production.
+        // Mirrors the same pattern in FocusCard.svelte::currentFocusedIdx.
+        try {
+            const w = window as unknown as { __APP_STATE__?: { navState?: { focusedIndex?: unknown } } }
+            const legacy = w.__APP_STATE__?.navState?.focusedIndex
+            if (typeof legacy === 'number' && Number.isFinite(legacy)) return String(legacy)
+        } catch {
+            /* ignore */
+        }
+        return null
+    })()
+    const hasFocusContext =
+        focusedNodeForAttrs !== null ||
+        (typeof focus.selectedBusiness === 'object' && focus.selectedBusiness !== null) // audit-ok: typeof-guarded branch, not transformed
+    const hasSearchContext =
+        !!search.summary ||
+        (typeof search.query === 'string' && search.query.trim().length >= 2) ||
+        nav.surface === 'focus-search' ||
+        nav.surface === 'search'
+
     // graph-context: legacy uses these values across CSS hooks
     const graphContext = (() => {
         if (vp.isCompact && camera.routeExplorationPhase === 'exploring') return 'corridor'
@@ -255,21 +288,22 @@ export function computeParityAttributes(): ParityAttributeMap {
         if (nav.mode === 'inside') return 'inside'
         if (nav.mode === 'focus' || nav.mode === 'trail') return 'focus'
         if (nav.mode === 'search' || search.summary) return 'corridor'
-        if (nav.mode === 'overview') return 'overview'
-        return 'overview'
+        if (nav.mode === 'overview') return 'idle'
+        return 'idle'
     })()
 
     const panelSurfaceMode = ((): string => {
         if (nav.currentView === 'map') {
-            if (nav.surface === 'focus-search' || nav.surface === 'search' || search.summary) return 'map-search'
-            if (nav.surface === 'focus') return 'map-focus'
             if (nav.surface === 'map-focus-search') return 'map-focus-search'
             if (nav.surface === 'map-trail') return 'map-trail'
+            if (hasFocusContext && hasSearchContext) return 'map-focus-search'
+            if (nav.surface === 'focus-search' || nav.surface === 'search' || search.summary) return 'map-search'
+            if (nav.surface === 'focus') return 'map-focus'
             if (nav.surface === 'map') return 'map'
             return 'map-idle'
         }
-        if (nav.surface === 'focus-search') return 'focus-search'
         if (focus.semanticDiveMode) return 'semantic-dive'
+        if (nav.surface === 'focus-search') return 'focus-search'
         if (nav.surface === 'map-focus-search') return 'map-focus-search'
         if (nav.surface === 'map-trail') return 'map-trail'
         if (nav.surface === 'thread-inspect') return 'thread-inspect'
@@ -280,8 +314,30 @@ export function computeParityAttributes(): ParityAttributeMap {
         return 'idle'
     })()
 
-    const trailState = journey.depth > 0 || presentation.navigationOwner === 'map-trail-strip' ? 'active' : 'inactive'
-    const semanticDive = focus.semanticDiveMode ? 'active' : journey.depth >= 2 ? 'transitioning' : 'inactive'
+    const mapContext = ((): string => {
+        if (nav.currentView !== 'map') return 'idle'
+        if (panelSurfaceMode === 'map-focus-search') return 'focus-search'
+        if (panelSurfaceMode === 'map-focus') return 'focus'
+        if (panelSurfaceMode === 'map-search') return 'search'
+        if (panelSurfaceMode === 'map-trail') return 'trail'
+        return 'idle'
+    })()
+
+    const hasMapTrailIntent =
+        nav.currentView === 'map' &&
+        (nav.focusedIndex !== null || Boolean(search.summary) || nav.surface === 'map-focus-search' || nav.surface === 'map-trail')
+    const trailState =
+        journey.depth > 0 || hasMapTrailIntent || presentation.navigationOwner === 'map-trail-strip'
+            ? 'active'
+            : 'inactive'
+    const semanticDive =
+        nav.currentView === 'galaxy'
+            ? focus.semanticDiveMode
+                ? 'active'
+                : journey.depth >= 2
+                  ? 'transitioning'
+                  : 'inactive'
+            : 'inactive'
     const threadInspectionActive = focus.threadInspector.active
     const inspectedThreadIndex = focus.threadInspector.inspectedIndex
 
@@ -342,26 +398,9 @@ export function computeParityAttributes(): ParityAttributeMap {
         panelSurfaceDetail,
         activeView: nav.currentView,
         viewMode: nav.currentView,
-        focusedNode: (() => {
-            // Primary: Svelte navStore rune (set by Svelte-side focus flows).
-            if (nav.focusedIndex !== null && Number.isFinite(nav.focusedIndex)) {
-                return String(nav.focusedIndex)
-            }
-            // Fallback: legacy `__APP_STATE__.navState.focusedIndex`. Legacy
-            // `applyLocalNeighborhoodFocus` writes to the legacy state but the
-            // Svelte navStore is not updated by the legacy code path, so this
-            // fallback is what actually carries the focus index in production.
-            // Mirrors the same pattern in FocusCard.svelte::currentFocusedIdx.
-            try {
-                const w = window as unknown as { __APP_STATE__?: { navState?: { focusedIndex?: unknown } } }
-                const legacy = w.__APP_STATE__?.navState?.focusedIndex
-                if (typeof legacy === 'number' && Number.isFinite(legacy)) return String(legacy)
-            } catch {
-                /* ignore */
-            }
-            return null
-        })(),
+        focusedNode: focusedNodeForAttrs,
         graphContext,
+        mapContext,
         routeExploration: journey.routeExplorationPhase || 'idle',
 
         trailDepth: String(journey.depth),

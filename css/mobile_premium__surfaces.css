@@ -83,6 +83,20 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow: hidden;
     }
 
+    body[data-active-view='galaxy'][data-panel-surface='idle'][data-compact='true'] #info-panel.info-panel {
+        position: fixed;
+        left: 10px;
+        right: 10px;
+        top: auto;
+        bottom: 0;
+        width: auto;
+        height: min(42dvh, 320px);
+        min-height: 214px;
+        max-height: min(42dvh, 320px);
+        transform: translateY(0);
+        overflow: hidden;
+    }
+
     body[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-copy {
         display: flex;
         flex-direction: column;
@@ -707,6 +721,39 @@ body.is-active #selected-details.active:not([hidden]) {
         animation-duration: 0s;
     }
 
+    body.is-active[data-panel-surface='search'] #info-panel.info-panel {
+        overflow: hidden;
+    }
+
+    body.is-active[data-panel-surface='search'] #info-panel-content.info-panel-content {
+        height: 100%;
+        min-height: 0;
+        max-height: 100%;
+        overflow: hidden;
+    }
+
+    body.is-active[data-panel-surface='search'] .search-container.info-panel-contained {
+        position: relative;
+        top: auto;
+        left: 0;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        height: 100%;
+        min-height: 0;
+        max-height: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    body.is-active[data-panel-surface='search'] .search-container #search-results.active {
+        flex: 1 1 auto;
+        min-height: 0;
+        max-height: none;
+        overflow-y: auto;
+    }
+
     body:is([data-panel-surface='search'], [data-panel-surface='focus'], [data-panel-surface='focus-search'])
         .info-panel-surface-selection {
         display: none;
@@ -717,6 +764,8 @@ body.is-active #selected-details.active:not([hidden]) {
     body[data-panel-surface='search'] #btn-panel,
     body[data-panel-surface='search'] #btn-share-view,
     body[data-panel-surface='search'] #btn-legend,
+    body[data-panel-surface='search'] #mode-chips,
+    body[data-panel-surface='search'] #mode-grid,
     body[data-panel-surface='search'] .controls {
         opacity: 0;
         visibility: hidden;
@@ -871,15 +920,15 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow: hidden;
     }
 
-    body:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) #info-panel.info-panel {
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive']) .search-container {
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .search-container {
         display: none;
         visibility: hidden;
         opacity: 0;
@@ -1112,8 +1161,11 @@ body.is-active #selected-details.active:not([hidden]) {
         visibility: visible;
         opacity: 1;
         width: 100%;
+        height: 100%;
+        min-height: 0;
         max-width: 100%;
         max-height: 100%;
+        box-sizing: border-box;
         margin: 0;
         padding: 0;
         border: 0;
@@ -1125,6 +1177,56 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow: hidden;
         pointer-events: auto;
         transform: none;
+    }
+
+    body.is-active[data-panel-surface='map-focus-search'] #selected-details.info-panel-surface-selection {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr) auto;
+        gap: 6px;
+        height: 100%;
+        min-height: 0;
+        max-height: 100%;
+        overflow: hidden;
+    }
+
+    body.is-active[data-panel-surface='map-focus-search'] #selected-details .selected-hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 8px;
+        min-height: 0;
+        overflow: hidden;
+    }
+
+    body.is-active[data-panel-surface='map-focus-search'] #selected-name {
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    body.is-active[data-panel-surface='map-focus-search'] #selected-what {
+        display: -webkit-box;
+        max-height: 42px;
+        overflow: hidden;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+    }
+
+    body.is-active[data-panel-surface='map-focus-search'] #selected-match-panel {
+        max-height: 48px;
+        overflow: hidden;
+    }
+
+    body.is-active[data-panel-surface='map-focus-search'] #selected-meta-strip,
+    body.is-active[data-panel-surface='map-focus-search'] #selected-badges,
+    body.is-active[data-panel-surface='map-focus-search'] #selected-facts,
+    body.is-active[data-panel-surface='map-focus-search'] #selected-sensitivity,
+    body.is-active[data-panel-surface='map-focus-search'] #selected-action-row,
+    body.is-active[data-panel-surface='map-focus-search'] .selected-grid,
+    body.is-active[data-panel-surface='map-focus-search'] #selected-trivia {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
     }
 
     body.is-active[data-panel-surface='map-focus-search'] #selected-card #vector-cascade-bg {

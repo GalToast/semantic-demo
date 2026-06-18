@@ -9,7 +9,7 @@
 
 ## Summary
 
-The `thread-inspector.png` visual baseline committed in `802f410` is **invalid**: it captures the mobile focus view with the `ThreadInspector` component completely unmounted, not the thread-inspector surface. The 8% `thresholdOverride` with the comment *"Svelte component may not render in legacy shell — capture whatever state is present"* masks this. The test now **anti-guards** the surface — it enforces a no-inspector state, so a future fix that actually renders the inspector would cause a test *failure*.
+The `thread-inspector.png` visual baseline committed in `802f410` is **invalid**: it captures the mobile focus view with the `ThreadInspector` component completely unmounted, not the thread-inspector surface. The 8% `thresholdOverride` with the comment _"Svelte component may not render in legacy shell — capture whatever state is present"_ masks this. The test now **anti-guards** the surface — it enforces a no-inspector state, so a future fix that actually renders the inspector would cause a test _failure_.
 
 A deeper activation-logic gap was also found: `pinThreadNeighbor(<focused index>)` returns `active:false, pinned:false`.
 
@@ -31,7 +31,7 @@ bodyHasThreadInspectorActive: absent
 
 `anchor=519` publishes `SEARCH_FOCUS_REQUESTED {index:519}` early (App.svelte:28). Focus activates, but `ThreadInspector.svelte` line 112 renders only when `{#if visible && focusSnapshot.threadInspector.active}` — focus alone sets neither. The component never mounts.
 
-### 2. Programmatic activation also fails to *visibly* render
+### 2. Programmatic activation also fails to _visibly_ render
 
 `window.__APP_ACTIONS__.pinThreadNeighbor(519, {reason:'debug-verify'})` returns:
 
@@ -63,7 +63,7 @@ document.body.dataset.threadInspectSurface = inspectionState?.active
 
 ## Root cause (hypothesis, high confidence)
 
-`pinThreadNeighbor(index)` is designed to pin a **neighbor** of the focused node — a thread is a *focus↔neighbor connection*. Passing the **focused index itself** (519) produces no thread strand (`getThreadInspectionState` → `active:false`, `segmentCount:0`), so:
+`pinThreadNeighbor(index)` is designed to pin a **neighbor** of the focused node — a thread is a _focus↔neighbor connection_. Passing the **focused index itself** (519) produces no thread strand (`getThreadInspectionState` → `active:false`, `segmentCount:0`), so:
 
 - The store write (`focusStore.threadInspector.active = true`) mounts the component.
 - `renderThreadInspection`'s returned `inspectionState.active = false` keeps the body attr `'idle'` and the element never gets the `.active` class.
@@ -77,9 +77,9 @@ To capture a real thread-inspector baseline, the recipe would need to pass an **
 
 1. **Remove or `.skip` the `thread-inspector` TestState** in `tests/visual-regression.test.ts`. The baseline is anti-guarding. (In-lane, safe — this is the test file, not the activation logic.)
 2. **Fix the activation logic** (separate ticket, deeper): either
-   - Make `pinThreadNeighbor` reject/short-circuit when `index === focusedIndex` (return null with a clear reason), OR
-   - Add a canonical "pin first available neighbor" helper that picks a real neighbor index, OR
-   - Document that the inspector only activates on a true neighbor hover/click and update the visual-regression recipe to simulate that interaction.
+    - Make `pinThreadNeighbor` reject/short-circuit when `index === focusedIndex` (return null with a clear reason), OR
+    - Add a canonical "pin first available neighbor" helper that picks a real neighbor index, OR
+    - Document that the inspector only activates on a true neighbor hover/click and update the visual-regression recipe to simulate that interaction.
 3. **Do NOT treat this as a parity-attrs bug.** The body attr is correct; the divergence is logic-level (pinThreadNeighbor store-write vs getThreadInspectionState computed result). See `notes/` memory entry for the self-correction.
 
 ## Verification of the focus stage (side benefit)

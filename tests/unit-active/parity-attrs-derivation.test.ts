@@ -309,15 +309,15 @@ describe('computeParityAttributes IIFE derivations', () => {
             expect(result.graphContext).toBe('corridor')
         })
 
-        it('returns "overview" when mode is "overview"', () => {
+        it('returns "idle" when mode is "overview"', () => {
             const result = computeParityAttributes()
-            expect(result.graphContext).toBe('overview')
+            expect(result.graphContext).toBe('idle')
         })
 
-        it('returns "overview" as default fallback', () => {
+        it('returns "idle" as default fallback', () => {
             _nav.mode = 'unknown-mode'
             const result = computeParityAttributes()
-            expect(result.graphContext).toBe('overview')
+            expect(result.graphContext).toBe('idle')
         })
     })
 
@@ -329,10 +329,11 @@ describe('computeParityAttributes IIFE derivations', () => {
                 _nav.currentView = 'map'
             })
 
-            it('returns "map-search" when surface is "focus-search"', () => {
+            it('returns "map-focus-search" when surface is "focus-search" and focus is active', () => {
                 _nav.surface = 'focus-search'
+                _nav.focusedIndex = 42
                 const result = computeParityAttributes()
-                expect(result.panelSurfaceMode).toBe('map-search')
+                expect(result.panelSurfaceMode).toBe('map-focus-search')
             })
 
             it('returns "map-search" when surface is "search"', () => {
@@ -341,11 +342,21 @@ describe('computeParityAttributes IIFE derivations', () => {
                 expect(result.panelSurfaceMode).toBe('map-search')
             })
 
+            it('returns "map-focus-search" when search.summary and focus are both set', () => {
+                _nav.surface = 'idle'
+                _nav.focusedIndex = 42
+                _search.summary = { query: 'test', totalMatches: 3 }
+                const result = computeParityAttributes()
+                expect(result.panelSurfaceMode).toBe('map-focus-search')
+                expect(result.mapContext).toBe('focus-search')
+            })
+
             it('returns "map-search" when search.summary is set', () => {
                 _nav.surface = 'idle'
                 _search.summary = { query: 'test', totalMatches: 3 }
                 const result = computeParityAttributes()
                 expect(result.panelSurfaceMode).toBe('map-search')
+                expect(result.mapContext).toBe('search')
             })
 
             it('returns "map-focus" when surface is "focus"', () => {
@@ -376,6 +387,7 @@ describe('computeParityAttributes IIFE derivations', () => {
                 _nav.surface = 'idle'
                 const result = computeParityAttributes()
                 expect(result.panelSurfaceMode).toBe('map-idle')
+                expect(result.mapContext).toBe('idle')
             })
         })
 
@@ -388,6 +400,14 @@ describe('computeParityAttributes IIFE derivations', () => {
 
             it('returns "semantic-dive" when semanticDiveMode is true', () => {
                 _nav.surface = 'idle'
+                _focus.semanticDiveMode = true
+                const result = computeParityAttributes()
+                expect(result.panelSurfaceMode).toBe('semantic-dive')
+            })
+
+            it('returns "semantic-dive" over stale focus-search surface when semanticDiveMode is true', () => {
+                _nav.surface = 'focus-search'
+                _nav.focusedIndex = 518
                 _focus.semanticDiveMode = true
                 const result = computeParityAttributes()
                 expect(result.panelSurfaceMode).toBe('semantic-dive')

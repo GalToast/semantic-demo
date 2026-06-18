@@ -32,11 +32,19 @@ export function setTrailDepth(depth: number, _options?: any): void {
 
     if (typeof window !== 'undefined') {
         const stateWindow = window as Window & {
+            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
             __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
             __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> }
             state?: Record<string, unknown> & { navState?: Record<string, unknown> }
         }
-        for (const appState of [stateWindow.__LEGACY_APP_STATE__, stateWindow.__semanticState, stateWindow.state]) {
+        for (const appState of [
+            stateWindow.__APP_STATE__,
+            stateWindow.__TEST_STATE__,
+            stateWindow.__LEGACY_APP_STATE__,
+            stateWindow.__semanticState,
+            stateWindow.state
+        ]) {
             if (!appState) continue
             appState.trailDepth = nextDepth
             if (appState.navState) {
@@ -134,6 +142,7 @@ export function applyCompositionState(): void {
         root.dataset.trailState = hasActiveTrailState ? 'active' : 'inactive'
         root.dataset.trailDepth = String($nav.trailDepth ?? 0)
         root.dataset.graphContext = activeView === 'galaxy' ? graphContext : 'idle'
+        root.dataset.mapContext = mapContext
         root.dataset.semanticDive = activeView === 'galaxy' ? semanticDive : 'inactive'
         root.dataset.panelSurface = panelSurface
         root.dataset.panelSurfaceDetail = panelSurface

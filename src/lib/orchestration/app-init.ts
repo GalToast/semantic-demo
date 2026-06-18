@@ -22,7 +22,6 @@ import { initData, setLoadingPhase } from '@lib/data-store.svelte';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { focusStore } from '@lib/stores/focus.svelte';
 import { appState } from '@lib/state/app.svelte';
-import { clearSearch as clearSearchAction } from '@lib/stores/search.svelte';
 import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle';
 import {
   focusOnNode as focusOnNodeAction,
@@ -36,7 +35,7 @@ import { switchView as switchViewAction } from '@lib/orchestration/view-controll
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { initAdapters } from '@lib/orchestration/adapters';
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps';
-import { search } from '@lib/engine/window-actions-bridge';
+import { search, clearSearch as clearSearchAction } from '@lib/engine/window-actions-bridge';
 import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge';
 import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge';
 import {
@@ -230,7 +229,7 @@ function installWindowGlobals(): () => void {
       resetExperienceStateAction();
     },
     clearSearch: () => {
-      clearSearchAction();
+      returnToOverviewAction();
     },
     returnToOverview: () => {
       returnToOverviewAction();

@@ -278,7 +278,8 @@ function formatBusinessName(name: string): string {
 }
 
 /** Describe a cluster name for the compass kicker. */
-function describeCluster(cluster: string | undefined): string {
+function describeCluster(cluster: unknown): string {
   if (!cluster) return 'Neighborhood';
-  return cluster.charAt(0).toUpperCase() + cluster.slice(1);
+  const label = String(cluster);
+  return label.charAt(0).toUpperCase() + label.slice(1);
 }

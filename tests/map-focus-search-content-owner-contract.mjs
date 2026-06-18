@@ -1,22 +1,31 @@
 /**
  * map-focus-search-content-owner-contract.mjs
  *
- * Source-only ownership contract for the mobile map-focus-search selected-card
- * content variant.
+ * Svelte-native ownership contract for the map+focus+search composition.
  *
- * Ownership rules:
- *   1. HTML exposes a dedicated #selected-map-summary subtree.
- *   2. focus-stage-renderer.js owns the map-summary variant decision and
- *      writes data-content-variant/data-content-owner on #selected-card.
- *   3. The full #selected-details payload is hidden by the renderer for
- *      map-focus-search, not trimmed after the fact by late CSS.
- *   4. #selected-map-summary remains read-only; map actions stay owned by the
- *      map trail strip.
- *   5. composition-state.js publishes composition updates after panelSurface changes.
- *   6. The mobile premium split MAP SUMMARY section styles the dedicated
- *      summary nodes.
- *   7. Mobile premium CSS must not reintroduce map-focus-search styling for
- *      old selected-card detail internals.
+ * After the chrome migration, the map-focus-search composition is owned by:
+ *   1. InfoPanel.svelte — owns #selected-card, #selected-details, all child IDs.
+ *   2. FocusCard.svelte — owns the focus-stage overlay #selected-card variant.
+ *   3. src/lib/focus/stage-renderer.ts — manages structural slot visibility
+ *      (hidden/aria-hidden) on #selected-card, #selected-details,
+ *      #selected-map-summary (null-check only, element removed in migration).
+ *   4. src/lib/journey/selected-card.ts — delegates content variant sync
+ *      to stage-renderer, not directly to DOM.
+ *   5. src/lib/orchestration/info-panel-state.ts — per-surface content
+ *      descriptors (selectionSuppressed, headerVisible, etc.).
+ *
+ * This contract verifies:
+ *   A. stage-renderer.ts is the single structural slot manager and owns
+ *      syncSelectedCardContentVariant().
+ *   B. No vanilla JS module writes to Svelte-internal child elements
+ *      (selected-name, selected-what, etc.).
+ *   C. The map summary content variant elements (#selected-map-summary-*)
+ *      no longer exist in any Svelte component — they are dead DOM IDs
+ *      in the renderer's null-check path. The map summary content variant
+ *      was retired; MapSummary.svelte is a separate mini-map overlay.
+ *   D. InfoPanel.svelte owns all surface IDs and data-content-owner attrs.
+ *   E. Composition updates flow through event-bus COMPOSITION_UPDATED,
+ *      not legacy direct-DOM calls.
  *
  * Usage:
  *   node tests/map-focus-search-content-owner-contract.mjs
@@ -24,311 +33,355 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import { MOBILE_PREMIUM_PATHS, MOBILE_PREMIUM_SPLIT } from './_fixtures/mobile-premium-split.mjs';
+import assert from 'node:assert/strict';
 
-const ROOT = path.resolve(process.cwd());
-const HTML_PATH = path.join(ROOT, 'vector-explorer-polished.html');
-const FOCUS_RENDERER_PATH = path.join(ROOT, 'js/modules/focus-stage-renderer.ts');
-const INFO_PANEL_SELECTION_SURFACE_PATH = path.join(ROOT, 'js/modules/components/InfoPanelSelectionSurface.svelte');
-const UI_RENDERERS_PATH = path.join(ROOT, 'js/modules/ui-renderers.ts');
-const JOURNEY_SELECTED_CARD_PATH = path.join(ROOT, 'js/modules/journey-selected-card.ts');
-const JOURNEY_FOCUS_UI_PATH = path.join(ROOT, 'js/modules/journey-focus-ui.ts');
-const JOURNEY_COMPASS_PATH = path.join(ROOT, 'js/modules/journey-compass-controller.ts');
-const JOURNEY_ROUTE_TRACE_PATH = path.join(ROOT, 'js/modules/journey-route-trace.ts');
-const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.ts');
-const COMPOSITION_STATE_PATH = path.join(ROOT, 'js/modules/composition-state.ts');
-const EVENT_BUS_PATH = path.join(ROOT, 'js/modules/event-bus.ts');
-const MAP_STATE_PATH = path.join(ROOT, 'js/modules/map-state.ts');
-const SEMANTIC_DIVE_UI_PATH = path.join(ROOT, 'js/modules/semantic-dive-ui.ts');
-const MOBILE_PREMIUM_PATH = MOBILE_PREMIUM_PATHS;
-const PROGRESSIVE_DISCLOSURE_PATH = path.join(ROOT, 'css/progressive_disclosure.css');
+const root = process.cwd();
+const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
+const exists = (rel) => fs.existsSync(path.join(root, rel));
 
-function read(filePath) {
-  if (Array.isArray(filePath)) return filePath.map(read).join('\n');
-  return fs.readFileSync(filePath, 'utf8');
-}
+// ── Source paths (post-migration canonical locations) ─────────────────────────
 
-function assert(condition, message) {
-  if (!condition) throw new Error(`ASSERTION FAILED: ${message}`);
-}
+const STAGE_RENDERER = 'src/lib/focus/stage-renderer.ts';
+const JOURNEY_STAGE_RENDERER = 'src/lib/journey/focus-stage-renderer.ts';
+const JOURNEY_SELECTED_CARD = 'src/lib/journey/selected-card.ts';
+const JOURNEY_MODULE = 'src/lib/journey/journey.ts';
+const INFO_PANEL = 'src/components/InfoPanel.svelte';
+const FOCUS_CARD = 'src/components/FocusCard.svelte';
+const INFO_PANEL_STATE = 'src/lib/orchestration/info-panel-state.ts';
+const EVENT_BUS = 'src/lib/orchestration/event-bus.ts';
+const LIFECYCLE = 'src/lib/stores/lifecycle.ts';
+const PARITY_ATTRS = 'src/lib/orchestration/parity-attrs.svelte.ts';
+const APP_SHELL = 'src/App.svelte';
 
-function testHtmlSummarySubtree() {
-  console.log('\n[TEST] map summary subtree is owned by InfoPanelSelectionSurface.svelte');
-  // Per the chrome migration (Lane 2): the map summary subtree is rendered
-  // by the Svelte component, not baked into the static HTML. We verify the
-  // IDs are owned by the Svelte source so the contract is portable across
-  // the shell-vs-island boundary.
-  const src = read(INFO_PANEL_SELECTION_SURFACE_PATH);
+// ── Svelte-owned child IDs (stage-renderer must NOT write these) ──────────────
 
-  for (const id of [
-    'selected-map-summary',
-    'selected-map-summary-kicker',
-    'selected-map-summary-name',
-    'selected-map-summary-what',
-    'selected-map-summary-role',
-    'selected-map-summary-match',
-    'selected-map-summary-match-copy',
-  ]) {
-    assert(src.includes(`id="${id}"`), `InfoPanelSelectionSurface.svelte must include #${id}`);
-  }
+const SVELTE_OWNED_CHILD_IDS = [
+  'selected-name',
+  'selected-what',
+  'selected-meta-strip',
+  'selected-badges',
+  'selected-facts',
+  'selected-match-panel',
+  'selected-match-copy',
+  'selected-action-row',
+  'btn-selected-map',
+  'selected-theme',
+  'selected-status',
+  'selected-map',
+  'selected-thread',
+];
 
-  assert(
-    /id="selected-map-summary"[^>]*hidden[^>]*aria-hidden="true"/.test(src),
-    '#selected-map-summary must start hidden until the renderer claims it'
-  );
+// ── Retired map-summary element IDs (should NOT exist in any Svelte source) ──
+// These were part of InfoPanelSelectionSurface.svelte, removed in chrome migration.
 
-  console.log('  OK - map summary subtree exists in Svelte source and starts hidden');
-}
+const RETIRED_MAP_SUMMARY_IDS = [
+  'selected-map-summary',
+  'selected-map-summary-kicker',
+  'selected-map-summary-name',
+  'selected-map-summary-what',
+  'selected-map-summary-role',
+  'selected-map-summary-match',
+  'selected-map-summary-match-copy',
+];
 
-function testRendererOwnsVariantDecision() {
-  console.log('\n[TEST] focus-stage-renderer owns map-summary content variant');
-  const src = read(FOCUS_RENDERER_PATH);
+// ── Retired component paths (must not exist) ──────────────────────────────────
+
+const RETIRED_PATHS = [
+  'js/modules/components/InfoPanelSelectionSurface.svelte',
+  'js/modules/components/SelectedBusinessDetails.svelte',
+  'js/modules/selected-details-svelte-island.ts',
+  'js/modules/search-results-svelte-island.ts',
+  'js/modules/focus-stage-renderer.ts',
+  'js/modules/journey-selected-card.ts',
+  'js/modules/ui-renderers.ts',
+  'js/modules/composition-state.ts',
+];
+
+// ── Test A: stage-renderer.ts owns structural slot management ─────────────────
+
+function testStageRendererOwnsStructuralSlots() {
+  const src = read(STAGE_RENDERER);
 
   assert(
     /export\s+function\s+syncSelectedCardContentVariant\s*\(/.test(src),
-    'focus-stage-renderer.js must export syncSelectedCardContentVariant()'
+    'stage-renderer.ts must export syncSelectedCardContentVariant()'
   );
+
   assert(
-    /state\.currentView\s*===\s*['"]map['"]/.test(src) &&
-      (/surface\s*===\s*['"]map-focus-search['"]/.test(src) ||
-        /isMapSummarySurface\s*\(\s*\)/.test(src)),
-    'syncSelectedCardContentVariant() must gate map summary on currentView=map and panelSurface=map-focus-search (literal or helper)'
+    /function\s+setSurfaceHidden\s*\(/.test(src),
+    'stage-renderer.ts must own setSurfaceHidden() for visibility management'
   );
+
+  // Must use hidden + aria-hidden, not inline display
   assert(
-    /cardEl\.dataset\.contentVariant\s*=[\s\S]{0,180}isFocusStageOwner\s*\?\s*['"]focus-stage['"][\s\S]{0,120}isMapSummary\s*\?\s*['"]map-summary['"]/.test(src),
-    '#selected-card must declare data-content-variant="focus-stage" before the map-summary fallback'
+    /el\.hidden\s*=\s*true[\s\S]{0,200}el\.setAttribute\s*\(\s*['"]aria-hidden['"],\s*['"]true['"]\s*\)/.test(src) &&
+      /el\.hidden\s*=\s*false[\s\S]{0,200}el\.setAttribute\s*\(\s*['"]aria-hidden['"],\s*['"]false['"]\s*\)/.test(src),
+    'setSurfaceHidden() must own hidden state and aria-hidden, not inline display'
   );
+
+  // Must NOT write style.display
   assert(
-    /cardEl\.dataset\.contentOwner\s*=[\s\S]{0,180}isFocusStageOwner\s*\?\s*['"]focus-stage['"][\s\S]{0,120}isMapSummary\s*\?\s*['"]selected-map-summary['"]/.test(src),
-    '#selected-card must declare data-content-owner="focus-stage" before the selected-map-summary fallback'
+    !/function\s+setSurfaceHidden\s*\([^)]*\)\s*\{[\s\S]*?style\.display/.test(src),
+    'setSurfaceHidden() must not write inline display; hidden attribute + CSS own layout'
   );
+
+  // Must gate on focus-stage-owned surfaces
   assert(
     /function\s+focusStageOwnsSelectedContent\s*\(/.test(src) &&
-      src.includes("'focus'") &&
-      src.includes("'focus-search'") &&
-      src.includes("'semantic-dive'") &&
-      /const\s+isFocusStageOwner\s*=[\s\S]{0,120}focusStageOwnsSelectedContent\s*\(\s*surface\s*\)/.test(src),
-    'renderer must treat focus, focus-search, and semantic-dive as focus-stage selected-content owners'
-  );
-  assert(
-    /if\s*\(\s*isFocusStageOwner\s*\)\s*\{[\s\S]{0,260}setSurfaceHidden\s*\(\s*detailsEl\s*,\s*true\s*\)/.test(src),
-    'renderer must hide #selected-details when the focus stage owns selected content'
-  );
-  assert(
-    /setSurfaceHidden\s*\(\s*detailsEl\s*,\s*isMapSummary\s*\)/.test(src),
-    'renderer must hide #selected-details when map summary owns content'
-  );
-  assert(
-    /setSurfaceHidden\s*\(\s*summaryEl\s*,\s*!isMapSummary\s*\)/.test(src),
-    'renderer must reveal #selected-map-summary only for map summary state'
-  );
-  assert(
-    /el\.hidden\s*=\s*true[\s\S]{0,120}el\.setAttribute\s*\(\s*['"]aria-hidden['"]\s*,\s*['"]true['"]\s*\)[\s\S]{0,180}el\.hidden\s*=\s*false[\s\S]{0,120}el\.setAttribute\s*\(\s*['"]aria-hidden['"]\s*,\s*['"]false['"]\s*\)/.test(src),
-    'setSurfaceHidden() must own hidden state and aria-hidden without inline display writes'
-  );
-  assert(
-    !/function\s+setSurfaceHidden\s*\([^)]*\)\s*\{[\s\S]*?style\.display[\s\S]*?\n\}/.test(src),
-    'setSurfaceHidden() must not write inline display; the hidden attribute and CSS own layout visibility'
-  );
-  assert(
-    !/selected-map-summary[\s\S]{0,240}\.innerHTML\s*=/.test(src),
-    'renderer must not inject interactive or untrusted HTML into #selected-map-summary'
-  );
-  assert(
-    /selected-map-summary-name[\s\S]*nameEl\.textContent/.test(src) &&
-      /selected-map-summary-what[\s\S]*whatEl\.textContent/.test(src) &&
-      /selected-map-summary-match-copy[\s\S]*matchCopyEl\.textContent/.test(src),
-    'renderer must populate map summary copy via textContent'
+      /'focus'/.test(src) && /'focus-search'/.test(src) && /'semantic-dive'/.test(src),
+    'stage-renderer must treat focus, focus-search, and semantic-dive as focus-stage owners'
   );
 
-  console.log('  OK - renderer owns the map-summary variant and hides full details');
+  // Must set data-content-variant and data-content-owner on #selected-card
+  assert(
+    /cardEl\.dataset\.contentVariant\s*=/.test(src),
+    'stage-renderer must set data-content-variant on #selected-card'
+  );
+  assert(
+    /cardEl\.dataset\.contentOwner\s*=/.test(src),
+    'stage-renderer must set data-content-owner on #selected-card'
+  );
+
+  console.log('  OK - stage-renderer.ts owns structural slot management');
 }
 
-function testSummaryIsReadOnly() {
-  console.log('\n[TEST] map summary stays read-only; strip owns map actions');
-  // Per the chrome migration (Lane 2): the map summary subtree lives in the
-  // Svelte component, so we inspect the Svelte source for the read-only invariant.
-  const svelteSrc = read(INFO_PANEL_SELECTION_SURFACE_PATH);
-  const summaryMatch = svelteSrc.match(/<div class="selected-map-summary"[\s\S]*?<\/div>\s*<\/div>\s*<\/div>/);
-  assert(summaryMatch, 'must be able to inspect #selected-map-summary subtree in Svelte source');
-  const summaryHtml = summaryMatch[0];
+// ── Test B: No vanilla JS writes to Svelte-internal children ─────────────────
 
-  assert(
-    !/<button\b/i.test(summaryHtml) && !/<a\b/i.test(summaryHtml) && !/role="button"/i.test(summaryHtml),
-    '#selected-map-summary must not contain buttons, links, or button roles'
-  );
+function testNoLegacySvelteChildWrites() {
+  // Check stage-renderer.ts
+  const rendererSrc = read(STAGE_RENDERER);
+  for (const id of SVELTE_OWNED_CHILD_IDS) {
+    assert(
+      !rendererSrc.includes(`getElementById('${id}')`) &&
+        !rendererSrc.includes(`getElementById("${id}")`),
+      `stage-renderer.ts must not query Svelte-owned #${id}`
+    );
+  }
 
-  const rendererSrc = read(FOCUS_RENDERER_PATH);
-  assert(
-    !/selected-map-summary[\s\S]{0,360}addEventListener\s*\(/.test(rendererSrc),
-    'focus-stage-renderer.js must not bind interactions inside #selected-map-summary'
-  );
+  // Check journey/selected-card.ts
+  const selectedCardSrc = read(JOURNEY_SELECTED_CARD);
+  for (const id of SVELTE_OWNED_CHILD_IDS) {
+    assert(
+      !selectedCardSrc.includes(`getElementById('${id}')`) &&
+        !selectedCardSrc.includes(`getElementById("${id}")`),
+      `journey/selected-card.ts must not query Svelte-owned #${id}`
+    );
+  }
 
-  console.log('  OK - map summary is read-only and interaction ownership stays with map trail strip');
+  // Check journey/journey.ts
+  const journeySrc = read(JOURNEY_MODULE);
+  for (const id of SVELTE_OWNED_CHILD_IDS) {
+    assert(
+      !journeySrc.includes(`getElementById('${id}')`) &&
+        !journeySrc.includes(`getElementById("${id}")`),
+      `journey/journey.ts must not query Svelte-owned #${id}`
+    );
+  }
+
+  console.log('  OK - no vanilla JS writes to Svelte-internal child elements');
 }
 
-function testRenderPathCallsVariantSync() {
-  console.log('\n[TEST] render and composition paths call content variant sync');
-  const uiSrc = read(UI_RENDERERS_PATH);
-  const selectedSrc = read(JOURNEY_SELECTED_CARD_PATH);
-  const lifecycleSrc = read(LIFECYCLE_PATH);
-  const compositionStateSrc = read(COMPOSITION_STATE_PATH);
-  const eventBusSrc = read(EVENT_BUS_PATH);
+// ── Test C: Retired map-summary elements do not exist in Svelte sources ──────
 
+function testRetiredMapSummaryElementsRemoved() {
+  // The old #selected-map-summary subtree was removed from Svelte sources
+  // during the chrome migration. MapSummary.svelte is a separate mini-map
+  // overlay component — it does NOT render the old selected-map-summary
+  // content variant.
+
+  const svelteComponents = [
+    INFO_PANEL,
+    FOCUS_CARD,
+    'src/components/MapSummary.svelte',
+    'src/components/SearchBar.svelte',
+    'src/components/SearchResults.svelte',
+  ];
+
+  for (const component of svelteComponents) {
+    if (!exists(component)) continue;
+    const src = read(component);
+    for (const id of RETIRED_MAP_SUMMARY_IDS) {
+      assert(
+        !src.includes(`id="${id}"`) && !src.includes(`id='${id}'`),
+        `${component} must not render retired map-summary element #${id}`
+      );
+    }
+  }
+
+  // stage-renderer.ts still has null-checks for these elements (dead code path),
+  // but they must NOT exist in any Svelte component source.
+  // Verify the HTML shell doesn't have them either:
+  const html = read('vector-explorer-polished.html');
+  for (const id of RETIRED_MAP_SUMMARY_IDS) {
+    assert(
+      !html.includes(`id="${id}"`) && !html.includes(`id='${id}'`),
+      `HTML shell must not render retired map-summary element #${id}`
+    );
+  }
+
+  console.log('  OK - retired map-summary elements removed from Svelte sources and HTML shell');
+}
+
+// ── Test D: InfoPanel.svelte owns surface IDs and content-owner attrs ────────
+
+function testInfoPanelOwnsSurface() {
+  const src = read(INFO_PANEL);
+
+  // Must own #info-panel as root element
   assert(
-    /export\s+function\s+syncSelectedCardContentVariant\s*\(/.test(uiSrc),
-    'ui-renderers.js must re-export syncSelectedCardContentVariant()'
-  );
-  assert(
-    /syncSelectedCardContentVariant\s*,/.test(selectedSrc) &&
-      /syncSelectedCardContentVariant\s*\(\s*point\s*\)/.test(selectedSrc),
-    'journey-selected-card.js must sync the content variant on empty and populated renders'
-  );
-  assert(
-    /cardWasEmpty\s*&&\s*!\(?mapSummarySurface\)?/.test(selectedSrc) ||
-      /cardWasEmpty\s*&&\s*!\(?isMapSummarySurface\)?/.test(selectedSrc),
-    'journey-selected-card.js must not run the selected-card fade when map summary owns the card'
+    src.includes('id="info-panel"'),
+    'InfoPanel.svelte must render #info-panel'
   );
 
+  // Must own #info-panel-content
+  assert(
+    src.includes('id="info-panel-content"'),
+    'InfoPanel.svelte must own #info-panel-content'
+  );
+
+  // Must own #selected-card with data-content-owner
+  assert(
+    src.includes('id="selected-card"') &&
+      src.includes('data-content-owner='),
+    'InfoPanel.svelte must own #selected-card with data-content-owner attribute'
+  );
+
+  // Must own #selected-details
+  assert(
+    src.includes('id="selected-details"'),
+    'InfoPanel.svelte must own #selected-details'
+  );
+
+  // Must own #selected-empty
+  assert(
+    src.includes('id="selected-empty"'),
+    'InfoPanel.svelte must own #selected-empty'
+  );
+
+  // Must own Svelte-child IDs (selected-name, selected-what, etc.)
+  for (const id of ['selected-name', 'selected-what', 'selected-meta-strip', 'selected-action-row', 'btn-selected-map']) {
+    assert(
+      src.includes(`id="${id}"`),
+      `InfoPanel.svelte must own #${id}`
+    );
+  }
+
+  // Must use getInfoPanelContent() for per-surface content descriptors
+  assert(
+    src.includes('getInfoPanelContent') || src.includes('contentDescriptor'),
+    'InfoPanel.svelte must use info-panel-state for per-surface content descriptors'
+  );
+
+  console.log('  OK - InfoPanel.svelte owns all surface IDs and content-owner attrs');
+}
+
+// ── Test E: FocusCard.svelte is the focus-stage overlay card ──────────────────
+
+function testFocusCardOwnsFocusOverlay() {
+  const src = read(FOCUS_CARD);
+
+  // FocusCard renders its own #selected-card for focus-stage positioning
+  assert(
+    src.includes('id="selected-card"'),
+    'FocusCard.svelte must render #selected-card for focus-stage overlay'
+  );
+
+  // Must have focus-stage-specific positioning (fixed, bottom-right)
+  assert(
+    src.includes('focus-card') || src.includes('focus-stage-card'),
+    'FocusCard.svelte must have focus-stage card class'
+  );
+
+  console.log('  OK - FocusCard.svelte owns the focus-stage overlay card');
+}
+
+// ── Test F: Composition flow uses event-bus, not legacy direct-DOM ───────────
+
+function testCompositionFlowOwnership() {
+  const eventBusSrc = read(EVENT_BUS);
   assert(
     /COMPOSITION_UPDATED:\s*['"]COMPOSITION_UPDATED['"]/.test(eventBusSrc),
-    'event-bus.js must expose COMPOSITION_UPDATED for composition state fanout'
-  );
-  assert(
-    /applyCompositionState\s*\(\s*{\s*state\s*,\s*root:\s*document\.body\s*}\s*\)/.test(lifecycleSrc),
-    'lifecycle.js must delegate panelSurface composition through applyCompositionState()'
-  );
-  assert(
-    /function\s+syncSharedCompositionUi\s*\([^)]*\)\s*{[\s\S]*publish\s*\(\s*EVENTS\.COMPOSITION_UPDATED\s*\)/.test(compositionStateSrc) &&
-      /export\s+function\s+applyCompositionState\s*\([^)]*\)\s*{[\s\S]*syncSharedCompositionUi\s*\(\s*\)/.test(compositionStateSrc),
-    'composition-state.js must publish COMPOSITION_UPDATED after panelSurface changes'
+    'event-bus.ts must expose COMPOSITION_UPDATED for composition fanout'
   );
 
-  const compositionSubscribers = [
-    [JOURNEY_SELECTED_CARD_PATH, 'journey-selected-card'],
-    [JOURNEY_FOCUS_UI_PATH, 'focus-neighbor-rail'],
-    [JOURNEY_COMPASS_PATH, 'journey-compass'],
-    [JOURNEY_ROUTE_TRACE_PATH, 'route-trace'],
-    [MAP_STATE_PATH, 'map-state'],
-    [SEMANTIC_DIVE_UI_PATH, 'semantic-dive-ui'],
-  ];
+  const lifecycleSrc = read(LIFECYCLE);
+  assert(
+    /function\s+derivePanelSurface\s*\(/.test(lifecycleSrc),
+    'lifecycle.ts must own derivePanelSurface()'
+  );
+  assert(
+    /function\s+applyCompositionState\s*\(/.test(lifecycleSrc),
+    'lifecycle.ts must own applyCompositionState()'
+  );
+  assert(
+    /export\s+function\s+refreshCompositionState\s*\(/.test(lifecycleSrc),
+    'lifecycle.ts must export refreshCompositionState()'
+  );
 
-  for (const [filePath, keyPrefix] of compositionSubscribers) {
-    const src = read(filePath);
+  // Parity attrs must be installed
+  const paritySrc = read(PARITY_ATTRS);
+  assert(
+    /export\s+function\s+installParityAttributeSync\s*\(/.test(paritySrc),
+    'parity-attrs.svelte.ts must export installParityAttributeSync()'
+  );
+  const appSrc = read(APP_SHELL);
+  assert(
+    appSrc.includes('installParityAttributeSync()'),
+    'App.svelte must install the parity attribute sync layer'
+  );
+
+  // journey.ts must delegate to syncSelectedCardContentVariant
+  const journeySrc = read(JOURNEY_MODULE);
+  assert(
+    /syncSelectedCardContentVariant/.test(journeySrc),
+    'journey/journey.ts must import/call syncSelectedCardContentVariant'
+  );
+
+  console.log('  OK - composition flow uses event-bus COMPOSITION_UPDATED and lifecycle.ts');
+}
+
+// ── Test G: Retired legacy modules do not exist ──────────────────────────────
+
+function testRetiredModulesRemoved() {
+  for (const rel of RETIRED_PATHS) {
     assert(
-      new RegExp(`subscribeKeyed\\s*\\(\\s*['"]${keyPrefix}:composition-updated['"]\\s*,\\s*EVENTS\\.COMPOSITION_UPDATED`).test(src),
-      `${path.basename(filePath)} must subscribe to COMPOSITION_UPDATED so panelSurface composition changes cannot leave stale UI`
+      !exists(rel),
+      `retired module ${rel} must not be restored`
     );
   }
 
-  console.log('  OK - render and composition paths keep content variant synchronized');
+  // App.svelte must not reference retired chrome islands
+  const appSrc = read(APP_SHELL);
+  assert(
+    !appSrc.includes('info-panel-chrome-island') && !appSrc.includes('InfoPanelChrome'),
+    'App.svelte must not reference retired info-panel chrome island'
+  );
+  assert(
+    !appSrc.includes('legend-panel-chrome-island') && !appSrc.includes('LegendPanelChrome'),
+    'App.svelte must not reference retired legend-panel chrome island'
+  );
+
+  console.log('  OK - retired legacy modules removed');
 }
 
-function testCssOwnsSummaryStyleOnly() {
-  console.log('\n[TEST] mobile premium split MAP SUMMARY section owns summary styling');
-  const mobilePremiumSrc = read(MOBILE_PREMIUM_PATH);
-
-  assert(
-    /\/\*\s*─── MAP SUMMARY/.test(mobilePremiumSrc),
-    'mobile premium split must keep a named MAP SUMMARY section'
-  );
-  assert(
-    /#selected-details\.active:not\(\[hidden\]\)/.test(mobilePremiumSrc),
-    'generic #selected-details.active rule must preserve [hidden] ownership'
-  );
-  assert(
-    /data-panel-surface=['"]map-focus-search['"][\s\S]*#selected-map-summary\.selected-map-summary:not\(\[hidden\]\)/.test(mobilePremiumSrc),
-    'mobile premium split MAP SUMMARY section must style the dedicated #selected-map-summary surface'
-  );
-  assert(
-    /data-panel-surface=['"]map-focus-search['"][\s\S]*\.selected-map-summary-match/.test(mobilePremiumSrc),
-    'mobile premium split MAP SUMMARY section must style the dedicated summary content, not only the wrapper'
-  );
-
-  const forbiddenLegacyInternals = [
-    '#selected-name',
-    '#selected-what',
-    '#selected-match-panel',
-    '#selected-meta-strip',
-    '#selected-badges',
-    '.selected-grid',
-    '#selected-action-row',
-    '.selected-action-row',
-  ];
-
-  for (const selector of forbiddenLegacyInternals) {
-    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const before = new RegExp(`data-panel-surface=['"]map-focus-search['"][^{}]*${escapedSelector}`);
-    const after = new RegExp(`${escapedSelector}[^{}]*data-panel-surface=['"]map-focus-search['"]`);
-    assert(
-      !before.test(mobilePremiumSrc) && !after.test(mobilePremiumSrc),
-      `mobile premium split must not add map-focus-search rules for old detail internal ${selector}`
-    );
-  }
-
-  console.log('  OK - summary styling is isolated from old selected-card internals');
-}
-
-function testProgressiveDisclosureDoesNotTargetMapSummaryState() {
-  console.log('\n[TEST] progressive_disclosure map selected-card rules exclude map-focus-search');
-  const src = read(PROGRESSIVE_DISCLOSURE_PATH);
-
-  const oldSelectedSelectors = [
-    '.selected-card',
-    '.selected-card .panel-section-title',
-    '.selected-card h3',
-    '.selected-hero',
-    '.selected-role-badge',
-    '.selected-filed-as',
-    '.selected-subtitle',
-    '.selected-meta-strip',
-    '.selected-action-row',
-    '.selected-match-panel',
-    '.selected-match-copy',
-    '.selected-grid',
-    '.selected-item',
-    '.selected-item-value',
-  ];
-
-  for (const selector of oldSelectedSelectors) {
-    const escapedSelector = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const unsafe = new RegExp(`body\\[data-active-view=['"]map['"]\\](?!:not\\(\\[data-panel-surface=['"]map-focus-search['"]\\]\\))\\s+${escapedSelector.replace(/\\ /g, '\\s+')}`);
-    assert(
-      !unsafe.test(src),
-      `progressive_disclosure.css must not apply broad map selected-card rule to map-focus-search for ${selector}`
-    );
-  }
-
-  assert(
-    /body\[data-active-view=['"]map['"]\]:not\(\[data-panel-surface=['"]map-focus-search['"]\]\)\s+\.selected-card/.test(src),
-    'progressive_disclosure.css should explicitly exclude map-focus-search from old map selected-card rules'
-  );
-
-  console.log('  OK - old map selected-card rules cannot style the map-summary content owner');
-}
+// ── Run all tests ────────────────────────────────────────────────────────────
 
 function run() {
-  // ── RETIRED CONTRACT ──────────────────────────────────────────────────
-  // The chrome migration (Lane 2) restructured the map-summary ownership:
-  //   - `#selected-map-summary` subtree moved from static HTML to
-  //     `InfoPanelSelectionSurface.svelte` (Test 1 rewritten).
-  //   - `syncSelectedCardContentVariant` is now called from `journey.js`,
-  //     not `journey-selected-card.js` (Test 4 stale).
-  //   - Several CSS/progressive-disclosure invariants checked pre-Svelte
-  //     architecture (Tests 5, 6).
-  //
-  // The substantive invariant — "the map summary subtree is owned by the
-  // Svelte component" — is covered by `testHtmlSummarySubtree()` (now reading
-  // the Svelte source). The remaining tests would need a full rewrite to
-  // match the new ownership graph, which is out of scope for this lane.
-  //
-  // To restore: re-implement tests 4-6 against the new call graph and
-  // ownership hierarchy. See CHANGELOG for the chrome migration commits.
   console.log('=================================================================');
   console.log('map-focus-search-content-owner-contract.mjs');
-  console.log('RETIRED — chrome migration restructured map-summary ownership.');
-  console.log('Substantive invariant moved to Svelte; full rewrite needed');
-  console.log('to restore the other 5 checks. See contract source for notes.');
+  console.log('Svelte-native ownership contract for map+focus+search composition');
+  console.log('=================================================================');
+
+  testStageRendererOwnsStructuralSlots();
+  testNoLegacySvelteChildWrites();
+  testRetiredMapSummaryElementsRemoved();
+  testInfoPanelOwnsSurface();
+  testFocusCardOwnsFocusOverlay();
+  testCompositionFlowOwnership();
+  testRetiredModulesRemoved();
+
+  console.log('\n=================================================================');
+  console.log('ALL TESTS PASSED');
   console.log('=================================================================');
 }
 

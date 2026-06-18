@@ -31,9 +31,11 @@ import type { ViewName, SwitchViewOptions } from '@lib/orchestration/view-contro
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
 import {
   resetExperienceState as resetSvelteExperienceState,
-  resetExplorationFocus as resetSvelteExplorationFocus
+  resetExplorationFocus as resetSvelteExplorationFocus,
+  refreshCompositionState as refreshSvelteCompositionState,
+  setSemanticDiveMode as setSvelteSemanticDiveMode,
+  setTrailDepth as setSvelteTrailDepth
 } from '@lib/stores/lifecycle';
-import { clearSearch as clearSvelteSearch } from '@lib/stores/search.svelte';
 import { navStore } from '@lib/stores/navigation.svelte';
 import { journeyStore } from '@lib/stores/journey.svelte';
 
@@ -166,6 +168,7 @@ function finiteIndexList(value: unknown): number[] {
 }
 
 function asFiniteNumber(value: unknown): number | null {
+  if (value === null || value === undefined || value === '') return null;
   const index = Number(value);
   return Number.isFinite(index) ? index : null;
 }
@@ -249,8 +252,10 @@ export function installWindowActions(): () => void {
       return getLegacyModules()?.search?.search?.(query, options);
     },
     clearSearch: (options?: Record<string, unknown>) => {
-      clearSvelteSearch();
-      getLegacyModules()?.search?.clearSearch?.(options);
+      const resetOptions = { ...(options ?? {}), preserveSearch: false };
+      resetSvelteExplorationFocus(resetOptions);
+      getLegacyModules()?.lifecycle?.resetExplorationFocus?.(resetOptions);
+      syncSvelteNavFromLegacy();
     },
     switchView: (view: string, options?: Record<string, unknown>) => {
       normalizeLegacyNavState();
@@ -269,13 +274,18 @@ export function installWindowActions(): () => void {
     },
     setTrailDepth: (depth: number, options?: Record<string, unknown>) => {
       normalizeLegacyNavState();
+      setSvelteTrailDepth(depth, options);
       const lifecycle = getLegacyModules()?.lifecycle;
       lifecycle?.setTrailDepth?.(depth, options);
       lifecycle?.refreshCompositionState?.();
+      refreshSvelteCompositionState();
       syncSvelteNavFromLegacy();
     },
     setSemanticDiveMode: (enabled: boolean) => {
+      setSvelteSemanticDiveMode(enabled);
+      setSvelteTrailDepth(enabled ? 2 : 1);
       getLegacyModules()?.lifecycle?.setSemanticDiveMode?.(enabled);
+      refreshSvelteCompositionState();
       syncSvelteNavFromLegacy();
     },
     returnToOverview: () => {

@@ -248,7 +248,7 @@ resetState();
 commitTransition('overview');
 
 assert(ds('activeView') === 'galaxy',   'overview: activeView is galaxy');
-assert(ds('graphContext') === 'overview',  'overview: graphContext is overview');
+assert(ds('graphContext') === 'idle',  'overview: graphContext is idle');
 assert(ds('panelSurface') === 'idle',  'overview: panelSurface is idle');
 assert(ds('semanticDive') === 'inactive', 'overview: semanticDive is inactive');
 assert(ds('trailState') === 'inactive','overview: trailState is inactive');
@@ -398,13 +398,13 @@ assert(ds('semanticDive') === 'inactive','reset: semanticDive is inactive');
 assert(ds('trailState') === 'inactive', 'reset: trailState is inactive');
 assert(state.focusedNode === null,    'reset: focusedNode is null');
 assert(state.selectedPoint === null,  'reset: selectedPoint is null');
-assert(ds('graphContext') === 'overview', 'reset: graphContext is overview');
+assert(ds('graphContext') === 'idle', 'reset: graphContext is idle');
 assert(ds('panelSurface') === 'idle', 'reset: panelSurface is idle');
 console.log('  PASS: reset state is correct\n');
 
 // ── RESOLVED ───────────────────────────────────────────────────────────────────
 // 1. (resolved) resetStateBeforeUrlRestore now clears navState.focusedIndex.
-//    graphContext returns to overview and panelSurface returns to idle after reset.
+//    graphContext returns to idle and panelSurface returns to idle after reset.
 // ─────────────────────────────────────────────────────────────────────────────
 
 // ── EDGE CASES ────────────────────────────────────────────────────────────────
@@ -435,7 +435,7 @@ shortInput.value = 'c'; // 1 char, below threshold
 elementsById.set('search-input', shortInput);
 commitTransition('short-input');
 
-assert(ds('graphContext') === 'overview', 'short-input: graphContext is overview (1 char below threshold)');
+assert(ds('graphContext') === 'idle', 'short-input: graphContext is idle (1 char below threshold)');
 assert(ds('panelSurface') === 'idle','short-input: panelSurface is idle');
 console.log('  PASS: single-char input (below threshold) correctly stays idle\n');
 
@@ -453,7 +453,7 @@ staleResults.classList.add('search-results', 'active');
 activeResultsIntentEl = staleResults;
 commitTransition('stale-active-results');
 
-assert(ds('graphContext') === 'overview', 'stale-active-results: graphContext is overview without summary or query');
+assert(ds('graphContext') === 'idle', 'stale-active-results: graphContext is idle without summary or query');
 assert(ds('panelSurface') === 'idle', 'stale-active-results: panelSurface is idle without summary or query');
 console.log('  PASS: stale active results alone do not keep search surface active\n');
 
@@ -563,7 +563,7 @@ resetStateBeforeUrlRestore({ clearSearchInput: true });
 commitTransition('post-reset-deep');
 
 assert(ds('activeView') === 'galaxy',    'reset: activeView is galaxy (not stuck on map/semantic)');
-assert(ds('graphContext') === 'overview',   'reset: graphContext is overview');
+assert(ds('graphContext') === 'idle',   'reset: graphContext is idle');
 assert(ds('panelSurface') === 'idle',   'reset: panelSurface is idle');
 assert(ds('semanticDive') === 'inactive','reset: semanticDive is inactive');
 assert(ds('trailState') === 'inactive', 'reset: trailState is inactive');

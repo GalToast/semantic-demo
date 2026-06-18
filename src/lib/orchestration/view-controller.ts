@@ -9,7 +9,7 @@
  */
 
 import { get } from 'svelte/store';
-import { navStore } from '@lib/stores/navigation.svelte.ts';
+import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts';
 import { semanticGuideIcon } from '@lib/journey/semantic-guide';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -149,7 +149,7 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
   }
 
   // Commit the view switch to the store
-  navStore.update((s) => ({ ...s, currentView: view }));
+  updateNavState({ currentView: view });
   // body.dataset.viewMode / .activeView are owned by parity-attrs.ts.
 
   // Transition choreography class

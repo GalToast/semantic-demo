@@ -8,7 +8,7 @@
 
 import { chromium } from 'playwright';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.RESET_MAP_OWNERSHIP_URL || DEFAULT_URL;
 const QUERY = process.env.RESET_MAP_OWNERSHIP_QUERY || 'coffee';
 
@@ -104,7 +104,7 @@ async function waitReady(page) {
       state.applyingUrlState === false &&
       window.history.state?.semanticDemo &&
       state.sceneRevealActive === false &&
-      document.body.dataset.sceneReveal === 'inactive';
+      (document.body.dataset.sceneReveal === 'inactive' || document.body.dataset.sceneReady === 'true');
   }, null, { timeout: 45000 });
 }
 
@@ -431,6 +431,17 @@ async function runMapTransitionScenario(browser) {
       document.body.dataset.activeView === 'map' &&
       document.body.dataset.panelSurface?.startsWith('map-');
   }, null, { timeout: 20000 });
+  await page.waitForFunction(() => {
+    const mapContainer = document.querySelector('#map-container.active');
+    if (!mapContainer) return false;
+    const rect = mapContainer.getBoundingClientRect();
+    const style = getComputedStyle(mapContainer);
+    return rect.width > 0 &&
+      rect.height > 0 &&
+      style.display !== 'none' &&
+      style.visibility !== 'hidden' &&
+      Number(style.opacity || 1) > 0.01;
+  }, null, { timeout: 20000 });
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {});
   const map = await snapshot(page);
   assert(map.currentView === 'map', `map transition: currentView should be map, got ${map.currentView}`);
@@ -465,17 +476,29 @@ async function runMapTransitionScenario(browser) {
   assert(map.boxes.infoPanel.y >= map.viewport.height * 0.52,
     `map transition: infoPanel should be bottom-attached, not a mid-screen slab, got ${JSON.stringify(map.boxes.infoPanel)}`);
   assert(map.boxes.selectedCard?.visible, `map transition: selected card content should be visible, got ${JSON.stringify(map.boxes.selectedCard)}`);
-  assert(map.boxes.selectedCard.dataset?.contentVariant === 'map-summary',
-    `map transition: selected card should use map-summary variant, got ${JSON.stringify(map.boxes.selectedCard)}`);
-  assert(map.boxes.selectedCard.dataset?.contentOwner === 'selected-map-summary',
-    `map transition: selected card should be owned by selected-map-summary, got ${JSON.stringify(map.boxes.selectedCard)}`);
-  assert(map.boxes.selectedMapSummary?.visible, `map transition: selected map summary should be visible, got ${JSON.stringify(map.boxes.selectedMapSummary)}`);
-  assert(map.boxes.selectedMapSummaryName?.visible, `map transition: selected map summary name should be visible, got ${JSON.stringify(map.boxes.selectedMapSummaryName)}`);
-  assert(map.boxes.selectedMapSummaryWhat?.visible, `map transition: selected map summary description should be visible, got ${JSON.stringify(map.boxes.selectedMapSummaryWhat)}`);
-  assert(map.boxes.selectedMapSummaryMatch?.visible, `map transition: selected map summary match context should be visible, got ${JSON.stringify(map.boxes.selectedMapSummaryMatch)}`);
-  assert(!map.boxes.selectedDetails?.visible,
-    `map transition: full selected details should be hidden under map summary owner, got ${JSON.stringify(map.boxes.selectedDetails)}`);
-  ['selectedTrivia', 'selectedGrid', 'trailControls', 'trailContext'].forEach((key) => {
+  assert(map.boxes.selectedCard.dataset?.contentVariant === 'info-panel',
+    `map transition: selected card should use InfoPanel variant, got ${JSON.stringify(map.boxes.selectedCard)}`);
+  assert(map.boxes.selectedCard.dataset?.contentOwner === 'info-panel',
+    `map transition: selected card should be owned by InfoPanel, got ${JSON.stringify(map.boxes.selectedCard)}`);
+  assert(map.boxes.selectedCard.dataset?.debugEffectiveSurface === 'map-focus-search',
+    `map transition: selected card should render map-focus-search surface, got ${JSON.stringify(map.boxes.selectedCard)}`);
+  assert(map.boxes.selectedCard.height <= map.boxes.infoPanel.height + 2,
+    `map transition: selected card should stay inside compact map drawer, got card=${JSON.stringify(map.boxes.selectedCard)} panel=${JSON.stringify(map.boxes.infoPanel)}`);
+  assert(!map.boxes.selectedMapSummary?.visible,
+    `map transition: retired selected-map-summary subtree should stay absent, got ${JSON.stringify(map.boxes.selectedMapSummary)}`);
+  assert(!map.boxes.selectedMapSummaryName?.visible,
+    `map transition: retired selected-map-summary name should stay absent, got ${JSON.stringify(map.boxes.selectedMapSummaryName)}`);
+  assert(!map.boxes.selectedMapSummaryWhat?.visible,
+    `map transition: retired selected-map-summary description should stay absent, got ${JSON.stringify(map.boxes.selectedMapSummaryWhat)}`);
+  assert(!map.boxes.selectedMapSummaryMatch?.visible,
+    `map transition: retired selected-map-summary match context should stay absent, got ${JSON.stringify(map.boxes.selectedMapSummaryMatch)}`);
+  assert(map.boxes.selectedDetails?.visible,
+    `map transition: InfoPanel selected details should own the compact map content, got ${JSON.stringify(map.boxes.selectedDetails)}`);
+  assert(map.boxes.selectedName?.visible,
+    `map transition: compact selected name should be visible, got ${JSON.stringify(map.boxes.selectedName)}`);
+  assert(map.boxes.selectedSubtitle?.visible,
+    `map transition: compact selected description should be visible, got ${JSON.stringify(map.boxes.selectedSubtitle)}`);
+  ['selectedTrivia', 'selectedGrid', 'selectedActionRow', 'trailControls', 'trailContext'].forEach((key) => {
     assert(!map.boxes[key]?.visible, `map transition: bulky ${key} should be hidden in map-focus-search, got ${JSON.stringify(map.boxes[key])}`);
   });
 

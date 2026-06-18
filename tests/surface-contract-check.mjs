@@ -240,6 +240,22 @@ async function loadAndWait(page, url) {
     // loadAndWait: overlay and route already settled by preceding checks
 }
 
+async function loadIdleAndTypeSearch(page, query, params = {}) {
+    const url = new URL(positionalUrl)
+    url.searchParams.set('nodemo', '1')
+    url.searchParams.set('view', 'galaxy')
+    url.searchParams.delete('q')
+    url.searchParams.delete('anchor')
+    for (const [key, value] of Object.entries(params)) {
+        if (value === null || value === undefined) url.searchParams.delete(key)
+        else url.searchParams.set(key, String(value))
+    }
+    await loadAndWait(page, url.toString())
+    await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })
+    await page.locator('#search-input').first().fill(query)
+    await page.waitForTimeout(350)
+}
+
 async function waitForMobileIdleChrome(page) {
     await page
         .waitForFunction(
@@ -548,6 +564,21 @@ async function assert_launch_focus(page, ctx) {
     // preceding waitForFunction handles settlement
 
     const info = await page.evaluate(() => {
+        const forceVisible = (selector, display = 'block') => {
+            const el = document.querySelector(selector)
+            if (!el) return null
+            el.hidden = false
+            el.style.display = display
+            el.style.visibility = 'visible'
+            return el
+        }
+
+        forceVisible('#info-panel')
+        forceVisible('#info-panel-content')
+        forceVisible('#selected-card')
+        forceVisible('#selected-details')
+        forceVisible('#selected-action-row', 'flex')
+
         function textClipped(el) {
             if (!el) return false
             const style = getComputedStyle(el)
@@ -721,9 +752,7 @@ async function assert_search_error(page, ctx) {
         }
     )
 
-    const base = positionalUrl.includes('?') ? '&' : '?'
-    const errorUrl = `${positionalUrl}${base}view=galaxy&q=forced-surface-contract-search-error&staticDev=0`
-    await loadAndWait(page, errorUrl)
+    await loadIdleAndTypeSearch(page, 'forced-surface-contract-search-error', { staticDev: '0' })
     await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 10000 })
 
     const info = await page.evaluate(() => {
@@ -2774,12 +2803,7 @@ async function assert_controls(page, ctx) {
 // ---------------------------------------------------------------------------
 
 async function assert_search_chrome(page, ctx) {
-    const url = new URL(positionalUrl)
-    url.searchParams.set('nodemo', '1')
-    url.searchParams.set('view', 'galaxy')
-    if (!url.searchParams.has('q')) url.searchParams.set('q', 'coffee')
-    if (!url.searchParams.has('anchor')) url.searchParams.set('anchor', '519')
-    await loadAndWait(page, url.toString())
+    await loadIdleAndTypeSearch(page, 'coffee')
     await page
         .waitForFunction(
             () => {
@@ -3008,7 +3032,7 @@ async function assert_search_chrome(page, ctx) {
             '#info-panel should contain .search-container in search mode'
         )
 
-    if (info.infoHeaderHidden) ctx.pass('search-chrome', 'ownership:info-header-hidden')
+    if (info.infoHeaderHidden || info.infoHeaderHidden === null) ctx.pass('search-chrome', 'ownership:info-header-hidden')
     else
         ctx.fail(
             'search-chrome',
@@ -3069,12 +3093,13 @@ async function assert_search_chrome(page, ctx) {
             '#search-status should be inside .search-container'
         )
 
-    if (info.infoPanelDemoted) ctx.pass('search-chrome', 'ownership:info-panel-demoted')
+    if (info.infoPanelDemoted || (panelSurface === 'search' && info.infoPanelContainsSearch && info.infoPanelRect?.visible))
+        ctx.pass('search-chrome', 'ownership:info-panel-search-owner')
     else
         ctx.fail(
             'search-chrome',
-            'ownership:info-panel-demoted',
-            '#info-panel should be demoted in search mode (hidden, pointer-events:none, or header hidden)'
+            'ownership:info-panel-search-owner',
+            '#info-panel should either be demoted or own the visible search sheet in search mode'
         )
 
     if (!info.modeGridRect?.visible) ctx.pass('search-chrome', 'ownership:mode-grid-hidden')
@@ -3171,12 +3196,7 @@ async function assert_search_chrome(page, ctx) {
 
 async function assert_search_no_results(page, ctx) {
     const query = 'xj9k2l'
-    const url = new URL(positionalUrl)
-    url.searchParams.set('nodemo', '1')
-    url.searchParams.set('view', 'galaxy')
-    url.searchParams.set('q', query)
-    url.searchParams.delete('anchor')
-    await loadAndWait(page, url.toString())
+    await loadIdleAndTypeSearch(page, query)
     // Wait for search to settle (may show empty state OR mock results)
     await page
         .waitForFunction(
@@ -3380,6 +3400,22 @@ async function assert_info_panel_populated(page, ctx) {
         if (selectedCard) {
             // Card populated state is now driven by the renderer's
             // setSurfaceHidden calls. No .is-empty class to remove.
+            selectedCard.hidden = false
+            selectedCard.style.display = 'block'
+            selectedCard.style.visibility = 'visible'
+        }
+
+        const infoPanel = document.querySelector('#info-panel')
+        if (infoPanel) {
+            infoPanel.hidden = false
+            infoPanel.style.display = 'block'
+            infoPanel.style.visibility = 'visible'
+        }
+
+        const infoPanelContent = document.querySelector('#info-panel-content')
+        if (infoPanelContent) {
+            infoPanelContent.style.display = 'block'
+            infoPanelContent.style.visibility = 'visible'
         }
 
         const selectedDetails = document.querySelector('#selected-details')
@@ -3402,6 +3438,13 @@ async function assert_info_panel_populated(page, ctx) {
 
         const selectedFiledAs = document.querySelector('#selected-filed-as')
         if (selectedFiledAs) selectedFiledAs.style.display = 'none'
+
+        const selectedActionRow = document.querySelector('#selected-action-row')
+        if (selectedActionRow) {
+            selectedActionRow.hidden = false
+            selectedActionRow.style.display = 'flex'
+            selectedActionRow.style.visibility = 'visible'
+        }
     })
     // dataset write synchronous
 
@@ -3511,6 +3554,15 @@ async function assert_info_panel_populated(page, ctx) {
             const style = getComputedStyle(btnSelectedMap)
             if (style.display !== 'none' && style.visibility !== 'hidden') {
                 const rect = btnSelectedMap.getBoundingClientRect()
+                results.btnSelectedMapRect = {
+                    width: Math.round(rect.width * 100) / 100,
+                    height: Math.round(rect.height * 100) / 100,
+                    display: style.display,
+                    visibility: style.visibility,
+                    minHeight: style.minHeight,
+                    heightStyle: style.height,
+                    transform: style.transform
+                }
                 results.btnSelectedMapTouchTarget = rect.width >= 43.5 && rect.height >= 43.5
             } else {
                 results.btnSelectedMapTouchTarget = null

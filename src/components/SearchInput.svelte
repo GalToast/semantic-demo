@@ -18,8 +18,7 @@
     searchState,
     setSearchQuery,
     setSearchStatus,
-    setSearchResults,
-    clearSearch
+    setSearchResults
   } from '@lib/stores/search.svelte';
   import { performSearch } from '@lib/search-engine';
   import {
@@ -80,11 +79,8 @@
     const trimmed = query.trim();
 
     if (trimmed.length === 0) {
-      clearSearch();
-      if (surfaceSwitchedToSearch) {
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
-        surfaceSwitchedToSearch = false;
-      }
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
+      surfaceSwitchedToSearch = false;
       return;
     }
 
@@ -146,11 +142,8 @@
       searchAbortController.abort();
       searchAbortController = null;
     }
-    clearSearch();
-    if (surfaceSwitchedToSearch) {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
-      surfaceSwitchedToSearch = false;
-    }
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
+    surfaceSwitchedToSearch = false;
     requestAnimationFrame(() => {
       document.getElementById('search-input')?.focus();
     });

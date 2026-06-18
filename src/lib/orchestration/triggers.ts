@@ -232,14 +232,21 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
     })
     // Add the focused node as the first trail stop so MapSummary
     // (which gates on hasTrail() && trail.length > 0) renders.
+    // Guard against duplicate trail stops when SEARCH_FOCUS_REQUESTED re-fires
+    // (e.g. the url-state post-search re-publish for numeric anchors — see
+    // docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md).
     const records = getBusinessRecords()
     const record = records[Number(index)]
-    addTrailStop({
-        index: Number(index),
-        name: record?.name ?? `Node ${index}`,
-        reason: 'search-focus',
-        visitedAt: Date.now()
-    })
+    const walkHist = appState.navState.walkHistoryIndices ?? []
+    const lastTrailIndex = walkHist.length > 0 ? walkHist[walkHist.length - 1] : null
+    if (lastTrailIndex !== Number(index)) {
+        addTrailStop({
+            index: Number(index),
+            name: record?.name ?? `Node ${index}`,
+            reason: 'search-focus',
+            visitedAt: Date.now()
+        })
+    }
     setTrailNeighborIndices(candidateIndices)
     setThreadCandidates(candidateIndices)
     setTrailDepth(1)

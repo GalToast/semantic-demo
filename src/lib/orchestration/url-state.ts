@@ -560,17 +560,22 @@ async function _restoreSearchFromParams(query: string, anchorId: string | null):
 
         if (domForcedFocusSearchSurface) preserveDomForcedFocusSearchSurface()
 
-        // Non-numeric anchor: focus it once results are available. Numeric
-        // anchors are settled by `_restoreAnchorFromParams` in `applyUrlState`
-        // before this helper ever runs.
-        if (anchorId && !Number.isFinite(Number(anchorId))) {
-            const results = searchStore().results
-            if (results && results.length > 0) {
-                const byId = results.find((r: any) => r.id === anchorId)
-                if (byId) {
-                    publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: byId.index })
-                }
-            }
+        // Focus the anchor once search results are available. Numeric anchors
+        // are ALSO re-fired here: their earlier publish (App.svelte module-parse
+        // + _restoreAnchorFromParams) fires before currentSearchSummary populates,
+        // leaving threadCandidates empty and the focus pocket / thread inspector
+        // without neighbor data. This re-fire runs after runSearch completes, so
+        // resultIndices is populated. The subscriber guards addTrailStop against
+        // duplicate trail stops. See docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md
+        const numericAnchor = Number.isFinite(Number(anchorId))
+        const results = searchStore().results
+        const byId = results && results.length > 0 ? results.find((r: any) => r.id === anchorId) : null
+        if (byId) {
+            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: byId.index })
+        } else if (numericAnchor) {
+            // Raw numeric anchor (?anchor=519) that isn't in results by .id
+            // (results .id is a lead_id string). Re-fire by numeric index directly.
+            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: Number(anchorId) })
         }
         preserveDomForcedFocusSearchSurface()
     } catch (err) {
