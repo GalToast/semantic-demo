@@ -23,7 +23,7 @@
  * - docs/w21-charter-2026-06-17.md (Wave 21.1 charter)
  */
 import { describe, it, expect } from 'vitest'
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { join, relative, resolve } from 'node:path'
 
 // ── Project roots ────────────────────────────────────────────────────────────
@@ -55,11 +55,12 @@ function relFromRoot(full: string): string {
  * Recursively collect .ts files under a directory, skipping node_modules/dist.
  */
 function collectTsFiles(dir: string, files: string[] = []): string[] {
+    if (!existsSync(dir)) return files
     for (const entry of readdirSync(dir)) {
         if (entry === 'node_modules' || entry === 'dist' || entry === '.git' || entry === 'tmp') continue
         const fullPath = join(dir, entry)
         try {
-            const stat = require('node:fs').statSync(fullPath)
+            const stat = statSync(fullPath)
             if (stat.isDirectory()) {
                 collectTsFiles(fullPath, files)
             } else if (/\.ts$/.test(entry)) {
@@ -103,13 +104,13 @@ function isCrossModuleRelativeImport(source: string): boolean {
 // TEST SUITE
 // ══════════════════════════════════════════════════════════════════════════════
 
-describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
+describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
     // ── Section 1: Hard invariants (must always pass) ────────────────────────
     // These test things that SHOULD already be true. If they fail,
     // it's a regression, not pending cleanup.
 
     describe('1. Hard invariants (regression gate)', () => {
-        it('no js/modules/ file imports from ../../src/lib/...', () => {
+        it('no js/modules/ file imports from ../../src/lib/... (or directory is gone)', () => {
             const tsFiles = collectTsFiles(JS_MODULES)
             const violations: string[] = []
 
@@ -162,7 +163,7 @@ describe('W20 Wave 4 readiness: js/modules/ tree state lock', () => {
     // and PASS when the parallel session lands. The test output tells you
     // exactly what's still pending — not just "test failed".
 
-    describe('2. Wave 4 cleanup: file deletions pending', () => {
+    describe('2. Wave 4 cleanup: file deletions (should all pass now)', () => {
         const pending: string[] = []
 
         beforeAll(() => {

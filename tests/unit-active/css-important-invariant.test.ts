@@ -41,7 +41,15 @@ const SKIP_PATTERNS = [
 
 // Baseline count of approved `!important` uses. Update this when
 // approving a new use (see comment in the test body).
-const APPROVED_BASELINE = 0;
+//
+// 3 approved uses (mobile_base.css, @media prefers-reduced-motion):
+//   [class*="demo-"] { opacity/transition/animation: none !important }
+// Justification: Accessibility hardening — the broad [class*="demo-"]
+// catch-all must override any component-level styles to ensure
+// reduced-motion users never see demo animations. Cascade-only
+// approaches can't guarantee this because the selector intentionally
+// matches elements with varying specificity from other stylesheets.
+const APPROVED_BASELINE = 3;
 
 interface ImportantUse {
     file: string;
