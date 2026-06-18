@@ -236,13 +236,12 @@ export default defineConfig({
       }
     }
   },
-  css: {
-    devSourcemap: true
-  },
   build: {
     target: 'es2022',
     outDir: SVELTE_OUT_DIR,
     emptyOutDir: true,
+    sourcemap: false,
+    reportCompressedSize: false,
     chunkSizeWarningLimit: 1500,
     rollupOptions: {
       output: {

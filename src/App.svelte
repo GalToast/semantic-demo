@@ -64,10 +64,14 @@
   type ThreadInspectorModule = typeof import('@components/ThreadInspector.svelte');
   let ThreadInspectorComponent: ThreadInspectorModule['default'] | null = $state(null);
   let threadInspectorImportPending = false;
-  import DemoChoreography from '@components/DemoChoreography.svelte';
+  type DemoChoreographyModule = typeof import('@components/DemoChoreography.svelte');
+  let DemoChoreographyComponent: DemoChoreographyModule['default'] | null = $state(null);
+  let demoChoreographyImportPending = false;
   import Controls from '@components/Controls.svelte';
   import Header from '@components/Header.svelte';
-  import FocusCard from '@components/FocusCard.svelte';
+  type FocusCardModule = typeof import('@components/FocusCard.svelte');
+  let FocusCardComponent: FocusCardModule['default'] | null = $state(null);
+  let focusCardImportPending = false;
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import WeatherWidget from '@components/WeatherWidget.svelte';
@@ -104,6 +108,38 @@
         })
         .finally(() => {
           threadInspectorImportPending = false;
+        });
+    }
+  });
+
+  $effect(() => {
+    if (!DemoChoreographyComponent && !demoChoreographyImportPending) {
+      demoChoreographyImportPending = true;
+      import('@components/DemoChoreography.svelte')
+        .then((mod) => {
+          DemoChoreographyComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] DemoChoreography lazy-load failed:', err);
+        })
+        .finally(() => {
+          demoChoreographyImportPending = false;
+        });
+    }
+  });
+
+  $effect(() => {
+    if (focusStageActive && !FocusCardComponent && !focusCardImportPending) {
+      focusCardImportPending = true;
+      import('@components/FocusCard.svelte')
+        .then((mod) => {
+          FocusCardComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] FocusCard lazy-load failed:', err);
+        })
+        .finally(() => {
+          focusCardImportPending = false;
         });
     }
   });
@@ -448,7 +484,9 @@
     style:pointer-events={focusStageActive ? 'none' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    <FocusCard visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+    {#if FocusCardComponent}
+      <FocusCardComponent visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+    {/if}
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
     {#if JourneyChrome}
@@ -493,7 +531,9 @@
   {/if}
 
   <!-- Demo choreography overlay -->
-  <DemoChoreography force={forceDemo} suppress={noDemo} />
+  {#if DemoChoreographyComponent}
+    <DemoChoreographyComponent force={forceDemo} suppress={noDemo} />
+  {/if}
 
   <!--
     Dev-only runtime tooling (lil-gui + Spector). Wrapped in
