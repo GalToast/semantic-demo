@@ -212,8 +212,13 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
     setEngineStatus('loading')
 
     try {
+        const _perf = typeof performance !== 'undefined'
+        if (_perf) performance.mark('engine-init-start')
+
         // 1. Sync Svelte data stores into the legacy state singleton
         await syncDataToLegacyState()
+
+        if (_perf) performance.mark('engine-init-sync-done')
 
         // 2. Ensure #canvas-container exists for initThreeJS()
         const parentEl = canvas.parentElement
@@ -237,6 +242,7 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
             Promise.resolve().then(() => initEngineHeavy(callbacks))
         }
     } catch (err) {
+        if (typeof performance !== 'undefined') performance.mark('engine-init-failed')
         console.error('[engine/lifecycle] initEngine: setup failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')
@@ -254,6 +260,8 @@ function initEngineHeavy(callbacks: EngineCallbacks): void {
     }
 
     try {
+        const _perf = typeof performance !== 'undefined'
+        if (_perf) performance.mark('engine-init-gpu-start')
         // 3b. Initialise the Three.js scene
         const success = initThreeJS()
         if (!success) {
@@ -338,11 +346,19 @@ function initEngineHeavy(callbacks: EngineCallbacks): void {
         //     on the new path dispatches it. We fire both the direct callback
         //     and the window event so both in-process callers and legacy
         //     listeners receive the signal.
+        if (typeof performance !== 'undefined') {
+            performance.mark('engine-init-ready')
+            try {
+                performance.measure('engine-init-total', 'engine-init-start', 'engine-init-ready')
+                performance.measure('engine-init-gpu', 'engine-init-gpu-start', 'engine-init-ready')
+            } catch (_) { /* ignore if marks absent (SSR) */ }
+        }
         callbacks.onLoadingPhase?.('launch', 1)
         if (typeof window !== 'undefined') {
             window.dispatchEvent(new Event('scene-ready'))
         }
     } catch (err) {
+        if (typeof performance !== 'undefined') performance.mark('engine-init-failed')
         console.error('[engine/lifecycle] initEngineHeavy: initialization failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')
