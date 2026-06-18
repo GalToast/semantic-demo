@@ -937,27 +937,23 @@ export function deinit() {
 }
 
 export function animate() {
+    // Clear the RAF id at the start of every callback so book-keeping
+    // stays correct across frames. Without this, the first scheduled
+    // callback would see _rafId != null and exit, killing the loop.
+    _rafId = null
+
     if (_circuitBreakerTripped) {
-        _rafId = null
         return
     }
     if (_webglContextLost) {
-        _rafId = null
         return
     }
     if (!webglContext.renderer || !webglContext.scene || !webglContext.camera) {
-        _rafId = null
         return
     }
     if (_state?.currentView !== 'galaxy' && !_state?.forceAnimate) {
-        _rafId = null
         return
     }
-
-    // Duplicate-RAF guard: if a previous requestAnimationFrame is still
-    // pending we already have an active loop — bail out to avoid stacking
-    // independent recursive loops that can't all be cancelled.
-    if (_rafId !== null) return
 
     _rafId = requestAnimationFrame(animate)
     try {
