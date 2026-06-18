@@ -84,16 +84,14 @@
 
   </style>
 
-  <link rel="stylesheet" href="semantic-demo.css">
-  <link rel="stylesheet" href="vector-explorer-pandora.css">
-  <link rel="stylesheet" href="css/mobile_premium__focus-dive.css">
-  <link rel="stylesheet" href="css/mobile_premium__chrome.css">
-  <link rel="stylesheet" href="css/mobile_premium__state.css">
-  <link rel="stylesheet" href="css/mobile_premium__idle.css">
-  <link rel="stylesheet" href="css/mobile_premium__map.css">
-  <link rel="stylesheet" href="css/mobile_premium__surfaces.css">
-  <link rel="stylesheet" href="css/mobile_premium__narrow.css">
-  <link rel="stylesheet" href="css/modules/focus_stage.css">
+  <!--
+    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,
+    css/mobile_premium__*.css, css/modules/focus_stage.css) injected at
+    build/serve time via transformIndexHtml in vite.config.ts. These files
+    live at the project root, outside the Vite src/ root, so they cannot
+    be referenced as static <link> tags in this template — Vite would warn
+    they don't exist at build time.
+  -->
 </head>
 <body
   data-panel-surface="idle"

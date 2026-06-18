@@ -37,6 +37,19 @@ type RootAssetMiddlewareStack = {
   use: (middleware: RootAssetMiddleware) => void;
 };
 
+const LEGACY_CSS_LINKS = [
+  '<link rel="stylesheet" href="semantic-demo.css">',
+  '<link rel="stylesheet" href="vector-explorer-pandora.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__focus-dive.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__chrome.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__state.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__idle.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__map.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__surfaces.css">',
+  '<link rel="stylesheet" href="css/mobile_premium__narrow.css">',
+  '<link rel="stylesheet" href="css/modules/focus_stage.css">',
+];
+
 function legacyRootAssetPlugin(): Plugin {
   return {
     name: 'legacy-root-assets',
@@ -45,6 +58,16 @@ function legacyRootAssetPlugin(): Plugin {
     },
     configurePreviewServer(server) {
       serveRootAssets(server.middlewares);
+    },
+    transformIndexHtml(html) {
+      // Inject legacy CSS <link> tags into the HTML. These files live at the
+      // project root (outside Vite's src/ root), so they cannot be static
+      // <link> tags in src/index.html — Vite would warn they don't exist.
+      const legacyBlock = LEGACY_CSS_LINKS.join('\n  ');
+      return html.replace(
+        '<!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,',
+        `${legacyBlock}\n  <!--\n    Legacy CSS links (semantic-demo.css, vector-explorer-pandora.css,`,
+      );
     },
   };
 }
