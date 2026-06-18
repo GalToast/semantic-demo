@@ -1,7 +1,9 @@
 # Svelte 5 Strict-Mode Compiler Bug — Upstream Report
 
-**Status:** Ready to file at https://github.com/sveltejs/svelte/issues
-**Date:** 2026-06-17
+**Status:** ✅ **FILED** at <https://github.com/sveltejs/svelte/issues/18439>
+**Filed by:** Fred McCullough (@GalToast)
+**Date filed:** 2026-06-18
+**Date report prepared:** 2026-06-17
 **Svelte version tested:** 5.56.2
 **Severity:** High (silent inversion of user-intended logic)
 
@@ -194,6 +196,34 @@ reproduction repository if helpful.
 - The workaround section shows the bug is significant enough that we had to work around it 38 times
 - The impact section explains why this is high-priority (silent inversion, hard to debug)
 - The additional context section offers further help if needed
+
+---
+
+## Filing Confirmation
+
+The issue was filed on 2026-06-18 using `gh issue create --repo sveltejs/svelte` from the GalToast account. The full body (5,335 bytes) was uploaded as-is. No edits were made by the Svelte team at filing time.
+
+| Field | Value |
+|-------|-------|
+| Issue number | [#18439](https://github.com/sveltejs/svelte/issues/18439) |
+| Title | `[bug] Rune mode compiles \`!==\` to $.strict_equals(a, b, false) — inverted comparison` |
+| State | OPEN |
+| Author | Fred McCullough (GalToast) |
+| Created | 2026-06-18T01:04:38Z |
+| Body size | 5,335 bytes (full body uploaded) |
+
+**To follow up:**
+
+```bash
+gh issue view 18439 --repo sveltejs/svelte
+gh issue view 18439 --repo sveltejs/svelte --comments
+```
+
+If the Svelte team requests additional context (e.g. a minimal reproduction repo), point them to:
+
+- `docs/svelte-5-strict-mode-cookbook.md` — the cookbook
+- `docs/latent-!==-bug-sweep-2026-06-17.md` — the audit of 167 usages
+- `docs/nav-state-ownership.md` — the dual-store mirror discipline that motivated the workarounds
 
 ---
 

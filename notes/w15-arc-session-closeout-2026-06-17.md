@@ -13,33 +13,41 @@ The arc is **complete**. The only remaining seam with broad value is filing the 
 
 ## Timeline (W15+ session commits, chronological)
 
-| Commit | Date | Title | Layer |
-|--------|------|-------|-------|
-| `7c131d7` | 2026-06-17 | fix(stores): force-write parity attributes on every refreshCompositionState | Source (first attempt) |
-| `2b100a1` | 2026-06-17 | docs(notes): preserve W15 parity-attrs diagnostic report | Docs |
-| `42aa09b` | 2026-06-17 | **fix(orchestration): stop mirroring legacy mode/surface in syncSvelteNavFromLegacy** | Source (THE fix) |
-| `ae963b1` | 2026-06-17 | docs(notes): W15 parity-attrs second-look closeout | Docs |
-| `83a0220` | 2026-06-17 | fix(w15): preserve surface in Canvas onNodePicked + queueMicrotask parity-attrs re-write | Source |
-| `2f90dde` | 2026-06-17 | docs(notes): legacy-mirror audit report (W15 follow-up) | Docs |
-| `37636fe` | 2026-06-17 | fix(stores): mirror FOCUS_NODE patch to appState.navState (Svelte 5 class) | Source |
-| `ca286d4` | 2026-06-17 | feat(ci): add nav-state mirror pattern lint check + canonical ownership map | CI + Docs |
-| `0bddd8c` | 2026-06-17 | feat(ci): vitest coverage for nav-mirror check + writeFocusPocketMirror helper | CI + Source |
-| `891cf21` | 2026-06-17 | feat(tests+docs): parity-attrs derivation vitest + Svelte 5 compiler bug cookbook | Tests + Docs |
-| `6503759` | 2026-06-17 | docs: production preview parity baseline + nav-state-ownership cross-refs | Docs |
-| `c584809` | 2026-06-17 | fix(svelte5): sweep latent !== usages + Playwright test reliability | Source + Tests |
+| Commit    | Date       | Title                                                                                    | Layer                  |
+| --------- | ---------- | ---------------------------------------------------------------------------------------- | ---------------------- |
+| `7c131d7` | 2026-06-17 | fix(stores): force-write parity attributes on every refreshCompositionState              | Source (first attempt) |
+| `2b100a1` | 2026-06-17 | docs(notes): preserve W15 parity-attrs diagnostic report                                 | Docs                   |
+| `42aa09b` | 2026-06-17 | **fix(orchestration): stop mirroring legacy mode/surface in syncSvelteNavFromLegacy**    | Source (THE fix)       |
+| `ae963b1` | 2026-06-17 | docs(notes): W15 parity-attrs second-look closeout                                       | Docs                   |
+| `83a0220` | 2026-06-17 | fix(w15): preserve surface in Canvas onNodePicked + queueMicrotask parity-attrs re-write | Source                 |
+| `2f90dde` | 2026-06-17 | docs(notes): legacy-mirror audit report (W15 follow-up)                                  | Docs                   |
+| `37636fe` | 2026-06-17 | fix(stores): mirror FOCUS_NODE patch to appState.navState (Svelte 5 class)               | Source                 |
+| `ca286d4` | 2026-06-17 | feat(ci): add nav-state mirror pattern lint check + canonical ownership map              | CI + Docs              |
+| `0bddd8c` | 2026-06-17 | feat(ci): vitest coverage for nav-mirror check + writeFocusPocketMirror helper           | CI + Source            |
+| `891cf21` | 2026-06-17 | feat(tests+docs): parity-attrs derivation vitest + Svelte 5 compiler bug cookbook        | Tests + Docs           |
+| `6503759` | 2026-06-17 | docs: production preview parity baseline + nav-state-ownership cross-refs                | Docs                   |
+| `c584809` | 2026-06-17 | fix(svelte5): sweep latent !== usages + Playwright test reliability                      | Source + Tests         |
+| `c80345b` | 2026-06-17 | docs: Svelte 5 upstream bug report + W15-arc session closeout                          | Docs                   |
+| `a09dd52` | 2026-06-17 | feat(ci+visual): !== CI guard closes the W15 arc + real visual baselines                | CI + Tests + Docs      |
 
-**12 commits** in the W15+ session, all McCullough digital authored.
+**14 commits** in the W15+ session, all McCullough digital authored.
+
+### W15+ follow-up wave (2026-06-18, post-closeout)
+
+| Date       | Title                                                                                                                  | Outcome                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- |
+| 2026-06-18 | [Svelte issue #18439](https://github.com/sveltejs/svelte/issues/18439) — `[bug] Rune mode compiles \`!==\` to $.strict_equals(a, b, false) — inverted comparison` | ✅ **FILED** upstream via `gh issue create` from GalToast account |
 
 ## Final Test Counts
 
-| Suite | Count | Status |
-|-------|-------|--------|
-| `tests/unit-active/parity-attrs-derivation.test.ts` | 84 | ✅ all pass |
-| `tests/scripts/ci-check-nav-mirror-pattern.test.mjs` | 21 | ✅ all pass |
-| `tests/integration/w15-body-attr-live-probe.spec.js` | 4 (idle/search/focus-search/focus) | ✅ ready to run |
-| `tests/integration/visual-state-snapshots.spec.js` | 4 (placeholder PNGs) | ⚠️ needs real baselines |
-| **Total session-shipped tests** | **113** | **105 pass + 4 visual placeholders + 4 integration ready** |
-| Full vitest suite | 987+ | ⚠️ 10 pre-existing failures from parallel session W28/W29 work |
+| Suite                                                | Count                              | Status                                                         |
+| ---------------------------------------------------- | ---------------------------------- | -------------------------------------------------------------- |
+| `tests/unit-active/parity-attrs-derivation.test.ts`  | 84                                 | ✅ all pass                                                    |
+| `tests/scripts/ci-check-nav-mirror-pattern.test.mjs` | 21                                 | ✅ all pass                                                    |
+| `tests/integration/w15-body-attr-live-probe.spec.js` | 4 (idle/search/focus-search/focus) | ✅ ready to run                                                |
+| `tests/integration/visual-state-snapshots.spec.js`   | 4 (placeholder PNGs)               | ⚠️ needs real baselines                                        |
+| **Total session-shipped tests**                      | **113**                            | **105 pass + 4 visual placeholders + 4 integration ready**     |
+| Full vitest suite                                    | 987+                               | ⚠️ 10 pre-existing failures from parallel session W28/W29 work |
 
 ## Source Code Changes
 
@@ -70,57 +78,59 @@ The arc is **complete**. The only remaining seam with broad value is filing the 
 
 ## Documentation Shipped
 
-| File | Size | Purpose |
-|------|------|---------|
-| `docs/nav-state-ownership.md` | ~16 KB | Field-by-field ownership map for 35+ NavState fields |
-| `docs/svelte-5-strict-mode-cookbook.md` | ~9.6 KB | `!==` → `===` bug cookbook with 3 workaround patterns |
-| `docs/production-preview-parity-baseline-2026-06-17.md` | ~5.5 KB | Dev vs production preview parity baseline |
-| `docs/latent-!==-bug-sweep-2026-06-17.md` | ~6.5 KB | 167 `!==` usages audited (38 RISKY + fixed) |
-| `notes/w15-parity-attrs-second-look-2026-06-17.md` | ~7.4 KB | Original W15 closeout |
-| `notes/w15-parity-attrs-diagnostic-2026-06-17.md` | ~5 KB | Original mimo 2.5 diagnostic report |
-| `notes/legacy-mirror-audit-2026-06-17.md` | ~6.7 KB | Mirror discipline audit |
-| `scripts/ci-check-nav-mirror-pattern.mjs` (in docs?) | — | CI check (counts as code) |
+| File                                                    | Size    | Purpose                                               |
+| ------------------------------------------------------- | ------- | ----------------------------------------------------- |
+| `docs/nav-state-ownership.md`                           | ~16 KB  | Field-by-field ownership map for 35+ NavState fields  |
+| `docs/svelte-5-strict-mode-cookbook.md`                 | ~9.6 KB | `!==` → `===` bug cookbook with 3 workaround patterns |
+| `docs/production-preview-parity-baseline-2026-06-17.md` | ~5.5 KB | Dev vs production preview parity baseline             |
+| `docs/latent-!==-bug-sweep-2026-06-17.md`               | ~6.5 KB | 167 `!==` usages audited (38 RISKY + fixed)           |
+| `notes/w15-parity-attrs-second-look-2026-06-17.md`      | ~7.4 KB | Original W15 closeout                                 |
+| `notes/w15-parity-attrs-diagnostic-2026-06-17.md`       | ~5 KB   | Original mimo 2.5 diagnostic report                   |
+| `notes/legacy-mirror-audit-2026-06-17.md`               | ~6.7 KB | Mirror discipline audit                               |
+| `scripts/ci-check-nav-mirror-pattern.mjs` (in docs?)    | —       | CI check (counts as code)                             |
 
 **Total documentation: ~57 KB across 7 files**
 
 ## Open Seams (post-session)
 
-### High value (in progress)
+### High value (DONE)
 
-- **Svelte 5 upstream bug report** — Lane A subagent is preparing paste-ready GitHub issue at `docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md`. Filing this upstream kills the bug class for everyone using rune mode.
+- ✅ **Svelte 5 upstream bug report** — Filed at https://github.com/sveltejs/svelte/issues/18439 on 2026-06-18 by Fred McCullough (@GalToast) via `gh issue create`. The issue is OPEN and includes the full repro, compiled output, workarounds, and impact analysis. If Svelte fixes the bug upstream, the entire bug class dies for all Svelte 5 users using rune mode.
 
 ### Medium value (deferred)
 
-- **9 UNKNOWN items in latent `!==` audit** — Lane A worker flagged these as needing manual review with compiled output. Likely safe (in plain functions or module-level init), but worth verifying with `dist/svelte/assets/*.js` inspection.
-- **Real visual baselines** — The 4 placeholder PNGs in `tests/integration/__snapshots__/` are 1×1 transparent. A real run with `UPDATE_SNAPSHOTS=true` against the live server would generate proper baselines for regression detection.
-- **CI guard against new `!==` regressions** — The cookbook reference is the current guard, but a pre-commit or CI check that warns about new `!==` usages in `.svelte`/`.svelte.ts` would be stronger.
+- ✅ **9 UNKNOWN items in latent `!==` audit** — RESOLVED in commit `a09dd52`. All 9 are SAFE (plain functions, template attributes, non-reactive contexts) and have been annotated with `// audit-ok:` comments. New CI guard `scripts/ci-check-svelte5-strict-mode.mjs` enforces the pattern going forward.
+- ✅ **Real visual baselines** — RESOLVED in commit `a09dd52`. 3 real PNG baselines generated (1440×938-958, 660-720 KB each) replacing 1×1 placeholders. Workflow documented at `docs/visual-regression-workflow.md`. focus-programmatic state still skipped (no field node in test scene).
+- ✅ **CI guard against new `!==` regressions** — RESOLVED in commit `a09dd52`. `scripts/ci-check-svelte5-strict-mode.mjs` (224 lines) wired as `npm run lint:svelte5-strict-mode`. Exits 0 if all `!==` are protected (typeof guard, withMutation, audit-ok, or plain-function context), exits 1 if any are RISKY.
 - **4 TODO visual states** — `trail`, `inside`, `semantic-dive`, `returning`. The infrastructure is in place; just needs Playwright test cases for each state.
 
 ### Low value (deferred)
 
 - **GitHub Actions CI workflow** — `.github/workflows/test.yml` to run `npm run test:unit` + `npm run lint:nav-mirror` + `npx playwright test` on every PR.
-- **AGENTS.md / agent-context-reference.md update** — Document the new patterns (`writeNavStateMirror`, `writeFocusPocketMirror`, Svelte 5 cookbook reference, latent `!==` sweep pattern).
+- ✅ **AGENTS.md update** — RESOLVED in commit `a09dd52`. Added "W15+ Arc Lessons" section documenting dual-store mirror discipline, Svelte 5 !== bug, subagent model selection, and production preview workflow. 60 new lines cross-reference 6 new docs files.
 - **Performance/observability seam** — Track how often the parity-attrs layer fires per second; baseline for future regression detection.
 - **A11y audit** — Run axe-core or pa11y against the 4 critical states; add CI guard for the 5 most important a11y checks.
 
 ## Next Session Handoff
 
-If continuing W15-related work:
+**The W15 arc is FULLY CLOSED** (2026-06-18). All high-value and most medium-value items are resolved. See "Open Seams" section above for the few remaining items (4 TODO visual states, GitHub Actions CI, a11y audit, perf/observability).
 
-1. Check if Svelte 5 upstream bug report was filed (search `docs/svelte-5-strict-mode-bug-upstream-report-2026-06-17.md`)
-2. Resolve the 9 UNKNOWN items by inspecting compiled bundle output
-3. Run real visual baselines with `UPDATE_SNAPSHOTS=true`
-4. Add CI guard against new `!==` regressions
+**If continuing W15-related work:**
 
-If pivoting to product quality:
+1. ~~Check if Svelte 5 upstream bug report was filed~~ — DONE: https://github.com/sveltejs/svelte/issues/18439
+2. ~~Resolve the 9 UNKNOWN items~~ — RESOLVED in commit `a09dd52`
+3. ~~Run real visual baselines~~ — RESOLVED in commit `a09dd52` (3 real PNGs)
+4. ~~Add CI guard against new `!==` regressions~~ — RESOLVED in commit `a09dd52` (`lint:svelte5-strict-mode`)
+
+**If pivoting to product quality:**
 
 1. Add the 4 TODO visual states (trail/inside/semantic-dive/returning)
 2. A11y audit with axe-core
 3. Performance/observability metrics
 
-If strategic wrap-up:
+**If strategic wrap-up:**
 
-1. Update AGENTS.md with the new patterns
+1. ~~Update AGENTS.md with the new patterns~~ — RESOLVED in commit `a09dd52`
 2. Add GitHub Actions CI workflow
 3. Clean up `tmp/` workspace (gitignored but large)
 
@@ -155,18 +165,18 @@ npx playwright test tests/integration/w15-body-attr-live-probe.spec.js --browser
 
 ## Worker Outcomes (final tally)
 
-| Worker | Model | Status | Output |
-|--------|-------|--------|--------|
-| `ocw_6d80b822` | mimo-v2.5 paid | ✅ completed | Original W15 diagnostic report |
-| `ocw_855c5a8e` | owl-alpha | ❌ died silently | (docs ownership map — done in-lane) |
-| `ocw_83f1d4e6` | owl-alpha | ❌ died | (CI check — delivered before dying) |
-| `ocw_5935f3a0` | owl-alpha | ❌ died | (legacy-mirror audit — done in-lane) |
-| `ocw_f01e7e5f` | owl-alpha | ❌ timed out | (vitest test — fixed in-lane) |
-| `ocw_34dbf306` | mimo-v2.5 paid | ✅ completed | parity-attrs derivation tests (84 cases) |
-| `ocw_893f1225` | mimo-v2.5 paid | ✅ completed | Svelte 5 cookbook (9.6 KB) |
-| `ocw_aeec21bb` | mimo-v2.5 paid | ✅ completed | Latent `!==` sweep (38 fixes + audit doc) |
-| `ocw_bd6d9817` | mimo-v2.5 paid | ✅ completed | Playwright test reliability + visual snapshots |
-| `ocw_9bc3b00d` | mimo-v2.5 paid | 🟡 running | Svelte 5 upstream bug report (in progress) |
+| Worker         | Model          | Status           | Output                                         |
+| -------------- | -------------- | ---------------- | ---------------------------------------------- |
+| `ocw_6d80b822` | mimo-v2.5 paid | ✅ completed     | Original W15 diagnostic report                 |
+| `ocw_855c5a8e` | owl-alpha      | ❌ died silently | (docs ownership map — done in-lane)            |
+| `ocw_83f1d4e6` | owl-alpha      | ❌ died          | (CI check — delivered before dying)            |
+| `ocw_5935f3a0` | owl-alpha      | ❌ died          | (legacy-mirror audit — done in-lane)           |
+| `ocw_f01e7e5f` | owl-alpha      | ❌ timed out     | (vitest test — fixed in-lane)                  |
+| `ocw_34dbf306` | mimo-v2.5 paid | ✅ completed     | parity-attrs derivation tests (84 cases)       |
+| `ocw_893f1225` | mimo-v2.5 paid | ✅ completed     | Svelte 5 cookbook (9.6 KB)                     |
+| `ocw_aeec21bb` | mimo-v2.5 paid | ✅ completed     | Latent `!==` sweep (38 fixes + audit doc)      |
+| `ocw_bd6d9817` | mimo-v2.5 paid | ✅ completed     | Playwright test reliability + visual snapshots |
+| `ocw_9bc3b00d` | mimo-v2.5 paid | 🟡 running       | Svelte 5 upstream bug report (in progress)     |
 
 **Pattern: mimo-v2.5 (paid) is the reliable model for both research/docs AND test implementation work. Owl-alpha is unreliable for subagent dispatch — bounces on file-content iteration and Playwright selector errors.**
 
