@@ -43,7 +43,7 @@ describe('geo-data tokenizeSearchText — NFC + Unicode', () => {
 
 describe('idb-service — module exports', () => {
     it('exports initDB, get, set, remove, keys, entries, clear', async () => {
-        const mod = await import('../../js/modules/idb-service.js');
+        const mod = await import('../../src/lib/utils/idb-service.ts');
         expect(typeof mod.initDB).toBe('function');
         expect(typeof mod.get).toBe('function');
         expect(typeof mod.set).toBe('function');
