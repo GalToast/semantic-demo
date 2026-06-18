@@ -121,14 +121,16 @@ interface LoadRecordsWorkerResult {
     invalidPositionIndices: number[]
 }
 
-function callDataWorker(type: string, payload: unknown): Promise<LoadRecordsWorkerResult> {
+function callDataWorker(type: 'LOAD_RECORDS', payload: { url: string }): Promise<LoadRecordsWorkerResult>
+function callDataWorker<T>(type: string, payload: unknown): Promise<T>
+function callDataWorker<T>(type: string, payload: unknown): Promise<T> {
     return new Promise((resolve, reject) => {
         const worker = new Worker(workerUrl, { type: 'module' })
         const handler = (event: MessageEvent<WorkerResponse>): void => {
             const res = event.data
             if (res.type === `${type}_SUCCESS`) {
                 worker.removeEventListener('message', handler)
-                resolve(res.payload as LoadRecordsWorkerResult)
+                resolve(res.payload as T)
                 worker.terminate()
             } else if (res.type === 'ERROR') {
                 worker.removeEventListener('message', handler)
@@ -144,6 +146,12 @@ function callDataWorker(type: string, payload: unknown): Promise<LoadRecordsWork
         }, 30_000)
         worker.postMessage({ type, payload })
     })
+}
+
+interface LoadThreadsWorkerResult {
+    neighborEntries: Array<[string, SemanticNeighborEntry]>
+    artifactName: string | null
+    bundle: unknown
 }
 
 // ── Business Data Loading ─────────────────────────────────────────────────────
@@ -393,6 +401,33 @@ function replaceInvalidPositionsWithBoundsCenter(
 export async function loadSemanticThreads(): Promise<SemanticThreadDataResult> {
     const requestUrls = THREAD_REQUEST_URLS_REL.map((rel) => buildAssetUrl(`${rel}?${cacheBustParam()}`))
 
+    try {
+        const result = await callDataWorker<LoadThreadsWorkerResult>('LOAD_THREADS', {
+            urls: requestUrls,
+            attemptConfigs: THREAD_FETCH_CONFIGS as Array<{ cache: string }>
+        })
+
+        const neighborMap = new Map<string, SemanticNeighborEntry>(result.neighborEntries)
+
+        debugInfo(
+            `[data-loader] Loaded semantic threads (via worker): ${result.artifactName}, ` +
+                `${neighborMap.size.toLocaleString()} node entries`
+        )
+
+        return {
+            bundle: result.bundle as SemanticThreadBundle,
+            artifactName: result.artifactName || 'unknown',
+            neighborMap,
+            layoutManifest: null
+        }
+    } catch (err) {
+        debugWarn('[data-loader] Worker thread load failed, falling back to main thread:', err)
+        return _loadSemanticThreadsMainThread(requestUrls)
+    }
+}
+
+/** Main-thread fallback for semantic-thread loading (kept for worker failure / SSR / old browsers). */
+async function _loadSemanticThreadsMainThread(requestUrls: string[]): Promise<SemanticThreadDataResult> {
     let bundle: SemanticThreadBundle | null = null
     let artifactName: string | null = null
     let lastError: Error | null = null
@@ -427,7 +462,8 @@ export async function loadSemanticThreads(): Promise<SemanticThreadDataResult> {
     const neighborMap = buildSemanticNeighborMap(bundle)
 
     debugInfo(
-        `[data-loader] Loaded semantic threads: ${artifactName}, ` + `${neighborMap.size.toLocaleString()} node entries`
+        `[data-loader] Loaded semantic threads (main thread): ${artifactName}, ` +
+            `${neighborMap.size.toLocaleString()} node entries`
     )
 
     return {
