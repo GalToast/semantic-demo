@@ -31,6 +31,6 @@ export default defineConfig({
         globals: true,
         // setupFiles runs before any test file. Store tests import modules that
         // call window.matchMedia during module initialization.
-        setupFiles: ['tests/unit/vitest.setup.js']
+        setupFiles: ['tests/unit-active/vitest.setup.js']
     }
 })
