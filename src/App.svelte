@@ -54,6 +54,7 @@
   import Legend from '@components/Legend.svelte';
   type MapViewModule = typeof import('@components/MapView.svelte');
   let MapViewComponent: MapViewModule['default'] | null = $state(null);
+  let mapViewImportPending = false;
   import SearchBar from '@components/SearchBar.svelte';
   import FocusPocket from '@components/FocusPocket.svelte';
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
@@ -74,10 +75,18 @@
   import { legendOpen } from '@lib/stores/legend.svelte';
 
   $effect(() => {
-    if (mapModeActive && !MapViewComponent) {
-      import('@components/MapView.svelte').then((mod) => {
-        MapViewComponent = mod.default;
-      });
+    if (mapModeActive && !MapViewComponent && !mapViewImportPending) {
+      mapViewImportPending = true;
+      import('@components/MapView.svelte')
+        .then((mod) => {
+          MapViewComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] MapView lazy-load failed:', err);
+        })
+        .finally(() => {
+          mapViewImportPending = false;
+        });
     }
   });
 
