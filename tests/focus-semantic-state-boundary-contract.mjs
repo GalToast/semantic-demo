@@ -109,10 +109,13 @@ function ds(key) {
 }
 
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
+const { resetNavState, updateNavState } = await import('../src/lib/stores/navigation.svelte.ts');
+const { resetFocus, setSelectedBusiness, setSemanticDiveMode } = await import('../src/lib/stores/focus.svelte.ts');
+const { clearSearch, setSearchQuery, setSearchSummary } = await import('../src/lib/stores/search.svelte.ts');
 
 let refreshCompositionState;
 try {
-  const lc = await import('../js/modules/lifecycle.ts');
+  const lc = await import('../src/lib/orchestration/lifecycle.ts');
   refreshCompositionState = lc.refreshCompositionState;
 } catch (e) {
   refreshCompositionState = globalThis.window.refreshCompositionState;
@@ -143,6 +146,12 @@ function resetState() {
   });
   fakeBody.dataset = {};
   _rafNow = 0;
+  resetNavState();
+  resetFocus();
+  clearSearch();
+  updateNavState({ currentView: 'galaxy', mode: 'overview', surface: 'idle', focusedIndex: null, trailDepth: 0 });
+  setSelectedBusiness(null);
+  setSemanticDiveMode(false);
 }
 
 function setTestTrailDepth(depth) {
@@ -153,7 +162,57 @@ function setTestTrailDepth(depth) {
   state.semanticDiveMode = depth === 2;
 }
 
+function syncStoresFromState() {
+  const searchInput = elementsById.get('search-input');
+  const query = String(state.currentSearchSummary?.query ?? searchInput?.value ?? '');
+  const hasSearchIntent = !!state.currentSearchSummary || query.trim().length >= 2;
+  const hasFocus = state.navState.focusedIndex != null || state.focusedNode != null || state.selectedPoint != null;
+  const activeView = state.currentView || 'galaxy';
+  const semanticDiveActive = activeView === 'galaxy' && hasFocus && state.semanticDiveMode === true;
+
+  const mode = semanticDiveActive
+    ? 'inside'
+    : hasFocus
+      ? 'focus'
+      : hasSearchIntent
+        ? 'search'
+        : 'overview';
+
+  const surface = (() => {
+    if (activeView === 'map') {
+      if (hasFocus && hasSearchIntent) return 'map-focus-search';
+      if (hasFocus) return 'focus';
+      if (hasSearchIntent) return 'search';
+      return 'idle';
+    }
+    if (hasFocus && hasSearchIntent) return 'focus-search';
+    if (semanticDiveActive) return 'inside';
+    if (hasFocus) return 'focus';
+    if (hasSearchIntent) return 'search';
+    return 'idle';
+  })();
+
+  updateNavState({
+    currentView: activeView,
+    focusedIndex: state.navState.focusedIndex,
+    mode,
+    surface,
+    trailDepth: state.trailDepth ?? state.navState.trailDepth ?? 0
+  });
+  setSelectedBusiness(state.selectedPoint ?? null);
+  setSemanticDiveMode(semanticDiveActive);
+
+  if (state.currentSearchSummary) {
+    setSearchSummary({ query, ...state.currentSearchSummary });
+  } else if (query.trim().length >= 2) {
+    setSearchQuery(query);
+  } else {
+    clearSearch();
+  }
+}
+
 function commit(label) {
+  syncStoresFromState();
   refreshCompositionState();
   console.log(`  [${label}] graphContext=${ds('graphContext')} panelSurface=${ds('panelSurface')} semanticDive=${ds('semanticDive')} activeView=${ds('activeView')} trailState=${ds('trailState')}`);
 }
@@ -173,7 +232,7 @@ withStateMutation(() => {
 elementsById.set('search-input', new FakeElement('input'));
 commit('focus-state');
 
-assert(ds('graphContext') === 'focus-search', 'focus: graphContext is focus-search');
+assert(ds('graphContext') === 'focus', 'focus: graphContext is focus');
 assert(ds('panelSurface') === 'focus-search', 'focus: panelSurface is focus-search');
 assert(ds('semanticDive') === 'inactive', 'focus: semanticDive is inactive (trailDepth < 2)');
 assert(state.trailDepth === 0, 'focus: trailDepth is 0');
@@ -187,7 +246,7 @@ withStateMutation(() => {
 });
 commit('semantic-dive-state');
 
-assert(ds('graphContext') === 'focus', 'semantic-dive: graphContext is focus');
+assert(ds('graphContext') === 'inside', 'semantic-dive: graphContext is inside');
 assert(ds('panelSurface') === 'semantic-dive', 'semantic-dive: panelSurface is semantic-dive');
 assert(ds('semanticDive') === 'active', 'semantic-dive: semanticDive is active');
 assert(state.trailDepth === 2, 'semantic-dive: trailDepth is 2');
@@ -262,7 +321,7 @@ withStateMutation(() => {
 elementsById.set('search-input', new FakeElement('input'));
 commit('pre-reset');
 
-const { resetStateBeforeUrlRestore } = await import('../js/modules/lifecycle.ts');
+const { resetStateBeforeUrlRestore } = await import('../src/lib/orchestration/lifecycle.ts');
 resetStateBeforeUrlRestore({ clearSearchInput: true });
 commit('post-reset');
 
@@ -272,7 +331,7 @@ assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null
 assert(state.navState.focusedIndex === null, 'reset: focusedIndex is null');
 assert(state.trailDepth === 0, 'reset: trailDepth is 0');
 assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false');
-assert(ds('graphContext') === 'idle', 'reset: graphContext is idle');
+assert(ds('graphContext') === 'overview', 'reset: graphContext is overview');
 assert(ds('panelSurface') === 'idle', 'reset: panelSurface is idle');
 assert(ds('semanticDive') === 'inactive', 'reset: semanticDive is inactive');
 console.log('  PASS: reset boundary transition correct\n');
@@ -288,7 +347,7 @@ withStateMutation(() => {
 });
 commit('semantic-dive-no-focus');
 
-assert(ds('graphContext') === 'idle', 'semantic-dive-no-focus: graphContext is idle (no focus)');
+assert(ds('graphContext') === 'overview', 'semantic-dive-no-focus: graphContext is overview (no focus)');
 assert(ds('panelSurface') === 'idle', 'semantic-dive-no-focus: panelSurface is idle');
 console.log('  PASS: no-focusedNode during semantic-dive guards correctly\n');
 
@@ -310,8 +369,8 @@ withStateMutation(() => {
 commit('focus-exit');
 
 assert(state.selectedPoint !== null, 'focus-exit: selectedPoint persists after focusNode cleared');
-// panelSurface stays focus-search because hasSearchIntent is still true (currentSearchSummary)
-assert(ds('panelSurface') === 'focus-search', 'focus-exit: panelSurface stays focus-search (search intent holds)');
+// panelSurface stays focus-search because selectedPoint/selectedBusiness remains the focus owner.
+assert(ds('panelSurface') === 'focus-search', 'focus-exit: panelSurface stays focus-search while selectedPoint persists');
 console.log('  PASS: selectedPoint persists correctly after focus exit\n');
 
 // ── SUMMARY ────────────────────────────────────────────────────────────────────

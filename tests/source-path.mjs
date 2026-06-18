@@ -42,6 +42,10 @@ export function resolveSource(legacyPath, root) {
       'navigation-state':      'src/lib/orchestration/navigation-state.ts',
       'url-state':             'src/lib/orchestration/url-state.ts',
       'cluster-filter':        'src/lib/orchestration/cluster-filter-controller.ts',
+      'lifecycle-reset':       'src/lib/stores/lifecycle.ts',
+      'event-bindings':        'src/lib/ui/event-bindings.ts',
+      'app':                   'src/lib/orchestration/app-init.ts',
+      'journey-compass-controller': 'src/lib/orchestration/compass-controller.ts',
     };
     const target = REMAP[stem] ?? `src/lib/journey/${stem}.ts`;
     const canonicalTs = path.resolve(base, target);

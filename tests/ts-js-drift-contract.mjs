@@ -119,6 +119,10 @@ function isRetiredShadowStub(base, source) {
  * Only includes entries where drift exists.
  */
 function computeDrift() {
+  if (!fs.existsSync(MODULES_DIR)) {
+    return { drift: {}, inspected: [] };
+  }
+
   const tsFiles = fs.readdirSync(MODULES_DIR, { withFileTypes: true })
     .filter(f => f.isFile() && f.name.endsWith('.ts') && !f.name.endsWith('.d.ts'))
     .map(f => f.name);
@@ -213,6 +217,8 @@ if (progressMode) {
    * @returns {{ tsOnly: string[], dual: string[], jsOnly: string[] }}
    */
   function scanAll(dir) {
+    if (!fs.existsSync(dir)) return { tsOnly: [], dual: [], jsOnly: [] };
+
     const entries = fs.readdirSync(dir, { withFileTypes: true });
     const tsOnly = [], dual = [], jsOnly = [];
 

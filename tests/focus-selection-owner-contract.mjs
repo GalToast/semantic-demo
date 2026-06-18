@@ -11,18 +11,19 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { resolveSource } from './source-path.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE = fs.readFileSync(
-    path.resolve(__dirname, '../js/modules/lifecycle.ts'),
+    resolveSource('js/modules/lifecycle.ts', path.resolve(__dirname, '..')),
     'utf8'
 );
 const LIFECYCLE_RESET_SOURCE = fs.readFileSync(
-    path.resolve(__dirname, '../js/modules/lifecycle-reset.ts'),
+    resolveSource('js/modules/lifecycle-reset.ts', path.resolve(__dirname, '..')),
     'utf8'
 );
 const URL_STATE_SOURCE = fs.readFileSync(
-    path.resolve(__dirname, '../js/modules/url-state.ts'),
+    resolveSource('js/modules/url-state.ts', path.resolve(__dirname, '..')),
     'utf8'
 );
 
@@ -188,14 +189,18 @@ assert(
 );
 console.log('  PASS — resetStateBeforeUrlRestore routes through clearExplorationFocusSelection');
 
-// Verify the helper is called from resetNodePositions
-console.log('\nVerifying resetNodePositions routes through clearExplorationFocusSelection...');
+// Verify resetNodePositions routes through the Svelte focus/reset owners.
+console.log('\nVerifying resetNodePositions routes through Svelte focus reset owners...');
 const resetNodeMatch = LIFECYCLE_RESET_SOURCE.match(/export\s+function\s+resetNodePositions[\s\S]*?\n}(?=\n|$)/m);
 assert(resetNodeMatch, 'Could not extract resetNodePositions body');
 const resetNodeBody = resetNodeMatch[0];
 assert(
-    /clearExplorationFocusSelection\s*\(/.test(resetNodeBody),
-    'resetNodePositions does not call clearExplorationFocusSelection'
+    /resetFocus\s*\(/.test(resetNodeBody),
+    'resetNodePositions does not call resetFocus'
+);
+assert(
+    /resetExplorationFocus\s*\(/.test(resetNodeBody),
+    'resetNodePositions does not call resetExplorationFocus'
 );
 assert(
     !/state\.focusedNode\s*=\s*null/.test(resetNodeBody),
@@ -205,6 +210,6 @@ assert(
     !/state\.selectedPoint\s*=\s*null/.test(resetNodeBody),
     'resetNodePositions still has direct write to selectedPoint'
 );
-console.log('  PASS — resetNodePositions routes through clearExplorationFocusSelection');
+console.log('  PASS — resetNodePositions routes through Svelte focus/reset owners');
 
 console.log('\nfocus-selection-owner-contract.mjs passed');

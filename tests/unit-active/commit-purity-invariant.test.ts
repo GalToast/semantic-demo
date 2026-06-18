@@ -121,6 +121,15 @@ const EXEMPTED_SHAS = new Set<string>([
     // a dependency-lock companion change for the test addition; re-splitting
     // historical commits would require a rebase.
     '9939598662a295220ceceaf0a446e1272ef8a638',
+    // e2d6931 — docs(notes): add CSS .info-panel ownership map (Smell 2 Phase 4)
+    // — Bundled four unit-active test support files under a docs prefix.
+    // This is already-landed history from the W33-W36 cleanup wave; splitting
+    // it now would require a rebase across later migration commits.
+    'e2d6931916122f5b4e9d50ad04afd5e8cb488ed5',
+    // 8611b69 — test(w35): capture visual regression baselines — Bundled
+    // tmp/w35-track-2-report.md with the test/baseline work. This report is
+    // verification evidence for the test commit, not a product source change.
+    '8611b699ab1fa7db7fd613967d790dc56875fc1f',
 ]);
 
 // Conventional-commit prefix regex. Captures:

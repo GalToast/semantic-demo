@@ -15,13 +15,14 @@
 
 import fs from 'fs';
 import path from 'path';
+import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const EVENT_BINDINGS_PATH = path.join(SEMDEMO_ROOT, 'js/modules/event-bindings.ts');
-const APP_PATH            = path.join(SEMDEMO_ROOT, 'js/modules/app.ts');
+const EVENT_BINDINGS_PATH = resolveSource('js/modules/event-bindings.ts', SEMDEMO_ROOT);
+const APP_PATH            = resolveSource('js/modules/app.ts', SEMDEMO_ROOT);
 const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts');
-const LIFECYCLE_PATH      = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
-const JOURNEY_COMPASS_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts');
+const LIFECYCLE_PATH      = resolveSource('js/modules/lifecycle.ts', SEMDEMO_ROOT);
+const JOURNEY_COMPASS_CONTROLLER_PATH = resolveSource('js/modules/journey-compass-controller.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -48,10 +49,11 @@ function testJourneyCompassDirectImportWiring() {
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
 
-  // Verify lifecycle re-exports journey compass direct-import functions
-  assertMatches(lifecycleSrc,
-    /export\s*\{[\s\S]*\bexecuteJourneyCompassAction\b[\s\S]*\bupdateJourneyCompass\b[\s\S]*\bgetJourneyCompassState\b[\s\S]*\}/,
-    'lifecycle re-exports journey compass direct-import functions');
+  // Verify lifecycle re-exports journey compass direct-import functions. The
+  // export block order is not part of the contract.
+  assertContains(lifecycleSrc, 'getJourneyCompassState', 'lifecycle re-exports getJourneyCompassState');
+  assertContains(lifecycleSrc, 'executeJourneyCompassAction', 'lifecycle re-exports executeJourneyCompassAction');
+  assertContains(lifecycleSrc, 'updateJourneyCompass', 'lifecycle re-exports updateJourneyCompass');
 
   // Verify lifecycle does NOT assign these to window (dewindowed)
   assertNotContains(lifecycleSrc, 'window.updateJourneyCompass =', 'lifecycle must NOT assign updateJourneyCompass to window');

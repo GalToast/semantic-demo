@@ -114,7 +114,7 @@ const { state } = await import('../src/lib/engine/state-bridge.ts');
 const {
     activeFiltersStore,
     activeClusterFilterStore
-} = await import('../js/modules/stores.ts');
+} = await import('../src/lib/stores/legacy-stores.ts');
 const {
     setActiveFilter,
     setActiveClusterFilter,
