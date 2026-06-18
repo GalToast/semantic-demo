@@ -76,8 +76,9 @@ if (hasSvelte) {
 
   test('App.svelte imports DemoChoreography component', () => {
     const appSource = fs.readFileSync(path.join(ROOT, 'src/App.svelte'), 'utf8');
-    assert(/import\s+DemoChoreography\s+from\s+['"]@components\/DemoChoreography\.svelte['"]/.test(appSource),
-      'App.svelte must import DemoChoreography');
+    assert(/import\s+DemoChoreography\s+from\s+['"]@components\/DemoChoreography\.svelte['"]/.test(appSource)
+      || /import\(['"]@components\/DemoChoreography\.svelte['"]\)/.test(appSource),
+      'App.svelte must import or dynamically import DemoChoreography');
   });
 
   test('App.svelte renders DemoChoreography with force/suppress props', () => {
@@ -93,7 +94,7 @@ if (hasSvelte) {
     assert(/installParityAttributeSync/.test(appSource),
       'App.svelte must install the parity attribute sync');
     assert(/key:\s*['"]demoPhase['"]/.test(paritySource)
-      && /demoPhaseStore\.subscribe\(recomputeAndApply\)/.test(paritySource),
+      && /demoPhaseGetter\(\)/.test(paritySource),
       'parity-attrs.svelte.ts must sync demoPhase from the demo store to body.dataset.demoPhase');
   });
 
@@ -141,18 +142,18 @@ if (hasSvelte) {
   });
 
   test('DemoChoreography.svelte owns the demo lifecycle', () => {
-    assert(/import[\s\S]*startDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+    assert(/import[\s\S]*startDemo[\s\S]*from\s+['"]@lib\/stores\/demo\.svelte\.ts['"]/.test(svelteComponentSource),
       'DemoChoreography must import startDemo from demo store');
-    assert(/import[\s\S]*cancelDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+    assert(/import[\s\S]*cancelDemo[\s\S]*from\s+['"]@lib\/stores\/demo\.svelte\.ts['"]/.test(svelteComponentSource),
       'DemoChoreography must import cancelDemo from demo store');
-    assert(/import[\s\S]*transitionDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+    assert(/import[\s\S]*transitionDemo[\s\S]*from\s+['"]@lib\/stores\/demo\.svelte\.ts['"]/.test(svelteComponentSource),
       'DemoChoreography must import transitionDemo');
   });
 
   test('DemoChoreography.svelte uses demo store eligibility and node selection helpers', () => {
-    assert(/import[\s\S]*shouldRunDemo[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+    assert(/import[\s\S]*shouldRunDemo[\s\S]*from\s+['"]@lib\/stores\/demo\.svelte\.ts['"]/.test(svelteComponentSource),
       'DemoChoreography must import shouldRunDemo from demo store');
-    assert(/import[\s\S]*findDemoNode[\s\S]*from\s+['"]@lib\/stores\/demo['"]/.test(svelteComponentSource),
+    assert(/import[\s\S]*findDemoNode[\s\S]*from\s+['"]@lib\/stores\/demo\.svelte\.ts['"]/.test(svelteComponentSource),
       'DemoChoreography must import findDemoNode from demo store');
     assert(/findDemoNode\(\s*getBusinessRecords\(\)\s*\)/.test(svelteComponentSource),
       'DemoChoreography must select a validated node from getBusinessRecords()');

@@ -50,7 +50,9 @@
   import '@lib/css/biofield.css';
 
   import Canvas from '@components/Canvas.svelte';
-  import InfoPanel from '@components/InfoPanel.svelte';
+  type InfoPanelModule = typeof import('@components/InfoPanel.svelte');
+  let InfoPanelComponent: InfoPanelModule['default'] | null = $state(null);
+  let infoPanelImportPending = false;
   import Legend from '@components/Legend.svelte';
   type MapViewModule = typeof import('@components/MapView.svelte');
   let MapViewComponent: MapViewModule['default'] | null = $state(null);
@@ -458,6 +460,22 @@
   // inverts `!==` to `===`. Use positive equality + negation instead.
   let controlsVisible = $derived(!(navSurface === 'focus-search') && !focusSearchForced);
   let infoPanelOpen = $derived((idleSurfaceActive || searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
+
+  $effect(() => {
+    if (infoPanelOpen && !InfoPanelComponent && !infoPanelImportPending) {
+      infoPanelImportPending = true;
+      import('@components/InfoPanel.svelte')
+        .then((mod) => {
+          InfoPanelComponent = mod.default;
+        })
+        .catch((err) => {
+          console.error('[App] InfoPanel lazy-load failed:', err);
+        })
+        .finally(() => {
+          infoPanelImportPending = false;
+        });
+    }
+  });
 </script>
 
 {#snippet searchPanelContent()}
@@ -506,7 +524,9 @@
   {/if}
 
   <!-- Layer 80: Info panel -->
-  <InfoPanel open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+  {#if InfoPanelComponent}
+    <InfoPanelComponent open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+  {/if}
 
   {#if idleSearchVisible}
     <!--

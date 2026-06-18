@@ -13,6 +13,7 @@
  * Tolerance: ±100ms per phase.
  */
 import { describe, it, expect } from 'vitest';
+import { DEMO_TIMING as STORE_DEMO_TIMING } from '../../src/lib/stores/demo.svelte.ts';
 
 // ── Store timing constants (source of truth) ──────────────────────────────────
 // These are imported from the Svelte store which defines DEMO_TIMING.
@@ -20,12 +21,12 @@ import { describe, it, expect } from 'vitest';
 // choreography are now aligned to these values.
 
 const DEMO_TIMING = {
-  GLIDING_MS: 1400,
-  ARRIVED_HOLD_MS: 120,
-  CARD_VISIBLE_MS: 1800,
-  PULLBACK_MS: 1200,
-  WIDE_VIEW_HOLD_MS: 350,
-  RETURNING_MS: 1000,
+  GLIDING_MS: STORE_DEMO_TIMING.GLIDE_DURATION_MS,
+  ARRIVED_HOLD_MS: STORE_DEMO_TIMING.ARRIVED_HOLD_MS,
+  CARD_VISIBLE_MS: STORE_DEMO_TIMING.CARD_VISIBLE_MS,
+  PULLBACK_MS: STORE_DEMO_TIMING.PULLBACK_DURATION_MS,
+  WIDE_VIEW_HOLD_MS: STORE_DEMO_TIMING.WIDE_VIEW_MS,
+  RETURNING_MS: STORE_DEMO_TIMING.RETURN_DURATION_MS,
 } as const;
 
 const TOTAL_DURATION_MS =

@@ -34,6 +34,7 @@ interface DemoStoreState {
 
 const _demoState = vi.hoisted(() => ({
   demoPhase: 'IDLE' as DemoPhase,
+  points: undefined as Array<Record<string, unknown>> | undefined,
 }));
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
@@ -43,6 +44,12 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
     },
     set demoPhase(v: DemoPhase) {
       _demoState.demoPhase = v;
+    },
+    get points() {
+      return _demoState.points;
+    },
+    set points(v: Array<Record<string, unknown>> | undefined) {
+      _demoState.points = v;
     },
     withMutation: (fn: () => unknown) => fn(),
   },
@@ -61,6 +68,9 @@ import {
   startDemo,
   cancelDemo,
   transitionDemo,
+  scheduleDemoTimer,
+  cancelAllDemoTimers,
+  getActiveDemoTimerCount,
   markDemoCompleted,
   markDemoSessionSkipped,
   resetDemo,
@@ -90,6 +100,7 @@ describe('Demo store — state-class appState regression', () => {
   beforeEach(() => {
     resetDemo();
     _demoState.demoPhase = 'IDLE';
+    _demoState.points = undefined;
 
     if (typeof localStorage !== 'undefined') {
       localStorage.removeItem(DEMO_LIFETIME_KEY);
@@ -97,9 +108,12 @@ describe('Demo store — state-class appState regression', () => {
     if (typeof sessionStorage !== 'undefined') {
       sessionStorage.removeItem(DEMO_SESSION_KEY);
     }
+    history.pushState(null, '', '/');
   });
 
   afterEach(() => {
+    cancelAllDemoTimers();
+    vi.useRealTimers();
     vi.restoreAllMocks();
   });
 
@@ -146,14 +160,21 @@ describe('Demo store — state-class appState regression', () => {
     expect(_demoState.demoPhase).toBe('CANCELLED');
   });
 
-  it('markDemoCompleted pushes COMPLETE to appState', () => {
+  it('markDemoCompleted writes the lifetime completion guard', () => {
     markDemoCompleted();
     expect(_demoState.demoPhase).toBe('COMPLETE');
+    if (typeof localStorage !== 'undefined') {
+      expect(localStorage.getItem(DEMO_LIFETIME_KEY)).not.toBeNull();
+    }
   });
 
-  it('markDemoSessionSkipped pushes IDLE to appState', () => {
+  it('markDemoSessionSkipped writes the session guard without changing the current phase', () => {
+    setDemoPhase('GLIDING');
     markDemoSessionSkipped();
-    expect(_demoState.demoPhase).toBe('IDLE');
+    expect(_demoState.demoPhase).toBe('GLIDING');
+    if (typeof sessionStorage !== 'undefined') {
+      expect(sessionStorage.getItem(DEMO_SESSION_KEY)).toBe('1');
+    }
   });
 
   it('demoPhase() reads directly from appState', () => {
@@ -307,12 +328,49 @@ describe('Demo store — state-class appState regression', () => {
     expect(DEMO_TIMING.CARD_VISIBLE_MS).toBeGreaterThan(0);
   });
 
-  it('findDemoNode returns null', () => {
-    expect(findDemoNode()).toBeNull();
+  it('findDemoNode returns the first valid showcase node', () => {
+    _demoState.points = [
+      { name: 'okay', status: 'active' },
+      { name: 'skip', status: 'disqualified' },
+      { name: 'showcase', status: 'active' }
+    ];
+    expect(findDemoNode()).toBe(0);
+
+    _demoState.points![0] = { name: 'skip', status: 'disqualified' };
+    expect(findDemoNode()).toBe(2);
   });
 
-  it('shouldRunDemo returns true', () => {
+  it('shouldRunDemo returns true when no guard is set', () => {
     expect(shouldRunDemo()).toBe(true);
+  });
+
+  it('shouldRunDemo honors nodemo and demo=force URL params', () => {
+    history.pushState(null, '', '/?nodemo=1');
+    expect(shouldRunDemo()).toBe(false);
+
+    history.pushState(null, '', '/?demo=force');
+    expect(shouldRunDemo()).toBe(true);
+  });
+
+  it('shouldRunDemo honors lifetime and session guards', () => {
+    localStorage.setItem(DEMO_LIFETIME_KEY, '1');
+    expect(shouldRunDemo()).toBe(false);
+    localStorage.removeItem(DEMO_LIFETIME_KEY);
+
+    sessionStorage.setItem(DEMO_SESSION_KEY, '1');
+    expect(shouldRunDemo()).toBe(false);
+  });
+
+  it('scheduleDemoTimer removes fired timers from the active timer set', () => {
+    vi.useFakeTimers();
+    const callback = vi.fn();
+
+    scheduleDemoTimer(callback, 25);
+    expect(getActiveDemoTimerCount()).toBe(1);
+
+    vi.advanceTimersByTime(25);
+    expect(callback).toHaveBeenCalledTimes(1);
+    expect(getActiveDemoTimerCount()).toBe(0);
   });
 
   it('demoNodeIndex returns null', () => {

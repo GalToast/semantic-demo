@@ -26,16 +26,18 @@ export interface DemoStoreState {
 // ── Constants ────────────────────────────────────────────────────────────────
 
 export const DEMO_TIMING = {
-  GLIDE_DURATION_MS: 2400,
-  CARD_VISIBLE_MS: 3200,
-  PULLBACK_DURATION_MS: 1800,
-  WIDE_VIEW_MS: 4000,
-  RETURN_DURATION_MS: 2200
+  GLIDE_DURATION_MS: 1400,
+  ARRIVED_HOLD_MS: 120,
+  CARD_VISIBLE_MS: 1800,
+  PULLBACK_DURATION_MS: 1200,
+  WIDE_VIEW_MS: 350,
+  RETURN_DURATION_MS: 1000
 } as const;
 
 export const DEMO_START_DELAY_MS = 1500;
 export const DEMO_TOTAL_DURATION_MS =
   DEMO_TIMING.GLIDE_DURATION_MS +
+  DEMO_TIMING.ARRIVED_HOLD_MS +
   DEMO_TIMING.CARD_VISIBLE_MS +
   DEMO_TIMING.PULLBACK_DURATION_MS +
   DEMO_TIMING.WIDE_VIEW_MS +
@@ -43,7 +45,8 @@ export const DEMO_TOTAL_DURATION_MS =
 export const DEMO_LIFETIME_KEY = 'moco_mycelium_demo_v1';
 export const DEMO_SESSION_KEY = 'moco_mycelium_demo_session_v1';
 export const MAX_START_RETRIES = 3;
-const activeDemoTimers = new Set<ReturnType<typeof setTimeout>>();
+const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938];
+const timers = new Map<ReturnType<typeof setTimeout>, number>();
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
@@ -80,11 +83,14 @@ let _startGuardClaimed = false;
  */
 function withDemoNotify(updater: (s: DemoStoreState) => DemoStoreState): void {
   const current = get(_demoWritable);
-  const next = updater(current);
-  _demoWritable.set(next);
+  const to = updater(current);
+  _demoWritable.set(to);
   appState.withMutation(() => {
-    appState.demoPhase = next.phase;
+    appState.demoPhase = to.phase;
   });
+  if (typeof document !== 'undefined') {
+    document.body.dataset.demoPhase = to.phase;
+  }
 }
 
 /**
@@ -107,6 +113,9 @@ function _createDemoStore(): DemoStoreApi {
     appState.withMutation(() => {
       appState.demoPhase = value.phase;
     });
+    if (typeof document !== 'undefined') {
+      document.body.dataset.demoPhase = value.phase;
+    }
   };
 
   return fn;
@@ -160,49 +169,112 @@ export function transitionDemo(nextPhase: DemoPhase): void {
 }
 
 export function setDemoTimer(id: any): void {
-  if (id !== null && id !== undefined) activeDemoTimers.add(id); // audit-ok: plain function, not transformed — bundle preserves native !==
+  if (id !== null && id !== undefined) timers.set(id, Date.now()); // audit-ok: plain function, not transformed — bundle preserves native !==
+}
+
+export function trackDemoTimer(id: ReturnType<typeof setTimeout>): ReturnType<typeof setTimeout> {
+  timers.set(id, Date.now());
+  return id;
+}
+
+export function scheduleDemoTimer(callback: () => void, delay: number): ReturnType<typeof setTimeout> {
+  const id = setTimeout(() => {
+    timers.delete(id);
+    callback();
+  }, delay);
+  timers.set(id, Date.now());
+  return id;
 }
 
 export function clearDemoTimer(id: any): void {
   if (id !== null && id !== undefined) { // audit-ok: plain function, not transformed — bundle preserves native !==
     clearTimeout(id);
-    activeDemoTimers.delete(id);
+    timers.delete(id);
   }
 }
 
 export function cancelAllDemoTimers(): void {
-  for (const id of activeDemoTimers) clearTimeout(id);
-  activeDemoTimers.clear();
+  for (const id of timers.keys()) clearTimeout(id);
+  timers.clear();
 }
 
 export function getActiveDemoTimerCount(): number {
-  return activeDemoTimers.size;
+  return timers.size;
 }
 
-export function findDemoNode(): number | null {
-  return null; // Mock or implementation
+export function findDemoNode(records?: Array<Record<string, unknown>>): number | null {
+  const points = records ?? (appState.points as Array<Record<string, unknown>> | undefined);
+  if (!points) return null;
+
+  const showcasePool = SHOWCASE_POOL;
+  for (const idx of showcasePool) {
+    const point = points[idx];
+    if (!point) continue;
+    if (point.status === 'disqualified') continue;
+    const name = ((point.name as string) || '').trim();
+    if (!name || name.length < 3) continue;
+    return idx;
+  }
+
+  if (!points.length) return null;
+  for (let i = 0; i < points.length; i++) {
+    const point = points[i];
+    if (!point) continue;
+    if (point.status === 'disqualified') continue;
+    const name = ((point.name as string) || '').trim();
+    if (!name || name.length < 3) continue;
+    return i;
+  }
+
+  return null;
 }
 
-export function shouldRunDemo(): boolean {
-  return true; // Mock or implementation
+export function shouldRunDemo(force = false): boolean {
+  const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams();
+  const forceDemo = force || params.get('demo') === 'force';
+  if (forceDemo) return true;
+  if (params.get('nodemo') === '1') return false;
+  if (hasDemoBeenSeen()) return false;
+  if (isDemoSuppressedThisSession()) return false;
+  return true;
 }
 
 export function hasDemoBeenSeen(): boolean {
   if (typeof localStorage === 'undefined') return false;
-  return localStorage.getItem(DEMO_LIFETIME_KEY) === '1';
+  const raw = localStorage.getItem(DEMO_LIFETIME_KEY);
+  if (!raw) return false;
+  try {
+    const parsed = JSON.parse(raw) as { seen?: boolean } | number | string | boolean;
+    if (parsed === true || parsed === 1) return true;
+    if (typeof parsed === 'object' && parsed !== null) return parsed.seen === true;
+    return raw === '1' || raw === 'true';
+  } catch {
+    return raw === '1' || raw === 'true';
+  }
 }
 
 export function isDemoSuppressedThisSession(): boolean {
   if (typeof sessionStorage === 'undefined') return false;
-  return sessionStorage.getItem(DEMO_SESSION_KEY) === '1';
+  return sessionStorage.getItem(DEMO_SESSION_KEY) !== null;
 }
 
 export function markDemoCompleted(): void {
   setDemoPhase('COMPLETE');
+  try {
+    localStorage.setItem(DEMO_LIFETIME_KEY, JSON.stringify({
+      seen: true,
+      seenAt: new Date().toISOString(),
+      version: 1
+    }));
+  } catch {
+    // Storage may be unavailable in private browsing or test sandboxes.
+  }
 }
 
-export function markDemoSessionSkipped(): void {
-  setDemoPhase('IDLE');
+export function markDemoSessionSkipped(_reason = 'user-input'): void {
+  if (typeof sessionStorage !== 'undefined') {
+    sessionStorage.setItem(DEMO_SESSION_KEY, '1');
+  }
 }
 
 export function resetDemo(): void {
@@ -211,4 +283,7 @@ export function resetDemo(): void {
   appState.withMutation(() => {
     appState.demoPhase = INITIAL_DEMO.phase;
   });
+  if (typeof document !== 'undefined') {
+    document.body.dataset.demoPhase = INITIAL_DEMO.phase;
+  }
 }

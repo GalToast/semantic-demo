@@ -30,14 +30,17 @@ const appIslandSource = read('src/main.ts');
 const shellSource = read('vector-explorer-polished.html');
 
 assert(
-  appSource.includes("import InfoPanel from '@components/InfoPanel.svelte'"),
-  'src/App.svelte should import the canonical InfoPanel component directly'
+  appSource.includes("import('@components/InfoPanel.svelte')") || appSource.includes("import InfoPanel from '@components/InfoPanel.svelte'"),
+  'src/App.svelte should own the canonical InfoPanel component directly or via lazy import'
 );
 assert(
   appSource.includes("import Legend from '@components/Legend.svelte'"),
   'src/App.svelte should import the canonical Legend component directly'
 );
-assert(appSource.includes('<InfoPanel '), 'src/App.svelte should render InfoPanel');
+assert(
+  appSource.includes('<InfoPanel ') || appSource.includes('<InfoPanelComponent '),
+  'src/App.svelte should render InfoPanel'
+);
 assert(appSource.includes('<Legend '), 'src/App.svelte should render Legend');
 
 assert(
@@ -59,8 +62,8 @@ assert(!shellSource.includes('legend-panel-chrome-island'), 'HTML shell should n
 
 const sourceFiles = [
   ...walk('js'),
-  ...walk('tests')
-].filter((file) => /\.(?:js|mjs|svelte|ts)$/.test(file) && file !== 'tests/svelte-chrome-ownership-contract.mjs');
+  ...walk('src')
+].filter((file) => /\.(?:js|mjs|svelte|ts)$/.test(file));
 
 for (const file of sourceFiles) {
   const source = read(file);

@@ -4,13 +4,13 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
   import {
-    demoStore,
     demoPhase,
     isDemoActive,
     startDemo,
     cancelDemo,
     transitionDemo,
     cancelAllDemoTimers,
+    scheduleDemoTimer,
     findDemoNode,
     shouldRunDemo,
     markDemoCompleted,
@@ -47,46 +47,44 @@
   };
 
   function completeDemo() {
-    transitionDemo('COMPLETE');
     markDemoCompleted();
-    markDemoSessionSkipped();
+    markDemoSessionSkipped('completed');
   }
 
   function dismissDemo() {
-    markDemoSessionSkipped();
+    markDemoSessionSkipped('dismissed');
     cancelDemo();
   }
 
   function runDemoSequence() {
-    // Timers are now managed within the store actions or local effects
     transitionDemo('GLIDING');
-    
-    setTimeout(() => {
+
+    scheduleDemoTimer(() => {
       transitionDemo('ARRIVED');
-      setTimeout(() => {
+      scheduleDemoTimer(() => {
         transitionDemo('CARD_VISIBLE');
-        setTimeout(() => {
+        scheduleDemoTimer(() => {
           transitionDemo('PULLBACK');
-          setTimeout(() => {
+          scheduleDemoTimer(() => {
             transitionDemo('WIDE_VIEW');
-            setTimeout(() => {
+            scheduleDemoTimer(() => {
               transitionDemo('RETURNING');
-              setTimeout(completeDemo, DEMO_TIMING.RETURN_DURATION_MS);
+              scheduleDemoTimer(completeDemo, DEMO_TIMING.RETURN_DURATION_MS);
             }, DEMO_TIMING.WIDE_VIEW_MS);
           }, DEMO_TIMING.PULLBACK_DURATION_MS);
         }, DEMO_TIMING.CARD_VISIBLE_MS);
-      }, 1000); // Hold arrived
+      }, DEMO_TIMING.ARRIVED_HOLD_MS);
     }, DEMO_TIMING.GLIDE_DURATION_MS);
   }
 
   function attemptStart(remainingAttempts = MAX_START_RETRIES) {
-    const nodeIndex = findDemoNode();
+    const nodeIndex = findDemoNode(getBusinessRecords());
     if (nodeIndex === null) {
       if (remainingAttempts <= 0) {
         eligible = false;
         return;
       }
-      setTimeout(() => attemptStart(remainingAttempts - 1), RETRY_START_DELAY_MS);
+      scheduleDemoTimer(() => attemptStart(remainingAttempts - 1), RETRY_START_DELAY_MS);
       return;
     }
 
@@ -103,7 +101,7 @@
       return;
     }
 
-    setTimeout(() => {
+    scheduleDemoTimer(() => {
       attemptStart();
     }, force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
   });

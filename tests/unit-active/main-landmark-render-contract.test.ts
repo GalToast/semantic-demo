@@ -79,6 +79,6 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
     const mainStart = appSrc.indexOf('<main id="main-content"');
     const mainEnd = appSrc.indexOf('</main>', mainStart);
     const mainContent = appSrc.substring(mainStart, mainEnd);
-    expect(mainContent).toContain('<InfoPanel');
+    expect(mainContent).toMatch(/<InfoPanel(?:Component)?\s/);
   });
 });

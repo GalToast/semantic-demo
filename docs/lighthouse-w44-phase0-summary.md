@@ -8,27 +8,27 @@ Raw LHR JSON (306 KB) was removed during evidence cleanup. The command above rep
 
 The run completed, but Lighthouse marked performance scoring incomplete because the page did not reach an idle CPU period before the timeout. This is consistent with the current cold-load path: the app fetches and parses large data artifacts before settling.
 
-| Metric | Result |
-| --- | ---: |
-| Performance score | `null` (incomplete) |
-| First Contentful Paint | 2.1 s |
-| Largest Contentful Paint | 2.1 s |
-| Speed Index | 4.4 s |
-| CLS | 0 |
-| Total Blocking Time | incomplete (`NO_TTI_CPU_IDLE_PERIOD`) |
-| Time to Interactive | incomplete (`NO_TTI_CPU_IDLE_PERIOD`) |
-| Main-thread work | 23.0 s |
-| JS execution (boot-up) | 21.5 s |
+| Metric                   |                                Result |
+| ------------------------ | ------------------------------------: |
+| Performance score        |                   `null` (incomplete) |
+| First Contentful Paint   |                                 2.1 s |
+| Largest Contentful Paint |                                 2.1 s |
+| Speed Index              |                                 4.4 s |
+| CLS                      |                                     0 |
+| Total Blocking Time      | incomplete (`NO_TTI_CPU_IDLE_PERIOD`) |
+| Time to Interactive      | incomplete (`NO_TTI_CPU_IDLE_PERIOD`) |
+| Main-thread work         |                                23.0 s |
+| JS execution (boot-up)   |                                21.5 s |
 
 ## Dominant cold-load resources
 
-| Resource | Transfer |
-| --- | ---: |
-| `semantic_threads_ui.dat?v=494947` | 41.4 MB × 2 |
-| `scripts/leadEnrichment.public.json?v=494947` | 18.6 MB |
-| `data.dat?v=494947` | 1.8 MB |
-| `index-*.js` | ~119 KB |
-| `postprocessing-*.js` | ~152 KB |
+| Resource                                      |    Transfer |
+| --------------------------------------------- | ----------: |
+| `semantic_threads_ui.dat?v=494947`            | 41.4 MB × 2 |
+| `scripts/leadEnrichment.public.json?v=494947` |     18.6 MB |
+| `data.dat?v=494947`                           |      1.8 MB |
+| `index-*.js`                                  |     ~119 KB |
+| `postprocessing-*.js`                         |     ~152 KB |
 
 ## Interpretation
 
