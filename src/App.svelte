@@ -52,7 +52,8 @@
   import Canvas from '@components/Canvas.svelte';
   import InfoPanel from '@components/InfoPanel.svelte';
   import Legend from '@components/Legend.svelte';
-  import MapView from '@components/MapView.svelte';
+  type MapViewModule = typeof import('@components/MapView.svelte');
+  let MapViewComponent: MapViewModule['default'] | null = $state(null);
   import SearchBar from '@components/SearchBar.svelte';
   import FocusPocket from '@components/FocusPocket.svelte';
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
@@ -71,6 +72,14 @@
   import DevGui from '@components/DevGui.svelte';
   import SpectorInspector from '@components/SpectorInspector.svelte';
   import { legendOpen } from '@lib/stores/legend.svelte';
+
+  $effect(() => {
+    if (mapModeActive && !MapViewComponent) {
+      import('@components/MapView.svelte').then((mod) => {
+        MapViewComponent = mod.default;
+      });
+    }
+  });
 
   interface Props {
     /** Force demo to run regardless of eligibility */
@@ -369,8 +378,8 @@
   <SemanticOverlay visible={true} />
 
   <!-- Full-screen map view (Map chip) -->
-  {#if mapModeActive}
-    <MapView />
+  {#if mapModeActive && MapViewComponent}
+    <MapViewComponent />
   {/if}
 
   <!-- Layer 50: Legend panel (UI-2: concealed in focus states to resolve bottom-left triple collision) -->
