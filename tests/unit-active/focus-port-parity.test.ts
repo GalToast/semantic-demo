@@ -21,7 +21,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import * as legacy from '../../js/modules/focus-stage-renderer.js';
+import * as legacy from '../../src/lib/journey/focus-stage-renderer.ts';
 import * as port from '../../src/lib/focus/stage-renderer.ts';
 
 const SAMPLE_TRIVIA: ReadonlyArray<readonly [string, string]> = [
