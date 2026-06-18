@@ -26,7 +26,7 @@ https://mccullough.cloud/semantic-demo/vector-explorer-polished.html
 3. `src/components/` - Svelte UI surfaces
 4. `src/lib/stores/` - typed Svelte stores replacing legacy UI state slices
 5. `src/lib/engine/` - TypeScript engine/legacy bridge layer
-6. `js/state.ts` - legacy engine state singleton during coexistence
+6. `src/lib/state/` - typed state management layer (Svelte stores + legacy bridge)
 7. `AGENTS.md` - local agent guidance (module ownership, state machines, edit safety rules)
 8. `TEST_STRATEGY.md` - how to verify changes (contract vs visual audit layers)
 
@@ -43,12 +43,12 @@ npm run qa:short-landscape:release # constrained layout + transition behavior pr
 ```
 
 ## Recent Architectural Changes
-- **JS Renderer Extraction**: UI renderer functions (buildLegend, renderSignalBadges, updateSelectedCardHeading, renderSelectedMetaStrip, renderSelectedMatchPanel, renderSelectedActionRow, setActiveSearchResultRow) are centralized in `js/modules/ui-renderers.js`. This module owns all window-bound renderer functions. `js/modules/ui-renderers-lifecycle.js` was a stub removed during extraction — do not recreate.
+- **JS Renderer Extraction**: UI renderer functions (buildLegend, renderSignalBadges, updateSelectedCardHeading, renderSelectedMetaStrip, renderSelectedMatchPanel, renderSelectedActionRow, setActiveSearchResultRow) are centralized in `src/lib/ui-renderers.ts`.
 - **Modular CSS**: The single monolithic CSS file has been split into 17 ordered modules. See `docs/semantic-demo-css-ownership-map.md` for details.
 - **CSS State Ownership**: `data-panel-surface` and related `data-*` body attributes are the canonical state interface between JS and CSS. See `docs/semantic-demo-mobile-state-ownership.md`.
 - **Mobile Surface Polish**: Deterministic QA with contract tests for mobile layout geometry, panel proportions, and 3D scene quality. Playwright-based surface contracts cover clipping, overlap, and touch targets.
 - **Micro-demo Fixes**: Resolved race conditions in the guided interaction loop, ensuring a reliable "Step Inside" experience for new users.
-- **Journey Compass State Machine**: `journey-compass-state.js` owns action synthesis driven by `data-panel-surface` and `data-journey-phase`.
+- **Journey Compass State Machine**: `src/lib/journey/compass-state.ts` owns action synthesis driven by `data-panel-surface` and `data-journey-phase`.
 
 ## Development & Maintenance
 ### Styles
@@ -60,7 +60,6 @@ The production app is built with Vite/Svelte.
 - Source: `src/`
 - Build: `npm run build`
 - Output: `dist/svelte/`
-- Legacy rollback/reference build: `npm run build:legacy`
 
 ### Audit & Verification
 The visual audit runner is `tests/visual-state-audit.mjs`. It captures screenshots and layout snapshots for named UI states.
