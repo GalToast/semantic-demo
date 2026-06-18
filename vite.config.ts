@@ -224,6 +224,16 @@ export default defineConfig({
     target: 'es2022',
     outDir: SVELTE_OUT_DIR,
     emptyOutDir: true,
+    chunkSizeWarningLimit: 1500,
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules/three/')) {
+            return 'three';
+          }
+        }
+      }
+    }
     // Vite auto-discovers index.html in the root directory (which is src/)
   }
 });
