@@ -37,6 +37,12 @@ export function isKeyboardControlTarget(target: EventTarget | null): target is H
 
 // ── DOM-heavy hint-panel functions (ported from legacy, no external deps) ────
 
+interface KeyboardHintPanelElement extends HTMLElement {
+    _openKeyboardHintPanel?: (ref?: HTMLElement | null) => void
+    _closeKeyboardHintPanel?: () => void
+    _autoDismissTimer?: ReturnType<typeof setTimeout> | null
+}
+
 let _returnToOverview: () => void = () => {}
 let _resetExplorationFocus: () => void = () => {}
 
@@ -69,33 +75,63 @@ export function handleGalaxyKeydown(e: KeyboardEvent): void {
     }
 }
 
-let _shortcutsPanelArrowToastShown = false
 let _previouslyFocused: HTMLElement | null = null
 
 export function initKeyboardShortcutsHint(): void {
     if (document.getElementById('keyboard-hint-panel')) return
 
-    const panel = document.createElement('div')
+    const panel = document.createElement('div') as KeyboardHintPanelElement
     panel.id = 'keyboard-hint-panel'
     panel.className = 'keyboard-hint-panel'
     panel.setAttribute('role', 'region')
     panel.setAttribute('aria-label', 'Keyboard shortcuts')
     panel.setAttribute('aria-hidden', 'true')
-    panel.innerHTML = `
-        <div class="kh-title">Keyboard Shortcuts</div>
-        <div class="kh-row"><span class="kh-keys"><kbd>Arrow</kbd></span><span>Navigate nodes</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>Home</kbd></span><span>Reset view</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>End</kbd></span><span>Recenter</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>+ / -</kbd></span><span>Zoom</span></div>
-        <div class="kh-row"><span class="kh-keys"><kbd>Esc</kbd></span><span>Close overlays</span></div>
-        <button class="kh-close" type="button" aria-label="Dismiss shortcuts panel">&times;</button>
-    `
+    const title = document.createElement('div')
+    title.className = 'kh-title'
+    title.textContent = 'Keyboard Shortcuts'
+    panel.appendChild(title)
+
+    const shortcuts = [
+        { key: 'Arrow', desc: 'Navigate nodes' },
+        { key: 'Home', desc: 'Reset view' },
+        { key: 'End', desc: 'Recenter' },
+        { key: '+ / -', desc: 'Zoom' },
+        { key: 'Esc', desc: 'Close overlays' }
+    ]
+
+    shortcuts.forEach((s) => {
+        const row = document.createElement('div')
+        row.className = 'kh-row'
+
+        const keysSpan = document.createElement('span')
+        keysSpan.className = 'kh-keys'
+
+        const kbd = document.createElement('kbd')
+        kbd.textContent = s.key
+
+        keysSpan.appendChild(kbd)
+        row.appendChild(keysSpan)
+
+        const descSpan = document.createElement('span')
+        descSpan.textContent = s.desc
+
+        row.appendChild(descSpan)
+        panel.appendChild(row)
+    })
+
+    const closeBtn = document.createElement('button')
+    closeBtn.className = 'kh-close'
+    closeBtn.type = 'button'
+    closeBtn.setAttribute('aria-label', 'Dismiss shortcuts panel')
+    closeBtn.textContent = '×'
+    panel.appendChild(closeBtn)
+
     document.body.appendChild(panel)
 
     function closePanel(): void {
-        if ((panel as any)._autoDismissTimer) {
-            clearTimeout((panel as any)._autoDismissTimer)
-            ;(panel as any)._autoDismissTimer = null
+        if (panel._autoDismissTimer) {
+            clearTimeout(panel._autoDismissTimer)
+            panel._autoDismissTimer = null
         }
         panel.classList.remove('visible')
         panel.setAttribute('aria-hidden', 'true')
@@ -136,12 +172,12 @@ export function initKeyboardShortcutsHint(): void {
         }
     }
 
-    panel.querySelector('.kh-close')!.addEventListener('click', closePanel)
+    closeBtn.addEventListener('click', closePanel)
 
     function openPanel(returnFocusEl?: HTMLElement | null): void {
-        if ((panel as any)._autoDismissTimer) {
-            clearTimeout((panel as any)._autoDismissTimer)
-            ;(panel as any)._autoDismissTimer = null
+        if (panel._autoDismissTimer) {
+            clearTimeout(panel._autoDismissTimer)
+            panel._autoDismissTimer = null
         }
         _previouslyFocused =
             returnFocusEl || document.getElementById('btn-keyboard-help') || (document.activeElement as HTMLElement)
@@ -160,8 +196,8 @@ export function initKeyboardShortcutsHint(): void {
         document.addEventListener('keydown', _onPanelKeydown)
     }
 
-    ;(panel as any)._openKeyboardHintPanel = openPanel
-    ;(panel as any)._closeKeyboardHintPanel = closePanel
+    panel._openKeyboardHintPanel = openPanel
+    panel._closeKeyboardHintPanel = closePanel
 
     const helpBtn = document.getElementById('btn-keyboard-help')
     if (helpBtn) {
@@ -186,10 +222,10 @@ export function initKeyboardShortcutsHint(): void {
 }
 
 export function showKeyboardShortcutsHint(): void {
-    const panel = document.getElementById('keyboard-hint-panel')
+    const panel = document.getElementById('keyboard-hint-panel') as KeyboardHintPanelElement | null
     if (!panel) return
-    if (typeof (panel as any)._openKeyboardHintPanel === 'function') {
-        ;(panel as any)._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
+    if (typeof panel._openKeyboardHintPanel === 'function') {
+        panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
     } else {
         const onboarding = document.getElementById('onboarding-hint')
         onboarding?.classList.remove('visible')
@@ -198,14 +234,14 @@ export function showKeyboardShortcutsHint(): void {
         panel.setAttribute('aria-hidden', 'false')
         ;(panel.querySelector('.kh-close') as HTMLElement)?.focus({ preventScroll: true })
     }
-    if ((panel as any)._autoDismissTimer) clearTimeout((panel as any)._autoDismissTimer)
-    ;(panel as any)._autoDismissTimer = setTimeout(() => {
-        if (typeof (panel as any)._closeKeyboardHintPanel === 'function') {
-            ;(panel as any)._closeKeyboardHintPanel()
+    if (panel._autoDismissTimer) clearTimeout(panel._autoDismissTimer)
+    panel._autoDismissTimer = setTimeout(() => {
+        if (typeof panel._closeKeyboardHintPanel === 'function') {
+            panel._closeKeyboardHintPanel()
         } else {
             panel.classList.remove('visible')
             panel.setAttribute('aria-hidden', 'true')
         }
-        ;(panel as any)._autoDismissTimer = null
+        panel._autoDismissTimer = null
     }, 5000)
 }
