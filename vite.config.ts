@@ -215,71 +215,77 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
         name: 'w44-preview-cache-headers',
         async configurePreviewServer(server) {
             const middlewares = server.middlewares as unknown as {
-                stack: Array<(req: any, res: any, next: () => void) => void>
-            } & RootAssetMiddlewareStack
-            // eslint-disable-next-line no-console
-            console.log('[w44] preview-cache: stackLen=' + middlewares.stack.length)
-            middlewares.stack.unshift((req, res, next) => {
-                // eslint-disable-next-line no-console
-                console.log('[w44] proxy for', req.url)
-                const rawUrl = req.url
-                if (!rawUrl) return next()
-                const url = rawUrl.split('?')[0] ?? ''
-                const hashed =
-                    /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(url)
+                stack: Array<{ route?: string; handle: (req: any, res: any, next: (err?: unknown) => void) => void }>
+            }
+            // Insert a properly-shaped connect Layer at index 0 (Vite's dispatcher reads
+            // `route`/`handle` directly; passing a bare function crashes its internal
+            // stack walk).
+            middlewares.stack.unshift({
+                route: '',
+                handle: (req, res, next) => {
+                    // eslint-disable-next-line no-console
+                    console.log('[w44] proxy for', req.url)
+                    const rawUrl = req.url
+                    if (!rawUrl) return next()
+                    const url = rawUrl.split('?')[0] ?? ''
+                    const hashed =
+                        /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
+                            url
+                        )
 
-                const writeHead = res.writeHead.bind(res)
-                const setHeader = res.setHeader.bind(res)
-                const removeHeader = res.removeHeader.bind(res)
-                let patched = false
+                    const writeHead = res.writeHead.bind(res)
+                    const setHeader = res.setHeader.bind(res)
+                    const removeHeader = res.removeHeader.bind(res)
+                    let patched = false
 
-                const applyPolicy = () => {
-                    setHeader('Vary', 'Accept-Encoding')
-                    if (hashed) {
-                        setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-                    } else if (/\.(dat|json)$/.test(url)) {
-                        setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
+                    const applyPolicy = () => {
+                        setHeader('Vary', 'Accept-Encoding')
+                        if (hashed) {
+                            setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+                        } else if (/\.(dat|json)$/.test(url)) {
+                            setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
+                        }
+                        if (url.endsWith('.br')) setHeader('Content-Encoding', 'br')
+                        else if (url.endsWith('.gz')) setHeader('Content-Encoding', 'gzip')
                     }
-                    if (url.endsWith('.br')) setHeader('Content-Encoding', 'br')
-                    else if (url.endsWith('.gz')) setHeader('Content-Encoding', 'gzip')
+
+                    res.writeHead = function patchedWriteHead(status: number, a?: any, b?: any) {
+                        if (!patched) {
+                            patched = true
+                            applyPolicy()
+                        }
+                        // Vite's static middleware may pass a headers object containing
+                        // `Cache-Control: no-cache`; strip our policy keys before delegating
+                        // so we win the final header merge.
+                        let headersObj: any
+                        if (typeof a === 'string' || a === undefined) {
+                            headersObj = b
+                        } else {
+                            headersObj = a
+                        }
+                        if (headersObj && typeof headersObj === 'object') {
+                            delete headersObj['Cache-Control']
+                            delete headersObj['Vary']
+                            delete headersObj['Content-Encoding']
+                        }
+                        if (typeof a === 'string' || a === undefined) {
+                            return writeHead(status as any, a as any, headersObj)
+                        }
+                        return writeHead(status, headersObj)
+                    } as typeof res.writeHead
+
+                    res.setHeader = function patchedSetHeader(name: string, value: any) {
+                        if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
+                        return setHeader(name as any, value as any)
+                    } as typeof res.setHeader
+
+                    res.removeHeader = function patchedRemoveHeader(name: string) {
+                        if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
+                        return removeHeader(name as any)
+                    } as typeof res.removeHeader
+
+                    next()
                 }
-
-                res.writeHead = function patchedWriteHead(status: number, a?: any, b?: any) {
-                    if (!patched) {
-                        patched = true
-                        applyPolicy()
-                    }
-                    // Vite's static middleware may pass a headers object containing
-                    // `Cache-Control: no-cache`; strip our policy keys before delegating
-                    // so we win the final header merge.
-                    let headersObj: any
-                    if (typeof a === 'string' || a === undefined) {
-                        headersObj = b
-                    } else {
-                        headersObj = a
-                    }
-                    if (headersObj && typeof headersObj === 'object') {
-                        delete headersObj['Cache-Control']
-                        delete headersObj['Vary']
-                        delete headersObj['Content-Encoding']
-                    }
-                    if (typeof a === 'string' || a === undefined) {
-                        return writeHead(status as any, a as any, headersObj)
-                    }
-                    return writeHead(status, headersObj)
-                } as typeof res.writeHead
-
-                res.setHeader = function patchedSetHeader(name: string, value: any) {
-                    if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
-                    return setHeader(name as any, value as any)
-                } as typeof res.setHeader
-
-                res.removeHeader = function patchedRemoveHeader(name: string) {
-                    if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
-                    return removeHeader(name as any)
-                } as typeof res.removeHeader
-
-                next()
             })
         }
     }

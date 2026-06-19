@@ -26,10 +26,10 @@ export function clearNavigationFocusState(): void {
     appState.withMutation(() => {
         appState.navState.focusedIndex = null;
         appState.navState.trailSeedIndex = null;
-        (appState.navState as any).trailNeighborIndices = [];
-        (appState.navState as any).trailCursor = -1;
-        (appState.navState as any).explorationHistoryIndices = [];
-        (appState.navState as any).lastTraversalReason = null;
+        appState.navState.trailNeighborIndices = [];
+        appState.navState.trailCursor = -1;
+        appState.navState.explorationHistoryIndices = [];
+        appState.navState.lastTraversalReason = null;
     });
     navStore.update(s => ({
         ...s,
@@ -44,12 +44,12 @@ export function clearNavigationFocusState(): void {
 
 export function clearTrailThreadState(): void {
     appState.withMutation(() => {
-        (appState.navState as any).threadCandidates = [];
-        (appState.navState as any).threadReasonByIndex = new Map();
-        (appState.navState as any).threadSource = '';
-        (appState.navState as any).trailNeighborIndices = [];
-        (appState.navState as any).trailCursor = -1;
-        (appState.navState as any).trailSeedIndex = null;
+        appState.navState.threadCandidates = [];
+        appState.navState.threadReasonByIndex = new Map();
+        appState.navState.threadSource = '';
+        appState.navState.trailNeighborIndices = [];
+        appState.navState.trailCursor = -1;
+        appState.navState.trailSeedIndex = null;
     });
     navStore.update(s => ({
         ...s,
@@ -71,12 +71,12 @@ export function setTrailNavState(seedIndex: number | null, opts: SetTrailNavStat
         cursor = 0,
     } = opts;
     appState.withMutation(() => {
-        (appState.navState as any).trailSeedIndex = seedIndex;
-        (appState.navState as any).threadCandidates = candidates;
-        (appState.navState as any).threadReasonByIndex = reasonByIndex;
-        (appState.navState as any).threadSource = source;
-        (appState.navState as any).trailNeighborIndices = neighborIndices;
-        (appState.navState as any).trailCursor = cursor;
+        appState.navState.trailSeedIndex = seedIndex;
+        appState.navState.threadCandidates = candidates;
+        appState.navState.threadReasonByIndex = reasonByIndex;
+        appState.navState.threadSource = source;
+        appState.navState.trailNeighborIndices = neighborIndices;
+        appState.navState.trailCursor = cursor;
     });
     navStore.update(s => ({
         ...s,

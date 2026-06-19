@@ -288,13 +288,21 @@ export function buildSelectedMatchNarrative(_point: Record<string, unknown> | nu
     return ''
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+declare global {
+    interface Window {
+        animateCameraToNode?: (opts: { transitionStyle: string }) => void
+    }
+}
+/* eslint-enable @typescript-eslint/no-explicit-any */
+
 /**
  * Recenter focused node.
  * Window bridge function from lifecycle.js.
  */
 export function recenterFocusedNode(): void {
-    if (typeof window !== 'undefined' && typeof (window as any).animateCameraToNode === 'function') {
-        ;(window as any).animateCameraToNode({ transitionStyle: 'focus' })
+    if (typeof window !== 'undefined' && typeof window.animateCameraToNode === 'function') {
+        window.animateCameraToNode({ transitionStyle: 'focus' })
     }
 }
 
