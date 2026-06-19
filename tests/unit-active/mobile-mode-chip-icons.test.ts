@@ -5,8 +5,8 @@
  * text prefixes. On mobile (≤768px), icons are visible and text labels
  * hidden; on desktop, text labels are shown and icons hidden.
  *
- * The SVG sprite symbols live in src/index.html and are referenced via
- * <use href="#icon-..."> in the component markup.
+ * The SVG sprite symbols live in src/index.html and are referenced from
+ * Header.svelte via <use href="#icon-..."> in the mode-chip markup.
  */
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
@@ -14,7 +14,6 @@ import { join, resolve } from 'node:path';
 
 const PROJECT_ROOT = resolve(import.meta.dirname, '../..');
 const HEADER_SVELTE = join(PROJECT_ROOT, 'src/components/Header.svelte');
-const MODECHIPS_SVELTE = join(PROJECT_ROOT, 'src/components/ModeChips.svelte');
 const INDEX_HTML = join(PROJECT_ROOT, 'src/index.html');
 
 /** Read a file as UTF-8 string */
@@ -37,7 +36,6 @@ const EXPECTED_ICONS: Record<string, string> = {
 
 describe('UI-8: mobile mode chip icons', () => {
   const headerSrc = read(HEADER_SVELTE);
-  const modechipsSrc = read(MODECHIPS_SVELTE);
   const indexHtml = read(INDEX_HTML);
 
   // ── Markup: SVG <use> replaces text letters ──────────────────────────────
@@ -78,35 +76,6 @@ describe('UI-8: mobile mode chip icons', () => {
     it('hides .chip-label on mobile via media query', () => {
       const afterMedia = headerSrc.substring(headerSrc.indexOf('@media (max-width: 768px)'));
       expect(afterMedia).toMatch(/\.chip-label[\s\S]*display:\s*none/);
-    });
-  });
-
-  describe('ModeChips.svelte uses SVG sprite icons', () => {
-    it('renders <svg> with <use href="#{mode.iconId}"> template syntax', () => {
-      expect(modechipsSrc).toContain('<use href="#{mode.iconId}"/>');
-    });
-
-    it('maps each mode to a known sprite icon id', () => {
-      for (const mode of REQUIRED_MODES) {
-        const iconId = EXPECTED_ICONS[mode];
-        expect(modechipsSrc).toContain(`'${iconId}'`);
-      }
-    });
-
-    it('does not use single-letter text icons', () => {
-      expect(modechipsSrc).not.toMatch(/icon:\s*'[MSTFIG]'/);
-      expect(modechipsSrc).toMatch(/iconId:\s*'icon-/);
-    });
-
-    it('hides .chip-icon on desktop', () => {
-      expect(modechipsSrc).toMatch(/\.chip-icon\s*\{[^}]*display:\s*none/s);
-    });
-
-    it('shows .chip-icon at narrow viewport', () => {
-      // ModeChips uses ≤480px breakpoint
-      expect(modechipsSrc).toContain('@media (max-width: 480px)');
-      const afterMedia = modechipsSrc.substring(modechipsSrc.indexOf('@media (max-width: 480px)'));
-      expect(afterMedia).toMatch(/\.chip-icon[\s\S]*display:\s*block/);
     });
   });
 

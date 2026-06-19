@@ -29,6 +29,7 @@ import { viewport } from '@lib/stores/viewport.svelte'
 import { cameraStore } from '@lib/stores/camera.svelte'
 import { demoStore, demoPhase as demoPhaseGetter } from '@lib/stores/demo.svelte'
 import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store'
+import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { getJourneyCompassState } from './compass-state'
 import { getJourneyCompassPresentationState, type CompassPresentationState } from './compass-controller'
 import type { LoadingPhase } from '@lib/types/state'
@@ -203,6 +204,11 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
     { key: 'cameraAssist', description: 'Camera assistance state (free|suspended)', source: 'loadingPhaseStore' },
     { key: 'graphicsMode', description: 'Graphics mode (webgl|fallback)', source: 'graphicsModeStore' },
     { key: 'testReady', description: 'Test readiness flag (true once parity is installed)', source: 'derived' },
+    {
+        key: 'engineState',
+        description: 'Engine init state (deferred|ready) — mirrors engineReady.value for CSS/contract tests',
+        source: 'engineReady.value'
+    },
 
     // Camera orbit slack (legacy camera-orbit-slack.js / camera.ts)
     {
@@ -466,6 +472,7 @@ export function computeParityAttributes(): ParityAttributeMap {
         cameraAssist,
         graphicsMode: graphicsModeValue,
         testReady: 'true',
+        engineState: engineReady.value ? 'ready' : 'deferred',
 
         cameraSlack: camera.orbitSlack.phase || 'idle',
         cameraSlackReason: camera.orbitSlack.reason || null
@@ -597,6 +604,7 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
         const unsubCamera = (cameraStore as any).subscribe(scheduleSync)
         const unsubLoadingPhase = loadingPhaseStore.subscribe(scheduleSync)
         const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync)
+        const unsubEngineReady = engineReady.subscribe(scheduleSync)
 
         if (initialSync) {
             // Force an initial compute on install
@@ -614,6 +622,7 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
             unsubCamera()
             unsubLoadingPhase()
             unsubGraphicsMode()
+            unsubEngineReady()
         }
     })
 

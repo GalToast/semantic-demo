@@ -14,9 +14,14 @@
 // ── State ────────────────────────────────────────────────────────────────────
 
 let _value = $state(false);
+const _subscribers = new Set<(v: boolean) => void>();
 
 function signalReady(): void {
+  if (_value) return;
   _value = true;
+  for (const fn of _subscribers) {
+    fn(_value);
+  }
 }
 
 /** Read-only accessor for the ready flag. */
@@ -32,10 +37,13 @@ export const engineReady = {
   /** Set to true once (idempotent). Triggers reactive subscriptions. */
   signalReady,
   /** Named getter for compatibility with $store patterns. */
+  getReady,
+  /** Store-compatible subscription. Immediately invokes with current value and re-invokes on change. */
   subscribe(fn: (v: boolean) => void) {
-    // Immediately invoke with current value, then re-invoke on change.
     fn(_value);
-    // No teardown needed: the flag only goes false → true once.
-    return () => {};
+    _subscribers.add(fn);
+    return () => {
+      _subscribers.delete(fn);
+    };
   },
 };

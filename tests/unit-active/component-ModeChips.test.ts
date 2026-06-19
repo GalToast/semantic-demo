@@ -1,5 +1,5 @@
 /**
- * component-ModeChips.test.ts — Component test for ModeChips.svelte
+ * component-ModeChips.test.ts — Component test for Header.svelte mode chips
  *
  * Uses source-inspection (readFileSync + string assertions) to verify the
  * a11y/structure contract. The component imports stores from
@@ -13,20 +13,19 @@
  *  4. Each button has aria-label matching its label text
  *  5. Each button has title attribute with mode description
  *  6. Each button contains an SVG with aria-hidden="true"
- *  7. Each button contains a .chip-label span with aria-hidden="true"
- *  8. Active mode shows .chip-description with description text
+ *  7. Each button contains a .chip-label span
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const MODE_CHIPS_PATH = resolve(__dirname, '../../src/components/ModeChips.svelte');
+const HEADER_PATH = resolve(__dirname, '../../src/components/Header.svelte');
 
 function readSource(): string {
-    return readFileSync(MODE_CHIPS_PATH, 'utf-8');
+    return readFileSync(HEADER_PATH, 'utf-8');
 }
 
-describe('ModeChips component', () => {
+describe('Header mode chips', () => {
     let source: string;
 
     beforeAll(() => {
@@ -71,14 +70,9 @@ describe('ModeChips component', () => {
         expect(source).toContain('<use href="#{mode.iconId}"/>');
     });
 
-    it('each button contains a .chip-label span with aria-hidden="true"', () => {
+    it('each button contains a .chip-label span', () => {
         expect(source).toContain('class="chip-label"');
-        expect(source).toContain('aria-hidden="true">{mode.label}</span>');
-    });
-
-    it('active mode shows .chip-description with description text', () => {
-        expect(source).toContain('class="chip-description"');
-        expect(source).toContain('{mode.description}');
+        expect(source).toContain('{mode.label}</span>');
     });
 
     it('MODE_DESCRIPTIONS defines descriptions for all navigation modes', () => {

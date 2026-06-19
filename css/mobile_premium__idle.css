@@ -80,7 +80,6 @@
     }
 
     body.is-active[data-panel-surface='idle'] .stat-caption,
-    body.is-active[data-panel-surface='idle'] .demo-starters,
     body.is-active[data-panel-surface='idle'] #btn-launch {
         display: none;
         visibility: hidden;

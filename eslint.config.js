@@ -1,10 +1,59 @@
 // eslint.config.js
-import js from '@eslint/js';
-import prettier from 'eslint-config-prettier';
+import js from '@eslint/js'
+import prettier from 'eslint-config-prettier'
 
 export default [
     js.configs.recommended,
     prettier,
+    {
+        files: ['scripts/**/*.mjs', 'scripts/**/*.js'],
+        languageOptions: {
+            ecmaVersion: 2022,
+            sourceType: 'module',
+            globals: {
+                console: 'readonly',
+                process: 'readonly',
+                __dirname: 'readonly',
+                __filename: 'readonly',
+                Buffer: 'readonly',
+                require: 'readonly',
+                module: 'readonly',
+                exports: 'readonly',
+                setTimeout: 'readonly',
+                clearTimeout: 'readonly',
+                setInterval: 'readonly',
+                clearInterval: 'readonly',
+                setImmediate: 'readonly',
+                clearImmediate: 'readonly',
+                URL: 'readonly',
+                URLSearchParams: 'readonly',
+                Promise: 'readonly',
+                Math: 'readonly',
+                JSON: 'readonly',
+                Map: 'readonly',
+                Set: 'readonly',
+                global: 'readonly',
+                globalThis: 'readonly',
+                TextEncoder: 'readonly',
+                TextDecoder: 'readonly'
+            }
+        },
+        rules: {
+            'no-unused-vars': [
+                'warn',
+                {
+                    vars: 'all',
+                    args: 'after-used',
+                    ignoreRestSiblings: true,
+                    varsIgnorePattern: '^_',
+                    argsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_'
+                }
+            ],
+            'no-undef': 'error',
+            'no-console': 'off'
+        }
+    },
     {
         files: ['js/**/*.js'],
         languageOptions: {
@@ -77,18 +126,21 @@ export default [
             }
         },
         rules: {
-            'no-unused-vars': ['warn', {
-                vars: 'all',
-                args: 'after-used',
-                ignoreRestSiblings: true,
-                varsIgnorePattern: '^_',
-                argsIgnorePattern: '^_',
-                caughtErrorsIgnorePattern: '^_'
-            }],
+            'no-unused-vars': [
+                'warn',
+                {
+                    vars: 'all',
+                    args: 'after-used',
+                    ignoreRestSiblings: true,
+                    varsIgnorePattern: '^_',
+                    argsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_'
+                }
+            ],
             'no-undef': 'error',
             'no-console': ['error', { allow: ['warn', 'error'] }],
             'no-var': 'error',
-            'eqeqeq': 'error',
+            eqeqeq: 'error',
             'no-empty': ['error', { allowEmptyCatch: true }],
             'no-useless-escape': 'error'
         }
@@ -164,14 +216,17 @@ export default [
             // Tests legitimately import many setup helpers that may not be
             // used in every test. Downgrade to warn so lint output is
             // actionable instead of noisy.
-            'no-unused-vars': ['warn', {
-                vars: 'all',
-                args: 'after-used',
-                ignoreRestSiblings: true,
-                varsIgnorePattern: '^_',
-                argsIgnorePattern: '^_',
-                caughtErrorsIgnorePattern: '^_'
-            }],
+            'no-unused-vars': [
+                'warn',
+                {
+                    vars: 'all',
+                    args: 'after-used',
+                    ignoreRestSiblings: true,
+                    varsIgnorePattern: '^_',
+                    argsIgnorePattern: '^_',
+                    caughtErrorsIgnorePattern: '^_'
+                }
+            ],
             // Regex tests often have intentional escaping; defensive optional
             // chaining in test setup is also a real pattern. Warn, don't error.
             'no-useless-escape': 'warn',
@@ -185,4 +240,4 @@ export default [
     // (b) remove the shebang, (c) downgrade to ESLint v9, (d) patch
     // ESLint itself. Investigated in commit 5f9bd0c; see follow-up note
     // in AGENTS.md.
-];
+]

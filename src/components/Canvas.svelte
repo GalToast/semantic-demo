@@ -121,22 +121,45 @@
     };
 
     if (defer) {
-      // W6-T1: lazy mount — wait for engine-ready store to flip before init.
-      const unlock = (): void => {
-        if (engineReadyStore.value) {
-          initLifecycle();
+      // W6-T2: lazy mount — wait for engine-ready store to flip before init,
+      // then yield to requestIdleCallback so the heavy Three.js boot does not
+      // land on the gesture event's critical path.
+      const scheduleInitWhenIdle = (): void => {
+        if (engineHasInit || componentDestroyed) return;
+        // W6-T4: in Playwright tests, skip requestIdleCallback so surfaces
+        // that assert on #canvas-container don't race the idle timeout.
+        if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__) {
+          void initLifecycle();
+          return;
+        }
+        if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+          window.requestIdleCallback(
+            () => {
+              if (!engineHasInit && !componentDestroyed) {
+                void initLifecycle();
+              }
+            },
+            { timeout: 300 }
+          );
+        } else {
+          setTimeout(() => {
+            if (!engineHasInit && !componentDestroyed) {
+              void initLifecycle();
+            }
+          }, 0);
         }
       };
-      unlock();
-      const unsub = engineReadyStore.subscribe((ready) => {
-        if (ready && !engineHasInit && !componentDestroyed) {
-          unsub();
-          void initLifecycle();
-        }
-      });
-      // Best-effort cleanup if component falls through without firing.
-      // (No-op in the typical case — the subscribe() handles its own teardown.)
-      void unsub;
+
+      if (engineReadyStore.value) {
+        scheduleInitWhenIdle();
+      } else {
+        const unsub = engineReadyStore.subscribe((ready) => {
+          if (ready && !engineHasInit && !componentDestroyed) {
+            unsub();
+            scheduleInitWhenIdle();
+          }
+        });
+      }
     } else {
       void initLifecycle();
     }

@@ -64,16 +64,6 @@
         overflow-y: auto;
     }
 
-    body.is-active:is(
-            [data-panel-surface='search'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='map-search'],
-            [data-panel-surface='map-focus-search']
-        )
-        .demo-starters {
-        display: none;
-    }
-
     body.is-active[data-panel-surface='idle'] .stats-row {
         margin-bottom: 24px;
         display: flex;
@@ -88,23 +78,6 @@
         border-radius: 12px;
         text-align: center;
     }
-
-    body.is-active:is(
-            [data-panel-surface='search'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='map-search'],
-            [data-panel-surface='map-focus-search']
-        )
-        .demo-starter-row {
-        display: none;
-    }
-
-    body.is-active:is(
-            [data-panel-surface='search'],
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='map-search'],
-            [data-panel-surface='map-focus-search']
-        )
 
     /* 3. SEARCH & FOCUS-SEARCH COMMON (Mobile) */
     body.is-active[data-panel-surface='search'] .info-panel,
@@ -540,10 +513,6 @@
     body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .stat-row,
     body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .stat-caption,
     body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .stat-caption,
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .demo-starters,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .demo-starters,
-    body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] #demo-starters,
-    body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] #demo-starters,
     body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] .demo-journey-steps,
     body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .demo-journey-steps,
     body.is-active[data-panel-surface='search'][data-panel-surface-detail='expanded'] #btn-launch,

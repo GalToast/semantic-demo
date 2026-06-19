@@ -139,6 +139,7 @@
 
   let isFullError = $derived(searchError != null && searchError.type === 'full');
   let isInlineError = $derived(searchError != null && searchError.type === 'inline');
+  const isResultsSurfaceActive = $derived(isSearching || isFullError || isEmpty || total > 0);
 
   // ── Roving tabindex active index ──────────────────────────────────────────────
 
@@ -386,7 +387,7 @@
   <div class="sr-only" aria-live="assertive" aria-atomic="true" role="status">
     {liveAnnouncement}
   </div>
-  <div id="search-results" class="search-results-wrapper" class:active={total > 0}>
+  <div id="search-results" class="search-results-wrapper" class:active={isResultsSurfaceActive}>
     <!-- Loading state -->
     {#if isSearching}
       <div class="search-loading">

@@ -82,3 +82,17 @@ dist/svelte/
 # root: 'src' is set). The canonical build is dist/svelte/ above. Anything
 # under src/dist/ is from a stale build and should not be tracked.
 src/dist/
+
+# Lockfiles (npm is canonical; bun.lock is local-only)
+bun.lock
+
+# PID files
+*.pid
+
+# OS / Editor noise (supplementary)
+.editorconfig
+.vscode/
+.idea/
+
+# Temporary directories at root
+None/

@@ -85,7 +85,6 @@ async function runTestForViewport(browser, viewport) {
   const idleChecks = [
     { selector: '#search-input', name: 'search-input' },
     { selector: '#btn-launch', name: 'btn-launch' },
-    { selector: '.demo-starter-chip', name: 'demo-starter-chip' },
   ];
 
   for (const check of idleChecks) {
@@ -121,7 +120,6 @@ async function runTestForViewport(browser, viewport) {
   const postSearchChecks = [
     { selector: '#search-input', name: 'search-input' },
     { selector: '#btn-launch', name: 'btn-launch' },
-    { selector: '.demo-starter-chip', name: 'demo-starter-chip' },
     { selector: '.info-panel', name: 'info-panel' },
   ];
 

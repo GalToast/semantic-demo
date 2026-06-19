@@ -167,7 +167,7 @@
       <span class="map-status-dot" aria-hidden="true"></span>
       <span>{statusDetail}</span>
       {#if status === 'error'}
-        <button class="map-retry-btn" type="button" onclick={activateLeafletMap}>Retry</button>
+        <button class="map-retry-btn" type="button" onclick={activateLeafletMap} style="min-height:44px">Retry</button>
       {/if}
     </div>
   {/if}
@@ -324,7 +324,7 @@
   }
 
   .map-retry-btn {
-    min-height: 34px;
+    min-height: 44px;
     padding: 0 12px;
   }
 

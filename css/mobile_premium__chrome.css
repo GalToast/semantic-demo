@@ -713,8 +713,7 @@
         transform: none;
     }
 
-    body.is-active[data-panel-surface='idle'] .stats-row,
-    body.is-active[data-panel-surface='idle'] .demo-starters {
+    body.is-active[data-panel-surface='idle'] .stats-row {
         order: 1;
     }
 } /* end @media chrome polish */
@@ -768,7 +767,6 @@
 
     body.is-active[data-panel-surface='idle'] .stats-row,
     body.is-active[data-panel-surface='idle'] .stat-caption,
-    body.is-active[data-panel-surface='idle'] .demo-starters,
     body.is-active[data-panel-surface='idle'] .launch-btn,
     body.is-active[data-panel-surface='idle'] #cluster-section,
     body.is-active[data-panel-surface='idle'] #filters-section,

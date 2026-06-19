@@ -112,7 +112,6 @@
 @media (max-width: 768px) {
     body:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .stats-row,
     body:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .launch-btn,
-    body:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .demo-starters,
     body:is([data-panel-surface='search'], [data-panel-surface='focus-search']) .demo-journey-steps {
         display: none;
     }
@@ -319,9 +318,7 @@
     }
 
     body[data-panel-surface='focus']:not([data-panel-surface='focus-search']) .info-header,
-    body[data-panel-surface='focus']:not([data-panel-surface='focus-search']) .demo-starters,
-    body[data-panel-surface='semantic-dive'] .info-header,
-    body[data-panel-surface='semantic-dive'] .demo-starters {
+    body[data-panel-surface='semantic-dive'] .info-header {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -489,7 +486,6 @@
     }
 
     body[data-panel-surface='idle'] .stats-row,
-    body[data-panel-surface='idle'] .demo-starters,
     body[data-panel-surface='idle'] .demo-journey-steps,
     body[data-panel-surface='idle'] .semantic-lane-pill,
     body[data-panel-surface='idle'] .semantic-lane-assist,
@@ -523,7 +519,6 @@
     /* .info-header hidden for search surface — canonical: layout_base.css:876 */
     body[data-panel-surface='search'] .stats-row,
     body[data-panel-surface='search'] .launch-btn,
-    body[data-panel-surface='search'] .demo-starters,
     body[data-panel-surface='search'] .demo-journey-steps,
     body[data-panel-surface='search'] .search-hint,
     body[data-panel-surface='search'] .semantic-lane-assist,
@@ -612,21 +607,6 @@
 }
 
 @media (max-width: 768px) {
-    body[data-panel-surface='idle'] .demo-starters {
-        display: block;
-        max-height: none;
-        margin-top: 0;
-        padding: 0;
-        overflow: visible;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
-    }
-
-    body[data-panel-surface='idle'] .demo-starters::before,
-    body[data-panel-surface='idle'] .demo-starters-kicker,
-    body[data-panel-surface='idle'] .demo-starters-copy,
     body[data-panel-surface='idle'] .demo-journey-steps,
     body[data-panel-surface='idle'] .search-hint,
     body[data-panel-surface='idle'] .semantic-lane-assist {
@@ -636,33 +616,6 @@
     body[data-panel-surface='idle'] .search-container {
         max-height: 106px;
         overflow: visible;
-    }
-
-    body[data-panel-surface='idle'] .demo-starter-row {
-        display: flex;
-        flex-wrap: nowrap;
-        gap: 7px;
-        margin-top: 0;
-        overflow-x: auto;
-        overflow-y: hidden;
-        scrollbar-width: none;
-        scroll-snap-type: x proximity;
-        padding-bottom: 1px;
-    }
-
-    body[data-panel-surface='idle'] .demo-starter-row::-webkit-scrollbar {
-        width: 0;
-        height: 0;
-        display: none;
-    }
-
-    body[data-panel-surface='idle'] .demo-starter-chip {
-        flex: 0 0 auto;
-        min-height: 44px;
-        max-width: 132px;
-        justify-content: center;
-        scroll-snap-align: start;
-        white-space: nowrap;
     }
 }
 
@@ -865,27 +818,6 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         display: none;
     }
 
-    body[data-panel-surface='idle'] .demo-starters {
-        padding: 11px;
-        border-radius: 8px;
-        background: rgba(255, 255, 255, 0.026);
-        overflow: hidden;
-    }
-
-    body[data-panel-surface='idle'] .demo-starters-copy {
-        font-size: 10.5px;
-        line-height: 1.35;
-    }
-
-    body[data-panel-surface='idle'] .demo-starter-row {
-        gap: 6px;
-    }
-
-    body[data-panel-surface='idle'] .demo-starter-chip {
-        min-height: 40px;
-        border-radius: 8px;
-    }
-
     body[data-panel-surface='idle'] .launch-btn {
         min-height: 44px;
         margin-bottom: 10px;
@@ -1019,7 +951,6 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
     body[data-panel-surface='search'] #filters-section,
     body[data-panel-surface='search'] .rail-section,
     body[data-panel-surface='search'] .launch-btn,
-    body[data-panel-surface='search'] .demo-starters,
     body[data-panel-surface='search'] .demo-journey-steps,
     body[data-panel-surface='search'] .semantic-lane-assist,
     body[data-panel-surface='search'] .semantic-lane-pill,
@@ -1132,7 +1063,6 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .stats-row,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .stat-caption,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .launch-btn,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .demo-starters,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #story-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #cluster-section,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #filters-section,
@@ -1213,47 +1143,8 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         font-size: 12px;
     }
 
-    body[data-panel-surface='idle'] .demo-starters {
-        order: 2;
-        margin: 0;
-        padding: 0;
-        border: 0;
-        border-radius: 0;
-        background: transparent;
-        box-shadow: none;
-        overflow: visible;
-    }
-
-    body[data-panel-surface='idle'] .demo-starters::before,
-    body[data-panel-surface='idle'] .demo-starters-copy,
     body[data-panel-surface='idle'] .demo-journey-steps {
         display: none;
-    }
-
-    body[data-panel-surface='idle'] .demo-starters-kicker {
-        display: block;
-        margin: 0 0 7px;
-        color: rgba(255, 226, 132, 0.74);
-        font-size: 9px;
-        letter-spacing: 0.15em;
-    }
-
-    body[data-panel-surface='idle'] .demo-starter-row {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        gap: 7px;
-        margin: 0;
-    }
-
-    body[data-panel-surface='idle'] .demo-starter-chip {
-        min-height: 42px;
-        padding: 0 10px;
-        border-radius: 8px;
-        border-color: rgba(var(--color-primary-tint-rgb), 0.16);
-        background: rgba(255, 255, 255, 0.028);
-        color: rgba(237, 250, 248, 0.9);
-        font-size: 11px;
-        letter-spacing: 0;
     }
 
     body[data-panel-surface='idle'] .launch-btn {
@@ -1483,7 +1374,6 @@ body[data-active-view='map'] #mode-chips .mode-chip.active {
 /* V8 idle contract: the overview sheet is search-only. Older responsive
    sizing blocks above describe legacy starter chips, but idle must not
    render competing entry points in the live cascade. */
-body[data-panel-surface='idle'] .demo-starters,
 body[data-panel-surface='idle'] .launch-btn,
 body[data-panel-surface='idle'] .stats-row,
 body[data-panel-surface='idle'] .stat-caption,
