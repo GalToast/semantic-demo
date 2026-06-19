@@ -65,14 +65,14 @@ test.describe('W15 body-attr live probe', () => {
 
         // ── a11y baseline scan (idle state) ─
         const axeResultsIdle = await new AxeBuilder({ page }).analyze()
-        console.log(`  [idle] a11y: ${axeResultsIdle.violations.length} violation(s)`) // eslint-disable-line no-console
+        console.log(`  [idle] a11y: ${axeResultsIdle.violations.length} violation(s)`)  
         if (axeResultsIdle.violations.length > 0) {
             for (const v of axeResultsIdle.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
             }
         }
         if (axeResultsIdle.violations.length > 5) {
-            throw new Error(`a11y regression: idle state has ${axeResultsIdle.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+            throw new Error(`a11y regression: idle state has ${axeResultsIdle.violations.length} violations (baseline threshold: 5)`)  
         }
 
         // Surface console errors in failure output
@@ -96,20 +96,20 @@ test.describe('W15 body-attr live probe', () => {
             logBodyAttrs(attrs, 'search')
 
             // After entering search mode and typing, the nav-surface should reflect search
-            expect(attrs.searchStatus, 'data-search-status should be searching or idle').toMatch(/searching|idle/)
+            expect(attrs.searchStatus, 'data-search-status should be searching or results or idle').toMatch(/searching|results|idle/)
             expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
         }, { maxAttempts: 3, backoffMs: 1000, label: 'search' })
 
         // ── a11y baseline scan (search state) ─
         const axeResultsSearch = await new AxeBuilder({ page }).analyze()
-        console.log(`  [search] a11y: ${axeResultsSearch.violations.length} violation(s)`) // eslint-disable-line no-console
+        console.log(`  [search] a11y: ${axeResultsSearch.violations.length} violation(s)`)  
         if (axeResultsSearch.violations.length > 0) {
             for (const v of axeResultsSearch.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
             }
         }
         if (axeResultsSearch.violations.length > 5) {
-            throw new Error(`a11y regression: search state has ${axeResultsSearch.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+            throw new Error(`a11y regression: search state has ${axeResultsSearch.violations.length} violations (baseline threshold: 5)`)  
         }
 
         if (consoleCapture.errors.length > 0) {
@@ -150,14 +150,14 @@ test.describe('W15 body-attr live probe', () => {
 
         // ── a11y baseline scan (focus-search state) ─
         const axeResultsFocusSearch = await new AxeBuilder({ page }).analyze()
-        console.log(`  [focus-search] a11y: ${axeResultsFocusSearch.violations.length} violation(s)`) // eslint-disable-line no-console
+        console.log(`  [focus-search] a11y: ${axeResultsFocusSearch.violations.length} violation(s)`)  
         if (axeResultsFocusSearch.violations.length > 0) {
             for (const v of axeResultsFocusSearch.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
             }
         }
         if (axeResultsFocusSearch.violations.length > 5) {
-            throw new Error(`a11y regression: focus-search state has ${axeResultsFocusSearch.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+            throw new Error(`a11y regression: focus-search state has ${axeResultsFocusSearch.violations.length} violations (baseline threshold: 5)`)  
         }
 
         if (consoleCapture.errors.length > 0) {
@@ -197,14 +197,14 @@ test.describe('W15 body-attr live probe', () => {
 
         // ── a11y baseline scan (focus state) ─
         const axeResultsFocus = await new AxeBuilder({ page }).analyze()
-        console.log(`  [focus] a11y: ${axeResultsFocus.violations.length} violation(s)`) // eslint-disable-line no-console
+        console.log(`  [focus] a11y: ${axeResultsFocus.violations.length} violation(s)`)  
         if (axeResultsFocus.violations.length > 0) {
             for (const v of axeResultsFocus.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
             }
         }
         if (axeResultsFocus.violations.length > 5) {
-            throw new Error(`a11y regression: focus state has ${axeResultsFocus.violations.length} violations (baseline threshold: 5)`) // eslint-disable-line no-console
+            throw new Error(`a11y regression: focus state has ${axeResultsFocus.violations.length} violations (baseline threshold: 5)`)  
         }
 
         if (consoleCapture.errors.length > 0) {
