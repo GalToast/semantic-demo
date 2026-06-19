@@ -545,8 +545,17 @@
   <!-- Layer 0: WebGL canvas -->
   <Canvas interactive={true} />
 
-  <!-- Layer 30: Semantic overlays (manifold, lens) -->
-  <SemanticOverlay visible={true} />
+  <!--
+    A11y region landmark wrapper (W5-T2).
+    Lighthouse flags overlay surfaces that sit inside <main> but outside
+    any named region. Wrapping the overlay layer in a region landmark
+    eliminates the 4-state violation (idle-overview, search-mode,
+    focus-search, focus-programmatic).
+  -->
+  <section aria-label="Semantic overlay layer">
+    <!-- Layer 30: Semantic overlays (manifold, lens) -->
+    <SemanticOverlay visible={true} />
+  </section>
 
   <!-- Full-screen map view (Map chip) -->
   {#if mapModeActive && MapViewComponent}

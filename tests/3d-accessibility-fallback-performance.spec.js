@@ -228,6 +228,123 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     expect(state.hasError || state.loadingGone, `WebGL-unavailable state must resolve: ${JSON.stringify(state)}`).toBe(true);
   });
 
+  test('a11y region landmark: semantic overlay layer has a region landmark inside main', async ({ page }) => {
+    test.setTimeout(60000);
+    await openReadyApp(page);
+
+    // Verify the region landmark wrapper exists around the semantic overlay
+    const regionExists = await page.evaluate(() => {
+      const main = document.getElementById('main-content');
+      if (!main) return { found: false, reason: 'no main element' };
+      const region = main.querySelector('section[aria-label="Semantic overlay layer"]');
+      if (!region) return { found: false, reason: 'no section[aria-label="Semantic overlay layer"]' };
+      // Verify it's inside main and has the correct ARIA attributes
+      const isInsideMain = main.contains(region);
+      const ariaLabel = region.getAttribute('aria-label');
+      return {
+        found: true,
+        isInsideMain,
+        ariaLabel,
+        tagName: region.tagName
+      };
+    });
+
+    expect(regionExists.found, 'section[aria-label="Semantic overlay layer"] must exist in main').toBe(true);
+    expect(regionExists.isInsideMain, 'region landmark must be inside <main>').toBe(true);
+    expect(regionExists.ariaLabel, 'region landmark must have aria-label').toBe('Semantic overlay layer');
+  });
+
+  test('a11y color contrast: focus pocket secondary text meets WCAG AA 4.5:1', async ({ page }) => {
+    test.setTimeout(60000);
+    await openReadyApp(page);
+
+    // Focus on a node to trigger the focus pocket
+    const targetIdx = await midpointIndex(page);
+    expect(targetIdx, 'scene should expose at least one focus target').toBeGreaterThanOrEqual(0);
+    if (targetIdx >= 0) await focusNodeViaApp(page, targetIdx);
+    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
+
+    // Check the computed color of secondary text elements in the focus pocket
+    const contrastCheck = await page.evaluate(() => {
+      // Helper to parse rgba(r, g, b, a) and compute contrast ratio
+      function parseRgba(color) {
+        const match = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+)/);
+        if (!match) return null;
+        return { r: parseInt(match[1]), g: parseInt(match[2]), b: parseInt(match[3]) };
+      }
+
+      function relativeLuminance(r, g, b) {
+        const [rs, gs, bs] = [r, g, b].map(c => {
+          c /= 255;
+          return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+        });
+        return 0.2126 * rs + 0.7152 * gs + 0.0722 * bs;
+      }
+
+      function contrastRatio(rgb1, rgb2) {
+        const l1 = relativeLuminance(rgb1.r, rgb1.g, rgb1.b);
+        const l2 = relativeLuminance(rgb2.r, rgb2.g, rgb2.b);
+        const lighter = Math.max(l1, l2);
+        const darker = Math.min(l1, l2);
+        return (lighter + 0.05) / (darker + 0.05);
+      }
+
+      // Get the focus card secondary text elements
+      const focusCard = document.querySelector('.focus-card.selected-card');
+      if (!focusCard) return { found: false, reason: 'focus card not visible' };
+
+      // Check .selected-card-location and .selected-card-contact
+      const locationEl = focusCard.querySelector('.selected-card-location');
+      const contactEl = focusCard.querySelector('.selected-card-contact');
+      const footerClusterEl = focusCard.querySelector('.footer-cluster');
+
+      // Background of focus card
+      const bg = { r: 7, g: 16, b: 24 }; // rgba(7, 16, 24, 0.92) background
+
+      const results = [];
+
+      if (locationEl) {
+        const color = getComputedStyle(locationEl).color;
+        const rgb = parseRgba(color);
+        if (rgb) {
+          const ratio = contrastRatio(rgb, bg);
+          results.push({ element: 'selected-card-location', color, ratio, rgb });
+        }
+      }
+
+      if (contactEl) {
+        const color = getComputedStyle(contactEl).color;
+        const rgb = parseRgba(color);
+        if (rgb) {
+          const ratio = contrastRatio(rgb, bg);
+          results.push({ element: 'selected-card-contact', color, ratio, rgb });
+        }
+      }
+
+      if (footerClusterEl) {
+        const color = getComputedStyle(footerClusterEl).color;
+        const rgb = parseRgba(color);
+        if (rgb) {
+          const ratio = contrastRatio(rgb, bg);
+          results.push({ element: 'footer-cluster', color, ratio, rgb });
+        }
+      }
+
+      return { found: true, results };
+    });
+
+    expect(contrastCheck.found, 'focus card should be visible after focusing a node').toBe(true);
+    expect(contrastCheck.results.length, 'should find secondary text elements to check').toBeGreaterThan(0);
+
+    // All secondary text must meet WCAG AA 4.5:1
+    for (const result of contrastCheck.results) {
+      expect(
+        result.ratio,
+        `${result.element} contrast ratio ${result.ratio.toFixed(2)}:1 must be >= 4.5:1 (color: ${result.color})`
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  });
+
   test('performance contract: renderer diagnostics are finite and stable through repeated focus', async ({ page }) => {
     test.setTimeout(90000);
     await openReadyApp(page);

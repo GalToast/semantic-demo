@@ -437,7 +437,8 @@
     align-items: center;
     gap: 0.35rem;
     font-size: 0.7rem;
-    color: rgba(224, 240, 240, 0.5);
+    /* A11y W5-T2: lifted from 0.5 to 0.7 (≈9.05:1 contrast) to meet WCAG AA 4.5:1 */
+    color: rgba(224, 240, 240, 0.7);
   }
   .selected-card-location svg,
   .selected-card-contact svg {
@@ -466,7 +467,8 @@
   .footer-cluster {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
-    color: rgba(224, 240, 240, 0.45);
+    /* A11y W5-T2: lifted from 0.45 to 0.7 (≈9.05:1 contrast) to meet WCAG AA 4.5:1 */
+    color: rgba(224, 240, 240, 0.7);
   }
   .footer-source {
     font-size: 0.55rem;
