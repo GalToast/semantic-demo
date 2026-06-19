@@ -123,17 +123,17 @@
       {#each statusFilters as filter (filter.id)}
         <button
           class="filter-chip"
-          class:active={isStatusActive(filter.id)}
+          class:active={$filterState.status === filter.id}
           data-status-filter={filter.id}
           onclick={() => handleStatusToggle(filter.id)}
           onkeydown={(e) => handleChipKeydown(e, filter.id, 'status')}
-          aria-pressed={isStatusActive(filter.id)}
+          aria-pressed={$filterState.status === filter.id}
           type="button"
         >
           {filter.label}
-        </button>
+       </button>
       {/each}
-    </div>
+   </div>
 
     <!-- Contact/signal filter chips -->
     <div class="filter-group">
@@ -149,9 +149,9 @@
           type="button"
         >
           {filter.label}
-        </button>
+       </button>
       {/each}
-    </div>
+   </div>
 
     <!-- City filter select -->
     <div class="filter-group">

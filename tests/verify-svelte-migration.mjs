@@ -121,11 +121,7 @@ async function main() {
         )
         assert(true, 'App.svelte mounted into #app (children present)')
 
-        // Verify App.svelte renders InfoPanelChrome
-        const hasInfoPanel = await page.evaluate(() => !!document.getElementById('info-panel'))
-        assert(hasInfoPanel, 'InfoPanelChrome rendered (info-panel element exists)')
-
-        // Verify App.svelte renders LegendPanelChrome
+        // Verify App.svelte renders LegendPanelChrome (always in DOM)
         const hasLegendPanel = await page.evaluate(() => !!document.getElementById('btn-legend'))
         assert(hasLegendPanel, 'LegendPanelChrome rendered (btn-legend exists)')
 
@@ -180,7 +176,7 @@ async function main() {
             focusStage: !!document.getElementById('focus-stage'),
             cameraControls: !!document.getElementById('camera-controls')
         }))
-        assert(elsExist.infoPanel, 'info-panel exists in DOM')
+        assert(elsExist.infoPanel, 'InfoPanelChrome rendered (info-panel exists after panelSurface=map-focus-search)')
         assert(elsExist.legendPanel, 'legend-panel exists in DOM')
         assert(elsExist.weatherWidget, 'weather-widget exists in DOM')
         assert(elsExist.searchInput, 'search-input exists in DOM')
@@ -210,7 +206,26 @@ async function main() {
             const btn = document.querySelector('[data-status-filter="active"]')
             if (btn) btn.click()
         })
-        await page.waitForTimeout(200)
+        // Wait for Svelte 5 reactive tick to flush DOM updates
+        await page.waitForTimeout(250)
+
+        // Wait for aria-pressed to actually flip (avoids evaluating before
+        // Svelte 5 re-runs the {$filterState.status === filter.id} expressions)
+        try {
+            await page.waitForFunction(
+                () => {
+                    const all = document.querySelector('[data-status-filter="all"]')
+                    const activeBtn = document.querySelector('[data-status-filter="active"]')
+                    return (
+                        all?.getAttribute('aria-pressed') === 'false' &&
+                        activeBtn?.getAttribute('aria-pressed') === 'true'
+                    )
+                },
+                { timeout: 3000 }
+            )
+        } catch {
+            // Fall through to diagnostic eval below
+        }
 
         const chipAfter = await page.evaluate(() => {
             const all = document.querySelector('[data-status-filter="all"]')
