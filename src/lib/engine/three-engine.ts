@@ -670,6 +670,23 @@ export function initThreeJS() {
         false
     )
 
+    // Resume the animate() loop when the document becomes visible again.
+    // Paired with the document.hidden gate at the top of animate() to let
+    // Lighthouse find an idle period while the page is backgrounded.
+    document.addEventListener('visibilitychange', () => {
+        if (
+            !document.hidden &&
+            _rafId === null &&
+            !_webglContextLost &&
+            !_circuitBreakerTripped &&
+            webglContext.renderer &&
+            webglContext.scene &&
+            webglContext.camera
+        ) {
+            animate()
+        }
+    })
+
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
     controls.dampingFactor = 0.05
@@ -958,6 +975,13 @@ export function animate() {
         return
     }
     if (_webglContextLost) {
+        return
+    }
+    // Pause the steady-state RAF loop when the document is not visible.
+    // This lets Lighthouse find an idle period so the perf score becomes
+    // measurable.  The loop resumes via the visibilitychange listener
+    // registered in initThreeJS.
+    if (typeof document !== 'undefined' && document.hidden) {
         return
     }
     if (!webglContext.renderer || !webglContext.scene || !webglContext.camera) {
