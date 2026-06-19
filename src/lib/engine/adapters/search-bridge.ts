@@ -58,14 +58,7 @@ export function mapBridgeSearchResult(row: RawSearchRow, order: number): BridgeS
 function _applyGlow(ctx: BridgeContext, indices: number[]): void {
     if (!ctx._state) return
 
-    ctx._state.searchGlowIndices.clear()
-    for (const i of indices) {
-        ctx._state.searchGlowIndices.add(i)
-    }
-    ctx._state.searchGlowTopIndex = indices[0] ?? null
-    ctx._state.searchGlowActive = indices.length > 0
-
-    // Sync the Svelte search-glow store so UI components see the glow state
+    // Route all glow mutations through the store action (single source of truth)
     setSearchGlow(indices, indices[0] ?? null)
 }
 
@@ -115,11 +108,7 @@ export function createSearchMethods(
 
             if (!ctx._state) return
 
-            ctx._state.searchGlowIndices.clear()
-            ctx._state.searchGlowTopIndex = null
-            ctx._state.searchGlowActive = false
-
-            // Sync the Svelte store so UI components see the clear
+            // Route glow clear through the store action (single source of truth)
             clearSearchGlow()
         }
     }

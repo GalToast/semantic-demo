@@ -34,7 +34,9 @@ export interface CacheDiagnosticsSnapshot extends SemanticSearchCacheDiagnostics
     maxEntries: number;
 }
 
-if (!state.semanticSearchResultCache) state.semanticSearchResultCache = new Map<string, CacheEntry>();
+withStateMutation(() => {
+    if (!state.semanticSearchResultCache) state.semanticSearchResultCache = new Map<string, CacheEntry>();
+});
 if (!state.semanticSearchCacheDiagnostics) {
     withStateMutation(() => {
         state.semanticSearchCacheDiagnostics = {
@@ -107,7 +109,9 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
     const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
     const entry = cache.get(key);
     if (!entry) {
-        state.semanticSearchCacheDiagnostics.misses += 1;
+        withStateMutation(() => {
+            state.semanticSearchCacheDiagnostics.misses += 1;
+        });
         markSemanticSearchCache('miss', key);
         return null;
     }
@@ -118,16 +122,21 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
         cache.delete(key);
         idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
 
-        state.semanticSearchCacheDiagnostics.evictions += 1;
-        state.semanticSearchCacheDiagnostics.misses += 1;
+        withStateMutation(() => {
+            state.semanticSearchCacheDiagnostics.evictions += 1;
+            state.semanticSearchCacheDiagnostics.misses += 1;
+        });
         markSemanticSearchCache('expired', key, entry as CacheEntry);
         return null;
     }
 
+    // lastAccessedAt is an internal cache field; mutation here does not affect Svelte 5 reactivity.
     (entry as CacheEntry).lastAccessedAt = now;
     idb.set(key as string, entry as CacheEntry).catch((err: unknown) => debugWarn('[idb-service] access update failed:', err));
 
-    state.semanticSearchCacheDiagnostics.hits += 1;
+    withStateMutation(() => {
+        state.semanticSearchCacheDiagnostics.hits += 1;
+    });
     markSemanticSearchCache('hit', key, entry as CacheEntry);
 
     const payload = cloneSemanticSearchPayload((entry as CacheEntry).payload);
@@ -156,7 +165,9 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
     state.semanticSearchResultCache.set(key, entry);
     idb.set(key, entry).catch((err: unknown) => debugWarn('[idb-service] store failed:', err));
 
-    state.semanticSearchCacheDiagnostics.stores += 1;
+    withStateMutation(() => {
+        state.semanticSearchCacheDiagnostics.stores += 1;
+    });
     markSemanticSearchCache('store', key);
 
     const cache = state.semanticSearchResultCache as unknown as Map<string, CacheEntry>;
@@ -166,7 +177,9 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
             if (e && (now - ce.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS)) {
                 cache.delete(k);
                 idb.remove(k as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
-                state.semanticSearchCacheDiagnostics.evictions += 1;
+                withStateMutation(() => {
+                    state.semanticSearchCacheDiagnostics.evictions += 1;
+                });
             }
         }
         if (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
@@ -182,7 +195,9 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
             if (!oldestKey) break;
             cache.delete(oldestKey);
             idb.remove(oldestKey as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err));
-            state.semanticSearchCacheDiagnostics.evictions += 1;
+            withStateMutation(() => {
+                state.semanticSearchCacheDiagnostics.evictions += 1;
+            });
         }
     }
 }

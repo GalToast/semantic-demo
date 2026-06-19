@@ -4,7 +4,8 @@
  * Port of js/modules/semantic-search-scoring.ts
  */
 
-import { state, type Point } from '../engine/state-bridge';
+import { appState } from '../state/app.svelte';
+import type { Point } from '../state/state-types';
 import { normalizeMockSearchText, MOCK_QUERY_ALIASES, MOCK_QUERY_NAICS_PREFIX, MOCK_QUERY_NAICS_DENY } from './mock-catalog';
 
 interface FieldWeights {
@@ -58,7 +59,7 @@ interface MockPointSearchFields {
 
 function getMockPointSearchFields(point: Point): MockPointSearchFields {
     const enrichment = point?.lead_id !== null && point?.lead_id !== undefined
-        ? (state.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[String(point.lead_id)]
+        ? (appState.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[String(point.lead_id)]
         : null;
     return {
         name: normalizeMockSearchText(point?.name),
@@ -105,7 +106,7 @@ export function buildDatasetBackedMockResults(
     matchedTerm: string | null,
     scoreBase: number
 ): ScoredResult[] {
-    if (!Array.isArray(state.points) || state.points.length === 0) return [];
+    if (!Array.isArray(appState.points) || appState.points.length === 0) return [];
     const terms = getMockDatasetTerms(query, matchedTerm);
     if (!terms.length) return [];
 
@@ -118,7 +119,7 @@ export function buildDatasetBackedMockResults(
         return m?.[1] ?? null;
     };
 
-    return state.points
+    return appState.points
         .map((point, index) => {
             if (!point || point.lead_id === null || point.lead_id === undefined || point.lead_id === '') return null;
             const fields = getMockPointSearchFields(point);
@@ -166,7 +167,7 @@ export function buildDatasetBackedMockResults(
         .slice(0, 5)
         .map(({ point, score }, i) => {
             const enrichment = point.lead_id !== null && point.lead_id !== undefined
-                ? (state.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[String(point.lead_id)]
+                ? (appState.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[String(point.lead_id)]
                 : null;
             return {
                 lead_id: String(point.lead_id),

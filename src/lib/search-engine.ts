@@ -387,7 +387,7 @@ function performMockSearch(query: string, signal: AbortSignal, offset = 0, limit
     const scored = MOCK_BUSINESSES.map((biz) => ({ biz, score: scoreBusiness(biz, queryLower) }))
         .filter((entry) => entry.score > 0)
         .sort((a, b) => b.score - a.score || a.biz.name.localeCompare(b.biz.name))
-    return sleep(80 + Math.random() * 170, signal).then(() =>
+    return sleep(165, signal).then(() =>
         scored.slice(offset, offset + limit).map(({ biz, score }) => ({
             id: biz.id,
             name: biz.name,

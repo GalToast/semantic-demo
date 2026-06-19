@@ -13,6 +13,7 @@ import { state } from '../engine/state-bridge';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from '../engine/search-panel-adapter-bridge';
+import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte';
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane';
 import {
     searchResultsStore,
@@ -719,9 +720,8 @@ export function updateSearchPreviewOverlay(): void {
 }
 
 export function activateSearchGlow(resultIndices: number[] = [], anchorIndex: number | null = null): void {
-    state.searchGlowActive = true;
-    state.searchGlowIndices = new Set(Array.isArray(resultIndices) ? resultIndices : []);
-    state.searchGlowTopIndex = Number.isFinite(anchorIndex) ? anchorIndex : state.searchGlowIndices.values().next().value ?? null;
+    const topIndex = Number.isFinite(anchorIndex) ? anchorIndex : (resultIndices.length > 0 ? resultIndices[0] : null);
+    storeSetSearchGlow(resultIndices, topIndex);
     setSearchGlowState(true);
     publish(EVENTS.COMPOSITION_UPDATED, { reason: 'search-glow' });
 }
@@ -806,10 +806,7 @@ function nearDuplicateKey(point: SearchResultPoint): string | null {
 }
 
 export function clearSearchGlow(): void {
-    state.searchGlowActive = false;
-    if (state.searchGlowIndices && typeof state.searchGlowIndices.clear === 'function') {
-        state.searchGlowIndices.clear();
-    }
+    storeSetSearchGlow([], null);
     setSearchGlowState(false);
     publish(EVENTS.COMPOSITION_UPDATED);
 }
