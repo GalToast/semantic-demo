@@ -248,7 +248,7 @@ export function hasDemoBeenSeen(): boolean {
     try {
         const parsed = JSON.parse(raw) as { seen?: boolean } | number | string | boolean
         if (parsed === true || parsed === 1) return true
-        if (typeof parsed === 'object' && parsed !== null) return parsed.seen === true
+        if (typeof parsed === 'object' && parsed !== null) return parsed.seen === true // audit-ok: plain JSON object null check
         return raw === '1' || raw === 'true'
     } catch {
         return raw === '1' || raw === 'true'
