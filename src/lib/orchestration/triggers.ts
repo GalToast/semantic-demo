@@ -48,6 +48,9 @@ import { appState } from '@lib/state/app.svelte.ts'
 import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
 import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
 import { bindSearchResultInteractions } from '@lib/search/orchestration'
+import type { Point } from '@lib/state/state-types'
+import type { SearchResult } from '@lib/types/state'
+import type { SearchContext } from '@lib/search/state'
 import { get } from 'svelte/store'
 
 // ── Keyboard Support ──────────────────────────────────────────────────────────
@@ -147,8 +150,8 @@ subscribe(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, () => {
 // after SEARCH_FOCUS_REQUESTED keeps its search context.
 subscribe(
     EVENTS.CAMERA_NODE_FOCUSED,
-    (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {} as any) => {
-        const index = Number((payload as any)?.index)
+    (payload: { index?: number; point?: unknown; options?: Record<string, unknown> } = {}) => {
+        const index = Number(payload?.index)
         if (Number.isFinite(index) && index >= 0) {
             // Guard: when SEARCH_FOCUS_REQUESTED fires just before this event (the
             // search-click hot path), it has already set focusedIndex, mode, surface
@@ -276,8 +279,8 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
  * Svelte navStore handles focusedIndex / mode / surface via the FOCUS_NODE
  * branch of dispatchNavTransition, so we mirror that here.
  */
-subscribe(EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index: number; skipHistory?: boolean } = {} as any) => {
-    const index = Number((payload as any)?.index)
+subscribe(EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index?: number; skipHistory?: boolean } = {}) => {
+    const index = Number(payload?.index)
     if (!Number.isFinite(index) || index < 0) return
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
         index,
@@ -285,7 +288,7 @@ subscribe(EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index: number; skipHistory?
         // appendHistory:false is the closest equivalent and prevents
         // duplicate history entries when the engine has already recorded
         // the focus.
-        appendHistory: (payload as any)?.skipHistory === true ? false : true
+        appendHistory: payload.skipHistory === true ? false : true
     })
 })
 
@@ -332,7 +335,9 @@ subscribe(EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, () => {
  * forward params and options directly.
  */
 subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const { params, reason, mode } = payload as any
+    const params = payload.params as Record<string, string | null | undefined> | undefined
+    const reason = payload.reason as string | undefined
+    const mode = payload.mode as 'push' | 'replace' | undefined
     updateUrlState(params ?? {}, { reason, mode })
 })
 
@@ -344,8 +349,11 @@ subscribe(EVENTS.URL_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => 
  * rendered outside the component lifecycle.
  */
 subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const { resultsEl, statusEl, results, renderContext } = payload as any
-    if (!resultsEl || !statusEl || !Array.isArray(results) || !renderContext) return
+    const resultsEl = payload.resultsEl instanceof HTMLElement ? payload.resultsEl : null
+    const statusEl = payload.statusEl instanceof HTMLElement ? payload.statusEl : null
+    const results = Array.isArray(payload.results) ? (payload.results as SearchResult[]) : null
+    const renderContext = payload.renderContext as SearchContext | undefined
+    if (!resultsEl || !statusEl || !results || !renderContext) return
     bindSearchResultInteractions(resultsEl, statusEl, results, renderContext)
 })
 
@@ -355,7 +363,9 @@ subscribe(EVENTS.SEARCH_UI_SYNC_REQUESTED, (payload: Record<string, unknown> = {
  * ui-feedback module owns the status DOM sync.
  */
 subscribe(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const { point, options } = payload as any
+    const point = payload.point as Point | undefined
+    const options = payload.options as Record<string, unknown> | undefined
+    if (!point) return
     syncSearchStatusForFocus(point, options)
 })
 
@@ -365,8 +375,9 @@ subscribe(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, (payload: Record<string, unknown>
  * as a no-op (state is managed reactively in the Svelte store).
  */
 subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const { laneState, options } = payload as any
-    setSemanticLaneUiState(laneState, options)
+    const laneState = payload.laneState as string | undefined
+    const options = payload.options as Record<string, unknown> | undefined
+    setSemanticLaneUiState(laneState ?? '', options)
 })
 
 /**
