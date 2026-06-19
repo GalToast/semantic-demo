@@ -60,7 +60,9 @@
   let MapViewComponent: MapViewModule['default'] | null = $state(null);
   let mapViewImportPending = false;
   import SearchBar from '@components/SearchBar.svelte';
-  import FocusPocket from '@components/FocusPocket.svelte';
+  type FocusPocketModule = typeof import('@components/FocusPocket.svelte');
+  let FocusPocketComponent: FocusPocketModule['default'] | null = $state(null);
+  let focusPocketImportPending = false;
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
@@ -125,19 +127,19 @@
     }
   });
 
+  // W5-T3b: idle-schedule ThreadInspector — only mounts when Thread view is active.
   $effect(() => {
-    if (!ThreadInspectorComponent && !threadInspectorImportPending) {
+    const threadActive = threadInspectorActive();
+    if (threadActive && !ThreadInspectorComponent && !threadInspectorImportPending) {
       threadInspectorImportPending = true;
-      import('@components/ThreadInspector.svelte')
-        .then((mod) => {
+      scheduleIdleComponentImport(() =>
+        import('@components/ThreadInspector.svelte').then((mod) => {
           ThreadInspectorComponent = mod.default;
+          return mod.default;
         })
-        .catch((err) => {
-          console.error('[App] ThreadInspector lazy-load failed:', err);
-        })
-        .finally(() => {
-          threadInspectorImportPending = false;
-        });
+      ).finally(() => {
+        threadInspectorImportPending = false;
+      });
     }
   });
 
@@ -151,6 +153,21 @@
         })
       ).finally(() => {
         demoChoreographyImportPending = false;
+      });
+    }
+  });
+
+  // W5-T3b: idle-schedule FocusPocket — only mounts when Focus view is active.
+  $effect(() => {
+    if (focusStageActive && !FocusPocketComponent && !focusPocketImportPending) {
+      focusPocketImportPending = true;
+      scheduleIdleComponentImport(() =>
+        import('@components/FocusPocket.svelte').then((mod) => {
+          FocusPocketComponent = mod.default;
+          return mod.default;
+        })
+      ).finally(() => {
+        focusPocketImportPending = false;
       });
     }
   });
@@ -624,7 +641,12 @@
       rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
       changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
     -->
-    <FocusPocket />
+    {#if FocusPocketComponent}
+      <FocusPocketComponent />
+    {:else if focusStageActive}
+      <!-- W5-T3b: skeleton placeholder prevents CLS while FocusPocket idle-hydrates -->
+      <div id="focus-pocket" class="focus-pocket-skeleton" aria-hidden="true"></div>
+    {/if}
   </div>
 
   <!-- Mini-map trail (self-gates via visible && hasTrail() && trail.length > 0) -->
@@ -649,6 +671,9 @@
   <!-- Thread inspector (overlay, self-gates via visible && threadInspectorActive()) -->
   {#if ThreadInspectorComponent}
     <ThreadInspectorComponent visible={threadInspectorActive()} />
+  {:else if threadInspectorActive()}
+    <!-- W5-T3b: skeleton placeholder prevents CLS while ThreadInspector idle-hydrates -->
+    <div class="thread-inspector-skeleton" aria-hidden="true"></div>
   {/if}
 
   <!-- Demo choreography overlay -->
@@ -760,6 +785,14 @@
   .semantic-explorer.reduced-motion {
     /* Disable all transitions when reduced motion is preferred */
     --transition-duration: 0s;
+  }
+
+  /* W5-T3b: skeleton placeholders — zero visual, sized to prevent CLS */
+  .focus-pocket-skeleton,
+  .thread-inspector-skeleton {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
   }
 
   /* Focus stage — when active, establish positioned context for absolute children */

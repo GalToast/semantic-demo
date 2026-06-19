@@ -6,7 +6,9 @@
  */
 import { mount, unmount } from 'svelte';
 import App from './App.svelte';
-import LegacyCompassSurface from '@components/LegacyCompassSurface.svelte';
+// W5-T3: LegacyCompassSurface is now lazy-loaded by App.svelte via
+// requestIdleCallback (scheduleIdleComponentImport). Removed static
+// import here to keep it off the cold-load main-thread critical path.
 import { testState } from '@lib/stores/index.svelte.ts';
 import { installWindowActions } from '@lib/orchestration/window-actions';
 import { hydrateFromLegacyState } from '@lib/data-store';
@@ -31,7 +33,6 @@ const { forceDemo, noDemo } = parseUrlParams();
 const mountTarget = document.getElementById('app') ?? document.getElementById('app-root');
 const overlayTarget = document.body;
 let app: ReturnType<typeof mount> | undefined;
-let legacyCompassSurface: ReturnType<typeof mount> | undefined;
 
 // Ensure legacy state is exposed on window before any async data loads
 // so that semantic-threads.ts (which may fall back to window.__APP_STATE__)
@@ -47,12 +48,7 @@ if (mountTarget) {
   });
 }
 
-if (overlayTarget) {
-  legacyCompassSurface = mount(LegacyCompassSurface, {
-    target: overlayTarget,
-    props: { noDemo }
-  });
-}
+
 
 // Initialize legacy route trace event subscriptions so the Svelte track
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics
@@ -187,7 +183,6 @@ window.addEventListener('beforeunload', () => {
   unsubTestState();
   cleanupWindowActions();
   if (app) unmount(app);
-  if (legacyCompassSurface) unmount(legacyCompassSurface);
 });
 
 export default app;
