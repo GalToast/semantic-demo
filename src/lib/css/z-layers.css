@@ -93,6 +93,7 @@
 
   /* Toast notifications */
   --z-toast: 1200;
+  --z-toast-plus: 1201;
   --z-toast-above: 1300;
 
   /* Journey modal */

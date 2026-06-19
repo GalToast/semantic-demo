@@ -13,6 +13,13 @@ import { CONFIG } from '@lib/engine/config';
 
 const state = _state as any;
 
+// Module-level constants to avoid per-frame allocations in getSaggedPoint
+const _worldUp = new Vector3(0, 1, 0);
+const _defaultViewVec = new Vector3(0.28, 0.2, 1);
+const _scratchVec3A = new Vector3();
+const _scratchVec3B = new Vector3();
+const _scratchVec3C = new Vector3();
+
 interface EdgePair {
     a: number;
     b: number;
@@ -311,10 +318,9 @@ export function updateMyceliumThreads() {
         const spanLength = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2 + (bz - az) ** 2);
 
         const viewVec = webglContext.camera
-            ? new Vector3().subVectors(webglContext.camera.position, new Vector3(midX, midY, midZ)).normalize()
-            : new Vector3(0.28, 0.2, 1).normalize();
-        const worldUp = new Vector3(0, 1, 0);
-        const right = new Vector3().crossVectors(worldUp, viewVec);
+            ? _scratchVec3A.subVectors(webglContext.camera.position, _scratchVec3B.set(midX, midY, midZ)).normalize()
+            : _scratchVec3A.copy(_defaultViewVec).normalize();
+        const right = _scratchVec3C.crossVectors(_worldUp, viewVec);
         if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
         right.normalize();
 
@@ -322,16 +328,16 @@ export function updateMyceliumThreads() {
         const edgeSide = ((a.index * 31 + b.index * 17) % 2 === 0) ? 1 : -1;
         const edgeRise = (((a.index + b.index) % 5) - 2) / 2 || 0.3;
         const control = (() => {
-            const start = new Vector3(ax, ay, az);
-            const end = new Vector3(bx, by, bz);
-            const mid = start.clone().lerp(end, 0.5);
+            _scratchVec3A.set(ax, ay, az);
+            _scratchVec3B.set(bx, by, bz);
+            const mid = _scratchVec3A.clone().lerp(_scratchVec3B, 0.5);
             const baseSag = Math.min(0.06, Math.max(0.012, spanLength * 0.14));
             const sideOffset = edgeSide * baseSag * 0.45;
             const riseOffset = edgeRise * baseSag * 0.28;
             return mid
                 .clone()
                 .addScaledVector(right, sideOffset)
-                .addScaledVector(new Vector3(0, 1, 0), -(baseSag * 0.7) + riseOffset);
+                .addScaledVector(_worldUp, -(baseSag * 0.7) + riseOffset);
         })();
 
         const samples: Array<{ x: number; y: number; z: number }> = [];

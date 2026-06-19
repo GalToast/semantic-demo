@@ -32,6 +32,10 @@ import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store
 // stateProxy instance that diverges from the live one.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 let _state: any = null
+// Promise gate: resolves when attachLegacyState() is called, so
+// loadSemanticThreads() can await instead of polling with a busy-wait.
+let _stateReadyResolve: (() => void) | null = null
+const _stateReady = new Promise<void>((resolve) => { _stateReadyResolve = resolve })
 
 function getState(): typeof _state {
     return _state
@@ -46,6 +50,10 @@ function getState(): typeof _state {
  */
 export function attachLegacyState(stateRef: Record<string, unknown> | unknown): void {
     _state = stateRef as typeof _state
+    if (_stateReadyResolve) {
+        _stateReadyResolve()
+        _stateReadyResolve = null
+    }
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -487,13 +495,13 @@ export interface LoadSemanticThreadsOptions {
  * fetch + JSON parse on failure.
  */
 export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = {}): Promise<boolean> {
-    // Guard: if attachLegacyState() hasn't been called yet, wait briefly
-    // then degrade gracefully instead of throwing on null state.
+    // Guard: if attachLegacyState() hasn't been called yet, await the promise
+    // gate with a 500ms timeout, then degrade gracefully instead of throwing.
     if (_state === null) {
-        const start = Date.now()
-        while (_state === null && Date.now() - start < 500) {
-            await new Promise((r) => setTimeout(r, 50))
-        }
+        await Promise.race([
+            _stateReady,
+            new Promise<void>((resolve) => setTimeout(resolve, 500))
+        ])
         if (_state === null) {
             console.warn(
                 '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully'

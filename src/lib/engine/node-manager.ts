@@ -44,10 +44,14 @@ const NODE_SPORE_ROLE_TINT_PRIMARY = new Color(0x4ecdc4); // teal - .direct
 const NODE_SPORE_ROLE_TINT_SUPPORT = new Color(0xffd93d); // amber - .support
 const NODE_SPORE_ROLE_TINT_HALO    = new Color(0xff6b6b); // rose - .civic
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint;
+const _threadTintColor = new Color(THREAD_TINT_COLOR);
 
 const SPORE_SEGMENTS_VISIBLE = 6;
 const SPORE_SEGMENTS_HIT_PROXY = 4;
 
+// _nodeSporeObject is a module-level scratch Object3D used in setNodeSporeInstanceMatrix().
+// This is safe under the single-threaded JS execution model. If any future Web Worker
+// offload touches this path, refactor to per-call Object3D instances.
 const _nodeSporeObject = new Object3D();
 const _nodeSporeColor = new Color();
 const _trackedTextures: Texture[] = [];
@@ -401,7 +405,7 @@ export function createPoints() {
         state.targetPositions.push({x: fx, y: fy, z: fz});
         state.originalPositions.push({x: fx, y: fy, z: fz});
 
-        const color = getThreadCategoryColor(cluster, CONFIG.COLORS).lerp(new Color(THREAD_TINT_COLOR), 0.005);
+        const color = getThreadCategoryColor(cluster, CONFIG.COLORS).lerp(_threadTintColor, 0.005);
         const radialDepth = Math.sqrt(fx * fx + fy * fy + fz * fz);
         const depthFactor = MathUtils.clamp(1.16 - radialDepth * 0.14, 0.82, 1.12);
         const colorOffset = i * 3;
