@@ -253,6 +253,39 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
     }
 }
 
+/**
+ * Yield to the browser between heavy init phases so Total Blocking Time
+ * stays under 200 ms. Each initThreeJS sub-step (initThreeJS itself, mycelium
+ * geometry, interaction bindings, semantic-thread attach) can spend 200-600 ms
+ * on a cold load; without yields they fuse into a single 1-2 s long task that
+ * Lighthouse flags as TBT. We use `requestIdleCallback` with a small timeout
+ * (50 ms) so the yield returns quickly on busy frames and waits for an idle
+ * slot when available. A `setTimeout(0)` fallback covers environments without
+ * requestIdleCallback (tests, SSR).
+ *
+ * Why per-phase, not one big yield: the W44 baseline showed that the
+ * `lifecycle-*.js` chunk is dominated by the *combined* time of initThreeJS +
+ * createPoints + createMycelium + initSemanticLens + initSemanticManifold.
+ * Splitting into 4 yields (init, geometry, interaction, semantic) cuts the
+ * longest-task contribution in half on a typical machine.
+ */
+function yieldToBrowser(): Promise<void> {
+    if (typeof window === 'undefined') return Promise.resolve()
+    if ('requestIdleCallback' in window) {
+        return new Promise<void>((resolve) => {
+            window.requestIdleCallback(() => resolve(), { timeout: 50 })
+        })
+    }
+    return new Promise<void>((resolve) => setTimeout(resolve, 0))
+}
+
+function engineInitStillActive(phase: string): boolean {
+    const status = _getEngineStatus()
+    if (!_destroyed && (status === 'loading' || status === 'ready')) return true
+    console.warn(`[engine/lifecycle] initEngineHeavy: aborted after ${phase}`)
+    return false
+}
+
 /** Heavy GPU + geometry init — runs in requestIdleCallback after first paint. */
 async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     // Guard: if engine was destroyed or degraded before we ran, abort
@@ -265,13 +298,19 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     try {
         const _perf = typeof performance !== 'undefined'
         if (_perf) performance.mark('engine-init-gpu-start')
-        // 3b. Initialise the Three.js scene
+        // 3b. Initialise the Three.js scene (renderer + scene + camera + lights)
+        // This is the largest single CPU+GPU step on cold load (~300-500 ms).
         const success = initThreeJS()
         if (!success) {
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
             return
         }
+
+        // W5-T1b: yield between initThreeJS and the geometry / data sync steps
+        // so the long task breaks into multiple sub-200 ms chunks.
+        await yieldToBrowser()
+        if (!engineInitStillActive('three-init-yield')) return
 
         // 4. Sync geometry from legacy state to Svelte appState
         const legacyState = appState as unknown as Record<string, unknown>
@@ -292,6 +331,12 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             liveCanvas.style.display = 'block'
         }
 
+        // W5-T1b: yield before mycelium geometry creation (the second-largest
+        // single CPU step — float-buffer allocation + LineSegments construction
+        // for ~10k nodes × 3 layers = ~30k line segments).
+        await yieldToBrowser()
+        if (!engineInitStillActive('geometry-yield')) return
+
         // 6. Create mycelium thread geometry
         if (appState.points?.length && appState.nodePositions?.length) {
             try {
@@ -300,6 +345,11 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                 console.warn('[engine/lifecycle] mycelium creation failed:', threadErr)
             }
         }
+
+        // W5-T1b: yield before interaction bindings (raycaster setup + event
+        // listener registration; ~50-100 ms but worth separating).
+        await yieldToBrowser()
+        if (!engineInitStillActive('interaction-yield')) return
 
         // 7. Wire canvas click/hover interaction bindings
         try {
@@ -325,6 +375,12 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                 ;(w.__refreshTestCompatState__ as () => void)()
             }
         }
+
+        // W5-T1b: yield before semantic-thread dynamic import (the import itself
+        // resolves the semantic-threads module + its .dat worker; we want this
+        // off the main task even though it's already a separate chunk).
+        await yieldToBrowser()
+        if (!engineInitStillActive('semantic-thread-yield')) return
 
         // 9. Attach legacy state to semantic threads (thread loading is deferred to
         // the deferred-hydration phase in ui/loading.ts to avoid blocking startup).

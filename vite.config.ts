@@ -223,15 +223,17 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
             middlewares.stack.unshift({
                 route: '',
                 handle: (req, res, next) => {
-                    // eslint-disable-next-line no-console
-                    console.log('[w44] proxy for', req.url)
                     const rawUrl = req.url
                     if (!rawUrl) return next()
                     const url = rawUrl.split('?')[0] ?? ''
+                    // Vite names hashed assets as `<name>-<8charhash><.ext>`. The previous
+                    // regex required a literal `.` before the hash and missed names like
+                    // `index-BJLe-Toy.js`. Use `-` as separator to cover Vite's convention.
                     const hashed =
-                        /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
+                        /[-][A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
                             url
                         )
+                    const dataAsset = /\.(dat|json)(\.gz|\.br)?$/.test(url)
 
                     const writeHead = res.writeHead.bind(res)
                     const setHeader = res.setHeader.bind(res)
@@ -242,7 +244,7 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                         setHeader('Vary', 'Accept-Encoding')
                         if (hashed) {
                             setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-                        } else if (/\.(dat|json)$/.test(url)) {
+                        } else if (dataAsset) {
                             setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
                         }
                         if (url.endsWith('.br')) setHeader('Content-Encoding', 'br')
@@ -266,7 +268,13 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                         if (headersObj && typeof headersObj === 'object') {
                             delete headersObj['Cache-Control']
                             delete headersObj['Vary']
-                            delete headersObj['Content-Encoding']
+                            // Only strip Content-Encoding for our precompressed assets
+                            // (.br/.gz served from disk by legacyRootAssetPlugin). For
+                            // runtime-compressed HTML/JS, preserve Vite's Content-Encoding
+                            // so the browser knows the body is compressed.
+                            if (url.endsWith('.br') || url.endsWith('.gz')) {
+                                delete headersObj['Content-Encoding']
+                            }
                         }
                         if (typeof a === 'string' || a === undefined) {
                             return writeHead(status as any, a as any, headersObj)
@@ -274,13 +282,27 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
                         return writeHead(status, headersObj)
                     } as typeof res.writeHead
 
+                    // Only intercept Vite's auto-compression headers for compressed
+                    // precompressed asset URLs we serve ourselves (.br/.gz). For
+                    // runtime-compressed HTML/JS, let Vite's compression middleware
+                    // set Content-Encoding normally — without the header, the
+                    // browser displays compressed bytes as raw text.
                     res.setHeader = function patchedSetHeader(name: string, value: any) {
-                        if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
+                        if (name === 'Cache-Control' || name === 'Vary') return
+                        if (name === 'Content-Encoding' && !url.endsWith('.br') && !url.endsWith('.gz')) {
+                            // Let Vite's compression middleware set it for runtime-encoded responses.
+                            return setHeader(name as any, value as any)
+                        }
+                        if (name === 'Content-Encoding') return
                         return setHeader(name as any, value as any)
                     } as typeof res.setHeader
 
                     res.removeHeader = function patchedRemoveHeader(name: string) {
-                        if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
+                        if (name === 'Cache-Control' || name === 'Vary') return
+                        if (name === 'Content-Encoding' && !url.endsWith('.br') && !url.endsWith('.gz')) {
+                            return removeHeader(name as any)
+                        }
+                        if (name === 'Content-Encoding') return
                         return removeHeader(name as any)
                     } as typeof res.removeHeader
 
