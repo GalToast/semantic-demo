@@ -72,7 +72,46 @@ The run completed with a full performance score after removing duplicate semanti
 
 ## Recommended next seams
 
-1. Verify worker-offload effect with a warm/cached run or a browser Performance recording focused on data-parse tasks.
-2. Apply or confirm Phase 2 source-map stripping / terser tightening.
-3. Lazy-load only components that are not needed for the initial load path, with strong preference for low-risk components already behind conditional visibility.
-4. Investigate `leadEnrichment.public.json` parsing / payload size as the next high-leverage cold-load seam.
+1. Verify worker-offload effect with a warm/cached run or a browser Performance recording focused on data-parse tasks. (Completed)
+2. Apply or confirm Phase 2 source-map stripping / terser tightening. (Completed via drop_console + sideEffects false)
+3. Lazy-load only components that are not needed for the initial load path, with strong preference for low-risk components already behind conditional visibility. (Completed via InfoPanelContent, JourneyChrome, FocusCard idle defer)
+4. Investigate `leadEnrichment.public.json` parsing / payload size as the next high-leverage cold-load seam. (Completed via Worker A: lead enrichment parsing offloaded to worker)
+
+---
+
+# W44 Phase F — Asset Precompression & Connect HTTP Header Proxy
+
+## Static Precompression Progress
+
+A zero-dependency build-time asset precompression pipeline (`w44AssetCompressionPlugin`) has been activated and integrated into `vite.config.ts`. It runs at compile time (`apply: 'build'`) emitting Brotli (quality 11) and Gzip (level 9) siblings for large allowlisted data assets:
+
+| Asset      | Raw Size              | Brotli (.br)           | Gzip (.gz)             | Savings (Brotli) |
+| ---------- | --------------------- | ---------------------- | ---------------------- | ---------------- |
+| `data.dat` | ~1.8 MB (1,801,987 B) | **332 KB** (332,054 B) | **449 KB** (449,844 B) | **~81.5%**       |
+
+## Connect Header Proxy & Cache-Control Verification
+
+To override Vite's default caching policy (`no-cache` on `vite preview`), we crafted a custom `w44PreviewCacheHeadersPlugin`. This implements a Connect-compatible middleware proxy inserted at the very front of the Connect middleware stack (index 0). It intercepts responses, monkey-patches `res.writeHead`, `res.setHeader`, and `res.removeHeader`, and guarantees that:
+
+- Hashed assets (`index-*.js`, `*-*.css`) are served with maximum immutability headers.
+- Unhashed developer data assets (`data.dat`, `leadEnrichment.public.json`) are cached safely on warm subsequent loads with soft revalidation.
+- Compressions (`.br` and `.gz`) translate directly to native network streams.
+
+Verified headers in action on `http://127.0.0.1:4175/`:
+
+```http
+# Hashed JS assets (e.g. url: /assets/index-client-BuSd8Ls5.js)
+HTTP/1.1 200 OK
+Vary: Accept-Encoding
+Cache-Control: public, max-age=31536000, immutable
+
+# Standard data assets (e.g. url: /data.dat)
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=300, stale-while-revalidate=86400
+
+# Brotli-compressed data assets (e.g. url: /data.dat.br)
+HTTP/1.1 200 OK
+Cache-Control: public, max-age=300, stale-while-revalidate=86400
+Content-Encoding: br
+Content-Length: 332054
+```
