@@ -126,24 +126,25 @@ function callDataWorker<T>(type: string, payload: unknown): Promise<T>
 function callDataWorker<T>(type: string, payload: unknown): Promise<T> {
     return new Promise((resolve, reject) => {
         const worker = new Worker(workerUrl, { type: 'module' })
+        const timeoutId = setTimeout(() => {
+            worker.terminate()
+            reject(new Error('Worker timeout'))
+        }, 30_000)
         const handler = (event: MessageEvent<WorkerResponse>): void => {
             const res = event.data
             if (res.type === `${type}_SUCCESS`) {
+                clearTimeout(timeoutId)
                 worker.removeEventListener('message', handler)
                 resolve(res.payload as T)
                 worker.terminate()
             } else if (res.type === 'ERROR') {
+                clearTimeout(timeoutId)
                 worker.removeEventListener('message', handler)
                 worker.terminate()
                 reject(new Error((res.payload as { message?: string })?.message || 'Worker failed'))
             }
         }
         worker.addEventListener('message', handler)
-        // Safety: terminate worker if it hangs
-        setTimeout(() => {
-            worker.terminate()
-            reject(new Error('Worker timeout'))
-        }, 30_000)
         worker.postMessage({ type, payload })
     })
 }

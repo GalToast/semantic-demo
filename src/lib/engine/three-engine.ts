@@ -391,6 +391,11 @@ let _webglRestoreTimer: number | null = null
 let _lastHoveredNode: number | null = null
 let _hoverEmissiveFlash = 0
 let _visibilityChangeHandler: (() => void) | null = null
+let _webglContextLostHandler: ((event: any) => void) | null = null
+let _webglContextRestoredHandler: (() => void) | null = null
+let _controlsStartHandler: (() => void) | null = null
+let _controlsEndHandler: (() => void) | null = null
+let _mapButtonClickHandler: ((event: MouseEvent) => void) | null = null
 
 const SCENE_PERF_EMA_DECAY = 0.992
 const IDLE_STATIC_FRAME_INTERVAL_MS = 125
@@ -498,7 +503,8 @@ function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean
     notice.append(kicker, heading, body, mapButton)
     container.appendChild(notice)
 
-    mapButton.addEventListener('click', () => {
+    _mapButtonClickHandler = (event: MouseEvent) => {
+        event.preventDefault()
         if (_viewController?.switchView) {
             _viewController.switchView('map')
             return
@@ -506,7 +512,8 @@ function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean
         document.getElementById('map-container')?.classList.add('active')
         container.classList.add('hidden')
         _mapState?.initMap?.()
-    })
+    }
+    mapButton.addEventListener('click', _mapButtonClickHandler)
 
     _uiFeedback?.showExperienceToast(
         'Graphics fallback active',
@@ -694,27 +701,29 @@ export function initThreeJS() {
     appState.renderer = renderer as any
     if (_state) _state.renderer = renderer
 
+    _webglContextLostHandler = (event: any) => {
+        event.preventDefault()
+        _webglContextLost = true
+        cancelAnimate()
+        _uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
+    }
     renderer.domElement.addEventListener(
         'webglcontextlost',
-        (event) => {
-            event.preventDefault()
-            _webglContextLost = true
-            cancelAnimate()
-            _uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
-        },
+        _webglContextLostHandler,
         false
     )
 
+    _webglContextRestoredHandler = () => {
+        _webglContextLost = false
+        _webglRestoreTimer = window.setTimeout(() => {
+            _webglRestore?.restoreWebGLContext().catch((err) => {
+                console.error('Failed to restore WebGL context:', err)
+            })
+        }, 1000)
+    }
     renderer.domElement.addEventListener(
         'webglcontextrestored',
-        () => {
-            _webglContextLost = false
-            _webglRestoreTimer = window.setTimeout(() => {
-                _webglRestore?.restoreWebGLContext().catch((err) => {
-                    console.error('Failed to restore WebGL context:', err)
-                })
-            }, 1000)
-        },
+        _webglContextRestoredHandler,
         false
     )
 
@@ -764,13 +773,15 @@ export function initThreeJS() {
         !(appState.autoRotateSuspended || _state?.autoRotateSuspended)
     )
     controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED
-    controls.addEventListener('start', () => {
+    _controlsStartHandler = () => {
         _cameraControls?.releaseFocusCameraAssist('user-control')
         _cameraControls?.noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
-    })
-    controls.addEventListener('end', () => {
+    }
+    controls.addEventListener('start', _controlsStartHandler)
+    _controlsEndHandler = () => {
         _cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
-    })
+    }
+    controls.addEventListener('end', _controlsEndHandler)
 
     const hemiLight = new HemisphereLight(0xe8f4ff, 0x080820, 0)
     hemiLight.position.set(0, 20, 0)
@@ -945,6 +956,33 @@ export function cancelAnimate() {
     if (_visibilityChangeHandler) {
         document.removeEventListener('visibilitychange', _visibilityChangeHandler)
         _visibilityChangeHandler = null
+    }
+    // Remove WebGL canvas event listeners to prevent leaks on re-init
+    const _renderer = webglContext.renderer || _state?.renderer
+    if (_webglContextLostHandler && _renderer?.domElement) {
+        _renderer.domElement.removeEventListener('webglcontextlost', _webglContextLostHandler)
+        _webglContextLostHandler = null
+    }
+    if (_webglContextRestoredHandler && _renderer?.domElement) {
+        _renderer.domElement.removeEventListener('webglcontextrestored', _webglContextRestoredHandler)
+        _webglContextRestoredHandler = null
+    }
+    // Remove OrbitControls custom event listeners
+    if (_controlsStartHandler && webglContext.controls) {
+        webglContext.controls.removeEventListener('start', _controlsStartHandler)
+        _controlsStartHandler = null
+    }
+    if (_controlsEndHandler && webglContext.controls) {
+        webglContext.controls.removeEventListener('end', _controlsEndHandler)
+        _controlsEndHandler = null
+    }
+    // Remove mapButton click listener (defensive cleanup)
+    if (_mapButtonClickHandler) {
+        const mapBtn = document.querySelector('.webgl-fallback-map')
+        if (mapBtn) {
+            mapBtn.removeEventListener('click', _mapButtonClickHandler as EventListener)
+        }
+        _mapButtonClickHandler = null
     }
     const contextWasLost = _webglContextLost
     _webglContextLost = false
