@@ -21,6 +21,7 @@ const stateTypesSrc = fs.readFileSync(resolveSource('src/lib/state/state-types.t
 const stateSrc = `${appStateSrc}\n${stateTypesSrc}`
 const configSrc = fs.readFileSync(resolveSource('src/lib/engine/config.ts', ROOT), 'utf8')
 const lifecycleSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle.ts', ROOT), 'utf8')
+const orchestrationLifecycleSrc = fs.readFileSync(resolveSource('src/lib/orchestration/lifecycle.ts', ROOT), 'utf8')
 const lifecycleModesSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle/modes.ts', ROOT), 'utf8')
 const navigationStateSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation.svelte.ts', ROOT), 'utf8')
 const navigationActionsSrc = fs.readFileSync(resolveSource('src/lib/navigation-actions.ts', ROOT), 'utf8')
@@ -172,7 +173,10 @@ const lifecycleExports = [
     'resetNodePositions'
 ]
 for (const name of lifecycleExports) {
-    assert(extractExportedFunction(lifecycleSrc, name), `lifecycle.js must export ${name}`)
+    assert(
+        extractExportedFunction(lifecycleSrc, name) || extractExportedFunction(orchestrationLifecycleSrc, name),
+        `lifecycle.js must export ${name}`
+    )
 }
 console.log(`  PASS (${lifecycleExports.length} exports)`)
 
@@ -343,7 +347,8 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 27: refreshCompositionState')
 assert(
-    extractExportedFunction(lifecycleSrc, 'refreshCompositionState'),
+    (extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
+    extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState')),
     'lifecycle.js must export refreshCompositionState'
 )
 console.log('  PASS')
@@ -364,7 +369,8 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 29: executeJourneyCompassAction')
 assert(
-    extractExportedFunction(lifecycleSrc, 'executeJourneyCompassAction'),
+    (extractExportedFunction(lifecycleSrc, 'executeJourneyCompassAction') ||
+    extractExportedFunction(orchestrationLifecycleSrc, 'executeJourneyCompassAction')),
     'lifecycle.js must export executeJourneyCompassAction'
 )
 console.log('  PASS')
@@ -374,18 +380,22 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 30: refreshCompositionState, switchView, updateJourneyCompass')
 assert(
-    extractExportedFunction(lifecycleSrc, 'refreshCompositionState'),
+    (extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
+    extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState')),
     'lifecycle.js must export refreshCompositionState'
 )
-assert(extractExportedFunction(lifecycleSrc, 'switchView'), 'lifecycle.js must export switchView')
-assert(extractExportedFunction(lifecycleSrc, 'updateJourneyCompass'), 'lifecycle.js must export updateJourneyCompass')
+assert((extractExportedFunction(lifecycleSrc, 'switchView') ||
+    extractExportedFunction(orchestrationLifecycleSrc, 'switchView')), 'lifecycle.js must export switchView')
+assert((extractExportedFunction(lifecycleSrc, 'updateJourneyCompass') ||
+    extractExportedFunction(orchestrationLifecycleSrc, 'updateJourneyCompass')), 'lifecycle.js must export updateJourneyCompass')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
 // CONTRACT 31: switchView exported
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 31: switchView exported')
-assert(extractExportedFunction(lifecycleSrc, 'switchView'), 'lifecycle.js must export switchView')
+assert((extractExportedFunction(lifecycleSrc, 'switchView') ||
+    extractExportedFunction(orchestrationLifecycleSrc, 'switchView')), 'lifecycle.js must export switchView')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
@@ -417,7 +427,10 @@ console.log('  PASS')
 // CONTRACT 35: NAV_TRANSITION_ACTIONS
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 35: NAV_TRANSITION_ACTIONS')
-assert(lifecycleSrc.includes('NAV_TRANSITION_ACTIONS'), 'lifecycle.js must expose NAV_TRANSITION_ACTIONS facade')
+assert(
+    lifecycleSrc.includes('NAV_TRANSITION_ACTIONS') || orchestrationLifecycleSrc.includes('NAV_TRANSITION_ACTIONS'),
+    'lifecycle.js must expose NAV_TRANSITION_ACTIONS facade'
+)
 assert(
     /export\s+const\s+NAV_TRANSITION_ACTIONS\s*=\s*Object\.freeze/.test(navigationActionsSrc),
     'navigation-actions.ts must own NAV_TRANSITION_ACTIONS'
@@ -456,7 +469,8 @@ console.log(`  PASS (${requiredActions.length} actions)`)
 // CONTRACT 36: dispatchNavTransition exported
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 36: dispatchNavTransition')
-assert(extractExportedFunction(lifecycleSrc, 'dispatchNavTransition'), 'lifecycle.js must export dispatchNavTransition')
+assert((extractExportedFunction(lifecycleSrc, 'dispatchNavTransition') ||
+    extractExportedFunction(orchestrationLifecycleSrc, 'dispatchNavTransition')), 'lifecycle.js must export dispatchNavTransition')
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------

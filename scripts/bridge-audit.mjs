@@ -27,9 +27,10 @@ const rows = bridgeFiles.map((br) => {
     //  - '@/lib/engine/state-bridge'                             (alt alias seen in some places)
     //  - '../../../lib/engine/state-bridge'                      (relative import)
     const bridgeRel = relPath(br).replace(/\.ts$/, '');
+    const aliasRel = bridgeRel.replace(/^lib\//, ''); // engine/lifecycle-bridge
     const targets = new Set([
-        '@lib/' + bridgeRel,
-        '@/lib/' + bridgeRel
+        '@lib/' + aliasRel,
+        '@/lib/' + aliasRel
     ]);
     const refCount = allSourceFiles.reduce((acc, f) => {
         if (f === br) return acc;
@@ -42,7 +43,7 @@ const rows = bridgeFiles.map((br) => {
                 continue;
             }
             if (p.startsWith('.')) {
-                // resolve relative path against f, compare bridgeRel
+                // resolve relative path against f, compare alias path matching what imports expect
                 const resolved = path.relative(SRC, path.resolve(path.dirname(f), p)).replace(/\\/g, '/');
                 if (resolved === bridgeRel) n++;
             }
