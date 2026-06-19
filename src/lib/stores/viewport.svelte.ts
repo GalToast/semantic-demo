@@ -92,7 +92,7 @@ function _createViewportStore(): ViewportStoreApi {
             appState.viewportHeight <= ULTRA_COMPACT_MAX_HEIGHT
     })) as unknown as ViewportStoreApi
 
-    fn.subscribe = _viewportWritable.subscribe as any
+    fn.subscribe = _viewportWritable.subscribe
     fn.update = (updater: (s: ViewportState) => ViewportState) => withViewportNotify(updater)
     fn.set = (value: ViewportState) => {
         _viewportWritable.set(value)
