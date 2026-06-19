@@ -66,7 +66,7 @@ export interface EventPayloads {
   };
   [EVENTS.CAMERA_NODE_FOCUSED]: { point?: unknown; index?: number; options?: Record<string, unknown> };
   [EVENTS.TRANSITION_PHASE_CHANGED]: { phase: string; details?: Record<string, unknown>; options?: Record<string, unknown> };
-  [EVENTS.EXPLORATION_FOCUS_SYNC]: { index: number; point?: unknown };
+  [EVENTS.EXPLORATION_FOCUS_SYNC]: { index: number; point?: unknown; skipHistory?: boolean };
   [EVENTS.DIVE_MODE_REQUESTED]: { enabled: boolean };
   [EVENTS.EXPLORATION_RESET_REQUESTED]: {
     preserveSearch?: boolean;

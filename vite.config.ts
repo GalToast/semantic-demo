@@ -14,7 +14,16 @@ const __dirname = dirname(__filename)
 const PROJECT_ROOT = __dirname
 const SRC_DIR = resolve(PROJECT_ROOT, 'src')
 const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte')
-const PRECOMPRESS_RUNTIME_ASSETS = process.env.SEMEXP_PRECOMPRESS_RUNTIME_ASSETS === '1'
+
+// W44 Phase F: list of large runtime-data assets that benefit from precompression.
+// Keep this allowlist explicit so we never accidentally compress chunk-manifest JSON.
+const COMPRESSION_ALLOWLIST = new Set([
+    'data.dat',
+    'semantic_threads_ui.dat',
+    'semantic_threads.dat',
+    'semantic_space_layout_manifest.json',
+    'leadEnrichment.public.json'
+])
 
 const ROOT_ASSETS = new Map<string, string>([
     ['/semantic-demo.css', 'semantic-demo.css'],
@@ -174,44 +183,95 @@ function contentType(filePath: string): string {
     }
 }
 
-// W44 Phase F — opt-in brotli pre-compression for .dat / .json assets + preview cache headers.
-// The runtime data files are large enough that precompression should be a deploy
-// step, not part of every local verification build.
-function w44CompressionCachePlugin(outputDir: string): Plugin {
+// W44 Phase F — brotli/gzip precompression of large runtime-data assets
+// (no env gate; build-only via `apply: 'build'`) + preview-server cache headers
+// that win over Vite's internal `Cache-Control: no-cache`. We monkey-patch
+// `res.writeHead` / `setHeader` / `removeHeader` so the policy is enforced at the
+// moment headers are actually flushed, regardless of what the static middleware
+// wrote before us.
+function w44CompressionCachePlugin(): Plugin {
     return {
         name: 'w44-compress-and-cache',
         apply: 'build',
         async closeBundle() {
-            const entries = await readdir(outputDir, { recursive: true, withFileTypes: true })
+            const entries = await readdir(SVELTE_OUT_DIR, { recursive: true, withFileTypes: true })
+            const tasks: Promise<unknown>[] = []
             for (const entry of entries) {
                 if (!entry.isFile()) continue
-                if (!/\.(dat|json)$/.test(entry.name)) continue
+                if (!COMPRESSION_ALLOWLIST.has(entry.name)) continue
                 const filePath = join(entry.parentPath, entry.name)
-                const buf = await readFile(filePath)
-                const br = brotliCompressSync(buf, {
-                    params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 }
-                })
-                const gz = gzipSync(buf, { level: 9 })
-                await Promise.all([
-                    writeFile(`${filePath}.br`, br),
-                    writeFile(`${filePath}.gz`, gz)
-                ])
+                tasks.push(
+                    readFile(filePath).then(async (buf) => {
+                        const br = brotliCompressSync(buf, {
+                            params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 }
+                        })
+                        const gz = gzipSync(buf, { level: 9 })
+                        await Promise.all([
+                            writeFile(`${filePath}.br`, br),
+                            writeFile(`${filePath}.gz`, gz)
+                        ])
+                    })
+                )
             }
+            await Promise.all(tasks)
         },
         configurePreviewServer(server) {
-            server.middlewares.use((req, res, next) => {
+            // Vite registers its own static middleware (which sets `Cache-Control: no-cache` and
+            // `Vary: Origin`) **before** invoking plugin hooks. To win over those defaults we must
+            // install our header patch **first** in the connect stack, not appended behind them.
+            // Using `unshift` adds our middleware at index 0 so the patched
+            // `setHeader`/`writeHead`/`removeHeader` exist on `res` before Vite touches them.
+            // `connect` exposes `unshift` at runtime but the Vite typings don't surface it.
+            const middlewareStack = server.middlewares as unknown as {
+                unshift: (middleware: (req: any, res: any, next: () => void) => void) => void
+                push: (middleware: (req: any, res: any, next: () => void) => void) => void
+                use: (middleware: (req: any, res: any, next: () => void) => void) => void
+            }
+            middlewareStack.unshift((req, res, next) => {
                 const rawUrl = req.url
                 if (!rawUrl) return next()
-                const url = (rawUrl.split('?')[0] ?? '')
-                const hashed = /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json)(\.gz|\.br)?$/.test(url)
-                res.setHeader('Vary', 'Accept-Encoding')
-                if (hashed) {
-                    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
-                } else if (/\.(dat|json)$/.test(url)) {
-                    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
+                const url = rawUrl.split('?')[0] ?? ''
+                const hashed = /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
+                    url
+                )
+
+                const writeHead = res.writeHead.bind(res)
+                const setHeader = res.setHeader.bind(res)
+                const removeHeader = res.removeHeader.bind(res)
+                let patched = false
+
+                const applyPolicy = () => {
+                    setHeader('Vary', 'Accept-Encoding')
+                    if (hashed) {
+                        setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+                    } else if (/\.(dat|json)$/.test(url)) {
+                        setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
+                    }
+                    if (url.endsWith('.br')) setHeader('Content-Encoding', 'br')
+                    else if (url.endsWith('.gz')) setHeader('Content-Encoding', 'gzip')
                 }
-                if (url.endsWith('.br')) res.setHeader('Content-Encoding', 'br')
-                else if (url.endsWith('.gz')) res.setHeader('Content-Encoding', 'gzip')
+
+                res.writeHead = function patchedWriteHead(status: number, a?: any, b?: any) {
+                    if (!patched) {
+                        patched = true
+                        applyPolicy()
+                    }
+                    if (typeof a === 'string' || a === undefined) {
+                        return writeHead(status as any, a as any, b)
+                    }
+                    return writeHead(status, a)
+                } as typeof res.writeHead
+
+                res.setHeader = function patchedSetHeader(name: string, value: any) {
+                    if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
+                    return setHeader(name as any, value as any)
+                } as typeof res.setHeader
+
+                res.removeHeader = function patchedRemoveHeader(name: string) {
+                    if (name === 'Cache-Control' || name === 'Vary' || name === 'Content-Encoding') return
+                    return removeHeader(name as any)
+                } as typeof res.removeHeader
+
                 next()
             })
         }
@@ -225,7 +285,7 @@ export default defineConfig({
     plugins: [
         legacyRootAssetPlugin(),
         copyRuntimeAssetsPlugin(),
-        ...(PRECOMPRESS_RUNTIME_ASSETS ? [w44CompressionCachePlugin(SVELTE_OUT_DIR)] : []),
+        w44CompressionCachePlugin(),
         svelte(),
         // Bundle analyzer — generates dist/svelte/stats.html with a treemap of
         // every module in the production bundle. Open in any browser to read.
