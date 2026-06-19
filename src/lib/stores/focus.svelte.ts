@@ -24,6 +24,8 @@ import type {
 import type { BusinessRecord } from '@lib/types/business'
 import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
+import { getBusinessRecords } from '@lib/data-store'
+
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
@@ -83,9 +85,43 @@ const INITIAL_FOCUS: FocusStoreState = {
 
 /** Read a fresh snapshot from the state kernel (appState). */
 function _readFocusSnapshot(): FocusStoreState {
+    const indices = appState.navState.focusPocketIndices || []
+    const roles = appState.navState.focusPocketRoleByIndex || new Map<number, string>()
+    const targetPositions = appState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined
+    const nodePositions = appState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined
+    const originalPositions = appState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined
+    const records = getBusinessRecords()
+    const anchorIndex = Number.isFinite(appState.navState.focusedIndex as number) ? (appState.navState.focusedIndex as number) : null
+
+    const nodes: FocusPocketNode[] = []
+    for (const idx of indices) {
+        if (!Number.isFinite(idx) || idx < 0) continue
+        if (anchorIndex != null && idx === anchorIndex) continue
+        const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
+        if (!position) continue
+        const legacyRole = (roles.get(idx) || 'support').toLowerCase()
+        const role: FocusPocketNode['role'] =
+            legacyRole === 'primary' || legacyRole === 'direct'
+                ? 'direct'
+                : legacyRole === 'civic'
+                  ? 'civic'
+                  : 'support'
+        const record = records[idx]
+        const label = record?.name ?? `Node ${idx}`
+        nodes.push({
+            index: idx,
+            position: [position.x ?? 0, position.y ?? 0, position.z ?? 0],
+            role,
+            score: 0.62,
+            label,
+            rotationSeed: (idx * 7919) % 360,
+            scaleSeed: ((idx * 104729) % 1000) / 1000
+        })
+    }
+
     return {
         ...INITIAL_FOCUS,
-        pocketNodes: (appState.navState.focusPocketIndices as unknown as readonly FocusPocketNode[]) || [],
+        pocketNodes: nodes,
         pocketMeta: appState.navState.focusPocketMeta,
         pocketRoleByIndex: new Map(appState.navState.focusPocketRoleByIndex),
         selectedBusiness: appState.selectedPoint as BusinessRecord | null,
