@@ -37,6 +37,7 @@ import {
 } from '@lib/focus/geometry'
 import { getNeighborhoodPersonality, getSemanticCandidateSlice } from '@lib/focus/pocket-personality'
 import { prefersReducedMotion } from '@lib/utils/environment'
+import { syncPocketNodesToStore } from '@lib/focus/pocket'
 
 export {
     clampNumber,
@@ -65,7 +66,12 @@ export function getFocusPocketIndices(): number[] {
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
-    writeFocusPocketMirror({ pocketNodes: indices as any[] })
+    appState.withMutation(() => {
+        appState.navState.focusPocketIndices = indices
+    })
+    // Derive proper FocusPocketNode[] so a11y consumers get node.label/node.role,
+    // not raw numbers hidden by an as-any[] cast.
+    syncPocketNodesToStore()
 }
 
 export function getFocusPocketRoleByIndex(): Map<number, string> {
@@ -117,7 +123,10 @@ export function clearFocusPocketMotionByIndex(): void {
 }
 
 export function clearFocusPocketIndices(): void {
-    writeFocusPocketMirror({ pocketNodes: [] as any[] })
+    appState.withMutation(() => {
+        appState.navState.focusPocketIndices = []
+    })
+    syncPocketNodesToStore()
 }
 
 export function getFocusPocketMeta(): unknown {

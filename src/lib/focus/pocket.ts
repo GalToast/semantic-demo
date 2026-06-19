@@ -65,7 +65,13 @@ export function getFocusPocketIndices(): number[] {
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
-    writeFocusPocketMirror({ pocketNodes: indices as any[] })
+    appState.withMutation(() => {
+        appState.navState.focusPocketIndices = indices
+    })
+    // Derive proper FocusPocketNode[] from the new indices + role/position data
+    // so consumers (e.g. FocusPocketA11y.svelte reading node.label/node.role)
+    // receive valid node objects instead of raw numbers.
+    syncPocketNodesToStore()
 }
 
 export function getFocusPocketRoleByIndex(): Map<number, string> {
@@ -117,7 +123,11 @@ export function clearFocusPocketMotionByIndex(): void {
 }
 
 export function clearFocusPocketIndices(): void {
-    writeFocusPocketMirror({ pocketNodes: [] as any[] })
+    appState.withMutation(() => {
+        appState.navState.focusPocketIndices = []
+    })
+    // syncPocketNodesToStore sees empty indices and pushes [] to the store.
+    syncPocketNodesToStore()
 }
 
 export function getFocusPocketMeta(): Record<string, unknown> | null {
@@ -410,7 +420,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
  * previous public `mirrorFocusPocketToSvelteStore` which the FocusPocket
  * HTML overlay invoked after the build step.
  */
-function syncPocketNodesToStore(): void {
+export function syncPocketNodesToStore(): void {
     const lState = appState
     const navState = lState.navState as unknown as Record<string, unknown> | undefined
     if (!navState) return
@@ -421,14 +431,14 @@ function syncPocketNodesToStore(): void {
     const originalPositions = lState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined
     const records = getBusinessRecords()
     const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null
-    if (indices.length === 0 || anchorIndex == null) {
+    if (indices.length === 0) {
         setPocketNodes([])
         return
     }
     const nodes: FocusPocketNode[] = []
     for (const idx of indices) {
         if (!Number.isFinite(idx) || idx < 0) continue
-        if (idx === anchorIndex) continue // anchor is rendered separately
+        if (anchorIndex != null && idx === anchorIndex) continue // anchor is rendered separately
         const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
         if (!position) continue
         const legacyRole = (roles.get(idx) || 'support').toLowerCase()
