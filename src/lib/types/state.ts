@@ -14,6 +14,7 @@ export type NavMode = 'overview' | 'search' | 'trail' | 'focus' | 'inside' | 'ma
 export type PanelSurface =
     | 'idle'
     | 'search'
+    | 'trail'
     | 'focus'
     | 'focus-search'
     | 'map'

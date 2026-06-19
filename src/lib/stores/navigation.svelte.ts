@@ -530,7 +530,7 @@ export function dispatchNavTransition(
                 ...s,
                 focusedIndex: payload.index ?? s.focusedIndex,
                 mode: 'trail' as NavMode,
-                surface: 'trail' as PanelSurface
+                surface: 'trail'
             }))
             break
         case NAV_TRANSITION_ACTIONS.WALK_THREAD:

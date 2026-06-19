@@ -142,8 +142,7 @@
     } else if (modeId === 'inside') {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' });
     } else if (modeId === 'trail') {
-      // 'trail' is a valid NavMode but not in PanelSurface; cast to match the type
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any });
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' });
     } else if (modeId === 'map') {
       // Map is a view-level switch (galaxy ↔ map), not just a surface change.
       // SET_VIEW updates currentView; SET_SURFACE preserves the map-family
