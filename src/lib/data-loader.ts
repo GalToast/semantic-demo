@@ -526,10 +526,18 @@ async function fetchEnrichment(url: string): Promise<Record<string, LeadEnrichme
 }
 
 export async function loadLeadEnrichmentData(): Promise<Record<string, LeadEnrichment> | null> {
-    const enrichmentUrl = buildAssetUrl(
-        `scripts/leadEnrichment.public.json?${cacheBustParam()}`,
-    )
-    return fetchEnrichment(enrichmentUrl)
+    const enrichmentUrl = buildAssetUrl(`scripts/leadEnrichment.public.json?${cacheBustParam()}`)
+
+    try {
+        const result = await callDataWorker<{ enrichment: Record<string, LeadEnrichment> | null }>(
+            'LOAD_LEAD_ENRICHMENT',
+            { url: enrichmentUrl }
+        )
+        return result.enrichment
+    } catch (err: unknown) {
+        debugWarn('[data-loader] Worker enrichment load failed, falling back to main thread:', err)
+        return fetchEnrichment(enrichmentUrl)
+    }
 }
 
 function checkDataBounds(buffer: Float32Array): void {
