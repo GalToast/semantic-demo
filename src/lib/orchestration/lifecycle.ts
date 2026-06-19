@@ -17,6 +17,7 @@ import {
     navStore,
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS,
+    updateNavState,
     setAutoRotate,
     suspendAutoRotate,
     resumeAutoRotate
@@ -211,8 +212,40 @@ export function probeSemanticLane(_options?: Record<string, unknown>): Promise<u
  * Set the semantic lane UI state.
  * Legacy stub — actual implementation lives in the engine bridge.
  */
-export function setSemanticLaneUiState(_laneState: string, _options?: Record<string, unknown>): void {
-    // No-op in store port
+export function setSemanticLaneUiState(laneState: string, options: Record<string, unknown> = {}): void {
+    const doc = typeof document !== 'undefined' ? document : null
+    const pill = doc?.getElementById?.('semantic-lane-pill') as HTMLElement | null
+    const assistEl = doc?.getElementById?.('semantic-lane-assist') as HTMLElement | null
+    const label = typeof options.label === 'string' ? options.label : laneState
+    const title = typeof options.title === 'string' ? options.title : label
+
+    if (pill) {
+        pill.dataset.state = laneState
+        pill.textContent = label
+        pill.setAttribute('aria-label', title)
+    }
+
+    if (!assistEl) return
+
+    const nav = get(navStore)
+    const search = get(searchStore)
+    const bodyContext = doc?.body?.dataset?.graphContext
+    const focusOwnsRail =
+        bodyContext === 'focus-search' ||
+        bodyContext === 'focus' ||
+        nav.focusedIndex !== null ||
+        Boolean(search.summary)
+
+    if (laneState === 'healthy' || focusOwnsRail) {
+        assistEl.hidden = true
+        assistEl.dataset.state = 'idle'
+        assistEl.style.display = 'none'
+        return
+    }
+
+    assistEl.hidden = false
+    assistEl.dataset.state = laneState
+    assistEl.style.display = ''
 }
 
 // ── UI Feedback Stubs ─────────────────────────────────────────────────────────

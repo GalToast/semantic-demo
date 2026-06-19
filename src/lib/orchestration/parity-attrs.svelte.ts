@@ -292,6 +292,7 @@ export function computeParityAttributes(): ParityAttributeMap {
         if (vp.isCompact && camera.routeExplorationPhase === 'exploring') return 'corridor'
         if (nav.currentView === 'map') return 'map'
         if (nav.mode === 'inside') return 'inside'
+        if (hasFocusContext && hasSearchContext) return 'focus-search'
         if (nav.mode === 'focus' || nav.mode === 'trail') return 'focus'
         if (nav.mode === 'search' || search.summary) return 'corridor'
         if (nav.mode === 'overview') return 'idle'
@@ -309,6 +310,7 @@ export function computeParityAttributes(): ParityAttributeMap {
             return 'map-idle'
         }
         if (focus.semanticDiveMode) return 'semantic-dive'
+        if (hasFocusContext && hasSearchContext) return 'focus-search'
         if (nav.surface === 'focus-search') return 'focus-search'
         if (nav.surface === 'map-focus-search') return 'map-focus-search'
         if (nav.surface === 'map-trail') return 'map-trail'
@@ -333,7 +335,12 @@ export function computeParityAttributes(): ParityAttributeMap {
         nav.currentView === 'map' &&
         (nav.focusedIndex != null || Boolean(search.summary) || nav.surface === 'map-focus-search' || nav.surface === 'map-trail')
     const trailState =
-        journey.depth > 0 || hasMapTrailIntent || presentation.navigationOwner === 'map-trail-strip'
+        journey.depth > 0 ||
+        hasMapTrailIntent ||
+        graphContext === 'focus-search' ||
+        graphContext === 'focus' ||
+        nav.mode === 'trail' ||
+        presentation.navigationOwner === 'map-trail-strip'
             ? 'active'
             : 'inactive'
     const semanticDive =
