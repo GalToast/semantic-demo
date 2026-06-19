@@ -118,8 +118,8 @@ export const hasActiveFilters: Readable<boolean> = derived(
     // Note: we use positive form (`=== 'all'` etc.) + negation instead of
     // `!== 'all'` to avoid the Svelte 5 strict-mode bug where `!==`
     // is incorrectly compiled to `===` (see docs/svelte-5-strict-mode-cookbook.md).
-    $filterState.status !== 'all' ||
-    $filterState.city !== '' ||
+    !($filterState.status === 'all') ||
+    !($filterState.city === '') ||
     $filterState.website ||
     $filterState.email ||
     $filterState.geocoded

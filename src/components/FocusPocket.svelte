@@ -43,12 +43,12 @@
   let lastFocusIndex: number | null = null;
 
   $effect(() => {
-    if (getDataLoadState().status !== 'ready') return;
+    if (!(getDataLoadState().status === 'ready')) return;
     const idx = focusedIndex_;
-    if (hasFocus_ && idx !== null && idx !== lastFocusIndex) {
+    if (hasFocus_ && idx != null && !(idx === lastFocusIndex)) {
       lastFocusIndex = idx;
       applyLocalNeighborhoodFocus(idx);
-    } else if (!hasFocus_ && lastFocusIndex !== null) { // audit-ok: plain Ln() callback, not transformed
+    } else if (!hasFocus_ && lastFocusIndex != null) {
       lastFocusIndex = null;
       clearPocketNodes();
     }

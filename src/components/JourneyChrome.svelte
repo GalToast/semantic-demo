@@ -170,7 +170,7 @@
     const name = currentPoint?.name || 'this business';
     const walkLen = currentWalkHistory.length;
     const focusIdx = currentFocusedIndex;
-    const lastReason = (focusIdx !== null && focusIdx >= 0 && focusIdx < getBusinessRecords().length)
+    const lastReason = (focusIdx != null && focusIdx >= 0 && focusIdx < getBusinessRecords().length)
       ? (getBusinessRecords()[focusIdx] as BusinessRecord)?.name ?? ''
       : '';
     if (currentTrailDepth >= 1 && walkLen >= 1) {

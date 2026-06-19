@@ -73,8 +73,8 @@
 
   let currentFocusedIdx = $derived.by(() => {
     void bodyFocusedNode;
-    const fromBody = bodyFocusedNode !== '' ? Number(bodyFocusedNode) : null;
-    if (fromBody !== null && Number.isFinite(fromBody)) return fromBody;
+    const fromBody = !(bodyFocusedNode === '') ? Number(bodyFocusedNode) : null;
+    if (fromBody != null && Number.isFinite(fromBody)) return fromBody;
     const fromNav = nav.focusedIndex;
     if (typeof fromNav === 'number' && Number.isFinite(fromNav)) return fromNav;
     return null;
