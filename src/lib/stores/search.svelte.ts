@@ -168,7 +168,7 @@ function _createSearchStore(): SearchStoreApi {
         summary: appState.currentSearchSummary ? { ...$state.snapshot(appState.currentSearchSummary) } : null,
         status: appState.searchStatus,
         hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
-        resultsRendered: (appState.currentSearchSummary?.resultIndices as any)?.length > 0,
+        resultsRendered: (appState.currentSearchSummary?.resultIndices?.length ?? 0) > 0,
         requestSequence: appState.searchRequestSequence,
         anchorIndex: appState.searchAnchorIndex,
         previewIndex: appState.searchPreviewIndex,
@@ -177,16 +177,16 @@ function _createSearchStore(): SearchStoreApi {
         glowActive: appState.searchGlowActive,
         currentEmptyQuery: appState.currentEmptyQuery,
         focusTransitionToken: appState.searchFocusTransitionToken,
-        trailCue: appState.semanticTrailCue as any,
+        trailCue: appState.semanticTrailCue,
         isCompactViewport: appState.isCompactViewport,
         semanticGuideRequestSequence: appState.semanticGuideRequestSequence,
         currentSemanticGuide: appState.currentSemanticGuide as string | null,
         summaryCardTypeToken: appState.summaryCardTypeToken
     })) as unknown as SearchStoreApi
 
-    fn.subscribe = _searchWritable.subscribe as any
-    fn.update = _searchWritable.update as any
-    fn.set = _searchWritable.set as any
+    fn.subscribe = _searchWritable.subscribe
+    fn.update = _searchWritable.update
+    fn.set = _searchWritable.set
 
     return fn
 }
@@ -247,7 +247,7 @@ function withSearchNotify<T>(fn: () => T): T {
         summary: appState.currentSearchSummary ? { ...appState.currentSearchSummary } : null,
         status: appState.searchStatus,
         hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
-        resultsRendered: (appState.currentSearchSummary?.resultIndices as any)?.length > 0,
+        resultsRendered: (appState.currentSearchSummary?.resultIndices?.length ?? 0) > 0,
         requestSequence: appState.searchRequestSequence,
         anchorIndex: appState.searchAnchorIndex,
         previewIndex: appState.searchPreviewIndex,
@@ -259,7 +259,7 @@ function withSearchNotify<T>(fn: () => T): T {
         glowActive: appState.searchGlowActive,
         currentEmptyQuery: appState.currentEmptyQuery,
         focusTransitionToken: appState.searchFocusTransitionToken,
-        trailCue: appState.semanticTrailCue as any,
+        trailCue: appState.semanticTrailCue,
         isCompactViewport: appState.isCompactViewport,
         semanticGuideRequestSequence: appState.semanticGuideRequestSequence,
         currentSemanticGuide: appState.currentSemanticGuide as string | null,
@@ -297,7 +297,7 @@ export function setSearchStatus(status: SearchStatus): void {
 
 export function setSearchSummary(summary: SearchSummary | null): void {
     withSearchNotify(() => {
-        appState.currentSearchSummary = summary as any
+        appState.currentSearchSummary = summary
         if (summary) appState.searchStatus = 'results'
     })
 }
