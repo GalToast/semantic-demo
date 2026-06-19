@@ -28,7 +28,8 @@ function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
         if (appState && appState.navState) {
             const nav = appState.navState
             const value = (nav as unknown as Record<string, unknown>)[legacyKey] as T | undefined
-            if (value !== undefined) { // audit-ok: plain function, not transformed
+            if (value !== undefined) {
+                // audit-ok: plain function, not transformed
                 return value
             }
         }
@@ -166,7 +167,8 @@ export const isExploration = () =>
     get(_navWritable).mode === 'trail' || get(_navWritable).mode === 'focus' || get(_navWritable).mode === 'inside'
 export const hasFocus = () => {
     const local = get(_navWritable)
-    if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) { // audit-ok: plain function with get() snapshot, not transformed — bundle preserves native !==
+    if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
+        // audit-ok: plain function with get() snapshot, not transformed — bundle preserves native !==
         return true
     }
     // Mode fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH paths still mutate
@@ -371,7 +373,7 @@ export function setActiveStoryPrompt(_id: string | null): void {
 
 /** Set the mycelium mode (dormant|active|overdrive). */
 export function setMyceliumMode(mode: string, _options?: any): void {
-    _navWritable.update((s) => ({ ...s, myceliumMode: mode as any }))
+    _navWritable.update((s) => ({ ...s, myceliumMode: mode }))
 }
 
 /** Set whether URL state is currently being applied. */
