@@ -435,7 +435,6 @@ body[data-panel-surface='semantic-dive'] .selected-card {
     .snow-flake,
     .mode-grid.computing,
     .loading-thread,
-    .biofield-drift,
     .search-spinner {
         animation-name: none;
     }
@@ -454,8 +453,7 @@ body[data-panel-surface='semantic-dive'] .selected-card {
     }
 }
 
-/* is-loading state for demo-starter-chip and surprise-btn */
-.demo-starter-chip.is-loading,
+/* is-loading state for surprise-btn */
 .surprise-btn.is-loading {
     opacity: 0.6;
     pointer-events: none;

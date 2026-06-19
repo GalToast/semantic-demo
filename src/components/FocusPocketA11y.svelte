@@ -127,7 +127,7 @@
     -webkit-backdrop-filter: blur(14px);
     border: 1px solid rgba(78, 205, 196, 0.18);
     border-radius: 0.5rem;
-    z-index: 80; /* panels */
+    z-index: var(--z-panels);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
 
@@ -187,7 +187,7 @@
     font-size: 0.7rem;
     font-weight: 600;
     cursor: pointer;
-    z-index: 80; /* panels */
+    z-index: var(--z-panels);
     transition: background 0.15s ease, border-color 0.15s ease, transform 0.15s ease;
   }
 

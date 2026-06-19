@@ -409,9 +409,6 @@ body[data-active-view='map'] .onboarding-hint {
     .snow-flake,
     .mode-grid.computing,
     .loading-thread,
-    .biofield-drift,
-    .biofield-spore-float,
-    .biofield-thread-breathe,
     #map-container .leaflet-interactive.semantic-map-route-pulse,
     .summary-card.is-synthesizing,
     .journey-compass-action.primary[data-journey-action='center-anchor']::after,
@@ -421,8 +418,6 @@ body[data-active-view='map'] .onboarding-hint {
     .ambiguous-hover-indicator,
     .sun-rays,
     .fog-overlay,
-    .biofield-orb,
-    .biofield-thread,
     .weather-widget,
     .view-toggle,
     .info-panel,
@@ -432,14 +427,6 @@ body[data-active-view='map'] .onboarding-hint {
     .terrain-bridge-veil,
     .terrain-bridge-halo {
         animation-name: none;
-    }
-
-    /* Any active demo-related overlay silenced under reduced-motion.
-       Specific dead selectors removed in commit w31-p2d. */
-    [class*="demo-"] {
-        opacity: 0 !important;
-        transition: none !important;
-        animation: none !important;
     }
 
     /* Broaden transition disable for #950 hardening */
@@ -462,8 +449,6 @@ body[data-active-view='map'] .onboarding-hint {
     .rain-drop,
     .snow-flake,
     .demo-starters::before,
-    .biofield-orb,
-    .biofield-thread,
     .sun-rays,
     .fog-overlay,
     .weather-icon .weather-seed-base {
@@ -478,7 +463,6 @@ body[data-active-view='map'] .onboarding-hint {
     /* Disable transition-based animations - broaden coverage per #950 */
     .hover-tooltip,
     .search-clear-btn,
-    .demo-starter-chip,
     .journey-compass,
     .journey-compass-action,
     .search-trail-cue,

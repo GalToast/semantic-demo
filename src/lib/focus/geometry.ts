@@ -53,7 +53,7 @@ function getFocusGeometryState(): LegacyState | null {
   return s;
 }
 
-// ── Pure geometry/easing utilities ──────────────────────────────────────────
+// ── Geometry/easing utilities that read from `appState` — not pure; mock `appState` in unit tests ──
 
 export function safeUnitScore(value: unknown, fallback = 0): number {
   const numeric = Number(value);

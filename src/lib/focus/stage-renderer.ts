@@ -138,12 +138,18 @@ function focusStageOwnsSelectedContent(surface: string): boolean {
  * journey-selected-card.js delegates container-slot toggling to this function
  * rather than doing its own DOM queries — preserving a single writer per slot.
  */
-export function syncSelectedCardContentVariant(point: Point | null = null): void {
-    const cardEl = document.getElementById('selected-card');
-    const emptyEl = document.getElementById('selected-empty');
-    const detailsEl = document.getElementById('selected-details');
-    const titleEl = document.getElementById('selected-card-title');
-    const cascadeEl = document.getElementById('vector-cascade-bg');
+export function syncSelectedCardContentVariant(point: Point | null = null, els?: {
+    cardEl?: HTMLElement | null;
+    emptyEl?: HTMLElement | null;
+    detailsEl?: HTMLElement | null;
+    titleEl?: HTMLElement | null;
+    cascadeEl?: HTMLElement | null;
+}): void {
+    const cardEl = els?.cardEl ?? document.getElementById('selected-card');
+    const emptyEl = els?.emptyEl ?? document.getElementById('selected-empty');
+    const detailsEl = els?.detailsEl ?? document.getElementById('selected-details');
+    const titleEl = els?.titleEl ?? document.getElementById('selected-card-title');
+    const cascadeEl = els?.cascadeEl ?? document.getElementById('vector-cascade-bg');
     const surface = getPanelSurface();
     const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
 

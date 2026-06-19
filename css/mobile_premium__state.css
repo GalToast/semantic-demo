@@ -105,9 +105,6 @@
             [data-panel-surface='map-search'],
             [data-panel-surface='map-focus-search']
         )
-        .demo-starter-chip {
-        display: none;
-    }
 
     /* 3. SEARCH & FOCUS-SEARCH COMMON (Mobile) */
     body.is-active[data-panel-surface='search'] .info-panel,
