@@ -48,6 +48,19 @@ import {
 import { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
+import type { ViewName } from '@lib/types/state'
+
+// ── Debug Window Extensions (Playwright test compat) ────────────────────────
+// `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims exposing a grab-bag
+// of action handles and a state getter for Playwright page.evaluate(). They are
+// intentionally loosely typed here (Record<string, unknown>) because their
+// shape is driven by test contracts, not app internals.
+declare global {
+    interface Window {
+        __APP_STATE__?: unknown
+        __APP_ACTIONS__?: Record<string, (...args: any[]) => unknown>
+    }
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -176,22 +189,23 @@ function clearSafetyTimers(timers: SafetyTimers | null): void {
  * Each action is a thin wrapper that delegates to the store or orchestration layer.
  */
 function installWindowGlobals(): () => void {
-    if (typeof window === 'undefined') return () => {}
+    if (typeof window === 'undefined')
+        return () => {}
 
-    // Expose a read-only snapshot of the current nav state for tests that
-    // read window.__APP_STATE__ for mode/view/focus state.
-    // Note: `routeTraceLines` lives on the legacy state for now; the Svelte 5
-    // port hasn't been updated to carry it yet. Cast through `any` to avoid a
-    // type-blocker until the W11-T8 search/journey subsubsystem migration adds
-    // it to the AppState class.
-    ;(window as any).__APP_STATE__ = {
+        // Expose a read-only snapshot of the current nav state for tests that
+        // read window.__APP_STATE__ for mode/view/focus state.
+        // Note: `routeTraceLines` lives on the legacy state for now; the Svelte 5
+        // port hasn't been updated to carry it yet. Cast through `any` to avoid a
+        // type-blocker until the W11-T8 search/journey subsubsystem migration adds
+        // it to the AppState class.
+    ;window.__APP_STATE__ = {
         get state() {
             return {
                 currentView: get(navStore).currentView,
                 navState: get(navStore),
                 activeFilters: focusStore(),
                 routeTraceDiagnostics: appState.routeTraceDiagnostics,
-                routeTraceLines: (appState as any).routeTraceLines,
+                routeTraceLines: (appState as unknown as { routeTraceLines?: unknown }).routeTraceLines,
                 points: appState.points
             }
         }
@@ -200,9 +214,9 @@ function installWindowGlobals(): () => void {
     // __APP_ACTIONS__: synchronous action handles for Playwright test automation.
     // Contract tests call these inside page.evaluate() without awaiting returned
     // promises, so these wrappers must not use lazy dynamic imports.
-    ;(window as any).__APP_ACTIONS__ = {
+    ;window.__APP_ACTIONS__ = {
         switchView: (view: string) => {
-            switchViewAction(view as any)
+            switchViewAction(view as ViewName)
         },
         focusOnNode: (index: number, options?: Record<string, unknown>) => {
             const result = focusOnNodeAction(index, options)
@@ -237,44 +251,44 @@ function installWindowGlobals(): () => void {
     // ── Extended actions (W11-T8 Wave 1) ────────────────────────────────────
     // These fill the gap between the initial 9-action skeleton and the full
     // legacy __APP_ACTIONS__ set (js/modules/app.ts:377-396).
-    ;(window as any).__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
+    ;window.__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
         return search(query, options)
     }
-    ;(window as any).__APP_ACTIONS__.setTrailFromSeed = (index: number) => {
+    ;window.__APP_ACTIONS__.setTrailFromSeed = (index: number) => {
         setTrailFromSeed(index)
     }
-    ;(window as any).__APP_ACTIONS__.traverseNeighbor = (step: number) => {
+    ;window.__APP_ACTIONS__.traverseNeighbor = (step: number) => {
         traverseNeighbor(step)
     }
-    ;(window as any).__APP_ACTIONS__.inspectThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    ;window.__APP_ACTIONS__.inspectThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
         return inspectThreadNeighbor(index, options)
     }
-    ;(window as any).__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    ;window.__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
         return pinThreadNeighbor(index, options)
     }
-    ;(window as any).__APP_ACTIONS__.pinFirstAvailableNeighbor = (options?: Record<string, unknown>) => {
+    ;window.__APP_ACTIONS__.pinFirstAvailableNeighbor = (options?: Record<string, unknown>) => {
         return pinFirstAvailableNeighbor(options)
     }
-    ;(window as any).__APP_ACTIONS__.unpinThreadInspection = () => {
+    ;window.__APP_ACTIONS__.unpinThreadInspection = () => {
         return unpinThreadInspection()
     }
-    ;(window as any).__APP_ACTIONS__.clearThreadInspection = (options?: Record<string, unknown>) => {
+    ;window.__APP_ACTIONS__.clearThreadInspection = (options?: Record<string, unknown>) => {
         return clearThreadInspection(options)
     }
-    ;(window as any).__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+    ;window.__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
         return walkThreadNeighbor(index, options)
     }
-    ;(window as any).__APP_ACTIONS__.requestSemanticGuide = (_point?: unknown) => {
+    ;window.__APP_ACTIONS__.requestSemanticGuide = (_point?: unknown) => {
         return requestSemanticGuide()
     }
-    ;(window as any).__APP_ACTIONS__.showSemanticThreadsDetail = () => {
+    ;window.__APP_ACTIONS__.showSemanticThreadsDetail = () => {
         return showSemanticThreadsDetail()
     }
 
     // No cleanup needed — window globals persist for the page lifetime.
     return () => {
-        delete (window as any).__APP_STATE__
-        delete (window as any).__APP_ACTIONS__
+        delete window.__APP_STATE__
+        delete window.__APP_ACTIONS__
     }
 }
 
