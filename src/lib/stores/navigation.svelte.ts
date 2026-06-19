@@ -258,7 +258,10 @@ export interface NavTransitionResult {
 
 /** Reset navigation state to initial values. */
 export function resetNavState(): void {
-    _navWritable.set({ ...INITIAL_NAV_STATE })
+    // Mirror to appState.navState via writeNavStateMirror so imperative readers
+    // stay in sync. Previously only set the Svelte writable, leaving
+    // appState.navState stale for RESET/RESET_EXPERIENCE and external callers.
+    writeNavStateMirror({ ...INITIAL_NAV_STATE })
 }
 
 function returnToOverviewState(): void {
@@ -610,6 +613,15 @@ export function dispatchNavTransition(
             resetNavState()
             break
     }
+
+    // Mirror the resulting nav state to legacy appState.navState so imperative
+    // readers (focus/journey snapshots) stay in sync with the Svelte 5 store.
+    // Cases that already mirror (SET_VIEW, RETURN_OVERVIEW, and RESET via
+    // resetNavState) are idempotent re-mirrors; this single write covers
+    // FOCUS_NODE and the remaining transition cases that previously only
+    // touched the writable. writeNavStateMirror's internal _navWritable.update
+    // is a no-op self-spread here (same state), so no extra subscriber churn.
+    writeNavStateMirror(get(_navWritable))
 
     return {
         ok: true,

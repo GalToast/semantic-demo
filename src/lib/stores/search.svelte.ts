@@ -233,7 +233,7 @@ export function getSearchSummary(): SearchSummary | null {
  * Always prefer this over calling `appState.withMutation` directly inside
  * the action functions below.
  */
-function withSearchNotify<T>(fn: () => T): T {
+export function withSearchNotify<T>(fn: () => T): T {
     const result = appState.withMutation(fn)
     // Re-read the latest snapshot through the store getter so the toStore
     // setter is bypassed (calling _searchWritable.set() recursively would

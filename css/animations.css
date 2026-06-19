@@ -26,7 +26,29 @@
     body .search-results,
     body .weather-widget,
     body .weather-widget *,
-    body .experience-reset-toast {
+    body .experience-reset-toast,
+    /* H7: weather children not covered by #weather-overlay * (specificity) */
+    body #weather-overlay .weather-seed-base,
+    body .time-display::before,
+    /* H7/M9: search spinner + shake animations */
+    body .search-spinner,
+    body.searching .search-spinner,
+    body.searching .search-container.has-query .search-spinner,
+    body .search-spinner-overlay,
+    body .shake-input,
+    body .suggestion-btn.shake {
+        animation: none;
+        transition: none;
+    }
+}
+
+/* M9: shell keyframes — pseudo-elements need matching specificity */
+@media (prefers-reduced-motion: reduce) {
+    body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::before,
+    body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::after,
+    body #map-container .leaflet-interactive.semantic-map-route-line,
+    body #map-container .leaflet-interactive.semantic-map-route-line-aura,
+    body #map-container .leaflet-interactive.semantic-map-route-pulse {
         animation: none;
         transition: none;
     }
