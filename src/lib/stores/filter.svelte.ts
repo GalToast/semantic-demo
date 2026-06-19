@@ -62,12 +62,15 @@ export const activeClusterFilterStore = activeClusterFilter;
 /** Active filters — the single source of truth for filter state. */
 const _filterStateWritable = writable<ActiveFilters>({ ...INITIAL_FILTERS });
 
-/** Push filterState mutations to both writable and appState. */
+/** Push filterState mutations to both writable and appState.
+ *  Clones the snapshot before storing so callers cannot accidentally alias
+ *  the store value to the legacy state object (see state-store-sync-contract). */
 function withFilterStateNotify(updater: (s: ActiveFilters) => ActiveFilters): void {
   const next = updater(get(_filterStateWritable));
-  _filterStateWritable.set(next);
+  const cloned = { ...next };
+  _filterStateWritable.set(cloned);
   appState.withMutation(() => {
-    appState.activeFilters = next;
+    appState.activeFilters = { ...cloned };
   });
 }
 
@@ -79,9 +82,10 @@ export const filterState: Readable<ActiveFilters> & {
   subscribe: _filterStateWritable.subscribe,
   update: (updater: (s: ActiveFilters) => ActiveFilters) => withFilterStateNotify(updater),
   set: (value: ActiveFilters) => {
-    _filterStateWritable.set(value);
+    const cloned = { ...value };
+    _filterStateWritable.set(cloned);
     appState.withMutation(() => {
-      appState.activeFilters = value;
+      appState.activeFilters = { ...cloned };
     });
   }
 };
