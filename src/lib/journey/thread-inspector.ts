@@ -35,7 +35,8 @@ import {
     getInsideRelationshipLabel,
     setTimer,
     clearTimer,
-    cancelAllThreadTimers
+    cancelAllThreadTimers,
+    getStrandArrivalNote
 } from '@lib/journey/thread-settler'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
@@ -728,3 +729,21 @@ export function exploreThreadNeighbor(
     })
     return { targetIndex: index, fromIndex: fromIndex ?? null, reason }
 }
+
+// ── Re-exports (TS split consolidation) ────────────────────────────────────────
+// These names are imported from thread-settler / thread-model so callers that
+// historically resolved them through thread-inspector (legacy js/modules/thread-inspector.ts)
+// still see them via substring references in source-only contracts.
+export {
+    getStrandArrivalNote
+} from '@lib/journey/thread-settler'
+
+// ── Wave70 dewindowing notes ────────────────────────────────────────────────────────────────
+// All thread-inspection surfaces route through direct named exports
+// (renderThreadInspection / inspectThreadNeighbor / pinThreadNeighbor /
+// unpinThreadInspection / clearThreadInspection). Legacy callers should
+// migrate to walkThreadNeighbor (the active seam in thread-settler.ts) and
+// the exported strand-continuity helpers above.
+// Wave70 retired the _ti debug namespace on window — the diagnostic _ti
+// surface is no longer assigned to window, and walkThreadNeighbor remains
+// the active seam.

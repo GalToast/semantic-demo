@@ -79,14 +79,28 @@ function copyFiniteIndexHistory(value: unknown): number[] {
 
 // ── Timer Helpers ────────────────────────────────────────────────────────────
 
-export function setTimer(purpose: string, ms: number, callback: () => void): void {
+// Module-level timer hooks allow initJourneyTimerAdapter to inject test
+// doubles (jsdom contracts often need deterministic timers). The defaults
+// delegate to the strand-continuity manager.
+let _setTimer: (purpose: string, ms: number, callback: () => void) => void = (
+    purpose: string,
+    ms: number,
+    callback: () => void
+) => {
     const manager = getStrandContinuityManager()
     manager.setTimer(purpose, ms, callback)
 }
-
-export function clearTimer(purpose: string): void {
+let _clearTimer: (purpose: string) => void = (purpose: string) => {
     const manager = getStrandContinuityManager()
     manager.clearTimer(purpose)
+}
+
+export function setTimer(purpose: string, ms: number, callback: () => void): void {
+    _setTimer(purpose, ms, callback)
+}
+
+export function clearTimer(purpose: string): void {
+    _clearTimer(purpose)
 }
 
 export function cancelAllThreadTimers(): void {
@@ -94,7 +108,15 @@ export function cancelAllThreadTimers(): void {
     manager.cancelAll()
 }
 
-export function initJourneyTimerAdapter(_deps: unknown = {}): void {}
+export interface JourneyTimerAdapterDeps {
+    setTimer?: (purpose: string, ms: number, callback: () => void) => void
+    clearTimer?: (purpose: string) => void
+}
+
+export function initJourneyTimerAdapter(deps: JourneyTimerAdapterDeps = {}): void {
+    if (deps.setTimer) _setTimer = deps.setTimer;
+    if (deps.clearTimer) _clearTimer = deps.clearTimer;
+}
 
 // ── Neighbor Reason Summaries ─────────────────────────────────────────────────
 

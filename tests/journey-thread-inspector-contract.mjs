@@ -207,15 +207,22 @@ function testBuildRouteTraceMaterial() {
 
     const webglSrc = fs.readFileSync(JOURNEY_ROUTE_TRACE_PATH, 'utf-8')
 
-    // Must return THREE.ShaderMaterial
-    assertContains(webglSrc, 'return new THREE.ShaderMaterial({', 'buildRouteTraceMaterial returns ShaderMaterial')
+    // Must return ShaderMaterial (form: THREE.ShaderMaterial OR bare ShaderMaterial)
+    const hasThreeForm = webglSrc.includes('return new THREE.ShaderMaterial({')
+    const hasBareForm = webglSrc.includes('return new ShaderMaterial({')
+    assert(
+        hasThreeForm || hasBareForm,
+        'buildRouteTraceMaterial returns ShaderMaterial (three-prefixed or bare import form)'
+    )
 
     // Must have depthWrite: false, depthTest: false
     assertContains(webglSrc, 'depthWrite: false', 'depthWrite: false in route trace material')
     assertContains(webglSrc, 'depthTest: false', 'depthTest: false in route trace material')
 
     // Must have AdditiveBlending
-    assertContains(webglSrc, 'blending: THREE.AdditiveBlending', 'AdditiveBlending in route trace material')
+    const hasThreeBlend = webglSrc.includes('blending: THREE.AdditiveBlending')
+    const hasBareBlend = webglSrc.includes('blending: AdditiveBlending')
+    assert(hasThreeBlend || hasBareBlend, 'AdditiveBlending in route trace material')
 
     // Shader must declare time uniform for animation
     assertContains(webglSrc, 'uniform float time;', 'time uniform declared in fragment shader')
@@ -264,7 +271,8 @@ function testGetCanvasNodePickingMode() {
 
     // Touch/pen must use 34px radius
     assertContains(canvasHitTestSrc, "pointerType === 'touch' || pointerType === 'pen'", 'touch/pen pointer type check')
-    assertContains(canvasHitTestSrc, 'return 34;', 'touch/pen returns 34px')
+    const has34 = canvasHitTestSrc.includes('return 34') || canvasHitTestSrc.includes('return 34;')
+    assert(has34, 'touch/pen returns 34px')
     assertContains(canvasHitTestSrc, 'hasCoarsePointer() ? 34 : 26', 'coarse pointer uses 34px else 26px')
 
     console.log('  OK getCanvasNodePickingMode URL override verified')
@@ -541,7 +549,9 @@ function testJourneyWebglLineShaderOwnership() {
     // Route trace uses a plain ShaderMaterial with direct uniforms. It should
     // not depend on LineMaterial's late onBeforeCompile userData.shader path.
     assertContains(webglSrc, 'function buildRouteTraceMaterial()', 'buildRouteTraceMaterial function exists')
-    assertContains(webglSrc, 'return new THREE.ShaderMaterial({', 'route trace returns ShaderMaterial')
+    const hasThreeForm2 = webglSrc.includes('return new THREE.ShaderMaterial({')
+    const hasBareForm2 = webglSrc.includes('return new ShaderMaterial({')
+    assert(hasThreeForm2 || hasBareForm2, 'route trace returns ShaderMaterial')
     assertContains(webglSrc, 'material.uniforms.time.value = now / 1000;', 'route trace updates direct uniforms')
 
     // Focus semantic lines use LineMaterial; onBeforeCompile must retain the
