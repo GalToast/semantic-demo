@@ -3,12 +3,13 @@
  */
 import type {
     JourneyState,
-    JourneyPhase,
+    NavMode,
     CompassState,
     CompassPhase,
     CompassAction,
     TrailStop,
-    WalkHistoryEntry
+    WalkHistoryEntry,
+    ThreadCandidateRef
 } from '@lib/types/state'
 import { get, type Readable, writable } from 'svelte/store'
 // debugWarn removed — was unused in this store
@@ -126,7 +127,7 @@ function _readJourneyFromAppState(): JourneyStoreState {
         trailDepth: appState.navState.trailDepth,
         walkHistoryIndices: walkIndices,
         trailSeedIndex: appState.navState.trailSeedIndex ?? null,
-        threadCandidates: valueArray(appState.navState.threadCandidates) as any[],
+        threadCandidates: valueArray(appState.navState.threadCandidates) as ThreadCandidateRef[],
         threadReasonByIndex: new Map(appState.navState.threadReasonByIndex),
         threadSource: appState.navState.threadSource,
         lastTraversalReason: appState.navState.lastTraversalReason,
@@ -238,8 +239,8 @@ export function currentJourneyIndex(): number | null {
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 
-export function setJourneyPhase(phase: JourneyPhase): void {
-    withJourneyNotify((s) => ({ ...s, phase: phase as any }))
+export function setJourneyPhase(phase: NavMode): void {
+    withJourneyNotify((s) => ({ ...s, phase }))
 }
 
 export function setTrailDepth(depth: number): void {
