@@ -2,6 +2,7 @@
  * @lib/stores/demo.svelte.ts — Micro-demo state machine store (Svelte 5 runes)
  */
 import { get, writable, type Readable } from 'svelte/store';
+import type { BusinessRecord } from '@lib/types/business';
 import { appState } from '@lib/state/app.svelte.ts';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -168,7 +169,7 @@ export function transitionDemo(nextPhase: DemoPhase): void {
   setDemoPhase(nextPhase);
 }
 
-export function setDemoTimer(id: any): void {
+export function setDemoTimer(id: ReturnType<typeof setTimeout>): void {
   if (id !== null && id !== undefined) timers.set(id, Date.now()); // audit-ok: plain function, not transformed — bundle preserves native !==
 }
 
@@ -186,7 +187,7 @@ export function scheduleDemoTimer(callback: () => void, delay: number): ReturnTy
   return id;
 }
 
-export function clearDemoTimer(id: any): void {
+export function clearDemoTimer(id: ReturnType<typeof setTimeout>): void {
   if (id !== null && id !== undefined) { // audit-ok: plain function, not transformed — bundle preserves native !==
     clearTimeout(id);
     timers.delete(id);
@@ -202,8 +203,8 @@ export function getActiveDemoTimerCount(): number {
   return timers.size;
 }
 
-export function findDemoNode(records?: Array<Record<string, unknown>>): number | null {
-  const points = records ?? (appState.points as Array<Record<string, unknown>> | undefined);
+export function findDemoNode(records?: readonly BusinessRecord[]): number | null {
+  const points = records ?? (appState.points as unknown as readonly BusinessRecord[] | undefined);
   if (!points) return null;
 
   const showcasePool = SHOWCASE_POOL;

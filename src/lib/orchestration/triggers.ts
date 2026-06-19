@@ -208,7 +208,11 @@ subscribe(EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
         trailDepth: 1,
         trailSeedIndex: focusIndex,
         trailNeighborIndices: candidateIndices,
-        threadCandidates: candidateIndices.map(idx => ({ index: idx, source: threadSource, reason: threadReasonByIndex.get(idx) ?? '' })),
+        threadCandidates: candidateIndices.map((idx) => ({
+            index: idx,
+            source: threadSource,
+            reason: threadReasonByIndex.get(idx) ?? ''
+        })),
         threadReasonByIndex,
         threadSource
     }))

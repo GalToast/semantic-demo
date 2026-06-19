@@ -210,6 +210,7 @@ export {
 // ── Combined Helpers ─────────────────────────────────────────────────────────
 
 import { get } from 'svelte/store'
+import type { BusinessRecord } from '@lib/types/business'
 import { navStore } from './navigation.svelte'
 import { getBusinessRecords as getDataBusinessRecords, getIsDataReady as getDataIsReady } from '../data-store'
 
@@ -220,8 +221,8 @@ export function getFocusedIndex(): number | null {
 }
 
 /** Returns the current list of business records. */
-export function getBusinessRecords(): any[] {
-    return [...getDataBusinessRecords()]
+export function getBusinessRecords(): BusinessRecord[] {
+    return [...getDataBusinessRecords()] as BusinessRecord[]
 }
 
 /** Returns whether records are ready for UI consumption. */

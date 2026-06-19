@@ -202,7 +202,9 @@ export function applyLocalNeighborhoodFocus(index: number): void {
             setFocusPocketRoleByIndex(pocket.roles || new Map())
 
             const newPocketSet = new Set(pocket.indices ?? [])
-            const motion = (pocket.motion as unknown as Map<number, PocketMotionWithFrame>) || new Map<number, PocketMotionWithFrame>()
+            const motion =
+                (pocket.motion as unknown as Map<number, PocketMotionWithFrame>) ||
+                new Map<number, PocketMotionWithFrame>()
             prevTargetByIndex.forEach((prevPos, pocketIndex) => {
                 if (newPocketSet.has(pocketIndex)) {
                     const existing = motion.get(pocketIndex)
@@ -455,11 +457,7 @@ export function applyFocusPocketBreathing(
         const breatheOffset = Math.sin(age * 0.0015 + phase) * breatheAmp * settle
         if (!Number.isFinite(breatheOffset)) return
 
-        const offset = new Vector3(
-            basePosition.x - anchor.x,
-            basePosition.y - anchor.y,
-            basePosition.z - anchor.z
-        )
+        const offset = new Vector3(basePosition.x - anchor.x, basePosition.y - anchor.y, basePosition.z - anchor.z)
 
         const speedFactor = motion.role === 'primary' ? 1.0 : 0.45
         const direction = index % 2 === 0 ? 1 : -1

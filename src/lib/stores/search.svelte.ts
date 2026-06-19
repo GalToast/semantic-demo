@@ -2,6 +2,7 @@
  * @lib/stores/search.svelte.ts — Search engine, tokenization, and result state store (Svelte 5 runes)
  */
 import type { SearchState, SearchResult, SearchSummary, SearchStatus } from '@lib/types/state';
+import type { BusinessRecord } from '@lib/types/business';
 import { type Readable, writable } from 'svelte/store';
 import {
   tokenizeSearchText as tokenizeRaw,
@@ -130,7 +131,7 @@ export type SearchStoreApi = (() => SearchStoreState) &
 
 function buildSearchResultsFromIndices(indices: number[] | undefined): SearchResult[] {
   if (!indices || !indices.length) return [];
-  const records = (getBusinessRecords() || []) as any[];
+  const records = (getBusinessRecords() || []) as BusinessRecord[];
   return indices.map((idx) => {
     const index = Number(idx);
     const record = records[index];

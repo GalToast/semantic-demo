@@ -482,8 +482,8 @@ export function dispatchNavTransition(
             // its initial 'overview' even after a focus click, breaking
             // compass presentation + the data-journey-phase parity attr.
             appState.withMutation(() => {
-                const _legacyMode: any = _finalMode
-                const _legacySurface: any = _finalSurface
+                const _legacyMode: NavMode = _finalMode
+                const _legacySurface: PanelSurface = _finalSurface
                 if (_indexDefined) appState.navState.focusedIndex = payload.index as number
                 if (_legacyMode) appState.navState.mode = _legacyMode
                 if (_legacySurface) appState.navState.surface = _legacySurface

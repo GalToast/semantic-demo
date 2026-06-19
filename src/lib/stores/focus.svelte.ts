@@ -18,8 +18,10 @@ import type {
     FocusPocketNode,
     FocusTransitionMode,
     FocusOrbitSlackState,
+    ThreadInspectorState,
     PocketMotionWithFrame
 } from '@lib/types/state'
+import type { BusinessRecord } from '@lib/types/business'
 import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 
@@ -86,7 +88,7 @@ function _readFocusSnapshot(): FocusStoreState {
         pocketNodes: (appState.navState.focusPocketIndices as unknown as readonly FocusPocketNode[]) || [],
         pocketMeta: appState.navState.focusPocketMeta,
         pocketRoleByIndex: new Map(appState.navState.focusPocketRoleByIndex),
-        selectedBusiness: appState.selectedPoint as any,
+        selectedBusiness: appState.selectedPoint as BusinessRecord | null,
         inspectedStrandIndex: appState.inspectedThreadIndex,
         pinnedThreadIndex: appState.pinnedThreadIndex,
         semanticDiveMode: appState.navState.trailDepth === 2,
@@ -261,7 +263,7 @@ export function clearThreadInspector(): void {
     }))
 }
 
-export function updateThreadInspector(patch: any): void {
+export function updateThreadInspector(patch: Partial<ThreadInspectorState>): void {
     withFocusNotify((s) => ({
         ...s,
         threadInspector: { ...s.threadInspector, ...patch }
@@ -272,8 +274,9 @@ export function setSemanticDiveMode(active: boolean): void {
     withFocusNotify((s) => ({ ...s, semanticDiveMode: active }))
 }
 
-export function setSelectedBusiness(business: any): void {
-    withFocusNotify((s) => ({ ...s, selectedBusiness: business }))
+type BusinessRecordWithIndex = Partial<BusinessRecord> & { index?: number };
+export function setSelectedBusiness(business: BusinessRecordWithIndex | null): void {
+    withFocusNotify((s) => ({ ...s, selectedBusiness: business as BusinessRecord | null }))
 }
 
 export function setInfoPanelOpen(open: boolean): void {

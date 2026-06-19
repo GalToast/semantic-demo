@@ -501,11 +501,7 @@ export function applyFocusPocketBreathing(
         const breatheOffset = Math.sin(age * 0.0015 + phase) * breatheAmp * settle
         if (!Number.isFinite(breatheOffset)) return
 
-        const offset = new Vector3(
-            basePosition.x - anchor.x,
-            basePosition.y - anchor.y,
-            basePosition.z - anchor.z
-        )
+        const offset = new Vector3(basePosition.x - anchor.x, basePosition.y - anchor.y, basePosition.z - anchor.z)
 
         // Slow kinetic orbit swirling
         const speedFactor = motion.role === 'primary' ? 1.0 : 0.45

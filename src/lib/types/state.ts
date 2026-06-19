@@ -109,9 +109,9 @@ export interface SearchResultPoint {
     what?: string
     cluster?: number
     city?: string
-    website?: string
-    email?: string
-    phone?: string
+    website?: string | null
+    email?: string | null
+    phone?: string | null
 }
 
 export interface SearchSummary {

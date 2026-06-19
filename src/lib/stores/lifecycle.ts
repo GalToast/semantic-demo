@@ -25,7 +25,7 @@ import { publish, EVENTS } from '../orchestration/event-bus'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
 
-export function setTrailDepth(depth: number, _options?: any): void {
+export function setTrailDepth(depth: number, _options?: unknown): void {
     const nextDepth = Math.max(0, Number(depth) || 0)
     _setTrailDepth(nextDepth)
     updateNavState({ trailDepth: nextDepth })
