@@ -242,8 +242,9 @@ export default defineConfig({
         minify: 'terser',
         terserOptions: {
             compress: {
-                drop_console: ['log', 'info'],
+                drop_console: true,
                 drop_debugger: true,
+                pure_funcs: ['console.debug', 'console.trace'],
                 passes: 2
             },
             mangle: {

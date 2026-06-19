@@ -206,6 +206,7 @@
     "keywords": [],
     "author": "",
     "license": "ISC",
+    "sideEffects": false,
     "devDependencies": {
         "@ast-grep/cli": "^0.43.0",
         "@axe-core/playwright": "^4.11.3",
