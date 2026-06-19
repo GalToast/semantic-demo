@@ -65,7 +65,10 @@ function extractExportedFunction(src, name) {
     if (directRe.test(src)) return true
     // Pass-through re-export: in an `export { ..., name, ... } [from '...'];` block
     const reExportRe = new RegExp(`export\\s*\\{[\\s\\S]*?\\b${name}\\b[\\s\\S]*?\\}`)
-    return reExportRe.test(src)
+    if (reExportRe.test(src)) return true
+    // TS migration: export const name = ...
+    const constRe = new RegExp(`export\\s+const\\s+${name}\\s*=`)
+    return constRe.test(src)
 }
 
 // ---------------------------------------------------------------------------

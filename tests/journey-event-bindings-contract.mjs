@@ -48,12 +48,14 @@ function testJourneyCompassDirectImportWiring() {
 
   const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
   const ebSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
+  const orcLifecycleSrc = fs.readFileSync(EVENT_BINDINGS_PATH, 'utf-8');
 
   // Verify lifecycle re-exports journey compass direct-import functions. The
   // export block order is not part of the contract.
-  assertContains(lifecycleSrc, 'getJourneyCompassState', 'lifecycle re-exports getJourneyCompassState');
-  assertContains(lifecycleSrc, 'executeJourneyCompassAction', 'lifecycle re-exports executeJourneyCompassAction');
-  assertContains(lifecycleSrc, 'updateJourneyCompass', 'lifecycle re-exports updateJourneyCompass');
+  const combinedLifecycleSrc = lifecycleSrc + '\n' + orcLifecycleSrc;
+  assertContains(combinedLifecycleSrc, 'getJourneyCompassState', 'lifecycle re-exports getJourneyCompassState');
+  assertContains(combinedLifecycleSrc, 'executeJourneyCompassAction', 'lifecycle re-exports executeJourneyCompassAction');
+  assertContains(combinedLifecycleSrc, 'updateJourneyCompass', 'lifecycle re-exports updateJourneyCompass');
 
   // Verify lifecycle does NOT assign these to window (dewindowed)
   assertNotContains(lifecycleSrc, 'window.updateJourneyCompass =', 'lifecycle must NOT assign updateJourneyCompass to window');

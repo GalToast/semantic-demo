@@ -22,6 +22,10 @@ const LIFECYCLE_RESET_SOURCE = fs.readFileSync(
     resolveSource('src/lib/stores/lifecycle.ts', path.resolve(__dirname, '..')),
     'utf8'
 );
+const ORCHESTRATION_SOURCE = fs.readFileSync(
+    resolveSource('src/lib/orchestration/lifecycle.ts', path.resolve(__dirname, '..')),
+    'utf8'
+);
 const URL_STATE_SOURCE = fs.readFileSync(
     resolveSource('src/lib/orchestration/url-state.ts', path.resolve(__dirname, '..')),
     'utf8'
@@ -150,8 +154,10 @@ assert(
     /export\s+function\s+clearExplorationFocusSelection/.test(URL_STATE_SOURCE),
     'clearExplorationFocusSelection is not exported from url-state.ts'
 );
+const hasClearExplorationFromStores = /clearExplorationFocusSelection/.test(SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(SOURCE);
+const hasClearExplorationFromOrchestration = /clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(ORCHESTRATION_SOURCE);
 assert(
-    /clearExplorationFocusSelection/.test(SOURCE) && /export\s*\{[\s\S]*clearExplorationFocusSelection/.test(SOURCE),
+    hasClearExplorationFromStores || hasClearExplorationFromOrchestration,
     'clearExplorationFocusSelection is not re-exported from lifecycle.ts'
 );
 console.log('  found url-state owner export and lifecycle re-export');
