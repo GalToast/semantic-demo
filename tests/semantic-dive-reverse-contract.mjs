@@ -42,7 +42,7 @@ globalThis.document = {
 // ---------------------------------------------------------------------------
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.ts');
-const { syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.ts');
+const { syncSemanticDiveUi } = await import('../src/lib/journey/semantic-overlay.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers

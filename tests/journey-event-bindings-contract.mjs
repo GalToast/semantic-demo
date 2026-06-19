@@ -18,11 +18,11 @@ import path from 'path';
 import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const EVENT_BINDINGS_PATH = resolveSource('js/modules/event-bindings.ts', SEMDEMO_ROOT);
-const APP_PATH            = resolveSource('js/modules/app.ts', SEMDEMO_ROOT);
+const EVENT_BINDINGS_PATH = resolveSource('src/lib/orchestration/lifecycle.ts', SEMDEMO_ROOT);
+const APP_PATH            = resolveSource('src/lib/orchestration/app-init.ts', SEMDEMO_ROOT);
 const JOURNEY_PATH        = path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts');
-const LIFECYCLE_PATH      = resolveSource('js/modules/lifecycle.ts', SEMDEMO_ROOT);
-const JOURNEY_COMPASS_CONTROLLER_PATH = resolveSource('js/modules/journey-compass-controller.ts', SEMDEMO_ROOT);
+const LIFECYCLE_PATH      = resolveSource('src/lib/stores/lifecycle.ts', SEMDEMO_ROOT);
+const JOURNEY_COMPASS_CONTROLLER_PATH = resolveSource('src/lib/journey/compass-state.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);

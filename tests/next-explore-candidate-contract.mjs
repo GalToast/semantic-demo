@@ -12,8 +12,8 @@ import { getNextExploreCandidateForIndex } from '../src/lib/journey/thread-model
 
 const ROOT = process.cwd();
 const THREAD_MODEL = join(ROOT, 'js/modules/journey-thread-model.ts');
-const COMPASS_STATE = join(ROOT, 'js/modules/journey-compass-state.ts');
-const SEMANTIC_DIVE_UI = join(ROOT, 'js/modules/semantic-dive-ui.ts');
+const COMPASS_STATE = join(ROOT, 'src/lib/journey/compass-state.ts');
+const SEMANTIC_DIVE_UI = join(ROOT, 'src/lib/journey/semantic-overlay.ts');
 
 function assert(condition, message) {
   if (!condition) throw new Error(message);

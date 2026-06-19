@@ -3,7 +3,7 @@
  *
  * No-resurrection guard and current-owner boundary for the search panel adapter.
  *
- * The old adapter lived at `js/modules/search-panel-adapter.ts` (MISSING).
+ * The old adapter lived at `src/lib/search/panel-adapter.ts` (MISSING).
  * This contract ensures:
  * 1. The new adapter at `src/lib/search/search-panel-adapter.ts` is leaf-like.
  * 2. No code outside the adapter toggles `.search-container` state classes.

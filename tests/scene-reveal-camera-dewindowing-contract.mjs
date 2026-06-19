@@ -14,15 +14,15 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const sceneRevealPath = resolve(CWD, 'js/modules/scene-reveal.ts');
-const cameraControlsPath = resolve(CWD, 'js/modules/camera-controls.ts');
-const threeSetupPath = resolve(CWD, 'js/modules/three-engine.ts');
+const sceneRevealPath = resolve(CWD, 'src/lib/engine/lifecycle.ts');
+const cameraControlsPath = resolve(CWD, 'src/lib/engine/camera-controls.ts');
+const threeSetupPath = resolve(CWD, 'src/lib/engine/three-engine.ts');
 
 let sceneRevealSrc;
 try {
   sceneRevealSrc = readFileSync(sceneRevealPath, 'utf8');
 } catch {
-  console.error('FAIL: could not read js/modules/scene-reveal.ts');
+  console.error('FAIL: could not read src/lib/engine/lifecycle.ts');
   process.exit(1);
 }
 

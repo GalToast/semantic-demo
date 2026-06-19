@@ -23,7 +23,7 @@ const root = process.cwd();
 const read = (relativePath) => fs.readFileSync(resolveSource(relativePath, root), 'utf8');
 
 const html = read('vector-explorer-polished.html');
-const weatherUiJs = read('js/modules/weather-ui.ts');
+const weatherUiJs = read('src/lib/stores/weather.svelte.ts');
 const timeWeatherCss = read('css/time_weather.css');
 
 const widgetMatches = html.match(/class="[^"]*\bweather-widget\b[^"]*"/g) ?? [];

@@ -27,7 +27,7 @@ import { pathToFileURL } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const SEMDEMO_ROOT = path.resolve(__dirname, '..');
-const ENGINE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/mycelium-engine.ts');
+const ENGINE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/mycelium-engine.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers

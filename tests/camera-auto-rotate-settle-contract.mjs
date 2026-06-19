@@ -11,7 +11,7 @@ import path from 'node:path'
 import { resolveSource } from './source-path.mjs'
 
 const SEMDEMO_ROOT = path.resolve(process.cwd())
-const CAMERA_PATH = resolveSource('js/modules/camera-controls.ts', SEMDEMO_ROOT)
+const CAMERA_PATH = resolveSource('src/lib/engine/camera-controls.ts', SEMDEMO_ROOT)
 const CAMERA_RESTORE_PATH = resolveSource('src/lib/engine/camera-controls-restore.svelte.ts', SEMDEMO_ROOT)
 const SCENE_REVEAL_PATH = resolveSource('src/lib/engine/scene-reveal.ts', SEMDEMO_ROOT)
 

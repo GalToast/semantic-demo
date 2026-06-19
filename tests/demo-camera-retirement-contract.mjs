@@ -95,7 +95,7 @@ test('demo-controller.js does not reference demo-camera', () => {
 });
 
 test('app.ts is the active entry and does not reference demo-camera', () => {
-    const p = path.join(ROOT, 'js/modules/app.ts');
+    const p = path.join(ROOT, 'src/lib/orchestration/app-init.ts');
     assert(fs.existsSync(p), `active runtime entry is missing: ${p}`);
     const src = fs.readFileSync(p, 'utf8');
     assert(!src.includes('demo-camera'), 'app.ts mentions demo-camera');
@@ -107,7 +107,7 @@ test('retired app.js remains absent', () => {
 });
 
 test('micro-demo.ts does not import from retired demo-camera.ts', () => {
-    const p = path.join(ROOT, 'js/modules/micro-demo.ts');
+    const p = path.join(ROOT, 'src/lib/demo/choreography.ts');
     assert(fs.existsSync(p), `active demo choreography is missing: ${p}`);
     const src = fs.readFileSync(p, 'utf8');
     // micro-demo.ts may reference micro-demo-camera.ts (active) — that's fine.

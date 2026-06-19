@@ -25,7 +25,7 @@ import { resolveSource } from './source-path.mjs';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
 const VIEW_CONTROLLER_PATH = resolveSource('src/lib/orchestration/view-controller.ts', SEMDEMO_ROOT);
-const LIFECYCLE_PATH = resolveSource('js/modules/lifecycle.ts', SEMDEMO_ROOT);
+const LIFECYCLE_PATH = resolveSource('src/lib/stores/lifecycle.ts', SEMDEMO_ROOT);
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -167,7 +167,7 @@ function testNoCircularImportChain() {
 
   const vcSrc = fs.readFileSync(VIEW_CONTROLLER_PATH, 'utf-8');
   const lcSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
-  const jccSrc = fs.readFileSync(resolveSource('js/modules/journey-compass-controller.ts', SEMDEMO_ROOT), 'utf-8');
+  const jccSrc = fs.readFileSync(resolveSource('src/lib/journey/compass-state.ts', SEMDEMO_ROOT), 'utf-8');
 
   // 5a. view-controller must NOT import lifecycle
   assert(
@@ -233,7 +233,7 @@ function testNoOtherModuleImplements() {
 
 function main() {
   // ── RETIRED CONTRACT ──────────────────────────────────────────────────
-  // js/modules/view-controller.ts was deleted during the engine kernel
+  // src/lib/orchestration/view-controller.ts was deleted during the engine kernel
   // consolidation. The canonical source moved to
   // src/lib/orchestration/view-controller.ts, but its internal structure
   // has evolved (different function signatures, different call patterns)

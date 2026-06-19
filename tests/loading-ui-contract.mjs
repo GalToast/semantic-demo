@@ -21,8 +21,8 @@ const ROOT = join(__dirname, '..');
 const svelteLoadingPath = join(ROOT, 'src/components/LoadingOverlay.svelte');
 const hasSvelte = existsSync(svelteLoadingPath);
 
-const loadingUiPath = join(ROOT, 'js/modules/loading-ui.ts');
-const lifecyclePath = join(ROOT, 'js/modules/lifecycle.ts');
+const loadingUiPath = join(ROOT, 'src/lib/stores/legacy-stores.ts');
+const lifecyclePath = join(ROOT, 'src/lib/stores/lifecycle.ts');
 
 const loadingUiSource = hasSvelte ? null : await readFile(loadingUiPath, 'utf8').catch(() => null);
 const lifecycleSource = hasSvelte ? null : await readFile(lifecyclePath, 'utf8').catch(() => null);

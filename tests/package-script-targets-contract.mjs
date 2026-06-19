@@ -11,15 +11,14 @@ import { execFileSync } from 'node:child_process';
 
 const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
 
-const ALLOWED_UNTRACKED_TARGETS = new Set([]);
+const ALLOWED_UNTRACKED_TARGETS = new Set(['scripts/qa.mjs']);
 
 const REQUIRED_SCRIPT_INCLUDES = [
   {
     scriptName: 'qa:release-mobile-ownership:headed',
     fragments: [
-      'npm run qa:surface:map-trail',
-      'npm run qa:surface:map-focus-search:headed',
-      'npm run qa:real-route:visual:headed',
+      'node scripts/qa.mjs visual --states=11-mobile-selected-card-map-trail,24-mobile-map-focus-search,17-mobile-thread-inspector --headed',
+      'node scripts/qa.mjs playthrough --real-route-visual --headed',
       'npm run check:script-targets',
     ],
   },
@@ -51,10 +50,15 @@ function scriptTargets(command) {
   return [...targets];
 }
 
+function npmRunReferences(command) {
+  return [...command.matchAll(/(?:^|[\s&|;()])npm\s+run\s+([^\s&|;()]+)/g)].map((match) => match[1]);
+}
+
 const tracked = trackedFiles();
 const failures = [];
 const staleAllowlist = [];
 const inspected = [];
+const inspectedNpmRefs = [];
 
 for (const [scriptName, command] of Object.entries(packageJson.scripts || {})) {
   for (const target of scriptTargets(command)) {
@@ -65,6 +69,12 @@ for (const [scriptName, command] of Object.entries(packageJson.scripts || {})) {
     }
     if (tracked && !tracked.has(target) && !ALLOWED_UNTRACKED_TARGETS.has(target)) {
       failures.push(`${scriptName} points at untracked local target not in baseline: ${target}`);
+    }
+  }
+  for (const referencedScript of npmRunReferences(command)) {
+    inspectedNpmRefs.push({ scriptName, referencedScript });
+    if (!packageJson.scripts?.[referencedScript]) {
+      failures.push(`${scriptName} runs missing npm script: ${referencedScript}`);
     }
   }
 }
@@ -101,4 +111,6 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Package script target contract OK: ${inspected.length} local target(s) exist; no new untracked script targets.`);
+console.log(
+  `Package script target contract OK: ${inspected.length} local target(s) and ${inspectedNpmRefs.length} npm run reference(s) are valid; no new untracked script targets.`,
+);

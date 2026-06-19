@@ -20,11 +20,11 @@ const appStateSrc = fs.readFileSync(resolveSource('src/lib/state/app.svelte.ts',
 const stateTypesSrc = fs.readFileSync(resolveSource('src/lib/state/state-types.ts', ROOT), 'utf8')
 const stateSrc = `${appStateSrc}\n${stateTypesSrc}`
 const configSrc = fs.readFileSync(resolveSource('src/lib/engine/config.ts', ROOT), 'utf8')
-const lifecycleSrc = fs.readFileSync(resolveSource('js/modules/lifecycle.ts', ROOT), 'utf8')
+const lifecycleSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle.ts', ROOT), 'utf8')
 const lifecycleModesSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle/modes.ts', ROOT), 'utf8')
-const navigationStateSrc = fs.readFileSync(resolveSource('js/modules/navigation-state.ts', ROOT), 'utf8')
+const navigationStateSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation.svelte.ts', ROOT), 'utf8')
 const navigationActionsSrc = fs.readFileSync(resolveSource('src/lib/navigation-actions.ts', ROOT), 'utf8')
-const urlStateSrc = fs.readFileSync(resolveSource('js/modules/url-state.ts', ROOT), 'utf8')
+const urlStateSrc = fs.readFileSync(resolveSource('src/lib/orchestration/url-state.ts', ROOT), 'utf8')
 // navigation.svelte.ts owns the dispatchNavTransition reducer and action key cases.
 // orchestration/navigation-state.ts only re-exports the function + constants.
 const navigationSvelteSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation.svelte.ts', ROOT), 'utf8')

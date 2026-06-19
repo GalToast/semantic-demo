@@ -21,9 +21,9 @@ import path from 'node:path';
 
 const ROOT = path.resolve(process.cwd());
 const KEYBOARD_HELP_PATH = path.join(ROOT, 'js/modules/keyboard-help.ts');
-const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.ts');
-const LIFECYCLE_RESET_PATH = path.join(ROOT, 'js/modules/lifecycle-reset.ts');
-const APP_PATH = path.join(ROOT, 'js/modules/app.ts');
+const LIFECYCLE_PATH = path.join(ROOT, 'src/lib/stores/lifecycle.ts');
+const LIFECYCLE_RESET_PATH = path.join(ROOT, 'src/lib/stores/lifecycle.ts');
+const APP_PATH = path.join(ROOT, 'src/lib/orchestration/app-init.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);

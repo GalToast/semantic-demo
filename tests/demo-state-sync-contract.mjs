@@ -22,10 +22,10 @@ const ROOT = process.cwd()
 const svelteDemoStorePath = path.join(ROOT, 'src/lib/stores/demo.svelte.ts')
 const hasSvelte = fs.existsSync(svelteDemoStorePath)
 
-const microDemoSource = hasSvelte ? null : fs.readFileSync(resolveSource('js/modules/micro-demo.ts', ROOT), 'utf8')
+const microDemoSource = hasSvelte ? null : fs.readFileSync(resolveSource('src/lib/demo/choreography.ts', ROOT), 'utf8')
 const eventBindingsSource = hasSvelte
     ? null
-    : fs.readFileSync(resolveSource('js/modules/event-bindings.ts', ROOT), 'utf8')
+    : fs.readFileSync(resolveSource('src/lib/orchestration/lifecycle.ts', ROOT), 'utf8')
 const svelteStoreSource = hasSvelte ? fs.readFileSync(svelteDemoStorePath, 'utf8') : null
 const svelteComponentSource = hasSvelte
     ? fs.readFileSync(path.join(ROOT, 'src/components/DemoChoreography.svelte'), 'utf8')

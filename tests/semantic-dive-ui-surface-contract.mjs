@@ -66,7 +66,7 @@ let state, withStateMutation, initJourneyLifecycleAdapter, syncSemanticDiveUi;
 try {
   ({ state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts'));
   ({ initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.ts'));
-  ({ syncSemanticDiveUi } = await import('../js/modules/semantic-dive-ui.ts'));
+  ({ syncSemanticDiveUi } = await import('../src/lib/journey/semantic-overlay.ts'));
 } catch (err) {
   // Dynamic import chain fails in Node ESM when TS files import without .ts extension.
   // The semantic-dive-ui module is tested via browser E2E contracts instead.

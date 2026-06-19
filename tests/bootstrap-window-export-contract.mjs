@@ -17,9 +17,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(process.cwd());
-const APP_PATH = path.join(ROOT, 'js/modules/app.ts');
-const APP_TS_PATH = path.join(ROOT, 'js/modules/app.ts');
-const LIFECYCLE_PATH = path.join(ROOT, 'js/modules/lifecycle.ts');
+const APP_PATH = path.join(ROOT, 'src/lib/orchestration/app-init.ts');
+const APP_TS_PATH = path.join(ROOT, 'src/lib/orchestration/app-init.ts');
+const LIFECYCLE_PATH = path.join(ROOT, 'src/lib/stores/lifecycle.ts');
 const TESTS_DIR = path.join(ROOT, 'tests');
 const THIS_FILE = fileURLToPath(import.meta.url);
 

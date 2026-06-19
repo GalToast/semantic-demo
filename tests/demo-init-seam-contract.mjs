@@ -25,10 +25,10 @@ const hasSvelte = fs.existsSync(svelteDemoStorePath) && fs.existsSync(svelteDemo
 
 const appSource = hasSvelte
   ? null
-  : fs.readFileSync(resolveSource('js/modules/app.ts', ROOT), 'utf8');
+  : fs.readFileSync(resolveSource('src/lib/orchestration/app-init.ts', ROOT), 'utf8');
 const microDemoSource = hasSvelte
   ? null
-  : fs.readFileSync(resolveSource('js/modules/micro-demo.ts', ROOT), 'utf8');
+  : fs.readFileSync(resolveSource('src/lib/demo/choreography.ts', ROOT), 'utf8');
 const svelteStoreSource = hasSvelte
   ? fs.readFileSync(svelteDemoStorePath, 'utf8')
   : null;

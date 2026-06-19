@@ -25,7 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts');
+const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);

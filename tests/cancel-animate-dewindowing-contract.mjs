@@ -9,8 +9,8 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const appPath = resolve(CWD, 'js/modules/app.ts');
-const threeSetupPath = resolve(CWD, 'js/modules/three-engine.ts');
+const appPath = resolve(CWD, 'src/lib/orchestration/app-init.ts');
+const threeSetupPath = resolve(CWD, 'src/lib/engine/three-engine.ts');
 
 function read(path, label) {
   try {
@@ -21,8 +21,8 @@ function read(path, label) {
   }
 }
 
-const appSrc = read(appPath, 'js/modules/app.ts');
-const threeSetupSrc = read(threeSetupPath, 'js/modules/three-engine.ts');
+const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts');
+const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts');
 
 const checks = [
   {

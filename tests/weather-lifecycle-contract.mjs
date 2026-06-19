@@ -19,8 +19,8 @@ import fs from 'node:fs';
 import { resolveSource } from './source-path.mjs';
 
 const root = process.cwd();
-const weatherPath = resolveSource('js/modules/weather.ts', root);
-const weatherUiPath = resolveSource('js/modules/weather-ui.ts', root);
+const weatherPath = resolveSource('src/lib/stores/weather.svelte.ts', root);
+const weatherUiPath = resolveSource('src/lib/stores/weather.svelte.ts', root);
 const src = fs.readFileSync(weatherPath, 'utf8');
 const uiSrc = fs.readFileSync(weatherUiPath, 'utf8');
 

@@ -27,11 +27,11 @@ const JOURNEY_POINT_COLOR_PATH = resolveSource('src/lib/journey/point-color.ts',
 const JOURNEY_CANVAS_INTERACTION_PATH = resolveSource('src/lib/journey/canvas-interaction.ts', SEMDEMO_ROOT)
 const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('src/lib/journey/canvas-node-picking.ts', SEMDEMO_ROOT)
 const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('src/lib/journey/canvas-hit-test.ts', SEMDEMO_ROOT)
-const THREAD_INSPECTOR_PATH = resolveSource('js/modules/thread-inspector.ts', SEMDEMO_ROOT)
+const THREAD_INSPECTOR_PATH = resolveSource('src/lib/journey/thread-inspector.ts', SEMDEMO_ROOT)
 const JOURNEY_THREAD_MODEL_PATH = resolveSource('src/lib/journey/thread-model.ts', SEMDEMO_ROOT)
 const JOURNEY_THREAD_MODEL_BRIDGE_PATH = resolveSource('src/lib/engine/journey-thread-model-bridge.ts', SEMDEMO_ROOT)
-const JOURNEY_WEBGL_PATH = resolveSource('js/modules/journey-webgl.ts', SEMDEMO_ROOT)
-const JOURNEY_ROUTE_TRACE_PATH = resolveSource('js/modules/journey-route-trace.ts', SEMDEMO_ROOT)
+const JOURNEY_WEBGL_PATH = resolveSource('src/lib/journey/webgl.ts', SEMDEMO_ROOT)
+const JOURNEY_ROUTE_TRACE_PATH = resolveSource('src/lib/journey/route-trace.ts', SEMDEMO_ROOT)
 const JOURNEY_SEMANTIC_OVERLAY_PATH = resolveSource('src/lib/journey/semantic-overlay.ts', SEMDEMO_ROOT)
 
 // ---------------------------------------------------------------------------

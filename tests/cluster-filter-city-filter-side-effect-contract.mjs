@@ -32,8 +32,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts');
-const FILTER_STATE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/filter-state.ts');
+const CLUSTER_FILTER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelte.ts');
+const FILTER_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelte.ts');
 
 function assert(cond, msg) {
   if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
@@ -216,7 +216,7 @@ async function testSyncCityFilterUiBehavior() {
     const originalCity = state.activeFilters.city;
     state.activeFilters.city = 'Rockville';
     try {
-      const { syncCityFilterUi } = await import('../js/modules/cluster-filter.ts');
+      const { syncCityFilterUi } = await import('../src/lib/stores/filter.svelte.ts');
       syncCityFilterUi();
       assert(
         capturedValue === 'Rockville',

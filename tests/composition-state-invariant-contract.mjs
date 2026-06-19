@@ -132,7 +132,7 @@ const { state, withStateMutation } = await import('../src/lib/engine/state-bridg
 let refreshCompositionState;
 let resetStateBeforeUrlRestore;
 try {
-  const lc = await import('../js/modules/lifecycle.ts');
+  const lc = await import('../src/lib/stores/lifecycle.ts');
   refreshCompositionState = lc.refreshCompositionState;
   resetStateBeforeUrlRestore = lc.resetStateBeforeUrlRestore;
 } catch (e) {

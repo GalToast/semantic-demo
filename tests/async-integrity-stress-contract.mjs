@@ -42,7 +42,7 @@ async function main() {
   };
   globalThis.sessionStorage = { removeItem: () => {}, getItem: () => null };
 
-  const { search } = await import('../js/modules/search-state.ts');
+  const { search } = await import('../src/lib/stores/search.svelte.ts');
 
   // 1. Simulate rapid search "Query Alpha" then "Query Bravo"
   console.log('[TEST] Rapid Search Overlap (Alpha -> Bravo)');

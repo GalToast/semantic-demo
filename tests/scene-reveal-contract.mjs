@@ -21,8 +21,8 @@ import { resolve } from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const CWD = process.cwd();
-const sceneRevealPath = resolveSource('js/modules/scene-reveal.ts', CWD);
-const lifecyclePath = resolveSource('js/modules/lifecycle.ts', CWD);
+const sceneRevealPath = resolveSource('src/lib/engine/lifecycle.ts', CWD);
+const lifecyclePath = resolveSource('src/lib/stores/lifecycle.ts', CWD);
 
 let src;
 try {

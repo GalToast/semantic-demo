@@ -70,7 +70,7 @@ async function main() {
   globalThis.sessionStorage = { removeItem: () => {}, getItem: () => null, setItem: () => {} };
   globalThis.window = { requestAnimationFrame: (cb) => cb() };
 
-  const { beginSemanticSearchUiState, finishSemanticSearchSuccessState, renderSearchResultItems } = await import('../js/modules/search-results-ui.ts');
+  const { beginSemanticSearchUiState, finishSemanticSearchSuccessState, renderSearchResultItems } = await import('../src/lib/stores/search.svelte.ts');
 
   // 1. Test Skeleton Loading (Non-destructive)
   console.log('[TEST] Non-destructive Skeleton Loading');

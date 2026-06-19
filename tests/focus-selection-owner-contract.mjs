@@ -15,15 +15,15 @@ import { resolveSource } from './source-path.mjs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SOURCE = fs.readFileSync(
-    resolveSource('js/modules/lifecycle.ts', path.resolve(__dirname, '..')),
+    resolveSource('src/lib/stores/lifecycle.ts', path.resolve(__dirname, '..')),
     'utf8'
 );
 const LIFECYCLE_RESET_SOURCE = fs.readFileSync(
-    resolveSource('js/modules/lifecycle-reset.ts', path.resolve(__dirname, '..')),
+    resolveSource('src/lib/stores/lifecycle.ts', path.resolve(__dirname, '..')),
     'utf8'
 );
 const URL_STATE_SOURCE = fs.readFileSync(
-    resolveSource('js/modules/url-state.ts', path.resolve(__dirname, '..')),
+    resolveSource('src/lib/orchestration/url-state.ts', path.resolve(__dirname, '..')),
     'utf8'
 );
 

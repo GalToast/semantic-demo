@@ -17,7 +17,7 @@ const lifecycleSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle.ts'
 const modesReexportSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle/modes.ts', process.cwd()), 'utf8');
 const navigationSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation.svelte.ts', process.cwd()), 'utf8');
 const focusSrc = fs.readFileSync(resolveSource('src/lib/stores/focus.svelte.ts', process.cwd()), 'utf8');
-const clusterFilterSrc = fs.readFileSync(resolveSource('js/modules/cluster-filter.ts', process.cwd()), 'utf8');
+const clusterFilterSrc = fs.readFileSync(resolveSource('src/lib/stores/filter.svelte.ts', process.cwd()), 'utf8');
 
 let passed = 0;
 let failed = 0;

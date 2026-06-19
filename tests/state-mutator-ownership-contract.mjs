@@ -41,7 +41,7 @@ function collectJsFiles(dir) {
 
 const appStateSrc = read('src/lib/state/app.svelte.ts');
 const stateBridgeSrc = read('src/lib/engine/state-bridge.ts');
-const mutatorSrc = read('js/modules/state-mutators.ts');
+const mutatorSrc = read('src/lib/stores/navigation.svelte.ts');
 const withStateMutationSrc = read('src/lib/state/with-state-mutation.ts');
 
 const combinedStateSrc = appStateSrc + '\n' + stateBridgeSrc + '\n' + withStateMutationSrc;
@@ -80,7 +80,7 @@ const directWritePattern = new RegExp(
 
 for (const file of collectJsFiles(MODULES_DIR)) {
   const relative = path.relative(ROOT, file).replace(/\\/g, '/');
-  if (relative === 'js/modules/state-mutators.ts') continue;
+  if (relative === 'src/lib/stores/navigation.svelte.ts') continue;
   const src = fs.readFileSync(file, 'utf8');
   const lines = src.split(/\r?\n/);
   lines.forEach((line, index) => {

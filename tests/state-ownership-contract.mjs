@@ -267,9 +267,9 @@ function scanWriters(modulePath, field) {
 
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 
-const lifecycle = await import('../js/modules/lifecycle.ts');
+const lifecycle = await import('../src/lib/stores/lifecycle.ts');
 
-const cameraControls = await import('../js/modules/camera-controls.ts');
+const cameraControls = await import('../src/lib/engine/camera-controls.ts');
 
 // ─── CONTRACT 1: semanticDiveMode is derived from trailDepth ──────────────────
 

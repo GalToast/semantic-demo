@@ -18,7 +18,7 @@ import path from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const ROOT = process.cwd();
-const microDemoSource = fs.readFileSync(resolveSource('js/modules/micro-demo.ts', ROOT), 'utf8');
+const microDemoSource = fs.readFileSync(resolveSource('src/lib/demo/choreography.ts', ROOT), 'utf8');
 
 let passed = 0;
 let failed = 0;

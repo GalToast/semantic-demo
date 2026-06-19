@@ -190,7 +190,7 @@ function testEventBindingsImportsFromCanonicalStore() {
 function testLifecycleDoesNotImportFromDeletedKernel() {
     console.log('\n[TEST 7] lifecycle.ts does NOT import from deleted legend-ui kernel')
 
-    const lifecyclePath = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts')
+    const lifecyclePath = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts')
     const src = readSrc(lifecyclePath)
 
     assert(

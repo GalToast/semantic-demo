@@ -18,7 +18,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const URL_STATE_PATH = resolve(CWD, 'js/modules/url-state.ts');
+const URL_STATE_PATH = resolve(CWD, 'src/lib/orchestration/url-state.ts');
 
 const src = readFileSync(URL_STATE_PATH, 'utf-8');
 

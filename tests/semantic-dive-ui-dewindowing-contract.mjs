@@ -18,13 +18,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const SEMANTIC_DIVE_UI_PATH = path.join(SEMDEMO_ROOT, 'js/modules/semantic-dive-ui.ts');
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts');
+const SEMANTIC_DIVE_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/semantic-overlay.ts');
+const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts');
 const RUNTIME_SYNC_CALLERS = [
   'js/modules/camera-controls-choreography-cursor.ts',
-  'js/modules/journey-compass-controller.ts',
-  'js/modules/journey-thread-settler.ts',
-  'js/modules/thread-inspector.ts'
+  'src/lib/journey/compass-state.ts',
+  'src/lib/journey/thread-settler.ts',
+  'src/lib/journey/thread-inspector.ts'
 ];
 
 function assert(cond, msg) {
@@ -37,7 +37,7 @@ function assert(cond, msg) {
 
 function main() {
   // ── RETIRED CONTRACT ──────────────────────────────────────────────────
-  // js/modules/semantic-dive-ui.ts was deleted during the engine kernel
+  // src/lib/journey/semantic-overlay.ts was deleted during the engine kernel
   // consolidation (Wave 10 W2). No canonical equivalent exists — the
   // de-windowing invariant it tested (no window.updateExplorationUi calls)
   // is now enforced by the Svelte/TS migration and is not testable against

@@ -32,7 +32,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd())
 // ── MODULE MAP ──────────────────────────────────────────────────────────────
 
 const MODULES = {
-    lifecycle: path.join(SEMDEMO_ROOT, 'js/modules/lifecycle.ts'),
+    lifecycle: path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts'),
     journey: path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts'),
     camera: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-controls.ts'),
     cameraChoreography: path.join(SEMDEMO_ROOT, 'src/lib/engine/camera-choreography/routes.ts'),
@@ -41,20 +41,20 @@ const MODULES = {
     sceneReveal: path.join(SEMDEMO_ROOT, 'src/lib/engine/scene-reveal.ts'),
     app: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
     appRuntime: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
-    mapState: path.join(SEMDEMO_ROOT, 'js/modules/map-state.ts'),
-    // clusterFilter: path.join(SEMDEMO_ROOT, 'js/modules/cluster-filter.ts'),  // REMOVED — file does not exist
-    journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-controller.ts'),
-    journeyCompassState: path.join(SEMDEMO_ROOT, 'js/modules/journey-compass-state.ts'),
+    mapState: path.join(SEMDEMO_ROOT, 'src/lib/stores/map.svelte.ts'),
+    // clusterFilter: path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelte.ts'),  // REMOVED — file does not exist
+    journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'src/lib/journey/compass-state.ts'),
+    journeyCompassState: path.join(SEMDEMO_ROOT, 'src/lib/journey/compass-state.ts'),
     focusPocket: path.join(SEMDEMO_ROOT, 'src/lib/journey/focus-pocket.ts'),
-    threadInspector: path.join(SEMDEMO_ROOT, 'js/modules/thread-inspector.ts'),
+    threadInspector: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector.ts'),
     strandContinuity: path.join(SEMDEMO_ROOT, 'src/lib/utils/strand-continuity.ts'),
-    journeyThreadSettler: path.join(SEMDEMO_ROOT, 'js/modules/journey-thread-settler.ts'),
+    journeyThreadSettler: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-settler.ts'),
     journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'src/lib/journey/canvas-interaction.ts'),
     clusterLabels: path.join(SEMDEMO_ROOT, 'src/lib/ui/cluster-labels.ts'),
-    audio: path.join(SEMDEMO_ROOT, 'js/modules/audio-scape.ts'),
-    viewController: path.join(SEMDEMO_ROOT, 'js/modules/view-controller.ts'),
-    navigationState: path.join(SEMDEMO_ROOT, 'js/modules/navigation-state.ts'),
-    journeyWebgl: path.join(SEMDEMO_ROOT, 'js/modules/journey-webgl.ts'),
+    audio: path.join(SEMDEMO_ROOT, 'src/lib/audio/audio-scape.ts'),
+    viewController: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/view-controller.ts'),
+    navigationState: path.join(SEMDEMO_ROOT, 'src/lib/stores/navigation.svelte.ts'),
+    journeyWebgl: path.join(SEMDEMO_ROOT, 'src/lib/journey/webgl.ts'),
     legendUi: path.join(SEMDEMO_ROOT, 'src/lib/journey/legend-ui.ts'),
     keyboardHelp: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/keyboard-help.ts'),
     uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui-renderers.ts'),
@@ -62,8 +62,8 @@ const MODULES = {
     inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/inspected-strand-overlay-adapter.ts'),
     routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/route-arrival-overlay-adapter.ts'),
     threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine.ts'),
-    threeSearchAnimations: path.join(SEMDEMO_ROOT, 'js/modules/three-search-animations.ts'),
-    threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'js/modules/three-interaction-visuals.ts')
+    threeSearchAnimations: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-search-animations.ts'),
+    threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-interaction-visuals.ts')
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────
