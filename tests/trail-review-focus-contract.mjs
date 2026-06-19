@@ -13,30 +13,30 @@
  *       (from semantic-demo root)
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
 
-const CWD = process.cwd();
-const LIFECYCLE_PATH = resolve(CWD, 'js/modules/lifecycle-search-sync.ts');
+const CWD = process.cwd()
+const LIFECYCLE_PATH = resolve(CWD, 'src/lib/stores/lifecycle.ts')
 
-const src = readFileSync(LIFECYCLE_PATH, 'utf-8');
+const src = readFileSync(LIFECYCLE_PATH, 'utf-8')
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function assert(cond, msg) {
-  if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+    if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
 }
 
 function assertContains(haystack, needle, label) {
-  const found = haystack.includes(needle);
-  assert(found, `${label}: expected source to contain "${needle}"`);
+    const found = haystack.includes(needle)
+    assert(found, `${label}: expected source to contain "${needle}"`)
 }
 
 function assertNotContains(haystack, needle, label) {
-  const found = haystack.includes(needle);
-  assert(!found, `${label}: source should NOT contain "${needle}"`);
+    const found = haystack.includes(needle)
+    assert(!found, `${label}: source should NOT contain "${needle}"`)
 }
 
 // ---------------------------------------------------------------------------
@@ -44,27 +44,35 @@ function assertNotContains(haystack, needle, label) {
 // ---------------------------------------------------------------------------
 
 function testOpenCapturesFocus() {
-  console.log('\n[TEST] _openTrailReview captures activeElement into _trailReviewReturnFocus');
+    console.log('\n[TEST] _openTrailReview captures activeElement into _trailReviewPreviouslyFocused')
 
-  // The module-level variable must be declared near the open function
-  assertContains(src, '_trailReviewReturnFocus = null',
-    '_trailReviewReturnFocus null-init');
-  assertContains(src, '_trailReviewReturnFocus = document.activeElement',
-    '_openTrailReview activeElement capture');
+    // The module-level variable must be declared near the open function
+    assertContains(
+        src,
+        '_trailReviewPreviouslyFocused: HTMLElement | null = null',
+        '_trailReviewPreviouslyFocused null-init'
+    )
+    assertContains(
+        src,
+        '_trailReviewPreviouslyFocused = document.activeElement',
+        '_openTrailReview activeElement capture'
+    )
 }
 
 // ---------------------------------------------------------------------------
-// TEST 2: _closeTrailReview restores focus from _trailReviewReturnFocus
+// TEST 2: _closeTrailReview restores focus from _trailReviewPreviouslyFocused
 // ---------------------------------------------------------------------------
 
 function testCloseRestoresFocus() {
-  console.log('\n[TEST] _closeTrailReview restores focus from _trailReviewReturnFocus');
+    console.log('\n[TEST] _closeTrailReview restores focus from _trailReviewPreviouslyFocused')
 
-  assertContains(src, '_trailReviewReturnFocus.focus()',
-    '_closeTrailReview calls .focus() on stored element');
-  // After restoring, it should null-out the variable
-  assertContains(src, '_trailReviewReturnFocus = null',
-    '_closeTrailReview nulls _trailReviewReturnFocus after focus restore');
+    assertContains(src, '_trailReviewPreviouslyFocused.focus()', '_closeTrailReview calls .focus() on stored element')
+    // After restoring, it should null-out the variable
+    assertContains(
+        src,
+        '_trailReviewPreviouslyFocused = null',
+        '_closeTrailReview nulls _trailReviewPreviouslyFocused after focus restore'
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -72,15 +80,13 @@ function testCloseRestoresFocus() {
 // ---------------------------------------------------------------------------
 
 function testAriaHiddenToggles() {
-  console.log('\n[TEST] overlay aria-hidden toggles: false on open, true on close');
+    console.log('\n[TEST] overlay aria-hidden toggles: false on open, true on close')
 
-  // Open path: setAttribute('aria-hidden', 'false')
-  assertContains(src, "overlay.setAttribute('aria-hidden', 'false')",
-    '_openTrailReview sets aria-hidden false');
+    // Open path: setAttribute('aria-hidden', 'false')
+    assertContains(src, "overlay.setAttribute('aria-hidden', 'false')", 'showExploreTrailReview sets aria-hidden false')
 
-  // Close path: setAttribute('aria-hidden', 'true')
-  assertContains(src, "overlay.setAttribute('aria-hidden', 'true')",
-    '_closeTrailReview sets aria-hidden true');
+    // Close path: setAttribute('aria-hidden', 'true')
+    assertContains(src, "overlay.setAttribute('aria-hidden', 'true')", 'hideExploreTrailReview sets aria-hidden true')
 }
 
 // ---------------------------------------------------------------------------
@@ -88,12 +94,14 @@ function testAriaHiddenToggles() {
 // ---------------------------------------------------------------------------
 
 function testCloseButtonFocusedOnOpen() {
-  console.log('\n[TEST] close button (.trail-review-close) receives focus on _openTrailReview');
+    console.log('\n[TEST] close button (.trail-review-close) receives focus on showExploreTrailReview')
 
-  assertContains(src, "overlay.querySelector('.trail-review-close')",
-    '_openTrailReview queries .trail-review-close selector');
-  assertContains(src, 'closeBtn.focus()',
-    '_openTrailReview calls .focus() on the close button element');
+    assertContains(
+        src,
+        "overlay.querySelector('.trail-review-close')",
+        'showExploreTrailReview queries .trail-review-close selector'
+    )
+    assertContains(src, 'closeBtn.focus()', 'showExploreTrailReview calls .focus() on the close button element')
 }
 
 // ---------------------------------------------------------------------------
@@ -101,12 +109,10 @@ function testCloseButtonFocusedOnOpen() {
 // ---------------------------------------------------------------------------
 
 function testOverlayVisibleOnOpen() {
-  console.log('\n[TEST] _openTrailReview adds .visible class and removes hidden attribute');
+    console.log('\n[TEST] showExploreTrailReview adds .visible class and removes hidden attribute')
 
-  assertContains(src, "overlay.classList.add('visible')",
-    '_openTrailReview adds .visible class');
-  assertContains(src, 'overlay.hidden = false',
-    '_openTrailReview clears hidden flag');
+    assertContains(src, "overlay.classList.add('visible')", 'showExploreTrailReview adds .visible class')
+    assertContains(src, 'overlay.hidden = false', 'showExploreTrailReview clears hidden flag')
 }
 
 // ---------------------------------------------------------------------------
@@ -114,26 +120,26 @@ function testOverlayVisibleOnOpen() {
 // ---------------------------------------------------------------------------
 
 const tests = [
-  testOpenCapturesFocus,
-  testCloseRestoresFocus,
-  testAriaHiddenToggles,
-  testCloseButtonFocusedOnOpen,
-  testOverlayVisibleOnOpen,
-];
+    testOpenCapturesFocus,
+    testCloseRestoresFocus,
+    testAriaHiddenToggles,
+    testCloseButtonFocusedOnOpen,
+    testOverlayVisibleOnOpen
+]
 
-let passed = 0;
-let failed = 0;
+let passed = 0
+let failed = 0
 
 for (const test of tests) {
-  try {
-    test();
-    passed++;
-    console.log('  PASS');
-  } catch (err) {
-    failed++;
-    console.error(`  FAIL: ${err.message}`);
-  }
+    try {
+        test()
+        passed++
+        console.log('  PASS')
+    } catch (err) {
+        failed++
+        console.error(`  FAIL: ${err.message}`)
+    }
 }
 
-console.log(`\nResult: ${passed}/${tests.length} passed\n`);
-if (failed > 0) process.exit(1);
+console.log(`\nResult: ${passed}/${tests.length} passed\n`)
+if (failed > 0) process.exit(1)

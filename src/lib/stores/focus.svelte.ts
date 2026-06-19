@@ -26,7 +26,6 @@ import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'
 
-
 // ── Initial State ────────────────────────────────────────────────────────────
 
 /** Internal store state interface. */
@@ -91,7 +90,9 @@ function _readFocusSnapshot(): FocusStoreState {
     const nodePositions = appState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined
     const originalPositions = appState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined
     const records = getBusinessRecords()
-    const anchorIndex = Number.isFinite(appState.navState.focusedIndex as number) ? (appState.navState.focusedIndex as number) : null
+    const anchorIndex = Number.isFinite(appState.navState.focusedIndex as number)
+        ? (appState.navState.focusedIndex as number)
+        : null
 
     const nodes: FocusPocketNode[] = []
     for (const idx of indices) {

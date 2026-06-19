@@ -63,8 +63,8 @@ function extractExportedFunction(src, name) {
         `export\\s+function\\s+${name}\\s*\\([^)]*\\)(?:\\s*:\\s*\\S[^{]*)?\\s*\\{[\\s\\S]*?\\n\\}`
     )
     if (directRe.test(src)) return true
-    // Pass-through re-export: in an `export { ..., name, ... };` block
-    const reExportRe = new RegExp(`export\\s*\\{[\\s\\S]*?\\b${name}\\b[\\s\\S]*?\\};`)
+    // Pass-through re-export: in an `export { ..., name, ... } [from '...'];` block
+    const reExportRe = new RegExp(`export\\s*\\{[\\s\\S]*?\\b${name}\\b[\\s\\S]*?\\}`)
     return reExportRe.test(src)
 }
 
@@ -230,9 +230,7 @@ assert(storyDesc, 'STORY_DESCRIPTIONS must be exported from lifecycle.js, lifecy
 // disqualified-ghosts) was moved to applyStoryPrompt case branches in
 // cluster-filter-controller.ts. STORY_DESCRIPTIONS now carries only { standard }.
 // Verify the constant still exists and has at least one key.
-const storyKeys = Object.keys(JSON.parse(
-    storyDesc.replace(/'/g, '"').replace(/(\w+)\s*:/g, '"$1":')
-))
+const storyKeys = Object.keys(JSON.parse(storyDesc.replace(/'/g, '"').replace(/(\w+)\s*:/g, '"$1":')))
 assert(storyKeys.length > 0, 'STORY_DESCRIPTIONS must have at least one key')
 assert(
     storyDesc.includes('standard') || storyDesc.includes(`'standard'`) || storyDesc.includes(`"standard"`),
@@ -425,7 +423,7 @@ assert(
 // (e.g. dispatchNavTransition). Match any export block containing the constant.
 assert(
     /export\s*\{[\s\S]*?NAV_TRANSITION_ACTIONS[\s\S]*?\}/.test(navigationStateSrc) ||
-    /export\s*\{[\s\S]*?NAV_TRANSITION_ACTIONS[\s\S]*?\}/.test(navigationSvelteSrc),
+        /export\s*\{[\s\S]*?NAV_TRANSITION_ACTIONS[\s\S]*?\}/.test(navigationSvelteSrc),
     'navigation-state.js or navigation.svelte.ts must re-export NAV_TRANSITION_ACTIONS'
 )
 const requiredActions = [
@@ -464,7 +462,7 @@ console.log('  PASS')
 console.log('CONTRACT 36b: window.dispatchNavTransition bridge retired')
 assert(
     !/window\.dispatchNavTransition\s*=/.test(lifecycleSrc) &&
-    !/window\.dispatchNavTransition\s*=/.test(navigationSvelteSrc),
+        !/window\.dispatchNavTransition\s*=/.test(navigationSvelteSrc),
     'window.dispatchNavTransition compatibility bridge must be retired'
 )
 console.log('  PASS')

@@ -174,7 +174,27 @@ async function makePage(browser, surface) {
         deviceScaleFactor: cfg.deviceScaleFactor,
         isMobile: cfg.isMobile
     })
-    return context.newPage()
+    await context.addInitScript(() => {
+        window.__PLAYWRIGHT__ = true
+    })
+    const page = await context.newPage()
+    page.on('console', (msg) => {
+        const type = msg.type()
+        const text = msg.text()
+        if (
+            type === 'error' ||
+            type === 'warning' ||
+            text.toLowerCase().includes('failed') ||
+            text.toLowerCase().includes('typeerror') ||
+            text.toLowerCase().includes('crash')
+        ) {
+            console.error(`[BROWSER CONSOLE ${type.toUpperCase()}] ${text}`)
+        }
+    })
+    page.on('pageerror', (err) => {
+        console.error(`[BROWSER UNCAUGHT ERROR] ${err.stack || err.message || err}`)
+    })
+    return page
 }
 
 async function closePageContext(page) {

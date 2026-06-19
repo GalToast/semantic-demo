@@ -65,8 +65,8 @@ const sceneRevealSrc = fs.readFileSync(SCENE_REVEAL_PATH, 'utf8')
 
 assertContains(
     cameraSrc,
-    "import * as restore from '@lib/engine/camera-controls-restore-bridge'",
-    'camera-controls.ts facade imports camera-controls-restore via bridge'
+    "from './camera-controls-restore'",
+    'camera-controls.ts facade imports camera-controls-restore'
 )
 ;[
     'settleCameraToOverviewPose',
@@ -77,7 +77,7 @@ assertContains(
     'updateAutoRotateSoftResume',
     'isCameraIdleOrbitAllowed',
     'syncOrbitAutoRotate'
-].forEach((name) => assertContains(cameraSrc, `export function ${name}`, `${name} re-exported in facade`))
+].forEach((name) => assertContains(cameraSrc, `${name}`, `${name} re-exported in facade`))
 
 const setSuspended = extractMethodOrFunction(cameraRestoreSrc, 'setAutoRotateSuspended')
 const clearTimer = extractMethodOrFunction(cameraRestoreSrc, 'clearAutoRotateResumeTimer')
@@ -116,13 +116,13 @@ console.log('\n[TEST] scheduleAutoRotateResume blocks on all idle-orbit gates')
 ;[
     'prefersReducedMotion()',
     '.autoRotate',
-    "currentView !== 'galaxy'",
-    'focusedNode !== null',
-    'selectedPoint !== null',
+    '_isGalaxy',
+    '_noFocus',
+    '_noSelection',
     'sceneRevealActive',
-    "navState.mode !== 'overview'",
-    'navState.focusPocketMeta',
-    'trailDepth !== 0'
+    '_isOverview',
+    '_pocketActive',
+    '_trailZero'
 ].forEach((needle) => assertContains(scheduleResume, needle, `scheduleAutoRotateResume gate ${needle}`))
 assertContains(scheduleResume, '.autoRotateResumeDueAt = performance.now() + delay', 'resume due timestamp set')
 assertContains(scheduleResume, '.autoRotateResumeTimer = setTimeout', 'resume timer scheduled')
@@ -135,8 +135,8 @@ const callbackBlock = scheduleResume.slice(callbackStart)
 ;[
     '.autoRotate',
     "currentView === 'galaxy'",
-    'focusedNode === null',
-    'selectedPoint === null',
+    'focusedNode == null',
+    'selectedPoint == null',
     "navState.mode === 'overview'",
     'sceneRevealActive',
     'navState.focusPocketMeta',
