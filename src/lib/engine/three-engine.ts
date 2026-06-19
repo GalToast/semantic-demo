@@ -129,6 +129,7 @@ interface LegacyState {
     dirLight: any
     autoRotate: boolean
     autoRotateSuspended: boolean
+    autoRotateResumeDueAt?: number
     currentView: string
     forceAnimate: boolean
     focusedNode: number | null
@@ -143,6 +144,9 @@ interface LegacyState {
     myceliumDirty: boolean
     selectedPoint: any
     sceneRevealActive: boolean
+    searchGlowActive?: boolean
+    inspectedThreadIndex?: number | null
+    pinnedThreadIndex?: number | null
     sceneRevealCameraStart: Vector3 | null
     sceneRevealCameraEnd: Vector3 | null
     inspectedStrandGroup: any
@@ -380,6 +384,7 @@ Object.assign(MYCELIUM_FIELD_SCALE, PORT_MYCELIUM_FIELD_SCALE)
 // ── Module-level Mutable State ───────────────────────────────────────────────
 
 let _rafId: number | null = null
+let _idleFrameTimerId: number | null = null
 let _webglContextLost = false
 let _circuitBreakerTripped = false
 let _webglRestoreTimer: number | null = null
@@ -387,8 +392,50 @@ let _lastHoveredNode: number | null = null
 let _hoverEmissiveFlash = 0
 
 const SCENE_PERF_EMA_DECAY = 0.992
+const IDLE_STATIC_FRAME_INTERVAL_MS = 125
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+function hasFiniteNodeIndex(value: unknown): boolean {
+    return typeof value === 'number' && Number.isFinite(value) && value >= 0
+}
+
+function sceneNeedsContinuousFrame(now: number): boolean {
+    if (!_state) return true
+    const focusPocketMotion = _state.focusPocketMotionByIndex as unknown
+    const focusPocketMoving = Array.isArray(focusPocketMotion)
+        ? focusPocketMotion.length > 0
+        : (focusPocketMotion as Map<unknown, unknown>)?.size > 0
+    const autoRotateActive = Boolean(_state.autoRotate && !_state.autoRotateSuspended)
+    const autoRotateResumePending =
+        typeof _state.autoRotateResumeDueAt === 'number' && _state.autoRotateResumeDueAt > now
+    return Boolean(
+        _state.forceAnimate ||
+        _state.sceneRevealActive ||
+        _state.nodesAreSettling ||
+        _state.myceliumDirty ||
+        focusPocketMoving ||
+        autoRotateActive ||
+        autoRotateResumePending ||
+        _state.searchGlowActive ||
+        hasFiniteNodeIndex(_state.hoverHighlightIndex) ||
+        hasFiniteNodeIndex(_state.focusedNode) ||
+        hasFiniteNodeIndex(_state.inspectedThreadIndex) ||
+        hasFiniteNodeIndex(_state.pinnedThreadIndex)
+    )
+}
+
+function scheduleNextAnimationFrame(continuous: boolean): void {
+    if (_rafId !== null || _idleFrameTimerId !== null) return
+    if (continuous) {
+        _rafId = window.requestAnimationFrame(animate)
+        return
+    }
+    _idleFrameTimerId = window.setTimeout(() => {
+        _idleFrameTimerId = null
+        if (_rafId === null) _rafId = window.requestAnimationFrame(animate)
+    }, IDLE_STATIC_FRAME_INTERVAL_MS)
+}
 
 function detectWebGLSupport() {
     if (typeof document === 'undefined') return { supported: false, reason: 'document-unavailable' }
@@ -677,6 +724,7 @@ export function initThreeJS() {
         if (
             !document.hidden &&
             _rafId === null &&
+            _idleFrameTimerId === null &&
             !_webglContextLost &&
             !_circuitBreakerTripped &&
             webglContext.renderer &&
@@ -877,6 +925,10 @@ export function cancelAnimate() {
         window.clearTimeout(_webglRestoreTimer)
         _webglRestoreTimer = null
     }
+    if (_idleFrameTimerId !== null) {
+        window.clearTimeout(_idleFrameTimerId)
+        _idleFrameTimerId = null
+    }
     const contextWasLost = _webglContextLost
     _webglContextLost = false
     const renderer = _state?.renderer
@@ -991,10 +1043,11 @@ export function animate() {
         return
     }
 
-    _rafId = requestAnimationFrame(animate)
     try {
         const frameStart = performance.now()
         const frameNow = frameStart
+        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow)
+        scheduleNextAnimationFrame(sceneNeedsContinuous)
         const sceneFrameMs = _state?.scenePerformanceDiagnostics?.lastFrameAt
             ? Math.min(250, Math.max(0, frameNow - _state.scenePerformanceDiagnostics.lastFrameAt))
             : 0
@@ -1179,16 +1232,18 @@ export function animate() {
             }
         }
 
-        updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
-        updateCorridorNodeGlow(frameNow)
-        updateSearchCorridorAnimation(frameNow)
+        if (sceneNeedsContinuous) {
+            updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
+            updateCorridorNodeGlow(frameNow)
+            updateSearchCorridorAnimation(frameNow)
 
-        try {
-            _inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
-            _routeArrival?.updateRouteTraceOverlayFrame(frameNow)
-            _routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)
-        } catch (overlayErr) {
-            debugWarn('overlay update threw:', overlayErr)
+            try {
+                _inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
+                _routeArrival?.updateRouteTraceOverlayFrame(frameNow)
+                _routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)
+            } catch (overlayErr) {
+                debugWarn('overlay update threw:', overlayErr)
+            }
         }
 
         // Note: _focusPocket.applyFocusPocketBreathing(...) is already called inside
@@ -1198,11 +1253,13 @@ export function animate() {
         // doubling the per-frame breathing cost (50-200ms in QA). Removed per
         // W15-T1 focus-deadlock diagnosis (tmp/w15-focus-deadlock-diagnosis.md).
 
-        if (shouldRenderThreads()) {
+        if (sceneNeedsContinuous && shouldRenderThreads()) {
             updateMyceliumThreads()
         }
-        _cameraControls?.applySemanticCentroidCamera(frameNow)
-        _clusterLabels?.updateClusterLabels()
+        if (sceneNeedsContinuous) {
+            _cameraControls?.applySemanticCentroidCamera(frameNow)
+            _clusterLabels?.updateClusterLabels()
+        }
 
         const updateEnd = performance.now()
         const renderStart = performance.now()
