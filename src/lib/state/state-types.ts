@@ -431,6 +431,7 @@ export interface SearchSummary {
     topIndex: number | null;
     resultIndices: number[];
     summaryType: 'semantic' | 'text' | 'mixed';
+    reason?: string;
 }
 
 export interface SemanticState extends StateConfig {

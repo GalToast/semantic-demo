@@ -23,29 +23,12 @@
  */
 
 
+import type { Point } from '@lib/state/state-types'
 import { getPanelSurface } from '@lib/utils/environment'
-import { appState } from '@lib/state/app.svelte';
-import { CONFIG } from '@lib/engine/config';
+import { appState } from '@lib/state/app.svelte'
+import { CONFIG } from '@lib/engine/config'
 
 // ── Types ──────────────────────────────────────────────────────────────────
-
-interface BusinessPoint {
-    name?: string;
-    what?: string;
-    lead_id?: string | number | null;
-    trivia?: string;
-    website?: string;
-    email?: string;
-    phone?: string;
-    city?: string;
-    lat?: number;
-    lng?: number;
-    cluster?: number;
-    status?: string;
-    weather_sensitive?: boolean;
-    sensitivity_flags?: string[];
-    [key: string]: unknown;
-}
 
 interface TriviaBlocklist {
     readonly exact: readonly string[];
@@ -57,7 +40,7 @@ interface TriviaBlocklist {
 
 // ── Renderers ──────────────────────────────────────────────────────────────
 
-export function renderSignalBadges(point: any): string {
+export function renderSignalBadges(point: Point | null): string {
     if (appState.currentView === 'map') return '';
     if (!point) return '';
     const badges: string[] = [];
@@ -67,21 +50,21 @@ export function renderSignalBadges(point: any): string {
     return badges.join('');
 }
 
-export function updateSelectedCardHeading(point: any = null): void {
+export function updateSelectedCardHeading(point: Point | null = null): void {
     const titleEl = document.getElementById('selected-card-title');
     if (!titleEl) return;
 
     const activePoint = point || appState.selectedPoint || null;
-    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : [];
+    const points = Array.isArray(appState.points) ? (appState.points as Point[]) : [];
     const activeIndex = activePoint && points.length > 0
         ? points.indexOf(activePoint)
         : -1;
-    const summary = appState.currentSearchSummary || {} as any;
-    const resultIndices: number[] = Array.isArray(summary.resultIndices) ? summary.resultIndices : [];
+    const summary = appState.currentSearchSummary;
+    const resultIndices = summary && Array.isArray(summary.resultIndices) ? (summary.resultIndices as number[]) : [];
 
     if (!activePoint) {
         titleEl.textContent = appState.currentView === 'map' ? 'Map Selection' : 'Selection';
-    } else if (Number.isFinite(summary.anchorIndex) && activeIndex === summary.anchorIndex) {
+    } else if (summary && Number.isFinite(summary.anchorIndex) && activeIndex === summary.anchorIndex) {
         titleEl.textContent = 'Search Anchor';
     } else if (resultIndices.includes(activeIndex)) {
         titleEl.textContent = 'Related Match';
@@ -92,17 +75,17 @@ export function updateSelectedCardHeading(point: any = null): void {
     }
 }
 
-export function renderSelectedMetaStrip(point: any): void {
+export function renderSelectedMetaStrip(point: Point | null): void {
     void point;
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
-export function renderSelectedMatchPanel(point: any): void {
+export function renderSelectedMatchPanel(point: Point | null): void {
     void point;
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
-export function renderSelectedActionRow(point: any): void {
+export function renderSelectedActionRow(point: Point | null): void {
     void point;
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
@@ -156,7 +139,7 @@ function focusStageOwnsSelectedContent(surface: string): boolean {
  * journey-selected-card.js delegates container-slot toggling to this function
  * rather than doing its own DOM queries — preserving a single writer per slot.
  */
-export function syncSelectedCardContentVariant(point: any = null): void {
+export function syncSelectedCardContentVariant(point: Point | null = null): void {
     const cardEl = document.getElementById('selected-card');
     const emptyEl = document.getElementById('selected-empty');
     const detailsEl = document.getElementById('selected-details');
@@ -186,7 +169,7 @@ export function syncSelectedCardContentVariant(point: any = null): void {
         cascadeEl.hidden = suppressCascade;
         if (suppressCascade) {
             cascadeEl.classList.remove('active');
-            cascadeEl.innerHTML = '';
+            cascadeEl.replaceChildren();
         }
     }
 
@@ -292,20 +275,20 @@ export function rejectsTrivia(trivia: string = ''): boolean {
     return TRIVIA_BLOCKLIST.substrings.some((substring) => trimmed.includes(substring));
 }
 
-export function getInterestingBusinessNote(point: any): string | null {
+export function getInterestingBusinessNote(point: Point | null): string | null {
     if (!point) return null;
     // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
     // (snapshot > business_overview > observations) over the database
     // trivia field, which is often database noise.
-    const enrichment: any = appState.leadEnrichment;
-    if (enrichment) {
-        const enr: any = enrichment[String(point.lead_id)];
+    const enrichment = appState.leadEnrichment;
+    if (enrichment && point.lead_id !== undefined) {
+        const enr = enrichment[String(point.lead_id)] as Record<string, unknown> | undefined;
         if (enr) {
             const candidates = [
-                enr.snapshot,
-                enr.business_overview_extended,
-                enr.business_overview,
-                enr.observations
+                enr.snapshot as string | undefined,
+                enr.business_overview_extended as string | undefined,
+                enr.business_overview as string | undefined,
+                enr.observations as string | undefined
             ];
             for (const c of candidates) {
                 if (c && !rejectsTrivia(c)) return c.trim();
@@ -325,9 +308,9 @@ export function getInterestingBusinessNote(point: any): string | null {
 /**
  * Build selected match narrative copy.
  */
-export function buildSelectedMatchNarrative(point: any): string {
+export function buildSelectedMatchNarrative(point: Point | null): string {
     if (!point) return '';
-    const summary: any = appState.currentSearchSummary;
+    const summary = appState.currentSearchSummary;
     if (summary?.reason) return summary.reason;
     return '';
 }

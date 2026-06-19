@@ -127,6 +127,7 @@ export interface SearchSummary {
     topIndex: number | null
     resultIndices: number[]
     summaryType: 'semantic' | 'text' | 'mixed'
+    reason?: string
 }
 
 // ── Journey State ─────────────────────────────────────────────────────────────
