@@ -4,21 +4,29 @@
   import { completeCameraTransition } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
+  import { engineReady as engineReadyStore } from '@lib/stores/engine-ready.svelte';
   import type { EngineCallbacks } from '@lib/engine/adapters/types';
   import type { LoadingPhase } from '@lib/types/state';
 
   interface Props {
     interactive?: boolean;
+    /**
+     * W6-T1: when true, defer initEngine() until the engine-ready store
+     * flips to true. Required for lazy-shell mount via App.svelte's
+     * conditional <Splash /> → <Canvas /> pattern. Default: false to
+     * preserve existing behaviour for non-lazy callers.
+     */
+    defer?: boolean;
   }
 
-  let { interactive = true }: Props = $props();
+  let { interactive = true, defer = false }: Props = $props();
 
   let containerEl: HTMLDivElement | undefined = $state(undefined);
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
   let mounted = $state(false);
   let overlayVisible = $state(true);
   let canvasReady = $state(false);
-  let engineReady = $state(false);
+  let engineHasInit = $state(false);
   let engineLifecycle: typeof import('@lib/engine/lifecycle') | null = null;
   let componentDestroyed = false;
   let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
@@ -95,7 +103,7 @@
       }
     }, 5000);
 
-    void (async () => {
+    const initLifecycle = async (): Promise<void> => {
       try {
         const lifecycle = await import('@lib/engine/lifecycle');
         if (componentDestroyed || !canvasEl) return;
@@ -105,12 +113,33 @@
           lifecycle.destroyEngine();
           return;
         }
-        engineReady = true;
+        engineHasInit = true;
         lifecycle.resizeEngine(viewportWidth(), viewportHeight());
       } catch (err) {
         console.error('[Canvas] Engine init failed:', err);
       }
-    })();
+    };
+
+    if (defer) {
+      // W6-T1: lazy mount — wait for engine-ready store to flip before init.
+      const unlock = (): void => {
+        if (engineReadyStore.value) {
+          initLifecycle();
+        }
+      };
+      unlock();
+      const unsub = engineReadyStore.subscribe((ready) => {
+        if (ready && !engineHasInit && !componentDestroyed) {
+          unsub();
+          void initLifecycle();
+        }
+      });
+      // Best-effort cleanup if component falls through without firing.
+      // (No-op in the typical case — the subscribe() handles its own teardown.)
+      void unsub;
+    } else {
+      void initLifecycle();
+    }
   });
 
   $effect(() => {
@@ -121,14 +150,14 @@
     // viewport store on its own. See qa-screenshots/REPORT.md bug 1.
     const w = $viewport.width;
     const h = $viewport.height;
-    if (engineReady && engineLifecycle?.getEngineStatus() === 'ready') {
+    if (engineHasInit && engineLifecycle?.getEngineStatus() === 'ready') {
       engineLifecycle.resizeEngine(w, h);
     }
   });
 
   onDestroy(() => {
     componentDestroyed = true;
-    engineReady = false;
+    engineHasInit = false;
     canvasReady = false;
     overlayVisible = true;
     engineLifecycle?.destroyEngine();

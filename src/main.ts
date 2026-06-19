@@ -11,6 +11,8 @@ import App from './App.svelte';
 // import here to keep it off the cold-load main-thread critical path.
 import { testState } from '@lib/stores/index.svelte.ts';
 import { installWindowActions } from '@lib/orchestration/window-actions';
+import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture';
+import { engineReady } from '@lib/stores/engine-ready.svelte';
 import { hydrateFromLegacyState } from '@lib/data-store';
 import { appState } from '@lib/state/app.svelte.ts';
 import { state as legacyState } from '@lib/engine/state-bridge';
@@ -54,6 +56,14 @@ if (mountTarget) {
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics
 // for visual-audit compatibility.
 initRouteTraceSubscriptions();
+
+// ── W6-T1 gesture-driven engine-ready signal ─────────────────────────────────
+// The engine waits for first user gesture (or visibility flip) before any
+// heavy init runs from <Canvas defer />. Idempotent — safe to call once.
+const teardownGestureMonitor = installGestureMonitor({
+  onReady: () => engineReady.signalReady(),
+});
+window.addEventListener('beforeunload', () => teardownGestureMonitor(), { once: true });
 
 // Hydrate Svelte stores from the legacy state after mount.
 // The legacy init path sets __APP_STATE__ asynchronously; retry until the
