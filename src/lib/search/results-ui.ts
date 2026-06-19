@@ -13,7 +13,7 @@ import { state } from '../engine/state-bridge';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { isCompactSearchViewport } from '../engine/ui-presentation-bridge';
 import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from '../engine/search-panel-adapter-bridge';
-import { recordSemanticLaneSnapshot } from '../engine/semantic-lane-bridge';
+import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane';
 import {
     searchResultsStore,
     searchSummaryStore,

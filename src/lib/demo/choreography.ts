@@ -22,12 +22,12 @@ import {
 } from './guards';
 import { seededUnit } from '@lib/utils/seeded-random';
 import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo.svelte.ts';
-import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '@lib/engine/micro-demo-choreography-bridge';
+import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '../engine/demo-choreography';
 import { appState } from '@lib/state/app.svelte';
 
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
 // The actual timed camera/UI choreography is still in the legacy JS module,
-// accessed via the engine bridge (micro-demo-choreography-bridge).
+// The actual timed camera/UI choreography is still in the legacy micro-demo-choreography.js module.
 // Static imports are resolved by Vite at bundle time; no lazy loading needed.
 
 // ── Constants ───────────────────────────────────────────────────────────────
