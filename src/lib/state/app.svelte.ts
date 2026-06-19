@@ -278,37 +278,37 @@ class AppState {
     })
 
     // ==== CONFIGURATION CONSTANTS ====
-    MAP_HANDOFF_PRELUDE_MS = $state(430)
-    VIEW_HANDOFF_OUT_MS = $state(1200)
-    TERRAIN_LANDING_SETTLE_MS = $state(1200)
-    TERRAIN_LANDING_SETTLE_LONG_MS = $state(1800)
-    SHOW_VIEW_HANDOFF_DISMISS_MS = $state(2200)
-    MAP_TRAIL_REFRESH_LATE_DELAY_MS = $state(100)
-    AUTO_ROTATE_IDLE_MS = $state(3600)
-    AUTO_ROTATE_MANUAL_IDLE_MS = $state(5200)
-    AUTO_ROTATE_SOFT_RESUME_MS = $state(1800)
-    AUTO_ROTATE_BASE_SPEED = $state(0.34)
-    MOBILE_ROUTE_FIELD_PEEK_MS = $state(1550)
-    SELECTED_CARD_FADE_MS = $state(180)
-    ORBIT_MIN_DISTANCE_DEFAULT = $state(0.5)
-    ORBIT_MIN_DISTANCE_INSIDE = $state(0.24)
-    ORBIT_MAX_DISTANCE_DEFAULT = $state(5.5)
-    ORBIT_MAX_DISTANCE_FREE = $state(6.8)
-    ORBIT_ROTATE_SPEED_DEFAULT = $state(0.6)
-    ORBIT_ROTATE_SPEED_FREE = $state(0.82)
-    ORBIT_PAN_SPEED_DEFAULT = $state(0.5)
-    ORBIT_PAN_SPEED_FREE = $state(0.68)
-    SEARCH_TRAIL_CUE_MIN_DWELL_MS = $state(920)
+    readonly MAP_HANDOFF_PRELUDE_MS = 430
+    readonly VIEW_HANDOFF_OUT_MS = 1200
+    readonly TERRAIN_LANDING_SETTLE_MS = 1200
+    readonly TERRAIN_LANDING_SETTLE_LONG_MS = 1800
+    readonly SHOW_VIEW_HANDOFF_DISMISS_MS = 2200
+    readonly MAP_TRAIL_REFRESH_LATE_DELAY_MS = 100
+    readonly AUTO_ROTATE_IDLE_MS = 3600
+    readonly AUTO_ROTATE_MANUAL_IDLE_MS = 5200
+    readonly AUTO_ROTATE_SOFT_RESUME_MS = 1800
+    readonly AUTO_ROTATE_BASE_SPEED = 0.34
+    readonly MOBILE_ROUTE_FIELD_PEEK_MS = 1550
+    readonly SELECTED_CARD_FADE_MS = 180
+    readonly ORBIT_MIN_DISTANCE_DEFAULT = 0.5
+    readonly ORBIT_MIN_DISTANCE_INSIDE = 0.24
+    readonly ORBIT_MAX_DISTANCE_DEFAULT = 5.5
+    readonly ORBIT_MAX_DISTANCE_FREE = 6.8
+    readonly ORBIT_ROTATE_SPEED_DEFAULT = 0.6
+    readonly ORBIT_ROTATE_SPEED_FREE = 0.82
+    readonly ORBIT_PAN_SPEED_DEFAULT = 0.5
+    readonly ORBIT_PAN_SPEED_FREE = 0.68
+    readonly SEARCH_TRAIL_CUE_MIN_DWELL_MS = 920
     JOURNEY_COMPASS_PHASE_ORDER = $state<string[]>(['overview', 'search', 'focus', 'inside', 'map'])
-    SCENE_REVEAL_DURATION_MS = $state(1650)
-    LOADING_MIN_VISIBLE_MS = $state(1320)
-    POINTS_MATERIAL_BASE_SIZE = $state(0.03)
-    POINTS_MATERIAL_BASE_OPACITY = $state(1.0)
-    FOCUS_THREAD_SEGMENTS = $state(16)
-    HOVER_LOCK_CONFIRM_MS = $state(80)
-    HOVER_SAMPLE_MS = $state(24)
-    LEAFLET_CSS_URL = $state('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css')
-    LEAFLET_JS_URL = $state('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
+    readonly SCENE_REVEAL_DURATION_MS = 1650
+    readonly LOADING_MIN_VISIBLE_MS = 1320
+    readonly POINTS_MATERIAL_BASE_SIZE = 0.03
+    readonly POINTS_MATERIAL_BASE_OPACITY = 1.0
+    readonly FOCUS_THREAD_SEGMENTS = 16
+    readonly HOVER_LOCK_CONFIRM_MS = 80
+    readonly HOVER_SAMPLE_MS = 24
+    readonly LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
+    readonly LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 
     // ==== COLORS / CLUSTER NAMES ====
     COLORS = $state(CLUSTER_COLORS)
@@ -477,8 +477,16 @@ class AppState {
     /** Derived from navState.focusedIndex — read-only. Use navState.focusedIndex to set. */
     focusedNode = $derived(this.navState.focusedIndex)
 
-    /** Derived from navState.trailDepth === 2 — read-only. Use navState.trailDepth to set. */
-    semanticDiveMode = $derived(this.navState.trailDepth === 2)
+    /** Compatibility view over trailDepth. Setting it keeps navState mirrored. */
+    get semanticDiveMode(): boolean {
+        return this.trailDepth === 2 || this.navState.trailDepth === 2
+    }
+
+    set semanticDiveMode(active: boolean) {
+        const nextDepth = active ? 2 : 0
+        this.trailDepth = nextDepth
+        this.navState.trailDepth = nextDepth
+    }
 
     // ==== URL STATE TRACKING ====
     applyingUrlState = $state<boolean>(false)
