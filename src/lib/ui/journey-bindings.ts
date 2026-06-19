@@ -18,6 +18,14 @@ import { resetExplorationFocus, exploreInsideToNextStop } from '@lib/engine/life
 import { clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 
+let _journeyAbortController: AbortController | null = null
+
+export function disposeJourneyBindings(): void {
+    _journeyAbortController?.abort()
+    _journeyAbortController = null
+    state.registeredEvents.clear()
+}
+
 export function expandNeighborhoodFromCurrentNode(): void {
     const index = state.focusedNode
     if (!Number.isFinite(index)) return
@@ -181,6 +189,7 @@ export function bindFocusControls(): void {
     }
 
     if (!(document.body as HTMLElement)?.dataset.journeyCompassStepDelegated) {
+        _journeyAbortController = new AbortController()
         document.addEventListener('click', (event: MouseEvent) => {
             const step = (event.target as HTMLElement)?.closest?.('.journey-compass-step') as HTMLElement | null
             if (!step) return
@@ -188,7 +197,7 @@ export function bindFocusControls(): void {
             if (action) {
                 executeJourneyCompassAction(action)
             }
-        })
+        }, { signal: _journeyAbortController.signal })
         document.addEventListener('keydown', (event: KeyboardEvent) => {
             if (event.key !== 'Enter' && event.key !== ' ') return
             const step = (event.target as HTMLElement)?.closest?.('.journey-compass-step') as HTMLElement | null
@@ -198,7 +207,7 @@ export function bindFocusControls(): void {
             if (action) {
                 executeJourneyCompassAction(action)
             }
-        })
+        }, { signal: _journeyAbortController.signal })
         if (document.body) (document.body as HTMLElement).dataset.journeyCompassStepDelegated = 'true'
     }
 

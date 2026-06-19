@@ -390,6 +390,7 @@ let _circuitBreakerTripped = false
 let _webglRestoreTimer: number | null = null
 let _lastHoveredNode: number | null = null
 let _hoverEmissiveFlash = 0
+let _visibilityChangeHandler: (() => void) | null = null
 
 const SCENE_PERF_EMA_DECAY = 0.992
 const IDLE_STATIC_FRAME_INTERVAL_MS = 125
@@ -720,7 +721,9 @@ export function initThreeJS() {
     // Resume the animate() loop when the document becomes visible again.
     // Paired with the document.hidden gate at the top of animate() to let
     // Lighthouse find an idle period while the page is backgrounded.
-    document.addEventListener('visibilitychange', () => {
+    // Stored as a named reference so it can be removed in cancelAnimate()/deinit()
+    // to prevent duplicate handlers on repeated initThreeJS() calls (W1-H1).
+    _visibilityChangeHandler = () => {
         if (
             !document.hidden &&
             _rafId === null &&
@@ -733,7 +736,8 @@ export function initThreeJS() {
         ) {
             animate()
         }
-    })
+    }
+    document.addEventListener('visibilitychange', _visibilityChangeHandler)
 
     const controls = new OrbitControls(camera, renderer.domElement)
     controls.enableDamping = true
@@ -916,6 +920,14 @@ export function onWindowResize() {
     _ppModule?.resizePostProcessing(width, height)
 }
 
+/**
+ * Cancel the render loop and tear down scene graph resources.
+ * NOTE: This is a LIGHTER teardown. The `deinit()` function additionally calls
+ * disposeNodeVisualsPort() and disposeMyceliumPort() to release tracked textures
+ * and mycelium GPU resources. Call deinit() after cancelAnimate() for full cleanup.
+ * The WebGL context-lost handler (line 701) currently only calls cancelAnimate();
+ * tracked textures will leak until context GC — known issue, see smell-accounting W1-M2.
+ */
 export function cancelAnimate() {
     if (_rafId !== null) {
         window.cancelAnimationFrame(_rafId)
@@ -928,6 +940,11 @@ export function cancelAnimate() {
     if (_idleFrameTimerId !== null) {
         window.clearTimeout(_idleFrameTimerId)
         _idleFrameTimerId = null
+    }
+    // Remove the visibilitychange handler to prevent accumulation on re-init (W1-H1)
+    if (_visibilityChangeHandler) {
+        document.removeEventListener('visibilitychange', _visibilityChangeHandler)
+        _visibilityChangeHandler = null
     }
     const contextWasLost = _webglContextLost
     _webglContextLost = false
@@ -1015,6 +1032,9 @@ export function deinit() {
     _threeInteractionVisuals?.disposeInteractionVisuals()
     _audioScape?.disposeAudio()
     _eventBindings?.disposeEventListeners()
+    // Reset module-cache flag so _ensureModules() re-reads fresh references on
+    // subsequent initThreeJS() calls (W1-M1).
+    _loaded = false
 }
 
 export function animate() {

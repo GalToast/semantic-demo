@@ -2,6 +2,7 @@ import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
 
 let _onboardingIdleTimer: ReturnType<typeof setTimeout> | null = null
+let _onboardingAbortController: AbortController | null = null
 
 function clearOnboardingTimers(): void {
     if (_onboardingIdleTimer) {
@@ -22,6 +23,8 @@ function clearOnboardingTimers(): void {
 
 export function disposeOnboardingBindings(): void {
     clearOnboardingTimers()
+    _onboardingAbortController?.abort()
+    _onboardingAbortController = null
 }
 
 export function shouldShowOnboardingHint(): boolean {
@@ -83,8 +86,9 @@ export function scheduleOnboardingHint(): void {
 
     if (!state.registeredEvents.has('onboarding-interaction')) {
         state.registeredEvents.add('onboarding-interaction')
+        _onboardingAbortController = new AbortController()
         ;(['mousemove', 'keydown', 'click'] as const).forEach((evt) =>
-            document.addEventListener(evt, resetOnboardingIdleTimer, { passive: true })
+            document.addEventListener(evt, resetOnboardingIdleTimer, { passive: true, signal: _onboardingAbortController!.signal })
         )
     }
 }
