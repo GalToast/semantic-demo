@@ -1145,7 +1145,7 @@ async function assert_focus_pocket(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0)
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -1158,7 +1158,7 @@ async function assert_focus_pocket(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0)
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -1457,7 +1457,7 @@ async function assert_field_node(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0)
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -1470,7 +1470,7 @@ async function assert_field_node(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0)
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -2908,7 +2908,7 @@ async function assert_search_chrome(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0)
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -4936,7 +4936,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0)
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -4949,7 +4949,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || rect.width <= 0 || rect.height <= 0)
+            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
