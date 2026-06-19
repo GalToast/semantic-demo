@@ -52,6 +52,8 @@
   import '@lib/css/biofield.css';
 
   import Canvas from '@components/Canvas.svelte';
+  import Splash from '@components/Splash.svelte';
+  import { engineReady } from '@lib/stores/engine-ready.svelte';
   type InfoPanelModule = typeof import('@components/InfoPanel.svelte');
   let InfoPanelComponent: InfoPanelModule['default'] | null = $state(null);
   let infoPanelImportPending = false;
@@ -90,6 +92,9 @@
   type SpectorInspectorModule = typeof import('@components/SpectorInspector.svelte');
   let SpectorInspectorComponent: SpectorInspectorModule['default'] | null = $state(null);
   let spectorInspectorImportPending = false;
+  type LegacyCompassSurfaceModule = typeof import('@components/LegacyCompassSurface.svelte');
+  let LegacyCompassSurfaceComponent: LegacyCompassSurfaceModule['default'] | null = $state(null);
+  let legacyCompassSurfaceImportPending = false;
   import { legendOpen } from '@lib/stores/legend.svelte';
 
   function scheduleIdleComponentImport<T>(
@@ -531,6 +536,33 @@
       });
     }
   });
+
+  // W5-T3: idle-load LegacyCompassSurface (legacy-compass parity surface)
+  let legacyCompassSurfaceActive = $derived(
+    searchFamilySurfaceActive ||
+    focusActive ||
+    mapModeActive ||
+    bodyPanelSurface.startsWith('map-') ||
+    navSurface.startsWith('map-')
+  );
+
+  $effect(() => {
+    if (
+      legacyCompassSurfaceActive &&
+      !LegacyCompassSurfaceComponent &&
+      !legacyCompassSurfaceImportPending
+    ) {
+      legacyCompassSurfaceImportPending = true;
+      scheduleIdleComponentImport(() =>
+        import('@components/LegacyCompassSurface.svelte').then((mod) => {
+          LegacyCompassSurfaceComponent = mod.default;
+          return mod.default;
+        })
+      ).finally(() => {
+        legacyCompassSurfaceImportPending = false;
+      });
+    }
+  });
 </script>
 
 {#snippet searchPanelContent()}
@@ -559,8 +591,12 @@
   class:reduced-motion={$viewport.reducedMotion}
   class:is-overview={$navStore.mode === 'overview'}
 >
-  <!-- Layer 0: WebGL canvas -->
-  <Canvas interactive={true} />
+  <!-- Layer 0: WebGL canvas (gated behind user gesture) -->
+  {#if engineReady.value}
+    <Canvas interactive={true} defer={true} />
+  {:else}
+    <Splash />
+  {/if}
 
   <!--
     A11y region landmark wrapper (W5-T2).
@@ -731,6 +767,10 @@
 
 <!-- Layer 3000: Loading overlay (highest z-index) -->
 <LoadingOverlay visible={true} />
+
+{#if LegacyCompassSurfaceComponent}
+  <LegacyCompassSurfaceComponent noDemo={noDemo} />
+{/if}
 
 <!--
   Legacy-compass parity surface (2026-06-06):
