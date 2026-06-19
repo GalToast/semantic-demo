@@ -20,59 +20,87 @@
  * Source-only / Fake-DOM — no browser or network required.
  */
 
-import { get } from 'svelte/store';
+import { get } from 'svelte/store'
 
 // ─── Fake DOM bootstrap (subset of what other contracts use) ──────────────────
 
-let _rafNow = 0;
+let _rafNow = 0
 
 class FakeClassList {
-    constructor() { this._items = new Set(); }
-    add(...n)    { n.forEach(x => this._items.add(x)); }
-    remove(...n)  { n.forEach(x => this._items.delete(x)); }
-    contains(n)   { return this._items.has(n); }
+    constructor() {
+        this._items = new Set()
+    }
+    add(...n) {
+        n.forEach((x) => this._items.add(x))
+    }
+    remove(...n) {
+        n.forEach((x) => this._items.delete(x))
+    }
+    contains(n) {
+        return this._items.has(n)
+    }
     toggle(n, f) {
-        const on = f !== undefined ? f : !this._items.has(n);
-        on ? this._items.add(n) : this._items.delete(n);
-        return on;
+        const on = f !== undefined ? f : !this._items.has(n)
+        on ? this._items.add(n) : this._items.delete(n)
+        return on
     }
 }
 
 class FakeElement {
     constructor(tag = 'div') {
-        this.tagName = tag.toUpperCase();
-        this.classList = new FakeClassList();
-        this.dataset = {};
-        this.style = {};
-        this.children = [];
-        this._innerHTML = '';
-        this._text = '';
-        this._attr = new Map();
-        this.hidden = false;
+        this.tagName = tag.toUpperCase()
+        this.classList = new FakeClassList()
+        this.dataset = {}
+        this.style = {}
+        this.children = []
+        this._innerHTML = ''
+        this._text = ''
+        this._attr = new Map()
+        this.hidden = false
     }
-    get innerHTML()  { return this._innerHTML; }
-    set innerHTML(v) { this._innerHTML = String(v); }
-    get textContent() { return this._text; }
-    set textContent(v) { this._text = String(v); }
-    appendChild(c)   { return this.children.push(c), c; }
-    setAttribute(k, v) { this._attr.set(String(k), String(v)); }
-    getAttribute(k)  { return this._attr.get(String(k)) ?? null; }
-    removeAttribute(k) { this._attr.delete(String(k)); }
-    querySelector()    { return null; }
-    querySelectorAll() { return []; }
+    get innerHTML() {
+        return this._innerHTML
+    }
+    set innerHTML(v) {
+        this._innerHTML = String(v)
+    }
+    get textContent() {
+        return this._text
+    }
+    set textContent(v) {
+        this._text = String(v)
+    }
+    appendChild(c) {
+        return (this.children.push(c), c)
+    }
+    setAttribute(k, v) {
+        this._attr.set(String(k), String(v))
+    }
+    getAttribute(k) {
+        return this._attr.get(String(k)) ?? null
+    }
+    removeAttribute(k) {
+        this._attr.delete(String(k))
+    }
+    querySelector() {
+        return null
+    }
+    querySelectorAll() {
+        return []
+    }
 }
 
-const fakeBody = new FakeElement('body');
-const elementsById = new Map();
+const fakeBody = new FakeElement('body')
+const elementsById = new Map()
 
 globalThis.document = {
     body: fakeBody,
-    getElementById: id => elementsById.get(id) || null,
+    getElementById: (id) => elementsById.get(id) || null,
     querySelector: () => null,
     querySelectorAll: () => [],
-    createElement: tag => new FakeElement(tag),
-    addEventListener: () => {},
-};
+    createElement: (tag) => new FakeElement(tag),
+    addEventListener: () => {}
+}
 
 globalThis.window = {
     innerWidth: 1280,
@@ -80,113 +108,120 @@ globalThis.window = {
     history: { replaceState: () => {}, pushState: () => {} },
     setTimeout: () => 0,
     clearTimeout: () => {},
-    requestAnimationFrame: fn => { _rafNow += 16; return ++_rafNow; },
+    requestAnimationFrame: (fn) => {
+        _rafNow += 16
+        return ++_rafNow
+    },
     cancelAnimationFrame: () => {},
     matchMedia: () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }),
     setInterval: () => 0,
     clearInterval: () => {},
     addEventListener: () => {},
-    removeEventListener: () => {},
-};
+    removeEventListener: () => {}
+}
 
-globalThis.performance = { now: () => { _rafNow += 16; return _rafNow; } };
+globalThis.performance = {
+    now: () => {
+        _rafNow += 16
+        return _rafNow
+    }
+}
 
 Object.defineProperty(globalThis, 'navigator', {
     value: { userAgent: 'node' },
     writable: true,
-    configurable: true,
-});
+    configurable: true
+})
 Object.defineProperty(globalThis, 'crypto', {
     value: { randomUUID: () => 'fake-uuid-' + Math.random().toString(36).slice(2) },
     writable: true,
-    configurable: true,
-});
+    configurable: true
+})
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function assert(cond, msg) {
-    if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+    if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
 }
 
 // ─── Load modules under test (after fake DOM is set up) ──────────────────────
 
-const { state } = await import('../src/lib/engine/state-bridge.ts');
-const {
-    activeFiltersStore,
-    activeClusterFilterStore
-} = await import('../src/lib/stores/legacy-stores.ts');
-const {
-    setActiveFilter,
-    setActiveClusterFilter,
-    resetActiveFilters
-} = await import('../src/lib/stores/filter.svelte.ts');
+const { state } = await import('../src/lib/engine/state-bridge.ts')
+const { filterState, activeClusterFilter, setFilter, setActiveClusterFilter, resetFilters } =
+    await import('../src/lib/stores/filter.svelte.ts')
 
-// ─── CONTRACT 1: setActiveFilter mirrors state.activeFilters → activeFiltersStore ──
+// ─── CONTRACT 1: setFilter mirrors state.activeFilters → filterState ──────
 
-setActiveFilter('status', 'active');
-const afStatus = get(activeFiltersStore);
-assert(afStatus && afStatus.status === 'active',
-    `activeFiltersStore.status should be 'active' after setActiveFilter('status', 'active'), got ${JSON.stringify(afStatus)}`);
-assert(state.activeFilters.status === 'active',
-    "state.activeFilters.status should also be 'active' (sanity check)");
+setFilter('status', 'active')
+const afStatus = get(filterState)
+assert(
+    afStatus && afStatus.status === 'active',
+    `filterState.status should be 'active' after setFilter('status', 'active'), got ${JSON.stringify(afStatus)}`
+)
+assert(state.activeFilters.status === 'active', "state.activeFilters.status should also be 'active' (sanity check)")
 
-setActiveFilter('website', true);
-const afWebsite = get(activeFiltersStore);
-assert(afWebsite.website === true,
-    `activeFiltersStore.website should be true, got ${JSON.stringify(afWebsite)}`);
+setFilter('website', true)
+const afWebsite = get(filterState)
+assert(afWebsite.website === true, `filterState.website should be true, got ${JSON.stringify(afWebsite)}`)
 
-console.log('PASS CONTRACT 1: setActiveFilter() syncs activeFiltersStore');
+console.log('PASS CONTRACT 1: setFilter() syncs filterState')
 
-// ─── CONTRACT 2: resetActiveFilters clears the store to defaults ──────────────
+// ─── CONTRACT 2: resetFilters clears the store to defaults ─────────
 
-resetActiveFilters();
-const afReset = get(activeFiltersStore);
-assert(afReset.status === 'all' && afReset.city === 'all' && afReset.website === false
-    && afReset.email === false && afReset.geocoded === false,
-    `activeFiltersStore should be at defaults after resetActiveFilters, got ${JSON.stringify(afReset)}`);
+resetFilters()
+const afReset = get(filterState)
+assert(
+    afReset.status === 'all' &&
+        afReset.city === '' &&
+        afReset.website === false &&
+        afReset.email === false &&
+        afReset.geocoded === false,
+    `filterState should be at defaults after resetFilters, got ${JSON.stringify(afReset)}`
+)
 
-console.log('PASS CONTRACT 2: resetActiveFilters() syncs activeFiltersStore to defaults');
+console.log('PASS CONTRACT 2: resetFilters() syncs filterState to defaults')
 
-// ─── CONTRACT 3: setActiveClusterFilter mirrors state.activeClusterFilter → activeClusterFilterStore ──
+// ─── CONTRACT 3: setActiveClusterFilter mirrors state.activeClusterFilter → activeClusterFilter ──
 
-setActiveClusterFilter(7);
-const acfValue = get(activeClusterFilterStore);
-assert(acfValue === 7,
-    `activeClusterFilterStore should be 7 after setActiveClusterFilter(7), got ${acfValue}`);
+setActiveClusterFilter(7)
+const acfValue = get(activeClusterFilter)
+// Canonical store normalizes to string; loose equality accepts both 7 and '7'.
+assert(acfValue == 7, `activeClusterFilter should be 7 after setActiveClusterFilter(7), got ${acfValue}`)
 
-setActiveClusterFilter(null);
-const acfNull = get(activeClusterFilterStore);
-assert(acfNull === null,
-    `activeClusterFilterStore should be null after setActiveClusterFilter(null), got ${acfNull}`);
+setActiveClusterFilter(null)
+const acfNull = get(activeClusterFilter)
+assert(acfNull === null, `activeClusterFilter should be null after setActiveClusterFilter(null), got ${acfNull}`)
 
-console.log('PASS CONTRACT 3: setActiveClusterFilter() syncs activeClusterFilterStore');
+console.log('PASS CONTRACT 3: setActiveClusterFilter() syncs activeClusterFilter')
 
 // ─── CONTRACT 4: store updates do not alias state (objects are cloned) ────────
 //
 // If the store held the same object reference as state, mutating one would
 // silently mutate the other. The sync contract clones objects to prevent this.
 
-setActiveFilter('city', 'Rockville');
-const afCity = get(activeFiltersStore);
-afCity.city = 'TAMPERED';
-const afStateAfter = state.activeFilters.city;
-assert(afStateAfter === 'Rockville',
-    `state.activeFilters.city must be 'Rockville' after store mutation — got '${afStateAfter}'. Sync must clone, not alias.`);
+setFilter('city', 'Rockville')
+const afCity = get(filterState)
+afCity.city = 'TAMPERED'
+const afStateAfter = state.activeFilters.city
+assert(
+    afStateAfter === 'Rockville',
+    `state.activeFilters.city must be 'Rockville' after store mutation — got '${afStateAfter}'. Sync must clone, not alias.`
+)
 
-console.log('PASS CONTRACT 7: store values are cloned, not aliased to state');
+console.log('PASS CONTRACT 7: store values are cloned, not aliased to state')
 
 // ─── Summary ──────────────────────────────────────────────────────────────────
 
-console.log('\n=== state-store-sync-contract.mjs COMPLETE ===');
-console.log('4 contracts verified. State ↔ Svelte store sync is load-bearing.');
-console.log('');
-console.log('Sync map:');
-console.log('  state.activeFilters         ↔ activeFiltersStore         (filter-state.js)');
-console.log('  state.activeClusterFilter   ↔ activeClusterFilterStore   (filter-state.js)');
-console.log('');
-console.log('Panel-toggle stores (isInfoPanelOpen, isLegendPanelOpen) are owned by the');
-console.log('Svelte chrome components and have no state.js counterpart.');
-console.log('');
-console.log('Decorative stores (currentView, loadingPhaseKey, semanticThreadsStatus)');
-console.log('were removed — no Svelte component read them, so the sync was dead weight.');
-console.log('The state writes themselves still happen via state-mutators.js.');
+console.log('\n=== state-store-sync-contract.mjs COMPLETE ===')
+console.log('4 contracts verified. State ↔ Svelte store sync is load-bearing.')
+console.log('')
+console.log('Sync map:')
+console.log('  state.activeFilters         ↔ activeFiltersStore         (filter-state.js)')
+console.log('  state.activeClusterFilter   ↔ activeClusterFilterStore   (filter-state.js)')
+console.log('')
+console.log('Panel-toggle stores (isInfoPanelOpen, isLegendPanelOpen) are owned by the')
+console.log('Svelte chrome components and have no state.js counterpart.')
+console.log('')
+console.log('Decorative stores (currentView, loadingPhaseKey, semanticThreadsStatus)')
+console.log('were removed — no Svelte component read them, so the sync was dead weight.')
+console.log('The state writes themselves still happen via state-mutators.js.')
