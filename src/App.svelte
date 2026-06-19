@@ -156,16 +156,15 @@
   $effect(() => {
     if (focusStageActive && !FocusCardComponent && !focusCardImportPending) {
       focusCardImportPending = true;
-      import('@components/FocusCard.svelte')
-        .then((mod) => {
+      // W44-S4: idle-deferred for cold-load
+      scheduleIdleComponentImport(() =>
+        import('@components/FocusCard.svelte').then((mod) => {
           FocusCardComponent = mod.default;
+          return mod.default;
         })
-        .catch((err) => {
-          console.error('[App] FocusCard lazy-load failed:', err);
-        })
-        .finally(() => {
-          focusCardImportPending = false;
-        });
+      ).finally(() => {
+        focusCardImportPending = false;
+      });
     }
   });
 
@@ -458,12 +457,20 @@
   // Lazy-load JourneyChrome (34 KB source) — only needed in focus/trail/inside mode
   type JourneyChromeModule = typeof import('@components/JourneyChrome.svelte');
   let JourneyChrome: JourneyChromeModule['default'] | null = $state(null);
+  let journeyChromeImportPending = false;
   $effect(() => {
-    if (focusActive) {
-      import('@components/JourneyChrome.svelte').then(mod => {
-        JourneyChrome = mod.default;
+    if (focusActive && !JourneyChrome && !journeyChromeImportPending) {
+      journeyChromeImportPending = true;
+      // W44-S4: idle-deferred for cold-load
+      scheduleIdleComponentImport(() =>
+        import('@components/JourneyChrome.svelte').then(mod => {
+          JourneyChrome = mod.default;
+          return mod.default;
+        })
+      ).finally(() => {
+        journeyChromeImportPending = false;
       });
-    } else {
+    } else if (!focusActive) {
       JourneyChrome = null;
     }
   });
@@ -479,16 +486,15 @@
   $effect(() => {
     if (infoPanelOpen && !InfoPanelComponent && !infoPanelImportPending) {
       infoPanelImportPending = true;
-      import('@components/InfoPanel.svelte')
-        .then((mod) => {
+      // W44-S4: idle-deferred for cold-load
+      scheduleIdleComponentImport(() =>
+        import('@components/InfoPanel.svelte').then((mod) => {
           InfoPanelComponent = mod.default;
+          return mod.default;
         })
-        .catch((err) => {
-          console.error('[App] InfoPanel lazy-load failed:', err);
-        })
-        .finally(() => {
-          infoPanelImportPending = false;
-        });
+      ).finally(() => {
+        infoPanelImportPending = false;
+      });
     }
   });
 </script>
