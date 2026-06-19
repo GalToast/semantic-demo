@@ -67,7 +67,7 @@ const headed =
     !cliArgs.includes('--headless') && process.env.PW_HEADLESS !== '1' && process.env.PLAYWRIGHT_HEADLESS !== '1'
 const launchOptions = {
     headless: !headed,
-    args: headed ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] : ['--no-sandbox']
+    args: headed ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', '--disable-application-cache', '--disable-cache'] : ['--no-sandbox', '--disable-application-cache', '--disable-cache']
 }
 
 function parseFlags(args) {
@@ -320,6 +320,8 @@ function makeAssert(name) {
 
 async function assert_mobile_idle(page, ctx) {
     await loadAndWait(page, positionalUrl)
+    // Trigger engineReady gate (requires user gesture to mount <Canvas>)
+    await page.evaluate(() => { window.dispatchEvent(new Event('pointerdown')); })
     await waitForMobileIdleChrome(page)
 
     const info = await page.evaluate(() => {
@@ -445,6 +447,8 @@ async function assert_mobile_idle(page, ctx) {
 
 async function assert_desktop_idle(page, ctx) {
     await loadAndWait(page, positionalUrl)
+    // Trigger engineReady gate (requires user gesture to mount <Canvas>)
+    await page.evaluate(() => { window.dispatchEvent(new Event('pointerdown')); })
 
     const info = await page.evaluate(() => {
         function blackOnDark(bg, text) {
@@ -883,6 +887,8 @@ async function assert_map_trail(page, ctx) {
     const base = positionalUrl.includes('?') ? '&' : '?'
     const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`
     await loadAndWait(page, focusedUrl)
+    // Trigger engineReady gate (requires user gesture to mount <Canvas>)
+    await page.evaluate(() => { window.dispatchEvent(new Event('pointerdown')); })
 
     // Click the first result card to enter focus stage
     await page.evaluate(() => {
@@ -3330,7 +3336,7 @@ async function assert_search_no_results(page, ctx) {
         )
 
     if (info.resultsActive) ctx.pass('search-no-results', 'dom:search-results-active')
-    else ctx.pass('search-no-results', 'dom:search-results-active')
+    else ctx.fail('search-no-results', 'dom:search-results-active', 'search results not active during no-results assertion')
 
     if (info.spinnerPresent) ctx.pass('search-no-results', 'dom:search-spinner')
     else ctx.fail('search-no-results', 'dom:search-spinner', 'missing #search-spinner')
@@ -3887,25 +3893,7 @@ async function assert_search_trail_cue(page, ctx) {
     await loadAndWait(page, positionalUrl)
 
     await page.evaluate(() => {
-        let cue = document.querySelector('#search-trail-cue')
-        if (!cue) {
-            cue = document.createElement('div')
-            cue.id = 'search-trail-cue'
-            cue.className = 'search-trail-cue'
-            cue.setAttribute('role', 'status')
-            cue.setAttribute('aria-live', 'polite')
-            cue.innerHTML = `
-        <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Connection cue</div>
-        <div class="search-trail-cue-title" id="search-trail-cue-title">Search opens a trail.</div>
-        <div class="search-trail-cue-stage" aria-hidden="true">
-          <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
-          <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
-          <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
-        </div>
-        <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>`
-            const host = document.querySelector('.search-container') || document.body
-            host.appendChild(cue)
-        }
+        const cue = document.querySelector('#search-trail-cue')
         if (cue) {
             cue.removeAttribute('hidden')
             cue.style.display = 'flex'

@@ -92,7 +92,7 @@
   }
 
   // ── Keyboard navigation ─────────────────────────────────────────────────────
-  function handleChipKeydown(event: KeyboardEvent, filterId: string, group: 'status' | 'contact') {
+  function handleChipKeydown(event: KeyboardEvent, filterId: string) {
     const chips = Array.from(
       (event.currentTarget as HTMLElement).closest('.filter-group')?.querySelectorAll('.filter-chip') ?? []
     ) as HTMLElement[];
@@ -123,11 +123,11 @@
       {#each statusFilters as filter (filter.id)}
         <button
           class="filter-chip"
-          class:active={$filterState.status === filter.id}
+          class:active={isStatusActive(filter.id)}
           data-status-filter={filter.id}
           onclick={() => handleStatusToggle(filter.id)}
-          onkeydown={(e) => handleChipKeydown(e, filter.id, 'status')}
-          aria-pressed={$filterState.status === filter.id}
+          onkeydown={(e) => handleChipKeydown(e, filter.id)}
+          aria-pressed={isStatusActive(filter.id)}
           type="button"
         >
           {filter.label}
@@ -144,7 +144,7 @@
           class:active={isContactActive(filter.id)}
           data-contact-filter={filter.id}
           onclick={() => handleContactToggle(filter.id)}
-          onkeydown={(e) => handleChipKeydown(e, filter.id, 'contact')}
+          onkeydown={(e) => handleChipKeydown(e, filter.id)}
           aria-pressed={isContactActive(filter.id)}
           type="button"
         >
@@ -159,7 +159,7 @@
       <select
         id="city-filter"
         class="city-filter"
-        value={$filterState.city}
+        value={getFilterState().city}
         onchange={handleCityChange}
       >
         <option value="">All Cities</option>
