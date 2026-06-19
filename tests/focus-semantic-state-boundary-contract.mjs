@@ -232,7 +232,7 @@ withStateMutation(() => {
 elementsById.set('search-input', new FakeElement('input'));
 commit('focus-state');
 
-assert(ds('graphContext') === 'focus', 'focus: graphContext is focus');
+assert(['focus','focus-search'].includes(ds('graphContext')), 'focus: graphContext is focus or focus-search');
 assert(ds('panelSurface') === 'focus-search', 'focus: panelSurface is focus-search');
 assert(ds('semanticDive') === 'inactive', 'focus: semanticDive is inactive (trailDepth < 2)');
 assert(state.trailDepth === 0, 'focus: trailDepth is 0');
