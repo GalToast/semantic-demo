@@ -64,7 +64,7 @@ import {
     setTrailFromSeed,
     updateTrailIndices
 } from '@lib/engine/journey-neighborhood-bridge'
-import { updateSelectedBusiness, syncFocusStage } from '@lib/engine/journey-selected-card-bridge'
+import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
 import {
     updateSelectedCardHeading,
     renderSelectedMetaStrip,

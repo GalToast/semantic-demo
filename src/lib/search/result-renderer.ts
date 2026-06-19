@@ -7,7 +7,7 @@
 
 import { state } from '../engine/state-bridge';
 import { getViewportSize } from '../utils/environment';
-import { isCompactSearchViewport } from '../engine/ui-presentation-bridge';
+import { isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters';
 
 // ── Types ──────────────────────────────────────────────────────────────────

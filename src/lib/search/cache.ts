@@ -8,7 +8,7 @@
 
 import { state, withStateMutation, type SemanticSearchCacheDiagnostics } from '../engine/state-bridge';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
-import * as idb from '../engine/idb-service-bridge';
+import * as idb from '../utils/idb-service';
 
 export const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES: number = 8;
 export const SEMANTIC_SEARCH_CACHE_TTL_MS: number = 10 * 60 * 1000;

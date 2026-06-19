@@ -11,7 +11,7 @@
 
 import { state } from '../engine/state-bridge';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
-import { isCompactSearchViewport } from '../engine/ui-presentation-bridge';
+import { isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from '../engine/search-panel-adapter-bridge';
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane';
 import {
@@ -29,7 +29,7 @@ import {
     buildSearchResultSnippet,
     buildSearchRankLabel
 } from './result-renderer';
-import { updateSearchTrailCue } from '../engine/search-trail-cue-renderer-bridge';
+import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

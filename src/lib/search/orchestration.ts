@@ -26,7 +26,7 @@ import { performSearch } from '@lib/search-engine';
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation';
-import { updateSearchTrailCue as renderSearchTrailCue } from '@lib/engine/search-trail-cue-renderer-bridge';
+import { updateSearchTrailCue as renderSearchTrailCue } from '@lib/journey/search-trail-cue-renderer';
 import {
   setSearchContainerState,
   setSearchGlowState,

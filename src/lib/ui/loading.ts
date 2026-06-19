@@ -194,7 +194,7 @@ export function scheduleWeatherHydration(): void {
 
     const start = async (): Promise<void> => {
         try {
-            const { initWeather } = await import('@lib/engine/weather-bridge')
+            const { initWeather } = await import('@lib/utils/weather')
             initWeather()
             setWeatherInitialized(true)
         } catch (err) {

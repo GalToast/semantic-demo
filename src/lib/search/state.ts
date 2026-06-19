@@ -55,7 +55,7 @@ export {
   hydrateSemanticResultContexts, type ServiceResultRow,
 } from './mapper';
 export { refreshSearchResultHierarchy, getSearchResultStrength, getSearchResultStrengthLabel } from './result-renderer';
-export { updateSearchTrailCue } from '@lib/engine/search-trail-cue-renderer-bridge';
+export { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer';
 
 import { pointMatchesActiveFilters } from '@lib/stores/filter.svelte';
 export { applyFilters, getFilteredIndices } from '@lib/orchestration/search-filter-core';
