@@ -12,19 +12,19 @@ set -e
 # Load .env if present (does not override existing env vars).
 # ---------------------------------------------------------------------------
 if [[ -f .env ]]; then
-  while IFS= read -r line; do
-    # Skip comments and empty lines.
-    [[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
-    # Export only KEY=VALUE (no multi-line, no shell expansion).
-    if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
-      key="${BASH_REMATCH[1]}"
-      val="${BASH_REMATCH[2]}"
-      # Only set if not already in the environment.
-      if [[ -z "${!key}" ]]; then
-        export "$key=$val"
-      fi
-    fi
-  done < .env
+	while IFS= read -r line; do
+		# Skip comments and empty lines.
+		[[ -z "$line" || "$line" =~ ^[[:space:]]*# ]] && continue
+		# Export only KEY=VALUE (no multi-line, no shell expansion).
+		if [[ "$line" =~ ^([A-Za-z_][A-Za-z0-9_]*)=(.*)$ ]]; then
+			key="${BASH_REMATCH[1]}"
+			val="${BASH_REMATCH[2]}"
+			# Only set if not already in the environment.
+			if [[ -z "${!key}" ]]; then
+				export "$key=$val"
+			fi
+		fi
+	done <.env
 fi
 
 # ---------------------------------------------------------------------------
@@ -37,7 +37,7 @@ PORT="${DEPLOY_PORT:-65002}"
 DOMAIN_TARGET="${DEPLOY_DOMAIN_TARGET:-${SSH_TARGET}:${REMOTE_DIR}/}"
 DRYRUN=false
 if [[ "$1" == "--dryrun" ]]; then
-  DRYRUN=true
+	DRYRUN=true
 fi
 DEPLOY_STAMP="$(date +%Y%m%d-%H%M%S)"
 # Backups go OUTSIDE public_html so they are not web-accessible.
@@ -47,12 +47,12 @@ BACKUP_PARENT="${DEPLOY_BACKUP_DIR:-/home/u741831384/backups/semantic-demo}"
 BACKUP_DIR="$BACKUP_PARENT/deploy-$DEPLOY_STAMP"
 
 function run() {
-  if $DRYRUN; then
-    echo "[DRYRUN] $@"
-  else
-    echo "==> $@"
-    eval "$@"
-  fi
+	if $DRYRUN; then
+		echo "[DRYRUN] $@"
+	else
+		echo "==> $@"
+		eval "$@"
+	fi
 }
 
 echo "==> Building dist/svelte..."
@@ -68,8 +68,7 @@ echo "==> Checking cache busters..."
 npm run check:cache
 
 echo "==> Creating remote rollback backup: $BACKUP_DIR"
-# Back up scanner.js too if it exists on the remote — cloudscan keeps its own copy.
-run "ssh -p $PORT $SSH_TARGET 'mkdir -p \"$BACKUP_DIR/assets\" \"$BACKUP_DIR/css\" \"$BACKUP_DIR/scripts\" \"$BACKUP_DIR/js\" && cp -p \"$REMOTE_DIR/index.html\" \"$BACKUP_DIR/index.html\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/vector-explorer-polished.html\" \"$BACKUP_DIR/vector-explorer-polished.html\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic-demo.css\" \"$BACKUP_DIR/semantic-demo.css\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/vector-explorer-pandora.css\" \"$BACKUP_DIR/vector-explorer-pandora.css\" 2>/dev/null || true && if [ -d \"$REMOTE_DIR/assets\" ]; then cp -p \"$REMOTE_DIR/assets/\"* \"$BACKUP_DIR/assets/\" 2>/dev/null || true; fi && if [ -d \"$REMOTE_DIR/css\" ]; then cp -p \"$REMOTE_DIR/css/\"*.css \"$BACKUP_DIR/css/\" 2>/dev/null || true; fi && cp -p \"$REMOTE_DIR/.htaccess\" \"$BACKUP_DIR/.htaccess\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/data.dat\" \"$BACKUP_DIR/data.dat\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/data.dat.gz\" \"$BACKUP_DIR/data.dat.gz\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic_threads.dat\" \"$BACKUP_DIR/semantic_threads.dat\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic_threads_ui.dat\" \"$BACKUP_DIR/semantic_threads_ui.dat\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic_space_layout_manifest.json\" \"$BACKUP_DIR/semantic_space_layout_manifest.json\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/scripts/leadEnrichment.public.json\" \"$BACKUP_DIR/scripts/leadEnrichment.public.json\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/js/scanner.js\" \"$BACKUP_DIR/js/scanner.js\" 2>/dev/null || true && cp -p \"$REMOTE_ROOT/js/scanner.js\" \"$BACKUP_DIR/scanner-root.js\" 2>/dev/null || true; true'"
+run "ssh -p $PORT $SSH_TARGET 'mkdir -p \"$BACKUP_DIR/assets\" \"$BACKUP_DIR/css\" \"$BACKUP_DIR/scripts\" \"$BACKUP_DIR/js\" && cp -p \"$REMOTE_DIR/index.html\" \"$BACKUP_DIR/index.html\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/vector-explorer-polished.html\" \"$BACKUP_DIR/vector-explorer-polished.html\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic-demo.css\" \"$BACKUP_DIR/semantic-demo.css\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/vector-explorer-pandora.css\" \"$BACKUP_DIR/vector-explorer-pandora.css\" 2>/dev/null || true && if [ -d \"$REMOTE_DIR/assets\" ]; then cp -p \"$REMOTE_DIR/assets/\"* \"$BACKUP_DIR/assets/\" 2>/dev/null || true; fi && if [ -d \"$REMOTE_DIR/css\" ]; then cp -p \"$REMOTE_DIR/css/\"*.css \"$BACKUP_DIR/css/\" 2>/dev/null || true; fi && cp -p \"$REMOTE_DIR/.htaccess\" \"$BACKUP_DIR/.htaccess\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/data.dat\" \"$BACKUP_DIR/data.dat\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/data.dat.gz\" \"$BACKUP_DIR/data.dat.gz\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic_threads.dat\" \"$BACKUP_DIR/semantic_threads.dat\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic_threads_ui.dat\" \"$BACKUP_DIR/semantic_threads_ui.dat\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/semantic_space_layout_manifest.json\" \"$BACKUP_DIR/semantic_space_layout_manifest.json\" 2>/dev/null || true && cp -p \"$REMOTE_DIR/scripts/leadEnrichment.public.json\" \"$BACKUP_DIR/scripts/leadEnrichment.public.json\" 2>/dev/null || true; true'"
 
 # Keep the deploy payload explicit. Do not widen this to dist/svelte/*:
 # stale files such as local metadata must never be published.
@@ -91,16 +90,16 @@ run "scp -P $PORT dist/svelte/data.dat '$DOMAIN_TARGET'"
 # $SemanticArtifacts array in deploy.ps1 so both scripts deploy the same
 # set of runtime assets to the live server.
 if [[ -f dist/svelte/data.dat.gz ]]; then
-  run "scp -P $PORT dist/svelte/data.dat.gz '$DOMAIN_TARGET'"
+	run "scp -P $PORT dist/svelte/data.dat.gz '$DOMAIN_TARGET'"
 fi
 if [[ -f dist/svelte/semantic_threads.dat ]]; then
-  run "scp -P $PORT dist/svelte/semantic_threads.dat '$DOMAIN_TARGET'"
+	run "scp -P $PORT dist/svelte/semantic_threads.dat '$DOMAIN_TARGET'"
 fi
 if [[ -f dist/svelte/semantic_threads_ui.dat ]]; then
-  run "scp -P $PORT dist/svelte/semantic_threads_ui.dat '$DOMAIN_TARGET'"
+	run "scp -P $PORT dist/svelte/semantic_threads_ui.dat '$DOMAIN_TARGET'"
 fi
 if [[ -f dist/svelte/semantic_space_layout_manifest.json ]]; then
-  run "scp -P $PORT dist/svelte/semantic_space_layout_manifest.json '$DOMAIN_TARGET'"
+	run "scp -P $PORT dist/svelte/semantic_space_layout_manifest.json '$DOMAIN_TARGET'"
 fi
 
 # Public enrichment — 13MB JSON keyed by lead_id, generated by
@@ -116,4 +115,4 @@ run "ssh -p $PORT $SSH_TARGET 'find \"$REMOTE_DIR\" -maxdepth 1 -type d -exec ch
 
 $DRYRUN && echo "==> Dry run complete — no files modified."
 $DRYRUN || echo "==> Deploy complete. Rollback backup: $BACKUP_DIR"
-$DRYRUN || echo "==> Rollback command: ssh -p $PORT $SSH_TARGET 'cp -p \"$BACKUP_DIR/index.html\" \"$REMOTE_DIR/index.html\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/vector-explorer-polished.html\" \"$REMOTE_DIR/vector-explorer-polished.html\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic-demo.css\" \"$REMOTE_DIR/semantic-demo.css\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/vector-explorer-pandora.css\" \"$REMOTE_DIR/vector-explorer-pandora.css\" 2>/dev/null || true && if [ -d \"$BACKUP_DIR/assets\" ]; then mkdir -p \"$REMOTE_DIR/assets\" && cp -p \"$BACKUP_DIR/assets/\"* \"$REMOTE_DIR/assets/\" 2>/dev/null || true; fi && if [ -d \"$BACKUP_DIR/css\" ]; then mkdir -p \"$REMOTE_DIR/css\" && cp -p \"$BACKUP_DIR/css/\"*.css \"$REMOTE_DIR/css/\" 2>/dev/null || true; fi && cp -p \"$BACKUP_DIR/.htaccess\" \"$REMOTE_DIR/.htaccess\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/data.dat\" \"$REMOTE_DIR/data.dat\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/data.dat.gz\" \"$REMOTE_DIR/data.dat.gz\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic_threads.dat\" \"$REMOTE_DIR/semantic_threads.dat\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic_threads_ui.dat\" \"$REMOTE_DIR/semantic_threads_ui.dat\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic_space_layout_manifest.json\" \"$REMOTE_DIR/semantic_space_layout_manifest.json\" 2>/dev/null || true && mkdir -p \"$REMOTE_DIR/scripts\" && cp -p \"$BACKUP_DIR/scripts/leadEnrichment.public.json\" \"$REMOTE_DIR/scripts/leadEnrichment.public.json\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/js/scanner.js\" \"$REMOTE_DIR/js/scanner.js\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/scanner-root.js\" \"$REMOTE_ROOT/js/scanner.js\" 2>/dev/null || true; true'"
+$DRYRUN || echo "==> Rollback command: ssh -p $PORT $SSH_TARGET 'cp -p \"$BACKUP_DIR/index.html\" \"$REMOTE_DIR/index.html\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/vector-explorer-polished.html\" \"$REMOTE_DIR/vector-explorer-polished.html\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic-demo.css\" \"$REMOTE_DIR/semantic-demo.css\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/vector-explorer-pandora.css\" \"$REMOTE_DIR/vector-explorer-pandora.css\" 2>/dev/null || true && if [ -d \"$BACKUP_DIR/assets\" ]; then mkdir -p \"$REMOTE_DIR/assets\" && cp -p \"$BACKUP_DIR/assets/\"* \"$REMOTE_DIR/assets/\" 2>/dev/null || true; fi && if [ -d \"$BACKUP_DIR/css\" ]; then mkdir -p \"$REMOTE_DIR/css\" && cp -p \"$BACKUP_DIR/css/\"*.css \"$REMOTE_DIR/css/\" 2>/dev/null || true; fi && cp -p \"$BACKUP_DIR/.htaccess\" \"$REMOTE_DIR/.htaccess\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/data.dat\" \"$REMOTE_DIR/data.dat\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/data.dat.gz\" \"$REMOTE_DIR/data.dat.gz\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic_threads.dat\" \"$REMOTE_DIR/semantic_threads.dat\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic_threads_ui.dat\" \"$REMOTE_DIR/semantic_threads_ui.dat\" 2>/dev/null || true && cp -p \"$BACKUP_DIR/semantic_space_layout_manifest.json\" \"$REMOTE_DIR/semantic_space_layout_manifest.json\" 2>/dev/null || true && mkdir -p \"$REMOTE_DIR/scripts\" && cp -p \"$BACKUP_DIR/scripts/leadEnrichment.public.json\" \"$REMOTE_DIR/scripts/leadEnrichment.public.json\" 2>/dev/null || true; true'"
