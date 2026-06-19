@@ -44,7 +44,6 @@ $SemanticArtifacts = @(
     "semantic_threads_ui.dat",
     "semantic_space_layout_manifest.json"
 )
-$ScannerSource = if ($env:DEPLOY_SCANNER_SOURCE) { $env:DEPLOY_SCANNER_SOURCE } else { "../js/scanner.js" }
 
 function Invoke-Step {
     param(
@@ -110,18 +109,6 @@ Invoke-Step @("scp", "-P", $Port, ".htaccess", $Target)
 # the public demo.
 Invoke-Step @("scp", "-P", $Port, "dist/svelte/scripts/leadEnrichment.public.json", "${Target}scripts/leadEnrichment.public.json")
 
-Write-Output "==> Syncing scanner.js to cloudscan/..."
-# scanner.js is the canonical source for /js/scanner.js (cloudscan page)
-# and /semantic-demo/js/scanner.js (semantic demo) - keep in sync.
-# This makes deploy.ps1 broader than semantic-demo-only changes. If ../js/scanner.js
-# is dirty or unrelated, use a scoped deploy instead of this full script.
-# If the sibling project isn't present (CI, isolated checkout), skip gracefully.
-if (Test-Path $ScannerSource) {
-    Invoke-Step @("scp", "-P", $Port, $ScannerSource, "${DomainRoot}js/scanner.js")
-    Invoke-Step @("scp", "-P", $Port, $ScannerSource, "${Target}js/scanner.js")
-} else {
-    Write-Output "==> Skipping scanner.js sync; $ScannerSource was not found in this checkout."
-}
 
 Invoke-Step @(
     "ssh", "-p", $Port, $SshTarget,
