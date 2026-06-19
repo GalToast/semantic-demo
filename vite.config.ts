@@ -19,7 +19,6 @@ const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte')
 // Keep this allowlist explicit so we never accidentally compress chunk-manifest JSON.
 const COMPRESSION_ALLOWLIST = new Set([
     'data.dat',
-    'data.dat.gz',
     'semantic_threads_ui.dat',
     'semantic_threads.dat',
     'semantic_space_layout_manifest.json',
