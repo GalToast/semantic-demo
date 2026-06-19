@@ -1,10 +1,11 @@
 import { svelte } from '@sveltejs/vite-plugin-svelte'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { createReadStream } from 'node:fs'
-import { copyFile, cp, mkdir, stat } from 'node:fs/promises'
+import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs/promises'
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { fileURLToPath } from 'url'
-import { dirname, extname, normalize, resolve } from 'path'
+import { dirname, extname, join, normalize, resolve } from 'path'
+import { brotliCompressSync, gzipSync, constants as zlibConstants } from 'node:zlib'
 import { defineConfig, type Plugin } from 'vite'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -13,6 +14,7 @@ const __dirname = dirname(__filename)
 const PROJECT_ROOT = __dirname
 const SRC_DIR = resolve(PROJECT_ROOT, 'src')
 const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte')
+const PRECOMPRESS_RUNTIME_ASSETS = process.env.SEMEXP_PRECOMPRESS_RUNTIME_ASSETS === '1'
 
 const ROOT_ASSETS = new Map<string, string>([
     ['/semantic-demo.css', 'semantic-demo.css'],
@@ -147,7 +149,9 @@ function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
             return
         }
 
-        res.setHeader('Cache-Control', 'no-cache')
+        if (!res.getHeader('Cache-Control')) {
+            res.setHeader('Cache-Control', 'no-cache')
+        }
         res.setHeader('Content-Type', contentType(filePath))
         createReadStream(filePath).pipe(res)
     })
@@ -170,6 +174,50 @@ function contentType(filePath: string): string {
     }
 }
 
+// W44 Phase F — opt-in brotli pre-compression for .dat / .json assets + preview cache headers.
+// The runtime data files are large enough that precompression should be a deploy
+// step, not part of every local verification build.
+function w44CompressionCachePlugin(outputDir: string): Plugin {
+    return {
+        name: 'w44-compress-and-cache',
+        apply: 'build',
+        async closeBundle() {
+            const entries = await readdir(outputDir, { recursive: true, withFileTypes: true })
+            for (const entry of entries) {
+                if (!entry.isFile()) continue
+                if (!/\.(dat|json)$/.test(entry.name)) continue
+                const filePath = join(entry.parentPath, entry.name)
+                const buf = await readFile(filePath)
+                const br = brotliCompressSync(buf, {
+                    params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 }
+                })
+                const gz = gzipSync(buf, { level: 9 })
+                await Promise.all([
+                    writeFile(`${filePath}.br`, br),
+                    writeFile(`${filePath}.gz`, gz)
+                ])
+            }
+        },
+        configurePreviewServer(server) {
+            server.middlewares.use((req, res, next) => {
+                const rawUrl = req.url
+                if (!rawUrl) return next()
+                const url = (rawUrl.split('?')[0] ?? '')
+                const hashed = /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json)(\.gz|\.br)?$/.test(url)
+                res.setHeader('Vary', 'Accept-Encoding')
+                if (hashed) {
+                    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable')
+                } else if (/\.(dat|json)$/.test(url)) {
+                    res.setHeader('Cache-Control', 'public, max-age=300, stale-while-revalidate=86400')
+                }
+                if (url.endsWith('.br')) res.setHeader('Content-Encoding', 'br')
+                else if (url.endsWith('.gz')) res.setHeader('Content-Encoding', 'gzip')
+                next()
+            })
+        }
+    }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
     root: SRC_DIR,
@@ -177,6 +225,7 @@ export default defineConfig({
     plugins: [
         legacyRootAssetPlugin(),
         copyRuntimeAssetsPlugin(),
+        ...(PRECOMPRESS_RUNTIME_ASSETS ? [w44CompressionCachePlugin(SVELTE_OUT_DIR)] : []),
         svelte(),
         // Bundle analyzer — generates dist/svelte/stats.html with a treemap of
         // every module in the production bundle. Open in any browser to read.
