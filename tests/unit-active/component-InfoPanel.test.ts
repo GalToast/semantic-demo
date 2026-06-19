@@ -22,87 +22,87 @@
  *  9. ARIA_LABEL_BY_SURFACE maps correct labels per surface
  * 10. #selected-name, #selected-what, #selected-theme elements in markup
  */
-import { describe, it, expect, beforeAll } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { describe, it, expect, beforeAll } from 'vitest'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
-const INFO_PANEL_PATH = resolve(__dirname, '../../src/components/InfoPanel.svelte');
+const INFO_PANEL_PATH = resolve(__dirname, '../../src/components/InfoPanel.svelte')
 
 function readSource(): string {
-    return readFileSync(INFO_PANEL_PATH, 'utf-8');
+    return readFileSync(INFO_PANEL_PATH, 'utf-8')
 }
 
 describe('InfoPanel component', () => {
-    let source: string;
+    let source: string
 
     beforeAll(() => {
-        source = readSource();
-    });
+        source = readSource()
+    })
 
     it('root aside#info-panel has aria-label and aria-live', () => {
-        expect(source).toContain('id="info-panel"');
+        expect(source).toContain('id="info-panel"')
         // <aside> has implicit complementary role
-        expect(source).toMatch(/<aside[\s\S]*id="info-panel"/);
-        expect(source).toContain('aria-label={panelAriaLabel}');
-        expect(source).toContain('aria-live="polite"');
-    });
+        expect(source).toMatch(/<aside[\s\S]*id="info-panel"/)
+        expect(source).toContain('aria-label={panelAriaLabel}')
+        expect(source).toContain('aria-live="polite"')
+    })
 
     it('#info-panel-content container exists', () => {
-        expect(source).toContain('id="info-panel-content"');
-    });
+        expect(source).toContain('id="info-panel-content"')
+    })
 
     it('.info-header class is present', () => {
-        expect(source).toContain('class="info-header"');
-    });
+        expect(source).toContain('class="info-header"')
+    })
 
     it('empty state #selected-empty with .selected-empty class', () => {
-        expect(source).toContain('id="selected-empty"');
-        expect(source).toContain('class="selected-empty"');
-    });
+        expect(source).toContain('id="selected-empty"')
+        expect(source).toContain('class="selected-empty"')
+    })
 
     it('.selected-empty-headline has empty state headline', () => {
-        expect(source).toContain('class="selected-empty-headline"');
-        expect(source).toContain('{contentDescriptor.emptyHeadline}');
-    });
+        expect(source).toContain('class="selected-empty-headline"')
+        expect(source).toContain('{contentDescriptor.emptyHeadline}')
+    })
 
     it('.selected-empty-sub has empty state subtext', () => {
-        expect(source).toContain('class="selected-empty-sub"');
-        expect(source).toContain('{contentDescriptor.emptySubtext}');
-    });
+        expect(source).toContain('class="selected-empty-sub"')
+        expect(source).toContain('{contentDescriptor.emptySubtext}')
+    })
 
     it('populated state #selected-card has .selected-card class', () => {
-        expect(source).toContain('id="selected-card"');
-        expect(source).toContain('class="selected-card"');
-    });
+        expect(source).toContain('id="selected-card"')
+        expect(source).toContain('class="selected-card"')
+    })
 
     it('#selected-role-badge and .selected-hero elements exist', () => {
-        expect(source).toContain('id="selected-role-badge"');
-        expect(source).toContain('.selected-role-badge');
-        expect(source).toContain('class="selected-hero"');
-    });
+        expect(source).toContain('id="selected-role-badge"')
+        expect(source).toContain('.selected-role-badge')
+        expect(source).toContain('class="selected-hero"')
+    })
 
     it('ARIA_LABEL_BY_SURFACE maps correct labels per surface', () => {
-        expect(source).toContain('ARIA_LABEL_BY_SURFACE');
-        expect(source).toContain("idle: 'Business context panel'");
-        expect(source).toContain("focus: 'Focused business details'");
-        expect(source).toContain("search: 'Business search panel'");
-        expect(source).toContain("'semantic-dive': 'Semantic dive exploration'");
-    });
+        expect(source).toContain('ARIA_LABEL_BY_SURFACE')
+        expect(source).toContain("idle: 'Business context panel'")
+        expect(source).toContain("focus: 'Focused business details'")
+        expect(source).toContain("search: 'Business search panel'")
+        expect(source).toContain("'semantic-dive': 'Semantic dive exploration'")
+    })
 
     it('#selected-name, #selected-what, #selected-theme elements in markup', () => {
-        expect(source).toContain('id="selected-name"');
-        expect(source).toContain('id="selected-what"');
-        expect(source).toContain('id="selected-theme"');
-    });
+        expect(source).toContain('id="selected-name"')
+        expect(source).toContain('id="selected-what"')
+        expect(source).toContain('id="selected-theme"')
+    })
 
     it('selected-empty section uses contentDescriptor for copy', () => {
-        expect(source).toContain('id="selected-empty"');
-        expect(source).toContain('emptyHeadline');
-        expect(source).toContain('emptySubtext');
-    });
+        expect(source).toContain('id="selected-empty"')
+        expect(source).toContain('emptyHeadline')
+        expect(source).toContain('emptySubtext')
+    })
 
     it('#info-panel-content container exists with .info-panel-content class', () => {
-        expect(source).toContain('id="info-panel-content"');
-        expect(source).toMatch(/class="info-panel-content[^"]*"/);
-    });
-});
+        expect(source).toContain('id="info-panel-content"')
+        expect(source).toMatch(/class="info-panel-content[^"]*"/)
+    })
+})

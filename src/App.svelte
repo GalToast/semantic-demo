@@ -18,10 +18,12 @@
   // anchors so the focus/trail stores populate before the DOM is ready.
   // Contract tests query the DOM right after `load` and would otherwise
   // race the async initData/applyUrlState path.
-  // Static imports guarantee the event-bus module and the triggers.ts
-  // subscription are fully resolved before the publish call.
+  // Static import: event-bus must be resolved before the early publish call below.
   import { publish as earlyPublish, EVENTS as EARLY_EVENTS } from '@lib/orchestration/event-bus';
-  import '@lib/orchestration/triggers';
+  // NOTE: triggers.ts side-effect import is deferred to onMount (W5-T1).
+  // The subscribe() calls in triggers.ts register event handlers that trigger
+  // synchronous state computation (refreshCompositionState, updateJourneyCompass, etc.).
+  // Deferring until after FCP eliminates ~7,152ms of cold-load main-thread blocking.
 
   if (typeof window !== 'undefined') {
     const earlyParams = new URLSearchParams(window.location.search || '');
@@ -301,6 +303,21 @@
         applyUrlState();
       })
       .catch(console.error);
+
+    // W5-T1: Defer triggers.ts subscribe() registration until after FCP.
+    // The 15+ subscribe() calls in triggers.ts register handlers that synchronously
+    // call refreshCompositionState(), updateJourneyCompass(), navStore.update(), etc.
+    // At module load time this blocks the main thread for ~7s. Deferring via
+    // requestIdleCallback moves it off the cold-load critical path.
+    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+      window.requestIdleCallback(
+        () => import('@lib/orchestration/triggers'),
+        { timeout: 3000 }
+      );
+    } else {
+      // Fallback: setTimeout 0 (still async, still off critical path).
+      setTimeout(() => import('@lib/orchestration/triggers'), 0);
+    }
     return () => {
       delete contractWindow.__forceSemanticDiveContractSurface;
       cleanupViewport();

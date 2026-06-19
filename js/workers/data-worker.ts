@@ -310,7 +310,10 @@ async function handleLoadLeadEnrichment(
             const chunks: Uint8Array[] = []
             let totalBytes = 0
             while (true) {
-                if (requestId !== _activeRequestId) { reader.cancel(); return { enrichment: null } }
+                if (requestId !== _activeRequestId) {
+                    reader.cancel()
+                    return { enrichment: null }
+                }
                 const { done, value } = await reader.read()
                 if (done) break
                 chunks.push(value)

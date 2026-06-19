@@ -61,6 +61,7 @@ export interface NavState {
     applyingUrlState: boolean
     restoringBrowserHistory: boolean
     urlStateRestoreToken: number
+    activeStoryPrompt: string | null
 }
 
 export interface FocusPocketMeta {

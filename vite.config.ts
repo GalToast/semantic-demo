@@ -19,6 +19,7 @@ const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte')
 // Keep this allowlist explicit so we never accidentally compress chunk-manifest JSON.
 const COMPRESSION_ALLOWLIST = new Set([
     'data.dat',
+    'data.dat.gz',
     'semantic_threads_ui.dat',
     'semantic_threads.dat',
     'semantic_space_layout_manifest.json',
@@ -88,32 +89,24 @@ function copyRuntimeAssetsPlugin(): Plugin {
                 ...Array.from(ROOT_ASSETS.values()).map(async (relativePath) => {
                     const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath))
                     const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath))
-
                     try {
                         const fileStat = await stat(sourcePath)
-                        if (!fileStat.isFile()) {
-                            return
-                        }
+                        if (!fileStat.isFile()) return
                     } catch {
                         return
                     }
-
                     await mkdir(dirname(targetPath), { recursive: true })
                     await copyFile(sourcePath, targetPath)
                 }),
                 ...ROOT_ASSET_DIRS.map(async (relativePath) => {
                     const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath))
                     const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath))
-
                     try {
                         const fileStat = await stat(sourcePath)
-                        if (!fileStat.isDirectory()) {
-                            return
-                        }
+                        if (!fileStat.isDirectory()) return
                     } catch {
                         return
                     }
-
                     await cp(sourcePath, targetPath, {
                         recursive: true,
                         force: true
@@ -128,11 +121,9 @@ function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
     middlewares.use(async (req, res, next) => {
         const urlPath = req.url?.split('?')[0] ?? ''
         let relativePath = ROOT_ASSETS.get(urlPath) ?? null
-
         if (!relativePath && urlPath.startsWith('/css/')) {
             relativePath = urlPath.slice(1)
         }
-
         if (!relativePath) {
             next()
             return
@@ -183,15 +174,12 @@ function contentType(filePath: string): string {
     }
 }
 
-// W44 Phase F — brotli/gzip precompression of large runtime-data assets
-// (no env gate; build-only via `apply: 'build'`) + preview-server cache headers
-// that win over Vite's internal `Cache-Control: no-cache`. We monkey-patch
-// `res.writeHead` / `setHeader` / `removeHeader` so the policy is enforced at the
-// moment headers are actually flushed, regardless of what the static middleware
-// wrote before us.
-function w44CompressionCachePlugin(): Plugin {
+/* W44 Phase F — brotli/gzip precompression of large runtime-data assets during build.
+ * The `apply: 'build'` gate ensures dev work never pays the cost.
+ */
+function w44AssetCompressionPlugin(): Plugin {
     return {
-        name: 'w44-compress-and-cache',
+        name: 'w44-asset-compression',
         apply: 'build',
         async closeBundle() {
             const entries = await readdir(SVELTE_OUT_DIR, { recursive: true, withFileTypes: true })
@@ -202,38 +190,43 @@ function w44CompressionCachePlugin(): Plugin {
                 const filePath = join(entry.parentPath, entry.name)
                 tasks.push(
                     readFile(filePath).then(async (buf) => {
+                        // Brotli at quality 11 yields the smallest precompressed payload;
+                        // gzip at level 9 is a fallback for browsers without brotli support.
                         const br = brotliCompressSync(buf, {
                             params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 }
                         })
                         const gz = gzipSync(buf, { level: 9 })
-                        await Promise.all([
-                            writeFile(`${filePath}.br`, br),
-                            writeFile(`${filePath}.gz`, gz)
-                        ])
+                        await Promise.all([writeFile(`${filePath}.br`, br), writeFile(`${filePath}.gz`, gz)])
                     })
                 )
             }
             await Promise.all(tasks)
-        },
-        configurePreviewServer(server) {
-            // Vite registers its own static middleware (which sets `Cache-Control: no-cache` and
-            // `Vary: Origin`) **before** invoking plugin hooks. To win over those defaults we must
-            // install our header patch **first** in the connect stack, not appended behind them.
-            // Using `unshift` adds our middleware at index 0 so the patched
-            // `setHeader`/`writeHead`/`removeHeader` exist on `res` before Vite touches them.
-            // `connect` exposes `unshift` at runtime but the Vite typings don't surface it.
-            const middlewareStack = server.middlewares as unknown as {
-                unshift: (middleware: (req: any, res: any, next: () => void) => void) => void
-                push: (middleware: (req: any, res: any, next: () => void) => void) => void
-                use: (middleware: (req: any, res: any, next: () => void) => void) => void
-            }
-            middlewareStack.unshift((req, res, next) => {
+        }
+    }
+}
+
+/* W44 Phase F — preview-server cache headers that win over Vite's internal
+ * `Cache-Control: no-cache`. We install a middleware at the front of the connect
+ * stack (index 0) so the response object's `setHeader`, `writeHead`, and
+ * `removeHeader` are patched before Vite's serveStatic handler touches them.
+ */
+function w44PreviewCacheHeadersPlugin(): Plugin {
+    return {
+        name: 'w44-preview-cache-headers',
+        async configurePreviewServer(server) {
+            const middlewares = server.middlewares as unknown as {
+                stack: Array<(req: any, res: any, next: () => void) => void>
+            } & RootAssetMiddlewareStack
+            // eslint-disable-next-line no-console
+            console.log('[w44] preview-cache: stackLen=' + middlewares.stack.length)
+            middlewares.stack.unshift((req, res, next) => {
+                // eslint-disable-next-line no-console
+                console.log('[w44] proxy for', req.url)
                 const rawUrl = req.url
                 if (!rawUrl) return next()
                 const url = rawUrl.split('?')[0] ?? ''
-                const hashed = /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(
-                    url
-                )
+                const hashed =
+                    /\.[A-Za-z0-9_-]{8,}\.(js|css|svg|woff2?|png|jpg|jpeg|webp|dat|json|wasm)(\.gz|\.br)?$/.test(url)
 
                 const writeHead = res.writeHead.bind(res)
                 const setHeader = res.setHeader.bind(res)
@@ -256,10 +249,24 @@ function w44CompressionCachePlugin(): Plugin {
                         patched = true
                         applyPolicy()
                     }
+                    // Vite's static middleware may pass a headers object containing
+                    // `Cache-Control: no-cache`; strip our policy keys before delegating
+                    // so we win the final header merge.
+                    let headersObj: any
                     if (typeof a === 'string' || a === undefined) {
-                        return writeHead(status as any, a as any, b)
+                        headersObj = b
+                    } else {
+                        headersObj = a
                     }
-                    return writeHead(status, a)
+                    if (headersObj && typeof headersObj === 'object') {
+                        delete headersObj['Cache-Control']
+                        delete headersObj['Vary']
+                        delete headersObj['Content-Encoding']
+                    }
+                    if (typeof a === 'string' || a === undefined) {
+                        return writeHead(status as any, a as any, headersObj)
+                    }
+                    return writeHead(status, headersObj)
                 } as typeof res.writeHead
 
                 res.setHeader = function patchedSetHeader(name: string, value: any) {
@@ -285,7 +292,8 @@ export default defineConfig({
     plugins: [
         legacyRootAssetPlugin(),
         copyRuntimeAssetsPlugin(),
-        w44CompressionCachePlugin(),
+        w44AssetCompressionPlugin(),
+        w44PreviewCacheHeadersPlugin(),
         svelte(),
         // Bundle analyzer — generates dist/svelte/stats.html with a treemap of
         // every module in the production bundle. Open in any browser to read.

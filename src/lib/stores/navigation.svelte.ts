@@ -121,7 +121,8 @@ const INITIAL_NAV_STATE: NavState = {
     loadingPhaseKey: 'records',
     applyingUrlState: false,
     restoringBrowserHistory: false,
-    urlStateRestoreToken: 0
+    urlStateRestoreToken: 0,
+    activeStoryPrompt: null
 }
 
 // ── Store ────────────────────────────────────────────────────────────────────
@@ -490,7 +491,7 @@ export function dispatchNavTransition(
                 if (_legacyMode) appState.navState.mode = _legacyMode
                 if (_legacySurface) appState.navState.surface = _legacySurface
                 if (_fromTraversal === true || _fromCanvasNode === true) {
-                    ;(appState.navState as any).activeStoryPrompt = null
+                    appState.navState.activeStoryPrompt = null
                 }
             })
             break

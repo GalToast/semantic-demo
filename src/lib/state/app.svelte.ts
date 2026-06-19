@@ -209,7 +209,8 @@ class AppState {
         loadingPhaseKey: 'records',
         applyingUrlState: false,
         restoringBrowserHistory: false,
-        urlStateRestoreToken: 0
+        urlStateRestoreToken: 0,
+        activeStoryPrompt: null
     })
 
     // ==== ACTIVE FILTERS (nested substate) ====

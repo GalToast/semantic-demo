@@ -3021,7 +3021,8 @@ async function assert_search_chrome(page, ctx) {
             '#info-panel should contain .search-container in search mode'
         )
 
-    if (info.infoHeaderHidden || info.infoHeaderHidden === null) ctx.pass('search-chrome', 'ownership:info-header-hidden')
+    if (info.infoHeaderHidden || info.infoHeaderHidden === null)
+        ctx.pass('search-chrome', 'ownership:info-header-hidden')
     else
         ctx.fail(
             'search-chrome',
@@ -3082,7 +3083,10 @@ async function assert_search_chrome(page, ctx) {
             '#search-status should be inside .search-container'
         )
 
-    if (info.infoPanelDemoted || (panelSurface === 'search' && info.infoPanelContainsSearch && info.infoPanelRect?.visible))
+    if (
+        info.infoPanelDemoted ||
+        (panelSurface === 'search' && info.infoPanelContainsSearch && info.infoPanelRect?.visible)
+    )
         ctx.pass('search-chrome', 'ownership:info-panel-search-owner')
     else
         ctx.fail(
@@ -3192,7 +3196,8 @@ async function assert_search_no_results(page, ctx) {
     await page.waitForFunction(
         () => {
             const searchContainer =
-                document.querySelector('.search-container.info-panel-contained') || document.querySelector('.search-container')
+                document.querySelector('.search-container.info-panel-contained') ||
+                document.querySelector('.search-container')
             const results = searchContainer?.querySelector('#search-results')
             if (!results) return false
             const loading = results.querySelector('.search-loading')
@@ -3243,7 +3248,8 @@ async function assert_search_no_results(page, ctx) {
 
         const infoPanel = document.querySelector('#info-panel')
         const searchContainer =
-            document.querySelector('.search-container.info-panel-contained') || document.querySelector('.search-container')
+            document.querySelector('.search-container.info-panel-contained') ||
+            document.querySelector('.search-container')
         const resultsEl = searchContainer?.querySelector('#search-results') || document.querySelector('#search-results')
         const emptyState =
             document.querySelector('.search-status.search-empty') || document.querySelector('.search-empty-state')
@@ -3670,7 +3676,8 @@ async function assert_info_panel_populated(page, ctx) {
 
     if (info.selectedMetaStripClipped)
         ctx.fail('info-panel-populated', 'text-clipping:#selected-meta-strip', '#selected-meta-strip text is clipped')
-    else if (info.selectedMetaStripClipped === false) ctx.pass('info-panel-populated', 'text-clipping:#selected-meta-strip')
+    else if (info.selectedMetaStripClipped === false)
+        ctx.pass('info-panel-populated', 'text-clipping:#selected-meta-strip')
 
     if (info.selectedBadgesPresent) ctx.pass('info-panel-populated', 'dom:#selected-badges')
     else ctx.fail('info-panel-populated', 'dom:#selected-badges', 'missing #selected-badges')
@@ -4487,7 +4494,9 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
                     actions.setTrailFromSeed(1)
                     candidates = window.__APP_STATE__?.state?.navState?.threadCandidates || []
                 }
-                const candidate = candidates.find((item) => item && Number.isFinite(typeof item === 'number' ? item : item.index))
+                const candidate = candidates.find(
+                    (item) => item && Number.isFinite(typeof item === 'number' ? item : item.index)
+                )
                 const candidateIndex = typeof candidate === 'number' ? candidate : candidate?.index
                 if (Number.isFinite(candidateIndex)) {
                     actions.inspectThreadNeighbor(candidateIndex, {
@@ -4543,7 +4552,10 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
                 () => {
                     const inspector = document.querySelector('#thread-inspector')
                     const rect = inspector?.getBoundingClientRect()
-                    return document.body.dataset.threadInspectSurface !== 'idle' || (!!rect && rect.width > 0 && rect.height > 0)
+                    return (
+                        document.body.dataset.threadInspectSurface !== 'idle' ||
+                        (!!rect && rect.width > 0 && rect.height > 0)
+                    )
                 },
                 undefined,
                 { timeout: 1500 }
@@ -5179,7 +5191,9 @@ async function run() {
             console.error(``)
             console.error(`Fix:`)
             console.error(`  1. Identify the exact listener on 8795:`)
-            console.error(`     Get-NetTCPConnection -LocalPort 8795 -State Listen | Select-Object LocalAddress,LocalPort,OwningProcess`)
+            console.error(
+                `     Get-NetTCPConnection -LocalPort 8795 -State Listen | Select-Object LocalAddress,LocalPort,OwningProcess`
+            )
             console.error(`  2. Stop only that exact PID if it is stale and not user-owned.`)
             console.error(`  3. Start a fresh server from the project root:`)
             console.error(`     cd <project-root> && python -m http.server 8795 --bind 127.0.0.1`)

@@ -17,50 +17,50 @@
  * orchestration glue.
  */
 
-import { get } from 'svelte/store';
-import { initData, setLoadingPhase } from '@lib/data-store.svelte';
-import { navStore } from '@lib/stores/navigation.svelte';
-import { focusStore } from '@lib/stores/focus.svelte';
-import { appState } from '@lib/state/app.svelte';
-import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle';
+import { get } from 'svelte/store'
+import { initData, setLoadingPhase } from '@lib/data-store.svelte'
+import { navStore } from '@lib/stores/navigation.svelte'
+import { focusStore } from '@lib/stores/focus.svelte'
+import { appState } from '@lib/state/app.svelte'
+import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle'
 import {
-  focusOnNode as focusOnNodeAction,
-  refreshCompositionState as refreshCompositionStateAction,
-  resetExperienceState as resetExperienceStateAction,
-  resetExplorationFocus as resetExplorationFocusAction,
-  setSemanticDiveMode as setSemanticDiveModeAction,
-  setTrailDepth as setTrailDepthAction,
-} from '@lib/orchestration/lifecycle';
-import { switchView as switchViewAction } from '@lib/orchestration/view-controller';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
-import { initAdapters } from '@lib/orchestration/adapters';
-import { buildAdapterDeps } from '@lib/orchestration/adapter-deps';
-import { search, clearSearch as clearSearchAction } from '@lib/engine/window-actions-bridge';
-import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge';
-import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge';
+    focusOnNode as focusOnNodeAction,
+    refreshCompositionState as refreshCompositionStateAction,
+    resetExperienceState as resetExperienceStateAction,
+    resetExplorationFocus as resetExplorationFocusAction,
+    setSemanticDiveMode as setSemanticDiveModeAction,
+    setTrailDepth as setTrailDepthAction
+} from '@lib/orchestration/lifecycle'
+import { switchView as switchViewAction } from '@lib/orchestration/view-controller'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { initAdapters } from '@lib/orchestration/adapters'
+import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
+import { search, clearSearch as clearSearchAction } from '@lib/engine/window-actions-bridge'
+import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge'
+import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge'
 import {
-  inspectThreadNeighbor,
-  pinThreadNeighbor,
-  pinFirstAvailableNeighbor,
-  unpinThreadInspection,
-  clearThreadInspection,
-} from '@lib/engine/thread-inspector-bridge';
-import { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge';
-import { requestSemanticGuide } from '@lib/journey/semantic-guide';
-import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis';
+    inspectThreadNeighbor,
+    pinThreadNeighbor,
+    pinFirstAvailableNeighbor,
+    unpinThreadInspection,
+    clearThreadInspection
+} from '@lib/engine/thread-inspector-bridge'
+import { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge'
+import { requestSemanticGuide } from '@lib/journey/semantic-guide'
+import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
 interface SafetyTimers {
-  slowProgress: ReturnType<typeof setTimeout>;
-  safetyValve: ReturnType<typeof setTimeout>;
+    slowProgress: ReturnType<typeof setTimeout>
+    safetyValve: ReturnType<typeof setTimeout>
 }
 
 interface AppInitOptions {
-  /** Force demo to run regardless of eligibility */
-  forceDemo?: boolean;
-  /** Suppress demo entirely */
-  noDemo?: boolean;
+    /** Force demo to run regardless of eligibility */
+    forceDemo?: boolean
+    /** Suppress demo entirely */
+    noDemo?: boolean
 }
 
 // ── Configuration ────────────────────────────────────────────────────────────
@@ -70,99 +70,96 @@ interface AppInitOptions {
  * network. The slow-progress threshold drops from 8s to 4s so the
  * "still preparing" UI surfaces earlier.
  */
-const SLOW_PROGRESS_MS = 4000;
+const SLOW_PROGRESS_MS = 4000
 
 /**
  * The 15s safety valve is a last-resort fallback for genuinely broken
  * networks. Shows error state if the overlay is still visible.
  */
-const SAFETY_VALVE_MS = 15_000;
+const SAFETY_VALVE_MS = 15_000
 
 // ── Internal State ───────────────────────────────────────────────────────────
 
-let _initCalled = false;
-let _safetyTimers: SafetyTimers | null = null;
-let _unsubWindowGlobals: (() => void) | null = null;
-let _unsubWebglRestore: (() => void) | null = null;
+let _initCalled = false
+let _safetyTimers: SafetyTimers | null = null
+let _unsubWindowGlobals: (() => void) | null = null
+let _unsubWebglRestore: (() => void) | null = null
 
 function refreshTraversalUiForCompatAction(action: string): void {
-  try {
-    updateTraversalUi();
-  } catch (error) {
-    debugWarn('AppInit', `${action}: traversal UI refresh failed`, error);
-  }
+    try {
+        updateTraversalUi()
+    } catch (error) {
+        debugWarn('AppInit', `${action}: traversal UI refresh failed`, error)
+    }
 }
 
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
 function setupSafetyValves(): SafetyTimers {
-  const slowProgress = setTimeout(() => {
-    if (typeof document === 'undefined') return;
-    const overlay = document.getElementById('loading-overlay');
-    // When the Svelte LoadingOverlay hides via {#if actuallyVisible}, the
-    // DOM element is removed entirely. Treat a missing overlay the same as
-    // a hidden one — the overlay has already been dismissed.
-    if (!overlay || overlay.classList.contains('hidden')) return;
+    const slowProgress = setTimeout(() => {
+        if (typeof document === 'undefined') return
+        const overlay = document.getElementById('loading-overlay')
+        // When the Svelte LoadingOverlay hides via {#if actuallyVisible}, the
+        // DOM element is removed entirely. Treat a missing overlay the same as
+        // a hidden one — the overlay has already been dismissed.
+        if (!overlay || overlay.classList.contains('hidden')) return
 
-    setLoadingPhase('restore');
-    // Push overrides via DOM (matches legacy setLoadingPhase override pattern)
-    const noteEl = document.getElementById('loading-note');
-    const footEl = document.getElementById('loading-foot');
-    if (noteEl) noteEl.textContent = 'Still preparing the scene…';
-    if (footEl) footEl.textContent = 'Taking longer than usual. Hold on a moment longer.';
-  }, SLOW_PROGRESS_MS);
+        setLoadingPhase('restore')
+        // Push overrides via DOM (matches legacy setLoadingPhase override pattern)
+        const noteEl = document.getElementById('loading-note')
+        const footEl = document.getElementById('loading-foot')
+        if (noteEl) noteEl.textContent = 'Still preparing the scene…'
+        if (footEl) footEl.textContent = 'Taking longer than usual. Hold on a moment longer.'
+    }, SLOW_PROGRESS_MS)
 
-  const safetyValve = setTimeout(() => {
-    if (typeof document === 'undefined') return;
-    const overlay = document.getElementById('loading-overlay');
-    if (overlay?.classList.contains('hidden')) return;
+    const safetyValve = setTimeout(() => {
+        if (typeof document === 'undefined') return
+        const overlay = document.getElementById('loading-overlay')
+        if (overlay?.classList.contains('hidden')) return
 
-    if (!overlay) return;
-    console.error(
-      '[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.'
-    );
+        if (!overlay) return
+        console.error('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
 
-    // Apply error state to the overlay (matches legacy applyLoadingErrorState)
-    // — built with DOM API per pi-lens innerHTML safety rule.
-    const shell = document.createElement('div');
-    shell.setAttribute('role', 'alert');
-    shell.className = 'loading-shell';
+        // Apply error state to the overlay (matches legacy applyLoadingErrorState)
+        // — built with DOM API per pi-lens innerHTML safety rule.
+        const shell = document.createElement('div')
+        shell.setAttribute('role', 'alert')
+        shell.className = 'loading-shell'
 
-    const kicker = document.createElement('div');
-    kicker.className = 'loading-kicker';
-    kicker.textContent = 'Graph unavailable';
-    shell.appendChild(kicker);
+        const kicker = document.createElement('div')
+        kicker.className = 'loading-kicker'
+        kicker.textContent = 'Graph unavailable'
+        shell.appendChild(kicker)
 
-    const titleEl = document.createElement('div');
-    titleEl.className = 'loading-title';
-    titleEl.textContent = 'Failed to load';
-    shell.appendChild(titleEl);
+        const titleEl = document.createElement('div')
+        titleEl.className = 'loading-title'
+        titleEl.textContent = 'Failed to load'
+        shell.appendChild(titleEl)
 
-    const noteEl = document.createElement('div');
-    noteEl.className = 'loading-note';
-    noteEl.textContent =
-      'Initialization timed out after 15 seconds. Refresh after the connection recovers.';
-    shell.appendChild(noteEl);
+        const noteEl = document.createElement('div')
+        noteEl.className = 'loading-note'
+        noteEl.textContent = 'Initialization timed out after 15 seconds. Refresh after the connection recovers.'
+        shell.appendChild(noteEl)
 
-    const footEl = document.createElement('div');
-    footEl.className = 'loading-foot';
-    footEl.textContent = 'Safety valve triggered.';
-    shell.appendChild(footEl);
+        const footEl = document.createElement('div')
+        footEl.className = 'loading-foot'
+        footEl.textContent = 'Safety valve triggered.'
+        shell.appendChild(footEl)
 
-    overlay.replaceChildren(shell);
-    overlay.hidden = false;
-    overlay.inert = false;
-    overlay.removeAttribute('aria-hidden');
-    overlay.classList.remove('hidden', 'launching');
-    overlay.dataset.loadingState = 'error';
-  }, SAFETY_VALVE_MS);
+        overlay.replaceChildren(shell)
+        overlay.hidden = false
+        overlay.inert = false
+        overlay.removeAttribute('aria-hidden')
+        overlay.classList.remove('hidden', 'launching')
+        overlay.dataset.loadingState = 'error'
+    }, SAFETY_VALVE_MS)
 
-  return { slowProgress, safetyValve };
+    return { slowProgress, safetyValve }
 }
 
 function clearSafetyTimers(timers: SafetyTimers | null): void {
-  if (timers?.slowProgress) clearTimeout(timers.slowProgress);
-  if (timers?.safetyValve) clearTimeout(timers.safetyValve);
+    if (timers?.slowProgress) clearTimeout(timers.slowProgress)
+    if (timers?.safetyValve) clearTimeout(timers.safetyValve)
 }
 
 // ── Window Globals for Test Compat ───────────────────────────────────────────
@@ -179,106 +176,106 @@ function clearSafetyTimers(timers: SafetyTimers | null): void {
  * Each action is a thin wrapper that delegates to the store or orchestration layer.
  */
 function installWindowGlobals(): () => void {
-  if (typeof window === 'undefined') return () => {};
+    if (typeof window === 'undefined') return () => {}
 
-  // Expose a read-only snapshot of the current nav state for tests that
-  // read window.__APP_STATE__ for mode/view/focus state.
-  // Note: `routeTraceLines` lives on the legacy state for now; the Svelte 5
-  // port hasn't been updated to carry it yet. Cast through `any` to avoid a
-  // type-blocker until the W11-T8 search/journey subsubsystem migration adds
-  // it to the AppState class.
-  (window as any).__APP_STATE__ = {
-    get state() {
-      return {
-        currentView: get(navStore).currentView,
-        navState: get(navStore),
-        activeFilters: focusStore(),
-        routeTraceDiagnostics: appState.routeTraceDiagnostics,
-        routeTraceLines: (appState as any).routeTraceLines,
-        points: appState.points,
-      };
-    },
-  };
+    // Expose a read-only snapshot of the current nav state for tests that
+    // read window.__APP_STATE__ for mode/view/focus state.
+    // Note: `routeTraceLines` lives on the legacy state for now; the Svelte 5
+    // port hasn't been updated to carry it yet. Cast through `any` to avoid a
+    // type-blocker until the W11-T8 search/journey subsubsystem migration adds
+    // it to the AppState class.
+    ;(window as any).__APP_STATE__ = {
+        get state() {
+            return {
+                currentView: get(navStore).currentView,
+                navState: get(navStore),
+                activeFilters: focusStore(),
+                routeTraceDiagnostics: appState.routeTraceDiagnostics,
+                routeTraceLines: (appState as any).routeTraceLines,
+                points: appState.points
+            }
+        }
+    }
 
-  // __APP_ACTIONS__: synchronous action handles for Playwright test automation.
-  // Contract tests call these inside page.evaluate() without awaiting returned
-  // promises, so these wrappers must not use lazy dynamic imports.
-  (window as any).__APP_ACTIONS__ = {
-    switchView: (view: string) => {
-      switchViewAction(view as any);
-    },
-    focusOnNode: (index: number, options?: Record<string, unknown>) => {
-      const result = focusOnNodeAction(index, options);
-      refreshTraversalUiForCompatAction('focusOnNode');
-      return result;
-    },
-    setTrailDepth: (depth: number, _options?: Record<string, unknown>) => {
-      setTrailDepthAction(depth);
-      refreshTraversalUiForCompatAction('setTrailDepth');
-    },
-    setSemanticDiveMode: (enabled: boolean) => {
-      setSemanticDiveModeAction(enabled);
-    },
-    refreshCompositionState: () => {
-      refreshCompositionStateAction();
-      refreshTraversalUiForCompatAction('refreshCompositionState');
-    },
-    resetExplorationFocus: (options?: Record<string, unknown>) => {
-      resetExplorationFocusAction(options);
-    },
-    resetExperienceState: () => {
-      resetExperienceStateAction();
-    },
-    clearSearch: () => {
-      returnToOverviewAction();
-    },
-    returnToOverview: () => {
-      returnToOverviewAction();
-    },
-  };
+    // __APP_ACTIONS__: synchronous action handles for Playwright test automation.
+    // Contract tests call these inside page.evaluate() without awaiting returned
+    // promises, so these wrappers must not use lazy dynamic imports.
+    ;(window as any).__APP_ACTIONS__ = {
+        switchView: (view: string) => {
+            switchViewAction(view as any)
+        },
+        focusOnNode: (index: number, options?: Record<string, unknown>) => {
+            const result = focusOnNodeAction(index, options)
+            refreshTraversalUiForCompatAction('focusOnNode')
+            return result
+        },
+        setTrailDepth: (depth: number, _options?: Record<string, unknown>) => {
+            setTrailDepthAction(depth)
+            refreshTraversalUiForCompatAction('setTrailDepth')
+        },
+        setSemanticDiveMode: (enabled: boolean) => {
+            setSemanticDiveModeAction(enabled)
+        },
+        refreshCompositionState: () => {
+            refreshCompositionStateAction()
+            refreshTraversalUiForCompatAction('refreshCompositionState')
+        },
+        resetExplorationFocus: (options?: Record<string, unknown>) => {
+            resetExplorationFocusAction(options)
+        },
+        resetExperienceState: () => {
+            resetExperienceStateAction()
+        },
+        clearSearch: () => {
+            returnToOverviewAction()
+        },
+        returnToOverview: () => {
+            returnToOverviewAction()
+        }
+    }
 
-  // ── Extended actions (W11-T8 Wave 1) ────────────────────────────────────
-  // These fill the gap between the initial 9-action skeleton and the full
-  // legacy __APP_ACTIONS__ set (js/modules/app.ts:377-396).
-  (window as any).__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
-    return search(query, options);
-  };
-  (window as any).__APP_ACTIONS__.setTrailFromSeed = (index: number) => {
-    setTrailFromSeed(index);
-  };
-  (window as any).__APP_ACTIONS__.traverseNeighbor = (step: number) => {
-    traverseNeighbor(step);
-  };
-  (window as any).__APP_ACTIONS__.inspectThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
-    return inspectThreadNeighbor(index, options);
-  };
-  (window as any).__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
-    return pinThreadNeighbor(index, options);
-  };
-  (window as any).__APP_ACTIONS__.pinFirstAvailableNeighbor = (options?: Record<string, unknown>) => {
-    return pinFirstAvailableNeighbor(options);
-  };
-  (window as any).__APP_ACTIONS__.unpinThreadInspection = () => {
-    return unpinThreadInspection();
-  };
-  (window as any).__APP_ACTIONS__.clearThreadInspection = (options?: Record<string, unknown>) => {
-    return clearThreadInspection(options);
-  };
-  (window as any).__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
-    return walkThreadNeighbor(index, options);
-  };
-  (window as any).__APP_ACTIONS__.requestSemanticGuide = (_point?: unknown) => {
-    return requestSemanticGuide();
-  };
-  (window as any).__APP_ACTIONS__.showSemanticThreadsDetail = () => {
-    return showSemanticThreadsDetail();
-  };
+    // ── Extended actions (W11-T8 Wave 1) ────────────────────────────────────
+    // These fill the gap between the initial 9-action skeleton and the full
+    // legacy __APP_ACTIONS__ set (js/modules/app.ts:377-396).
+    ;(window as any).__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
+        return search(query, options)
+    }
+    ;(window as any).__APP_ACTIONS__.setTrailFromSeed = (index: number) => {
+        setTrailFromSeed(index)
+    }
+    ;(window as any).__APP_ACTIONS__.traverseNeighbor = (step: number) => {
+        traverseNeighbor(step)
+    }
+    ;(window as any).__APP_ACTIONS__.inspectThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+        return inspectThreadNeighbor(index, options)
+    }
+    ;(window as any).__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+        return pinThreadNeighbor(index, options)
+    }
+    ;(window as any).__APP_ACTIONS__.pinFirstAvailableNeighbor = (options?: Record<string, unknown>) => {
+        return pinFirstAvailableNeighbor(options)
+    }
+    ;(window as any).__APP_ACTIONS__.unpinThreadInspection = () => {
+        return unpinThreadInspection()
+    }
+    ;(window as any).__APP_ACTIONS__.clearThreadInspection = (options?: Record<string, unknown>) => {
+        return clearThreadInspection(options)
+    }
+    ;(window as any).__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
+        return walkThreadNeighbor(index, options)
+    }
+    ;(window as any).__APP_ACTIONS__.requestSemanticGuide = (_point?: unknown) => {
+        return requestSemanticGuide()
+    }
+    ;(window as any).__APP_ACTIONS__.showSemanticThreadsDetail = () => {
+        return showSemanticThreadsDetail()
+    }
 
-  // No cleanup needed — window globals persist for the page lifetime.
-  return () => {
-    delete (window as any).__APP_STATE__;
-    delete (window as any).__APP_ACTIONS__;
-  };
+    // No cleanup needed — window globals persist for the page lifetime.
+    return () => {
+        delete (window as any).__APP_STATE__
+        delete (window as any).__APP_ACTIONS__
+    }
 }
 
 // ── URL State Application ────────────────────────────────────────────────────
@@ -289,12 +286,12 @@ function installWindowGlobals(): () => void {
  * layer to be ready before they can be resolved.
  */
 async function applyUrlStateAfterData(): Promise<void> {
-  try {
-    const { applyUrlState } = await import('@lib/orchestration/url-state');
-    await applyUrlState();
-  } catch (err) {
-    console.error('[app-init] applyUrlState failed during init:', err);
-  }
+    try {
+        const { applyUrlState } = await import('@lib/orchestration/url-state')
+        await applyUrlState()
+    } catch (err) {
+        console.error('[app-init] applyUrlState failed during init:', err)
+    }
 }
 
 // ── WebGL Context Restore ─────────────────────────────────────────────────
@@ -309,33 +306,33 @@ async function applyUrlStateAfterData(): Promise<void> {
  * @returns A cleanup function that removes the event listeners.
  */
 function setupWebglContextRestore(): () => void {
-  const canvas = document.querySelector<HTMLCanvasElement>('canvas');
-  if (!canvas) return () => {};
+    const canvas = document.querySelector<HTMLCanvasElement>('canvas')
+    if (!canvas) return () => {}
 
-  const handleContextLost = (event: Event) => {
-    event.preventDefault();
-    console.warn('[app-init] WebGL context lost');
-  };
-
-  const handleContextRestored = async () => {
-    console.warn('[app-init] WebGL context restored; reinitializing');
-    // Re-run the Svelte-first init. The init guard (_initCalled) will
-    // prevent double-init, so we reset it first.
-    _initCalled = false;
-    try {
-      await appInit();
-    } catch (err) {
-      console.error('[app-init] WebGL restore reinit failed:', err);
+    const handleContextLost = (event: Event) => {
+        event.preventDefault()
+        console.warn('[app-init] WebGL context lost')
     }
-  };
 
-  canvas.addEventListener('webglcontextlost', handleContextLost);
-  canvas.addEventListener('webglcontextrestored', handleContextRestored);
+    const handleContextRestored = async () => {
+        console.warn('[app-init] WebGL context restored; reinitializing')
+        // Re-run the Svelte-first init. The init guard (_initCalled) will
+        // prevent double-init, so we reset it first.
+        _initCalled = false
+        try {
+            await appInit()
+        } catch (err) {
+            console.error('[app-init] WebGL restore reinit failed:', err)
+        }
+    }
 
-  return () => {
-    canvas.removeEventListener('webglcontextlost', handleContextLost);
-    canvas.removeEventListener('webglcontextrestored', handleContextRestored);
-  };
+    canvas.addEventListener('webglcontextlost', handleContextLost)
+    canvas.addEventListener('webglcontextrestored', handleContextRestored)
+
+    return () => {
+        canvas.removeEventListener('webglcontextlost', handleContextLost)
+        canvas.removeEventListener('webglcontextrestored', handleContextRestored)
+    }
 }
 
 // ── Main Init ────────────────────────────────────────────────────────────────
@@ -357,77 +354,77 @@ function setupWebglContextRestore(): () => void {
  * @returns A cleanup function that tears down listeners and timers.
  */
 export async function appInit(options: AppInitOptions = {}): Promise<() => void> {
-  if (_initCalled) {
-    debugWarn('[app-init] init() called more than once; skipping.');
-    return () => {};
-  }
-  _initCalled = true;
+    if (_initCalled) {
+        debugWarn('[app-init] init() called more than once; skipping.')
+        return () => {}
+    }
+    _initCalled = true
 
-  const { forceDemo: _forceDemo = false, noDemo: _noDemo = false } = options;
+    const { forceDemo: _forceDemo = false, noDemo: _noDemo = false } = options
 
-  debugWarn('[app-init] Starting Svelte-first initialization…');
+    debugWarn('[app-init] Starting Svelte-first initialization…')
 
-  // ── Phase 1: Safety valves ────────────────────────────────────────────────
-  _safetyTimers = setupSafetyValves();
+    // ── Phase 1: Safety valves ────────────────────────────────────────────────
+    _safetyTimers = setupSafetyValves()
 
-  // ── Phase 2: Window globals (immediate, before async work) ────────────────
-  _unsubWindowGlobals = installWindowGlobals();
+    // ── Phase 2: Window globals (immediate, before async work) ────────────────
+    _unsubWindowGlobals = installWindowGlobals()
 
-  // ── Phase 3: Data loading ─────────────────────────────────────────────────
-  //
-  // initData() is async and loads business records + semantic threads.
-  // LoadingOverlay.svelte reads loadingPhaseStore reactively, so phase
-  // transitions (records → scene → restore → launch) appear immediately.
-  //
-  // We don't await here — the data loads in the background while the engine
-  // bridge initializes WebGL via Canvas.svelte. The URL state application
-  // (Phase 4) awaits data readiness before running.
-  const dataReadyPromise = initData().catch((err) => {
-    console.error('[app-init] initData failed:', err);
-    // Non-fatal: data-store sets error state; UI shows error overlay
-  });
+    // ── Phase 3: Data loading ─────────────────────────────────────────────────
+    //
+    // initData() is async and loads business records + semantic threads.
+    // LoadingOverlay.svelte reads loadingPhaseStore reactively, so phase
+    // transitions (records → scene → restore → launch) appear immediately.
+    //
+    // We don't await here — the data loads in the background while the engine
+    // bridge initializes WebGL via Canvas.svelte. The URL state application
+    // (Phase 4) awaits data readiness before running.
+    const dataReadyPromise = initData().catch((err) => {
+        console.error('[app-init] initData failed:', err)
+        // Non-fatal: data-store sets error state; UI shows error overlay
+    })
 
-  // ── Phase 3.5: Adapter initialization ─────────────────────────────────
-  initAdapters(buildAdapterDeps());
+    // ── Phase 3.5: Adapter initialization ─────────────────────────────────
+    initAdapters(buildAdapterDeps())
 
-  // ── Phase 4: URL state (after data is ready) ──────────────────────────────
-  //
-  // URL state may reference focusedIndex, view, filters, or search query —
-  // all of which need business data to be loaded. Awaiting dataReadyPromise
-  // ensures the URL state can resolve against loaded records.
-  await dataReadyPromise;
-  await applyUrlStateAfterData();
+    // ── Phase 4: URL state (after data is ready) ──────────────────────────────
+    //
+    // URL state may reference focusedIndex, view, filters, or search query —
+    // all of which need business data to be loaded. Awaiting dataReadyPromise
+    // ensures the URL state can resolve against loaded records.
+    await dataReadyPromise
+    await applyUrlStateAfterData()
 
-  // ── Phase 5: WebGL context restore handler ────────────────────────────────
-  _unsubWebglRestore = setupWebglContextRestore();
+    // ── Phase 5: WebGL context restore handler ────────────────────────────────
+    _unsubWebglRestore = setupWebglContextRestore()
 
-  // ── Phase 6: First-paint coordination ─────────────────────────────────────
-  //
-  // The LoadingOverlay component hides itself when loadingPhaseStore = 'launch'.
-  // The Canvas bridge fires onLoadingPhase('launch') once WebGL is ready.
-  // DemoChoreography.svelte handles demo eligibility and choreography.
-  //
-  // The safety valve timer (Phase 1) is cleared once we reach this point.
-  if (_safetyTimers) {
-    clearSafetyTimers(_safetyTimers);
-    _safetyTimers = null;
-  }
+    // ── Phase 6: First-paint coordination ─────────────────────────────────────
+    //
+    // The LoadingOverlay component hides itself when loadingPhaseStore = 'launch'.
+    // The Canvas bridge fires onLoadingPhase('launch') once WebGL is ready.
+    // DemoChoreography.svelte handles demo eligibility and choreography.
+    //
+    // The safety valve timer (Phase 1) is cleared once we reach this point.
+    if (_safetyTimers) {
+        clearSafetyTimers(_safetyTimers)
+        _safetyTimers = null
+    }
 
-  debugWarn('[app-init] Initialization orchestration complete.');
+    debugWarn('[app-init] Initialization orchestration complete.')
 
-  // ── Return cleanup function ───────────────────────────────────────────────
-  return () => {
-    clearSafetyTimers(_safetyTimers);
-    _safetyTimers = null;
-    _unsubWindowGlobals?.();
-    _unsubWebglRestore?.();
-    _initCalled = false;
-  };
+    // ── Return cleanup function ───────────────────────────────────────────────
+    return () => {
+        clearSafetyTimers(_safetyTimers)
+        _safetyTimers = null
+        _unsubWindowGlobals?.()
+        _unsubWebglRestore?.()
+        _initCalled = false
+    }
 }
 
 /**
  * Check whether the app initialization has been called.
  */
 export function isAppInitComplete(): boolean {
-  return _initCalled;
+    return _initCalled
 }

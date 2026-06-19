@@ -11,19 +11,19 @@
  * so that production Proxy traps on CRITICAL_KEYS are satisfied.
  */
 
-import { withStateMutation } from '@lib/state/with-state-mutation';
-import { workerUrl } from '@lib/engine/data-worker-url-bridge';
+import { withStateMutation } from '@lib/state/with-state-mutation'
+import { workerUrl } from '@lib/engine/data-worker-url-bridge'
 import type {
-  SemanticThreadBundle,
-  SemanticThreadNode,
-  SemanticNeighborEntry,
-  SemanticNeighborDetail,
-  LayoutManifest,
-} from '@lib/types/business';
-import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
-import { cleanOptionalValue } from '@lib/utils/dom-formatters';
-import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store';
+    SemanticThreadBundle,
+    SemanticThreadNode,
+    SemanticNeighborEntry,
+    SemanticNeighborDetail,
+    LayoutManifest
+} from '@lib/types/business'
+import { normalizeRelationshipRole } from '@lib/utils/relationship-roles'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { cleanOptionalValue } from '@lib/utils/dom-formatters'
+import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store'
 
 // ── Legacy state singleton ────────────────────────────────────────────────────
 // The state reference is injected by the engine bridge during init via
@@ -31,10 +31,10 @@ import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store
 // the CJS require fails under Vite's ESM pipeline and creates a second
 // stateProxy instance that diverges from the live one.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _state: any = null;
+let _state: any = null
 
 function getState(): typeof _state {
-  return _state;
+    return _state
 }
 
 /**
@@ -45,474 +45,406 @@ function getState(): typeof _state {
  * engine reads from.
  */
 export function attachLegacyState(stateRef: Record<string, unknown> | unknown): void {
-  _state = stateRef as typeof _state;
+    _state = stateRef as typeof _state
 }
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
-const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000] as const;
-const SEMANTIC_THREAD_WORKER_TIMEOUT_MS = 75_000;
+const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000] as const
+const SEMANTIC_THREAD_WORKER_TIMEOUT_MS = 75_000
 
 // ── Worker singleton ──────────────────────────────────────────────────────────
 
-let _dataWorker: Worker | null = null;
-let _semanticThreadRequestId = 0;
+let _dataWorker: Worker | null = null
+let _semanticThreadRequestId = 0
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
 function buildAssetUrl(path: string): string {
-  if (typeof window === 'undefined') return path;
-  return new URL(path, window.location.href).href;
+    if (typeof window === 'undefined') return path
+    return new URL(path, window.location.href).href
 }
 
 function getWorker(): Worker | null {
-  if (typeof Worker === 'undefined') {
-    _dataWorker = null;
-    return null;
-  }
-  if (_dataWorker) return _dataWorker;
+    if (typeof Worker === 'undefined') {
+        _dataWorker = null
+        return null
+    }
+    if (_dataWorker) return _dataWorker
 
-  try {
-    _dataWorker = new Worker(workerUrl, { type: 'module' });
-    return _dataWorker;
-  } catch (err) {
-    console.warn(
-      'Web Worker instantiation failed for threads, using main-thread fallback.',
-      err,
-    );
-    return null;
-  }
+    try {
+        _dataWorker = new Worker(workerUrl, { type: 'module' })
+        return _dataWorker
+    } catch (err) {
+        console.warn('Web Worker instantiation failed for threads, using main-thread fallback.', err)
+        return null
+    }
 }
 
 export function resetSemanticThreadWorker(): void {
-  if (_dataWorker) {
-    _dataWorker.terminate();
-  }
-  _dataWorker = null;
+    if (_dataWorker) {
+        _dataWorker.terminate()
+    }
+    _dataWorker = null
 }
 
 // ── Layout manifest loading ───────────────────────────────────────────────────
 
-async function _loadSemanticSpaceLayoutManifest(
-  cacheBust: number,
-): Promise<Record<string, unknown>> {
-  const manifestUrl = buildAssetUrl(
-    `semantic_space_layout_manifest.json?v=${cacheBust}`,
-  );
-  const response = await fetch(manifestUrl, { cache: 'no-store' });
-  if (!response.ok) {
-    throw new Error(`semantic space manifest unavailable (${response.status})`);
-  }
-  const manifest: unknown = await response.json();
-  if (
-    !manifest ||
-    typeof manifest !== 'object' ||
-    Array.isArray(manifest)
-  ) {
-    throw new Error('semantic space manifest is not an object');
-  }
-  return manifest as Record<string, unknown>;
+async function _loadSemanticSpaceLayoutManifest(cacheBust: number): Promise<Record<string, unknown>> {
+    const manifestUrl = buildAssetUrl(`semantic_space_layout_manifest.json?v=${cacheBust}`)
+    const response = await fetch(manifestUrl, { cache: 'no-store' })
+    if (!response.ok) {
+        throw new Error(`semantic space manifest unavailable (${response.status})`)
+    }
+    const manifest: unknown = await response.json()
+    if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
+        throw new Error('semantic space manifest is not an object')
+    }
+    return manifest as Record<string, unknown>
 }
 
 function _basename(value: unknown): string {
-  if (!value) return '';
-  return String(value).replaceAll('\\', '/').split('/').pop() || '';
+    if (!value) return ''
+    return String(value).replaceAll('\\', '/').split('/').pop() || ''
 }
 
 function _countThreadEdges(bundle: SemanticThreadBundle): number {
-  const nodes =
-    bundle?.nodes && typeof bundle.nodes === 'object' ? bundle.nodes : {};
-  return Object.values(nodes).reduce(
-    (sum, node) =>
-      sum + (Array.isArray(node?.neighbors) ? node.neighbors.length : 0),
-    0,
-  );
+    const nodes = bundle?.nodes && typeof bundle.nodes === 'object' ? bundle.nodes : {}
+    return Object.values(nodes).reduce(
+        (sum, node) => sum + (Array.isArray(node?.neighbors) ? node.neighbors.length : 0),
+        0
+    )
 }
 
 interface LayoutValidationSummary {
-  generatedAt: string | null;
-  method: string | null;
-  rows: number;
-  edges: number;
-  threadArtifact: string | null;
+    generatedAt: string | null
+    method: string | null
+    rows: number
+    edges: number
+    threadArtifact: string | null
 }
 
 function isLayoutManifest(value: unknown): value is LayoutManifest {
-  if (!value || typeof value !== 'object') return false;
-  const manifest = value as { rows?: unknown; edges?: unknown };
-  return Number.isFinite(Number(manifest.rows)) && Number.isFinite(Number(manifest.edges));
+    if (!value || typeof value !== 'object') return false
+    const manifest = value as { rows?: unknown; edges?: unknown }
+    return Number.isFinite(Number(manifest.rows)) && Number.isFinite(Number(manifest.edges))
 }
 
 function _validateSemanticSpaceLayoutManifest(
-  manifest: LayoutManifest,
-  bundle: SemanticThreadBundle,
-  artifactName: string | null,
+    manifest: LayoutManifest,
+    bundle: SemanticThreadBundle,
+    artifactName: string | null
 ): LayoutValidationSummary {
-  const nodes =
-    bundle?.nodes && typeof bundle.nodes === 'object' ? bundle.nodes : {};
-  const nodeCount = Object.keys(nodes).length;
-  const edgeCount = _countThreadEdges(bundle);
-  const state = getState();
-  const pointCount = Array.isArray(state?.points) ? state.points.length : 0;
-  const rows = Number(manifest.rows);
-  const edges = Number(manifest.edges);
-  const manifestThreadName = _basename(manifest.thread_path);
-  const loadedThreadName = artifactName ? _basename(artifactName) : '';
+    const nodes = bundle?.nodes && typeof bundle.nodes === 'object' ? bundle.nodes : {}
+    const nodeCount = Object.keys(nodes).length
+    const edgeCount = _countThreadEdges(bundle)
+    const state = getState()
+    const pointCount = Array.isArray(state?.points) ? state.points.length : 0
+    const rows = Number(manifest.rows)
+    const edges = Number(manifest.edges)
+    const manifestThreadName = _basename(manifest.thread_path)
+    const loadedThreadName = artifactName ? _basename(artifactName) : ''
 
-  const failures: string[] = [];
-  if (!Number.isFinite(rows) || rows <= 0)
-    failures.push('rows must be a positive number');
-  if (!Number.isFinite(edges) || edges <= 0)
-    failures.push('edges must be a positive number');
-  if (rows !== nodeCount)
-    failures.push(`rows ${rows} != semantic nodes ${nodeCount}`);
-  if (pointCount > 0 && rows !== pointCount)
-    failures.push(`rows ${rows} != loaded points ${pointCount}`);
-  if (edges !== edgeCount)
-    failures.push(`edges ${edges} != semantic edges ${edgeCount}`);
-  if (manifestThreadName && loadedThreadName && manifestThreadName !== loadedThreadName) {
-    failures.push(
-      `thread_path ${manifestThreadName} != loaded artifact ${loadedThreadName}`,
-    );
-  }
-  if (
-    _basename(manifest.data_path) &&
-    _basename(manifest.data_path) !== 'data.dat'
-  ) {
-    failures.push(
-      `data_path must reference data.dat, got ${_basename(manifest.data_path)}`,
-    );
-  }
+    const failures: string[] = []
+    if (!Number.isFinite(rows) || rows <= 0) failures.push('rows must be a positive number')
+    if (!Number.isFinite(edges) || edges <= 0) failures.push('edges must be a positive number')
+    if (rows !== nodeCount) failures.push(`rows ${rows} != semantic nodes ${nodeCount}`)
+    if (pointCount > 0 && rows !== pointCount) failures.push(`rows ${rows} != loaded points ${pointCount}`)
+    if (edges !== edgeCount) failures.push(`edges ${edges} != semantic edges ${edgeCount}`)
+    if (manifestThreadName && loadedThreadName && manifestThreadName !== loadedThreadName) {
+        failures.push(`thread_path ${manifestThreadName} != loaded artifact ${loadedThreadName}`)
+    }
+    if (_basename(manifest.data_path) && _basename(manifest.data_path) !== 'data.dat') {
+        failures.push(`data_path must reference data.dat, got ${_basename(manifest.data_path)}`)
+    }
 
-  if (failures.length) {
-    throw new Error(
-      `semantic space manifest mismatch: ${failures.join('; ')}`,
-    );
-  }
+    if (failures.length) {
+        throw new Error(`semantic space manifest mismatch: ${failures.join('; ')}`)
+    }
 
-  return {
-    generatedAt: (manifest.generated_at as string) || null,
-    method: (manifest.method as string) || null,
-    rows,
-    edges,
-    threadArtifact: loadedThreadName || manifestThreadName || null,
-  };
+    return {
+        generatedAt: (manifest.generated_at as string) || null,
+        method: (manifest.method as string) || null,
+        rows,
+        edges,
+        threadArtifact: loadedThreadName || manifestThreadName || null
+    }
 }
 
 async function _guardSemanticSpaceLayout(
-  bundle: SemanticThreadBundle,
-  artifactName: string | null,
-  cacheBust: number,
+    bundle: SemanticThreadBundle,
+    artifactName: string | null,
+    cacheBust: number
 ): Promise<{ summary: LayoutValidationSummary; manifest: LayoutManifest }> {
-  const rawManifest = await _loadSemanticSpaceLayoutManifest(cacheBust);
-  if (!isLayoutManifest(rawManifest)) {
-    throw new Error('semantic space manifest is missing numeric rows/edges');
-  }
-  const manifest = rawManifest;
-  const summary = _validateSemanticSpaceLayoutManifest(
-    manifest,
-    bundle,
-    artifactName,
-  );
-  const state = getState();
-  withStateMutation(() => {
-    state.semanticSpaceLayoutManifest = manifest;
-    state.semanticSpaceLayoutStatus = 'ready';
-    state.semanticSpaceLayoutError = null;
-  });
-  _recordSemanticLaneSnapshot({
-    semantic_space_layout_status: 'ready',
-    semantic_space_layout_rows: summary.rows,
-    semantic_space_layout_edges: summary.edges,
-    semantic_space_layout_thread_artifact: summary.threadArtifact,
-    semantic_space_layout_generated_at: summary.generatedAt,
-  });
-  return { summary, manifest };
+    const rawManifest = await _loadSemanticSpaceLayoutManifest(cacheBust)
+    if (!isLayoutManifest(rawManifest)) {
+        throw new Error('semantic space manifest is missing numeric rows/edges')
+    }
+    const manifest = rawManifest
+    const summary = _validateSemanticSpaceLayoutManifest(manifest, bundle, artifactName)
+    const state = getState()
+    withStateMutation(() => {
+        state.semanticSpaceLayoutManifest = manifest
+        state.semanticSpaceLayoutStatus = 'ready'
+        state.semanticSpaceLayoutError = null
+    })
+    _recordSemanticLaneSnapshot({
+        semantic_space_layout_status: 'ready',
+        semantic_space_layout_rows: summary.rows,
+        semantic_space_layout_edges: summary.edges,
+        semantic_space_layout_thread_artifact: summary.threadArtifact,
+        semantic_space_layout_generated_at: summary.generatedAt
+    })
+    return { summary, manifest }
 }
 
 // ── Worker communication ──────────────────────────────────────────────────────
 
 interface WorkerResponse {
-  type: string;
-  payload: unknown;
-  requestId?: number;
+    type: string
+    payload: unknown
+    requestId?: number
 }
 
 interface WorkerThreadResult {
-  neighborEntries: Array<[string, SemanticThreadNode]>;
-  artifactName: string;
-  bundle: SemanticThreadBundle;
+    neighborEntries: Array<[string, SemanticThreadNode]>
+    artifactName: string
+    bundle: SemanticThreadBundle
 }
 
-function callWorker(
-  type: string,
-  payload: unknown,
-): Promise<WorkerThreadResult> {
-  return new Promise((resolve, reject) => {
-    const worker = getWorker();
-    if (!worker) {
-      reject(new Error('Worker unavailable'));
-      return;
-    }
-
-    const requestId = ++_semanticThreadRequestId;
-    let settled = false;
-    let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null;
-
-    const cleanup = (): void => {
-      if (timeoutId !== null) globalThis.clearTimeout(timeoutId);
-      worker.removeEventListener('message', handler);
-      worker.removeEventListener('error', errorHandler);
-    };
-
-    const settleReject = (err: Error): void => {
-      if (settled) return;
-      settled = true;
-      cleanup();
-      resetSemanticThreadWorker();
-      reject(err);
-    };
-
-    const handler = (event: MessageEvent<WorkerResponse>): void => {
-      const { type: resType, payload: resPayload, requestId: resRequestId } = event.data;
-      if (resRequestId !== requestId) return;
-      if (resType === `${type}_SUCCESS`) {
-        settled = true;
-        cleanup();
-        if (type === 'LOAD_THREADS') {
-          resetSemanticThreadWorker();
+function callWorker(type: string, payload: unknown): Promise<WorkerThreadResult> {
+    return new Promise((resolve, reject) => {
+        const worker = getWorker()
+        if (!worker) {
+            reject(new Error('Worker unavailable'))
+            return
         }
-        resolve(resPayload as WorkerThreadResult);
-      } else if (resType === 'ERROR') {
-        settleReject(
-          new Error(
-            (resPayload as { message?: string })?.message || 'Worker failed',
-          ),
-        );
-      }
-    };
 
-    const errorHandler = (): void => {
-      settleReject(new Error('Semantic thread worker crashed'));
-    };
+        const requestId = ++_semanticThreadRequestId
+        let settled = false
+        let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null
 
-    timeoutId = globalThis.setTimeout(() => {
-      settleReject(
-        new Error(
-          `Semantic thread worker timed out after ${SEMANTIC_THREAD_WORKER_TIMEOUT_MS}ms`,
-        ),
-      );
-    }, SEMANTIC_THREAD_WORKER_TIMEOUT_MS);
+        const cleanup = (): void => {
+            if (timeoutId !== null) globalThis.clearTimeout(timeoutId)
+            worker.removeEventListener('message', handler)
+            worker.removeEventListener('error', errorHandler)
+        }
 
-    worker.addEventListener('message', handler);
-    worker.addEventListener('error', errorHandler);
-    worker.postMessage({ type, payload, requestId });
-  });
+        const settleReject = (err: Error): void => {
+            if (settled) return
+            settled = true
+            cleanup()
+            resetSemanticThreadWorker()
+            reject(err)
+        }
+
+        const handler = (event: MessageEvent<WorkerResponse>): void => {
+            const { type: resType, payload: resPayload, requestId: resRequestId } = event.data
+            if (resRequestId !== requestId) return
+            if (resType === `${type}_SUCCESS`) {
+                settled = true
+                cleanup()
+                if (type === 'LOAD_THREADS') {
+                    resetSemanticThreadWorker()
+                }
+                resolve(resPayload as WorkerThreadResult)
+            } else if (resType === 'ERROR') {
+                settleReject(new Error((resPayload as { message?: string })?.message || 'Worker failed'))
+            }
+        }
+
+        const errorHandler = (): void => {
+            settleReject(new Error('Semantic thread worker crashed'))
+        }
+
+        timeoutId = globalThis.setTimeout(() => {
+            settleReject(new Error(`Semantic thread worker timed out after ${SEMANTIC_THREAD_WORKER_TIMEOUT_MS}ms`))
+        }, SEMANTIC_THREAD_WORKER_TIMEOUT_MS)
+
+        worker.addEventListener('message', handler)
+        worker.addEventListener('error', errorHandler)
+        worker.postMessage({ type, payload, requestId })
+    })
 }
 
 // ── Neighbor normalization helpers ────────────────────────────────────────────
 
 function _normalizeLeadId(id: unknown): string | null {
-  if (id === null || id === undefined) return null;
-  const s = String(id).trim();
-  return s.length > 0 ? s : null;
+    if (id === null || id === undefined) return null
+    const s = String(id).trim()
+    return s.length > 0 ? s : null
 }
 
 function _normalizeSemanticNeighborEntries(
-  neighborEntries: Array<[string, SemanticThreadNode]>,
+    neighborEntries: Array<[string, SemanticThreadNode]>
 ): Array<[string, SemanticNeighborEntry]> {
-  if (!Array.isArray(neighborEntries)) return [];
-  return neighborEntries.map(([leadId, node]) => [
-    leadId,
-    {
-      leadId,
-      name: node?.name ?? null,
-      city: node?.city ?? null,
-      status: node?.status ?? null,
-      signalScore: Number(node?.signal_score ?? 0),
-      neighbors: Array.isArray(node?.neighbors)
-        ? node.neighbors.map((neighbor) => ({
-            leadId: _normalizeLeadId(neighbor?.lead_id) ?? '',
-            score: Number(neighbor?.score ?? 0),
-            semanticScore: Number(neighbor?.semantic_score ?? 0),
-            sameCity: Boolean(neighbor?.same_city),
-            sameStatus: Boolean(neighbor?.same_status),
-            bridgeScore: Number(neighbor?.bridge_score ?? 0),
-            signalScore: Number(neighbor?.signal_score ?? 0),
-            threadType:
-              cleanOptionalValue(neighbor?.thread_type) ||
-              'local_semantic_neighbor',
-            relationshipRole: normalizeRelationshipRole(
-              neighbor?.relationship_role,
-            ) as SemanticNeighborDetail['relationshipRole'],
-            relationshipAxis:
-              cleanOptionalValue(neighbor?.relationship_axis) || '',
-            roleReason:
-              cleanOptionalValue(neighbor?.role_reason) || '',
-            reason:
-              cleanOptionalValue(neighbor?.reason) ||
-              'semantic neighbor',
-          }))
-        : [],
-    },
-  ]);
+    if (!Array.isArray(neighborEntries)) return []
+    return neighborEntries.map(([leadId, node]) => [
+        leadId,
+        {
+            leadId,
+            name: node?.name ?? null,
+            city: node?.city ?? null,
+            status: node?.status ?? null,
+            signalScore: Number(node?.signal_score ?? 0),
+            neighbors: Array.isArray(node?.neighbors)
+                ? node.neighbors.map((neighbor) => ({
+                      leadId: _normalizeLeadId(neighbor?.lead_id) ?? '',
+                      score: Number(neighbor?.score ?? 0),
+                      semanticScore: Number(neighbor?.semantic_score ?? 0),
+                      sameCity: Boolean(neighbor?.same_city),
+                      sameStatus: Boolean(neighbor?.same_status),
+                      bridgeScore: Number(neighbor?.bridge_score ?? 0),
+                      signalScore: Number(neighbor?.signal_score ?? 0),
+                      threadType: cleanOptionalValue(neighbor?.thread_type) || 'local_semantic_neighbor',
+                      relationshipRole: normalizeRelationshipRole(
+                          neighbor?.relationship_role
+                      ) as SemanticNeighborDetail['relationshipRole'],
+                      relationshipAxis: cleanOptionalValue(neighbor?.relationship_axis) || '',
+                      roleReason: cleanOptionalValue(neighbor?.role_reason) || '',
+                      reason: cleanOptionalValue(neighbor?.reason) || 'semantic neighbor'
+                  }))
+                : []
+        }
+    ])
 }
 
 // ── Semantic lane snapshot ────────────────────────────────────────────────────
 
-function _recordSemanticLaneSnapshot(
-  partial: Record<string, unknown> = {},
-): void {
-  // In the TS port, semantic lane snapshots are recorded via the
-  // lifecycle orchestration module.  This is a no-op during direct
-  // port — the actual recording happens when the lifecycle bridge
-  // adapter calls into the legacy semantic-lane module.
-  void partial;
+function _recordSemanticLaneSnapshot(partial: Record<string, unknown> = {}): void {
+    // In the TS port, semantic lane snapshots are recorded via the
+    // lifecycle orchestration module.  This is a no-op during direct
+    // port — the actual recording happens when the lifecycle bridge
+    // adapter calls into the legacy semantic-lane module.
+    void partial
 }
 
 // ── Focused state refresh ─────────────────────────────────────────────────────
 
 function _refreshFocusedSemanticState(): void {
-  // No-op in the direct port.  Focused state refresh is handled by
-  // the Svelte store subscriptions in the UI layer.
+    // No-op in the direct port.  Focused state refresh is handled by
+    // the Svelte store subscriptions in the UI layer.
 }
 
 function _syncSemanticThreadDataToStores(
-  bundle: SemanticThreadBundle,
-  artifactName: string,
-  neighborMap: Map<string, SemanticNeighborEntry>,
-  layoutManifestValue: LayoutManifest | null,
+    bundle: SemanticThreadBundle,
+    artifactName: string,
+    neighborMap: Map<string, SemanticNeighborEntry>,
+    layoutManifestValue: LayoutManifest | null
 ): void {
-  setSemanticThreadData({
-    bundle,
-    artifactName,
-    neighborMap,
-    layoutManifest: layoutManifestValue,
-  });
+    setSemanticThreadData({
+        bundle,
+        artifactName,
+        neighborMap,
+        layoutManifest: layoutManifestValue
+    })
 }
 
 function _syncSemanticThreadFailureToStores(errMessage: string): void {
-  setSemanticThreadFailure(errMessage);
+    setSemanticThreadFailure(errMessage)
 }
 
 // ── Retry timer management ────────────────────────────────────────────────────
 
 function _clearSemanticThreadsRetryTimer(): void {
-  const state = getState();
-  withStateMutation(() => {
-    if (state.semanticThreadsRetryTimer) {
-      window.clearTimeout(state.semanticThreadsRetryTimer);
-      state.semanticThreadsRetryTimer = null;
-    }
-  });
+    const state = getState()
+    withStateMutation(() => {
+        if (state.semanticThreadsRetryTimer) {
+            window.clearTimeout(state.semanticThreadsRetryTimer)
+            state.semanticThreadsRetryTimer = null
+        }
+    })
 }
 
-function _scheduleSemanticThreadsRetry(
-  reason = 'artifact-retry',
-): void {
-  const state = getState();
-  if (
-    state.semanticThreadsStatus === 'ready' ||
-    state.semanticThreadsLoadPromise ||
-    state.semanticThreadsRetryTimer
-  )
-    return;
+function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
+    const state = getState()
+    if (state.semanticThreadsStatus === 'ready' || state.semanticThreadsLoadPromise || state.semanticThreadsRetryTimer)
+        return
 
-  if (typeof state.semanticThreadsRetryAttempt !== 'number') {
+    if (typeof state.semanticThreadsRetryAttempt !== 'number') {
+        withStateMutation(() => {
+            state.semanticThreadsRetryAttempt = 0
+        })
+    }
+
+    const MAX_RETRIES = 5
+    if (state.semanticThreadsRetryAttempt >= MAX_RETRIES) {
+        debugWarn(`loadSemanticThreads: max retries (${MAX_RETRIES}) reached, giving up`)
+        _updateSemanticThreadsStatus('failed')
+        return
+    }
+
+    const delayMs =
+        SEMANTIC_THREAD_RETRY_DELAYS_MS[
+            Math.min(
+                Number.isFinite(state.semanticThreadsRetryAttempt) ? state.semanticThreadsRetryAttempt : 0,
+                SEMANTIC_THREAD_RETRY_DELAYS_MS.length - 1
+            )
+        ] || 15000
+
+    _recordSemanticLaneSnapshot({
+        thread_retry_source: reason,
+        thread_retry_count: state.semanticThreadsRetryAttempt + 1,
+        thread_retry_wait_until: new Date(Date.now() + delayMs).toISOString()
+    })
+
     withStateMutation(() => {
-      state.semanticThreadsRetryAttempt = 0;
-    });
-  }
-
-  const MAX_RETRIES = 5;
-  if (state.semanticThreadsRetryAttempt >= MAX_RETRIES) {
-    debugWarn(
-      `loadSemanticThreads: max retries (${MAX_RETRIES}) reached, giving up`,
-    );
-    _updateSemanticThreadsStatus('failed');
-    return;
-  }
-
-  const delayMs =
-    SEMANTIC_THREAD_RETRY_DELAYS_MS[
-      Math.min(
-        Number.isFinite(state.semanticThreadsRetryAttempt)
-          ? state.semanticThreadsRetryAttempt
-          : 0,
-        SEMANTIC_THREAD_RETRY_DELAYS_MS.length - 1,
-      )
-    ] || 15000;
-
-  _recordSemanticLaneSnapshot({
-    thread_retry_source: reason,
-    thread_retry_count: state.semanticThreadsRetryAttempt + 1,
-    thread_retry_wait_until: new Date(Date.now() + delayMs).toISOString(),
-  });
-
-  withStateMutation(() => {
-    state.semanticThreadsRetryAttempt += 1;
-    state.semanticThreadsRetryTimer = window.setTimeout(() => {
-      withStateMutation(() => {
-        state.semanticThreadsRetryTimer = null;
-      });
-      loadSemanticThreads({ reason }).catch((err: unknown) => {
-        debugWarn('loadSemanticThreads retry failed:', err);
-      });
-    }, delayMs);
-  });
+        state.semanticThreadsRetryAttempt += 1
+        state.semanticThreadsRetryTimer = window.setTimeout(() => {
+            withStateMutation(() => {
+                state.semanticThreadsRetryTimer = null
+            })
+            loadSemanticThreads({ reason }).catch((err: unknown) => {
+                debugWarn('loadSemanticThreads retry failed:', err)
+            })
+        }, delayMs)
+    })
 }
 
 // ── Status mutator ────────────────────────────────────────────────────────────
 
-function _updateSemanticThreadsStatus(
-  status: 'idle' | 'loading' | 'ready' | 'failed',
-): void {
-  const state = getState();
-  withStateMutation(() => {
-    state.semanticThreadsStatus = status;
-  });
+function _updateSemanticThreadsStatus(status: 'idle' | 'loading' | 'ready' | 'failed'): void {
+    const state = getState()
+    withStateMutation(() => {
+        state.semanticThreadsStatus = status
+    })
 }
 
 // ── Finalize ──────────────────────────────────────────────────────────────────
 
 function finalizeThreadLoad(): void {
-  const state = getState();
+    const state = getState()
 
-  if (new URLSearchParams(window.location.search).has('debug')) {
-    debugWarn('[semantic-threads] artifact loaded', {
-      artifact: state.semanticThreadArtifactName,
-      records: state.semanticNeighborMapByLeadId.size,
-    });
-  }
+    if (new URLSearchParams(window.location.search).has('debug')) {
+        debugWarn('[semantic-threads] artifact loaded', {
+            artifact: state.semanticThreadArtifactName,
+            records: state.semanticNeighborMapByLeadId.size
+        })
+    }
 
-  _updateSemanticThreadsStatus(
-    state.semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed',
-  );
+    _updateSemanticThreadsStatus(state.semanticNeighborMapByLeadId.size > 0 ? 'ready' : 'failed')
 
-  _recordSemanticLaneSnapshot({
-    thread_artifact_status: state.semanticThreadsStatus,
-    thread_artifact_name: state.semanticThreadArtifactName,
-    semantic_space_layout_status: state.semanticSpaceLayoutStatus,
-    thread_retry_source: null,
-    thread_retry_count:
-      state.semanticThreadsStatus === 'ready'
-        ? 0
-        : state.semanticThreadsRetryAttempt,
-    thread_retry_wait_until: null,
-  });
+    _recordSemanticLaneSnapshot({
+        thread_artifact_status: state.semanticThreadsStatus,
+        thread_artifact_name: state.semanticThreadArtifactName,
+        semantic_space_layout_status: state.semanticSpaceLayoutStatus,
+        thread_retry_source: null,
+        thread_retry_count: state.semanticThreadsStatus === 'ready' ? 0 : state.semanticThreadsRetryAttempt,
+        thread_retry_wait_until: null
+    })
 
-  if (state.semanticThreadsStatus !== 'ready') {
-    withStateMutation(() => {
-      state.semanticThreadsLoadPromise = null;
-    });
-    _scheduleSemanticThreadsRetry('empty-artifact');
-  } else {
-    withStateMutation(() => {
-      state.semanticThreadsRetryAttempt = 0;
-    });
-  }
+    if (state.semanticThreadsStatus !== 'ready') {
+        withStateMutation(() => {
+            state.semanticThreadsLoadPromise = null
+        })
+        _scheduleSemanticThreadsRetry('empty-artifact')
+    } else {
+        withStateMutation(() => {
+            state.semanticThreadsRetryAttempt = 0
+        })
+    }
 
-  _refreshFocusedSemanticState();
+    _refreshFocusedSemanticState()
 }
 
 // ── Public Getters ────────────────────────────────────────────────────────────
@@ -522,7 +454,7 @@ function finalizeThreadLoad(): void {
  * Returns null if not yet loaded or if attachLegacyState() was never called.
  */
 export function getSemanticThreadBundle(): SemanticThreadBundle | null {
-  return _state?.semanticThreadBundle ?? null;
+    return _state?.semanticThreadBundle ?? null
 }
 
 /**
@@ -530,7 +462,7 @@ export function getSemanticThreadBundle(): SemanticThreadBundle | null {
  * Returns null if not yet loaded.
  */
 export function getSemanticThreadArtifactName(): string | null {
-  return _state?.semanticThreadArtifactName ?? null;
+    return _state?.semanticThreadArtifactName ?? null
 }
 
 /**
@@ -538,13 +470,13 @@ export function getSemanticThreadArtifactName(): string | null {
  * Returns an empty map if not yet loaded.
  */
 export function getSemanticNeighborMapByLeadId(): Map<string, SemanticNeighborEntry> {
-  return _state?.semanticNeighborMapByLeadId ?? new Map<string, SemanticNeighborEntry>();
+    return _state?.semanticNeighborMapByLeadId ?? new Map<string, SemanticNeighborEntry>()
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
 export interface LoadSemanticThreadsOptions {
-  reason?: string;
+    reason?: string
 }
 
 /**
@@ -554,126 +486,100 @@ export interface LoadSemanticThreadsOptions {
  * Attempts Web Worker parsing first; falls back to main-thread
  * fetch + JSON parse on failure.
  */
-export async function loadSemanticThreads(
-  options: LoadSemanticThreadsOptions = {},
-): Promise<boolean> {
-  // Guard: if attachLegacyState() hasn't been called yet, wait briefly
-  // then degrade gracefully instead of throwing on null state.
-  if (_state === null) {
-    const start = Date.now();
-    while (_state === null && Date.now() - start < 500) {
-      await new Promise((r) => setTimeout(r, 50));
-    }
+export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = {}): Promise<boolean> {
+    // Guard: if attachLegacyState() hasn't been called yet, wait briefly
+    // then degrade gracefully instead of throwing on null state.
     if (_state === null) {
-      console.warn(
-        '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully',
-      );
-      return false;
+        const start = Date.now()
+        while (_state === null && Date.now() - start < 500) {
+            await new Promise((r) => setTimeout(r, 50))
+        }
+        if (_state === null) {
+            console.warn(
+                '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully'
+            )
+            return false
+        }
     }
-  }
 
-  const state = getState();
-  if (state.semanticThreadsLoadPromise)
-    return state.semanticThreadsLoadPromise as Promise<boolean>;
+    const state = getState()
+    if (state.semanticThreadsLoadPromise) return state.semanticThreadsLoadPromise as Promise<boolean>
 
-  const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60));
-  const requestUrls = [
-    buildAssetUrl(`semantic_threads_ui.dat?v=${cacheBust}`),
-    buildAssetUrl(`semantic_threads.dat?v=${cacheBust}`),
-  ];
-  const attemptConfigs: RequestCache[] = [
-    'default',
-    'force-cache',
-    'reload',
-    'no-store',
-  ];
+    const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60))
+    const requestUrls = [
+        buildAssetUrl(`semantic_threads_ui.dat?v=${cacheBust}`),
+        buildAssetUrl(`semantic_threads.dat?v=${cacheBust}`)
+    ]
+    const attemptConfigs: RequestCache[] = ['default', 'force-cache', 'reload', 'no-store']
 
-  _updateSemanticThreadsStatus('loading');
+    _updateSemanticThreadsStatus('loading')
 
-  const loadPromise = (async (): Promise<boolean> => {
-    try {
-      _clearSemanticThreadsRetryTimer();
+    const loadPromise = (async (): Promise<boolean> => {
+        try {
+            _clearSemanticThreadsRetryTimer()
 
-      // Worker is mandatory — .dat files are >40 MB; main-thread JSON.parse
-      // blocks the UI for 500-750 ms. We rely on the Worker for all parsing.
-      const worker = getWorker();
-      if (!worker) {
-        throw new Error(
-          'Web Worker unavailable and semantic thread artifacts exceed main-thread budget.',
-        );
-      }
+            // Worker is mandatory — .dat files are >40 MB; main-thread JSON.parse
+            // blocks the UI for 500-750 ms. We rely on the Worker for all parsing.
+            const worker = getWorker()
+            if (!worker) {
+                throw new Error('Web Worker unavailable and semantic thread artifacts exceed main-thread budget.')
+            }
 
-      try {
-        const { neighborEntries, artifactName, bundle } = await callWorker(
-          'LOAD_THREADS',
-          { urls: requestUrls, attemptConfigs },
-        );
-        const { manifest } = await _guardSemanticSpaceLayout(
-          bundle,
-          artifactName,
-          cacheBust,
-        );
-        const neighborMap = new Map(
-          _normalizeSemanticNeighborEntries(neighborEntries),
-        );
-        withStateMutation(() => {
-          state.semanticThreadBundle = bundle;
-          state.semanticThreadArtifactName = artifactName;
-          state.semanticNeighborMapByLeadId = neighborMap;
-        });
-        _syncSemanticThreadDataToStores(
-          bundle,
-          artifactName,
-          neighborMap,
-          manifest,
-        );
-        finalizeThreadLoad();
-        return true;
-      } catch (err) {
-        // Worker failed — do not fall back to main thread for >40 MB files.
-        _dataWorker = null;
-        throw new Error(
-          'Worker-based thread loading failed (artifacts exceed main-thread budget).',
-          { cause: err },
-        );
-      }
-    } catch (error) {
-      console.warn(
-        'Failed to load semantic thread artifact; using geometric fallback.',
-        error,
-      );
-      const errMessage =
-        error instanceof Error ? error.message : String(error);
-      withStateMutation(() => {
-        state.semanticThreadBundle = null;
-        state.semanticThreadArtifactName = null;
-        state.semanticSpaceLayoutManifest = null;
-        state.semanticSpaceLayoutStatus = 'failed';
-        state.semanticSpaceLayoutError = errMessage;
-        state.semanticNeighborMapByLeadId = new Map();
-      });
-      _updateSemanticThreadsStatus('failed');
-      state.semanticThreadsLoadPromise = null;
-      _recordSemanticLaneSnapshot({
-        thread_artifact_status: 'failed',
-        thread_artifact_name: null,
-        semantic_space_layout_status: state.semanticSpaceLayoutStatus,
-        semantic_space_layout_error: state.semanticSpaceLayoutError,
-        thread_retry_source: options.reason || 'artifact-load',
-        thread_retry_count: state.semanticThreadsRetryAttempt,
-      });
-      _syncSemanticThreadFailureToStores(errMessage);
-      _scheduleSemanticThreadsRetry(options.reason || 'artifact-load');
-      _refreshFocusedSemanticState();
-      return false;
-    }
-  })();
+            try {
+                const { neighborEntries, artifactName, bundle } = await callWorker('LOAD_THREADS', {
+                    urls: requestUrls,
+                    attemptConfigs
+                })
+                const { manifest } = await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust)
+                const neighborMap = new Map(_normalizeSemanticNeighborEntries(neighborEntries))
+                withStateMutation(() => {
+                    state.semanticThreadBundle = bundle
+                    state.semanticThreadArtifactName = artifactName
+                    state.semanticNeighborMapByLeadId = neighborMap
+                })
+                _syncSemanticThreadDataToStores(bundle, artifactName, neighborMap, manifest)
+                finalizeThreadLoad()
+                return true
+            } catch (err) {
+                // Worker failed — do not fall back to main thread for >40 MB files.
+                _dataWorker = null
+                throw new Error('Worker-based thread loading failed (artifacts exceed main-thread budget).', {
+                    cause: err
+                })
+            }
+        } catch (error) {
+            console.warn('Failed to load semantic thread artifact; using geometric fallback.', error)
+            const errMessage = error instanceof Error ? error.message : String(error)
+            withStateMutation(() => {
+                state.semanticThreadBundle = null
+                state.semanticThreadArtifactName = null
+                state.semanticSpaceLayoutManifest = null
+                state.semanticSpaceLayoutStatus = 'failed'
+                state.semanticSpaceLayoutError = errMessage
+                state.semanticNeighborMapByLeadId = new Map()
+            })
+            _updateSemanticThreadsStatus('failed')
+            state.semanticThreadsLoadPromise = null
+            _recordSemanticLaneSnapshot({
+                thread_artifact_status: 'failed',
+                thread_artifact_name: null,
+                semantic_space_layout_status: state.semanticSpaceLayoutStatus,
+                semantic_space_layout_error: state.semanticSpaceLayoutError,
+                thread_retry_source: options.reason || 'artifact-load',
+                thread_retry_count: state.semanticThreadsRetryAttempt
+            })
+            _syncSemanticThreadFailureToStores(errMessage)
+            _scheduleSemanticThreadsRetry(options.reason || 'artifact-load')
+            _refreshFocusedSemanticState()
+            return false
+        }
+    })()
 
-  withStateMutation(() => {
-    state.semanticThreadsLoadPromise = loadPromise;
-  });
+    withStateMutation(() => {
+        state.semanticThreadsLoadPromise = loadPromise
+    })
 
-  return loadPromise;
+    return loadPromise
 }
 
-export default loadSemanticThreads;
+export default loadSemanticThreads
