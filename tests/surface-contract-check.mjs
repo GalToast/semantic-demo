@@ -1145,7 +1145,13 @@ async function assert_focus_pocket(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
+            if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                style.opacity === '0' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            )
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -1158,7 +1164,13 @@ async function assert_focus_pocket(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
+            if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                style.opacity === '0' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            )
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -1457,7 +1469,13 @@ async function assert_field_node(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
+            if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                style.opacity === '0' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            )
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -1470,7 +1488,13 @@ async function assert_field_node(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
+            if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                style.opacity === '0' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            )
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -2908,7 +2932,13 @@ async function assert_search_chrome(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
+            if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                style.opacity === '0' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            )
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -4544,7 +4574,7 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
             }
         }
 
-        let inspector = document.querySelector('#thread-inspector, #focus-thread-inspector')
+        let inspector = document.querySelector('#focus-thread-inspector, #thread-inspector')
         if (!inspector && preview) {
             inspector = document.createElement('div')
             inspector.id = 'focus-thread-inspector'
@@ -4648,7 +4678,7 @@ async function productRouteSnapshot(page, { preview = false } = {}) {
             search: rectSnapshot('.search-container'),
             infoPanel: rectSnapshot('#info-panel'),
             focusStage: rectSnapshot('#focus-stage'),
-            inspector: rectSnapshot('#thread-inspector, #focus-thread-inspector'),
+            inspector: rectSnapshot('#focus-thread-inspector, #thread-inspector'),
             neighbors: rectSnapshot('.focus-stage-neighbors'),
             modeGrid: rectSnapshot('#mode-chips'),
             overflowX: document.documentElement.scrollWidth > window.innerWidth
@@ -4936,7 +4966,13 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
+            if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                style.opacity === '0' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            )
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -4949,7 +4985,13 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0' || rect.width <= 0 || rect.height <= 0)
+            if (
+                style.display === 'none' ||
+                style.visibility === 'hidden' ||
+                style.opacity === '0' ||
+                rect.width <= 0 ||
+                rect.height <= 0
+            )
                 return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
@@ -5092,7 +5134,8 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
         ctx.pass(surfaceName, 'pointer-events:focus-kicker:skipped')
     }
 
-    if (info.focusActionsHidden || info.focusActionsHidden === null) ctx.pass(surfaceName, 'visibility:focus-actions:hidden')
+    if (info.focusActionsHidden || info.focusActionsHidden === null)
+        ctx.pass(surfaceName, 'visibility:focus-actions:hidden')
     else
         ctx.fail(
             surfaceName,
