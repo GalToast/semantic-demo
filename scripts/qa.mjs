@@ -180,7 +180,12 @@ async function runPlaythrough() {
     if (headed && !rest.some((a) => a === '--headed')) {
         spawnArgs.push('--headed')
     }
-    return spawnSync(node, spawnArgs, { stdio: 'inherit', cwd: root })
+    // Propagate --url to the child via env so it matches runSurfaceContract /
+    // runVisualAudit. Without this, `qa.mjs playthrough --url=...` silently
+    // drops the override.
+    const env = { ...process.env }
+    if (urlOverride) env.SURFACE_CONTRACT_URL = urlOverride
+    return spawnSync(node, spawnArgs, { stdio: 'inherit', cwd: root, env })
 }
 
 async function runContractGroup() {
@@ -220,8 +225,13 @@ async function main() {
             console.error('Run `node scripts/qa.mjs --help` for usage.')
             process.exit(2)
     }
-    if (result && result.status !== null) {
-        process.exit(result.status)
+    if (result) {
+        if (result.status !== null) {
+            process.exit(result.status)
+        }
+        // status === null means the child was killed by a signal (e.g. SIGTERM from CI).
+        // Surface a non-zero exit so signal-killed children don't silently report success.
+        process.exit(1)
     }
 }
 

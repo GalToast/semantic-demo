@@ -162,7 +162,7 @@ For each high-risk surface, the following must hold before any edit:
 | `app.svelte.ts` | 1. Confirm M-flagged status. 2. Coordinate with parallel session. 3. After edit: `npm run lint:nav-mirror`, `npm run check`, `npm run test:contract`. |
 | `app-init.ts` | 1. Confirm no parallel session write scope. 2. After edit: full init sequence verification (dev + prod-preview), `npm run check`, visual regression pass. |
 | `journey.ts` | 1. Requires explicit lead approval (off-limits write surface). 2. After edit: `npm run check:bridges`, `npm run test:contract`, compass-rail + thread-inspector surface checks. |
-| `lifecycle.ts` | 1. Coordinate with parallel session. 2. After edit: `npm run check`, `npm run test:contract`, `npm run qa:surface:all`. Do not remove legacy stubs until bridge retirement phase. |
+| `lifecycle.ts` | 1. Coordinate with parallel session. 2. After edit: `npm run check`, `npm run test:contract`, `node scripts/qa.mjs contract --all --headed`. Do not remove legacy stubs until bridge retirement phase. |
 | `three-engine.ts` | 1. Requires explicit lead approval (off-limits write surface). 2. After edit: disposal audit for any new material/texture, `npm run test:contract`, visual regression for desktop-idle + mobile-idle. |
 | `deploy.sh` / `deploy.ps1` | 1. End-to-end deploy verification against `dist/svelte/`. 2. Verify `../js/scanner.js` path resolves. 3. Test both dev and production preview. |
 | Focus-stage renderers | 1. M-flagged. Coordinate with parallel session. 2. After edit: `npm run check:bridges`, CSS ownership check (`docs/semantic-demo-focus-stage-css-owner-matrix.md`), focus-pocket + compass-rail surface checks. |
