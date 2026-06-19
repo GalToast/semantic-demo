@@ -129,7 +129,7 @@ function withFocusNotify(updater: (s: FocusStoreState) => FocusStoreState): void
     appState.withMutation(() => {
         appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
         appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
-        appState.navState.focusPocketMeta = next.pocketMeta as any
+        appState.navState.focusPocketMeta = next.pocketMeta
         appState.selectedPoint = next.selectedBusiness as any
         appState.inspectedThreadIndex = next.inspectedStrandIndex
         appState.pinnedThreadIndex = next.pinnedThreadIndex
@@ -185,7 +185,7 @@ function _createFocusStore(): FocusStoreApi {
     // by withFocusNotify for every appState bridge mutation).
     const fn = (() => get(_focusWritable)) as unknown as FocusStoreApi
 
-    fn.subscribe = _focusWritable.subscribe as any
+    fn.subscribe = _focusWritable.subscribe
     fn.update = (updater: (s: FocusStoreState) => FocusStoreState) => withFocusNotify(updater)
     fn.set = (value: FocusStoreState) => {
         _focusWritable.set(value)
@@ -193,7 +193,7 @@ function _createFocusStore(): FocusStoreApi {
         appState.withMutation(() => {
             appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
             appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
-            appState.navState.focusPocketMeta = value.pocketMeta as any
+            appState.navState.focusPocketMeta = value.pocketMeta
             appState.selectedPoint = value.selectedBusiness as any
             appState.inspectedThreadIndex = value.inspectedStrandIndex
             appState.pinnedThreadIndex = value.pinnedThreadIndex
@@ -236,7 +236,7 @@ export const threadInspectorActive = () => appState.inspectedStrandDiagnostics.a
 // ── Actions ──────────────────────────────────────────────────────────────────
 
 export function setPocketNodes(nodes: readonly FocusPocketNode[]): void {
-    withFocusNotify((s) => ({ ...s, pocketNodes: nodes as any[] }))
+    withFocusNotify((s) => ({ ...s, pocketNodes: nodes }))
 }
 
 export function clearPocketNodes(): void {
@@ -274,7 +274,7 @@ export function setSemanticDiveMode(active: boolean): void {
     withFocusNotify((s) => ({ ...s, semanticDiveMode: active }))
 }
 
-type BusinessRecordWithIndex = Partial<BusinessRecord> & { index?: number };
+type BusinessRecordWithIndex = Partial<BusinessRecord> & { index?: number }
 export function setSelectedBusiness(business: BusinessRecordWithIndex | null): void {
     withFocusNotify((s) => ({ ...s, selectedBusiness: business as BusinessRecord | null }))
 }
