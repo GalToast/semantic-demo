@@ -13,9 +13,7 @@ const root = resolve(fileURLToPath(new URL('../', import.meta.url)))
 const source = readFileSync(resolveSource('src/lib/journey/thread-settler.ts', root), 'utf8')
 
 function extractFunctionBody(name, options = {}) {
-    const signature = options.findClassMethod
-        ? name
-        : `export function ${name}`
+    const signature = options.findClassMethod ? name : `export function ${name}`
     const start = source.indexOf(signature)
     assert(start >= 0, `${name} export should exist`)
     // Find the opening brace of the function body, skipping past params and TS return type
@@ -68,8 +66,8 @@ const walkBody = (walkBodyOrDelegate || '') + '\n' + (walkClassBody || '')
 const adapterBody = extractFunctionBody('initJourneyTimerAdapter')
 
 assert(
-    adapterBody.includes('if (deps.setTimer) _setTimer = deps.setTimer;') &&
-        adapterBody.includes('if (deps.clearTimer) _clearTimer = deps.clearTimer;'),
+    /(if\s*\(\s*deps\.setTimer\s*\)\s*_setTimer\s*=\s*deps\.setTimer)/.test(adapterBody) &&
+        /(if\s*\(\s*deps\.clearTimer\s*\)\s*_clearTimer\s*=\s*deps\.clearTimer)/.test(adapterBody),
     'timer adapter should own injectable set/clear timer hooks'
 )
 
@@ -110,10 +108,7 @@ assert(
         source.includes('this.manager.clearTimer'),
     'thread timers clearing decided (tracked helper or manager direct)'
 )
-assert(
-    source.includes('export function cancelAllThreadTimers()'),
-    'cancelAllThreadTimers exported'
-)
+assert(source.includes('export function cancelAllThreadTimers()'), 'cancelAllThreadTimers exported')
 assert(
     !walkBody.includes('clearTimeout(state.strandContinuityState.arrivalTimeoutId)') &&
         !walkBody.includes('clearTimeout(state.strandContinuityState.settleTimeoutId)'),
@@ -129,13 +124,11 @@ const settleTimerIndex = settleTimerIndexEarliest >= 0 ? settleTimerIndexEarlies
 assert(arrivalTimerIndex >= 0, 'walk should schedule an arrival timer (manager.setTimer or timerAdapter)')
 assert(settleTimerIndex > arrivalTimerIndex, 'walk should schedule settle after arrival')
 assert(
-    walkBody.includes('}, options.arrivalDelay || 820);') ||
-        walkBody.includes(', options.arrivalDelay || 820,'),
+    walkBody.includes('}, options.arrivalDelay || 820);') || walkBody.includes(', options.arrivalDelay || 820,'),
     'arrival timer delay should remain configurable with 820ms default'
 )
 assert(
-    walkBody.includes('}, options.settleDelay || 5200);') ||
-        walkBody.includes(', options.settleDelay || 5200,'),
+    walkBody.includes('}, options.settleDelay || 5200);') || walkBody.includes(', options.settleDelay || 5200,'),
     'settle timer delay should remain configurable with 5200ms default'
 )
 assert(
