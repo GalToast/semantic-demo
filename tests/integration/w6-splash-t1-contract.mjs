@@ -3,7 +3,7 @@
 // W6-T1 contract test: gesture-driven engine-ready gate.
 //
 // Verifies the Splash → Canvas gated-mount pattern. Until the App.svelte
-// patch from docs/w6-t1-app-svelte-integration.md lands, the engine-ready
+// patch from docs/archive/w6-t1-app-svelte-integration.md lands, the engine-ready
 // store can still be tested in isolation:
 //   - body[data-app-state="splash"] on page load
 //   - flipping the store via window.__READY__() removes splash
