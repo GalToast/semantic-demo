@@ -250,16 +250,17 @@ function scanImports(modulePath) {
 
 // ─── Module paths ───────────────────────────────────────────────────────────────
 
-const MODULES_DIR = join(PROJECT_ROOT, 'js', 'modules');
+// MODULE_PATHS for the post-migration ownership graph.
+// Note: `filter-chrome.svelte` was retired — the chrome layer is now wired
+// through event-bindings.ts directly. Removed from the chain check below.
 
 const MODULE_PATHS = {
   'filter-state.ts':     join(PROJECT_ROOT, 'src', 'lib', 'stores', 'filter.svelte.ts'),
   'search-state.ts':     join(PROJECT_ROOT, 'src', 'lib', 'search', 'state.ts'),
   'cluster-filter.ts':    join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'cluster-filter-controller.ts'),
-  'event-bindings.ts':   join(MODULES_DIR, 'bindings', 'filter-bindings.ts'),
-  'filter-chrome.svelte': join(MODULES_DIR, 'components', 'FilterChrome.svelte'),
-  'url-state.ts':         join(MODULES_DIR, 'url-state.ts'),
-  'lifecycle.ts':        join(MODULES_DIR, 'lifecycle.ts'),
+  'event-bindings.ts':   join(PROJECT_ROOT, 'src', 'lib', 'ui', 'filter-bindings.ts'),
+  'url-state.ts':         join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-state.ts'),
+  'lifecycle.ts':        join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'lifecycle.ts'),
   'camera-controls.ts':  join(PROJECT_ROOT, 'src', 'lib', 'engine', 'camera-controls.ts'),
 };
 
@@ -356,9 +357,10 @@ console.log('PASS CONTRACT 4: cluster-filter.ts does not import search-state.ts 
 // the API names in `bindFilterControls` (the linter-era shim was
 // importing those names as a satisficer).
 
+// FilterChrome.svelte was retired — the modern chrome layer routes through
+// event-bindings.ts only. The chrome chain is now a single-link graph.
 const CHROME_CHAIN = [
   MODULE_PATHS['event-bindings.ts'],
-  MODULE_PATHS['filter-chrome.svelte'],
 ];
 
 const FILTER_STATE_API_NAMES = ['setActiveFilter', 'toggleActiveFilterSignal', 'resetActiveFilters'];

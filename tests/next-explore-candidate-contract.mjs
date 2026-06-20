@@ -11,7 +11,7 @@ import { join } from 'node:path';
 import { getNextExploreCandidateForIndex } from '../src/lib/journey/thread-model.ts';
 
 const ROOT = process.cwd();
-const THREAD_MODEL = join(ROOT, 'js/modules/journey-thread-model.ts');
+const THREAD_MODEL = join(ROOT, 'src/lib/journey/thread-model.ts');
 const COMPASS_STATE = join(ROOT, 'src/lib/journey/compass-state.ts');
 const SEMANTIC_DIVE_UI = join(ROOT, 'src/lib/journey/semantic-overlay.ts');
 

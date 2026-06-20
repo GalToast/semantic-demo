@@ -1,9 +1,10 @@
 /**
  * legend-ui-ownership-contract.mjs
  *
- * Verifies the post-W15 legend panel ownership graph:
+ * Verifies the post-bridge-retirement legend panel ownership graph:
  *   - src/lib/stores/legend-panel.svelte.ts owns the 10 legend-panel ports
- *   - src/lib/engine/legend-ui-bridge.ts re-exports from the canonical store
+ *   - Consumers (event-bindings.ts, legend-bindings.ts) import directly from
+ *     the canonical store (the bridge that used to mediate has been retired)
  *   - No live source file imports from the retired js/modules/legend-ui.ts kernel
  *
  * Runs in Node. No Playwright, no live network.
@@ -19,8 +20,7 @@ import { execSync } from 'node:child_process'
 const SEMDEMO_ROOT = path.resolve(process.cwd())
 
 const LEGEND_PANEL_STORE = path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts')
-const LEGEND_UI_BRIDGE = path.join(SEMDEMO_ROOT, 'src/lib/engine/legend-ui-bridge.ts')
-const DELETED_KERNEL = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts')
+const LEGEND_BINDINGS = path.join(SEMDEMO_ROOT, 'src/lib/ui/legend-bindings.ts')
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
@@ -60,44 +60,31 @@ function testLegendPanelStoreExportsPorts() {
     console.log('  OK — legend-panel.svelte.ts exports all 10 canonical ports')
 }
 
-// ── TEST 2: legend-ui-bridge.ts re-exports from the canonical store ─────────────
+// ── TEST 2: legend-bindings.ts imports directly from the canonical store ──────
+// The legend-ui-bridge.ts that previously mediated this surface was retired
+// (see docs/bridge-audit-2026-06-19.md). Consumers now import the canonical
+// store directly.
 
-function testBridgeReexportsFromCanonicalStore() {
-    console.log('\n[TEST 2] legend-ui-bridge.ts re-exports from legend-panel.svelte.ts')
+function testLegendBindingsImportsFromCanonicalStore() {
+    console.log('\n[TEST 2] legend-bindings.ts imports from the canonical legend-panel store')
 
-    const src = readSrc(LEGEND_UI_BRIDGE)
+    const src = readSrc(LEGEND_BINDINGS)
 
     assert(
-        src.includes("from '@lib/stores/legend-panel.svelte.ts'") || src.includes("from '@lib/stores/legend-panel'"),
-        'legend-ui-bridge.ts must re-export from the canonical store'
+        src.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
+            src.includes("from '@lib/stores/legend-panel'"),
+        'legend-bindings.ts must import from the canonical legend-panel store'
     )
 
-    // Must NOT re-export from the deleted kernel
+    // Must NOT import from the deleted kernel
     assert(
         !src.includes("from '../../../js/modules/legend-ui.ts'") &&
             !src.includes("from './js/modules/legend-ui.ts'") &&
             !src.includes("from 'js/modules/legend-ui.ts'"),
-        'legend-ui-bridge.ts must not re-export from the deleted kernel'
+        'legend-bindings.ts must not import from the deleted kernel'
     )
 
-    const requiredReexports = [
-        'isLegendPanelOpen',
-        'openLegendPanel',
-        'closeLegendPanel',
-        'restoreLegendCollapsedPanel',
-        'buildLegend',
-        'updateLegendGuideState',
-        'closeLegendGuide',
-        'buildCanvasColorLegend',
-        'setPreviouslyFocusedLegend',
-        'getPreviouslyFocusedLegend'
-    ]
-
-    for (const name of requiredReexports) {
-        assert(src.includes(name), `legend-ui-bridge.ts must re-export ${name}`)
-    }
-
-    console.log('  OK — legend-ui-bridge.ts re-exports all 10 ports from the canonical store')
+    console.log('  OK — legend-bindings.ts imports directly from the canonical store')
 }
 
 // ── TEST 3: No live source imports from the deleted kernel ──────────────────────
@@ -164,7 +151,7 @@ function testEventBindingsImportsFromCanonicalStore() {
     const ebSrc = readSrc(eventBindingsPath)
     assert(
         ebSrc.includes("from '@lib/stores/legend-panel") || ebSrc.includes("from '@lib/engine/legend-ui-bridge'"),
-        'event-bindings.ts imports from the canonical store or bridge'
+        'event-bindings.ts imports from the canonical store'
     )
 
     // legend-bindings.ts imports from the store
@@ -208,13 +195,13 @@ function testLifecycleDoesNotImportFromDeletedKernel() {
 console.log('=================================================================')
 console.log('legend-ui-ownership-contract.mjs')
 console.log('Verifies: legend-panel.svelte.ts owns the 10 canonical ports')
-console.log('          legend-ui-bridge.ts re-exports from the canonical store')
+console.log('          legend-bindings.ts imports directly from the canonical store')
 console.log('          no live source imports from the deleted kernel')
 console.log('=================================================================')
 
 try {
     testLegendPanelStoreExportsPorts()
-    testBridgeReexportsFromCanonicalStore()
+    testLegendBindingsImportsFromCanonicalStore()
     testNoLiveSourceImportsFromDeletedKernel()
     testNoWindowExports()
     testStoreDoesNotImportLifecycleOrEventBindings()

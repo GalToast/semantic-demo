@@ -56,8 +56,8 @@ function testClipboardCatchPath() {
     'copyCurrentViewLink has catch block for clipboard error');
 
   // Catch must show toast (not re-throw) so UI stays stable
-  assertContains(src, "showExperienceToast('Copy unavailable'",
-    'catch block calls showExperienceToast for Copy unavailable');
+  assertContains(src, "_showToast('Copy unavailable'",
+    'catch block calls _showToast for Copy unavailable');
 
   // Catch must return null — no success value after failure
   assertContains(src, 'return null',
@@ -75,7 +75,7 @@ function testSuccessPathReturnsHref() {
   assertNotContains(src, 'state.lastCopiedViewLink',
     'success path no longer writes dead lastCopiedViewLink field');
 
-  assertContains(src, "showExperienceToast('View link copied'",
+  assertContains(src, "_showToast('View link copied'",
     'success path shows View link copied toast');
 
   // Must return href (string), not an object or undefined
@@ -135,7 +135,7 @@ function testNoRethrowOnClipboardFailure() {
     'catch block must not contain an actual throw statement (not just a comment mention)');
   assert(catchBlock.includes('return null'),
     'catch block must return null on failure');
-  assert(catchBlock.includes("showExperienceToast('Copy unavailable'"),
+  assert(catchBlock.includes("_showToast('Copy unavailable'"),
     'catch block must show toast on failure');
 }
 
@@ -146,7 +146,7 @@ function testNoRethrowOnClipboardFailure() {
 function testShareButtonLabelReset() {
   console.log('\n[TEST] view-bindings.js resets share button label on copy success');
 
-  const EVB_PATH = resolve(CWD, 'js/modules/bindings/view-bindings.ts');
+  const EVB_PATH = resolve(CWD, 'src/lib/ui/view-bindings.ts');
   const evbSrc = readFileSync(EVB_PATH, 'utf-8');
 
   assertContains(evbSrc, "btn.setAttribute('aria-label', 'Link copied to clipboard')",

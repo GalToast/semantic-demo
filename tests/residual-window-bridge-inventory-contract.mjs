@@ -41,7 +41,7 @@ const MODULES = {
     sceneReveal: path.join(SEMDEMO_ROOT, 'src/lib/engine/scene-reveal.ts'),
     app: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
     appRuntime: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/adapters.ts'),
-    mapState: path.join(SEMDEMO_ROOT, 'src/lib/stores/map.svelte.ts'),
+    mapState: path.join(SEMDEMO_ROOT, 'src/lib/engine/map-state.ts'),
     // clusterFilter: path.join(SEMDEMO_ROOT, 'src/lib/stores/filter.svelte.ts'),  // REMOVED — file does not exist
     journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'src/lib/journey/compass-state.ts'),
     journeyCompassState: path.join(SEMDEMO_ROOT, 'src/lib/journey/compass-state.ts'),

@@ -20,7 +20,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const CWD = process.cwd();
-const KEYBOARD_HELP_PATH = resolve(CWD, 'js/modules/keyboard-help.ts');
+const KEYBOARD_HELP_PATH = resolve(CWD, 'src/lib/keyboard/keyboard-help.ts');
 
 const src = readFileSync(KEYBOARD_HELP_PATH, 'utf-8');
 

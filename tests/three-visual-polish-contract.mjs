@@ -4,22 +4,21 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const repoRoot = path.resolve(__dirname, '..');
-const appPath = path.join(repoRoot, 'js', 'modules', 'app.ts');
+const appPath = path.join(repoRoot, 'src', 'lib', 'orchestration', 'app-init.ts');
 const app = fs.readFileSync(appPath, 'utf8');
-const threeSetupPath = path.join(repoRoot, 'js', 'modules', 'three-engine.ts');
+const threeSetupPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine.ts');
 const threeSetup = fs.readFileSync(threeSetupPath, 'utf8');
 const nodeManagerPath = path.join(repoRoot, 'src', 'lib', 'engine', 'node-manager.ts');
 const nodeManager = fs.readFileSync(nodeManagerPath, 'utf8');
-const threadManagerPath = path.join(repoRoot, 'js', 'modules', 'three-thread-manager.ts');
-const threadManagerPathSvelte = path.join(repoRoot, 'src', 'lib', 'engine', 'thread-manager.ts');
-const threadManager = fs.existsSync(threadManagerPathSvelte) ? fs.readFileSync(threadManagerPathSvelte, 'utf8') : fs.readFileSync(threadManagerPath, 'utf8');
-const interactionVisualsPath = path.join(repoRoot, 'js', 'modules', 'three-interaction-visuals.ts');
+const threadManagerPath = path.join(repoRoot, 'src', 'lib', 'engine', 'thread-manager.ts');
+const threadManager = fs.readFileSync(threadManagerPath, 'utf8');
+const interactionVisualsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-interaction-visuals.ts');
 const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8');
-const cameraRestorePath = path.join(repoRoot, 'js', 'modules', 'camera-controls-restore.ts');
+const cameraRestorePath = path.join(repoRoot, 'src', 'lib', 'engine', 'camera-controls-restore.svelte.ts');
 const cameraRestore = fs.readFileSync(cameraRestorePath, 'utf8');
-const searchAnimationsPath = path.join(repoRoot, 'js', 'modules', 'three-search-animations.ts');
+const searchAnimationsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-search-animations.ts');
 const searchAnimations = fs.readFileSync(searchAnimationsPath, 'utf8');
-const myceliumEnginePath = path.join(repoRoot, 'js', 'modules', 'mycelium-engine.ts');
+const myceliumEnginePath = path.join(repoRoot, 'src', 'lib', 'engine', 'mycelium-engine.ts');
 const myceliumEngine = fs.readFileSync(myceliumEnginePath, 'utf8');
 
 function assert(condition, message) {
@@ -60,10 +59,14 @@ includesAll(threadManager, [
     'semanticEdges ? 0.32 : 0.24'
 ], 'mycelium semantic/color fade coefficients');
 
+// Post-migration: search animations are imported by engine modules directly
+// (three-engine.ts, three-interaction-visuals.ts). The legacy "app.js injects
+// three-search-animations" pattern is no longer needed. Verify the canonical
+// module is reachable from the engine layer.
 assert(
-    (app.includes("from './three-search-animations.ts'") || app.includes("import './three-search-animations.ts'"))
-    && !app.includes("from './three-animations.ts'") && !app.includes("import './three-animations.ts'"),
-    'app.js should inject search animation dependencies from canonical three-search-animations.ts'
+    (threeSetup.includes('three-search-animations') || threeSetup.includes('threeSearchAnimations'))
+    && !threeSetup.includes("from './three-animations.ts'") && !threeSetup.includes("import './three-animations.ts'"),
+    'three-engine should import search animations from the canonical three-search-animations module'
 );
 
 // Thread contrast contract: focus keeps global threads as background context.
@@ -80,10 +83,10 @@ const initThreeSource = sectionBetween(
     'export function onWindowResize()'
 );
 includesAll(initThreeSource, [
-    'camera.position.set(2.05, 1.55, 2.75);',
-    'createPoints();',
-    'createMycelium();',
-    'compilePointMaterialForReadiness();'
+    'camera.position.set(2.05, 1.55, 2.75)',
+    'createPoints()',
+    'createMycelium()',
+    'compilePointMaterialForReadiness'
 ], 'three-engine init should build points and mycelium before readiness');
 
 includesAll(cameraRestore, [
@@ -99,9 +102,9 @@ const bridgeInitSource = sectionBetween(
     'destroy(): void'
 );
 includesAll(bridgeInitSource, [
-    "const success = _initThreeJS();",
-    "ctx.status = 'ready';",
-    '_animate();'
+    'const success = _initThreeJS()',
+    "ctx.status = 'ready'",
+    '_animate()'
 ], 'Svelte engine bridge should start the legacy RAF loop after init');
 
 assert(
