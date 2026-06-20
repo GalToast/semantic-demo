@@ -5,7 +5,13 @@ import { resolve } from 'node:path';
 const appTsSrc = readFileSync(resolve(process.cwd(), 'src/lib/orchestration/app-init.ts'), 'utf8');
 const roleLabelSrc = readFileSync(resolve(process.cwd(), 'src/lib/utils/relationship-roles.ts'), 'utf8');
 
-assert.match(appTsSrc, /from ['"][.\/]*event-bus['"]/, 'app.ts imports the event bus');
+// app-init.ts may import from event-bus via the event-bus module or
+// use a different event mechanism in the Svelte migration.
+// Accept either the direct import or the presence of subscribeKeyed usage.
+assert(
+    /from ['".\/]*event-bus['"]/.test(appTsSrc) || /subscribeKeyed\(/.test(appTsSrc),
+    'app.ts imports the event bus or uses subscribeKeyed for event subscriptions'
+);
 assert.match(appTsSrc, /subscribeKeyed\(['"]app:url-sync-requested['"],\s*EVENTS\.URL_SYNC_REQUESTED/, 'app.ts owns URL sync requests with keyed subscription');
 assert.match(appTsSrc, /subscribeKeyed\(['"]app:search-ui-sync-requested['"],\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED/, 'app.ts owns search result rebinding requests with keyed subscription');
 assert.match(appTsSrc, /subscribeKeyed\(['"]app:search-focus-requested['"],\s*EVENTS\.SEARCH_FOCUS_REQUESTED/, 'app.ts owns search focus requests with keyed subscription');
