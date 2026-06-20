@@ -14,6 +14,7 @@
 import { describe, it, expect, afterEach } from 'vitest'
 import { render, waitFor } from '@testing-library/svelte'
 import SearchBar from '../../src/components/SearchBar.svelte'
+import { syncTestStateFromBody } from '../../src/lib/stores/test-compat.svelte'
 
 describe('SearchBar component', () => {
     it('renders div.search-container with role="search"', () => {
@@ -31,6 +32,7 @@ describe('SearchBar component', () => {
 
     afterEach(() => {
         delete document.body.dataset.loadingPhase
+        syncTestStateFromBody()
     })
 
     it('renders SearchInput sub-component (#search-input present)', () => {
@@ -41,6 +43,7 @@ describe('SearchBar component', () => {
 
     it('lazy-renders SearchResults sub-component when search state is active (#search-results present)', async () => {
         document.body.dataset.loadingPhase = 'searching'
+        syncTestStateFromBody()
         const { container } = render(SearchBar)
         // Flush any microticks and paint timings in Vitest JS-DOM
         await new Promise((resolve) => setTimeout(resolve, 50))

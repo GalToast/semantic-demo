@@ -14,7 +14,7 @@ import {
     renderWeatherFallback as renderWeatherFallbackState,
     updateWeatherStaleness as updateWeatherStalenessForTimestamp,
     updateWeatherUi as updateWeatherUiState
-} from '@lib/engine/weather-ui-bridge';
+} from '@lib/ui/weather-ui'
 
 const WEATHER_REFRESH_MS: number = 5 * 60 * 1000;
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 } as const;

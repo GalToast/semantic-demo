@@ -27,6 +27,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const URL_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-state.ts');
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts');
 const SEARCH_RESULTS_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/results-ui.ts');
+const SEARCH_STORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/search.svelte.ts');
 const SEARCH_PANEL_BRIDGE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/search-panel-adapter-bridge.ts');
 const APP_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/app-init.ts');
 
@@ -113,24 +114,33 @@ function testLifecycleNoWindowSetSearchPanelStateCall() {
 // ---------------------------------------------------------------------------
 
 function testLifecycleCallsSetSearchPanelStateDirectly() {
-  console.log('\n[TEST] resetStateBeforeUrlRestore clears canonical search state/input directly');
+  console.log('\n[TEST] resetStateBeforeUrlRestore clears canonical search state through the search store');
 
   const src = fs.readFileSync(URL_STATE_PATH, 'utf-8');
+  const searchStoreSrc = fs.readFileSync(SEARCH_STORE_PATH, 'utf-8');
 
   assert(
     /export\s+function\s+resetStateBeforeUrlRestore\s*\(/.test(src),
     'url-state.ts must export resetStateBeforeUrlRestore'
   );
   assert(
-    /appState\.currentSearchSummary\s*=\s*null/.test(src),
-    'resetStateBeforeUrlRestore must clear appState.currentSearchSummary'
+    /import\s*\{[\s\S]*\bclearSearch\b[\s\S]*\}\s+from\s+['"]@lib\/stores\/search\.svelte['"]/.test(src),
+    'url-state.ts must import clearSearch from the canonical search store'
+  );
+  assert(
+    /resetStateBeforeUrlRestore[\s\S]*\bclearSearch\s*\(\s*\)/.test(src),
+    'resetStateBeforeUrlRestore must delegate canonical state clearing to clearSearch()'
+  );
+  assert(
+    /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.currentSearchSummary\s*=\s*null/.test(searchStoreSrc),
+    'clearSearch() must clear appState.currentSearchSummary in the canonical search store'
   );
   assert(
     /input\.dispatchEvent\s*\(\s*new\s+Event\s*\(\s*['"]input['"]/.test(src),
     'resetStateBeforeUrlRestore({ clearSearchInput }) must notify the search input owner via an input event'
   );
 
-  console.log('  OK — resetStateBeforeUrlRestore clears canonical state and input without a window bridge');
+  console.log('  OK — resetStateBeforeUrlRestore clears canonical state through clearSearch and input ownership');
 }
 
 // ---------------------------------------------------------------------------

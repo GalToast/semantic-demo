@@ -82,7 +82,7 @@ includesAll(
     'mycelium presentation opacity profile'
 )
 
-const initThreeSource = sectionBetween(threeSetup, 'export function initThreeJS()', 'export function onWindowResize()')
+const initThreeSource = sectionBetween(threeSetup, 'export async function initThreeJS()', 'export function onWindowResize()')
 includesAll(
     initThreeSource,
     ['camera.position.set(2.05, 1.55, 2.75)', 'createPoints()', 'createMycelium()', 'compilePointMaterialForReadiness'],
@@ -95,17 +95,10 @@ includesAll(
     'overview camera restore pose should match widened overview framing'
 )
 
-const bridgePath = path.join(repoRoot, 'src', 'lib', 'engine', 'adapters', 'lifecycle-bridge.ts')
-const bridge = fs.readFileSync(bridgePath, 'utf8')
-const bridgeInitSource = sectionBetween(
-    bridge,
-    'async init(canvas: HTMLCanvasElement): Promise<void>',
-    'destroy(): void'
-)
 includesAll(
-    bridgeInitSource,
-    ['const success = _initThreeJS()', "ctx.status = 'ready'", '_animate()'],
-    'Svelte engine bridge should start the legacy RAF loop after init'
+    initThreeSource,
+    ["document.body.dataset.graphicsMode = 'webgl'", 'animate()'],
+    'three-engine init should set WebGL-ready state and start the render loop directly'
 )
 
 assert(

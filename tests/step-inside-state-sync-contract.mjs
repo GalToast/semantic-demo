@@ -70,14 +70,18 @@ Object.defineProperty(globalThis, 'navigator', {
 // Now safe to import modules
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
 const { setSemanticDiveModeProxy: setSemanticDiveMode, refreshCompositionState } = await import('../src/lib/orchestration/lifecycle.ts')
+const { updateNavState } = await import('../src/lib/stores/navigation.svelte.ts')
+const { resetFocus, setSelectedBusiness } = await import('../src/lib/stores/focus.svelte.ts')
 
 function resetState() {
+    resetFocus()
     withStateMutation(() => {
         state.semanticDiveMode = false
         state.trailDepth = 0
         state.currentView = 'galaxy'
         state.navState.mode = 'overview'
     })
+    updateNavState({ mode: 'overview', surface: 'idle', currentView: 'galaxy', focusedIndex: null, trailDepth: 0 })
     document.body.dataset = {}
 }
 
@@ -95,10 +99,12 @@ try {
     assert(state.semanticDiveMode === true, 'state.semanticDiveMode is true')
     assert(state.trailDepth === 2, 'state.trailDepth is 2')
     assert(state.navState.mode === 'trail' || state.navState.mode === 'inside', 'navState.mode updated')
-    // refreshCompositionState requires a focus record to set semanticDive='active'
+    // refreshCompositionState derives active dive from navStore + focusStore, not the old state alias alone.
     withStateMutation(() => {
         state.focusedNode = 1
     })
+    updateNavState({ focusedIndex: 1, mode: 'inside', surface: 'inside', currentView: 'galaxy', trailDepth: 2 })
+    setSelectedBusiness({ index: 1, name: 'Contract Focus' })
     refreshCompositionState()
     assert(document.body.dataset.semanticDive === 'active', 'body dataset reflects active dive')
     console.log('  PASS — Enter sync confirmed')

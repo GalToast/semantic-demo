@@ -26,7 +26,7 @@ import {
 } from '@lib/engine/journey-focus-ui-bridge'
 import { revealSelectedBusinessCard } from '@lib/engine/lifecycle-bridge'
 import { describeThreadLensForPoint } from '@lib/engine/journey-point-color-bridge'
-import { _getSelectedBusinessRoleLabel } from '@lib/engine/role-label-bridge'
+import { _getSelectedBusinessRoleLabel } from '@lib/utils/role-label'
 
 export function buildAdapterDeps(): AdapterDeps {
     const mutableAppState = appState as unknown as {

@@ -94,7 +94,7 @@ import * as mapFlatteningMod from '../utils/map-flattening-layout'
 import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter'
 import * as focusAnchorMod from '@lib/journey/focus-anchor-indicator'
 import * as audioScapeMod from '@lib/audio/audio-scape'
-import * as eventBindingsMod from '@lib/engine/event-bindings-bridge'
+import * as eventBindingsMod from '@lib/ui/event-bindings'
 import * as loadingUiMod from '../ui/loading'
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──

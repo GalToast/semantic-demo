@@ -52,7 +52,7 @@ const checks = [
     },
     {
         name: 'three-engine exports initThreeJS',
-        pass: /export\s+function\s+initThreeJS\s*\(/.test(threeSetupSrc)
+        pass: /export\s+(?:async\s+)?function\s+initThreeJS\s*\(/.test(threeSetupSrc)
     },
     {
         // Post-W7 canvas-architecture: initThreeJS() lives in @lib/engine/three-engine.
