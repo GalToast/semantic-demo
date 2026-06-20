@@ -2,13 +2,13 @@
 
 ## Summary
 
-| Metric | Value |
-|--------|-------|
-| Total bridge files | 7 |
-| Total LoC | 314 |
-| **KEEP (5/5 signals — load-bearing)** | 3 |
-| **RETIRE (0/5 signals — confirmed dead)** | 0 |
-| **AUDIT (1-4/5 signals — needs review)** | 4 |
+| Metric                                    | Value |
+| ----------------------------------------- | ----- |
+| Total bridge files                        | 7     |
+| Total LoC                                 | 314   |
+| **KEEP (5/5 signals — load-bearing)**     | 3     |
+| **RETIRE (0/5 signals — confirmed dead)** | 0     |
+| **AUDIT (1-4/5 signals — needs review)**  | 4     |
 
 ## 5-Signal Rule (per docs/migration-plan.md §Bridge File Doctrine)
 
@@ -18,19 +18,19 @@ A bridge passes "dead" only when **all five signals are zero**:
 2. Imported by name in docs/, tests/, or legacy-reference/
 3. Exports public types or functions used by src/components/
 4. Has a commit in the last 60 days
-5. Is a *-bridge.ts file with active callers
+5. Is a \*-bridge.ts file with active callers
 
 ## Bridge Inventory
 
-| # | Bridge | LoC | Consumers | Docs/Tests | Comp Exports | Last Commit | Within 60d | Active Signals | Verdict | Sample Consumers |
-|---|--------|-----|-----------|------------|--------------|-------------|------------|----------------|---------|------------------|
-| 1 | `data-worker-url-bridge.ts` | 17 | 2 | 0 | 11 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\data-loader.ts, C:\Users\HP\repos\semantic-explorer\src\lib\semantic-threads.ts |
-| 2 | `journey-compass-controller-bridge.ts` | 24 | 4 | 1 | 2 | 2026-06-15 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\cursor.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapters.ts (+1) |
-| 3 | `lifecycle-bridge.ts` | 45 | 13 | 1 | 3 | 2026-06-20 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts (+10) |
-| 4 | `search-state-bridge.ts` | 156 | 3 | 0 | 13 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\mode-bindings.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\suggestion-bindings.ts |
-| 5 | `state-bridge.ts` | 24 | 57 | 3 | 23 | 2026-06-19 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\audio\audio-scape.ts, C:\Users\HP\repos\semantic-explorer\src\lib\data-store.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\framing-utils.ts (+54) |
-| 6 | `strand-continuity-bridge.ts` | 18 | 4 | 1 | 0 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\focus-ui.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-inspector.ts (+1) |
-| 7 | `window-actions-bridge.ts` | 30 | 2 | 0 | 23 | 2026-06-20 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\window-actions.ts |
+| #   | Bridge                                 | LoC | Consumers | Docs/Tests | Comp Exports | Last Commit | Within 60d | Active Signals | Verdict             | Sample Consumers                                                                                                                                                                                                                      |
+| --- | -------------------------------------- | --- | --------- | ---------- | ------------ | ----------- | ---------- | -------------- | ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | `data-worker-url-bridge.ts`            | 17  | 2         | 0          | 11           | 2026-06-15  | ✓          | 4/5            | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\data-loader.ts, C:\Users\HP\repos\semantic-explorer\src\lib\semantic-threads.ts                                                                                                           |
+| 2   | `journey-compass-controller-bridge.ts` | 24  | 4         | 1          | 2            | 2026-06-15  | ✓          | 5/5            | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\cursor.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapters.ts (+1) |
+| 3   | `lifecycle-bridge.ts`                  | 45  | 13        | 1          | 3            | 2026-06-20  | ✓          | 5/5            | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts (+10)            |
+| 4   | `search-state-bridge.ts`               | 156 | 3         | 0          | 13           | 2026-06-16  | ✓          | 4/5            | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\mode-bindings.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\suggestion-bindings.ts                   |
+| 5   | `state-bridge.ts`                      | 24  | 57        | 3          | 23           | 2026-06-19  | ✓          | 5/5            | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\audio\audio-scape.ts, C:\Users\HP\repos\semantic-explorer\src\lib\data-store.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\framing-utils.ts (+54)            |
+| 6   | `strand-continuity-bridge.ts`          | 18  | 4         | 1          | 0            | 2026-06-16  | ✓          | 4/5            | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\focus-ui.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-inspector.ts (+1)                         |
+| 7   | `window-actions-bridge.ts`             | 30  | 2         | 0          | 23           | 2026-06-20  | ✓          | 4/5            | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\window-actions.ts                                                                                    |
 
 ## Methodology Notes
 

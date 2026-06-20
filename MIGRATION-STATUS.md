@@ -4,21 +4,21 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ## Overall Progress
 
-| Milestone                                     | Status                                  | Last Updated |
-| --------------------------------------------- | --------------------------------------- | ------------ |
-| Svelte UI (26 components)                     | ✅ Complete                             | W40          |
-| Typed stores / state                          | ✅ Complete                             | W41          |
-| Engine kernel in `src/lib/`                   | ✅ Complete                             | W40          |
-| Bridge files (`src/lib/engine/*-bridge.ts`)   | ✅ 1 remaining (`state-bridge.ts`)      | W10          |
-| Worker (`src/lib/workers/data-worker.ts`)     | ✅ Complete                             | W10          |
-| Legacy islands (`legacy-reference/`)          | 🟢 Archive only                         | W42          |
-| BOTH-pattern `.js` shadows                    | ✅ Retired                              | W10          |
-| `@legacy/*` path alias                        | ✅ Retired                              | 9D-Option-B  |
-| Deploy-script decoupling (`../js/scanner.js`) | ✅ Complete                             | 2026-06-19   |
-| Svelte 5 strict-mode `!==` cleanup            | ✅ Guarded by CI                        | W44          |
-| Bundle optimization                           | ✅ ~338 KB gzip                         | W41          |
-| Parity-attrs layer                            | ✅ Functional (113 tests)               | W43          |
-| A11y sweep                                    | ✅ Baseline set                         | W42          |
+| Milestone                                     | Status                             | Last Updated |
+| --------------------------------------------- | ---------------------------------- | ------------ |
+| Svelte UI (26 components)                     | ✅ Complete                        | W40          |
+| Typed stores / state                          | ✅ Complete                        | W41          |
+| Engine kernel in `src/lib/`                   | ✅ Complete                        | W40          |
+| Bridge files (`src/lib/engine/*-bridge.ts`)   | ✅ 1 remaining (`state-bridge.ts`) | W10          |
+| Worker (`src/lib/workers/data-worker.ts`)     | ✅ Complete                        | W10          |
+| Legacy islands (`legacy-reference/`)          | 🟢 Archive only                    | W42          |
+| BOTH-pattern `.js` shadows                    | ✅ Retired                         | W10          |
+| `@legacy/*` path alias                        | ✅ Retired                         | 9D-Option-B  |
+| Deploy-script decoupling (`../js/scanner.js`) | ✅ Complete                        | 2026-06-19   |
+| Svelte 5 strict-mode `!==` cleanup            | ✅ Guarded by CI                   | W44          |
+| Bundle optimization                           | ✅ ~338 KB gzip                    | W41          |
+| Parity-attrs layer                            | ✅ Functional (113 tests)          | W43          |
+| A11y sweep                                    | ✅ Baseline set                    | W42          |
 
 ## Current Wave: W10 (2026-06-20)
 
@@ -31,8 +31,8 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 ### Scope
 
 - Retired 20 single-consumer and passthrough bridges via 5-signal dead-code audit:
-  - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`, `thread-inspector-bridge.ts`, `journey-point-color-bridge.ts`, `journey-thread-model-bridge.ts`, `journey-thread-settler-bridge.ts`, `inspected-strand-overlay-bridge.ts`, `route-arrival-overlay-bridge.ts`, `camera-controls-restore-bridge.ts`, `journey-focus-ui-bridge.ts`, `journey-neighborhood-bridge.ts`, `journey-webgl-bridge.ts`, `journey-compass-controller-bridge.ts`, `window-actions-bridge.ts`, `search-state-bridge.ts`, `strand-continuity-bridge.ts`, `lifecycle-bridge.ts`
-  - Total: 34 → 1 bridge file remaining (`state-bridge.ts`).
+    - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`, `thread-inspector-bridge.ts`, `journey-point-color-bridge.ts`, `journey-thread-model-bridge.ts`, `journey-thread-settler-bridge.ts`, `inspected-strand-overlay-bridge.ts`, `route-arrival-overlay-bridge.ts`, `camera-controls-restore-bridge.ts`, `journey-focus-ui-bridge.ts`, `journey-neighborhood-bridge.ts`, `journey-webgl-bridge.ts`, `journey-compass-controller-bridge.ts`, `window-actions-bridge.ts`, `search-state-bridge.ts`, `strand-continuity-bridge.ts`, `lifecycle-bridge.ts`
+    - Total: 34 → 1 bridge file remaining (`state-bridge.ts`).
 - Closed the worker URL wrapper as bridge debt by moving the Vite `?worker&url` boundary to `src/lib/workers/data-worker-url.ts`.
 - Refactored `tests/unit-active/w11-t7-adapters-init.test.ts` to assert all 11 adapters are imported from their canonical owners (no longer requires reading the obsolete `adapters-bridge.ts`).
 - Fixed the W9-era `component-SearchBar.test.ts` isolation bug (vacuous `vi.mock` hoisting).
@@ -53,12 +53,12 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 | Decision                          | Status       | Doc                                           |
 | --------------------------------- | ------------ | --------------------------------------------- |
-| Bridge files as canonical seam    | ✅ Retired   | `docs/archive/w8-charter-2026-06-20.md`               |
+| Bridge files as canonical seam    | ✅ Retired   | `docs/archive/w8-charter-2026-06-20.md`       |
 | Body data-attr as JS↔CSS contract | ✅ Active    | `AGENTS.md`                                   |
 | 8,406-point mycelium invariant    | ✅ Preserved | `state.rawPositionsBuffer` in `app.svelte.ts` |
 | Nav-mirror CI guard               | ✅ Active    | `npm run lint:nav-mirror`                     |
 | Svelte 5 `!==` strict-mode lint   | ✅ Active    | `npm run lint:svelte5-strict-mode`            |
-| W8 charter drafted                | ✅ Done      | `docs/archive/w8-charter-2026-06-20.md`               |
+| W8 charter drafted                | ✅ Done      | `docs/archive/w8-charter-2026-06-20.md`       |
 
 ## Known Blockers
 

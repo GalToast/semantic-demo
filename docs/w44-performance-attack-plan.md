@@ -7,14 +7,14 @@
 
 ## 1. Current Measured State (W43-B Baseline)
 
-| Metric | Value | Budget | Status |
-|--------|-------|--------|--------|
-| Performance score | 33–35 | ≥90 | 🔴 |
-| LCP | 17.0–17.3 s | <2.5 s | 🔴 6.8× over |
-| TBT | 1,470 ms (best) / 4,110 ms (worst) | <200 ms | 🔴 7–20× over |
-| FCP | 1.3–1.4 s | — | 🟡 borderline |
-| CLS | 0.01 | <0.1 | 🟢 excellent |
-| Speed Index | 2.9–3.0 s | — | 🟡 borderline |
+| Metric            | Value                              | Budget  | Status        |
+| ----------------- | ---------------------------------- | ------- | ------------- |
+| Performance score | 33–35                              | ≥90     | 🔴            |
+| LCP               | 17.0–17.3 s                        | <2.5 s  | 🔴 6.8× over  |
+| TBT               | 1,470 ms (best) / 4,110 ms (worst) | <200 ms | 🔴 7–20× over |
+| FCP               | 1.3–1.4 s                          | —       | 🟡 borderline |
+| CLS               | 0.01                               | <0.1    | 🟢 excellent  |
+| Speed Index       | 2.9–3.0 s                          | —       | 🟡 borderline |
 
 **Bundle:** ~1,219 KB raw JS / ~338 KB gzip (within 2,500/650 KB ceilings — W41 selective imports landed).
 **Main thread:** 4.9 s total; 3.6 s script evaluation dominates (72%).
@@ -29,13 +29,13 @@ TBT varies 2.8× between runs (1,470 ms vs 4,110 ms) while LCP stays stable at ~
 
 ## 2. Optimization Levers
 
-| # | Lever | Expected Savings (ROM) | Key Assumption |
-|---|-------|----------------------|----------------|
-| 1 | **Deferred Three.js init** | **-1,500 to -2,500 ms TBT**, -5–10 s LCP | Scene/camera/renderer init currently blocks first paint. Deferring via `requestIdleCallback` or post-FCP hook moves ~2–3 s of GPU setup off critical path. LCP improves because the 3D canvas placeholder paints first. |
-| 2 | **Source-map stripping + minification tightening** | **-50–100 ms parse**, marginal TBT | Verify Vite `terser` compress options are maxed; confirm zero source maps in production. The 585 KB main bundle could shrink 50–100 KB with aggressive mangling. |
-| 3 | **Web-worker data offload** | **-200–400 ms TBT** | Semantic thread parsing (8,406 nodes × relationship walks) runs on main thread during init. `data-worker.ts` already exists — wire the parsing through it to move CPU off main thread. |
-| 4 | **Code-split remaining islands** (focus pocket, postprocessing) | **-50–150 ms TBT**, -80 KB raw parse | Focus-stage components and postprocessing effects (80.55 KB) load unconditionally. Splitting behind user intent removes them from initial parse. |
-| 5 | **Conditional postprocessing gate** | **-100–200 ms TBT** | Postprocessing (80.55 KB / 6.6% of bundle) activates unconditionally. Gating behind a "visual quality" toggle or desktop-only check removes init cost on mobile. |
+| #   | Lever                                                           | Expected Savings (ROM)                   | Key Assumption                                                                                                                                                                                                          |
+| --- | --------------------------------------------------------------- | ---------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | **Deferred Three.js init**                                      | **-1,500 to -2,500 ms TBT**, -5–10 s LCP | Scene/camera/renderer init currently blocks first paint. Deferring via `requestIdleCallback` or post-FCP hook moves ~2–3 s of GPU setup off critical path. LCP improves because the 3D canvas placeholder paints first. |
+| 2   | **Source-map stripping + minification tightening**              | **-50–100 ms parse**, marginal TBT       | Verify Vite `terser` compress options are maxed; confirm zero source maps in production. The 585 KB main bundle could shrink 50–100 KB with aggressive mangling.                                                        |
+| 3   | **Web-worker data offload**                                     | **-200–400 ms TBT**                      | Semantic thread parsing (8,406 nodes × relationship walks) runs on main thread during init. `data-worker.ts` already exists — wire the parsing through it to move CPU off main thread.                                  |
+| 4   | **Code-split remaining islands** (focus pocket, postprocessing) | **-50–150 ms TBT**, -80 KB raw parse     | Focus-stage components and postprocessing effects (80.55 KB) load unconditionally. Splitting behind user intent removes them from initial parse.                                                                        |
+| 5   | **Conditional postprocessing gate**                             | **-100–200 ms TBT**                      | Postprocessing (80.55 KB / 6.6% of bundle) activates unconditionally. Gating behind a "visual quality" toggle or desktop-only check removes init cost on mobile.                                                        |
 
 ### Cumulative Projection
 
@@ -76,11 +76,11 @@ npx lighthouse http://127.0.0.1:4174/ --output=json --output-path=docs/lighthous
 
 Track deltas:
 
-| Metric | Baseline | Phase 1 | Phase 2 | Phase 3 | Phase 4 |
-|--------|----------|---------|---------|---------|---------|
-| TBT | 1,470–4,110 ms | <2,000 ms | <1,900 ms | <1,500 ms | <1,300 ms |
-| LCP | 17.0–17.3 s | <10 s | <9.5 s | <9 s | <8.5 s |
-| Perf score | 33–35 | ≥45 | ≥48 | ≥55 | ≥60 |
+| Metric     | Baseline       | Phase 1   | Phase 2   | Phase 3   | Phase 4   |
+| ---------- | -------------- | --------- | --------- | --------- | --------- |
+| TBT        | 1,470–4,110 ms | <2,000 ms | <1,900 ms | <1,500 ms | <1,300 ms |
+| LCP        | 17.0–17.3 s    | <10 s     | <9.5 s    | <9 s      | <8.5 s    |
+| Perf score | 33–35          | ≥45       | ≥48       | ≥55       | ≥60       |
 
 ---
 
@@ -92,4 +92,4 @@ Track deltas:
 
 ---
 
-*Created 2026-06-18. Worker D, Team W43-Immediate.*
+_Created 2026-06-18. Worker D, Team W43-Immediate._

@@ -153,7 +153,10 @@ const EXEMPTED_SHAS = new Set<string>([
     '8c6ce38a8b7eb1fd490f7ae5dbbc875ef4510a3b',
     // f5ac105 — docs(w10): update migration status to reflect 3 remaining bridges
     // — Mixed commit containing migration docs and companion refactor code and tests under 'docs' prefix.
-    'f5ac10555c9378de0f99d84aae320fe1e6cca0ee'
+    'f5ac10555c9378de0f99d84aae320fe1e6cca0ee',
+    // c652fa2 — docs(archive): move 7 closed-wave charter docs into docs/archive/
+    // — Mixed commit that touches non-doc test file tests/integration/w6-splash-t1-contract.mjs
+    'c652fa2f949884dc115bfca83f2441acc47ecb43'
 ])
 
 // Conventional-commit prefix regex. Captures:
