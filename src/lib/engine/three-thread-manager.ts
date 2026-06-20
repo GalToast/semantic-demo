@@ -134,7 +134,7 @@ export function getThreadPulseOpacity(baseOpacity: any, pulse: any, requestedAmp
 export function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode();
     if (currentMode === 'overview' || currentMode === undefined) {
-        return { core: 0.112, wispy: 0.047, bridge: 0.068, pulse: 0.022 };
+        return { core: 0.12, wispy: 0.047, bridge: 0.068, pulse: 0.022 };
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
         return { core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008 };

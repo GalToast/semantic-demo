@@ -705,7 +705,7 @@ export function initThreeJS() {
     _webglContextLostHandler = (event: any) => {
         event.preventDefault()
         _webglContextLost = true
-        cancelAnimate()
+        pauseRenderLoopTimers({ clearRestoreTimer: true })
         _uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
     }
     renderer.domElement.addEventListener('webglcontextlost', _webglContextLostHandler, false)
@@ -716,6 +716,15 @@ export function initThreeJS() {
             _webglRestore?.restoreWebGLContext().catch((err) => {
                 console.error('Failed to restore WebGL context:', err)
             })
+            if (
+                _rafId === null &&
+                !_circuitBreakerTripped &&
+                webglContext.renderer &&
+                webglContext.scene &&
+                webglContext.camera
+            ) {
+                animate()
+            }
         }, 1000)
     }
     renderer.domElement.addEventListener('webglcontextrestored', _webglContextRestoredHandler, false)
@@ -940,12 +949,12 @@ export function onWindowResize() {
  * The WebGL context-lost handler (line 701) currently only calls cancelAnimate();
  * tracked textures will leak until context GC — known issue, see smell-accounting W1-M2.
  */
-export function cancelAnimate() {
+function pauseRenderLoopTimers(options: { clearRestoreTimer?: boolean } = {}): void {
     if (_rafId !== null) {
         window.cancelAnimationFrame(_rafId)
         _rafId = null
     }
-    if (_webglRestoreTimer) {
+    if (options.clearRestoreTimer && _webglRestoreTimer) {
         window.clearTimeout(_webglRestoreTimer)
         _webglRestoreTimer = null
     }
@@ -953,6 +962,10 @@ export function cancelAnimate() {
         window.clearTimeout(_idleFrameTimerId)
         _idleFrameTimerId = null
     }
+}
+
+export function cancelAnimate() {
+    pauseRenderLoopTimers({ clearRestoreTimer: true })
     // Remove the visibilitychange handler to prevent accumulation on re-init (W1-H1)
     if (_visibilityChangeHandler) {
         document.removeEventListener('visibilitychange', _visibilityChangeHandler)

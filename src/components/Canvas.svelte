@@ -6,7 +6,7 @@
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
   import { engineReady as engineReadyStore } from '@lib/stores/engine-ready.svelte';
   import { debugLog, debugWarn, debugError } from '@lib/utils/debug';
-  import type { EngineCallbacks } from '@lib/engine/adapters/types';
+  import type { EngineCallbacks } from '@lib/engine/lifecycle';
   import type { LoadingPhase } from '@lib/types/state';
 
   interface Props {

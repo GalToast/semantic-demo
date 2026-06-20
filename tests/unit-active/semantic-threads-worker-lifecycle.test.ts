@@ -24,8 +24,20 @@ class MockWorker extends EventTarget {
         MockWorker.instances.push(this)
     }
 
-    postMessage(message: unknown): void {
+    postMessage(message: any): void {
         this.lastMessage = message
+        if (message && message.type === 'PING') {
+            queueMicrotask(() => {
+                this.dispatchEvent(
+                    new MessageEvent('message', {
+                        data: {
+                            type: 'PONG',
+                            pingId: message.pingId
+                        }
+                    })
+                )
+            })
+        }
     }
 
     terminate(): void {

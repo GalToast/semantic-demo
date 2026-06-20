@@ -36,7 +36,9 @@ let _state: SemanticState | null = null
 // Promise gate: resolves when attachLegacyState() is called, so
 // loadSemanticThreads() can await instead of polling with a busy-wait.
 let _stateReadyResolve: (() => void) | null = null
-const _stateReady = new Promise<void>((resolve) => { _stateReadyResolve = resolve })
+const _stateReady = new Promise<void>((resolve) => {
+    _stateReadyResolve = resolve
+})
 
 function getState(): SemanticState {
     if (!_state) throw new Error('semantic-threads: state not attached')
@@ -110,10 +112,12 @@ async function getWorker(): Promise<Worker | null> {
     if (_workerFailureCount >= WORKER_MAX_FAILURES) {
         console.warn(
             `[semantic-threads] Worker circuit breaker open (${_workerFailureCount} consecutive failures). ` +
-            `Retrying in 30s...`
+                `Retrying in 30s...`
         )
         // Reset after cooldown so next caller can try again
-        setTimeout(() => { _workerFailureCount = 0 }, 30_000)
+        setTimeout(() => {
+            _workerFailureCount = 0
+        }, 30_000)
         return null
     }
 
@@ -132,12 +136,11 @@ async function getWorker(): Promise<Worker | null> {
         } catch (err) {
             const delay = WORKER_RETRY_DELAYS[attempt]
             console.warn(
-                `[semantic-threads] Worker instantiation attempt ${attempt + 1} failed, ` +
-                `retrying in ${delay}ms...`,
+                `[semantic-threads] Worker instantiation attempt ${attempt + 1} failed, ` + `retrying in ${delay}ms...`,
                 err instanceof Error ? err.message : err
             )
             if (attempt < WORKER_RETRY_DELAYS.length - 1) {
-                await new Promise(r => setTimeout(r, delay))
+                await new Promise((r) => setTimeout(r, delay))
             }
         }
     }
@@ -145,7 +148,7 @@ async function getWorker(): Promise<Worker | null> {
     _workerFailureCount++
     console.error(
         `[semantic-threads] Worker creation failed after ${WORKER_RETRY_DELAYS.length} attempts. ` +
-        `Consecutive failure count: ${_workerFailureCount}/${WORKER_MAX_FAILURES}`
+            `Consecutive failure count: ${_workerFailureCount}/${WORKER_MAX_FAILURES}`
     )
     return null
 }
@@ -568,7 +571,10 @@ export function getSemanticThreadArtifactName(): string | null {
  * Returns an empty map if not yet loaded.
  */
 export function getSemanticNeighborMapByLeadId(): Map<string, SemanticNeighborEntry> {
-    return (_state?.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>) ?? new Map<string, SemanticNeighborEntry>()
+    return (
+        (_state?.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>) ??
+        new Map<string, SemanticNeighborEntry>()
+    )
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -588,10 +594,7 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
     // Guard: if attachLegacyState() hasn't been called yet, await the promise
     // gate with a 500ms timeout, then degrade gracefully instead of throwing.
     if (_state === null) {
-        await Promise.race([
-            _stateReady,
-            new Promise<void>((resolve) => setTimeout(resolve, 500))
-        ])
+        await Promise.race([_stateReady, new Promise<void>((resolve) => setTimeout(resolve, 500))])
         if (_state === null) {
             console.warn(
                 '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully'

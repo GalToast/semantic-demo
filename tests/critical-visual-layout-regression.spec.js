@@ -149,22 +149,23 @@ test.describe('Critical Visual Layout Regression', () => {
         )
 
         await page.evaluate(() => {
-            document.body.classList.add('is-active')
-            document.body.dataset.activeView = 'galaxy'
+            window.__APP_ACTIONS__?.focusOnNode?.(4200, { skipUrlSync: true })
         })
-        await page
-            .waitForFunction(
-                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
-                { timeout: 8000 }
-            )
-            .catch(() => {})
+        await page.waitForFunction(
+            () =>
+                document.querySelector('.journey-compass:not(.hidden-by-nodemo):not(.hidden-by-search)') &&
+                window.__TEST_STATE__?.focusedNode !== null &&
+                window.__TEST_STATE__?.focusedNode !== undefined,
+            { timeout: 8000 }
+        )
 
         const compassState = await page.evaluate(() => ({
             activeView: document.body.dataset.activeView,
             panelSurface: document.body.dataset.panelSurface || ''
         }))
-        expect(compassState.activeView, 'short-landscape contract must exercise real galaxy view ownership').toBe(
-            'galaxy'
+        expect(compassState.activeView, 'short-landscape contract must stay on the galaxy canvas').toBe('galaxy')
+        expect(compassState.panelSurface, 'short-landscape contract must exercise real focus compass ownership').toBe(
+            'focus'
         )
 
         const compass = await probeRect(page, '.journey-compass')

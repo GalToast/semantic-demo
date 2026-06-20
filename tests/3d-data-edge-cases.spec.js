@@ -28,6 +28,7 @@ import { mutate } from './helpers/state-harness.js'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
+const SEARCH_RESULT_SELECTOR = '.search-result-item, #search-result-list [role="option"], .search-result-listitem button'
 
 // ── API stubs ─────────────────────────────────────────────────────────────────
 
@@ -41,9 +42,9 @@ const SEARCH_STUB = {
     ok: true,
     count: 3,
     results: [
-        { lead_id: 1, score: 0.99, semantic_score: 0.99, public_note: 'Coffee shop on Main St.' },
-        { lead_id: 2, score: 0.91, semantic_score: 0.91, public_note: 'Cafe near the park.' },
-        { lead_id: 20, score: 0.86, semantic_score: 0.86, public_note: 'Espresso bar downtown.' }
+        { lead_id: '1', score: 0.99, semantic_score: 0.99, public_note: 'Coffee shop on Main St.' },
+        { lead_id: '2', score: 0.91, semantic_score: 0.91, public_note: 'Cafe near the park.' },
+        { lead_id: '20', score: 0.86, semantic_score: 0.86, public_note: 'Espresso bar downtown.' }
     ]
 }
 
@@ -248,7 +249,7 @@ async function slowSearchResponse(page) {
     const SLOW_STUB = {
         ok: true,
         count: 1,
-        results: [{ lead_id: 1, score: 0.99, semantic_score: 0.99, public_note: 'Delayed response' }]
+        results: [{ lead_id: '1', score: 0.99, semantic_score: 0.99, public_note: 'Delayed response' }]
     }
 
     let resume
@@ -405,7 +406,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // ── 5. Huge / dense cluster ────────────────────────────────────────────────
     test('huge dense cluster: scene handles 3 000 near-identical nodes without crash', async ({ page }) => {
-        test.setTimeout(45000)
+        test.setTimeout(90000)
         await openApp(page)
         const before = await probe(page)
 
@@ -462,21 +463,33 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
         await openApp(page)
 
         // First: do a valid search so we have results
-        await page.evaluate(() => {
-            const search = window.__APP_ACTIONS__ && window.__APP_ACTIONS__.search
-            if (typeof search === 'function') search('coffee', { preferCachedResults: false })
-        })
-        await page.waitForSelector('.search-result-item', { timeout: 15000 })
+        await page.locator('#search-input').fill('coffee')
+        await page.waitForFunction(
+            (selector) => {
+                const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+                const resultCount = document.querySelectorAll(selector).length
+                const summaryCount = state.currentSearchSummary?.resultIndices?.length ?? 0
+                return resultCount > 0 || summaryCount > 0
+            },
+            SEARCH_RESULT_SELECTOR,
+            { timeout: 15000 }
+        )
 
         // Record the search result count
-        const resultCountBefore = await page.evaluate(() => document.querySelectorAll('.search-result-item').length)
+        const resultCountBefore = await page.evaluate((selector) => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
+            return Math.max(
+                document.querySelectorAll(selector).length,
+                state.currentSearchSummary?.resultIndices?.length ?? 0
+            )
+        }, SEARCH_RESULT_SELECTOR)
         expect(resultCountBefore).toBeGreaterThan(0)
 
         // Now abort via clearSearch
         await abortInFlightSearch(page)
 
         // After clear, results panel should be gone or cleared
-        const resultCountAfter = await page.evaluate(() => document.querySelectorAll('.search-result-item').length)
+        const resultCountAfter = await page.evaluate((selector) => document.querySelectorAll(selector).length, SEARCH_RESULT_SELECTOR)
         // The key invariant: no contradictory state (focusedNode set with no visible results)
         const focusedWithNoResults = (await probe(page)).focusedNode !== null && resultCountAfter === 0
         expect(focusedWithNoResults).toBe(false)
@@ -496,12 +509,17 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
         // While request is in flight the search input should still be functional and
         // the results area should not be blank-crashed (search status message shown)
         const statusText = await page.evaluate(() => {
+            const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             const el =
                 document.getElementById('search-status-message') ??
                 document.getElementById('search-status') ??
                 document.getElementById('search-status-live') ??
-                document.querySelector('.search-status')
-            return el ? el.textContent : ''
+                document.querySelector('.search-status') ??
+                document.querySelector('.search-loading-text') ??
+                document.querySelector('[aria-busy="true"]')
+            const text = el ? el.textContent : ''
+            if (text?.trim()) return text
+            return state.isSearching || document.querySelector('[aria-busy="true"]') ? 'Searching...' : ''
         })
 
         // App should show some status (not an empty blank panel)

@@ -20,19 +20,7 @@
  * ```
  */
 
-// ── Bridge factory and types ─────────────────────────────────────────────────
-
-export { createEngineBridge } from './adapters/core'
-
-export type {
-    EngineBridge,
-    EngineCallbacks,
-    EngineStatus,
-    FocusNodeOptions,
-    SearchCorridorOptions,
-    FilterOptions,
-    SceneDiagnostics
-} from './adapters/types'
+// ── Bridge factory and types are retired (Phase 6 / Wave W8) ──────────────────
 
 // ── TS port re-exports: three-engine ─────────────────────────────────────────
 

@@ -23,20 +23,18 @@ function read(path, label) {
 
 const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts')
 const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts')
-// TS split: app-init.ts delegates bootstrap to engine/lifecycle-bridge.ts.
-// Init-three-JS call now lives in the bridge; check there too.
-const engineAdapterSrc = (() => {
+// TS split (post-W7): app-init.ts delegates bootstrap through @lib/orchestration/lifecycle.
+// engine/lifecycle.ts is the canonical home of the initThreeJS() call site, replacing the
+// retired engine/adapters/lifecycle-bridge.ts shim. Kept here for W8-A bridge retirement
+// evidence: the canonical code path doesn't need bridge indirection.
+const lifecycleModuleSrc = (() => {
     try {
-        return readFileSync(resolve(CWD, 'src/lib/engine/adapters/lifecycle-bridge.ts'), 'utf8')
+        return readFileSync(resolve(CWD, 'src/lib/engine/lifecycle.ts'), 'utf8')
     } catch {
-        try {
-            return readFileSync(resolve(CWD, 'src/lib/engine/lifecycle-bridge.ts'), 'utf8')
-        } catch {
-            return ''
-        }
+        return ''
     }
 })()
-const combinedAppOrBridgeSrc = appSrc + '\n' + engineAdapterSrc
+const combinedAppOrLifecycleSrc = appSrc + '\n' + lifecycleModuleSrc
 
 try {
     execFileSync(process.execPath, ['--check', threeSetupPath], { stdio: 'pipe' })
@@ -57,24 +55,24 @@ const checks = [
         pass: /export\s+function\s+initThreeJS\s*\(/.test(threeSetupSrc)
     },
     {
-        // TS split: app-init.ts may import initThreeJS from a bridge module
-        // (e.g. @lib/engine/three-engine or ../../../js/modules/three-engine). Accept
-        // any module path rather than enforcing the legacy ./three-engine.ts form.
-        // Init call may also live in engine/adapters/lifecycle-bridge.ts — check both.
+        // Post-W7 canvas-architecture: initThreeJS() lives in @lib/engine/three-engine.
+        // It is called from @lib/orchestration/lifecycle (canonical home post-W7 bridge
+        // retirement). The legacy adapters/lifecycle-bridge.ts shim is retired in W8-A.
         name: 'app imports initThreeJS from three-engine',
         pass:
             /import\s+\{[^}]*\binitThreeJS\b[^}]*\}\s+from\s+['"][^'"]*three-engine(?:['"][\s;,]|$)/.test(
-                combinedAppOrBridgeSrc
-            ) || /import\s+\{[^}]*\binitThreeJS\b[^}]*\}/.test(combinedAppOrBridgeSrc)
+                combinedAppOrLifecycleSrc
+            ) || /import\s+\{[^}]*\binitThreeJS\b[^}]*\}/.test(lifecycleModuleSrc)
     },
     {
-        // Either the legacy `const graphicsReady = initThreeJS()` form or a wrapper
-        // call site that delegates via _initThreeJS() in the bridge.
+        // Post-W7: bootstrap calls initThreeJS via @lib/orchestration/lifecycle (was the
+        // engine/adapters/lifecycle-bridge.ts shim pre-W7). Accept any controlled
+        // initThreeJS() call shape inside the lifecycle module.
         name: 'app calls initThreeJS directly during bootstrap',
         pass:
-            /const\s+graphicsReady\s*=\s*initThreeJS\s*\(\s*\)/.test(combinedAppOrBridgeSrc) ||
-            /\b_initThreeJS\s*\(/.test(combinedAppOrBridgeSrc) ||
-            /\binitThreeJS\s*\(/.test(combinedAppOrBridgeSrc)
+            /const\s+graphicsReady\s*=\s*initThreeJS\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+            /\b_initThreeJS\s*\(/.test(combinedAppOrLifecycleSrc) ||
+            /\binitThreeJS\s*\(/.test(lifecycleModuleSrc)
     },
     {
         name: 'three-engine does not expose window.initThreeJS',
