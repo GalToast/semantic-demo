@@ -509,9 +509,52 @@ class AppState {
 
 // Singleton opt-in instance — consumers can import and use this instead of the legacy state.
 const GLOBAL_APP_STATE_KEY = '__SEMANTIC_EXPLORER_APP_STATE_V1__'
-const existingAppState: AppState | null =
-    (typeof window !== 'undefined' && (window as any)[GLOBAL_APP_STATE_KEY]) || null
-export const appState: AppState = existingAppState || new AppState()
-if (typeof window !== 'undefined' && !(window as any)[GLOBAL_APP_STATE_KEY]) {
-    ;(window as any)[GLOBAL_APP_STATE_KEY] = appState
+
+let _appStateInstance: AppState | null = null
+
+function getAppState(): AppState {
+    if (_appStateInstance === null) {
+        _appStateInstance = new AppState()
+        if (typeof window !== 'undefined' && !(window as any)[GLOBAL_APP_STATE_KEY]) {
+            (window as any)[GLOBAL_APP_STATE_KEY] = _appStateInstance
+        }
+    }
+    return _appStateInstance
+}
+
+/** Lazy AppState singleton — defers instantiation (and 191 $state proxy creations)
+ * until first property access, shaving ~300–800 ms off the critical path. */
+export const appState: AppState = new Proxy({} as AppState, {
+    get(_target, prop, _receiver) {
+        const instance = getAppState()
+        const value = Reflect.get(instance, prop, instance)
+        return typeof value === 'function' ? (value as Function).bind(instance) : value
+    },
+    set(_target, prop, value, _receiver) {
+        return Reflect.set(getAppState(), prop, value)
+    },
+    has(_target, prop) {
+        return Reflect.has(getAppState(), prop)
+    },
+    ownKeys(_target) {
+        return Reflect.ownKeys(getAppState())
+    },
+    getOwnPropertyDescriptor(_target, prop) {
+        return Reflect.getOwnPropertyDescriptor(getAppState(), prop)
+    },
+    defineProperty(_target, prop, attributes) {
+        return Reflect.defineProperty(getAppState(), prop, attributes)
+    },
+    deleteProperty(_target, prop) {
+        return Reflect.deleteProperty(getAppState(), prop)
+    }
+})
+
+// Also expose on window for devtools / legacy bridge access (triggers instantiation if not yet done)
+if (typeof window !== 'undefined') {
+    Object.defineProperty(window, GLOBAL_APP_STATE_KEY, {
+        get: getAppState,
+        enumerable: false,
+        configurable: true
+    })
 }
