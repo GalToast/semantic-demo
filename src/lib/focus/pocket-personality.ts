@@ -8,7 +8,7 @@
 import { appState } from '@lib/state/app.svelte';
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { getSemanticThreadCandidates } from '@lib/engine/journey-thread-model-bridge';
-import { getFocusConstellationViewportProfile } from '@lib/focus/geometry';
+import { getFocusConstellationViewportProfile } from '@lib/journey/focus-pocket-geometry';
 
 export interface SemanticCandidate {
     index: number;

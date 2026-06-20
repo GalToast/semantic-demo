@@ -22,7 +22,6 @@ import {
     buildFocusedSemanticPocket,
     clampNumber,
     easeOutQuint,
-    seededUnit,
     safeUnitScore,
     getFocusViewBasis,
     getFocusConstellationMotif,
@@ -34,7 +33,8 @@ import {
     applyRelationshipRolePlacementBias,
     getFocusThreadCurvePoint,
     type PocketEntry
-} from '@lib/focus/geometry'
+} from '@lib/journey/focus-pocket-geometry'
+import { seededUnit } from '@lib/utils/seeded-random'
 import { getNeighborhoodPersonality, getSemanticCandidateSlice } from '@lib/focus/pocket-personality'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { setPocketNodes } from '@lib/stores/focus.svelte'
