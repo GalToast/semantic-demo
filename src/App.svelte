@@ -502,8 +502,8 @@
     mapModeActive &&
     bodyJourneyNavigationOwner === 'map-trail-strip' &&
       bodyPanelSurface.startsWith('map-') &&
-      bodyPanelSurface !== 'map-idle' &&
-      bodyPanelSurface !== 'map'
+      bodyPanelSurface !== 'map-idle' && // audit-ok: literal state check
+      bodyPanelSurface !== 'map' // audit-ok: literal state check
   );
   let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
 

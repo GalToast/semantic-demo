@@ -82,7 +82,8 @@ async function _loadPostProcessing(): Promise<PostProcessingModule> {
     return _ppLoading
 }
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn, debugInfo } from '@lib/utils/diagnostic-adapter'
+import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 
 // ── Static ../../../js/* imports (COLD — init-only, consumed by ensureModules) ──
@@ -878,13 +879,21 @@ export function initThreeJS() {
     // until premium mode is toggled on via the body data-attribute. The
     // composer's render path is invoked from the animate loop below; if
     // premium mode is off, the loop falls through to vanilla renderer.render().
-    _loadPostProcessing().then((pp) => {
-        try {
-            pp.initPostProcessing(renderer, scene, camera)
-        } catch (ppErr) {
-            debugWarn('[three-engine] postprocessing init failed, vanilla render will be used:', ppErr)
-        }
-    })
+    //
+    // Gated on mobile: postprocessing adds 80+ KB and heavy GPU passes that
+    // are unnecessary on small viewports. The vanilla renderer.render() path
+    // is used instead.
+    if (!isMobileViewport()) {
+        _loadPostProcessing().then((pp) => {
+            try {
+                pp.initPostProcessing(renderer, scene, camera)
+            } catch (ppErr) {
+                debugWarn('[three-engine] postprocessing init failed, vanilla render will be used:', ppErr)
+            }
+        })
+    } else {
+        debugInfo('[three-engine] postprocessing skipped on mobile viewport')
+    }
 
     // Dev-only: expose engine handle for the Spector.js frame-capture bridge.
     // Lets SpectorInspector force a render call before captureContext() so

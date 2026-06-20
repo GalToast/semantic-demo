@@ -13,22 +13,23 @@
  */
 
 export interface GestureMonitorOpts {
-  /** Called exactly once when a qualifying gesture or visibility event fires. */
-  onReady: () => void;
-  /** Debounce window in ms after the first gesture (default: 200). */
-  cooldownMs?: number;
+    /** Called exactly once when a qualifying gesture or visibility event fires. */
+    onReady: () => void
+    /** Debounce window in ms after the first gesture (default: 200). */
+    cooldownMs?: number
 }
 
-const DEFAULT_COOLDOWN = 200;
+const DEFAULT_COOLDOWN = 200
 
 /** Window-level events that signal user intent. */
-const GESTURE_EVENTS: Array<keyof WindowEventMap> = [
-  'pointerdown',
-  'keydown',
-  'wheel',
-  'touchstart',
-  'mousemove',
-];
+const GESTURE_EVENTS: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'mousemove']
+
+function isAutomatedBrowserSession(): boolean {
+    return Boolean(
+        typeof window !== 'undefined' &&
+            ((window as any).__PLAYWRIGHT__ || (typeof navigator !== 'undefined' && navigator.webdriver))
+    )
+}
 
 /**
  * Install the gesture monitor on window.
@@ -36,74 +37,74 @@ const GESTURE_EVENTS: Array<keyof WindowEventMap> = [
  * Returns a teardown function that removes all listeners.
  */
 export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
-  const cooldown = opts.cooldownMs ?? DEFAULT_COOLDOWN;
-  let fired = false;
-  let wasHidden = false;
-  let timer: ReturnType<typeof setTimeout> | undefined;
+    const cooldown = opts.cooldownMs ?? DEFAULT_COOLDOWN
+    let fired = false
+    let wasHidden = false
+    let timer: ReturnType<typeof setTimeout> | undefined
 
-  function handleReady(): void {
-    if (fired) return;
-    fired = true;
-    opts.onReady();
-    // Safety: remove all listeners after the cooldown even if teardown wasn't called.
-    if (timer !== undefined) clearTimeout(timer);
-    timer = setTimeout(cleanup, cooldown);
-  }
-
-  const listeners: Array<{
-    target: EventTarget;
-    type: string;
-    handler: EventListener;
-  }> = [];
-
-  function listen<K extends keyof WindowEventMap>(
-    target: Window,
-    type: K,
-    handler: (ev: WindowEventMap[K]) => void,
-    opts?: AddEventListenerOptions,
-  ): void {
-    const wrapped = handler as unknown as EventListener;
-    target.addEventListener(type, wrapped, opts);
-    listeners.push({ target, type, handler: wrapped });
-  }
-
-  // ── Gesture listeners ────────────────────────────────────────────────────
-
-  for (const evt of GESTURE_EVENTS) {
-    listen(window, evt, () => handleReady(), { passive: true });
-  }
-
-  // ── Visibility fallback (kiosk / no-gesture scenario) ───────────────────
-  // Only fire on transition from hidden → visible, not on initial load.
-  function onVisibilityChange(): void {
-    if (document.visibilityState === 'hidden') {
-      wasHidden = true
-      return
+    function handleReady(): void {
+        if (fired) return
+        fired = true
+        opts.onReady()
+        // Safety: remove all listeners after the cooldown even if teardown wasn't called.
+        if (timer !== undefined) clearTimeout(timer)
+        timer = setTimeout(cleanup, cooldown)
     }
-    if (wasHidden && document.visibilityState === 'visible') {
-      handleReady()
+
+    const listeners: Array<{
+        target: EventTarget
+        type: string
+        handler: EventListener
+    }> = []
+
+    function listen<K extends keyof WindowEventMap>(
+        target: Window,
+        type: K,
+        handler: (ev: WindowEventMap[K]) => void,
+        opts?: AddEventListenerOptions
+    ): void {
+        const wrapped = handler as unknown as EventListener
+        target.addEventListener(type, wrapped, opts)
+        listeners.push({ target, type, handler: wrapped })
     }
-  }
-  listen(document as unknown as Window, 'visibilitychange' as any, onVisibilityChange);
 
-  // Playwright test auto-fire: skip gesture wait in automated tests so
-  // canvas mounts without requiring every test to simulate a gesture.
-  if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__) {
-    setTimeout(() => handleReady(), 0)
-  }
+    // ── Gesture listeners ────────────────────────────────────────────────────
 
-  // ── Cleanup ──────────────────────────────────────────────────────────────
-
-  function cleanup(): void {
-    for (const l of listeners) {
-      l.target.removeEventListener(l.type, l.handler);
+    for (const evt of GESTURE_EVENTS) {
+        listen(window, evt, () => handleReady(), { passive: true })
     }
-    listeners.length = 0;
-    if (timer !== undefined) {
-      clearTimeout(timer);
-      timer = undefined;
-    }
-  }
 
-  return cleanup;
+    // ── Visibility fallback (kiosk / no-gesture scenario) ───────────────────
+    // Only fire on transition from hidden → visible, not on initial load.
+    function onVisibilityChange(): void {
+        if (document.visibilityState === 'hidden') {
+            wasHidden = true
+            return
+        }
+        if (wasHidden && document.visibilityState === 'visible') {
+            handleReady()
+        }
+    }
+    listen(document as unknown as Window, 'visibilitychange' as any, onVisibilityChange)
+
+    // Playwright test auto-fire: skip gesture wait in automated tests so
+    // canvas mounts without requiring every test to simulate a gesture.
+    if (isAutomatedBrowserSession()) {
+        setTimeout(() => handleReady(), 0)
+    }
+
+    // ── Cleanup ──────────────────────────────────────────────────────────────
+
+    function cleanup(): void {
+        for (const l of listeners) {
+            l.target.removeEventListener(l.type, l.handler)
+        }
+        listeners.length = 0
+        if (timer !== undefined) {
+            clearTimeout(timer)
+            timer = undefined
+        }
+    }
+
+    return cleanup
 }

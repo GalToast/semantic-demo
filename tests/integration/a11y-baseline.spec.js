@@ -62,13 +62,13 @@ const MAX_VIOLATIONS = parseInt(process.env.A11Y_MAX_VIOLATIONS || '5', 10)
 async function runA11yScan(page, stateLabel) {
     const results = await new AxeBuilder({ page }).analyze()
     const count = results.violations.length
-    console.log(`  [a11y:${stateLabel}] ${count} violation(s)`) // eslint-disable-line no-console
+    console.log(`  [a11y:${stateLabel}] ${count} violation(s)`)  
 
     if (count > 0) {
         // Log each violation with impact, rule ID, description, and affected node count
         for (const v of results.violations) {
             const impact = v.impact || 'unknown'
-            console.log(`    - [${impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`) // eslint-disable-line no-console
+            console.log(`    - [${impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
         }
 
         // Summarize by category for the 5 key categories
@@ -77,7 +77,7 @@ async function runA11yScan(page, stateLabel) {
             const cat = v.id.split('-')[0] // e.g., 'color-contrast', 'aria', 'label', 'landmark', 'heading'
             categories[cat] = (categories[cat] || 0) + 1
         }
-        console.log(`  [a11y:${stateLabel}] categories: ${JSON.stringify(categories)}`) // eslint-disable-line no-console
+        console.log(`  [a11y:${stateLabel}] categories: ${JSON.stringify(categories)}`)  
     }
 
     return results
@@ -92,7 +92,7 @@ test.describe('A11y baseline — 4 critical states', () => {
         const consoleCapture = captureConsoleErrors(page)
 
         await withRetry(async (attempt) => {
-            console.log(`  [idle-overview] Attempt ${attempt}...`) // eslint-disable-line no-console
+            console.log(`  [idle-overview] Attempt ${attempt}...`)  
             await navigateToApp(page)
             await page.waitForTimeout(SETTLE_MS)
 
@@ -118,11 +118,11 @@ test.describe('A11y baseline — 4 critical states', () => {
                     nodeCount: v.nodes.length,
                 })),
             }
-            console.log(`  [idle-overview] baseline: ${JSON.stringify(baseline, null, 2)}`) // eslint-disable-line no-console
+            console.log(`  [idle-overview] baseline: ${JSON.stringify(baseline, null, 2)}`)  
         }, { maxAttempts: 3, backoffMs: 1000, label: 'idle-overview a11y' })
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [idle-overview] ${consoleCapture.summary()}`) // eslint-disable-line no-console
+            console.log(`  [idle-overview] ${consoleCapture.summary()}`)  
         }
     })
 
@@ -131,7 +131,7 @@ test.describe('A11y baseline — 4 critical states', () => {
         const consoleCapture = captureConsoleErrors(page)
 
         await withRetry(async (attempt) => {
-            console.log(`  [search-mode] Attempt ${attempt}...`) // eslint-disable-line no-console
+            console.log(`  [search-mode] Attempt ${attempt}...`)  
             await navigateToApp(page)
             await enterSearchMode(page)
             await typeSearchQuery(page, 'cafe')
@@ -157,11 +157,11 @@ test.describe('A11y baseline — 4 critical states', () => {
                     nodeCount: v.nodes.length,
                 })),
             }
-            console.log(`  [search-mode] baseline: ${JSON.stringify(baseline, null, 2)}`) // eslint-disable-line no-console
+            console.log(`  [search-mode] baseline: ${JSON.stringify(baseline, null, 2)}`)  
         }, { maxAttempts: 3, backoffMs: 1000, label: 'search-mode a11y' })
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [search-mode] ${consoleCapture.summary()}`) // eslint-disable-line no-console
+            console.log(`  [search-mode] ${consoleCapture.summary()}`)  
         }
     })
 
@@ -170,7 +170,7 @@ test.describe('A11y baseline — 4 critical states', () => {
         const consoleCapture = captureConsoleErrors(page)
 
         await withRetry(async (attempt) => {
-            console.log(`  [focus-search] Attempt ${attempt}...`) // eslint-disable-line no-console
+            console.log(`  [focus-search] Attempt ${attempt}...`)  
             await navigateToApp(page)
             await enterSearchMode(page)
             await typeSearchQuery(page, 'cafe')
@@ -197,11 +197,11 @@ test.describe('A11y baseline — 4 critical states', () => {
                     nodeCount: v.nodes.length,
                 })),
             }
-            console.log(`  [focus-search] baseline: ${JSON.stringify(baseline, null, 2)}`) // eslint-disable-line no-console
+            console.log(`  [focus-search] baseline: ${JSON.stringify(baseline, null, 2)}`)  
         }, { maxAttempts: 3, backoffMs: 1000, label: 'focus-search a11y' })
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [focus-search] ${consoleCapture.summary()}`) // eslint-disable-line no-console
+            console.log(`  [focus-search] ${consoleCapture.summary()}`)  
         }
     })
 
@@ -210,7 +210,7 @@ test.describe('A11y baseline — 4 critical states', () => {
         const consoleCapture = captureConsoleErrors(page)
 
         await withRetry(async (attempt) => {
-            console.log(`  [focus-programmatic] Attempt ${attempt}...`) // eslint-disable-line no-console
+            console.log(`  [focus-programmatic] Attempt ${attempt}...`)  
             await navigateToApp(page)
 
             // Try to click a visible field-node in overview
@@ -241,10 +241,10 @@ test.describe('A11y baseline — 4 critical states', () => {
                         nodeCount: v.nodes.length,
                     })),
                 }
-                console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`) // eslint-disable-line no-console
+                console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`)  
             } else {
                 // No field-node visible — run a11y scan on idle state as fallback
-                console.log('  [focus-programmatic] No field-node visible; scanning idle state as fallback') // eslint-disable-line no-console
+                console.log('  [focus-programmatic] No field-node visible; scanning idle state as fallback')  
                 const results = await runA11yScan(page, 'focus-programmatic (idle-fallback)')
 
                 const baseline = {
@@ -259,12 +259,12 @@ test.describe('A11y baseline — 4 critical states', () => {
                         nodeCount: v.nodes.length,
                     })),
                 }
-                console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`) // eslint-disable-line no-console
+                console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`)  
             }
         }, { maxAttempts: 2, backoffMs: 1000, label: 'focus-programmatic a11y' })
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [focus-programmatic] ${consoleCapture.summary()}`) // eslint-disable-line no-console
+            console.log(`  [focus-programmatic] ${consoleCapture.summary()}`)  
         }
     })
 })

@@ -293,6 +293,7 @@ export function computeParityAttributes(): ParityAttributeMap {
         if (nav.mode === 'inside') return 'inside'
         if (hasFocusContext && hasSearchContext) return 'focus-search'
         if (hasFocusContext) return 'focus'
+        if (hasSearchContext) return 'corridor'
         if (nav.mode === 'search' || search.summary) return 'corridor'
         if (nav.mode === 'overview') return 'idle'
         return 'idle'
