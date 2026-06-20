@@ -60,7 +60,7 @@ export function resolveSource(legacyPath, root) {
             'state-mutators': 'src/lib/state/mutators.ts',
             'search-state': 'src/lib/search/state.ts',
             'search-results-ui': 'src/lib/search/results-ui.ts',
-            'search-panel-adapter': 'src/lib/search/panel-adapter.ts'
+            'search-panel-adapter': 'src/lib/search/search-panel-adapter.ts'
         }
         const target = REMAP[stem] ?? `src/lib/journey/${stem}.ts`
         const canonicalTs = path.resolve(base, target)

@@ -28,7 +28,7 @@ const URL_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-state.
 const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts')
 const SEARCH_RESULTS_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/results-ui.ts')
 const SEARCH_STORE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/search.svelte.ts')
-const SEARCH_PANEL_BRIDGE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/search-panel-adapter-bridge.ts')
+const SEARCH_PANEL_BRIDGE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/search-panel-adapter.ts')
 const APP_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/app-init.ts')
 
 function assert(cond, msg) {
@@ -178,8 +178,8 @@ function testSearchStateImplementsPanelState() {
     const adapterSrc = fs.readFileSync(SEARCH_PANEL_BRIDGE_PATH, 'utf-8')
 
     assert(
-        /setSearchContainerState[\s\S]*from\s+['"]\.\.\/engine\/search-panel-adapter-bridge['"]/.test(src),
-        'search/results-ui.ts must import setSearchContainerState from the panel adapter bridge'
+        /setSearchContainerState[\s\S]*from\s+['"]\.\/search-panel-adapter['"]/.test(src),
+        'search/results-ui.ts must import setSearchContainerState from search-panel-adapter'
     )
 
     assert(

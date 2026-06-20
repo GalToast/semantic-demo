@@ -89,7 +89,7 @@ import { appState } from '@lib/state/app.svelte'
 // ── Static ../../../js/* imports (COLD — init-only, consumed by ensureModules) ──
 import * as viewControllerMod from '@lib/orchestration/view-controller'
 import * as mapStateMod from '@lib/engine/map-state'
-import * as uiFeedbackMod from '@lib/engine/ui-feedback-bridge'
+import * as uiFeedbackMod from '@lib/ui/ui-feedback'
 import * as mapFlatteningMod from '../utils/map-flattening-layout'
 import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter'
 import * as focusAnchorMod from '@lib/journey/focus-anchor-indicator'

@@ -22,7 +22,7 @@ import {
     setMyceliumMode,
     updateExplorationUi
 } from '@lib/orchestration/lifecycle'
-import { syncSearchStatusForFocus } from '@lib/engine/ui-feedback-bridge'
+import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'

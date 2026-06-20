@@ -12,11 +12,7 @@
 import { state } from '../engine/state-bridge'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import {
-    setSearchContainerState,
-    setSearchGlowState,
-    setupMobileSearchSheetToggle
-} from '../engine/search-panel-adapter-bridge'
+import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte'
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane'
 import { appState } from '@lib/state/app.svelte'

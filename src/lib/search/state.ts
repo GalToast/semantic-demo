@@ -5,61 +5,79 @@
  * Consumers import from here instead of the legacy js/modules/search-state.ts.
  */
 
-import { publish, EVENTS } from '@lib/orchestration/event-bus';
-import { clearSearch as storeClearSearch } from '@lib/stores/search.svelte';
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import { clearSearch as storeClearSearch } from '@lib/stores/search.svelte'
 
 export interface SearchOptions {
-  preferCachedResults?: boolean;
-  offset?: number;
-  restoreAnchorLeadId?: string | number;
-  skipResetFocus?: boolean;
-  preserveSearch?: boolean;
-  suppressEvent?: boolean;
+    preferCachedResults?: boolean
+    offset?: number
+    restoreAnchorLeadId?: string | number
+    skipResetFocus?: boolean
+    preserveSearch?: boolean
+    suppressEvent?: boolean
 }
 
 export function clearSearch(options: SearchOptions = {}): void {
-  if (!options.skipResetFocus) {
-    publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, {
-      preserveSearch: true, skipUrlSync: true, skipSearchClearEvent: true,
-    });
-  }
-  storeClearSearch();
-  if (!options.suppressEvent) {
-    publish(EVENTS.SEARCH_CLEARED, {
-      ...options, preservedSearch: !!options.preserveSearch,
-    });
-  }
+    if (!options.skipResetFocus) {
+        publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, {
+            preserveSearch: true,
+            skipUrlSync: true,
+            skipSearchClearEvent: true
+        })
+    }
+    storeClearSearch()
+    if (!options.suppressEvent) {
+        publish(EVENTS.SEARCH_CLEARED, {
+            ...options,
+            preservedSearch: !!options.preserveSearch
+        })
+    }
 }
 
-export { search, bindSearchResultInteractions, beginSearchFocusTransition, type SearchContext } from './orchestration';
-export { setActiveSearchResultRow } from './result-renderer';
+export { search, bindSearchResultInteractions, beginSearchFocusTransition, type SearchContext } from './orchestration'
+export { setActiveSearchResultRow } from './result-renderer'
 
 export {
-  setSearchPanelState, renderSearchResultItems, beginSemanticSearchUiState,
-  updateSemanticSearchRetryState, applySemanticSearchDegradedState,
-  finishSemanticSearchSuccessState, applyEmptySemanticSearchState,
-  stopSearchVectorScramble, startSearchVectorScramble, updateSearchPreviewOverlay,
-  activateSearchGlow, clearSearchGlow, resetSemanticGuideUi,
-  clearShortSemanticSearchState, startMobileRouteFieldPeek,
-  clearSearchPreviewHoverTimer, clearMobileRouteFieldPeek,
-  isMobileRouteFieldPeekActive, focusSearchInputForReplacement,
-  updateSearchStatusMessage,
-} from './results-ui';
+    setSearchPanelState,
+    renderSearchResultItems,
+    beginSemanticSearchUiState,
+    updateSemanticSearchRetryState,
+    applySemanticSearchDegradedState,
+    finishSemanticSearchSuccessState,
+    applyEmptySemanticSearchState,
+    stopSearchVectorScramble,
+    startSearchVectorScramble,
+    updateSearchPreviewOverlay,
+    activateSearchGlow,
+    clearSearchGlow,
+    resetSemanticGuideUi,
+    clearShortSemanticSearchState,
+    startMobileRouteFieldPeek,
+    clearSearchPreviewHoverTimer,
+    clearMobileRouteFieldPeek,
+    isMobileRouteFieldPeekActive,
+    focusSearchInputForReplacement,
+    updateSearchStatusMessage
+} from './results-ui'
 
-export { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './panel-adapter';
-export { tokenizeSearchText, expandSearchIntent, countTokenMatches } from './tokenizer';
+export { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './search-panel-adapter'
+export { tokenizeSearchText, expandSearchIntent, countTokenMatches } from './tokenizer'
 export {
-  getSemanticSearchServiceResults, getSemanticSearchTotalMatches,
-  isNumericOnlySearchQuery, resultMatchesNumericSearchQuery,
-  mapSemanticSearchServiceResult, mapSemanticSearchResults,
-  hydrateSemanticResultContexts, type ServiceResultRow,
-} from './mapper';
-export { refreshSearchResultHierarchy, getSearchResultStrength, getSearchResultStrengthLabel } from './result-renderer';
-export { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer';
+    getSemanticSearchServiceResults,
+    getSemanticSearchTotalMatches,
+    isNumericOnlySearchQuery,
+    resultMatchesNumericSearchQuery,
+    mapSemanticSearchServiceResult,
+    mapSemanticSearchResults,
+    hydrateSemanticResultContexts,
+    type ServiceResultRow
+} from './mapper'
+export { refreshSearchResultHierarchy, getSearchResultStrength, getSearchResultStrengthLabel } from './result-renderer'
+export { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 
-import { pointMatchesActiveFilters } from '@lib/stores/filter.svelte';
-export { applyFilters, getFilteredIndices } from '@lib/orchestration/search-filter-core';
-export { pointMatchesActiveFilters };
+import { pointMatchesActiveFilters } from '@lib/stores/filter.svelte'
+export { applyFilters, getFilteredIndices } from '@lib/orchestration/search-filter-core'
+export { pointMatchesActiveFilters }
 
-export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics } from '@lib/search-cache';
-export { publish, EVENTS } from '@lib/orchestration/event-bus';
+export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics } from '@lib/search-cache'
+export { publish, EVENTS } from '@lib/orchestration/event-bus'
