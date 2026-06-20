@@ -616,6 +616,7 @@ export interface SemanticState extends StateConfig {
     routeTraceRenderStateKey: string;
     routeTraceDiagnostics: RouteTraceDiagnostics;
     inspectedStrandGroup: WebGLContextState['inspectedStrandGroup'];
+    anchorBloomLight: WebGLContextState['anchorBloomLight'];
     inspectedThreadIndex: number | null;
     pinnedThreadIndex: number | null;
     canvasThreadInspectionClearTimer: ReturnType<typeof setTimeout> | null;

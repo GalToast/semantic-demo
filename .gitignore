@@ -13,6 +13,7 @@ playwright-report/
 scratch/
 
 # Local server and deployment scratch
+check-output.txt
 *.log
 .local-dev-active
 decompose-and-delegate.skill

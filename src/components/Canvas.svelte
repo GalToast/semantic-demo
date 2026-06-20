@@ -5,6 +5,7 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
   import { engineReady as engineReadyStore } from '@lib/stores/engine-ready.svelte';
+  import { debugLog, debugWarn, debugError } from '@lib/utils/debug';
   import type { EngineCallbacks } from '@lib/engine/adapters/types';
   import type { LoadingPhase } from '@lib/types/state';
 
@@ -68,7 +69,7 @@
     onLoadingPhase: (phase, progress) => {
       setLoadingPhase(phase as LoadingPhase);
       if (phase === 'launch') {
-        console.log('[Canvas] Scene ready', progress);
+        debugLog('Canvas: Scene ready', progress);
         canvasReady = true;
         hideOverlay();
       }
@@ -97,7 +98,7 @@
     // warned about.
     overlayTimeout = setTimeout(() => {
       if (overlayVisible && !canvasReady) {
-        console.warn('[Canvas] Overlay fallback timeout — hiding loading overlay');
+        debugWarn('Canvas: Overlay fallback timeout — hiding loading overlay');
         overlayVisible = false;
         overlayTimeout = undefined;
       }
@@ -116,7 +117,7 @@
         engineHasInit = true;
         lifecycle.resizeEngine(viewportWidth(), viewportHeight());
       } catch (err) {
-        console.error('[Canvas] Engine init failed:', err);
+        debugError('Canvas: Engine init failed:', err);
       }
     };
 

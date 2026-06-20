@@ -26,7 +26,7 @@ import {
     ChromaticAberrationEffect,
     Effect,
 } from 'postprocessing';
-import { debugWarn } from '../utils/diagnostic-adapter';
+import { debugWarn, debugInfo } from '../utils/diagnostic-adapter';
 
 // ── Custom Effects ──────────────────────────────────────────────────────────
 
@@ -161,7 +161,7 @@ export function initPostProcessing(
     }
 
     if (!_premiumMode) {
-        console.debug('[postprocessing] deferred until premium mode is enabled');
+        debugInfo('[postprocessing] deferred until premium mode is enabled');
         return;
     }
 
@@ -238,7 +238,7 @@ export function initPostProcessing(
             document.body.dataset.premiumMode = 'true';
         }
 
-        console.debug('[postprocessing] initialized — vignette + CA + bloom + DOF ready');
+        debugInfo('[postprocessing] initialized — vignette + CA + bloom + DOF ready');
     } catch (err) {
         console.error('[postprocessing] init failed, falling back to vanilla renderer:', err);
         disposePostProcessing();

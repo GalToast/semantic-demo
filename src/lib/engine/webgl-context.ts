@@ -14,6 +14,7 @@ import type {
   Mesh,
   HemisphereLight,
   DirectionalLight,
+  PointLight,
 } from 'three';
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
@@ -39,7 +40,7 @@ export interface WebGLContextState {
   focusSemanticConnectionPairs: Array<{ a: number; b: number }>;
   semanticLensGroup: Group | null;
   semanticLensGlow: Mesh | null;
-  semanticLensSpokes: Group | null;
+  semanticLensSpokes: LineSegments | null;
   myceliumConnectionPairs: Array<{ a: number; b: number; layer: number }>;
   hemiLight: HemisphereLight | null;
   dirLight: DirectionalLight | null;
@@ -66,6 +67,7 @@ export interface WebGLContextState {
   routeTraceConnectionPairs: Array<{ a: number; b: number }>;
   routeTraceRenderStateKey: string;
   inspectedStrandGroup: Group | null;
+  anchorBloomLight: PointLight | null;
 }
 
 export const webglContext: WebGLContextState = {
@@ -117,6 +119,7 @@ export const webglContext: WebGLContextState = {
   routeTraceConnectionPairs: [],
   routeTraceRenderStateKey: '',
   inspectedStrandGroup: null,
+  anchorBloomLight: null,
 };
 
 export interface LiveResourceCounts extends Record<string, number> {

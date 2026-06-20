@@ -9,7 +9,7 @@ const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
 import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge'
 import { setSemanticDiveMode } from '@lib/engine/lifecycle-bridge'
-import { pinThreadNeighbor, unpinThreadInspection } from '@lib/engine/thread-inspector-bridge'
+import { pinThreadNeighbor, pinFirstAvailableNeighbor, unpinThreadInspection } from '@lib/engine/thread-inspector-bridge'
 import { walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
@@ -157,7 +157,14 @@ export function bindFocusControls(): void {
         if (state.pinnedThreadIndex === index) {
             unpinThreadInspection()
         } else {
-            pinThreadNeighbor(index, { surface: 'pinned' })
+            // W7-C fix: when the inspected index is the focused node itself,
+            // pinThreadNeighbor returns active:false (a node cannot inspect
+            // its own thread). Fall back to the first available neighbor.
+            if (index !== state.focusedIndex) {
+                pinThreadNeighbor(index, { surface: 'pinned' })
+            } else {
+                pinFirstAvailableNeighbor({ surface: 'pinned' })
+            }
         }
     })
 

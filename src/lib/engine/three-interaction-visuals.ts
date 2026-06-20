@@ -10,6 +10,21 @@ import {
 } from '@lib/journey/focus-anchor-indicator';
 import { disposeObject3D } from '@lib/engine/resource-tracker';
 
+// ── Three.js material narrowing helpers ───────────────────────────────────────
+// All focus/mote/petal/halo objects in this codebase are constructed with a single
+// Material. These helpers narrow the union type at the Three.js interop boundary.
+
+/** Narrow a single-material object's material to a single Material instance. */
+function asSingleMaterial(mat: Material | Material[]): Material {
+    return Array.isArray(mat) ? mat[0]! : mat;
+}
+
+/** Narrow material to ShaderMaterial when possible. Returns null for non-shader materials. */
+function asShaderMaterial(mat: Material | Material[]): ShaderMaterial | null {
+    const m = asSingleMaterial(mat);
+    return m instanceof ShaderMaterial ? m : null;
+}
+
 // ── Local Types ───────────────────────────────────────────────────────────────
 
 interface SpriteUserData {
@@ -96,7 +111,7 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
     if (!state.focusPetalGroup || !Array.isArray(state.focusPetals)) return;
     const hasFocus = Boolean(worldPos);
     const targetOpacity = hasFocus ? (isInside ? 0.75 : 0.65) : 0;
-    state.focusPetalGroup.visible = hasFocus || state.focusPetals.some((petal: SpriteLike) => petal.material.opacity > 0.01);
+    state.focusPetalGroup.visible = hasFocus || state.focusPetals.some((petal) => asSingleMaterial(petal.material).opacity > 0.01);
     if (hasFocus) {
         state.focusPetalGroup.position.copy(worldPos);
         state.focusPetalGroup.rotation.set(
@@ -106,10 +121,11 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
         );
     }
 
-    state.focusPetals.forEach((petal: SpriteLike, index: number) => {
+    state.focusPetals.forEach((petal, index: number) => {
         const data = petal.userData || {};
-        petal.material.opacity += (targetOpacity - petal.material.opacity) * 0.1;
-        petal.visible = petal.material.opacity > 0.01;
+        const mat = asSingleMaterial(petal.material);
+        mat.opacity += (targetOpacity - mat.opacity) * 0.1;
+        petal.visible = mat.opacity > 0.01;
         if (!hasFocus) return;
 
         const phase = (data.phase || 0) + time * (data.speed || 0.28);
@@ -122,7 +138,7 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
             (data.lift || 0) + Math.sin(phase * 0.61) * radius * 0.34,
             Math.sin(angle) * radius * (data.tilt || 0.72) * breath
         );
-        petal.material.rotation = angle + Math.PI * 0.5 + Math.sin(time * 0.46 + index) * 0.44;
+        (mat as Material & { rotation?: number }).rotation = angle + Math.PI * 0.5 + Math.sin(time * 0.46 + index) * 0.44;
         const length = (data.length || 0.042) * (1.0 + Math.sin(time * 0.72 + index * 0.9) * 0.18);
         const thickness = data.thickness || 0.008;
         petal.scale.set(length, thickness, 1);
@@ -134,8 +150,9 @@ function updateSelectedNodeFilaments(worldPos: any, time: any, isInside: any) {
     const positions = state.focusFilaments.geometry.attributes.position.array;
     const hasFocus = Boolean(worldPos);
     const targetOpacity = hasFocus ? (isInside ? 0.62 : 0.50) : 0;
-    state.focusFilaments.material.opacity += (targetOpacity - state.focusFilaments.material.opacity) * 0.1;
-    state.focusFilaments.visible = state.focusFilaments.material.opacity > 0.01;
+    const filMat = asSingleMaterial(state.focusFilaments.material);
+    filMat.opacity += (targetOpacity - filMat.opacity) * 0.1;
+    state.focusFilaments.visible = filMat.opacity > 0.01;
     if (!hasFocus) {
         positions.fill(0);
         state.focusFilaments.geometry.attributes.position.needsUpdate = true;
@@ -379,8 +396,9 @@ export function initSemanticLens() {
         blending: NormalBlending,
         depthWrite: false
     });
-    state.semanticLensSpokes = new LineSegments(spokeGeo, spokeMat);
-    state.semanticLensGroup.add(state.semanticLensSpokes);
+    const spokes = new LineSegments(spokeGeo, spokeMat);
+    state.semanticLensSpokes = spokes;
+    state.semanticLensGroup.add(spokes);
 
     const focusLensGeo = new IcosahedronGeometry(0.08, 3);
     const focusLensMat = new ShaderMaterial({
@@ -445,7 +463,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
     const isFocused = activeNode === focusedNode;
 
     if (state.hoverHalo) {
-        state.hoverHalo.material.opacity = 0;
+        asSingleMaterial(state.hoverHalo.material).opacity = 0;
         state.hoverHalo.visible = false;
     }
 
@@ -465,19 +483,20 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         }
 
         if (isActive) {
-            state.focusCore.material.color.setHex(0xeafffb);
+            (asSingleMaterial(state.focusCore.material) as Material & { color: Color }).color.setHex(0xeafffb);
             const corePulse = 1.0 + Math.sin(time * 1.2) * 0.09;
             state.focusCore.scale.set(baseScale * corePulse, baseScale * corePulse, 1);
         } else if (hasFocus) {
-            state.focusCore.material.color.setHex(0xcffcf4);
+            (asSingleMaterial(state.focusCore.material) as Material & { color: Color }).color.setHex(0xcffcf4);
             const corePulse = isInside
                 ? 1.0 + Math.sin(time * 1.25) * 0.09
                 : 1.0 + Math.sin(time * 2.4) * 0.045;
             state.focusCore.scale.set(baseScale * corePulse, baseScale * corePulse, 1);
         }
 
-        state.focusCore.material.opacity += (coreTargetOpacity - state.focusCore.material.opacity) * 0.15;
-        state.focusCore.visible = state.focusCore.material.opacity > 0.01;
+        const coreMat = asSingleMaterial(state.focusCore.material);
+        coreMat.opacity += (coreTargetOpacity - coreMat.opacity) * 0.15;
+        state.focusCore.visible = coreMat.opacity > 0.01;
 
         if (hasFocus && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx];
@@ -510,7 +529,8 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0 && state.nodePositions?.[focusIdx];
         const isInside = state.trailDepth === 2;
         const group = state.semanticLensGroup;
-        const glowUniforms = state.semanticLensGlow.material?.uniforms;
+        const glowMat = state.semanticLensGlow.material ? asShaderMaterial(state.semanticLensGlow.material) : null;
+        const glowUniforms = glowMat?.uniforms;
         const spokes = state.semanticLensSpokes;
 
         if (!hasFocus || !glowUniforms) {
@@ -518,7 +538,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             group.visible = Boolean(glowUniforms?.uOpacity?.value > 0.01);
             spokes.visible = false;
         } else {
-            const focusPos = state.nodePositions[focusIdx];
+            const focusPos = state.nodePositions[focusIdx]!;
             const worldPos = new Vector3(focusPos.x, focusPos.y, focusPos.z);
             if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);
             group.position.copy(worldPos);
@@ -527,15 +547,15 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
                 spokes.visible = false;
             }
             const targetOpacity = isInside ? 0.2 : 0.11;
-            glowUniforms.uOpacity.value += (targetOpacity - glowUniforms.uOpacity.value) * 0.12;
+            glowUniforms!.uOpacity!.value += (targetOpacity - glowUniforms!.uOpacity!.value) * 0.12;
 
             if (glowUniforms.uSignalScore) {
                 const targetSignal = typeof calculateSignalScore === 'function' ? calculateSignalScore(state.points?.[focusIdx]) : 0;
                 glowUniforms.uSignalScore.value += (targetSignal - glowUniforms.uSignalScore.value) * 0.12;
             }
 
-            const positionAttr = spokes.geometry.attributes.position;
-            const alphaAttr = spokes.geometry.attributes.alpha;
+            const positionAttr = spokes.geometry.attributes.position!;
+            const alphaAttr = spokes.geometry.attributes.alpha!;
             const positions = positionAttr.array;
             const alphas = alphaAttr.array;
             positions.fill(0);
@@ -546,7 +566,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
                 let positionOffset = 0;
                 let alphaOffset = 0;
                 getSemanticLensNeighborIndices(focusIdx).forEach((neighborIndex: number) => {
-                    const neighborPos = state.nodePositions[neighborIndex];
+                    const neighborPos = state.nodePositions[neighborIndex]!;
                     const neighborWorld = new Vector3(neighborPos.x, neighborPos.y, neighborPos.z);
                     if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(neighborWorld);
                     neighborWorld.sub(worldPos);
@@ -564,8 +584,8 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
                 });
                 spokes.visible = positionOffset > 0;
             }
-            positionAttr.needsUpdate = true;
-            alphaAttr.needsUpdate = true;
+            positionAttr!.needsUpdate = true;
+            alphaAttr!.needsUpdate = true;
         }
     }
 
@@ -577,12 +597,13 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         const targetOpacity = hasFocus ? (isDiving ? 0.36 : 0.24) : 0.0;
         const lerpSpeed = isDiving ? 0.15 : 0.09;
 
-        if (state.focusLens.material.uniforms) {
-            state.focusLens.material.uniforms.opacity.value += (targetOpacity - state.focusLens.material.uniforms.opacity.value) * lerpSpeed;
-            state.focusLens.material.uniforms.time.value = time;
-            state.focusLens.material.uniforms.color.value.setHex(isDiving ? 0xd8fff8 : 0x9fffee);
+        const lensMat = asShaderMaterial(state.focusLens.material);
+        if (lensMat?.uniforms) {
+            lensMat.uniforms.opacity!.value += (targetOpacity - lensMat.uniforms.opacity!.value) * lerpSpeed;
+            lensMat.uniforms.time!.value = time;
+            lensMat.uniforms.color!.value.setHex(isDiving ? 0xd8fff8 : 0x9fffee);
         }
-        state.focusLens.visible = state.focusLens.material.uniforms?.opacity?.value > 0.01;
+        state.focusLens.visible = (lensMat?.uniforms?.opacity?.value ?? 0) > 0.01;
 
         if (state.focusLens.visible && hasFocus && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx];
@@ -612,7 +633,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         if (hasFocus && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx];
             state.anchorBloomLight.position.set(pos.x, pos.y, pos.z);
-            if (state.pointsMesh?.localToWorld) state.anchorBloomLight.position.applyMatrix4(state.pointsMesh.matrixWorld);
+            if (state.pointsMesh) state.anchorBloomLight.position.applyMatrix4(state.pointsMesh.matrixWorld);
         }
         state.anchorBloomLight.visible = state.anchorBloomLight.intensity > 0.01;
     }

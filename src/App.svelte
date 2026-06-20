@@ -499,8 +499,11 @@
   let searchSurfaceActive = $derived((navSurface === 'search' || bodyPanelSurface === 'search') && !focusSearchForced);
   let searchFamilySurfaceActive = $derived(searchSurfaceActive || focusSearchForced);
   let mapTrailSearchLaneActive = $derived(
+    mapModeActive &&
     bodyJourneyNavigationOwner === 'map-trail-strip' &&
-      (bodyPanelSurface === 'map-focus-search' || bodyPanelSurface === 'map-trail' || bodyPanelSurface === 'map-search')
+      bodyPanelSurface.startsWith('map-') &&
+      bodyPanelSurface !== 'map-idle' &&
+      bodyPanelSurface !== 'map'
   );
   let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
 

@@ -414,9 +414,9 @@ export function createPoints() {
         const baseG = Math.min(1, color.g * depthFactor * 1.18 + 0.022);
         const baseB = Math.min(1, color.b * depthFactor * 1.18 + 0.019);
 
-        state.pointBaseColors[colorOffset] = baseR;
-        state.pointBaseColors[colorOffset + 1] = baseG;
-        state.pointBaseColors[colorOffset + 2] = baseB;
+        state.pointBaseColors![colorOffset] = baseR;
+        state.pointBaseColors![colorOffset + 1] = baseG;
+        state.pointBaseColors![colorOffset + 2] = baseB;
         colors.push(baseR, baseG, baseB);
     });
 

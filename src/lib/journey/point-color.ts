@@ -25,13 +25,14 @@ function toIndexArray(value: unknown): number[] {
 
 function syncNodeSporeColorsFromPointColors(): void {
 	if (!_state.nodeSporeMesh || !_state.pointsMesh?.geometry?.attributes?.color) return;
-	const colors = _state.pointsMesh.geometry.attributes.color.array;
+	const colorAttr = _state.pointsMesh.geometry.attributes.color;
+	const colors = colorAttr.array;
 	for (let i = 0; i < _state.points.length; i++) {
 		const colorOffset = i * 3;
 		nodeSporeSyncColor.setRGB(
-			Math.min(1, colors[colorOffset] * 1.62),
-			Math.min(1, colors[colorOffset + 1] * 1.62),
-			Math.min(1, colors[colorOffset + 2] * 1.62)
+			Math.min(1, (colors[colorOffset] ?? 0) * 1.62),
+			Math.min(1, (colors[colorOffset + 1] ?? 0) * 1.62),
+			Math.min(1, (colors[colorOffset + 2] ?? 0) * 1.62)
 		);
 		_state.nodeSporeMesh.setColorAt(i, nodeSporeSyncColor);
 	}
@@ -56,7 +57,9 @@ export function applyPointFilterColors(): void {
 		walkHistoryIndices.slice(-6).join(',')
 	].join('|');
 	if (_state.filterColorStateKey === colorStateKey) return;
-	const colors = _state.pointsMesh.geometry.attributes.color.array;
+	const colorAttr = _state.pointsMesh?.geometry?.attributes?.color;
+	if (!colorAttr) return;
+	const colors = colorAttr.array;
 	const focusLocalIndices = _state.navState.focusedIndex !== null
 		? new Set([
 			_state.navState.focusedIndex,
@@ -117,7 +120,7 @@ export function applyPointFilterColors(): void {
 		colors[colorOffset + 1] = baseG * factor;
 		colors[colorOffset + 2] = baseB * factor;
 	}
-	_state.pointsMesh.geometry.attributes.color.needsUpdate = true;
+	if (_state.pointsMesh?.geometry?.attributes?.color) _state.pointsMesh.geometry.attributes.color.needsUpdate = true;
 	_state.pointColorStateVersion += 1;
 	_state.filterColorVersion = _state.filterVersion;
 	_state.filterColorStateKey = colorStateKey;
