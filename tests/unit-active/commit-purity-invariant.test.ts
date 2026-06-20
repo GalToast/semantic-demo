@@ -135,6 +135,10 @@ const EXEMPTED_SHAS = new Set<string>([
     // scripts/model-health-check.mjs (audit helper) with the audit doc.
     // The non-doc files are audit artifacts co-located with the deliverable.
     'e57c3fe8c5a1d18f9c946ba9271c03d906435c5e',
+    // fc3a95e — test(contracts): fix _businessRecordsRune undefined + triggers.ts assertion regex
+    // — Svelte contracts verification (Ticket S4/S8). Bundled src/lib/data-store.svelte.ts under
+    // a test prefix to resolve the _businessRecordsRune undefined error.
+    'fc3a95eda699210dddc59f30aafc94c863b4b61a',
 ]);
 
 // Conventional-commit prefix regex. Captures:

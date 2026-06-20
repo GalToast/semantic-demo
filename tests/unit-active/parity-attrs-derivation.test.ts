@@ -175,6 +175,7 @@ vi.mock('@lib/orchestration/compass-controller', () => ({
 
 // ── Import under test (must appear AFTER vi.mock) ───────────────────────────
 
+// @ts-ignore
 import { computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -221,7 +222,6 @@ function resetAllSnapshots(): void {
     _graphicsMode.value = 'webgl'
     _demoPhase.value = 'IDLE'
 
-
     _compassState.phase = 'idle'
     _compassPresentation.density = 'expanded'
     _compassPresentation.copy = 'full'
@@ -230,7 +230,9 @@ function resetAllSnapshots(): void {
     // Reset legacy window state
     try {
         delete (window as any).__APP_STATE__
-    } catch { /* ignore */ }
+    } catch {
+        /* ignore */
+    }
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
@@ -374,6 +376,7 @@ describe('computeParityAttributes IIFE derivations', () => {
         describe('non-map view surfaces', () => {
             it('returns "focus-search" when surface is "focus-search"', () => {
                 _nav.surface = 'focus-search'
+                _nav.focusedIndex = 42
                 const result = computeParityAttributes()
                 expect(result.panelSurfaceMode).toBe('focus-search')
             })

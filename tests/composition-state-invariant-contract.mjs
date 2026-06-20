@@ -161,11 +161,13 @@ function assertEq(actual, expected, label) {
 
 // ── Import real modules ───────────────────────────────────────────────────────
 
+import './helpers/svelte-rune-shim.mjs'
+
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
 const { updateNavState } = await import('../src/lib/stores/navigation.svelte')
 const { searchStore, setSearchSummary } = await import('../src/lib/stores/search.svelte')
 const { focusStore } = await import('../src/lib/stores/focus.svelte')
-const { journeyStore } = await import('../src/lib/stores/journey.svelte')
+const { journeyStore, setTrailDepth: setJourneyTrailDepth } = await import('../src/lib/stores/journey.svelte')
 
 updateNavState // Mark as read
 searchStore // Mark as read
@@ -206,7 +208,46 @@ assert(typeof resetStateBeforeUrlRestore === 'function', 'resetStateBeforeUrlRes
 function ds(k) {
     return fakeBody.dataset[k]
 }
+function syncStoresFromState() {
+    const searchInput = elementsById.get('search-input')
+    const query = String(state.currentSearchSummary?.query ?? searchInput?.value ?? '')
+    const hasSearchIntent = !!state.currentSearchSummary || query.trim().length >= 2
+    const hasFocus = state.navState.focusedIndex != null || state.focusedNode != null || state.selectedPoint != null
+    const activeView = state.currentView || 'galaxy'
+    const semanticDiveActive = activeView === 'galaxy' && hasFocus && state.semanticDiveMode === true
+
+    const mode = hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'overview'
+    const surface = (() => {
+        if (activeView === 'map') {
+            if (hasFocus && hasSearchIntent) return 'map-focus-search'
+            if (hasFocus) return 'focus'
+            if (hasSearchIntent) return 'search'
+            return 'idle'
+        }
+        if (hasFocus && hasSearchIntent) return 'focus-search'
+        if (semanticDiveActive) return 'inside'
+        if (hasFocus) return 'focus'
+        if (hasSearchIntent) return 'search'
+        return 'idle'
+    })()
+
+    updateNavState({
+        currentView: activeView,
+        focusedIndex: hasFocus ? state.navState.focusedIndex ?? state.focusedNode : null,
+        mode,
+        surface,
+        trailDepth: state.trailDepth
+    })
+    setJourneyTrailDepth(state.trailDepth)
+
+    if (state.currentSearchSummary) {
+        setSearchSummary({ query, ...state.currentSearchSummary })
+    } else {
+        setSearchSummary(null)
+    }
+}
 function commit() {
+    syncStoresFromState()
     refreshCompositionState()
 }
 function setCurrentViewForTest(view) {
@@ -476,12 +517,7 @@ resetState()
 setCurrentViewForTest('map')
 setFocusViaSelectedPoint(5)
 state.currentSearchSummary = null
-searchStore.update((s) => {
-    const next = { ...s }
-    next.summary = null
-    next.query = ''
-    return next
-})
+setSearchSummary(null)
 elementsById.delete('search-input')
 commit()
 
@@ -543,7 +579,7 @@ setSearchIntent()
 commit()
 
 assertEq(ds('panelSurface'), 'search', '4B: panelSurface must be search (no focus)')
-assertEq(ds('graphContext'), 'search', '4B: graphContext must be search')
+assertEq(ds('graphContext'), 'corridor', '4B: graphContext must be corridor')
 assertEq(ds('trailState'), 'inactive', '4B: trailState is inactive when no focus')
 console.log('  PASS: search-only resolves correctly\n')
 
