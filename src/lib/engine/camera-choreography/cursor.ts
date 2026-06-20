@@ -20,9 +20,9 @@ import {
     NAV_TRANSITION_ACTIONS,
     setTrailDepth,
     setMyceliumMode,
-    updateExplorationUi,
-    syncSearchStatusForFocus
+    updateExplorationUi
 } from '@lib/orchestration/lifecycle'
+import { syncSearchStatusForFocus } from '@lib/engine/ui-feedback-bridge'
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
