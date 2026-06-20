@@ -3478,93 +3478,60 @@ async function assert_search_no_results(page, ctx) {
 // ---------------------------------------------------------------------------
 
 async function assert_info_panel_populated(page, ctx) {
+    // Trigger the real focus path through the Svelte component lifecycle
+    // instead of manually mutating phantom DOM. The InfoPanel is a Svelte
+    // component that conditionally renders based on navStore state and the
+    // selectedRecord store. Manual dataset writes and forceVisible calls
+    // bypass the component's reactive $derived gates, so the real DOM never
+    // mounts and every assertion fails. We use __APP_ACTIONS__.focusOnNode
+    // to walk through the real orchestration (dispatchNavTransition →
+    // navStore update → InfoPanel $derived re-eval → DOM render).
     await loadAndWait(page, positionalUrl)
 
+    // Dismiss the splash screen if present so the canvas + data load.
     await page.evaluate(() => {
-        document.body.dataset.activeView = 'galaxy'
-        document.body.dataset.graphContext = 'focus'
-        document.body.dataset.panelSurface = 'focus'
-        document.body.dataset.focusedNode = '0'
-        if (window.syncTestStateFromBody) window.syncTestStateFromBody()
+        const cta = document.querySelector('[data-testid="splash-cta"]')
+        if (cta) cta.click()
+    })
+    await page.waitForTimeout(3000)
 
-        const selectedCard = document.querySelector('#selected-card')
-        if (selectedCard) {
-            // Card populated state is now driven by the renderer's
-            // setSurfaceHidden calls. No .is-empty class to remove.
-            selectedCard.hidden = false
-            selectedCard.style.display = 'block'
-            selectedCard.style.visibility = 'visible'
-        }
+    // Wait for data to be ready. The data-store initData() loads business
+    // records via a web worker and then syncs them to the Svelte stores.
+    // appState.points is populated by engine/lifecycle.ts:_syncDataFields()
+    // which reads from the Svelte stores. We poll both the Svelte store
+    // readiness (via loadingPhase) and the actual points availability.
+    let dataReady = false
+    for (let attempt = 0; attempt < 10; attempt++) {
+        dataReady = await page.evaluate(() => {
+            const s = window.__APP_STATE__?.state || {}
+            const hasPoints = (s.points?.length ?? 0) > 0
+            const phase = document.body.dataset.loadingPhase
+            // Accept data-ready if we have points OR if loading reached launch
+            // and the loading overlay is gone (data may be in stores but not
+            // yet synced to appState in some builds).
+            const overlayGone = !document.querySelector('.loading-overlay.active')
+            return hasPoints || (phase === 'launch' && overlayGone)
+        })
+        if (dataReady) break
+        await page.waitForTimeout(500)
+    }
+    if (!dataReady) {
+        // Don't spam 21 DOM-missing failures when the root cause is data.
+        // Surface the actual failure clearly.
+        ctx.fail('info-panel-populated', 'data-ready', 'Business records not loaded after 5s; InfoPanel has no data to render in populated state')
+        return
+    }
 
-        const infoPanel = document.querySelector('#info-panel')
-        if (infoPanel) {
-            infoPanel.hidden = false
-            infoPanel.style.display = 'block'
-            infoPanel.style.visibility = 'visible'
-        }
-
-        const infoPanelContent = document.querySelector('#info-panel-content')
-        if (infoPanelContent) {
-            infoPanelContent.style.display = 'block'
-            infoPanelContent.style.visibility = 'visible'
-        }
-
-        const selectedDetails = document.querySelector('#selected-details')
-        if (selectedDetails) {
-            selectedDetails.classList.add('active')
-            selectedDetails.style.display = ''
-        }
-
-        const selectedName = document.querySelector('#selected-name')
-        if (selectedName) selectedName.textContent = 'Downtown Coffee Collective'
-
-        const selectedWhat = document.querySelector('#selected-what')
-        if (selectedWhat) selectedWhat.textContent = 'Artisan coffee shop with outdoor seating'
-
-        const selectedTheme = document.querySelector('#selected-theme')
-        if (selectedTheme) selectedTheme.textContent = 'Food & Drink · Cafes'
-
-        const selectedStatus = document.querySelector('#selected-status')
-        if (selectedStatus) selectedStatus.textContent = 'Active'
-
-        const selectedFiledAs = document.querySelector('#selected-filed-as')
-        if (selectedFiledAs) selectedFiledAs.style.display = 'none'
-
-        const selectedActionRow = document.querySelector('#selected-action-row')
-        if (selectedActionRow) {
-            selectedActionRow.hidden = false
-            selectedActionRow.style.display = 'flex'
-            selectedActionRow.style.visibility = 'visible'
+    // Focus the first node via the real action path.
+    await page.evaluate(() => {
+        if (window.__APP_ACTIONS__?.focusOnNode) {
+            window.__APP_ACTIONS__.focusOnNode(0)
         }
     })
-    // dataset write synchronous
-
-    await page.evaluate(() => {
-        const selectedDetails = document.querySelector('#selected-details')
-        if (selectedDetails) {
-            selectedDetails.classList.add('active')
-            selectedDetails.hidden = false
-            selectedDetails.style.display = 'block'
-            selectedDetails.style.visibility = 'visible'
-        }
-    })
+    // Allow Svelte reactivity + component mount to settle.
+    await page.waitForTimeout(2500)
 
     const info = await page.evaluate(() => {
-        const forceVisible = (selector, display = 'block') => {
-            const el = document.querySelector(selector)
-            if (!el) return null
-            el.hidden = false
-            el.style.display = display
-            el.style.visibility = 'visible'
-            return el
-        }
-
-        forceVisible('#info-panel')
-        forceVisible('#info-panel-content')
-        forceVisible('#selected-card')
-        forceVisible('#selected-details')
-        forceVisible('#selected-action-row', 'flex')
-
         function textClipped(el) {
             if (!el) return false
             const style = getComputedStyle(el)
@@ -3599,11 +3566,9 @@ async function assert_info_panel_populated(page, ctx) {
             results.selectedCardBlackOnDark = blackOnDark(style.backgroundColor, style.color)
         }
 
-        // Structural container always present when panel renders
         const infoPanelContent = document.querySelector('#info-panel-content')
         results.infoPanelContentPresent = infoPanelContent !== null
 
-        // Info header (always rendered; CSS hides it in search mode per contract)
         const infoHeader = document.querySelector('.info-header')
         results.infoHeaderPresent = infoHeader !== null
 
@@ -3635,11 +3600,6 @@ async function assert_info_panel_populated(page, ctx) {
         const selectedRoleBadge = document.querySelector('#selected-role-badge')
         results.selectedRoleBadgePresent = selectedRoleBadge !== null
 
-        // ── Non-conditional populated-state surface elements ────────────────
-        // These elements are always rendered inside #selected-details when
-        // the panel has a selected record (!isEmpty). Assertions below close
-        // contract-test gaps identified in the Wave 3 hardening sweep.
-
         const selectedMetaStrip = document.querySelector('#selected-meta-strip')
         results.selectedMetaStripPresent = selectedMetaStrip !== null
         results.selectedMetaStripClipped = selectedMetaStrip ? textClipped(selectedMetaStrip) : null
@@ -3660,15 +3620,6 @@ async function assert_info_panel_populated(page, ctx) {
             const style = getComputedStyle(btnSelectedMap)
             if (style.display !== 'none' && style.visibility !== 'hidden') {
                 const rect = btnSelectedMap.getBoundingClientRect()
-                results.btnSelectedMapRect = {
-                    width: Math.round(rect.width * 100) / 100,
-                    height: Math.round(rect.height * 100) / 100,
-                    display: style.display,
-                    visibility: style.visibility,
-                    minHeight: style.minHeight,
-                    heightStyle: style.height,
-                    transform: style.transform
-                }
                 results.btnSelectedMapTouchTarget = rect.width >= 43.5 && rect.height >= 43.5
             } else {
                 results.btnSelectedMapTouchTarget = null
