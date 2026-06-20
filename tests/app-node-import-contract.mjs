@@ -5,7 +5,7 @@ import { resolve } from 'node:path';
 const appTsSrc = readFileSync(resolve(process.cwd(), 'src/lib/orchestration/app-init.ts'), 'utf8');
 const roleLabelSrc = readFileSync(resolve(process.cwd(), 'src/lib/utils/relationship-roles.ts'), 'utf8');
 
-assert.match(appTsSrc, /from ['"]\.\/event-bus\.(?:js|ts)['"]/, 'app.ts imports the event bus');
+assert.match(appTsSrc, /from ['"][.\/]*event-bus['"]/, 'app.ts imports the event bus');
 assert.match(appTsSrc, /subscribeKeyed\(['"]app:url-sync-requested['"],\s*EVENTS\.URL_SYNC_REQUESTED/, 'app.ts owns URL sync requests with keyed subscription');
 assert.match(appTsSrc, /subscribeKeyed\(['"]app:search-ui-sync-requested['"],\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED/, 'app.ts owns search result rebinding requests with keyed subscription');
 assert.match(appTsSrc, /subscribeKeyed\(['"]app:search-focus-requested['"],\s*EVENTS\.SEARCH_FOCUS_REQUESTED/, 'app.ts owns search focus requests with keyed subscription');

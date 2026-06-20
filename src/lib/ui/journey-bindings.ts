@@ -9,7 +9,11 @@ const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
 import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge'
 import { setSemanticDiveMode } from '@lib/engine/lifecycle-bridge'
-import { pinThreadNeighbor, pinFirstAvailableNeighbor, unpinThreadInspection } from '@lib/engine/thread-inspector-bridge'
+import {
+    pinThreadNeighbor,
+    pinFirstAvailableNeighbor,
+    unpinThreadInspection
+} from '@lib/engine/thread-inspector-bridge'
 import { walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
@@ -197,24 +201,32 @@ export function bindFocusControls(): void {
 
     if (!(document.body as HTMLElement)?.dataset.journeyCompassStepDelegated) {
         _journeyAbortController = new AbortController()
-        document.addEventListener('click', (event: MouseEvent) => {
-            const step = (event.target as HTMLElement)?.closest?.('.journey-compass-step') as HTMLElement | null
-            if (!step) return
-            const action = actionMap[step.dataset.journeyStep || '']
-            if (action) {
-                executeJourneyCompassAction(action)
-            }
-        }, { signal: _journeyAbortController.signal })
-        document.addEventListener('keydown', (event: KeyboardEvent) => {
-            if (event.key !== 'Enter' && event.key !== ' ') return
-            const step = (event.target as HTMLElement)?.closest?.('.journey-compass-step') as HTMLElement | null
-            if (!step) return
-            event.preventDefault()
-            const action = actionMap[step.dataset.journeyStep || '']
-            if (action) {
-                executeJourneyCompassAction(action)
-            }
-        }, { signal: _journeyAbortController.signal })
+        document.addEventListener(
+            'click',
+            (event: MouseEvent) => {
+                const step = (event.target as HTMLElement)?.closest?.('.journey-compass-step') as HTMLElement | null
+                if (!step) return
+                const action = actionMap[step.dataset.journeyStep || '']
+                if (action) {
+                    executeJourneyCompassAction(action)
+                }
+            },
+            { signal: _journeyAbortController.signal }
+        )
+        document.addEventListener(
+            'keydown',
+            (event: KeyboardEvent) => {
+                if (event.key !== 'Enter' && event.key !== ' ') return
+                const step = (event.target as HTMLElement)?.closest?.('.journey-compass-step') as HTMLElement | null
+                if (!step) return
+                event.preventDefault()
+                const action = actionMap[step.dataset.journeyStep || '']
+                if (action) {
+                    executeJourneyCompassAction(action)
+                }
+            },
+            { signal: _journeyAbortController.signal }
+        )
         if (document.body) (document.body as HTMLElement).dataset.journeyCompassStepDelegated = 'true'
     }
 

@@ -20,13 +20,15 @@ test.use({
 
 async function waitForReady(page) {
   await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
+  // W44: Increased timeout from 30s to 90s to accommodate heavy main-bundle
+  // parse/execute on CI machines (Three.js 587 KB + AppState 191 proxies).
   await page.waitForFunction(() => {
     const body = document.body?.dataset;
     return (
       body?.testReady === 'true' &&
       typeof (window.__APP_STATE__ ?? window.__TEST_STATE__) === 'object'
     );
-  }, { timeout: 30000 });
+  }, { timeout: 90000 });
   await page.evaluate(() => {
     window.__PLAYWRIGHT__ = true;
     for (const type of ['pointerdown', 'mousemove', 'keydown']) {

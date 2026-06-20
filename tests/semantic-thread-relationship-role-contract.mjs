@@ -32,8 +32,8 @@ const CODE_PROPAGATION_FILES = [
   'src/lib/data-loader.ts',
   'src/lib/semantic-threads.ts',
   'src/lib/journey/thread-model.ts',
-  'src/lib/focus/pocket.ts',
-  'src/lib/focus/geometry.ts',
+  'src/lib/journey/focus-pocket.ts',
+  'src/lib/journey/focus-pocket-geometry.ts',
 ];
 
 function assert(condition, message) {

@@ -89,7 +89,7 @@ npm run lint
 npm run test
 npm run test:unit
 npm run test:contract
-npm run qa:contract:all
+npm run qa:contract
 npm run qa:surface:all
 npm run qa:surface:mobile-idle
 npm run test:microdemo

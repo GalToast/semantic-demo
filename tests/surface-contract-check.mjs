@@ -451,10 +451,10 @@ async function assert_mobile_idle(page, ctx) {
 
 async function assert_desktop_idle(page, ctx) {
     await loadAndWait(page, positionalUrl)
-    // Trigger engineReady gate (requires user gesture to mount <Canvas>)
-    await page.evaluate(() => {
-        window.dispatchEvent(new Event('pointerdown'))
-    })
+    // Trigger engineReady gate through the real Splash CTA, then wait for the
+    // lazy Canvas mount. Synthetic window pointer events do not dismiss Splash.
+    await page.click('[data-testid="splash-cta"]').catch(() => {})
+    await page.waitForSelector('#canvas-container', { state: 'attached', timeout: 10000 }).catch(() => {})
 
     const info = await page.evaluate(() => {
         function blackOnDark(bg, text) {
@@ -3483,6 +3483,8 @@ async function assert_info_panel_populated(page, ctx) {
         document.body.dataset.activeView = 'galaxy'
         document.body.dataset.graphContext = 'focus'
         document.body.dataset.panelSurface = 'focus'
+        document.body.dataset.focusedNode = '0'
+        if (window.syncTestStateFromBody) window.syncTestStateFromBody()
 
         const selectedCard = document.querySelector('#selected-card')
         if (selectedCard) {

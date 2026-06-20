@@ -143,8 +143,10 @@
   let surface = $derived(currentSurface());
 
   function bodySurfaceOwnsInfoPanel(surfaceValue: string): boolean {
-    return surfaceValue === 'search' ||
+    return surfaceValue === 'focus' ||
+      surfaceValue === 'search' ||
       surfaceValue === 'focus-search' ||
+      surfaceValue === 'semantic-dive' ||
       surfaceValue === 'map-idle' ||
       surfaceValue === 'map' ||
       surfaceValue === 'map-focus' ||

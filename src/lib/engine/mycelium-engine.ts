@@ -79,7 +79,9 @@ export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroid
                     const cell = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
                     if (!cell) continue;
                     for (const j of cell) {
-                        if (j <= i || !state.points[i] || !state.points[j] || state.points[i]!.cluster !== state.points[j]!.cluster) continue;
+                        const sourcePoint = state.points[i];
+                        const targetPoint = state.points[j];
+                        if (j <= i || !sourcePoint || !targetPoint || sourcePoint.cluster !== targetPoint.cluster) continue;
                         const target = state.nodePositions[j];
                         if (!target) continue;
                         const dist = Math.hypot(source.x - target.x, source.y - target.y, source.z - target.z);

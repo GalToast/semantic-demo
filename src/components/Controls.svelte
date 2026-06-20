@@ -132,8 +132,10 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 2.75rem;
+    height: 2.75rem;
+    min-width: 2.75rem;
+    min-height: 2.75rem;
     background: none;
     border: none;
     border-radius: 0.3rem;

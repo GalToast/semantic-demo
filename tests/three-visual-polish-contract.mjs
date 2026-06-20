@@ -146,7 +146,7 @@ includesAll(
         'group.position.copy(worldPos)',
         'if (!isInside) {',
         'spokes.visible = false',
-        'glowUniforms.uOpacity.value +=',
+        'opacityUniform.value += (targetOpacity - opacityUniform.value) * 0.12',
         'const positionAttr = spokes.geometry.attributes.position',
         'const alphaAttr = spokes.geometry.attributes.alpha',
         'const maxSpokeLength = 0.12',
