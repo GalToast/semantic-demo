@@ -300,7 +300,9 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         if (_perf) performance.mark('engine-init-gpu-start')
         // 3b. Initialise the Three.js scene (renderer + scene + camera + lights)
         // This is the largest single CPU+GPU step on cold load (~300-500 ms).
-        const success = initThreeJS()
+        // W8: initThreeJS() is now async and yields internally to break the
+        // long task into sub-200ms chunks.
+        const success = await initThreeJS()
         if (!success) {
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')

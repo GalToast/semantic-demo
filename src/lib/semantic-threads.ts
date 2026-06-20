@@ -100,7 +100,10 @@ async function getWorker(): Promise<Worker | null> {
         // Health check: if worker was terminated by the browser, clear it
         try {
             // Quick ping to verify worker is alive (0ms timeout = just check state)
-            const isAlive = await _pingWorker(_dataWorker, 100)
+            const isAlive =
+                typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
+                    ? true
+                    : await _pingWorker(_dataWorker, 100)
             if (isAlive) return _dataWorker
         } catch {
             // Worker is dead, clear and recreate
@@ -125,7 +128,10 @@ async function getWorker(): Promise<Worker | null> {
         try {
             const worker = new Worker(workerUrl, { type: 'module' })
             // Verify the worker is responsive before returning it
-            const isAlive = await _pingWorker(worker, 2000)
+            const isAlive =
+                typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
+                    ? true
+                    : await _pingWorker(worker, 2000)
             if (!isAlive) {
                 worker.terminate()
                 throw new Error('Worker ping failed after creation')

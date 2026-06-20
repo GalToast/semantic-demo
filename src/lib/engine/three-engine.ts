@@ -631,7 +631,19 @@ export function updateCameraViewportOffset() {
     camera.updateProjectionMatrix()
 }
 
-export function initThreeJS() {
+// ── Yield helper for breaking up long tasks (W5-T1b / W8) ──────────────────────
+//
+// Uses setTimeout(0) instead of requestIdleCallback: during engine init the
+// main thread is busy with GPU work, so requestIdleCallback's 50ms timeout
+// adds latency without actually yielding earlier. setTimeout(0) is the
+// fastest path to the event loop.
+
+function _yieldToBrowser(_timeoutMs = 50): Promise<void> {
+    if (typeof window === 'undefined') return Promise.resolve()
+    return new Promise<void>((resolve) => setTimeout(resolve, 0))
+}
+
+export async function initThreeJS() {
     cancelAnimate()
 
     // Reset circuit breaker so a fresh init can start the loop even if a
@@ -838,6 +850,12 @@ export function initThreeJS() {
     refSphere.name = 'county-depth-reference'
     scene.add(refSphere)
 
+    // W8: yield before heavy geometry/buffer work to break the init long task.
+    // createPoints() uploads 8,406 × 3 floats + 8,406 × 16 instance matrices;
+    // createMycelium() uploads 100,872 edge line segments. Both are O(n)
+    // synchronous work that benefits from interleaved yield.
+    await _yieldToBrowser()
+
     createPoints()
     appState.pointsMesh = webglContext.pointsMesh
     appState.pointsMaterial = webglContext.pointsMaterial
@@ -851,6 +869,11 @@ export function initThreeJS() {
         _state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
         _state.nodeSporeMaterial = webglContext.nodeSporeMaterial
     }
+
+    // W8: yield between createPoints() and createMycelium() to keep individual
+    // tasks under 200ms. createMycelium() uploads 100k+ edge line segments.
+    await _yieldToBrowser()
+
     createMycelium()
     appState.myceliumGroup = webglContext.myceliumGroup
     appState.myceliumCoreLines = webglContext.myceliumCoreLines
@@ -864,11 +887,20 @@ export function initThreeJS() {
         _state.myceliumBridgeLines = webglContext.myceliumBridgeLines
         _state.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
     }
+
+    // W8: yield after mycelium buffer upload (100k+ edges) before the
+    // material compilation and visual setup phases.
+    await _yieldToBrowser()
+
     compilePointMaterialForReadinessPort()
     initSemanticLens()
     initSemanticManifold()
     document.body.dataset.graphicsMode = 'webgl'
     updateCameraViewportOffset()
+
+    // W8: yield before starting the render loop. The first frame() call
+    // triggers shader compilation and uniform binding which can block.
+    await _yieldToBrowser()
 
     // Start the render loop explicitly. The new Svelte lifecycle no longer
     // receives the legacy DOM scene-ready path, and without this the renderer

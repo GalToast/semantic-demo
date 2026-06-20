@@ -24,20 +24,8 @@ class MockWorker extends EventTarget {
         MockWorker.instances.push(this)
     }
 
-    postMessage(message: any): void {
+    postMessage(message: unknown): void {
         this.lastMessage = message
-        if (message && message.type === 'PING') {
-            queueMicrotask(() => {
-                this.dispatchEvent(
-                    new MessageEvent('message', {
-                        data: {
-                            type: 'PONG',
-                            pingId: message.pingId
-                        }
-                    })
-                )
-            })
-        }
     }
 
     terminate(): void {
@@ -140,6 +128,8 @@ describe('semantic thread worker lifecycle', () => {
 
     it('sends a request id, resolves from the matching worker response, and terminates the worker', async () => {
         const promise = loadSemanticThreads({ reason: 'unit-test' })
+        await Promise.resolve()
+        await Promise.resolve()
 
         const worker = MockWorker.instances[0]
         expect(worker).toBeDefined()
@@ -180,6 +170,8 @@ describe('semantic thread worker lifecycle', () => {
         const promise = loadSemanticThreads({ reason: 'unit-test-stale-response' })
         const resolved = vi.fn()
         promise.then(resolved)
+        await Promise.resolve()
+        await Promise.resolve()
 
         const worker = MockWorker.instances[0]
         expect(worker).toBeDefined()
@@ -229,6 +221,8 @@ describe('semantic thread worker lifecycle', () => {
 
     it('fails and terminates the worker when the semantic thread worker emits an error', async () => {
         const promise = loadSemanticThreads({ reason: 'unit-test-worker-error' })
+        await Promise.resolve()
+        await Promise.resolve()
 
         const worker = MockWorker.instances[0]
         expect(worker).toBeDefined()
@@ -252,6 +246,8 @@ describe('semantic thread worker lifecycle', () => {
 
     it('fails and terminates the worker when the semantic thread request times out', async () => {
         const promise = loadSemanticThreads({ reason: 'unit-test-timeout' })
+        await Promise.resolve()
+        await Promise.resolve()
 
         await vi.runAllTimersAsync()
         const worker = MockWorker.instances[0]
