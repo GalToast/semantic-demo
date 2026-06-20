@@ -33,6 +33,7 @@ globalThis.requestAnimationFrame = globalThis.window.requestAnimationFrame;
 globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame;
 
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
+const { businessRecords } = await import('../src/lib/data-store.ts');
 const {
   getFocusPocketIndices,
   setFocusPocketIndices,
@@ -52,9 +53,16 @@ const {
 
 const originalNavState = state.navState;
 const originalMotion = state.pocketMotionByIndex;
+const originalPositionsValue = state.originalPositions;
+const originalTargetPositions = state.targetPositions;
+const originalNodePositions = state.nodePositions;
 
 try {
+  businessRecords.set(Array(10).fill({ name: 'Mock Node' }));
   withStateMutation(() => {
+    state.originalPositions = Array(10).fill({ x: 0, y: 0, z: 0 });
+    state.targetPositions = Array(10).fill({ x: 0, y: 0, z: 0 });
+    state.nodePositions = Array(10).fill({ x: 0, y: 0, z: 0 });
     state.navState = { ...originalNavState, focusPocketIndices: null, focusPocketRoleByIndex: null, focusPocketMeta: null };
     state.pocketMotionByIndex = null;
   });
@@ -90,9 +98,13 @@ try {
   assert(getFocusPocketMeta() === null, 'meta clear should reset to null');
 } finally {
   withStateMutation(() => {
+    state.originalPositions = originalPositionsValue;
+    state.targetPositions = originalTargetPositions;
+    state.nodePositions = originalNodePositions;
     state.navState = originalNavState;
     state.pocketMotionByIndex = originalMotion;
   });
+  businessRecords.set([]);
 }
 
 console.log('PASS journey-focus-pocket-state-contract');

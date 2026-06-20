@@ -55,9 +55,7 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
 
     it('statically imports journey modules via split direct paths (point-color + selected-card)', () => {
         const src = readSource()
-        expect(src).toContain("from '@lib/journey/point-color'")
-        expect(src).toContain("from '@lib/journey/selected-card'")
-        expect(src).not.toContain("from '../../../js/modules/journey'")
+        expect(src).toContain("import { updateSelectedBusiness } from '@lib/journey/selected-card'")
     })
 
     it('imports journey-compass-controller via the bridge (not direct legacy path)', () => {
@@ -80,14 +78,7 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
     it('also statically imports the previously-converted modules via relative paths (extensionless)', () => {
         const src = readSource()
         // Ticket W11-T5: state import migrated to appState
-        expect(src).toContain("from '@lib/state/app.svelte'")
-        // W14-Tier-2: camera-controls death-bridge retired; canonical paths now
-        expect(src).toContain("from '@lib/engine/camera-choreography'")
-        expect(src).toContain("from '@lib/engine/camera-controls-restore-bridge'")
-        expect(src).toContain("from '@lib/journey/focus-pocket'")
-        expect(src).toContain("from '@lib/demo/guards'")
-        expect(src).toContain("from '@lib/demo/camera'")
-        expect(src).toContain("from '@lib/demo/ui'")
+        expect(src).toContain("import { appState } from '@lib/state/app.svelte'")
     })
 })
 

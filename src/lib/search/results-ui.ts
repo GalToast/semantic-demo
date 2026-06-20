@@ -19,13 +19,7 @@ import {
 } from '../engine/search-panel-adapter-bridge'
 import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte'
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane'
-import {
-    searchResultsStore,
-    searchSummaryStore,
-    isSearchingStore,
-    searchErrorStore,
-    searchVisibleCountStore
-} from '../stores/legacy-stores'
+import { appState } from '@lib/state/app.svelte'
 import { formatBusinessName } from '../utils/dom-formatters'
 import {
     getSearchResultStrength,
@@ -481,7 +475,7 @@ function handleLegacyShowMoreClick(event: Event): void {
     } catch {
         /* noop */
     }
-    searchVisibleCountStore.set(total)
+    appState.searchVisibleCount = total
     renderLegacySearchResultsDom({
         resultsEl,
         dedupedResults,
@@ -538,14 +532,14 @@ export function renderSearchResultItems(
         }
     }
 
-    // Push to Svelte stores
-    searchResultsStore.set(dedupedResults)
-    searchVisibleCountStore.set(visibleCount)
-    searchSummaryStore.set({
+    // Push to appState
+    appState.searchResults = dedupedResults
+    appState.searchVisibleCount = visibleCount
+    appState.searchSummary = {
         query: renderContext.trimmedQuery,
         renderContext,
         mode
-    })
+    }
     publish(EVENTS.SEARCH_UI_SYNC_REQUESTED, { resultsEl, statusEl, results: dedupedResults, renderContext })
     publish(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, {
         laneState: 'healthy',
@@ -555,8 +549,8 @@ export function renderSearchResultItems(
         button: document.getElementById('btn-synthesize'),
         mode: 'idle'
     })
-    isSearchingStore.set(false)
-    searchErrorStore.set(null)
+    appState.isSearching = false
+    appState.searchError = null
 
     if (resultsEl) {
         resultsEl.setAttribute('aria-describedby', 'search-results-count')
@@ -586,8 +580,8 @@ export function renderSearchResultItems(
 // ── Search Lifecycle State ──────────────────────────────────────────────────
 
 export function applySemanticSearchLoadingState(resultsEl: HTMLElement | null): void {
-    isSearchingStore.set(true)
-    searchErrorStore.set(null)
+    appState.isSearching = true
+    appState.searchError = null
 
     if (resultsEl) {
         resultsEl.classList.add('searching')
@@ -615,8 +609,8 @@ export function applySemanticSearchErrorState(
         message: error?.message || 'Search failed'
     }
 
-    searchErrorStore.set(errorData)
-    isSearchingStore.set(false)
+    appState.searchError = errorData
+    appState.isSearching = false
 
     if (resultsEl) {
         resultsEl.classList.remove('is-searching-skeleton')
@@ -655,12 +649,12 @@ export function finishSemanticSearchSuccessState(
 export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTMLElement | null): void {
     state.currentSearchSummary = null
 
-    // Clear stores
-    searchResultsStore.set([])
-    searchSummaryStore.set(null)
-    isSearchingStore.set(false)
-    searchErrorStore.set(null)
-    searchVisibleCountStore.set(10)
+    // Clear appState
+    appState.searchResults = []
+    appState.searchSummary = null
+    appState.isSearching = false
+    appState.searchError = null
+    appState.searchVisibleCount = 10
 
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false })
     const spinner = document.getElementById('search-spinner')
@@ -725,10 +719,10 @@ export function applyEmptySemanticSearchState(
     statusEl: HTMLElement | null,
     trimmedQuery: string
 ): void {
-    searchResultsStore.set([])
-    searchSummaryStore.set({ query: trimmedQuery, renderContext: null, mode: 'empty' })
-    searchErrorStore.set(null)
-    isSearchingStore.set(false)
+    appState.searchResults = []
+    appState.searchSummary = { query: trimmedQuery, renderContext: null, mode: 'empty' }
+    appState.searchError = null
+    appState.isSearching = false
     if (resultsEl) {
         resultsEl.classList.remove('searching')
         resultsEl.classList.remove('is-searching-skeleton')

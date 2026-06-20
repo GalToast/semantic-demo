@@ -197,7 +197,7 @@ vi.mock('@lib/orchestration/compass-controller', async () => {
 
 // ── Import under test (must appear AFTER vi.mock) ───────────────────────────
 
-import { computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
+import { computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte.ts'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

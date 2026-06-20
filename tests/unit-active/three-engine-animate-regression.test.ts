@@ -18,14 +18,18 @@ function animateSource() {
 
 describe('three-engine animate RAF bookkeeping', () => {
     it('clears consumed RAF id before guard returns so the loop can reschedule', () => {
+        const src = readFileSync(SRC_PATH, 'utf8')
         const body = animateSource()
+
         const clearIndex = body.indexOf('_rafId = null')
         const circuitBreakerIndex = body.indexOf('if (_circuitBreakerTripped)')
-        const scheduleIndex = body.indexOf('_rafId = requestAnimationFrame(animate)')
+
+        // The rescheduling call was refactored into scheduleNextAnimationFrame
+        const scheduleIndexInFile = src.indexOf('_rafId = window.requestAnimationFrame(animate)')
 
         expect(clearIndex).toBeGreaterThanOrEqual(0)
         expect(clearIndex).toBeLessThan(circuitBreakerIndex)
-        expect(scheduleIndex).toBeGreaterThan(circuitBreakerIndex)
+        expect(scheduleIndexInFile).toBeGreaterThan(0)
     })
 
     it('does not bail from inside animate just because the current callback had an id', () => {

@@ -10,26 +10,24 @@
  */
 
 export {
-  resetRouteTraceDiagnostics,
-  removeRouteTraceOverlay,
-  setRouteChoreographyPhase,
-  refreshRouteTraceOverlay,
-  updateRouteTraceOverlayPositions,
-  refreshFocusSemanticOverlay,
-  updateFocusSemanticOverlayPositions,
-  removeFocusSemanticOverlay,
-  resetFocusThreadDiagnostics,
-  syncArrivalHandoffOverlay,
-  updateArrivalHandoffOverlay,
-  disposeArrivalHandoffOverlay,
-} from './journey-webgl-lazy';
+    resetRouteTraceDiagnostics,
+    removeRouteTraceOverlay,
+    setRouteChoreographyPhase,
+    refreshRouteTraceOverlay,
+    updateRouteTraceOverlayPositions,
+    refreshFocusSemanticOverlay,
+    updateFocusSemanticOverlayPositions,
+    removeFocusSemanticOverlay,
+    resetFocusThreadDiagnostics,
+    syncArrivalHandoffOverlay,
+    updateArrivalHandoffOverlay,
+    disposeArrivalHandoffOverlay
+} from './journey-webgl-lazy'
 
 export {
-  syncInspectedStrandOverlay,
-  updateInspectedStrandOverlay,
-  disposeInspectedStrandOverlay,
-} from './journey-webgl-lazy';
+    syncInspectedStrandOverlay,
+    updateInspectedStrandOverlay,
+    disposeInspectedStrandOverlay
+} from './journey-webgl-lazy'
 
-export {
-  setInspectedStrandOverlayUpdater,
-} from './journey-webgl-lazy';
+export { setInspectedStrandOverlayUpdater } from './journey-webgl-lazy'

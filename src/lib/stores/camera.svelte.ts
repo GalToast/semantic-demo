@@ -1,238 +1,469 @@
 /**
  * @lib/stores/camera.svelte.ts — Camera choreography, orbit slack, and transition store
  *
- * Replaces:
- *   - js/modules/camera-controls.js (choreography state)
- *   - js/modules/camera-orbit-slack.js (orbit slack state)
- *   - Camera slices from js/state.js
+ * Svelte 5/Svelte-first port.
  *
  * Camera state holds the Svelte-side truth for camera position, auto-rotate,
  * and transition lifecycle. The actual Three.js camera is owned by the engine;
  * the bridge translates between these stores and the imperative engine calls.
  */
-import { get, writable, type Readable, type Subscriber, type Unsubscriber } from 'svelte/store';
-import type {
-  CameraState,
-  CameraTransition,
-  FocusOrbitSlackState
-} from '@lib/types/state';
-import { appState } from '@lib/state/app.svelte.ts';
+import type { Readable } from 'svelte/store'
+import type { CameraState, CameraTransition, FocusOrbitSlackState } from '@lib/types/state'
+import { appState } from '@lib/state/app.svelte.ts'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
 export const CAMERA_CONFIG = {
-  AUTO_ROTATE_BASE_SPEED: 0.34,
-  AUTO_ROTATE_IDLE_MS: 3600,
-  AUTO_ROTATE_MANUAL_IDLE_MS: 5200,
-  AUTO_ROTATE_SOFT_RESUME_MS: 1800,
-  ORBIT_MIN_DISTANCE_DEFAULT: 0.5,
-  ORBIT_MIN_DISTANCE_INSIDE: 0.24,
-  ORBIT_MAX_DISTANCE_DEFAULT: 5.5,
-  ORBIT_MAX_DISTANCE_FREE: 6.8,
-  ORBIT_ROTATE_SPEED_DEFAULT: 0.6,
-  ORBIT_ROTATE_SPEED_FREE: 0.82,
-  ORBIT_PAN_SPEED_DEFAULT: 0.5,
-  ORBIT_PAN_SPEED_FREE: 0.68,
-  SELECTED_CARD_FADE_MS: 180,
-  MOBILE_ROUTE_FIELD_PEEK_MS: 1550,
-  SEARCH_TRAIL_CUE_MIN_DWELL_MS: 920
-} as const;
+    AUTO_ROTATE_BASE_SPEED: 0.34,
+    AUTO_ROTATE_IDLE_MS: 3600,
+    AUTO_ROTATE_MANUAL_IDLE_MS: 5200,
+    AUTO_ROTATE_SOFT_RESUME_MS: 1800,
+    ORBIT_MIN_DISTANCE_DEFAULT: 0.5,
+    ORBIT_MIN_DISTANCE_INSIDE: 0.24,
+    ORBIT_MAX_DISTANCE_DEFAULT: 5.5,
+    ORBIT_MAX_DISTANCE_FREE: 6.8,
+    ORBIT_ROTATE_SPEED_DEFAULT: 0.6,
+    ORBIT_ROTATE_SPEED_FREE: 0.82,
+    ORBIT_PAN_SPEED_DEFAULT: 0.5,
+    ORBIT_PAN_SPEED_FREE: 0.68,
+    SELECTED_CARD_FADE_MS: 180,
+    MOBILE_ROUTE_FIELD_PEEK_MS: 1550,
+    SEARCH_TRAIL_CUE_MIN_DWELL_MS: 920
+} as const
 
 // ── Overview Camera Pose (from camera-controls-restore.js) ───────────────────
 
 export const OVERVIEW_CAMERA_POSE = {
-  position: [0, 0.45, 3.0] as [number, number, number],
-  target: [0, 0, 0] as [number, number, number]
-} as const;
+    position: [0, 0.45, 3.0] as [number, number, number],
+    target: [0, 0, 0] as [number, number, number]
+} as const
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
-const DEFAULT_POSITION: [number, number, number] = [0, 0, 3];
-const DEFAULT_TARGET: [number, number, number] = [0, 0, 0];
+const DEFAULT_POSITION: [number, number, number] = [0, 0, 3]
+const DEFAULT_TARGET: [number, number, number] = [0, 0, 0]
 
 const INITIAL_TRANSITION: CameraTransition = {
-  phase: 'idle',
-  token: 0,
-  startedAt: 0,
-  durationMs: 0,
-  from: { position: DEFAULT_POSITION, target: DEFAULT_TARGET },
-  to: { position: DEFAULT_POSITION, target: DEFAULT_TARGET }
-};
+    phase: 'idle',
+    token: 0,
+    startedAt: 0,
+    durationMs: 0,
+    from: { position: DEFAULT_POSITION, target: DEFAULT_TARGET },
+    to: { position: DEFAULT_POSITION, target: DEFAULT_TARGET }
+}
 
 const INITIAL_ORBIT_SLACK: FocusOrbitSlackState = {
-  phase: 'idle',
-  reason: '',
-  startedAt: 0,
-  targetShift: 0,
-  cameraShift: 0,
-  distanceBefore: 0,
-  distanceAfter: 0,
-  maxDistance: CAMERA_CONFIG.ORBIT_MAX_DISTANCE_DEFAULT,
-  rotateSpeed: CAMERA_CONFIG.ORBIT_ROTATE_SPEED_DEFAULT,
-  panSpeed: CAMERA_CONFIG.ORBIT_PAN_SPEED_DEFAULT
-};
+    phase: 'idle',
+    reason: '',
+    startedAt: 0,
+    targetShift: 0,
+    cameraShift: 0,
+    distanceBefore: 0,
+    distanceAfter: 0,
+    maxDistance: CAMERA_CONFIG.ORBIT_MAX_DISTANCE_DEFAULT,
+    rotateSpeed: CAMERA_CONFIG.ORBIT_ROTATE_SPEED_DEFAULT,
+    panSpeed: CAMERA_CONFIG.ORBIT_PAN_SPEED_DEFAULT
+}
 
 const INITIAL_CAMERA: CameraState = {
-  position: DEFAULT_POSITION,
-  target: DEFAULT_TARGET,
-  transition: { ...INITIAL_TRANSITION },
-  autoRotate: false,
-  autoRotateSuspended: false,
-  autoRotateSpeed: CAMERA_CONFIG.AUTO_ROTATE_BASE_SPEED
-};
+    position: DEFAULT_POSITION,
+    target: DEFAULT_TARGET,
+    transition: { ...INITIAL_TRANSITION },
+    autoRotate: false,
+    autoRotateSuspended: false,
+    autoRotateSpeed: CAMERA_CONFIG.AUTO_ROTATE_BASE_SPEED
+}
 
 // ── Extended Camera Store (includes orbit slack) ─────────────────────────────
 
 export interface CameraStoreState extends CameraState {
-  orbitSlack: FocusOrbitSlackState;
-  /** Resume timer expiry timestamp (ms from performance.now). */
-  autoResumeDueAt: number;
-  /** Soft resume started timestamp. */
-  softResumeStartedAt: number;
-  /** Whether the camera assist (auto-follow during focus) is active. */
-  cameraAssistActive: boolean;
-  /** Camera assist expiry timestamp. */
-  cameraAssistUntil: number;
-  /** Camera assist reason. */
-  cameraAssistReason: string;
-  /** Route exploration phase. */
-  routeExplorationPhase: 'idle' | 'exploring' | 'user-control';
-  /** Route exploration reason. */
-  routeExplorationReason: string;
-  /** Route choreography phase. */
-  routeChoreographyPhase: string;
-  /** Whether the camera has settled to overview pose. */
-  cameraIdleOrbitAllowed: boolean;
+    orbitSlack: FocusOrbitSlackState
+    /** Resume timer expiry timestamp (ms from performance.now). */
+    autoResumeDueAt: number
+    /** Soft resume started timestamp. */
+    softResumeStartedAt: number
+    /** Whether the camera assist (auto-follow during focus) is active. */
+    cameraAssistActive: boolean
+    /** Camera assist expiry timestamp. */
+    cameraAssistUntil: number
+    /** Camera assist reason. */
+    cameraAssistReason: string
+    /** Route exploration phase. */
+    routeExplorationPhase: 'idle' | 'exploring' | 'user-control'
+    /** Route exploration reason. */
+    routeExplorationReason: string
+    /** Route choreography phase. */
+    routeChoreographyPhase: string
+    /** Whether the camera has settled to overview pose. */
+    cameraIdleOrbitAllowed: boolean
 }
 
 const INITIAL_STORE: CameraStoreState = {
-  ...INITIAL_CAMERA,
-  orbitSlack: { ...INITIAL_ORBIT_SLACK },
-  autoResumeDueAt: 0,
-  softResumeStartedAt: 0,
-  cameraAssistActive: false,
-  cameraAssistUntil: 0,
-  cameraAssistReason: 'idle',
-  routeExplorationPhase: 'idle',
-  routeExplorationReason: '',
-  routeChoreographyPhase: 'overview',
-  cameraIdleOrbitAllowed: true
-};
-
-// ── Store (reactive binding) ──────────────────────────────────────────────────
-
-/**
- * Why a plain `writable` instead of `toStore(getter, setter)`:
- *   `toStore` replaces the writable's notifying `set` with the user's custom
- *   setter. In Svelte runtime this works because the render_effect re-reads the
- *   getter after mutations and calls the underlying writable's `set`. But in
- *   jsdom/vitest there is no render_effect, so `store.update()` writes to
- *   appState but subscribers never wake up — `get(store)` returns stale values.
- *
- *   A plain `writable` + `withCameraNotify()` wrapper fixes both: runtime
- *   subscribers are notified by the writable's own `.set()`, and test
- *   environments get synchronous notification too.
- */
-const _cameraWritable = writable<CameraStoreState>({ ...INITIAL_STORE });
-
-/**
- * Push autoRotate-related mutations to both `_cameraWritable` and `appState`.
- * Called by actions that change autoRotate/suspended/resume properties.
- * Other camera state (position, target, transition, orbitSlack) lives only
- * in `_cameraWritable` and doesn't need the appState bridge.
- */
-function withCameraNotify(updater: (s: CameraStoreState) => CameraStoreState): void {
-  const current = get(_cameraWritable);
-  const next = updater(current);
-  _cameraWritable.set(next);
-  // Sync the 4 autoRotate properties that appState owns
-  appState.withMutation(() => {
-    appState.autoRotate = next.autoRotate;
-    appState.autoRotateSuspended = next.autoRotateSuspended;
-    appState.autoRotateResumeDueAt = next.autoResumeDueAt;
-    appState.autoRotateSoftResumeStartedAt = next.softResumeStartedAt;
-  });
+    ...INITIAL_CAMERA,
+    orbitSlack: { ...INITIAL_ORBIT_SLACK },
+    autoResumeDueAt: 0,
+    softResumeStartedAt: 0,
+    cameraAssistActive: false,
+    cameraAssistUntil: 0,
+    cameraAssistReason: 'idle',
+    routeExplorationPhase: 'idle',
+    routeExplorationReason: '',
+    routeChoreographyPhase: 'overview',
+    cameraIdleOrbitAllowed: true
 }
+
+// ── Svelte 5 Reactive Store Implementation ───────────────────────────────────
+
+class CameraStoreControl {
+    // Local reactive state for camera-only fields
+    private _position = $state<[number, number, number]>([...DEFAULT_POSITION])
+    private _target = $state<[number, number, number]>([...DEFAULT_TARGET])
+    private _transition = $state<CameraTransition>({ ...INITIAL_TRANSITION })
+    private _autoRotateSpeed = $state<number>(CAMERA_CONFIG.AUTO_ROTATE_BASE_SPEED)
+    private _orbitSlack = $state<FocusOrbitSlackState>({ ...INITIAL_ORBIT_SLACK })
+
+    private _cameraAssistActive = $state<boolean>(false)
+    private _cameraAssistUntil = $state<number>(0)
+    private _cameraAssistReason = $state<string>('idle')
+
+    private _routeExplorationPhase = $state<'idle' | 'exploring' | 'user-control'>('idle')
+    private _routeExplorationReason = $state<string>('')
+    private _routeChoreographyPhase = $state<string>('overview')
+    private _cameraIdleOrbitAllowed = $state<boolean>(true)
+
+    // Synchronized subscribers
+    private subscribers = new Set<(s: CameraStoreState) => void>()
+
+    // Getters & Setters mapping to local reactive fields or appState mirrors
+    get position() {
+        return this._position
+    }
+    set position(v) {
+        this._position = v
+        this.notify()
+    }
+
+    get target() {
+        return this._target
+    }
+    set target(v) {
+        this._target = v
+        this.notify()
+    }
+
+    get transition() {
+        return this._transition
+    }
+    set transition(v) {
+        this._transition = v
+        this.notify()
+    }
+
+    get autoRotateSpeed() {
+        return this._autoRotateSpeed
+    }
+    set autoRotateSpeed(v) {
+        this._autoRotateSpeed = v
+        this.notify()
+    }
+
+    get orbitSlack() {
+        return this._orbitSlack
+    }
+    set orbitSlack(v) {
+        this._orbitSlack = v
+        this.notify()
+    }
+
+    get cameraAssistActive() {
+        return this._cameraAssistActive
+    }
+    set cameraAssistActive(v) {
+        this._cameraAssistActive = v
+        this.notify()
+    }
+
+    get cameraAssistUntil() {
+        return this._cameraAssistUntil
+    }
+    set cameraAssistUntil(v) {
+        this._cameraAssistUntil = v
+        this.notify()
+    }
+
+    get cameraAssistReason() {
+        return this._cameraAssistReason
+    }
+    set cameraAssistReason(v) {
+        this._cameraAssistReason = v
+        this.notify()
+    }
+
+    get routeExplorationPhase() {
+        return this._routeExplorationPhase
+    }
+    set routeExplorationPhase(v) {
+        this._routeExplorationPhase = v
+        this.notify()
+    }
+
+    get routeExplorationReason() {
+        return this._routeExplorationReason
+    }
+    set routeExplorationReason(v) {
+        this._routeExplorationReason = v
+        this.notify()
+    }
+
+    get routeChoreographyPhase() {
+        return this._routeChoreographyPhase
+    }
+    set routeChoreographyPhase(v) {
+        this._routeChoreographyPhase = v
+        this.notify()
+    }
+
+    get cameraIdleOrbitAllowed() {
+        return this._cameraIdleOrbitAllowed
+    }
+    set cameraIdleOrbitAllowed(v) {
+        this._cameraIdleOrbitAllowed = v
+        this.notify()
+    }
+
+    // AppState mapped properties
+    get autoRotate() {
+        return appState.autoRotate
+    }
+    set autoRotate(v) {
+        appState.withMutation(() => {
+            appState.autoRotate = v
+        })
+        this.notify()
+    }
+
+    get autoRotateSuspended() {
+        return appState.autoRotateSuspended
+    }
+    set autoRotateSuspended(v) {
+        appState.withMutation(() => {
+            appState.autoRotateSuspended = v
+        })
+        this.notify()
+    }
+
+    get autoResumeDueAt() {
+        return appState.autoRotateResumeDueAt
+    }
+    set autoResumeDueAt(v) {
+        appState.withMutation(() => {
+            appState.autoRotateResumeDueAt = v
+        })
+        this.notify()
+    }
+
+    get softResumeStartedAt() {
+        return appState.autoRotateSoftResumeStartedAt
+    }
+    set softResumeStartedAt(v) {
+        appState.withMutation(() => {
+            appState.autoRotateSoftResumeStartedAt = v
+        })
+        this.notify()
+    }
+
+    /**
+     * Get a snapshot representation of the current store state.
+     */
+    getSnapshot(): CameraStoreState {
+        return {
+            position: this.position,
+            target: this.target,
+            transition: this.transition,
+            autoRotate: this.autoRotate,
+            autoRotateSuspended: this.autoRotateSuspended,
+            autoRotateSpeed: this.autoRotateSpeed,
+            orbitSlack: this.orbitSlack,
+            autoResumeDueAt: this.autoResumeDueAt,
+            softResumeStartedAt: this.softResumeStartedAt,
+            cameraAssistActive: this.cameraAssistActive,
+            cameraAssistUntil: this.cameraAssistUntil,
+            cameraAssistReason: this.cameraAssistReason,
+            routeExplorationPhase: this.routeExplorationPhase,
+            routeExplorationReason: this.routeExplorationReason,
+            routeChoreographyPhase: this.routeChoreographyPhase,
+            cameraIdleOrbitAllowed: this.cameraIdleOrbitAllowed
+        }
+    }
+
+    /**
+     * Enable Svelte Readable/Writable store contract.
+     */
+    subscribe = (run: (s: CameraStoreState) => void): (() => void) => {
+        this.subscribers.add(run)
+        run(this.getSnapshot())
+        return () => {
+            this.subscribers.delete(run)
+        }
+    }
+
+    notify(): void {
+        const snap = this.getSnapshot()
+        for (const run of this.subscribers) {
+            try {
+                run(snap)
+            } catch (err) {
+                console.error('[CameraStore] Subscription notification error:', err)
+            }
+        }
+    }
+
+    update(updater: (s: CameraStoreState) => CameraStoreState): void {
+        const next = updater(this.getSnapshot())
+        // Assign fields individually or update the Svelte state
+        this._position = next.position
+        this._target = next.target
+        this._transition = next.transition
+        this._autoRotateSpeed = next.autoRotateSpeed
+        this._orbitSlack = next.orbitSlack
+        this._cameraAssistActive = next.cameraAssistActive
+        this._cameraAssistUntil = next.cameraAssistUntil
+        this._cameraAssistReason = next.cameraAssistReason
+        this._routeExplorationPhase = next.routeExplorationPhase
+        this._routeExplorationReason = next.routeExplorationReason
+        this._routeChoreographyPhase = next.routeChoreographyPhase
+        this._cameraIdleOrbitAllowed = next.cameraIdleOrbitAllowed
+
+        appState.withMutation(() => {
+            appState.autoRotate = next.autoRotate
+            appState.autoRotateSuspended = next.autoRotateSuspended
+            appState.autoRotateResumeDueAt = next.autoResumeDueAt
+            appState.autoRotateSoftResumeStartedAt = next.softResumeStartedAt
+        })
+
+        this.notify()
+    }
+
+    set(next: CameraStoreState): void {
+        this.update(() => next)
+    }
+}
+
+const cameraStoreImpl = new CameraStoreControl()
 
 /** CameraStore type: Readable + property accessors + Writable-ish. */
 export type CameraStoreApi = Readable<CameraStoreState> & {
-  update(fn: (s: CameraStoreState) => CameraStoreState): void;
-  set(value: CameraStoreState): void;
-} & { [K in keyof CameraStoreState]: CameraStoreState[K] };
+    update(fn: (s: CameraStoreState) => CameraStoreState): void
+    set(value: CameraStoreState): void
+} & { [K in keyof CameraStoreState]: CameraStoreState[K] }
 
-function _createCameraStore(): CameraStoreApi {
-  const stateKeys = [
-    'position', 'target', 'transition', 'autoRotate', 'autoRotateSuspended', 'autoRotateSpeed',
-    'orbitSlack', 'autoResumeDueAt', 'softResumeStartedAt',
-    'cameraAssistActive', 'cameraAssistUntil', 'cameraAssistReason',
-    'routeExplorationPhase', 'routeExplorationReason', 'routeChoreographyPhase',
-    'cameraIdleOrbitAllowed'
-  ] as const;
-
-  const api: Partial<CameraStoreApi> = {
-    subscribe: (listener: Subscriber<CameraStoreState>): Unsubscriber => {
-      return _cameraWritable.subscribe(listener);
-    },
-    update: (updater: (s: CameraStoreState) => CameraStoreState): void => {
-      _cameraWritable.update(updater);
-    },
-    set: (value: CameraStoreState): void => {
-      _cameraWritable.set(value);
+/** Create the proxied API so that cameraStore.property accessor lookups work. */
+function createCameraStoreApi(): CameraStoreApi {
+    const api: Partial<CameraStoreApi> = {
+        subscribe: cameraStoreImpl.subscribe,
+        update: (fn) => cameraStoreImpl.update(fn),
+        set: (val) => cameraStoreImpl.set(val)
     }
-  };
 
-  for (const key of stateKeys) {
-    Object.defineProperty(api, key, {
-      get() { return get(_cameraWritable)[key]; },
-      enumerable: true,
-      configurable: true
-    });
-  }
+    const stateKeys = [
+        'position',
+        'target',
+        'transition',
+        'autoRotate',
+        'autoRotateSuspended',
+        'autoRotateSpeed',
+        'orbitSlack',
+        'autoResumeDueAt',
+        'softResumeStartedAt',
+        'cameraAssistActive',
+        'cameraAssistUntil',
+        'cameraAssistReason',
+        'routeExplorationPhase',
+        'routeExplorationReason',
+        'routeChoreographyPhase',
+        'cameraIdleOrbitAllowed'
+    ] as const
 
-  return api as CameraStoreApi;
+    for (const key of stateKeys) {
+        Object.defineProperty(api, key, {
+            get() {
+                return cameraStoreImpl[key]
+            },
+            set(v) {
+                ;(cameraStoreImpl as any)[key] = v
+            },
+            enumerable: true,
+            configurable: true
+        })
+    }
+
+    return api as CameraStoreApi
 }
 
 /** Single reactive instance of the camera state. */
-export const cameraStore: CameraStoreApi = _createCameraStore();
+export const cameraStore: CameraStoreApi = createCameraStoreApi()
 /** Backwards-compatible alias. */
-export const cameraState = cameraStore;
+export const cameraState = cameraStore
 
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
-export function cameraPosition(): [number, number, number] { return get(_cameraWritable).position; }
-export function cameraTarget(): [number, number, number] { return get(_cameraWritable).target; }
-export function autoRotate(): boolean { return get(_cameraWritable).autoRotate; }
-export function autoRotateSuspended(): boolean { return get(_cameraWritable).autoRotateSuspended; }
-export function cameraTransitionPhase(): string { return get(_cameraWritable).transition.phase; }
-export function isAutoRotating(): boolean { const s = get(_cameraWritable); return s.autoRotate && !s.autoRotateSuspended; }
-export function isTransitioning(): boolean { return get(_cameraWritable).transition.phase === 'transitioning'; }
-export function orbitSlackPhase(): string { return get(_cameraWritable).orbitSlack.phase; }
-export function cameraAssistActive(): boolean { return get(_cameraWritable).cameraAssistActive; }
+export function cameraPosition(): [number, number, number] {
+    return cameraStoreImpl.position
+}
+export function cameraTarget(): [number, number, number] {
+    return cameraStoreImpl.target
+}
+export function autoRotate(): boolean {
+    return cameraStoreImpl.autoRotate
+}
+export function autoRotateSuspended(): boolean {
+    return cameraStoreImpl.autoRotateSuspended
+}
+export function cameraTransitionPhase(): string {
+    return cameraStoreImpl.transition.phase
+}
+export function isAutoRotating(): boolean {
+    return cameraStoreImpl.autoRotate && !cameraStoreImpl.autoRotateSuspended
+}
+export function isTransitioning(): boolean {
+    return cameraStoreImpl.transition.phase === 'transitioning'
+}
+export function orbitSlackPhase(): string {
+    return cameraStoreImpl.orbitSlack.phase
+}
+export function cameraAssistActive(): boolean {
+    return cameraStoreImpl.cameraAssistActive
+}
 
 // ── Actions: Basic Camera ────────────────────────────────────────────────────
 
 export function setCameraPosition(position: [number, number, number]): void {
-  _cameraWritable.update(s => ({ ...s, position }));
+    cameraStoreImpl.position = position
 }
 
 export function setCameraTarget(target: [number, number, number]): void {
-  _cameraWritable.update(s => ({ ...s, target }));
+    cameraStoreImpl.target = target
 }
 
 export function setAutoRotate(enabled: boolean): void {
-  withCameraNotify(s => ({ ...s, autoRotate: enabled }));
+    cameraStoreImpl.autoRotate = enabled
 }
 
 export function suspendAutoRotate(): void {
-  withCameraNotify(s => ({ ...s, autoRotateSuspended: true }));
+    cameraStoreImpl.autoRotateSuspended = true
 }
 
 export function resumeAutoRotate(): void {
-  withCameraNotify(s => ({ ...s, autoRotateSuspended: false }));
+    cameraStoreImpl.autoRotateSuspended = false
 }
 
 export function toggleAutoRotate(): void {
-  withCameraNotify(s => ({ ...s, autoRotate: !s.autoRotate, autoRotateSuspended: false }));
+    const currentAuto = cameraStoreImpl.autoRotate
+    appState.withMutation(() => {
+        appState.autoRotate = !currentAuto
+        appState.autoRotateSuspended = false
+    })
+    cameraStoreImpl.notify()
 }
 
 /**
@@ -240,201 +471,183 @@ export function toggleAutoRotate(): void {
  * Returns the transition token for cancellation checks.
  */
 export function startCameraTransition(
-  to: { position: [number, number, number]; target: [number, number, number] },
-  durationMs: number
+    to: { position: [number, number, number]; target: [number, number, number] },
+    durationMs: number
 ): number {
-  const current = get(_cameraWritable);
-  const token = current.transition.token + 1;
+    const token = cameraStoreImpl.transition.token + 1
 
-  _cameraWritable.update(s => ({
-    ...s,
-    transition: {
-      phase: 'transitioning',
-      token,
-      startedAt: performance.now(),
-      durationMs,
-      from: { position: s.position, target: s.target },
-      to
+    cameraStoreImpl.transition = {
+        phase: 'transitioning',
+        token,
+        startedAt: performance.now(),
+        durationMs,
+        from: { position: cameraStoreImpl.position, target: cameraStoreImpl.target },
+        to
     }
-  }));
 
-  return token;
+    return token
 }
 
 /** Mark the current transition as arrived. */
 export function completeCameraTransition(): void {
-  _cameraWritable.update(s => ({
-    ...s,
-    position: s.transition.to.position,
-    target: s.transition.to.target,
-    transition: { ...s.transition, phase: 'arrived' }
-  }));
+    cameraStoreImpl.update((s) => ({
+        ...s,
+        position: s.transition.to.position,
+        target: s.transition.to.target,
+        transition: { ...s.transition, phase: 'arrived' }
+    }))
 
-  // Sync body data attribute
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.cameraTransition = 'arrived';
-  }
+    // Sync body data attribute
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.cameraTransition = 'arrived'
+    }
 }
 
 /** Reset camera to initial state. */
 export function resetCamera(): void {
-  _cameraWritable.set({ ...INITIAL_STORE });
-  // Sync autoRotate properties back to appState
-  appState.withMutation(() => {
-    appState.autoRotate = INITIAL_STORE.autoRotate;
-    appState.autoRotateSuspended = INITIAL_STORE.autoRotateSuspended;
-    appState.autoRotateResumeDueAt = INITIAL_STORE.autoResumeDueAt;
-    appState.autoRotateSoftResumeStartedAt = INITIAL_STORE.softResumeStartedAt;
-  });
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.cameraTransition = 'idle';
-    document.body.dataset.cameraSlack = 'idle';
-  }
+    cameraStoreImpl.set({ ...INITIAL_STORE })
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.cameraTransition = 'idle'
+        document.body.dataset.cameraSlack = 'idle'
+    }
 }
 
 // ── Actions: Auto-Rotate Resume ──────────────────────────────────────────────
 
 /** Schedule auto-rotate resume after a delay (ms). */
 export function scheduleAutoRotateResume(delayMs: number): void {
-  withCameraNotify(s => ({ ...s, autoResumeDueAt: performance.now() + delayMs }));
+    cameraStoreImpl.autoResumeDueAt = performance.now() + delayMs
 }
 
 /** Clear any pending auto-rotate resume. */
 export function clearAutoRotateResumeTimer(): void {
-  withCameraNotify(s => ({ ...s, autoResumeDueAt: 0 }));
+    cameraStoreImpl.autoResumeDueAt = 0
 }
 
 /** Start the soft resume of auto-rotate (gradual speed-up). */
 export function startAutoRotateSoftResume(): void {
-  withCameraNotify(s => ({ ...s, softResumeStartedAt: performance.now() }));
+    cameraStoreImpl.softResumeStartedAt = performance.now()
 }
 
 /** Note a scene interaction — suspends auto-rotate and schedules resume. */
 export function noteSceneInteraction(delayMs: number = CAMERA_CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS): void {
-  suspendAutoRotate();
-  scheduleAutoRotateResume(delayMs);
+    suspendAutoRotate()
+    scheduleAutoRotateResume(delayMs)
 }
 
 // ── Actions: Camera Assist ───────────────────────────────────────────────────
 
 /** Start camera assist (auto-follow during focus). */
-export function startFocusCameraAssist(
-  durationMs: number = 900,
-  reason: string = 'focus'
-): void {
-  _cameraWritable.update(s => ({
-    ...s,
-    cameraAssistActive: true,
-    cameraAssistUntil: performance.now() + durationMs,
-    cameraAssistReason: reason
-  }));
+export function startFocusCameraAssist(durationMs: number = 900, reason: string = 'focus'): void {
+    cameraStoreImpl.update((s) => ({
+        ...s,
+        cameraAssistActive: true,
+        cameraAssistUntil: performance.now() + durationMs,
+        cameraAssistReason: reason
+    }))
 
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.cameraAssist = 'active';
-    document.body.dataset.cameraAssistReason = reason;
-  }
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.cameraAssist = 'active'
+        document.body.dataset.cameraAssistReason = reason
+    }
 }
 
 /** Release camera assist. */
 export function releaseFocusCameraAssist(reason: string = 'manual'): void {
-  _cameraWritable.update(s => ({
-    ...s,
-    cameraAssistActive: false,
-    cameraAssistUntil: 0,
-    cameraAssistReason: reason
-  }));
+    cameraStoreImpl.update((s) => ({
+        ...s,
+        cameraAssistActive: false,
+        cameraAssistUntil: 0,
+        cameraAssistReason: reason
+    }))
 
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.cameraAssist = '';
-    document.body.dataset.cameraAssistReason = reason;
-  }
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.cameraAssist = ''
+        document.body.dataset.cameraAssistReason = reason
+    }
 }
 
 /** Check if camera assist is currently active. */
 export function isFocusCameraAssistActive(now: number = performance.now()): boolean {
-  const s = get(_cameraWritable);
-  return s.cameraAssistActive && now < s.cameraAssistUntil;
+    return cameraStoreImpl.cameraAssistActive && now < cameraStoreImpl.cameraAssistUntil
 }
 
 // ── Actions: Route Exploration ───────────────────────────────────────────────
 
 /** Set the route exploration state. */
-export function setRouteExplorationState(
-  phase: 'idle' | 'exploring' | 'user-control',
-  reason: string = ''
-): void {
-  _cameraWritable.update(s => ({
-    ...s,
-    routeExplorationPhase: phase,
-    routeExplorationReason: reason
-  }));
+export function setRouteExplorationState(phase: 'idle' | 'exploring' | 'user-control', reason: string = ''): void {
+    cameraStoreImpl.update((s) => ({
+        ...s,
+        routeExplorationPhase: phase,
+        routeExplorationReason: reason
+    }))
 
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.routeExploration = phase;
-  }
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.routeExploration = phase
+    }
 }
 
 /** Clear route exploration state. */
 export function clearRouteExploration(reason: string = 'clear'): void {
-  setRouteExplorationState('idle', reason);
+    setRouteExplorationState('idle', reason)
 }
 
 /** Mark route exploration as active (user panned/rotated). */
 export function markRouteExploration(reason: string = 'user-control'): void {
-  setRouteExplorationState('user-control', reason);
+    setRouteExplorationState('user-control', reason)
 }
 
 /** Check if route exploration should be marked (not already active). */
 export function shouldMarkRouteExploration(_reason: string = ''): boolean {
-  return get(_cameraWritable).routeExplorationPhase !== 'user-control';
+    return cameraStoreImpl.routeExplorationPhase !== 'user-control'
 }
 
 // ── Actions: Orbit Slack ─────────────────────────────────────────────────────
 
 /** Update the orbit slack state (from camera-orbit-slack.js). */
 export function updateOrbitSlack(patch: Partial<FocusOrbitSlackState>): void {
-  _cameraWritable.update(s => ({
-    ...s,
-    orbitSlack: { ...s.orbitSlack, ...patch }
-  }));
+    cameraStoreImpl.update((s) => ({
+        ...s,
+        orbitSlack: { ...s.orbitSlack, ...patch }
+    }))
 
-  if (typeof document !== 'undefined' && document.body && patch.phase) {
-    document.body.dataset.cameraSlack = patch.phase;
-    if (patch.reason) {
-      document.body.dataset.cameraSlackReason = patch.reason;
+    if (typeof document !== 'undefined' && document.body && patch.phase) {
+        document.body.dataset.cameraSlack = patch.phase
+        if (patch.reason) {
+            document.body.dataset.cameraSlackReason = patch.reason
+        }
     }
-  }
 }
 
 /** Reset orbit slack to defaults. */
 export function resetOrbitSlack(): void {
-  _cameraWritable.update(s => ({
-    ...s,
-    orbitSlack: { ...INITIAL_ORBIT_SLACK }
-  }));
+    cameraStoreImpl.update((s) => ({
+        ...s,
+        orbitSlack: { ...INITIAL_ORBIT_SLACK }
+    }))
 
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.cameraSlack = 'idle';
-  }
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.cameraSlack = 'idle'
+    }
 }
 
 // ── Actions: Focus Transition Mode ───────────────────────────────────────────
 
-export type FocusTransitionCameraMode = 'idle' | 'entering' | 'settling' | 'inside' | 'exiting';
+export type FocusTransitionCameraMode = 'idle' | 'entering' | 'settling' | 'inside' | 'exiting'
 
 /** Set the focus transition mode on the camera store. */
 export function setFocusTransitionMode(mode: FocusTransitionCameraMode): void {
-  _cameraWritable.update(s => ({
-    ...s,
-    transition: {
-      ...s.transition,
-      phase: mode === 'idle' ? 'idle' : s.transition.phase
-    }
-  }));
+    cameraStoreImpl.update((s) => ({
+        ...s,
+        transition: {
+            ...s.transition,
+            phase: mode === 'idle' ? 'idle' : s.transition.phase
+        }
+    }))
 
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.focusTransition = mode;
-  }
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.focusTransition = mode
+    }
 }
 
 // ── Helper: Is search route focus active? ────────────────────────────────────
@@ -445,24 +658,24 @@ export function setFocusTransitionMode(mode: FocusTransitionCameraMode): void {
  * Delegates actual state reads to the caller's context.
  */
 export function isSearchRouteFocusActive(params: {
-  currentView: string;
-  hasFocus: boolean;
-  hasSearch: boolean;
-  walkDepth: number;
-  semanticDiveMode: boolean;
+    currentView: string
+    hasFocus: boolean
+    hasSearch: boolean
+    walkDepth: number
+    semanticDiveMode: boolean
 }): boolean {
-  return (
-    params.currentView === 'galaxy' &&
-    !params.semanticDiveMode &&
-    params.hasFocus &&
-    params.hasSearch &&
-    params.walkDepth === 0
-  );
+    return (
+        params.currentView === 'galaxy' &&
+        !params.semanticDiveMode &&
+        params.hasFocus &&
+        params.hasSearch &&
+        params.walkDepth === 0
+    )
 }
 
 // ── Helper: Get route layer origin ───────────────────────────────────────────
 
 /** Get the route layer origin from the camera store. */
 export function getRouteLayerOrigin(): [number, number, number] | null {
-  return get(_cameraWritable).target;
+    return cameraStoreImpl.target
 }

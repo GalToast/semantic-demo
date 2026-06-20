@@ -10,10 +10,11 @@
 
 import { get } from 'svelte/store'
 import { navStore, bumpUrlStateRestoreToken, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
-import { setJourneyPhase } from '@lib/stores/journey.svelte'
+import { setJourneyPhase, journeyStore } from '@lib/stores/journey.svelte'
 import type { NavState, ViewName } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { runSearch, searchStore } from '@lib/stores/search.svelte'
+import { focusStore } from '@lib/stores/focus.svelte'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
 import { showExperienceToast } from '@lib/orchestration/toast'
@@ -115,7 +116,8 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
         mode: 'overview',
         currentView: 'galaxy',
         myceliumMode: 'default',
-        trailDepthFromExploration: 0
+        trailDepthFromExploration: 0,
+        trailDepth: 0
     }))
     appState.withMutation(() => {
         appState.currentView = 'galaxy'
@@ -124,6 +126,23 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
         appState.semanticDiveMode = false
         appState.myceliumMode = 'default'
         appState.navState.trailDepth = 0
+    })
+    focusStore.update((s) => {
+        const next = { ...s }
+        next.selectedBusiness = null
+        next.semanticDiveMode = false
+        return next
+    })
+    searchStore.update((s) => {
+        const next = { ...s }
+        next.summary = null
+        return next
+    })
+    journeyStore.update((s) => {
+        const next = { ...s }
+        next.depth = 0
+        next.trailDepth = 0
+        return next
     })
 
     if (options.clearSearchInput) {

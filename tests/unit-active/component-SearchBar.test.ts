@@ -42,6 +42,8 @@ describe('SearchBar component', () => {
     it('lazy-renders SearchResults sub-component when search state is active (#search-results present)', async () => {
         document.body.dataset.loadingPhase = 'searching'
         const { container } = render(SearchBar)
+        // Flush any microticks and paint timings in Vitest JS-DOM
+        await new Promise((resolve) => setTimeout(resolve, 50))
         await waitFor(() => expect(container.querySelector('#search-results')).toBeTruthy())
     })
 

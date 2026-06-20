@@ -29,8 +29,8 @@
 
   // ── Test Compatibility ────────────────────────────────────────────────────────
 
-  let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
-  let testLoadingPhase = $derived(testCompatStore().loadingPhase);
+  let testPanelSurface = $derived($testCompatStore.panelSurface || $testCompatStore.navSurface);
+  let testLoadingPhase = $derived($testCompatStore.loadingPhase);
 
   // Sync test state on mount
   onMount(() => {

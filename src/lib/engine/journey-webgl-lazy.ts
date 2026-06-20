@@ -33,62 +33,98 @@ function ensureWebglModule(): Promise<typeof import('@lib/journey/webgl')> {
 }
 
 export function resetRouteTraceDiagnostics(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.resetRouteTraceDiagnostics()
 }
 
 export function removeRouteTraceOverlay(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.removeRouteTraceOverlay()
 }
 
 export function setRouteChoreographyPhase(phase: string): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.setRouteChoreographyPhase(phase)
 }
 
 export function refreshRouteTraceOverlay(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.refreshRouteTraceOverlay()
 }
 
 export function updateRouteTraceOverlayPositions(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.updateRouteTraceOverlayPositions()
 }
 
 export function refreshFocusSemanticOverlay(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.refreshFocusSemanticOverlay()
 }
 
 export function updateFocusSemanticOverlayPositions(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.updateFocusSemanticOverlayPositions()
 }
 
 export function removeFocusSemanticOverlay(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.removeFocusSemanticOverlay()
 }
 
 export function resetFocusThreadDiagnostics(reason?: string): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.resetFocusThreadDiagnostics(reason)
 }
 
 export function syncArrivalHandoffOverlay(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.syncArrivalHandoffOverlay()
 }
 
 export function updateArrivalHandoffOverlay(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.updateArrivalHandoffOverlay()
 }
 
 export function disposeArrivalHandoffOverlay(): void {
-    if (!webglModule) { ensureWebglModule(); return }
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
     webglModule.disposeArrivalHandoffOverlay()
 }
 
@@ -105,8 +141,13 @@ function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/threa
     return inspectorWebglPromise
 }
 
-export function syncInspectedStrandOverlay(...args: Parameters<typeof import('@lib/journey/thread-inspector-webgl').syncInspectedStrandOverlay>): void {
-    if (!inspectorWebglModule) { ensureInspectorWebglModule(); return }
+export function syncInspectedStrandOverlay(
+    ...args: Parameters<typeof import('@lib/journey/thread-inspector-webgl').syncInspectedStrandOverlay>
+): void {
+    if (!inspectorWebglModule) {
+        ensureInspectorWebglModule()
+        return
+    }
     inspectorWebglModule.syncInspectedStrandOverlay(...args)
 }
 
@@ -116,7 +157,10 @@ export function updateInspectedStrandOverlay(now?: number): void {
 }
 
 export function disposeInspectedStrandOverlay(): void {
-    if (!inspectorWebglModule) { ensureInspectorWebglModule(); return }
+    if (!inspectorWebglModule) {
+        ensureInspectorWebglModule()
+        return
+    }
     inspectorWebglModule.disposeInspectedStrandOverlay()
 }
 

@@ -129,7 +129,9 @@ export class Vec3 implements Vec3Like {
         const nx3 = t * ax * az - s * ay
         const ny3 = t * ay * az + s * ax
         const nz3 = t * az * az + c
-        const vx = this.x, vy = this.y, vz = this.z
+        const vx = this.x,
+            vy = this.y,
+            vz = this.z
         this.x = nx * vx + ny * vy + nz * vz
         this.y = nx2 * vx + ny2 * vy + nz2 * vz
         this.z = nx3 * vx + ny3 * vy + nz3 * vz

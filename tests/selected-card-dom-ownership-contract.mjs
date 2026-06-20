@@ -23,8 +23,6 @@
 
 import fs from 'node:fs';
 import path from 'node:path';
-import assert from 'node:assert/strict';
-
 const root = process.cwd();
 const read = (rel) => fs.readFileSync(path.join(root, rel), 'utf8');
 
@@ -63,7 +61,6 @@ const AUTHORIZED_SLOT_WRITERS = new Set([
     'src/lib/focus/stage-dom.ts',
     'src/lib/focus/stage-renderer.ts',
     'src/lib/journey/focus-stage-dom.ts',
-    'src/lib/journey/focus-stage-renderer.ts',
     'src/lib/journey/selected-card.ts',
 ]);
 
@@ -138,7 +135,6 @@ for (const file of allFiles) {
 // ── Check C: migrated TS/Svelte ownership files exist ───────────────────────
 const infoPanel = 'src/components/InfoPanel.svelte';
 const focusRendererTS = 'src/lib/focus/stage-renderer.ts';
-const journeyFocusRendererTS = 'src/lib/journey/focus-stage-renderer.ts';
 
 if (!fs.existsSync(path.join(root, infoPanel))) {
     violations.push(`${infoPanel} missing — InfoPanel.svelte owns selected-card declarative content`);
@@ -146,16 +142,13 @@ if (!fs.existsSync(path.join(root, infoPanel))) {
 if (!fs.existsSync(path.join(root, focusRendererTS))) {
     violations.push(`${focusRendererTS} missing — focus stage renderer owns structural slot sync`);
 }
-if (!fs.existsSync(path.join(root, journeyFocusRendererTS))) {
-    violations.push(`${journeyFocusRendererTS} missing — journey focus renderer owns structural slot sync`);
-}
 
 // ── Check D: focus-stage-renderer.ts documents the ownership boundary ───────
 const focusRendererSrc = read(focusRendererTS);
 if (!focusRendererSrc.includes('structural slot management') &&
     !focusRendererSrc.includes('Svelte-owned')) {
     warnings.push(
-        `${focusRendererJS} should document the structural-slot vs Svelte-internal ownership boundary`
+        `${focusRendererTS} should document the structural-slot vs Svelte-internal ownership boundary`
     );
 }
 
@@ -179,4 +172,4 @@ if (warnings.length) {
 console.log('selected-card-dom-ownership-contract OK');
 console.log(`  - structural slot writers: ${STRUCTURAL_SLOT_IDS.length} slots, ${AUTHORIZED_SLOT_WRITERS.size} authorized writers`);
 console.log(`  - Svelte-owned children: ${SVELTE_OWNED_CHILD_IDS.length} elements guarded`);
-console.log(`  - migrated TS/Svelte sources: ${infoPanel}, ${focusRendererTS}, ${journeyFocusRendererTS} present`);
+console.log(`  - migrated TS/Svelte sources: ${infoPanel}, ${focusRendererTS} present`);

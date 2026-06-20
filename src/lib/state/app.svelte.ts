@@ -62,6 +62,12 @@ class AppState {
     searchVectorScrambleTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     compactSearchRevealToken = $state<number>(0)
     compactSearchRevealTimers = $state<Array<ReturnType<typeof setTimeout>>>([])
+    // Migrated from legacy stores (searchResultsStore, searchSummaryStore, isSearchingStore, searchErrorStore, searchVisibleCountStore)
+    searchResults = $state<Array<Record<string, unknown>>>([])
+    searchSummary = $state<Record<string, unknown> | null>(null)
+    isSearching = $state<boolean>(false)
+    searchError = $state<unknown | null>(null)
+    searchVisibleCount = $state<number>(5)
     mobileRouteFieldPeekToken = $state<number>(0)
     semanticLaneMonitorTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     semanticLaneProbePromise = $state<Promise<unknown> | null>(null)
@@ -430,6 +436,60 @@ class AppState {
     legendOpen = $state<boolean>(false)
     demoPhase = $state<string>('IDLE')
     engineBridge = $state<unknown>(null) // Cast to EngineBridge in stores
+
+    // ==== SEMANTIC GUIDE UI STATE ====
+    semanticGuideState = $state<{
+        isVisible: boolean
+        isSynthesizing: boolean
+        config: Record<string, unknown> | null
+        typeToken: number
+        buttonMode: string
+        buttonOptions?: Record<string, unknown>
+    }>({
+        isVisible: false,
+        isSynthesizing: false,
+        config: null,
+        typeToken: 0,
+        buttonMode: 'ready'
+    })
+
+    // ==== WEATHER STATE (MIGRATED FROM weatherStateStore) ====
+    weatherState = $state<{
+        weather: Record<string, unknown> | null
+        lastFetch: number | null
+        fallback: boolean
+        stalenessMsg: string
+    }>({
+        weather: null,
+        lastFetch: null,
+        fallback: false,
+        stalenessMsg: ''
+    })
+
+    // ==== COMPOSITION STATE (MIGRATED FROM compositionStore) ====
+    composition = $state<{
+        activeView: string
+        trailState: string
+        trailDepth: string
+        graphContext: string
+        mapContext: string
+        semanticDive: string
+        panelSurface: string
+        panelSurfaceDetail: string
+        searchGlow: string
+        isActive: boolean
+    }>({
+        activeView: 'galaxy',
+        trailState: 'inactive',
+        trailDepth: '0',
+        graphContext: 'idle',
+        mapContext: 'idle',
+        semanticDive: 'inactive',
+        panelSurface: 'idle',
+        panelSurfaceDetail: 'peek',
+        searchGlow: 'inactive',
+        isActive: false
+    })
 
     // ==== newly consolidated state (MIGRATED FROM INDIVIDUAL STORES) ====
     pocketMotionByIndex = $state<Map<number, any>>(new Map())

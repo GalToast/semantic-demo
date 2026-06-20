@@ -47,9 +47,7 @@ export interface FocusViewBasis {
 }
 
 export function getFocusViewBasis(focusVector: Vec3): FocusViewBasis {
-    const viewVector = state.camera
-        ? new Vec3().subVectors(state.camera.position, focusVector)
-        : new Vec3(0.28, 0.2, 1)
+    const viewVector = state.camera ? new Vec3().subVectors(state.camera.position, focusVector) : new Vec3(0.28, 0.2, 1)
     if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1)
     viewVector.normalize()
 

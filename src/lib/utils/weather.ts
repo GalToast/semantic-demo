@@ -6,7 +6,7 @@
  */
 
 import { state } from '@lib/engine/state-bridge'
-import { weatherStateStore } from '@lib/stores/legacy-stores';
+
 import { appState } from '@lib/state/app.svelte';
 import {
     applyWeatherEffects as applyWeatherEffectsForWeather,
@@ -72,21 +72,21 @@ export async function fetchWeather(): Promise<void> {
         if (!normalized) throw new Error('weather payload incomplete');
         (state as Record<string, unknown>).lastSuccessfulFetch = Date.now();
 
-        weatherStateStore.set({
+        appState.weatherState = {
             weather: appState.weather as Record<string, unknown> | null,
             lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number,
             fallback: false,
             stalenessMsg: ''
-        });
+        };
     } catch (_error: unknown) {
         state.weather = null;
 
-        weatherStateStore.set({
+        appState.weatherState = {
             weather: null,
             lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number | null || null,
             fallback: true,
             stalenessMsg: ''
-        });
+        };
     }
 }
 

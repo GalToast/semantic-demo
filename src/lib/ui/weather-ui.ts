@@ -5,7 +5,7 @@
  * Weather widget DOM rendering and effects.
  */
 
-import { weatherStateStore, compositionStore } from '@lib/stores/legacy-stores';
+import { appState } from '@lib/state/app.svelte';
 import { seededUnit } from '@lib/utils/seeded-random';
 
 let lightningTimer: number | null = null;
@@ -18,12 +18,6 @@ function canUseWeatherDom(): boolean {
         && typeof document.querySelector === 'function';
 }
 
-function getStoreValue<T>(store: { subscribe: (fn: (v: T) => void) => () => void }): T {
-    let value: T;
-    store.subscribe((v: T) => { value = v; })();
-    return value!;
-}
-
 interface WeatherStateValue {
     weather: Record<string, unknown> | null;
     lastFetch: number | null;
@@ -31,30 +25,40 @@ interface WeatherStateValue {
     stalenessMsg: string;
 }
 
-interface CompositionState {
-    activeView: string;
+/**
+ * Reactive wiring — called once at module init.
+ * Reads appState.weatherState and appState.composition directly,
+ * replacing the legacy .subscribe() callbacks.
+ */
+export function initWeatherUiListeners(): void {
+    // No-op placeholder: callers that previously relied on .subscribe()
+    // now call updateWeatherUi / clearWeatherEffects explicitly.
+    // Kept for backward-compat so existing init sequences don't break.
 }
 
-weatherStateStore.subscribe((state: WeatherStateValue) => {
-    if (!canUseWeatherDom() || !state) return;
+/** Reactive handler — call whenever appState.weatherState changes. */
+export function onWeatherStateChange(): void {
+    if (!canUseWeatherDom()) return;
+    const state = appState.weatherState;
     if (state.fallback) {
         renderWeatherFallback(state);
     } else if (state.weather) {
         updateWeatherUi(state);
     }
-});
+}
 
-compositionStore.subscribe((comp: CompositionState) => {
+/** Reactive handler — call whenever appState.composition changes. */
+export function onCompositionChange(): void {
     if (!canUseWeatherDom()) return;
-    if (comp.activeView !== 'map') {
+    if (appState.composition.activeView !== 'map') {
         clearWeatherEffects();
     } else {
-        const weatherState = getStoreValue<WeatherStateValue>(weatherStateStore);
-        if (weatherState?.weather && !weatherState.fallback) {
-            applyWeatherEffects(weatherState.weather);
+        const ws = appState.weatherState;
+        if (ws?.weather && !ws.fallback) {
+            applyWeatherEffects(ws.weather);
         }
     }
-});
+}
 
 export function updateWeatherUi(state: WeatherStateValue): void {
     if (!canUseWeatherDom()) return;
@@ -86,13 +90,12 @@ export function updateWeatherUi(state: WeatherStateValue): void {
 
     updateWeatherStaleness(state.lastFetch);
 
-    const comp = getStoreValue<CompositionState>(compositionStore);
-    if (comp.activeView === 'map') {
+    if (appState.composition.activeView === 'map') {
         applyWeatherEffects(weather);
     }
 
     if (!stalenessIntervalId && typeof window !== 'undefined') {
-        stalenessIntervalId = window.setInterval(() => updateWeatherStaleness(getStoreValue<WeatherStateValue>(weatherStateStore)?.lastFetch), 60000);
+        stalenessIntervalId = window.setInterval(() => updateWeatherStaleness(appState.weatherState?.lastFetch), 60000);
     }
 }
 
@@ -262,8 +265,7 @@ function scheduleLightning(): void {
     let flashCount = 0;
     const flash = (): void => {
         if (generation !== lightningGeneration) return;
-        const comp = getStoreValue<CompositionState>(compositionStore);
-        if (comp.activeView !== 'map') return;
+        if (appState.composition.activeView !== 'map') return;
         const lightning = document.getElementById('lightning-flash');
         if (lightning) {
             lightning.classList.add('flash');

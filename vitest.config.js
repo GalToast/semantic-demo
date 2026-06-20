@@ -6,7 +6,6 @@ import { dirname, resolve } from 'path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const SRC_DIR = resolve(__dirname, 'src')
-const JS_DIR = resolve(__dirname, 'js')
 
 export default defineConfig({
     plugins: [svelte()],
@@ -31,6 +30,9 @@ export default defineConfig({
         globals: true,
         // setupFiles runs before any test file. Store tests import modules that
         // call window.matchMedia during module initialization.
-        setupFiles: ['tests/unit-active/vitest.setup.js']
+        setupFiles: ['tests/unit-active/vitest.setup.js'],
+        sequence: {
+            concurrent: false
+        }
     }
 })

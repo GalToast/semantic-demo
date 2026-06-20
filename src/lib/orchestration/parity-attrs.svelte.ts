@@ -293,7 +293,7 @@ export function computeParityAttributes(): ParityAttributeMap {
         if (nav.currentView === 'map') return 'map'
         if (nav.mode === 'inside') return 'inside'
         if (hasFocusContext && hasSearchContext) return 'focus-search'
-        if (nav.mode === 'focus' || nav.mode === 'trail') return 'focus'
+        if (hasFocusContext) return 'focus'
         if (nav.mode === 'search' || search.summary) return 'corridor'
         if (nav.mode === 'overview') return 'idle'
         return 'idle'
@@ -345,9 +345,9 @@ export function computeParityAttributes(): ParityAttributeMap {
             : 'inactive'
     const semanticDive =
         nav.currentView === 'galaxy'
-            ? focus.semanticDiveMode
+            ? focus.semanticDiveMode && hasFocusContext
                 ? 'active'
-                : journey.depth >= 2
+                : journey.depth >= 2 && hasFocusContext
                   ? 'transitioning'
                   : 'inactive'
             : 'inactive'

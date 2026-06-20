@@ -20,12 +20,12 @@
  */
 
 import { state } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
 import { escapeHtml } from '@lib/utils/dom-formatters';
 import {
   buildSemanticGuideRequestPayload,
   updateLegendGuideState,
-  showSemanticThreadsDetail,
-  semanticGuideStateStore
+  showSemanticThreadsDetail
 } from '@lib/engine/lifecycle-bridge';
 
 function getMostFrequent(values: string[]): string | null {
@@ -84,13 +84,8 @@ export function semanticGuideIcon(id: string, label = ''): string {
 }
 
 export function setSemanticGuideButtonState(mode = 'ready', options: Record<string, any> = {}): void {
-    let currentState: any;
-    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
-    semanticGuideStateStore.set({
-        ...currentState,
-        buttonMode: mode,
-        buttonOptions: options
-    });
+    appState.semanticGuideState.buttonMode = mode;
+    appState.semanticGuideState.buttonOptions = options;
 }
 
 function getSemanticGuideLoadingCardConfig(): any {
@@ -151,27 +146,17 @@ export function showSummaryCard(config: any = {}): void {
     state.currentSemanticGuide = settings;
     (state as any).summaryCardTypeToken = ((state as any).summaryCardTypeToken || 0) + 1;
 
-    let currentState: any;
-    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
-    semanticGuideStateStore.set({
-        ...currentState,
-        isVisible: true,
-        config: settings,
-        typeToken: (state as any).summaryCardTypeToken
-    });
+    appState.semanticGuideState.isVisible = true;
+    appState.semanticGuideState.config = settings;
+    appState.semanticGuideState.typeToken = (state as any).summaryCardTypeToken;
 }
 
 export function hideSummaryCard(): void {
     (state as any).summaryCardTypeToken = ((state as any).summaryCardTypeToken || 0) + 1;
-    let currentState: any;
-    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
-    semanticGuideStateStore.set({
-        ...currentState,
-        isVisible: false,
-        config: null,
-        typeToken: (state as any).summaryCardTypeToken,
-        isSynthesizing: false
-    });
+    appState.semanticGuideState.isVisible = false;
+    appState.semanticGuideState.config = null;
+    appState.semanticGuideState.typeToken = (state as any).summaryCardTypeToken;
+    appState.semanticGuideState.isSynthesizing = false;
 }
 
 function getSemanticGuideTimeoutMs(): number {
@@ -248,12 +233,7 @@ function startSemanticGuideRequest(): { requestId: number; controller: AbortCont
     state.semanticGuideAbortController = controller;
     setSemanticGuideButtonState('loading');
 
-    let currentState: any;
-    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
-    semanticGuideStateStore.set({
-        ...currentState,
-        isSynthesizing: true
-    });
+    appState.semanticGuideState.isSynthesizing = true;
 
     showSummaryCard(getSemanticGuideLoadingCardConfig());
 
@@ -273,12 +253,7 @@ function showSemanticGuideSuccess(guide: any): void {
 }
 
 function showSemanticGuideFailure(payload: any, error: any): void {
-    let currentState: any;
-    semanticGuideStateStore.subscribe((s: any) => currentState = s)();
-    semanticGuideStateStore.set({
-        ...currentState,
-        isSynthesizing: false
-    });
+    appState.semanticGuideState.isSynthesizing = false;
     const fallback = buildClientSemanticGuideFallback(payload);
     showSummaryCard(buildSemanticGuideFallbackCardConfig(fallback));
 }

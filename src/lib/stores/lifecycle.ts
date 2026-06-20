@@ -63,7 +63,7 @@ export const setMyceliumMode = _setMyceliumMode
  * Matches the legacy `deriveGraphContext` in lifecycle.js.
  */
 function deriveGraphContext(
-    view: string,
+    _view: string,
     hasFocus: boolean,
     hasSearchIntent: boolean,
     mapContextOverride?: string
@@ -149,6 +149,35 @@ export function applyCompositionState(): void {
         if (graphContext !== 'idle') {
             delete root.dataset.mobileRoutePeek
             delete root.dataset.mobileRoutePeekReason
+        }
+    }
+
+    // Setup global state mirrors for tests
+    if (typeof window !== 'undefined') {
+        const stateWindow = window as Window & {
+            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> }
+            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
+        }
+        for (const appSt of [
+            stateWindow.__APP_STATE__,
+            stateWindow.__TEST_STATE__,
+            stateWindow.__LEGACY_APP_STATE__,
+            stateWindow.__semanticState,
+            stateWindow.state
+        ]) {
+            if (!appSt) continue
+            appSt.focusedNode = hasFocus
+                ? $nav.focusedIndex || ($focus.selectedBusiness ? ($focus.selectedBusiness as any).index : null)
+                : null
+            appSt.selectedPoint = $focus.selectedBusiness
+            appSt.semanticDiveMode = semanticDive === 'active'
+            if (appSt.navState) {
+                appSt.navState.focusedIndex = appSt.focusedNode
+                appSt.navState.mode = $nav.mode
+            }
         }
     }
 }

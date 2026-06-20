@@ -23,7 +23,7 @@
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
   import { applyUrlState, updateUrlState } from '@lib/orchestration/url-state';
   import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
-  import { semanticGuideStateStore } from '@lib/stores/legacy-stores';
+
   import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide';
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
@@ -88,7 +88,7 @@
     suggestions?: SemanticGuideSuggestion[];
   };
 
-  const semanticGuideConfig = $derived(($semanticGuideStateStore.config ?? {}) as SemanticGuideCardConfig);
+  const semanticGuideConfig = $derived((appState.semanticGuideState.config ?? {}) as SemanticGuideCardConfig);
   const semanticGuideSuggestions = $derived(
     Array.isArray(semanticGuideConfig.suggestions) ? semanticGuideConfig.suggestions : []
   );
@@ -809,8 +809,8 @@
   <div
     id="semantic-summary-card"
     class="summary-card"
-    class:hidden={!$semanticGuideStateStore.isVisible}
-    class:is-synthesizing={$semanticGuideStateStore.isSynthesizing}
+    class:hidden={!appState.semanticGuideState.isVisible}
+    class:is-synthesizing={appState.semanticGuideState.isSynthesizing}
     role="region"
     aria-label="Synthesis summary"
   >

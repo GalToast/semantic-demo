@@ -22,6 +22,7 @@
  * shell until full W16 retirement.
  */
 import { state, withStateMutation } from '@lib/engine/state-bridge'
+import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/engine/journey-webgl-bridge'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import type { StrandContinuityState } from '@lib/state/state-types'
 
@@ -240,22 +241,18 @@ function getWrapperManager(): StrandContinuityManager {
             document.body.dataset.strandJourneyReason = managerState.reason ?? ''
         },
         onArrivalSync: () => {
-            import('@lib/engine/journey-webgl-bridge').then(({ syncArrivalHandoffOverlay }) => {
-                try {
-                    syncArrivalHandoffOverlay()
-                } catch {
-                    /* webgl not initialised yet — tolerate */
-                }
-            }).catch(() => { /* bridge unavailable — tolerate */ })
+            try {
+                syncArrivalHandoffOverlay()
+            } catch {
+                /* webgl not initialised yet — tolerate */
+            }
         },
         onArrivalDispose: () => {
-            import('@lib/engine/journey-webgl-bridge').then(({ disposeArrivalHandoffOverlay }) => {
-                try {
-                    disposeArrivalHandoffOverlay()
-                } catch {
-                    /* already disposed or never initialised */
-                }
-            }).catch(() => { /* bridge unavailable — tolerate */ })
+            try {
+                disposeArrivalHandoffOverlay()
+            } catch {
+                /* already disposed or never initialised */
+            }
         }
     })
     return _wrapperManager

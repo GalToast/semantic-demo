@@ -1,58 +1,83 @@
 /**
  * @lib/stores/legend.svelte.ts — Legend panel visibility store
  *
+ * Svelte 5 / Svelte-first port of the legend panel open state.
  * Manages whether the category legend panel is open.
  * Default: open on desktop (>768px), closed on mobile.
- *
- * Why a plain `writable` instead of `toStore(getter, setter)`:
- *   `toStore` replaces the writable's notifying `set` with the user's custom
- *   setter. In Svelte runtime this works because the render_effect re-reads the
- *   getter after mutations and calls the underlying writable's `set`. But in
- *   jsdom/vitest there is no render_effect, so `store.update()` writes to
- *   appState but subscribers never wake up — `get(store)` returns stale values.
- *
- *   A plain `writable` + `withLegendNotify()` wrapper fixes both: runtime
- *   subscribers are notified by the writable's own `.set()`, and test
- *   environments get synchronous notification too.
  */
-import { get, writable, type Readable } from 'svelte/store';
-import { appState } from '@lib/state/app.svelte.ts';
+import { appState } from '@lib/state/app.svelte.ts'
+import type { Readable } from 'svelte/store'
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
-const _legendWritable = writable<boolean>(appState.legendOpen);
-
-/**
- * Push mutations to both `_legendWritable` and `appState`.
- */
-function withLegendNotify(updater: (v: boolean) => boolean): void {
-  const next = updater(get(_legendWritable));
-  _legendWritable.set(next);
-  appState.withMutation(() => {
-    appState.legendOpen = next;
-  });
+interface LegendStoreApi extends Readable<boolean> {
+    update(fn: (v: boolean) => boolean): void
+    set(value: boolean): void
 }
 
-/** Legend store: Readable<boolean> + update/set. */
-export type LegendStoreApi = Readable<boolean> & {
-  update(fn: (v: boolean) => boolean): void;
-  set(value: boolean): void;
-};
+class LegendStore {
+    // Use Svelte 5 reactive $state directly linked to appState.legendOpen
+    get open(): boolean {
+        return appState.legendOpen
+    }
 
-export const legendOpen: LegendStoreApi = {
-  subscribe: _legendWritable.subscribe,
-  update: (updater) => withLegendNotify(updater),
-  set: (value) => withLegendNotify(() => value),
-};
+    set open(value: boolean) {
+        appState.withMutation(() => {
+            appState.legendOpen = value
+        })
+        this.notify()
+    }
+
+    // Backwards-compatibility subscribers
+    private subscribers = new Set<(v: boolean) => void>()
+
+    /**
+     * Subscribe method to meet Readable<boolean> contract.
+     * Enables Svelte 4/5 `$store` prefix subscription syntax in legacy wrappers.
+     */
+    subscribe = (run: (v: boolean) => void): (() => void) => {
+        this.subscribers.add(run)
+        run(this.open)
+        return () => {
+            this.subscribers.delete(run)
+        }
+    }
+
+    /**
+     * Run all current active subscribers synchronously when a value changes.
+     */
+    private notify(): void {
+        for (const run of this.subscribers) {
+            try {
+                run(this.open)
+            } catch (err) {
+                console.error('[LegendStore] Subscription notification error:', err)
+            }
+        }
+    }
+
+    update(fn: (v: boolean) => boolean): void {
+        this.open = fn(this.open)
+    }
+
+    set(value: boolean): void {
+        this.open = value
+    }
+}
+
+const legendStoreImpl = new LegendStore()
+
+/** Legend store: Readable<boolean> + update/set. */
+export const legendOpen: LegendStoreApi = legendStoreImpl
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 
 /** Toggle the legend panel open/closed. */
 export function toggleLegend(): void {
-  withLegendNotify(v => !v);
+    legendStoreImpl.open = !legendStoreImpl.open
 }
 
 /** Set the legend panel to a specific open/closed state. */
 export function setLegendOpen(open: boolean): void {
-  withLegendNotify(() => open);
+    legendStoreImpl.open = open
 }

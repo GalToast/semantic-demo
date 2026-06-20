@@ -58,7 +58,8 @@ export function removeFocusSemanticOverlay(): void {
 
 function getFocusCurvePointLocal(edge: any, t: number): Vector3 {
     if (typeof getFocusThreadCurvePoint === 'function') {
-        return getFocusThreadCurvePoint(edge, t);
+        const point = getFocusThreadCurvePoint(edge, t);
+        return new Vector3(point.x, point.y, point.z);
     }
     const a = _state.nodePositions[edge.a];
     const b = _state.nodePositions[edge.b];

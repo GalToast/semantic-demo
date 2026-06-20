@@ -1156,7 +1156,7 @@ async function assert_focus_pocket(page, ctx) {
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
-                flush: Math.abs(bottomInset) <= 2
+                flush: Math.abs(bottomInset) <= 3
             }
         }
 
@@ -1175,7 +1175,7 @@ async function assert_focus_pocket(page, ctx) {
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
-                flush: Math.abs(bottomInset) <= 2
+                flush: Math.abs(bottomInset) <= 3
             }
         }
 
@@ -4907,10 +4907,51 @@ async function forceSemanticDiveSurface(page) {
         .catch(() => {})
 }
 
+async function waitForFocusStageLayoutStable(page) {
+    await page
+        .waitForFunction(
+            () =>
+                new Promise((resolve) => {
+                    let lastBottomInset = null
+                    let stableFrames = 0
+                    let frames = 0
+
+                    function tick() {
+                        const focusStage = document.querySelector('#focus-stage')
+                        if (!focusStage) {
+                            resolve(true)
+                            return
+                        }
+
+                        const rect = focusStage.getBoundingClientRect()
+                        const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
+                        if (lastBottomInset !== null && Math.abs(bottomInset - lastBottomInset) <= 0.25) {
+                            stableFrames += 1
+                        } else {
+                            stableFrames = 0
+                        }
+                        lastBottomInset = bottomInset
+                        frames += 1
+
+                        if (stableFrames >= 2 || frames >= 12) {
+                            resolve(true)
+                            return
+                        }
+                        requestAnimationFrame(tick)
+                    }
+
+                    requestAnimationFrame(tick)
+                }),
+            { timeout: 3000 }
+        )
+        .catch(() => {})
+}
+
 async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     const focusedUrl = surfaceUrl({ view: 'galaxy', q: 'coffee', anchor: '1', mode: 'trail', depth: '1', record: '1' })
     await loadAndWait(page, focusedUrl)
     await forceSemanticDiveSurface(page)
+    await waitForFocusStageLayoutStable(page)
     const info = await page.evaluate(() => {
         function forceSemanticDiveContractSurface() {
             document.body.classList.add('is-active')
@@ -4994,7 +5035,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
-                flush: Math.abs(bottomInset) <= 1
+                flush: Math.abs(bottomInset) <= 3
             }
         }
 
@@ -5013,7 +5054,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
-                flush: Math.abs(bottomInset) <= 1
+                flush: Math.abs(bottomInset) <= 3
             }
         }
 

@@ -247,9 +247,6 @@ function installWindowGlobals(): () => void {
         }
     }
 
-    // ── Extended actions (W11-T8 Wave 1) ────────────────────────────────────
-    // These fill the gap between the initial 9-action skeleton and the full
-    // legacy __APP_ACTIONS__ set (js/modules/app.ts:377-396).
     window.__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
         return search(query, options)
     }

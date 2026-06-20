@@ -27,7 +27,7 @@ export { applyClusterUiAccent } from '../ui/cluster-ui-accent'
 export { buildSemanticGuideRequestPayload } from '../journey/semantic-guide-payload'
 export { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts'
 export { showSemanticThreadsDetail } from '../journey/connection-analysis'
-export { semanticGuideStateStore } from '../stores/legacy-stores'
+
 export { getNextWalkCandidateForIndex } from '../journey/lifecycle-adapter'
 export { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '../journey/focus-stage-dom'
 
