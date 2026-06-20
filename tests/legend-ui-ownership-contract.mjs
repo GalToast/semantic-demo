@@ -94,8 +94,10 @@ function testNoLiveSourceImportsFromDeletedKernel() {
 
     // Use ripgrep to find any imports from the deleted kernel path
     try {
+        const searchRoots = ['src/']
+        if (fs.existsSync(path.join(SEMDEMO_ROOT, 'js'))) searchRoots.push('js/')
         const result = execSync(
-            'rg -l "from.*js/modules/legend-ui" --glob "!tests/" --glob "!legacy-reference/" --glob "!docs/" src/ js/',
+            `rg -l "from.*js/modules/legend-ui" --glob "!tests/" --glob "!legacy-reference/" --glob "!docs/" ${searchRoots.join(' ')}`,
             { cwd: SEMDEMO_ROOT, encoding: 'utf-8', timeout: 15000 }
         ).trim()
 

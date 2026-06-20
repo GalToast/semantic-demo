@@ -78,7 +78,7 @@ const knownOrigins = {
   ],
   // worker-src origins
   'worker-src': [
-    { origin: "'self'", source: 'js/workers/data-worker.js' },
+    { origin: "'self'", source: 'src/lib/workers/data-worker.ts' },
   ],
 };
 

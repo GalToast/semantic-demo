@@ -7,7 +7,7 @@
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
 import { handleGalaxyKeydown, initKeyboardResetOwnership, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help'
-import { returnToOverview, resetExplorationFocus } from '@lib/engine/lifecycle-bridge'
+import { returnToOverview, resetExplorationFocus } from '@lib/orchestration/lifecycle'
 import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } from '@lib/ui/semantic-lane-bindings'
 import { applyUrlState } from '@lib/orchestration/url-state'
 

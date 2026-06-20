@@ -47,7 +47,7 @@ import {
     updateSelectedCardHeading,
     syncSelectedCardContentVariant
 } from '@lib/focus/stage-renderer'
-import { applyClusterUiAccent } from '@lib/engine/lifecycle-bridge'
+import { applyClusterUiAccent } from '@lib/ui/cluster-ui-accent'
 import { isMapSummarySurface } from '@lib/utils/environment'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { seededUnit } from '@lib/utils/seeded-random'

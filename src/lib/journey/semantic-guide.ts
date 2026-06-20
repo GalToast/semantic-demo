@@ -22,11 +22,9 @@
 import { state } from '@lib/engine/state-bridge';
 import { appState } from '@lib/state/app.svelte';
 import { escapeHtml } from '@lib/utils/dom-formatters';
-import {
-  buildSemanticGuideRequestPayload,
-  updateLegendGuideState,
-  showSemanticThreadsDetail
-} from '@lib/engine/lifecycle-bridge';
+import { buildSemanticGuideRequestPayload } from '@lib/journey/semantic-guide-payload';
+import { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts';
+import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis';
 
 function getMostFrequent(values: string[]): string | null {
     if (!values?.length) return null;

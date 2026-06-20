@@ -24,12 +24,14 @@ import { resolveSource } from './source-path.mjs'
 const SEMDEMO_ROOT = path.resolve(process.cwd())
 const JOURNEY_PATH = resolveSource('src/lib/journey/journey.ts', SEMDEMO_ROOT)
 const JOURNEY_POINT_COLOR_PATH = resolveSource('src/lib/journey/point-color.ts', SEMDEMO_ROOT)
+// @ts-ignore
 const JOURNEY_CANVAS_INTERACTION_PATH = resolveSource('src/lib/journey/canvas-interaction.ts', SEMDEMO_ROOT)
 const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('src/lib/journey/canvas-node-picking.ts', SEMDEMO_ROOT)
 const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('src/lib/journey/canvas-hit-test.ts', SEMDEMO_ROOT)
 const THREAD_INSPECTOR_PATH = resolveSource('src/lib/journey/thread-inspector.ts', SEMDEMO_ROOT)
 const JOURNEY_THREAD_MODEL_PATH = resolveSource('src/lib/journey/thread-model.ts', SEMDEMO_ROOT)
-const JOURNEY_THREAD_MODEL_BRIDGE_PATH = resolveSource('src/lib/engine/journey-thread-model-bridge.ts', SEMDEMO_ROOT)
+// retired journey-thread-model-bridge.ts in Svelte 5 modernization sweep
+// @ts-ignore
 const JOURNEY_WEBGL_PATH = resolveSource('src/lib/journey/webgl.ts', SEMDEMO_ROOT)
 const JOURNEY_ROUTE_TRACE_PATH = resolveSource('src/lib/journey/route-trace.ts', SEMDEMO_ROOT)
 const JOURNEY_SEMANTIC_OVERLAY_PATH = resolveSource('src/lib/journey/semantic-overlay.ts', SEMDEMO_ROOT)
@@ -287,7 +289,6 @@ function testThreadInspectorSemanticFirst() {
 
     const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const journeyModelSrc = fs.readFileSync(JOURNEY_THREAD_MODEL_PATH, 'utf-8')
-    const journeyModelBridgeSrc = fs.readFileSync(JOURNEY_THREAD_MODEL_BRIDGE_PATH, 'utf-8')
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
 
     // Both files must have getSemanticThreadCandidates
@@ -319,18 +320,9 @@ function testThreadInspectorSemanticFirst() {
         'journey-thread-model: semantic-first strategy'
     )
 
-    // journey.ts must consume the thread model through the engine bridge, not
-    // through thread-inspector or a resurrected direct legacy import.
-    assertContains(
-        journeySrc,
-        "from '@lib/engine/journey-thread-model-bridge'",
-        'journey.ts imports from journey-thread-model bridge'
-    )
-    assertContains(
-        journeyModelBridgeSrc,
-        "from '@lib/journey/thread-model'",
-        'journey-thread-model bridge re-exports canonical thread model'
-    )
+    // journey.ts must consume the thread model directly, not
+    // through retired engine/adapters or a resurrected direct legacy import.
+    assertContains(journeySrc, "from './thread-model'", 'journey.ts imports from thread-model directly')
 
     // thread-inspector.js must NOT re-implement normalizeLeadId; it must use the shared version.
     assert(journeyModelSrc.includes('function normalizeLeadId'), 'journey-thread-model has canonical normalizeLeadId')
@@ -353,8 +345,6 @@ function testThreadInspectorSemanticFirst() {
         assert(tiBlock.includes('getThreadCandidatesForIndex,'), 'window._ti.getThreadCandidatesForIndex')
         assert(tiBlock.includes('exploreThreadNeighbor'), 'window._ti.exploreThreadNeighbor diagnostic access')
     }
-
-    assertContains(journeyModelBridgeSrc, 'normalizeLeadId,', 'bridge exports normalizeLeadId from thread-model')
 
     console.log('  OK thread-inspector dual candidates strategy verified')
 }
@@ -379,7 +369,7 @@ function testSharedStrandContinuityOwner() {
     )
     assertContains(
         strandContinuitySrc,
-        "from '@lib/engine/journey-webgl-bridge'",
+        "from '@lib/engine/journey-webgl-lazy'",
         'strand-continuity owns arrival handoff overlay imports'
     )
 
@@ -387,6 +377,9 @@ function testSharedStrandContinuityOwner() {
         /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity(?:\.ts)?['"]/.test(
             journeySrc
         ) ||
+            /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/utils\/strand-continuity['"]/.test(
+                journeySrc
+            ) ||
             /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/engine\/strand-continuity-bridge['"]/.test(
                 journeySrc
             ),
@@ -396,6 +389,9 @@ function testSharedStrandContinuityOwner() {
         /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]\.\/strand-continuity(?:\.ts)?['"]/.test(
             threadInspectorSrc
         ) ||
+            /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/utils\/strand-continuity['"]/.test(
+                threadInspectorSrc
+            ) ||
             /import\s*\{[^}]*\bsetStrandContinuityState\b[^}]*\bclearStrandContinuityState\b[^}]*\}\s*from\s*['"]@lib\/engine\/strand-continuity-bridge['"]/.test(
                 threadInspectorSrc
             ),

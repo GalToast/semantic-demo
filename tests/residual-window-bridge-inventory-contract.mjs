@@ -521,19 +521,21 @@ function testJourneyArrivalHandoffDewindowed() {
         }
     }
     assert(
-        /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"](?:\.\/journey-webgl\.(?:js|ts)|@lib\/engine\/journey-webgl-bridge)['"]/.test(
+        /import\s+\{[^}]*\bsyncArrivalHandoffOverlay\b[^}]*\bdisposeArrivalHandoffOverlay\b[^}]*\}\s+from\s+['"](?:\.\/journey-webgl\.(?:js|ts)|@lib\/engine\/journey-webgl-bridge|@lib\/engine\/journey-webgl-lazy)['"]/.test(
             strandContinuitySrc
         ),
         'strand-continuity.ts should import arrival handoff functions directly from journey-webgl (legacy or bridge alias)'
     )
     assert(
         journeySrc.includes("from './strand-continuity.ts'") ||
-            journeySrc.includes("from '@lib/engine/strand-continuity-bridge'"),
+            journeySrc.includes("from '@lib/engine/strand-continuity-bridge'") ||
+            journeySrc.includes("from '@lib/utils/strand-continuity'"),
         'journey.ts should import strand continuity state from the shared owner (legacy or bridge alias)'
     )
     assert(
         threadInspectorSrc.includes("from './strand-continuity.ts'") ||
-            threadInspectorSrc.includes("from '@lib/engine/strand-continuity-bridge'"),
+            threadInspectorSrc.includes("from '@lib/engine/strand-continuity-bridge'") ||
+            threadInspectorSrc.includes("from '@lib/utils/strand-continuity'"),
         'thread-inspector.ts should import strand continuity state from the shared owner (legacy or bridge alias)'
     )
     assert(
@@ -563,7 +565,8 @@ function testJourneyArrivalHandoffDewindowed() {
         'journey-webgl.js should register route/arrival overlay frame updaters with the adapter'
     )
     assert(
-        threeSetupSrc.includes("from '@lib/engine/route-arrival-overlay-bridge'") &&
+        (threeSetupSrc.includes("from '@lib/engine/route-arrival-overlay-bridge'") ||
+            threeSetupSrc.includes("from '@lib/journey/route-arrival-overlay-adapter'")) &&
             threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow)') &&
             threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)'),
         'three-engine.js should update route/arrival overlays through the adapter'

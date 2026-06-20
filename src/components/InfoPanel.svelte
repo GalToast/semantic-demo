@@ -19,8 +19,7 @@
     #selected-map, #selected-thread, #selected-trivia
 -->
 <script lang="ts">
-  import { hasFocus, currentSurface } from '@lib/stores/navigation.svelte.ts';
-  import { focusedIndex } from '@lib/stores/navigation.svelte.ts';
+  import { hasFocus, currentSurface, navStore } from '@lib/stores/navigation.svelte.ts';
   import { activeResult, searchSummary } from '@lib/stores/search.svelte';
   import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import type { BusinessRecord } from '@lib/types/business';
@@ -137,9 +136,9 @@
 
   // ── Derived state ─────────────────────────────────────────────────────────────
 
-  let currentFocusedIdx = $derived(focusedIndex());
+  let currentFocusedIdx = $derived($navStore.focusedIndex);
   let currentActiveResult = $derived(activeResult());
-  let isFocused = $derived(hasFocus());
+  let isFocused = $derived($navStore.mode === 'focus' || $navStore.mode === 'inside' || $navStore.focusedIndex !== null);
   let surface = $derived(currentSurface());
 
   function bodySurfaceOwnsInfoPanel(surfaceValue: string): boolean {

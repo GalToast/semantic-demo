@@ -7,7 +7,7 @@
  * 1. Hard invariants (must always pass — regressions if they fail)
  *    - No deep-relative ../../src/lib/ imports in js/modules/
  *    - W20 canonical files exist and are wired correctly
- *    - 3 companion regression tests exist
+ *    - canonical lifecycle/composition regression tests exist
  * 2. Wave 4 cleanup status (expected to fail until parallel session lands)
  *    - File deletions pending: lifecycle.ts, lifecycle-modes.ts, lifecycle-reset.ts
  *    - Import violations from deleted lifecycle.ts: 5 files still importing
@@ -40,7 +40,6 @@ const PENDING_DELETIONS = ['lifecycle.ts', 'lifecycle-modes.ts', 'lifecycle-rese
 const MUST_EXIST_FILES = [
     join('src', 'lib', 'orchestration', 'composition-state.ts'),
     join('src', 'lib', 'orchestration', 'lifecycle.ts'),
-    join('tests', 'unit-active', 'lifecycle-bridge-canonical-regression.test.ts'),
     join('tests', 'unit-active', 'lifecycle-canonical-semantic-dive-mode-regression.test.ts'),
     join('tests', 'unit-active', 'composition-state-canonical-regression.test.ts')
 ] as const
@@ -150,11 +149,12 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
             expect(src).toMatch(/from ['"]@lib\/stores\/lifecycle['"]/)
         })
 
-        it('lifecycle-bridge imports from @lib/orchestration/lifecycle (not legacy js/modules)', () => {
+        it('lifecycle bridge is retired; consumers import @lib/orchestration/lifecycle directly', () => {
             const bridge = join(PROJECT_ROOT, 'src/lib/engine/lifecycle-bridge.ts')
-            const src = readFileSync(bridge, 'utf-8')
-            expect(src).toContain("from '@lib/orchestration/lifecycle'")
-            expect(src).not.toContain("from '../../../js/modules/lifecycle'")
+            expect(existsSync(bridge), 'src/lib/engine/lifecycle-bridge.ts should stay retired').toBe(false)
+            const demo = readFileSync(join(PROJECT_ROOT, 'src/lib/engine/demo-choreography.ts'), 'utf-8')
+            expect(demo).toContain("from '@lib/orchestration/lifecycle'")
+            expect(demo).not.toContain("from '@lib/engine/lifecycle-bridge'")
         })
     })
 

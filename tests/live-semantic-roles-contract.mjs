@@ -122,7 +122,7 @@ try {
 
   const requiredResources = [
     /\/dist\/bundle\.js/,
-    /\/js\/workers\/data-worker\.js/,
+    /(?:\/js\/workers\/data-worker|\/src\/lib\/workers\/data-worker|data-worker-[a-zA-Z0-9_-]+)\.(?:js|ts)/,
     /\/data\.dat/,
     /\/semantic_threads_ui\.dat/,
     /\/css\/journey_steps\.css/

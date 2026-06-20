@@ -10,7 +10,8 @@ import type { Point } from '@lib/engine/state-bridge';
 
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
-import { setActiveSearchResultRow, updateSearchTrailCue } from '@lib/engine/lifecycle-bridge';
+import { setActiveSearchResultRow } from '@lib/search/result-renderer';
+import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer';
 
 export function showExperienceToast(title: string, copy: string): void {
     const toast = document.getElementById('experience-reset-toast');

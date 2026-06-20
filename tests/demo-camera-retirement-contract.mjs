@@ -43,8 +43,9 @@ function walkJs(dir) {
 }
 
 function sourceFiles() {
+    const jsDir = path.join(ROOT, 'js');
     return [
-        ...walkJs(path.join(ROOT, 'js')),
+        ...(fs.existsSync(jsDir) ? walkJs(jsDir) : []),
         ...walkJs(path.join(ROOT, 'tests')),
         ...fs.readdirSync(ROOT)
             .filter((entry) => entry.endsWith('.html'))

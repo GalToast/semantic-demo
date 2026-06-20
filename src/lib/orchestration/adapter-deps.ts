@@ -20,7 +20,7 @@ import {
     updateTraversalUi,
     shouldUseFloatingFocusJourneyOnly
 } from '@lib/journey/focus-ui'
-import { revealSelectedBusinessCard } from '@lib/engine/lifecycle-bridge'
+import { revealSelectedBusinessCard } from '@lib/ui/panel-bindings'
 import { describeThreadLensForPoint } from '@lib/journey/point-color'
 import { _getSelectedBusinessRoleLabel } from '@lib/utils/role-label'
 

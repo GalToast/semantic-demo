@@ -186,28 +186,28 @@ function syncSvelteNavFromLegacy(): void {
     // focusedIndex + trail/thread bookkeeping.
     navStore.update((state) => ({
         ...state,
-        focusedIndex,
-        trailSeedIndex: asFiniteNumber(navState.trailSeedIndex),
-        trailNeighborIndices: finiteIndexList(navState.trailNeighborIndices),
+        focusedIndex: focusedIndex ?? state.focusedIndex,
+        trailSeedIndex: asFiniteNumber(navState.trailSeedIndex) ?? state.trailSeedIndex,
+        trailNeighborIndices: finiteIndexList(navState.trailNeighborIndices) ?? state.trailNeighborIndices,
         trailCursor: asFiniteNumber(navState.trailCursor) ?? state.trailCursor,
         trailDepth: asFiniteNumber(navState.trailDepth) ?? state.trailDepth,
-        walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices),
+        walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices) ?? state.walkHistoryIndices,
         lastTraversalReason:
             typeof navState.lastTraversalReason === 'string' ? navState.lastTraversalReason : state.lastTraversalReason,
-        threadCandidates: valueArray(navState.threadCandidates) as any[],
+        threadCandidates: valueArray(navState.threadCandidates) as any[] ?? state.threadCandidates,
         threadReasonByIndex:
             navState.threadReasonByIndex instanceof Map
                 ? (navState.threadReasonByIndex as Map<number, string>)
                 : state.threadReasonByIndex,
         threadSource: typeof navState.threadSource === 'string' ? navState.threadSource : state.threadSource,
-        focusPocketIndices: finiteIndexList(navState.focusPocketIndices),
+        focusPocketIndices: finiteIndexList(navState.focusPocketIndices) ?? state.focusPocketIndices,
         focusPocketMeta:
             (navState.focusPocketMeta as typeof state.focusPocketMeta | undefined) ?? state.focusPocketMeta,
         focusPocketRoleByIndex:
             navState.focusPocketRoleByIndex instanceof Map
                 ? (navState.focusPocketRoleByIndex as Map<number, string>)
                 : state.focusPocketRoleByIndex,
-        neighborhoodIndices: finiteIndexList(navState.neighborhoodIndices)
+        neighborhoodIndices: finiteIndexList(navState.neighborhoodIndices) ?? state.neighborhoodIndices
     }))
 
     journeyStore.update((state) => ({

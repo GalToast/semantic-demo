@@ -72,9 +72,10 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
         expect(src).not.toContain("from '../../../js/modules/bindings/panel-bindings'")
     })
 
-    it('imports lifecycle via the bridge (not direct legacy path)', () => {
+    it('imports lifecycle via the canonical orchestration module (not bridge or legacy path)', () => {
         const src = readSource()
-        expect(src).toContain("from '@lib/engine/lifecycle-bridge'")
+        expect(src).toContain("from '@lib/orchestration/lifecycle'")
+        expect(src).not.toContain("from '@lib/engine/lifecycle-bridge'")
         expect(src).not.toContain("from '../../../js/modules/lifecycle'")
     })
 

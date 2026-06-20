@@ -110,8 +110,8 @@ assert(
     'selected node filament opacity should be visible enough to read as a halo'
 )
 assert(
-    interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.18 : 0.135) : 0.0;') &&
-        interactionVisuals.includes('const auraScale = isInside ? 0.088 : 0.082;'),
+    interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0;') &&
+        interactionVisuals.includes('const auraScale = isInside ? 0.044 : 0.082;'),
     'focus halo should stay restrained so it does not wash out the selected-node scene'
 )
 

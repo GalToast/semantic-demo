@@ -59,4 +59,4 @@ These files are fetched lazily at runtime via `buildAssetUrl("data/<filename>?v=
 in `src/lib/data-loader.ts` and `src/lib/semantic-threads.ts`. The cache-buster
 query parameter (`v=`) is an hourly epoch to invalidate browser caches on deploy.
 
-Workers (`js/workers/data-worker.ts`) handle the heavy parsing off the main thread.
+Workers (`src/lib/workers/data-worker.ts`) handle the heavy parsing off the main thread.

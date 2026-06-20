@@ -22,6 +22,23 @@ import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
 import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
 
+// ── Cross-chunk singleton helpers ────────────────────────────────────────────
+// When Vite code-splits, this module can be duplicated into multiple chunks.
+// Each duplicate would create its own writable-store instances, so consumers
+// in different chunks would see different (empty) stores.  We use a plain
+// *window* data property to share the canonical store instances.
+function getOrCreateWritable<T>(windowKey: string, initial: T) {
+    const existing = typeof window !== 'undefined' ? (window as any)[windowKey] : undefined
+    if (existing && typeof existing.subscribe === 'function') {
+        return existing as ReturnType<typeof writable<T>>
+    }
+    const store = writable<T>(initial)
+    if (typeof window !== 'undefined') {
+        ;(window as any)[windowKey] = store
+    }
+    return store
+}
+
 // ── Status Types ──────────────────────────────────────────────────────────────
 
 export type DataLoadStatus = 'idle' | 'loading' | 'ready' | 'error'
@@ -40,7 +57,10 @@ export interface DataLoadState {
 // ── Stores ────────────────────────────────────────────────────────────────────
 
 /** Raw business records loaded from data.dat */
-export const businessRecords = writable<readonly BusinessRecord[]>([])
+export const businessRecords = getOrCreateWritable<readonly BusinessRecord[]>(
+    '__SEMANTIC_EXPLORER_DATA_BUSINESS_RECORDS__',
+    []
+)
 
 /**
  * Hydrate the Svelte stores from the legacy state.
@@ -129,12 +149,15 @@ export const semanticNeighborMap = writable<Map<string, SemanticNeighborEntry>>(
 export const layoutManifest = writable<LayoutManifest | null>(null)
 
 /** Overall data loading state */
-export const dataLoadState = writable<DataLoadState>({
-    status: 'idle',
-    businessLoaded: false,
-    threadsLoaded: false,
-    error: null
-})
+export const dataLoadState = getOrCreateWritable<DataLoadState>(
+    '__SEMANTIC_EXPLORER_DATA_LOAD_STATE__',
+    {
+        status: 'idle',
+        businessLoaded: false,
+        threadsLoaded: false,
+        error: null
+    }
+)
 
 let leadEnrichmentLoadPromise: Promise<Record<string, LeadEnrichment> | null> | null = null
 
@@ -145,13 +168,19 @@ let leadEnrichmentLoadPromise: Promise<Record<string, LeadEnrichment> | null> | 
  * The LoadingOverlay and parity-attrs.svelte.ts layer read from this store.
  * Replaces the collapsed 2-state derivation that only had records/launch.
  */
-export const loadingPhaseStore = writable<LoadingPhase>('records')
+export const loadingPhaseStore = getOrCreateWritable<LoadingPhase>(
+    '__SEMANTIC_EXPLORER_DATA_LOADING_PHASE__',
+    'records'
+)
 
 /**
  * Graphics mode: 'webgl' when GPU rendering is available, 'fallback' otherwise.
  * The engine bridge should set this during init; parity-attrs.svelte.ts reads it.
  */
-export const graphicsModeStore = writable<'webgl' | 'fallback'>('webgl')
+export const graphicsModeStore = getOrCreateWritable<'webgl' | 'fallback'>(
+    '__SEMANTIC_EXPLORER_DATA_GRAPHICS_MODE__',
+    'webgl'
+)
 
 /**
  * Set the loading phase and sync body.dataset for legacy test compat.

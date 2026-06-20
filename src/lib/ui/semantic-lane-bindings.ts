@@ -4,7 +4,7 @@
  * Semantic lane retry, focus, and visibility controls.
  */
 
-import { probeSemanticLane } from '@lib/engine/lifecycle-bridge';
+import { probeSemanticLane } from '@lib/orchestration/lifecycle';
 import { loadSemanticThreads } from '@lib/semantic-threads';
 
 type RecordSemanticLaneSnapshot = (snapshot: { state: string; attempted_warm: boolean }) => void;

@@ -71,7 +71,7 @@ import {
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant
-} from '@lib/engine/lifecycle-bridge'
+} from '@lib/focus/stage-renderer'
 import {
     isCondensedFocusStageViewport,
     hasColdDegradedSemanticFallback,
@@ -95,7 +95,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from './point-color'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
-import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/engine/lifecycle-bridge'
+import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/orchestration/lifecycle'
 import { appState } from '@lib/state/app.svelte'
 
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {

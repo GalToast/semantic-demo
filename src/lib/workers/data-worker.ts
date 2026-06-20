@@ -103,10 +103,10 @@ self.onmessage = async (event: MessageEvent) => {
             const result = await handleLoadRecords(payload)
             if (requestId !== _activeRequestId && !incomingRequestId) return
             // Transfer buffers to main thread to eliminate cloning overhead
-            self.postMessage({ type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId }, [
-                result.positionsBuffer.buffer,
-                result.clustersBuffer.buffer
-            ])
+            ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
+                { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
+                [result.positionsBuffer.buffer, result.clustersBuffer.buffer] as Transferable[]
+            )
         } else if (type === 'LOAD_THREADS') {
             const result = await handleLoadThreads(payload, requestId)
             if (requestId !== _activeRequestId && !incomingRequestId) return
@@ -294,9 +294,9 @@ function normalizeLeadId(id: unknown): string | null {
 
 function artifactNameFromUrl(url: string): string {
     try {
-        return new URL(url).pathname.split('/').pop() || url.split('?')[0]
+        return new URL(url).pathname.split('/').pop() || url.split('?')[0] || url
     } catch {
-        return url.split('?')[0]
+        return url.split('?')[0] || url
     }
 }
 
