@@ -13,6 +13,9 @@ const src = readFileSync(resolve(CWD, 'src/lib/engine/three-engine.ts'), 'utf8')
 const nodeManagerSrc = readFileSync(resolveSource('src/lib/engine/node-manager.ts', CWD), 'utf8');
 const interactionSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-interaction-visuals.ts'), 'utf8');
 const shellCss = readFileSync(resolve(CWD, 'css/shell.css'), 'utf8');
+const biofieldCss = readFileSync(resolve(CWD, 'src/lib/css/biofield.css'), 'utf8');
+const semanticManifoldSrc =
+  interactionSrc.match(/export\s+function\s+initSemanticManifold\s*\(\)\s*\{[\s\S]*?export\s+function\s+initSemanticLens/)?.[0] ?? '';
 
 const checks = [
   {
@@ -30,16 +33,18 @@ const checks = [
   },
   {
     name: 'county point cloud does not use additive blending',
-    pass: /blending:\s*THREE\.NormalBlending/.test(nodeManagerSrc),
+    pass: /import\s*\{[\s\S]*\bNormalBlending\b[\s\S]*\}\s*from\s*['"]three['"]/.test(nodeManagerSrc)
+      && /webglContext\.pointsMaterial\s*=\s*new\s+PointsMaterial[\s\S]{0,520}?blending:\s*NormalBlending/.test(nodeManagerSrc),
   },
   {
     name: 'node spore field does not use additive blending',
-    pass: /const\s+sporeMat\s*=\s*new\s+THREE\.MeshPhongMaterial[\s\S]{0,620}?blending:\s*THREE\.NormalBlending/.test(nodeManagerSrc),
+    pass: /const\s+sporeMat\s*=\s*new\s+MeshPhongMaterial[\s\S]{0,620}?blending:\s*NormalBlending/.test(nodeManagerSrc),
   },
   {
     name: 'semantic manifold is atmospheric, not additive',
-    pass: /state\.semanticManifold\s*=\s*new\s+THREE\.Mesh[\s\S]{0,600}?state\.scene\.add\(state\.semanticManifold\)/.test(interactionSrc)
-      && /blending:\s*THREE\.NormalBlending/.test(interactionSrc),
+    pass: /state\.semanticManifold\s*=\s*new\s+Mesh[\s\S]{0,160}?state\.scene\.add\(state\.semanticManifold\)/.test(semanticManifoldSrc)
+      && /const\s+manifoldMat\s*=\s*new\s+ShaderMaterial[\s\S]*?blending:\s*NormalBlending/.test(semanticManifoldSrc)
+      && !/blending:\s*AdditiveBlending/.test(semanticManifoldSrc),
   },
   {
     name: 'semantic lens score uniform exists before render loop updates it',
@@ -57,11 +62,14 @@ const checks = [
   },
   {
     name: 'focus DOM atmosphere does not screen-blend a white veil over WebGL',
-    pass: /body\[data-trail-state=\"active\"\]\s+\.biofield-atmosphere,\s*body\[data-panel-surface=\"focus\"\]\s+\.biofield-atmosphere,\s*body\[data-panel-surface=\"focus-search\"\]\s+\.biofield-atmosphere\s*\{[\s\S]{0,140}?opacity:\s*0\.18\s*;[\s\S]{0,80}?mix-blend-mode:\s*normal\s*;/.test(shellCss),
+    pass: /#canvas-container\s*\{[\s\S]{0,260}?isolation:\s*isolate\s*;/.test(shellCss)
+      && /\.biofield-glow::before\s*\{[\s\S]{0,360}?mix-blend-mode:\s*normal\s*;/.test(biofieldCss)
+      && !/\.biofield-glow::before\s*\{[\s\S]{0,360}?mix-blend-mode:\s*screen\s*;/.test(biofieldCss),
   },
   {
-    name: 'focus biofield orbs are subdued so nodes remain the visual signal',
-    pass: /body\[data-panel-surface=\"focus\"\]\s+\.biofield-orb,\s*body\[data-panel-surface=\"focus-search\"\]\s+\.biofield-orb,[\s\S]{0,180}?opacity:\s*0\.025\s*;/.test(shellCss),
+    name: 'focus biofield accent remains subdued so nodes remain the visual signal',
+    pass: /\.biofield-glow::before\s*\{[\s\S]{0,260}?rgba\(0,\s*255,\s*170,\s*0\.08\)/.test(biofieldCss)
+      && /50%\s*\{[^}]*opacity:\s*0\.38\s*;/.test(biofieldCss),
   },
 ];
 
