@@ -60,7 +60,7 @@ async function captureRendererState(page) {
 }
 
 // Check whether the canvas has actual rendered content (non-blank)
-async function canvasHasContent(page) {
+async function _canvasHasContent(page) {
   return page.evaluate(() => {
     const canvas = document.querySelector('canvas');
     if (!canvas) return false;
@@ -158,7 +158,7 @@ test.describe('WebGL Context Loss Resilience', () => {
     await waitForAppReady(page);
 
     const beforePointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0);
-    const beforeMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
+    const _beforeMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
 
     expect(beforePointCount, 'scene must have points loaded').toBeGreaterThan(0);
 
@@ -185,7 +185,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
     // Verify state integrity
     const afterPointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0);
-    const afterMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
+    const _afterMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
     const pointsMeshExists = await page.evaluate(() => window.__TEST_STATE__?.pointsMesh !== null);
     const rendererExists = await page.evaluate(() => window.__TEST_STATE__?.renderer !== null);
 
@@ -199,7 +199,7 @@ test.describe('WebGL Context Loss Resilience', () => {
     await waitForAppReady(page);
 
     // Record animation loop state before loss
-    const rafBefore = await page.evaluate(() => {
+    const _rafBefore = await page.evaluate(() => {
       const r = window.__TEST_STATE__?.renderer;
       return r ? 'active' : 'no-renderer';
     });

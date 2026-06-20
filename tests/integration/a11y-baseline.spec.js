@@ -31,10 +31,10 @@
  *   A11Y_MAX_VIOLATIONS  — fail threshold per state (default: 5)
  */
 
-import { test, expect } from '@playwright/test'
+import { test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import {
-    installMockFetch,
+    _installMockFetch,
     captureConsoleErrors,
     withRetry,
     navigateToApp,

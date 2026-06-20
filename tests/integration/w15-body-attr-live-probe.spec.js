@@ -26,7 +26,7 @@
 import { test, expect } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import {
-    installMockFetch,
+    _installMockFetch,
     captureConsoleErrors,
     withRetry,
     readBodyAttrs,

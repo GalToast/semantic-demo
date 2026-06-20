@@ -159,7 +159,7 @@ async function sceneLuminanceFromBuffer(buffer) {
 }
 
 // Continuity sampling — same technique as three-scene-playtest.mjs
-function continuitySample(line) {
+function _continuitySample(line) {
     const values = Array.from(line?.geometry?.attributes?.position?.array || [])
     if (values.length < 30) return { checked: 0, matched: 0 }
     let checked = 0,

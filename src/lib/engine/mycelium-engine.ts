@@ -13,13 +13,6 @@ import { CONFIG } from '@lib/engine/config';
 
 const state = _state;
 
-// Module-level constants to avoid per-frame allocations in getSaggedPoint
-const _worldUp = new Vector3(0, 1, 0);
-const _defaultViewVec = new Vector3(0.28, 0.2, 1);
-const _scratchVec3A = new Vector3();
-const _scratchVec3B = new Vector3();
-const _scratchVec3C = new Vector3();
-
 interface EdgePair {
     a: number;
     b: number;
@@ -314,33 +307,15 @@ export function updateMyceliumThreads() {
         const by = Number.isFinite(b.y) ? b.y : 0;
         const bz = Number.isFinite(b.z) ? b.z : 0;
 
-        const midX = (ax + bx) * 0.5;
-        const midY = (ay + by) * 0.5;
-        const midZ = (az + bz) * 0.5;
-        const spanLength = Math.sqrt((bx - ax) ** 2 + (by - ay) ** 2 + (bz - az) ** 2);
-
-        const viewVec = webglContext.camera
-            ? _scratchVec3A.subVectors(webglContext.camera.position, _scratchVec3B.set(midX, midY, midZ)).normalize()
-            : _scratchVec3A.copy(_defaultViewVec).normalize();
-        const right = _scratchVec3C.crossVectors(_worldUp, viewVec);
-        if (right.lengthSq() < 0.0001) right.set(1, 0, 0);
-        right.normalize();
-
         const verts: Array<{ x: number; y: number; z: number }> = [];
         const edgeSide = ((a.index * 31 + b.index * 17) % 2 === 0) ? 1 : -1;
         const edgeRise = (((a.index + b.index) % 5) - 2) / 2 || 0.3;
-        const control = (() => {
-            _scratchVec3A.set(ax, ay, az);
-            _scratchVec3B.set(bx, by, bz);
-            const mid = _scratchVec3A.clone().lerp(_scratchVec3B, 0.5);
-            const baseSag = Math.min(0.06, Math.max(0.012, spanLength * 0.14));
-            const sideOffset = edgeSide * baseSag * 0.45;
-            const riseOffset = edgeRise * baseSag * 0.28;
-            return mid
-                .clone()
-                .addScaledVector(right, sideOffset)
-                .addScaledVector(_worldUp, -(baseSag * 0.7) + riseOffset);
-        })();
+        const control = getBezierControlPoint(
+            { x: ax, y: ay, z: az },
+            { x: bx, y: by, z: bz },
+            edgeSide,
+            edgeRise
+        );
 
         const samples: Array<{ x: number; y: number; z: number }> = [];
         const segments = 5;

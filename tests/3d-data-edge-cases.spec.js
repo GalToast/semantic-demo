@@ -208,8 +208,9 @@ async function abortInFlightSearch(page) {
 
   // Start search without awaiting — fire-and-forget
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
-      (window.__APP_ACTIONS__?.search)('coffee', { preferCachedResults: false });
+    const search = window.__APP_ACTIONS__ && window.__APP_ACTIONS__.search;
+    if (typeof search === 'function') {
+      search('coffee', { preferCachedResults: false });
     }
   });
   // Give the request a moment to be dispatched
@@ -401,8 +402,9 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
     await input.focus();
     await input.fill('coffee');
     await page.evaluate(() => {
-      if (typeof (window.__APP_ACTIONS__?.search) === 'function') {
-        (window.__APP_ACTIONS__?.search)('coffee', { preferCachedResults: true });
+      const search = window.__APP_ACTIONS__ && window.__APP_ACTIONS__.search;
+      if (typeof search === 'function') {
+        search('coffee', { preferCachedResults: true });
       }
     });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
@@ -420,7 +422,8 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
 
     // First: do a valid search so we have results
     await page.evaluate(() => {
-      if (typeof (window.__APP_ACTIONS__?.search) === 'function') (window.__APP_ACTIONS__?.search)('coffee', { preferCachedResults: false });
+      const search = window.__APP_ACTIONS__ && window.__APP_ACTIONS__.search;
+      if (typeof search === 'function') search('coffee', { preferCachedResults: false });
     });
     await page.waitForSelector('.search-result-item', { timeout: 15000 });
 

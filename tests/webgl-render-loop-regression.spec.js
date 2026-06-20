@@ -18,7 +18,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import fs from 'node:fs/promises'
 import path from 'node:path'
 import { PNG } from 'pngjs'
 

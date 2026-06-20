@@ -100,7 +100,7 @@ test.describe('Critical Visual Layout Regression', () => {
     });
 
     // Assertions
-    const { journey, diveBtn, card, kicker, viewportHeight } = bounds;
+    const { journey, diveBtn, card, kicker, viewportHeight: _viewportHeight } = bounds;
 
     if (journey && diveBtn) {
       // Journey bottom must not intrude into dive button top
