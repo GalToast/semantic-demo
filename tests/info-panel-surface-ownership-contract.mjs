@@ -42,11 +42,9 @@ const exists = (rel) => fs.existsSync(path.join(root, rel))
 // ── Source paths ──────────────────────────────────────────────────────────────
 
 const INFO_PANEL = 'src/components/InfoPanel.svelte'
-const FOCUS_CARD = 'src/components/FocusCard.svelte'
 const INFO_PANEL_STATE = 'src/lib/orchestration/info-panel-state.ts'
 const VIEW_MODEL = 'src/lib/view-models/selected-business-view-model.ts'
 const STAGE_RENDERER = 'src/lib/focus/stage-renderer.ts'
-const JOURNEY_STAGE_RENDERER = 'src/lib/journey/focus-stage-renderer.ts'
 const HTML_SHELL = 'vector-explorer-polished.html'
 
 // ── InfoPanel surface IDs (must ALL be owned by InfoPanel.svelte) ─────────────
@@ -254,16 +252,8 @@ function testStageRendererRespectsSvelteOwnership() {
         'stage-renderer.ts must not write innerHTML to #selected-what'
     )
 
-    // Same check for journey/focus-stage-renderer.ts
-    if (exists(JOURNEY_STAGE_RENDERER)) {
-        const jSrc = read(JOURNEY_STAGE_RENDERER)
-        for (const id of SVELTE_OWNED_CHILD_IDS) {
-            assert(
-                !jSrc.includes(`getElementById('${id}')`) && !jSrc.includes(`getElementById("${id}")`),
-                `journey/focus-stage-renderer.ts must not query Svelte-owned #${id}`
-            )
-        }
-    }
+    // W7-B Pair 1 collapse: journey/focus-stage-renderer.ts retired,
+    // canonical focus/stage-renderer.ts already checked above.
 
     console.log('  OK - stage-renderer respects Svelte child element ownership')
 }

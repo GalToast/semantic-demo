@@ -41,4 +41,4 @@ export {
     renderSelectedMatchPanel,
     renderSelectedActionRow,
     syncSelectedCardContentVariant
-} from '../journey/focus-stage-renderer'
+} from '../focus/stage-renderer'

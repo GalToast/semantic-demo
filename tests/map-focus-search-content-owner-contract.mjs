@@ -210,12 +210,13 @@ function testRetiredMapSummaryElementsRemoved() {
 
   // stage-renderer.ts must not keep null-check/content-writer paths for the
   // retired subtree either; InfoPanel owns the compact map-focus-search payload.
+  // W7-B Pair 1 collapse: journey/focus-stage-renderer.ts retired, canonical
+  // is the single focus/stage-renderer.ts.
   const stageRendererSrc = read(STAGE_RENDERER);
-  const journeyRendererSrc = read(JOURNEY_STAGE_RENDERER);
   for (const id of RETIRED_MAP_SUMMARY_IDS) {
     assert(
-      !stageRendererSrc.includes(id) && !journeyRendererSrc.includes(id),
-      `stage renderers must not reference retired map-summary element #${id}`
+      !stageRendererSrc.includes(id),
+      `stage renderer must not reference retired map-summary element #${id}`
     );
   }
 

@@ -5,6 +5,8 @@
  * so that journey-layer code does not import directly from js/.
  *
  * W12-T2: All js/ imports removed. Now imports from src/lib/journey/.
+ * W44: Re-exports now come from journey-webgl-lazy.ts to break the static
+ * Three.js import chain in the main bundle.
  */
 
 export {
@@ -20,14 +22,14 @@ export {
   syncArrivalHandoffOverlay,
   updateArrivalHandoffOverlay,
   disposeArrivalHandoffOverlay,
-} from '@lib/journey/webgl';
+} from './journey-webgl-lazy';
 
 export {
   syncInspectedStrandOverlay,
   updateInspectedStrandOverlay,
   disposeInspectedStrandOverlay,
-} from '@lib/journey/thread-inspector-webgl';
+} from './journey-webgl-lazy';
 
 export {
   setInspectedStrandOverlayUpdater,
-} from '@lib/journey/inspected-strand-overlay-adapter';
+} from './journey-webgl-lazy';
