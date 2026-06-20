@@ -433,7 +433,14 @@ export default defineConfig({
         },
         modulePreload: {
             resolveDependencies: (_filename, deps) => {
-                return deps.filter((dep) => !dep.includes('three-D-'))
+                return deps.filter((dep) => {
+                    if (dep.includes('three-D-')) return false
+                    // W44: Exclude non-critical chunks from eager preload to improve LCP
+                    if (dep.includes('demo.svelte-')) return false
+                    if (dep.includes('weather.svelte-')) return false
+                    if (dep.includes('camera.svelte-')) return false
+                    return true
+                })
             }
         },
         rollupOptions: {
