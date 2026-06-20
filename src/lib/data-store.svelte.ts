@@ -17,7 +17,7 @@ import {
     semanticNeighborMap as semanticNeighborMapStore,
     layoutManifest as layoutManifestStore
 } from './data-store.ts'
-import type { BusinessDataResult, SemanticThreadDataResult, PositionBufferDescriptor } from '@lib/types/business'
+import type { BusinessRecord, BusinessDataResult, SemanticThreadDataResult, PositionBufferDescriptor } from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
 import { loadBusinessData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
@@ -48,13 +48,6 @@ export function getBusinessRecords() {
     return get(businessRecordsStore)
 }
 
-/** Reactive bridge — kept in sync with the Svelte 4 store so $derived works. */
-let _businessRecordsRune = $state(get(businessRecordsStore))
-$effect(() => {
-    const unsub = businessRecordsStore.subscribe(v => { _businessRecordsRune = v })
-    return () => unsub()
-})
-
 /** Float32Array of interleaved [x,y,z] positions in [0,1] unit cube */
 let positionBuffer = $state<Float32Array | null>(null)
 export function getPositionBuffer() {
@@ -80,40 +73,41 @@ export function getLeadEnrichment() {
     return get(leadEnrichmentStore)
 }
 
-/** Raw semantic thread bundle — kept in sync with the Svelte 4 store via $effect */
-let semanticThreadBundle = $state(get(semanticThreadBundleStore))
+/** Raw semantic thread bundle — kept in sync with the canonical writable store. */
+let semanticThreadBundle = get(semanticThreadBundleStore)
 export function getSemanticThreadBundle() {
     return semanticThreadBundle
 }
 
 /** Name of the loaded thread artifact file */
-let semanticThreadArtifactName = $state(get(semanticThreadArtifactNameStore))
+let semanticThreadArtifactName = get(semanticThreadArtifactNameStore)
 export function getSemanticThreadArtifactName() {
     return semanticThreadArtifactName
 }
 
 /** Normalized neighbor map keyed by lead_id */
-let semanticNeighborMap = $state(get(semanticNeighborMapStore))
+let semanticNeighborMap = get(semanticNeighborMapStore)
 export function getSemanticNeighborMap() {
     return semanticNeighborMap
 }
 
 /** Semantic space layout manifest (validation metadata) */
-let layoutManifest = $state(get(layoutManifestStore))
+let layoutManifest = get(layoutManifestStore)
 export function getLayoutManifest() {
     return layoutManifest
 }
 
-/** Sync reactive runes from the Svelte 4 stores so `.svelte` components
- *  calling getter functions inside `$derived` actually re-evaluate. */
-$effect(() => {
-    const unsubs = [
-        semanticThreadBundleStore.subscribe(v => { semanticThreadBundle = v }),
-        semanticThreadArtifactNameStore.subscribe(v => { semanticThreadArtifactName = v }),
-        semanticNeighborMapStore.subscribe(v => { semanticNeighborMap = v }),
-        layoutManifestStore.subscribe(v => { layoutManifest = v })
-    ]
-    return () => { unsubs.forEach(u => u()) }
+semanticThreadBundleStore.subscribe((v) => {
+    semanticThreadBundle = v
+})
+semanticThreadArtifactNameStore.subscribe((v) => {
+    semanticThreadArtifactName = v
+})
+semanticNeighborMapStore.subscribe((v) => {
+    semanticNeighborMap = v
+})
+layoutManifestStore.subscribe((v) => {
+    layoutManifest = v
 })
 
 /** Overall data loading state */
@@ -160,6 +154,15 @@ export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
         document.body.dataset.graphicsMode = mode
     }
 }
+
+// ── Svelte 5 Rune State (mirrors the writable store for reactive consumption) ──
+
+let _businessRecordsRune = $state<readonly BusinessRecord[]>([])
+
+// Keep the rune in sync with the canonical writable store.
+businessRecordsStore.subscribe((records) => {
+    _businessRecordsRune = records
+})
 
 // ── Derived Stores ────────────────────────────────────────────────────────────
 
