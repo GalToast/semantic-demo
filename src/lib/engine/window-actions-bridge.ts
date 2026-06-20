@@ -19,11 +19,11 @@ export {
     refreshCompositionState
 } from './lifecycle-bridge'
 export { setTrailFromSeed } from '@lib/journey/neighborhood'
-export { traverseNeighbor, walkThreadNeighbor } from './journey-thread-settler-bridge'
+export { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settler'
 export {
     inspectThreadNeighbor,
     pinThreadNeighbor,
     unpinThreadInspection,
     clearThreadInspection
-} from './thread-inspector-bridge'
+} from '@lib/journey/thread-inspector'
 export { showSemanticThreadsDetail } from './lifecycle-bridge'

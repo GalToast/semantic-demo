@@ -87,4 +87,4 @@ export {
     noteSceneInteraction,
     updateAutoRotateSoftResume,
     toggleAutoRotate
-} from './camera-controls-restore'
+} from './camera-controls-restore.svelte'

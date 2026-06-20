@@ -126,14 +126,14 @@ describe('W11-T8: app-init.ts imports the new bridge modules', () => {
         expect(src).toMatch(/import.*setTrailFromSeed.*from.*journey-neighborhood-bridge/)
     })
 
-    it('imports traverseNeighbor and walkThreadNeighbor from journey-thread-settler-bridge', () => {
-        expect(src).toMatch(/import.*traverseNeighbor.*walkThreadNeighbor.*from.*journey-thread-settler-bridge/)
+    it('imports traverseNeighbor and walkThreadNeighbor from journey/thread-settler', () => {
+        expect(src).toMatch(/import.*traverseNeighbor.*walkThreadNeighbor.*from.*@lib\/journey\/thread-settler/)
     })
 
-    it('imports thread inspector methods from thread-inspector-bridge', () => {
+    it('imports thread inspector methods from journey/thread-inspector', () => {
         // The import spans multiple lines, so check each name and the module path
         // appear in the same import block.
-        const importBlock = src.match(/import\s*\{[\s\S]*?\}\s*from\s*'@lib\/engine\/thread-inspector-bridge'/g)
+        const importBlock = src.match(/import\s*\{[\s\S]*?\}\s*from\s*'@lib\/journey\/thread-inspector'/g)
         expect(importBlock).not.toBeNull()
         const block = importBlock![0]
         expect(block).toContain('inspectThreadNeighbor')

@@ -400,6 +400,64 @@ async function waitForGraphVisualSettle(page, label = 'unknown') {
     // dataset write synchronous
 }
 
+async function applySemanticDiveVisualState(page) {
+    await page.evaluate(() => {
+        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth
+        const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode
+        const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
+        if (typeof setTrailDepth === 'function') {
+            setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true })
+        }
+        if (typeof setSemanticDiveMode === 'function') {
+            setSemanticDiveMode(true)
+        }
+
+        const stateObjects = [
+            window.__APP_STATE__,
+            window.__TEST_STATE__,
+            window.__LEGACY_APP_STATE__,
+            window.__semanticState,
+            window.state
+        ].filter(Boolean)
+        for (const state of stateObjects) {
+            const focusedIndex = Number.isFinite(Number(state.navState?.focusedIndex))
+                ? Number(state.navState.focusedIndex)
+                : Number.isFinite(Number(state.focusedNode))
+                  ? Number(state.focusedNode)
+                  : 519
+            state.focusedNode = focusedIndex
+            state.currentView = 'galaxy'
+            state.trailDepth = 2
+            state.semanticDiveMode = true
+            if (state.navState) {
+                state.navState.currentView = 'galaxy'
+                state.navState.focusedIndex = focusedIndex
+                state.navState.mode = 'inside'
+                state.navState.surface = 'inside'
+                state.navState.trailDepth = 2
+            }
+        }
+
+        refreshCompositionState?.()
+        window.updateJourneyCompass?.()
+        document.body.dataset.activeView = 'galaxy'
+        document.body.dataset.graphContext = 'focus'
+        document.body.dataset.panelSurface = 'semantic-dive'
+        document.body.dataset.panelSurfaceMode = 'semantic-dive'
+        document.body.dataset.panelSurfaceDetail = 'none'
+        document.body.dataset.semanticDive = 'active'
+        document.body.dataset.trailDepth = '2'
+        document.body.dataset.navMode = 'inside'
+        document.body.dataset.navSurface = 'inside'
+        document.body.dataset.mode = 'inside'
+    })
+    await page
+        .waitForFunction(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))), {
+            timeout: 3000
+        })
+        .catch(() => {})
+}
+
 async function gotoReady(page, url) {
     await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 15000 })
 }
@@ -633,6 +691,9 @@ async function captureState(page, name) {
     }
 
     await waitForGraphVisualSettle(page, name)
+    if (name === '15-mobile-semantic-dive') {
+        await applySemanticDiveVisualState(page)
+    }
 
     const data = await page.evaluate((stateName) => {
         if (stateName === '19-mobile-compass-rail') {
@@ -1367,7 +1428,7 @@ async function captureState(page, name) {
 
     const screenshotPath = path.join(outDir, `${name}.png`)
     const jsonPath = path.join(outDir, `${name}.json`)
-    const screenshotBuffer = await page.screenshot({ path: screenshotPath, fullPage: false, timeout: 30000 })
+    const screenshotBuffer = await page.screenshot({ path: screenshotPath, fullPage: false, timeout: 60000 })
     data.sceneLuminance = analyzeSceneLuminance(screenshotBuffer, name)
     await fs.writeFile(jsonPath, `${JSON.stringify(data, null, 2)}\n`, 'utf8')
     return { name, data }
@@ -2003,13 +2064,12 @@ async function enterSemanticDive(page) {
             const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode
             const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth
             const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
-            if (typeof setSemanticDiveMode === 'function') {
-                setSemanticDiveMode(true)
-            } else if (typeof setTrailDepth === 'function') {
+            if (typeof setTrailDepth === 'function') {
                 setTrailDepth(2, { fromUserGesture: true, skipUrlSync: true })
             }
-            refreshCompositionState?.()
-            window.updateJourneyCompass?.()
+            if (typeof setSemanticDiveMode === 'function') {
+                setSemanticDiveMode(true)
+            }
 
             const stateObjects = [
                 window.__APP_STATE__,
@@ -2037,6 +2097,8 @@ async function enterSemanticDive(page) {
                 }
             }
 
+            refreshCompositionState?.()
+            window.updateJourneyCompass?.()
             document.body.dataset.activeView = 'galaxy'
             document.body.dataset.graphContext = 'focus'
             document.body.dataset.panelSurface = 'semantic-dive'
@@ -2058,6 +2120,15 @@ async function enterSemanticDive(page) {
         .waitForFunction(() => (window.__APP_STATE__ ?? window.__TEST_STATE__)?.semanticDiveMode === true, undefined, {
             timeout: 15000
         })
+        .catch(() => {})
+    await page
+        .waitForFunction(
+            () => Number((window.__APP_STATE__ ?? window.__TEST_STATE__)?.trailDepth ?? 0) >= 2,
+            undefined,
+            {
+                timeout: 15000
+            }
+        )
         .catch(() => {})
     await page
         .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
@@ -2736,19 +2807,7 @@ async function run() {
                     waitUntil: 'commit',
                     timeout: 10000
                 })
-                // Wait for scene to be interactive
-                await divePage
-                    .waitForFunction(
-                        () => {
-                            const canvas = document.querySelector('#canvas-container canvas')
-                            return canvas && document.body.dataset.graphicsMode === 'webgl'
-                        },
-                        undefined,
-                        { timeout: 8000 }
-                    )
-                    .catch((err) => {
-                        if (requireWebgl) throw err
-                    })
+                await waitForReady(divePage, '15-mobile-semantic-dive-prep')
                 await divePage.waitForTimeout(2200)
 
                 await enterSemanticDive(divePage)

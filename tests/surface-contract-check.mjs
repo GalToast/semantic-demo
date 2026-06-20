@@ -3518,7 +3518,11 @@ async function assert_info_panel_populated(page, ctx) {
     if (!dataReady) {
         // Don't spam 21 DOM-missing failures when the root cause is data.
         // Surface the actual failure clearly.
-        ctx.fail('info-panel-populated', 'data-ready', 'Business records not loaded after 5s; InfoPanel has no data to render in populated state')
+        ctx.fail(
+            'info-panel-populated',
+            'data-ready',
+            'Business records not loaded after 5s; InfoPanel has no data to render in populated state'
+        )
         return
     }
 

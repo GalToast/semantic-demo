@@ -137,18 +137,19 @@ export function updateFocusAnchorIndicator(now: number, focusedNode: number | nu
 
     const reducedMotion = prefersReducedMotion();
     const time = now / 1000;
+    const semanticDiveActive = state.semanticDiveMode === true || state.trailDepth === 2;
 
-    const fadeTarget = OPACITY_CEIL;
+    const fadeTarget = semanticDiveActive ? 0.34 : OPACITY_CEIL;
     (haloSprite.material as SpriteMaterial).opacity += (fadeTarget - (haloSprite.material as SpriteMaterial).opacity) * FADE_RATE;
-    let spriteScale = RING_BASE_SCALE;
+    let spriteScale = RING_BASE_SCALE * (semanticDiveActive ? 0.58 : 1);
     if (!reducedMotion) {
         const pulse = Math.sin(time * Math.PI * 2 * PULSE_FREQUENCY_HZ);
-        spriteScale = RING_BASE_SCALE * (1.0 + pulse * PULSE_AMPLITUDE);
+        spriteScale = RING_BASE_SCALE * (semanticDiveActive ? 0.58 : 1) * (1.0 + pulse * PULSE_AMPLITUDE);
     }
     haloSprite.scale.set(spriteScale, spriteScale, 1);
 
     let ringScale = 1.0;
-    const ringOpacity = 0.78;
+    const ringOpacity = semanticDiveActive ? 0.2 : 0.78;
     if (!reducedMotion) {
         const slowPulse = Math.sin(time * Math.PI * 2 * PULSE_FREQUENCY_HZ * 0.5 + 0.7);
         ringScale = 1.0 + slowPulse * 0.05;

@@ -18,14 +18,14 @@ import {
     getStrandArrivalNote,
     summarizeNeighborReason,
     getInsideRelationshipLabel
-} from '@lib/engine/journey-thread-settler-bridge'
+} from '@lib/journey/thread-settler'
 import {
     hasColdDegradedSemanticFallback,
     updateTraversalUi,
     shouldUseFloatingFocusJourneyOnly
 } from '@lib/engine/journey-focus-ui-bridge'
 import { revealSelectedBusinessCard } from '@lib/engine/lifecycle-bridge'
-import { describeThreadLensForPoint } from '@lib/engine/journey-point-color-bridge'
+import { describeThreadLensForPoint } from '@lib/journey/point-color'
 import { _getSelectedBusinessRoleLabel } from '@lib/utils/role-label'
 
 export function buildAdapterDeps(): AdapterDeps {

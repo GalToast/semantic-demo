@@ -9,7 +9,7 @@ import type { ChoreographyCamera, ChoreographyControls, ChoreographyPersonality 
 import { easeInOutCubic, quadraticBezierComponent } from '@lib/utils/math-easing'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { noteSceneInteraction } from '@lib/engine/camera-controls-restore'
+import { noteSceneInteraction } from '@lib/engine/camera-controls-restore.svelte'
 import { setFocusTransitionMode } from '@lib/engine/camera-controls-core'
 import { appState } from '@lib/state/app.svelte'
 

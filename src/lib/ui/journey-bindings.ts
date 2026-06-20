@@ -9,12 +9,8 @@ const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
 import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge'
 import { setSemanticDiveMode } from '@lib/engine/lifecycle-bridge'
-import {
-    pinThreadNeighbor,
-    pinFirstAvailableNeighbor,
-    unpinThreadInspection
-} from '@lib/engine/thread-inspector-bridge'
-import { walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge'
+import { pinThreadNeighbor, pinFirstAvailableNeighbor, unpinThreadInspection } from '@lib/journey/thread-inspector'
+import { walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'

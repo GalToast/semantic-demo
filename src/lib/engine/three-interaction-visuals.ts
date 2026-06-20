@@ -1,4 +1,22 @@
-import { Material, Vector3, CircleGeometry, ShaderMaterial, DoubleSide, NormalBlending, Mesh, SphereGeometry, BufferGeometry, BufferAttribute, LineSegments, IcosahedronGeometry, AdditiveBlending, BackSide, PointLight, Color, Group } from 'three';
+import {
+    Material,
+    Vector3,
+    CircleGeometry,
+    ShaderMaterial,
+    DoubleSide,
+    NormalBlending,
+    Mesh,
+    SphereGeometry,
+    BufferGeometry,
+    BufferAttribute,
+    LineSegments,
+    IcosahedronGeometry,
+    AdditiveBlending,
+    BackSide,
+    PointLight,
+    Color,
+    Group
+} from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
 const state = _state;
 import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations';
@@ -31,6 +49,10 @@ function asShaderMaterial(mat: Material | Material[]): ShaderMaterial | null {
 function asColorMaterial(mat: Material | Material[]): (Material & { color: Color }) | null {
     const m = asSingleMaterial(mat);
     return 'color' in m && m.color instanceof Color ? (m as Material & { color: Color }) : null;
+}
+
+function isSemanticDiveActive() {
+    return state.semanticDiveMode === true || state.trailDepth === 2;
 }
 
 // ── Local Types ───────────────────────────────────────────────────────────────
@@ -71,19 +93,19 @@ function getSemanticLensNeighborIndices(focusedNode: any) {
     if (!semanticNode?.neighbors?.length || !state.pointIndexByLeadId?.size) return [];
     return semanticNode.neighbors
         .map((neighbor: { leadId: string | number }) => state.pointIndexByLeadId.get(String(neighbor.leadId)))
-        .filter((index: number | undefined): index is number => (
-            Number.isFinite(index) &&
-            index !== focusedNode &&
-            Boolean(state.nodePositions?.[index as number])
-        ))
+        .filter(
+            (index: number | undefined): index is number =>
+                Number.isFinite(index) && index !== focusedNode && Boolean(state.nodePositions?.[index as number])
+        )
         .slice(0, 12);
 }
 
 function updateSelectedNodeMotes(worldPos: any, time: any, isInside: any) {
     if (!state.focusMoteGroup || !Array.isArray(state.focusMotes)) return;
     const hasFocus = Boolean(worldPos);
-    const targetOpacity = hasFocus ? (isInside ? 0.90 : 0.82) : 0;
-    state.focusMoteGroup.visible = hasFocus || state.focusMotes.some((mote: SpriteLike) => mote.material.opacity > 0.01);
+    const targetOpacity = hasFocus ? (isInside ? 0.4 : 0.82) : 0;
+    state.focusMoteGroup.visible =
+        hasFocus || state.focusMotes.some((mote: SpriteLike) => mote.material.opacity > 0.01);
     if (hasFocus) {
         state.focusMoteGroup.position.copy(worldPos);
         state.focusMoteGroup.rotation.set(
@@ -108,9 +130,12 @@ function updateSelectedNodeMotes(worldPos: any, time: any, isInside: any) {
         mote.position.set(
             Math.cos(curl) * radius * breath + Math.sin(time * 0.33 + index * 2.1) * 0.004 * wander,
             (data.lift || 0) + verticalDrift,
-            Math.sin(curl) * radius * (data.tilt || 0.72) * breath + Math.cos(time * 0.29 + index * 1.6) * 0.004 * wander
+            Math.sin(curl) * radius * (data.tilt || 0.72) * breath +
+                Math.cos(time * 0.29 + index * 1.6) * 0.004 * wander
         );
-        const moteScale = (data.scale || 0.0084) * (1.0 + Math.sin(time * 1.08 + index * 0.7) * 0.24 + Math.sin(time * 0.41 + index) * 0.09);
+        const moteScale =
+            (data.scale || 0.0084) *
+            (1.0 + Math.sin(time * 1.08 + index * 0.7) * 0.24 + Math.sin(time * 0.41 + index) * 0.09);
         mote.scale.set(moteScale, moteScale, 1);
     });
 }
@@ -118,8 +143,9 @@ function updateSelectedNodeMotes(worldPos: any, time: any, isInside: any) {
 function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
     if (!state.focusPetalGroup || !Array.isArray(state.focusPetals)) return;
     const hasFocus = Boolean(worldPos);
-    const targetOpacity = hasFocus ? (isInside ? 0.75 : 0.65) : 0;
-    state.focusPetalGroup.visible = hasFocus || state.focusPetals.some((petal) => asSingleMaterial(petal.material).opacity > 0.01);
+    const targetOpacity = hasFocus ? (isInside ? 0.24 : 0.65) : 0;
+    state.focusPetalGroup.visible =
+        hasFocus || state.focusPetals.some((petal) => asSingleMaterial(petal.material).opacity > 0.01);
     if (hasFocus) {
         state.focusPetalGroup.position.copy(worldPos);
         state.focusPetalGroup.rotation.set(
@@ -146,7 +172,8 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
             (data.lift || 0) + Math.sin(phase * 0.61) * radius * 0.34,
             Math.sin(angle) * radius * (data.tilt || 0.72) * breath
         );
-        (mat as Material & { rotation?: number }).rotation = angle + Math.PI * 0.5 + Math.sin(time * 0.46 + index) * 0.44;
+        (mat as Material & { rotation?: number }).rotation =
+            angle + Math.PI * 0.5 + Math.sin(time * 0.46 + index) * 0.44;
         const length = (data.length || 0.042) * (1.0 + Math.sin(time * 0.72 + index * 0.9) * 0.18);
         const thickness = data.thickness || 0.008;
         petal.scale.set(length, thickness, 1);
@@ -157,7 +184,7 @@ function updateSelectedNodeFilaments(worldPos: any, time: any, isInside: any) {
     if (!state.focusFilaments?.geometry?.attributes?.position) return;
     const positions = state.focusFilaments.geometry.attributes.position.array;
     const hasFocus = Boolean(worldPos);
-    const targetOpacity = hasFocus ? (isInside ? 0.62 : 0.50) : 0;
+    const targetOpacity = hasFocus ? (isInside ? 0.22 : 0.5) : 0;
     const filMat = asSingleMaterial(state.focusFilaments.material);
     filMat.opacity += (targetOpacity - filMat.opacity) * 0.1;
     state.focusFilaments.visible = filMat.opacity > 0.01;
@@ -186,7 +213,11 @@ function updateSelectedNodeFilaments(worldPos: any, time: any, isInside: any) {
             const t = s / FOCUS_WISP_SEGMENTS;
             const taper = Math.sin(t * Math.PI);
             const ease = t * t * (3 - 2 * t);
-            const curl = phase + ease * (2.25 + i * 0.055) + Math.sin(time * 0.34 + seed + t * 5.6) * 0.72 + Math.sin(time * 0.12 + seed * 2.1 + t * 9.2) * 0.3;
+            const curl =
+                phase +
+                ease * (2.25 + i * 0.055) +
+                Math.sin(time * 0.34 + seed + t * 5.6) * 0.72 +
+                Math.sin(time * 0.12 + seed * 2.1 + t * 9.2) * 0.3;
             const drift = Math.sin(time * 0.48 + seed + t * 6.8) * taper;
             const lateral = curlStrength * ease * (0.62 + taper * shell);
             const float = Math.sin(time * 0.28 + seed * 0.8 + t * 3.7) * taper * 0.0075;
@@ -466,8 +497,12 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
     if (!state.pointsMesh) return;
     const time = now / 1000;
 
-    const activeNode = Number.isFinite(focusedNode) && focusedNode >= 0 ? focusedNode
-        : (Number.isFinite(hoveredNode) && hoveredNode >= 0 ? hoveredNode : null);
+    const activeNode =
+        Number.isFinite(focusedNode) && focusedNode >= 0
+            ? focusedNode
+            : Number.isFinite(hoveredNode) && hoveredNode >= 0
+              ? hoveredNode
+              : null;
     const isFocused = activeNode === focusedNode;
 
     if (state.hoverHalo) {
@@ -478,11 +513,11 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
     if (state.focusCore) {
         const focusIdx = focusedNode;
         const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0;
-        const isInside = state.trailDepth === 2;
+        const isInside = isSemanticDiveActive();
         const isActive = hasFocus && isFocused;
-        const auraTargetOpacity = hasFocus ? (isInside ? 0.18 : 0.135) : 0.0;
-        const coreTargetOpacity = hasFocus ? (isInside ? 0.82 : 0.74) : 0.0;
-        const baseScale = isActive ? 0.036 : (isInside ? 0.034 : 0.032);
+        const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0;
+        const coreTargetOpacity = hasFocus ? (isInside ? 0.26 : 0.74) : 0.0;
+        const baseScale = isActive ? (isInside ? 0.021 : 0.036) : isInside ? 0.021 : 0.032;
 
         if (state.focusHalo) {
             state.focusHalo.material.color.setHex(isActive ? 0x8ff8ed : 0x7ce7dd);
@@ -497,9 +532,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             state.focusCore.scale.set(baseScale * corePulse, baseScale * corePulse, 1);
         } else if (hasFocus) {
             coreColorMat?.color.setHex(0xcffcf4);
-            const corePulse = isInside
-                ? 1.0 + Math.sin(time * 1.25) * 0.09
-                : 1.0 + Math.sin(time * 2.4) * 0.045;
+            const corePulse = isInside ? 1.0 + Math.sin(time * 1.25) * 0.09 : 1.0 + Math.sin(time * 2.4) * 0.045;
             state.focusCore.scale.set(baseScale * corePulse, baseScale * corePulse, 1);
         }
 
@@ -515,7 +548,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             if (state.focusHalo) {
                 const auraPulse = 1.0 + Math.sin(time * 0.82) * 0.09 + Math.sin(time * 0.31 + 1.4) * 0.035;
                 state.focusHalo.position.copy(worldPos);
-                const auraScale = isInside ? 0.088 : 0.082;
+                const auraScale = isInside ? 0.044 : 0.082;
                 state.focusHalo.scale.set(auraScale * auraPulse, auraScale * auraPulse, 1);
             }
             state.focusCore.position.copy(worldPos);
@@ -537,7 +570,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         const focusIdx = focusedNode;
         const focusPos = Number.isFinite(focusIdx) && focusIdx >= 0 ? state.nodePositions?.[focusIdx] : null;
         const hasFocus = Boolean(focusPos);
-        const isInside = state.trailDepth === 2;
+        const isInside = isSemanticDiveActive();
         const group = state.semanticLensGroup;
         const glowMat = state.semanticLensGlow.material ? asShaderMaterial(state.semanticLensGlow.material) : null;
         const glowUniforms = glowMat?.uniforms;
@@ -560,7 +593,8 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             opacityUniform.value += (targetOpacity - opacityUniform.value) * 0.12;
 
             if (glowUniforms.uSignalScore) {
-                const targetSignal = typeof calculateSignalScore === 'function' ? calculateSignalScore(state.points?.[focusIdx]) : 0;
+                const targetSignal =
+                    typeof calculateSignalScore === 'function' ? calculateSignalScore(state.points?.[focusIdx]) : 0;
                 glowUniforms.uSignalScore.value += (targetSignal - glowUniforms.uSignalScore.value) * 0.12;
             }
 
@@ -641,13 +675,13 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             state.focusLens.scale.set(pulse, pulse, pulse);
         }
     }
-    
+
     // 4. Step Inside anchor bloom light
     if (state.anchorBloomLight) {
         const focusIdx = focusedNode;
         const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0;
-        const isInside = state.trailDepth === 2;
-        const targetIntensity = hasFocus ? (isInside ? 0.62 : 0.24) : 0.0;
+        const isInside = isSemanticDiveActive();
+        const targetIntensity = hasFocus ? (isInside ? 0.14 : 0.24) : 0.0;
         state.anchorBloomLight.intensity += (targetIntensity - state.anchorBloomLight.intensity) * 0.08;
         if (hasFocus && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx];
@@ -682,7 +716,7 @@ if (typeof document !== 'undefined' && document && document.addEventListener) {
 
         if (phase === 'glow' || phase === 'gliding') {
             _demoHighlightNode = index;
-            _demoHighlightBoost = (phase === 'gliding') ? 1.55 : 1.35;
+            _demoHighlightBoost = phase === 'gliding' ? 1.55 : 1.35;
             const pos = state.nodePositions[index];
             if (pos) {
                 shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z);

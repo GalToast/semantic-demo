@@ -27,11 +27,7 @@ import {
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
-import {
-    inspectThreadNeighbor,
-    clearThreadInspection,
-    renderThreadInspection
-} from '@lib/engine/thread-inspector-bridge'
+import { inspectThreadNeighbor, clearThreadInspection, renderThreadInspection } from './thread-inspector'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'

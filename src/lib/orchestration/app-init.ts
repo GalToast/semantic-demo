@@ -37,14 +37,14 @@ import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { search } from '@lib/engine/window-actions-bridge'
 import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge'
-import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/journey-thread-settler-bridge'
+import { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settler'
 import {
     inspectThreadNeighbor,
     pinThreadNeighbor,
     pinFirstAvailableNeighbor,
     unpinThreadInspection,
     clearThreadInspection
-} from '@lib/engine/thread-inspector-bridge'
+} from '@lib/journey/thread-inspector'
 import { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'

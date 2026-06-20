@@ -104,8 +104,8 @@ import * as focusPocketMod from '@lib/journey/focus-pocket'
 import * as sceneRevealMod from './scene-reveal'
 import * as cameraControlsMod from '@lib/engine/camera-controls'
 import * as myceliumEngineMod from './mycelium-engine'
-import * as inspectedStrandMod from '@lib/engine/inspected-strand-overlay-bridge'
-import * as routeArrivalMod from '@lib/engine/route-arrival-overlay-bridge'
+import * as inspectedStrandMod from '@lib/journey/inspected-strand-overlay-adapter'
+import * as routeArrivalMod from '@lib/journey/route-arrival-overlay-adapter'
 import * as threeSearchAnimationsMod from './three-search-animations'
 import * as threeInteractionVisualsMod from './three-interaction-visuals'
 
@@ -1246,9 +1246,9 @@ export function animate() {
 
         if (webglContext.pointsMaterial) {
             const isFocused = Number.isFinite(_state?.focusedNode)
-            const isSemanticDive = (_state?.trailDepth ?? 0) >= 2
-            const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.16 : 0.46) : 1.0
-            const pointsSizeScale = isFocused ? (isSemanticDive ? 0.52 : 0.8) : 1.0
+            const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
+            const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.06 : 0.46) : 1.0
+            const pointsSizeScale = isFocused ? (isSemanticDive ? 0.36 : 0.8) : 1.0
             webglContext.pointsMaterial.opacity =
                 0.32 * (SCENE_ATMOSPHERE.pointOpacityScale ?? 1) * pointsRevealProgress * pointsOpacityScale
             webglContext.pointsMaterial.size =
@@ -1262,11 +1262,8 @@ export function animate() {
             ;(webglContext.scene.fog as FogExp2).density = (SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
         }
         if (webglContext.nodeSporeMaterial) {
-            const focusBoost = Number.isFinite(_state?.focusedNode)
-                ? (_state?.trailDepth ?? 0) >= 2
-                    ? 0.72
-                    : 1.0
-                : 1.0
+            const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
+            const focusBoost = Number.isFinite(_state?.focusedNode) ? (isSemanticDive ? 0.22 : 1.0) : 1.0
             const targetSporeOpacity = (SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
             webglContext.nodeSporeMaterial.opacity +=
                 (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
@@ -1307,31 +1304,32 @@ export function animate() {
 
         const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
         const graphProfile = getMyceliumPresentationProfilePort()
+        const semanticDiveThreadScale = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
         if (threadsVisible) {
             if (webglContext.myceliumCoreLines)
                 (webglContext.myceliumCoreLines.material as Material).opacity =
-                    getThreadPulseOpacityPort(
+                    (getThreadPulseOpacityPort(
                         (graphProfile as any).core,
                         Math.sin(_state?.pulsePhase ?? 0),
                         (graphProfile as any).pulse,
                         threadRevealProgress
-                    ) ?? 0
+                    ) ?? 0) * semanticDiveThreadScale
             if (webglContext.myceliumWispyLines)
                 (webglContext.myceliumWispyLines.material as Material).opacity =
-                    getThreadPulseOpacityPort(
+                    (getThreadPulseOpacityPort(
                         (graphProfile as any).wispy,
                         Math.sin((_state?.pulsePhase ?? 0) * 0.7),
                         (graphProfile as any).pulse * 0.36,
                         threadRevealProgress
-                    ) ?? 0
+                    ) ?? 0) * semanticDiveThreadScale
             if (webglContext.myceliumBridgeLines)
                 (webglContext.myceliumBridgeLines.material as Material).opacity =
-                    getThreadPulseOpacityPort(
+                    (getThreadPulseOpacityPort(
                         (graphProfile as any).bridge,
                         Math.sin((_state?.pulsePhase ?? 0) * 0.45),
                         (graphProfile as any).pulse * 0.28,
                         threadRevealProgress
-                    ) ?? 0
+                    ) ?? 0) * semanticDiveThreadScale
         } else {
             if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as Material).opacity = 0
             if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as Material).opacity = 0

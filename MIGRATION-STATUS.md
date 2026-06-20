@@ -4,21 +4,21 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ## Overall Progress
 
-| Milestone                                     | Status                    | Last Updated |
-| --------------------------------------------- | ------------------------- | ------------ |
-| Svelte UI (26 components)                     | ✅ Complete               | W40          |
-| Typed stores / state                          | ✅ Complete               | W41          |
-| Engine kernel in `src/lib/`                   | ✅ Complete               | W40          |
-| Bridge files (`src/lib/engine/*-bridge.ts`)   | 🟡 19 remaining (Phase 6 ongoing) | W10          |
-| Worker (`js/workers/data-worker.ts`)          | 🟡 Active runtime         | W40          |
-| Legacy islands (`legacy-reference/`)          | 🟢 Archive only           | W42          |
-| BOTH-pattern `.js` shadows                    | ✅ Retired                | W10          |
-| `@legacy/*` path alias                        | ✅ Retired                | 9D-Option-B  |
-| Deploy-script decoupling (`../js/scanner.js`) | ✅ Complete               | 2026-06-19   |
-| Svelte 5 strict-mode `!==` cleanup            | ✅ Guarded by CI          | W44          |
-| Bundle optimization                           | ✅ ~338 KB gzip           | W41          |
-| Parity-attrs layer                            | ✅ Functional (113 tests) | W43          |
-| A11y sweep                                    | ✅ Baseline set           | W42          |
+| Milestone                                     | Status                            | Last Updated |
+| --------------------------------------------- | --------------------------------- | ------------ |
+| Svelte UI (26 components)                     | ✅ Complete                       | W40          |
+| Typed stores / state                          | ✅ Complete                       | W41          |
+| Engine kernel in `src/lib/`                   | ✅ Complete                       | W40          |
+| Bridge files (`src/lib/engine/*-bridge.ts`)   | 🟡 13 remaining (Phase 6 ongoing) | W10          |
+| Worker (`js/workers/data-worker.ts`)          | 🟡 Active runtime                 | W40          |
+| Legacy islands (`legacy-reference/`)          | 🟢 Archive only                   | W42          |
+| BOTH-pattern `.js` shadows                    | ✅ Retired                        | W10          |
+| `@legacy/*` path alias                        | ✅ Retired                        | 9D-Option-B  |
+| Deploy-script decoupling (`../js/scanner.js`) | ✅ Complete                       | 2026-06-19   |
+| Svelte 5 strict-mode `!==` cleanup            | ✅ Guarded by CI                  | W44          |
+| Bundle optimization                           | ✅ ~338 KB gzip                   | W41          |
+| Parity-attrs layer                            | ✅ Functional (113 tests)         | W43          |
+| A11y sweep                                    | ✅ Baseline set                   | W42          |
 
 ## Current Wave: W10 (2026-06-20)
 
@@ -30,9 +30,9 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ### Scope
 
-- Retired 5 more single-consumer bridges via 5-signal dead-code audit:
-  - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`
-  - Total: 34 → 19 bridges remaining (44% drop overall)
+- Retired 11 single-consumer and passthrough bridges via 5-signal dead-code audit:
+  - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`, `thread-inspector-bridge.ts`, `journey-point-color-bridge.ts`, `journey-thread-model-bridge.ts`, `journey-thread-settler-bridge.ts`, `inspected-strand-overlay-bridge.ts`, `route-arrival-overlay-bridge.ts`
+  - Total: 34 → 13 bridges remaining (61% drop overall)
 - Refactored `tests/unit-active/w11-t7-adapters-init.test.ts` to assert all 11 adapters are imported from their canonical owners (no longer requires reading the obsolete `adapters-bridge.ts`).
 - Fixed the W9-era `component-SearchBar.test.ts` isolation bug (vacuous `vi.mock` hoisting).
 - Verified `npm run test:unit` green: **1135/1135 passing**, 102/102 test files.
@@ -85,16 +85,16 @@ npm run qa:visual -- --all
 
 ## Changelog (last 5 waves)
 
-| Wave | Date       | Key Deliverable                                                    |
-| ---- | ---------- | ------------------------------------------------------------------ |
-| W10  | 2026-06-20 | Phase 6C cont.: 5 more bridges retired (34→19, −44% total), test alignment, 1135/1135 unit tests |
+| Wave | Date       | Key Deliverable                                                                                      |
+| ---- | ---------- | ---------------------------------------------------------------------------------------------------- |
+| W10  | 2026-06-20 | Phase 6C cont.: 5 more bridges retired (34→19, −44% total), test alignment, 1135/1135 unit tests     |
 | W9   | 2026-06-20 | Phase 6C: Parity smoke + bridge unwind continuation + Lighthouse (Perf 80, A11y 100, BP 100, SEO 91) |
-| W8   | 2026-06-20 | Phase 6A/6B: Retired old Engine Bridge & adapters (-542 LoC)       |
-| W7   | 2026-06-19 | Dual-module collapse (Pairs 1–4) + Svelte-5 hardening (−1,553 LoC) |
-| W6   | 2026-06-19 | Splash + lazy Canvas                                               |
-| W5   | 2026-06-18 | TBT optimization, a11y closeout                                    |
-| W44  | 2026-06-17 | Bundle audit, brotli compression                                   |
-| W43  | 2026-06-18 | Focus-stage QA, parity-attrs                                       |
+| W8   | 2026-06-20 | Phase 6A/6B: Retired old Engine Bridge & adapters (-542 LoC)                                         |
+| W7   | 2026-06-19 | Dual-module collapse (Pairs 1–4) + Svelte-5 hardening (−1,553 LoC)                                   |
+| W6   | 2026-06-19 | Splash + lazy Canvas                                                                                 |
+| W5   | 2026-06-18 | TBT optimization, a11y closeout                                                                      |
+| W44  | 2026-06-17 | Bundle audit, brotli compression                                                                     |
+| W43  | 2026-06-18 | Focus-stage QA, parity-attrs                                                                         |
 
 ---
 

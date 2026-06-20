@@ -29,14 +29,14 @@ import {
     getGeometricThreadCandidates,
     getSemanticThreadCandidates,
     getThreadCandidatesForIndex
-} from '@lib/engine/journey-thread-model-bridge'
+} from './thread-model'
 import {
     initJourneyTimerAdapter,
     getStrandArrivalNote,
     getInsideRelationshipLabel,
     summarizeNeighborReason,
     walkThreadNeighbor
-} from '@lib/engine/journey-thread-settler-bridge'
+} from './thread-settler'
 import { traverseNeighbor, previewInsideNextThread } from './thread-settler-adapter'
 import {
     getThreadInspectionState,
@@ -46,7 +46,7 @@ import {
     unpinThreadInspection,
     scheduleCanvasThreadInspectionClear,
     clearThreadInspection
-} from '@lib/engine/thread-inspector-bridge'
+} from './thread-inspector'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
 import {
     initJourneyNeighborhoodAdapter,
@@ -93,7 +93,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
     _ensureCanvasNodeInteractionBindings()
 }
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
-import { applyPointFilterColors, describeThreadLensForPoint } from '@lib/engine/journey-point-color-bridge'
+import { applyPointFilterColors, describeThreadLensForPoint } from './point-color'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/engine/lifecycle-bridge'
 import { appState } from '@lib/state/app.svelte'
