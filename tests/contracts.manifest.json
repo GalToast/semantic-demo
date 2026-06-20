@@ -105,7 +105,8 @@
                 "scene-reveal-contract.mjs",
                 "loading-ui-contract.mjs",
                 "motion-state-contract.mjs",
-                "map-flattening-raw-buffer-contract.mjs"
+                "map-flattening-raw-buffer-contract.mjs",
+                "production-preview-parity-contract.mjs"
             ]
         },
         "mobile-critical": {

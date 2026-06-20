@@ -20,12 +20,13 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 | Parity-attrs layer                            | ✅ Functional (113 tests) | W43          |
 | A11y sweep                                    | ✅ Baseline set           | W42          |
 
-## Current Wave: W8 (2026-06-20)
+## Current Wave: W9 (2026-06-20)
 
-**Charter:** `docs/w8-charter-2026-06-20.md`
-**Next wave:** W9 (Production-Preview Parity Smoke)
+**Charter:** `docs/w9-charter-2026-06-20.md`
+**Previous wave:** W8 (closed 2026-06-20)
+**Next wave:** W10 (pending W9 outcomes)
 
-**Pipeline:** Phase 6A & Phase 6B: Bridge Retirement & Canvas Component Lifecycle Ownership
+**Pipeline:** Phase 6C: Bridge Unwind Continuation + Parity Smoke + Lighthouse closeout
 
 ### Scope
 
@@ -41,7 +42,15 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ### Open Items
 
-- [ ] Lighthouse 92% verification (blocked on Three.js named-imports audit completing)
+- [x] W9-A: Production-preview parity smoke (carry-over from W43-C) — **DONE**, see `docs/production-preview-parity-baseline-w9-2026-06-20.md`
+- [ ] W9-B: Bridge unwind continuation (4-signal audit on remaining 34 bridges)
+- [ ] W9-C: Lighthouse 92% verification (W8 carry-over; unblocked by W44 named-imports audit)
+
+### W9-A Findings (2026-06-20)
+
+- **Parity smoke PASS**: dev (5173) and preview (4174) produce identical body data-attrs across all 16 attrs and 2 flows (idle + search). W8 Bridge Retirement does NOT regress the W15 parity baseline.
+- **Contract test registered** under `smoke` group in `tests/contracts.manifest.json`. Runs as part of `node tests/run-all-contracts.js --group=smoke`.
+- **Test baseline reality check**: `npm run test:unit` reports **1,118 passed / 1 failed / 1,119 total**. The single failure is `component-SearchBar.test.ts` "lazy-renders SearchResults sub-component when search state is active" — a pre-existing test isolation bug that reproduces only in the full-suite cumulative run. The test passes in isolation and when paired with any single other test file. **Not W9 scope; flagged for W10 or parallel-session follow-up.**
 
 ### Parallel-Session Safety
 
@@ -88,6 +97,7 @@ npm run qa:visual -- --all
 
 | Wave | Date       | Key Deliverable                                                    |
 | ---- | ---------- | ------------------------------------------------------------------ |
+| W9   | 2026-06-20 | Phase 6C: Parity smoke + bridge unwind continuation + Lighthouse   |
 | W8   | 2026-06-20 | Phase 6A/6B: Retired old Engine Bridge & adapters (-542 LoC)       |
 | W7   | 2026-06-19 | Dual-module collapse (Pairs 1–4) + Svelte-5 hardening (−1,553 LoC) |
 | W6   | 2026-06-19 | Splash + lazy Canvas                                               |

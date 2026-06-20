@@ -137,8 +137,8 @@ A file passes the "dead" threshold only when **all five signals are zero**.
 
 ### 4. Prod-Preview Parity Smoke
 
-**Status:** Baseline captured in W15 (`docs/production-preview-parity-baseline-2026-06-17.md`).
-**Remaining:** Re-run parity smoke after any visual or body data-attr change. Verify dev (Vite 5173) and production preview (Vite preview 4174) produce identical body attributes and visual state.
+**Status:** ✅ Complete (W9-A, 2026-06-20). W8 Bridge Retirement preserved parity. Refresh baseline: `docs/production-preview-parity-baseline-w9-2026-06-20.md`. Smoke contract lives in `tests/production-preview-parity-contract.mjs` (registered under `smoke` group in `tests/contracts.manifest.json`).
+**Remaining:** Expand smoke to all 16 surfaces (currently 16 high-traffic attrs across 2 flows). Visual pixel-level parity diff is a future hardening.
 
 ### 5. Deploy Shell Normalization
 
