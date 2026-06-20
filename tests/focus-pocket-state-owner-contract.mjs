@@ -7,8 +7,8 @@ import { fileURLToPath } from 'url';
 import { dirname, join, relative } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
-const MODULES_DIR = join(__dirname, '..', 'js', 'modules');
-const FP_PATH = join(__dirname, '..', 'js', 'modules', 'focus-pocket.ts');
+const MODULES_DIR = join(__dirname, '..', 'src', 'lib');
+const FP_PATH = join(__dirname, '..', 'src', 'lib', 'journey', 'focus-pocket.ts');
 
 let failures = 0;
 
@@ -120,8 +120,9 @@ if (!source.includes('export function applyLocalNeighborhoodFocus')) {
     failures++;
 }
 
-// Verify the API comment header is present
-if (!source.includes('// === Focus Pocket Owner API ===')) {
+// Verify the API comment header is present (accept the current JSDoc-style
+// header in focus-pocket.ts or the legacy `// === Focus Pocket Owner API ===`).
+if (!source.includes("// === Focus Pocket Owner API ===") && !/Focus pocket node layout[\s\S]{0,400}owner API/.test(source)) {
     console.error('FAIL: owner API header comment is missing');
     failures++;
 }
