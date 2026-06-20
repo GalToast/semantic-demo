@@ -23,8 +23,6 @@ export {
 export { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from '../journey/lifecycle-adapter'
 export { revealSelectedBusinessCard } from '@lib/ui/panel-bindings'
 export { applyClusterUiAccent } from '../ui/cluster-ui-accent'
-export { selectedPointStore as legacySelectedPointStore } from '../stores/legacy-stores'
-
 // Relocated legacy re-exports from semantic-guide-bridge & semantic-dive-bridge
 export { buildSemanticGuideRequestPayload } from '../journey/semantic-guide-payload'
 export { updateLegendGuideState } from '@lib/stores/legend-panel.svelte.ts'

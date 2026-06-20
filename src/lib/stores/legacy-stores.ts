@@ -8,7 +8,6 @@
 
 import { writable } from 'svelte/store'
 import type { Writable } from 'svelte/store'
-import { getViewportSize } from '@lib/utils/environment'
 import type { ActiveFilters } from '@lib/state/state-types'
 
 interface CompositionState {
@@ -38,10 +37,6 @@ interface SemanticGuideState {
     typeToken: number
     buttonMode: string
 }
-
-const isDesktop: boolean = getViewportSize().width >= 1024
-export const isInfoPanelOpenStore: Writable<boolean> = writable(isDesktop)
-export const isLegendPanelOpenStore: Writable<boolean> = writable(false)
 
 export const activeFiltersStore: Writable<ActiveFilters> = writable({
     status: 'all',
