@@ -131,7 +131,8 @@ function getCompatValue(prop: string | symbol): unknown {
             ...asRecord(legacyState.state),
             ...asRecord(svelteState.state),
             currentView: svelteState.currentView ?? legacyState.currentView,
-            navState: getCompatNavState()
+            navState: getCompatNavState(),
+            points: (appState as any).points
         }
     }
     const svelteValue = svelteState[prop]

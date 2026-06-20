@@ -142,12 +142,10 @@ Object.defineProperty(globalThis, 'navigator', {
 
 elementsById.set('search-spinner', new FakeElement('div'));
 
-const { state } = await import('../src/lib/engine/state-bridge.ts');
 const {
   getSearchResultStrength,
   getSearchResultStrengthLabel,
-  applySemanticSearchDegradedState,
-} = await import('../src/lib/engine/search-state-bridge.ts');
+} = await import('../src/lib/search/result-renderer.ts');
 const { subscribe, EVENTS } = await import('../src/lib/orchestration/event-bus.ts');
 
 window.recordSemanticLaneSnapshotCalls = [];
@@ -166,16 +164,6 @@ subscribe(EVENTS.COMPOSITION_UPDATED, () => {
 subscribe(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, ({ laneState, options }) => {
   window.semanticLaneStates.push([laneState, options]);
 });
-
-state.points = [
-  { cluster: 2 },
-  { cluster: 2 },
-  { cluster: 7 },
-  { cluster: 8 },
-  { cluster: 9 },
-  { cluster: 10 },
-];
-state.currentSearchSummary = null;
 
 assert(getSearchResultStrength({ score: 0.74 }, 1) === 74, 'strength scales against top score');
 assert(getSearchResultStrength({}, 1) === 14, 'missing score has a 14% floor');

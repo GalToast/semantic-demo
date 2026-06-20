@@ -566,14 +566,38 @@ class AppState {
 
 // Singleton opt-in instance — consumers can import and use this instead of the legacy state.
 const GLOBAL_APP_STATE_KEY = '__SEMANTIC_EXPLORER_APP_STATE_V1__'
+// Cross-chunk direct key: used by getAppState() to detect an instance already
+// created by another Vite chunk.  MUST be a plain data property (not a getter);
+// the getter on GLOBAL_APP_STATE_KEY calls getAppState() itself, so reading it
+// inside getAppState() would create infinite recursion.
+const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
 
 let _appStateInstance: AppState | null = null
 
 function getAppState(): AppState {
     if (_appStateInstance === null) {
-        _appStateInstance = new AppState()
-        if (typeof window !== 'undefined' && !(window as any)[GLOBAL_APP_STATE_KEY]) {
-            ;(window as any)[GLOBAL_APP_STATE_KEY] = _appStateInstance
+        // Cross-chunk singleton synchronisation.
+        // When Vite code-splits, the `app.svelte.ts` module can be duplicated
+        // into multiple chunks.  Each chunk has its own module-level
+        // `_appStateInstance`.  If engine/lifecycle.ts (chunk A) creates and
+        // populates the instance, then main.ts (chunk B) must reuse that same
+        // object rather than lazily creating a new empty one.
+        //
+        // We use a plain *data* property on `window` for this, NOT the getter
+        // `window[GLOBAL_APP_STATE_KEY]`.  The getter is defined below as
+        // `Object.defineProperty(window, GLOBAL_APP_STATE_KEY, { get: getAppState })`,
+        // so reading it triggers `getAppState()` again — infinite recursion.
+        const directInstance =
+            typeof window !== 'undefined'
+                ? ((window as any)[APP_STATE_DIRECT_KEY] as AppState | undefined)
+                : undefined
+        if (directInstance) {
+            _appStateInstance = directInstance
+        } else {
+            _appStateInstance = new AppState()
+            if (typeof window !== 'undefined') {
+                ;(window as any)[APP_STATE_DIRECT_KEY] = _appStateInstance
+            }
         }
     }
     return _appStateInstance

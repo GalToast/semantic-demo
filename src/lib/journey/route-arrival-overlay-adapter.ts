@@ -5,6 +5,9 @@
  * Manages the route-trace and arrival-handoff overlay update callbacks.
  */
 
+import { updateArrivalHandoffOverlay } from '@lib/journey/arrival-handoff';
+import { updateRouteTraceOverlayPositions } from '@lib/journey/route-trace';
+
 type RouteTraceOverlayUpdater = (now?: number) => void;
 type ArrivalHandoffOverlayUpdater = (now?: number) => void;
 
@@ -26,11 +29,11 @@ export function setRouteArrivalOverlayUpdaters(updaters: RouteArrivalOverlayUpda
 }
 
 export function updateRouteTraceOverlayFrame(now: number = performance.now()): void {
-    if (!routeTraceOverlayUpdater) return;
-    routeTraceOverlayUpdater(now);
+    const update = routeTraceOverlayUpdater || updateRouteTraceOverlayPositions;
+    update(now);
 }
 
 export function updateArrivalHandoffOverlayFrame(now: number = performance.now()): void {
-    if (!arrivalHandoffOverlayUpdater) return;
-    arrivalHandoffOverlayUpdater(now);
+    const update = arrivalHandoffOverlayUpdater || updateArrivalHandoffOverlay;
+    update(now);
 }

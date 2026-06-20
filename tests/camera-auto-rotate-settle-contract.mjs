@@ -65,8 +65,8 @@ const sceneRevealSrc = fs.readFileSync(SCENE_REVEAL_PATH, 'utf8')
 
 assertContains(
     cameraSrc,
-    "from './camera-controls-restore'",
-    'camera-controls.ts facade imports camera-controls-restore'
+    "from './camera-controls-restore.svelte'",
+    'camera-controls.ts facade imports camera-controls-restore.svelte'
 )
 ;[
     'settleCameraToOverviewPose',

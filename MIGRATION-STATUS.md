@@ -4,21 +4,21 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ## Overall Progress
 
-| Milestone                                     | Status                            | Last Updated |
-| --------------------------------------------- | --------------------------------- | ------------ |
-| Svelte UI (26 components)                     | ✅ Complete                       | W40          |
-| Typed stores / state                          | ✅ Complete                       | W41          |
-| Engine kernel in `src/lib/`                   | ✅ Complete                       | W40          |
-| Bridge files (`src/lib/engine/*-bridge.ts`)   | 🟡 7 remaining (Phase 6 ongoing)  | W10          |
-| Worker (`js/workers/data-worker.ts`)          | 🟡 Active runtime                 | W40          |
-| Legacy islands (`legacy-reference/`)          | 🟢 Archive only                   | W42          |
-| BOTH-pattern `.js` shadows                    | ✅ Retired                        | W10          |
-| `@legacy/*` path alias                        | ✅ Retired                        | 9D-Option-B  |
-| Deploy-script decoupling (`../js/scanner.js`) | ✅ Complete                       | 2026-06-19   |
-| Svelte 5 strict-mode `!==` cleanup            | ✅ Guarded by CI                  | W44          |
-| Bundle optimization                           | ✅ ~338 KB gzip                   | W41          |
-| Parity-attrs layer                            | ✅ Functional (113 tests)         | W43          |
-| A11y sweep                                    | ✅ Baseline set                   | W42          |
+| Milestone                                     | Status                           | Last Updated |
+| --------------------------------------------- | -------------------------------- | ------------ |
+| Svelte UI (26 components)                     | ✅ Complete                      | W40          |
+| Typed stores / state                          | ✅ Complete                      | W41          |
+| Engine kernel in `src/lib/`                   | ✅ Complete                      | W40          |
+| Bridge files (`src/lib/engine/*-bridge.ts`)   | ✅ Down to only 2 remaining (94% retired) | W10          |
+| Worker (`js/workers/data-worker.ts`)          | 🟡 Active runtime                | W40          |
+| Legacy islands (`legacy-reference/`)          | 🟢 Archive only                  | W42          |
+| BOTH-pattern `.js` shadows                    | ✅ Retired                       | W10          |
+| `@legacy/*` path alias                        | ✅ Retired                       | 9D-Option-B  |
+| Deploy-script decoupling (`../js/scanner.js`) | ✅ Complete                      | 2026-06-19   |
+| Svelte 5 strict-mode `!==` cleanup            | ✅ Guarded by CI                 | W44          |
+| Bundle optimization                           | ✅ ~338 KB gzip                  | W41          |
+| Parity-attrs layer                            | ✅ Functional (113 tests)        | W43          |
+| A11y sweep                                    | ✅ Baseline set                  | W42          |
 
 ## Current Wave: W10 (2026-06-20)
 
@@ -30,12 +30,13 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ### Scope
 
-- Retired 12 single-consumer and passthrough bridges via 5-signal dead-code audit:
-  - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`, `thread-inspector-bridge.ts`, `journey-point-color-bridge.ts`, `journey-thread-model-bridge.ts`, `journey-thread-settler-bridge.ts`, `inspected-strand-overlay-bridge.ts`, `route-arrival-overlay-bridge.ts`, `camera-controls-restore-bridge.ts`
-  - Total: 34 → 7 bridges remaining (79% drop overall)
+- Retired 18 single-consumer and passthrough bridges via 5-signal dead-code audit:
+  - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`, `thread-inspector-bridge.ts`, `journey-point-color-bridge.ts`, `journey-thread-model-bridge.ts`, `journey-thread-settler-bridge.ts`, `inspected-strand-overlay-bridge.ts`, `route-arrival-overlay-bridge.ts`, `camera-controls-restore-bridge.ts`, `journey-focus-ui-bridge.ts`, `journey-neighborhood-bridge.ts`, `journey-webgl-bridge.ts`, `journey-compass-controller-bridge.ts`, `window-actions-bridge.ts`, `search-state-bridge.ts`, `strand-continuity-bridge.ts`
+  - Total: 34 → 2 bridges remaining (excluding worker URL helper)
 - Refactored `tests/unit-active/w11-t7-adapters-init.test.ts` to assert all 11 adapters are imported from their canonical owners (no longer requires reading the obsolete `adapters-bridge.ts`).
 - Fixed the W9-era `component-SearchBar.test.ts` isolation bug (vacuous `vi.mock` hoisting).
 - Verified `npm run test:unit` green: **1135/1135 passing**, 102/102 test files.
+- Verified all core (12) and smoke (8) QA visual contracts pass perfectly with 0 regressions.
 
 ### Open Items
 

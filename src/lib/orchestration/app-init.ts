@@ -50,6 +50,8 @@ import { requestSemanticGuide } from '@lib/journey/semantic-guide'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
 import type { ViewName } from '@lib/types/state'
 
+const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
+
 // ── Debug Window Extensions (Playwright test compat) ────────────────────────
 // `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims exposing a grab-bag
 // of action handles and a state getter for Playwright page.evaluate(). They are
@@ -199,16 +201,9 @@ function installWindowGlobals(): () => void {
     // it to the AppState class.
     window.__APP_STATE__ = {
         get state() {
-            // Read the AppState singleton through the global key rather than
-            // the module-level `appState` proxy. When Vite code-splits the
-            // `app.svelte.ts` module across chunks, each chunk gets its own
-            // module-level `_appStateInstance`. The engine/lifecycle chunk
-            // populates the instance it creates, but the app-init chunk's
-            // `appState` proxy lazily instantiates a *different* empty instance
-            // on first access, causing `__APP_STATE__` to return stale empty
-            // data even though the global key holds the populated one.
             const liveAppState =
-                (typeof window !== 'undefined' && (window as any).__SEMANTIC_EXPLORER_APP_STATE_V1__) || appState
+                ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as typeof appState | undefined) ||
+                appState
             return {
                 currentView: get(navStore).currentView,
                 navState: get(navStore),
