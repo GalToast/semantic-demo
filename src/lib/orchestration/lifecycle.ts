@@ -208,60 +208,17 @@ export function exploreInsideToNextStop(): void {
 }
 
 // ── Legacy Semantic Lane Probes ────────────────────────────────────────────────
-
-/**
- * Probe the semantic lane health.
- * Legacy stub — actual implementation lives in the engine bridge.
- */
-export function probeSemanticLane(_options?: Record<string, unknown>): Promise<unknown> {
-    return Promise.resolve(null)
-}
-
-/**
- * Set the semantic lane UI state.
- * Legacy stub — actual implementation lives in the engine bridge.
- */
-export function setSemanticLaneUiState(laneState: string, options: Record<string, unknown> = {}): void {
-    const doc = typeof document !== 'undefined' ? document : null
-    const pill = doc?.getElementById?.('semantic-lane-pill') as HTMLElement | null
-    const assistEl = doc?.getElementById?.('semantic-lane-assist') as HTMLElement | null
-    const label = typeof options.label === 'string' ? options.label : laneState
-    const title = typeof options.title === 'string' ? options.title : label
-
-    if (pill) {
-        pill.dataset.state = laneState
-        pill.textContent = label
-        pill.setAttribute('aria-label', title)
-    }
-
-    if (!assistEl) return
-
-    const nav = get(navStore)
-    const search = get(searchStore)
-    const bodyContext = doc?.body?.dataset?.graphContext
-    const focusOwnsRail =
-        bodyContext === 'focus-search' ||
-        bodyContext === 'focus' ||
-        nav.focusedIndex !== null ||
-        Boolean(search.summary)
-
-    if (laneState === 'healthy' || focusOwnsRail) {
-        assistEl.hidden = true
-        assistEl.dataset.state = 'idle'
-        assistEl.style.display = 'none'
-        return
-    }
-
-    assistEl.hidden = false
-    assistEl.dataset.state = laneState
-    assistEl.style.display = ''
-}
+// Thin re-exports: canonical implementations moved to semantic-lane.ts
+// (see W7-C cleanup). Remove once bridge retirement phase 6 retires
+// lifecycle.ts as a re-export hub.
+export { probeSemanticLane, setSemanticLaneUiState } from './semantic-lane'
 
 // ── UI Feedback Stubs ─────────────────────────────────────────────────────────
+// The functions below are genuine no-op stubs. Per the bridge retirement
+// plan, they remain here until phase 6 replaces lifecycle.ts re-exports.
 
-/**
- * Sync search status for a focused business point.
- * Legacy stub — actual implementation lives in ui-feedback.js.
+/** Sync search status for a focused business point. Actual implementation
+ *  lives in the UI feedback module behind the engine bridge.
  */
 export function syncSearchStatusForFocus(
     _point: Record<string, unknown> | null,
