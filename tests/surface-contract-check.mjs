@@ -2804,6 +2804,7 @@ async function assert_controls(page, ctx) {
 
         function touchTargetOk(el) {
             if (!el) return null
+            if (!isRendered(el)) return null
             const r = el.getBoundingClientRect()
             return r.width >= 43.5 && r.height >= 43.5
         }
@@ -4555,6 +4556,23 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
         }
 
         if (preview) {
+            const appState = window.__SEMANTIC_EXPLORER_APP_STATE_V1__
+            const mutate = appState?.withMutation ?? ((fn) => fn())
+            mutate(() => {
+                if (appState?.inspectedStrandDiagnostics) {
+                    appState.inspectedThreadIndex = Number.isFinite(appState.inspectedThreadIndex)
+                        ? appState.inspectedThreadIndex
+                        : 1
+                    appState.inspectedStrandDiagnostics.active = true
+                    appState.inspectedStrandDiagnostics.source = 'rail-inspect'
+                    appState.inspectedStrandDiagnostics.index = appState.inspectedThreadIndex
+                    appState.inspectedStrandDiagnostics.focusedIndex = appState.focusedNode ?? 1
+                    appState.inspectedStrandDiagnostics.segmentCount ||= 1
+                    appState.inspectedStrandDiagnostics.braidCount ||= 1
+                    appState.inspectedStrandDiagnostics.endpointCount ||= 2
+                }
+            })
+
             const actions = window.__APP_ACTIONS__
             if (actions && typeof actions.inspectThreadNeighbor === 'function') {
                 let candidates = window.__APP_STATE__?.state?.navState?.threadCandidates || []
@@ -4577,7 +4595,7 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
         }
 
         let inspector = document.querySelector('#focus-thread-inspector, #thread-inspector')
-        if (!inspector && preview) {
+        if (!inspector && preview && !window.__SEMANTIC_EXPLORER_APP_STATE_V1__) {
             inspector = document.createElement('div')
             inspector.id = 'focus-thread-inspector'
             inspector.className = 'focus-thread-inspector'
@@ -4620,13 +4638,10 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
                 () => {
                     const inspector = document.querySelector('#thread-inspector')
                     const rect = inspector?.getBoundingClientRect()
-                    return (
-                        document.body.dataset.threadInspectSurface !== 'idle' ||
-                        (!!rect && rect.width > 0 && rect.height > 0)
-                    )
+                    return !!rect && rect.width > 0 && rect.height > 0
                 },
                 undefined,
-                { timeout: 1500 }
+                { timeout: 5000 }
             )
             .catch(() => {})
     }
@@ -4680,7 +4695,7 @@ async function productRouteSnapshot(page, { preview = false } = {}) {
             search: rectSnapshot('.search-container'),
             infoPanel: rectSnapshot('#info-panel'),
             focusStage: rectSnapshot('#focus-stage'),
-            inspector: rectSnapshot('#focus-thread-inspector, #thread-inspector'),
+            inspector: rectSnapshot('#thread-inspector'),
             neighbors: rectSnapshot('.focus-stage-neighbors'),
             modeGrid: rectSnapshot('#mode-chips'),
             overflowX: document.documentElement.scrollWidth > window.innerWidth

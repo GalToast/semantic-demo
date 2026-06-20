@@ -516,7 +516,7 @@ function getAppState(): AppState {
     if (_appStateInstance === null) {
         _appStateInstance = new AppState()
         if (typeof window !== 'undefined' && !(window as any)[GLOBAL_APP_STATE_KEY]) {
-            (window as any)[GLOBAL_APP_STATE_KEY] = _appStateInstance
+            ;(window as any)[GLOBAL_APP_STATE_KEY] = _appStateInstance
         }
     }
     return _appStateInstance

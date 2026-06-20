@@ -58,8 +58,6 @@ export const searchErrorStore: Writable<unknown | null> = writable(null)
 
 export const searchVisibleCountStore: Writable<number> = writable(5)
 
-export const selectedPointStore: Writable<Record<string, unknown> | null> = writable(null)
-
 export const compositionStore: Writable<CompositionState> = writable({
     activeView: 'galaxy',
     trailState: 'inactive',

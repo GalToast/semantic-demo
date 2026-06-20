@@ -145,7 +145,8 @@ export function setSemanticDiveModeProxy(enabled: boolean): void {
         const hasFocus = nav.focusedIndex != null || Boolean(focus.selectedBusiness)
         const hasSearchIntent = Boolean(search.summary || search.query.trim().length >= 2)
         const mode = hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'overview'
-        const surface = hasFocus && hasSearchIntent ? 'focus-search' : hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'idle'
+        const surface =
+            hasFocus && hasSearchIntent ? 'focus-search' : hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'idle'
         setTrailDepth(1)
         updateNavState({ mode, surface, trailDepth: 1 })
     }
