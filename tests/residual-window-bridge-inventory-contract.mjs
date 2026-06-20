@@ -58,7 +58,7 @@ const MODULES = {
     legendUi: path.join(SEMDEMO_ROOT, 'src/lib/journey/legend-ui.ts'),
     keyboardHelp: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/keyboard-help.ts'),
     uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui-renderers.ts'),
-    mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'js/modules/map-flattening-layout.ts'),
+    mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'src/lib/utils/map-flattening-layout.ts'),
     inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/inspected-strand-overlay-adapter.ts'),
     routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/route-arrival-overlay-adapter.ts'),
     threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine.ts'),
@@ -534,8 +534,8 @@ function testJourneyArrivalHandoffDewindowed() {
         'thread-inspector.ts should import strand continuity state from the shared owner (legacy or bridge alias)'
     )
     assert(
-        /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"]\.\/lifecycle\.(?:js|ts)['"]/.test(threadInspectorSrc),
-        'thread-inspector.js should import syncFocusStage through lifecycle.js instead of the window bridge'
+        /import\s+\{[^}]*\bsyncFocusStage\b[^}]*\}\s+from\s+['"][^'"]*(?:selected-card|lifecycle)['"]/.test(threadInspectorSrc),
+        'thread-inspector.ts should import syncFocusStage from selected-card (or legacy lifecycle) instead of the window bridge'
     )
     assert(
         !threadInspectorSrc.includes('window.syncFocusStage'),

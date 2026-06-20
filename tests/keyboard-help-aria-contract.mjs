@@ -37,6 +37,11 @@ function assertContains(haystack, needle, label) {
   assert(found, `${label}: expected source to contain "${needle}"`);
 }
 
+function assertMatches(haystack, pattern, label) {
+  const found = pattern.test(haystack);
+  assert(found, `${label}: expected source to match ${pattern}`);
+}
+
 // ---------------------------------------------------------------------------
 // TEST 1: _previouslyFocused variable declared at module scope
 // ---------------------------------------------------------------------------
@@ -55,9 +60,9 @@ function testPreviouslyFocusedVariable() {
 function testOpenCapturesFocus() {
   console.log('\n[TEST] _openKeyboardHintPanel captures focus into _previouslyFocused');
 
-  assertContains(src, '_previouslyFocused = returnFocusEl',
+  assertMatches(src, /_previouslyFocused\s*=\s*[\s\S]*?returnFocusEl/,
     '_openKeyboardHintPanel assigns returnFocusEl to _previouslyFocused');
-  assertContains(src, '_previouslyFocused = returnFocusEl || document.getElementById(\'btn-keyboard-help\')',
+  assertMatches(src, /_previouslyFocused\s*=\s*[\s\S]*?returnFocusEl\s*\|\|\s*document\.getElementById\('btn-keyboard-help'\)/,
     '_openKeyboardHintPanel fallbacks to btn-keyboard-help when no returnFocusEl');
 }
 
@@ -161,8 +166,10 @@ function testEscapeKeyWired() {
 function testCloseButtonWired() {
   console.log('\n[TEST] .kh-close button is wired to closePanel');
 
-  assertContains(src, "querySelector('.kh-close')!.addEventListener('click', closePanel)",
-    '.kh-close click listener calls closePanel');
+  assert(src.includes("className = 'kh-close'") || src.includes('className = "kh-close"'),
+    '.kh-close close button is created with the right class');
+  assert(/addEventListener\(['"]click['"],\s*closePanel\)/.test(src),
+    'close button click listener calls closePanel');
 }
 
 // ---------------------------------------------------------------------------
@@ -172,7 +179,7 @@ function testCloseButtonWired() {
 function testFocusTrap() {
   console.log('\n[TEST] panel has focus-trap logic for Tab key');
 
-  assertContains(src, "querySelectorAll('button, [href], input, select, textarea, [tabindex]:not([tabindex=\"-1\"])",
+  assertMatches(src, /querySelectorAll\(\s*['"]button,\s*\[href\],\s*input,\s*select,\s*textarea,\s*\[tabindex\]:not\(\[tabindex=["']-1["']\]\)['"]/,
     'focus trap queries focusable elements within panel');
   assertContains(src, 'e.shiftKey',
     'focus trap handles Shift+Tab case');

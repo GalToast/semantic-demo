@@ -27,6 +27,10 @@ function assertIncludes(source, needle, label) {
   assert(source.includes(needle), `${label}: missing ${needle}`);
 }
 
+function assertMatches(source, pattern, label) {
+  assert(pattern.test(source), `${label}: missing match for ${pattern}`);
+}
+
 function assertNotIncludes(source, needle, label) {
   assert(!source.includes(needle), `${label}: unexpected ${needle}`);
 }
@@ -77,10 +81,14 @@ function testCallerWiring() {
 
   for (const [label, source, focusName] of [
     ['journey-compass-state', compass, 'focusIndex'],
-    ['semantic-dive-ui', dive, 'currentFocusIndex']
+    ['semantic-dive-ui', dive, 'focusedIndex']
   ]) {
-    assertIncludes(source, "import { getNextExploreCandidateForIndex } from './journey-thread-model.ts';", `${label} helper import`);
-    assertIncludes(source, "import { getNextWalkCandidateForIndex } from './journey-lifecycle-adapter.ts';", `${label} adapter import`);
+    assertMatches(source, /import\s+\{[^}]*\bgetNextExploreCandidateForIndex\b[^}]*\}\s+from\s+['"][^'"]*thread-model['"]/, `${label} helper import`);
+    // getNextWalkCandidateForIndex may come from either the legacy
+    // lifecycle-adapter (compass-state) or the neighborhood helper
+    // (semantic-overlay), depending on which module owns the walk
+    // semantics post-migration.
+    assertMatches(source, /import\s+\{[^}]*\bgetNextWalkCandidateForIndex\b[^}]*\}\s+from\s+['"][^'"]*(?:lifecycle-adapter|neighborhood)['"]/, `${label} adapter import`);
     assertIncludes(source, `getNextExploreCandidateForIndex(${focusName}, getNextWalkCandidateForIndex`, `${label} helper call`);
     assertNotIncludes(source, 'window.getNextWalkCandidateForIndex', `${label} no getNextWalk window bridge`);
     assertNotIncludes(source, 'window.getNextExploreCandidateForIndex', `${label} no getNextExplore window bridge`);
