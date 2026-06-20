@@ -31,6 +31,7 @@ import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
+import { animateCameraToNode } from './focus'
 
 // Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)
 type OnboardingHint = HTMLElement & {
@@ -159,11 +160,9 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
         fromSearchResult: !!options.fromSearchResult
     })
 
-    import('@lib/engine/camera-choreography').then((m) =>
-        m.animateCameraToNode(index, {
-            transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
-        })
-    )
+    animateCameraToNode(index, {
+        transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
+    })
 
     syncSemanticDiveUi()
     refreshCompositionState()

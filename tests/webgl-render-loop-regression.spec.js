@@ -25,6 +25,9 @@ const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 const TMP_DIR = path.resolve(process.cwd(), 'tmp');
 
 async function waitForSceneReady(page) {
+  await page.addInitScript(() => {
+    window.__PLAYWRIGHT__ = true;
+  });
   await page.goto(
     `${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`,
     { waitUntil: 'domcontentloaded' }

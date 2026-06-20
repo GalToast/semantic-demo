@@ -233,7 +233,7 @@ function syncStoresFromState() {
 
     updateNavState({
         currentView: activeView,
-        focusedIndex: hasFocus ? state.navState.focusedIndex ?? state.focusedNode : null,
+        focusedIndex: hasFocus ? (state.navState.focusedIndex ?? state.focusedNode) : null,
         mode,
         surface,
         trailDepth: state.trailDepth

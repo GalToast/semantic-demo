@@ -25,6 +25,7 @@ import * as lifecycleStaticModule from '@lib/engine/lifecycle-bridge'
 import * as journeyCompassStaticModule from '@lib/engine/journey-compass-controller-bridge'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import * as panelBindingsStaticModule from '@lib/ui/panel-bindings'
+import { animateCameraToNode } from '@lib/engine/camera-choreography'
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -146,7 +147,6 @@ export function resetRetryState(): void {
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
 async function loadCameraControls(): Promise<CameraControlsModule> {
-    const { animateCameraToNode } = await import('@lib/engine/camera-choreography')
     return { animateCameraToNode, setAutoRotateSuspended } as unknown as CameraControlsModule
 }
 

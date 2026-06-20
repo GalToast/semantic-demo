@@ -297,6 +297,12 @@ test.describe('3D thread orchestration quality', () => {
     isMobile: true,
   });
 
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      window.__PLAYWRIGHT__ = true;
+    });
+  });
+
   // -------------------------------------------------------------------------
   // Overview state — threads are present, legible, not overbright
   // -------------------------------------------------------------------------

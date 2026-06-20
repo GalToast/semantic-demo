@@ -22,6 +22,9 @@ test.use({
 });
 
 async function waitForAppReady(page) {
+  await page.addInitScript(() => {
+    window.__PLAYWRIGHT__ = true;
+  });
   await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
     document.body?.dataset?.graphicsMode === 'webgl' &&

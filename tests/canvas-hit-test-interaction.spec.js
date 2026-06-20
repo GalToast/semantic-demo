@@ -49,6 +49,9 @@ async function setupMockSearch(page) {
 async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await setupMockSearch(page);
   await page.setViewportSize(viewport);
+  await page.addInitScript(() => {
+    window.__PLAYWRIGHT__ = true;
+  });
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
   // Wait for app state to be initialized - the authoritative readiness signal.
   // Do NOT require search-input here; it is a UI element that may not exist at

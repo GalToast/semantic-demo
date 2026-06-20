@@ -16,6 +16,7 @@ import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { state as legacyState } from '@lib/engine/state-bridge'
+import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import './lib/css/biofield.css'
 
 // ── URL parameter initialization ──────────────────────────────────────────────
@@ -59,11 +60,9 @@ import('@lib/engine/adapters-bridge').then(({ initRouteTraceSubscriptions }) => 
 
 // W44: Preload journey WebGL overlay modules after initial render so they're
 // available when the user first opens the thread inspector or reaches the
-// arrival phase. This is a dynamic import — it does NOT pull Three.js into
-// the main bundle statically.
-import('@lib/engine/journey-webgl-lazy').then(({ preloadJourneyWebgl }) => {
-    preloadJourneyWebgl()
-})
+// arrival phase. The bridge is static, but the heavy overlay modules remain
+// lazy-loaded inside preloadJourneyWebgl().
+preloadJourneyWebgl()
 
 // ── W6-T1 gesture-driven engine-ready signal ─────────────────────────────────
 // The engine waits for first user gesture (or visibility flip) before any

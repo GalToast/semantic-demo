@@ -10,33 +10,43 @@
 
 // ── Re-export ported choreography functions ──────────────────────────────────
 
+import {
+    animateCameraToNode as runAnimateCameraToNode,
+    focusOnNode as runFocusOnNode,
+    animateCameraToSearchCorridor as runAnimateCameraToSearchCorridor,
+    animateCameraToTerrainPrelude as runAnimateCameraToTerrainPrelude,
+    applySemanticCentroidCamera as runApplySemanticCentroidCamera,
+    zoomCamera as runZoomCamera,
+    clearInsideCentroid as runClearInsideCentroid,
+    cancelFocusCameraAnimation as runCancelFocusCameraAnimation
+} from './camera-choreography'
+
 export function animateCameraToNode(index: number, options?: any): void {
-    import('./camera-choreography').then((m: any) => m.animateCameraToNode(index, options))
+    runAnimateCameraToNode(index, options)
 }
 
 export function focusOnNode(index: number, options?: any): boolean {
-    import('./camera-choreography').then((m: any) => m.focusOnNode(index, options))
-    return true
+    return runFocusOnNode(index, options)
 }
 
 export function animateCameraToSearchCorridor(...args: any[]): void {
-    import('./camera-choreography').then((m: any) => m.animateCameraToSearchCorridor(...args))
+    runAnimateCameraToSearchCorridor(...args)
 }
 
 export function animateCameraToTerrainPrelude(...args: any[]): void {
-    import('./camera-choreography').then((m: any) => m.animateCameraToTerrainPrelude(...args))
+    runAnimateCameraToTerrainPrelude(...args)
 }
 
 export function applySemanticCentroidCamera(...args: any[]): void {
-    import('./camera-choreography').then((m: any) => m.applySemanticCentroidCamera(...args))
+    runApplySemanticCentroidCamera(...args)
 }
 
 export function zoomCamera(...args: any[]): void {
-    import('./camera-choreography').then((m: any) => m.zoomCamera(...args))
+    runZoomCamera(...args)
 }
 
 export function clearInsideCentroid(...args: any[]): void {
-    import('./camera-choreography').then((m: any) => m.clearInsideCentroid(...args))
+    runClearInsideCentroid(...args)
 }
 
 export type { FocusOnNodeOptions, AnimateCameraToNodeOptions } from './camera-choreography'
@@ -44,7 +54,7 @@ export type { FocusOnNodeOptions, AnimateCameraToNodeOptions } from './camera-ch
 // ── Re-export cancelFocusCameraAnimation from ported choreography focus ─────
 
 export function cancelFocusCameraAnimation(): void {
-    import('./camera-choreography/focus').then((m: any) => m.cancelFocusCameraAnimation())
+    runCancelFocusCameraAnimation()
 }
 
 // ── Re-export core functions (ported to local) ───────────────────────────────

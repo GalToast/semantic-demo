@@ -20,6 +20,7 @@ import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { appState } from '@lib/state/app.svelte'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
+import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller'
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -434,15 +435,13 @@ function _restoreFiltersFromParams(params: URLSearchParams): void {
     restoreActiveFiltersFromUrl(params)
     if (!hasFilterParams) return
 
-    void import('@lib/orchestration/cluster-filter-controller')
-        .then(({ syncFilterControls }) => {
-            syncFilterControls()
-            applyFilters()
-        })
-        .catch((err) => {
-            debugWarn('[url-state] Filter UI sync after URL restore failed:', err)
-            applyFilters()
-        })
+    try {
+        syncFilterControls()
+        applyFilters()
+    } catch (err) {
+        debugWarn('[url-state] Filter UI sync after URL restore failed:', err)
+        applyFilters()
+    }
 }
 
 function _restoreClusterFilter(clusterStr: string): void {

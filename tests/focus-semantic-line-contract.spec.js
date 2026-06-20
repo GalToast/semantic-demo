@@ -101,6 +101,9 @@ function compareSceneBand(beforeBuffer, afterBuffer) {
 }
 
 async function waitForAppReady(page) {
+  await page.addInitScript(() => {
+    window.__PLAYWRIGHT__ = true;
+  });
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
