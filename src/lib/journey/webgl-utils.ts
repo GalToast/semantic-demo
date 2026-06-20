@@ -4,7 +4,7 @@
  * Ported from: js/modules/journey-webgl-utils.ts
  * Pure utility functions. No side effects.
  */
-import { Vector3, Color } from 'three';
+import { Vec3, Color } from '@lib/utils/math-vec3';
 import { state } from '@lib/engine/state-bridge';
 
 export const ROUTE_TRACE_SEGMENT_STEPS: number = 7;
@@ -20,23 +20,23 @@ export function disposeLineObject(lineObject: any): void {
     lineObject?.material?.dispose?.();
 }
 
-export function getNodeVector(index: number | null | undefined): Vector3 | null {
+export function getNodeVector(index: number | null | undefined): Vec3 | null {
     if (!Number.isFinite(index) || index === null || index === undefined) return null;
     const pos = (state.nodePositions as any[])[index] || (state.targetPositions as any[])[index] || (state.originalPositions as any[])[index];
     if (!pos) return null;
     const px = Number.isFinite(pos.x) ? pos.x : 0;
     const py = Number.isFinite(pos.y) ? pos.y : 0;
     const pz = Number.isFinite(pos.z) ? pos.z : 0;
-    return new Vector3(px, py, pz);
+    return new Vec3(px, py, pz);
 }
 
 export function getArcPoint(
-    from: Vector3,
-    to: Vector3,
+    from: Vec3,
+    to: Vec3,
     t: number,
     lift: number = 0.08,
     side: number = 0
-): Vector3 | null {
+): Vec3 | null {
     if (!from || !to) return null;
     const distance = from.distanceTo(to);
     if (!Number.isFinite(distance)) return null;

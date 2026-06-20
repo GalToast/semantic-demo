@@ -21,6 +21,12 @@ export class Vec3 implements Vec3Like {
         this.y = y
         this.z = z
     }
+    set(x: number, y: number, z: number) {
+        this.x = x
+        this.y = y
+        this.z = z
+        return this
+    }
     clone() {
         return new Vec3(this.x, this.y, this.z)
     }
@@ -63,6 +69,12 @@ export class Vec3 implements Vec3Like {
         this.z += v.z
         return this
     }
+    addScaledVector(v: Vec3Like, s: number) {
+        this.x += v.x * s
+        this.y += v.y * s
+        this.z += v.z * s
+        return this
+    }
     sub(v: Vec3Like) {
         this.x -= v.x
         this.y -= v.y
@@ -99,6 +111,28 @@ export class Vec3 implements Vec3Like {
         this.x = a.x + (b.x - a.x) * t
         this.y = a.y + (b.y - a.y) * t
         this.z = a.z + (b.z - a.z) * t
+        return this
+    }
+    applyAxisAngle(axis: Vec3Like, angle: number) {
+        const c = Math.cos(angle)
+        const s = Math.sin(angle)
+        const t = 1 - c
+        const ax = axis.x
+        const ay = axis.y
+        const az = axis.z
+        const nx = t * ax * ax + c
+        const ny = t * ax * ay - s * az
+        const nz = t * ax * az + s * ay
+        const nx2 = t * ax * ay + s * az
+        const ny2 = t * ay * ay + c
+        const nz2 = t * ay * az - s * ax
+        const nx3 = t * ax * az - s * ay
+        const ny3 = t * ay * az + s * ax
+        const nz3 = t * az * az + c
+        const vx = this.x, vy = this.y, vz = this.z
+        this.x = nx * vx + ny * vy + nz * vz
+        this.y = nx2 * vx + ny2 * vy + nz2 * vz
+        this.z = nx3 * vx + ny3 * vy + nz3 * vz
         return this
     }
 }

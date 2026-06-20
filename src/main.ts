@@ -16,7 +16,6 @@ import { engineReady } from '@lib/stores/engine-ready.svelte';
 import { hydrateFromLegacyState } from '@lib/data-store';
 import { appState } from '@lib/state/app.svelte.ts';
 import { state as legacyState } from '@lib/engine/state-bridge';
-import { initRouteTraceSubscriptions } from '@lib/engine/adapters-bridge';
 import './lib/css/biofield.css';
 
 // ── URL parameter initialization ──────────────────────────────────────────────
@@ -55,7 +54,10 @@ if (mountTarget) {
 // Initialize legacy route trace event subscriptions so the Svelte track
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics
 // for visual-audit compatibility.
-initRouteTraceSubscriptions();
+// Dynamic import to keep Three.js out of the main bundle
+import('@lib/engine/adapters-bridge').then(({ initRouteTraceSubscriptions }) => {
+  initRouteTraceSubscriptions();
+});
 
 // ── W6-T1 gesture-driven engine-ready signal ─────────────────────────────────
 // The engine waits for first user gesture (or visibility flip) before any
