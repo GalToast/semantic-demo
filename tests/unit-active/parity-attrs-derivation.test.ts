@@ -102,102 +102,80 @@ const _compassPresentation = vi.hoisted(() => ({
 
 // ── Module mocks ────────────────────────────────────────────────────────────
 
-vi.mock('@lib/stores/navigation.svelte', async () => {
-    return {
-        navStore: vi.fn(() => _nav)
-    }
-})
+vi.mock('@lib/stores/navigation.svelte', () => ({
+    navStore: () => _nav
+}))
 
-vi.mock('@lib/stores/journey.svelte', async () => {
-    return {
-        journeyStore: vi.fn(() => _journey)
-    }
-})
+vi.mock('@lib/stores/journey.svelte', () => ({
+    journeyStore: () => _journey
+}))
 
-vi.mock('@lib/stores/focus.svelte', async () => {
-    return {
-        focusStore: vi.fn(() => _focus)
-    }
-})
+vi.mock('@lib/stores/focus.svelte', () => ({
+    focusStore: () => _focus
+}))
 
-vi.mock('@lib/stores/search.svelte', async () => {
-    return {
-        searchStore: {
-            subscribe: (fn: (v: typeof _search) => void) => {
-                fn(_search)
-                return () => {}
-            }
+vi.mock('@lib/stores/search.svelte', () => ({
+    searchStore: {
+        subscribe: (fn: (v: typeof _search) => void) => {
+            fn(_search)
+            return () => {}
         }
     }
-})
+}))
 
-vi.mock('@lib/stores/filter.svelte', async () => {
-    return {
-        filterState: {
-            subscribe: (fn: (v: typeof _filter) => void) => {
-                fn(_filter)
-                return () => {}
-            }
+vi.mock('@lib/stores/filter.svelte', () => ({
+    filterState: {
+        subscribe: (fn: (v: typeof _filter) => void) => {
+            fn(_filter)
+            return () => {}
         }
     }
-})
+}))
 
-vi.mock('@lib/stores/viewport.svelte', async () => {
-    return {
-        viewport: vi.fn(() => _viewport)
-    }
-})
+vi.mock('@lib/stores/viewport.svelte', () => ({
+    viewport: () => _viewport
+}))
 
-vi.mock('@lib/stores/camera.svelte', async () => {
-    return {
-        cameraStore: {
-            subscribe: (fn: (v: typeof _camera) => void) => {
-                fn(_camera)
-                return () => {}
-            }
+vi.mock('@lib/stores/camera.svelte', () => ({
+    cameraStore: {
+        subscribe: (fn: (v: typeof _camera) => void) => {
+            fn(_camera)
+            return () => {}
         }
     }
-})
+}))
 
-vi.mock('@lib/stores/demo.svelte', async () => {
-    return {
-        demoStore: vi.fn(() => ({ phase: _demoPhase.value })),
-        demoPhase: vi.fn(() => _demoPhase.value)
-    }
-})
+vi.mock('@lib/stores/demo.svelte', () => ({
+    demoStore: () => ({ phase: _demoPhase.value }),
+    demoPhase: () => _demoPhase.value
+}))
 
-vi.mock('@lib/data-store', async () => {
-    return {
-        loadingPhaseStore: {
-            subscribe: (fn: (v: string) => void) => {
-                fn(_loadingPhase.value)
-                return () => {}
-            }
-        },
-        graphicsModeStore: {
-            subscribe: (fn: (v: string) => void) => {
-                fn(_graphicsMode.value)
-                return () => {}
-            }
+vi.mock('@lib/data-store', () => ({
+    loadingPhaseStore: {
+        subscribe: (fn: (v: string) => void) => {
+            fn(_loadingPhase.value)
+            return () => {}
+        }
+    },
+    graphicsModeStore: {
+        subscribe: (fn: (v: string) => void) => {
+            fn(_graphicsMode.value)
+            return () => {}
         }
     }
-})
+}))
 
-vi.mock('@lib/orchestration/compass-state', async () => {
-    return {
-        getJourneyCompassState: vi.fn(() => _compassState)
-    }
-})
+vi.mock('@lib/orchestration/compass-state', () => ({
+    getJourneyCompassState: () => _compassState
+}))
 
-vi.mock('@lib/orchestration/compass-controller', async () => {
-    return {
-        getJourneyCompassPresentationState: vi.fn(() => _compassPresentation)
-    }
-})
+vi.mock('@lib/orchestration/compass-controller', () => ({
+    getJourneyCompassPresentationState: () => _compassPresentation
+}))
 
 // ── Import under test (must appear AFTER vi.mock) ───────────────────────────
 
-import { computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte.ts'
+import { computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -286,12 +264,14 @@ describe('computeParityAttributes IIFE derivations', () => {
 
         it('returns "focus" when mode is "focus"', () => {
             _nav.mode = 'focus'
+            _nav.focusedIndex = 42
             const result = computeParityAttributes()
             expect(result.graphContext).toBe('focus')
         })
 
         it('returns "focus" when mode is "trail"', () => {
             _nav.mode = 'trail'
+            _nav.focusedIndex = 42
             const result = computeParityAttributes()
             expect(result.graphContext).toBe('focus')
         })
@@ -757,12 +737,14 @@ describe('computeParityAttributes IIFE derivations', () => {
 
     describe('semanticDive', () => {
         it('returns "active" when semanticDiveMode is true', () => {
+            _nav.focusedIndex = 42
             _focus.semanticDiveMode = true
             const result = computeParityAttributes()
             expect(result.semanticDive).toBe('active')
         })
 
         it('returns "transitioning" when journey.depth >= 2', () => {
+            _nav.focusedIndex = 42
             _journey.depth = 2
             _journey.trailDepth = 2
             const result = computeParityAttributes()

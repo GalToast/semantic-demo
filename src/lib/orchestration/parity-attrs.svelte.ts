@@ -304,6 +304,7 @@ export function computeParityAttributes(): ParityAttributeMap {
             if (nav.surface === 'map-focus-search') return 'map-focus-search'
             if (nav.surface === 'map-trail') return 'map-trail'
             if (hasFocusContext && hasSearchContext) return 'map-focus-search'
+            if (hasFocusContext) return 'map-focus'
             if (nav.surface === 'focus-search' || nav.surface === 'search' || search.summary) return 'map-search'
             if (nav.surface === 'focus') return 'map-focus'
             if (nav.surface === 'map') return 'map'
@@ -311,6 +312,7 @@ export function computeParityAttributes(): ParityAttributeMap {
         }
         if (focus.semanticDiveMode) return 'semantic-dive'
         if (hasFocusContext && hasSearchContext) return 'focus-search'
+        if (hasSearchContext) return 'search'
         if (nav.surface === 'focus-search') return 'focus-search'
         if (nav.surface === 'map-focus-search') return 'map-focus-search'
         if (nav.surface === 'map-trail') return 'map-trail'

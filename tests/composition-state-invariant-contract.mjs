@@ -162,10 +162,10 @@ function assertEq(actual, expected, label) {
 // ── Import real modules ───────────────────────────────────────────────────────
 
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
-const { updateNavState } = await import('../src/lib/stores/navigation.svelte.ts')
-const { searchStore } = await import('../src/lib/stores/search.svelte.ts')
-const { focusStore } = await import('../src/lib/stores/focus.svelte.ts')
-const { journeyStore } = await import('../src/lib/stores/journey.svelte.ts')
+const { updateNavState } = await import('../src/lib/stores/navigation.svelte')
+const { searchStore, setSearchSummary } = await import('../src/lib/stores/search.svelte')
+const { focusStore } = await import('../src/lib/stores/focus.svelte')
+const { journeyStore } = await import('../src/lib/stores/journey.svelte')
 
 updateNavState // Mark as read
 searchStore // Mark as read
@@ -265,11 +265,7 @@ function resetState() {
         next.semanticDiveMode = false
         return next
     })
-    searchStore.update((s) => {
-        const next = { ...s }
-        next.summary = null
-        return next
-    })
+    setSearchSummary(null)
     state.trailIndices.clear()
     fakeBody.dataset = {}
     _rafQueue = []
@@ -310,12 +306,7 @@ function setTrailDepthOnAll(depth) {
 function setSearchIntent(query = 'coffee') {
     const sum = { query, visibleMatches: 5 }
     state.currentSearchSummary = sum
-    searchStore.update((s) => {
-        const next = { ...s }
-        next.summary = sum
-        next.query = query
-        return next
-    })
+    setSearchSummary(sum)
     const input = new FakeElement('input')
     input.value = query
     elementsById.set('search-input', input)
@@ -338,21 +329,6 @@ resetState()
 setFocusViaSelectedPoint(4)
 setTrailDepthOnAll(2)
 // semanticDiveMode getter returns true when trailDepth=2
-const { get } = await import('svelte/store');
-const { navStore } = await import('../src/lib/stores/navigation.svelte.ts');
-const { focusStore: fsS } = await import('../src/lib/stores/focus.svelte.ts');
-const { searchStore: ssS } = await import('../src/lib/stores/search.svelte.ts');
-const $n = get(navStore);
-const $f = get(fsS);
-const $s = get(ssS);
-const hasFocusDeb = !!($n.focusedIndex != null || $f.selectedBusiness);
-const hasSearchDeb = !!($s.summary || $s.query.trim().length >= 2);
-console.log('DEBUG COMP: activeView =', $n.currentView);
-console.log('DEBUG COMP: hasFocus =', hasFocusDeb);
-console.log('DEBUG COMP: hasSearchIntent =', hasSearchDeb);
-console.log('DEBUG COMP: semanticDive =', $f.semanticDiveMode && hasFocusDeb ? 'active' : 'inactive');
-const gCtx = $n.currentView === 'galaxy' ? (hasFocusDeb && hasSearchDeb ? 'focus-search' : (hasFocusDeb ? 'focus' : (hasSearchDeb ? 'search' : 'idle'))) : 'idle';
-console.log('DEBUG COMP: gCtx =', gCtx);
 commit()
 assertEq(ds('semanticDive'), 'active', '1A: semanticDive is active')
 assertEq(ds('panelSurface'), 'semantic-dive', '1A: panelSurface is semantic-dive')
@@ -522,7 +498,7 @@ console.log('[TEST] 3C — exiting semantic-dive into map view (real user flow)'
 resetState()
 setCurrentViewForTest('galaxy')
 setFocusViaSelectedPoint(4)
-state.trailDepth = 2
+setTrailDepthOnAll(2)
 setSearchIntent()
 commit()
 assertEq(ds('semanticDive'), 'active', '3C: pre — semanticDive is active before switch')
