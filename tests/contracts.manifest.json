@@ -1,570 +1,537 @@
 {
-  "$schema": "./contracts.schema.json",
-  "description": "Contract manifest for semantic-explorer QA. Groups allow targeted runs without discovering all *.mjs files.",
-  "groups": {
-    "core": {
-      "description": "Core state and surface contracts - semantic-dive, search, lanes, state transitions, connection analysis.",
-      "contracts": [
-        "semantic-dive-ui-surface-contract.mjs",
-        "search-state-surface-contract.mjs",
-        "search-state-focus-clear-owner-contract.mjs",
-        "state-transition-contract.mjs",
-        "state-transition-table-contract.mjs",
-        "focus-semantic-state-boundary-contract.mjs",
-        "semantic-lane-contract.mjs",
-        "connection-analysis-contract.mjs",
-        "exploration-modes-contract.mjs",
-        "focus-selection-owner-contract.mjs",
-        "journey-event-bindings-contract.mjs",
-        "state-store-sync-contract.mjs"
-      ]
-    },
-    "navigation": {
-      "description": "Journey and wayfinding contracts - compass, thread-inspector, window surface, event bindings, trail review.",
-      "contracts": [
-        "journey-compass-state-contract.mjs",
-        "journey-thread-inspector-contract.mjs",
-        "thread-inspector-dewindowing-contract.mjs",
-        "journey-event-bindings-contract.mjs",
-        "trail-review-focus-contract.mjs",
-        "journey-walk-candidate-contract.mjs",
-        "journey-walk-thread-neighbor-timer-contract.mjs",
-        "journey-ui-ownership-contract.mjs"
-      ]
-    },
-    "scene": {
-      "description": "Scene atmosphere and visual polish - reveal, atmosphere, three.js polish, reduced-motion variants.",
-      "contracts": [
-        "scene-reveal-contract.mjs",
-        "scene-reveal-camera-dewindowing-contract.mjs",
-        "webgl-restore-dewindowing-contract.mjs",
-        "three-setup-init-dewindowing-contract.mjs",
-        "cancel-animate-dewindowing-contract.mjs",
-        "three-setup-loop-dewindowing-contract.mjs",
-        "three-setup-zero-caller-dewindowing-contract.mjs",
-        "scene-atmosphere-contract.mjs",
-        "three-visual-polish-contract.mjs",
-        "reduced-motion-transition-contract.mjs",
-        "reduced-motion-interruption-contract.mjs",
-        "mycelium-logic-contract.mjs",
-        "node-interaction-contract.spec.js",
-        "dynamic-lighting-contract.spec.js",
-        "focus-transition-contract.mjs"
-      ]
-    },
-    "browser": {
-      "description": "Playwright-rendered contracts - all require browser launch, inherently slower (5-20s each).",
-      "contracts": [
-        "focus-stage-render-contract.mjs",
-        "info-panel-collapsed-render-contract.mjs",
-        "mode-chip-state-render-contract.mjs",
-        "weather-widget-render-contract.mjs",
-        "connection-analysis-render-state-contract.mjs",
-        "search-peek-expanded-render-contract.mjs"
-      ]
-    },
-    "browser-interaction": {
-      "description": "Playwright browser-interaction contracts - canvas hit-test and live UI reset interaction proofs. Requires a running dev server on port 8795.",
-      "contracts": [
-        "live-ui-reset-interaction.spec.js",
-        "live-state-transition-ui-paths.spec.js",
-        "short-landscape-transition-ui-paths.spec.js",
-        "url-restore-cluster-filter-race.spec.js",
-        "canvas-hit-test-interaction.spec.js",
-        "reduced-motion-interruption.spec.js",
-        "gemma-fallback-error.spec.js",
-        "data-boundary-stress.spec.js",
-        "filter-search-chrome-svelte.spec.js"
-      ]
-    },
-    "short-landscape": {
-      "description": "Short-landscape deterministic proof - constrained layout plus interactive transition behavior. Visual screenshot proof remains qa:surface:short-landscape.",
-      "contracts": [
-        "short-landscape-layout-contract.mjs",
-        "short-landscape-contract.spec.js",
-        "short-landscape-transition-ui-paths.spec.js"
-      ]
-    },
-    "render": {
-      "description": "Backward-compatible alias for browser-backed render contracts. Prefer the browser group for new scripts.",
-      "contracts": [
-        "focus-stage-render-contract.mjs",
-        "info-panel-collapsed-render-contract.mjs",
-        "mode-chip-state-render-contract.mjs",
-        "weather-widget-render-contract.mjs",
-        "connection-analysis-render-state-contract.mjs",
-        "search-peek-expanded-render-contract.mjs"
-      ]
-    },
-    "smoke": {
-      "description": "Fast smoke checks - weather, loading, scene-reveal, motion settle. Sub-1s each.",
-      "contracts": [
-        "weather-lifecycle-contract.mjs",
-        "weather-surface-ownership-contract.mjs",
-        "camera-auto-rotate-settle-contract.mjs",
-        "scene-reveal-contract.mjs",
-        "loading-ui-contract.mjs",
-        "motion-state-contract.mjs",
-        "map-flattening-raw-buffer-contract.mjs"
-      ]
-    },
-    "mobile-critical": {
-      "description": "Mobile-critical surface and interaction contracts - focused on touch/responsive UI surfaces.",
-      "contracts": [
-        "semantic-dive-ui-surface-contract.mjs",
-        "search-state-surface-contract.mjs",
-        "focus-pocket-motion-contract.mjs",
-        "focus-pocket-composition-contract.mjs",
-        "demo-init-seam-contract.mjs",
-        "reset-callsite-routing-contract.mjs",
-        "demo-camera-retirement-contract.mjs",
-        "cluster-labels-contract.mjs",
-        "loading-ui-contract.mjs",
-        "short-landscape-layout-contract.mjs",
-        "mobile-visual-qa-contract.mjs",
-        "real-route-contract.mjs",
-        "landscape-896x414-audit.spec.js",
-        "critical-visual-layout-regression.spec.js"
-      ]
-    },
-    "motion": {
-      "description": "Motion/animation system contracts - camera controls, focus pocket, motion state, semantic-dive reverse.",
-      "contracts": [
-        "camera-controls-motion-contract.mjs",
-        "focus-pocket-motion-contract.mjs",
-        "motion-state-contract.mjs",
-        "camera-auto-rotate-settle-contract.mjs",
-        "semantic-dive-reverse-contract.mjs",
-        "focus-transition-contract.mjs"
-      ]
-    },
-    "lifecycle": {
-      "description": "Lifecycle and initialization contracts - composition, state sync, reset, demo, guide payload.",
-      "contracts": [
-        "lifecycle-composition-contract.mjs",
-        "composition-state-invariant-contract.mjs",
-        "state-transition-contract.mjs",
-        "state-transition-table-contract.mjs",
-        "step-inside-state-sync-contract.mjs",
-        "focus-semantic-state-boundary-contract.mjs",
-        "demo-init-seam-contract.mjs",
-        "reset-callsite-routing-contract.mjs",
-        "semantic-guide-payload-contract.mjs",
-        "demo-camera-retirement-contract.mjs",
-        "demo-state-sync-contract.mjs",
-        "micro-demo-state-owner-contract.mjs",
-        "weather-lifecycle-contract.mjs",
-        "residual-window-bridge-inventory-contract.mjs",
-        "app-node-import-contract.mjs",
-        "next-explore-candidate-contract.mjs",
-        "ui-renderers-helper-contract.mjs",
-        "lifecycle-semantic-guide-residual-bridge-contract.mjs",
-        "legend-ui-ownership-contract.mjs",
-        "semantic-dive-ui-dewindowing-contract.mjs",
-        "semantic-dive-active-owner-contract.mjs",
-        "state-ownership-contract.mjs",
-        "state-mutator-ownership-contract.mjs",
-        "filter-ownership-contract.mjs",
-        "cluster-filter-contract.mjs",
-        "keyboard-reset-ownership-contract.mjs",
-        "url-state-bridge-contract.mjs",
-        "search-focus-transition-timer-contract.mjs",
-        "search-state-ui-adapter-contract.mjs",
-        "search-panel-adapter-contract.mjs",
-        "focus-selection-owner-contract.mjs",
-        "focus-pocket-state-owner-contract.mjs",
-        "journey-focus-constellation-viewport-contract.mjs",
-        "journey-focus-pocket-state-contract.mjs",
-        "journey-focus-personality-contract.mjs",
-        "journey-focus-runtime-state-contract.mjs",
-        "journey-strand-continuity-contract.mjs",
-        "journey-neighborhood-manifest-contract.mjs",
-        "journey-walk-thread-neighbor-timer-contract.mjs",
-        "bootstrap-window-export-contract.mjs",
-        "lifecycle-search-panel-ownership-contract.mjs",
-        "lifecycle-journey-quick-dewindowing-contract.mjs",
-        "search-lifecycle-adapter-contract.mjs",
-        "view-controller-ownership-contract.mjs"
-      ]
-    },
-    "quality": {
-      "description": "UI quality, interaction, and CSS ownership contracts that may write tmp reports.",
-      "contracts": [
-        "css-manifest-contract.mjs",
-        "design-token-doc-contract.mjs",
-        "surface-style-matrix-contract.mjs",
-        "focus-stage-css-ownership-contract.mjs",
-        "css-transient-state-ownership-contract.mjs",
-        "mobile-chrome-ownership-contract.mjs",
-        "ui-quality-contract.mjs",
-        "micro-surface-interactions-contract.mjs",
-        "surface-redundancy-contract.mjs",
-        "aria-sync-contract.mjs",
-        "focus-trap-contract.mjs",
-        "window-global-allowlist-contract.mjs",
-        "persistence-contract.mjs",
-        "disposal-hygiene-contract.spec.js",
-        "search-results-svelte-ownership-contract.mjs",
-        "selected-details-svelte-ownership-contract.mjs",
-        "selected-card-dom-ownership-contract.mjs",
-        "svelte-chrome-ownership-contract.mjs",
-        "three-resource-lifecycle-contract.mjs",
-        "ts-js-drift-contract.mjs"
-      ]
-    },
-    "supplemental": {
-      "description": "Supplemental non-default contracts that are intentionally owned by the manifest but not part of the pinned full run.",
-      "timeout": 600000,
-      "contracts": [
-        "async-integrity-stress-contract.mjs",
-        "composition-state-owner-contract.mjs",
-        "focus-camera-ownership-contract.mjs",
-        "focus-camera-readability-contract.mjs",
-        "focus-interaction-ownership-contract.mjs",
-        "info-panel-surface-ownership-contract.mjs",
-        "js-design-token-contract.mjs",
-        "live-semantic-roles-contract.mjs",
-        "map-focus-search-content-owner-contract.mjs",
-        "mobile-focus-search-surface-ownership-contract.mjs",
-        "mobile-route-ownership-contract.mjs",
-        "package-script-targets-contract.mjs",
-        "reset-map-interaction-ownership-contract.mjs",
-        "search-sheet-css-ownership-contract.mjs",
-        "semantic-thread-relationship-role-contract.mjs",
-        "ui-perfection-contract.mjs",
-        "reduced-motion-interruption-proof.spec.js",
-        "config-topology-env-contract.mjs",
-        "data-schema-contract.mjs"
-      ]
-    },
-    "3d-engine": {
-      "description": "WebGL resilience and memory hygiene contracts for the 3D engine - context loss survival and geometry disposal hygiene. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "webgl-resilience-contract.spec.js",
-        "disposal-hygiene-contract.spec.js"
-      ]
-    },
-    "3d-interaction-quality": {
-      "description": "3D interaction-quality contracts - aggregate group. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-hidpi-click-accuracy.spec.js",
-        "3d-node-hit-accuracy.spec.js",
-        "3d-hover-affordance.spec.js",
-        "3d-real-pointer-playthrough.spec.js",
-        "3d-focus-pocket-selectability.spec.js",
-        "3d-cluster-readability.spec.js",
-        "3d-thread-orchestration-quality.spec.js",
-        "3d-camera-orbit-resilience.spec.js",
-        "3d-touch-parity.spec.js",
-        "3d-viewport-dpr-resilience.spec.js",
-        "3d-overlay-hit-stealing.spec.js",
-        "3d-state-transition-integrity.spec.js",
-        "3d-data-edge-cases.spec.js",
-        "3d-focus-neighborhood-geometry.spec.js",
-        "3d-focus-neighborhood-interaction.spec.js",
-        "focus-semantic-line-contract.spec.js",
-        "3d-rapid-re-selection-contract.spec.js"
-      ]
-    },
-    "3d-pointer": {
-      "description": "3D pointer/contact contracts - projected canvas node hit accuracy, hover/touch affordance, focus-pocket selectability. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-hidpi-click-accuracy.spec.js",
-        "3d-node-hit-accuracy.spec.js",
-        "3d-hover-affordance.spec.js",
-        "3d-real-pointer-playthrough.spec.js",
-        "3d-focus-pocket-selectability.spec.js"
-      ]
-    },
-    "3d-focus-neighborhood": {
-      "description": "Focus neighborhood visibility and reachability contracts - geometry projection, interaction, overlay hit-stealing, hover affordance, thread orchestration, and camera orbit. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-focus-pocket-selectability.spec.js",
-        "3d-overlay-hit-stealing.spec.js",
-        "3d-hover-affordance.spec.js",
-        "3d-thread-orchestration-quality.spec.js",
-        "3d-camera-orbit-resilience.spec.js",
-        "3d-focus-neighborhood-geometry.spec.js",
-        "3d-focus-neighborhood-interaction.spec.js"
-      ]
-    },
-    "3d-focus-neighborhood-geometry": {
-      "description": "Focus neighborhood geometry: screen coordinate projection, role distinguishability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-focus-neighborhood-geometry.spec.js"
-      ]
-    },
-    "3d-focus-ghost-graph-visibility": {
-      "description": "Whole-graph context point cloud visibility during focus mode: opacity, size, projected presence, and spore-vs-point-cloud layering. Requires a running dev server on port 8795.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-focus-ghost-graph-visibility.spec.js"
-      ]
-    },
-    "3d-hidpi-click-accuracy": {
-      "description": "HiDPI 3D click/tap accuracy at DPR=2 across desktop, mobile portrait, and short-landscape viewports. Requires a running dev server on port 8795.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-hidpi-click-accuracy.spec.js"
-      ]
-    },
-    "3d-focus-neighborhood-interaction": {
-      "description": "Focus neighborhood interaction: hover, click, and state integrity through neighbor interaction sequences. Requires a running dev server on port 8795.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-focus-neighborhood-interaction.spec.js",
-        "semantic-role-traversal.spec.js"
-      ]
-    },
-    "3d-focus-pocket-geometry": {
-      "description": "Geometry/projection: pocket node screen coordinates, in-canvas reachability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-focus-pocket-selectability.spec.js",
-        "3d-focus-neighborhood-geometry.spec.js"
-      ]
-    },
-    "3d-hover-click-interaction": {
-      "description": "Hover/click interaction: hover affordance, real-pointer playthrough, node hit accuracy, and state integrity through interaction sequences. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-hover-affordance.spec.js",
-        "3d-real-pointer-playthrough.spec.js",
-        "3d-hidpi-click-accuracy.spec.js",
-        "3d-node-hit-accuracy.spec.js",
-        "3d-focus-neighborhood-interaction.spec.js"
-      ]
-    },
-    "3d-focus-desktop-click": {
-      "description": "Desktop-only 3D focus click lane at 1440x900 - strict hover/click accuracy without mobile-frustum soft-skips. Requires a running dev server on port 8795.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-focus-desktop-click.spec.js"
-      ]
-    },
-    "3d-rapid-re-selection": {
-      "description": "Rapid 3D focus re-selection contracts for A-to-B, A-to-B-to-A, and canvas click race windows. Requires a running dev server on port 8795.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-rapid-re-selection-contract.spec.js"
-      ]
-    },
-    "3d-responsive-ui": {
-      "description": "Responsive UI and viewport resilience: camera aspect/resize coherence, DPR/backing scale, touch parity, and orbit stability across viewports. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-camera-orbit-resilience.spec.js",
-        "3d-viewport-dpr-resilience.spec.js",
-        "3d-touch-parity.spec.js"
-      ]
-    },
-    "3d-visual-quality": {
-      "description": "3D visual quality contracts - cluster readability and thread orchestration quality. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-cluster-readability.spec.js",
-        "3d-thread-orchestration-quality.spec.js"
-      ]
-    },
-    "3d-resilience": {
-      "description": "3D resilience contracts - camera/orbit, touch parity, viewport/DPR resilience, and overlay hit ownership. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-camera-orbit-resilience.spec.js",
-        "3d-touch-parity.spec.js",
-        "3d-viewport-dpr-resilience.spec.js",
-        "3d-overlay-hit-stealing.spec.js"
-      ]
-    },
-    "3d-state-data": {
-      "description": "3D state and data contracts - state transition integrity and data edge cases. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-state-transition-integrity.spec.js",
-        "3d-data-edge-cases.spec.js"
-      ]
-    },
-    "3d-accessibility-fallback-performance": {
-      "description": "3D accessibility, fallback, and performance contracts - keyboard focus ownership, reduced-motion final state, WebGL fallback/context loss, and renderer diagnostics. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-accessibility-fallback-performance.spec.js"
-      ]
-    },
-    "3d-smoke": {
-      "description": "3D fast smoke - pointer hit, hover affordance, focus-pocket selectability. Sub-5s each, minimal scene complexity.",
-      "timeout": 300000,
-      "contracts": [
-        "3d-node-hit-accuracy.spec.js",
-        "3d-hover-affordance.spec.js",
-        "3d-focus-pocket-selectability.spec.js"
-      ]
-    },
-    "3d-regression": {
-      "description": "3D focused regression lane - recent focus-neighborhood, pointer, overlay, and thread orchestration coverage without the full 3D suite cost. Requires a running dev server on port 8795.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-focus-neighborhood-geometry.spec.js",
-        "3d-focus-ghost-graph-visibility.spec.js",
-        "3d-focus-neighborhood-interaction.spec.js",
-        "3d-overlay-hit-stealing.spec.js",
-        "3d-hover-affordance.spec.js",
-        "3d-thread-orchestration-quality.spec.js"
-      ]
-    },
-    "3d-slow": {
-      "description": "3D slow/visual - cluster readability, thread orchestration, accessibility/fallback. 10-30s each, full scene rendering.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-cluster-readability.spec.js",
-        "3d-thread-orchestration-quality.spec.js",
-        "3d-accessibility-fallback-performance.spec.js"
-      ]
-    },
-    "3d-full": {
-      "description": "All 3D interaction quality contracts - every 3d-*.spec.js. 10-15 specs, full scene + interaction coverage.",
-      "timeout": 600000,
-      "contracts": [
-        "3d-node-hit-accuracy.spec.js",
-        "3d-hover-affordance.spec.js",
-        "3d-real-pointer-playthrough.spec.js",
-        "3d-focus-pocket-selectability.spec.js",
-        "3d-cluster-readability.spec.js",
-        "3d-thread-orchestration-quality.spec.js",
-        "3d-camera-orbit-resilience.spec.js",
-        "3d-touch-parity.spec.js",
-        "3d-viewport-dpr-resilience.spec.js",
-        "3d-overlay-hit-stealing.spec.js",
-        "3d-state-transition-integrity.spec.js",
-        "3d-data-edge-cases.spec.js",
-        "3d-focus-neighborhood-geometry.spec.js",
-        "3d-focus-neighborhood-interaction.spec.js",
-        "3d-focus-desktop-click.spec.js",
-        "3d-accessibility-fallback-performance.spec.js"
-      ]
-    },
-    "full": {
-      "description": "All ordered contracts - same as default npm run test:contract.",
-      "contracts": [
-        "semantic-dive-ui-surface-contract.mjs",
-        "search-state-surface-contract.mjs",
-        "lifecycle-composition-contract.mjs",
-        "state-transition-contract.mjs",
-        "state-transition-table-contract.mjs",
-        "step-inside-state-sync-contract.mjs",
-        "focus-semantic-state-boundary-contract.mjs",
-        "journey-compass-state-contract.mjs",
-        "semantic-lane-contract.mjs",
-        "connection-analysis-contract.mjs",
-        "camera-controls-motion-contract.mjs",
-        "focus-pocket-motion-contract.mjs",
-        "focus-pocket-composition-contract.mjs",
-        "journey-event-bindings-contract.mjs",
-        "demo-init-seam-contract.mjs",
-        "reset-callsite-routing-contract.mjs",
-        "demo-camera-retirement-contract.mjs",
-        "cluster-labels-contract.mjs",
-        "journey-thread-inspector-contract.mjs",
-        "trail-review-focus-contract.mjs",
-        "journey-walk-thread-neighbor-timer-contract.mjs",
-        "journey-ui-ownership-contract.mjs",
-        "share-view-clipboard-contract.mjs",
-        "keyboard-help-aria-contract.mjs",
-        "weather-lifecycle-contract.mjs",
-        "weather-surface-ownership-contract.mjs",
-        "camera-auto-rotate-settle-contract.mjs",
-        "semantic-dive-reverse-contract.mjs",
-        "thread-inspector-dewindowing-contract.mjs",
-        "residual-window-bridge-inventory-contract.mjs",
-        "next-explore-candidate-contract.mjs",
-        "ui-renderers-helper-contract.mjs",
-        "lifecycle-semantic-guide-residual-bridge-contract.mjs",
-        "legend-ui-ownership-contract.mjs",
-        "semantic-dive-ui-dewindowing-contract.mjs",
-        "lifecycle-search-panel-ownership-contract.mjs",
-        "lifecycle-journey-quick-dewindowing-contract.mjs",
-        "search-lifecycle-adapter-contract.mjs",
-        "view-controller-ownership-contract.mjs",
-        "loading-ui-contract.mjs",
-        "state-ownership-contract.mjs",
-        "state-mutator-ownership-contract.mjs",
-        "filter-ownership-contract.mjs",
-        "keyboard-reset-ownership-contract.mjs",
-        "search-state-ui-adapter-contract.mjs",
-        "search-panel-adapter-contract.mjs",
-        "exploration-modes-contract.mjs",
-        "scene-reveal-contract.mjs",
-        "scene-reveal-camera-dewindowing-contract.mjs",
-        "webgl-restore-dewindowing-contract.mjs",
-        "three-setup-init-dewindowing-contract.mjs",
-        "cancel-animate-dewindowing-contract.mjs",
-        "three-setup-loop-dewindowing-contract.mjs",
-        "three-setup-zero-caller-dewindowing-contract.mjs",
-        "scene-atmosphere-contract.mjs",
-        "motion-state-contract.mjs",
-        "demo-state-sync-contract.mjs",
-        "three-visual-polish-contract.mjs",
-        "search-peek-expanded-render-contract.mjs",
-        "semantic-guide-payload-contract.mjs",
-        "connection-analysis-render-state-contract.mjs",
-        "reduced-motion-interruption.spec.js",
-        "gemma-fallback-error.spec.js",
-        "selected-card-dom-ownership-contract.mjs"
-      ]
-    },
-    "projection": {
-      "description": "Siloed projection field contracts - strandJourney, terrainHandoff, routeDirector, semanticDive/trailDepth mutual consistency.",
-      "contracts": []
-    },
-    "visual-smoke": {
-      "description": "Fast visual smoke and layout regression specs - btn layout, camera motion, demo seam, micro-demo sequence, ui renderers.",
-      "contracts": [
-        "btn-journey-primary-layout.spec.js",
-        "camera-motion-visual-smoke.spec.js",
-        "demo-init-seam-contract.mjs",
-        "micro-demo.spec.js",
-        "ui-renderers-validation.spec.js"
-      ]
-    },
-    "live-url": {
-      "description": "Live URL-state contracts on port 8795 - URL reconstruction, body state sync, reset proofs, polish adversarial. Requires running dev server.",
-      "contracts": [
-        "live-url-state-reconstruction.spec.js",
-        "url-restore-cluster-filter-race.spec.js",
-        "live-step-inside-url-body-state-sync.spec.js",
-        "live-reset-clear-demo-proof.spec.js",
-        "live-reset-proof.spec.js",
-        "polish-adversarial.spec.js"
-      ]
-    },
-    "extraction": {
-      "description": "Extraction and de-monolith verification contracts on port 8795 - proves shell boundaries hold under full load.",
-      "contracts": [
-        "extraction-contracts.spec.js",
-        "semantic-guide-fallback-contract.spec.js",
-        "semantic-guide-fetch-fallback-contract.spec.js",
-        "semantic-guide-edge-contract.mjs",
-        "short-landscape-contract.spec.js"
-      ]
-    },
-    "manual-risk": {
-      "description": "Manual-risk specs on alternate ports - map-search visual (9876), reset experience state (9876). May require specific environment.",
-      "contracts": [
-        "sd143-map-search-visual.spec.js",
-        "reset-experience-state.spec.js"
-      ]
-    },
-    "e2e": {
-      "description": "End-to-end Playwright specs requiring a live server - switchView race condition and full click flow proofs. Requires running dev server on port 9876.",
-      "contracts": [
-        "switchview-race.spec.js",
-        "e2e-click-flow.spec.js"
-      ]
+    "$schema": "./contracts.schema.json",
+    "description": "Contract manifest for semantic-explorer QA. Groups allow targeted runs without discovering all *.mjs files.",
+    "groups": {
+        "core": {
+            "description": "Core state and surface contracts - semantic-dive, search, lanes, state transitions, connection analysis.",
+            "contracts": [
+                "semantic-dive-ui-surface-contract.mjs",
+                "search-state-surface-contract.mjs",
+                "search-state-focus-clear-owner-contract.mjs",
+                "state-transition-contract.mjs",
+                "state-transition-table-contract.mjs",
+                "focus-semantic-state-boundary-contract.mjs",
+                "semantic-lane-contract.mjs",
+                "connection-analysis-contract.mjs",
+                "exploration-modes-contract.mjs",
+                "focus-selection-owner-contract.mjs",
+                "journey-event-bindings-contract.mjs",
+                "state-store-sync-contract.mjs"
+            ]
+        },
+        "navigation": {
+            "description": "Journey and wayfinding contracts - compass, thread-inspector, window surface, event bindings, trail review.",
+            "contracts": [
+                "journey-compass-state-contract.mjs",
+                "journey-thread-inspector-contract.mjs",
+                "thread-inspector-dewindowing-contract.mjs",
+                "journey-event-bindings-contract.mjs",
+                "trail-review-focus-contract.mjs",
+                "journey-walk-candidate-contract.mjs",
+                "journey-walk-thread-neighbor-timer-contract.mjs",
+                "journey-ui-ownership-contract.mjs"
+            ]
+        },
+        "scene": {
+            "description": "Scene atmosphere and visual polish - reveal, atmosphere, three.js polish, reduced-motion variants.",
+            "contracts": [
+                "scene-reveal-contract.mjs",
+                "scene-reveal-camera-dewindowing-contract.mjs",
+                "webgl-restore-dewindowing-contract.mjs",
+                "three-setup-init-dewindowing-contract.mjs",
+                "cancel-animate-dewindowing-contract.mjs",
+                "three-setup-loop-dewindowing-contract.mjs",
+                "three-setup-zero-caller-dewindowing-contract.mjs",
+                "scene-atmosphere-contract.mjs",
+                "three-visual-polish-contract.mjs",
+                "reduced-motion-transition-contract.mjs",
+                "reduced-motion-interruption-contract.mjs",
+                "mycelium-logic-contract.mjs",
+                "node-interaction-contract.spec.js",
+                "dynamic-lighting-contract.spec.js",
+                "focus-transition-contract.mjs"
+            ]
+        },
+        "browser": {
+            "description": "Playwright-rendered contracts - all require browser launch, inherently slower (5-20s each).",
+            "contracts": [
+                "focus-stage-render-contract.mjs",
+                "info-panel-collapsed-render-contract.mjs",
+                "mode-chip-state-render-contract.mjs",
+                "weather-widget-render-contract.mjs",
+                "connection-analysis-render-state-contract.mjs",
+                "search-peek-expanded-render-contract.mjs"
+            ]
+        },
+        "browser-interaction": {
+            "description": "Playwright browser-interaction contracts - canvas hit-test and live UI reset interaction proofs. Requires a running dev server on port 8795.",
+            "contracts": [
+                "live-ui-reset-interaction.spec.js",
+                "live-state-transition-ui-paths.spec.js",
+                "short-landscape-transition-ui-paths.spec.js",
+                "url-restore-cluster-filter-race.spec.js",
+                "canvas-hit-test-interaction.spec.js",
+                "reduced-motion-interruption.spec.js",
+                "gemma-fallback-error.spec.js",
+                "data-boundary-stress.spec.js",
+                "filter-search-chrome-svelte.spec.js"
+            ]
+        },
+        "short-landscape": {
+            "description": "Short-landscape deterministic proof - constrained layout plus interactive transition behavior. Visual screenshot proof remains qa:surface:short-landscape.",
+            "contracts": [
+                "short-landscape-layout-contract.mjs",
+                "short-landscape-contract.spec.js",
+                "short-landscape-transition-ui-paths.spec.js"
+            ]
+        },
+        "render": {
+            "description": "Backward-compatible alias for browser-backed render contracts. Prefer the browser group for new scripts.",
+            "contracts": [
+                "focus-stage-render-contract.mjs",
+                "info-panel-collapsed-render-contract.mjs",
+                "mode-chip-state-render-contract.mjs",
+                "weather-widget-render-contract.mjs",
+                "connection-analysis-render-state-contract.mjs",
+                "search-peek-expanded-render-contract.mjs"
+            ]
+        },
+        "smoke": {
+            "description": "Fast smoke checks - weather, loading, scene-reveal, motion settle. Sub-1s each.",
+            "contracts": [
+                "weather-lifecycle-contract.mjs",
+                "weather-surface-ownership-contract.mjs",
+                "camera-auto-rotate-settle-contract.mjs",
+                "scene-reveal-contract.mjs",
+                "loading-ui-contract.mjs",
+                "motion-state-contract.mjs",
+                "map-flattening-raw-buffer-contract.mjs"
+            ]
+        },
+        "mobile-critical": {
+            "description": "Mobile-critical surface and interaction contracts - focused on touch/responsive UI surfaces.",
+            "contracts": [
+                "semantic-dive-ui-surface-contract.mjs",
+                "search-state-surface-contract.mjs",
+                "focus-pocket-motion-contract.mjs",
+                "focus-pocket-composition-contract.mjs",
+                "demo-init-seam-contract.mjs",
+                "reset-callsite-routing-contract.mjs",
+                "demo-camera-retirement-contract.mjs",
+                "cluster-labels-contract.mjs",
+                "loading-ui-contract.mjs",
+                "short-landscape-layout-contract.mjs",
+                "mobile-visual-qa-contract.mjs",
+                "real-route-contract.mjs",
+                "landscape-896x414-audit.spec.js",
+                "critical-visual-layout-regression.spec.js"
+            ]
+        },
+        "motion": {
+            "description": "Motion/animation system contracts - camera controls, focus pocket, motion state, semantic-dive reverse.",
+            "contracts": [
+                "camera-controls-motion-contract.mjs",
+                "focus-pocket-motion-contract.mjs",
+                "motion-state-contract.mjs",
+                "camera-auto-rotate-settle-contract.mjs",
+                "semantic-dive-reverse-contract.mjs",
+                "focus-transition-contract.mjs"
+            ]
+        },
+        "lifecycle": {
+            "description": "Lifecycle and initialization contracts - composition, state sync, reset, demo, guide payload.",
+            "contracts": [
+                "lifecycle-composition-contract.mjs",
+                "composition-state-invariant-contract.mjs",
+                "state-transition-contract.mjs",
+                "state-transition-table-contract.mjs",
+                "step-inside-state-sync-contract.mjs",
+                "focus-semantic-state-boundary-contract.mjs",
+                "demo-init-seam-contract.mjs",
+                "reset-callsite-routing-contract.mjs",
+                "semantic-guide-payload-contract.mjs",
+                "demo-camera-retirement-contract.mjs",
+                "demo-state-sync-contract.mjs",
+                "micro-demo-state-owner-contract.mjs",
+                "weather-lifecycle-contract.mjs",
+                "residual-window-bridge-inventory-contract.mjs",
+                "app-node-import-contract.mjs",
+                "next-explore-candidate-contract.mjs",
+                "ui-renderers-helper-contract.mjs",
+                "lifecycle-semantic-guide-residual-bridge-contract.mjs",
+                "legend-ui-ownership-contract.mjs",
+                "semantic-dive-ui-dewindowing-contract.mjs",
+                "semantic-dive-active-owner-contract.mjs",
+                "state-ownership-contract.mjs",
+                "state-mutator-ownership-contract.mjs",
+                "filter-ownership-contract.mjs",
+                "cluster-filter-contract.mjs",
+                "keyboard-reset-ownership-contract.mjs",
+                "url-state-bridge-contract.mjs",
+                "search-focus-transition-timer-contract.mjs",
+                "search-state-ui-adapter-contract.mjs",
+                "search-panel-adapter-contract.mjs",
+                "focus-selection-owner-contract.mjs",
+                "focus-pocket-state-owner-contract.mjs",
+                "journey-focus-constellation-viewport-contract.mjs",
+                "journey-focus-pocket-state-contract.mjs",
+                "journey-focus-personality-contract.mjs",
+                "journey-focus-runtime-state-contract.mjs",
+                "journey-strand-continuity-contract.mjs",
+                "journey-neighborhood-manifest-contract.mjs",
+                "journey-walk-thread-neighbor-timer-contract.mjs",
+                "bootstrap-window-export-contract.mjs",
+                "lifecycle-search-panel-ownership-contract.mjs",
+                "lifecycle-journey-quick-dewindowing-contract.mjs",
+                "search-lifecycle-adapter-contract.mjs",
+                "view-controller-ownership-contract.mjs"
+            ]
+        },
+        "quality": {
+            "description": "UI quality, interaction, and CSS ownership contracts that may write tmp reports.",
+            "contracts": [
+                "css-manifest-contract.mjs",
+                "design-token-doc-contract.mjs",
+                "surface-style-matrix-contract.mjs",
+                "focus-stage-css-ownership-contract.mjs",
+                "css-transient-state-ownership-contract.mjs",
+                "mobile-chrome-ownership-contract.mjs",
+                "ui-quality-contract.mjs",
+                "micro-surface-interactions-contract.mjs",
+                "surface-redundancy-contract.mjs",
+                "aria-sync-contract.mjs",
+                "focus-trap-contract.mjs",
+                "window-global-allowlist-contract.mjs",
+                "persistence-contract.mjs",
+                "disposal-hygiene-contract.spec.js",
+                "search-results-svelte-ownership-contract.mjs",
+                "selected-details-svelte-ownership-contract.mjs",
+                "selected-card-dom-ownership-contract.mjs",
+                "svelte-chrome-ownership-contract.mjs",
+                "three-resource-lifecycle-contract.mjs",
+                "ts-js-drift-contract.mjs"
+            ]
+        },
+        "supplemental": {
+            "description": "Supplemental non-default contracts that are intentionally owned by the manifest but not part of the pinned full run.",
+            "timeout": 600000,
+            "contracts": [
+                "async-integrity-stress-contract.mjs",
+                "composition-state-owner-contract.mjs",
+                "focus-camera-ownership-contract.mjs",
+                "focus-camera-readability-contract.mjs",
+                "focus-interaction-ownership-contract.mjs",
+                "info-panel-surface-ownership-contract.mjs",
+                "js-design-token-contract.mjs",
+                "live-semantic-roles-contract.mjs",
+                "map-focus-search-content-owner-contract.mjs",
+                "mobile-focus-search-surface-ownership-contract.mjs",
+                "mobile-route-ownership-contract.mjs",
+                "package-script-targets-contract.mjs",
+                "reset-map-interaction-ownership-contract.mjs",
+                "search-sheet-css-ownership-contract.mjs",
+                "semantic-thread-relationship-role-contract.mjs",
+                "ui-perfection-contract.mjs",
+                "reduced-motion-interruption-proof.spec.js",
+                "config-topology-env-contract.mjs",
+                "data-schema-contract.mjs"
+            ]
+        },
+        "3d-engine": {
+            "description": "WebGL resilience and memory hygiene contracts for the 3D engine - context loss survival and geometry disposal hygiene. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": ["webgl-resilience-contract.spec.js", "disposal-hygiene-contract.spec.js"]
+        },
+        "3d-interaction-quality": {
+            "description": "3D interaction-quality contracts - aggregate group. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-hidpi-click-accuracy.spec.js",
+                "3d-node-hit-accuracy.spec.js",
+                "3d-hover-affordance.spec.js",
+                "3d-real-pointer-playthrough.spec.js",
+                "3d-focus-pocket-selectability.spec.js",
+                "3d-cluster-readability.spec.js",
+                "3d-thread-orchestration-quality.spec.js",
+                "3d-camera-orbit-resilience.spec.js",
+                "3d-touch-parity.spec.js",
+                "3d-viewport-dpr-resilience.spec.js",
+                "3d-overlay-hit-stealing.spec.js",
+                "3d-state-transition-integrity.spec.js",
+                "3d-data-edge-cases.spec.js",
+                "3d-focus-neighborhood-geometry.spec.js",
+                "3d-focus-neighborhood-interaction.spec.js",
+                "focus-semantic-line-contract.spec.js",
+                "3d-rapid-re-selection-contract.spec.js"
+            ]
+        },
+        "3d-pointer": {
+            "description": "3D pointer/contact contracts - projected canvas node hit accuracy, hover/touch affordance, focus-pocket selectability. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-hidpi-click-accuracy.spec.js",
+                "3d-node-hit-accuracy.spec.js",
+                "3d-hover-affordance.spec.js",
+                "3d-real-pointer-playthrough.spec.js",
+                "3d-focus-pocket-selectability.spec.js"
+            ]
+        },
+        "3d-focus-neighborhood": {
+            "description": "Focus neighborhood visibility and reachability contracts - geometry projection, interaction, overlay hit-stealing, hover affordance, thread orchestration, and camera orbit. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-focus-pocket-selectability.spec.js",
+                "3d-overlay-hit-stealing.spec.js",
+                "3d-hover-affordance.spec.js",
+                "3d-thread-orchestration-quality.spec.js",
+                "3d-camera-orbit-resilience.spec.js",
+                "3d-focus-neighborhood-geometry.spec.js",
+                "3d-focus-neighborhood-interaction.spec.js"
+            ]
+        },
+        "3d-focus-neighborhood-geometry": {
+            "description": "Focus neighborhood geometry: screen coordinate projection, role distinguishability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
+            "timeout": 300000,
+            "contracts": ["3d-focus-neighborhood-geometry.spec.js"]
+        },
+        "3d-focus-ghost-graph-visibility": {
+            "description": "Whole-graph context point cloud visibility during focus mode: opacity, size, projected presence, and spore-vs-point-cloud layering. Requires a running dev server on port 8795.",
+            "timeout": 300000,
+            "contracts": ["3d-focus-ghost-graph-visibility.spec.js"]
+        },
+        "3d-hidpi-click-accuracy": {
+            "description": "HiDPI 3D click/tap accuracy at DPR=2 across desktop, mobile portrait, and short-landscape viewports. Requires a running dev server on port 8795.",
+            "timeout": 300000,
+            "contracts": ["3d-hidpi-click-accuracy.spec.js"]
+        },
+        "3d-focus-neighborhood-interaction": {
+            "description": "Focus neighborhood interaction: hover, click, and state integrity through neighbor interaction sequences. Requires a running dev server on port 8795.",
+            "timeout": 300000,
+            "contracts": ["3d-focus-neighborhood-interaction.spec.js", "semantic-role-traversal.spec.js"]
+        },
+        "3d-focus-pocket-geometry": {
+            "description": "Geometry/projection: pocket node screen coordinates, in-canvas reachability, and anchor/neighbor spatial separation. Requires a running dev server on port 8795.",
+            "timeout": 300000,
+            "contracts": ["3d-focus-pocket-selectability.spec.js", "3d-focus-neighborhood-geometry.spec.js"]
+        },
+        "3d-hover-click-interaction": {
+            "description": "Hover/click interaction: hover affordance, real-pointer playthrough, node hit accuracy, and state integrity through interaction sequences. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-hover-affordance.spec.js",
+                "3d-real-pointer-playthrough.spec.js",
+                "3d-hidpi-click-accuracy.spec.js",
+                "3d-node-hit-accuracy.spec.js",
+                "3d-focus-neighborhood-interaction.spec.js"
+            ]
+        },
+        "3d-focus-desktop-click": {
+            "description": "Desktop-only 3D focus click lane at 1440x900 - strict hover/click accuracy without mobile-frustum soft-skips. Requires a running dev server on port 8795.",
+            "timeout": 300000,
+            "contracts": ["3d-focus-desktop-click.spec.js"]
+        },
+        "3d-rapid-re-selection": {
+            "description": "Rapid 3D focus re-selection contracts for A-to-B, A-to-B-to-A, and canvas click race windows. Requires a running dev server on port 8795.",
+            "timeout": 300000,
+            "contracts": ["3d-rapid-re-selection-contract.spec.js"]
+        },
+        "3d-responsive-ui": {
+            "description": "Responsive UI and viewport resilience: camera aspect/resize coherence, DPR/backing scale, touch parity, and orbit stability across viewports. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-camera-orbit-resilience.spec.js",
+                "3d-viewport-dpr-resilience.spec.js",
+                "3d-touch-parity.spec.js"
+            ]
+        },
+        "3d-visual-quality": {
+            "description": "3D visual quality contracts - cluster readability and thread orchestration quality. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": ["3d-cluster-readability.spec.js", "3d-thread-orchestration-quality.spec.js"]
+        },
+        "3d-resilience": {
+            "description": "3D resilience contracts - camera/orbit, touch parity, viewport/DPR resilience, and overlay hit ownership. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-camera-orbit-resilience.spec.js",
+                "3d-touch-parity.spec.js",
+                "3d-viewport-dpr-resilience.spec.js",
+                "3d-overlay-hit-stealing.spec.js"
+            ]
+        },
+        "3d-state-data": {
+            "description": "3D state and data contracts - state transition integrity and data edge cases. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": ["3d-state-transition-integrity.spec.js", "3d-data-edge-cases.spec.js"]
+        },
+        "3d-accessibility-fallback-performance": {
+            "description": "3D accessibility, fallback, and performance contracts - keyboard focus ownership, reduced-motion final state, WebGL fallback/context loss, and renderer diagnostics. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": ["3d-accessibility-fallback-performance.spec.js"]
+        },
+        "3d-smoke": {
+            "description": "3D fast smoke - pointer hit, hover affordance, focus-pocket selectability. Sub-5s each, minimal scene complexity.",
+            "timeout": 300000,
+            "contracts": [
+                "3d-node-hit-accuracy.spec.js",
+                "3d-hover-affordance.spec.js",
+                "3d-focus-pocket-selectability.spec.js"
+            ]
+        },
+        "3d-regression": {
+            "description": "3D focused regression lane - recent focus-neighborhood, pointer, overlay, and thread orchestration coverage without the full 3D suite cost. Requires a running dev server on port 8795.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-focus-neighborhood-geometry.spec.js",
+                "3d-focus-ghost-graph-visibility.spec.js",
+                "3d-focus-neighborhood-interaction.spec.js",
+                "3d-overlay-hit-stealing.spec.js",
+                "3d-hover-affordance.spec.js",
+                "3d-thread-orchestration-quality.spec.js"
+            ]
+        },
+        "3d-slow": {
+            "description": "3D slow/visual - cluster readability, thread orchestration, accessibility/fallback. 10-30s each, full scene rendering.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-cluster-readability.spec.js",
+                "3d-thread-orchestration-quality.spec.js",
+                "3d-accessibility-fallback-performance.spec.js"
+            ]
+        },
+        "3d-full": {
+            "description": "All 3D interaction quality contracts - every 3d-*.spec.js. 10-15 specs, full scene + interaction coverage.",
+            "timeout": 600000,
+            "contracts": [
+                "3d-node-hit-accuracy.spec.js",
+                "3d-hover-affordance.spec.js",
+                "3d-real-pointer-playthrough.spec.js",
+                "3d-focus-pocket-selectability.spec.js",
+                "3d-cluster-readability.spec.js",
+                "3d-thread-orchestration-quality.spec.js",
+                "3d-camera-orbit-resilience.spec.js",
+                "3d-touch-parity.spec.js",
+                "3d-viewport-dpr-resilience.spec.js",
+                "3d-overlay-hit-stealing.spec.js",
+                "3d-state-transition-integrity.spec.js",
+                "3d-data-edge-cases.spec.js",
+                "3d-focus-neighborhood-geometry.spec.js",
+                "3d-focus-neighborhood-interaction.spec.js",
+                "3d-focus-desktop-click.spec.js",
+                "3d-accessibility-fallback-performance.spec.js"
+            ]
+        },
+        "full": {
+            "description": "All ordered contracts - same as default npm run test:contract.",
+            "contracts": [
+                "semantic-dive-ui-surface-contract.mjs",
+                "search-state-surface-contract.mjs",
+                "lifecycle-composition-contract.mjs",
+                "state-transition-contract.mjs",
+                "state-transition-table-contract.mjs",
+                "step-inside-state-sync-contract.mjs",
+                "focus-semantic-state-boundary-contract.mjs",
+                "journey-compass-state-contract.mjs",
+                "semantic-lane-contract.mjs",
+                "connection-analysis-contract.mjs",
+                "camera-controls-motion-contract.mjs",
+                "focus-pocket-motion-contract.mjs",
+                "focus-pocket-composition-contract.mjs",
+                "journey-event-bindings-contract.mjs",
+                "demo-init-seam-contract.mjs",
+                "reset-callsite-routing-contract.mjs",
+                "demo-camera-retirement-contract.mjs",
+                "cluster-labels-contract.mjs",
+                "journey-thread-inspector-contract.mjs",
+                "trail-review-focus-contract.mjs",
+                "journey-walk-thread-neighbor-timer-contract.mjs",
+                "journey-ui-ownership-contract.mjs",
+                "share-view-clipboard-contract.mjs",
+                "keyboard-help-aria-contract.mjs",
+                "weather-lifecycle-contract.mjs",
+                "weather-surface-ownership-contract.mjs",
+                "camera-auto-rotate-settle-contract.mjs",
+                "semantic-dive-reverse-contract.mjs",
+                "thread-inspector-dewindowing-contract.mjs",
+                "residual-window-bridge-inventory-contract.mjs",
+                "next-explore-candidate-contract.mjs",
+                "ui-renderers-helper-contract.mjs",
+                "lifecycle-semantic-guide-residual-bridge-contract.mjs",
+                "legend-ui-ownership-contract.mjs",
+                "semantic-dive-ui-dewindowing-contract.mjs",
+                "lifecycle-search-panel-ownership-contract.mjs",
+                "lifecycle-journey-quick-dewindowing-contract.mjs",
+                "search-lifecycle-adapter-contract.mjs",
+                "view-controller-ownership-contract.mjs",
+                "loading-ui-contract.mjs",
+                "state-ownership-contract.mjs",
+                "state-mutator-ownership-contract.mjs",
+                "filter-ownership-contract.mjs",
+                "keyboard-reset-ownership-contract.mjs",
+                "search-state-ui-adapter-contract.mjs",
+                "search-panel-adapter-contract.mjs",
+                "exploration-modes-contract.mjs",
+                "scene-reveal-contract.mjs",
+                "scene-reveal-camera-dewindowing-contract.mjs",
+                "webgl-restore-dewindowing-contract.mjs",
+                "three-setup-init-dewindowing-contract.mjs",
+                "cancel-animate-dewindowing-contract.mjs",
+                "three-setup-loop-dewindowing-contract.mjs",
+                "three-setup-zero-caller-dewindowing-contract.mjs",
+                "scene-atmosphere-contract.mjs",
+                "motion-state-contract.mjs",
+                "demo-state-sync-contract.mjs",
+                "three-visual-polish-contract.mjs",
+                "search-peek-expanded-render-contract.mjs",
+                "semantic-guide-payload-contract.mjs",
+                "connection-analysis-render-state-contract.mjs",
+                "reduced-motion-interruption.spec.js",
+                "gemma-fallback-error.spec.js",
+                "selected-card-dom-ownership-contract.mjs"
+            ]
+        },
+        "projection": {
+            "description": "Siloed projection field contracts - strandJourney, terrainHandoff, routeDirector, semanticDive/trailDepth mutual consistency.",
+            "contracts": []
+        },
+        "visual-smoke": {
+            "description": "Fast visual smoke and layout regression specs - btn layout, camera motion, demo seam, micro-demo sequence, ui renderers.",
+            "contracts": [
+                "btn-journey-primary-layout.spec.js",
+                "camera-motion-visual-smoke.spec.js",
+                "demo-init-seam-contract.mjs",
+                "micro-demo.spec.js",
+                "ui-renderers-validation.spec.js"
+            ]
+        },
+        "live-url": {
+            "description": "Live URL-state contracts on port 8795 - URL reconstruction, body state sync, reset proofs, polish adversarial. Requires running dev server.",
+            "contracts": [
+                "live-url-state-reconstruction.spec.js",
+                "url-restore-cluster-filter-race.spec.js",
+                "live-step-inside-url-body-state-sync.spec.js",
+                "live-reset-clear-demo-proof.spec.js",
+                "live-reset-proof.spec.js",
+                "polish-adversarial.spec.js"
+            ]
+        },
+        "extraction": {
+            "description": "Extraction and de-monolith verification contracts on port 8795 - proves shell boundaries hold under full load.",
+            "contracts": [
+                "extraction-contracts.spec.js",
+                "semantic-guide-fallback-contract.spec.js",
+                "semantic-guide-fetch-fallback-contract.spec.js",
+                "semantic-guide-edge-contract.mjs",
+                "short-landscape-contract.spec.js"
+            ]
+        },
+        "manual-risk": {
+            "description": "Manual-risk specs on alternate ports - map-search visual (9876), reset experience state (9876). May require specific environment.",
+            "contracts": ["sd143-map-search-visual.spec.js", "reset-experience-state.spec.js"]
+        },
+        "e2e": {
+            "description": "End-to-end Playwright specs requiring a live server - switchView race condition and full click flow proofs. Requires running dev server on port 9876.",
+            "contracts": ["switchview-race.spec.js", "e2e-click-flow.spec.js"]
+        }
     }
-  }
 }

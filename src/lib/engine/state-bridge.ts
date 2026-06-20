@@ -15,7 +15,7 @@
  * file extracted from `js/state.ts` in Wave 1).
  */
 
-import { appState } from '@lib/state/app.svelte';
+import { appState } from '@lib/state/app.svelte.ts';
 import type { SemanticState } from '@lib/state/state-types';
 
 export const state = appState as unknown as SemanticState;

@@ -10,7 +10,9 @@
 
 import { get } from 'svelte/store';
 import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts';
+import { animateCameraToTerrainPrelude } from '@lib/engine/camera-controls';
 import { semanticGuideIcon } from '@lib/journey/semantic-guide';
+import { applyMapFlatteningLayout } from '@lib/utils/map-flattening-layout';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -170,6 +172,9 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
   // Leaving galaxy: clean up orphaned timers
   if (view !== 'galaxy') {
     _clearGalaxyTimers();
+    applyMapFlatteningLayout(true);
+  } else {
+    applyMapFlatteningLayout(false);
   }
 
   // Button state sync
@@ -201,6 +206,7 @@ function _startTerrainPrelude(
 ): void {
   // Show the handoff overlay
   showViewHandoff('map');
+  animateCameraToTerrainPrelude({ duration: CONFIG.MAP_HANDOFF_PRELUDE_MS });
 
   _viewSwitchPreludeTimer = setTimeout(() => {
     _viewSwitchPreludeTimer = null;

@@ -5,7 +5,7 @@
  * for components that need to render specific states for testing.
  * (Svelte 5 runes)
  */
-import { type Readable, type Subscriber, type Unsubscriber } from 'svelte/store'
+import { get, type Readable, type Subscriber, type Unsubscriber, writable } from 'svelte/store'
 
 export interface TestCompatState {
     panelSurface: string | null
@@ -61,7 +61,7 @@ const initialTestState: TestCompatState = {
     graphicsMode: null
 }
 
-let _testCompatStore = $state<TestCompatState>({ ...initialTestState })
+const _testCompatWritable = writable<TestCompatState>({ ...initialTestState })
 
 // ── TestCompatStore API ────────────────────────────────────────────────────
 // testCompatStore is a hybrid: callable as testCompatStore() for Svelte 5 rune consumers,
@@ -71,12 +71,11 @@ let _testCompatStore = $state<TestCompatState>({ ...initialTestState })
 export type TestCompatStoreApi = (() => TestCompatState) & Readable<TestCompatState>
 
 function _createTestCompatStore(): TestCompatStoreApi {
-    const fn = (() => _testCompatStore) as TestCompatStoreApi
+    const fn = (() => get(_testCompatWritable)) as TestCompatStoreApi
 
     // Satisfy Readable<TestCompatState> so get(testCompatStore) from svelte/store works.
     fn.subscribe = (listener: Subscriber<TestCompatState>): Unsubscriber => {
-        listener(_testCompatStore)
-        return () => {}
+        return _testCompatWritable.subscribe(listener)
     }
 
     return fn
@@ -90,7 +89,7 @@ export function syncTestStateFromBody(): void {
     if (typeof document === 'undefined' || !document.body) return
 
     const body = document.body
-    Object.assign(_testCompatStore, {
+    _testCompatWritable.set({
         panelSurface: body.dataset.panelSurface || null,
         focusedNode: body.dataset.focusedNode ? Number(body.dataset.focusedNode) : null,
         activeView: body.dataset.activeView || body.dataset.viewMode || null,
@@ -138,7 +137,7 @@ export function syncBodyFromTestState(): void {
     if (typeof document === 'undefined' || !document.body) return
 
     const body = document.body
-    const currentState = _testCompatStore
+    const currentState = get(_testCompatWritable)
     Object.entries(currentState).forEach(([key, value]) => {
         if (value !== null && value !== undefined) {
             // Convert camelCase to kebab-case for data attributes
@@ -150,5 +149,5 @@ export function syncBodyFromTestState(): void {
 
 /** Reset test state to initial */
 export function resetTestState(): void {
-    Object.assign(_testCompatStore, { ...initialTestState })
+    _testCompatWritable.set({ ...initialTestState })
 }

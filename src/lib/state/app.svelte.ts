@@ -474,8 +474,15 @@ class AppState {
 
     // ==== DERIVED STATE (replaces Proxy getters from legacy state) ====
 
-    /** Derived from navState.focusedIndex — read-only. Use navState.focusedIndex to set. */
-    focusedNode = $derived(this.navState.focusedIndex)
+    /** Compatibility alias for navState.focusedIndex. */
+    get focusedNode(): number | null {
+        return this.navState.focusedIndex
+    }
+
+    set focusedNode(index: number | null | undefined) {
+        const nextIndex = Number.isFinite(index) ? Number(index) : null
+        this.navState.focusedIndex = nextIndex
+    }
 
     /** Compatibility view over trailDepth. Setting it keeps navState mirrored. */
     get semanticDiveMode(): boolean {

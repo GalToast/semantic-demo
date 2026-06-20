@@ -12,299 +12,329 @@
  * Run: node tests/state-transition-contract.mjs
  */
 
-let _rafNow = 0;
-let _rafQueue = [];
+let _rafNow = 0
+let _rafQueue = []
 
 class FakeClassList {
-  constructor() { this._items = new Set(); }
-  add(...n)    { n.forEach(x => this._items.add(x)); }
-  remove(...n)  { n.forEach(x => this._items.delete(x)); }
-  contains(n)   { return this._items.has(n); }
-  toggle(n, f)  {
-    const on = f !== undefined ? f : !this._items.has(n);
-    on ? this._items.add(n) : this._items.delete(n);
-    return on;
-  }
+    constructor() {
+        this._items = new Set()
+    }
+    add(...n) {
+        n.forEach((x) => this._items.add(x))
+    }
+    remove(...n) {
+        n.forEach((x) => this._items.delete(x))
+    }
+    contains(n) {
+        return this._items.has(n)
+    }
+    toggle(n, f) {
+        const on = f !== undefined ? f : !this._items.has(n)
+        on ? this._items.add(n) : this._items.delete(n)
+        return on
+    }
 }
 
 class FakeElement {
-  constructor(tag = 'div') {
-    this.tagName    = tag.toUpperCase();
-    this.classList  = new FakeClassList();
-    this.dataset    = {};
-    this.style      = {};
-    this.children   = [];
-    this._innerHTML = '';
-    this._text      = '';
-    this._attr      = new Map();
-    this.hidden     = false;
-    this.disabled   = false;
-    this.inert      = false;
-    this.title      = '';
-  }
-  get innerHTML()  { return this._innerHTML; }
-  set innerHTML(v) { this._innerHTML = String(v); }
-  get textContent() { return this._text; }
-  set textContent(v) { this._text = String(v); }
-  appendChild(c)   { this.children.push(c); return c; }
-  setAttribute(k, v) { this._attr.set(String(k), String(v)); }
-  getAttribute(k)  { return this._attr.get(String(k)) ?? null; }
-  removeAttribute(k) { this._attr.delete(String(k)); if (k === 'title') this.title = ''; }
-  querySelector()  { return null; }
+    constructor(tag = 'div') {
+        this.tagName = tag.toUpperCase()
+        this.classList = new FakeClassList()
+        this.dataset = {}
+        this.style = {}
+        this.children = []
+        this._innerHTML = ''
+        this._text = ''
+        this._attr = new Map()
+        this.hidden = false
+        this.disabled = false
+        this.inert = false
+        this.title = ''
+    }
+    get innerHTML() {
+        return this._innerHTML
+    }
+    set innerHTML(v) {
+        this._innerHTML = String(v)
+    }
+    get textContent() {
+        return this._text
+    }
+    set textContent(v) {
+        this._text = String(v)
+    }
+    appendChild(c) {
+        this.children.push(c)
+        return c
+    }
+    setAttribute(k, v) {
+        this._attr.set(String(k), String(v))
+    }
+    getAttribute(k) {
+        return this._attr.get(String(k)) ?? null
+    }
+    removeAttribute(k) {
+        this._attr.delete(String(k))
+        if (k === 'title') this.title = ''
+    }
+    querySelector() {
+        return null
+    }
 }
 
 // ── Establish global shim BEFORE module imports ────────────────────────────────
 
-const fakeBody = new FakeElement('body');
-const elementsById = new Map();
-let activeResultsIntentEl = null;
+const fakeBody = new FakeElement('body')
+const elementsById = new Map()
+let activeResultsIntentEl = null
 
 globalThis.document = {
-  body: fakeBody,
-  getElementById: id => elementsById.get(id) || null,
-  querySelector: selector => {
-    if (selector === '.search-container.has-query .search-results.active') return activeResultsIntentEl;
-    return null;
-  },
-  querySelectorAll: () => [],
-  createElement: tag => new FakeElement(tag),
-};
+    body: fakeBody,
+    getElementById: (id) => elementsById.get(id) || null,
+    querySelector: (selector) => {
+        if (selector === '.search-container.has-query .search-results.active') return activeResultsIntentEl
+        return null
+    },
+    querySelectorAll: () => [],
+    createElement: (tag) => new FakeElement(tag)
+}
 
 globalThis.window = {
-  location: { search: '' },
-  history: { replaceState: () => {} },
-  setTimeout: () => 0,
-  clearTimeout: () => {},
-  requestAnimationFrame: fn => {
-    _rafQueue.push(fn);
-    return ++_rafNow;
-  },
-  cancelAnimationFrame: () => {},
-  matchMedia: () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }),
-  syncRouteDirectorState: () => {},
-  syncSemanticDiveUi: () => {},
-  updateJourneyCompass: () => {},
-  updateFocusNeighborRail: () => {},
-  refreshMapMarkers: () => {},
-  refreshMapRouteEmbodiment: () => {},
-  refreshRouteTraceOverlay: () => {},
-  clearMobileRouteFieldPeek: () => {},
-  updateLegendGuideState: () => {},
-  updateSelectedCardHeading: () => {},
-  getRouteEmbodimentIndices: () => [],
-  getRouteLayerOrigin: () => 'galaxy',
-  setSearchPanelState: () => {},
-  hideTooltip: () => {},
-  clearSearchPreviewHoverTimer: () => {},
-  clearSearchPreviewOverlay: () => {},
-  clearSearchGlow: () => {},
-  updateSearchTrailCue: () => {},
-  syncFocusStage: () => {},
-  applyFilters: () => {},
-  updateExplorationUi: () => {},
-  updateSearchStatusMessage: () => {},
-  resetNodePositions: () => {},
-  updateSelectedBusiness: () => {},
-};
+    location: { search: '' },
+    history: { replaceState: () => {} },
+    setTimeout: () => 0,
+    clearTimeout: () => {},
+    requestAnimationFrame: (fn) => {
+        _rafQueue.push(fn)
+        return ++_rafNow
+    },
+    cancelAnimationFrame: () => {},
+    matchMedia: () => ({ matches: false, addEventListener: () => {}, removeEventListener: () => {} }),
+    syncRouteDirectorState: () => {},
+    syncSemanticDiveUi: () => {},
+    updateJourneyCompass: () => {},
+    updateFocusNeighborRail: () => {},
+    refreshMapMarkers: () => {},
+    refreshMapRouteEmbodiment: () => {},
+    refreshRouteTraceOverlay: () => {},
+    clearMobileRouteFieldPeek: () => {},
+    updateLegendGuideState: () => {},
+    updateSelectedCardHeading: () => {},
+    getRouteEmbodimentIndices: () => [],
+    getRouteLayerOrigin: () => 'galaxy',
+    setSearchPanelState: () => {},
+    hideTooltip: () => {},
+    clearSearchPreviewHoverTimer: () => {},
+    clearSearchPreviewOverlay: () => {},
+    clearSearchGlow: () => {},
+    updateSearchTrailCue: () => {},
+    syncFocusStage: () => {},
+    applyFilters: () => {},
+    updateExplorationUi: () => {},
+    updateSearchStatusMessage: () => {},
+    resetNodePositions: () => {},
+    updateSelectedBusiness: () => {}
+}
 
 globalThis.performance = {
-  now: () => { _rafNow += 16; return _rafNow; },
-};
+    now: () => {
+        _rafNow += 16
+        return _rafNow
+    }
+}
 
 // ── Assert helper ──────────────────────────────────────────────────────────────
 
 function assert(cond, msg) {
-  if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+    if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
 }
 
 function ds(key) {
-  return fakeBody.dataset[key];
+    return fakeBody.dataset[key]
 }
 
 // ── Import modules ─────────────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
-const { resetNavState, updateNavState } = await import('../src/lib/stores/navigation.svelte.ts');
-const { resetFocus, setSelectedBusiness, setSemanticDiveMode } = await import('../src/lib/stores/focus.svelte.ts');
-const { clearSearch, setSearchQuery, setSearchSummary } = await import('../src/lib/stores/search.svelte.ts');
+const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
+const { resetNavState, updateNavState } = await import('../src/lib/stores/navigation.svelte.ts')
+const { resetFocus, setSelectedBusiness, setSemanticDiveMode } = await import('../src/lib/stores/focus.svelte.ts')
+const { clearSearch, setSearchQuery, setSearchSummary } = await import('../src/lib/stores/search.svelte.ts')
 
 // We call refreshCompositionState() directly — it lives in lifecycle.js and is
 // exported as a named export.
-let refreshCompositionState;
+let refreshCompositionState
 try {
-  const lc = await import('../src/lib/orchestration/lifecycle.ts');
-  refreshCompositionState = lc.refreshCompositionState;
+    const lc = await import('../src/lib/orchestration/lifecycle.ts')
+    refreshCompositionState = lc.refreshCompositionState
 } catch (e) {
-  console.error('LIFECYCLE IMPORT ERROR:', e);
-  // lifecycle.js may self-initialize on import; get it via window if not exported
-  refreshCompositionState = globalThis.window.refreshCompositionState;
+    console.error('LIFECYCLE IMPORT ERROR:', e)
+    // lifecycle.js may self-initialize on import; get it via window if not exported
+    refreshCompositionState = globalThis.window.refreshCompositionState
 }
 
-assert(typeof refreshCompositionState === 'function', 'refreshCompositionState is callable');
+assert(typeof refreshCompositionState === 'function', 'refreshCompositionState is callable')
 
 // ── Helpers ────────────────────────────────────────────────────────────────────
 
 function resetState() {
-  withStateMutation(() => {
-    // Deep-reset state to a clean overview baseline
-    state.currentView = 'galaxy';
-    state.focusedNode = null;
-    state.selectedPoint = null;
-    state.navState.focusedIndex = null;
-    state.navState.mode = 'overview';
-    state.navState.trailCursor = -1;
-    state.navState.trailSeedIndex = null;
-    state.navState.trailNeighborIndices = [];
-    state.navState.walkHistoryIndices = [];
-    state.navState.threadCandidates = [];
-    state.navState.trailDepth = 0;
-    state.trailDepth = 0;
-    state.semanticDiveMode = false;
-    state.currentSearchSummary = null;
-    state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
-    state.trailIndices.clear();
-  });
-  fakeBody.dataset = {};
-  activeResultsIntentEl = null;
-  _rafQueue = [];
-  resetNavState();
-  resetFocus();
-  clearSearch();
-  updateNavState({ currentView: 'galaxy', mode: 'overview', surface: 'idle', focusedIndex: null, trailDepth: 0 });
-  setSelectedBusiness(null);
-  setSemanticDiveMode(false);
+    withStateMutation(() => {
+        // Deep-reset state to a clean overview baseline
+        state.currentView = 'galaxy'
+        state.focusedNode = null
+        state.selectedPoint = null
+        state.navState.focusedIndex = null
+        state.navState.mode = 'overview'
+        state.navState.trailCursor = -1
+        state.navState.trailSeedIndex = null
+        state.navState.trailNeighborIndices = []
+        state.navState.walkHistoryIndices = []
+        state.navState.threadCandidates = []
+        state.navState.trailDepth = 0
+        state.trailDepth = 0
+        state.semanticDiveMode = false
+        state.currentSearchSummary = null
+        state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false }
+        state.trailIndices.clear()
+    })
+    fakeBody.dataset = {}
+    activeResultsIntentEl = null
+    _rafQueue = []
+    resetNavState()
+    resetFocus()
+    clearSearch()
+    updateNavState({ currentView: 'galaxy', mode: 'overview', surface: 'idle', focusedIndex: null, trailDepth: 0 })
+    setSelectedBusiness(null)
+    setSemanticDiveMode(false)
 }
 
 function setTestTrailDepth(depth) {
-  state.navState.trailDepth = depth;
-  state.trailDepth = depth;
-  // Raw Node contracts use a minimal non-reactive Svelte rune shim, so mirror
-  // the derived value that the real Svelte runtime computes from navState.
-  state.semanticDiveMode = depth === 2;
+    state.navState.trailDepth = depth
+    state.trailDepth = depth
+    // Raw Node contracts use a minimal non-reactive Svelte rune shim, so mirror
+    // the derived value that the real Svelte runtime computes from navState.
+    state.semanticDiveMode = depth === 2
 }
 
 function syncStoresFromState() {
-  const searchInput = elementsById.get('search-input');
-  const query = String(state.currentSearchSummary?.query ?? searchInput?.value ?? '');
-  const hasSearchIntent = !!state.currentSearchSummary || query.trim().length >= 2;
-  const hasFocus = state.navState.focusedIndex != null || state.focusedNode != null || state.selectedPoint != null;
-  const activeView = state.currentView || 'galaxy';
-  const semanticDiveActive = activeView === 'galaxy' && hasFocus && state.semanticDiveMode === true;
+    const searchInput = elementsById.get('search-input')
+    const query = String(state.currentSearchSummary?.query ?? searchInput?.value ?? '')
+    const hasSearchIntent = !!state.currentSearchSummary || query.trim().length >= 2
+    const hasFocus = state.navState.focusedIndex != null || state.focusedNode != null || state.selectedPoint != null
+    const activeView = state.currentView || 'galaxy'
+    const semanticDiveActive = activeView === 'galaxy' && hasFocus && state.semanticDiveMode === true
 
-  const mode = semanticDiveActive
-    ? 'inside'
-    : hasFocus
-      ? 'focus'
-      : hasSearchIntent
-        ? 'search'
-        : 'overview';
+    const mode = semanticDiveActive ? 'inside' : hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'overview'
 
-  const surface = (() => {
-    if (activeView === 'map') {
-      if (hasFocus && hasSearchIntent) return 'map-focus-search';
-      if (hasFocus) return 'focus';
-      if (hasSearchIntent) return 'search';
-      return 'idle';
+    const surface = (() => {
+        if (activeView === 'map') {
+            if (hasFocus && hasSearchIntent) return 'map-focus-search'
+            if (hasFocus) return 'focus'
+            if (hasSearchIntent) return 'search'
+            return 'idle'
+        }
+        if (hasFocus && hasSearchIntent) return 'focus-search'
+        if (semanticDiveActive) return 'inside'
+        if (hasFocus) return 'focus'
+        if (hasSearchIntent) return 'search'
+        return 'idle'
+    })()
+
+    updateNavState({
+        currentView: activeView,
+        focusedIndex: state.navState.focusedIndex,
+        mode,
+        surface,
+        trailDepth: state.trailDepth ?? state.navState.trailDepth ?? 0
+    })
+    setSelectedBusiness(state.selectedPoint ?? null)
+    setSemanticDiveMode(semanticDiveActive)
+
+    if (state.currentSearchSummary) {
+        setSearchSummary({ query, ...state.currentSearchSummary })
+    } else if (query.trim().length >= 2) {
+        setSearchQuery(query)
+    } else {
+        clearSearch()
     }
-    if (hasFocus && hasSearchIntent) return 'focus-search';
-    if (semanticDiveActive) return 'inside';
-    if (hasFocus) return 'focus';
-    if (hasSearchIntent) return 'search';
-    return 'idle';
-  })();
-
-  updateNavState({
-    currentView: activeView,
-    focusedIndex: state.navState.focusedIndex,
-    mode,
-    surface,
-    trailDepth: state.trailDepth ?? state.navState.trailDepth ?? 0
-  });
-  setSelectedBusiness(state.selectedPoint ?? null);
-  setSemanticDiveMode(semanticDiveActive);
-
-  if (state.currentSearchSummary) {
-    setSearchSummary({ query, ...state.currentSearchSummary });
-  } else if (query.trim().length >= 2) {
-    setSearchQuery(query);
-  } else {
-    clearSearch();
-  }
 }
 
 function commitTransition(label) {
-  syncStoresFromState();
-  refreshCompositionState();
-  console.log(`  [${label}] graphContext=${ds('graphContext')} panelSurface=${ds('panelSurface')} semanticDive=${ds('semanticDive')} activeView=${ds('activeView')} trailState=${ds('trailState')}`);
+    syncStoresFromState()
+    refreshCompositionState()
+    console.log(
+        `  [${label}] graphContext=${ds('graphContext')} panelSurface=${ds('panelSurface')} semanticDive=${ds('semanticDive')} activeView=${ds('activeView')} trailState=${ds('trailState')}`
+    )
 }
 
 // ── TRANSITIONS ───────────────────────────────────────────────────────────────
 
-console.log('\n=== State Transition Contract ===\n');
+console.log('\n=== State Transition Contract ===\n')
 
 // ── PHASE 1: overview ──────────────────────────────────────────────────────────
-console.log('[PHASE] overview');
-resetState();
-commitTransition('overview');
+console.log('[PHASE] overview')
+resetState()
+commitTransition('overview')
 
-assert(ds('activeView') === 'galaxy',   'overview: activeView is galaxy');
-assert(ds('graphContext') === 'idle',  'overview: graphContext is idle');
-assert(ds('panelSurface') === 'idle',  'overview: panelSurface is idle');
-assert(ds('semanticDive') === 'inactive', 'overview: semanticDive is inactive');
-assert(ds('trailState') === 'inactive','overview: trailState is inactive');
-assert(state.trailDepth === 0,         'overview: trailDepth is 0');
-assert(state.semanticDiveMode === false,'overview: semanticDiveMode is false');
-assert(state.focusedNode === null,     'overview: focusedNode is null');
-assert(state.selectedPoint === null,    'overview: selectedPoint is null');
-assert(state.navState.focusedIndex === null, 'overview: focusedIndex is null');
-assert(state.navState.mode === 'overview', 'overview: navState.mode is overview');
-console.log('  PASS: overview state is correct\n');
+assert(ds('activeView') === 'galaxy', 'overview: activeView is galaxy')
+assert(ds('graphContext') === 'idle', 'overview: graphContext is idle')
+assert(ds('panelSurface') === 'idle', 'overview: panelSurface is idle')
+assert(ds('semanticDive') === 'inactive', 'overview: semanticDive is inactive')
+assert(ds('trailState') === 'inactive', 'overview: trailState is inactive')
+assert(state.trailDepth === 0, 'overview: trailDepth is 0')
+assert(state.semanticDiveMode === false, 'overview: semanticDiveMode is false')
+assert(state.focusedNode === null, 'overview: focusedNode is null')
+assert(state.selectedPoint === null, 'overview: selectedPoint is null')
+assert(state.navState.focusedIndex === null, 'overview: focusedIndex is null')
+assert(state.navState.mode === 'overview', 'overview: navState.mode is overview')
+console.log('  PASS: overview state is correct\n')
 
 // ── PHASE 2: search ───────────────────────────────────────────────────────────
-console.log('[PHASE] search');
-resetState();
+console.log('[PHASE] search')
+resetState()
 withStateMutation(() => {
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-});
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+})
 // Simulate search input present so hasSearchIntent is true
-const searchInput = new FakeElement('input');
-searchInput.value = 'coffee';
-elementsById.set('search-input', searchInput);
-commitTransition('search');
+const searchInput = new FakeElement('input')
+searchInput.value = 'coffee'
+elementsById.set('search-input', searchInput)
+commitTransition('search')
 
-assert(ds('activeView') === 'galaxy',   'search: activeView is galaxy');
-assert(ds('graphContext') === 'corridor', 'search: graphContext is corridor');
-assert(ds('panelSurface') === 'search', 'search: panelSurface is search');
-assert(ds('semanticDive') === 'inactive','search: semanticDive is inactive');
-assert(ds('trailState') === 'inactive', 'search: trailState is inactive (no focus yet)');
-assert(state.focusedNode === null,     'search: focusedNode is null');
-assert(state.selectedPoint === null,    'search: selectedPoint is null');
-assert(state.navState.focusedIndex === null, 'search: focusedIndex is null');
-console.log('  PASS: search state is correct\n');
+assert(ds('activeView') === 'galaxy', 'search: activeView is galaxy')
+assert(ds('graphContext') === 'corridor', 'search: graphContext is corridor')
+assert(ds('panelSurface') === 'search', 'search: panelSurface is search')
+assert(ds('semanticDive') === 'inactive', 'search: semanticDive is inactive')
+assert(ds('trailState') === 'inactive', 'search: trailState is inactive (no focus yet)')
+assert(state.focusedNode === null, 'search: focusedNode is null')
+assert(state.selectedPoint === null, 'search: selectedPoint is null')
+assert(state.navState.focusedIndex === null, 'search: focusedIndex is null')
+console.log('  PASS: search state is correct\n')
 
 // ── PHASE 3: focus ───────────────────────────────────────────────────────────
 // When focusedNode + currentSearchSummary are both present, graphContext tracks
 // the broad navigation phase while panelSurface carries the fine-grained
 // focus-search composition.
 // We test the combined case (normal user flow: search → click result).
-console.log('[PHASE] focus');
-resetState();
+console.log('[PHASE] focus')
+resetState()
 withStateMutation(() => {
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('focus');
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('focus')
 
-assert(ds('activeView') === 'galaxy',    'focus: activeView is galaxy');
-assert(['focus','focus-search'].includes(ds('graphContext')), 'focus: graphContext is focus or focus-search');
-assert(ds('panelSurface') === 'focus-search', 'focus: panelSurface is focus-search');
-assert(ds('semanticDive') === 'inactive', 'focus: semanticDive is inactive (trailDepth=0)');
-assert(ds('trailState') === 'inactive' || ds('trailState') === 'active',  'focus: trailState is inactive or active (per truth table)');
-assert(state.trailDepth === 0,           'focus: trailDepth is still 0');
-assert(state.semanticDiveMode === false,  'focus: semanticDiveMode is false');
-console.log('  PASS: focus (with search) state is correct\n');
+assert(ds('activeView') === 'galaxy', 'focus: activeView is galaxy')
+assert(['focus', 'focus-search'].includes(ds('graphContext')), 'focus: graphContext is focus or focus-search')
+assert(ds('panelSurface') === 'focus-search', 'focus: panelSurface is focus-search')
+assert(ds('semanticDive') === 'inactive', 'focus: semanticDive is inactive (trailDepth=0)')
+assert(
+    ds('trailState') === 'inactive' || ds('trailState') === 'active',
+    'focus: trailState is inactive or active (per truth table)'
+)
+assert(state.trailDepth === 0, 'focus: trailDepth is still 0')
+assert(state.semanticDiveMode === false, 'focus: semanticDiveMode is false')
+console.log('  PASS: focus (with search) state is correct\n')
 
 // ── PHASE 4: semantic-dive (trailDepth=2, inside mode) ───────────────────────
 // In semantic-dive, trailDepth=2 and semanticDiveMode=true.
@@ -315,23 +345,23 @@ console.log('  PASS: focus (with search) state is correct\n');
 // hasFocusedTrailRecord && (navState.mode === 'trail' || hasSearchIntent).
 // In pure semantic-dive (no trail mode set, no search), trailState may be inactive
 // since navState.mode is not 'trail' and hasSearchIntent is false.
-console.log('[PHASE] semantic-dive');
-resetState();
+console.log('[PHASE] semantic-dive')
+resetState()
 withStateMutation(() => {
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  setTestTrailDepth(2);
-  // semanticDiveMode derives from navState.trailDepth, mirrored to legacy trailDepth for bridge consumers.
-  state.currentSearchSummary = null; // isolate the inside-walk; no search context
-});
-commitTransition('semantic-dive');
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    setTestTrailDepth(2)
+    // semanticDiveMode derives from navState.trailDepth, mirrored to legacy trailDepth for bridge consumers.
+    state.currentSearchSummary = null // isolate the inside-walk; no search context
+})
+commitTransition('semantic-dive')
 
-assert(ds('activeView') === 'galaxy',   'semantic-dive: activeView is galaxy');
-assert(ds('graphContext') === 'inside',  'semantic-dive: graphContext is inside');
-assert(ds('panelSurface') === 'semantic-dive', 'semantic-dive: panelSurface is semantic-dive');
-assert(ds('semanticDive') === 'active', 'semantic-dive: semanticDive is active');
-assert(state.trailDepth === 2,          'semantic-dive: trailDepth is 2');
-assert(state.semanticDiveMode === true, 'semantic-dive: semanticDiveMode reflects trailDepth');
+assert(ds('activeView') === 'galaxy', 'semantic-dive: activeView is galaxy')
+assert(ds('graphContext') === 'inside', 'semantic-dive: graphContext is inside')
+assert(ds('panelSurface') === 'semantic-dive', 'semantic-dive: panelSurface is semantic-dive')
+assert(ds('semanticDive') === 'active', 'semantic-dive: semanticDive is active')
+assert(state.trailDepth === 2, 'semantic-dive: trailDepth is 2')
+assert(state.semanticDiveMode === true, 'semantic-dive: semanticDiveMode reflects trailDepth')
 // trailState depends on hasActiveTrailState: galaxy mode requires (navState.mode==='trail' || hasSearchIntent)
 // Since navState.mode='overview' and hasSearchIntent=false, trailState stays inactive
 // trailState depends on hasActiveTrailState: galaxy mode requires
@@ -340,67 +370,67 @@ assert(state.semanticDiveMode === true, 'semantic-dive: semanticDiveMode reflect
 // This is a correct contract: pure semantic-dive without a started trail does NOT
 // set trailState=active. The trail chip (depth>=1) and trailState=active are
 // separate concepts.
-console.log('  PASS: semantic-dive state is correct (trailState inactive — trail not started)\n');
+console.log('  PASS: semantic-dive state is correct (trailState inactive — trail not started)\n')
 
 // ── PHASE 5: map-trail ────────────────────────────────────────────────────────
-console.log('[PHASE] map-trail');
-resetState();
+console.log('[PHASE] map-trail')
+resetState()
 withStateMutation(() => {
-  state.currentView = 'map';
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('map-trail');
+    state.currentView = 'map'
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('map-trail')
 
-assert(ds('activeView') === 'map',       'map-trail: activeView is map');
-assert(ds('graphContext') === 'map', 'map-trail: graphContext is map');
-assert(ds('mapContext') === 'focus-search', 'map-trail: mapContext is focus-search (focus + search intent)');
-assert(ds('panelSurface') === 'map-focus-search', 'map-trail: panelSurface is map-focus-search');
-assert(ds('semanticDive') === 'inactive','map-trail: semanticDive is inactive (map view)');
-assert(ds('trailState') === 'active',   'map-trail: trailState is active');
-assert(state.selectedPoint !== null,     'map-trail: selectedPoint is set');
-console.log('  PASS: map-trail state is correct\n');
+assert(ds('activeView') === 'map', 'map-trail: activeView is map')
+assert(ds('graphContext') === 'map', 'map-trail: graphContext is map')
+assert(ds('mapContext') === 'focus-search', 'map-trail: mapContext is focus-search (focus + search intent)')
+assert(ds('panelSurface') === 'map-focus-search', 'map-trail: panelSurface is map-focus-search')
+assert(ds('semanticDive') === 'inactive', 'map-trail: semanticDive is inactive (map view)')
+assert(ds('trailState') === 'active', 'map-trail: trailState is active')
+assert(state.selectedPoint !== null, 'map-trail: selectedPoint is set')
+console.log('  PASS: map-trail state is correct\n')
 
 // ── PHASE 6: reset ───────────────────────────────────────────────────────────
-console.log('[PHASE] reset');
-resetState();
+console.log('[PHASE] reset')
+resetState()
 // Simulate a pre-reset state: focus + search active
 withStateMutation(() => {
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('pre-reset');
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('pre-reset')
 
 // Now perform the actual resetStateBeforeUrlRestore
-const { resetStateBeforeUrlRestore } = await import('../src/lib/orchestration/lifecycle.ts');
-resetStateBeforeUrlRestore({ clearSearchInput: true });
+const { resetStateBeforeUrlRestore } = await import('../src/lib/orchestration/lifecycle.ts')
+resetStateBeforeUrlRestore({ clearSearchInput: true })
 
 // Verify state variables are cleared
-assert(state.focusedNode === null,    'reset: focusedNode is null');
-assert(state.selectedPoint === null,  'reset: selectedPoint is null');
-assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null');
-assert(state.navState.mode === 'overview', 'reset: navState.mode is overview');
-assert(state.trailDepth === 0,        'reset: trailDepth is 0');
-assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false');
-assert(state.navState.focusedIndex === null, 'reset: focusedIndex is null');
+assert(state.focusedNode === null, 'reset: focusedNode is null')
+assert(state.selectedPoint === null, 'reset: selectedPoint is null')
+assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null')
+assert(state.navState.mode === 'overview', 'reset: navState.mode is overview')
+assert(state.trailDepth === 0, 'reset: trailDepth is 0')
+assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false')
+assert(state.navState.focusedIndex === null, 'reset: focusedIndex is null')
 // Re-run composition to observe the cleared state
-commitTransition('post-reset');
+commitTransition('post-reset')
 
 // Post-reset: all focus state is cleared → graphContext='idle' and panelSurface='idle'.
-assert(ds('activeView') === 'galaxy',   'reset: activeView is galaxy');
-assert(ds('semanticDive') === 'inactive','reset: semanticDive is inactive');
-assert(ds('trailState') === 'inactive', 'reset: trailState is inactive');
-assert(state.focusedNode === null,    'reset: focusedNode is null');
-assert(state.selectedPoint === null,  'reset: selectedPoint is null');
-assert(ds('graphContext') === 'idle', 'reset: graphContext is idle');
-assert(ds('panelSurface') === 'idle', 'reset: panelSurface is idle');
-console.log('  PASS: reset state is correct\n');
+assert(ds('activeView') === 'galaxy', 'reset: activeView is galaxy')
+assert(ds('semanticDive') === 'inactive', 'reset: semanticDive is inactive')
+assert(ds('trailState') === 'inactive', 'reset: trailState is inactive')
+assert(state.focusedNode === null, 'reset: focusedNode is null')
+assert(state.selectedPoint === null, 'reset: selectedPoint is null')
+assert(ds('graphContext') === 'idle', 'reset: graphContext is idle')
+assert(ds('panelSurface') === 'idle', 'reset: panelSurface is idle')
+console.log('  PASS: reset state is correct\n')
 
 // ── RESOLVED ───────────────────────────────────────────────────────────────────
 // 1. (resolved) resetStateBeforeUrlRestore now clears navState.focusedIndex.
@@ -410,171 +440,171 @@ console.log('  PASS: reset state is correct\n');
 // ── EDGE CASES ────────────────────────────────────────────────────────────────
 
 // Edge: focus with no search → graphContext=focus (not focus-search)
-console.log('[EDGE] focus without search');
-resetState();
+console.log('[EDGE] focus without search')
+resetState()
 withStateMutation(() => {
-  state.focusedNode = 7;
-  state.navState.focusedIndex = 7;
-  state.currentSearchSummary = null; // no search summary
-});
-commitTransition('focus-no-search');
+    state.focusedNode = 7
+    state.navState.focusedIndex = 7
+    state.currentSearchSummary = null // no search summary
+})
+commitTransition('focus-no-search')
 
-assert(ds('graphContext') === 'focus', 'focus-no-search: graphContext is focus');
-assert(ds('panelSurface') === 'focus','focus-no-search: panelSurface is focus');
-console.log('  PASS: focus without search is correct\n');
+assert(ds('graphContext') === 'focus', 'focus-no-search: graphContext is focus')
+assert(ds('panelSurface') === 'focus', 'focus-no-search: panelSurface is focus')
+console.log('  PASS: focus without search is correct\n')
 
 // hasSearchIntent = summary OR input>=2 chars.
 // 1 char is below threshold → hasSearchIntent=false → idle
-console.log('[EDGE] search intent with single-char input (below threshold)');
-resetState();
+console.log('[EDGE] search intent with single-char input (below threshold)')
+resetState()
 withStateMutation(() => {
-  state.currentSearchSummary = null; // no active search
-});
-const shortInput = new FakeElement('input');
-shortInput.value = 'c'; // 1 char, below threshold
-elementsById.set('search-input', shortInput);
-commitTransition('short-input');
+    state.currentSearchSummary = null // no active search
+})
+const shortInput = new FakeElement('input')
+shortInput.value = 'c' // 1 char, below threshold
+elementsById.set('search-input', shortInput)
+commitTransition('short-input')
 
-assert(ds('graphContext') === 'idle', 'short-input: graphContext is idle (1 char below threshold)');
-assert(ds('panelSurface') === 'idle','short-input: panelSurface is idle');
-console.log('  PASS: single-char input (below threshold) correctly stays idle\n');
+assert(ds('graphContext') === 'idle', 'short-input: graphContext is idle (1 char below threshold)')
+assert(ds('panelSurface') === 'idle', 'short-input: panelSurface is idle')
+console.log('  PASS: single-char input (below threshold) correctly stays idle\n')
 
 // Edge: stale active result DOM without a live query must not resurrect search.
-console.log('[EDGE] stale active results without live query');
-resetState();
+console.log('[EDGE] stale active results without live query')
+resetState()
 withStateMutation(() => {
-  state.currentSearchSummary = null;
-});
-const emptyInput = new FakeElement('input');
-emptyInput.value = '';
-elementsById.set('search-input', emptyInput);
-const staleResults = new FakeElement('section');
-staleResults.classList.add('search-results', 'active');
-activeResultsIntentEl = staleResults;
-commitTransition('stale-active-results');
+    state.currentSearchSummary = null
+})
+const emptyInput = new FakeElement('input')
+emptyInput.value = ''
+elementsById.set('search-input', emptyInput)
+const staleResults = new FakeElement('section')
+staleResults.classList.add('search-results', 'active')
+activeResultsIntentEl = staleResults
+commitTransition('stale-active-results')
 
-assert(ds('graphContext') === 'idle', 'stale-active-results: graphContext is idle without summary or query');
-assert(ds('panelSurface') === 'idle', 'stale-active-results: panelSurface is idle without summary or query');
-console.log('  PASS: stale active results alone do not keep search surface active\n');
+assert(ds('graphContext') === 'idle', 'stale-active-results: graphContext is idle without summary or query')
+assert(ds('panelSurface') === 'idle', 'stale-active-results: panelSurface is idle without summary or query')
+console.log('  PASS: stale active results alone do not keep search surface active\n')
 
 // Edge: map view with search but no focus → map-search
-console.log('[EDGE] map with search but no focus');
-resetState();
+console.log('[EDGE] map with search but no focus')
+resetState()
 withStateMutation(() => {
-  state.currentView = 'map';
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('map-search');
+    state.currentView = 'map'
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('map-search')
 
-assert(ds('activeView') === 'map',     'map-search: activeView is map');
-assert(ds('mapContext') === 'search', 'map-search: mapContext is search');
-assert(ds('panelSurface') === 'map-search', 'map-search: panelSurface is map-search');
-console.log('  PASS: map with search but no focus is correct\n');
+assert(ds('activeView') === 'map', 'map-search: activeView is map')
+assert(ds('mapContext') === 'search', 'map-search: mapContext is search')
+assert(ds('panelSurface') === 'map-search', 'map-search: panelSurface is map-search')
+console.log('  PASS: map with search but no focus is correct\n')
 
 // Edge: map view with both search and focus → map-focus-search
-console.log('[EDGE] map with search AND focus');
-resetState();
+console.log('[EDGE] map with search AND focus')
+resetState()
 withStateMutation(() => {
-  state.currentView = 'map';
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('map-focus-search');
+    state.currentView = 'map'
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('map-focus-search')
 
-assert(ds('mapContext') === 'focus-search', 'map-focus-search: mapContext is focus-search');
-assert(ds('panelSurface') === 'map-focus-search', 'map-focus-search: panelSurface is map-focus-search');
-console.log('  PASS: map with search and focus is correct\n');
+assert(ds('mapContext') === 'focus-search', 'map-focus-search: mapContext is focus-search')
+assert(ds('panelSurface') === 'map-focus-search', 'map-focus-search: panelSurface is map-focus-search')
+console.log('  PASS: map with search and focus is correct\n')
 
 // Edge: semantic-dive on map view is always inactive (map view takes precedence)
 // lifecycle.js:1070-1101 handles map-mode branch; semanticDive is forced to 'inactive'
-console.log('[EDGE] semantic-dive on map view is overridden');
-resetState();
+console.log('[EDGE] semantic-dive on map view is overridden')
+resetState()
 withStateMutation(() => {
-  state.currentView = 'map';
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  setTestTrailDepth(2);
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('map-semantic-dive');
+    state.currentView = 'map'
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    setTestTrailDepth(2)
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('map-semantic-dive')
 
-assert(ds('semanticDive') === 'inactive', 'map-semantic-dive: semanticDive is inactive (map view overrides)');
-assert(ds('activeView') === 'map',        'map-semantic-dive: activeView is map');
+assert(ds('semanticDive') === 'inactive', 'map-semantic-dive: semanticDive is inactive (map view overrides)')
+assert(ds('activeView') === 'map', 'map-semantic-dive: activeView is map')
 // In map mode, hasFocus (focusedNode) + hasSearchIntent → mapContext=focus-search, graphContext=focus-search
-assert(ds('mapContext') === 'focus-search', 'map-semantic-dive: mapContext is focus-search (focus + search)');
-assert(ds('graphContext') === 'map', 'map-semantic-dive: graphContext is map');
-console.log('  PASS: map view overrides semantic-dive\n');
+assert(ds('mapContext') === 'focus-search', 'map-semantic-dive: mapContext is focus-search (focus + search)')
+assert(ds('graphContext') === 'map', 'map-semantic-dive: graphContext is map')
+console.log('  PASS: map view overrides semantic-dive\n')
 
 // PHASE 5b: focus -> map-trail direct (no semantic-dive, direct galaxy->map handoff)
 // Tests that direct focus->map transition (without entering semantic-dive) correctly
 // sets mapContext=focus-search and panelSurface=map-focus-search.
 // This covers the focus -> map-trail direct boundary gap.
-console.log('[PHASE] focus -> map-trail direct');
-resetState();
+console.log('[PHASE] focus -> map-trail direct')
+resetState()
 withStateMutation(() => {
-  state.currentView = 'galaxy';
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-  setTestTrailDepth(1); // trail active but not yet at dive depth
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('focus-pre-map');
+    state.currentView = 'galaxy'
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+    setTestTrailDepth(1) // trail active but not yet at dive depth
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('focus-pre-map')
 
 // Switch to map directly - no semantic-dive intermediate state
 withStateMutation(() => {
-  state.currentView = 'map';
-});
-commitTransition('map-trail-direct');
+    state.currentView = 'map'
+})
+commitTransition('map-trail-direct')
 
-assert(ds('activeView') === 'map',       'focus->map: activeView is map');
-assert(ds('mapContext') === 'focus-search', 'focus->map: mapContext is focus-search (focus + search)');
-assert(ds('graphContext') === 'map', 'focus->map: graphContext is map');
-assert(ds('panelSurface') === 'map-focus-search', 'focus->map: panelSurface is map-focus-search');
-assert(ds('semanticDive') === 'inactive','focus->map: semanticDive is inactive');
-assert(ds('trailState') === 'active',    'focus->map: trailState is active');
-assert(state.selectedPoint !== null,     'focus->map: selectedPoint is preserved');
-console.log('  PASS: focus -> map-trail direct transition is correct\n');
+assert(ds('activeView') === 'map', 'focus->map: activeView is map')
+assert(ds('mapContext') === 'focus-search', 'focus->map: mapContext is focus-search (focus + search)')
+assert(ds('graphContext') === 'map', 'focus->map: graphContext is map')
+assert(ds('panelSurface') === 'map-focus-search', 'focus->map: panelSurface is map-focus-search')
+assert(ds('semanticDive') === 'inactive', 'focus->map: semanticDive is inactive')
+assert(ds('trailState') === 'active', 'focus->map: trailState is active')
+assert(state.selectedPoint !== null, 'focus->map: selectedPoint is preserved')
+console.log('  PASS: focus -> map-trail direct transition is correct\n')
 
 // PHASE 6b: reset -> overview UI return (resetStateBeforeUrlRestore returns to idle)
 // Tests that reset from deep state (semantic-dive) properly clears all composition
 // dataset attributes so the UI returns to overview/idle state.
 // This covers the reset -> overview UI return boundary gap.
-console.log('[PHASE] reset -> overview UI return');
-resetState();
+console.log('[PHASE] reset -> overview UI return')
+resetState()
 withStateMutation(() => {
-  state.currentView = 'galaxy';
-  state.focusedNode = 4;
-  state.navState.focusedIndex = 4;
-  state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 };
-  state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 };
-  setTestTrailDepth(2); // deep dive state
-});
-elementsById.set('search-input', new FakeElement('input'));
-commitTransition('pre-reset-deep');
+    state.currentView = 'galaxy'
+    state.focusedNode = 4
+    state.navState.focusedIndex = 4
+    state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+    setTestTrailDepth(2) // deep dive state
+})
+elementsById.set('search-input', new FakeElement('input'))
+commitTransition('pre-reset-deep')
 
 // Perform the full reset
-resetStateBeforeUrlRestore({ clearSearchInput: true });
-commitTransition('post-reset-deep');
+resetStateBeforeUrlRestore({ clearSearchInput: true })
+commitTransition('post-reset-deep')
 
-assert(ds('activeView') === 'galaxy',    'reset: activeView is galaxy (not stuck on map/semantic)');
-assert(ds('graphContext') === 'idle',   'reset: graphContext is idle');
-assert(ds('panelSurface') === 'idle',   'reset: panelSurface is idle');
-assert(ds('semanticDive') === 'inactive','reset: semanticDive is inactive');
-assert(ds('trailState') === 'inactive', 'reset: trailState is inactive');
-assert(ds('mapContext') === 'idle',     'reset: mapContext is idle (not stuck on focus-search)');
-assert(state.focusedNode === null,      'reset: focusedNode is null');
-assert(state.selectedPoint === null,    'reset: selectedPoint is null');
-assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null');
-assert(state.trailDepth === 0,          'reset: trailDepth is 0');
-assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false');
-assert(state.navState.mode === 'overview', 'reset: navState.mode is overview');
-console.log('  PASS: reset -> overview UI return is correct\n');
+assert(ds('activeView') === 'galaxy', 'reset: activeView is galaxy (not stuck on map/semantic)')
+assert(ds('graphContext') === 'idle', 'reset: graphContext is idle')
+assert(ds('panelSurface') === 'idle', 'reset: panelSurface is idle')
+assert(ds('semanticDive') === 'inactive', 'reset: semanticDive is inactive')
+assert(ds('trailState') === 'inactive', 'reset: trailState is inactive')
+assert(ds('mapContext') === 'idle', 'reset: mapContext is idle (not stuck on focus-search)')
+assert(state.focusedNode === null, 'reset: focusedNode is null')
+assert(state.selectedPoint === null, 'reset: selectedPoint is null')
+assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null')
+assert(state.trailDepth === 0, 'reset: trailDepth is 0')
+assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false')
+assert(state.navState.mode === 'overview', 'reset: navState.mode is overview')
+console.log('  PASS: reset -> overview UI return is correct\n')
 
 // -- SUMMARY ------------------------------------------------------------------
-console.log('All state-transition contracts passed.');
+console.log('All state-transition contracts passed.')

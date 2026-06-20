@@ -8,7 +8,7 @@
  * triggers the camera animation (delegated to focus.ts).
  */
 
-import { appState } from '@lib/state/app.svelte'
+import { appState } from '@lib/state/app.svelte.ts'
 import type { Point } from '@lib/state/state-types'
 import type { PanelSurface } from '@lib/types/state'
 
@@ -26,13 +26,11 @@ import {
 import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
 import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
-import { applyPointFilterColors } from '@lib/journey/point-color'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
-import { animateCameraToNode } from './focus'
 
 // Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)
 type OnboardingHint = HTMLElement & {
@@ -148,7 +146,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     publish(EVENTS.CAMERA_MOVED, { reason: 'focus-node', index })
     publish(EVENTS.CAMERA_NODE_FOCUSED, { index, point, options })
 
-    applyPointFilterColors()
+    import('@lib/journey/point-color').then((m) => m.applyPointFilterColors())
     updateExplorationUi()
 
     syncFocusStage(point)
@@ -161,9 +159,11 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
         fromSearchResult: !!options.fromSearchResult
     })
 
-    animateCameraToNode(index, {
-        transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
-    })
+    import('@lib/engine/camera-choreography').then((m) =>
+        m.animateCameraToNode(index, {
+            transitionStyle: options.fromTraversal ? 'walk' : options.fromSearchResult ? 'search' : 'focus'
+        })
+    )
 
     syncSemanticDiveUi()
     refreshCompositionState()

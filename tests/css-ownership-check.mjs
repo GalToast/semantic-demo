@@ -21,6 +21,7 @@ const selectorBaselines = {
     'synthesis.css': 2,
   },
   '.suggestion-btn': {
+    'animations.css': 1,
     'controls.css': 2,
     'synthesis.css': 8,
     'search.css': 1,

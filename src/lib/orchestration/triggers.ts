@@ -280,18 +280,22 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
  * Svelte navStore handles focusedIndex / mode / surface via the FOCUS_NODE
  * branch of dispatchNavTransition, so we mirror that here.
  */
-subscribeKeyed('triggers.ts:EXPLORATION_FOCUS_SYNC', EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { index?: number; skipHistory?: boolean } = {}) => {
-    const index = Number(payload?.index)
-    if (!Number.isFinite(index) || index < 0) return
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
-        index,
-        // The Svelte navStore does not have a skipHistory flag, but
-        // appendHistory:false is the closest equivalent and prevents
-        // duplicate history entries when the engine has already recorded
-        // the focus.
-        appendHistory: payload.skipHistory === true ? false : true
-    })
-})
+subscribeKeyed(
+    'triggers.ts:EXPLORATION_FOCUS_SYNC',
+    EVENTS.EXPLORATION_FOCUS_SYNC,
+    (payload: { index?: number; skipHistory?: boolean } = {}) => {
+        const index = Number(payload?.index)
+        if (!Number.isFinite(index) || index < 0) return
+        dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
+            index,
+            // The Svelte navStore does not have a skipHistory flag, but
+            // appendHistory:false is the closest equivalent and prevents
+            // duplicate history entries when the engine has already recorded
+            // the focus.
+            appendHistory: payload.skipHistory === true ? false : true
+        })
+    }
+)
 
 /**
  * SEARCH_STATE_RESET_REQUESTED is published by the search pipeline when
@@ -299,9 +303,13 @@ subscribeKeyed('triggers.ts:EXPLORATION_FOCUS_SYNC', EVENTS.EXPLORATION_FOCUS_SY
  * resetExplorationFocus preserves the current search summary by default,
  * matching the legacy preserveSearch:true default in lifecycle-reset.ts.
  */
-subscribeKeyed('triggers.ts:SEARCH_STATE_RESET_REQUESTED', EVENTS.SEARCH_STATE_RESET_REQUESTED, (options: Record<string, unknown> = {}) => {
-    resetExplorationFocus(options as Parameters<typeof resetExplorationFocus>[0])
-})
+subscribeKeyed(
+    'triggers.ts:SEARCH_STATE_RESET_REQUESTED',
+    EVENTS.SEARCH_STATE_RESET_REQUESTED,
+    (options: Record<string, unknown> = {}) => {
+        resetExplorationFocus(options as Parameters<typeof resetExplorationFocus>[0])
+    }
+)
 
 /**
  * SUMMARY_CARD_HIDE_REQUESTED is published when the summary card should
@@ -319,9 +327,13 @@ subscribeKeyed('triggers.ts:SUMMARY_CARD_HIDE_REQUESTED', EVENTS.SUMMARY_CARD_HI
  * owns its own state via the focus store, so this subscription is a
  * documented no-op (matches the legacy stub at app.ts:228-231).
  */
-subscribeKeyed('triggers.ts:SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED', EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED, () => {
-    // Handled reactively by the Svelte focus store and semantic-guide component.
-})
+subscribeKeyed(
+    'triggers.ts:SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED',
+    EVENTS.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED,
+    () => {
+        // Handled reactively by the Svelte focus store and semantic-guide component.
+    }
+)
 
 // ── W11-T6 Wave 2: Remaining event-bus subscriptions ────────────────────────
 //
@@ -349,37 +361,49 @@ subscribeKeyed('triggers.ts:URL_SYNC_REQUESTED', EVENTS.URL_SYNC_REQUESTED, (pay
  * The Svelte search orchestration module owns rebinding for DOM results
  * rendered outside the component lifecycle.
  */
-subscribeKeyed('triggers.ts:SEARCH_UI_SYNC_REQUESTED', EVENTS.SEARCH_UI_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const resultsEl = payload.resultsEl instanceof HTMLElement ? payload.resultsEl : null
-    const statusEl = payload.statusEl instanceof HTMLElement ? payload.statusEl : null
-    const results = Array.isArray(payload.results) ? (payload.results as SearchResult[]) : null
-    const renderContext = payload.renderContext as SearchContext | undefined
-    if (!resultsEl || !statusEl || !results || !renderContext) return
-    bindSearchResultInteractions(resultsEl, statusEl, results, renderContext)
-})
+subscribeKeyed(
+    'triggers.ts:SEARCH_UI_SYNC_REQUESTED',
+    EVENTS.SEARCH_UI_SYNC_REQUESTED,
+    (payload: Record<string, unknown> = {}) => {
+        const resultsEl = payload.resultsEl instanceof HTMLElement ? payload.resultsEl : null
+        const statusEl = payload.statusEl instanceof HTMLElement ? payload.statusEl : null
+        const results = Array.isArray(payload.results) ? (payload.results as SearchResult[]) : null
+        const renderContext = payload.renderContext as SearchContext | undefined
+        if (!resultsEl || !statusEl || !results || !renderContext) return
+        bindSearchResultInteractions(resultsEl, statusEl, results, renderContext)
+    }
+)
 
 /**
  * SEARCH_STATUS_SYNC_REQUESTED is published when the search status
  * display should update to reflect focus on a specific point. The Svelte
  * ui-feedback module owns the status DOM sync.
  */
-subscribeKeyed('triggers.ts:SEARCH_STATUS_SYNC_REQUESTED', EVENTS.SEARCH_STATUS_SYNC_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const point = payload.point as Point | undefined
-    const options = payload.options as Record<string, unknown> | undefined
-    if (!point) return
-    syncSearchStatusForFocus(point, options)
-})
+subscribeKeyed(
+    'triggers.ts:SEARCH_STATUS_SYNC_REQUESTED',
+    EVENTS.SEARCH_STATUS_SYNC_REQUESTED,
+    (payload: Record<string, unknown> = {}) => {
+        const point = payload.point as Point | undefined
+        const options = payload.options as Record<string, unknown> | undefined
+        if (!point) return
+        syncSearchStatusForFocus(point, options)
+    }
+)
 
 /**
  * SEMANTIC_LANE_STATE_REQUESTED is published when the semantic lane
  * health state should update. The Svelte lifecycle module owns this
  * as a no-op (state is managed reactively in the Svelte store).
  */
-subscribeKeyed('triggers.ts:SEMANTIC_LANE_STATE_REQUESTED', EVENTS.SEMANTIC_LANE_STATE_REQUESTED, (payload: Record<string, unknown> = {}) => {
-    const laneState = payload.laneState as string | undefined
-    const options = payload.options as Record<string, unknown> | undefined
-    setSemanticLaneUiState(laneState ?? '', options)
-})
+subscribeKeyed(
+    'triggers.ts:SEMANTIC_LANE_STATE_REQUESTED',
+    EVENTS.SEMANTIC_LANE_STATE_REQUESTED,
+    (payload: Record<string, unknown> = {}) => {
+        const laneState = payload.laneState as string | undefined
+        const options = payload.options as Record<string, unknown> | undefined
+        setSemanticLaneUiState(laneState ?? '', options)
+    }
+)
 
 /**
  * TOOLTIP_HIDE_REQUESTED is now handled directly by

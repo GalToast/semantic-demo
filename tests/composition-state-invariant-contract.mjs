@@ -132,12 +132,26 @@ const { state, withStateMutation } = await import('../src/lib/engine/state-bridg
 let refreshCompositionState;
 let resetStateBeforeUrlRestore;
 try {
-  const lc = await import('../src/lib/stores/lifecycle.ts');
-  refreshCompositionState = lc.refreshCompositionState;
-  resetStateBeforeUrlRestore = lc.resetStateBeforeUrlRestore;
+    const lc = await import('../src/lib/stores/lifecycle.ts');
+    refreshCompositionState = lc.refreshCompositionState ?? undefined;
+    resetStateBeforeUrlRestore = lc.resetStateBeforeUrlRestore ?? undefined;
 } catch (e) {
-  refreshCompositionState = globalThis.window.refreshCompositionState;
-  resetStateBeforeUrlRestore = globalThis.window.resetStateBeforeUrlRestore;
+    void e;
+}
+if (typeof refreshCompositionState !== 'function' || typeof resetStateBeforeUrlRestore !== 'function') {
+    try {
+        const lc2 = await import('../src/lib/orchestration/lifecycle.ts');
+        if (typeof refreshCompositionState !== 'function') refreshCompositionState = lc2.refreshCompositionState;
+        if (typeof resetStateBeforeUrlRestore !== 'function') resetStateBeforeUrlRestore = lc2.resetStateBeforeUrlRestore;
+    } catch (e) {
+        void e;
+    }
+}
+if (typeof refreshCompositionState !== 'function') {
+    refreshCompositionState = globalThis.window?.refreshCompositionState;
+}
+if (typeof resetStateBeforeUrlRestore !== 'function') {
+    resetStateBeforeUrlRestore = globalThis.window?.resetStateBeforeUrlRestore;
 }
 
 assert(typeof refreshCompositionState === 'function', 'refreshCompositionState is callable');

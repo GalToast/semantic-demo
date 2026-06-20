@@ -4,7 +4,7 @@
 <script lang="ts">
   import { cameraState, setAutoRotate, startCameraTransition, resetCamera } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
-  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
 
   interface Props {
     visible?: boolean;
@@ -112,9 +112,21 @@
     padding: 0.3rem;
     border: 1px solid rgba(78, 205, 196, 0.12);
   }
+  .controls[hidden] {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
   .controls.compact {
     bottom: 4.5rem;
     right: 0.5rem;
+  }
+  @media (max-width: 768px) {
+    :global(body.is-active[data-panel-surface='idle']) .controls {
+      display: none !important;
+      visibility: hidden !important;
+      pointer-events: none !important;
+    }
   }
   .control-btn {
     display: flex;

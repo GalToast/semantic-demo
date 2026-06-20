@@ -12,7 +12,7 @@ import { resolveSource } from './source-path.mjs'
 const root = process.cwd()
 const source = {
     search: readFileSync(resolveSource('src/lib/search/state.ts', root), 'utf8'),
-    searchAdapter: readFileSync(resolveSource('src/lib/search/panel-adapter.ts', root), 'utf8'),
+    searchAdapter: readFileSync(resolveSource('src/lib/search/search-panel-adapter.ts', root), 'utf8'),
     sceneReveal: readFileSync(resolveSource('src/lib/engine/scene-reveal.ts', root), 'utf8'),
     threeSetup: readFileSync(resolveSource('src/lib/engine/three-engine.ts', root), 'utf8'),
     journey: readFileSync(resolveSource('src/lib/journey/journey.ts', root), 'utf8'),
@@ -51,10 +51,10 @@ const checks = [
     {
         name: 'renderer completion clears scene reveal DOM state',
         pass:
-            /import\s*\{[^}]*setSceneRevealDataset[^}]*\}\s*from\s*['"]\.\/scene-reveal\.(?:js|ts)['"]/.test(
+            /import\s+\*\s+as\s+sceneRevealMod\s+from\s+['"]@lib\/engine\/scene-reveal-bridge['"]/.test(
                 source.threeSetup
             ) &&
-            /revealProgress\s*>=\s*1[\s\S]*?state\.sceneRevealActive\s*=\s*false[\s\S]*?setSceneRevealDataset\s*\(\s*false\s*\)/.test(
+            /revealProgress\s*>=\s*1[\s\S]*?_state\.sceneRevealActive\s*=\s*false[\s\S]*?_sceneReveal\?\.setSceneRevealDataset\s*\(\s*false\s*\)/.test(
                 source.threeSetup
             )
     },
@@ -69,9 +69,9 @@ const checks = [
     {
         name: 'focus plus search intent owns focus-search panel surface',
         pass:
-            /if\s*\(\s*hasSearchIntent\s*\)\s*return\s+hasFocus\s*\?\s*['"]focus-search['"]\s*:\s*['"]search['"]/.test(
+            /if\s*\(\s*hasFocus\s*&&\s*hasSearchIntent\s*\)\s*return\s+['"]focus-search['"]/.test(
                 source.lifecycle
-            ) && /context\s*=\s*['"]focus-search['"]/.test(source.lifecycle)
+            ) && /if\s*\(\s*graphContext\s*===\s*['"]focus-search['"]\s*\)\s*return\s+['"]focus-search['"]/.test(source.lifecycle)
     }
 ]
 

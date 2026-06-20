@@ -356,10 +356,14 @@ export function buildNeighborhoodManifest(
 
   const displayLimit = options.displayLimit ?? getSemanticThreadDisplayLimit();
   const uniqueRoute: number[] = [];
+  const fallbackCandidateByIndex = new Map<number, { index: number; score: number; reason: string; source: string }>();
   const seen = new Set<number>([anchorIndex]);
   const filters = appState.activeFilters;
 
-  (routeIndices || []).forEach((candidateIndex: number) => {
+  const appendRouteCandidate = (
+    candidateIndex: number,
+    fallbackCandidate?: { index: number; score: number; reason: string; source: string }
+  ): void => {
     if (
       !Number.isFinite(candidateIndex) ||
       seen.has(candidateIndex) ||
@@ -371,6 +375,11 @@ export function buildNeighborhoodManifest(
     }
     seen.add(candidateIndex);
     uniqueRoute.push(candidateIndex);
+    if (fallbackCandidate) fallbackCandidateByIndex.set(candidateIndex, fallbackCandidate);
+  };
+
+  (routeIndices || []).forEach((candidateIndex: number) => {
+    appendRouteCandidate(candidateIndex);
   });
 
   const candidates = new Map<number, any>();
@@ -389,22 +398,72 @@ export function buildNeighborhoodManifest(
     source: 'semantic'
   });
 
-  const scoredRoute = uniqueRoute
+  let scoredRoute = uniqueRoute
     .map((candidateIndex: number) => {
       const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as any);
+      const fallbackCandidate = fallbackCandidateByIndex.get(candidateIndex);
       const anchorRecord = getSemanticNeighborRecordBetween(anchorIndex, candidateIndex);
       const score = Number(
         candidate.semanticScore ||
           candidate.score ||
+          fallbackCandidate?.score ||
           anchorRecord?.semanticScore ||
           anchorRecord?.score ||
           0
       );
-      return { candidateIndex, candidate, anchorRecord, score };
+      return {
+        candidateIndex,
+        candidate: { ...fallbackCandidate, ...candidate },
+        anchorRecord,
+        score
+      };
     })
-    .filter((entry) => entry.anchorRecord)
+    .filter((entry) => entry.anchorRecord || fallbackCandidateByIndex.has(entry.candidateIndex))
     .sort((a, b) => b.score - a.score || a.candidateIndex - b.candidateIndex)
     .slice(0, displayLimit);
+
+  if (scoredRoute.length === 0) {
+    const semanticFallbacks = resolveSemanticNeighbors(anchorIndex, displayLimit);
+    const fallbackCandidates = [...semanticFallbacks];
+    if (fallbackCandidates.length < Math.min(6, displayLimit)) {
+      const existing = new Set(fallbackCandidates.map((candidate) => candidate.index));
+      existing.add(anchorIndex);
+      for (const candidate of resolveGeometricNeighbors(anchorIndex, displayLimit)) {
+        if (existing.has(candidate.index)) continue;
+        fallbackCandidates.push(candidate);
+        existing.add(candidate.index);
+        if (fallbackCandidates.length >= displayLimit) break;
+      }
+    }
+
+    for (const candidate of fallbackCandidates) {
+      appendRouteCandidate(candidate.index, candidate);
+    }
+
+    scoredRoute = uniqueRoute
+      .map((candidateIndex: number) => {
+        const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as any);
+        const fallbackCandidate = fallbackCandidateByIndex.get(candidateIndex);
+        const anchorRecord = getSemanticNeighborRecordBetween(anchorIndex, candidateIndex);
+        const score = Number(
+          candidate.semanticScore ||
+            candidate.score ||
+            fallbackCandidate?.score ||
+            anchorRecord?.semanticScore ||
+            anchorRecord?.score ||
+            0
+        );
+        return {
+          candidateIndex,
+          candidate: { ...fallbackCandidate, ...candidate },
+          anchorRecord,
+          score
+        };
+      })
+      .filter((entry) => entry.anchorRecord || fallbackCandidateByIndex.has(entry.candidateIndex))
+      .sort((a, b) => b.score - a.score || a.candidateIndex - b.candidateIndex)
+      .slice(0, displayLimit);
+  }
 
   scoredRoute.forEach((entry, order) => {
     const { candidateIndex, candidate, anchorRecord, score } = entry;

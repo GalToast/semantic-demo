@@ -92,10 +92,8 @@ export {
   updateTime,
   getThreadPulseOpacity,
   getFieldStepSyncLift,
-  getZoomBlend,
   getGraphPresentationState,
-  getGraphPresentationProfile,
-  getThreadCategoryColor
+  getGraphPresentationProfile
 } from './ui-presentation';
 export type { GraphPresentationState, GraphPresentationProfile } from './ui-presentation';
 export {

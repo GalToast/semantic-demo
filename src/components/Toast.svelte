@@ -76,7 +76,7 @@
 
   .experience-reset-toast.active {
     opacity: 1;
-    pointer-events: auto;
+    pointer-events: none;
     transform: translateX(-50%) translateY(0);
   }
 

@@ -22,7 +22,6 @@
  * Svelte component from the `selectedPointStore`.
  */
 
-
 import type { Point } from '@lib/state/state-types'
 import { getPanelSurface } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
@@ -31,98 +30,95 @@ import { CONFIG } from '@lib/engine/config'
 // ── Types ──────────────────────────────────────────────────────────────────
 
 interface TriviaBlocklist {
-    readonly exact: readonly string[];
-    readonly equals: readonly string[];
-    readonly prefixes: readonly string[];
-    readonly substrings: readonly string[];
-    readonly minLength: number;
+    readonly exact: readonly string[]
+    readonly equals: readonly string[]
+    readonly prefixes: readonly string[]
+    readonly substrings: readonly string[]
+    readonly minLength: number
 }
 
 // ── Renderers ──────────────────────────────────────────────────────────────
 
 export function renderSignalBadges(point: Point | null): string {
-    if (appState.currentView === 'map') return '';
-    if (!point) return '';
-    const badges: string[] = [];
-    if (point.website) badges.push('<span class="signal-badge meta" title="Website present">Website present</span>');
-    if (point.email) badges.push('<span class="signal-badge fact" title="Email present">Email present</span>');
-    if (point.phone) badges.push('<span class="signal-badge ai" title="Phone present">Phone present</span>');
-    return badges.join('');
+    if (appState.currentView === 'map') return ''
+    if (!point) return ''
+    const badges: string[] = []
+    if (point.website) badges.push('<span class="signal-badge meta" title="Website present">Website present</span>')
+    if (point.email) badges.push('<span class="signal-badge fact" title="Email present">Email present</span>')
+    if (point.phone) badges.push('<span class="signal-badge ai" title="Phone present">Phone present</span>')
+    return badges.join('')
 }
 
 export function updateSelectedCardHeading(point: Point | null = null): void {
-    const titleEl = document.getElementById('selected-card-title');
-    if (!titleEl) return;
+    const titleEl = document.getElementById('selected-card-title')
+    if (!titleEl) return
 
-    const activePoint = point || appState.selectedPoint || null;
-    const points = Array.isArray(appState.points) ? (appState.points as Point[]) : [];
-    const activeIndex = activePoint && points.length > 0
-        ? points.indexOf(activePoint)
-        : -1;
-    const summary = appState.currentSearchSummary;
-    const resultIndices = summary && Array.isArray(summary.resultIndices) ? (summary.resultIndices as number[]) : [];
+    const activePoint = point || appState.selectedPoint || null
+    const points = Array.isArray(appState.points) ? (appState.points as Point[]) : []
+    const activeIndex = activePoint && points.length > 0 ? points.indexOf(activePoint) : -1
+    const summary = appState.currentSearchSummary
+    const resultIndices = summary && Array.isArray(summary.resultIndices) ? (summary.resultIndices as number[]) : []
 
     if (!activePoint) {
-        titleEl.textContent = appState.currentView === 'map' ? 'Map Selection' : 'Selection';
+        titleEl.textContent = appState.currentView === 'map' ? 'Map Selection' : 'Selection'
     } else if (summary && Number.isFinite(summary.anchorIndex) && activeIndex === summary.anchorIndex) {
-        titleEl.textContent = 'Search Anchor';
+        titleEl.textContent = 'Search Anchor'
     } else if (resultIndices.includes(activeIndex)) {
-        titleEl.textContent = 'Related Match';
+        titleEl.textContent = 'Related Match'
     } else if (appState.currentView === 'map') {
-        titleEl.textContent = 'Map Selection';
+        titleEl.textContent = 'Map Selection'
     } else {
-        titleEl.textContent = 'Focused Business';
+        titleEl.textContent = 'Focused Business'
     }
 }
 
 export function renderSelectedMetaStrip(point: Point | null): void {
-    void point;
+    void point
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 export function renderSelectedMatchPanel(point: Point | null): void {
-    void point;
+    void point
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 export function renderSelectedActionRow(point: Point | null): void {
-    void point;
+    void point
     // Compatibility shim: SelectedBusinessDetails.svelte owns this markup.
 }
 
 function setSurfaceHidden(el: HTMLElement | null, hidden: boolean): void {
-    if (!el) return;
+    if (!el) return
     if (hidden) {
-        el.hidden = true;
-        el.setAttribute('aria-hidden', 'true');
+        el.hidden = true
+        el.setAttribute('aria-hidden', 'true')
     } else {
-        el.hidden = false;
-        el.setAttribute('aria-hidden', 'false');
+        el.hidden = false
+        el.setAttribute('aria-hidden', 'false')
     }
 }
 
 function scheduleFrame(callback: FrameRequestCallback | (() => void)): void {
     if (typeof requestAnimationFrame === 'function') {
-        requestAnimationFrame(callback as FrameRequestCallback);
-        return;
+        requestAnimationFrame(callback as FrameRequestCallback)
+        return
     }
-    setTimeout(callback as TimerHandler, 0);
+    setTimeout(callback as TimerHandler, 0)
 }
 
 export function triggerSelectedCardFade(cardEl: HTMLElement): void {
-    if (!cardEl) return;
-    cardEl.style.setProperty('--selected-card-fade-ms', `${CONFIG.SELECTED_CARD_FADE_MS}ms`);
-    cardEl.classList.add('is-fading');
+    if (!cardEl) return
+    cardEl.style.setProperty('--selected-card-fade-ms', `${CONFIG.SELECTED_CARD_FADE_MS}ms`)
+    cardEl.classList.add('is-fading')
     scheduleFrame(() => {
         scheduleFrame(() => {
-            cardEl.classList.remove('is-fading');
-        });
-    });
+            cardEl.classList.remove('is-fading')
+        })
+    })
 }
 
 function focusStageOwnsSelectedContent(surface: string): boolean {
-    return appState.currentView === 'galaxy'
-        && ['focus', 'focus-search', 'semantic-dive'].includes(surface);
+    return appState.currentView === 'galaxy' && ['focus', 'focus-search', 'semantic-dive'].includes(surface)
 }
 
 /**
@@ -140,54 +136,54 @@ function focusStageOwnsSelectedContent(surface: string): boolean {
  * rather than doing its own DOM queries — preserving a single writer per slot.
  */
 export function syncSelectedCardContentVariant(point: Point | null = null): void {
-    const cardEl = document.getElementById('selected-card');
-    const emptyEl = document.getElementById('selected-empty');
-    const detailsEl = document.getElementById('selected-details');
-    const titleEl = document.getElementById('selected-card-title');
-    const cascadeEl = document.getElementById('vector-cascade-bg');
-    const surface = getPanelSurface();
-    const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface);
+    const cardEl = document.getElementById('selected-card')
+    const emptyEl = document.getElementById('selected-empty')
+    const detailsEl = document.getElementById('selected-details')
+    const titleEl = document.getElementById('selected-card-title')
+    const cascadeEl = document.getElementById('vector-cascade-bg')
+    const surface = getPanelSurface()
+    const isFocusStageOwner = Boolean(point) && focusStageOwnsSelectedContent(surface)
 
     if (cardEl) {
-        const isEmpty = !point;
-        cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : 'info-panel';
-        cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : 'info-panel';
+        const isEmpty = !point
+        cardEl.dataset.contentVariant = isFocusStageOwner ? 'focus-stage' : 'info-panel'
+        cardEl.dataset.contentOwner = isFocusStageOwner ? 'focus-stage' : 'info-panel'
         if (isFocusStageOwner || isEmpty) {
             // Empty / focus-stage variants carry only placeholder H3s ("Business
             // Name", "Semantic Connection Path"). Inert keeps them out of the
             // heading outline and tab order until a real point is selected.
-            cardEl.setAttribute('aria-hidden', 'true');
-            cardEl.inert = true;
+            cardEl.setAttribute('aria-hidden', 'true')
+            cardEl.inert = true
         } else {
-            cardEl.removeAttribute('aria-hidden');
-            cardEl.inert = false;
+            cardEl.removeAttribute('aria-hidden')
+            cardEl.inert = false
         }
     }
 
     if (cascadeEl) {
-        const suppressCascade = isFocusStageOwner || !point;
-        cascadeEl.hidden = suppressCascade;
+        const suppressCascade = isFocusStageOwner || !point
+        cascadeEl.hidden = suppressCascade
         if (suppressCascade) {
-            cascadeEl.classList.remove('active');
-            cascadeEl.replaceChildren();
+            cascadeEl.classList.remove('active')
+            cascadeEl.replaceChildren()
         }
     }
 
     if (isFocusStageOwner) {
-        setSurfaceHidden(titleEl as HTMLElement | null, true);
-        setSurfaceHidden(detailsEl as HTMLElement | null, true);
-        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true);
-        return;
+        setSurfaceHidden(titleEl as HTMLElement | null, true)
+        setSurfaceHidden(detailsEl as HTMLElement | null, true)
+        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true)
+        return
     }
 
-    setSurfaceHidden(titleEl as HTMLElement | null, false);
+    setSurfaceHidden(titleEl as HTMLElement | null, false)
 
     if (point) {
-        setSurfaceHidden(detailsEl as HTMLElement | null, false);
-        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true);
+        setSurfaceHidden(detailsEl as HTMLElement | null, false)
+        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, true)
     } else {
-        setSurfaceHidden(detailsEl as HTMLElement | null, true);
-        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, false);
+        setSurfaceHidden(detailsEl as HTMLElement | null, true)
+        if (emptyEl) setSurfaceHidden(emptyEl as HTMLElement | null, false)
     }
 }
 
@@ -195,21 +191,9 @@ export function syncSelectedCardContentVariant(point: Point | null = null): void
  * Filter business trivia, suppressing placeholders and internal metadata.
  */
 export const TRIVIA_BLOCKLIST: TriviaBlocklist = Object.freeze({
-    exact: Object.freeze([
-        'Pending research.',
-        'Pending research'
-    ]),
-    equals: Object.freeze([
-        'Has both email and phone.',
-        'Website only — no direct contact on file.'
-    ]),
-    prefixes: Object.freeze([
-        'no ',
-        'none',
-        'no verifiable',
-        'unable to',
-        'could not'
-    ]),
+    exact: Object.freeze(['Pending research.', 'Pending research']),
+    equals: Object.freeze(['Has both email and phone.', 'Website only — no direct contact on file.']),
+    prefixes: Object.freeze(['no ', 'none', 'no verifiable', 'unable to', 'could not']),
     substrings: Object.freeze([
         'SearXNG',
         'Insufficient evidence',
@@ -262,55 +246,55 @@ export const TRIVIA_BLOCKLIST: TriviaBlocklist = Object.freeze({
         'created from'
     ]),
     minLength: 20
-});
+})
 
 export function rejectsTrivia(trivia: string = ''): boolean {
-    const trimmed = String(trivia || '').trim();
-    if (!trimmed) return true;
-    if (TRIVIA_BLOCKLIST.exact.includes(trimmed)) return true;
-    if (TRIVIA_BLOCKLIST.equals.includes(trimmed)) return true;
-    if (trimmed.length < TRIVIA_BLOCKLIST.minLength) return true;
-    const lower = trimmed.toLowerCase();
-    if (TRIVIA_BLOCKLIST.prefixes.some((prefix) => lower.startsWith(prefix))) return true;
-    return TRIVIA_BLOCKLIST.substrings.some((substring) => trimmed.includes(substring));
+    const trimmed = String(trivia || '').trim()
+    if (!trimmed) return true
+    if (TRIVIA_BLOCKLIST.exact.includes(trimmed)) return true
+    if (TRIVIA_BLOCKLIST.equals.includes(trimmed)) return true
+    if (trimmed.length < TRIVIA_BLOCKLIST.minLength) return true
+    const lower = trimmed.toLowerCase()
+    if (TRIVIA_BLOCKLIST.prefixes.some((prefix) => lower.startsWith(prefix))) return true
+    return TRIVIA_BLOCKLIST.substrings.some((substring) => trimmed.includes(substring))
 }
 
 export function getInterestingBusinessNote(point: Point | null): string | null {
-    if (!point) return null;
+    if (!point) return null
     // Bug Sweep 33: prefer the lead's own one-liner from the enrichment
     // (snapshot > business_overview > observations) over the database
     // trivia field, which is often database noise.
-    const enrichment = appState.leadEnrichment;
+    const enrichment = appState.leadEnrichment
     if (enrichment && point.lead_id !== undefined) {
-        const enr = enrichment[String(point.lead_id)] as Record<string, unknown> | undefined;
+        const enr = enrichment[String(point.lead_id)] as Record<string, unknown> | undefined
         if (enr) {
             const candidates = [
                 enr.snapshot as string | undefined,
                 enr.business_overview_extended as string | undefined,
                 enr.business_overview as string | undefined,
                 enr.observations as string | undefined
-            ];
+            ]
             for (const c of candidates) {
-                if (c && !rejectsTrivia(c)) return c.trim();
+                if (c && !rejectsTrivia(c)) return c.trim()
             }
         }
     }
     if (point.trivia) {
-        const t = point.trivia.trim();
-        if (rejectsTrivia(t)) return null;
-        return t;
+        const t = point.trivia.trim()
+        if (rejectsTrivia(t)) return null
+        return t
     }
-    if (point.email && point.phone) return null;
-    if (point.website && !point.email && !point.phone) return null;
-    return null;
+    if (point.email && point.phone) return null
+    if (point.website && !point.email && !point.phone) return null
+    return null
 }
 
 /**
  * Build selected match narrative copy.
  */
 export function buildSelectedMatchNarrative(point: Point | null): string {
-    if (!point) return '';
-    const summary = appState.currentSearchSummary;
-    if (summary?.reason) return summary.reason;
-    return '';
+    if (!point) return ''
+    const summary = appState.currentSearchSummary
+    if (summary?.reason) return summary.reason
+    return ''
 }

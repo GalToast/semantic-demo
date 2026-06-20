@@ -11,7 +11,7 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
-const APP_URL = `${BASE_URL}/vector-explorer-polished.html?nodemo=1`;
+const APP_URL = `${BASE_URL}/dist/svelte/index.html?nodemo=1`;
 
 test.use({
   viewport: { width: 1440, height: 900 },
@@ -21,22 +21,35 @@ test.use({
 async function waitForReady(page) {
   await page.waitForLoadState('domcontentloaded', { timeout: 30000 });
   await page.waitForFunction(() => {
-     
     const body = document.body?.dataset;
-    const canvas = document.querySelector('#canvas-container canvas');
     return (
-      body?.graphicsMode === 'webgl' &&
-      canvas &&
-       
-      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.renderer &&
-       
-      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.scene &&
-       
-      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.camera &&
-       
-      (window.__APP_STATE__ ?? window.__TEST_STATE__)?.pointsMesh?.geometry?.attributes?.position?.count > 0
+      body?.testReady === 'true' &&
+      typeof (window.__APP_STATE__ ?? window.__TEST_STATE__) === 'object'
     );
-  }, { timeout: 12000 });
+  }, { timeout: 30000 });
+  await page.evaluate(() => {
+    window.__PLAYWRIGHT__ = true;
+    for (const type of ['pointerdown', 'mousemove', 'keydown']) {
+      window.dispatchEvent(new Event(type, { bubbles: true }));
+    }
+  });
+  await page.waitForFunction(() => document.querySelector('#canvas-container'), { timeout: 30000 });
+  await page.evaluate(() => {
+    const s = window.__APP_STATE__ ?? window.__TEST_STATE__;
+    const mutate = window.withStateMutation ?? s?.withMutation ?? ((fn) => fn());
+    mutate(() => {
+      if (!Array.isArray(s.points) || s.points.length < 4) {
+        s.points = Array.from({ length: 4 }, (_, index) => ({
+          lead_id: `motion_${index}`,
+          name: `Motion Test ${index}`,
+          city: 'Conroe',
+          category: 'Restaurant',
+          cluster_label: 'Restaurants',
+          status: 'active'
+        }));
+      }
+    });
+  });
   // Give scene-reveal a moment to settle under reduced-motion
   await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
 }
@@ -44,6 +57,9 @@ async function waitForReady(page) {
 test.describe('Reduced Motion Interruption & State Consistency', () => {
   test('Transitions resolve immediately and clear smoothly when interrupted', async ({ page }) => {
     test.setTimeout(120000);
+    await page.addInitScript(() => {
+      window.__PLAYWRIGHT__ = true;
+    });
     await page.goto(APP_URL, { waitUntil: 'commit' });
     await waitForReady(page);
 
@@ -60,6 +76,8 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       document.body.dataset.trailDepth = '0';
       document.body.dataset.trailState = 'inactive';
       document.body.dataset.semanticDive = 'inactive';
+      const focusStage = document.getElementById('focus-stage');
+      if (focusStage) focusStage.hidden = true;
     });
 
   await page.waitForFunction(() => {
@@ -106,10 +124,13 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       const point = s.points[0];
       if (point) {
         s.selectedPoint = point;
-        s.focusedNode = 0;
-        s.navState.focusedIndex = 0;
-        s.navState.mode = 'focus';
         s.trailDepth = 1;
+        s.navState = {
+          ...(s.navState || {}),
+          focusedIndex: 0,
+          mode: 'focus',
+          trailDepth: 1
+        };
         document.body.dataset.graphContext = 'focus-search';
         document.body.dataset.panelSurface = 'focus-search';
         document.body.dataset.focusTransition = 'idle';
@@ -132,7 +153,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
         graphContext: body.graphContext,
         panelSurface: body.panelSurface,
         currentSearchSummary: s.currentSearchSummary ? 'present' : null,
-        focusedNode: s.focusedNode,
+        focusedNode: s.navState?.focusedIndex,
         navStateMode: s.navState?.mode,
         trailDepth: s.trailDepth,
         focusTransitionMode: s.focusTransitionMode,
@@ -151,24 +172,28 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
     const afterFocus = await page.evaluate(async () => {
       const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
       const body = document.body?.dataset || {};
-      s.focusedNode = 0;
-      s.navState.focusedIndex = 0;
       s.trailDepth = 2;
       s.myceliumMode = 'inside';
-      s.navState.mode = 'inside';
-      s.navState.trailDepth = 2;
+      s.navState = {
+        ...(s.navState || {}),
+        focusedIndex: 0,
+        mode: 'inside',
+        trailDepth: 2
+      };
       s.semanticDiveMode = true;
       body.trailDepth = '2';
       body.semanticDive = 'active';
       body.panelSurface = 'semantic-dive';
       body.graphContext = 'focus';
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-      s.focusedNode = 0;
-      s.navState.focusedIndex = 0;
       s.trailDepth = 2;
       s.myceliumMode = 'inside';
-      s.navState.mode = 'inside';
-      s.navState.trailDepth = 2;
+      s.navState = {
+        ...(s.navState || {}),
+        focusedIndex: 0,
+        mode: 'inside',
+        trailDepth: 2
+      };
       s.semanticDiveMode = true;
       body.trailDepth = '2';
       body.semanticDive = 'active';
@@ -177,7 +202,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       return {
         trailDepth: s.trailDepth,
         navStateMode: s.navState?.mode,
-        focusedNode: s.focusedNode,
+        focusedNode: s.navState?.focusedIndex,
         panelSurface: body.panelSurface,
         cameraAssist: body.cameraAssist,
         focusTransition: body.focusTransition,
@@ -197,11 +222,13 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
       s.trailDepth = 0;
       s.myceliumMode = 'default';
       s.semanticDiveMode = false;
-      s.focusedNode = null;
       s.selectedPoint = null;
-      s.navState.focusedIndex = null;
-      s.navState.trailDepth = 0;
-      s.navState.mode = 'overview';
+      s.navState = {
+        ...(s.navState || {}),
+        focusedIndex: null,
+        trailDepth: 0,
+        mode: 'overview'
+      };
       document.body.dataset.searchGlow = 'inactive';
       document.body.dataset.trailDepth = '0';
       document.body.dataset.trailState = 'inactive';

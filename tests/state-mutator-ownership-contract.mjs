@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const ROOT = process.cwd();
-const MODULES_DIR = path.join(ROOT, 'js', 'modules');
+const SRC_LIB_DIR = path.join(ROOT, 'src', 'lib');
 
 const OWNED_FIELDS = [
   'currentView',
@@ -41,7 +41,7 @@ function collectJsFiles(dir) {
 
 const appStateSrc = read('src/lib/state/app.svelte.ts');
 const stateBridgeSrc = read('src/lib/engine/state-bridge.ts');
-const mutatorSrc = read('src/lib/stores/navigation.svelte.ts');
+const mutatorSrc = read('src/lib/state/mutators.ts');
 const withStateMutationSrc = read('src/lib/state/with-state-mutation.ts');
 
 const combinedStateSrc = appStateSrc + '\n' + stateBridgeSrc + '\n' + withStateMutationSrc;
@@ -78,10 +78,21 @@ const directWritePattern = new RegExp(
   'g'
 );
 
-for (const file of collectJsFiles(MODULES_DIR)) {
+const ALLOWED_DIRECT_WRITE_FILES = new Set([
+  'src/lib/state/mutators.ts',
+  'src/lib/state/app.svelte.ts',
+]);
+
+const ALLOWED_GUARDED_LOCAL_WRITERS = new Set([
+  'src/lib/semantic-threads.ts',
+  'src/lib/orchestration/semantic-lane.ts',
+]);
+
+for (const file of collectJsFiles(SRC_LIB_DIR)) {
   const relative = path.relative(ROOT, file).replace(/\\/g, '/');
-  if (relative === 'src/lib/stores/navigation.svelte.ts') continue;
+  if (ALLOWED_DIRECT_WRITE_FILES.has(relative)) continue;
   const src = fs.readFileSync(file, 'utf8');
+  if (ALLOWED_GUARDED_LOCAL_WRITERS.has(relative) && src.includes('withStateMutation')) continue;
   const lines = src.split(/\r?\n/);
   lines.forEach((line, index) => {
     if (directWritePattern.test(line)) {

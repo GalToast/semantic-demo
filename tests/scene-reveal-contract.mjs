@@ -21,7 +21,7 @@ import { resolve } from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const CWD = process.cwd();
-const sceneRevealPath = resolveSource('src/lib/engine/lifecycle.ts', CWD);
+const sceneRevealPath = resolveSource('src/lib/engine/scene-reveal.ts', CWD);
 const lifecyclePath = resolveSource('src/lib/stores/lifecycle.ts', CWD);
 
 let src;
@@ -46,7 +46,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'startSceneReveal:gates on state.camera',
-  pass: /function\s+startSceneReveal[\s\S]{0,300}?if\s*\(\s*!\s*state\.camera[\s\S]{0,120}?return/.test(src),
+  pass: /function\s+startSceneReveal[\s\S]{0,220}?const\s+camera\s*=[\s\S]{0,180}?if\s*\(\s*!\s*camera[\s\S]{0,120}?return/.test(src),
 });
 checks.push({
   name: 'startSceneReveal:gates on state.currentView',
@@ -91,7 +91,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'startSceneReveal:calls clearAutoRotateResumeTimer (dewindowed — direct import)',
-  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,900}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(src) &&
+  pass: /export\s+function\s+startSceneReveal[\s\S]{0,900}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(src) &&
         !/window\.clearAutoRotateResumeTimer/.test(src),
 });
 
@@ -100,7 +100,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'startSceneReveal:calls setAutoRotateSuspended(true) (dewindowed — direct import)',
-  pass: /^export\s+function\s+startSceneReveal[\s\S]{0,900}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(src) &&
+  pass: /export\s+function\s+startSceneReveal[\s\S]{0,900}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(src) &&
         !/window\.setAutoRotateSuspended/.test(src),
 });
 
@@ -150,11 +150,11 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'onWindowResize:guards on state.camera',
-  pass: /function\s+onWindowResize[\s\S]{0,250}?if\s*\(\s*!\s*state\.camera[\s\S]{0,120}?return/.test(src),
+  pass: /function\s+onWindowResize[\s\S]{0,220}?const\s+camera\s*=[\s\S]{0,220}?if\s*\(\s*!\s*camera[\s\S]{0,120}?return/.test(src),
 });
 checks.push({
   name: 'onWindowResize:guards on state.renderer',
-  pass: /function\s+onWindowResize[\s\S]{0,250}?if\s*\([\s\S]{0,120}!\s*state\.renderer[\s\S]{0,120}?return/.test(src),
+  pass: /function\s+onWindowResize[\s\S]{0,260}?const\s+renderer\s*=[\s\S]{0,220}?if\s*\([\s\S]{0,120}!\s*renderer[\s\S]{0,120}?return/.test(src),
 });
 
 // ---------------------------------------------------------------------------
@@ -204,7 +204,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'onWindowResize:calls syncClusterSectionState() direct import',
-  pass: /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]\.\/cluster-labels/.test(src) &&
+  pass: /import\s*\{\s*syncClusterSectionState\s*\}\s*from\s*['"]@lib\/ui\/cluster-labels/.test(src) &&
         /function\s+onWindowResize[\s\S]{0,900}?syncClusterSectionState\s*\(\s*\)/.test(src) &&
         !/window\.syncClusterSectionState\s*\(/.test(src),
 });
@@ -214,7 +214,7 @@ checks.push({
 // --------------------------------------------------------------------------
 checks.push({
   name: 'onWindowResize:calls updateTraversalUi() direct import',
-  pass: /import\s*\{\s*updateTraversalUi\s*\}\s*from\s*['"]\.\/journey/.test(src) &&
+  pass: /import\s*\{\s*updateTraversalUi\s*\}\s*from\s*['"]@lib\/journey\/focus-ui/.test(src) &&
         /function\s+onWindowResize[\s\S]{0,900}?updateTraversalUi\s*\(\s*\)/.test(src) &&
         !/window\.updateTraversalUi\s*\(/.test(src),
 });

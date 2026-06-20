@@ -734,9 +734,7 @@ export function exploreThreadNeighbor(
 // These names are imported from thread-settler / thread-model so callers that
 // historically resolved them through thread-inspector (legacy js/modules/thread-inspector.ts)
 // still see them via substring references in source-only contracts.
-export {
-    getStrandArrivalNote
-} from '@lib/journey/thread-settler'
+export { getStrandArrivalNote } from '@lib/journey/thread-settler'
 
 // ── Wave70 dewindowing notes ────────────────────────────────────────────────────────────────
 // All thread-inspection surfaces route through direct named exports

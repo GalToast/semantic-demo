@@ -15,10 +15,10 @@ import type { NavState, ViewName } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { runSearch, searchStore } from '@lib/stores/search.svelte'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket'
-import { overwriteActiveFilters } from '@lib/stores/filter.svelte'
+import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { appState } from '@lib/state/app.svelte'
+import { applyFilters } from '@lib/orchestration/search-filter-core'
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -416,26 +416,28 @@ subscribe(EVENTS.STATE_RESET, ({ options }: { options?: { skipUrlSync?: boolean 
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
 function _restoreFiltersFromParams(params: URLSearchParams): void {
-    const status = params.get('status')
-    const city = params.get('city')
-    const website = params.get('website')
-    const email = params.get('email')
-    const geocoded = params.get('geocoded')
+    const hasFilterParams = ['status', 'city', 'website', 'email', 'geocoded'].some((key) => params.has(key))
+    restoreActiveFiltersFromUrl(params)
+    if (!hasFilterParams) return
 
-    if (status || city || website || email || geocoded) {
-        overwriteActiveFilters({
-            status: status || 'all',
-            city: city || '',
-            website: website === '1',
-            email: email === '1',
-            geocoded: geocoded === '1'
+    void import('@lib/orchestration/cluster-filter-controller')
+        .then(({ syncFilterControls }) => {
+            syncFilterControls()
+            applyFilters()
         })
-    }
+        .catch((err) => {
+            debugWarn('[url-state] Filter UI sync after URL restore failed:', err)
+            applyFilters()
+        })
 }
 
 function _restoreClusterFilter(clusterStr: string): void {
     const cluster = Number(clusterStr)
     if (!Number.isFinite(cluster)) return
+
+    const params = new URLSearchParams()
+    params.set('cluster', String(cluster))
+    restoreActiveClusterFilterFromUrl(params)
 
     if (typeof window !== 'undefined') {
         window.dispatchEvent(
@@ -481,8 +483,8 @@ function preserveDomForcedFocusSearchSurface(): void {
  * runs whenever `?anchor` is present, regardless of whether a query followed.
  *
  * Numeric anchor flow:
- *   1. Publish `SEARCH_FOCUS_REQUESTED` synchronously so trail / search stores
- *      populate before any `?q` round-trip latency.
+ *   1. Publish `SEARCH_FOCUS_REQUESTED` from the mounted URL-state replay path
+ *      after data is available and Svelte has an active component context.
  *   2. Direct `applyLocalNeighborhoodFocus` call as a defensive reflection of
  *      the FocusPocket `$effect` rebuild — closes the URL→focus race even
  *      when the navStore update races the data-ready transition.
@@ -527,7 +529,14 @@ async function _restoreAnchorFromParams(anchorId: string): Promise<void> {
     }
 
     publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId })
+    // W44-S5: dynamic import keeps Three.js + focus-pocket geometry off the
+    // cold-load modulepreload list. focus/pocket.ts imports Vector3 / PerspectiveCamera
+    // from 'three' for layout math; url-state sits on App.svelte's cold path so any
+    // static import here would pull the entire Three chunk into cold-preload.
+    // The function is only called for numeric `?anchor=` params, so lazy-loading
+    // it does not affect anything outside the anchor-restoration path.
     try {
+        const { applyLocalNeighborhoodFocus } = await import('@lib/focus/pocket')
         applyLocalNeighborhoodFocus(numericId)
     } catch (e) {
         debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e)
@@ -561,8 +570,8 @@ async function _restoreSearchFromParams(query: string, anchorId: string | null):
         if (domForcedFocusSearchSurface) preserveDomForcedFocusSearchSurface()
 
         // Focus the anchor once search results are available. Numeric anchors
-        // are ALSO re-fired here: their earlier publish (App.svelte module-parse
-        // + _restoreAnchorFromParams) fires before currentSearchSummary populates,
+        // are ALSO re-fired here: their earlier publish in `_restoreAnchorFromParams`
+        // fires before currentSearchSummary populates,
         // leaving threadCandidates empty and the focus pocket / thread inspector
         // without neighbor data. This re-fire runs after runSearch completes, so
         // resultIndices is populated. The subscriber guards addTrailStop against

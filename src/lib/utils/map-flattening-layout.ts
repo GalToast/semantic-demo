@@ -2,7 +2,7 @@
  * map-flattening-layout.ts — Canonical port of map-flattening-layout.ts
  * Pure state mutation for flattening map layout.
  */
-import { state, withStateMutation } from '@lib/engine/state-bridge';
+import { state } from '@lib/engine/state-bridge';
 
 export function applyMapFlatteningLayout(enabled: boolean): void {
     if (!state.points || !state.originalPositions) return;

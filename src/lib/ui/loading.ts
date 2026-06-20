@@ -11,7 +11,6 @@
 import { setLoadingPhase as setNavLoadingPhase } from '@lib/stores/navigation.svelte.ts'
 import { setLoadingPhase as setDataLoadingPhase } from '@lib/data-store'
 import { loadSemanticThreads } from '@lib/semantic-threads'
-import { createMycelium } from '@lib/engine/thread-manager'
 import { isWeatherInitialized, setWeatherInitialized } from '@lib/stores/weather.svelte'
 
 import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state'
@@ -45,7 +44,6 @@ let _hideToken = 0
 let _loadingOverlayStartedAt = 0
 
 let _loadingHideTimer: ReturnType<typeof setTimeout> | null = null
-let _loadingHideCancelled = false
 let _deferredHydrationStarted = false
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -165,6 +163,7 @@ export function startDeferredHydration(): void {
 
             // Create mycelium thread geometry (sync, requires pointsMesh + nodePositions)
             try {
+                const { createMycelium } = await import('@lib/engine/thread-manager')
                 createMycelium()
             } catch (threadErr) {
                 console.warn('[Loading] deferred mycelium creation failed:', threadErr)
@@ -291,7 +290,6 @@ function _updatePhaseChips(activePhase: string): void {
  * when `deinit()` runs while the launch transition is queued.
  */
 export function cancelLoadingHide(): void {
-    _loadingHideCancelled = true
     if (_loadingHideTimer !== null) {
         clearTimeout(_loadingHideTimer)
         _loadingHideTimer = null

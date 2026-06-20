@@ -164,11 +164,14 @@ function withFocusNotify(updater: (s: FocusStoreState) => FocusStoreState): void
     _focusWritable.set(next)
     // Sync all bridged properties back to appState
     appState.withMutation(() => {
+        const inspectedThreadIndex = next.threadInspector.active
+            ? next.threadInspector.inspectedIndex
+            : next.inspectedStrandIndex
         appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
         appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
         appState.navState.focusPocketMeta = next.pocketMeta
         appState.selectedPoint = next.selectedBusiness as any
-        appState.inspectedThreadIndex = next.inspectedStrandIndex
+        appState.inspectedThreadIndex = inspectedThreadIndex
         appState.pinnedThreadIndex = next.pinnedThreadIndex
         appState.nodesAreSettling = next.nodesAreSettling
         appState.pocketMotionByIndex = next.pocketMotionByIndex
@@ -228,11 +231,14 @@ function _createFocusStore(): FocusStoreApi {
         _focusWritable.set(value)
         // Sync all bridged properties back to appState (same as withFocusNotify)
         appState.withMutation(() => {
+            const inspectedThreadIndex = value.threadInspector.active
+                ? value.threadInspector.inspectedIndex
+                : value.inspectedStrandIndex
             appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
             appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
             appState.navState.focusPocketMeta = value.pocketMeta
             appState.selectedPoint = value.selectedBusiness as any
-            appState.inspectedThreadIndex = value.inspectedStrandIndex
+            appState.inspectedThreadIndex = inspectedThreadIndex
             appState.pinnedThreadIndex = value.pinnedThreadIndex
             appState.nodesAreSettling = value.nodesAreSettling
             appState.pocketMotionByIndex = value.pocketMotionByIndex
@@ -296,13 +302,15 @@ export function clearThreadInspector(): void {
     withFocusNotify((s) => ({
         ...s,
         inspectedStrandIndex: null,
-        threadInspector: { ...s.threadInspector, active: false }
+        threadInspector: { ...s.threadInspector, active: false, inspectedIndex: null }
     }))
 }
 
 export function updateThreadInspector(patch: Partial<ThreadInspectorState>): void {
     withFocusNotify((s) => ({
         ...s,
+        inspectedStrandIndex:
+            patch.inspectedIndex === undefined ? s.inspectedStrandIndex : patch.inspectedIndex,
         threadInspector: { ...s.threadInspector, ...patch }
     }))
 }

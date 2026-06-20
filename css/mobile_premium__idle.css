@@ -21,7 +21,7 @@
 
     /* Idle composition budget: the overview sheet and compact compass own
        mobile idle chrome; the desktop zoom/reset rail is redundant here. */
-    body.is-active[data-panel-surface='idle'] .controls {
+    body.is-active[data-panel-surface='idle'] :is(.controls, #camera-controls) {
         display: none;
         visibility: hidden;
         pointer-events: none;

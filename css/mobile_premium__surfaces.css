@@ -754,6 +754,12 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow-y: auto;
     }
 
+    body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-container #search-results.active {
+        flex: 0 0 72px;
+        min-height: 72px;
+        max-height: 72px;
+    }
+
     body:is([data-panel-surface='search'], [data-panel-surface='focus'], [data-panel-surface='focus-search'])
         .info-panel-surface-selection {
         display: none;
@@ -1242,6 +1248,7 @@ body.is-active #selected-details.active:not([hidden]) {
        strip-owner tuple while the panel reducer is still on map-search. */
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .info-panel {
@@ -1264,6 +1271,7 @@ body.is-active #selected-details.active:not([hidden]) {
 
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .info-content {
@@ -1278,51 +1286,61 @@ body.is-active #selected-details.active:not([hidden]) {
 
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .info-header,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #info-panel-title,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .stats-row,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #filters-section,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #cluster-section,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #mode-grid,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .mode-grid,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #selected-card,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .selected-card,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .selected-empty {
@@ -1333,6 +1351,7 @@ body.is-active #selected-details.active:not([hidden]) {
 
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .search-container {
@@ -1350,16 +1369,19 @@ body.is-active #selected-details.active:not([hidden]) {
 
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .search-results-count,
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .search-result-listitem:not(:first-child),
     body.is-active:is(
             [data-panel-surface='map-trail'],
+            [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .search-result-item:not(:first-child) {

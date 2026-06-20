@@ -126,21 +126,21 @@ function readFile(rel) {
 
     // Both scripts must back up leadEnrichment.public.json in the backup step.
     assert(
-        sh.includes('BACKUP_DIR/scripts/leadEnrichment'),
+        sh.includes('BACKUP_DIR/data/leadEnrichment'),
         'deploy.sh: must back up leadEnrichment.public.json in backup dir'
     )
     assert(
-        ps.includes('BackupDir/scripts/leadEnrichment'),
+        ps.includes('BackupDir/data/leadEnrichment'),
         'deploy.ps1: must back up leadEnrichment.public.json in backup dir'
     )
 
     // Both scripts must restore leadEnrichment.public.json in rollback.
     assert(
-        sh.includes('scripts/leadEnrichment') && sh.includes('REMOTE_DIR/scripts'),
+        sh.includes('data/leadEnrichment') && sh.includes('REMOTE_DIR/data'),
         'deploy.sh: rollback must restore leadEnrichment.public.json'
     )
     assert(
-        ps.includes('scripts/leadEnrichment') && ps.includes('RemoteDir/scripts'),
+        ps.includes('data/leadEnrichment') && ps.includes('RemoteDir/data'),
         'deploy.ps1: rollback must restore leadEnrichment.public.json'
     )
 

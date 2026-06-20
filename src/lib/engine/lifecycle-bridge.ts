@@ -20,10 +20,7 @@ export {
     switchView,
     updateExplorationUi
 } from '@lib/orchestration/lifecycle'
-export {
-    getPreviouslyFocusedFocusStage,
-    setPreviouslyFocusedFocusStage
-} from '../journey/lifecycle-adapter'
+export { getPreviouslyFocusedFocusStage, setPreviouslyFocusedFocusStage } from '../journey/lifecycle-adapter'
 export { revealSelectedBusinessCard } from '@lib/ui/panel-bindings'
 export { applyClusterUiAccent } from '../ui/cluster-ui-accent'
 export { selectedPointStore as legacySelectedPointStore } from '../stores/legacy-stores'

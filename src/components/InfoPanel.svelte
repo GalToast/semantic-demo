@@ -270,7 +270,10 @@
   /** Whether the panel should visually appear open */
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use `!= null` (Pattern 3) + positive equality (Pattern 2).
-  let panelOpen = $derived(open || isFocused || currentActiveResult != null || Boolean(testPanelSurface && !(testPanelSurface === 'idle')));
+  let panelOpen = $derived(
+    contentDescriptor.panelVisible &&
+      (open || isFocused || currentActiveResult != null || Boolean(testPanelSurface && !(testPanelSurface === 'idle')))
+  );
 
   /** Whether to show the empty state */
   let isEmpty = $derived(!selectedRecord);
@@ -340,7 +343,7 @@
       const showTrivia = Boolean(trivia);
       const summary = searchSummary();
       const matchNarrative = selectionSource === 'search' && currentActiveResult !== null && summary // audit-ok: inside $derived.by — previously audited as SAFE
-        ? buildSearchMatchNarrative('', summary.topScore)
+        ? buildSearchMatchNarrative(selectedRecord)
         : '';
       const showMatchPanel = Boolean(matchNarrative);
       const facts: Record<string, unknown>[] = [];
@@ -673,10 +676,11 @@
   }
   :global(#selected-card[hidden]),
   :global(#selected-details[hidden]),
+  :global(#info-panel[hidden]),
   .selected-sensitivity[hidden],
   .selected-match-panel[hidden],
   .selected-action-row[hidden] {
-    display: none;
+    display: none !important;
   }
   .selected-action-row .action-btn {
     box-sizing: border-box;

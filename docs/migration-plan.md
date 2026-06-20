@@ -8,33 +8,33 @@
 
 ## TL;DR
 
-| Dimension | Current state (W42) |
-|-----------|---------------------|
-| **Svelte UI** | 26/26 components complete. `svelte-check` 0/0. All stores, types, orchestration files in place. |
-| **Engine kernel** | Fully migrated to `src/lib/`. Only `js/workers/data-worker.ts` remains (active runtime web worker, imported via `data-worker-url-bridge.ts`). Legacy `js/modules/*.ts` are gone from disk. |
-| **Bridge** | `src/lib/engine/*-bridge.ts` files are the canonical seam manifest. Load-bearing; do not mass-delete (AGENTS.md §9). |
-| **BOTH pattern** | `.js` shadows retired in W10 W2 (commit `7fc7b9d`). `@legacy/*` alias retired in 9D-Option-B (`cbc6509`). Legacy islands deleted in m3 sweep (`b8a50ba`), reverted 2026-06-12 (`ec520da`) — status ambiguous. |
-| **Contracts** | 225 contract tests pass. Visual state audit covers 26 surface IDs. |
-| **Bundle** | ~1,217 KB raw JS / ~338 KB gzip. CSS ~54 KB raw / ~10 KB gzip. Dead CSS modules pruned in W41 (`80e4224`). |
-| **Deploy** | `deploy.sh` + `deploy.ps1` depend on sibling `../js/scanner.js`. Production shell at `dist/svelte/index.html`. |
-| **What's left** | Bridge retirement (Phase 6), deploy-script decoupling, parity-attrs final closeout, prod-preview parity smoke, Svelte 5 strict-mode `!==` cleanup, deploy shell normalization. |
+| Dimension         | Current state (W42)                                                                                                                                                                                           |
+| ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Svelte UI**     | 26/26 components complete. `svelte-check` 0/0. All stores, types, orchestration files in place.                                                                                                               |
+| **Engine kernel** | Fully migrated to `src/lib/`. Only `js/workers/data-worker.ts` remains (active runtime web worker, imported via `data-worker-url-bridge.ts`). Legacy `js/modules/*.ts` are gone from disk.                    |
+| **Bridge**        | `src/lib/engine/*-bridge.ts` files are the canonical seam manifest. Load-bearing; do not mass-delete (AGENTS.md §9).                                                                                          |
+| **BOTH pattern**  | `.js` shadows retired in W10 W2 (commit `7fc7b9d`). `@legacy/*` alias retired in 9D-Option-B (`cbc6509`). Legacy islands deleted in m3 sweep (`b8a50ba`), reverted 2026-06-12 (`ec520da`) — status ambiguous. |
+| **Contracts**     | 225 contract tests pass. Visual state audit covers 26 surface IDs.                                                                                                                                            |
+| **Bundle**        | ~1,217 KB raw JS / ~338 KB gzip. CSS ~54 KB raw / ~10 KB gzip. Dead CSS modules pruned in W41 (`80e4224`).                                                                                                    |
+| **Deploy**        | `deploy.sh` + `deploy.ps1` depend on sibling `../js/scanner.js`. Production shell at `dist/svelte/index.html`.                                                                                                |
+| **What's left**   | Bridge retirement (Phase 6), deploy-script decoupling, parity-attrs final closeout, prod-preview parity smoke, Svelte 5 strict-mode `!==` cleanup, deploy shell normalization.                                |
 
 ---
 
 ## Architecture Layers
 
-| Layer | Path | Status | Notes |
-|-------|------|--------|-------|
-| **Svelte UI** | `src/components/*`, `src/lib/stores/*.svelte.ts` | ✅ Complete | 26 components, 12 stores, 4 type files |
-| **Bridge** | `src/lib/engine/*-bridge.ts` | 🟡 Load-bearing | Canonical seam manifest — see § "Bridge File Doctrine" |
-| **Engine kernel** | `src/lib/engine/`, `src/lib/focus/`, `src/lib/journey/` | ✅ Migrated | Three.js scene, camera, shaders, focus pocket, journey orchestration |
-| **Orchestration** | `src/lib/orchestration/` | ✅ Complete | App init, lifecycle, view transitions, URL state, compass, events, parity-attrs |
-| **State & stores** | `src/lib/state/`, `src/lib/stores/` | ✅ Complete | `appState` Svelte 5 class + typed writable stores |
-| **Search** | `src/lib/search/`, `src/lib/search-engine.ts` | ✅ Complete | API search, local fallback, tokenization, reranking, caching |
-| **Data** | `src/lib/data-store.ts`, `src/lib/data-store.svelte.ts`, `src/lib/data-loader.ts` | ✅ Complete | Business records, semantic threads |
-| **Utilities** | `src/lib/utils/` | ✅ Complete | Seeded random, diagnostics, DOM helpers, math, WebGL restore, relationship roles |
-| **Worker** | `js/workers/data-worker.ts` | 🟡 Active runtime | Only remaining `js/` file; imported via `src/lib/engine/data-worker-url-bridge.ts` |
-| **Legacy reference** | `legacy-reference/` | 🟢 Archive | Frozen BOTH-pattern shadow files; reference only, not built |
+| Layer                | Path                                                                              | Status            | Notes                                                                              |
+| -------------------- | --------------------------------------------------------------------------------- | ----------------- | ---------------------------------------------------------------------------------- |
+| **Svelte UI**        | `src/components/*`, `src/lib/stores/*.svelte.ts`                                  | ✅ Complete       | 26 components, 12 stores, 4 type files                                             |
+| **Bridge**           | `src/lib/engine/*-bridge.ts`                                                      | 🟡 Load-bearing   | Canonical seam manifest — see § "Bridge File Doctrine"                             |
+| **Engine kernel**    | `src/lib/engine/`, `src/lib/focus/`, `src/lib/journey/`                           | ✅ Migrated       | Three.js scene, camera, shaders, focus pocket, journey orchestration               |
+| **Orchestration**    | `src/lib/orchestration/`                                                          | ✅ Complete       | App init, lifecycle, view transitions, URL state, compass, events, parity-attrs    |
+| **State & stores**   | `src/lib/state/`, `src/lib/stores/`                                               | ✅ Complete       | `appState` Svelte 5 class + typed writable stores                                  |
+| **Search**           | `src/lib/search/`, `src/lib/search-engine.ts`                                     | ✅ Complete       | API search, local fallback, tokenization, reranking, caching                       |
+| **Data**             | `src/lib/data-store.ts`, `src/lib/data-store.svelte.ts`, `src/lib/data-loader.ts` | ✅ Complete       | Business records, semantic threads                                                 |
+| **Utilities**        | `src/lib/utils/`                                                                  | ✅ Complete       | Seeded random, diagnostics, DOM helpers, math, WebGL restore, relationship roles   |
+| **Worker**           | `js/workers/data-worker.ts`                                                       | 🟡 Active runtime | Only remaining `js/` file; imported via `src/lib/engine/data-worker-url-bridge.ts` |
+| **Legacy reference** | `legacy-reference/`                                                               | 🟢 Archive        | Frozen BOTH-pattern shadow files; reference only, not built                        |
 
 Ref: AGENTS.md § "Engine Kernel Architecture"
 
@@ -44,15 +44,15 @@ Ref: AGENTS.md § "Engine Kernel Architecture"
 
 These files require explicit ownership, targeted tests, and coordination with parallel sessions before any edit. (Per AGENTS.md "Edit Safety" section.)
 
-| Surface | Module | Risk rationale | Active-care rules |
-|---------|--------|---------------|-------------------|
-| **`src/lib/state/app.svelte.ts`** | State class | Single source of truth for all global state. Dual-store mirror discipline: must write through `writeNavStateMirror()` / `writeFocusPocketMirror()`. | M-flagged. Coordinate with parallel session. Verify `npm run lint:nav-mirror` after any change. |
-| **`src/lib/orchestration/app-init.ts`** | Orchestration | App initialization orchestrator. Replaces legacy `js/modules/app.ts`. Sequence-sensitive (10-step init). | M-flagged via proxy (lifecycle.ts). Do not re-order init steps without visual regression pass. |
-| **`src/lib/journey/journey.ts`** | Journey | Journey orchestration layer. Thread walk, neighbor timers, trail seed, route index. | Off-limits write surface (AGENTS.md Worker Prompt Boundary). Touch only with explicit lead approval. |
-| **`src/lib/orchestration/lifecycle.ts`** | Orchestration | App orchestration, view handoff, window bindings, scene-reveal logic. 425 lines. Many no-op stubs for legacy bridge compat. | Coordinate with parallel session. Do not remove legacy stubs until bridge retirement phase. |
-| **`src/lib/engine/three-engine.ts`** | Engine | WebGL render loop, scene lifecycle, renderer management. RAF loop + GPU resource tracking. | Off-limits write surface. Do not touch without explicit lead approval. Disposal audit required for any material/texture changes. |
-| **`deploy.sh` / `deploy.ps1`** | Deploy | Depend on `../js/scanner.js` path. Production shell routing. | Do not move app root until deploy scripts are decoupled. Any deploy change requires end-to-end verification against `dist/svelte/`. |
-| **Focus-stage renderers** (`src/lib/focus/stage-renderer.ts`, `src/lib/journey/focus-stage-renderer.ts`) | Focus / Journey | M-flagged. Focus stage DOM rendering, selected-card hydration. | M-flagged. Coordinate with parallel session. CSS ownership via `docs/semantic-demo-focus-stage-css-owner-matrix.md`. |
+| Surface                                                                                                  | Module          | Risk rationale                                                                                                                                      | Active-care rules                                                                                                                   |
+| -------------------------------------------------------------------------------------------------------- | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| **`src/lib/state/app.svelte.ts`**                                                                        | State class     | Single source of truth for all global state. Dual-store mirror discipline: must write through `writeNavStateMirror()` / `writeFocusPocketMirror()`. | M-flagged. Coordinate with parallel session. Verify `npm run lint:nav-mirror` after any change.                                     |
+| **`src/lib/orchestration/app-init.ts`**                                                                  | Orchestration   | App initialization orchestrator. Replaces legacy `js/modules/app.ts`. Sequence-sensitive (10-step init).                                            | M-flagged via proxy (lifecycle.ts). Do not re-order init steps without visual regression pass.                                      |
+| **`src/lib/journey/journey.ts`**                                                                         | Journey         | Journey orchestration layer. Thread walk, neighbor timers, trail seed, route index.                                                                 | Off-limits write surface (AGENTS.md Worker Prompt Boundary). Touch only with explicit lead approval.                                |
+| **`src/lib/orchestration/lifecycle.ts`**                                                                 | Orchestration   | App orchestration, view handoff, window bindings, scene-reveal logic. 425 lines. Many no-op stubs for legacy bridge compat.                         | Coordinate with parallel session. Do not remove legacy stubs until bridge retirement phase.                                         |
+| **`src/lib/engine/three-engine.ts`**                                                                     | Engine          | WebGL render loop, scene lifecycle, renderer management. RAF loop + GPU resource tracking.                                                          | Off-limits write surface. Do not touch without explicit lead approval. Disposal audit required for any material/texture changes.    |
+| **`deploy.sh` / `deploy.ps1`**                                                                           | Deploy          | Depend on `../js/scanner.js` path. Production shell routing.                                                                                        | Do not move app root until deploy scripts are decoupled. Any deploy change requires end-to-end verification against `dist/svelte/`. |
+| **Focus-stage renderers** (`src/lib/focus/stage-renderer.ts`, `src/lib/journey/focus-stage-renderer.ts`) | Focus / Journey | M-flagged. Focus stage DOM rendering, selected-card hydration.                                                                                      | M-flagged. Coordinate with parallel session. CSS ownership via `docs/semantic-demo-focus-stage-css-owner-matrix.md`.                |
 
 ---
 
@@ -60,26 +60,26 @@ These files require explicit ownership, targeted tests, and coordination with pa
 
 ### Truly dead (can be removed)
 
-| Artifact | Status | Evidence |
-|----------|--------|----------|
-| `@legacy/*` path alias | Dead | Retired in 9D-Option-B, commit `cbc6509`. |
-| `.js` shadow files | Dead | Retired in W10 W2, commit `7fc7b9d`. |
+| Artifact                                 | Status         | Evidence                                                                                                        |
+| ---------------------------------------- | -------------- | --------------------------------------------------------------------------------------------------------------- |
+| `@legacy/*` path alias                   | Dead           | Retired in 9D-Option-B, commit `cbc6509`.                                                                       |
+| `.js` shadow files                       | Dead           | Retired in W10 W2, commit `7fc7b9d`.                                                                            |
 | `js/modules/*.ts` (legacy orchestration) | Dead from disk | AGENTS.md: "The old `js/modules/*.ts` files referenced by earlier documentation are no longer present on disk." |
 
 ### Still load-bearing (do NOT remove)
 
-| Artifact | Status | Evidence |
-|----------|--------|----------|
-| `src/lib/engine/*-bridge.ts` files | **Load-bearing** | AGENTS.md §9: "Bridge files are the canonical seam manifest." Must pass `npm run check:bridges` before deletion. |
-| `js/workers/data-worker.ts` | **Active runtime** | Imported by `src/lib/engine/data-worker-url-bridge.ts`. Only surviving `js/` file. |
-| `legacy-reference/` | **Archive-only** | Frozen reference. Not built. Safe to leave. |
+| Artifact                           | Status             | Evidence                                                                                                         |
+| ---------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| `src/lib/engine/*-bridge.ts` files | **Load-bearing**   | AGENTS.md §9: "Bridge files are the canonical seam manifest." Must pass `npm run check:bridges` before deletion. |
+| `js/workers/data-worker.ts`        | **Active runtime** | Imported by `src/lib/engine/data-worker-url-bridge.ts`. Only surviving `js/` file.                               |
+| `legacy-reference/`                | **Archive-only**   | Frozen reference. Not built. Safe to leave.                                                                      |
 
 ### Ambiguous — requires 4-signal audit
 
-| Artifact | Status | Evidence |
-|----------|--------|----------|
-| Legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) | **Ambiguous** | Deleted in m3 sweep (`b8a50ba`), then reverted on 2026-06-12 (`ec520da`). AGENTS.md: "Per the BOTH pattern below, they are part of the in-flight migration, not confirmed dead." Before removal, apply the 4-signal bridge rule: (1) runtime import, (2) docs/tests/legacy-reference reference, (3) public type export consumers, (4) commits in last 60 days. |
-| `src/dist/svelte/` (build output) | **Not source** | Build artifact, not source. Safe to regenerate. Not a migration concern. |
+| Artifact                                                                                                                         | Status         | Evidence                                                                                                                                                                                                                                                                                                                                                       |
+| -------------------------------------------------------------------------------------------------------------------------------- | -------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Legacy islands (`selected-details-svelte-island.{ts,js}`, `search-results-svelte-island.{ts,js}`, `island-mount-helper.{ts,js}`) | **Ambiguous**  | Deleted in m3 sweep (`b8a50ba`), then reverted on 2026-06-12 (`ec520da`). AGENTS.md: "Per the BOTH pattern below, they are part of the in-flight migration, not confirmed dead." Before removal, apply the 4-signal bridge rule: (1) runtime import, (2) docs/tests/legacy-reference reference, (3) public type export consumers, (4) commits in last 60 days. |
+| `src/dist/svelte/` (build output)                                                                                                | **Not source** | Build artifact, not source. Safe to regenerate. Not a migration concern.                                                                                                                                                                                                                                                                                       |
 
 ### Post-06-12 revert implications
 
@@ -157,17 +157,17 @@ A file passes the "dead" threshold only when **all five signals are zero**.
 
 For each high-risk surface, the following must hold before any edit:
 
-| Surface | Pre-edit checklist |
-|---------|--------------------|
-| `app.svelte.ts` | 1. Confirm M-flagged status. 2. Coordinate with parallel session. 3. After edit: `npm run lint:nav-mirror`, `npm run check`, `npm run test:contract`. |
-| `app-init.ts` | 1. Confirm no parallel session write scope. 2. After edit: full init sequence verification (dev + prod-preview), `npm run check`, visual regression pass. |
-| `journey.ts` | 1. Requires explicit lead approval (off-limits write surface). 2. After edit: `npm run check:bridges`, `npm run test:contract`, compass-rail + thread-inspector surface checks. |
-| `lifecycle.ts` | 1. Coordinate with parallel session. 2. After edit: `npm run check`, `npm run test:contract`, `node scripts/qa.mjs contract --all --headed`. Do not remove legacy stubs until bridge retirement phase. |
-| `three-engine.ts` | 1. Requires explicit lead approval (off-limits write surface). 2. After edit: disposal audit for any new material/texture, `npm run test:contract`, visual regression for desktop-idle + mobile-idle. |
-| `deploy.sh` / `deploy.ps1` | 1. End-to-end deploy verification against `dist/svelte/`. 2. Verify `../js/scanner.js` path resolves. 3. Test both dev and production preview. |
-| Focus-stage renderers | 1. M-flagged. Coordinate with parallel session. 2. After edit: `npm run check:bridges`, CSS ownership check (`docs/semantic-demo-focus-stage-css-owner-matrix.md`), focus-pocket + compass-rail surface checks. |
+| Surface                    | Pre-edit checklist                                                                                                                                                                                              |
+| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app.svelte.ts`            | 1. Confirm M-flagged status. 2. Coordinate with parallel session. 3. After edit: `npm run lint:nav-mirror`, `npm run check`, `npm run test:contract`.                                                           |
+| `app-init.ts`              | 1. Confirm no parallel session write scope. 2. After edit: full init sequence verification (dev + prod-preview), `npm run check`, visual regression pass.                                                       |
+| `journey.ts`               | 1. Requires explicit lead approval (off-limits write surface). 2. After edit: `npm run check:bridges`, `npm run test:contract`, compass-rail + thread-inspector surface checks.                                 |
+| `lifecycle.ts`             | 1. Coordinate with parallel session. 2. After edit: `npm run check`, `npm run test:contract`, `node scripts/qa.mjs contract --all --headed`. Do not remove legacy stubs until bridge retirement phase.          |
+| `three-engine.ts`          | 1. Requires explicit lead approval (off-limits write surface). 2. After edit: disposal audit for any new material/texture, `npm run test:contract`, visual regression for desktop-idle + mobile-idle.           |
+| `deploy.sh` / `deploy.ps1` | 1. End-to-end deploy verification against `dist/svelte/`. 2. Verify `../js/scanner.js` path resolves. 3. Test both dev and production preview.                                                                  |
+| Focus-stage renderers      | 1. M-flagged. Coordinate with parallel session. 2. After edit: `npm run check:bridges`, CSS ownership check (`docs/semantic-demo-focus-stage-css-owner-matrix.md`), focus-pocket + compass-rail surface checks. |
 
-**Bridge candidate deletion rule:** Before deleting any file that *might* be a bridge candidate, run `npm run check:bridges` and verify zero references in `rg <filename> src/ docs/ tests/`.
+**Bridge candidate deletion rule:** Before deleting any file that _might_ be a bridge candidate, run `npm run check:bridges` and verify zero references in `rg <filename> src/ docs/ tests/`.
 
 ---
 
@@ -193,37 +193,37 @@ For each high-risk surface, the following must hold before any edit:
 
 ## Cross-References
 
-| Document | Path | Relevance |
-|----------|------|-----------|
-| W42 Charter | `docs/w42-charter-2026-06-18.md` | Thread-inspector fix + a11y sweep (completed) |
-| W41 Charter | `docs/w41-charter-2026-06-18.md` | Bundle optimization + dead code elimination (partial) |
-| W40 Charter | `docs/w40-charter-2026-06-18.md` | Production verification + Lighthouse baseline + visual regression |
-| W38 Charter | `docs/w38-charter-2026-06-17.md` | Prior wave charter |
-| W43 Charter | `docs/w43-charter-2026-06-18.md` | Focus-stage QA + performance prep (current) |
-| Bridge Load-Bearing | `docs/bridge-load-bearing-2026-06-18.md` | **TBD — verify** existence; may not exist yet |
-| A11y Baseline | Per W42-B scope | Keyboard traps, focus-visible, screen reader labels |
-| Performance Budget | `docs/performance-budget.md` | JS/CSS budget ceilings and actuals |
-| Design Tokens | `docs/semantic-demo-design-tokens.md` | Canonical token sheet |
-| State Transition Table | `docs/semantic-demo-state-transition-table.md` | View-phase state machine |
-| Surface Style Matrix | `docs/semantic-demo-surface-style-matrix.md` | 26 visual audit states mapped to tokens |
-| Svelte 5 Strict-Mode Cookbook | `docs/svelte-5-strict-mode-cookbook.md` | `!==` inversion workaround patterns |
-| Historical Migration Plan | `docs/archive/migration-docs/phase56-migration-plan.md` | Phase 5/6 reference (archived) |
-| Nav State Ownership | `docs/nav-state-ownership.md` | Field-by-field ownership for NavState |
-| CSS Ownership Map | `docs/semantic-demo-css-authority-map.md` | CSS selector ownership |
-| Mobile State Ownership | `docs/semantic-demo-mobile-state-ownership.md` | Mobile body data-attr gates |
-| Focus-Stage CSS Owner | `docs/semantic-demo-focus-stage-css-owner-matrix.md` | Focus-stage CSS ownership |
+| Document                      | Path                                                    | Relevance                                                         |
+| ----------------------------- | ------------------------------------------------------- | ----------------------------------------------------------------- |
+| W42 Charter                   | `docs/w42-charter-2026-06-18.md`                        | Thread-inspector fix + a11y sweep (completed)                     |
+| W41 Charter                   | `docs/w41-charter-2026-06-18.md`                        | Bundle optimization + dead code elimination (partial)             |
+| W40 Charter                   | `docs/w40-charter-2026-06-18.md`                        | Production verification + Lighthouse baseline + visual regression |
+| W38 Charter                   | `docs/w38-charter-2026-06-17.md`                        | Prior wave charter                                                |
+| W43 Charter                   | `docs/w43-charter-2026-06-18.md`                        | Focus-stage QA + performance prep (current)                       |
+| Bridge Load-Bearing           | `docs/bridge-load-bearing-2026-06-18.md`                | **TBD — verify** existence; may not exist yet                     |
+| A11y Baseline                 | Per W42-B scope                                         | Keyboard traps, focus-visible, screen reader labels               |
+| Performance Budget            | `docs/performance-budget.md`                            | JS/CSS budget ceilings and actuals                                |
+| Design Tokens                 | `docs/semantic-demo-design-tokens.md`                   | Canonical token sheet                                             |
+| State Transition Table        | `docs/semantic-demo-state-transition-table.md`          | View-phase state machine                                          |
+| Surface Style Matrix          | `docs/semantic-demo-surface-style-matrix.md`            | 26 visual audit states mapped to tokens                           |
+| Svelte 5 Strict-Mode Cookbook | `docs/svelte-5-strict-mode-cookbook.md`                 | `!==` inversion workaround patterns                               |
+| Historical Migration Plan     | `docs/archive/migration-docs/phase56-migration-plan.md` | Phase 5/6 reference (archived)                                    |
+| Nav State Ownership           | `docs/nav-state-ownership.md`                           | Field-by-field ownership for NavState                             |
+| CSS Ownership Map             | `docs/semantic-demo-css-authority-map.md`               | CSS selector ownership                                            |
+| Mobile State Ownership        | `docs/semantic-demo-mobile-state-ownership.md`          | Mobile body data-attr gates                                       |
+| Focus-Stage CSS Owner         | `docs/semantic-demo-focus-stage-css-owner-matrix.md`    | Focus-stage CSS ownership                                         |
 
 ---
 
 ## Deferral List
 
-| Item | Deferred to | Reason |
-|------|-------------|--------|
-| Bridge retirement (Phase 6) | Future wave | Bridge files are load-bearing; requires Canvas to own full engine lifecycle first |
-| `../js/scanner.js` decoupling | Future wave | Requires decision on `scanner.js` necessity post-migration |
-| Legacy islands removal | Future wave (after 4-signal audit) | Ambiguous status post-`ec520da` revert; needs fresh import audit |
-| Deploy shell normalization | Future wave | Requires product decision on legacy URL path sunset |
-| `docs/bridge-load-bearing-2026-06-18.md` | Verify existence | May not have been created yet |
+| Item                                     | Deferred to                        | Reason                                                                            |
+| ---------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------- |
+| Bridge retirement (Phase 6)              | Future wave                        | Bridge files are load-bearing; requires Canvas to own full engine lifecycle first |
+| `../js/scanner.js` decoupling            | Future wave                        | Requires decision on `scanner.js` necessity post-migration                        |
+| Legacy islands removal                   | Future wave (after 4-signal audit) | Ambiguous status post-`ec520da` revert; needs fresh import audit                  |
+| Deploy shell normalization               | Future wave                        | Requires product decision on legacy URL path sunset                               |
+| `docs/bridge-load-bearing-2026-06-18.md` | Verify existence                   | May not have been created yet                                                     |
 
 ---
 
@@ -233,4 +233,4 @@ None found. All claims in this plan are consistent with AGENTS.md as of the W42 
 
 ---
 
-*Generated 2026-06-18. Commit: `docs: create migration-plan.md (post-W42 baseline)`*
+_Generated 2026-06-18. Commit: `docs: create migration-plan.md (post-W42 baseline)`_

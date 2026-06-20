@@ -15,7 +15,7 @@ import {
 } from '../src/lib/utils/relationship-roles.ts';
 
 const ROOT = process.cwd();
-const THREAD_UI_PATH = path.join(ROOT, 'semantic_threads_ui.dat');
+const THREAD_UI_PATH = path.join(ROOT, 'public', 'data', 'semantic_threads_ui.dat');
 
 const VALID_ROLES = new Set([
   'core_peer',

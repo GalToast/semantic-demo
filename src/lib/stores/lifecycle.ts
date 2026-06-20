@@ -146,6 +146,10 @@ export function applyCompositionState(): void {
         root.dataset.semanticDive = activeView === 'galaxy' ? semanticDive : 'inactive'
         root.dataset.panelSurface = panelSurface
         root.dataset.panelSurfaceDetail = panelSurface
+        if (graphContext !== 'idle') {
+            delete root.dataset.mobileRoutePeek
+            delete root.dataset.mobileRoutePeekReason
+        }
     }
 }
 

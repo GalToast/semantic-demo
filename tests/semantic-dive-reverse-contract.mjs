@@ -5,6 +5,8 @@
  * Runs in Node with minimal DOM/state shims — no browser needed.
  */
 
+import './helpers/svelte-rune-shim.mjs';
+
 class FakeElement {
   constructor(tagName = 'div') {
     this.tagName = tagName.toUpperCase();
@@ -41,8 +43,8 @@ globalThis.document = {
 // Imports
 // ---------------------------------------------------------------------------
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
-const { initJourneyLifecycleAdapter } = await import('../js/modules/journey-lifecycle-adapter.ts');
-const { syncSemanticDiveUi } = await import('../src/lib/journey/semantic-overlay.ts');
+const { initJourneyLifecycleAdapter } = await import('../src/lib/journey/lifecycle-adapter.ts');
+const { syncSemanticDiveUi } = await import('../src/lib/journey/semantic-dive.ts');
 
 // ---------------------------------------------------------------------------
 // Helpers

@@ -114,8 +114,8 @@ export interface JourneyTimerAdapterDeps {
 }
 
 export function initJourneyTimerAdapter(deps: JourneyTimerAdapterDeps = {}): void {
-    if (deps.setTimer) _setTimer = deps.setTimer;
-    if (deps.clearTimer) _clearTimer = deps.clearTimer;
+    if (deps.setTimer) _setTimer = deps.setTimer
+    if (deps.clearTimer) _clearTimer = deps.clearTimer
 }
 
 // ── Neighbor Reason Summaries ─────────────────────────────────────────────────

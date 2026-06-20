@@ -23,6 +23,7 @@ import {
   isMapSummarySurface,
   isSemanticDiveSurface
 } from '@lib/stores/viewport.svelte.ts';
+import { appState } from '@lib/state/app.svelte';
 import { resetExplorationFocus } from '@lib/orchestration/lifecycle';
 import {
   getJourneyCompassState,
@@ -365,14 +366,24 @@ export function executeJourneyCompassAction(action: string): void {
 
     case JOURNEY_ACTIONS.OPEN_MAP: {
       const targetSurface = deriveOpenMapSurface();
+      _switchView('map');
       setSemanticDiveMode(false);
       journeySetTrailDepth(1);
+      appState.currentView = 'map';
+      appState.trailDepth = 1;
+      appState.navState = {
+        ...appState.navState,
+        currentView: 'map',
+        mode: 'trail',
+        surface: targetSurface,
+        trailDepth: 1
+      };
       navStore.update((state) => ({
         ...state,
         currentView: 'map',
         mode: 'trail',
         surface: targetSurface,
-        trailDepth: Math.max(Number(state.trailDepth) || 0, 1)
+        trailDepth: 1
       }));
       if (typeof document !== 'undefined' && document.body) {
         document.body.dataset.semanticDive = 'inactive';

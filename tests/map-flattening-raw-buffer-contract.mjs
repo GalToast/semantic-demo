@@ -24,8 +24,8 @@ import { resolve } from 'node:path';
 import { resolveSource } from './source-path.mjs';
 
 const CWD = process.cwd();
-const TARGET_PATH = resolveSource('js/modules/map-flattening-layout.ts', CWD);
-const DATA_LOADER_PATH = resolveSource('src/lib/data-loader.ts', CWD);
+const TARGET_PATH = resolveSource('src/lib/utils/map-flattening-layout.ts', CWD);
+const DATA_LOADER_PATH = resolveSource('src/lib/data-store.ts', CWD);
 const DATA_WORKER_PATH = resolve(CWD, 'js/workers/data-worker.ts');
 
 let targetSrc;
@@ -85,8 +85,8 @@ check(
 const dataLoaderSrc = readFileSync(DATA_LOADER_PATH, 'utf8');
 check(
     'data-loader:writes state.rawPositionsBuffer',
-    /state\.rawPositionsBuffer\s*=\s*positionsBuffer/.test(dataLoaderSrc),
-    'data-loader.js must assign state.rawPositionsBuffer from the typed array'
+    /rawPositionsBuffer\s*=\s*result\.positionsBuffer/.test(dataLoaderSrc),
+    'data-store.ts must assign state.rawPositionsBuffer from the typed array'
 );
 
 // ---------------------------------------------------------------------------

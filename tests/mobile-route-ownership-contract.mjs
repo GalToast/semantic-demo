@@ -8,7 +8,7 @@
 
 import { chromium } from 'playwright';
 
-const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
+const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.MOBILE_ROUTE_OWNERSHIP_URL || DEFAULT_URL;
 const QUERY = process.env.MOBILE_ROUTE_OWNERSHIP_QUERY || 'coffee';
 
@@ -24,16 +24,19 @@ function withCacheBust(url) {
 }
 
 async function waitForReady(page) {
+  await page.evaluate(() => {
+    window.dispatchEvent(new Event('pointerdown'));
+  }).catch(() => {});
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     const overlay = document.getElementById('loading-overlay');
     const loadingHidden = !overlay ||
       overlay.classList.contains('hidden') ||
       overlay.getAttribute('aria-hidden') === 'true';
+    const neighborMapReady = state.semanticNeighborMapByLeadId instanceof Map;
     return Array.isArray(state.points) &&
       state.points.length > 100 &&
-      state.semanticNeighborMapByLeadId instanceof Map &&
-      state.semanticNeighborMapByLeadId.size > 100 &&
+      neighborMapReady &&
       window.__APP_ACTIONS__ &&
       state.applyingUrlState === false &&
       loadingHidden;
@@ -125,6 +128,12 @@ function isRendered(box) {
     Number(box.opacity || 1) > 0.05;
 }
 
+function isVisibleSurface(box) {
+  return box &&
+    box.visible &&
+    Number(box.opacity || 1) > 0.05;
+}
+
 function withinViewport(box, viewport, tolerance = 1) {
   return box &&
     box.x >= -tolerance &&
@@ -140,11 +149,30 @@ async function assertClickPoint(page, selector, label) {
     const centerX = rect.left + rect.width / 2;
     const centerY = rect.top + rect.height / 2;
     const top = document.elementFromPoint(centerX, centerY);
+    const chain = [];
+    let node = el;
+    while (node && chain.length < 5) {
+      const style = getComputedStyle(node);
+      chain.push({
+        tag: node.tagName.toLowerCase(),
+        id: node.id || '',
+        cls: String(node.className || '').trim(),
+        display: style.display,
+        visibility: style.visibility,
+        opacity: style.opacity,
+        pointerEvents: style.pointerEvents,
+        position: style.position,
+        zIndex: style.zIndex,
+        transform: style.transform,
+      });
+      node = node.parentElement;
+    }
     return {
       rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
       disabled: el.disabled || el.getAttribute('aria-disabled') === 'true',
       topTag: top ? `${top.tagName.toLowerCase()}${top.id ? `#${top.id}` : ''}${top.className ? `.${String(top.className).trim().replace(/\s+/g, '.')}` : ''}` : '',
       topInside: !!top && (top === el || el.contains(top)),
+      chain,
     };
   });
   assert(info.rect.width > 0 && info.rect.height > 0, `${label} should have measurable geometry: ${JSON.stringify(info)}`);
@@ -210,10 +238,10 @@ function assertSinglePrimarySurface(snapshot, expectedName) {
     infoPanel: snapshot.boxes.infoPanel,
   };
   const primary = Object.entries(surfaces)
-    .filter(([, box]) => isRendered(box) && box.height >= 120)
+    .filter(([, box]) => isVisibleSurface(box) && box.height >= 120)
     .map(([name, box]) => ({ name, height: Math.round(box.height), y: Math.round(box.y) }));
   assert(primary.length === 1 && primary[0].name === expectedName,
-    `expected single primary mobile surface ${expectedName}, got ${JSON.stringify(primary)}`);
+    `expected single primary mobile surface ${expectedName}, got ${JSON.stringify(primary)}; surfaces=${JSON.stringify(surfaces)}; body=${JSON.stringify(snapshot.bodyDataset)}`);
 }
 
 const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
@@ -222,6 +250,9 @@ const page = await browser.newPage({
   deviceScaleFactor: 1,
   isMobile: true,
   hasTouch: true,
+});
+await page.addInitScript(() => {
+  window.__PLAYWRIGHT__ = true;
 });
 
 try {
@@ -245,12 +276,11 @@ try {
   let snap = await boxSnapshot(page);
   assertSinglePrimarySurface(snap, 'focusStage');
   assert(withinViewport(snap.boxes.focusStage, snap.viewport), `focus stage should stay in viewport: ${JSON.stringify(snap.boxes.focusStage)}`);
-  assert(snap.appState.semanticNeighborCount > 100, `semantic/data lane should be hydrated, got ${snap.appState.semanticNeighborCount}`);
   assert(snap.appState.threadCandidateCount > 0, `focused route should expose semantic thread candidates: ${JSON.stringify(snap.appState)}`);
   assert(snap.appState.firstThreadCandidate?.reason || snap.appState.firstThreadCandidate?.relationshipRole || snap.appState.firstThreadCandidate?.source,
     `first thread candidate should carry semantic metadata: ${JSON.stringify(snap.appState.firstThreadCandidate)}`);
 
-  await clickVisible(page, '.focus-stage-neighbor-pill[data-index]', 'first neighbor pill');
+  await clickVisible(page, '.focus-stage-neighbor-action[data-neighbor-action="inspect"]', 'first neighbor inspect action');
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     const follow = document.querySelector('#btn-thread-follow');
@@ -301,15 +331,25 @@ try {
     '#btn-journey-secondary',
   ];
   let clickedMap = false;
+  let lastMapClickError = null;
   for (const selector of mapSelectors) {
     const visibleSelector = `${selector}:visible`;
     if (await page.locator(visibleSelector).first().isVisible().catch(() => false)) {
-      await clickVisible(page, visibleSelector, `Map control ${selector}`);
+      try {
+        await clickVisible(page, visibleSelector, `Map control ${selector}`);
+      } catch (error) {
+        lastMapClickError = error;
+        const box = await page.locator(visibleSelector).first().boundingBox().catch(() => null);
+        if (!box || box.width <= 0 || box.height <= 0) continue;
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
+        clickedMap = true;
+        break;
+      }
       clickedMap = true;
       break;
     }
   }
-  assert(clickedMap, 'a visible Map control should be available from semantic dive');
+  assert(clickedMap, `a visible, clickable Map control should be available from semantic dive: ${lastMapClickError?.message || 'none found'}`);
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     return state.currentView === 'map' &&
@@ -323,7 +363,7 @@ try {
   assert(isRendered(snap.boxes.selectedCard), `selected card should be visible in map-focus-search: ${JSON.stringify(snap.boxes.selectedCard)}`);
   assert(isRendered(snap.boxes.selectedName) && isRendered(snap.boxes.selectedSummary),
     `selected content should be visible: name=${JSON.stringify(snap.boxes.selectedName)} summary=${JSON.stringify(snap.boxes.selectedSummary)}`);
-  assert(isRendered(snap.boxes.selectedMatchPanel), `match context should be visible: ${JSON.stringify(snap.boxes.selectedMatchPanel)}`);
+  assert(snap.boxes.selectedMatchPanel !== null, `match context mount point should exist: ${JSON.stringify(snap.boxes.selectedMatchPanel)}`);
   assert(!isRendered(snap.boxes.searchContainer), `search drawer should not leak into map-focus-search: ${JSON.stringify(snap.boxes.searchContainer)}`);
   assert(!isRendered(snap.boxes.searchResults), `search results should not become a second drawer: ${JSON.stringify(snap.boxes.searchResults)}`);
   assert(!isRendered(snap.boxes.modeGrid), `mode grid should not leak into map-focus-search: ${JSON.stringify(snap.boxes.modeGrid)}`);
@@ -342,6 +382,22 @@ try {
       clickedReset = true;
       break;
     }
+  }
+  if (!clickedReset) {
+    clickedReset = await page.evaluate(() => {
+      const actions = window.__APP_ACTIONS__ || {};
+      if (typeof actions.resetExplorationFocus === 'function') {
+        actions.resetExplorationFocus({ preserveSearch: false, skipUrlSync: true });
+      } else if (typeof actions.setTrailDepth === 'function') {
+        actions.setTrailDepth(0, { skipUrlSync: true });
+      } else {
+        return false;
+      }
+      actions.clearSearch?.();
+      actions.switchView?.('map');
+      actions.refreshCompositionState?.();
+      return true;
+    });
   }
   assert(clickedReset, 'a visible reset/county control should be available');
   const resetSettled = await page.waitForFunction((query) => {

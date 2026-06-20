@@ -21,7 +21,7 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 PARENT_DIR = REPO_ROOT.parent
 CRM_SQLITE = PARENT_DIR / 'crm.sqlite'
-OUTPUT_DIR = REPO_ROOT / 'scripts'
+OUTPUT_DIR = REPO_ROOT / 'public' / 'data'
 
 LEADOPS_PUBLIC_FIELDS = {
     # From leadops_leads

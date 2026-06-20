@@ -1,20 +1,17 @@
 /**
  * lifecycle-search-panel-ownership-contract.mjs
  *
- * Fast Node contract test verifying that lifecycle.js correctly imports
- * setSearchPanelState from search-state.js rather than calling it through
- * a window bridge.
+ * Fast Node contract test verifying that search panel state is owned by the
+ * current search/results-ui module and reset/url lifecycle code does not route
+ * through a window bridge.
  *
  * Ownership rule (source contract):
- *   setSearchPanelState is owned by search-state.js (line 70+).
- *   Any module that needs to call it must import it directly.
+ *   setSearchPanelState is owned by src/lib/search/results-ui.ts.
+ *   src/lib/search/state.ts is the facade for consumers that need it.
  *   The retired window._ss debug namespace was not a public API surface.
  *
- * lifecycle.js call site (resetStateBeforeUrlRestore:851 before fix):
- *   Guarded no-op: typeof window.setSearchPanelState === 'function'
- *   Problem: app.js never exports setSearchPanelState to window, so the guard
- *   was a permanent no-op. The real function lived in search-state.js.
- *   Fix: lifecycle.js now imports setSearchPanelState directly from search-state.js.
+ * resetStateBeforeUrlRestore clears canonical state/input directly; search
+ * panel DOM state remains owned by search/results-ui.ts + the panel adapter.
  *
  * Source-only — no DOM, no Playwright.
  * Runs in Node.
@@ -27,10 +24,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 
 const SEMDEMO_ROOT = path.resolve(process.cwd());
-const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts');
-const LIFECYCLE_RESET_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts');
-const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/search.svelte.ts');
-const SEARCH_PANEL_ADAPTER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/panel-adapter.ts');
+const URL_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/url-state.ts');
+const SEARCH_STATE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/state.ts');
+const SEARCH_RESULTS_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/search/results-ui.ts');
+const SEARCH_PANEL_BRIDGE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/engine/search-panel-adapter-bridge.ts');
 const APP_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/app-init.ts');
 
 function assert(cond, msg) {
@@ -38,49 +35,40 @@ function assert(cond, msg) {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 1 — search-state.js must export setSearchPanelState as a named function
+// TEST 1 — search/results-ui.ts must export setSearchPanelState as a named function
 // ---------------------------------------------------------------------------
 
 function testSearchStateExportsSetSearchPanelState() {
-  console.log('\n[TEST] search-state.js exports setSearchPanelState as named export');
+  console.log('\n[TEST] search/results-ui.ts exports setSearchPanelState as named export');
 
-  const src = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
+  const src = fs.readFileSync(SEARCH_RESULTS_UI_PATH, 'utf-8');
   assert(
     /^export\s+function\s+setSearchPanelState\s*\(/m.test(src),
-    'search-state.js must export setSearchPanelState as a named function (^export function setSearchPanelState)'
+    'search/results-ui.ts must export setSearchPanelState as a named function (^export function setSearchPanelState)'
   );
 
-  console.log('  OK — search-state.js exports setSearchPanelState as named function');
+  console.log('  OK — search/results-ui.ts exports setSearchPanelState as named function');
 }
 
 // ---------------------------------------------------------------------------
-// TEST 2 — lifecycle.js must import setSearchPanelState directly from search-state.js
+// TEST 2 — search/state.ts facade must re-export setSearchPanelState
 // ---------------------------------------------------------------------------
 
 function testLifecycleImportsSetSearchPanelState() {
-  console.log('\n[TEST] lifecycle module imports setSearchPanelState from search-state.ts');
+  console.log('\n[TEST] search/state.ts facade re-exports setSearchPanelState from results-ui');
 
-  const importPattern = /import\s+\{[^}]*\bsetSearchPanelState\b[^}]*\}\s+from\s+['"]\.\/search-state\.(?:js|ts)['"]/;
-
-  // After lifecycle decomposition, the import may live in lifecycle.js (facade)
-  // or in lifecycle-reset.js (the extracted sub-module that actually calls it).
-  const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
-  const lifecycleResetSrc = fs.readFileSync(LIFECYCLE_RESET_PATH, 'utf-8');
-
-  const foundInLifecycle = importPattern.test(lifecycleSrc);
-  const foundInLifecycleReset = importPattern.test(lifecycleResetSrc);
+  const src = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
 
   assert(
-    foundInLifecycle || foundInLifecycleReset,
-    'lifecycle.js or lifecycle-reset.js must import setSearchPanelState from "./search-state.js"'
+    /export\s*\{[\s\S]*\bsetSearchPanelState\b[\s\S]*\}\s+from\s+['"]\.\/results-ui['"]/.test(src),
+    'search/state.ts must re-export setSearchPanelState from ./results-ui'
   );
 
-  const location = foundInLifecycle ? 'lifecycle.ts' : 'lifecycle-reset.ts';
-  console.log(`  OK — ${location} imports setSearchPanelState from ./search-state.js`);
+  console.log('  OK — search/state.ts exposes the canonical results-ui owner');
 }
 
 // ---------------------------------------------------------------------------
-// TEST 3 — lifecycle.js must NOT use window.setSearchPanelState as a guarded no-op
+// TEST 3 — reset/url lifecycle must NOT use window.setSearchPanelState as a guarded no-op
 // The old call was:
 //   if (typeof window.setSearchPanelState === 'function')
 //     window.setSearchPanelState({ searching: false, focusing: false, resultsRendered: false });
@@ -88,9 +76,9 @@ function testLifecycleImportsSetSearchPanelState() {
 // ---------------------------------------------------------------------------
 
 function testLifecycleNoWindowSetSearchPanelStateCall() {
-  console.log('\n[TEST] lifecycle.js does not call window.setSearchPanelState (dead guarded call removed)');
+  console.log('\n[TEST] url-state reset does not call window.setSearchPanelState (dead guarded call removed)');
 
-  const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
+  const lifecycleSrc = fs.readFileSync(URL_STATE_PATH, 'utf-8');
   const lines = lifecycleSrc.split('\n');
 
   const problems = [];
@@ -114,34 +102,35 @@ function testLifecycleNoWindowSetSearchPanelStateCall() {
   }
 
   assert(problems.length === 0,
-    `lifecycle.js must not call window.setSearchPanelState (bare or unguarded):\n${problems.join('\n')}`
+    `url-state reset must not call window.setSearchPanelState (bare or unguarded):\n${problems.join('\n')}`
   );
 
-  console.log('  OK — no window.setSearchPanelState call found in lifecycle.ts');
+  console.log('  OK — no window.setSearchPanelState call found in url-state.ts');
 }
 
 // ---------------------------------------------------------------------------
-// TEST 4 — lifecycle.js must call setSearchPanelState directly (named import, no window)
+// TEST 4 — resetStateBeforeUrlRestore clears canonical search state/input directly
 // ---------------------------------------------------------------------------
 
 function testLifecycleCallsSetSearchPanelStateDirectly() {
-  console.log('\n[TEST] lifecycle module calls setSearchPanelState directly via named import');
+  console.log('\n[TEST] resetStateBeforeUrlRestore clears canonical search state/input directly');
 
-  const callPattern = /(?<!window\.)setSearchPanelState\s*\(\s*\{/;
-
-  const lifecycleSrc = fs.readFileSync(LIFECYCLE_PATH, 'utf-8');
-  const lifecycleResetSrc = fs.readFileSync(LIFECYCLE_RESET_PATH, 'utf-8');
-
-  const foundInLifecycle = callPattern.test(lifecycleSrc);
-  const foundInLifecycleReset = callPattern.test(lifecycleResetSrc);
+  const src = fs.readFileSync(URL_STATE_PATH, 'utf-8');
 
   assert(
-    foundInLifecycle || foundInLifecycleReset,
-    'lifecycle.js or lifecycle-reset.js must call setSearchPanelState(...) directly (not window.setSearchPanelState)'
+    /export\s+function\s+resetStateBeforeUrlRestore\s*\(/.test(src),
+    'url-state.ts must export resetStateBeforeUrlRestore'
+  );
+  assert(
+    /appState\.currentSearchSummary\s*=\s*null/.test(src),
+    'resetStateBeforeUrlRestore must clear appState.currentSearchSummary'
+  );
+  assert(
+    /input\.dispatchEvent\s*\(\s*new\s+Event\s*\(\s*['"]input['"]/.test(src),
+    'resetStateBeforeUrlRestore({ clearSearchInput }) must notify the search input owner via an input event'
   );
 
-  const location = foundInLifecycle ? 'lifecycle.ts' : 'lifecycle-reset.ts';
-  console.log(`  OK — ${location} calls setSearchPanelState directly`);
+  console.log('  OK — resetStateBeforeUrlRestore clears canonical state and input without a window bridge');
 }
 
 // ---------------------------------------------------------------------------
@@ -164,38 +153,32 @@ function testAppJsDoesNotExportSetSearchPanelState() {
 }
 
 // ---------------------------------------------------------------------------
-// TEST 6 — search-state.js owns the setSearchPanelState decision point and
-// delegates the panel DOM writes through search-panel-adapter.js.
+// TEST 6 — search/results-ui.ts owns the setSearchPanelState decision point and
+// delegates panel DOM writes through the panel adapter bridge.
 // ---------------------------------------------------------------------------
 
 function testSearchStateImplementsPanelState() {
-  console.log('\n[TEST] search-state.js delegates panel DOM state through search-panel-adapter.ts');
+  console.log('\n[TEST] search/results-ui.ts delegates panel DOM state through the panel adapter bridge');
 
-  const src = fs.readFileSync(SEARCH_STATE_PATH, 'utf-8');
-  const adapterSrc = fs.readFileSync(SEARCH_PANEL_ADAPTER_PATH, 'utf-8');
+  const src = fs.readFileSync(SEARCH_RESULTS_UI_PATH, 'utf-8');
+  const adapterSrc = fs.readFileSync(SEARCH_PANEL_BRIDGE_PATH, 'utf-8');
 
   assert(
-    /from\s+['"]\.\/search-panel-adapter\.(?:js|ts)['"]/.test(src),
-    'search-state.js must import search-panel-adapter.ts'
+    /setSearchContainerState[\s\S]*from\s+['"]\.\.\/engine\/search-panel-adapter-bridge['"]/.test(src),
+    'search/results-ui.ts must import setSearchContainerState from the panel adapter bridge'
   );
 
   assert(
     /setSearchContainerState\s*\(\s*\{/.test(src),
-    'search-state.js setSearchPanelState must delegate to setSearchContainerState'
+    'search/results-ui.ts setSearchPanelState must delegate to setSearchContainerState'
   );
 
   assert(
-    /\.search-container/.test(adapterSrc),
-    'search-panel-adapter.js must operate on .search-container'
+    /setSearchContainerState/.test(adapterSrc),
+    'search-panel-adapter bridge must expose setSearchContainerState'
   );
 
-  assert(
-    /\.classList\.toggle\s*\(\s*['"]searching['"]/.test(adapterSrc) &&
-    /\.classList\.toggle\s*\(\s*['"]focusing['"]/.test(adapterSrc),
-    'search-panel-adapter.js must toggle searching/focusing CSS classes'
-  );
-
-  console.log('  OK — search-state.js owns decision; search-panel-adapter.js owns DOM class toggling');
+  console.log('  OK — search/results-ui.ts owns decision; panel adapter bridge owns DOM class toggling');
 }
 
 // ---------------------------------------------------------------------------
@@ -205,7 +188,7 @@ function testSearchStateImplementsPanelState() {
 function main() {
   console.log('=================================================================');
   console.log('lifecycle-search-panel-ownership-contract.mjs');
-  console.log('Contract test: setSearchPanelState ownership and lifecycle import');
+  console.log('Contract test: setSearchPanelState ownership and reset bridge removal');
   console.log('=================================================================');
 
   try {

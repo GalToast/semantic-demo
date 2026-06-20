@@ -794,7 +794,17 @@
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-actions {
-        display: none;
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        flex-shrink: 0;
+    }
+
+    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) .focus-stage-neighbor-action {
+        min-height: 36px;
+        padding: 0 8px;
+        border-radius: 8px;
+        font-size: 8px;
     }
 
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(

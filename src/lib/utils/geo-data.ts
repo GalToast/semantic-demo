@@ -9,7 +9,37 @@
  * from the legacy state bridge until Phase 2+.
  */
 
-import { Vector3 } from 'three';
+// Minimal Vec3 helper (avoids pulling Three.js into the main bundle)
+class Vec3 {
+	x: number; y: number; z: number;
+	constructor(x = 0, y = 0, z = 0) { this.x = x; this.y = y; this.z = z; }
+	clone() { return new Vec3(this.x, this.y, this.z); }
+	lengthSq() { return this.x * this.x + this.y * this.y + this.z * this.z; }
+	length() { return Math.sqrt(this.lengthSq()); }
+	normalize() {
+		const len = this.length();
+		if (len > 0) { this.x /= len; this.y /= len; this.z /= len; }
+		return this;
+	}
+	crossVectors(a: Vec3, b: Vec3) {
+		this.x = a.y * b.z - a.z * b.y;
+		this.y = a.z * b.x - a.x * b.z;
+		this.z = a.x * b.y - a.y * b.x;
+		return this;
+	}
+	multiplyScalar(s: number) {
+		this.x *= s; this.y *= s; this.z *= s;
+		return this;
+	}
+	add(v: Vec3) {
+		this.x += v.x; this.y += v.y; this.z += v.z;
+		return this;
+	}
+	sub(v: Vec3) {
+		this.x -= v.x; this.y -= v.y; this.z -= v.z;
+		return this;
+	}
+}
 import { cleanOptionalValue, escapeHtml } from './dom-formatters';
 
 export interface ScatterOffset {
@@ -264,13 +294,13 @@ export function computeOverviewScatterOffsets(
 		groups.get(root)!.push(i);
 	}
 
-	const worldUp = new Vector3(0, 1, 0);
-	const fallbackAxis = new Vector3(1, 0, 0);
+	const worldUp = new Vec3(0, 1, 0);
+	const fallbackAxis = new Vec3(1, 0, 0);
 	for (const group of groups.values()) {
 		if (group.length < 2) continue;
 		group.sort((a, b) => a - b);
 
-		const centroid = new Vector3();
+		const centroid = new Vec3();
 		group.forEach((index) => {
 			const position = getPosition(index);
 			centroid.x += position.x;
@@ -282,20 +312,20 @@ export function computeOverviewScatterOffsets(
 		const normal =
 			centroid.lengthSq() > 1e-8
 				? centroid.clone().normalize()
-				: new Vector3(0, 0, 1);
-		let tangentA = new Vector3().crossVectors(normal, worldUp);
+				: new Vec3(0, 0, 1);
+		let tangentA = new Vec3().crossVectors(normal, worldUp);
 		if (tangentA.lengthSq() < 1e-8) {
-			tangentA = new Vector3().crossVectors(normal, fallbackAxis);
+			tangentA = new Vec3().crossVectors(normal, fallbackAxis);
 		}
 		tangentA.normalize();
-		const tangentB = new Vector3().crossVectors(normal, tangentA).normalize();
+		const tangentB = new Vec3().crossVectors(normal, tangentA).normalize();
 
 		const goldenAngle = Math.PI * (3 - Math.sqrt(5));
 		const maxRadius = Math.min(0.082, 0.016 + Math.sqrt(group.length) * 0.0072);
 		const minRadius = Math.min(maxRadius * 0.58, 0.012 + group.length * 0.00045);
 		const phase = seededUnit(group[0]!, group.length) * Math.PI * 2;
-		const rawOffsets: { index: number; radial: Vector3 }[] = [];
-		const groupOffsetCenter = new Vector3();
+		const rawOffsets: { index: number; radial: Vec3 }[] = [];
+		const groupOffsetCenter = new Vec3();
 
 		group.forEach((index, order) => {
 			const rank = (order + 0.5) / group.length;

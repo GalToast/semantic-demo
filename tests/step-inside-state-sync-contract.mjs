@@ -8,6 +8,8 @@
  * without relying on window globals.
  */
 
+import './helpers/svelte-rune-shim.mjs'
+
 function assert(condition, message) {
     if (!condition) throw new Error(`ASSERTION FAILED: ${message}`)
 }

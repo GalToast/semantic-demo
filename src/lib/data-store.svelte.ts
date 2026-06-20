@@ -17,7 +17,12 @@ import {
     semanticNeighborMap as semanticNeighborMapStore,
     layoutManifest as layoutManifestStore
 } from './data-store.ts'
-import type { BusinessRecord, BusinessDataResult, SemanticThreadDataResult, PositionBufferDescriptor } from '@lib/types/business'
+import type {
+    BusinessRecord,
+    BusinessDataResult,
+    SemanticThreadDataResult,
+    PositionBufferDescriptor
+} from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
 import { loadBusinessData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'

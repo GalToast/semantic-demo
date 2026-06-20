@@ -25,7 +25,6 @@ interface ThreadInspectorAdapterDeps {
     summarizeNeighborReason?: ((candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string) | null;
     getInsideRelationshipLabel?: ((candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string) | null;
     getCurrentTrailFocusIndex?: (() => number | null) | null;
-    getFocusThreadCurvePoint?: ((edge: unknown, t: number) => Point3D | null) | null;
 }
 
 // ── Module-level state ─────────────────────────────────────────────────────
@@ -33,7 +32,6 @@ interface ThreadInspectorAdapterDeps {
 let _summarizeNeighborReason: ((candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string) | null = null;
 let _getInsideRelationshipLabel: ((candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string) | null = null;
 let _getCurrentTrailFocusIndex: (() => number | null) | null = null;
-let _getFocusThreadCurvePoint: ((edge: unknown, t: number) => Point3D | null) | null = null;
 
 // ── Exports ────────────────────────────────────────────────────────────────
 
@@ -41,7 +39,6 @@ export function initThreadInspectorAdapter(deps: ThreadInspectorAdapterDeps = {}
     _summarizeNeighborReason = typeof deps.summarizeNeighborReason === 'function' ? deps.summarizeNeighborReason : null;
     _getInsideRelationshipLabel = typeof deps.getInsideRelationshipLabel === 'function' ? deps.getInsideRelationshipLabel : null;
     _getCurrentTrailFocusIndex = typeof deps.getCurrentTrailFocusIndex === 'function' ? deps.getCurrentTrailFocusIndex : null;
-    _getFocusThreadCurvePoint = typeof deps.getFocusThreadCurvePoint === 'function' ? deps.getFocusThreadCurvePoint : null;
 }
 
 export function adapter_summarizeNeighborReason(candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D): string {
@@ -56,10 +53,5 @@ export function adapter_getInsideRelationshipLabel(candidate: NeighborCandidate,
 
 export function adapter_getCurrentTrailFocusIndex(): number | null {
     if (_getCurrentTrailFocusIndex) return _getCurrentTrailFocusIndex();
-    return null;
-}
-
-export function adapter_getFocusThreadCurvePoint(edge: unknown, t: number): Point3D | null {
-    if (_getFocusThreadCurvePoint) return _getFocusThreadCurvePoint(edge, t);
     return null;
 }

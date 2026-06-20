@@ -463,7 +463,9 @@ function testWave60ExploreThreadNeighborSettleBehavior() {
         'followTargetsCurrent checks index === focusedIndex'
     )
     assert(
-        /followBtn\.disabled\s*=\s*!inspectionState\??\.active\s*\|\|\s*!!?followTargetsCurrent\s*\|\|\s*inspectionState\??\.journeyPhase\s*===\s*['"]exploring['"]/.test(tiSrc),
+        /followBtn\.disabled\s*=\s*!inspectionState\??\.active\s*\|\|\s*!!?followTargetsCurrent\s*\|\|\s*inspectionState\??\.journeyPhase\s*===\s*['"]exploring['"]/.test(
+            tiSrc
+        ),
         'followTargetsCurrent disables followBtn'
     )
     assertContains(tiSrc, 'Current Stop', 'followTargetsCurrent changes button text to Current Stop')

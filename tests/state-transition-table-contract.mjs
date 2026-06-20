@@ -347,8 +347,8 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 27: refreshCompositionState')
 assert(
-    (extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
-    extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState')),
+    extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
+        extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState'),
     'lifecycle.js must export refreshCompositionState'
 )
 console.log('  PASS')
@@ -369,8 +369,8 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 29: executeJourneyCompassAction')
 assert(
-    (extractExportedFunction(lifecycleSrc, 'executeJourneyCompassAction') ||
-    extractExportedFunction(orchestrationLifecycleSrc, 'executeJourneyCompassAction')),
+    extractExportedFunction(lifecycleSrc, 'executeJourneyCompassAction') ||
+        extractExportedFunction(orchestrationLifecycleSrc, 'executeJourneyCompassAction'),
     'lifecycle.js must export executeJourneyCompassAction'
 )
 console.log('  PASS')
@@ -380,22 +380,31 @@ console.log('  PASS')
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 30: refreshCompositionState, switchView, updateJourneyCompass')
 assert(
-    (extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
-    extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState')),
+    extractExportedFunction(lifecycleSrc, 'refreshCompositionState') ||
+        extractExportedFunction(orchestrationLifecycleSrc, 'refreshCompositionState'),
     'lifecycle.js must export refreshCompositionState'
 )
-assert((extractExportedFunction(lifecycleSrc, 'switchView') ||
-    extractExportedFunction(orchestrationLifecycleSrc, 'switchView')), 'lifecycle.js must export switchView')
-assert((extractExportedFunction(lifecycleSrc, 'updateJourneyCompass') ||
-    extractExportedFunction(orchestrationLifecycleSrc, 'updateJourneyCompass')), 'lifecycle.js must export updateJourneyCompass')
+assert(
+    extractExportedFunction(lifecycleSrc, 'switchView') ||
+        extractExportedFunction(orchestrationLifecycleSrc, 'switchView'),
+    'lifecycle.js must export switchView'
+)
+assert(
+    extractExportedFunction(lifecycleSrc, 'updateJourneyCompass') ||
+        extractExportedFunction(orchestrationLifecycleSrc, 'updateJourneyCompass'),
+    'lifecycle.js must export updateJourneyCompass'
+)
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
 // CONTRACT 31: switchView exported
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 31: switchView exported')
-assert((extractExportedFunction(lifecycleSrc, 'switchView') ||
-    extractExportedFunction(orchestrationLifecycleSrc, 'switchView')), 'lifecycle.js must export switchView')
+assert(
+    extractExportedFunction(lifecycleSrc, 'switchView') ||
+        extractExportedFunction(orchestrationLifecycleSrc, 'switchView'),
+    'lifecycle.js must export switchView'
+)
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------
@@ -469,8 +478,11 @@ console.log(`  PASS (${requiredActions.length} actions)`)
 // CONTRACT 36: dispatchNavTransition exported
 // ---------------------------------------------------------------------------
 console.log('CONTRACT 36: dispatchNavTransition')
-assert((extractExportedFunction(lifecycleSrc, 'dispatchNavTransition') ||
-    extractExportedFunction(orchestrationLifecycleSrc, 'dispatchNavTransition')), 'lifecycle.js must export dispatchNavTransition')
+assert(
+    extractExportedFunction(lifecycleSrc, 'dispatchNavTransition') ||
+        extractExportedFunction(orchestrationLifecycleSrc, 'dispatchNavTransition'),
+    'lifecycle.js must export dispatchNavTransition'
+)
 console.log('  PASS')
 
 // ---------------------------------------------------------------------------

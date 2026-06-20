@@ -45,7 +45,7 @@ const COL = {
 
 const MAX_BUSINESS_RETRIES = 3
 
-const THREAD_REQUEST_URLS_REL = ['semantic_threads_ui.dat', 'semantic_threads.dat']
+const THREAD_REQUEST_URLS_REL = ['data/semantic_threads_ui.dat', 'data/semantic_threads.dat']
 
 const THREAD_FETCH_CONFIGS: RequestInit[] = [
     { cache: 'default' },
@@ -473,7 +473,7 @@ async function _loadSemanticThreadsMainThread(requestUrls: string[]): Promise<Se
  */
 export async function loadLayoutManifest(): Promise<LayoutManifest | null> {
     try {
-        const url = buildAssetUrl(`semantic_space_layout_manifest.json?${cacheBustParam()}`)
+        const url = buildAssetUrl(`data/semantic_space_layout_manifest.json?${cacheBustParam()}`)
         const response = await fetch(url, { cache: 'no-store' })
         if (!response.ok) return null
         const manifest = (await response.json()) as LayoutManifest
@@ -527,7 +527,7 @@ async function fetchEnrichment(url: string): Promise<Record<string, LeadEnrichme
 }
 
 export async function loadLeadEnrichmentData(): Promise<Record<string, LeadEnrichment> | null> {
-    const enrichmentUrl = buildAssetUrl(`scripts/leadEnrichment.public.json?${cacheBustParam()}`)
+    const enrichmentUrl = buildAssetUrl(`data/leadEnrichment.public.json?${cacheBustParam()}`)
 
     try {
         const result = await callDataWorker<{ enrichment: Record<string, LeadEnrichment> | null }>(

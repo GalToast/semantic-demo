@@ -20,18 +20,11 @@
 import type { DemoPhase } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
-import { animateCameraToNode } from '@lib/engine/camera-choreography'
 import { setAutoRotateSuspended } from '@lib/engine/camera-controls-restore-bridge'
-const cameraControlsStaticModule = { animateCameraToNode, setAutoRotateSuspended }
-import * as focusPocketStaticModule from '@lib/journey/focus-pocket'
 import * as lifecycleStaticModule from '@lib/engine/lifecycle-bridge'
 import * as journeyCompassStaticModule from '@lib/engine/journey-compass-controller-bridge'
-import { applyPointFilterColors } from '@lib/journey/point-color'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import * as panelBindingsStaticModule from '@lib/ui/panel-bindings'
-import * as microDemoGuardsStaticModule from '@lib/demo/guards'
-import * as microDemoCameraStaticModule from '@lib/demo/camera'
-import * as microDemoUiStaticModule from '@lib/demo/ui'
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -69,7 +62,6 @@ interface JourneyCompassModule {
 
 interface JourneyModule {
     updateSelectedBusiness: typeof updateSelectedBusiness
-    applyPointFilterColors: typeof applyPointFilterColors
 }
 
 interface PanelBindingsModule {
@@ -154,11 +146,13 @@ export function resetRetryState(): void {
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
 async function loadCameraControls(): Promise<CameraControlsModule> {
-    return cameraControlsStaticModule as unknown as CameraControlsModule
+    const { animateCameraToNode } = await import('@lib/engine/camera-choreography')
+    return { animateCameraToNode, setAutoRotateSuspended } as unknown as CameraControlsModule
 }
 
 async function loadFocusPocket(): Promise<FocusPocketModule> {
-    return focusPocketStaticModule as unknown as FocusPocketModule
+    const mod = await import('@lib/journey/focus-pocket')
+    return mod as unknown as FocusPocketModule
 }
 
 async function loadLifecycle(): Promise<LifecycleModule> {
@@ -170,7 +164,7 @@ async function loadJourneyCompass(): Promise<JourneyCompassModule> {
 }
 
 async function loadJourney(): Promise<JourneyModule> {
-    return { updateSelectedBusiness, applyPointFilterColors }
+    return { updateSelectedBusiness }
 }
 
 async function loadPanelBindings(): Promise<PanelBindingsModule> {
@@ -178,15 +172,18 @@ async function loadPanelBindings(): Promise<PanelBindingsModule> {
 }
 
 async function loadMicroDemoGuards(): Promise<MicroDemoGuardsModule> {
-    return microDemoGuardsStaticModule as unknown as MicroDemoGuardsModule
+    const mod = await import('@lib/demo/guards')
+    return mod as unknown as MicroDemoGuardsModule
 }
 
 async function loadMicroDemoCamera(): Promise<MicroDemoCameraModule> {
-    return microDemoCameraStaticModule as unknown as MicroDemoCameraModule
+    const mod = await import('@lib/demo/camera')
+    return mod as unknown as MicroDemoCameraModule
 }
 
 async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
-    return microDemoUiStaticModule as unknown as MicroDemoUiModule
+    const mod = await import('@lib/demo/ui')
+    return mod as unknown as MicroDemoUiModule
 }
 
 // ── demoReset ─────────────────────────────────────────────────────────────────
@@ -224,6 +221,7 @@ async function demoReset(): Promise<void> {
     if (appState.controls) appState.controls.enabled = true
 
     updateSelectedBusiness(null)
+    const { applyPointFilterColors } = await import('@lib/journey/point-color')
     applyPointFilterColors()
     lifecycle.refreshCompositionState()
     compass.updateJourneyCompass()
@@ -251,6 +249,7 @@ async function demoFocusSetup(demoNode: number): Promise<void> {
     })
 
     updateSelectedBusiness(point, { revealCard: true })
+    const { applyPointFilterColors } = await import('@lib/journey/point-color')
     applyPointFilterColors()
     lifecycle.updateExplorationUi()
     compass.updateJourneyCompass('focus')

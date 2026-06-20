@@ -137,8 +137,17 @@ export function setSemanticDiveModeProxy(enabled: boolean): void {
     if (nextActive) {
         if (document.body) document.body.dataset.semanticDive = 'transitioning'
         setTrailDepth(2)
+        updateNavState({ mode: 'inside', surface: 'inside', trailDepth: 2 })
     } else {
+        const nav = get(navStore)
+        const search = get(searchStore)
+        const focus = focusStore()
+        const hasFocus = nav.focusedIndex != null || Boolean(focus.selectedBusiness)
+        const hasSearchIntent = Boolean(search.summary || search.query.trim().length >= 2)
+        const mode = hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'overview'
+        const surface = hasFocus && hasSearchIntent ? 'focus-search' : hasFocus ? 'focus' : hasSearchIntent ? 'search' : 'idle'
         setTrailDepth(1)
+        updateNavState({ mode, surface, trailDepth: 1 })
     }
 
     refreshCompositionState()

@@ -1,4 +1,5 @@
 import './helpers/node-window-shim.mjs'
+import './helpers/svelte-rune-shim.mjs'
 
 /**
  * Contract: selected-business narrative helpers live in ui-renderers.

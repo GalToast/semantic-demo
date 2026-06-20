@@ -31,20 +31,9 @@ const getFocusBeaconTexture = () => state.focusBeaconTexture;
 const getPinnedThreadIndex = () => state.pinnedThreadIndex;
 const getPulsePhase = () => state.pulsePhase;
 
-// ── Adapter import ──────────────────────────────────────────────────────────
-
-// adapter_getFocusThreadCurvePoint is imported via the adapter bridge
-// We define a local fallback that returns null if the adapter isn't initialized
-let _getFocusThreadCurvePoint: ((edge: unknown, t: number) => { x?: number; y?: number; z?: number } | null) | null = null;
-
-export function setFocusThreadCurvePointAdapter(adapter: (edge: unknown, t: number) => { x?: number; y?: number; z?: number } | null): void {
-    _getFocusThreadCurvePoint = adapter;
-}
-
-function adapter_getFocusThreadCurvePoint(edge: unknown, t: number): { x?: number; y?: number; z?: number } | null {
-    if (_getFocusThreadCurvePoint) return _getFocusThreadCurvePoint(edge, t);
-    return null;
-}
+// ── Direct import (was adapter bridge; moved here to keep focus/geometry.ts
+//     out of the main bundle — it imports Three.js) ─────────────────────
+import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket-geometry';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -104,8 +93,8 @@ export function writeInspectedStrandPositions(lineObject: any): void {
         for (let segment = 0; segment < focusThreadSegments; segment += 1) {
             const t0 = segment / focusThreadSegments;
             const t1 = (segment + 1) / focusThreadSegments;
-            const p0 = adapter_getFocusThreadCurvePoint(edge as any, t0) || new Vector3();
-            const p1 = adapter_getFocusThreadCurvePoint(edge as any, t1) || new Vector3();
+            const p0 = getFocusThreadCurvePoint(edge as any, t0) || new Vector3();
+            const p1 = getFocusThreadCurvePoint(edge as any, t1) || new Vector3();
             positions[offset] = Number.isFinite(p0.x) ? p0.x! : 0;
             positions[offset + 1] = Number.isFinite(p0.y) ? p0.y! : 0;
             positions[offset + 2] = Number.isFinite(p0.z) ? p0.z! : 0;

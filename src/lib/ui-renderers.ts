@@ -6,6 +6,7 @@
  */
 
 import type { BusinessRecord } from './types/business';
+import { appState } from './state/app.svelte.ts';
 
 /** Blocklist for filtering business trivia. */
 export const TRIVIA_BLOCKLIST = Object.freeze({
@@ -108,9 +109,9 @@ export function getInterestingBusinessNote(point: BusinessRecord | null): string
 }
 
 /** Build selected match narrative copy. */
-export function buildSelectedMatchNarrative(snippet: string, score: number): string {
-    if (!snippet) return '';
-    
-    const strengthLabel = score > 0.8 ? 'Strong' : score > 0.5 ? 'Good' : 'Weak';
-    return `${snippet} (${strengthLabel} match, ${(score * 100).toFixed(0)}% confidence)`;
+export function buildSelectedMatchNarrative(point: BusinessRecord | null): string {
+    if (!point) return '';
+    const summary = appState.currentSearchSummary;
+    if (summary?.reason) return summary.reason;
+    return '';
 }

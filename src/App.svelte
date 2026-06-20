@@ -12,31 +12,6 @@
       body data-* attributes the legacy production shell relies on
       (journey-compass-phase, semantic-dive, focused-node, etc.).
 -->
-<script module lang="ts">
-  // Module-level: runs once when the App.svelte module is first imported.
-  // Dispatches SEARCH_FOCUS_REQUESTED synchronously for numeric URL
-  // anchors so the focus/trail stores populate before the DOM is ready.
-  // Contract tests query the DOM right after `load` and would otherwise
-  // race the async initData/applyUrlState path.
-  // Static import: event-bus must be resolved before the early publish call below.
-  import { publish as earlyPublish, EVENTS as EARLY_EVENTS } from '@lib/orchestration/event-bus';
-  // NOTE: triggers.ts side-effect import is deferred to onMount (W5-T1).
-  // The subscribe() calls in triggers.ts register event handlers that trigger
-  // synchronous state computation (refreshCompositionState, updateJourneyCompass, etc.).
-  // Deferring until after FCP eliminates ~7,152ms of cold-load main-thread blocking.
-
-  if (typeof window !== 'undefined') {
-    const earlyParams = new URLSearchParams(window.location.search || '');
-    const earlyAnchor = earlyParams.get('anchor');
-    if (earlyAnchor) {
-      const earlyNumeric = Number(earlyAnchor);
-      if (Number.isFinite(earlyNumeric)) {
-        earlyPublish(EARLY_EVENTS.SEARCH_FOCUS_REQUESTED, { index: earlyNumeric });
-      }
-    }
-  }
-</script>
-
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
@@ -475,6 +450,7 @@
   let bodyPanelSurface = $state('');
   let bodyGraphContext = $state('');
   let bodyCompact = $state(false);
+  let bodyJourneyNavigationOwner = $state('');
   let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
   $effect(() => {
     if (typeof document === 'undefined') return;
@@ -485,6 +461,7 @@
       bodyPanelSurface = nextPanelSurface;
       bodyGraphContext = nextGraphContext;
       bodyCompact = document.body.dataset.compact === 'true';
+      bodyJourneyNavigationOwner = document.body.dataset.journeyNavigationOwner || '';
       if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
         document.body.dataset.focusSearchForced = 'true';
       } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') { // audit-ok: plain Ln() callback, not transformed
@@ -492,7 +469,7 @@
       }
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-compact', 'data-focus-panel-mode', 'data-panel-surface', 'data-graph-context'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-compact', 'data-focus-panel-mode', 'data-panel-surface', 'data-graph-context', 'data-journey-navigation-owner'] });
     sync();
     return () => obs.disconnect();
   });
@@ -521,6 +498,10 @@
   let mapModeActive = $derived(navView === 'map');
   let searchSurfaceActive = $derived((navSurface === 'search' || bodyPanelSurface === 'search') && !focusSearchForced);
   let searchFamilySurfaceActive = $derived(searchSurfaceActive || focusSearchForced);
+  let mapTrailSearchLaneActive = $derived(
+    bodyJourneyNavigationOwner === 'map-trail-strip' &&
+      (bodyPanelSurface === 'map-focus-search' || bodyPanelSurface === 'map-trail' || bodyPanelSurface === 'map-search')
+  );
   let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
 
   // Search only shows when explicitly in search AND has content
@@ -697,7 +678,7 @@
     <InfoPanelComponent open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
   {/if}
 
-  {#if idleSearchVisible}
+  {#if idleSearchVisible || mapTrailSearchLaneActive}
     <!--
       Layer 100: Search bar.
       SearchBar composes <SearchInput> + <SearchResults>, so the result list

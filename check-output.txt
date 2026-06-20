@@ -1,0 +1,326 @@
+
+> semantic-explorer@1.0.0 check:svelte
+> svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css
+
+Loading svelte-check in workspace: c:\Users\HP\repos\semantic-explorer\src
+Getting Svelte diagnostics...
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\journey\point-color.ts[39m:32:16
+[31mError[39m: Object is possibly 'undefined'. 
+[36m		nodeSporeSyncColor.setRGB(
+			Math.min(1, [35mcolors[colorOffset][36m * 1.62),
+			Math.min(1, colors[colorOffset + 1] * 1.62),[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\journey\point-color.ts[39m:33:16
+[31mError[39m: Object is possibly 'undefined'. 
+[36m			Math.min(1, colors[colorOffset] * 1.62),
+			Math.min(1, [35mcolors[colorOffset + 1][36m * 1.62),
+			Math.min(1, colors[colorOffset + 2] * 1.62)[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\journey\point-color.ts[39m:34:16
+[31mError[39m: Object is possibly 'undefined'. 
+[36m			Math.min(1, colors[colorOffset + 1] * 1.62),
+			Math.min(1, [35mcolors[colorOffset + 2][36m * 1.62)
+		);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\journey\point-color.ts[39m:59:17
+[31mError[39m: '_state.pointsMesh.geometry.attributes.color' is possibly 'undefined'. 
+[36m	if (_state.filterColorStateKey === colorStateKey) return;
+	const colors = [35m_state.pointsMesh.geometry.attributes.color[36m.array;
+	const focusLocalIndices = _state.navState.focusedIndex !== null[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\journey\point-color.ts[39m:120:2
+[31mError[39m: '_state.pointsMesh.geometry.attributes.color' is possibly 'undefined'. 
+[36m	}
+	[35m_state.pointsMesh.geometry.attributes.color[36m.needsUpdate = true;
+	_state.pointColorStateVersion += 1;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\node-manager.ts[39m:417:9
+[31mError[39m: 'state.pointBaseColors' is possibly 'null'. 
+[36m
+        [35mstate.pointBaseColors[36m[colorOffset] = baseR;
+        state.pointBaseColors[colorOffset + 1] = baseG;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\node-manager.ts[39m:418:9
+[31mError[39m: 'state.pointBaseColors' is possibly 'null'. 
+[36m        state.pointBaseColors[colorOffset] = baseR;
+        [35mstate.pointBaseColors[36m[colorOffset + 1] = baseG;
+        state.pointBaseColors[colorOffset + 2] = baseB;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\node-manager.ts[39m:419:9
+[31mError[39m: 'state.pointBaseColors' is possibly 'null'. 
+[36m        state.pointBaseColors[colorOffset + 1] = baseG;
+        [35mstate.pointBaseColors[36m[colorOffset + 2] = baseB;
+        colors.push(baseR, baseG, baseB);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\mycelium-engine.ts[39m:82:79
+[31mError[39m: Object is possibly 'undefined'. 
+[36m                    for (const j of cell) {
+                        if (j <= i || !state.points[i] || !state.points[j] || [35mstate.points[i][36m.cluster !== state.points[j].cluster) continue;
+                        const target = state.nodePositions[j];[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:99:72
+[31mError[39m: Argument of type '(petal: SpriteLike) => boolean' is not assignable to parameter of type '(value: Mesh<BufferGeometry<NormalBufferAttributes, BufferGeometryEventMap>, Material<MaterialEventMap> | Material<...>[], Object3DEventMap>, index: number, array: Mesh<...>[]) => unknown'.
+  Types of parameters 'petal' and 'value' are incompatible.
+    Type 'Mesh<BufferGeometry<NormalBufferAttributes, BufferGeometryEventMap>, Material<MaterialEventMap> | Material<...>[], Object3DEventMap>' is not assignable to type 'SpriteLike'.
+      Types of property 'material' are incompatible.
+        Type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]' is not assignable to type 'Material<MaterialEventMap> & { opacity: number; rotation?: number | undefined; }'.
+          Type 'Material<MaterialEventMap>[]' is not assignable to type 'Material<MaterialEventMap> & { opacity: number; rotation?: number | undefined; }'.
+            Type 'Material<MaterialEventMap>[]' is missing the following properties from type 'Material<MaterialEventMap>': isMaterial, uuid, type, version, and 57 more. 
+[36m    const targetOpacity = hasFocus ? (isInside ? 0.75 : 0.65) : 0;
+    state.focusPetalGroup.visible = hasFocus || state.focusPetals.some([35m(petal: SpriteLike) => petal.material.opacity > 0.01[36m);
+    if (hasFocus) {[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:109:31
+[31mError[39m: Argument of type '(petal: SpriteLike, index: number) => void' is not assignable to parameter of type '(value: Mesh<BufferGeometry<NormalBufferAttributes, BufferGeometryEventMap>, Material<MaterialEventMap> | Material<...>[], Object3DEventMap>, index: number, array: Mesh<...>[]) => void'.
+  Types of parameters 'petal' and 'value' are incompatible.
+    Type 'Mesh<BufferGeometry<NormalBufferAttributes, BufferGeometryEventMap>, Material<MaterialEventMap> | Material<...>[], Object3DEventMap>' is not assignable to type 'SpriteLike'.
+      Types of property 'material' are incompatible.
+        Type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]' is not assignable to type 'Material<MaterialEventMap> & { opacity: number; rotation?: number | undefined; }'.
+          Type 'Material<MaterialEventMap>[]' is not assignable to type 'Material<MaterialEventMap> & { opacity: number; rotation?: number | undefined; }'.
+            Type 'Material<MaterialEventMap>[]' is missing the following properties from type 'Material<MaterialEventMap>': isMaterial, uuid, type, version, and 57 more. 
+[36m
+    state.focusPetals.forEach([35m(petal: SpriteLike, index: number) => {[36m
+        const data = petal.userData || {};[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:137:35
+[31mError[39m: Property 'opacity' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'opacity' does not exist on type 'Material<MaterialEventMap>[]'. 
+[36m    const targetOpacity = hasFocus ? (isInside ? 0.62 : 0.50) : 0;
+    state.focusFilaments.material.[35mopacity[36m += (targetOpacity - state.focusFilaments.material.opacity) * 0.1;
+    state.focusFilaments.visible = state.focusFilaments.material.opacity > 0.01;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:137:93
+[31mError[39m: Property 'opacity' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'opacity' does not exist on type 'Material<MaterialEventMap>[]'. 
+[36m    const targetOpacity = hasFocus ? (isInside ? 0.62 : 0.50) : 0;
+    state.focusFilaments.material.opacity += (targetOpacity - state.focusFilaments.material.[35mopacity[36m) * 0.1;
+    state.focusFilaments.visible = state.focusFilaments.material.opacity > 0.01;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:138:66
+[31mError[39m: Property 'opacity' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'opacity' does not exist on type 'Material<MaterialEventMap>[]'. 
+[36m    state.focusFilaments.material.opacity += (targetOpacity - state.focusFilaments.material.opacity) * 0.1;
+    state.focusFilaments.visible = state.focusFilaments.material.[35mopacity[36m > 0.01;
+    if (!hasFocus) {[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:210:29
+[31mError[39m: Argument of type '{}' is not assignable to parameter of type 'Object3D<Object3DEventMap>'.
+  Type '{}' is missing the following properties from type 'Object3D<Object3DEventMap>': isObject3D, id, uuid, name, and 74 more. 
+[36m    if (state.anchorBloomLight) {
+        state.scene?.remove([35mstate.anchorBloomLight[36m);
+        state.anchorBloomLight.dispose?.();[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:211:32
+[31mError[39m: Property 'dispose' does not exist on type '{}'. 
+[36m        state.scene?.remove(state.anchorBloomLight);
+        state.anchorBloomLight.[35mdispose[36m?.();
+        state.anchorBloomLight = null;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:382:5
+[31mError[39m: Property 'isGroup' is missing in type 'LineSegments<BufferGeometry<NormalBufferAttributes, BufferGeometryEventMap>, ShaderMaterial, Object3DEventMap>' but required in type 'Group<Object3DEventMap>'. 
+[36m    });
+    [35mstate.semanticLensSpokes[36m = new LineSegments(spokeGeo, spokeMat);
+    state.semanticLensGroup.add(state.semanticLensSpokes);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:383:33
+[31mError[39m: Argument of type 'Group<Object3DEventMap> | null' is not assignable to parameter of type 'Object3D<Object3DEventMap>'.
+  Type 'null' is not assignable to type 'Object3D<Object3DEventMap>'. 
+[36m    state.semanticLensSpokes = new LineSegments(spokeGeo, spokeMat);
+    state.semanticLensGroup.add([35mstate.semanticLensSpokes[36m);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:424:28
+[31mError[39m: Argument of type '{}' is not assignable to parameter of type 'Object3D<Object3DEventMap>'.
+  Type '{}' is missing the following properties from type 'Object3D<Object3DEventMap>': isObject3D, id, uuid, name, and 74 more. 
+[36m    if (state.anchorBloomLight) {
+        state.scene.remove([35mstate.anchorBloomLight[36m);
+        state.anchorBloomLight.dispose?.();[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:425:32
+[31mError[39m: Property 'dispose' does not exist on type '{}'. 
+[36m        state.scene.remove(state.anchorBloomLight);
+        state.anchorBloomLight.[35mdispose[36m?.();
+        state.anchorBloomLight = null;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:448:34
+[31mError[39m: Property 'opacity' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'opacity' does not exist on type 'Material<MaterialEventMap>[]'. 
+[36m    if (state.hoverHalo) {
+        state.hoverHalo.material.[35mopacity[36m = 0;
+        state.hoverHalo.visible = false;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:468:38
+[31mError[39m: Property 'color' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'color' does not exist on type 'Material<MaterialEventMap>'. 
+[36m        if (isActive) {
+            state.focusCore.material.[35mcolor[36m.setHex(0xeafffb);
+            const corePulse = 1.0 + Math.sin(time * 1.2) * 0.09;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:472:38
+[31mError[39m: Property 'color' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'color' does not exist on type 'Material<MaterialEventMap>'. 
+[36m        } else if (hasFocus) {
+            state.focusCore.material.[35mcolor[36m.setHex(0xcffcf4);
+            const corePulse = isInside[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:479:34
+[31mError[39m: Property 'opacity' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'opacity' does not exist on type 'Material<MaterialEventMap>[]'. 
+[36m
+        state.focusCore.material.[35mopacity[36m += (coreTargetOpacity - state.focusCore.material.opacity) * 0.15;
+        state.focusCore.visible = state.focusCore.material.opacity > 0.01;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:479:91
+[31mError[39m: Property 'opacity' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'opacity' does not exist on type 'Material<MaterialEventMap>[]'. 
+[36m
+        state.focusCore.material.opacity += (coreTargetOpacity - state.focusCore.material.[35mopacity[36m) * 0.15;
+        state.focusCore.visible = state.focusCore.material.opacity > 0.01;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:480:60
+[31mError[39m: Property 'opacity' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'opacity' does not exist on type 'Material<MaterialEventMap>[]'. 
+[36m        state.focusCore.material.opacity += (coreTargetOpacity - state.focusCore.material.opacity) * 0.15;
+        state.focusCore.visible = state.focusCore.material.[35mopacity[36m > 0.01;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:513:63
+[31mError[39m: Property 'uniforms' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'uniforms' does not exist on type 'Material<MaterialEventMap>'. 
+[36m        const group = state.semanticLensGroup;
+        const glowUniforms = state.semanticLensGlow.material?.[35muniforms[36m;
+        const spokes = state.semanticLensSpokes;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:522:42
+[31mError[39m: 'focusPos' is possibly 'undefined'. 
+[36m            const focusPos = state.nodePositions[focusIdx];
+            const worldPos = new Vector3([35mfocusPos[36m.x, focusPos.y, focusPos.z);
+            if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:522:54
+[31mError[39m: 'focusPos' is possibly 'undefined'. 
+[36m            const focusPos = state.nodePositions[focusIdx];
+            const worldPos = new Vector3(focusPos.x, [35mfocusPos[36m.y, focusPos.z);
+            if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:522:66
+[31mError[39m: 'focusPos' is possibly 'undefined'. 
+[36m            const focusPos = state.nodePositions[focusIdx];
+            const worldPos = new Vector3(focusPos.x, focusPos.y, [35mfocusPos[36m.z);
+            if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:537:41
+[31mError[39m: Property 'geometry' does not exist on type 'Group<Object3DEventMap>'. 
+[36m
+            const positionAttr = spokes.[35mgeometry[36m.attributes.position;
+            const alphaAttr = spokes.geometry.attributes.alpha;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:538:38
+[31mError[39m: Property 'geometry' does not exist on type 'Group<Object3DEventMap>'. 
+[36m            const positionAttr = spokes.geometry.attributes.position;
+            const alphaAttr = spokes.[35mgeometry[36m.attributes.alpha;
+            const positions = positionAttr.array;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:550:55
+[31mError[39m: 'neighborPos' is possibly 'undefined'. 
+[36m                    const neighborPos = state.nodePositions[neighborIndex];
+                    const neighborWorld = new Vector3([35mneighborPos[36m.x, neighborPos.y, neighborPos.z);
+                    if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(neighborWorld);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:550:70
+[31mError[39m: 'neighborPos' is possibly 'undefined'. 
+[36m                    const neighborPos = state.nodePositions[neighborIndex];
+                    const neighborWorld = new Vector3(neighborPos.x, [35mneighborPos[36m.y, neighborPos.z);
+                    if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(neighborWorld);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:550:85
+[31mError[39m: 'neighborPos' is possibly 'undefined'. 
+[36m                    const neighborPos = state.nodePositions[neighborIndex];
+                    const neighborWorld = new Vector3(neighborPos.x, neighborPos.y, [35mneighborPos[36m.z);
+                    if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(neighborWorld);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:580:38
+[31mError[39m: Property 'uniforms' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'uniforms' does not exist on type 'Material<MaterialEventMap>'. 
+[36m
+        if (state.focusLens.material.[35muniforms[36m) {
+            state.focusLens.material.uniforms.opacity.value += (targetOpacity - state.focusLens.material.uniforms.opacity.value) * lerpSpeed;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:581:38
+[31mError[39m: Property 'uniforms' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'uniforms' does not exist on type 'Material<MaterialEventMap>'. 
+[36m        if (state.focusLens.material.uniforms) {
+            state.focusLens.material.[35muniforms[36m.opacity.value += (targetOpacity - state.focusLens.material.uniforms.opacity.value) * lerpSpeed;
+            state.focusLens.material.uniforms.time.value = time;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:581:106
+[31mError[39m: Property 'uniforms' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'uniforms' does not exist on type 'Material<MaterialEventMap>'. 
+[36m        if (state.focusLens.material.uniforms) {
+            state.focusLens.material.uniforms.opacity.value += (targetOpacity - state.focusLens.material.[35muniforms[36m.opacity.value) * lerpSpeed;
+            state.focusLens.material.uniforms.time.value = time;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:582:38
+[31mError[39m: Property 'uniforms' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'uniforms' does not exist on type 'Material<MaterialEventMap>'. 
+[36m            state.focusLens.material.uniforms.opacity.value += (targetOpacity - state.focusLens.material.uniforms.opacity.value) * lerpSpeed;
+            state.focusLens.material.[35muniforms[36m.time.value = time;
+            state.focusLens.material.uniforms.color.value.setHex(isDiving ? 0xd8fff8 : 0x9fffee);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:583:38
+[31mError[39m: Property 'uniforms' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'uniforms' does not exist on type 'Material<MaterialEventMap>'. 
+[36m            state.focusLens.material.uniforms.time.value = time;
+            state.focusLens.material.[35muniforms[36m.color.value.setHex(isDiving ? 0xd8fff8 : 0x9fffee);
+        }[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:585:60
+[31mError[39m: Property 'uniforms' does not exist on type 'Material<MaterialEventMap> | Material<MaterialEventMap>[]'.
+  Property 'uniforms' does not exist on type 'Material<MaterialEventMap>'. 
+[36m        }
+        state.focusLens.visible = state.focusLens.material.[35muniforms[36m?.opacity?.value > 0.01;[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:611:32
+[31mError[39m: Property 'intensity' does not exist on type '{}'. 
+[36m        const targetIntensity = hasFocus ? (isInside ? 0.62 : 0.24) : 0.0;
+        state.anchorBloomLight.[35mintensity[36m += (targetIntensity - state.anchorBloomLight.intensity) * 0.08;
+        if (hasFocus && state.nodePositions[focusIdx]) {[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:611:87
+[31mError[39m: Property 'intensity' does not exist on type '{}'. 
+[36m        const targetIntensity = hasFocus ? (isInside ? 0.62 : 0.24) : 0.0;
+        state.anchorBloomLight.intensity += (targetIntensity - state.anchorBloomLight.[35mintensity[36m) * 0.08;
+        if (hasFocus && state.nodePositions[focusIdx]) {[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:614:36
+[31mError[39m: Property 'position' does not exist on type '{}'. 
+[36m            const pos = state.nodePositions[focusIdx];
+            state.anchorBloomLight.[35mposition[36m.set(pos.x, pos.y, pos.z);
+            if (state.pointsMesh?.localToWorld) state.anchorBloomLight.position.applyMatrix4(state.pointsMesh.matrixWorld);[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:615:17
+[31mError[39m: This condition will always return true since this function is always defined. Did you mean to call it instead? 
+[36m            state.anchorBloomLight.position.set(pos.x, pos.y, pos.z);
+            if ([35mstate.pointsMesh?.localToWorld[36m) state.anchorBloomLight.position.applyMatrix4(state.pointsMesh.matrixWorld);
+        }[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:615:72
+[31mError[39m: Property 'position' does not exist on type '{}'. 
+[36m            state.anchorBloomLight.position.set(pos.x, pos.y, pos.z);
+            if (state.pointsMesh?.localToWorld) state.anchorBloomLight.[35mposition[36m.applyMatrix4(state.pointsMesh.matrixWorld);
+        }[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:617:32
+[31mError[39m: Property 'visible' does not exist on type '{}'. 
+[36m        }
+        state.anchorBloomLight.[35mvisible[36m = state.anchorBloomLight.intensity > 0.01;
+    }[39m
+
+c:\Users\HP\repos\semantic-explorer\src\[32mlib\engine\three-interaction-visuals.ts[39m:617:65
+[31mError[39m: Property 'intensity' does not exist on type '{}'. 
+[36m        }
+        state.anchorBloomLight.visible = state.anchorBloomLight.[35mintensity[36m > 0.01;
+    }[39m
+
+====================================
+[31msvelte-check found 48 errors and 0 warnings in 4 files
+[39m

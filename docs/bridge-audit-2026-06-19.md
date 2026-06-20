@@ -11,40 +11,40 @@
 
 ## Single-caller bridges (1 ref each)
 
-| Path                                                  | Bytes | Notes                                                  |
-| ----------------------------------------------------- | ----: | ------------------------------------------------------ |
-| `lib/engine/adapters/lifecycle-bridge.ts`             | 22,973| The big one — see "dead subfolder" below               |
-| `lib/engine/adapters/camera-bridge.ts`               |  3,976 |                                                        |
-| `lib/engine/camera-orbit-slack-bridge.ts`             |    481 |                                                        |
-| `lib/engine/weather-ui-bridge.ts`                     |    431 |                                                        |
-| `lib/engine/event-bindings-bridge.ts`                 |    406 |                                                        |
-| `lib/engine/role-label-bridge.ts`                     |    394 |                                                        |
-| `lib/engine/focus-pocket-bridge.ts`                   |    368 |                                                        |
-| `lib/engine/scene-reveal-bridge.ts`                   |    364 |                                                        |
-| `lib/engine/inspected-strand-overlay-bridge.ts`       |    354 |                                                        |
-| `lib/engine/focus-anchor-indicator-bridge.ts`         |    348 |                                                        |
-| `lib/engine/ui-feedback-bridge.ts`                    |    346 |                                                        |
-| `lib/engine/route-arrival-overlay-bridge.ts`          |    342 |                                                        |
-| `lib/engine/loading-ui-bridge.ts`                     |    302 |                                                        |
-| `lib/engine/map-flattening-layout-bridge.ts`          |    287 |                                                        |
-| `lib/engine/cluster-labels-bridge.ts`                 |    286 |                                                        |
-| `lib/engine/mycelium-engine-bridge.ts`                |    284 |                                                        |
-| `lib/engine/audio-scape-bridge.ts`                    |    279 |                                                        |
-| `lib/engine/three-interaction-visuals-bridge.ts`      |    237 |                                                        |
-| `lib/engine/three-search-animations-bridge.ts`        |    229 |                                                        |
+| Path                                             |  Bytes | Notes                                    |
+| ------------------------------------------------ | -----: | ---------------------------------------- |
+| `lib/engine/adapters/lifecycle-bridge.ts`        | 22,973 | The big one — see "dead subfolder" below |
+| `lib/engine/adapters/camera-bridge.ts`           |  3,976 |                                          |
+| `lib/engine/camera-orbit-slack-bridge.ts`        |    481 |                                          |
+| `lib/engine/weather-ui-bridge.ts`                |    431 |                                          |
+| `lib/engine/event-bindings-bridge.ts`            |    406 |                                          |
+| `lib/engine/role-label-bridge.ts`                |    394 |                                          |
+| `lib/engine/focus-pocket-bridge.ts`              |    368 |                                          |
+| `lib/engine/scene-reveal-bridge.ts`              |    364 |                                          |
+| `lib/engine/inspected-strand-overlay-bridge.ts`  |    354 |                                          |
+| `lib/engine/focus-anchor-indicator-bridge.ts`    |    348 |                                          |
+| `lib/engine/ui-feedback-bridge.ts`               |    346 |                                          |
+| `lib/engine/route-arrival-overlay-bridge.ts`     |    342 |                                          |
+| `lib/engine/loading-ui-bridge.ts`                |    302 |                                          |
+| `lib/engine/map-flattening-layout-bridge.ts`     |    287 |                                          |
+| `lib/engine/cluster-labels-bridge.ts`            |    286 |                                          |
+| `lib/engine/mycelium-engine-bridge.ts`           |    284 |                                          |
+| `lib/engine/audio-scape-bridge.ts`               |    279 |                                          |
+| `lib/engine/three-interaction-visuals-bridge.ts` |    237 |                                          |
+| `lib/engine/three-search-animations-bridge.ts`   |    229 |                                          |
 
 ## Multi-caller bridges (worth keeping as bridges)
 
-| Path                                       | Refs | Bytes | Why keep                              |
-| ------------------------------------------ | ---: | ----: | ------------------------------------- |
-| `lib/engine/state-bridge.ts`               |   62 | 1,018 | Public state passthrough, high traffic |
-| `lib/engine/lifecycle-bridge.ts` (top)     |   16 | 1,972 | Public lifecycle hook                |
-| `lib/engine/window-actions-bridge.ts`      |    7 | 1,035 | Window-bound action surface          |
-| `lib/engine/thread-inspector-bridge.ts`    |    5 |   469 |                                          |
-| `lib/engine/journey-thread-settler-bridge.ts` | 5 |   436 |                                          |
-| `lib/engine/journey-webgl-bridge.ts`       |    4 |   977 |                                          |
-| `lib/engine/journey-compass-controller-bridge.ts` | 4 |   753 |                                      |
-| `lib/engine/camera-controls-restore-bridge.ts` | 4 |   675 |                                        |
+| Path                                              | Refs | Bytes | Why keep                               |
+| ------------------------------------------------- | ---: | ----: | -------------------------------------- |
+| `lib/engine/state-bridge.ts`                      |   62 | 1,018 | Public state passthrough, high traffic |
+| `lib/engine/lifecycle-bridge.ts` (top)            |   16 | 1,972 | Public lifecycle hook                  |
+| `lib/engine/window-actions-bridge.ts`             |    7 | 1,035 | Window-bound action surface            |
+| `lib/engine/thread-inspector-bridge.ts`           |    5 |   469 |                                        |
+| `lib/engine/journey-thread-settler-bridge.ts`     |    5 |   436 |                                        |
+| `lib/engine/journey-webgl-bridge.ts`              |    4 |   977 |                                        |
+| `lib/engine/journey-compass-controller-bridge.ts` |    4 |   753 |                                        |
+| `lib/engine/camera-controls-restore-bridge.ts`    |    4 |   675 |                                        |
 
 ## 🚨 Dead-code spot — `src/lib/engine/adapters/`
 
@@ -72,14 +72,14 @@ external path is through `index.ts`.
 
 ### Recommended retirement
 
-| Action | File                                | Bytes  |
-| ------ | ----------------------------------- | -----: |
-| Delete | `src/lib/engine/adapters/core.ts`   | ≈ 200  |
-| Delete | `src/lib/engine/adapters/camera-bridge.ts` | 3,976 |
-| Delete | `src/lib/engine/adapters/lifecycle-bridge.ts` | 22,973 |
-| Delete | `src/lib/engine/adapters/search-bridge.ts` | 5,285 |
-| Delete | `src/lib/engine/adapters/types.ts`  | ≈ 500  |
-| **Total** |                              | **~32,934** |
+| Action    | File                                          |       Bytes |
+| --------- | --------------------------------------------- | ----------: |
+| Delete    | `src/lib/engine/adapters/core.ts`             |       ≈ 200 |
+| Delete    | `src/lib/engine/adapters/camera-bridge.ts`    |       3,976 |
+| Delete    | `src/lib/engine/adapters/lifecycle-bridge.ts` |      22,973 |
+| Delete    | `src/lib/engine/adapters/search-bridge.ts`    |       5,285 |
+| Delete    | `src/lib/engine/adapters/types.ts`            |       ≈ 500 |
+| **Total** |                                               | **~32,934** |
 
 ### Blocked step
 

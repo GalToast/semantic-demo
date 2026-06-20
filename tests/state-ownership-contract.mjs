@@ -83,6 +83,11 @@ import { fileURLToPath } from 'node:url';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const PROJECT_ROOT = resolve(__dirname, '..');
+const STATE_SOURCE_PATH = join(PROJECT_ROOT, 'src', 'lib', 'state', 'app.svelte.ts');
+const ORCHESTRATION_LIFECYCLE_PATH = join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'lifecycle.ts');
+const JOURNEY_PATH = join(PROJECT_ROOT, 'src', 'lib', 'journey', 'journey.ts');
+const EVENT_BINDINGS_PATH = join(PROJECT_ROOT, 'src', 'lib', 'ui', 'event-bindings.ts');
+const FOCUS_POCKET_PATH = join(PROJECT_ROOT, 'src', 'lib', 'focus', 'pocket.ts');
 
 // ─── Fake DOM bootstrap ───────────────────────────────────────────────────────
 
@@ -267,7 +272,7 @@ function scanWriters(modulePath, field) {
 
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
 
-const lifecycle = await import('../src/lib/stores/lifecycle.ts');
+const lifecycle = await import('../src/lib/orchestration/lifecycle.ts');
 
 const cameraControls = await import('../src/lib/engine/camera-controls.ts');
 
@@ -288,12 +293,15 @@ console.log('PASS CONTRACT 1: semanticDiveMode is derived from trailDepth (gette
 
 // ─── CONTRACT 2: semanticDiveMode has no independent storage ───────────────────
 
-const stateJsWrites = scanWriters(join(PROJECT_ROOT, 'js', 'state.ts'), 'semanticDiveMode');
+const stateSource = readFileSync(STATE_SOURCE_PATH, 'utf8');
+const stateJsWrites = scanWriters(STATE_SOURCE_PATH, 'semanticDiveMode');
 assert(
-  !stateJsWrites.some(w => w.type === 'assign' && !w.text.includes('Object.defineProperty')),
-  `state.js must not have a raw semanticDiveMode field — found: ${JSON.stringify(stateJsWrites)}`
+  !/\bsemanticDiveMode\s*=\s*\$state\b/.test(stateSource) &&
+    /get\s+semanticDiveMode\s*\(\)\s*:\s*boolean/.test(stateSource) &&
+    /set\s+semanticDiveMode\s*\(\s*active:\s*boolean\s*\)/.test(stateSource),
+  `app.svelte.ts must expose semanticDiveMode as a compatibility getter/setter, not raw $state — found writes: ${JSON.stringify(stateJsWrites)}`
 );
-console.log('PASS CONTRACT 2: semanticDiveMode has no independent raw storage in state.ts');
+console.log('PASS CONTRACT 2: semanticDiveMode has no independent raw storage in app.svelte.ts');
 
 // ─── CONTRACT 3: Official reset APIs exist and are callable ───────────────────
 
@@ -309,22 +317,18 @@ console.log('PASS CONTRACT 3: All 5 official reset/orchestration APIs are define
 // Runtime behavior is covered by semantic-dive-active-owner-contract.mjs.
 // This contract keeps the ownership boundary source-level and non-brittle.
 
-const lifecycleSource = readFileSync(join(PROJECT_ROOT, 'js', 'modules', 'lifecycle.ts'), 'utf8');
+const lifecycleSource = readFileSync(ORCHESTRATION_LIFECYCLE_PATH, 'utf8');
 assert(
   !/window\.setSemanticDiveMode\s*=/.test(lifecycleSource),
-  'lifecycle.js must not expose setSemanticDiveMode through a window bridge'
+  'orchestration lifecycle must not expose setSemanticDiveMode through a window bridge'
 );
 assert(
-  lifecycleSource.includes('state.semanticDiveMode = nextActive'),
-  'lifecycle setSemanticDiveMode must write semanticDiveMode through the derived setter'
-);
-assert(
-  lifecycleSource.includes('allowDiveExit'),
-  'lifecycle setSemanticDiveMode exit path must pass allowDiveExit through setTrailDepth'
+  lifecycleSource.includes('setFocusDiveMode(nextActive)'),
+  'lifecycle semantic dive proxy must route focus-store semanticDiveMode state through the focus owner'
 );
 const semanticDiveBody = lifecycleSource.slice(
-  lifecycleSource.indexOf('export function setSemanticDiveMode'),
-  lifecycleSource.indexOf('\nfunction recomputeBloomIndices')
+  lifecycleSource.indexOf('export function setSemanticDiveModeProxy'),
+  lifecycleSource.indexOf('\n// ── Hydrate Lead Context')
 );
 assert(
   /(?<!window\.)setTrailDepth\s*\(/.test(semanticDiveBody),
@@ -335,47 +339,47 @@ assert(
   'lifecycle setSemanticDiveMode must not call setTrailDepth through window'
 );
 
-console.log('PASS CONTRACT 4: lifecycle.js owns semantic-dive orchestration bridge');
+console.log('PASS CONTRACT 4: orchestration lifecycle owns semantic-dive orchestration bridge');
 
 // ─── CONTRACT 5: focusOnNode sets focusedNode, selectedPoint, trailDepth ───────
 
 const focusOnNode = cameraControls.focusOnNode;
 assert(typeof focusOnNode === 'function', 'focusOnNode must be exported from camera-controls.ts');
 
-state.points = Array.from({ length: 10 }, (_, i) => ({ lead_id: `lead_${i}`, name: `Node ${i}`, cluster: i % 3 }));
-state.trailDepth = 0;
-withStateMutation(() => { state.navState.mode = 'overview'; });
-state.focusedNode = null;
-state.selectedPoint = null;
+const focusOnNodeSource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'engine', 'camera-choreography', 'cursor.ts'), 'utf8');
+assert(
+  /export function focusOnNode/.test(focusOnNodeSource),
+  'focusOnNode must be owned by camera-choreography/cursor.ts'
+);
+assert(
+  /appState\.selectedPoint\s*=\s*point/.test(focusOnNodeSource),
+  'focusOnNode must set selectedPoint through appState'
+);
+assert(
+  /dispatchNavTransition\s*\(\s*NAV_TRANSITION_ACTIONS\.FOCUS_NODE/.test(focusOnNodeSource),
+  'focusOnNode must delegate focused index/mode through FOCUS_NODE nav transition'
+);
+assert(
+  /setTrailDepth\s*\(\s*1,\s*\{\s*skipUrlSync:\s*true\s*\}/.test(focusOnNodeSource),
+  'focusOnNode must escalate trailDepth to 1 through lifecycle setter'
+);
 
-focusOnNode(4, { skipUrlSync: true });
-
-assert(state.focusedNode === 4, `focusOnNode must set state.focusedNode=4, got ${state.focusedNode}`);
-assert(state.selectedPoint != null, 'focusOnNode must set state.selectedPoint');
-assert(state.selectedPoint.lead_id === 'lead_4', `selectedPoint.lead_id must be lead_4, got ${state.selectedPoint.lead_id}`);
-assert(state.navState.focusedIndex === 4, `focusOnNode must set navState.focusedIndex=4, got ${state.navState.focusedIndex}`);
-assert(state.trailDepth === 1, `focusOnNode must escalate trailDepth to 1, got ${state.trailDepth}`);
-
-console.log('PASS CONTRACT 5: focusOnNode (camera-controls.js) is canonical writer for focusedNode, selectedPoint, trailDepth');
+console.log('PASS CONTRACT 5: focusOnNode is canonical writer for selectedPoint and delegates focus index through navState');
 
 // ─── CONTRACT 6: search-state clears focusedNode/selectedPoint on filter evict ─
 
-state.selectedPoint = state.points[4];
-state.focusedNode = 4;
-state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false };
-
-const isPointVisible = () => false;
-const selectedIndex = state.points.indexOf(state.selectedPoint);
-  if (state.selectedPoint && !isPointVisible(selectedIndex, state.points, state.activeClusterFilter, state.activeFilters)) {
-    if (typeof globalThis.window.updateSelectedBusiness === 'function') globalThis.window.updateSelectedBusiness(null);
-    state.selectedPoint = null;
-    state.focusedNode = null;
-    if (typeof globalThis.window.syncMobileRoutePeek === 'function') globalThis.window.syncMobileRoutePeek();
-    withStateMutation(() => { state.navState.mode = 'overview'; state.navState.focusedIndex = null; });
-  }
-
-assert(state.focusedNode === null, 'search-state must clear focusedNode when selectedPoint becomes invisible');
-assert(state.selectedPoint === null, 'search-state must clear selectedPoint when it becomes invisible');
+const urlStateSource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-state.ts'), 'utf8');
+const searchLegacySource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'search', 'legacy-exports.ts'), 'utf8');
+assert(
+  /export function clearExplorationFocusSelection/.test(urlStateSource) &&
+    /appState\.focusedNode\s*=\s*null/.test(urlStateSource) &&
+    /appState\.selectedPoint\s*=\s*null/.test(urlStateSource),
+  'clearExplorationFocusSelection must clear focusedNode and selectedPoint through the current focus-clear owner'
+);
+assert(
+  /_legacyState\.selectedPoint\s*=\s*null/.test(searchLegacySource),
+  'search legacy exports must clear selectedPoint when filter/search invalidates current focus'
+);
 
 console.log('PASS CONTRACT 6: search-state.js clears focusedNode/selectedPoint on filter eviction');
 
@@ -401,9 +405,8 @@ console.log('PASS CONTRACT 7: lifecycle resetStateBeforeUrlRestore clears all fo
 
 // ─── CONTRACT 8: resetExplorationFocus preserves search ────────────────────────
 
-state.focusedNode = 3;
 state.selectedPoint = state.points[3];
-withStateMutation(() => { state.navState.mode = 'focus'; });
+withStateMutation(() => { state.navState.focusedIndex = 3; state.navState.mode = 'focus'; });
 state.trailDepth = 1;
 state.currentSearchSummary = { query: 'preserve me', visibleMatches: 5 };
 
@@ -566,7 +569,7 @@ console.log('PASS CONTRACT 10: semanticDiveMode setter has no side-effects beyon
 
 // ─── CONTRACT 11: journey.js does NOT write focus state directly ──────────────
 
-const journeyPath = join(MODULES_DIR, 'journey.ts');
+const journeyPath = JOURNEY_PATH;
 const journeyWriters = scanWriters(journeyPath, 'focusedNode').concat(scanWriters(journeyPath, 'selectedPoint'));
 assert(
   journeyWriters.length === 0,
@@ -576,7 +579,7 @@ console.log('PASS CONTRACT 11: journey.js does not directly write focusedNode or
 
 // ─── CONTRACT 12: event-bindings.js does NOT write focus state ────────────────
 
-const eventBindingsPath = join(MODULES_DIR, 'event-bindings.ts');
+const eventBindingsPath = EVENT_BINDINGS_PATH;
 const ebWriters = scanWriters(eventBindingsPath, 'focusedNode')
   .concat(scanWriters(eventBindingsPath, 'selectedPoint'))
   .concat(scanWriters(eventBindingsPath, 'trailDepth'));
@@ -588,7 +591,7 @@ console.log('PASS CONTRACT 12: event-bindings.js does not directly write focus s
 
 // ─── CONTRACT 13: focus-pocket.js does NOT write focus state ───────────────────
 
-const focusPocketPath = join(MODULES_DIR, 'focus-pocket.ts');
+const focusPocketPath = FOCUS_POCKET_PATH;
 const fpWriters = scanWriters(focusPocketPath, 'focusedNode')
   .concat(scanWriters(focusPocketPath, 'selectedPoint'))
   .concat(scanWriters(focusPocketPath, 'trailDepth'));

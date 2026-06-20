@@ -16,9 +16,9 @@ import zlib from 'node:zlib';
 const ROOT = process.cwd();
 const DATA_PATH = path.join(ROOT, 'data.dat');
 const GZIP_DATA_PATH = path.join(ROOT, 'data.dat.gz');
-const THREAD_PATH = path.join(ROOT, 'semantic_threads_ui.dat');
-const MANIFEST_PATH = path.join(ROOT, 'semantic_space_layout_manifest.json');
-const SCRIPT_EMBEDDINGS_PATH = path.join(ROOT, 'scripts', 'qwen3_embeddings.npy');
+const THREAD_PATH = path.join(ROOT, 'public', 'data', 'semantic_threads_ui.dat');
+const MANIFEST_PATH = path.join(ROOT, 'public', 'data', 'semantic_space_layout_manifest.json');
+const SCRIPT_EMBEDDINGS_PATH = path.join(ROOT, 'public', 'data', 'qwen3_embeddings.npy');
 const NEAREST_K = 48;
 const MAX_THREAD_TO_LAYOUT_LAG_MS = 60 * 60 * 1000;
 

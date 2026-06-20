@@ -481,9 +481,7 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): Vector3 {
     const mid = start.clone().lerp(end, 0.5)
     const span = new Vector3().subVectors(end, start)
     const spanLength = Math.max(span.length(), 0.001)
-    const viewVector = state.camera
-        ? new Vector3().subVectors(state.camera.position, mid)
-        : new Vector3(0.28, 0.2, 1)
+    const viewVector = state.camera ? new Vector3().subVectors(state.camera.position, mid) : new Vector3(0.28, 0.2, 1)
     if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1)
     viewVector.normalize()
 
@@ -495,8 +493,7 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): Vector3 {
     const motifBraid = Number.isFinite(edge.motifBraid) ? edge.motifBraid! : 0.52
     const roleLift = edge.role === 'support' ? 0.78 : 1
     const isFieldNodeWalk = getFocusPanelMode() === FOCUS_PANEL_MODE.FIELD_NODE
-    const longArc =
-        isFieldNodeWalk && edge.role === 'direct' ? MathUtils.clamp((spanLength - 0.18) / 0.34, 0, 1) : 0
+    const longArc = isFieldNodeWalk && edge.role === 'direct' ? MathUtils.clamp((spanLength - 0.18) / 0.34, 0, 1) : 0
     const bendCap = isFieldNodeWalk ? 0.17 + longArc * 0.14 : 0.16
     const bendFloor = isFieldNodeWalk ? 0.032 + longArc * 0.026 : 0.028
     const bend = Math.min(
@@ -665,11 +662,7 @@ export function buildFocusedPocketStagedPositions(
             stagedOffset.multiplyScalar(personality.microVariation.scale)
         }
 
-        const originalOffset = new Vector3(
-            original.x - focusOrig.x,
-            original.y - focusOrig.y,
-            original.z - focusOrig.z
-        )
+        const originalOffset = new Vector3(original.x - focusOrig.x, original.y - focusOrig.y, original.z - focusOrig.z)
         const originalDistance = originalOffset.length()
         if (originalDistance > 0.0001) {
             originalOffset.normalize().multiplyScalar(Math.min(originalDistance, placement.radius * 1.35))
@@ -799,7 +792,6 @@ export function buildFocusedSemanticPocket(index: number): SemanticPocketResult 
             }
         )
     })
-
     ;[...supportScores.entries()]
         .filter(([, entry]) => entry.count >= 2 || (entry.count >= 1 && entry.sameCity >= 1 && entry.score >= 0.72))
         .sort((a, b) => b[1].count - a[1].count || b[1].score - a[1].score)
