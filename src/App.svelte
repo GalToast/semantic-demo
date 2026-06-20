@@ -554,7 +554,7 @@
       !($viewport.isCompact && (bodyPanelSurface === 'search' || navSurface === 'search'))
   );
   let infoPanelOpen = $derived(
-    (searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) &&
+    (searchSurfaceActive || focusActive) &&
       !mapModeActive &&
       // On compact/mobile, the idle surface shows an empty bottom-sheet that
       // overlays the 3D canvas. Keep the panel closed on idle mobile/compact;
