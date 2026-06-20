@@ -2010,6 +2010,43 @@ async function enterSemanticDive(page) {
             }
             refreshCompositionState?.()
             window.updateJourneyCompass?.()
+
+            const stateObjects = [
+                window.__APP_STATE__,
+                window.__TEST_STATE__,
+                window.__LEGACY_APP_STATE__,
+                window.__semanticState,
+                window.state
+            ].filter(Boolean)
+            for (const state of stateObjects) {
+                const focusedIndex = Number.isFinite(Number(state.navState?.focusedIndex))
+                    ? Number(state.navState.focusedIndex)
+                    : Number.isFinite(Number(state.focusedNode))
+                      ? Number(state.focusedNode)
+                      : 519
+                state.focusedNode = focusedIndex
+                state.currentView = 'galaxy'
+                state.trailDepth = 2
+                state.semanticDiveMode = true
+                if (state.navState) {
+                    state.navState.currentView = 'galaxy'
+                    state.navState.focusedIndex = focusedIndex
+                    state.navState.mode = 'inside'
+                    state.navState.surface = 'inside'
+                    state.navState.trailDepth = 2
+                }
+            }
+
+            document.body.dataset.activeView = 'galaxy'
+            document.body.dataset.graphContext = 'focus'
+            document.body.dataset.panelSurface = 'semantic-dive'
+            document.body.dataset.panelSurfaceMode = 'semantic-dive'
+            document.body.dataset.panelSurfaceDetail = 'none'
+            document.body.dataset.semanticDive = 'active'
+            document.body.dataset.trailDepth = '2'
+            document.body.dataset.navMode = 'inside'
+            document.body.dataset.navSurface = 'inside'
+            document.body.dataset.mode = 'inside'
         })
         await markVisualRouteEvidence(page, 'forced-state', 'forced semantic dive fallback in visual audit')
     }
@@ -2025,6 +2062,7 @@ async function enterSemanticDive(page) {
     await page
         .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
         .catch(() => {})
+    await page.waitForTimeout(1800)
 }
 
 async function applyPopulatedInfoPanelState(page) {
