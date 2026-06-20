@@ -49,7 +49,7 @@ git status --short
 
 ## Key Product Invariants
 
-- The 8,406-point mycelium data lives in `state.rawPositionsBuffer` as `[0,1]^3` positions.
+- The 8,406-point mycelium data lives in `state.rawPositionsBuffer` as `[0,1]^3` positions. W7-B Pair 2 prep preserved the unit-cube invariant via the canonical `seededUnit` re-export from `@lib/utils/seeded-random`.
 - `getPointBoundsCenter(points, positionBuffer)` in `src/lib/engine/node-manager.ts` must receive the raw position buffer. Passing only point objects mis-centers the network.
 - `src/lib/state/app.svelte.ts` is the Svelte 5 global state source of truth.
 - `js/workers/data-worker.ts` is active runtime via `data-worker-url-bridge.ts`.

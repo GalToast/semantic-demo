@@ -53,14 +53,14 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ## Architecture Decision Records
 
-| Decision                          | Status       | Doc                                            |
-| --------------------------------- | ------------ | ---------------------------------------------- |
-| Bridge files as canonical seam    | 🟡 Active    | `docs/migration-plan.md` §Bridge File Doctrine |
-| Body data-attr as JS↔CSS contract | ✅ Active    | `AGENTS.md`                                    |
-| 8,406-point mycelium invariant    | ✅ Preserved | `state.rawPositionsBuffer` in `app.svelte.ts`  |
-| Nav-mirror CI guard               | ✅ Active    | `npm run lint:nav-mirror`                      |
-| Svelte 5 `!==` strict-mode lint   | ✅ Active    | `npm run lint:svelte5-strict-mode`             |
-| W8 charter drafted                | 🟢 Phase 6A prep | `docs/w8-charter-2026-06-20.md`           |
+| Decision                          | Status           | Doc                                            |
+| --------------------------------- | ---------------- | ---------------------------------------------- |
+| Bridge files as canonical seam    | 🟡 Active        | `docs/migration-plan.md` §Bridge File Doctrine |
+| Body data-attr as JS↔CSS contract | ✅ Active        | `AGENTS.md`                                    |
+| 8,406-point mycelium invariant    | ✅ Preserved     | `state.rawPositionsBuffer` in `app.svelte.ts`  |
+| Nav-mirror CI guard               | ✅ Active        | `npm run lint:nav-mirror`                      |
+| Svelte 5 `!==` strict-mode lint   | ✅ Active        | `npm run lint:svelte5-strict-mode`             |
+| W8 charter drafted                | 🟢 Phase 6A prep | `docs/w8-charter-2026-06-20.md`                |
 
 ## Known Blockers
 
@@ -89,13 +89,13 @@ npm run qa:visual -- --all
 
 ## Changelog (last 5 waves)
 
-| Wave | Date       | Key Deliverable                     |
-| ---- | ---------- | ----------------------------------- |
+| Wave | Date       | Key Deliverable                                                    |
+| ---- | ---------- | ------------------------------------------------------------------ |
 | W7   | 2026-06-19 | Dual-module collapse (Pairs 1–4) + Svelte-5 hardening (−1,553 LoC) |
-| W6   | 2026-06-19 | Splash + lazy Canvas                |
-| W5   | 2026-06-18 | TBT optimization, a11y closeout     |
-| W44  | 2026-06-17 | Bundle audit, brotli compression    |
-| W43  | 2026-06-18 | Focus-stage QA, parity-attrs        |
+| W6   | 2026-06-19 | Splash + lazy Canvas                                               |
+| W5   | 2026-06-18 | TBT optimization, a11y closeout                                    |
+| W44  | 2026-06-17 | Bundle audit, brotli compression                                   |
+| W43  | 2026-06-18 | Focus-stage QA, parity-attrs                                       |
 
 ---
 
