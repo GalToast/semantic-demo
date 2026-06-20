@@ -10,11 +10,11 @@ Re-validate the W15 production-preview parity baseline (captured 2026-06-17) aft
 - **Preview server:** `npx vite preview --config vite.config.ts --port 4174 --host 127.0.0.1 --strictPort` (serves the production build)
 - **Bundle:** `dist/svelte/assets/index-BrBgLeLH.js` (255.76 kB pre-gzip, after W8 retirement)
 - **URLs:**
-  - Dev: `http://127.0.0.1:5173/?nodemo=1&view=galaxy`
-  - Preview: `http://127.0.0.1:4174/?nodemo=1&view=galaxy`
+    - Dev: `http://127.0.0.1:5173/?nodemo=1&view=galaxy`
+    - Preview: `http://127.0.0.1:4174/?nodemo=1&view=galaxy`
 - **Flows covered:**
-  1. **idle (overview)** — page load, no user interaction
-  2. **search-query "cafe"** — fill `#search-input`, press Enter, wait 2s for results
+    1. **idle (overview)** — page load, no user interaction
+    2. **search-query "cafe"** — fill `#search-input`, press Enter, wait 2s for results
 
 ## Body data-attrs covered
 
@@ -42,10 +42,10 @@ Flow: search-query "cafe"
 
 ## Comparison with W15 baseline
 
-| Flow | W15 baseline (2026-06-17) | W9-A refresh (2026-06-20) | Status |
-|------|---------------------------|----------------------------|--------|
-| idle (overview) | All attrs match W15 spec | All 16 attrs match between dev/preview | ✅ No drift |
-| search-result click (focus-search) | All attrs match W15 spec | Out of scope for fast smoke (W43-C covers full 16-surface parity) | 🟡 Subset only |
+| Flow                               | W15 baseline (2026-06-17) | W9-A refresh (2026-06-20)                                         | Status         |
+| ---------------------------------- | ------------------------- | ----------------------------------------------------------------- | -------------- |
+| idle (overview)                    | All attrs match W15 spec  | All 16 attrs match between dev/preview                            | ✅ No drift    |
+| search-result click (focus-search) | All attrs match W15 spec  | Out of scope for fast smoke (W43-C covers full 16-surface parity) | 🟡 Subset only |
 
 **Note:** The W15 baseline doc captured a more detailed flow (`search → click first result → focus-search state`). The W9-A smoke is a **fast lane** that runs in CI; the deeper 16-surface parity (W43-C deferred arc) is covered by `npm run qa:surface:all` which renders all 16 surface IDs.
 

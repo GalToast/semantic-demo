@@ -132,9 +132,7 @@ async function main() {
         console.log(`Flow: ${flow.name}`)
         let devAttrs, previewAttrs
         try {
-            devAttrs = flow.setup
-                ? await captureAfterSearch(DEV_URL, flow.setup)
-                : await captureBodyAttrs(DEV_URL)
+            devAttrs = flow.setup ? await captureAfterSearch(DEV_URL, flow.setup) : await captureBodyAttrs(DEV_URL)
         } catch (err) {
             console.log(`  [SKIP] dev server not reachable: ${err.message.split('\n')[0]}`)
             continue
