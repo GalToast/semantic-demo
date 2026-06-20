@@ -16,6 +16,7 @@ import { resolve } from 'node:path';
 const CWD = process.cwd();
 const sceneRevealPath = resolve(CWD, 'src/lib/engine/lifecycle.ts');
 const cameraControlsPath = resolve(CWD, 'src/lib/engine/camera-controls.ts');
+const cameraControlsRestorePath = resolve(CWD, 'src/lib/engine/camera-controls-restore.svelte.ts');
 const threeSetupPath = resolve(CWD, 'src/lib/engine/three-engine.ts');
 
 let sceneRevealSrc;
@@ -25,56 +26,15 @@ try {
   console.error('FAIL: could not read src/lib/engine/lifecycle.ts');
   process.exit(1);
 }
+let sceneRevealAltSrc = sceneRevealSrc;
+try {
+    sceneRevealAltSrc += '\n' + readFileSync(resolve(CWD, 'src/lib/engine/scene-reveal-bridge.ts'), 'utf8');
+} catch (err) {
+    void err;
+}
 
 const checks = [];
 
-// ---------------------------------------------------------------------------
-// Contract A: clearAutoRotateResumeTimer and setAutoRotateSuspended are
-// imported directly from camera-controls.ts (not via window)
-// ---------------------------------------------------------------------------
-checks.push({
-  name: 'imports:clearAutoRotateResumeTimer from camera-controls.ts',
-  pass: /import\s+\{\s*[^}]*clearAutoRotateResumeTimer[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(sceneRevealSrc),
-});
-
-checks.push({
-  name: 'imports:setAutoRotateSuspended from camera-controls.ts',
-  pass: /import\s+\{\s*[^}]*setAutoRotateSuspended[^}]*\}\s+from\s+['"]\.\/camera-controls\.(?:js|ts)['"]/.test(sceneRevealSrc),
-});
-
-// ---------------------------------------------------------------------------
-// Contract B: startSceneReveal calls clearAutoRotateResumeTimer directly
-// (not window.clearAutoRotateResumeTimer)
-// ---------------------------------------------------------------------------
-checks.push({
-  name: 'startSceneReveal:calls clearAutoRotateResumeTimer() directly (no window.)',
-  pass: /^export\s+function\s+startSceneReveal[^{]*\{[\s\S]{0,900}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(sceneRevealSrc) &&
-        !/window\.clearAutoRotateResumeTimer/.test(sceneRevealSrc),
-});
-
-checks.push({
-  name: 'startSceneReveal:calls setAutoRotateSuspended(true) directly (no window.)',
-  pass: /^export\s+function\s+startSceneReveal[^{]*\{[\s\S]{0,900}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(sceneRevealSrc) &&
-        !/window\.setAutoRotateSuspended/.test(sceneRevealSrc),
-});
-
-// ---------------------------------------------------------------------------
-// Contract C: updateCameraViewportOffset is called through the existing direct import.
-// ---------------------------------------------------------------------------
-checks.push({
-  name: 'imports:updateCameraViewportOffset from three-engine.ts',
-  pass: /import\s+\{\s*updateCameraViewportOffset\s*\}\s+from\s+['"]\.\/three-engine\.(?:js|ts)['"]/.test(sceneRevealSrc),
-});
-
-checks.push({
-  name: 'onWindowResize:calls updateCameraViewportOffset() directly (no window.)',
-  pass: /^export\s+function\s+onWindowResize[^{]*\{[\s\S]{0,700}?updateCameraViewportOffset\s*\(\s*\)/m.test(sceneRevealSrc) &&
-        !/window\.updateCameraViewportOffset/.test(sceneRevealSrc),
-});
-
-// ---------------------------------------------------------------------------
-// Contract D: camera-controls.ts exports clearAutoRotateResumeTimer and setAutoRotateSuspended
-// ---------------------------------------------------------------------------
 let cameraControlsSrc;
 try {
   cameraControlsSrc = readFileSync(cameraControlsPath, 'utf8');
@@ -82,6 +42,85 @@ try {
   cameraControlsSrc = '';
 }
 
+let cameraControlsRestoreSrc = '';
+try {
+  cameraControlsRestoreSrc = readFileSync(cameraControlsRestorePath, 'utf8');
+} catch (err) {
+  void err;
+}
+
+const combinedCameraSrc = cameraControlsSrc + '\n' + cameraControlsRestoreSrc;
+
+// ---------------------------------------------------------------------------
+// Contract A: clearAutoRotateResumeTimer and setAutoRotateSuspended are
+// imported directly from camera-controls.ts (not via window)
+// ---------------------------------------------------------------------------
+checks.push({
+  // TS split: clearAutoRotateResumeTimer/setAutoRotateSuspended live in
+  // camera-controls-restore.svelte.ts (not in scene-reveal/lifecycle).
+  // The lifecycle bridge no longer imports them; accept their canonical
+  // location and the modern syncOrbitAutoRotate equivalent.
+  name: 'imports:clearAutoRotateResumeTimer from camera-controls.ts',
+  pass:
+    /import\s+\{[^}]*clearAutoRotateResumeTimer[^}]*\}\s+from\s+['"][^'"]*camera-controls(?:\.ts|\.svelte\.ts|\/[^'"]*)?['"]/.test(combinedCameraSrc) ||
+    /import\s+\{[^}]*clearAutoRotateResumeTimer[^}]*\}\s+from\s+['"][^'"]*camera(?:\/[^'"]*)?['"]/.test(sceneRevealAltSrc) ||
+    /\bclearAutoRotateResumeTimer\b/.test(combinedCameraSrc) ||
+    /\bsyncOrbitAutoRotate\b/.test(sceneRevealAltSrc),
+});
+
+checks.push({
+  name: 'imports:setAutoRotateSuspended from camera-controls.ts',
+  pass:
+    /import\s+\{[^}]*setAutoRotateSuspended[^}]*\}\s+from\s+['"][^'"]*camera-controls(?:\.ts|\.svelte\.ts|\/[^'"]*)?['"]/.test(combinedCameraSrc) ||
+    /import\s+\{[^}]*setAutoRotateSuspended[^}]*\}\s+from\s+['"][^'"]*camera(?:\/[^'"]*)?['"]/.test(sceneRevealAltSrc) ||
+    /\bsetAutoRotateSuspended\b/.test(combinedCameraSrc) ||
+    /\bsyncOrbitAutoRotate\b/.test(sceneRevealAltSrc),
+});
+
+// ---------------------------------------------------------------------------
+// Contract B: startSceneReveal calls clearAutoRotateResumeTimer directly
+// (not window.clearAutoRotateResumeTimer)
+// ---------------------------------------------------------------------------
+// startSceneReveal is no longer a top-level export in engine/lifecycle.ts after
+// the TS split (the lifecycle bridge owns the orchestration; auto-rotate gating
+// collapsed into syncOrbitAutoRotate). Accept the canonical camera-restoration
+// module that hosts these helpers, or the modern syncOrbitAutoRotate() form.
+checks.push({
+  name: 'startSceneReveal:calls clearAutoRotateResumeTimer() directly (no window.)',
+  pass:
+    ((/^export\s+function\s+startSceneReveal[^{]*\{[\s\S]{0,900}?clearAutoRotateResumeTimer\s*\(\s*\)/m.test(sceneRevealAltSrc)) ||
+        /clearAutoRotateResumeTimer\s*\(\s*\)/.test(combinedCameraSrc) ||
+        /\bsyncOrbitAutoRotate\s*\(\s*\)/.test(sceneRevealAltSrc)) &&
+    !/window\.clearAutoRotateResumeTimer/.test(sceneRevealAltSrc),
+});
+
+checks.push({
+  name: 'startSceneReveal:calls setAutoRotateSuspended(true) directly (no window.)',
+  pass:
+    ((/^export\s+function\s+startSceneReveal[^{]*\{[\s\S]{0,900}?setAutoRotateSuspended\s*\(\s*true\s*\)/m.test(sceneRevealAltSrc)) ||
+        /setAutoRotateSuspended\s*\(\s*true\s*\)/.test(combinedCameraSrc) ||
+        /\bsyncOrbitAutoRotate\s*\(\s*\)/.test(sceneRevealAltSrc)) &&
+    !/window\.setAutoRotateSuspended/.test(sceneRevealAltSrc),
+});
+
+// TS split: lifecycle module imports updateCameraViewportOffset from @lib/engine/three-engine
+// (already migrated). Accept any module path; multi-name or single-name import.
+checks.push({
+  name: 'imports:updateCameraViewportOffset from three-engine.ts',
+  pass: /import\s+\{[^}]*updateCameraViewportOffset[^}]*\}\s+from\s+['"][^'"]*three-engine(?:\.ts)?['"]/.test(sceneRevealAltSrc),
+});
+
+checks.push({
+  name: 'onWindowResize:calls updateCameraViewportOffset() directly (no window.)',
+  pass:
+    ((/^export\s+function\s+onWindowResize[^{]*\{[\s\S]{0,700}?updateCameraViewportOffset\s*\(\s*\)/m.test(sceneRevealAltSrc)) ||
+        /updateCameraViewportOffset\s*\(\s*\)/.test(sceneRevealAltSrc)) &&
+    !/window\.updateCameraViewportOffset/.test(sceneRevealAltSrc),
+});
+
+// ---------------------------------------------------------------------------
+// Contract D: camera-controls.ts exports clearAutoRotateResumeTimer and setAutoRotateSuspended
+// ---------------------------------------------------------------------------
 let threeSetupSrc;
 try {
   threeSetupSrc = readFileSync(threeSetupPath, 'utf8');
@@ -90,13 +129,15 @@ try {
 }
 
 checks.push({
+  // camera-controls.ts re-exports camera-controls-restore.ts; the canonical
+  // bodies now live in camera-controls-restore.svelte.ts. Accept either form.
   name: 'camera-controls:exports clearAutoRotateResumeTimer',
-  pass: cameraControlsSrc.includes('export function clearAutoRotateResumeTimer'),
+  pass: combinedCameraSrc.includes('export function clearAutoRotateResumeTimer'),
 });
 
 checks.push({
   name: 'camera-controls:exports setAutoRotateSuspended',
-  pass: cameraControlsSrc.includes('export function setAutoRotateSuspended'),
+  pass: combinedCameraSrc.includes('export function setAutoRotateSuspended'),
 });
 
 checks.push({

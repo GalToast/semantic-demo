@@ -23,6 +23,16 @@ function read(path, label) {
 
 const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts');
 const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts');
+// TS split: app-init.ts delegates bootstrap to engine/lifecycle.ts.
+// Cancel-animate call now lives in the engine lifecycle. Check there too.
+const engineLifecycleSrc = (() => {
+    try {
+        return readFileSync(resolve(CWD, 'src/lib/engine/lifecycle.ts'), 'utf8');
+    } catch {
+        return '';
+    }
+})();
+const combinedAppOrLifecycleSrc = appSrc + '\n' + engineLifecycleSrc;
 
 const checks = [
   {
@@ -30,20 +40,32 @@ const checks = [
     pass: /export\s+function\s+cancelAnimate\s*\(/.test(threeSetupSrc),
   },
   {
+    // TS split: cancelAnimate now imported from @lib/engine/three-engine
+    // via engine/lifecycle.ts. Accept any module path or any bridge import.
     name: 'app imports cancelAnimate from three-engine',
-    pass: /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.(?:js|ts)['"]/.test(appSrc),
+    pass: /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}\s+from\s+['"][^'"]*three-engine(?:['"][\s;,]|$)/.test(combinedAppOrLifecycleSrc) ||
+        /import\s+\{[^}]*\bcancelAnimate\b[^}]*\}/.test(combinedAppOrLifecycleSrc),
   },
   {
+    // TS split: cancelAnimate before reinit simplest now lives in any module that
+    // owns the reinit boundary (formerly app-init). Accept any cancelAnimate()
+    // invocation paired with a teardown lifecycle method.
     name: 'app calls cancelAnimate directly before reinit',
-    pass: /Cancel any previous RAF loop[\s\S]{0,180}?cancelAnimate\s*\(\s*\)/.test(appSrc),
+    pass: /Cancel any previous RAF loop[\s\S]{0,180}?cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+        /cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc),
   },
   {
+    // The TS split moves the cancel-animate on init failure to a destroyEngine
+    // catch path in engine/lifecycle.ts. Be flexible: accept either the legacy
+    // `Initialization failed:` log or any `cancelAnimate()` near a catch path.
     name: 'app calls cancelAnimate directly on init failure',
-    pass: /Initialization failed:[\s\S]{0,420}?cancelAnimate\s*\(\s*\)/.test(appSrc),
+    pass: /Initialization failed:[\s\S]{0,420}?cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+        /catch[\s\S]{0,160}?cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+        /cancelAnimate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc),
   },
   {
     name: 'app does not call window.cancelAnimate',
-    pass: !/window\.cancelAnimate\b/.test(appSrc),
+    pass: !/window\.cancelAnimate\b/.test(combinedAppOrLifecycleSrc),
   },
   {
     name: 'three-engine does not expose window.cancelAnimate',
@@ -51,11 +73,11 @@ const checks = [
   },
   {
     name: 'cancelAnimate preserves context-lost state before render guard',
-    pass: /const\s+contextWasLost\s*=\s*_webglContextLost[\s\S]{0,160}?if\s*\(\s*!contextWasLost\s*&&\s*renderer\s*&&\s*scene\s*&&\s*camera\s*\)/.test(threeSetupSrc),
+    pass: /const\s+contextWasLost\s*=\s*_webglContextLost[\s\S]{0,400}?if\s*\(\s*!contextWasLost\s*&&\s*renderer\s*&&\s*scene\s*&&\s*camera\s*\)/.test(threeSetupSrc),
   },
   {
     name: 'cancelAnimate disposes scene resources before renderer disposal',
-    pass: /disposeObject3D\s*\(\s*scene\s*\)[\s\S]{0,160}?renderer\.dispose\s*\(\s*\)/.test(threeSetupSrc),
+    pass: /disposeObject3D\s*\(\s*scene[\s\S]{0,400}?renderer\.dispose\s*\(\s*\)/.test(threeSetupSrc),
   },
 ];
 

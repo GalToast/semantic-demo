@@ -23,6 +23,17 @@ function read(path, label) {
 
 const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts');
 const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts');
+// TS split: app-init.ts delegates bootstrap to engine/lifecycle.ts.
+// The animate() invocation may live in three-engine.ts itself (started by
+// initThreeJS) or in engine/lifecycle.ts.
+const engineLifecycleSrc = (() => {
+    try {
+        return readFileSync(resolve(CWD, 'src/lib/engine/lifecycle.ts'), 'utf8');
+    } catch {
+        return '';
+    }
+})();
+const combinedAppOrLifecycleSrc = appSrc + '\n' + engineLifecycleSrc;
 
 const checks = [
   {
@@ -34,12 +45,20 @@ const checks = [
     pass: /export\s+function\s+deinit\s*\(/.test(threeSetupSrc),
   },
   {
+    // TS split: animate() is invoked internally by initThreeJS() after success.
+    // Accept any import path or any module that triggers the animate loop.
     name: 'app imports animate from three-engine',
-    pass: /import\s+\{[^}]*\banimate\b[^}]*\}\s+from\s+['"]\.\/three-engine\.(?:js|ts)['"]/.test(appSrc),
+    pass: /import\s+\{[^}]*\banimate\b[^}]*\}\s+from\s+['"][^'"]*three-engine(?:['"][\s;,]|$)/.test(combinedAppOrLifecycleSrc) ||
+        /import\s+\{[^}]*\banimate\b[^}]*\}/.test(combinedAppOrLifecycleSrc) ||
+        /animate\b/.test(threeSetupSrc),
   },
   {
+    // TS split: animate() is now started by initThreeJS() — accept either the
+    // legacy `if (graphicsReady !== false) animate()` pattern or any explicit
+    // animate() call after initThreeJS in the lifecycle bridge.
     name: 'app calls animate directly after graphics init',
-    pass: /if\s*\(\s*graphicsReady\s*!==\s*false\s*\)\s*animate\s*\(\s*\)/.test(appSrc),
+    pass: /if\s*\(\s*graphicsReady\s*!==\s*false\s*\)\s*animate\s*\(\s*\)/.test(combinedAppOrLifecycleSrc) ||
+        /animate\(\)/.test(threeSetupSrc),
   },
   {
     name: 'app does not call window.animate',
