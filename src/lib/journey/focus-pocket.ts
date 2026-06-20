@@ -37,7 +37,9 @@ import {
 } from '@lib/focus/geometry'
 import { getNeighborhoodPersonality, getSemanticCandidateSlice } from '@lib/focus/pocket-personality'
 import { prefersReducedMotion } from '@lib/utils/environment'
-import { syncPocketNodesToStore } from '@lib/focus/pocket'
+import { setPocketNodes } from '@lib/stores/focus.svelte'
+import { getBusinessRecords } from '@lib/data-store'
+import type { FocusPocketNode } from '@lib/types/state'
 
 export {
     clampNumber,
@@ -512,4 +514,52 @@ export function getRuntimeStateSnapshot(): Record<string, unknown> {
         nodesAreSettling: (appState as unknown as Record<string, unknown>).nodesAreSettling,
         autoRotate: (appState as unknown as Record<string, unknown>).autoRotate
     }
+}
+
+// ── Pocket Node Sync ─────────────────────────────────────────────────────────
+// Migrated from focus/pocket.ts (W7-B Pair 3 collapse).
+// Derives FocusPocketNode[] from current navState indices/roles/positions
+// and pushes the result into the Svelte focus store.
+
+export function syncPocketNodesToStore(): void {
+    const lState = appState
+    const navState = lState.navState as unknown as Record<string, unknown> | undefined
+    if (!navState) return
+    const indices = (navState.focusPocketIndices as number[] | undefined) ?? []
+    const roles = (navState.focusPocketRoleByIndex as Map<number, string> | undefined) ?? new Map<number, string>()
+    const targetPositions = lState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined
+    const nodePositions = lState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined
+    const originalPositions = lState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined
+    const records = getBusinessRecords()
+    const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null
+    if (indices.length === 0) {
+        setPocketNodes([])
+        return
+    }
+    const nodes: FocusPocketNode[] = []
+    for (const idx of indices) {
+        if (!Number.isFinite(idx) || idx < 0) continue
+        if (anchorIndex != null && idx === anchorIndex) continue // anchor is rendered separately
+        const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
+        if (!position) continue
+        const legacyRole = (roles.get(idx) || 'support').toLowerCase()
+        const role: FocusPocketNode['role'] =
+            legacyRole === 'primary' || legacyRole === 'direct'
+                ? 'direct'
+                : legacyRole === 'civic'
+                  ? 'civic'
+                  : 'support'
+        const record = records[idx]
+        const label = record?.name ?? `Node ${idx}`
+        nodes.push({
+            index: idx,
+            position: [position.x ?? 0, position.y ?? 0, position.z ?? 0],
+            role,
+            score: 0.62,
+            label,
+            rotationSeed: (idx * 7919) % 360,
+            scaleSeed: ((idx * 104729) % 1000) / 1000
+        })
+    }
+    setPocketNodes(nodes)
 }

@@ -13,7 +13,7 @@
 -->
 <script lang="ts">
   import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { applyLocalNeighborhoodFocus } from '@lib/focus/pocket';
+  import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
   import { getDataLoadState } from '@lib/data-store.svelte';
 

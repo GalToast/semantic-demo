@@ -382,12 +382,7 @@ subscribeKeyed('triggers.ts:SEMANTIC_LANE_STATE_REQUESTED', EVENTS.SEMANTIC_LANE
 })
 
 /**
- * TOOLTIP_HIDE_REQUESTED is published when the tooltip should be hidden.
- * The real hideTooltip lives in js/modules/tooltip.ts and is not yet
- * exposed via a Svelte/TS bridge. Once a tooltip bridge exists in
- * src/lib/, replace this no-op with the imported function.
+ * TOOLTIP_HIDE_REQUESTED is now handled directly by
+ * src/lib/ui/tooltip.ts:initTooltipEventBusSubscriptions().
+ * The previous no-op subscriber here was redundant; removed W7-C.
  */
-subscribeKeyed('triggers.ts:TOOLTIP_HIDE_REQUESTED', EVENTS.TOOLTIP_HIDE_REQUESTED, () => {
-    // TODO (Wave 2): legacy function — engine bridge not yet wired.
-    // hideTooltip();
-})

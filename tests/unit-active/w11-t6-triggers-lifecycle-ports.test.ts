@@ -43,37 +43,37 @@ describe('W11-T6: lifecycle orchestration event-bus port (triggers.ts)', () => {
   describe('structural: 4 new subscriptions present in triggers.ts', () => {
     it('subscribes to EXPLORATION_FOCUS_SYNC with a FOCUS_NODE dispatch handler', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.EXPLORATION_FOCUS_SYNC\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.EXPLORATION_FOCUS_SYNC\s*,/;
       const handlerPattern =
-        /subscribe\(\s*EVENTS\.EXPLORATION_FOCUS_SYNC\s*,[\s\S]*?dispatchNavTransition\(\s*NAV_TRANSITION_ACTIONS\.FOCUS_NODE\s*,/;
+        /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.EXPLORATION_FOCUS_SYNC\s*,[\s\S]*?dispatchNavTransition\(\s*NAV_TRANSITION_ACTIONS\.FOCUS_NODE\s*,/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
 
     it('subscribes to SEARCH_STATE_RESET_REQUESTED with a resetExplorationFocus handler', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEARCH_STATE_RESET_REQUESTED\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEARCH_STATE_RESET_REQUESTED\s*,/;
       const handlerPattern =
-        /subscribe\(\s*EVENTS\.SEARCH_STATE_RESET_REQUESTED\s*,[\s\S]*?resetExplorationFocus\(/;
+        /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEARCH_STATE_RESET_REQUESTED\s*,[\s\S]*?resetExplorationFocus\(/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
 
     it('subscribes to SUMMARY_CARD_HIDE_REQUESTED with a hideSummaryCard handler', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.SUMMARY_CARD_HIDE_REQUESTED\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SUMMARY_CARD_HIDE_REQUESTED\s*,/;
       const handlerPattern =
-        /subscribe\(\s*EVENTS\.SUMMARY_CARD_HIDE_REQUESTED\s*,[\s\S]*?hideSummaryCard\(/;
+        /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SUMMARY_CARD_HIDE_REQUESTED\s*,[\s\S]*?hideSummaryCard\(/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
 
     it('subscribes to SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED (documented no-op)', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED\s*,/;
       // The Svelte side intentionally no-ops this event (the focus store
       // owns guide state reactively), matching the legacy stub.
-      const handlerPattern = /subscribe\(\s*EVENTS\.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED\s*,/;
+      const handlerPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED\s*,/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
@@ -82,48 +82,47 @@ describe('W11-T6: lifecycle orchestration event-bus port (triggers.ts)', () => {
   describe('structural: 5 Wave 2 subscriptions present in triggers.ts', () => {
     it('subscribes to URL_SYNC_REQUESTED with an updateUrlState handler', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.URL_SYNC_REQUESTED\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.URL_SYNC_REQUESTED\s*,/;
       const handlerPattern =
-        /subscribe\(\s*EVENTS\.URL_SYNC_REQUESTED\s*,[\s\S]*?updateUrlState\(/;
+        /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.URL_SYNC_REQUESTED\s*,[\s\S]*?updateUrlState\(/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
 
     it('subscribes to SEARCH_UI_SYNC_REQUESTED with a search result rebind handler', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED\s*,/;
       const handlerPattern =
-        /subscribe\(\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED\s*,[\s\S]*?bindSearchResultInteractions\(/;
+        /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEARCH_UI_SYNC_REQUESTED\s*,[\s\S]*?bindSearchResultInteractions\(/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
 
     it('subscribes to SEARCH_STATUS_SYNC_REQUESTED with a syncSearchStatusForFocus handler', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEARCH_STATUS_SYNC_REQUESTED\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEARCH_STATUS_SYNC_REQUESTED\s*,/;
       const handlerPattern =
-        /subscribe\(\s*EVENTS\.SEARCH_STATUS_SYNC_REQUESTED\s*,[\s\S]*?syncSearchStatusForFocus\(/;
+        /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEARCH_STATUS_SYNC_REQUESTED\s*,[\s\S]*?syncSearchStatusForFocus\(/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
 
     it('subscribes to SEMANTIC_LANE_STATE_REQUESTED with a setSemanticLaneUiState handler', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.SEMANTIC_LANE_STATE_REQUESTED\s*,/;
+      const subscriptionPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEMANTIC_LANE_STATE_REQUESTED\s*,/;
       const handlerPattern =
-        /subscribe\(\s*EVENTS\.SEMANTIC_LANE_STATE_REQUESTED\s*,[\s\S]*?setSemanticLaneUiState\(/;
+        /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.SEMANTIC_LANE_STATE_REQUESTED\s*,[\s\S]*?setSemanticLaneUiState\(/;
       expect(subscriptionPattern.test(src)).toBe(true);
       expect(handlerPattern.test(src)).toBe(true);
     });
 
-    it('subscribes to TOOLTIP_HIDE_REQUESTED (legacy bridge TODO)', () => {
+    it('TOOLTIP_HIDE_REQUESTED is handled by src/lib/ui/tooltip.ts', () => {
       const src = readSource();
-      const subscriptionPattern = /subscribe\(\s*EVENTS\.TOOLTIP_HIDE_REQUESTED\s*,/;
-      // The Svelte side has no tooltip bridge yet; the handler is a documented
-      // no-op with a TODO comment, matching the estrangler-fig gap pattern.
-      const handlerPattern = /subscribe\(\s*EVENTS\.TOOLTIP_HIDE_REQUESTED\s*,/;
-      expect(subscriptionPattern.test(src)).toBe(true);
-      expect(handlerPattern.test(src)).toBe(true);
+      // The no-op subscriber was removed from triggers.ts (W7-C)
+      // because src/lib/ui/tooltip.ts:initTooltipEventBusSubscriptions()
+      // now handles the event directly.
+      const noOpPattern = /subscribeKeyed\(\s*['"].*?['"],\s*EVENTS\.TOOLTIP_HIDE_REQUESTED\s*,/;
+      expect(noOpPattern.test(src)).toBe(false); // no-op removed
     });
   });
 
@@ -178,9 +177,14 @@ describe('W11-T6: lifecycle orchestration event-bus port (triggers.ts)', () => {
       expect(count).toBeGreaterThanOrEqual(1);
     });
 
-    it('TOOLTIP_HIDE_REQUESTED has at least 1 subscriber', () => {
-      const count = getSubscriberCount(EVENTS.TOOLTIP_HIDE_REQUESTED);
-      expect(count).toBeGreaterThanOrEqual(1);
+    it('TOOLTIP_HIDE_REQUESTED subscriber is in tooltip.ts, not triggers.ts', () => {
+      // W7-C: the no-op subscriber was removed from triggers.ts.
+      // The real handler is in src/lib/ui/tooltip.ts:initTooltipEventBusSubscriptions()
+      // which subscribes to EVENTS.TOOLTIP_HIDE_REQUESTED with the real hideTooltip().
+      // Verify that triggers.ts no longer has a no-op subscription.
+      const src = readSource();
+      const remaining = /subscribeKeyed\(.*TOOLTIP_HIDE_REQUESTED/.test(src);
+      expect(remaining).toBe(false);
     });
   });
 

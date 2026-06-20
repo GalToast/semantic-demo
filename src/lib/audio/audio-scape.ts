@@ -163,9 +163,14 @@ function updateAudio(): void {
     const rawTargetFilter = 150 + density * 400 + smoothVelocity * 200 + pathProximity * 800
     const targetFilter = Number.isFinite(rawTargetFilter) ? rawTargetFilter : 200
 
-    mainOsc!.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1)
-    gainNode!.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.1)
-    filterNode!.frequency.setTargetAtTime(targetFilter, audioCtx.currentTime, 0.1)
+    // Guard: audio nodes may be null after disposeAudio() races with RAF.
+    if (!mainOsc || !gainNode || !filterNode || !audioCtx) {
+        _audioRafId = requestAnimationFrame(updateAudio)
+        return
+    }
+    mainOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1)
+    gainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.1)
+    filterNode.frequency.setTargetAtTime(targetFilter, audioCtx.currentTime, 0.1)
 
     _audioRafId = requestAnimationFrame(updateAudio)
 }
@@ -229,7 +234,9 @@ export function disposeAudio(): void {
     if (mainOsc) {
         try {
             mainOsc.stop()
-        } catch (_) {}
+        } catch {
+            // oscillator may already be stopped — safe to ignore
+        }
         mainOsc.disconnect()
         mainOsc = null
     }
@@ -244,7 +251,9 @@ export function disposeAudio(): void {
     if (audioCtx && audioCtx.state !== 'closed') {
         try {
             audioCtx.close()
-        } catch (_) {}
+        } catch {
+            // audioContext may already be closed — safe to ignore
+        }
         audioCtx = null
     }
     lastCameraPos = null
