@@ -5,7 +5,8 @@ import { copyFile, cp, mkdir, readFile, readdir, stat, writeFile } from 'node:fs
 import type { IncomingMessage, ServerResponse } from 'node:http'
 import { fileURLToPath } from 'url'
 import { dirname, extname, join, normalize, resolve } from 'path'
-import { brotliCompressSync, gzipSync, constants as zlibConstants } from 'node:zlib'
+import { promisify } from 'node:util'
+import { brotliCompress, gzip, constants as zlibConstants } from 'node:zlib'
 import { defineConfig, type Plugin } from 'vite'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -14,6 +15,10 @@ const __dirname = dirname(__filename)
 const PROJECT_ROOT = __dirname
 const SRC_DIR = resolve(PROJECT_ROOT, 'src')
 const SVELTE_OUT_DIR = resolve(PROJECT_ROOT, 'dist/svelte')
+const brotliCompressAsync = promisify(brotliCompress)
+const gzipAsync = promisify(gzip)
+const BROTLI_QUALITY = Number(process.env.VITE_BROTLI_QUALITY || 5)
+const GZIP_LEVEL = Number(process.env.VITE_GZIP_LEVEL || 6)
 
 // W44 Phase F: list of large runtime-data assets that benefit from precompression.
 // Keep this allowlist explicit so we never accidentally compress chunk-manifest JSON.
@@ -30,10 +35,10 @@ const ROOT_ASSETS = new Map<string, string>([
     ['/vector-explorer-pandora.css', 'vector-explorer-pandora.css'],
     ['/data.dat', 'data.dat'],
     ['/data.dat.gz', 'data.dat.gz'],
-    ['/semantic_threads_ui.dat', 'semantic_threads_ui.dat'],
-    ['/semantic_threads.dat', 'semantic_threads.dat'],
-    ['/semantic_space_layout_manifest.json', 'semantic_space_layout_manifest.json'],
-    ['/scripts/leadEnrichment.public.json', 'scripts/leadEnrichment.public.json']
+    ['/semantic_threads_ui.dat', 'public/data/semantic_threads_ui.dat'],
+    ['/semantic_threads.dat', 'public/data/semantic_threads.dat'],
+    ['/semantic_space_layout_manifest.json', 'public/data/semantic_space_layout_manifest.json'],
+    ['/scripts/leadEnrichment.public.json', 'public/data/leadEnrichment.public.json']
 ])
 
 const ROOT_ASSET_DIRS = ['css']
@@ -87,7 +92,8 @@ function copyRuntimeAssetsPlugin(): Plugin {
             await Promise.all([
                 ...Array.from(ROOT_ASSETS.values()).map(async (relativePath) => {
                     const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath))
-                    const targetPath = normalize(resolve(SVELTE_OUT_DIR, relativePath))
+                    const distRelativePath = relativePath.replace(/^public\//, '')
+                    const targetPath = normalize(resolve(SVELTE_OUT_DIR, distRelativePath))
                     try {
                         const fileStat = await stat(sourcePath)
                         if (!fileStat.isFile()) return
@@ -122,6 +128,9 @@ function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
         let relativePath = ROOT_ASSETS.get(urlPath) ?? null
         if (!relativePath && urlPath.startsWith('/css/')) {
             relativePath = urlPath.slice(1)
+        }
+        if (!relativePath && urlPath.startsWith('/data/')) {
+            relativePath = `public${urlPath}`
         }
         if (!relativePath) {
             next()
@@ -189,12 +198,13 @@ function w44AssetCompressionPlugin(): Plugin {
                 const filePath = join(entry.parentPath, entry.name)
                 tasks.push(
                     readFile(filePath).then(async (buf) => {
-                        // Brotli at quality 11 yields the smallest precompressed payload;
-                        // gzip at level 9 is a fallback for browsers without brotli support.
-                        const br = brotliCompressSync(buf, {
-                            params: { [zlibConstants.BROTLI_PARAM_QUALITY]: 11 }
+                        // Quality 11 blocks local builds for minutes on large data assets.
+                        // Defaults favor fast repeat builds; CI/release can override via env.
+                        const br = await brotliCompressAsync(buf, {
+                            params: { [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY }
                         })
-                        const gz = gzipSync(buf, { level: 9 })
+                        const gz = await gzipAsync(buf, { level: GZIP_LEVEL })
+                        await mkdir(entry.parentPath, { recursive: true })
                         await Promise.all([writeFile(`${filePath}.br`, br), writeFile(`${filePath}.gz`, gz)])
                     })
                 )
@@ -312,11 +322,34 @@ function w44PreviewCacheHeadersPlugin(): Plugin {
     }
 }
 
+function chunkGraphAnalyzerPlugin(): Plugin {
+    return {
+        name: 'chunk-graph-analyzer',
+        apply: 'build',
+        async generateBundle(_, bundle) {
+            const graph: Record<string, any> = {}
+            for (const [name, chunk] of Object.entries(bundle)) {
+                if (chunk.type === 'chunk') {
+                    graph[name] = {
+                        isEntry: chunk.isEntry,
+                        imports: chunk.imports,
+                        dynamicImports: chunk.dynamicImports,
+                        modules: Object.keys(chunk.modules)
+                    }
+                }
+            }
+            // Write outside project dir so parallel-session builds can't overwrite it.
+            await writeFile('C:/Users/HP/chunk-graph-latest.json', JSON.stringify(graph, null, 2))
+        }
+    }
+}
+
 // https://vite.dev/config/
 export default defineConfig({
     root: SRC_DIR,
     base: './',
     plugins: [
+        chunkGraphAnalyzerPlugin(),
         legacyRootAssetPlugin(),
         copyRuntimeAssetsPlugin(),
         w44AssetCompressionPlugin(),
@@ -396,6 +429,11 @@ export default defineConfig({
             },
             format: {
                 comments: false
+            }
+        },
+        modulePreload: {
+            resolveDependencies: (_filename, deps) => {
+                return deps.filter((dep) => !dep.includes('three-D-'))
             }
         },
         rollupOptions: {
