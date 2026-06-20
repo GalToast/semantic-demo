@@ -11,7 +11,7 @@ import { describeCluster } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { isPointVisible } from '@lib/utils/geo-data';
 
-const _state = state as any;
+const _state = state;
 const nodeSporeSyncColor = new Color();
 
 function toIndexArray(value: unknown): number[] {

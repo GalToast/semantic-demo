@@ -11,11 +11,11 @@
 
 import { Color, Object3D, Texture, Vector3, MathUtils, InstancedMesh, DynamicDrawUsage, SphereGeometry, MeshPhongMaterial, NormalBlending, BufferGeometry, Float32BufferAttribute, PointsMaterial, Points, LineBasicMaterial, LineLoop, MeshBasicMaterial } from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
-const state = _state as any;
+const state = _state;
 import { webglContext } from './webgl-context';
 import { SCENE_PALETTE } from '@lib/utils/design-tokens';
 import { computeOverviewScatterOffsets } from '@lib/utils/geo-data';
-import { getThreadCategoryColor } from '@lib/utils/ui-presentation';
+import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three';
 import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture } from '@lib/utils/three-textures';
 import { seededUnit } from '@lib/utils/seeded-random';
 import { CONFIG } from './config';

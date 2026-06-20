@@ -48,37 +48,38 @@
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
   import { applyUrlState, updateUrlState } from '@lib/orchestration/url-state';
   import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
+  import { semanticGuideStateStore } from '@lib/stores/legacy-stores';
+  import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide';
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
 
-  import Canvas from '@components/Canvas.svelte';
+  // W6-T2: Lazy-loaded components use a generic type to avoid Vite analyzing
+  // typeof import() references, which would add chunk references to the cold bundle.
+  type LazyComponent = any;
+
+  let CanvasComponent: LazyComponent | null = $state(null);
+  let canvasImportPending = $state(false);
   import Splash from '@components/Splash.svelte';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
-  type InfoPanelModule = typeof import('@components/InfoPanel.svelte');
-  let InfoPanelComponent: InfoPanelModule['default'] | null = $state(null);
+  let InfoPanelComponent: LazyComponent | null = $state(null);
   let infoPanelImportPending = false;
   import Legend from '@components/Legend.svelte';
-  type MapViewModule = typeof import('@components/MapView.svelte');
-  let MapViewComponent: MapViewModule['default'] | null = $state(null);
+  let MapViewComponent: LazyComponent | null = $state(null);
   let mapViewImportPending = false;
   import SearchBar from '@components/SearchBar.svelte';
-  type FocusPocketModule = typeof import('@components/FocusPocket.svelte');
-  let FocusPocketComponent: FocusPocketModule['default'] | null = $state(null);
+  let FocusPocketComponent: LazyComponent | null = $state(null);
   let focusPocketImportPending = false;
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
   import LoadingOverlay from '@components/LoadingOverlay.svelte';
-  type ThreadInspectorModule = typeof import('@components/ThreadInspector.svelte');
-  let ThreadInspectorComponent: ThreadInspectorModule['default'] | null = $state(null);
+  let ThreadInspectorComponent: LazyComponent | null = $state(null);
   let threadInspectorImportPending = false;
-  type DemoChoreographyModule = typeof import('@components/DemoChoreography.svelte');
-  let DemoChoreographyComponent: DemoChoreographyModule['default'] | null = $state(null);
+  let DemoChoreographyComponent: LazyComponent | null = $state(null);
   let demoChoreographyImportPending = false;
   import Controls from '@components/Controls.svelte';
   import Header from '@components/Header.svelte';
-  type FocusCardModule = typeof import('@components/FocusCard.svelte');
-  let FocusCardComponent: FocusCardModule['default'] | null = $state(null);
+  let FocusCardComponent: LazyComponent | null = $state(null);
   let focusCardImportPending = false;
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
@@ -97,6 +98,26 @@
   let legacyCompassSurfaceImportPending = false;
   import { legendOpen } from '@lib/stores/legend.svelte';
 
+  type SemanticGuideSuggestion = {
+    lead_id?: string | number;
+    label?: string;
+    name?: string;
+    city?: string;
+    reason?: string;
+  };
+
+  type SemanticGuideCardConfig = {
+    title?: string;
+    text?: string;
+    laneStatus?: string;
+    suggestions?: SemanticGuideSuggestion[];
+  };
+
+  const semanticGuideConfig = $derived(($semanticGuideStateStore.config ?? {}) as SemanticGuideCardConfig);
+  const semanticGuideSuggestions = $derived(
+    Array.isArray(semanticGuideConfig.suggestions) ? semanticGuideConfig.suggestions : []
+  );
+
   // In Playwright tests, eagerly pre-load components that are required by
   // contract tests but now lazy-loaded in production for performance.
   if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__) {
@@ -105,6 +126,9 @@
       .catch(() => {});
     import('@components/LegacyCompassSurface.svelte')
       .then((mod) => { LegacyCompassSurfaceComponent = mod.default; })
+      .catch(() => {});
+    import('@components/ThreadInspector.svelte')
+      .then((mod) => { ThreadInspectorComponent = mod.default; })
       .catch(() => {});
   }
 
@@ -536,7 +560,15 @@
   let headerVisible = $derived(!mapModeActive && (idleSurfaceActive || searchFamilySurfaceActive || focusActive));
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use positive equality + negation instead.
-  let controlsVisible = $derived(!(navSurface === 'focus-search') && !focusSearchForced);
+  let controlsVisible = $derived(
+    !(navSurface === 'focus-search') &&
+      !focusSearchForced &&
+      !($viewport.isCompact && (bodyPanelSurface === 'idle' || navSurface === 'idle')) &&
+      // A3: suppress camera controls on mobile search surface — the search
+      // results/focus-stage owns the cockpit; the zoom/rotate rail competes
+      // for the same right-edge viewport budget.
+      !($viewport.isCompact && (bodyPanelSurface === 'search' || navSurface === 'search'))
+  );
   let infoPanelOpen = $derived((idleSurfaceActive || searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
 
   $effect(() => {
@@ -562,6 +594,26 @@
     bodyPanelSurface.startsWith('map-') ||
     navSurface.startsWith('map-')
   );
+
+  // Lazy-import Canvas module when the gesture gate flips to true.
+  // W6-T2: keeps Three.js + postprocessing out of the cold-load bundle.
+  $effect(() => {
+    if (engineReady.value && !CanvasComponent && !canvasImportPending) {
+      canvasImportPending = true;
+      scheduleIdleComponentImport(() =>
+        import('@components/Canvas.svelte').then((mod) => {
+          CanvasComponent = mod.default;
+          return mod.default;
+        })
+      )
+        .catch((err) => {
+          console.error('[App] Canvas lazy-load failed:', err);
+        })
+        .finally(() => {
+          canvasImportPending = false;
+        });
+    }
+  });
 
   $effect(() => {
     if (
@@ -608,9 +660,9 @@
   class:reduced-motion={$viewport.reducedMotion}
   class:is-overview={$navStore.mode === 'overview'}
 >
-  <!-- Layer 0: WebGL canvas (gated behind user gesture) -->
-  {#if engineReady.value}
-    <Canvas interactive={true} defer={true} />
+  <!-- Layer 0: WebGL canvas (gated behind user gesture; module import lazy) -->
+  {#if engineReady.value && CanvasComponent}
+    <CanvasComponent interactive={true} defer={true} />
   {:else}
     <Splash />
   {/if}
@@ -760,10 +812,45 @@
     <div id="tooltip-what" class="tooltip-what"></div>
   </div>
 
-  <!-- Synthesis summary card (port of synthesis output panel) -->
-  <div class="summary-card hidden" role="region" aria-label="Synthesis summary">
-    <div class="summary-title">Synthesis</div>
-    <div class="typewriter-content"></div>
+  <!-- Synthesis summary card (legacy-compatible semantic guide surface) -->
+  <div
+    id="synthesize-trigger"
+    class="synthesize-trigger hidden"
+    hidden
+    aria-hidden="true"
+  >
+    <button id="btn-synthesize" type="button" class="btn-synthesize" onclick={requestSemanticGuide}>Synthesize trail</button>
+  </div>
+
+  <div
+    id="semantic-summary-card"
+    class="summary-card"
+    class:hidden={!$semanticGuideStateStore.isVisible}
+    class:is-synthesizing={$semanticGuideStateStore.isSynthesizing}
+    role="region"
+    aria-label="Synthesis summary"
+  >
+    <div class="summary-card-header">
+      <div class="summary-title" id="summary-card-title-text">{semanticGuideConfig.title || 'Synthesis'}</div>
+      <button id="btn-close-summary" type="button" class="summary-close" aria-label="Close synthesis" onclick={hideSummaryCard}>Close</button>
+    </div>
+    <div id="summary-text" class="typewriter-content">{semanticGuideConfig.text || ''}</div>
+    <div id="summary-suggestions" class="summary-suggestions">
+      {#each semanticGuideSuggestions as suggestion}
+        <button
+          class="suggestion-btn"
+          type="button"
+          data-lead-id={String(suggestion.lead_id ?? '')}
+        >
+          <span class="suggestion-label">{suggestion.label || 'Suggestion'}</span>
+          <span class="suggestion-name">{suggestion.name || 'Related business'}</span>
+          {#if suggestion.reason}
+            <span class="suggestion-reason">{suggestion.reason}</span>
+          {/if}
+        </button>
+      {/each}
+    </div>
+    <div id="summary-lane-status" class="summary-lane-status">{semanticGuideConfig.laneStatus || 'Ready'}</div>
   </div>
 
   <!-- Search trail cue (port of trail discovery tooltip) -->
@@ -816,6 +903,12 @@
     overflow: hidden;
     background: #071018;
   }
+  :global(body[data-panel-surface='semantic-dive']) .semantic-explorer {
+    pointer-events: none;
+  }
+  :global(body[data-panel-surface='semantic-dive']) .semantic-explorer button {
+    pointer-events: auto;
+  }
 
   .semantic-main {
     display: block;
@@ -823,6 +916,9 @@
     height: 100%;
     overflow: hidden;
     outline: none;
+  }
+  :global(body[data-panel-surface='semantic-dive']) .semantic-main {
+    pointer-events: none;
   }
 
   /* A2-6: Visible H1 page title — first heading on the page */
@@ -910,18 +1006,99 @@
   .summary-card.hidden {
     display: none;
   }
+  .summary-card.is-synthesizing {
+    cursor: progress;
+  }
+  .summary-card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.45rem;
+  }
   .summary-title {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
     color: #4ecdc4;
-    margin-bottom: 0.4rem;
+    margin-bottom: 0;
+    text-transform: uppercase;
+  }
+  .summary-close {
+    border: 1px solid rgba(224, 240, 240, 0.22);
+    border-radius: 0.35rem;
+    background: rgba(224, 240, 240, 0.06);
+    color: rgba(224, 240, 240, 0.78);
+    font-size: 0.62rem;
+    line-height: 1;
+    padding: 0.35rem 0.45rem;
+    cursor: pointer;
+  }
+  .summary-close:hover {
+    background: rgba(224, 240, 240, 0.12);
+    color: rgba(224, 240, 240, 0.95);
   }
   .typewriter-content {
     font-size: 0.7rem;
     color: rgba(224, 240, 240, 0.7);
     line-height: 1.5;
     overflow-wrap: break-word;
+  }
+  .summary-suggestions {
+    display: grid;
+    gap: 0.45rem;
+    margin-top: 0.7rem;
+  }
+  .suggestion-btn {
+    display: grid;
+    gap: 0.16rem;
+    width: 100%;
+    min-width: 0;
+    border: 1px solid rgba(78, 205, 196, 0.16);
+    border-radius: 0.45rem;
+    background: rgba(78, 205, 196, 0.07);
+    color: rgba(224, 240, 240, 0.84);
+    padding: 0.48rem 0.55rem;
+    text-align: left;
+    cursor: pointer;
+  }
+  .suggestion-btn:hover {
+    border-color: rgba(78, 205, 196, 0.34);
+    background: rgba(78, 205, 196, 0.12);
+  }
+  .suggestion-label {
+    color: #4ecdc4;
+    font-size: 0.55rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .suggestion-name {
+    overflow-wrap: anywhere;
+    font-size: 0.68rem;
+    font-weight: 600;
+  }
+  .suggestion-reason {
+    color: rgba(224, 240, 240, 0.62);
+    font-size: 0.62rem;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+  .summary-lane-status {
+    margin-top: 0.65rem;
+    color: rgba(224, 240, 240, 0.54);
+    font-size: 0.56rem;
+    letter-spacing: 0;
+    text-transform: uppercase;
+  }
+  .synthesize-trigger[hidden] {
+    display: none;
+  }
+  .btn-synthesize {
+    border: 1px solid rgba(78, 205, 196, 0.28);
+    border-radius: 0.45rem;
+    background: rgba(78, 205, 196, 0.1);
+    color: rgba(224, 240, 240, 0.9);
+    padding: 0.45rem 0.6rem;
   }
 
   /* Search trail cue */

@@ -1,6 +1,6 @@
 import { Material, Vector3, CircleGeometry, ShaderMaterial, DoubleSide, NormalBlending, Mesh, SphereGeometry, BufferGeometry, BufferAttribute, LineSegments, IcosahedronGeometry, AdditiveBlending, BackSide, PointLight, Color, Group } from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
-const state = _state as any;
+const state = _state;
 import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations';
 import { calculateSignalScore } from '@lib/utils/geo-data';
 import {

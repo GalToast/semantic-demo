@@ -12,10 +12,10 @@
 import { webglContext } from './webgl-context';
 import { Vector3, Object3D, BufferGeometry, Float32BufferAttribute, LineSegments, LineBasicMaterial, NormalBlending, Group, BufferAttribute } from 'three';
 import { state as _state, withStateMutation } from '@lib/engine/state-bridge';
-const state = _state as any;
+const state = _state;
 import { CONFIG } from './config';
 import { disposeObject3D } from './resource-tracker';
-import { getThreadCategoryColor } from '@lib/utils/ui-presentation';
+import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three';
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 

@@ -8,10 +8,10 @@
 import { webglContext } from '@lib/engine/webgl-context';
 import { Vector3 } from 'three';
 import { state as _state } from '@lib/engine/state-bridge';
-import { getThreadCategoryColor } from '@lib/utils/ui-presentation';
+import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three';
 import { CONFIG } from '@lib/engine/config';
 
-const state = _state as any;
+const state = _state;
 
 // Module-level constants to avoid per-frame allocations in getSaggedPoint
 const _worldUp = new Vector3(0, 1, 0);

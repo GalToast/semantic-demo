@@ -12,7 +12,7 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js';
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js';
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js';
 import { isPointVisible } from '@lib/utils/geo-data';
-import { getThreadCandidatesForIndex } from '@lib/journey/thread-model';
+import { getNextExploreCandidateForIndex, getThreadCandidatesForIndex } from '@lib/journey/thread-model';
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/journey/neighborhood';
 import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket';
 import { prefersReducedMotion } from '@lib/utils/environment';
@@ -175,8 +175,7 @@ function getActiveNextFocusIndex(): number | null {
         ? _state.navState.focusedIndex
         : getCurrentTrailFocusIndex(_state.navState.focusedIndex ?? null);
     if (!Number.isFinite(focusedIndex)) return null;
-    const candidate = getNextWalkCandidateForIndex(focusedIndex, {
-        requireSemantic: _state.currentView === 'galaxy',
+    const candidate = getNextExploreCandidateForIndex(focusedIndex, getNextWalkCandidateForIndex as any, {
         requireOnCanvas: _state.currentView === 'galaxy'
     });
     if (!candidate) return null;

@@ -30,14 +30,16 @@ import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store
 // attachLegacyState().  Do NOT import directly from ../../js/state.js —
 // the CJS require fails under Vite's ESM pipeline and creates a second
 // stateProxy instance that diverges from the live one.
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let _state: any = null
+import type { SemanticState } from '@lib/state/state-types'
+
+let _state: SemanticState | null = null
 // Promise gate: resolves when attachLegacyState() is called, so
 // loadSemanticThreads() can await instead of polling with a busy-wait.
 let _stateReadyResolve: (() => void) | null = null
 const _stateReady = new Promise<void>((resolve) => { _stateReadyResolve = resolve })
 
-function getState(): typeof _state {
+function getState(): SemanticState {
+    if (!_state) throw new Error('semantic-threads: state not attached')
     return _state
 }
 
@@ -99,7 +101,7 @@ export function resetSemanticThreadWorker(): void {
 // ── Layout manifest loading ───────────────────────────────────────────────────
 
 async function _loadSemanticSpaceLayoutManifest(cacheBust: number): Promise<Record<string, unknown>> {
-    const manifestUrl = buildAssetUrl(`semantic_space_layout_manifest.json?v=${cacheBust}`)
+    const manifestUrl = buildAssetUrl(`data/semantic_space_layout_manifest.json?v=${cacheBust}`)
     const response = await fetch(manifestUrl, { cache: 'no-store' })
     if (!response.ok) {
         throw new Error(`semantic space manifest unavailable (${response.status})`)
@@ -398,7 +400,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
 
     withStateMutation(() => {
         state.semanticThreadsRetryAttempt += 1
-        state.semanticThreadsRetryTimer = window.setTimeout(() => {
+        state.semanticThreadsRetryTimer = (globalThis as any).setTimeout(() => {
             withStateMutation(() => {
                 state.semanticThreadsRetryTimer = null
             })
@@ -462,7 +464,7 @@ function finalizeThreadLoad(): void {
  * Returns null if not yet loaded or if attachLegacyState() was never called.
  */
 export function getSemanticThreadBundle(): SemanticThreadBundle | null {
-    return _state?.semanticThreadBundle ?? null
+    return (_state?.semanticThreadBundle as SemanticThreadBundle | null) ?? null
 }
 
 /**
@@ -478,7 +480,7 @@ export function getSemanticThreadArtifactName(): string | null {
  * Returns an empty map if not yet loaded.
  */
 export function getSemanticNeighborMapByLeadId(): Map<string, SemanticNeighborEntry> {
-    return _state?.semanticNeighborMapByLeadId ?? new Map<string, SemanticNeighborEntry>()
+    return (_state?.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>) ?? new Map<string, SemanticNeighborEntry>()
 }
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -515,8 +517,8 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
 
     const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60))
     const requestUrls = [
-        buildAssetUrl(`semantic_threads_ui.dat?v=${cacheBust}`),
-        buildAssetUrl(`semantic_threads.dat?v=${cacheBust}`)
+        buildAssetUrl(`data/semantic_threads_ui.dat?v=${cacheBust}`),
+        buildAssetUrl(`data/semantic_threads.dat?v=${cacheBust}`)
     ]
     const attemptConfigs: RequestCache[] = ['default', 'force-cache', 'reload', 'no-store']
 

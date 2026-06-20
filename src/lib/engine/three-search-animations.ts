@@ -11,7 +11,7 @@ import {
     Group
 } from 'three'
 import { state as _state } from '@lib/engine/state-bridge'
-const state = _state as any
+const state = _state
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { triggerCorridorBloom } from '@lib/audio/audio-scape'
@@ -379,8 +379,10 @@ export function updateCorridorNodeGlow(frameNow: any) {
         const anchorBoost = 1.0 + ANCHOR_GLOW_PERSIST_INTENSITY * fadeRatio
         shader.uniforms.uHoverBoost.value = Math.max(shader.uniforms.uHoverBoost.value, anchorBoost)
         const pos = state.nodePositions[_anchorGlowIndex]
-        shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z)
-        anyActive = true
+        if (pos) {
+            shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z)
+            anyActive = true
+        }
     } else {
         _anchorGlowLastFrame = frameNow
     }
@@ -510,7 +512,7 @@ export function updateSearchCorridorAnimation(frameNow: any) {
 
 export function disposeSearchCorridorAnimation() {
     if (state.searchCorridorGroup) {
-        if (state.scene) state.scene.remove(state.searchCorridorGroup)
+        if (state.scene) state.scene.remove(state.searchCorridorGroup as any)
         disposeObject3D(state.searchCorridorGroup)
         state.searchCorridorGroup = null
     }

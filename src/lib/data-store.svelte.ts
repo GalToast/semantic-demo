@@ -48,6 +48,13 @@ export function getBusinessRecords() {
     return get(businessRecordsStore)
 }
 
+/** Reactive bridge — kept in sync with the Svelte 4 store so $derived works. */
+let _businessRecordsRune = $state(get(businessRecordsStore))
+$effect(() => {
+    const unsub = businessRecordsStore.subscribe(v => { _businessRecordsRune = v })
+    return () => unsub()
+})
+
 /** Float32Array of interleaved [x,y,z] positions in [0,1] unit cube */
 let positionBuffer = $state<Float32Array | null>(null)
 export function getPositionBuffer() {
@@ -73,29 +80,41 @@ export function getLeadEnrichment() {
     return get(leadEnrichmentStore)
 }
 
-/** Raw semantic thread bundle */
-let semanticThreadBundle = $derived(get(semanticThreadBundleStore))
+/** Raw semantic thread bundle — kept in sync with the Svelte 4 store via $effect */
+let semanticThreadBundle = $state(get(semanticThreadBundleStore))
 export function getSemanticThreadBundle() {
     return semanticThreadBundle
 }
 
 /** Name of the loaded thread artifact file */
-let semanticThreadArtifactName = $derived(get(semanticThreadArtifactNameStore))
+let semanticThreadArtifactName = $state(get(semanticThreadArtifactNameStore))
 export function getSemanticThreadArtifactName() {
     return semanticThreadArtifactName
 }
 
 /** Normalized neighbor map keyed by lead_id */
-let semanticNeighborMap = $derived(get(semanticNeighborMapStore))
+let semanticNeighborMap = $state(get(semanticNeighborMapStore))
 export function getSemanticNeighborMap() {
     return semanticNeighborMap
 }
 
 /** Semantic space layout manifest (validation metadata) */
-let layoutManifest = $derived(get(layoutManifestStore))
+let layoutManifest = $state(get(layoutManifestStore))
 export function getLayoutManifest() {
     return layoutManifest
 }
+
+/** Sync reactive runes from the Svelte 4 stores so `.svelte` components
+ *  calling getter functions inside `$derived` actually re-evaluate. */
+$effect(() => {
+    const unsubs = [
+        semanticThreadBundleStore.subscribe(v => { semanticThreadBundle = v }),
+        semanticThreadArtifactNameStore.subscribe(v => { semanticThreadArtifactName = v }),
+        semanticNeighborMapStore.subscribe(v => { semanticNeighborMap = v }),
+        layoutManifestStore.subscribe(v => { layoutManifest = v })
+    ]
+    return () => { unsubs.forEach(u => u()) }
+})
 
 /** Overall data loading state */
 let _dataLoadState = $state<DataLoadState>({
@@ -145,7 +164,7 @@ export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
 // ── Derived Stores ────────────────────────────────────────────────────────────
 
 /** Number of loaded business records */
-const _recordCount = $derived(get(businessRecordsStore).length)
+const _recordCount = $derived(_businessRecordsRune.length)
 export function getRecordCount() {
     return _recordCount
 }
@@ -177,9 +196,8 @@ export function getPositionDescriptor() {
 
 /** Total number of semantic thread edges */
 const _threadEdgeCount = $derived.by(() => {
-    const bundle = get(semanticThreadBundleStore)
-    if (!bundle?.nodes) return 0
-    return Object.values(bundle.nodes).reduce(
+    if (!semanticThreadBundle?.nodes) return 0
+    return Object.values(semanticThreadBundle.nodes).reduce(
         (sum, node) => sum + (Array.isArray(node?.neighbors) ? node.neighbors.length : 0),
         0
     )
@@ -189,7 +207,7 @@ export function getThreadEdgeCount() {
 }
 
 /** Number of entries in the semantic neighbor map */
-const _neighborMapSize = $derived(get(semanticNeighborMapStore).size)
+const _neighborMapSize = $derived(semanticNeighborMap.size)
 export function getNeighborMapSize() {
     return _neighborMapSize
 }
