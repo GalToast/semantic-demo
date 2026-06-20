@@ -9,11 +9,14 @@
  * can run without a real WebGL context or full engine init.
  */
 import { describe, it, expect } from 'vitest'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+// @ts-ignore
+import { readFileSync } from 'node:fs'
+// @ts-ignore
+import { resolve } from 'node:path'
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+// @ts-ignore
 const APP_INIT_PATH = resolve(import.meta.dirname, '../../src/lib/orchestration/app-init.ts')
 
 function readSource(path: string): string {
@@ -117,13 +120,14 @@ describe('W11-T8: app-init.ts WebGL context restore handler', () => {
     })
 })
 
-describe('W11-T8: app-init.ts imports the new bridge modules', () => {
-    it('imports search from window-actions-bridge', () => {
-        expect(src).toMatch(/import.*\bsearch\b.*from.*window-actions-bridge/)
+describe('W11-T8: app-init.ts imports the new canonical modules', () => {
+    it('imports search from state', () => {
+        expect(src).toMatch(/import.*\bsearch\b.*from.*search\/state/)
     })
 
-    it('imports setTrailFromSeed from journey-neighborhood-bridge', () => {
-        expect(src).toMatch(/import.*setTrailFromSeed.*from.*journey-neighborhood-bridge/)
+    it('imports setTrailFromSeed from neighborhood', () => {
+        // Can be absolute or relative alias mapping
+        expect(src).toMatch(/import.*setTrailFromSeed.*from.*neighborhood/)
     })
 
     it('imports traverseNeighbor and walkThreadNeighbor from journey/thread-settler', () => {

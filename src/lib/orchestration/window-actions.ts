@@ -8,25 +8,25 @@
 
 import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge';
 import { focusOnNode } from '@lib/engine/camera-controls';
-import { search, clearSearch } from '@lib/engine/window-actions-bridge';
+import { search, clearSearch } from '@lib/search/state';
+import { switchView } from '@lib/orchestration/view-controller';
 import {
-  switchView,
   setTrailDepth,
   setSemanticDiveMode,
   returnToOverview,
   resetExperienceState,
   resetExplorationFocus,
   refreshCompositionState,
-} from '@lib/engine/window-actions-bridge';
-import { setTrailFromSeed } from '@lib/engine/window-actions-bridge';
-import { traverseNeighbor, walkThreadNeighbor } from '@lib/engine/window-actions-bridge';
+} from '@lib/orchestration/lifecycle';
+import { setTrailFromSeed } from '@lib/journey/neighborhood';
+import { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settler';
 import {
   inspectThreadNeighbor,
   pinThreadNeighbor,
   unpinThreadInspection,
   clearThreadInspection,
-} from '@lib/engine/window-actions-bridge';
-import { showSemanticThreadsDetail } from '@lib/engine/window-actions-bridge';
+} from '@lib/journey/thread-inspector';
+import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis';
 import type { ViewName, SwitchViewOptions } from '@lib/orchestration/view-controller';
 import * as semanticGuideModule from '@lib/journey/semantic-guide';
 import {

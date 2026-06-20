@@ -20,7 +20,7 @@ import {
     syncArrivalHandoffOverlay,
     updateArrivalHandoffOverlay,
     disposeArrivalHandoffOverlay
-} from '@lib/engine/journey-webgl-bridge'
+} from '@lib/engine/journey-webgl-lazy'
 import {
     normalizeLeadId,
     buildSpatialGrid,
@@ -47,7 +47,7 @@ import {
     scheduleCanvasThreadInspectionClear,
     clearThreadInspection
 } from './thread-inspector'
-import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
+import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import {
     initJourneyNeighborhoodAdapter,
     getSemanticThreadDisplayLimit,
@@ -63,7 +63,7 @@ import {
     primeBoundedSemanticNeighborhoodForTraversal,
     setTrailFromSeed,
     updateTrailIndices
-} from '@lib/engine/journey-neighborhood-bridge'
+} from '@lib/journey/neighborhood'
 import { updateSelectedBusiness, syncFocusStage } from '@lib/journey/selected-card'
 import {
     updateSelectedCardHeading,
@@ -79,7 +79,7 @@ import {
     updateTraversalUi,
     initFocusNeighborRailSubscriptions,
     shouldUseFloatingFocusJourneyOnly
-} from '@lib/engine/journey-focus-ui-bridge'
+} from '@lib/journey/focus-ui'
 import {
     ensureCanvasNodeInteractionBindings as _ensureCanvasNodeInteractionBindings,
     isThreadCandidateVisibleOnCanvas as _isThreadCandidateVisibleOnCanvas,

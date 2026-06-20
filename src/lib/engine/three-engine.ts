@@ -416,11 +416,13 @@ function sceneNeedsContinuousFrame(now: number): boolean {
     const autoRotateActive = Boolean(_state.autoRotate && !_state.autoRotateSuspended)
     const autoRotateResumePending =
         typeof _state.autoRotateResumeDueAt === 'number' && _state.autoRotateResumeDueAt > now
+    const routeTraceActive = Boolean(_state.routeTraceLines)
     return Boolean(
         _state.forceAnimate ||
         _state.sceneRevealActive ||
         _state.nodesAreSettling ||
         _state.myceliumDirty ||
+        routeTraceActive ||
         focusPocketMoving ||
         autoRotateActive ||
         autoRotateResumePending ||
@@ -1247,8 +1249,8 @@ export function animate() {
         if (webglContext.pointsMaterial) {
             const isFocused = Number.isFinite(_state?.focusedNode)
             const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
-            const pointsOpacityScale = isFocused ? (isSemanticDive ? 0.06 : 0.46) : 1.0
-            const pointsSizeScale = isFocused ? (isSemanticDive ? 0.36 : 0.8) : 1.0
+            const pointsOpacityScale = isSemanticDive ? 0.06 : isFocused ? 0.46 : 1.0
+            const pointsSizeScale = isSemanticDive ? 0.36 : isFocused ? 0.8 : 1.0
             webglContext.pointsMaterial.opacity =
                 0.32 * (SCENE_ATMOSPHERE.pointOpacityScale ?? 1) * pointsRevealProgress * pointsOpacityScale
             webglContext.pointsMaterial.size =
@@ -1263,7 +1265,7 @@ export function animate() {
         }
         if (webglContext.nodeSporeMaterial) {
             const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
-            const focusBoost = Number.isFinite(_state?.focusedNode) ? (isSemanticDive ? 0.22 : 1.0) : 1.0
+            const focusBoost = isSemanticDive ? 0.22 : 1.0
             const targetSporeOpacity = (SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
             webglContext.nodeSporeMaterial.opacity +=
                 (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12

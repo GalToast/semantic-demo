@@ -10,7 +10,7 @@ import { formatBusinessName, escapeHtml, cleanOptionalValue } from '@lib/utils/d
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { isPointVisible } from '@lib/utils/geo-data';
 import { truncateMicrocopy } from '@lib/journey/text-helpers';
-import { setStrandContinuityState } from '@lib/engine/strand-continuity-bridge';
+import { setStrandContinuityState } from '@lib/utils/strand-continuity';
 import {
     summarizeNeighborReason,
     walkThreadNeighbor
@@ -32,7 +32,7 @@ import {
     updateFocusSemanticOverlayPositions,
     removeFocusSemanticOverlay,
     resetFocusThreadDiagnostics
-} from '@lib/engine/journey-webgl-bridge';
+} from '@lib/engine/journey-webgl-lazy';
 import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment';
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
 import type { RelationshipRole } from '@lib/utils/relationship-roles';

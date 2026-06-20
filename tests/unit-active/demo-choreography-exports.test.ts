@@ -9,8 +9,11 @@
  *  - All 7 legacy modules are statically imported (not lazy-loaded)
  */
 import { describe, it, expect, beforeEach } from 'vitest'
+// @ts-ignore
 import { readFileSync } from 'node:fs'
+// @ts-ignore
 import { fileURLToPath } from 'node:url'
+// @ts-ignore
 import { dirname, resolve } from 'node:path'
 import {
     PHASE,
@@ -58,9 +61,9 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
         expect(src).toContain("import { updateSelectedBusiness } from '@lib/journey/selected-card'")
     })
 
-    it('imports journey-compass-controller via the bridge (not direct legacy path)', () => {
+    it('imports journey-compass-controller via the canonical module', () => {
         const src = readSource()
-        expect(src).toContain("from '@lib/engine/journey-compass-controller-bridge'")
+        expect(src).toContain("from '@lib/orchestration/compass-controller'")
     })
 
     it('imports panel bindings via the UI binding port (not direct legacy path)', () => {

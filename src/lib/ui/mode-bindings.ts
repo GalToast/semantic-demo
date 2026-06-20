@@ -1,7 +1,7 @@
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
 import { applyStoryPrompt } from '@lib/orchestration/cluster-filter-controller'
-import { focusSearchInputForReplacement, search } from '@lib/engine/search-state-bridge'
+import { focusSearchInputForReplacement, search } from '@lib/search/state'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 
 type SetMyceliumMode = (mode: string) => void

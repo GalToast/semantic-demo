@@ -16,13 +16,13 @@ import {
     getSemanticThreadCandidates,
     getThreadCandidatesForIndex
 } from '@lib/journey/thread-model'
-import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
+import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,
     disposeInspectedStrandOverlay,
     setInspectedStrandOverlayUpdater
-} from '@lib/engine/journey-webgl-bridge'
+} from '@lib/engine/journey-webgl-lazy'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { syncFocusStage } from '@lib/journey/selected-card'

@@ -23,7 +23,7 @@ import {
     updateExplorationUi
 } from '@lib/orchestration/lifecycle'
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
-import { updateJourneyCompass } from '@lib/engine/journey-compass-controller-bridge'
+import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
 import { syncFocusStage } from '@lib/journey/selected-card'

@@ -22,8 +22,11 @@
  * + The 3-step retirement path sections).
  */
 import { describe, it, expect, beforeAll } from 'vitest'
+// @ts-ignore
 import { readFileSync, readdirSync, statSync, existsSync } from 'fs'
+// @ts-ignore
 import { dirname, join, relative, resolve } from 'path'
+// @ts-ignore
 import { fileURLToPath } from 'url'
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url))
@@ -83,6 +86,7 @@ function isExcluded(file: string): boolean {
 }
 
 describe('Svelte-bridge import contract (S7)', () => {
+    // @ts-ignore
     if (process.env.REFACTOR_BASELINE_OVERRIDE) {
         it('skips during active refactor wave (unset REFACTOR_BASELINE_OVERRIDE to re-enable)', () => {
             expect(true).toBe(true)
@@ -179,15 +183,12 @@ describe('Bridge health (W11 retirement progress)', () => {
         'src/lib/engine/ui-feedback-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
         'src/lib/engine/event-bindings-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
 
-        'src/lib/engine/inspected-strand-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
-        'src/lib/engine/route-arrival-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
         'src/lib/engine/search-state-bridge.ts', // W15-T1 — search-state port; bridge created, consumers not yet wired
         // ── W11-T5 Wave 2 ─────────────────────────────────────────
         'src/lib/engine/event-bus-bridge.ts', // W11-T5 Wave 2 — T9 retires when journey files land
         'src/lib/engine/micro-demo-choreography-bridge.ts', // W11-T5 Wave 2 — sanctioned passthrough (micro-demo legacy)
         // ── W15-T-SEARCH-STATE (partial port, 2026-06-15) ────────
         'src/lib/engine/search-state-bridge.ts', // W15-T-SEARCH-STATE — bridge created with clearSearch(options) signature fix; consumers in js/modules/* still use the old path; rewiring is a follow-up ticket
-        'src/lib/engine/camera-controls-restore-bridge.ts', // W16-T-CAM-3 — bridge for js/modules/camera-controls-restore.ts retirement; canonical Svelte 5 implementation lives in camera-controls-restore.svelte.ts; kernel consumers wired in W16 follow-up
         'src/lib/engine/legend-ui-bridge.ts' // Retired legend-ui-bridge — logic relocated to @lib/journey/legend-ui + @lib/stores/legend-panel.svelte.ts; zero consumers remain
     ])
 

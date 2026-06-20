@@ -62,7 +62,7 @@ type AdapterInitName = (typeof ADAPTER_INIT_NAMES)[number]
 const ADAPTER_IMPORT_SOURCES: Record<AdapterInitName, string> = {
     initJourneyLifecycleAdapter: '@lib/journey/lifecycle-adapter',
     initClusterFilterAdapter: '@lib/orchestration/cluster-filter-controller',
-    initJourneyCompassAdapter: '@lib/engine/journey-compass-controller-bridge',
+    initJourneyCompassAdapter: '@lib/orchestration/compass-controller',
     initJourneySelectedCard: '@lib/journey/selected-card',
     initSemanticDiveUiSubscriptions: '@lib/journey/semantic-dive',
     initFocusNeighborRailSubscriptions: '@lib/journey/focus-ui',

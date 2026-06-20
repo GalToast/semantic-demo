@@ -13,17 +13,13 @@ import { applyFilters, clearShortSemanticSearchState } from '@lib/orchestration/
 import { clearSearchGlow } from '@lib/stores/search.svelte'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { previewInsideNextThread } from '@lib/journey/thread-settler-adapter'
-import { getNextWalkCandidateForIndex, getCurrentTrailFocusIndex } from '@lib/engine/journey-neighborhood-bridge'
-import {
-    getStrandArrivalNote,
-    summarizeNeighborReason,
-    getInsideRelationshipLabel
-} from '@lib/journey/thread-settler'
+import { getNextWalkCandidateForIndex, getCurrentTrailFocusIndex } from '@lib/journey/neighborhood'
+import { getStrandArrivalNote, summarizeNeighborReason, getInsideRelationshipLabel } from '@lib/journey/thread-settler'
 import {
     hasColdDegradedSemanticFallback,
     updateTraversalUi,
     shouldUseFloatingFocusJourneyOnly
-} from '@lib/engine/journey-focus-ui-bridge'
+} from '@lib/journey/focus-ui'
 import { revealSelectedBusinessCard } from '@lib/engine/lifecycle-bridge'
 import { describeThreadLensForPoint } from '@lib/journey/point-color'
 import { _getSelectedBusinessRoleLabel } from '@lib/utils/role-label'

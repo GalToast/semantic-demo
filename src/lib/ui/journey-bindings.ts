@@ -7,7 +7,7 @@
 import { state as _state } from '@lib/engine/state-bridge'
 const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
-import { executeJourneyCompassAction } from '@lib/engine/journey-compass-controller-bridge'
+import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller'
 import { setSemanticDiveMode } from '@lib/engine/lifecycle-bridge'
 import { pinThreadNeighbor, pinFirstAvailableNeighbor, unpinThreadInspection } from '@lib/journey/thread-inspector'
 import { walkThreadNeighbor } from '@lib/journey/thread-settler'

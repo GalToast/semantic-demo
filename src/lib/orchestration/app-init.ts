@@ -35,8 +35,8 @@ import { switchView as switchViewAction } from '@lib/orchestration/view-controll
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
-import { search } from '@lib/engine/window-actions-bridge'
-import { setTrailFromSeed } from '@lib/engine/journey-neighborhood-bridge'
+import { search } from '@lib/search/state'
+import { setTrailFromSeed } from '@lib/journey/neighborhood'
 import { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settler'
 import {
     inspectThreadNeighbor,
@@ -45,7 +45,7 @@ import {
     unpinThreadInspection,
     clearThreadInspection
 } from '@lib/journey/thread-inspector'
-import { updateTraversalUi } from '@lib/engine/journey-focus-ui-bridge'
+import { updateTraversalUi } from '@lib/journey/focus-ui'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
 import type { ViewName } from '@lib/types/state'
@@ -199,13 +199,23 @@ function installWindowGlobals(): () => void {
     // it to the AppState class.
     window.__APP_STATE__ = {
         get state() {
+            // Read the AppState singleton through the global key rather than
+            // the module-level `appState` proxy. When Vite code-splits the
+            // `app.svelte.ts` module across chunks, each chunk gets its own
+            // module-level `_appStateInstance`. The engine/lifecycle chunk
+            // populates the instance it creates, but the app-init chunk's
+            // `appState` proxy lazily instantiates a *different* empty instance
+            // on first access, causing `__APP_STATE__` to return stale empty
+            // data even though the global key holds the populated one.
+            const liveAppState =
+                (typeof window !== 'undefined' && (window as any).__SEMANTIC_EXPLORER_APP_STATE_V1__) || appState
             return {
                 currentView: get(navStore).currentView,
                 navState: get(navStore),
                 activeFilters: focusStore(),
-                routeTraceDiagnostics: appState.routeTraceDiagnostics,
-                routeTraceLines: (appState as unknown as { routeTraceLines?: unknown }).routeTraceLines,
-                points: appState.points
+                routeTraceDiagnostics: liveAppState.routeTraceDiagnostics,
+                routeTraceLines: (liveAppState as unknown as { routeTraceLines?: unknown }).routeTraceLines,
+                points: liveAppState.points
             }
         }
     }

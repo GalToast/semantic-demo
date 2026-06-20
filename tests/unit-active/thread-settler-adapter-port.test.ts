@@ -8,9 +8,12 @@
  */
 
 import { describe, it, expect } from 'vitest';
+// @ts-ignore
 import { readFileSync } from 'fs';
+// @ts-ignore
 import { join } from 'path';
 
+// @ts-ignore
 const ROOT = join(import.meta.dirname, '..', '..');
 
 function readFile(relPath: string): string {
@@ -51,9 +54,9 @@ describe('traverseNeighbor import routing', () => {
 		expect(src).toMatch(adapterImport);
 	});
 
-	it('src/lib/orchestration/window-actions.ts imports traverseNeighbor from window-actions-bridge', () => {
+	it('src/lib/orchestration/window-actions.ts imports traverseNeighbor from thread-settler', () => {
 		const src = readFile('src/lib/orchestration/window-actions.ts');
-		const bridgeImport = /import\s*\{[^}]*traverseNeighbor[^}]*\}\s*from\s*['"]@lib\/engine\/window-actions-bridge['"]/;
+		const bridgeImport = /import\s*\{[^}]*traverseNeighbor[^}]*\}\s*from\s*['"]@lib\/journey\/thread-settler['"]/;
 		expect(src).toMatch(bridgeImport);
 	});
 });

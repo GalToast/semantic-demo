@@ -8,7 +8,7 @@
  */
 import { initJourneyLifecycleAdapter } from '@lib/journey/lifecycle-adapter'
 import { initClusterFilterAdapter } from '@lib/orchestration/cluster-filter-controller'
-import { initJourneyCompassAdapter } from '@lib/engine/journey-compass-controller-bridge'
+import { initJourneyCompassAdapter } from '@lib/orchestration/compass-controller'
 import { initJourneySelectedCard } from '@lib/journey/selected-card'
 import { initSemanticDiveUiSubscriptions } from '@lib/journey/semantic-dive'
 import { initFocusNeighborRailSubscriptions } from '@lib/journey/focus-ui'

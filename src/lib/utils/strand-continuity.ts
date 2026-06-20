@@ -22,7 +22,7 @@
  * shell until full W16 retirement.
  */
 import { state, withStateMutation } from '@lib/engine/state-bridge'
-import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/engine/journey-webgl-bridge'
+import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/engine/journey-webgl-lazy'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import type { StrandContinuityState } from '@lib/state/state-types'
 

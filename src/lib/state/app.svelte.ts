@@ -5,11 +5,8 @@
 import type {
     SemanticState,
     ViewName,
-    ClusterName,
     Point,
     NodePosition,
-    CompassPhase,
-    ThreadSource,
     RouteExplorationState,
     RouteChoreographyState,
     TerrainHandoffState,
@@ -28,8 +25,8 @@ import type {
     RendererLike,
     ControlsLike,
     Vector3Like,
-    SearchSummary,
-    SemanticNode
+    SearchSummary
+    // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'

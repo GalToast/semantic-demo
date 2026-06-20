@@ -24,7 +24,7 @@ import {
     getBoundedNeighborhoodWalkCandidate,
     getNextWalkCandidateForIndex
 } from '@lib/journey/neighborhood'
-import { setStrandContinuityState, clearStrandContinuityState } from '@lib/engine/strand-continuity-bridge'
+import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { inspectThreadNeighbor, clearThreadInspection, renderThreadInspection } from './thread-inspector'

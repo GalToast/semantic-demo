@@ -64,7 +64,7 @@ import {
     updateAutoRotateSoftResume,
     toggleAutoRotate,
     OVERVIEW_CAMERA_POSE
-} from '@lib/engine/camera-controls-restore-bridge'
+} from '@lib/engine/camera-controls-restore.svelte'
 import {
     setFocusTransitionMode,
     getFocusTransitionProgress,
