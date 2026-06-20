@@ -29,23 +29,23 @@ export function focusOnNode(index: number, options?: any): boolean {
     return runFocusOnNode(index, options)
 }
 
-export function animateCameraToSearchCorridor(...args: any[]): void {
+export function animateCameraToSearchCorridor(...args: Parameters<typeof runAnimateCameraToSearchCorridor>): void {
     runAnimateCameraToSearchCorridor(...args)
 }
 
-export function animateCameraToTerrainPrelude(...args: any[]): void {
+export function animateCameraToTerrainPrelude(...args: Parameters<typeof runAnimateCameraToTerrainPrelude>): void {
     runAnimateCameraToTerrainPrelude(...args)
 }
 
-export function applySemanticCentroidCamera(...args: any[]): void {
+export function applySemanticCentroidCamera(...args: Parameters<typeof runApplySemanticCentroidCamera>): void {
     runApplySemanticCentroidCamera(...args)
 }
 
-export function zoomCamera(...args: any[]): void {
+export function zoomCamera(...args: Parameters<typeof runZoomCamera>): void {
     runZoomCamera(...args)
 }
 
-export function clearInsideCentroid(...args: any[]): void {
+export function clearInsideCentroid(...args: Parameters<typeof runClearInsideCentroid>): void {
     runClearInsideCentroid(...args)
 }
 

@@ -20,26 +20,35 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 | Parity-attrs layer                            | ✅ Functional (113 tests)      | W43          |
 | A11y sweep                                    | ✅ Baseline set                | W42          |
 
-## Current Wave: W6 (2026-06-19)
+## Current Wave: W7 (2026-06-19)
 
-**Charter:** `docs/w6-charter-2026-06-19.md`
+**Charter:** `docs/w7-charter-dual-module-collapse-2026-06-19.md`
+**Next wave:** W8 charter drafted at `docs/w8-charter-2026-06-20.md` (Phase 6A prep)
+
+**Pipeline:** Dual-Module Collapse + Symptomatic Svelte-5 Hardening
 
 ### Scope
 
-- Splash shell + gesture monitor + lazy Canvas mount (deferred prop)
-- Reduce CSS sprawl (6 modules targeted)
-- Retire `ModeChips.svelte` component
-- Audio-scape cleanup (`src/lib/audio/audio-scape.ts`)
+- 4 focus/↔journey/ dual-module pair collapses (Pairs 1, 2, 3, 4)
+- Audio-scape null guards (`audio-scape.ts:166` RAF-path crash fix, empty-catch comments)
+- Triggers.ts:391 removal — `TOOLTIP_HIDE_REQUESTED` no-op consumer (real handler in `src/lib/ui/tooltip.ts`)
+- Lifecycle stubs dedup — `probeSemanticLane` + `setSemanticLaneUiState` re-exported from canonical `semantic-lane.ts`
+- W7-A bulk-data migration — 286 MB moved to `public/data/` (out of git)
+- Vite config path fix for `public/data/*` dist output; cache-buster path updates; deploy.sh/ps1 parity
+- Thread-inspector activation gap fix — `pinThreadNeighbor(<focusedIndex>)` returns valid state via `pinFirstAvailableNeighbor` fallback
+
+### Net reduction
+
+- **−1,553 LoC** across this wave's pair collapses + stub dedup
 
 ### Open Items
 
-- [ ] Thread-inspector stash (`stash@{0}` — 10 files, re-apply after coordination)
-- [ ] Bridge retirement Phase 6 decision
-- [ ] Deploy-script `../js/scanner.js` decoupling
+- [ ] Bridge retirement Phase 6 decision (carried from W6)
+- [ ] Lighthouse 92% verification (blocked on Three.js named-imports audit completing)
 
 ### Parallel-Session Safety
 
-- Active worktree: CSS files, `FocusPocketA11y.svelte`, `ModeChips.svelte` (deleted), `audio-scape.ts`, `focus/geometry.ts`, `focus/stage-renderer.ts`
+- Active worktree: CSS modules, `parity-attrs.svelte.ts`, `stores/*.svelte.ts`, `engine/*-bridge.ts` (still load-bearing), `src/main.ts`
 - See `git status` before committing; do not commit without `git log --since="3 hours ago" --oneline`
 
 ## Architecture Decision Records
@@ -51,6 +60,7 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 | 8,406-point mycelium invariant    | ✅ Preserved | `state.rawPositionsBuffer` in `app.svelte.ts`  |
 | Nav-mirror CI guard               | ✅ Active    | `npm run lint:nav-mirror`                      |
 | Svelte 5 `!==` strict-mode lint   | ✅ Active    | `npm run lint:svelte5-strict-mode`             |
+| W8 charter drafted                | 🟢 Phase 6A prep | `docs/w8-charter-2026-06-20.md`           |
 
 ## Known Blockers
 
@@ -81,11 +91,11 @@ npm run qa:visual -- --all
 
 | Wave | Date       | Key Deliverable                     |
 | ---- | ---------- | ----------------------------------- |
-| W6   | 2026-06-19 | Splash + lazy Canvas (in progress)  |
+| W7   | 2026-06-19 | Dual-module collapse (Pairs 1–4) + Svelte-5 hardening (−1,553 LoC) |
+| W6   | 2026-06-19 | Splash + lazy Canvas                |
 | W5   | 2026-06-18 | TBT optimization, a11y closeout     |
 | W44  | 2026-06-17 | Bundle audit, brotli compression    |
 | W43  | 2026-06-18 | Focus-stage QA, parity-attrs        |
-| W42  | 2026-06-18 | Thread-inspector fix, a11y baseline |
 
 ---
 
