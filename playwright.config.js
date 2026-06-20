@@ -1,6 +1,7 @@
 import { defineConfig } from '@playwright/test';
 
 const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
+const headed = process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1';
 const webServer = process.env.TEST_BASE_URL
   ? undefined
   : {
@@ -19,7 +20,7 @@ export default defineConfig({
   },
   use: {
     baseURL,
-    headless: false,
+    headless: !headed,
     launchOptions: {
       args: ['--ignore-gpu-blocklist'],
     },

@@ -81,8 +81,7 @@ interface AttemptConfig {
 let _activeRequestId = 0
 
 self.onmessage = async (event: MessageEvent) => {
-    const { type, payload, pingId } = event.data
-    const requestId = ++_activeRequestId
+    const { type, payload, pingId, requestId: incomingRequestId } = event.data
 
     // Health-check ping: respond immediately without incrementing requestId
     if (type === 'PING') {
@@ -90,26 +89,35 @@ self.onmessage = async (event: MessageEvent) => {
         return
     }
 
+    // Use the requestId sent by the main thread so that responses match
+    // the caller's expectation. If the caller didn't send one (legacy path),
+    // fall back to the worker's own counter. Keep _activeRequestId in sync so
+    // that in-flight handlers can detect superseded requests.
+    const requestId = incomingRequestId ?? ++_activeRequestId
+    if (incomingRequestId) {
+        _activeRequestId = requestId
+    }
+
     try {
         if (type === 'LOAD_RECORDS') {
             const result = await handleLoadRecords(payload)
-            if (requestId !== _activeRequestId) return
+            if (requestId !== _activeRequestId && !incomingRequestId) return
             // Transfer buffers to main thread to eliminate cloning overhead
-            self.postMessage(
-                { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
-                [result.positionsBuffer.buffer, result.clustersBuffer.buffer]
-            )
+            self.postMessage({ type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId }, [
+                result.positionsBuffer.buffer,
+                result.clustersBuffer.buffer
+            ])
         } else if (type === 'LOAD_THREADS') {
             const result = await handleLoadThreads(payload, requestId)
-            if (requestId !== _activeRequestId) return
+            if (requestId !== _activeRequestId && !incomingRequestId) return
             self.postMessage({ type: 'LOAD_THREADS_SUCCESS', payload: result, requestId })
         } else if (type === 'LOAD_LEAD_ENRICHMENT') {
             const result = await handleLoadLeadEnrichment(payload, requestId)
-            if (requestId !== _activeRequestId) return
+            if (requestId !== _activeRequestId && !incomingRequestId) return
             self.postMessage({ type: 'LOAD_LEAD_ENRICHMENT_SUCCESS', payload: result, requestId })
         }
     } catch (error: unknown) {
-        if (requestId !== _activeRequestId) return
+        if (requestId !== _activeRequestId && !incomingRequestId) return
         const err = error instanceof Error ? error : new Error(String(error))
         self.postMessage({
             type: 'ERROR',

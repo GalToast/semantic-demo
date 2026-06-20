@@ -9,9 +9,9 @@
  * '[Demo] Invalid transition: COMPLETE → CANCELLED' and leaving a dead affordance on screen.
  * 
  * Two bugs were fixed:
- * 1. src/components/DemoChoreography.svelte: {#if eligible && isDemoActive} used the
- *    store object (always truthy) instead of $isDemoActive (the value), so the dismiss
- *    button never unmounted in terminal states.
+ * 1. src/components/DemoChoreography.svelte must render from isDemoActive()
+ *    (the current boolean getter), so the dismiss button unmounts in terminal
+ *    states.
  * 2. src/lib/stores/demo.svelte.ts: cancelDemo() had no guard, so it always tried to
  *    transition to CANCELLED. The legacy path already had the equivalent guard.
  * 
@@ -63,36 +63,48 @@ console.log('=== Running Dismiss-in-COMPLETE-State Regression Contract ===\n');
 // Read the source files
 const demoStoreSource = readFileSync(resolve(ROOT, 'src/lib/stores/demo.svelte.ts'), 'utf8');
 const demoChoreographySource = readFileSync(resolve(ROOT, 'src/components/DemoChoreography.svelte'), 'utf8');
+const legacyDemoSource = readFileSync(resolve(ROOT, 'src/lib/engine/demo-choreography.ts'), 'utf8');
+
+function sourceBetween(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker);
+  assert(start >= 0, `${startMarker} should exist`);
+  const end = source.indexOf(endMarker, start);
+  assert(end > start, `${endMarker} should exist after ${startMarker}`);
+  return source.slice(start, end);
+}
+
+const cancelDemoSource = sourceBetween(demoStoreSource, 'export function cancelDemo', 'export function transitionDemo');
 
 // Test 1: Verify isDemoActive derived store excludes COMPLETE and CANCELLED
 console.log('Test 1: isDemoActive derived store excludes terminal states');
 test('isDemoActive excludes COMPLETE state', () => {
-  const hasCorrectLogic = demoStoreSource.includes("s.phase !== 'IDLE' && s.phase !== 'COMPLETE' && s.phase !== 'CANCELLED'") &&
-                         demoStoreSource.includes('export const isDemoActive: Readable<boolean> = derived');
+  const hasCorrectLogic = demoStoreSource.includes("phase !== 'IDLE' && phase !== 'COMPLETE' && phase !== 'CANCELLED'") &&
+                         demoStoreSource.includes('export const isDemoActive = () =>');
   assert(hasCorrectLogic, 'isDemoActive should exclude IDLE, COMPLETE, and CANCELLED states');
 });
 
 // Test 2: Verify cancelDemo has guard for terminal states
 console.log('\nTest 2: cancelDemo guards against terminal states');
 test('cancelDemo has guard for IDLE, COMPLETE, CANCELLED', () => {
-  const hasGuard = demoStoreSource.includes('if (current === \'IDLE\' || current === \'COMPLETE\' || current === \'CANCELLED\')') &&
-                  demoStoreSource.includes('return false;') &&
-                  demoStoreSource.includes('transitionDemo(\'CANCELLED\')');
+  const hasGuard = cancelDemoSource.includes("if (phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED')") &&
+                  cancelDemoSource.includes('return false') &&
+                  cancelDemoSource.includes("phase: 'CANCELLED'") &&
+                  cancelDemoSource.includes('return true');
   assert(hasGuard, 'cancelDemo should guard against terminal states and return false');
 });
 
-// Test 3: Verify DemoChoreography uses $isDemoActive (not isDemoActive)
-console.log('\nTest 3: DemoChoreography uses $isDemoActive (not isDemoActive)');
-test('DemoChoreography uses $isDemoActive in conditional', () => {
-  const hasCorrectUsage = demoChoreographySource.includes('{#if eligible && $isDemoActive}');
-  assert(hasCorrectUsage, 'Should use $isDemoActive (value) not isDemoActive (store object)');
+// Test 3: Verify DemoChoreography calls isDemoActive() as a boolean getter.
+console.log('\nTest 3: DemoChoreography uses isDemoActive() boolean getter');
+test('DemoChoreography uses isDemoActive() in conditional', () => {
+  const hasCorrectUsage = demoChoreographySource.includes('{#if eligible && isDemoActive()}');
+  assert(hasCorrectUsage, 'Should call isDemoActive() instead of testing a function/store object');
 });
 
-// Test 4: Verify onDestroy uses get(isDemoActive)
-console.log('\nTest 4: onDestroy uses get(isDemoActive)');
-test('onDestroy uses get(isDemoActive) instead of isDemoActive', () => {
-  const hasCorrectUsage = demoChoreographySource.includes('if (get(isDemoActive))');
-  assert(hasCorrectUsage, 'Should use get(isDemoActive) to get the boolean value');
+// Test 4: Verify onDestroy also calls isDemoActive().
+console.log('\nTest 4: onDestroy uses isDemoActive()');
+test('onDestroy uses isDemoActive() instead of testing function identity', () => {
+  const hasCorrectUsage = demoChoreographySource.includes('if (isDemoActive())');
+  assert(hasCorrectUsage, 'Should call isDemoActive() to get the boolean value');
 });
 
 // Test 5: Simulate the bug scenario - what would happen without the fix
@@ -107,51 +119,41 @@ test('Without fix: isDemoActive would be truthy in COMPLETE state', () => {
 // Test 6: Verify the fix prevents invalid transitions
 console.log('\nTest 6: Fix prevents invalid COMPLETE → CANCELLED transition');
 test('cancelDemo returns false in COMPLETE state', () => {
-  // Extract the cancelDemo function
-  const cancelDemoMatch = demoStoreSource.match(/export\s+function\s+cancelDemo\(\):\s*boolean\s*\{[\s\S]*?\}/);
-  assert(cancelDemoMatch !== null, 'cancelDemo function should exist');
-  
-  const cancelDemoBody = cancelDemoMatch[0];
-  const hasTerminalCheck = cancelDemoBody.includes("current === 'COMPLETE'") &&
-                           cancelDemoBody.includes('return false');
+  const hasTerminalCheck = cancelDemoSource.includes("phase === 'COMPLETE'") &&
+                           cancelDemoSource.includes('return false');
   assert(hasTerminalCheck, 'cancelDemo should return false when in COMPLETE state');
 });
 
 // Test 7: Verify the fix prevents invalid CANCELLED → CANCELLED transition
 console.log('\nTest 7: Fix prevents invalid CANCELLED → CANCELLED transition');
 test('cancelDemo returns false in CANCELLED state', () => {
-  const cancelDemoMatch = demoStoreSource.match(/export\s+function\s+cancelDemo\(\):\s*boolean\s*\{[\s\S]*?\}/);
-  const cancelDemoBody = cancelDemoMatch[0];
-  const hasCancelledCheck = cancelDemoBody.includes("current === 'CANCELLED'") &&
-                            cancelDemoBody.includes('return false');
+  const hasCancelledCheck = cancelDemoSource.includes("phase === 'CANCELLED'") &&
+                            cancelDemoSource.includes('return false');
   assert(hasCancelledCheck, 'cancelDemo should return false when already CANCELLED');
 });
 
 // Test 8: Verify the fix prevents invalid IDLE → CANCELLED transition
 console.log('\nTest 8: Fix prevents invalid IDLE → CANCELLED transition');
 test('cancelDemo returns false in IDLE state', () => {
-  const cancelDemoMatch = demoStoreSource.match(/export\s+function\s+cancelDemo\(\):\s*boolean\s*\{[\s\S]*?\}/);
-  const cancelDemoBody = cancelDemoMatch[0];
-  const hasIdleCheck = cancelDemoBody.includes("current === 'IDLE'") &&
-                       cancelDemoBody.includes('return false');
+  const hasIdleCheck = cancelDemoSource.includes("phase === 'IDLE'") &&
+                       cancelDemoSource.includes('return false');
   assert(hasIdleCheck, 'cancelDemo should return false when in IDLE state');
 });
 
 // Test 9: Verify the comment explains the guard
 console.log('\nTest 9: Code includes explanatory comment for the guard');
 test('cancelDemo has explanatory comment', () => {
-  const hasComment = demoStoreSource.includes('Mirrors the legacy') &&
-                    demoStoreSource.includes('silently no-ops when the demo') &&
-                    demoStoreSource.includes('terminal state');
+  const hasComment = cancelDemoSource.includes('Mirror the legacy choreography guard') &&
+                    cancelDemoSource.includes('terminal states are already settled');
   assert(hasComment, 'cancelDemo should have comment explaining the terminal state guard');
 });
 
 // Test 10: Verify the fix matches the legacy behavior
 console.log('\nTest 10: Fix matches legacy cancelChoreography guard');
 test('Svelte cancelDemo matches legacy guard behavior', () => {
-  // The legacy path had this guard, and the Svelte path should match
-  const hasMatchingBehavior = demoStoreSource.includes('cancelChoreography') &&
-                              demoStoreSource.includes('terminal state');
+  const legacyHasGuard = legacyDemoSource.includes('_demoPhase === PHASE.IDLE || _demoPhase === PHASE.COMPLETE || _demoCancelled');
+  const svelteHasGuard = cancelDemoSource.includes("phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED'");
+  const hasMatchingBehavior = legacyHasGuard && svelteHasGuard;
   assert(hasMatchingBehavior, 'Svelte cancelDemo should match legacy guard behavior');
 });
 

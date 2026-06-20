@@ -121,7 +121,7 @@ function isPidAlive(pid) {
 function createServer() {
   const server = http.createServer((req, res) => {
     let urlPath = decodeURIComponent(req.url.split('?')[0])
-    if (urlPath === '/') urlPath = '/vector-explorer-polished.html'
+    if (urlPath === '/') urlPath = '/dist/svelte/index.html'
     const filePath = path.resolve(ROOT, urlPath.replace(/^[/\\]+/, ''))
     const relativePath = path.relative(ROOT, filePath)
     if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {

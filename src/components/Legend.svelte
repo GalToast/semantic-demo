@@ -206,6 +206,10 @@
   .legend.concealed-by-focus {
     display: none;
   }
+  :global(body[data-panel-surface='search']) .legend,
+  :global(body[data-panel-surface='focus-search']) .legend {
+    display: none;
+  }
   .legend-title {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.8rem;

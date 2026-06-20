@@ -20,6 +20,7 @@ import { readFileSync } from 'fs';
 import { join, extname } from 'path';
 
 const ROOT = process.cwd();
+const headed = process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1';
 
 // ---------------------------------------------------------------------------
 // Inline HTTP server (serves project files, auto-shutdown)
@@ -499,7 +500,10 @@ async function main() {
   const url = requestedUrl || `http://127.0.0.1:${localPort}/vector-explorer-polished.html`;
   if (server) console.log(`Server started on http://127.0.0.1:${localPort}`);
 
-  const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
+  const browser = await chromium.launch({
+    headless: !headed,
+    args: headed ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] : ['--no-sandbox'],
+  });
   const context = await browser.newContext({
     viewport: { width: 390, height: 844 },
     deviceScaleFactor: 2,

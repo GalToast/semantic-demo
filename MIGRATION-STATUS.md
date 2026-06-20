@@ -43,7 +43,7 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 ### Open Items
 
 - [x] W9-A: Production-preview parity smoke (carry-over from W43-C) — **DONE**, see `docs/production-preview-parity-baseline-w9-2026-06-20.md`
-- [ ] W9-B: Bridge unwind continuation (4-signal audit on remaining 34 bridges)
+- [x] W9-B: Bridge unwind continuation (4-signal audit on remaining 34 bridges) — **DONE**, 10 micro-bridges retired (24 remaining), see `docs/w9-bridge-audit-2026-06-20.md`
 - [ ] W9-C: Lighthouse 92% verification (W8 carry-over; unblocked by W44 named-imports audit)
 
 ### W9-A Findings (2026-06-20)

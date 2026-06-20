@@ -461,6 +461,7 @@ Options:
 Environment:
   CONTRACT_TIMEOUT_MS     Default per-contract timeout in milliseconds.
   TEST_BASE_URL           Reuse an existing app server for browser specs.
+  CONTRACT_HEADED=1       Run Playwright browser specs headed instead of headless.
 `)
 }
 
@@ -593,7 +594,10 @@ function runValidation() {
 
 // Playwright test flags for browser-interaction specs.
 const PLAYWRIGHT_CLI = join(PROJECT_ROOT, 'node_modules', '@playwright', 'test', 'cli.js')
-const PLAYWRIGHT_FLAGS = ['--browser=chromium', '--headed']
+const PLAYWRIGHT_FLAGS = ['--browser=chromium']
+if (process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1') {
+    PLAYWRIGHT_FLAGS.push('--headed')
+}
 const CONTRACT_TIMEOUT_MS = Number(process.env.CONTRACT_TIMEOUT_MS || 240000)
 
 function isPlaywrightTestFile(filename, entry) {

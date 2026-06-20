@@ -116,7 +116,7 @@ A file passes the "dead" threshold only when **all five signals are zero**.
 
 ### 1. Bridge Retirement (Phase 6 from historical plan)
 
-**Status:** Not started. Bridge files are the canonical seam.
+**Status:** In Progress (W9-B, 2026-06-20). Retired 10 micro-bridges, 24 remain. Full 5-signal audit completed in `docs/w9-bridge-audit-2026-06-20.md`.
 **Scope:** Slim bridge adapters (Phase 6A), then eliminate bridge entirely (Phase 6B) once Canvas component owns engine lifecycle.
 **Dependency:** Requires porting engine modules to TS-first pattern (already done per AGENTS.md "Engine Kernel Architecture" — the engine kernel is fully in `src/lib/`).
 **Blocker:** The bridge still wraps imperative Three.js calls; eliminating it requires the Svelte layer to own all engine lifecycle sequencing directly.

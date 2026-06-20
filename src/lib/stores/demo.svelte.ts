@@ -161,8 +161,12 @@ export function startDemo(): boolean {
     return true
 }
 
-export function cancelDemo(): void {
+export function cancelDemo(): boolean {
+    const phase = appState.demoPhase
+    // Mirror the legacy choreography guard: terminal states are already settled.
+    if (phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED') return false
     withDemoNotify((s) => ({ ...s, phase: 'CANCELLED' }))
+    return true
 }
 
 export function transitionDemo(nextPhase: DemoPhase): void {

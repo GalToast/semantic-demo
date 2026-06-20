@@ -153,6 +153,7 @@
                 "semantic-guide-payload-contract.mjs",
                 "demo-camera-retirement-contract.mjs",
                 "demo-state-sync-contract.mjs",
+                "dismiss-in-complete-state-contract.mjs",
                 "micro-demo-state-owner-contract.mjs",
                 "weather-lifecycle-contract.mjs",
                 "residual-window-bridge-inventory-contract.mjs",
@@ -491,10 +492,6 @@
                 "selected-card-dom-ownership-contract.mjs"
             ]
         },
-        "projection": {
-            "description": "Siloed projection field contracts - strandJourney, terrainHandoff, routeDirector, semanticDive/trailDepth mutual consistency.",
-            "contracts": []
-        },
         "visual-smoke": {
             "description": "Fast visual smoke and layout regression specs - btn layout, camera motion, demo seam, micro-demo sequence, ui renderers.",
             "contracts": [
@@ -527,8 +524,13 @@
             ]
         },
         "manual-risk": {
-            "description": "Manual-risk specs on alternate ports - map-search visual (9876), reset experience state (9876). May require specific environment.",
-            "contracts": ["sd143-map-search-visual.spec.js", "reset-experience-state.spec.js"]
+            "description": "Manual-risk specs and probes that need deliberate setup/debug before promotion to active groups.",
+            "contracts": [
+                "sd143-map-search-visual.spec.js",
+                "reset-experience-state.spec.js",
+                "url-anchor-bare-regression.spec.js",
+                "webgl-render-loop-regression.spec.js"
+            ]
         },
         "e2e": {
             "description": "End-to-end Playwright specs requiring a live server - switchView race condition and full click flow proofs. Requires running dev server on port 9876.",
