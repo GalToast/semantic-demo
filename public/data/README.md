@@ -10,20 +10,20 @@ directly.
 
 ## Files
 
-| File | Size | Source |
-|------|------|--------|
-| `leadEnrichment.public.json` | ~18 MB | `scripts/extract-lead-enrichment.mjs` |
-| `leadEnrichment.internal.json` | ~34 MB | `scripts/extract-lead-enrichment.mjs` |
-| `leadopsLeads.json` | ~12 MB | `scripts/extract-crm-sqlite.py` |
-| `leadopsProfiles.public.json` | ~20 MB | `scripts/extract-crm-sqlite.py` |
-| `leadopsProfiles.internal.json` | ~34 MB | `scripts/extract-crm-sqlite.py` |
-| `leadopsContacts.json` | ~1.4 MB | `scripts/extract-crm-sqlite.py` |
-| `leadopsBusinessFacts.json` | ~15 MB | `scripts/extract-crm-sqlite.py` |
-| `qwen3_embeddings.npy` | ~33 MB | `scripts/build-embeddings.py` |
-| `qwen3_embeddings_meta.json` | tiny | `scripts/build-embeddings.py` |
-| `semantic_threads.dat` | ~79 MB | `scripts/build-semantic-threads.py` |
-| `semantic_threads_ui.dat` | ~40 MB | `scripts/build-semantic-threads.py` |
-| `semantic_space_layout_manifest.json` | tiny | `scripts/build-semantic-space.py` |
+| File                                  | Size    | Source                                |
+| ------------------------------------- | ------- | ------------------------------------- |
+| `leadEnrichment.public.json`          | ~18 MB  | `scripts/extract-lead-enrichment.mjs` |
+| `leadEnrichment.internal.json`        | ~34 MB  | `scripts/extract-lead-enrichment.mjs` |
+| `leadopsLeads.json`                   | ~12 MB  | `scripts/extract-crm-sqlite.py`       |
+| `leadopsProfiles.public.json`         | ~20 MB  | `scripts/extract-crm-sqlite.py`       |
+| `leadopsProfiles.internal.json`       | ~34 MB  | `scripts/extract-crm-sqlite.py`       |
+| `leadopsContacts.json`                | ~1.4 MB | `scripts/extract-crm-sqlite.py`       |
+| `leadopsBusinessFacts.json`           | ~15 MB  | `scripts/extract-crm-sqlite.py`       |
+| `qwen3_embeddings.npy`                | ~33 MB  | `scripts/build-embeddings.py`         |
+| `qwen3_embeddings_meta.json`          | tiny    | `scripts/build-embeddings.py`         |
+| `semantic_threads.dat`                | ~79 MB  | `scripts/build-semantic-threads.py`   |
+| `semantic_threads_ui.dat`             | ~40 MB  | `scripts/build-semantic-threads.py`   |
+| `semantic_space_layout_manifest.json` | tiny    | `scripts/build-semantic-space.py`     |
 
 ## Regeneration Commands
 

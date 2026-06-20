@@ -176,7 +176,6 @@ describe('Bridge health (W11 retirement progress)', () => {
         'src/lib/engine/adapter-deps-bridge.ts',
         'src/lib/engine/search-trail-cue-renderer-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)
         'src/lib/engine/search-panel-adapter-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)
-        'src/lib/engine/data-worker-url-bridge.ts', // W11-T5 Wave 1 — Vite ?worker&url magic import; trivial wrapper, no Svelte path needed
         'src/lib/engine/weather-bridge.ts', // W11-T5 Wave 1 — weather widget fetch; trivial wrapper, no Svelte port justified
         'src/lib/engine/ui-renderers-bridge.ts', // Retired ui-renderers-bridge — logic relocated to lifecycle-bridge
         'src/lib/engine/semantic-dive-bridge.ts', // Retired semantic-dive-bridge — logic relocated to lifecycle-bridge

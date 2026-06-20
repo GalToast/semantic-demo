@@ -21,6 +21,10 @@
 Despite all bridges meeting minimum load-bearing criteria, these 5 have the **lowest caller counts** and represent the best candidates for future consolidation or retirement:
 
 ### 1. data-worker-url-bridge.ts
+
+> Superseded 2026-06-20: the Vite `?worker&url` boundary was moved to
+> `src/lib/workers/data-worker-url.ts`, outside the engine bridge inventory.
+
 - **Callers:** 1 (src/lib/semantic-threads.ts)
 - **Exports:** `workerUrl` (default re-export from data-worker.ts)
 - **Commits (60d):** 2
@@ -28,6 +32,7 @@ Despite all bridges meeting minimum load-bearing criteria, these 5 have the **lo
 - **Risk:** Single-caller bridge. If semantic-threads.ts is refactored, this bridge becomes dead.
 
 ### 2. micro-demo-choreography-bridge.ts
+
 - **Callers:** 3 (docs/archive/*, src/lib/demo/choreography.ts)
 - **Exports:** Multiple choreography utilities
 - **Commits (60d):** 4
@@ -35,6 +40,7 @@ Despite all bridges meeting minimum load-bearing criteria, these 5 have the **lo
 - **Risk:** Demo-only usage. Non-production path. Could be inlined into demo module.
 
 ### 3. journey-selected-card-bridge.ts
+
 - **Callers:** 3 (src/lib/journey/journey.ts, docs/archive/*)
 - **Exports:** Selected card state management
 - **Commits (60d):** 4
@@ -42,6 +48,7 @@ Despite all bridges meeting minimum load-bearing criteria, these 5 have the **lo
 - **Risk:** Journey-specific. Low caller count suggests tight coupling to single consumer.
 
 ### 4. weather-ui-bridge.ts
+
 - **Callers:** 3 (src/lib/utils/weather.ts, src/lib/ui/weather-ui.ts)
 - **Exports:** Weather UI bindings
 - **Commits (60d):** 2
@@ -49,6 +56,7 @@ Despite all bridges meeting minimum load-bearing criteria, these 5 have the **lo
 - **Risk:** Weather subsystem is self-contained. Bridge could be absorbed into weather-ui.ts.
 
 ### 5. camera-orbit-slack-bridge.ts
+
 - **Callers:** 5 (docs/archive/*, src/lib/engine/*, src/lib/stores/camera.svelte.ts)
 - **Exports:** Orbit slack behavior
 - **Commits (60d):** 1

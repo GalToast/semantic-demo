@@ -106,7 +106,7 @@ includesAll(
 )
 
 assert(
-    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.62 : 0.50) : 0;'),
+    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.22 : 0.5) : 0;'),
     'selected node filament opacity should be visible enough to read as a halo'
 )
 assert(

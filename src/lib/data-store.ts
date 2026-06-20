@@ -149,15 +149,12 @@ export const semanticNeighborMap = writable<Map<string, SemanticNeighborEntry>>(
 export const layoutManifest = writable<LayoutManifest | null>(null)
 
 /** Overall data loading state */
-export const dataLoadState = getOrCreateWritable<DataLoadState>(
-    '__SEMANTIC_EXPLORER_DATA_LOAD_STATE__',
-    {
-        status: 'idle',
-        businessLoaded: false,
-        threadsLoaded: false,
-        error: null
-    }
-)
+export const dataLoadState = getOrCreateWritable<DataLoadState>('__SEMANTIC_EXPLORER_DATA_LOAD_STATE__', {
+    status: 'idle',
+    businessLoaded: false,
+    threadsLoaded: false,
+    error: null
+})
 
 let leadEnrichmentLoadPromise: Promise<Record<string, LeadEnrichment> | null> | null = null
 

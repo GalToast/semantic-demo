@@ -588,9 +588,7 @@ function getAppState(): AppState {
         // `Object.defineProperty(window, GLOBAL_APP_STATE_KEY, { get: getAppState })`,
         // so reading it triggers `getAppState()` again — infinite recursion.
         const directInstance =
-            typeof window !== 'undefined'
-                ? ((window as any)[APP_STATE_DIRECT_KEY] as AppState | undefined)
-                : undefined
+            typeof window !== 'undefined' ? ((window as any)[APP_STATE_DIRECT_KEY] as AppState | undefined) : undefined
         if (directInstance) {
             _appStateInstance = directInstance
         } else {

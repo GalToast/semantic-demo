@@ -57,7 +57,7 @@ All levers: **-1,850 to -3,350 ms TBT**, **-5–10 s LCP**. From best-case TBT (
 
 ### Phase 3: Web-Worker Data Offload
 
-**Why third:** `data-worker.ts` already exists and is wired via `data-worker-url-bridge.ts`. Moving semantic thread parsing to the existing worker is a targeted refactor with clear boundaries — the bridge pattern isolates the change. Depends on Phase 1 landing first (so the main thread is free to schedule the worker response).
+**Why third:** `data-worker.ts` already exists and is wired via `src/lib/workers/data-worker-url.ts`. Moving semantic thread parsing to the existing worker is a targeted refactor with clear worker boundaries. Depends on Phase 1 landing first (so the main thread is free to schedule the worker response).
 
 ### Phase 4: Code-Split Remaining Islands
 

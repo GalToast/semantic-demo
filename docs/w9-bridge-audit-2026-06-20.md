@@ -42,7 +42,13 @@ A bridge passes "dead" only when **all five signals are zero**:
 
 ## Per-Bridge Detail
 
-### data-worker-url-bridge.ts — AUDIT (4/5 signals)
+### data-worker-url-bridge.ts — SUPERSEDED
+
+Superseded by W10 worker URL closeout: the Vite `?worker&url` boundary now lives at
+`src/lib/workers/data-worker-url.ts`, outside `src/lib/engine/*-bridge.ts`. The runtime
+boundary remains centralized; it is no longer bridge debt.
+
+### Original audit record — data-worker-url-bridge.ts — AUDIT (4/5 signals)
 
 - **LoC**: 17
 - **Exports**: 1 symbol(s)
@@ -111,4 +117,3 @@ A bridge passes "dead" only when **all five signals are zero**:
 - **Signal 3** (component-export usages): 23
 - **Signal 4** (last commit within 60d): yes (2026-06-20)
 - **Signal 5** (active callers): yes
-

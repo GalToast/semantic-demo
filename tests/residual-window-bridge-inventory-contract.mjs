@@ -624,7 +624,7 @@ function testInspectedStrandTopLevelBridgesRetired() {
         'journey/thread-settler modules must not call window.syncInspectedStrandOverlay'
     )
     assert(
-        threeSetupSrc.includes("from '@lib/engine/inspected-strand-overlay-bridge'"),
+        threeSetupSrc.includes("from '@lib/journey/inspected-strand-overlay-adapter'"),
         'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.ts'
     )
     assert(

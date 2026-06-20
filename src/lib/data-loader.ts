@@ -19,7 +19,7 @@ import type {
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles'
-import { workerUrl } from '@lib/engine/data-worker-url-bridge'
+import { workerUrl } from '@lib/workers/data-worker-url'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
 

@@ -9,7 +9,7 @@ import {
 } from '../../src/lib/data-store.ts'
 import type { SemanticThreadBundle, SemanticThreadNode } from '../../src/lib/types/business'
 
-vi.mock('../../src/lib/engine/data-worker-url-bridge', () => ({
+vi.mock('../../src/lib/workers/data-worker-url', () => ({
     workerUrl: 'mock-data-worker.js'
 }))
 

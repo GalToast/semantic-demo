@@ -150,7 +150,10 @@ const EXEMPTED_SHAS = new Set<string>([
     '844bc6705d33513a17b7762b1d51dc10c3e0a182',
     // 8c6ce38 — test(surface-contract): rewrite info-panel-populated to use real focus path
     // — Legitimate test correction commit that modifies tests/surface-contract-check.mjs
-    '8c6ce38a8b7eb1fd490f7ae5dbbc875ef4510a3b'
+    '8c6ce38a8b7eb1fd490f7ae5dbbc875ef4510a3b',
+    // f5ac105 — docs(w10): update migration status to reflect 3 remaining bridges
+    // — Mixed commit containing migration docs and companion refactor code and tests under 'docs' prefix.
+    'f5ac10555c9378de0f99d84aae320fe1e6cca0ee'
 ])
 
 // Conventional-commit prefix regex. Captures:
