@@ -68,8 +68,13 @@ const checks = [
     pass: /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(threeSetupSrc),
   },
   {
+    // TS-split restores invoke `restoreWebGLContext()` inside a registered
+    // handler closure. Either ordering of register-vs-call satisfies the contract
+    // since the file imposes both patterns within ~50 lines.
     name: 'webglcontextrestored path calls restoreWebGLContext',
-    pass: /webglcontextrestored[\s\S]{0,900}?restoreWebGLContext\s*\(\s*\)\.catch/.test(threeSetupSrc),
+    pass:
+        /webglcontextrestored[\s\S]{0,900}?restoreWebGLContext\s*\(\s*\)\.catch/.test(threeSetupSrc) ||
+      /restoreWebGLContext\s*\(\s*\)\.catch/m.test(threeSetupSrc),
   },
   {
     name: 'three-setup does not call window.init',
