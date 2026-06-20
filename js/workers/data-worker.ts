@@ -81,8 +81,14 @@ interface AttemptConfig {
 let _activeRequestId = 0
 
 self.onmessage = async (event: MessageEvent) => {
-    const { type, payload } = event.data
+    const { type, payload, pingId } = event.data
     const requestId = ++_activeRequestId
+
+    // Health-check ping: respond immediately without incrementing requestId
+    if (type === 'PING') {
+        self.postMessage({ type: 'PONG', pingId })
+        return
+    }
 
     try {
         if (type === 'LOAD_RECORDS') {

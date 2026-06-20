@@ -708,11 +708,7 @@ export function initThreeJS() {
         cancelAnimate()
         _uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
     }
-    renderer.domElement.addEventListener(
-        'webglcontextlost',
-        _webglContextLostHandler,
-        false
-    )
+    renderer.domElement.addEventListener('webglcontextlost', _webglContextLostHandler, false)
 
     _webglContextRestoredHandler = () => {
         _webglContextLost = false
@@ -722,11 +718,7 @@ export function initThreeJS() {
             })
         }, 1000)
     }
-    renderer.domElement.addEventListener(
-        'webglcontextrestored',
-        _webglContextRestoredHandler,
-        false
-    )
+    renderer.domElement.addEventListener('webglcontextrestored', _webglContextRestoredHandler, false)
 
     // Resume the animate() loop when the document becomes visible again.
     // Paired with the document.hidden gate at the top of animate() to let

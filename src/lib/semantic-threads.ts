@@ -63,10 +63,15 @@ export function attachLegacyState(stateRef: Record<string, unknown> | unknown): 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000] as const
 const SEMANTIC_THREAD_WORKER_TIMEOUT_MS = 75_000
 
-// ── Worker singleton ──────────────────────────────────────────────────────────
+// ── Worker singleton & hardening ───────────────────────────────────────────────
 
 let _dataWorker: Worker | null = null
 let _semanticThreadRequestId = 0
+
+// Circuit breaker: tracks consecutive worker failures
+let _workerFailureCount = 0
+const WORKER_MAX_FAILURES = 3
+const WORKER_RETRY_DELAYS = [500, 1500, 4000] // ms
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -75,20 +80,104 @@ function buildAssetUrl(path: string): string {
     return new URL(path, window.location.href).href
 }
 
-function getWorker(): Worker | null {
+/**
+ * Get or (re)create the data worker with retry logic.
+ *
+ * Hardening layers:
+ * 1. Retry instantiation with exponential backoff (up to 3 attempts)
+ * 2. Circuit breaker: if 3 consecutive failures, stop retrying for 30s
+ * 3. Health-check: ping the worker before returning it
+ */
+async function getWorker(): Promise<Worker | null> {
     if (typeof Worker === 'undefined') {
         _dataWorker = null
         return null
     }
-    if (_dataWorker) return _dataWorker
 
-    try {
-        _dataWorker = new Worker(workerUrl, { type: 'module' })
-        return _dataWorker
-    } catch (err) {
-        console.warn('Web Worker instantiation failed for threads, using main-thread fallback.', err)
+    if (_dataWorker) {
+        // Health check: if worker was terminated by the browser, clear it
+        try {
+            // Quick ping to verify worker is alive (0ms timeout = just check state)
+            const isAlive = await _pingWorker(_dataWorker, 100)
+            if (isAlive) return _dataWorker
+        } catch {
+            // Worker is dead, clear and recreate
+        }
+        _dataWorker = null
+    }
+
+    // Circuit breaker: if we've failed too many times, wait before retrying
+    if (_workerFailureCount >= WORKER_MAX_FAILURES) {
+        console.warn(
+            `[semantic-threads] Worker circuit breaker open (${_workerFailureCount} consecutive failures). ` +
+            `Retrying in 30s...`
+        )
+        // Reset after cooldown so next caller can try again
+        setTimeout(() => { _workerFailureCount = 0 }, 30_000)
         return null
     }
+
+    for (let attempt = 0; attempt < WORKER_RETRY_DELAYS.length; attempt++) {
+        try {
+            const worker = new Worker(workerUrl, { type: 'module' })
+            // Verify the worker is responsive before returning it
+            const isAlive = await _pingWorker(worker, 2000)
+            if (!isAlive) {
+                worker.terminate()
+                throw new Error('Worker ping failed after creation')
+            }
+            _dataWorker = worker
+            _workerFailureCount = 0
+            return worker
+        } catch (err) {
+            const delay = WORKER_RETRY_DELAYS[attempt]
+            console.warn(
+                `[semantic-threads] Worker instantiation attempt ${attempt + 1} failed, ` +
+                `retrying in ${delay}ms...`,
+                err instanceof Error ? err.message : err
+            )
+            if (attempt < WORKER_RETRY_DELAYS.length - 1) {
+                await new Promise(r => setTimeout(r, delay))
+            }
+        }
+    }
+
+    _workerFailureCount++
+    console.error(
+        `[semantic-threads] Worker creation failed after ${WORKER_RETRY_DELAYS.length} attempts. ` +
+        `Consecutive failure count: ${_workerFailureCount}/${WORKER_MAX_FAILURES}`
+    )
+    return null
+}
+
+/**
+ * Ping the worker with a PING/PONG round-trip to verify it's alive.
+ */
+async function _pingWorker(worker: Worker, timeoutMs: number): Promise<boolean> {
+    return new Promise((resolve) => {
+        const pingId = `__ping_${Date.now()}`
+        let handler: (e: MessageEvent) => void
+
+        const cleanup = (): void => {
+            worker.removeEventListener('message', handler)
+        }
+
+        const timer = setTimeout(() => {
+            cleanup()
+            resolve(false)
+        }, timeoutMs)
+
+        handler = (event: MessageEvent): void => {
+            if (event.data?.type === 'PONG' && event.data?.pingId === pingId) {
+                clearTimeout(timer)
+                cleanup()
+                resolve(true)
+            }
+        }
+
+        worker.addEventListener('message', handler)
+        worker.postMessage({ type: 'PING', pingId })
+    })
 }
 
 export function resetSemanticThreadWorker(): void {
@@ -222,14 +311,13 @@ interface WorkerThreadResult {
     bundle: SemanticThreadBundle
 }
 
-function callWorker(type: string, payload: unknown): Promise<WorkerThreadResult> {
-    return new Promise((resolve, reject) => {
-        const worker = getWorker()
-        if (!worker) {
-            reject(new Error('Worker unavailable'))
-            return
-        }
+async function callWorker(type: string, payload: unknown): Promise<WorkerThreadResult> {
+    const worker = await getWorker()
+    if (!worker) {
+        throw new Error('Worker unavailable')
+    }
 
+    return new Promise((resolve, reject) => {
         const requestId = ++_semanticThreadRequestId
         let settled = false
         let timeoutId: ReturnType<typeof globalThis.setTimeout> | null = null
@@ -530,7 +618,7 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
 
             // Worker is mandatory — .dat files are >40 MB; main-thread JSON.parse
             // blocks the UI for 500-750 ms. We rely on the Worker for all parsing.
-            const worker = getWorker()
+            const worker = await getWorker()
             if (!worker) {
                 throw new Error('Web Worker unavailable and semantic thread artifacts exceed main-thread budget.')
             }

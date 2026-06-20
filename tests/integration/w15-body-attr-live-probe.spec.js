@@ -35,44 +35,48 @@ import {
     enterSearchMode,
     typeSearchQuery,
     clickFirstSearchResult,
-    SETTLE_MS,
+    SETTLE_MS
 } from './helpers.js'
 
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 test.describe('W15 body-attr live probe', () => {
-
     // ── State: idle (initial overview) ──────────────────────────────────────
     test('idle state: body data-attrs on initial overview', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [idle] Attempt ${attempt}...`)
-            await navigateToApp(page)
-            await page.waitForTimeout(SETTLE_MS)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [idle] Attempt ${attempt}...`)
+                await navigateToApp(page)
+                await page.waitForTimeout(SETTLE_MS)
 
-            const attrs = await readBodyAttrs(page)
-            logBodyAttrs(attrs, 'idle')
+                const attrs = await readBodyAttrs(page)
+                logBodyAttrs(attrs, 'idle')
 
-            expect(attrs.mode, 'data-mode should be overview').toBe('overview')
-            expect(attrs.journeyPhase, 'data-journey-phase should be overview').toBe('overview')
-            expect(attrs.searchStatus, 'data-search-status should be idle').toBe('idle')
-            expect(attrs.trailDepth, 'data-trail-depth should be 0').toBe('0')
-            expect(attrs.trailState, 'data-trail-state should be inactive').toBe('inactive')
-            expect(attrs.semanticDive, 'data-semantic-dive should be inactive').toBe('inactive')
-            expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
-        }, { maxAttempts: 3, backoffMs: 1000, label: 'idle' })
+                expect(attrs.mode, 'data-mode should be overview').toBe('overview')
+                expect(attrs.journeyPhase, 'data-journey-phase should be overview').toBe('overview')
+                expect(attrs.searchStatus, 'data-search-status should be idle').toBe('idle')
+                expect(attrs.trailDepth, 'data-trail-depth should be 0').toBe('0')
+                expect(attrs.trailState, 'data-trail-state should be inactive').toBe('inactive')
+                expect(attrs.semanticDive, 'data-semantic-dive should be inactive').toBe('inactive')
+                expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
+            },
+            { maxAttempts: 3, backoffMs: 1000, label: 'idle' }
+        )
 
         // ── a11y baseline scan (idle state) ─
         const axeResultsIdle = await new AxeBuilder({ page }).analyze()
-        console.log(`  [idle] a11y: ${axeResultsIdle.violations.length} violation(s)`)  
+        console.log(`  [idle] a11y: ${axeResultsIdle.violations.length} violation(s)`)
         if (axeResultsIdle.violations.length > 0) {
             for (const v of axeResultsIdle.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)
             }
         }
         if (axeResultsIdle.violations.length > 5) {
-            throw new Error(`a11y regression: idle state has ${axeResultsIdle.violations.length} violations (baseline threshold: 5)`)  
+            throw new Error(
+                `a11y regression: idle state has ${axeResultsIdle.violations.length} violations (baseline threshold: 5)`
+            )
         }
 
         // Surface console errors in failure output
@@ -85,31 +89,38 @@ test.describe('W15 body-attr live probe', () => {
     test('search state: body data-attrs after typing a query', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [search] Attempt ${attempt}...`)
-            await navigateToApp(page)
-            await enterSearchMode(page)
-            await typeSearchQuery(page, 'cafe')
-            await page.waitForTimeout(SETTLE_MS)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [search] Attempt ${attempt}...`)
+                await navigateToApp(page)
+                await enterSearchMode(page)
+                await typeSearchQuery(page, 'cafe')
+                await page.waitForTimeout(SETTLE_MS)
 
-            const attrs = await readBodyAttrs(page)
-            logBodyAttrs(attrs, 'search')
+                const attrs = await readBodyAttrs(page)
+                logBodyAttrs(attrs, 'search')
 
-            // After entering search mode and typing, the nav-surface should reflect search
-            expect(attrs.searchStatus, 'data-search-status should be searching or results or idle').toMatch(/searching|results|idle/)
-            expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
-        }, { maxAttempts: 3, backoffMs: 1000, label: 'search' })
+                // After entering search mode and typing, the nav-surface should reflect search
+                expect(attrs.searchStatus, 'data-search-status should be searching or results or idle').toMatch(
+                    /searching|results|idle/
+                )
+                expect(attrs.sceneReady, 'data-scene-ready should be true').toBe('true')
+            },
+            { maxAttempts: 3, backoffMs: 1000, label: 'search' }
+        )
 
         // ── a11y baseline scan (search state) ─
         const axeResultsSearch = await new AxeBuilder({ page }).analyze()
-        console.log(`  [search] a11y: ${axeResultsSearch.violations.length} violation(s)`)  
+        console.log(`  [search] a11y: ${axeResultsSearch.violations.length} violation(s)`)
         if (axeResultsSearch.violations.length > 0) {
             for (const v of axeResultsSearch.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)
             }
         }
         if (axeResultsSearch.violations.length > 5) {
-            throw new Error(`a11y regression: search state has ${axeResultsSearch.violations.length} violations (baseline threshold: 5)`)  
+            throw new Error(
+                `a11y regression: search state has ${axeResultsSearch.violations.length} violations (baseline threshold: 5)`
+            )
         }
 
         if (consoleCapture.errors.length > 0) {
@@ -121,43 +132,48 @@ test.describe('W15 body-attr live probe', () => {
     test('focus-search state: body data-attrs after search-result focus click', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [focus-search] Attempt ${attempt}...`)
-            await navigateToApp(page)
-            await enterSearchMode(page)
-            await typeSearchQuery(page, 'cafe')
-            const clickedIndex = await clickFirstSearchResult(page)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [focus-search] Attempt ${attempt}...`)
+                await navigateToApp(page)
+                await enterSearchMode(page)
+                await typeSearchQuery(page, 'cafe')
+                const clickedIndex = await clickFirstSearchResult(page)
 
-            // Wait for the focus click to propagate
-            await page.waitForTimeout(SETTLE_MS)
+                // Wait for the focus click to propagate
+                await page.waitForTimeout(SETTLE_MS)
 
-            const attrs = await readBodyAttrs(page)
-            logBodyAttrs(attrs, 'focus-search')
+                const attrs = await readBodyAttrs(page)
+                logBodyAttrs(attrs, 'focus-search')
 
-            // GREEN assertions — these work via direct DOM writes in cursor.ts
-            expect(attrs.focusedNode, 'data-focused-node should be the clicked index').toBe(clickedIndex)
-            expect(attrs.trailDepth, 'data-trail-depth should be 1').toBe('1')
-            expect(attrs.searchStatus, 'data-search-status should be focusing').toBe('focusing')
-            expect(attrs.focusOrigin, 'data-focus-origin should be search-result').toBe('search-result')
+                // GREEN assertions — these work via direct DOM writes in cursor.ts
+                expect(attrs.focusedNode, 'data-focused-node should be the clicked index').toBe(clickedIndex)
+                expect(attrs.trailDepth, 'data-trail-depth should be 1').toBe('1')
+                expect(attrs.searchStatus, 'data-search-status should be focusing').toBe('focusing')
+                expect(attrs.focusOrigin, 'data-focus-origin should be search-result').toBe('search-result')
 
-            // Core parity-attr assertions — these should pass after the W15 fix
-            expect(attrs.mode, 'data-mode should be focus').toBe('focus')
-            expect(attrs.navSurface, 'data-nav-surface should be focus-search').toBe('focus-search')
-            expect(attrs.panelSurface, 'data-panel-surface should be focus-search').toBe('focus-search')
-            expect(attrs.journeyPhase, 'data-journey-phase should be focus-search').toBe('focus-search')
-            expect(attrs.trailState, 'data-trail-state should be active').toBe('active')
-        }, { maxAttempts: 3, backoffMs: 1000, label: 'focus-search' })
+                // Core parity-attr assertions — these should pass after the W15 fix
+                expect(attrs.mode, 'data-mode should be focus').toBe('focus')
+                expect(attrs.navSurface, 'data-nav-surface should be focus-search').toBe('focus-search')
+                expect(attrs.panelSurface, 'data-panel-surface should be focus-search').toBe('focus-search')
+                expect(attrs.journeyPhase, 'data-journey-phase should be focus-search').toBe('focus-search')
+                expect(attrs.trailState, 'data-trail-state should be active').toBe('active')
+            },
+            { maxAttempts: 3, backoffMs: 1000, label: 'focus-search' }
+        )
 
         // ── a11y baseline scan (focus-search state) ─
         const axeResultsFocusSearch = await new AxeBuilder({ page }).analyze()
-        console.log(`  [focus-search] a11y: ${axeResultsFocusSearch.violations.length} violation(s)`)  
+        console.log(`  [focus-search] a11y: ${axeResultsFocusSearch.violations.length} violation(s)`)
         if (axeResultsFocusSearch.violations.length > 0) {
             for (const v of axeResultsFocusSearch.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)
             }
         }
         if (axeResultsFocusSearch.violations.length > 5) {
-            throw new Error(`a11y regression: focus-search state has ${axeResultsFocusSearch.violations.length} violations (baseline threshold: 5)`)  
+            throw new Error(
+                `a11y regression: focus-search state has ${axeResultsFocusSearch.violations.length} violations (baseline threshold: 5)`
+            )
         }
 
         if (consoleCapture.errors.length > 0) {
@@ -169,42 +185,47 @@ test.describe('W15 body-attr live probe', () => {
     test('focus state: body data-attrs after programmatic focus (click a node in overview)', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [focus] Attempt ${attempt}...`)
-            await navigateToApp(page)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [focus] Attempt ${attempt}...`)
+                await navigateToApp(page)
 
-            // In overview mode, try to click a visible node label/field-node
-            const fieldNode = page.locator('[data-field-node], .field-node, [role="button"]').first()
-            const nodeVisible = await fieldNode.isVisible().catch(() => false)
+                // In overview mode, try to click a visible node label/field-node
+                const fieldNode = page.locator('[data-field-node], .field-node, [role="button"]').first()
+                const nodeVisible = await fieldNode.isVisible().catch(() => false)
 
-            if (nodeVisible) {
-                await fieldNode.click()
-                await page.waitForTimeout(SETTLE_MS)
+                if (nodeVisible) {
+                    await fieldNode.click()
+                    await page.waitForTimeout(SETTLE_MS)
 
-                const attrs = await readBodyAttrs(page)
-                logBodyAttrs(attrs, 'focus (programmatic)')
+                    const attrs = await readBodyAttrs(page)
+                    logBodyAttrs(attrs, 'focus (programmatic)')
 
-                // After clicking a node in overview, we expect a focus state
-                expect(attrs.mode, 'data-mode should be focus after node click').toBe('focus')
-                expect(attrs.focusedNode, 'data-focused-node should be set').not.toBeNull()
-                expect(attrs.trailDepth, 'data-trail-depth should be at least 1').toBe('1')
-            } else {
-                // No field-node visible — skip with a note
-                console.log('  [focus] No field-node visible in overview; skipping focus assertion')
-                test.skip()
-            }
-        }, { maxAttempts: 2, backoffMs: 1000, label: 'focus (programmatic)' })
+                    // After clicking a node in overview, we expect a focus state
+                    expect(attrs.mode, 'data-mode should be focus after node click').toBe('focus')
+                    expect(attrs.focusedNode, 'data-focused-node should be set').not.toBeNull()
+                    expect(attrs.trailDepth, 'data-trail-depth should be at least 1').toBe('1')
+                } else {
+                    // No field-node visible — skip with a note
+                    console.log('  [focus] No field-node visible in overview; skipping focus assertion')
+                    test.skip()
+                }
+            },
+            { maxAttempts: 2, backoffMs: 1000, label: 'focus (programmatic)' }
+        )
 
         // ── a11y baseline scan (focus state) ─
         const axeResultsFocus = await new AxeBuilder({ page }).analyze()
-        console.log(`  [focus] a11y: ${axeResultsFocus.violations.length} violation(s)`)  
+        console.log(`  [focus] a11y: ${axeResultsFocus.violations.length} violation(s)`)
         if (axeResultsFocus.violations.length > 0) {
             for (const v of axeResultsFocus.violations) {
-                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
+                console.log(`    - [${v.impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)
             }
         }
         if (axeResultsFocus.violations.length > 5) {
-            throw new Error(`a11y regression: focus state has ${axeResultsFocus.violations.length} violations (baseline threshold: 5)`)  
+            throw new Error(
+                `a11y regression: focus state has ${axeResultsFocus.violations.length} violations (baseline threshold: 5)`
+            )
         }
 
         if (consoleCapture.errors.length > 0) {

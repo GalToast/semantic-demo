@@ -18,298 +18,408 @@
  *   - State is consistent (scene still has expected objects)
  */
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '@playwright/test'
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
+const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
+const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
 
 async function waitForAppReady(page) {
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
-  // Wait for scene init — pointsMesh is a reliable scene-ready sentinel
-  await page.waitForFunction(() => (
-    typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
-    Array.isArray(window.__TEST_STATE__?.points) &&
-    (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
-    (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0 &&
-    (window.__APP_STATE__ ?? window.__TEST_STATE__).renderer !== null
-  ), undefined, { timeout: 25000 });
-  // Ensure loading overlay is gone so we know the render loop is active
-  await page.waitForFunction(() => {
-    const overlay = document.getElementById('loading-overlay');
-    if (!overlay) return true;
-    const styles = getComputedStyle(overlay);
-    return overlay.classList.contains('hidden') ||
-      styles.display === 'none' ||
-      styles.visibility === 'hidden' ||
-      styles.pointerEvents === 'none';
-  }, undefined, { timeout: 20000 });
-  await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
+    await page.goto(`${BASE_URL}${APP_PATH}?view=galaxy`, { waitUntil: 'domcontentloaded' })
+    // Wait for scene init — pointsMesh is a reliable scene-ready sentinel
+    await page.waitForFunction(
+        () =>
+            typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
+            Array.isArray(window.__TEST_STATE__?.points) &&
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0 &&
+            (window.__APP_STATE__ ?? window.__TEST_STATE__).renderer !== null,
+        undefined,
+        { timeout: 25000 }
+    )
+    // Ensure loading overlay is gone so we know the render loop is active
+    await page.waitForFunction(
+        () => {
+            const overlay = document.getElementById('loading-overlay')
+            if (!overlay) return true
+            const styles = getComputedStyle(overlay)
+            return (
+                overlay.classList.contains('hidden') ||
+                styles.display === 'none' ||
+                styles.visibility === 'hidden' ||
+                styles.pointerEvents === 'none'
+            )
+        },
+        undefined,
+        { timeout: 20000 }
+    )
+    await page
+        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), {
+            timeout: 8000
+        })
+        .catch(() => {})
 }
 
 // Capture renderer state before context loss
 async function captureRendererState(page) {
-  return page.evaluate(() => {
-    const r = window.__TEST_STATE__?.renderer;
-    const s = window.__TEST_STATE__?.scene;
-    return {
-      hasRenderer: r !== null && r !== undefined,
-      hasScene: s !== null && s !== undefined,
-      rendererInfo: r ? (r.info?.memory?.geometries ?? 'unavailable') : 0,
-      pointCount: window.__TEST_STATE__?.points?.length ?? 0,
-    };
-  });
+    return page.evaluate(() => {
+        const r = window.__TEST_STATE__?.renderer
+        const s = window.__TEST_STATE__?.scene
+        return {
+            hasRenderer: r !== null && r !== undefined,
+            hasScene: s !== null && s !== undefined,
+            rendererInfo: r ? (r.info?.memory?.geometries ?? 'unavailable') : 0,
+            pointCount: window.__TEST_STATE__?.points?.length ?? 0
+        }
+    })
 }
 
 // Check whether the canvas has actual rendered content (non-blank)
 async function _canvasHasContent(page) {
-  return page.evaluate(() => {
-    const canvas = document.querySelector('canvas');
-    if (!canvas) return false;
-    try {
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return true; // WebGL canvas — assume content exists
-      const data = ctx.getImageData(0, 0, 4, 4).data;
-      // If all pixels are transparent/black, canvas is blank
-      return data.some(v => v !== 0);
-    } catch (_) {
-      return true; // cross-origin or WebGL canvas
-    }
-  });
+    return page.evaluate(() => {
+        const canvas = document.querySelector('canvas')
+        if (!canvas) return false
+        try {
+            const ctx = canvas.getContext('2d')
+            if (!ctx) return true // WebGL canvas — assume content exists
+            const data = ctx.getImageData(0, 0, 4, 4).data
+            // If all pixels are transparent/black, canvas is blank
+            return data.some((v) => v !== 0)
+        } catch (_) {
+            return true // cross-origin or WebGL canvas
+        }
+    })
 }
 
 test.describe('WebGL Context Loss Resilience', () => {
+    test('context loss is detected and renderer survives without dispose', async ({ page }) => {
+        test.setTimeout(60000)
+        await waitForAppReady(page)
 
-  test('context loss is detected and renderer survives without dispose', async ({ page }) => {
-    test.setTimeout(60000);
-    await waitForAppReady(page);
+        const beforeState = await captureRendererState(page)
+        expect(beforeState.hasRenderer, 'renderer must exist before loss test').toBe(true)
 
-    const beforeState = await captureRendererState(page);
-    expect(beforeState.hasRenderer, 'renderer must exist before loss test').toBe(true);
+        // Inject a context-loss listener into the app so the body gets flagged
+        await page.evaluate(() => {
+            const canvas = document.querySelector('canvas')
+            if (!canvas) return
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+            if (!gl) return
+            const ext = gl.getExtension('WEBGL_lose_context')
 
-    // Inject a context-loss listener into the app so the body gets flagged
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      if (!canvas) return;
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      if (!gl) return;
-      const ext = gl.getExtension('WEBGL_lose_context');
+            // Observe context loss and restoration events
+            canvas.addEventListener(
+                'webglcontextlost',
+                (e) => {
+                    e.preventDefault()
+                    document.body.dataset.webglContextLost = 'lost'
+                    window.__webglContextLostAt = Date.now()
+                },
+                { passive: false }
+            )
 
-      // Observe context loss and restoration events
-      canvas.addEventListener('webglcontextlost', (e) => {
-        e.preventDefault();
-        document.body.dataset.webglContextLost = 'lost';
-        window.__webglContextLostAt = Date.now();
-      }, { passive: false });
+            canvas.addEventListener(
+                'webglcontextrestored',
+                () => {
+                    document.body.dataset.webglContextLost = 'restored'
+                    window.__webglContextRestoredAt = Date.now()
+                },
+                { passive: false }
+            )
 
-      canvas.addEventListener('webglcontextrestored', () => {
-        document.body.dataset.webglContextLost = 'restored';
-        window.__webglContextRestoredAt = Date.now();
-      }, { passive: false });
+            // Expose extension for the test to trigger loss/restore
+            window.__webglLoseContextExt = ext
+            window.__webglCanvas = canvas
+        })
 
-      // Expose extension for the test to trigger loss/restore
-      window.__webglLoseContextExt = ext;
-      window.__webglCanvas = canvas;
-    });
+        const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt)
+        if (!extAvailable) {
+            // WEBGL_lose_context not available — skip with informative note
+            test.skip('WEBGL_lose_context extension not available in this WebGL build')
+            return
+        }
 
-    const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt);
-    if (!extAvailable) {
-      // WEBGL_lose_context not available — skip with informative note
-      test.skip('WEBGL_lose_context extension not available in this WebGL build');
-      return;
-    }
+        // Trigger the context loss
+        await page.evaluate(() => {
+            if (window.__webglLoseContextExt) {
+                window.__webglLoseContextExt.loseContext()
+            }
+        })
 
-    // Trigger the context loss
-    await page.evaluate(() => {
-      if (window.__webglLoseContextExt) {
-        window.__webglLoseContextExt.loseContext();
-      }
-    });
+        // Allow the event handlers to fire
+        await page
+            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+            .catch(() => {})
 
-    // Allow the event handlers to fire
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
+        const lostState = await page.evaluate(() => ({
+            datasetLost: document.body.dataset.webglContextLost || '',
+            rendererGone: window.__TEST_STATE__?.renderer === null
+        }))
 
-    const lostState = await page.evaluate(() => ({
-      datasetLost: document.body.dataset.webglContextLost || '',
-      rendererGone: window.__TEST_STATE__?.renderer === null,
-    }));
+        expect(lostState.datasetLost, 'context loss must be reflected on body.dataset').toBe('lost')
+        expect(lostState.rendererGone, 'renderer must NOT be nullified on context loss').toBe(false)
 
-    expect(lostState.datasetLost, 'context loss must be reflected on body.dataset').toBe('lost');
-    expect(lostState.rendererGone, 'renderer must NOT be nullified on context loss').toBe(false);
+        // Restore the context
+        await page.evaluate(() => {
+            if (window.__webglLoseContextExt) {
+                window.__webglLoseContextExt.restoreContext()
+            }
+        })
 
-    // Restore the context
-    await page.evaluate(() => {
-      if (window.__webglLoseContextExt) {
-        window.__webglLoseContextExt.restoreContext();
-      }
-    });
+        // Allow restoration to propagate
+        await page
+            .waitForFunction(
+                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
+                { timeout: 8000 }
+            )
+            .catch(() => {})
 
-    // Allow restoration to propagate
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
+        const afterState = await captureRendererState(page)
+        const restoredFlag = await page.evaluate(() => document.body.dataset.webglContextLost || '')
 
-    const afterState = await captureRendererState(page);
-    const restoredFlag = await page.evaluate(() => document.body.dataset.webglContextLost || '');
+        expect(afterState.hasRenderer, 'renderer must still exist after restore').toBe(true)
+        expect(afterState.hasScene, 'scene must still exist after restore').toBe(true)
+        expect(restoredFlag, 'context restoration must be reflected on body.dataset').toBe('restored')
+    })
 
-    expect(afterState.hasRenderer, 'renderer must still exist after restore').toBe(true);
-    expect(afterState.hasScene, 'scene must still exist after restore').toBe(true);
-    expect(restoredFlag, 'context restoration must be reflected on body.dataset').toBe('restored');
-  });
+    test('context loss does not dispose scene objects; scene still has point mesh after restore', async ({ page }) => {
+        test.setTimeout(60000)
+        await waitForAppReady(page)
 
-  test('context loss does not dispose scene objects; scene still has point mesh after restore', async ({ page }) => {
-    test.setTimeout(60000);
-    await waitForAppReady(page);
+        const beforePointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0)
+        const _beforeMyceliumPairs = await page.evaluate(
+            () => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0
+        )
 
-    const beforePointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0);
-    const _beforeMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
+        expect(beforePointCount, 'scene must have points loaded').toBeGreaterThan(0)
 
-    expect(beforePointCount, 'scene must have points loaded').toBeGreaterThan(0);
+        // Inject loss/restoration handlers
+        await page.evaluate(() => {
+            const canvas = document.querySelector('canvas')
+            if (!canvas) return
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+            if (!gl) return
+            const ext = gl.getExtension('WEBGL_lose_context')
+            canvas.addEventListener(
+                'webglcontextlost',
+                (e) => {
+                    e.preventDefault()
+                    document.body.dataset.webglContextLost = 'lost'
+                },
+                { passive: false }
+            )
+            canvas.addEventListener(
+                'webglcontextrestored',
+                () => {
+                    document.body.dataset.webglContextLost = 'restored'
+                },
+                { passive: false }
+            )
+            window.__webglLoseContextExt = ext
+        })
 
-    // Inject loss/restoration handlers
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      if (!canvas) return;
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      if (!gl) return;
-      const ext = gl.getExtension('WEBGL_lose_context');
-      canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); document.body.dataset.webglContextLost = 'lost'; }, { passive: false });
-      canvas.addEventListener('webglcontextrestored', () => { document.body.dataset.webglContextLost = 'restored'; }, { passive: false });
-      window.__webglLoseContextExt = ext;
-    });
+        const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt)
+        if (!extAvailable) {
+            test.skip('WEBGL_lose_context not available')
+            return
+        }
 
-    const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt);
-    if (!extAvailable) { test.skip('WEBGL_lose_context not available'); return; }
+        // Lose then restore
+        await page.evaluate(() => window.__webglLoseContextExt?.loseContext())
+        await page
+            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+            .catch(() => {})
+        await page.evaluate(() => window.__webglLoseContextExt?.restoreContext())
+        await page
+            .waitForFunction(
+                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
+                { timeout: 8000 }
+            )
+            .catch(() => {})
 
-    // Lose then restore
-    await page.evaluate(() => window.__webglLoseContextExt?.loseContext());
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
-    await page.evaluate(() => window.__webglLoseContextExt?.restoreContext());
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
+        // Verify state integrity
+        const afterPointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0)
+        const _afterMyceliumPairs = await page.evaluate(
+            () => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0
+        )
+        const pointsMeshExists = await page.evaluate(() => window.__TEST_STATE__?.pointsMesh !== null)
+        const rendererExists = await page.evaluate(() => window.__TEST_STATE__?.renderer !== null)
 
-    // Verify state integrity
-    const afterPointCount = await page.evaluate(() => window.__TEST_STATE__?.points?.length ?? 0);
-    const _afterMyceliumPairs = await page.evaluate(() => window.__TEST_STATE__?.myceliumConnectionPairs?.length ?? 0);
-    const pointsMeshExists = await page.evaluate(() => window.__TEST_STATE__?.pointsMesh !== null);
-    const rendererExists = await page.evaluate(() => window.__TEST_STATE__?.renderer !== null);
+        expect(afterPointCount, 'point data must be preserved after restore').toBe(beforePointCount)
+        expect(pointsMeshExists, 'pointsMesh must still exist after restore').toBe(true)
+        expect(rendererExists, 'renderer must still exist after restore').toBe(true)
+    })
 
-    expect(afterPointCount, 'point data must be preserved after restore').toBe(beforePointCount);
-    expect(pointsMeshExists, 'pointsMesh must still exist after restore').toBe(true);
-    expect(rendererExists, 'renderer must still exist after restore').toBe(true);
-  });
+    test('canvas is non-blank after context restore; animation loop continues', async ({ page }) => {
+        test.setTimeout(60000)
+        await waitForAppReady(page)
 
-  test('canvas is non-blank after context restore; animation loop continues', async ({ page }) => {
-    test.setTimeout(60000);
-    await waitForAppReady(page);
+        // Record animation loop state before loss
+        const _rafBefore = await page.evaluate(() => {
+            const r = window.__TEST_STATE__?.renderer
+            return r ? 'active' : 'no-renderer'
+        })
 
-    // Record animation loop state before loss
-    const _rafBefore = await page.evaluate(() => {
-      const r = window.__TEST_STATE__?.renderer;
-      return r ? 'active' : 'no-renderer';
-    });
+        await page.evaluate(() => {
+            const canvas = document.querySelector('canvas')
+            if (!canvas) return
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+            if (!gl) return
+            const ext = gl.getExtension('WEBGL_lose_context')
+            canvas.addEventListener(
+                'webglcontextlost',
+                (e) => {
+                    e.preventDefault()
+                    document.body.dataset.webglContextLost = 'lost'
+                },
+                { passive: false }
+            )
+            canvas.addEventListener(
+                'webglcontextrestored',
+                () => {
+                    document.body.dataset.webglContextLost = 'restored'
+                },
+                { passive: false }
+            )
+            window.__webglLoseContextExt = ext
+        })
 
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      if (!canvas) return;
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      if (!gl) return;
-      const ext = gl.getExtension('WEBGL_lose_context');
-      canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); document.body.dataset.webglContextLost = 'lost'; }, { passive: false });
-      canvas.addEventListener('webglcontextrestored', () => { document.body.dataset.webglContextLost = 'restored'; }, { passive: false });
-      window.__webglLoseContextExt = ext;
-    });
+        const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt)
+        if (!extAvailable) {
+            test.skip('WEBGL_lose_context not available')
+            return
+        }
 
-    const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt);
-    if (!extAvailable) { test.skip('WEBGL_lose_context not available'); return; }
+        await page.evaluate(() => window.__webglLoseContextExt?.loseContext())
+        await page
+            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+            .catch(() => {})
+        await page.evaluate(() => window.__webglLoseContextExt?.restoreContext())
+        await page
+            .waitForFunction(
+                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
+                { timeout: 8000 }
+            )
+            .catch(() => {}) // Allow render loop to re-establish
 
-    await page.evaluate(() => window.__webglLoseContextExt?.loseContext());
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
-    await page.evaluate(() => window.__webglLoseContextExt?.restoreContext());
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // Allow render loop to re-establish
+        const afterRaf = await page.evaluate(() => {
+            const r = window.__TEST_STATE__?.renderer
+            return r ? 'active' : 'no-renderer'
+        })
 
-    const afterRaf = await page.evaluate(() => {
-      const r = window.__TEST_STATE__?.renderer;
-      return r ? 'active' : 'no-renderer';
-    });
+        expect(afterRaf, 'renderer must still be active after restore and animation loop must continue').toBe('active')
 
-    expect(afterRaf, 'renderer must still be active after restore and animation loop must continue').toBe('active');
+        // Verify canvas is still present and not removed
+        const canvasPresent = await page.evaluate(() => !!document.querySelector('canvas'))
+        expect(canvasPresent, 'canvas element must still be in DOM after context restore').toBe(true)
+    })
 
-    // Verify canvas is still present and not removed
-    const canvasPresent = await page.evaluate(() => !!document.querySelector('canvas'));
-    expect(canvasPresent, 'canvas element must still be in DOM after context restore').toBe(true);
-  });
+    test('pointsMaterial shader is reconstructed after context restore; no zombie shader', async ({ page }) => {
+        test.setTimeout(60000)
+        await waitForAppReady(page)
 
-  test('pointsMaterial shader is reconstructed after context restore; no zombie shader', async ({ page }) => {
-    test.setTimeout(60000);
-    await waitForAppReady(page);
+        // Verify shader exists before loss
+        const shaderExistsBefore = await page.evaluate(() => {
+            const mat = window.__TEST_STATE__?.pointsMaterial
+            return mat && typeof mat.userData?.shader === 'object' && mat.userData.shader !== null
+        })
+        expect(shaderExistsBefore, 'shader must exist before loss test').toBe(true)
 
-    // Verify shader exists before loss
-    const shaderExistsBefore = await page.evaluate(() => {
-      const mat = window.__TEST_STATE__?.pointsMaterial;
-      return mat && typeof mat.userData?.shader === 'object' && mat.userData.shader !== null;
-    });
-    expect(shaderExistsBefore, 'shader must exist before loss test').toBe(true);
+        // Inject loss/restoration handlers
+        await page.evaluate(() => {
+            const canvas = document.querySelector('canvas')
+            if (!canvas) return
+            const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+            if (!gl) return
+            const ext = gl.getExtension('WEBGL_lose_context')
+            canvas.addEventListener(
+                'webglcontextlost',
+                (e) => {
+                    e.preventDefault()
+                    document.body.dataset.webglContextLost = 'lost'
+                },
+                { passive: false }
+            )
+            canvas.addEventListener(
+                'webglcontextrestored',
+                () => {
+                    document.body.dataset.webglContextLost = 'restored'
+                },
+                { passive: false }
+            )
+            window.__webglLoseContextExt = ext
+        })
 
-    // Inject loss/restoration handlers
-    await page.evaluate(() => {
-      const canvas = document.querySelector('canvas');
-      if (!canvas) return;
-      const gl = canvas.getContext('webgl2') || canvas.getContext('webgl');
-      if (!gl) return;
-      const ext = gl.getExtension('WEBGL_lose_context');
-      canvas.addEventListener('webglcontextlost', (e) => { e.preventDefault(); document.body.dataset.webglContextLost = 'lost'; }, { passive: false });
-      canvas.addEventListener('webglcontextrestored', () => { document.body.dataset.webglContextLost = 'restored'; }, { passive: false });
-      window.__webglLoseContextExt = ext;
-    });
+        const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt)
+        if (!extAvailable) {
+            test.skip('WEBGL_lose_context not available')
+            return
+        }
 
-    const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt);
-    if (!extAvailable) { test.skip('WEBGL_lose_context not available'); return; }
+        // Lose then restore
+        await page.evaluate(() => window.__webglLoseContextExt?.loseContext())
+        await page
+            .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })
+            .catch(() => {})
+        await page.evaluate(() => window.__webglLoseContextExt?.restoreContext())
+        await page
+            .waitForFunction(
+                () => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))),
+                { timeout: 8000 }
+            )
+            .catch(() => {}) // Allow restore + reinit to complete
 
-    // Lose then restore
-    await page.evaluate(() => window.__webglLoseContextExt?.loseContext());
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
-    await page.evaluate(() => window.__webglLoseContextExt?.restoreContext());
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {}); // Allow restore + reinit to complete
+        // Critical: shader must be a valid object after restore (not null, not undefined)
+        const shaderAfterRestore = await page.evaluate(() => {
+            const mat = window.__TEST_STATE__?.pointsMaterial
+            if (!mat) return { exists: false, reason: 'pointsMaterial is null' }
+            const shader = mat.userData?.shader
+            return {
+                exists: typeof shader === 'object' && shader !== null,
+                hasUniforms: shader ? typeof shader.uniforms === 'object' : false,
+                uniformCount: shader ? Object.keys(shader.uniforms || {}).length : 0
+            }
+        })
 
-    // Critical: shader must be a valid object after restore (not null, not undefined)
-    const shaderAfterRestore = await page.evaluate(() => {
-      const mat = window.__TEST_STATE__?.pointsMaterial;
-      if (!mat) return { exists: false, reason: 'pointsMaterial is null' };
-      const shader = mat.userData?.shader;
-      return {
-        exists: typeof shader === 'object' && shader !== null,
-        hasUniforms: shader ? (typeof shader.uniforms === 'object') : false,
-        uniformCount: shader ? Object.keys(shader.uniforms || {}).length : 0
-      };
-    });
+        expect(
+            shaderAfterRestore.exists,
+            `shader must be reconstructed after restore (was: ${shaderAfterRestore.reason})`
+        ).toBe(true)
+        expect(shaderAfterRestore.hasUniforms, 'shader must have uniforms object').toBe(true)
+        expect(shaderAfterRestore.uniformCount, 'shader must have more than zero uniforms').toBeGreaterThan(0)
+    })
 
-    expect(shaderAfterRestore.exists, `shader must be reconstructed after restore (was: ${shaderAfterRestore.reason})`).toBe(true);
-    expect(shaderAfterRestore.hasUniforms, 'shader must have uniforms object').toBe(true);
-    expect(shaderAfterRestore.uniformCount, 'shader must have more than zero uniforms').toBeGreaterThan(0);
-  });
+    test('map route precompiles points shader before animation can pause', async ({ page }) => {
+        test.setTimeout(45000)
+        await page.goto(`${BASE_URL}${APP_PATH}?view=map&nodemo=1&q=coffee&anchor=519`, {
+            waitUntil: 'domcontentloaded'
+        })
 
-  test('map route precompiles points shader before animation can pause', async ({ page }) => {
-    test.setTimeout(45000);
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=map&nodemo=1&q=coffee&anchor=519`, { waitUntil: 'domcontentloaded' });
+        await page.waitForFunction(
+            () => {
+                const state = window.__TEST_STATE__
+                return Boolean(
+                    state?.renderer &&
+                    state?.scene &&
+                    state?.camera &&
+                    state?.pointsMesh?.geometry?.attributes?.position?.count &&
+                    state?.pointsMaterial?.userData?.shader
+                )
+            },
+            undefined,
+            { timeout: 12000 }
+        )
 
-    await page.waitForFunction(() => {
-      const state = window.__TEST_STATE__;
-      return Boolean(
-        state?.renderer &&
-        state?.scene &&
-        state?.camera &&
-        state?.pointsMesh?.geometry?.attributes?.position?.count &&
-        state?.pointsMaterial?.userData?.shader
-      );
-    }, undefined, { timeout: 12000 });
+        const mapReady = await page.evaluate(() => ({
+            currentView: window.__TEST_STATE__?.currentView,
+            graphicsMode: document.body.dataset.graphicsMode,
+            pointCount: window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count ?? 0,
+            shaderUniforms: Object.keys(window.__TEST_STATE__?.pointsMaterial?.userData?.shader?.uniforms || {})
+        }))
 
-    const mapReady = await page.evaluate(() => ({
-      currentView: window.__TEST_STATE__?.currentView,
-      graphicsMode: document.body.dataset.graphicsMode,
-      pointCount: window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count ?? 0,
-      shaderUniforms: Object.keys(window.__TEST_STATE__?.pointsMaterial?.userData?.shader?.uniforms || {}),
-    }));
-
-    expect(mapReady.graphicsMode, 'map route should still initialize WebGL graphics mode').toBe('webgl');
-    expect(mapReady.pointCount, 'map route should keep the semantic point cloud available').toBeGreaterThan(0);
-    expect(mapReady.shaderUniforms, 'map route should precompile semantic point shader uniforms').toEqual(
-      expect.arrayContaining(['uGlowIntensity', 'uRippleTime', 'uRevealProgress'])
-    );
-  });
-});
+        expect(mapReady.graphicsMode, 'map route should still initialize WebGL graphics mode').toBe('webgl')
+        expect(mapReady.pointCount, 'map route should keep the semantic point cloud available').toBeGreaterThan(0)
+        expect(mapReady.shaderUniforms, 'map route should precompile semantic point shader uniforms').toEqual(
+            expect.arrayContaining(['uGlowIntensity', 'uRippleTime', 'uRevealProgress'])
+        )
+    })
+})

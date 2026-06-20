@@ -41,7 +41,7 @@ import {
     enterSearchMode,
     typeSearchQuery,
     clickFirstSearchResult,
-    SETTLE_MS,
+    SETTLE_MS
 } from './helpers.js'
 
 // ── Config ──────────────────────────────────────────────────────────────────
@@ -62,13 +62,13 @@ const MAX_VIOLATIONS = parseInt(process.env.A11Y_MAX_VIOLATIONS || '5', 10)
 async function runA11yScan(page, stateLabel) {
     const results = await new AxeBuilder({ page }).analyze()
     const count = results.violations.length
-    console.log(`  [a11y:${stateLabel}] ${count} violation(s)`)  
+    console.log(`  [a11y:${stateLabel}] ${count} violation(s)`)
 
     if (count > 0) {
         // Log each violation with impact, rule ID, description, and affected node count
         for (const v of results.violations) {
             const impact = v.impact || 'unknown'
-            console.log(`    - [${impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)  
+            console.log(`    - [${impact}] ${v.id}: ${v.description} (${v.nodes.length} node(s))`)
         }
 
         // Summarize by category for the 5 key categories
@@ -77,7 +77,7 @@ async function runA11yScan(page, stateLabel) {
             const cat = v.id.split('-')[0] // e.g., 'color-contrast', 'aria', 'label', 'landmark', 'heading'
             categories[cat] = (categories[cat] || 0) + 1
         }
-        console.log(`  [a11y:${stateLabel}] categories: ${JSON.stringify(categories)}`)  
+        console.log(`  [a11y:${stateLabel}] categories: ${JSON.stringify(categories)}`)
     }
 
     return results
@@ -86,43 +86,45 @@ async function runA11yScan(page, stateLabel) {
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 test.describe('A11y baseline — 4 critical states', () => {
-
     // ── State: idle-overview ────────────────────────────────────────────────
     test('idle-overview: a11y scan', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [idle-overview] Attempt ${attempt}...`)  
-            await navigateToApp(page)
-            await page.waitForTimeout(SETTLE_MS)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [idle-overview] Attempt ${attempt}...`)
+                await navigateToApp(page)
+                await page.waitForTimeout(SETTLE_MS)
 
-            const results = await runA11yScan(page, 'idle-overview')
+                const results = await runA11yScan(page, 'idle-overview')
 
-            // Soft assertion: log but don't fail unless above threshold
-            if (results.violations.length > MAX_VIOLATIONS) {
-                throw new Error(
-                    `a11y regression: idle-overview has ${results.violations.length} violations ` +
-                    `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
-                )
-            }
+                // Soft assertion: log but don't fail unless above threshold
+                if (results.violations.length > MAX_VIOLATIONS) {
+                    throw new Error(
+                        `a11y regression: idle-overview has ${results.violations.length} violations ` +
+                            `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
+                    )
+                }
 
-            // Store baseline metadata for future comparison
-            const baseline = {
-                state: 'idle-overview',
-                timestamp: new Date().toISOString(),
-                violationCount: results.violations.length,
-                rules: results.violations.map(v => ({
-                    id: v.id,
-                    impact: v.impact,
-                    description: v.description,
-                    nodeCount: v.nodes.length,
-                })),
-            }
-            console.log(`  [idle-overview] baseline: ${JSON.stringify(baseline, null, 2)}`)  
-        }, { maxAttempts: 3, backoffMs: 1000, label: 'idle-overview a11y' })
+                // Store baseline metadata for future comparison
+                const baseline = {
+                    state: 'idle-overview',
+                    timestamp: new Date().toISOString(),
+                    violationCount: results.violations.length,
+                    rules: results.violations.map((v) => ({
+                        id: v.id,
+                        impact: v.impact,
+                        description: v.description,
+                        nodeCount: v.nodes.length
+                    }))
+                }
+                console.log(`  [idle-overview] baseline: ${JSON.stringify(baseline, null, 2)}`)
+            },
+            { maxAttempts: 3, backoffMs: 1000, label: 'idle-overview a11y' }
+        )
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [idle-overview] ${consoleCapture.summary()}`)  
+            console.log(`  [idle-overview] ${consoleCapture.summary()}`)
         }
     })
 
@@ -130,38 +132,41 @@ test.describe('A11y baseline — 4 critical states', () => {
     test('search-mode: a11y scan', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [search-mode] Attempt ${attempt}...`)  
-            await navigateToApp(page)
-            await enterSearchMode(page)
-            await typeSearchQuery(page, 'cafe')
-            await page.waitForTimeout(SETTLE_MS)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [search-mode] Attempt ${attempt}...`)
+                await navigateToApp(page)
+                await enterSearchMode(page)
+                await typeSearchQuery(page, 'cafe')
+                await page.waitForTimeout(SETTLE_MS)
 
-            const results = await runA11yScan(page, 'search-mode')
+                const results = await runA11yScan(page, 'search-mode')
 
-            if (results.violations.length > MAX_VIOLATIONS) {
-                throw new Error(
-                    `a11y regression: search-mode has ${results.violations.length} violations ` +
-                    `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
-                )
-            }
+                if (results.violations.length > MAX_VIOLATIONS) {
+                    throw new Error(
+                        `a11y regression: search-mode has ${results.violations.length} violations ` +
+                            `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
+                    )
+                }
 
-            const baseline = {
-                state: 'search-mode',
-                timestamp: new Date().toISOString(),
-                violationCount: results.violations.length,
-                rules: results.violations.map(v => ({
-                    id: v.id,
-                    impact: v.impact,
-                    description: v.description,
-                    nodeCount: v.nodes.length,
-                })),
-            }
-            console.log(`  [search-mode] baseline: ${JSON.stringify(baseline, null, 2)}`)  
-        }, { maxAttempts: 3, backoffMs: 1000, label: 'search-mode a11y' })
+                const baseline = {
+                    state: 'search-mode',
+                    timestamp: new Date().toISOString(),
+                    violationCount: results.violations.length,
+                    rules: results.violations.map((v) => ({
+                        id: v.id,
+                        impact: v.impact,
+                        description: v.description,
+                        nodeCount: v.nodes.length
+                    }))
+                }
+                console.log(`  [search-mode] baseline: ${JSON.stringify(baseline, null, 2)}`)
+            },
+            { maxAttempts: 3, backoffMs: 1000, label: 'search-mode a11y' }
+        )
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [search-mode] ${consoleCapture.summary()}`)  
+            console.log(`  [search-mode] ${consoleCapture.summary()}`)
         }
     })
 
@@ -169,39 +174,42 @@ test.describe('A11y baseline — 4 critical states', () => {
     test('focus-search: a11y scan', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [focus-search] Attempt ${attempt}...`)  
-            await navigateToApp(page)
-            await enterSearchMode(page)
-            await typeSearchQuery(page, 'cafe')
-            await clickFirstSearchResult(page)
-            await page.waitForTimeout(SETTLE_MS)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [focus-search] Attempt ${attempt}...`)
+                await navigateToApp(page)
+                await enterSearchMode(page)
+                await typeSearchQuery(page, 'cafe')
+                await clickFirstSearchResult(page)
+                await page.waitForTimeout(SETTLE_MS)
 
-            const results = await runA11yScan(page, 'focus-search')
+                const results = await runA11yScan(page, 'focus-search')
 
-            if (results.violations.length > MAX_VIOLATIONS) {
-                throw new Error(
-                    `a11y regression: focus-search has ${results.violations.length} violations ` +
-                    `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
-                )
-            }
+                if (results.violations.length > MAX_VIOLATIONS) {
+                    throw new Error(
+                        `a11y regression: focus-search has ${results.violations.length} violations ` +
+                            `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
+                    )
+                }
 
-            const baseline = {
-                state: 'focus-search',
-                timestamp: new Date().toISOString(),
-                violationCount: results.violations.length,
-                rules: results.violations.map(v => ({
-                    id: v.id,
-                    impact: v.impact,
-                    description: v.description,
-                    nodeCount: v.nodes.length,
-                })),
-            }
-            console.log(`  [focus-search] baseline: ${JSON.stringify(baseline, null, 2)}`)  
-        }, { maxAttempts: 3, backoffMs: 1000, label: 'focus-search a11y' })
+                const baseline = {
+                    state: 'focus-search',
+                    timestamp: new Date().toISOString(),
+                    violationCount: results.violations.length,
+                    rules: results.violations.map((v) => ({
+                        id: v.id,
+                        impact: v.impact,
+                        description: v.description,
+                        nodeCount: v.nodes.length
+                    }))
+                }
+                console.log(`  [focus-search] baseline: ${JSON.stringify(baseline, null, 2)}`)
+            },
+            { maxAttempts: 3, backoffMs: 1000, label: 'focus-search a11y' }
+        )
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [focus-search] ${consoleCapture.summary()}`)  
+            console.log(`  [focus-search] ${consoleCapture.summary()}`)
         }
     })
 
@@ -209,62 +217,65 @@ test.describe('A11y baseline — 4 critical states', () => {
     test('focus-programmatic: a11y scan', async ({ page }) => {
         const consoleCapture = captureConsoleErrors(page)
 
-        await withRetry(async (attempt) => {
-            console.log(`  [focus-programmatic] Attempt ${attempt}...`)  
-            await navigateToApp(page)
+        await withRetry(
+            async (attempt) => {
+                console.log(`  [focus-programmatic] Attempt ${attempt}...`)
+                await navigateToApp(page)
 
-            // Try to click a visible field-node in overview
-            const fieldNode = page.locator('[data-field-node], .field-node, [role="button"]').first()
-            const nodeVisible = await fieldNode.isVisible().catch(() => false)
+                // Try to click a visible field-node in overview
+                const fieldNode = page.locator('[data-field-node], .field-node, [role="button"]').first()
+                const nodeVisible = await fieldNode.isVisible().catch(() => false)
 
-            if (nodeVisible) {
-                await fieldNode.click()
-                await page.waitForTimeout(SETTLE_MS)
+                if (nodeVisible) {
+                    await fieldNode.click()
+                    await page.waitForTimeout(SETTLE_MS)
 
-                const results = await runA11yScan(page, 'focus-programmatic')
+                    const results = await runA11yScan(page, 'focus-programmatic')
 
-                if (results.violations.length > MAX_VIOLATIONS) {
-                    throw new Error(
-                        `a11y regression: focus-programmatic has ${results.violations.length} violations ` +
-                        `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
-                    )
+                    if (results.violations.length > MAX_VIOLATIONS) {
+                        throw new Error(
+                            `a11y regression: focus-programmatic has ${results.violations.length} violations ` +
+                                `(threshold: ${MAX_VIOLATIONS}). Review violations above.`
+                        )
+                    }
+
+                    const baseline = {
+                        state: 'focus-programmatic',
+                        timestamp: new Date().toISOString(),
+                        violationCount: results.violations.length,
+                        rules: results.violations.map((v) => ({
+                            id: v.id,
+                            impact: v.impact,
+                            description: v.description,
+                            nodeCount: v.nodes.length
+                        }))
+                    }
+                    console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`)
+                } else {
+                    // No field-node visible — run a11y scan on idle state as fallback
+                    console.log('  [focus-programmatic] No field-node visible; scanning idle state as fallback')
+                    const results = await runA11yScan(page, 'focus-programmatic (idle-fallback)')
+
+                    const baseline = {
+                        state: 'focus-programmatic',
+                        timestamp: new Date().toISOString(),
+                        note: 'skipped — no field-node visible; idle scan captured instead',
+                        violationCount: results.violations.length,
+                        rules: results.violations.map((v) => ({
+                            id: v.id,
+                            impact: v.impact,
+                            description: v.description,
+                            nodeCount: v.nodes.length
+                        }))
+                    }
+                    console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`)
                 }
-
-                const baseline = {
-                    state: 'focus-programmatic',
-                    timestamp: new Date().toISOString(),
-                    violationCount: results.violations.length,
-                    rules: results.violations.map(v => ({
-                        id: v.id,
-                        impact: v.impact,
-                        description: v.description,
-                        nodeCount: v.nodes.length,
-                    })),
-                }
-                console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`)  
-            } else {
-                // No field-node visible — run a11y scan on idle state as fallback
-                console.log('  [focus-programmatic] No field-node visible; scanning idle state as fallback')  
-                const results = await runA11yScan(page, 'focus-programmatic (idle-fallback)')
-
-                const baseline = {
-                    state: 'focus-programmatic',
-                    timestamp: new Date().toISOString(),
-                    note: 'skipped — no field-node visible; idle scan captured instead',
-                    violationCount: results.violations.length,
-                    rules: results.violations.map(v => ({
-                        id: v.id,
-                        impact: v.impact,
-                        description: v.description,
-                        nodeCount: v.nodes.length,
-                    })),
-                }
-                console.log(`  [focus-programmatic] baseline: ${JSON.stringify(baseline, null, 2)}`)  
-            }
-        }, { maxAttempts: 2, backoffMs: 1000, label: 'focus-programmatic a11y' })
+            },
+            { maxAttempts: 2, backoffMs: 1000, label: 'focus-programmatic a11y' }
+        )
 
         if (consoleCapture.errors.length > 0) {
-            console.log(`  [focus-programmatic] ${consoleCapture.summary()}`)  
+            console.log(`  [focus-programmatic] ${consoleCapture.summary()}`)
         }
     })
 })
