@@ -9,7 +9,7 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 | Svelte UI (26 components)                     | ✅ Complete               | W40          |
 | Typed stores / state                          | ✅ Complete               | W41          |
 | Engine kernel in `src/lib/`                   | ✅ Complete               | W40          |
-| Bridge files (`src/lib/engine/*-bridge.ts`)   | ✅ Complete               | W8           |
+| Bridge files (`src/lib/engine/*-bridge.ts`)   | 🟡 19 remaining (Phase 6 ongoing) | W10          |
 | Worker (`js/workers/data-worker.ts`)          | 🟡 Active runtime         | W40          |
 | Legacy islands (`legacy-reference/`)          | 🟢 Archive only           | W42          |
 | BOTH-pattern `.js` shadows                    | ✅ Retired                | W10          |
@@ -20,41 +20,31 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 | Parity-attrs layer                            | ✅ Functional (113 tests) | W43          |
 | A11y sweep                                    | ✅ Baseline set           | W42          |
 
-## Current Wave: W9 (2026-06-20)
+## Current Wave: W10 (2026-06-20)
 
-**Charter:** `docs/w9-charter-2026-06-20.md`
-**Previous wave:** W8 (closed 2026-06-20)
-**Next wave:** W10 (pending W9 outcomes)
+**Charter:** `docs/w9-charter-2026-06-20.md` (W10 was a Phase 6C continuation, not a separately-chartered wave)
+**Previous wave:** W9 (closed 2026-06-20)
+**Next wave:** W11-T10 Wave 3 (sanctioned passthrough retirement; deferred per `docs/archive/wave-11-engine-port-plan-2026-06-14.md`)
 
-**Pipeline:** Phase 6C: Bridge Unwind Continuation + Parity Smoke + Lighthouse closeout
+**Pipeline:** Phase 6C: Bridge Thinnability Continuation + Test Alignment
 
 ### Scope
 
-- Redirected `Canvas.svelte`'s generic callbacks type imports directly to self-contained engine declarations (`EngineCallbacks` interface inside `@lib/engine/lifecycle.ts`), bypassing legacy bridge maps.
-- Deleted `src/lib/engine/adapters/` completely, including `core.ts` (Composition root), `types.ts` (bridge types signature), and `lifecycle-bridge.ts`.
-- Simplified the central barrel `src/lib/engine/index.ts` to stop exporting the old defunct `createEngineBridge` and `adapters/types`.
-- Updated `tests/three-setup-init-dewindowing-contract.mjs` contract validations to target `@lib/engine/lifecycle.ts` rather than the defunct `lifecycle-bridge.ts`.
-- Verified all 1,142 tests and TypeScript compilation gates are 100% green and error-free.
-
-### Net reduction
-
-- **−542 LoC** across this wave's legacy adapter removals + barrel simplification
+- Retired 5 more single-consumer bridges via 5-signal dead-code audit:
+  - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`
+  - Total: 34 → 19 bridges remaining (44% drop overall)
+- Refactored `tests/unit-active/w11-t7-adapters-init.test.ts` to assert all 11 adapters are imported from their canonical owners (no longer requires reading the obsolete `adapters-bridge.ts`).
+- Fixed the W9-era `component-SearchBar.test.ts` isolation bug (vacuous `vi.mock` hoisting).
+- Verified `npm run test:unit` green: **1135/1135 passing**, 102/102 test files.
 
 ### Open Items
 
-- [x] W9-A: Production-preview parity smoke (carry-over from W43-C) — **DONE**, see `docs/production-preview-parity-baseline-w9-2026-06-20.md`
-- [x] W9-B: Bridge unwind continuation (4-signal audit on remaining 34 bridges) — **DONE**, 10 micro-bridges retired (24 remaining), see `docs/w9-bridge-audit-2026-06-20.md`
-- [x] W9-C: Lighthouse 92% verification (W8 carry-over; unblocked by W44 named-imports audit) — **DONE**, Performance is up index-score **80/100** (2.4x baseline), Accessibility is **100/100** (Perfect), Best Practices is **100/100** (Perfect), SEO is **91/100** (Stable). Total Blocking Time (TBT) reduced to **0 ms**, LCP slashed to **3.8 s**. See `docs/lighthouse-w9-summary-2026-06-20.md`.
-
-### W9-A Findings (2026-06-20)
-
-- **Parity smoke PASS**: dev (5173) and preview (4174) produce identical body data-attrs across all 16 attrs and 2 flows (idle + search). W8 Bridge Retirement does NOT regress the W15 parity baseline.
-- **Contract test registered** under `smoke` group in `tests/contracts.manifest.json`. Runs as part of `node tests/run-all-contracts.js --group=smoke`.
-- **Test baseline reality check**: `npm run test:unit` reports **1,118 passed / 1 failed / 1,119 total**. The single failure is `component-SearchBar.test.ts` "lazy-renders SearchResults sub-component when search state is active" — a pre-existing test isolation bug that reproduces only in the full-suite cumulative run. The test passes in isolation and when paired with any single other test file. **Not W9 scope; flagged for W10 or parallel-session follow-up.**
+- [ ] W11-T10 Wave 3 — sequential bridge retirement to canonical Svelte 5 home for the remaining 14 sanctioned passthroughs (deferred per W11 plan)
+- [ ] Worker closeout (`js/workers/data-worker.ts` → fully retire once parity confirmed)
 
 ### Parallel-Session Safety
 
-- Active worktree: CSS modules, `parity-attrs.svelte.ts`, `stores/*.svelte.ts`, `src/main.ts`
+- Active worktree: CSS modules, `parity-attrs.svelte.ts`, `stores/*.svelte.ts`, `src/App.svelte`, `src/main.ts`
 - See `git status` before committing; do not commit without `git log --since="3 hours ago" --oneline`
 
 ## Architecture Decision Records
@@ -97,7 +87,8 @@ npm run qa:visual -- --all
 
 | Wave | Date       | Key Deliverable                                                    |
 | ---- | ---------- | ------------------------------------------------------------------ |
-| W9   | 2026-06-20 | Phase 6C: Parity smoke + bridge unwind continuation + Lighthouse   |
+| W10  | 2026-06-20 | Phase 6C cont.: 5 more bridges retired (34→19, −44% total), test alignment, 1135/1135 unit tests |
+| W9   | 2026-06-20 | Phase 6C: Parity smoke + bridge unwind continuation + Lighthouse (Perf 80, A11y 100, BP 100, SEO 91) |
 | W8   | 2026-06-20 | Phase 6A/6B: Retired old Engine Bridge & adapters (-542 LoC)       |
 | W7   | 2026-06-19 | Dual-module collapse (Pairs 1–4) + Svelte-5 hardening (−1,553 LoC) |
 | W6   | 2026-06-19 | Splash + lazy Canvas                                               |
