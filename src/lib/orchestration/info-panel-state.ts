@@ -27,6 +27,10 @@ export interface InfoPanelContentDescriptor {
 
 const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
   idle: {
+    // Note: panelVisible controls the internal open-state of the InfoPanel
+    // component when it is mounted. On mobile/compact viewports, the panel
+    // is NOT mounted at all on idle (see App.svelte infoPanelOpen
+    // derivation). Keep these two gates in sync when adding new surfaces.
     headerText: 'Business Details',
     headerVisible: true,
     emptyHeadline: 'Select a business to see details',

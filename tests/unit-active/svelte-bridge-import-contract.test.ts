@@ -169,7 +169,6 @@ describe('Bridge health (W11 retirement progress)', () => {
      * paths before lookup so Windows backslashes match.
      */
     const KNOWN_RETIRED_BRIDGES: ReadonlySet<string> = new Set([
-        'src/lib/engine/focus-pocket-bridge.ts', // W11-T7 (Focus Subsystem Svelte 5 Port) — consumer migrated to @lib/focus/geometry + appState
         'src/lib/engine/adapter-deps-bridge.ts',
         'src/lib/engine/search-trail-cue-renderer-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)
         'src/lib/engine/search-panel-adapter-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)
@@ -178,19 +177,10 @@ describe('Bridge health (W11 retirement progress)', () => {
         'src/lib/engine/ui-renderers-bridge.ts', // Retired ui-renderers-bridge — logic relocated to lifecycle-bridge
         'src/lib/engine/semantic-dive-bridge.ts', // Retired semantic-dive-bridge — logic relocated to lifecycle-bridge
         'src/lib/engine/ui-feedback-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
-        'src/lib/engine/map-flattening-layout-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
-        'src/lib/engine/focus-anchor-indicator-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
-        'src/lib/engine/audio-scape-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
         'src/lib/engine/event-bindings-bridge.ts', // W11-T10 Wave 1 � COLD sanctioned passthrough; no Svelte path yet
 
-        'src/lib/engine/cluster-labels-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
-        'src/lib/engine/focus-pocket-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; Svelte 5 port exists in @lib/focus/pocket but render loop still uses legacy module surface
-        'src/lib/engine/scene-reveal-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; Svelte 5 port exists in @lib/engine/scene-reveal but render loop still uses legacy module surface
-        'src/lib/engine/mycelium-engine-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
         'src/lib/engine/inspected-strand-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
         'src/lib/engine/route-arrival-overlay-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
-        'src/lib/engine/three-search-animations-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
-        'src/lib/engine/three-interaction-visuals-bridge.ts', // W11-T10 Wave 2 — HOT sanctioned passthrough; no Svelte path yet
         'src/lib/engine/search-state-bridge.ts', // W15-T1 — search-state port; bridge created, consumers not yet wired
         // ── W11-T5 Wave 2 ─────────────────────────────────────────
         'src/lib/engine/event-bus-bridge.ts', // W11-T5 Wave 2 — T9 retires when journey files land

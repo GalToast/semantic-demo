@@ -51,7 +51,7 @@ const checks = [
     {
         name: 'renderer completion clears scene reveal DOM state',
         pass:
-            /import\s+\*\s+as\s+sceneRevealMod\s+from\s+['"]@lib\/engine\/scene-reveal-bridge['"]/.test(
+            /import\s+\*\s+as\s+sceneRevealMod\s+from\s+['"](?:@lib\/engine\/scene-reveal|\.\/scene-reveal)['"]/.test(
                 source.threeSetup
             ) &&
             /revealProgress\s*>=\s*1[\s\S]*?_state\.sceneRevealActive\s*=\s*false[\s\S]*?_sceneReveal\?\.setSceneRevealDataset\s*\(\s*false\s*\)/.test(

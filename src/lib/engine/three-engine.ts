@@ -628,10 +628,10 @@ export function updateCameraViewportOffset() {
     const focused = document.body?.dataset?.focusedNode
     const hasContent = Boolean(
         focused ||
-            surface === 'focus' ||
-            surface === 'search' ||
-            surface === 'focus-search' ||
-            surface === 'semantic-dive'
+        surface === 'focus' ||
+        surface === 'search' ||
+        surface === 'focus-search' ||
+        surface === 'semantic-dive'
     )
     const panel = document.querySelector('.info-panel')
     if (panel && hasContent && panel.classList.contains('active') && width > 768) {

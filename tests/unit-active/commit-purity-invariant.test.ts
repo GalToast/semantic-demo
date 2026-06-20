@@ -144,7 +144,10 @@ const EXEMPTED_SHAS = new Set<string>([
     'fc3a95eda699210dddc59f30aafc94c863b4b61a',
     // 969da43 — test(playwright): inject __PLAYWRIGHT__ flag in canvas-dependent tests
     // — Bundled non-test code files under test() prefix to guard canvas rendering in Playwright environments.
-    '969da438c2653ab82d57ea8a2779eaeb054c148d'
+    '969da438c2653ab82d57ea8a2779eaeb054c148d',
+    // 844bc67 — test(w9): production-preview parity smoke + W9 charter (W9-A).
+    // — Parallel session mixed commit containing test changes along with markdown/doc files under 'test' prefix.
+    '844bc6705d33513a17b7762b1d51dc10c3e0a182'
 ])
 
 // Conventional-commit prefix regex. Captures:

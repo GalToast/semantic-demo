@@ -118,10 +118,10 @@ function getLineCount(file) {
 
 function getLastCommitDate(file) {
     try {
-        const out = execSync(
-            `git log -1 --format=%cI -- "${file.replace(/\\/g, '/')}"`,
-            { cwd: ROOT, encoding: 'utf8' }
-        ).trim()
+        const out = execSync(`git log -1 --format=%cI -- "${file.replace(/\\/g, '/')}"`, {
+            cwd: ROOT,
+            encoding: 'utf8'
+        }).trim()
         return out || null
     } catch {
         return null
@@ -145,9 +145,7 @@ const docFiles = readAll(DOCS, /\.md$/)
 const testMjsFiles = findMjsFiles(TESTS)
 const testTsFiles = findTsFiles(TESTS)
 const testFiles = [...testMjsFiles, ...testTsFiles]
-const legacyFiles = existsSync(LEGACY)
-    ? readAll(LEGACY, /\.(ts|js|svelte|mjs|md)$/)
-    : []
+const legacyFiles = existsSync(LEGACY) ? readAll(LEGACY, /\.(ts|js|svelte|mjs|md)$/) : []
 
 const allConsumerFiles = [...srcLibFiles, ...srcCompFiles]
 const allNonConsumerFiles = [...docFiles, ...testFiles, ...legacyFiles]
@@ -170,9 +168,7 @@ for (const bridge of bridges) {
 
     // Signal (1): imported by src/lib or src/components
     const aliasRe = new RegExp(`from\\s+['"](?:${escapeRegex(alias)}|\\.\\.?/[^'"]*${escapeRegex(bridgeBase)})['"]`)
-    const signal1Hits = grepInFiles(allConsumerFiles, aliasRe).filter(
-        (f) => f !== bridgePath
-    )
+    const signal1Hits = grepInFiles(allConsumerFiles, aliasRe).filter((f) => f !== bridgePath)
 
     // Signal (2): imported by docs/, tests/, or legacy-reference/
     const signal2Hits = grepInFiles(allNonConsumerFiles, aliasRe)
@@ -185,9 +181,7 @@ for (const bridge of bridges) {
             .map(escapeRegex)
             .join('|')})\\b`
     )
-    const signal3Hits = exports.length
-        ? grepInFiles(srcCompFiles, exportNamesRe).filter((f) => f !== bridgePath)
-        : []
+    const signal3Hits = exports.length ? grepInFiles(srcCompFiles, exportNamesRe).filter((f) => f !== bridgePath) : []
 
     // Signal (4): last commit within 60 days
     const lastCommit = getLastCommitDate(bridgePath)
@@ -204,9 +198,12 @@ for (const bridge of bridges) {
         signal5
     ].filter(Boolean).length
 
-    const verdict = activeSignals === 5 ? 'KEEP (load-bearing)' : 
-                    activeSignals === 0 ? 'RETIRE (5-signal dead)' :
-                    `AUDIT (${activeSignals}/5 signals)`
+    const verdict =
+        activeSignals === 5
+            ? 'KEEP (load-bearing)'
+            : activeSignals === 0
+              ? 'RETIRE (5-signal dead)'
+              : `AUDIT (${activeSignals}/5 signals)`
 
     rows.push({
         bridge,
@@ -219,16 +216,20 @@ for (const bridge of bridges) {
         activeSignals,
         verdict,
         exports: exports.length,
-        consumersList: signal1Hits.map((f) => f.replace(ROOT + '/', '')).slice(0, 3).join(', ') + (signal1Hits.length > 3 ? ` (+${signal1Hits.length - 3})` : '')
+        consumersList:
+            signal1Hits
+                .map((f) => f.replace(ROOT + '/', ''))
+                .slice(0, 3)
+                .join(', ') + (signal1Hits.length > 3 ? ` (+${signal1Hits.length - 3})` : '')
     })
 }
 
 const outPath = process.argv[2] || join(ROOT, `docs/w9-bridge-audit-${auditDate}.md`)
 
 const totalLoC = rows.reduce((s, r) => s + r.loc, 0)
-const keepCount = rows.filter(r => r.verdict.startsWith('KEEP')).length
-const retireCount = rows.filter(r => r.verdict.startsWith('RETIRE')).length
-const auditCount = rows.filter(r => r.verdict.startsWith('AUDIT')).length
+const keepCount = rows.filter((r) => r.verdict.startsWith('KEEP')).length
+const retireCount = rows.filter((r) => r.verdict.startsWith('RETIRE')).length
+const auditCount = rows.filter((r) => r.verdict.startsWith('AUDIT')).length
 
 let md = `# W9-B Bridge Audit — ${auditDate}
 
