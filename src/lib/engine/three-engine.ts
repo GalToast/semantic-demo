@@ -617,11 +617,24 @@ function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTiming
 export function updateCameraViewportOffset() {
     const camera = (webglContext.camera || appState.camera) as any
     if (!camera) return
-    const panel = document.querySelector('.info-panel')
     const width = window.innerWidth
     const height = window.innerHeight
 
-    if (panel && panel.classList.contains('active') && width > 768) {
+    // Only shift the camera frustum when the info-panel is actually showing
+    // content that takes real screen real estate on desktop. Idle / launch
+    // surfaces keep the panel chrome open but empty; offsetting the camera
+    // there pushes the 3D cloud off-center on first paint.
+    const surface = document.body?.dataset?.panelSurface
+    const focused = document.body?.dataset?.focusedNode
+    const hasContent = Boolean(
+        focused ||
+            surface === 'focus' ||
+            surface === 'search' ||
+            surface === 'focus-search' ||
+            surface === 'semantic-dive'
+    )
+    const panel = document.querySelector('.info-panel')
+    if (panel && hasContent && panel.classList.contains('active') && width > 768) {
         const rect = panel.getBoundingClientRect()
         const offset = rect.right / 2
         camera.setViewOffset(width, height, -offset, 0, width, height)

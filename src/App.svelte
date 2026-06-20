@@ -553,7 +553,14 @@
       // for the same right-edge viewport budget.
       !($viewport.isCompact && (bodyPanelSurface === 'search' || navSurface === 'search'))
   );
-  let infoPanelOpen = $derived((idleSurfaceActive || searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) && !mapModeActive);
+  let infoPanelOpen = $derived(
+    (searchSurfaceActive || (focusActive && !bodyCompact && !$viewport.isCompact)) &&
+      !mapModeActive &&
+      // On compact/mobile, the idle surface shows an empty bottom-sheet that
+      // overlays the 3D canvas. Keep the panel closed on idle mobile/compact;
+      // focus and search surfaces can still open it on mobile.
+      !(($viewport.isCompact || bodyCompact) && idleSurfaceActive && !focusActive && !searchSurfaceActive)
+  );
 
   $effect(() => {
     if (infoPanelOpen && !InfoPanelComponent && !infoPanelImportPending) {

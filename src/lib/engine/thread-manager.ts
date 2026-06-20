@@ -296,7 +296,12 @@ export function getThreadPulseOpacity(baseOpacity: any, pulse: any, requestedAmp
 export function getMyceliumPresentationProfile() {
     const currentMode = getNavigationMode();
     if (currentMode === 'overview' || currentMode === undefined) {
-        return { core: 0.12, wispy: 0.047, bridge: 0.068, pulse: 0.022 };
+        // Ambient overview profile. Previously 0.12/0.047/0.068 — too faint against
+        // the dark canvas (8,406 points × ~3,830 line segments rendered at 12%
+        // opacity appeared nearly invisible). Bumped to ~3-5× the previous
+        // base opacities so the mycelium reads as a clear ambient texture while
+        // still staying subordinate to points and spore materials.
+        return { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04 };
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
         return { core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008 };

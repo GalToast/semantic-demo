@@ -96,20 +96,13 @@ async function getWorker(): Promise<Worker | null> {
         return null
     }
 
-    if (_dataWorker) {
-        // Health check: if worker was terminated by the browser, clear it
-        try {
-            // Quick ping to verify worker is alive (0ms timeout = just check state)
-            const isAlive =
-                typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
-                    ? true
-                    : await _pingWorker(_dataWorker, 100)
-            if (isAlive) return _dataWorker
-        } catch {
-            // Worker is dead, clear and recreate
-        }
-        _dataWorker = null
-    }
+    // Skip the existing-worker health-check ping. The worker may be mid-parse
+    // of a 40 MB+ JSON payload (semantic_threads_ui.dat) when a subsequent
+    // caller hits getWorker(); a tight PING timeout can't be answered while
+    // the worker is busy, so the previous 100 ms ping killed the worker and
+    // forced a full re-instantiation + re-fetch of the .dat file. Trust the
+    // singleton until the next postMessage ERROR or crash event.
+    if (_dataWorker) return _dataWorker
 
     // Circuit breaker: if we've failed too many times, wait before retrying
     if (_workerFailureCount >= WORKER_MAX_FAILURES) {
@@ -127,11 +120,13 @@ async function getWorker(): Promise<Worker | null> {
     for (let attempt = 0; attempt < WORKER_RETRY_DELAYS.length; attempt++) {
         try {
             const worker = new Worker(workerUrl, { type: 'module' })
-            // Verify the worker is responsive before returning it
+            // Verify the worker is responsive before returning it.
+            // Allow up to 5 s — ESM worker bundle fetch + script parse on a cold
+            // cache can easily exceed 2 s on slower devices.
             const isAlive =
                 typeof process !== 'undefined' && process.env.NODE_ENV === 'test'
                     ? true
-                    : await _pingWorker(worker, 2000)
+                    : await _pingWorker(worker, 5000)
             if (!isAlive) {
                 worker.terminate()
                 throw new Error('Worker ping failed after creation')
