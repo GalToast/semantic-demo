@@ -54,7 +54,7 @@ if (mountTarget) {
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics
 // for visual-audit compatibility.
 // Dynamic import to keep Three.js out of the main bundle
-import('@lib/engine/adapters-bridge').then(({ initRouteTraceSubscriptions }) => {
+import('@lib/journey/route-trace').then(({ initRouteTraceSubscriptions }) => {
     initRouteTraceSubscriptions()
 })
 

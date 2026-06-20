@@ -69,7 +69,8 @@ Object.defineProperty(globalThis, 'navigator', {
 
 // Now safe to import modules
 const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
-const { setSemanticDiveModeProxy: setSemanticDiveMode, refreshCompositionState } = await import('../src/lib/orchestration/lifecycle.ts')
+const { setSemanticDiveModeProxy: setSemanticDiveMode, refreshCompositionState } =
+    await import('../src/lib/orchestration/lifecycle.ts')
 const { updateNavState } = await import('../src/lib/stores/navigation.svelte.ts')
 const { resetFocus, setSelectedBusiness } = await import('../src/lib/stores/focus.svelte.ts')
 

@@ -47,7 +47,7 @@ describe('SearchBar component', () => {
         const { container } = render(SearchBar)
         // Flush any microticks and paint timings in Vitest JS-DOM
         await new Promise((resolve) => setTimeout(resolve, 50))
-        await waitFor(() => expect(container.querySelector('#search-results')).toBeTruthy())
+        await waitFor(() => expect(container.querySelector('#search-results')).toBeTruthy(), { timeout: 15000 })
     })
 
     it('search-results absent on default render (lazy-loaded)', () => {

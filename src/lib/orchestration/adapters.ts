@@ -6,19 +6,17 @@
  * arbitrary data, or external bridge layer where the concrete type is
  * not yet available in the Svelte layer).
  */
-import {
-    initJourneyLifecycleAdapter,
-    initClusterFilterAdapter,
-    initJourneyCompassAdapter,
-    initJourneySelectedCard,
-    initSemanticDiveUiSubscriptions,
-    initFocusNeighborRailSubscriptions,
-    initRouteTraceSubscriptions,
-    initThreadInspectorAdapter,
-    initMapStateSubscriptions,
-    initViewControllerAdapter,
-    setupMobileSearchSheetToggle
-} from '@lib/engine/adapters-bridge'
+import { initJourneyLifecycleAdapter } from '@lib/journey/lifecycle-adapter'
+import { initClusterFilterAdapter } from '@lib/orchestration/cluster-filter-controller'
+import { initJourneyCompassAdapter } from '@lib/engine/journey-compass-controller-bridge'
+import { initJourneySelectedCard } from '@lib/journey/selected-card'
+import { initSemanticDiveUiSubscriptions } from '@lib/journey/semantic-dive'
+import { initFocusNeighborRailSubscriptions } from '@lib/journey/focus-ui'
+import { initRouteTraceSubscriptions } from '@lib/journey/route-trace'
+import { initThreadInspectorAdapter } from '@lib/journey/thread-inspector-adapter'
+import { initMapStateSubscriptions } from '@lib/engine/map-state'
+import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
+import { setupMobileSearchSheetToggle } from '@lib/search/search-panel-adapter'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
 
 /**

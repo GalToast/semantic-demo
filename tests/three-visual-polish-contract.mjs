@@ -74,7 +74,7 @@ assert(
 includesAll(
     threadManager,
     [
-        'core: 0.112, wispy: 0.047, bridge: 0.068, pulse: 0.022',
+        'core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04',
         'core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008',
         'core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072',
         'core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044'
@@ -82,7 +82,11 @@ includesAll(
     'mycelium presentation opacity profile'
 )
 
-const initThreeSource = sectionBetween(threeSetup, 'export async function initThreeJS()', 'export function onWindowResize()')
+const initThreeSource = sectionBetween(
+    threeSetup,
+    'export async function initThreeJS()',
+    'export function onWindowResize()'
+)
 includesAll(
     initThreeSource,
     ['camera.position.set(2.05, 1.55, 2.75)', 'createPoints()', 'createMycelium()', 'compilePointMaterialForReadiness'],

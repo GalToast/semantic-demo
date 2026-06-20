@@ -16,7 +16,7 @@
 
 import { state, withStateMutation } from '@lib/engine/state-bridge';
 import type { SemanticState } from '@lib/state/state-types';
-import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-orbit-slack-bridge';
+import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

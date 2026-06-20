@@ -4,11 +4,11 @@
 
 | Metric | Value |
 |--------|-------|
-| Total bridge files | 24 |
-| Total LoC | 640 |
+| Total bridge files | 19 |
+| Total LoC | 515 |
 | **KEEP (5/5 signals — load-bearing)** | 5 |
 | **RETIRE (0/5 signals — confirmed dead)** | 0 |
-| **AUDIT (1-4/5 signals — needs review)** | 19 |
+| **AUDIT (1-4/5 signals — needs review)** | 14 |
 
 ## 5-Signal Rule (per docs/migration-plan.md §Bridge File Doctrine)
 
@@ -24,30 +24,25 @@ A bridge passes "dead" only when **all five signals are zero**:
 
 | # | Bridge | LoC | Consumers | Docs/Tests | Comp Exports | Last Commit | Within 60d | Active Signals | Verdict | Sample Consumers |
 |---|--------|-----|-----------|------------|--------------|-------------|------------|----------------|---------|------------------|
-| 1 | `adapters-bridge.ts` | 35 | 1 | 0 | 1 | 2026-06-17 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapters.ts |
-| 2 | `camera-controls-restore-bridge.ts` | 22 | 3 | 0 | 1 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\index.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\view-bindings.ts |
-| 3 | `camera-orbit-slack-bridge.ts` | 48 | 1 | 0 | 0 | 2026-06-19 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-controls-core.svelte.ts |
-| 4 | `data-worker-url-bridge.ts` | 17 | 2 | 0 | 11 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\data-loader.ts, C:\Users\HP\repos\semantic-explorer\src\lib\semantic-threads.ts |
-| 5 | `event-bindings-bridge.ts` | 16 | 1 | 0 | 0 | 2026-06-16 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\three-engine.ts |
-| 6 | `inspected-strand-overlay-bridge.ts` | 8 | 1 | 1 | 26 | 2026-06-15 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\three-engine.ts |
-| 7 | `journey-compass-controller-bridge.ts` | 24 | 4 | 2 | 2 | 2026-06-15 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\adapters-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\cursor.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts (+1) |
-| 8 | `journey-focus-ui-bridge.ts` | 16 | 3 | 0 | 1 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts |
-| 9 | `journey-neighborhood-bridge.ts` | 24 | 3 | 0 | 0 | 2026-06-15 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts |
-| 10 | `journey-point-color-bridge.ts` | 12 | 2 | 0 | 1 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts |
-| 11 | `journey-thread-model-bridge.ts` | 17 | 2 | 1 | 0 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\focus\pocket-personality.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts |
-| 12 | `journey-thread-settler-bridge.ts` | 16 | 5 | 0 | 2 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts (+2) |
-| 13 | `journey-webgl-bridge.ts` | 34 | 4 | 1 | 0 | 2026-06-20 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\focus-ui.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-inspector.ts (+1) |
-| 14 | `lifecycle-bridge.ts` | 45 | 13 | 1 | 3 | 2026-06-20 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts (+10) |
-| 15 | `role-label-bridge.ts` | 10 | 1 | 0 | 0 | 2026-06-16 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts |
-| 16 | `route-arrival-overlay-bridge.ts` | 8 | 1 | 1 | 26 | 2026-06-15 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\three-engine.ts |
-| 17 | `search-panel-adapter-bridge.ts` | 18 | 2 | 0 | 0 | 2026-06-16 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\search\panel-adapter.ts, C:\Users\HP\repos\semantic-explorer\src\lib\search\results-ui.ts |
-| 18 | `search-state-bridge.ts` | 156 | 3 | 0 | 13 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\mode-bindings.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\suggestion-bindings.ts |
-| 19 | `state-bridge.ts` | 24 | 58 | 3 | 23 | 2026-06-19 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\audio\audio-scape.ts, C:\Users\HP\repos\semantic-explorer\src\lib\data-store.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\framing-utils.ts (+55) |
-| 20 | `strand-continuity-bridge.ts` | 18 | 4 | 1 | 0 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\focus-ui.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-inspector.ts (+1) |
-| 21 | `thread-inspector-bridge.ts` | 18 | 5 | 0 | 1 | 2026-06-18 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-settler.ts (+2) |
-| 22 | `ui-feedback-bridge.ts` | 8 | 2 | 0 | 1 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\cursor.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\three-engine.ts |
-| 23 | `weather-ui-bridge.ts` | 16 | 1 | 0 | 0 | 2026-06-17 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\utils\weather.ts |
-| 24 | `window-actions-bridge.ts` | 30 | 2 | 0 | 23 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\window-actions.ts |
+| 1 | `camera-controls-restore-bridge.ts` | 22 | 3 | 0 | 1 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\index.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\view-bindings.ts |
+| 2 | `data-worker-url-bridge.ts` | 17 | 2 | 0 | 11 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\data-loader.ts, C:\Users\HP\repos\semantic-explorer\src\lib\semantic-threads.ts |
+| 3 | `inspected-strand-overlay-bridge.ts` | 8 | 1 | 1 | 26 | 2026-06-15 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\three-engine.ts |
+| 4 | `journey-compass-controller-bridge.ts` | 24 | 4 | 2 | 2 | 2026-06-15 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\cursor.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapters.ts (+1) |
+| 5 | `journey-focus-ui-bridge.ts` | 16 | 3 | 0 | 1 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts |
+| 6 | `journey-neighborhood-bridge.ts` | 24 | 3 | 0 | 0 | 2026-06-15 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts |
+| 7 | `journey-point-color-bridge.ts` | 12 | 2 | 0 | 1 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts |
+| 8 | `journey-thread-model-bridge.ts` | 17 | 2 | 1 | 0 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\focus\pocket-personality.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts |
+| 9 | `journey-thread-settler-bridge.ts` | 16 | 5 | 0 | 2 | 2026-06-15 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\adapter-deps.ts (+2) |
+| 10 | `journey-webgl-bridge.ts` | 34 | 4 | 1 | 0 | 2026-06-20 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\focus-ui.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-inspector.ts (+1) |
+| 11 | `lifecycle-bridge.ts` | 45 | 13 | 1 | 3 | 2026-06-20 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\demo-choreography.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts (+10) |
+| 12 | `route-arrival-overlay-bridge.ts` | 8 | 1 | 1 | 26 | 2026-06-15 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\three-engine.ts |
+| 13 | `search-panel-adapter-bridge.ts` | 18 | 2 | 0 | 0 | 2026-06-16 | ✓ | 3/5 | AUDIT (3/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\search\panel-adapter.ts, C:\Users\HP\repos\semantic-explorer\src\lib\search\results-ui.ts |
+| 14 | `search-state-bridge.ts` | 156 | 3 | 0 | 13 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\mode-bindings.ts, C:\Users\HP\repos\semantic-explorer\src\lib\ui\suggestion-bindings.ts |
+| 15 | `state-bridge.ts` | 24 | 57 | 3 | 23 | 2026-06-19 | ✓ | 5/5 | KEEP (load-bearing) | C:\Users\HP\repos\semantic-explorer\src\lib\audio\audio-scape.ts, C:\Users\HP\repos\semantic-explorer\src\lib\data-store.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\framing-utils.ts (+54) |
+| 16 | `strand-continuity-bridge.ts` | 18 | 4 | 1 | 0 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\journey\focus-ui.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-inspector.ts (+1) |
+| 17 | `thread-inspector-bridge.ts` | 18 | 5 | 0 | 1 | 2026-06-18 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\window-actions-bridge.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\journey.ts, C:\Users\HP\repos\semantic-explorer\src\lib\journey\thread-settler.ts (+2) |
+| 18 | `ui-feedback-bridge.ts` | 8 | 2 | 0 | 1 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\engine\camera-choreography\cursor.ts, C:\Users\HP\repos\semantic-explorer\src\lib\engine\three-engine.ts |
+| 19 | `window-actions-bridge.ts` | 30 | 2 | 0 | 23 | 2026-06-16 | ✓ | 4/5 | AUDIT (4/5 signals) | C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\app-init.ts, C:\Users\HP\repos\semantic-explorer\src\lib\orchestration\window-actions.ts |
 
 ## Methodology Notes
 
@@ -59,16 +54,6 @@ A bridge passes "dead" only when **all five signals are zero**:
 
 ## Per-Bridge Detail
 
-### adapters-bridge.ts — AUDIT (4/5 signals)
-
-- **LoC**: 35
-- **Exports**: 11 symbol(s)
-- **Signal 1** (src/lib+components consumers): 1
-- **Signal 2** (docs/tests/legacy refs): 0
-- **Signal 3** (component-export usages): 1
-- **Signal 4** (last commit within 60d): yes (2026-06-17)
-- **Signal 5** (active callers): yes
-
 ### camera-controls-restore-bridge.ts — AUDIT (4/5 signals)
 
 - **LoC**: 22
@@ -79,16 +64,6 @@ A bridge passes "dead" only when **all five signals are zero**:
 - **Signal 4** (last commit within 60d): yes (2026-06-16)
 - **Signal 5** (active callers): yes
 
-### camera-orbit-slack-bridge.ts — AUDIT (3/5 signals)
-
-- **LoC**: 48
-- **Exports**: 4 symbol(s)
-- **Signal 1** (src/lib+components consumers): 1
-- **Signal 2** (docs/tests/legacy refs): 0
-- **Signal 3** (component-export usages): 0
-- **Signal 4** (last commit within 60d): yes (2026-06-19)
-- **Signal 5** (active callers): yes
-
 ### data-worker-url-bridge.ts — AUDIT (4/5 signals)
 
 - **LoC**: 17
@@ -97,16 +72,6 @@ A bridge passes "dead" only when **all five signals are zero**:
 - **Signal 2** (docs/tests/legacy refs): 0
 - **Signal 3** (component-export usages): 11
 - **Signal 4** (last commit within 60d): yes (2026-06-15)
-- **Signal 5** (active callers): yes
-
-### event-bindings-bridge.ts — AUDIT (3/5 signals)
-
-- **LoC**: 16
-- **Exports**: 9 symbol(s)
-- **Signal 1** (src/lib+components consumers): 1
-- **Signal 2** (docs/tests/legacy refs): 0
-- **Signal 3** (component-export usages): 0
-- **Signal 4** (last commit within 60d): yes (2026-06-16)
 - **Signal 5** (active callers): yes
 
 ### inspected-strand-overlay-bridge.ts — KEEP (load-bearing)
@@ -199,16 +164,6 @@ A bridge passes "dead" only when **all five signals are zero**:
 - **Signal 4** (last commit within 60d): yes (2026-06-20)
 - **Signal 5** (active callers): yes
 
-### role-label-bridge.ts — AUDIT (3/5 signals)
-
-- **LoC**: 10
-- **Exports**: 1 symbol(s)
-- **Signal 1** (src/lib+components consumers): 1
-- **Signal 2** (docs/tests/legacy refs): 0
-- **Signal 3** (component-export usages): 0
-- **Signal 4** (last commit within 60d): yes (2026-06-16)
-- **Signal 5** (active callers): yes
-
 ### route-arrival-overlay-bridge.ts — KEEP (load-bearing)
 
 - **LoC**: 8
@@ -243,7 +198,7 @@ A bridge passes "dead" only when **all five signals are zero**:
 
 - **LoC**: 24
 - **Exports**: 2 symbol(s)
-- **Signal 1** (src/lib+components consumers): 58
+- **Signal 1** (src/lib+components consumers): 57
 - **Signal 2** (docs/tests/legacy refs): 3
 - **Signal 3** (component-export usages): 23
 - **Signal 4** (last commit within 60d): yes (2026-06-19)
@@ -277,16 +232,6 @@ A bridge passes "dead" only when **all five signals are zero**:
 - **Signal 2** (docs/tests/legacy refs): 0
 - **Signal 3** (component-export usages): 1
 - **Signal 4** (last commit within 60d): yes (2026-06-16)
-- **Signal 5** (active callers): yes
-
-### weather-ui-bridge.ts — AUDIT (3/5 signals)
-
-- **LoC**: 16
-- **Exports**: 5 symbol(s)
-- **Signal 1** (src/lib+components consumers): 1
-- **Signal 2** (docs/tests/legacy refs): 0
-- **Signal 3** (component-export usages): 0
-- **Signal 4** (last commit within 60d): yes (2026-06-17)
 - **Signal 5** (active callers): yes
 
 ### window-actions-bridge.ts — AUDIT (4/5 signals)
