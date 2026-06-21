@@ -33,7 +33,6 @@ function parseUrlParams(): { forceDemo: boolean; noDemo: boolean } {
 
 const { forceDemo, noDemo } = parseUrlParams()
 const mountTarget = document.getElementById('app') ?? document.getElementById('app-root')
-const overlayTarget = document.body
 let app: ReturnType<typeof mount> | undefined
 
 // Ensure legacy state is exposed on window before any async data loads
@@ -56,7 +55,7 @@ if (mountTarget) {
 // Dynamic import to keep Three.js out of the main bundle
 import('@lib/journey/route-trace').then(({ initRouteTraceSubscriptions }) => {
     initRouteTraceSubscriptions()
-})
+}).catch(() => {})
 
 // W44: Preload journey WebGL overlay modules after initial render so they're
 // available when the user first opens the thread inspector or reaches the

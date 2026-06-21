@@ -907,7 +907,7 @@ async function _executeSearch(
 ): Promise<SearchResult[]> {
     const preferLive = shouldPreferLiveSearch()
     const staticDevFallbackAllowed = canUseStaticDevFallback()
-    console.error('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
+    if (import.meta.env.DEV) console.error('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
     let results: SearchResult[] = []
     const limit = normalizeSearchLimit(PAGE_SIZE)
 
