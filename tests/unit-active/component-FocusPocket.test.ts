@@ -3,7 +3,7 @@
  *
  * Uses source-inspection (readFileSync + string assertions) to verify the
  * a11y/structure contract. The component imports from navStore, focus.svelte,
- * and data-store.svelte which hit circular dependencies in the vitest env,
+ * and data-store which hit circular dependencies in the vitest env,
  * preventing a full render(). This pattern matches the FocusCard approach.
  *
  * Verifies:

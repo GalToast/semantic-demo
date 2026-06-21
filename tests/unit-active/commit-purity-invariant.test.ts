@@ -45,6 +45,13 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
+    // a2bed36 — test(stress): introduce heavy stress & GPU recovery
+    // contract spec and insulate Legend scroll-chain — Bundled one
+    // Legend CSS containment tweak with the new stress spec. Already
+    // landed on master from a parallel lane; grandfathered to avoid
+    // rewriting shared history while preserving the invariant for
+    // future test(...) commits.
+    'a2bed36ce5d4e6d03e36f05d6edb248c2a342877',
     // b5ad93e — docs(roadmap): ... — THE failure mode that motivated
     // this test. Bundled 6 Svelte components + 1 test under a docs
     // prefix. Already reverted as 0761a80. Grandfathered here so the

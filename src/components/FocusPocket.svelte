@@ -15,7 +15,7 @@
   import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
-  import { getDataLoadState } from '@lib/data-store.svelte';
+  import { getDataLoadState } from '@lib/data-store';
 
   // Reactive navStore mirror — bridge svelte/store writable into Svelte 5 $state.
   let nav = $state(navStore());

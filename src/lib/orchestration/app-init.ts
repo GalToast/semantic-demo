@@ -18,7 +18,7 @@
  */
 
 import { get } from 'svelte/store'
-import { initData, setLoadingPhase } from '@lib/data-store.svelte'
+import { initData, setLoadingPhase } from '@lib/data-store'
 import { navStore } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { appState } from '@lib/state/app.svelte'

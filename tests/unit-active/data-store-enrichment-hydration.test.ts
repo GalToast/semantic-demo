@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadLeadEnrichment, resetDataStores, setLeadEnrichmentData } from '../../src/lib/data-store.ts'
 import { appState as state } from '../../src/lib/state/app.svelte.ts'
-import { getLeadEnrichment } from '../../src/lib/data-store.svelte.ts'
+import { getLeadEnrichment } from '../../src/lib/data-store.ts'
 import type { LeadEnrichment } from '../../src/lib/types/business'
 
 function createEnrichment(): Record<string, LeadEnrichment> {

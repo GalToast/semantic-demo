@@ -16,7 +16,7 @@ import { rerankResults } from '@lib/utils/rerank'
 import { searchUseRerank } from '@lib/stores/search.svelte'
 import { get } from 'svelte/store'
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
-import { getBusinessRecords } from '@lib/data-store.svelte'
+import { getBusinessRecords } from '@lib/data-store'
 import type { BusinessRecord } from '@lib/types/business'
 import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search-cache'
 

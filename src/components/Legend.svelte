@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { businessRecordsStore } from '@lib/data-store.svelte';
+  import { businessRecords } from '@lib/data-store';
   import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter.svelte';
   import { initLegendEventBusSubscriptions } from '@lib/journey/legend-ui';
   // The full filter pipeline lives in cluster-filter-controller; the
@@ -54,7 +54,7 @@
   }
 
   let clusterEntries: ClusterEntry[] = $derived.by(() => {
-    const records = $businessRecordsStore;
+    const records = Array.isArray($businessRecords) ? $businessRecords : [];
     if (!records.length) {
       return CLUSTER_NAMES.map((name, i) => ({
         index: i,

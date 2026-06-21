@@ -192,6 +192,7 @@ subscribeKeyed('triggers.ts:STATE_RESET', EVENTS.STATE_RESET, updateJourneyCompa
 
 subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUESTED, ({ index }: { index?: number }) => {
     if (typeof index !== 'number' || !Number.isFinite(index)) return
+    if (appState.searchError) return // Don't focus if there's a search error
     const focusIndex = index
     const searchSummary = appState.currentSearchSummary
     const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
