@@ -48,7 +48,7 @@ import { appState } from '@lib/state/app.svelte.ts'
 import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
 import { appState as _legacyState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const legacyState = _legacyState as any;
+const legacyState = _legacyState as any
 import { bindSearchResultInteractions } from '@lib/search/orchestration'
 import type { Point } from '@lib/state/state-types'
 import type { SearchResult } from '@lib/types/state'

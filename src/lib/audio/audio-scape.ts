@@ -57,6 +57,16 @@ export function initAudio(): void {
     startEvents.forEach((evt) => {
         document.addEventListener(evt, startAudioContext, { once: true })
     })
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+}
+
+function handleVisibilityChange(): void {
+    if (document.visibilityState === 'visible' && audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume().catch((err: unknown) => {
+            debugWarn('[audio] AudioContext resume failed on visibility change', err)
+        })
+    }
 }
 
 function startAudioContext(): void {
@@ -228,6 +238,8 @@ export const play = trigger
  * Called during engine deinit to prevent leaks across re-inits.
  */
 export function disposeAudio(): void {
+    document.removeEventListener('visibilitychange', handleVisibilityChange)
+
     if (_audioRafId !== null) {
         window.cancelAnimationFrame(_audioRafId)
         _audioRafId = null

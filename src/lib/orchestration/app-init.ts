@@ -425,6 +425,14 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         _safetyTimers = null
     }
 
+    // ── Phase 7: Audio Scape Initialization ─────────────────────────────────
+    try {
+        const { initAudio } = await import('@lib/audio/audio-scape')
+        initAudio()
+    } catch (err) {
+        console.error('[app-init] initAudio failed:', err)
+    }
+
     debugWarn('[app-init] Initialization orchestration complete.')
 
     // ── Return cleanup function ───────────────────────────────────────────────
