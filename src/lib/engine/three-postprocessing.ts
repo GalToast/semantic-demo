@@ -239,7 +239,7 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
 
         debugInfo('[postprocessing] initialized — vignette + CA + bloom + DOF ready')
     } catch (err) {
-        console.error('[postprocessing] init failed, falling back to vanilla renderer:', err)
+        if (import.meta.env.DEV) console.error('[postprocessing] init failed, falling back to vanilla renderer:', err)
         disposePostProcessing()
     }
 }

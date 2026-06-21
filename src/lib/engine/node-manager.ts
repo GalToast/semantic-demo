@@ -214,7 +214,7 @@ export function compilePointMaterialForReadiness() {
             webglContext.renderer.render(webglContext.scene, webglContext.camera);
         }
     } catch (error) {
-        console.warn('Semantic point shader precompile failed:', error);
+        if (import.meta.env.DEV) console.warn('Semantic point shader precompile failed:', error);
     }
 }
 

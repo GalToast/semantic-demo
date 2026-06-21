@@ -37,8 +37,8 @@ import { animateCameraToNode } from './focus'
 // don't stack up deferred DOM mutations.
 const parityTimeoutHandles: ReturnType<typeof setTimeout>[] = []
 function clearParityTimeouts(): void {
-  for (const t of parityTimeoutHandles) clearTimeout(t)
-  parityTimeoutHandles.length = 0
+    for (const t of parityTimeoutHandles) clearTimeout(t)
+    parityTimeoutHandles.length = 0
 }
 
 // Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)

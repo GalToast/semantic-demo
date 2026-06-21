@@ -90,7 +90,7 @@ async function syncDataToLegacyState(): Promise<void> {
     }
 
     if (!get(isDataReady)) {
-        console.warn('[engine/lifecycle] syncDataToLegacyState: data not ready after 15s, proceeding anyway')
+        if (import.meta.env.DEV) console.warn('[engine/lifecycle] syncDataToLegacyState: data not ready after 15s, proceeding anyway')
     }
 
     _syncDataFields()
@@ -165,7 +165,7 @@ function bindEventBridge(callbacks: EngineCallbacks): void {
             })
         )
     } catch (busErr) {
-        console.warn('[engine/lifecycle] Event bus subscription failed:', busErr)
+        if (import.meta.env.DEV) console.warn('[engine/lifecycle] Event bus subscription failed:', busErr)
     }
 
     _sceneReadyHandler = (): void => {
@@ -205,7 +205,7 @@ function unbindEventBridge(): void {
 export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCallbacks = {}): Promise<void> {
     const currentStatus = _getEngineStatus()
     if (currentStatus === 'ready' || currentStatus === 'loading') {
-        console.warn('[engine/lifecycle] initEngine: already initialized, ignoring')
+        if (import.meta.env.DEV) console.warn('[engine/lifecycle] initEngine: already initialized, ignoring')
         return
     }
 
@@ -247,7 +247,7 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
         await heavyInit
     } catch (err) {
         if (typeof performance !== 'undefined') performance.mark('engine-init-failed')
-        console.error('[engine/lifecycle] initEngine: setup failed', err)
+        if (import.meta.env.DEV) console.error('[engine/lifecycle] initEngine: setup failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')
@@ -283,7 +283,7 @@ function yieldToBrowser(): Promise<void> {
 function engineInitStillActive(phase: string): boolean {
     const status = _getEngineStatus()
     if (!_destroyed && (status === 'loading' || status === 'ready')) return true
-    console.warn(`[engine/lifecycle] initEngineHeavy: aborted after ${phase}`)
+    if (import.meta.env.DEV) console.warn(`[engine/lifecycle] initEngineHeavy: aborted after ${phase}`)
     return false
 }
 
@@ -292,7 +292,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     // Guard: if engine was destroyed or degraded before we ran, abort
     const currentStatus = _getEngineStatus()
     if (_destroyed || currentStatus === 'degraded') {
-        console.warn('[engine/lifecycle] initEngineHeavy: engine not in valid init state, aborting')
+        if (import.meta.env.DEV) console.warn('[engine/lifecycle] initEngineHeavy: engine not in valid init state, aborting')
         return
     }
 
@@ -345,7 +345,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             try {
                 createMycelium()
             } catch (threadErr) {
-                console.warn('[engine/lifecycle] mycelium creation failed:', threadErr)
+                if (import.meta.env.DEV) console.warn('[engine/lifecycle] mycelium creation failed:', threadErr)
             }
         }
 
@@ -359,7 +359,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             ensureCanvasNodeInteractionBindings()
             _canvasInteractionBound = true
         } catch (interactionErr) {
-            console.warn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
+            if (import.meta.env.DEV) console.warn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
             return
@@ -375,23 +375,23 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                 simulateWebGLContextLoss: () => {
                     const canvas = document.querySelector('canvas')
                     if (!canvas) {
-                        console.warn('[simulateWebGLContextLoss] No canvas found')
+                        if (import.meta.env.DEV) console.warn('[simulateWebGLContextLoss] No canvas found')
                         return false
                     }
                     const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
                     if (!gl) {
-                        console.warn('[simulateWebGLContextLoss] WebGL context not found')
+                        if (import.meta.env.DEV) console.warn('[simulateWebGLContextLoss] WebGL context not found')
                         return false
                     }
                     const ext = gl.getExtension('WEBGL_lose_context')
                     if (!ext) {
-                        console.warn('[simulateWebGLContextLoss] WEBGL_lose_context extension not available')
+                        if (import.meta.env.DEV) console.warn('[simulateWebGLContextLoss] WEBGL_lose_context extension not available')
                         return false
                     }
-                    console.log('[simulateWebGLContextLoss] Triggering artificial context loss')
+                    if (import.meta.env.DEV) console.log('[simulateWebGLContextLoss] Triggering artificial context loss')
                     ext.loseContext()
                     setTimeout(() => {
-                        console.log('[simulateWebGLContextLoss] Triggering artificial context restoration')
+                        if (import.meta.env.DEV) console.log('[simulateWebGLContextLoss] Triggering artificial context restoration')
                         ext.restoreContext()
                     }, 500)
                     return true
@@ -414,7 +414,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         const semanticThreads = await import('@lib/semantic-threads')
         semanticThreads.attachLegacyState(appState as unknown as Record<string, unknown>)
         semanticThreads.loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
-            console.warn('[engine/lifecycle] semantic-thread load failed:', err)
+            if (import.meta.env.DEV) console.warn('[engine/lifecycle] semantic-thread load failed:', err)
         })
 
         // 10. Subscribe to the legacy event bus
@@ -449,7 +449,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         }
     } catch (err) {
         if (typeof performance !== 'undefined') performance.mark('engine-init-failed')
-        console.error('[engine/lifecycle] initEngineHeavy: initialization failed', err)
+        if (import.meta.env.DEV) console.error('[engine/lifecycle] initEngineHeavy: initialization failed', err)
         unbindEventBridge()
         setEngineStatus('degraded')
         callbacks.onGraphicsStateChange?.('fallback')

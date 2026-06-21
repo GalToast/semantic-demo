@@ -133,7 +133,7 @@ function setupSafetyValves(): SafetyTimers {
         if (overlay?.classList.contains('hidden')) return
 
         if (!overlay) return
-        console.error('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
+        if (import.meta.env.DEV) console.error('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
 
         // Apply error state to the overlay (matches legacy applyLoadingErrorState)
         // — built with DOM API per pi-lens innerHTML safety rule.
@@ -305,7 +305,7 @@ async function applyUrlStateAfterData(): Promise<void> {
         const { applyUrlState } = await import('@lib/orchestration/url-state')
         await applyUrlState()
     } catch (err) {
-        console.error('[app-init] applyUrlState failed during init:', err)
+        if (import.meta.env.DEV) console.error('[app-init] applyUrlState failed during init:', err)
     }
 }
 
@@ -326,7 +326,7 @@ function setupWebglContextRestore(): () => void {
 
     const handleContextLost = (event: Event) => {
         event.preventDefault()
-        console.warn('[app-init] WebGL context lost')
+        if (import.meta.env.DEV) console.warn('[app-init] WebGL context lost')
     }
 
     const handleContextRestored = async () => {
@@ -337,7 +337,7 @@ function setupWebglContextRestore(): () => void {
         try {
             await appInit()
         } catch (err) {
-            console.error('[app-init] WebGL restore reinit failed:', err)
+            if (import.meta.env.DEV) console.error('[app-init] WebGL restore reinit failed:', err)
         }
     }
 
@@ -395,7 +395,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // bridge initializes WebGL via Canvas.svelte. The URL state application
     // (Phase 4) awaits data readiness before running.
     const dataReadyPromise = initData().catch((err) => {
-        console.error('[app-init] initData failed:', err)
+        if (import.meta.env.DEV) console.error('[app-init] initData failed:', err)
         // Non-fatal: data-store sets error state; UI shows error overlay
     })
 
@@ -430,7 +430,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         const { initAudio } = await import('@lib/audio/audio-scape')
         initAudio()
     } catch (err) {
-        console.error('[app-init] initAudio failed:', err)
+        if (import.meta.env.DEV) console.error('[app-init] initAudio failed:', err)
     }
 
     debugWarn('[app-init] Initialization orchestration complete.')

@@ -101,8 +101,7 @@ self.onmessage = async (event: MessageEvent) => {
     try {
         if (type === 'LOAD_RECORDS') {
             const result = await handleLoadRecords(payload)
-            if (requestId !== _activeRequestId) return
-            // Transfer buffers to main thread to eliminate cloning overhead
+            if (requestId !== _activeRequestId) return // Transfer buffers to main thread to eliminate cloning overhead
             ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
                 { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
                 [result.positionsBuffer.buffer, result.clustersBuffer.buffer] as Transferable[]

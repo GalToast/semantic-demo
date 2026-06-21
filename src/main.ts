@@ -15,7 +15,7 @@ import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
-const legacyState = appState as any;
+const legacyState = appState as any
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import './lib/css/biofield.css'
 
@@ -53,9 +53,11 @@ if (mountTarget) {
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics
 // for visual-audit compatibility.
 // Dynamic import to keep Three.js out of the main bundle
-import('@lib/journey/route-trace').then(({ initRouteTraceSubscriptions }) => {
-    initRouteTraceSubscriptions()
-}).catch(() => {})
+import('@lib/journey/route-trace')
+    .then(({ initRouteTraceSubscriptions }) => {
+        initRouteTraceSubscriptions()
+    })
+    .catch(() => {})
 
 // W44: Preload journey WebGL overlay modules after initial render so they're
 // available when the user first opens the thread inspector or reaches the

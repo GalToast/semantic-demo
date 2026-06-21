@@ -224,7 +224,7 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         }
         requestAnimationFrame(step)
     } catch (_err) {
-        console.error('animateCameraToTerrainPrelude failed:', _err)
+        if (import.meta.env.DEV) console.error('animateCameraToTerrainPrelude failed:', _err)
     } finally {
         publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
     }

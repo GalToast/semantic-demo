@@ -189,7 +189,9 @@ export function applySemanticLaneHealthPayload(payload: LaneHealthPayload | null
     const win = getWindow();
     if (typeof win?.scheduleSemanticLaneCooldownProbe === 'function') win.scheduleSemanticLaneCooldownProbe(payload || {});
     if (state.semanticLaneOpsMode) {
-        refreshSemanticLaneOpsSummary().catch((err: unknown) => console.warn('refreshSemanticLaneOpsSummary failed:', err));
+        refreshSemanticLaneOpsSummary().catch((err: unknown) => {
+            if (import.meta.env.DEV) console.warn('refreshSemanticLaneOpsSummary failed:', err)
+        });
     }
     const laneState = payload?.state || 'degraded';
     const rawProvenanceLabel = payload?.provenance?.label || null;
@@ -308,7 +310,9 @@ export async function probeSemanticLane({ warm = false, reason = 'interval' }: L
             return payload;
         } catch (err: unknown) {
             const isTimeout = (err as Error)?.name === 'AbortError';
-            if (isTimeout) console.warn('Semantic lane probe timed out after 5s');
+            if (isTimeout) {
+                if (import.meta.env.DEV) console.warn('Semantic lane probe timed out after 5s');
+            }
 
             if (reason === 'focus' || reason === 'visibility' || effectiveWarm || isTimeout || state.semanticLaneState === 'checking' || state.semanticLaneState === 'degraded' || state.semanticLaneState === 'unavailable') {
                 recordSemanticLaneSnapshot({

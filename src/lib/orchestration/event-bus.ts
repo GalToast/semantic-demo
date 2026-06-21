@@ -189,7 +189,7 @@ export function publish<K extends EventName>(eventName: K, payload: EventPayload
         try {
             callback(payload)
         } catch (error) {
-            console.error(`[EventBus] Error in subscriber for ${eventName}:`, error)
+            if (import.meta.env.DEV) console.error(`[EventBus] Error in subscriber for ${eventName}:`, error)
         }
     })
 }

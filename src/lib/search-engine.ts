@@ -907,7 +907,8 @@ async function _executeSearch(
 ): Promise<SearchResult[]> {
     const preferLive = shouldPreferLiveSearch()
     const staticDevFallbackAllowed = canUseStaticDevFallback()
-    if (import.meta.env.DEV) console.error('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
+    if (import.meta.env.DEV)
+        console.error('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
     let results: SearchResult[] = []
     const limit = normalizeSearchLimit(PAGE_SIZE)
 
@@ -940,7 +941,7 @@ async function _executeSearch(
                     throw err
                 }
                 if (shouldLogStaticDevFallback()) {
-                    console.warn('[search-engine] Live search failed, falling back to local index for:', trimmed, err)
+                    if (import.meta.env.DEV) console.warn('[search-engine] Live search failed, falling back to local index for:', trimmed, err)
                 }
             }
         } else {
@@ -957,7 +958,7 @@ async function _executeSearch(
                     throw err
                 }
                 if (canUseStaticDevFallback() && shouldLogStaticDevFallback()) {
-                    console.warn('[search-engine] API unavailable on static dev, using local index for:', trimmed, err)
+                    if (import.meta.env.DEV) console.warn('[search-engine] API unavailable on static dev, using local index for:', trimmed, err)
                 }
             }
         }

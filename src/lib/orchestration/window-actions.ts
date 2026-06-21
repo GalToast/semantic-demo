@@ -334,7 +334,7 @@ export function installWindowActions(): () => void {
     }
 
     void loadLegacyActionModules().catch((error) => {
-        console.error('[window-actions] Failed to preload legacy action modules:', error)
+        if (import.meta.env.DEV) console.error('[window-actions] Failed to preload legacy action modules:', error)
     })
 
     return () => {

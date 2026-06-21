@@ -324,7 +324,7 @@ export function setBusinessData(result: BusinessDataResult): void {
             ;(legacyState as any).pointIndexByLeadId = result.pointIndexByLeadId
         })
     } catch (e) {
-        console.warn('[data-store] Legacy state sync failed:', e)
+        if (import.meta.env.DEV) console.warn('[data-store] Legacy state sync failed:', e)
     }
     dataLoadState.update((s) => ({
         ...s,
@@ -344,7 +344,7 @@ export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment>
             ;(legacyState as any).leadEnrichment = enrichment
         })
     } catch (e) {
-        console.warn('[data-store] Legacy enrichment sync failed:', e)
+        if (import.meta.env.DEV) console.warn('[data-store] Legacy enrichment sync failed:', e)
     }
 }
 
@@ -395,7 +395,7 @@ export function setSemanticThreadData(result: SemanticThreadDataResult): void {
             ;(legacyState as any).semanticThreadArtifactName = result.artifactName
         })
     } catch (e) {
-        console.warn('[data-store] Legacy semantic thread sync failed:', e)
+        if (import.meta.env.DEV) console.warn('[data-store] Legacy semantic thread sync failed:', e)
     }
 
     dataLoadState.update((s) => ({
@@ -416,7 +416,7 @@ export function setSemanticThreadFailure(error: string): void {
     semanticNeighborMap.set(new Map())
     layoutManifest.set(null)
 
-    console.warn('[data-store] Semantic threads failed; using geometric fallback.', error)
+    if (import.meta.env.DEV) console.warn('[data-store] Semantic threads failed; using geometric fallback.', error)
 
     dataLoadState.update((s) => ({
         ...s,
@@ -517,7 +517,7 @@ export async function initData(): Promise<void> {
         debugInfo('[data-store] Data initialization complete.')
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        console.error('[data-store] Unexpected error during init:', msg)
+        if (import.meta.env.DEV) console.error('[data-store] Unexpected error during init:', msg)
         setDataLoadError(msg)
         setLoadingPhase('launch') // dismiss overlay on error
     }

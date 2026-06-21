@@ -291,7 +291,7 @@ export function disposeSemanticLens() {
 
 export function initSemanticManifold() {
     if (!state.scene) {
-        console.warn('[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init');
+        if (import.meta.env.DEV) console.warn('[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init');
         return;
     }
     const manifoldGeo = new CircleGeometry(4, 64);
@@ -358,7 +358,7 @@ export function initSemanticManifold() {
 
 export function initSemanticLens() {
     if (!state.scene) {
-        console.warn('[three-interaction-visuals] initSemanticLens: state.scene is null, skipping lens init');
+        if (import.meta.env.DEV) console.warn('[three-interaction-visuals] initSemanticLens: state.scene is null, skipping lens init');
         return;
     }
     disposeSemanticLens();

@@ -306,7 +306,7 @@ function _ensureModules(): void {
         _threeInteractionVisuals = threeInteractionVisualsMod as unknown as ThreeInteractionVisualsModule
         _loaded = true
     } catch (err) {
-        console.error('[three-engine] Failed to load legacy modules:', err)
+        if (import.meta.env.DEV) console.error('[three-engine] Failed to load legacy modules:', err)
     }
 }
 
@@ -704,7 +704,7 @@ export async function initThreeJS() {
             powerPreference: 'high-performance'
         })
     } catch (error) {
-        console.error('WebGL renderer creation failed; using semantic demo graphics fallback.', error)
+        if (import.meta.env.DEV) console.error('WebGL renderer creation failed; using semantic demo graphics fallback.', error)
         showWebGLFallback(container, { reason: (error as Error)?.message || 'renderer-create-failed' })
         return false
     }
@@ -743,7 +743,7 @@ export async function initThreeJS() {
         _webglContextLost = false
         _webglRestoreTimer = window.setTimeout(() => {
             _webglRestore?.restoreWebGLContext().catch((err) => {
-                console.error('Failed to restore WebGL context:', err)
+                if (import.meta.env.DEV) console.error('Failed to restore WebGL context:', err)
             })
             if (
                 _rafId === null &&
@@ -1407,7 +1407,7 @@ export function animate() {
             renderMs: renderEnd - renderStart
         })
     } catch (err) {
-        console.error('[three-engine] Unhandled exception in animate loop:', err)
+        if (import.meta.env.DEV) console.error('[three-engine] Unhandled exception in animate loop:', err)
         _circuitBreakerTripped = true
     }
 }

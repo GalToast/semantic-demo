@@ -313,7 +313,7 @@ class CameraStoreControl {
             try {
                 run(snap)
             } catch (err) {
-                console.error('[CameraStore] Subscription notification error:', err)
+                if (import.meta.env.DEV) console.error('[CameraStore] Subscription notification error:', err)
             }
         }
     }

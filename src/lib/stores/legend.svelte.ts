@@ -51,7 +51,7 @@ class LegendStore {
             try {
                 run(this.open)
             } catch (err) {
-                console.error('[LegendStore] Subscription notification error:', err)
+                if (import.meta.env.DEV) console.error('[LegendStore] Subscription notification error:', err)
             }
         }
     }

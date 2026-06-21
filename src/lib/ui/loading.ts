@@ -152,7 +152,7 @@ export function startDeferredHydration(): void {
             // Load semantic thread neighbor data (async, may retry internally)
             const threadsPromise = loadSemanticThreads({ reason: 'svelte-deferred-hydration' }).catch(
                 (err: unknown) => {
-                    console.warn('[Loading] deferred semantic threads load failed:', err)
+                    if (import.meta.env.DEV) console.warn('[Loading] deferred semantic threads load failed:', err)
                 }
             )
 
@@ -166,10 +166,10 @@ export function startDeferredHydration(): void {
                 const { createMycelium } = await import('@lib/engine/thread-manager')
                 createMycelium()
             } catch (threadErr) {
-                console.warn('[Loading] deferred mycelium creation failed:', threadErr)
+                if (import.meta.env.DEV) console.warn('[Loading] deferred mycelium creation failed:', threadErr)
             }
         } catch (err) {
-            console.error('[Loading] deferred hydration failed:', err)
+            if (import.meta.env.DEV) console.error('[Loading] deferred hydration failed:', err)
         }
 
         scheduleWeatherHydration()
@@ -197,7 +197,7 @@ export function scheduleWeatherHydration(): void {
             initWeather()
             setWeatherInitialized(true)
         } catch (err) {
-            console.warn('[Loading] weather initialization failed:', err)
+            if (import.meta.env.DEV) console.warn('[Loading] weather initialization failed:', err)
         }
     }
 
