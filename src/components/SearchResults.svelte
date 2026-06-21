@@ -586,6 +586,8 @@
     z-index: calc(var(--z-search, 100) - 1);
     max-height: min(52vh, 420px);
     overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
   }
 
   :global(.search-container.info-panel-contained) .search-results-wrapper {
@@ -655,6 +657,8 @@
     border: 1px solid rgba(78, 205, 196, 0.15);
     max-height: 320px;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     scrollbar-width: thin;
     scrollbar-color: rgba(78, 205, 196, 0.2) transparent;
   }

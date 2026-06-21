@@ -371,7 +371,31 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             w.__THREE_APP__ = {
                 renderer: appState.renderer,
                 scene: appState.scene,
-                camera: (appState as unknown as Record<string, unknown>).camera
+                camera: (appState as unknown as Record<string, unknown>).camera,
+                simulateWebGLContextLoss: () => {
+                    const canvas = document.querySelector('canvas')
+                    if (!canvas) {
+                        console.warn('[simulateWebGLContextLoss] No canvas found')
+                        return false
+                    }
+                    const gl = canvas.getContext('webgl2') || canvas.getContext('webgl')
+                    if (!gl) {
+                        console.warn('[simulateWebGLContextLoss] WebGL context not found')
+                        return false
+                    }
+                    const ext = gl.getExtension('WEBGL_lose_context')
+                    if (!ext) {
+                        console.warn('[simulateWebGLContextLoss] WEBGL_lose_context extension not available')
+                        return false
+                    }
+                    console.log('[simulateWebGLContextLoss] Triggering artificial context loss')
+                    ext.loseContext()
+                    setTimeout(() => {
+                        console.log('[simulateWebGLContextLoss] Triggering artificial context restoration')
+                        ext.restoreContext()
+                    }, 500)
+                    return true
+                }
             }
             w.__LEGACY_APP_STATE__ = appState
             if (typeof w.__refreshTestCompatState__ === 'function') {

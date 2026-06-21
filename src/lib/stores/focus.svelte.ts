@@ -84,15 +84,43 @@ const INITIAL_FOCUS: FocusStoreState = {
 
 /** Read a fresh snapshot from the state kernel (appState). */
 function _readFocusSnapshot(): FocusStoreState {
-    const indices = appState.navState.focusPocketIndices || []
-    const roles = appState.navState.focusPocketRoleByIndex || new Map<number, string>()
-    const targetPositions = appState.targetPositions as Array<{ x: number; y: number; z: number }> | undefined
-    const nodePositions = appState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined
-    const originalPositions = appState.originalPositions as Array<{ x: number; y: number; z: number }> | undefined
+    const source = appState as unknown as {
+        navState?: {
+            focusPocketIndices?: number[]
+            focusPocketRoleByIndex?: Map<number, string>
+            focusPocketMeta?: FocusStoreState['pocketMeta']
+            focusedIndex?: number | null
+            trailDepth?: number
+        }
+        targetPositions?: Array<{ x: number; y: number; z: number }>
+        nodePositions?: Array<{ x: number; y: number; z: number }>
+        originalPositions?: Array<{ x: number; y: number; z: number }>
+        selectedPoint?: BusinessRecord | null
+        inspectedThreadIndex?: number | null
+        pinnedThreadIndex?: number | null
+        nodesAreSettling?: boolean
+        pocketMotionByIndex?: Map<number, PocketMotionWithFrame>
+        pocketTransitionStartedAt?: number
+        infoPanelOpen?: boolean
+        pocketListVisible?: boolean
+        focusTransitionMode?: FocusTransitionMode
+        focusTransitionStartedAt?: number
+        focusOrbitSlackState?: FocusOrbitSlackState
+        inspectedStrandDiagnostics?: ThreadInspectorState
+        threadInspectorPointerInside?: boolean
+    }
+    const navState = source.navState ?? {}
+    const indices = navState.focusPocketIndices || []
+    const roles = navState.focusPocketRoleByIndex || new Map<number, string>()
+    const targetPositions = source.targetPositions
+    const nodePositions = source.nodePositions
+    const originalPositions = source.originalPositions
     const records = getBusinessRecords()
-    const anchorIndex = Number.isFinite(appState.navState.focusedIndex as number)
-        ? (appState.navState.focusedIndex as number)
+    const anchorIndex = Number.isFinite(navState.focusedIndex as number)
+        ? (navState.focusedIndex as number)
         : null
+    const diagnostics = source.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
+    const orbitSlack = source.focusOrbitSlackState ?? INITIAL_FOCUS.orbitSlack
 
     const nodes: FocusPocketNode[] = []
     for (const idx of indices) {
@@ -123,29 +151,29 @@ function _readFocusSnapshot(): FocusStoreState {
     return {
         ...INITIAL_FOCUS,
         pocketNodes: nodes,
-        pocketMeta: appState.navState.focusPocketMeta,
-        pocketRoleByIndex: new Map(appState.navState.focusPocketRoleByIndex),
-        selectedBusiness: appState.selectedPoint as BusinessRecord | null,
-        inspectedStrandIndex: appState.inspectedThreadIndex,
-        pinnedThreadIndex: appState.pinnedThreadIndex,
-        semanticDiveMode: appState.navState.trailDepth === 2,
-        nodesAreSettling: appState.nodesAreSettling,
-        pocketMotionByIndex: new Map(appState.pocketMotionByIndex),
-        pocketTransitionStartedAt: appState.pocketTransitionStartedAt,
-        infoPanelOpen: appState.infoPanelOpen,
-        pocketListVisible: appState.pocketListVisible,
-        transitionMode: appState.focusTransitionMode as FocusTransitionMode,
-        transitionStartedAt: appState.focusTransitionStartedAt,
-        orbitSlack: { ...appState.focusOrbitSlackState } as FocusOrbitSlackState,
+        pocketMeta: navState.focusPocketMeta ?? null,
+        pocketRoleByIndex: new Map(roles),
+        selectedBusiness: source.selectedPoint ?? null,
+        inspectedStrandIndex: source.inspectedThreadIndex ?? null,
+        pinnedThreadIndex: source.pinnedThreadIndex ?? null,
+        semanticDiveMode: navState.trailDepth === 2,
+        nodesAreSettling: source.nodesAreSettling ?? false,
+        pocketMotionByIndex: new Map(source.pocketMotionByIndex ?? []),
+        pocketTransitionStartedAt: source.pocketTransitionStartedAt ?? 0,
+        infoPanelOpen: source.infoPanelOpen ?? true,
+        pocketListVisible: source.pocketListVisible ?? false,
+        transitionMode: source.focusTransitionMode ?? 'idle',
+        transitionStartedAt: source.focusTransitionStartedAt ?? 0,
+        orbitSlack: { ...orbitSlack } as FocusOrbitSlackState,
         threadInspector: {
-            active: appState.inspectedStrandDiagnostics.active,
-            source: appState.inspectedStrandDiagnostics.source,
-            inspectedIndex: appState.inspectedThreadIndex,
-            pinnedIndex: appState.pinnedThreadIndex,
-            pointerInside: appState.threadInspectorPointerInside,
-            segmentCount: appState.inspectedStrandDiagnostics.segmentCount,
-            braidCount: appState.inspectedStrandDiagnostics.braidCount,
-            endpointCount: appState.inspectedStrandDiagnostics.endpointCount
+            active: diagnostics.active,
+            source: diagnostics.source,
+            inspectedIndex: source.inspectedThreadIndex ?? null,
+            pinnedIndex: source.pinnedThreadIndex ?? null,
+            pointerInside: source.threadInspectorPointerInside ?? false,
+            segmentCount: diagnostics.segmentCount,
+            braidCount: diagnostics.braidCount,
+            endpointCount: diagnostics.endpointCount
         }
     }
 }

@@ -613,6 +613,8 @@
     transform: translateX(100%);
     transition: transform 0.3s ease;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     padding: 1rem;
     scrollbar-width: thin;
     scrollbar-color: rgba(78, 205, 196, 0.2) transparent;

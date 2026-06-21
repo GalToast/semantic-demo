@@ -116,21 +116,22 @@ const INITIAL_JOURNEY: JourneyStoreState = {
 
 /** Read the current journey state from appState (shared by initial value and callable getter). */
 function _readJourneyFromAppState(): JourneyStoreState {
-    const walkIndices = finiteIndexList(appState.navState.walkHistoryIndices)
+    const navState = appState?.navState ?? {}
+    const walkIndices = finiteIndexList(navState.walkHistoryIndices)
     return {
         ...INITIAL_JOURNEY,
-        ...$state.snapshot(appState.navState),
-        phase: appState.navState.mode,
+        ...$state.snapshot(navState),
+        phase: navState.mode,
         trail: walkIndices.map((index) => ({ index }) as TrailStop),
-        cursor: appState.navState.trailCursor,
-        depth: appState.navState.trailDepth,
-        trailDepth: appState.navState.trailDepth,
+        cursor: navState.trailCursor,
+        depth: navState.trailDepth,
+        trailDepth: navState.trailDepth,
         walkHistoryIndices: walkIndices,
-        trailSeedIndex: appState.navState.trailSeedIndex ?? null,
-        threadCandidates: valueArray(appState.navState.threadCandidates) as ThreadCandidateRef[],
-        threadReasonByIndex: new Map(appState.navState.threadReasonByIndex),
-        threadSource: appState.navState.threadSource,
-        lastTraversalReason: appState.navState.lastTraversalReason,
+        trailSeedIndex: navState.trailSeedIndex ?? null,
+        threadCandidates: valueArray(navState.threadCandidates) as ThreadCandidateRef[],
+        threadReasonByIndex: new Map(navState.threadReasonByIndex),
+        threadSource: navState.threadSource,
+        lastTraversalReason: navState.lastTraversalReason,
         terrainHandoffPhase: 'idle',
         routeExplorationPhase: 'idle',
         routeChoreographyPhase: 'overview'
