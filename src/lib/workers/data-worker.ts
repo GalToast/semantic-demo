@@ -352,7 +352,11 @@ async function handleLoadLeadEnrichment(
 }
 
 function parseEnrichmentJson(text: string): Record<string, LeadEnrichment> | null {
-    const raw = JSON.parse(text) as unknown
-    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
-    return raw as Record<string, LeadEnrichment>
+    try {
+        const raw = JSON.parse(text) as unknown
+        if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+        return raw as Record<string, LeadEnrichment>
+    } catch {
+        return null
+    }
 }

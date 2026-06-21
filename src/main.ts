@@ -77,11 +77,10 @@ window.addEventListener('beforeunload', () => teardownGestureMonitor(), { once: 
 // The legacy init path sets __APP_STATE__ asynchronously; retry until the
 // data is present or the cap is reached.
 let hydrateAttempts = 0
-let hydrateSuccess = false
 const tryHydrate = (): void => {
-    hydrateFromLegacyState()
+    const didHydrate = hydrateFromLegacyState()
     hydrateAttempts += 1
-    if (hydrateSuccess) return
+    if (didHydrate) return
     if (hydrateAttempts < 60) {
         window.setTimeout(tryHydrate, 500)
     }

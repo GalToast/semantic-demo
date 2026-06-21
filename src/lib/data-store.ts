@@ -22,7 +22,7 @@ import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
 import { appState as _legacyState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const legacyState = _legacyState as any;
+const legacyState = _legacyState as any
 
 // ── Cross-chunk singleton helpers ────────────────────────────────────────────
 // When Vite code-splits, this module can be duplicated into multiple chunks.
@@ -71,8 +71,8 @@ export const businessRecords = getOrCreateWritable<readonly BusinessRecord[]>(
  * and the Svelte stores need to be populated from that source so reactive
  * components can read the data.
  */
-export function hydrateFromLegacyState(): void {
-    if (typeof window === 'undefined') return
+export function hydrateFromLegacyState(): boolean {
+    if (typeof window === 'undefined') return false
     const w = window as unknown as {
         __APP_STATE__?: {
             points?: readonly BusinessRecord[]
@@ -86,23 +86,30 @@ export function hydrateFromLegacyState(): void {
         }
     }
     const appState = w.__APP_STATE__
-    if (!appState) return
+    if (!appState) return false
     const legacy = appState as Record<string, unknown>
+    let didHydrate = false
     if (Array.isArray(appState.points) && appState.points.length > 0) {
         businessRecords.set(appState.points as BusinessRecord[])
+        didHydrate = true
     }
     if (legacy.semanticNeighborMapByLeadId instanceof Map) {
         semanticNeighborMap.set(legacy.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>)
+        didHydrate = true
     }
     if (legacy.semanticThreadBundle !== undefined) {
         semanticThreadBundle.set(legacy.semanticThreadBundle as SemanticThreadBundle | null)
+        didHydrate = true
     }
     if (legacy.semanticThreadArtifactName !== undefined) {
         semanticThreadArtifactName.set(legacy.semanticThreadArtifactName as string | null)
+        didHydrate = true
     }
     if (legacy.semanticSpaceLayoutManifest !== undefined) {
         layoutManifest.set(legacy.semanticSpaceLayoutManifest as LayoutManifest | null)
+        didHydrate = true
     }
+    return didHydrate
 }
 
 /** Synchronous snapshot of business records. */
