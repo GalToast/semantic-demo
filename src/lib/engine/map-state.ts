@@ -38,10 +38,6 @@ interface TerrainHandoffOptions {
     settlePhase?: string
 }
 
-interface RouteAnchorIndexOptions {
-    routeIndices?: number[]
-}
-
 let leafletAssetsPromise: Promise<unknown> | null = null
 
 export async function loadLeafletAssets(): Promise<unknown> {
@@ -159,7 +155,7 @@ export async function initMap(): Promise<void> {
         if (!container) throw new Error('Map container is missing')
         if ((container as unknown as { _leaflet_id?: number })._leaflet_id) {
             delete (container as unknown as { _leaflet_id?: number })._leaflet_id
-            container.innerHTML = ''
+            container.replaceChildren()
         }
 
         const L = window.L! as {
@@ -313,10 +309,38 @@ export function refreshMapRouteEmbodiment(): void {
                 emptyEl.className = 'map-empty-state'
                 emptyEl.setAttribute('role', 'status')
                 emptyEl.setAttribute('aria-live', 'polite')
-                emptyEl.innerHTML =
-                    '<div class="map-empty-state-icon"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg></div>' +
-                    '<div class="map-empty-state-title">Choose a business to map its neighborhood</div>' +
-                    '<div class="map-empty-state-note">Search or select a business in the mycelium view, then open Map to see its nearby records here.</div>'
+
+                const iconContainer = document.createElement('div')
+                iconContainer.className = 'map-empty-state-icon'
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+                svg.setAttribute('width', '28')
+                svg.setAttribute('height', '28')
+                svg.setAttribute('viewBox', '0 0 24 24')
+                svg.setAttribute('fill', 'none')
+                svg.setAttribute('stroke', 'currentColor')
+                svg.setAttribute('stroke-width', '1.5')
+                svg.setAttribute('aria-hidden', 'true')
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path')
+                path.setAttribute('d', 'M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z')
+                svg.appendChild(path)
+                const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle')
+                circle.setAttribute('cx', '12')
+                circle.setAttribute('cy', '10')
+                circle.setAttribute('r', '3')
+                svg.appendChild(circle)
+                iconContainer.appendChild(svg)
+                emptyEl.appendChild(iconContainer)
+
+                const title = document.createElement('div')
+                title.className = 'map-empty-state-title'
+                title.textContent = 'Choose a business to map its neighborhood'
+                emptyEl.appendChild(title)
+
+                const note = document.createElement('div')
+                note.className = 'map-empty-state-note'
+                note.textContent = 'Search or select a business in the mycelium view, then open Map to see its nearby records here.'
+                emptyEl.appendChild(note)
+
                 container.appendChild(emptyEl)
             }
         }
@@ -635,4 +659,28 @@ export function zoomMap(multiplier: number): void {
     } else {
         ;(state.map as { zoomOut(): void }).zoomOut()
     }
+}
+
+export function destroyMap(): void {
+    const mapState = state as unknown as {
+        mapInitialized?: boolean
+        map: Record<string, unknown> | null
+        markersLayer: Record<string, unknown> | null
+        mapRouteLayer: Record<string, unknown> | null
+        pointMarkers: Array<{ marker: LeafletMarker; index: number }>
+    }
+
+    if (mapState.map) {
+        try {
+            ;(mapState.map as { remove(): void }).remove()
+        } catch (error) {
+            debugWarn('destroyMap failed:', error)
+        }
+    }
+
+    mapState.mapInitialized = false
+    mapState.map = null
+    mapState.markersLayer = null
+    mapState.mapRouteLayer = null
+    mapState.pointMarkers = []
 }

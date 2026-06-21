@@ -44,6 +44,7 @@ import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 
 // Engine sub-modules
 import { initThreeJS, onWindowResize, cancelAnimate, updateCameraViewportOffset } from '@lib/engine/three-engine'
+import { destroyMap } from '@lib/engine/map-state'
 import { createMycelium } from '@lib/engine/thread-manager'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
 let _ppResize: ((w: number, h: number) => void) | null = null
@@ -488,6 +489,13 @@ export function destroyEngine(): void {
     // FIX #2: Dispose tooltip event-bus subscriptions (was missing in bridge)
     try {
         disposeTooltipEventBusSubscriptions()
+    } catch (_) {
+        /* best-effort */
+    }
+
+    // FIX #3: Dispose Leaflet Map state recursively (was missing in bridge)
+    try {
+        destroyMap()
     } catch (_) {
         /* best-effort */
     }
