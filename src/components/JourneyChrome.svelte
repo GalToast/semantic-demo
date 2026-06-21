@@ -481,13 +481,15 @@
               data-index={idx}
               data-relationship-role={relationshipRole}
               data-reason={reasonLabel}
-              role="button"
-              tabindex="0"
-              aria-label={`Walk to ${name}`}
-              onclick={() => walkToCandidate(candidate)}
-              onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); walkToCandidate(candidate); } }}
             >
-              <span class="focus-stage-neighbor-main">
+              <div
+                class="focus-stage-neighbor-main"
+                role="button"
+                tabindex="0"
+                aria-label={`Walk to ${name}`}
+                onclick={() => walkToCandidate(candidate)}
+                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); walkToCandidate(candidate); } }}
+              >
                 <span class="focus-stage-neighbor-index">{String(i + 1).padStart(2, '0')}</span>
                 <span class="focus-stage-neighbor-copy">
                   <span class="focus-stage-neighbor-name">
@@ -500,7 +502,7 @@
                   </span>
                   <span class="focus-stage-neighbor-reason">{reasonLabel}</span>
                 </span>
-              </span>
+              </div>
               <span class="focus-stage-neighbor-actions" aria-label="Strand actions">
                 <span
                   class="focus-stage-neighbor-action"
@@ -508,8 +510,8 @@
                   tabindex="0"
                   data-neighbor-action="inspect"
                   aria-label="Inspect connection"
-                  onclick={(e) => { e.stopPropagation(); inspectCandidate(idx); }}
-                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); inspectCandidate(idx); } }}
+                  onclick={() => inspectCandidate(idx)}
+                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectCandidate(idx); } }}
                 >Inspect</span>
                 <span
                   class="focus-stage-neighbor-action primary"
@@ -517,8 +519,8 @@
                   tabindex="0"
                   data-neighbor-action="pin"
                   aria-label="Pin connection"
-                  onclick={(e) => { e.stopPropagation(); pinCandidate(idx); }}
-                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); e.stopPropagation(); pinCandidate(idx); } }}
+                  onclick={() => pinCandidate(idx)}
+                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pinCandidate(idx); } }}
                 >Pin</span>
               </span>
             </div>
@@ -767,15 +769,10 @@
     border: 1px solid rgba(78, 205, 196, 0.12);
     border-radius: 0.4rem;
     padding: 0.3rem 0.5rem;
-    cursor: pointer;
     transition: all 0.15s;
     font-family: 'Nunito Sans', sans-serif;
     text-align: left;
     width: 100%;
-  }
-  .focus-stage-neighbor-pill:hover {
-    background: rgba(78, 205, 196, 0.08);
-    border-color: rgba(78, 205, 196, 0.25);
   }
   .focus-stage-neighbor-pill.is-next-stop {
     border-color: rgba(78, 205, 196, 0.3);
@@ -787,6 +784,13 @@
     gap: 0.4rem;
     min-width: 0;
     flex: 1;
+    cursor: pointer;
+    padding: 0.1rem;
+    border-radius: 0.2rem;
+    transition: background 0.15s;
+  }
+  .focus-stage-neighbor-main:hover {
+    background: rgba(78, 205, 196, 0.08);
   }
   .focus-stage-neighbor-index {
     font-family: 'JetBrains Mono', monospace;

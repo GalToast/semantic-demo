@@ -119,6 +119,9 @@
     aria-label="Thread connection inspector"
     role="complementary"
     aria-live="polite"
+    onpointerdown={(e) => e.stopPropagation()}
+    onwheel={(e) => e.stopPropagation()}
+    ondblclick={(e) => e.stopPropagation()}
   >
     <section
       class="focus-thread-inspector active"
@@ -182,6 +185,9 @@
     id="thread-inspector"
     aria-label="Thread connection inspector"
     role="complementary"
+    onpointerdown={(e) => e.stopPropagation()}
+    onwheel={(e) => e.stopPropagation()}
+    ondblclick={(e) => e.stopPropagation()}
   >
     <section
       class="focus-thread-inspector"
