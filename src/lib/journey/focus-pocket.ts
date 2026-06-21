@@ -143,7 +143,7 @@ export function clearFocusPocketMeta(): void {
     writeFocusPocketMirror({ pocketMeta: null })
 }
 
-export function applyLocalNeighborhoodFocus(index: number): void {
+export function applyLocalNeighborhoodFocus(index: number): boolean {
     const points = appState.points
     const originalPositions = appState.originalPositions
     const nodePositions = appState.nodePositions
@@ -165,7 +165,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
         })
     }
 
-    if (!points || !Array.isArray(points) || !originalPositions) return
+    if (!points || !Array.isArray(points) || !originalPositions) return false
     for (let i = 0; i < points.length; i++) {
         const pos = originalPositions[i]
         const px = Number.isFinite(pos?.x) ? pos!.x : 0
@@ -258,7 +258,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
             ;(appState as unknown as Record<string, unknown>).nodesAreSettling = false
             ;(appState as unknown as Record<string, unknown>).autoRotate = true
         })
-        return
+        return false
     }
     const viewportProfile = getFocusConstellationViewportProfile()
     const threadCandidates = (navState.threadCandidates as Array<Record<string, unknown>>) ?? []
@@ -334,7 +334,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
             ;(appState as unknown as Record<string, unknown>).nodesAreSettling = true
             ;(appState as unknown as Record<string, unknown>).autoRotate = false
         })
-        return
+        return false
     }
 
     setFocusPocketIndices([...localIndices].filter((candidateIndex: number) => candidateIndex !== index))
@@ -366,7 +366,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     const focusPosX = Number.isFinite(focusPos.x) ? focusPos.x : 0
     const focusPosY = Number.isFinite(focusPos.y) ? focusPos.y : 0
     const focusPosZ = Number.isFinite(focusPos.z) ? focusPos.z : 0
-    if (!points || !Array.isArray(points)) return
+    if (!points || !Array.isArray(points)) return false
     for (let i = 0; i < points.length; i++) {
         if (i === index) continue
         if (!localIndices.has(i)) continue
@@ -416,6 +416,7 @@ export function applyLocalNeighborhoodFocus(index: number): void {
     appState.withMutation(() => {
         ;(appState as unknown as Record<string, unknown>).nodesAreSettling = true
     })
+    return true
 }
 
 export function applyFocusPocketBreathing(

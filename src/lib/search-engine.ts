@@ -941,7 +941,12 @@ async function _executeSearch(
                     throw err
                 }
                 if (shouldLogStaticDevFallback()) {
-                    if (import.meta.env.DEV) console.warn('[search-engine] Live search failed, falling back to local index for:', trimmed, err)
+                    if (import.meta.env.DEV)
+                        console.warn(
+                            '[search-engine] Live search failed, falling back to local index for:',
+                            trimmed,
+                            err
+                        )
                 }
             }
         } else {
@@ -958,7 +963,12 @@ async function _executeSearch(
                     throw err
                 }
                 if (canUseStaticDevFallback() && shouldLogStaticDevFallback()) {
-                    if (import.meta.env.DEV) console.warn('[search-engine] API unavailable on static dev, using local index for:', trimmed, err)
+                    if (import.meta.env.DEV)
+                        console.warn(
+                            '[search-engine] API unavailable on static dev, using local index for:',
+                            trimmed,
+                            err
+                        )
                 }
             }
         }

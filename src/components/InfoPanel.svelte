@@ -568,7 +568,7 @@
 
         <!-- Action row -->
         <div class="selected-action-row" id="selected-action-row" hidden={!viewModel.isPopulated}>
-          <button class="action-btn biofield-glow" id="btn-selected-map" type="button" onclick={handleMapClick}>View on Map</button>
+          <button class="action-btn biofield-glow" id="btn-selected-map" type="button" aria-label="View selected business on map" onclick={handleMapClick}>View on Map</button>
         </div>
 
         <!-- Grid -->

@@ -12,10 +12,12 @@
   Svelte 5 runes.
 -->
 <script lang="ts">
+  import { onDestroy } from 'svelte';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
   import { getDataLoadState } from '@lib/data-store';
+  import { engineStatusStore } from '@lib/stores/engine.svelte.ts';
 
   // Reactive navStore mirror — bridge svelte/store writable into Svelte 5 $state.
   let nav = $state(navStore());
@@ -42,19 +44,30 @@
     hasFocus_ && !(getDataLoadState().status === 'ready')
   );
 
+  let engineStatus = $state<ReturnType<typeof engineStatusStore.subscribe> extends infer U ? U : string>('idle');
+  $effect(() => {
+    const unsub = engineStatusStore.subscribe((s) => { engineStatus = s; });
+    return unsub;
+  });
+
   // Last-applied index prevents redundant rebuilds on data-status ticks.
   let lastFocusIndex: number | null = null;
 
   $effect(() => {
     if (!(getDataLoadState().status === 'ready')) return;
+    if (engineStatus !== 'ready') return;
     const idx = focusedIndex_;
     if (hasFocus_ && idx != null && !(idx === lastFocusIndex)) {
-      lastFocusIndex = idx;
-      applyLocalNeighborhoodFocus(idx);
+      const ok = applyLocalNeighborhoodFocus(idx);
+      if (ok) lastFocusIndex = idx;
     } else if (!hasFocus_ && lastFocusIndex != null) {
       lastFocusIndex = null;
       clearPocketNodes();
     }
+  });
+
+  onDestroy(() => {
+    clearPocketNodes();
   });
 </script>
 

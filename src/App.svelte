@@ -364,6 +364,7 @@
       cleanupViewport();
       cleanupParity();
       resetSemanticThreadWorker();
+      import('@lib/ui/weather-ui').then(({ disposeWeatherUi }) => disposeWeatherUi()).catch(() => {});
     };
   });
 

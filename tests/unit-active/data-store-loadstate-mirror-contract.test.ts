@@ -30,7 +30,7 @@ import {
     getIsDataReady,
     getIsLoading,
     getBusinessRecords,
-    resetDataStores,
+    resetDataStores
 } from '../../src/lib/data-store'
 import type { DataLoadStatus } from '../../src/lib/data-store'
 
@@ -39,13 +39,13 @@ function makeFakeBusinessData() {
         records: [
             {
                 lead_id: 'l-1',
-                category: 'Cafe',
-            },
+                category: 'Cafe'
+            }
         ],
         positionBuffer: new Float32Array([0, 0, 0, 1, 1, 1]),
         clustersBuffer: new Uint16Array([0, 1]),
         pointIndexByLeadId: new Map([['l-1', 0]]),
-        semanticNeighborMap: new Map(),
+        semanticNeighborMap: new Map()
     }
 }
 

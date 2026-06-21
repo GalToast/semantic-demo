@@ -19,7 +19,7 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - Prefer scoped reads/searches over broad recursive scans in this repo.
 - Use `rg` for text search unless an ast-grep skill/tool is available and the task is structural TypeScript/Svelte matching.
 - Do not kill broad `node`, PowerShell, browser, Claude, Gemini, Pi, or MCP process trees. Stop only exact PIDs with command-line evidence.
-- Never revert user or parallel-session changes unless explicitly asked.
+- Evaluate unfamiliar changes on their merits — good changes should stick, bad ones should be fixed. Don't reflexively revert a parallel-lane change just because it doesn't match your mental model; if it improves the code, keep it. Don't preserve bad code silently because authorship is murky either — if a change introduces an error or breaks an invariant, fix it (or revert it with a brief explanation, not as a stealth revert). When parallel sessions land conflicting changes, surface the conflict in chat rather than silently picking a side.
 - If durable repo behavior changes, update the appropriate repo doc in the same turn.
 - Before presenting work as finished, verify against the real success criteria and state what was run.
 
@@ -35,7 +35,7 @@ git status --short
 ```
 
 - If 5+ unseen commits landed since last verified `HEAD`, queue work but do not commit until the stream quiesces.
-- If tracked files you did not touch are modified, avoid those files or pause and coordinate.
+- If tracked files you did not touch are modified, evaluate the diff on merit. Good changes stay; bad ones get fixed or reverted with an explanation. Pause and coordinate when the change is unclear-to-you-but-claimed-by-someone-else.
 - For dirty worktrees, inspect before removal. Do not force-remove a worktree that may contain another session's WIP.
 
 ## Subagents
@@ -114,6 +114,7 @@ Use narrower checks when validating a scoped change.
 
 ## Pi Harness Notes
 
+- `memory_write` is broken at the gateway layer until `~/.pi/agent/extensions/pi-hermes-memory-writer.ts` is loaded — a one-time repair Pi performs at session start. If you ever see `pi_tool memory_write → Tool not found`, run `/reload-runtime` or restart once. See `~/.pi/agent/patches/pi-hermes-memory-writer.md` for the failure mode + verification recipe.
 - Pi harness self-improvement is allowed when friction reveals a safe, scoped upgrade.
 - Keep reusable Pi harness rules in global Pi docs/skills where appropriate, not in this repo file unless they are repo-specific.
 - For JavaScript scratch work, prefer the `js-repl` skill/tool when available instead of embedding REPL rules here.

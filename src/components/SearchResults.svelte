@@ -389,7 +389,7 @@
   <div id="search-results" class="search-results-wrapper" class:active={isResultsSurfaceActive}>
     <!-- Loading state -->
     {#if isSearching}
-      <div class="search-loading">
+      <div class="search-loading" role="status" aria-live="polite">
         <div class="search-loading-spinner"></div>
         <div class="search-loading-text">Searching...</div>
       </div>

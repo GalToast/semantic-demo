@@ -31,6 +31,7 @@
   let engineLifecycle: typeof import('@lib/engine/lifecycle') | null = null;
   let componentDestroyed = $state(false);
   let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  let engineReadyUnsub: (() => void) | null = null;
   // W6-T5: Track whether the engine lifecycle has been destroyed so we
   // don't reset overlay state on re-mount after the engine already warmed up.
   let engineLifecycleDestroyed = false;
@@ -173,6 +174,7 @@
             scheduleInitWhenIdle();
           }
         });
+        engineReadyUnsub = unsub;
       }
     } else {
       void initLifecycle();
@@ -197,6 +199,8 @@
     engineLifecycleDestroyed = true;
     engineHasInit = false;
     canvasReady = false;
+    engineReadyUnsub?.();
+    engineReadyUnsub = null;
     // W6-T5: Don't reset overlay to visible on destroy if we already had a
     // successful engine lifecycle. This prevents overlay flash on re-mount.
     overlayVisible = !engineLifecycleDestroyed;

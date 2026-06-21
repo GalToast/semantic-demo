@@ -126,25 +126,38 @@ function callDataWorker<T>(type: string, payload: unknown): Promise<T>
 function callDataWorker<T>(type: string, payload: unknown): Promise<T> {
     return new Promise((resolve, reject) => {
         const worker = new Worker(workerUrl, { type: 'module' })
-        const timeoutId = setTimeout(() => {
+        let settled = false
+        const settle = (fn: () => void): void => {
+            if (settled) return
+            settled = true
+            clearTimeout(timeoutId)
+            worker.removeEventListener('message', handler)
+            worker.removeEventListener('messageerror', messageErrorHandler)
+            worker.removeEventListener('error', errorHandler)
             worker.terminate()
-            reject(new Error('Worker timeout'))
+            fn()
+        }
+        const timeoutId = setTimeout(() => {
+            settle(() => reject(new Error('Worker timeout')))
         }, 30_000)
         const handler = (event: MessageEvent<WorkerResponse>): void => {
             const res = event.data
             if (res.type === `${type}_SUCCESS`) {
-                clearTimeout(timeoutId)
-                worker.removeEventListener('message', handler)
-                resolve(res.payload as T)
-                worker.terminate()
+                settle(() => resolve(res.payload as T))
             } else if (res.type === 'ERROR') {
-                clearTimeout(timeoutId)
-                worker.removeEventListener('message', handler)
-                worker.terminate()
-                reject(new Error((res.payload as { message?: string })?.message || 'Worker failed'))
+                settle(() => reject(new Error((res.payload as { message?: string })?.message || 'Worker failed')))
             }
         }
+        const messageErrorHandler = (): void => {
+            // Fires when postMessage fails to structured-clone the payload.
+            settle(() => reject(new Error('Worker payload could not be structured-cloned (messageerror).')))
+        }
+        const errorHandler = (event: ErrorEvent): void => {
+            settle(() => reject(new Error(event.message || 'Worker error event')))
+        }
         worker.addEventListener('message', handler)
+        worker.addEventListener('messageerror', messageErrorHandler)
+        worker.addEventListener('error', errorHandler)
         worker.postMessage({ type, payload })
     })
 }

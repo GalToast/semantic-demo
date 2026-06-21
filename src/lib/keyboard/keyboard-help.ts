@@ -96,7 +96,11 @@ export function initKeyboardShortcutsHint(): void {
         { key: 'Home', desc: 'Reset view' },
         { key: 'End', desc: 'Recenter' },
         { key: '+ / -', desc: 'Zoom' },
-        { key: 'Esc', desc: 'Close overlays' }
+        { key: '/', desc: 'Focus search input' },
+        { key: 'w', desc: 'Toggle weather widget' },
+        { key: 'Ctrl+1-6', desc: 'Switch view mode' },
+        { key: 'Esc', desc: 'Return to overview' },
+        { key: '?', desc: 'Open this help panel' }
     ]
 
     shortcuts.forEach((s) => {

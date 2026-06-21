@@ -109,10 +109,11 @@ async function getWorker(): Promise<Worker | null> {
 
     // Circuit breaker: if we've failed too many times, wait before retrying
     if (_workerFailureCount >= WORKER_MAX_FAILURES) {
-        if (import.meta.env.DEV) console.warn(
-            `[semantic-threads] Worker circuit breaker open (${_workerFailureCount} consecutive failures). ` +
-                `Retrying in 30s...`
-        )
+        if (import.meta.env.DEV)
+            console.warn(
+                `[semantic-threads] Worker circuit breaker open (${_workerFailureCount} consecutive failures). ` +
+                    `Retrying in 30s...`
+            )
         // Reset after cooldown so next caller can try again
         setTimeout(() => {
             _workerFailureCount = 0
@@ -139,10 +140,12 @@ async function getWorker(): Promise<Worker | null> {
             return worker
         } catch (err) {
             const delay = WORKER_RETRY_DELAYS[attempt]
-            if (import.meta.env.DEV) console.warn(
-                `[semantic-threads] Worker instantiation attempt ${attempt + 1} failed, ` + `retrying in ${delay}ms...`,
-                err instanceof Error ? err.message : err
-            )
+            if (import.meta.env.DEV)
+                console.warn(
+                    `[semantic-threads] Worker instantiation attempt ${attempt + 1} failed, ` +
+                        `retrying in ${delay}ms...`,
+                    err instanceof Error ? err.message : err
+                )
             if (attempt < WORKER_RETRY_DELAYS.length - 1) {
                 await new Promise((r) => setTimeout(r, delay))
             }
@@ -150,10 +153,11 @@ async function getWorker(): Promise<Worker | null> {
     }
 
     _workerFailureCount++
-    if (import.meta.env.DEV) console.error(
-        `[semantic-threads] Worker creation failed after ${WORKER_RETRY_DELAYS.length} attempts. ` +
-            `Consecutive failure count: ${_workerFailureCount}/${WORKER_MAX_FAILURES}`
-    )
+    if (import.meta.env.DEV)
+        console.error(
+            `[semantic-threads] Worker creation failed after ${WORKER_RETRY_DELAYS.length} attempts. ` +
+                `Consecutive failure count: ${_workerFailureCount}/${WORKER_MAX_FAILURES}`
+        )
     return null
 }
 
@@ -600,9 +604,10 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
     if (_state === null) {
         await Promise.race([_stateReady, new Promise<void>((resolve) => setTimeout(resolve, 500))])
         if (_state === null) {
-            if (import.meta.env.DEV) console.warn(
-                '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully'
-            )
+            if (import.meta.env.DEV)
+                console.warn(
+                    '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully'
+                )
             return false
         }
     }
@@ -654,7 +659,8 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                 })
             }
         } catch (error) {
-            if (import.meta.env.DEV) console.warn('Failed to load semantic thread artifact; using geometric fallback.', error)
+            if (import.meta.env.DEV)
+                console.warn('Failed to load semantic thread artifact; using geometric fallback.', error)
             const errMessage = error instanceof Error ? error.message : String(error)
             withStateMutation(() => {
                 state.semanticThreadBundle = null

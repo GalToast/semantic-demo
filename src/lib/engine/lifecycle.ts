@@ -85,12 +85,13 @@ async function syncDataToLegacyState(): Promise<void> {
     }
 
     const start = Date.now()
-    while (!get(isDataReady) && Date.now() - start < 15_000) {
+    while (!get(isDataReady) && Date.now() - start < 35_000) {
         await new Promise((r) => setTimeout(r, 200))
     }
 
     if (!get(isDataReady)) {
-        if (import.meta.env.DEV) console.warn('[engine/lifecycle] syncDataToLegacyState: data not ready after 15s, proceeding anyway')
+        if (import.meta.env.DEV)
+            console.warn('[engine/lifecycle] syncDataToLegacyState: data not ready after 35s, proceeding anyway')
     }
 
     _syncDataFields()
@@ -292,7 +293,8 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
     // Guard: if engine was destroyed or degraded before we ran, abort
     const currentStatus = _getEngineStatus()
     if (_destroyed || currentStatus === 'degraded') {
-        if (import.meta.env.DEV) console.warn('[engine/lifecycle] initEngineHeavy: engine not in valid init state, aborting')
+        if (import.meta.env.DEV)
+            console.warn('[engine/lifecycle] initEngineHeavy: engine not in valid init state, aborting')
         return
     }
 
@@ -359,7 +361,8 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             ensureCanvasNodeInteractionBindings()
             _canvasInteractionBound = true
         } catch (interactionErr) {
-            if (import.meta.env.DEV) console.warn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
+            if (import.meta.env.DEV)
+                console.warn('[engine/lifecycle] Canvas interaction binding failed:', interactionErr)
             setEngineStatus('degraded')
             callbacks.onGraphicsStateChange?.('fallback')
             return
@@ -385,13 +388,16 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                     }
                     const ext = gl.getExtension('WEBGL_lose_context')
                     if (!ext) {
-                        if (import.meta.env.DEV) console.warn('[simulateWebGLContextLoss] WEBGL_lose_context extension not available')
+                        if (import.meta.env.DEV)
+                            console.warn('[simulateWebGLContextLoss] WEBGL_lose_context extension not available')
                         return false
                     }
-                    if (import.meta.env.DEV) console.log('[simulateWebGLContextLoss] Triggering artificial context loss')
+                    if (import.meta.env.DEV)
+                        console.log('[simulateWebGLContextLoss] Triggering artificial context loss')
                     ext.loseContext()
                     setTimeout(() => {
-                        if (import.meta.env.DEV) console.log('[simulateWebGLContextLoss] Triggering artificial context restoration')
+                        if (import.meta.env.DEV)
+                            console.log('[simulateWebGLContextLoss] Triggering artificial context restoration')
                         ext.restoreContext()
                     }, 500)
                     return true

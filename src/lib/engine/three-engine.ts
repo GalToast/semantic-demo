@@ -100,7 +100,7 @@ import * as loadingUiMod from '../ui/loading'
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
 import { appState as _legacyState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const legacyState = _legacyState as any;
+const legacyState = _legacyState as any
 import * as clusterLabelsMod from '@lib/ui/cluster-labels'
 import * as focusPocketMod from '@lib/journey/focus-pocket'
 import * as sceneRevealMod from './scene-reveal'
@@ -704,7 +704,8 @@ export async function initThreeJS() {
             powerPreference: 'high-performance'
         })
     } catch (error) {
-        if (import.meta.env.DEV) console.error('WebGL renderer creation failed; using semantic demo graphics fallback.', error)
+        if (import.meta.env.DEV)
+            console.error('WebGL renderer creation failed; using semantic demo graphics fallback.', error)
         showWebGLFallback(container, { reason: (error as Error)?.message || 'renderer-create-failed' })
         return false
     }

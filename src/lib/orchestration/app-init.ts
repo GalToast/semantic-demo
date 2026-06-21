@@ -133,7 +133,8 @@ function setupSafetyValves(): SafetyTimers {
         if (overlay?.classList.contains('hidden')) return
 
         if (!overlay) return
-        if (import.meta.env.DEV) console.error('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
+        if (import.meta.env.DEV)
+            console.error('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
 
         // Apply error state to the overlay (matches legacy applyLoadingErrorState)
         // — built with DOM API per pi-lens innerHTML safety rule.

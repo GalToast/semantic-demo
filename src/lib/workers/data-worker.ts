@@ -81,9 +81,25 @@ interface AttemptConfig {
 let _activeRequestId = 0
 
 self.onmessage = async (event: MessageEvent) => {
-    const { type, payload, pingId, requestId: incomingRequestId } = event.data
+    const data = event.data
+    // Handle non-object payloads (e.g., main thread sent null or a primitive)
+    // by short-circuiting with an ERROR reply rather than silently hanging.
+    if (!data || typeof data !== 'object') {
+        self.postMessage({
+            type: 'ERROR',
+            payload: { message: 'Worker received a non-object payload.', stack: undefined },
+            requestId: undefined
+        })
+        return
+    }
+    // Narrow fields explicitly so downstream assignments stay type-safe.
+    const raw = data as { type?: unknown; payload?: unknown; pingId?: unknown; requestId?: unknown }
+    const type = raw.type
+    const payload = raw.payload
+    const pingId = raw.pingId
+    const incomingRequestId = typeof raw.requestId === 'number' ? raw.requestId : undefined
 
-    // Health-check ping: respond immediately without incrementing requestId
+    // Health-check ping: respond immediately without incrementing requestId.
     if (type === 'PING') {
         self.postMessage({ type: 'PONG', pingId })
         return
@@ -93,27 +109,41 @@ self.onmessage = async (event: MessageEvent) => {
     // the caller's expectation. If the caller didn't send one (legacy path),
     // fall back to the worker's own counter. Keep _activeRequestId in sync so
     // that in-flight handlers can detect superseded requests.
-    const requestId = incomingRequestId ?? ++_activeRequestId
-    if (incomingRequestId) {
+    const requestId: number = incomingRequestId ?? ++_activeRequestId
+    if (incomingRequestId !== undefined) {
         _activeRequestId = requestId
     }
 
     try {
         if (type === 'LOAD_RECORDS') {
-            const result = await handleLoadRecords(payload)
+            const result = await handleLoadRecords(payload as { url: string })
             if (requestId !== _activeRequestId) return // Transfer buffers to main thread to eliminate cloning overhead
             ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
                 { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
                 [result.positionsBuffer.buffer, result.clustersBuffer.buffer] as Transferable[]
             )
         } else if (type === 'LOAD_THREADS') {
-            const result = await handleLoadThreads(payload, requestId)
+            const result = await handleLoadThreads(
+                payload as { urls: string[]; attemptConfigs: (string | AttemptConfig)[] },
+                requestId
+            )
             if (requestId !== _activeRequestId) return
             self.postMessage({ type: 'LOAD_THREADS_SUCCESS', payload: result, requestId })
         } else if (type === 'LOAD_LEAD_ENRICHMENT') {
-            const result = await handleLoadLeadEnrichment(payload, requestId)
+            const result = await handleLoadLeadEnrichment(payload as { url: string }, requestId)
             if (requestId !== _activeRequestId) return
             self.postMessage({ type: 'LOAD_LEAD_ENRICHMENT_SUCCESS', payload: result, requestId })
+        } else {
+            // Unknown command type: surface as an ERROR reply so the main
+            // thread can fail fast instead of hanging on a 30s timeout.
+            self.postMessage({
+                type: 'ERROR',
+                payload: {
+                    message: `Worker received unknown command type: ${typeof type === 'string' ? type : String(type)}`,
+                    stack: undefined
+                },
+                requestId
+            })
         }
     } catch (error: unknown) {
         if (requestId !== _activeRequestId) return

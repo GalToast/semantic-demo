@@ -16,55 +16,55 @@
  *  7. Loading shimmer has aria-label="Loading neighborhood data"
  *  8. Two .pocket-shimmer divs (default + .short variant)
  */
-import { describe, it, expect, beforeAll } from 'vitest';
-import { readFileSync } from 'fs';
-import { resolve } from 'path';
+import { describe, it, expect, beforeAll } from 'vitest'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
-const SOURCE_PATH = resolve(__dirname, '../../src/components/FocusPocket.svelte');
+const SOURCE_PATH = resolve(__dirname, '../../src/components/FocusPocket.svelte')
 
 function readSource(): string {
-    return readFileSync(SOURCE_PATH, 'utf-8');
+    return readFileSync(SOURCE_PATH, 'utf-8')
 }
 
 describe('FocusPocket component', () => {
-    let source: string;
+    let source: string
 
     beforeAll(() => {
-        source = readSource();
-    });
+        source = readSource()
+    })
 
     it('root div has id="focus-pocket"', () => {
-        expect(source).toContain('id="focus-pocket"');
-    });
+        expect(source).toContain('id="focus-pocket"')
+    })
 
     it('root div has role="region"', () => {
-        expect(source).toContain('role="region"');
-    });
+        expect(source).toContain('role="region"')
+    })
 
     it('root div has aria-label="Focus pocket — neighborhood constellation"', () => {
-        expect(source).toContain('aria-label="Focus pocket — neighborhood constellation"');
-    });
+        expect(source).toContain('aria-label="Focus pocket — neighborhood constellation"')
+    })
 
     it('root div has tabindex="-1" (programmatic focus only)', () => {
-        expect(source).toContain('tabindex="-1"');
-    });
+        expect(source).toContain('tabindex="-1"')
+    })
 
     it('conditional rendering gated by {#if hasFocus_}', () => {
-        expect(source).toContain('{#if hasFocus_}');
-    });
+        expect(source).toContain('{#if hasFocus_}')
+    })
 
     it('loading shimmer .focus-pocket-loading has role="status"', () => {
-        expect(source).toContain('class="focus-pocket-loading"');
-        expect(source).toContain('role="status"');
-    });
+        expect(source).toContain('class="focus-pocket-loading"')
+        expect(source).toContain('role="status"')
+    })
 
     it('loading shimmer has aria-label="Loading neighborhood data"', () => {
-        expect(source).toContain('aria-label="Loading neighborhood data"');
-    });
+        expect(source).toContain('aria-label="Loading neighborhood data"')
+    })
 
     it('two .pocket-shimmer divs (default + .short variant)', () => {
-        const pocketShimmerMatches = source.match(/class="pocket-shimmer/g);
-        expect(pocketShimmerMatches).toHaveLength(2);
-        expect(source).toContain('class="pocket-shimmer short"');
-    });
-});
+        const pocketShimmerMatches = source.match(/class="pocket-shimmer/g)
+        expect(pocketShimmerMatches).toHaveLength(2)
+        expect(source).toContain('class="pocket-shimmer short"')
+    })
+})
