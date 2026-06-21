@@ -173,6 +173,7 @@ describe('Bridge health (W11 retirement progress)', () => {
      * paths before lookup so Windows backslashes match.
      */
     const KNOWN_RETIRED_BRIDGES: ReadonlySet<string> = new Set([
+        'src/lib/engine/state-bridge.ts',
         'src/lib/engine/adapter-deps-bridge.ts',
         'src/lib/engine/search-trail-cue-renderer-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)
         'src/lib/engine/search-panel-adapter-bridge.ts', // W11-T5 Wave 1 — search-* sanctioned passthrough (W11-T6 Wave 2 search subsystem)

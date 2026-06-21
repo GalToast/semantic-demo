@@ -16,7 +16,8 @@ import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions'
 import { navStore, dispatchNavTransition, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'
-import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
+import { appState as legacyState } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 import {
     getCurrentTrailFocusIndex,
     isBoundedNeighborhoodActive,

@@ -15,7 +15,7 @@ import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
-import { state as legacyState } from '@lib/engine/state-bridge'
+const legacyState = appState as any;
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import './lib/css/biofield.css'
 

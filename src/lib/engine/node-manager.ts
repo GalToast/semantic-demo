@@ -10,8 +10,8 @@
  */
 
 import { Color, Object3D, Texture, Vector3, MathUtils, InstancedMesh, DynamicDrawUsage, SphereGeometry, MeshPhongMaterial, NormalBlending, BufferGeometry, Float32BufferAttribute, PointsMaterial, Points, LineBasicMaterial, LineLoop, MeshBasicMaterial } from 'three';
-import { state as _state } from '@lib/engine/state-bridge';
-const state = _state;
+import { appState as _state } from '@lib/state/app.svelte'
+const state = _state as any;
 import { webglContext } from './webgl-context';
 import { SCENE_PALETTE } from '@lib/utils/design-tokens';
 import { computeOverviewScatterOffsets } from '@lib/utils/geo-data';

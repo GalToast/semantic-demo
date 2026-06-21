@@ -4,7 +4,7 @@
  * Ported from: js/modules/journey-route-trace.ts
  * Route trace overlay rendering, subscriptions, and frame updates.
  */
-import { state } from '@lib/engine/state-bridge';
+import { appState as state } from '@lib/state/app.svelte'
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import { ShaderMaterial, AdditiveBlending, Color, BufferGeometry, Float32BufferAttribute, LineSegments } from 'three';

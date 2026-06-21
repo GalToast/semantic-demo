@@ -377,7 +377,7 @@ assert(
   'clearExplorationFocusSelection must clear focusedNode and selectedPoint through the current focus-clear owner'
 );
 assert(
-  /_legacyState\.selectedPoint\s*=\s*null/.test(searchLegacySource),
+  /appState\.selectedPoint\s*=\s*null/.test(searchLegacySource),
   'search legacy exports must clear selectedPoint when filter/search invalidates current focus'
 );
 

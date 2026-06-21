@@ -7,11 +7,10 @@
 
 import { webglContext } from '@lib/engine/webgl-context';
 import { Vector3 } from 'three';
-import { state as _state } from '@lib/engine/state-bridge';
+import { appState as _state } from '@lib/state/app.svelte'
+const state = _state as any;
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three';
 import { CONFIG } from '@lib/engine/config';
-
-const state = _state;
 
 interface EdgePair {
     a: number;

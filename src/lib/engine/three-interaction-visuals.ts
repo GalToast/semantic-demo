@@ -17,8 +17,8 @@ import {
     Color,
     Group
 } from 'three';
-import { state as _state } from '@lib/engine/state-bridge';
-const state = _state;
+import { appState as _state } from '@lib/state/app.svelte'
+const state = _state as any;
 import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations';
 import { calculateSignalScore } from '@lib/utils/geo-data';
 import {
@@ -145,7 +145,7 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
     const hasFocus = Boolean(worldPos);
     const targetOpacity = hasFocus ? (isInside ? 0.24 : 0.65) : 0;
     state.focusPetalGroup.visible =
-        hasFocus || state.focusPetals.some((petal) => asSingleMaterial(petal.material).opacity > 0.01);
+        hasFocus || state.focusPetals.some((petal: any) => asSingleMaterial(petal.material).opacity > 0.01);
     if (hasFocus) {
         state.focusPetalGroup.position.copy(worldPos);
         state.focusPetalGroup.rotation.set(
@@ -155,7 +155,7 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
         );
     }
 
-    state.focusPetals.forEach((petal, index: number) => {
+    state.focusPetals.forEach((petal: any, index: number) => {
         const data = petal.userData || {};
         const mat = asSingleMaterial(petal.material);
         mat.opacity += (targetOpacity - mat.opacity) * 0.1;

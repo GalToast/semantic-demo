@@ -2,7 +2,7 @@
 // TypeScript shadow of connection-analysis-adapter.js
 // Thin adapter boundary: decouples connection-analysis.js from raw global DOM ids and raw state shape.
 
-import { state as _state } from '@lib/engine/state-bridge'
+import { appState as _state } from '@lib/state/app.svelte'
 
 const state = _state as any
 

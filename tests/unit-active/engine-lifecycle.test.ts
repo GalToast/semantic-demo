@@ -140,15 +140,6 @@ vi.mock('@lib/state/app.svelte', () => ({
   },
 }))
 
-// Mock legacy state bridge
-vi.mock('@lib/engine/state-bridge', () => ({
-  state: {
-    points: [],
-    renderer: null,
-    nodePositions: [],
-  },
-}))
-
 // Mock camera-controls for updateCameraViewportOffset
 vi.mock('@lib/engine/camera-controls', () => ({
   focusOnNode: vi.fn(),

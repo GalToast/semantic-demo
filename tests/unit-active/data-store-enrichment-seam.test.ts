@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { get } from 'svelte/store'
 import type { LeadEnrichment } from '@lib/types/business'
-import { state as legacyState } from '@lib/engine/state-bridge'
+import { appState as legacyState } from '@lib/state/app.svelte'
 
 const originalGlobalWorker = globalThis.Worker
 const originalWindowWorker = (window as Window & { Worker?: unknown }).Worker
@@ -146,11 +146,11 @@ function makeEnrichment(): Record<string, LeadEnrichment> {
 }
 
 function resetLegacyDataState(): void {
-    legacyState.points = []
-    legacyState.rawPositionsBuffer = null
-    legacyState.rawClustersBuffer = null
-    legacyState.leadEnrichment = null
-    legacyState.pointIndexByLeadId = new Map()
+    ;(legacyState as any).points = []
+    ;(legacyState as any).rawPositionsBuffer = null
+    ;(legacyState as any).rawClustersBuffer = null
+    ;(legacyState as any).leadEnrichment = null
+    ;(legacyState as any).pointIndexByLeadId = new Map()
 }
 
 describe('lead enrichment hydration seam in data-store', () => {

@@ -68,8 +68,9 @@ for (const exportName of EXPECTED_EXPORTS) {
 }
 
 assert(
-  /import\s+\{[^}]*\bstate\b[^}]*\bwithStateMutation\b[^}]*\}\s+from\s+['"]@lib\/engine\/state-bridge['"]/.test(mutatorSrc),
-  'state-mutators.ts must import state and withStateMutation from the canonical state bridge'
+  /import\s+\{\s*appState\s*\}\s+from\s+['"]\.\/app\.svelte['"]/.test(mutatorSrc) &&
+    /import\s+\{\s*withStateMutation\s*\}\s+from\s+['"]\.\/with-state-mutation['"]/.test(mutatorSrc),
+  'state-mutators.ts must import appState and withStateMutation from canonical state modules'
 );
 
 const offenders = [];

@@ -14,7 +14,9 @@
 
 import { Vector3, ShaderMaterial, BufferGeometry, Float32BufferAttribute, LineSegments, Group, SpriteMaterial, Texture, Sprite, AdditiveBlending } from 'three';
 import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config';
-import { state, withStateMutation } from '@lib/engine/state-bridge';
+import { appState } from '@lib/state/app.svelte'
+const state = appState as any
+import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // ── Local selectors (replacing js/state/selectors/index.ts imports) ─────────
 

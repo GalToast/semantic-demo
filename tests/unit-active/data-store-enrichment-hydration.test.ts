@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { loadLeadEnrichment, resetDataStores, setLeadEnrichmentData } from '../../src/lib/data-store.ts'
-import { state } from '../../src/lib/engine/state-bridge'
+import { appState as state } from '../../src/lib/state/app.svelte.ts'
 import { getLeadEnrichment } from '../../src/lib/data-store.svelte.ts'
 import type { LeadEnrichment } from '../../src/lib/types/business'
 

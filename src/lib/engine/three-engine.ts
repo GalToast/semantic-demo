@@ -98,7 +98,9 @@ import * as eventBindingsMod from '@lib/ui/event-bindings'
 import * as loadingUiMod from '../ui/loading'
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
-import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
+import { appState as _legacyState } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
+const legacyState = _legacyState as any;
 import * as clusterLabelsMod from '@lib/ui/cluster-labels'
 import * as focusPocketMod from '@lib/journey/focus-pocket'
 import * as sceneRevealMod from './scene-reveal'

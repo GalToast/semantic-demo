@@ -718,9 +718,9 @@ function testViewHandoffCameraPreludeBridgeRetired() {
         'three-engine.js must not expose the retired window.applyMapFlatteningLayout bridge'
     )
     assert(
-        /import\s+\{\s*state(?:\s+as\s+_state)?\s*\}\s+from\s+['"]@lib\/engine\/state-bridge['"]/.test(
-            mapFlatteningLayoutSrc
-        ) && /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
+        /import\s+\{\s*appState\s*\}\s+from\s+['"]@lib\/state\/app\.svelte['"]/.test(mapFlatteningLayoutSrc) &&
+            /import\s+type\s+\{\s*SemanticState\s*\}\s+from\s+['"]@lib\/state\/state-types['"]/.test(mapFlatteningLayoutSrc) &&
+            /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
         'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
     )
     assert(

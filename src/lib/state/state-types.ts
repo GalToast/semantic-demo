@@ -1,8 +1,8 @@
 /**
  * @lib/state/state-types.ts — Type definitions for the Svelte 5 state class.
  *
- * W13-T5b Wave 1: Extracted from js/state.ts to break the circular dependency
- * between src/lib/state/app.svelte.ts and src/lib/engine/state-bridge.ts.
+ * W13-T5b Wave 1: Extracted from js/state.ts to centralize the shared app
+ * state type surface for src/lib/state/app.svelte.ts and its consumers.
  *
  * This file contains ONLY type/interface declarations (no runtime values).
  * The 39 types here are the public type surface of the legacy state kernel.

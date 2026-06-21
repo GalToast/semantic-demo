@@ -12,7 +12,7 @@
 
 import type { BusinessRecord } from '@lib/types/business';
 import type { Point3D } from '@lib/types/webgl';
-import { state } from '@lib/engine/state-bridge';
+import { appState as state } from '@lib/state/app.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import { normalizeRelationshipRole, type RelationshipRole, UNCLASSIFIED_RELATIONSHIP_ROLE } from '@lib/utils/relationship-roles';
 

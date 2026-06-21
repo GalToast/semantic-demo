@@ -88,7 +88,10 @@ export function scheduleOnboardingHint(): void {
         state.registeredEvents.add('onboarding-interaction')
         _onboardingAbortController = new AbortController()
         ;(['mousemove', 'keydown', 'click'] as const).forEach((evt) =>
-            document.addEventListener(evt, resetOnboardingIdleTimer, { passive: true, signal: _onboardingAbortController!.signal })
+            document.addEventListener(evt, resetOnboardingIdleTimer, {
+                passive: true,
+                signal: _onboardingAbortController!.signal
+            })
         )
     }
 }

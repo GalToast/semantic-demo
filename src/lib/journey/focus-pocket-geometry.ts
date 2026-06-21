@@ -3,7 +3,8 @@
 // Focus constellation geometry, seeded placement, screen-bounds, thread curve points.
 
 import { Vec3, clamp } from '@lib/utils/math-vec3'
-import { state } from '@lib/engine/state-bridge'
+import { appState } from '@lib/state/app.svelte'
+const state = appState as any
 import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 import type { ConstellationMotifName } from '@lib/state/state-types'
 import { getViewportSize } from '@lib/utils/environment'

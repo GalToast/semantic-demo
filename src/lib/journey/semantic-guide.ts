@@ -12,14 +12,14 @@
  *   - requestSemanticGuide()                  — async request + render cycle
  *
  * Dependencies still in legacy path (will migrate later):
- *   - @lib/engine/state-bridge (canonical AppState compatibility state)
+ *   - @lib/state/app.svelte (canonical AppState)
  *   - ../../../js/modules/semantic-guide-payload.ts (buildSemanticGuideRequestPayload)
  *   - ../../../js/modules/legend-ui.ts (updateLegendGuideState)
  *   - ../../../js/modules/connection-analysis.ts (showSemanticThreadsDetail)
  *   - ../../../js/modules/stores.ts (semanticGuideStateStore)
  */
 
-import { state } from '@lib/engine/state-bridge';
+import { appState as state } from '@lib/state/app.svelte'
 import { appState } from '@lib/state/app.svelte';
 import { escapeHtml } from '@lib/utils/dom-formatters';
 import { buildSemanticGuideRequestPayload } from '@lib/journey/semantic-guide-payload';

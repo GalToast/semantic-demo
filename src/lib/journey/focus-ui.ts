@@ -29,7 +29,7 @@ import type { RelationshipRole } from '@lib/utils/relationship-roles'
 import type { BusinessRecord } from '@lib/types/business'
 import type { NavState, StrandContinuityState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
-import { state } from '@lib/engine/state-bridge'
+const state = appState as any
 
 export function isCondensedFocusStageViewport(): boolean {
     return appState.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait())

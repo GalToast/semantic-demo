@@ -5,7 +5,7 @@
  * GLSL-enhanced Line2 material for semantic thread visualization.
  */
 
-import { state } from '@lib/engine/state-bridge';
+import { appState as state } from '@lib/state/app.svelte'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 import { Vector3, Color, AdditiveBlending, Float32BufferAttribute } from 'three';
 import { Line2 } from 'three/examples/jsm/lines/Line2.js';

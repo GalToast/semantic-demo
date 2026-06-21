@@ -20,7 +20,9 @@ import type {
 import type { LoadingPhase } from '@lib/types/state'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
-import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
+import { appState as _legacyState } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
+const legacyState = _legacyState as any;
 
 // ── Cross-chunk singleton helpers ────────────────────────────────────────────
 // When Vite code-splits, this module can be duplicated into multiple chunks.

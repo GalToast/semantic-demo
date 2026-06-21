@@ -39,7 +39,8 @@ import {
     getStrandArrivalNote
 } from '@lib/journey/thread-settler'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { state as legacyState, withStateMutation } from '@lib/engine/state-bridge'
+import { appState as legacyState } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // Register the WebGL update callback
 setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay)

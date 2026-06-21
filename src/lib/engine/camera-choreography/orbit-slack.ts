@@ -10,7 +10,9 @@
  */
 
 import { Vector3, Box3 } from 'three'
-import { state, withStateMutation } from '@lib/engine/state-bridge';
+import { appState as _state } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
+const state = _state as any;
 import type { SemanticState } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'

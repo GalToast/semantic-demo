@@ -138,7 +138,7 @@
 
   let currentFocusedIdx = $derived($navStore.focusedIndex);
   let currentActiveResult = $derived(activeResult());
-  let isFocused = $derived($navStore.mode === 'focus' || $navStore.mode === 'inside' || $navStore.focusedIndex !== null);
+  let isFocused = $derived($navStore.mode === 'focus' || $navStore.mode === 'inside' || !($navStore.focusedIndex === null));
   let surface = $derived(currentSurface());
 
   function bodySurfaceOwnsInfoPanel(surfaceValue: string): boolean {

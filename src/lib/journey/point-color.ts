@@ -5,7 +5,7 @@
  * Re-exports exactly the API surface consumed by the bridge and journey.ts.
  */
 import { Color } from 'three';
-import { state } from '@lib/engine/state-bridge';
+import { appState as state } from '@lib/state/app.svelte'
 import { publish, EVENTS } from '@lib/orchestration/event-bus';
 import { describeCluster } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';

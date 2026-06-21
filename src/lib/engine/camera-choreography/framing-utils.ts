@@ -6,7 +6,8 @@
  */
 import { Vector3 } from 'three';
 import { getViewportSize } from '@lib/utils/environment';
-import { state } from '@lib/engine/state-bridge';
+import { appState as _state } from '@lib/state/app.svelte'
+const state = _state as any;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

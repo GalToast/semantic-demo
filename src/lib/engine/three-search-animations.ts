@@ -10,8 +10,8 @@ import {
     LineSegments,
     Group
 } from 'three'
-import { state as _state } from '@lib/engine/state-bridge'
-const state = _state
+import { appState as _state } from '@lib/state/app.svelte'
+const state = _state as any;
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { triggerCorridorBloom } from '@lib/audio/audio-scape'

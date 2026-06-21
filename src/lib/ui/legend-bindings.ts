@@ -49,20 +49,28 @@ export function bindLegendControls(): void {
     if (!state.registeredEvents.has('legend-interaction')) {
         state.registeredEvents.add('legend-interaction')
         _legendAbortController = new AbortController()
-        document.addEventListener('pointerdown', (e: PointerEvent) => {
-            if (!legendPanel?.classList.contains('active')) return
-            if (legendPanel.contains(e.target as Node) || legendToggle?.contains(e.target as Node)) return
-            const prevFocus = (getPreviouslyFocusedLegend() || legendToggle) as HTMLElement | null
-            closeLegendPanel()
-            restoreLegendCollapsedPanel(infoPanel, panelBtn)
-            if (prevFocus && typeof prevFocus.focus === 'function') {
-                prevFocus.focus({ preventScroll: true })
-            }
-        }, { signal: _legendAbortController.signal })
-        document.addEventListener('keydown', (e: KeyboardEvent) => {
-            if (e.key === 'Escape' && legendPanel?.classList.contains('active')) {
-                if (typeof closeLegendGuide === 'function') closeLegendGuide({ restoreFocus: true })
-            }
-        }, { signal: _legendAbortController.signal })
+        document.addEventListener(
+            'pointerdown',
+            (e: PointerEvent) => {
+                if (!legendPanel?.classList.contains('active')) return
+                if (legendPanel.contains(e.target as Node) || legendToggle?.contains(e.target as Node)) return
+                const prevFocus = (getPreviouslyFocusedLegend() || legendToggle) as HTMLElement | null
+                closeLegendPanel()
+                restoreLegendCollapsedPanel(infoPanel, panelBtn)
+                if (prevFocus && typeof prevFocus.focus === 'function') {
+                    prevFocus.focus({ preventScroll: true })
+                }
+            },
+            { signal: _legendAbortController.signal }
+        )
+        document.addEventListener(
+            'keydown',
+            (e: KeyboardEvent) => {
+                if (e.key === 'Escape' && legendPanel?.classList.contains('active')) {
+                    if (typeof closeLegendGuide === 'function') closeLegendGuide({ restoreFocus: true })
+                }
+            },
+            { signal: _legendAbortController.signal }
+        )
     }
 }

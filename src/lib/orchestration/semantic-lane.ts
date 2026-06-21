@@ -8,7 +8,9 @@
  *
  * Ported from js/modules/semantic-lane.ts (Wave H, W15).
  */
-import { state, withStateMutation } from '@lib/engine/state-bridge';
+import { appState as _state } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
+const state = _state as any;
 import { detectStaticDevPHP, allowsStaticDevFallback, shouldLogStaticDevFallback } from '@lib/utils/ui-presentation';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 

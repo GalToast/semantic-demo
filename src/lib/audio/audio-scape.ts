@@ -7,7 +7,8 @@
  * that reacts to camera velocity and local mycelium density.
  */
 
-import { state } from '@lib/engine/state-bridge'
+import { appState as _state } from '@lib/state/app.svelte'
+const state = _state as any;
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
 // ── Local boundary types ────────────────────────────────────────────────────

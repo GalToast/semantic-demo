@@ -6,7 +6,7 @@
  * Ported from js/modules/search-trail-cue-renderer.ts (W15 Wave E).
  */
 
-import { state as _state } from '@lib/engine/state-bridge';
+import { appState as _state } from '@lib/state/app.svelte'
 
 const state = _state as any;
 

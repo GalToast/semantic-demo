@@ -10,12 +10,12 @@
  *
  * Dependencies that are still in the legacy path (will migrate later):
  *   - ../../../js/state/selectors/index (state selectors)
- *   - @lib/engine/state-bridge (canonical AppState compatibility state)
+ *   - @lib/state/app.svelte (canonical AppState)
  *   - ../../../js/modules/journey-lifecycle-adapter.ts (getNextWalkCandidateForIndex)
  *   - ../../../js/modules/focus-stage-dom.ts (ensureFocusStageAuxiliaryDom, ensureDiveButton)
  */
 
-import { state } from '@lib/engine/state-bridge';
+import { appState as state } from '@lib/state/app.svelte'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus';
 import type { BusinessRecord } from '@lib/types/business';
 import { cleanOptionalValue, formatBusinessName } from '@lib/utils/dom-formatters';

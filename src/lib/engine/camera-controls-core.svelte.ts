@@ -14,7 +14,9 @@
  * Body dataset writes are side effects, not $effect — they stay in method bodies.
  */
 
-import { state, withStateMutation } from '@lib/engine/state-bridge';
+import { appState as _state } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
+const state = _state as any;
 import type { SemanticState } from '@lib/state/state-types';
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack';
 

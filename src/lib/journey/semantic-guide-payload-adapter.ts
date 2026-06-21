@@ -5,7 +5,7 @@
  * Thin adapter seam: decouples semantic-guide payload builders from raw state shape.
  */
 
-import { state } from '@lib/engine/state-bridge'
+import { appState as state } from '@lib/state/app.svelte'
 import type { Point } from '@lib/state/state-types'
 import { formatBusinessName, cleanPublicNoteText, getPublicRecordStatusLabel } from '@lib/utils/dom-formatters.ts'
 import { describeCluster } from '@lib/utils/ui-presentation.ts'

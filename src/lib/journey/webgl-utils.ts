@@ -5,7 +5,7 @@
  * Pure utility functions. No side effects.
  */
 import { Vec3, Color } from '@lib/utils/math-vec3'
-import { state } from '@lib/engine/state-bridge'
+import { appState as state } from '@lib/state/app.svelte'
 
 export const ROUTE_TRACE_SEGMENT_STEPS: number = 7
 export const ARRIVAL_HANDOFF_SEGMENT_STEPS: number = 9
