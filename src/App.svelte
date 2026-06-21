@@ -17,12 +17,11 @@
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
-  import { initData } from '@lib/data-store';
   import { resetSemanticThreadWorker } from '@lib/semantic-threads';
   const legacyState = appState as any;
   import { appState } from '@lib/state/app.svelte.ts';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
-  import { applyUrlState, updateUrlState } from '@lib/orchestration/url-state';
+  import { updateUrlState } from '@lib/orchestration/url-state';
   import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
 
   import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide';
@@ -331,19 +330,6 @@
         surface: 'search'
       }));
     }
-    initData()
-      .then(() => {
-        if ((legacyState as any).semanticNeighborMapByLeadId instanceof Map) {
-          appState.semanticNeighborMapByLeadId = (legacyState as any).semanticNeighborMapByLeadId;
-        }
-        if ((legacyState as any).pointIndexByLeadId instanceof Map) {
-          appState.pointIndexByLeadId = (legacyState as any).pointIndexByLeadId;
-        }
-        applyUrlState();
-      })
-      .catch((err) => {
-        if (import.meta.env.DEV) console.error('[App] initData failed:', err);
-      });
 
     // W5-T1: Defer triggers.ts subscribe() registration until after FCP.
     // The 15+ subscribe() calls in triggers.ts register handlers that synchronously

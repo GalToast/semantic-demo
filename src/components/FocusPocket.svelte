@@ -17,7 +17,7 @@
   import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
   import { getDataLoadState } from '@lib/data-store';
-  import { engineStatusStore } from '@lib/stores/engine.svelte.ts';
+  import { engineStatusStore, type EngineStatus } from '@lib/stores/engine.svelte.ts';
 
   // Reactive navStore mirror — bridge svelte/store writable into Svelte 5 $state.
   let nav = $state(navStore());
@@ -44,7 +44,7 @@
     hasFocus_ && !(getDataLoadState().status === 'ready')
   );
 
-  let engineStatus = $state<ReturnType<typeof engineStatusStore.subscribe> extends infer U ? U : string>('idle');
+  let engineStatus = $state<EngineStatus>('idle');
   $effect(() => {
     const unsub = engineStatusStore.subscribe((s) => { engineStatus = s; });
     return unsub;
@@ -55,7 +55,7 @@
 
   $effect(() => {
     if (!(getDataLoadState().status === 'ready')) return;
-    if (engineStatus !== 'ready') return;
+    if (!(engineStatus === 'ready')) return;
     const idx = focusedIndex_;
     if (hasFocus_ && idx != null && !(idx === lastFocusIndex)) {
       const ok = applyLocalNeighborhoodFocus(idx);

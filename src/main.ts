@@ -15,6 +15,7 @@ import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
+import { appInit } from '@lib/orchestration/app-init'
 const legacyState = appState as any
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import './lib/css/biofield.css'
@@ -48,6 +49,18 @@ if (mountTarget) {
         props: { forceDemo, noDemo }
     })
 }
+
+// ── Canonical app initialization (safety valves, adapters, data, URL state) ──
+// Phase 1-7 of app-init.ts: safety valves, window globals, data loading,
+// adapter initialization, URL state, WebGL context restore, audio init.
+// This replaces the ad-hoc initData() + applyUrlState() that previously
+// lived in App.svelte onMount.
+let appInitCleanup: (() => void) | undefined
+appInit({ forceDemo, noDemo }).then((cleanup) => {
+    appInitCleanup = cleanup
+}).catch((err) => {
+    if (import.meta.env.DEV) console.error('[main] appInit failed:', err)
+})
 
 // Initialize legacy route trace event subscriptions so the Svelte track
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics
@@ -200,6 +213,7 @@ const cleanupWindowActions = installWindowActions()
 window.addEventListener('beforeunload', () => {
     unsubTestState()
     cleanupWindowActions()
+    appInitCleanup?.()
     if (app) unmount(app)
 })
 

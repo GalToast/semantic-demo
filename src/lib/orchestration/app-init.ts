@@ -194,24 +194,23 @@ function clearSafetyTimers(timers: SafetyTimers | null): void {
 function installWindowGlobals(): () => void {
     if (typeof window === 'undefined') return () => {}
 
-    // Expose a read-only snapshot of the current nav state for tests that
-    // read window.__APP_STATE__ for mode/view/focus state.
-    // Note: `routeTraceLines` lives on the legacy state for now; the Svelte 5
-    // port hasn't been updated to carry it yet. Cast through `any` to avoid a
-    // type-blocker until the W11-T8 search/journey subsubsystem migration adds
-    // it to the AppState class.
-    window.__APP_STATE__ = {
-        get state() {
-            const liveAppState =
-                ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as typeof appState | undefined) ||
-                appState
-            return {
-                currentView: get(navStore).currentView,
-                navState: get(navStore),
-                activeFilters: focusStore(),
-                routeTraceDiagnostics: liveAppState.routeTraceDiagnostics,
-                routeTraceLines: (liveAppState as unknown as { routeTraceLines?: unknown }).routeTraceLines,
-                points: liveAppState.points
+    // If a test compat proxy (or another init path) already set __APP_STATE__,
+    // preserve it. The canonical test proxy in main.ts is more comprehensive
+    // than the fallback snapshot here.
+    if (!window.__APP_STATE__) {
+        window.__APP_STATE__ = {
+            get state() {
+                const liveAppState =
+                    ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as typeof appState | undefined) ||
+                    appState
+                return {
+                    currentView: get(navStore).currentView,
+                    navState: get(navStore),
+                    activeFilters: focusStore(),
+                    routeTraceDiagnostics: liveAppState.routeTraceDiagnostics,
+                    routeTraceLines: (liveAppState as unknown as { routeTraceLines?: unknown }).routeTraceLines,
+                    points: liveAppState.points
+                }
             }
         }
     }
@@ -289,7 +288,9 @@ function installWindowGlobals(): () => void {
 
     // No cleanup needed — window globals persist for the page lifetime.
     return () => {
-        delete window.__APP_STATE__
+        if (window.__APP_STATE__ && typeof window.__APP_STATE__ === 'object' && 'state' in window.__APP_STATE__) {
+            delete window.__APP_STATE__
+        }
         delete window.__APP_ACTIONS__
     }
 }
