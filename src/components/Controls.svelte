@@ -47,6 +47,7 @@
     id="camera-controls"
     role="toolbar"
     aria-label="Map controls"
+    tabindex="0"
     hidden={!visible}
     onpointerdown={(e) => e.stopPropagation()}
     onwheel={(e) => e.stopPropagation()}

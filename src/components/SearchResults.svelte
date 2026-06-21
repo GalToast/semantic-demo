@@ -54,9 +54,9 @@
       what?: string;
       cluster?: number;
       city?: string;
-      website?: string;
-      email?: string;
-      phone?: string;
+      website?: string | null;
+      email?: string | null;
+      phone?: string | null;
     };
     score?: number;
   }
@@ -106,7 +106,7 @@
   let searchError = $derived(appState.searchError as { type: string; query?: string } | null);
   let isSearching = $derived(status === 'searching');
 
-  const resultSlice = $derived(results.slice(0, visibleCount) as any[]);
+  const resultSlice = $derived(results.slice(0, visibleCount));
   const total = $derived(results.length);
   const remaining = $derived(total - visibleCount);
   const showMore = $derived(total > visibleCount);

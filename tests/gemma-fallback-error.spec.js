@@ -10,11 +10,28 @@
 
 import { test, expect } from '@playwright/test';
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
-const APP_URL = `${BASE_URL}/dist/svelte/index.html?nodemo=1`;
+const EXPLICIT_BASE_URL = process.env.TEST_BASE_URL || process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.BASE_URL || '';
+const APP_PATH = '/dist/svelte/index.html?nodemo=1';
+
+async function resolveAppUrl() {
+  if (EXPLICIT_BASE_URL) return `${EXPLICIT_BASE_URL.replace(/\/$/, '')}${APP_PATH}`;
+
+  for (let port = 8795; port <= 8895; port += 1) {
+    const candidate = `http://127.0.0.1:${port}${APP_PATH}`;
+    try {
+      const response = await fetch(candidate);
+      if (response.ok && !(await response.text()).includes('Not found:')) return candidate;
+    } catch {
+      // Try the next local contract/dev-server port.
+    }
+  }
+
+  return `http://127.0.0.1:8795${APP_PATH}`;
+}
 
 async function waitForStateReady(page) {
-  await page.goto(APP_URL, { waitUntil: 'domcontentloaded' });
+  const appUrl = await resolveAppUrl();
+  await page.goto(appUrl, { waitUntil: 'domcontentloaded' });
   // The Svelte shell publishes testReady eagerly, while app data may populate
   // asynchronously. Individual tests seed deterministic records when needed.
   await page.waitForFunction(() => {
