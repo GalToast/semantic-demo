@@ -72,7 +72,6 @@
   // ── Search dispatch ───────────────────────────────────────────────────────────
 
   function dispatchSearch(query: string): void {
-    console.log('[SearchInput] dispatchSearch called with query:', query);
     if (searchAbortController) {
       searchAbortController.abort();
       searchAbortController = null;
@@ -116,13 +115,11 @@
   }
 
   function debounceDispatch(query: string): void {
-    console.log('[SearchInput] debounceDispatch called with query:', query);
     if (debounceTimer !== null) {
       clearTimeout(debounceTimer);
     }
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
-      console.log('[SearchInput] debounce timer fired, calling dispatchSearch');
       dispatchSearch(query);
     }, debounceMs);
   }
