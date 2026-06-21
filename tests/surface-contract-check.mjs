@@ -152,7 +152,7 @@ const VIEWPORTS = {
     'thread-inspector': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
     controls: { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
     'search-chrome': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
-    'info-panel-populated': { width: 1440, height: 900, isMobile: false, deviceScaleFactor: 1 },
+    'info-panel-populated': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
     'hover-tooltip': { width: 1440, height: 900, isMobile: false, deviceScaleFactor: 1 },
     'synthesis-summary-card': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },
     'search-trail-cue': { width: 390, height: 844, isMobile: true, deviceScaleFactor: 2 },

@@ -565,7 +565,7 @@
   );
 
   $effect(() => {
-    if (infoPanelOpen && !InfoPanelComponent && !infoPanelImportPending) {
+    if ((infoPanelOpen || focusActive) && !InfoPanelComponent && !infoPanelImportPending) {
       infoPanelImportPending = true;
       // W44-S4: idle-deferred for cold-load
       scheduleIdleComponentImport(() =>
