@@ -5,10 +5,13 @@
  * Port of js/modules/search-result-renderer.ts
  */
 
-import { state } from '../engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
+import type { SemanticState } from '@lib/state/state-types';
 import { getViewportSize } from '../utils/environment';
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters';
+
+const state = appState as unknown as SemanticState;
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

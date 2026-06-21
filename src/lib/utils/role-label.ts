@@ -1,4 +1,4 @@
-import { state } from '@lib/engine/state-bridge'
+import { appState } from '@lib/state/app.svelte'
 import type { Point, SemanticState } from '@lib/state/state-types'
 
 /**
@@ -9,7 +9,7 @@ import type { Point, SemanticState } from '@lib/state/state-types'
  * Ported from js/modules/role-label.ts — no side-effects.
  */
 export function _getSelectedBusinessRoleLabel(point: Point): string {
-    const _s = state as unknown as SemanticState
+    const _s = appState as unknown as SemanticState
     let index = _s.points && Array.isArray(_s.points) ? _s.points.indexOf(point) : -1
 
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {

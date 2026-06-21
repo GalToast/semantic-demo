@@ -4,7 +4,7 @@
  * Journey navigation, focus controls, thread inspector, and compass delegation.
  */
 
-import { state as _state } from '@lib/engine/state-bridge'
+import { appState as _state } from '@lib/state/app.svelte'
 const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
 import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller'

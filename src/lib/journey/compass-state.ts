@@ -11,7 +11,7 @@ import { describeCluster } from '@lib/utils/ui-presentation';
 import { getNextExploreCandidateForIndex } from './thread-model';
 import { getNextWalkCandidateForIndex } from './lifecycle-adapter';
 import { seededUnit } from '@lib/utils/seeded-random';
-import type { Point } from '@lib/engine/state-bridge';
+import type { Point } from '@lib/state/state-types';
 import { appState } from '@lib/state/app.svelte';
 
 let routeEmbodimentReader: () => any[] = () => [];

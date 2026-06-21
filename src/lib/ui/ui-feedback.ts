@@ -6,7 +6,7 @@
  * (announces the focused point's relationship to the active search stack).
  */
 import { appState } from '@lib/state/app.svelte';
-import type { Point } from '@lib/engine/state-bridge';
+import type { Point } from '@lib/state/state-types';
 
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation';
 import { formatBusinessName } from '@lib/utils/dom-formatters';

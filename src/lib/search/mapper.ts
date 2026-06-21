@@ -5,7 +5,7 @@
  * Port of js/modules/search-mapper.ts
  */
 
-import { state } from '../engine/state-bridge';
+import { appState as state } from '@lib/state/app.svelte';
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters';
 import { isPointVisible } from '../utils/geo-data';
 

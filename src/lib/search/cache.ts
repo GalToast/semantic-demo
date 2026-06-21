@@ -6,12 +6,15 @@
  * after consumers moved to this module.
  */
 
-import { state, withStateMutation, type SemanticSearchCacheDiagnostics } from '../engine/state-bridge';
+import { appState } from '@lib/state/app.svelte';
+import { withStateMutation } from '@lib/state/with-state-mutation';
+import type { SemanticSearchCacheDiagnostics, SemanticState } from '@lib/state/state-types';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import * as idb from '../utils/idb-service';
 
 export const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES: number = 8;
 export const SEMANTIC_SEARCH_CACHE_TTL_MS: number = 10 * 60 * 1000;
+const state = appState as unknown as SemanticState;
 
 export interface CacheEntry {
     storedAt: number;

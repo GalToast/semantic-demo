@@ -37,7 +37,7 @@ function extractFunctionBody(functionName) {
 const helperBody = extractFunctionBody('clearSearchRelatedFocusState');
 
 console.log('Verifying clearSearchRelatedFocusState ownership...');
-assert(/(?:_legacyState|state)\.selectedPoint\s*=\s*null/.test(helperBody), 'helper must clear selectedPoint');
+assert(/(?:appState|_legacyState|state)\.selectedPoint\s*=\s*null/.test(helperBody), 'helper must clear selectedPoint');
 assert(/publish\(EVENTS\.STATE_RESET/.test(helperBody), 'helper must request nav reset through EVENTS.STATE_RESET');
 assert(/clearTrailThreadState\s*\(\s*\)/.test(helperBody), 'helper must route trail/thread cleanup through clearTrailThreadState()');
 assert(/(?:appState|state)\.trailIndices(?:\?\.)?clear(?:\?\.)?\s*\(\s*\)/.test(helperBody), 'helper must clear search-owned trail index set');

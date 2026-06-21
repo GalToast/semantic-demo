@@ -4,7 +4,7 @@
  * Core click helper, zoom, and view controls.
  */
 
-import { state as _state } from '@lib/engine/state-bridge'
+import { appState as _state } from '@lib/state/app.svelte'
 const state = _state as any
 import { switchView } from '@lib/orchestration/view-controller'
 import { toggleAutoRotate } from '@lib/engine/camera-controls-restore.svelte'

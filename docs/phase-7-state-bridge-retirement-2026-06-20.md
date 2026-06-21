@@ -19,6 +19,7 @@ This charter documents the **consumer migration** required to retire `state-brid
 **Goal:** Eliminate `src/lib/engine/state-bridge.ts` as a passthrough by migrating all ~58 consumers to use `appState` and `withStateMutation` from canonical homes.
 
 **Acceptance criteria:**
+
 - `src/lib/engine/state-bridge.ts` removed
 - `tests/unit-active/svelte-bridge-import-contract.test.ts` passes (no unexpected dead bridges); `state-bridge.ts` added to `KNOWN_RETIRED_BRIDGES` set
 - `tests/unit-active/bridge-import-graph-invariant.test.ts` passes
@@ -126,14 +127,28 @@ These currently `from '@lib/engine/state-bridge'` for `state` (or `legacyState` 
 
 (Plus sync the test contract's `KNOWN_RETIRED_BRIDGES` set and add `state-bridge.ts` to it.)
 
+## Progress notes
+
+- 2026-06-20 initial pass migrated low-risk type/utility consumers:
+  - `src/lib/journey/compass-state.ts`
+  - `src/lib/ui/ui-feedback.ts`
+  - `src/lib/utils/map-flattening-layout.ts`
+  - `src/lib/utils/role-label.ts`
+  - `src/lib/utils/weather.ts`
+  - `src/lib/state/mutators.ts`
+- 2026-06-20 search subsystem pass migrated the missed `src/lib/search/*` consumers:
+  - `api-cache.ts`, `cache.ts`, `mapper.ts`, `result-renderer.ts`, `results-ui.ts`, `legacy-exports.ts`
+- Worker audit note: the original enumeration missed `src/lib/search/*`; keep future counts grounded in `rg "@lib/engine/state-bridge|\\.\\./engine/state-bridge" src tests`.
+
 ## Suggested ticket breakdown
 
 **Ticket 7-A:** migrate `src/lib/state/*` (5 files) — small surface, no bridge re-exports inside (except `state-bridge.ts` itself which is the focus)
 **Ticket 7-B:** migrate `src/lib/utils/*` (5 files) — low-risk utility layer
-**Ticket 7-C:** migrate `src/lib/ui/*` (10 files) — bindings layer, simpler patterns
-**Ticket 7-D:** migrate `src/lib/journey/*` (~20 files) — bigger scope, has lots of inter-deps
-**Ticket 7-E:** migrate `src/lib/engine/*` + `src/lib/orchestration/*` + `src/main.ts` + `src/App.svelte` (~15 files) — completion
-**Ticket 7-F:** delete `src/lib/engine/state-bridge.ts`, update `KNOWN_RETIRED_BRIDGES`, run final test gates
+**Ticket 7-C:** migrate `src/lib/search/*` (6 files) — completed in the initial pass
+**Ticket 7-D:** migrate `src/lib/ui/*` (10 files) — bindings layer, simpler patterns
+**Ticket 7-E:** migrate `src/lib/journey/*` (~20 files) — bigger scope, has lots of inter-deps
+**Ticket 7-F:** migrate `src/lib/engine/*` + `src/lib/orchestration/*` + `src/main.ts` + `src/App.svelte` (~15 files) — completion
+**Ticket 7-G:** delete `src/lib/engine/state-bridge.ts`, update `KNOWN_RETIRED_BRIDGES`, run final test gates
 
 Each ticket is atomic with mechanical recipe. Estimated ~250–400 LoC per ticket. Total ~1,200 LoC of consumer rewrite + 1 file retirement.
 

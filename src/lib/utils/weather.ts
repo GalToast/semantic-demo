@@ -5,8 +5,6 @@
  * Zero logic changes — only import paths adapted for src/lib/utils/ location.
  */
 
-import { state } from '@lib/engine/state-bridge'
-
 import { appState } from '@lib/state/app.svelte';
 import {
     applyWeatherEffects as applyWeatherEffectsForWeather,
@@ -17,6 +15,7 @@ import {
 } from '@lib/ui/weather-ui'
 
 const WEATHER_REFRESH_MS: number = 5 * 60 * 1000;
+const state = appState as typeof appState & Record<string, unknown>;
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 } as const;
 const OPEN_METEO_CURRENT_FIELDS: string = [
     'temperature_2m',

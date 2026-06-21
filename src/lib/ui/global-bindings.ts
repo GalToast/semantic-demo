@@ -4,7 +4,7 @@
  * Global keyboard, focus, popstate, and visibility bindings.
  */
 
-import { state as _state } from '@lib/engine/state-bridge'
+import { appState as _state } from '@lib/state/app.svelte'
 const state = _state as any
 import { handleGalaxyKeydown, initKeyboardResetOwnership, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help'
 import { returnToOverview, resetExplorationFocus } from '@lib/orchestration/lifecycle'

@@ -3576,7 +3576,7 @@ async function assert_info_panel_populated(page, ctx) {
         const infoHeader = document.querySelector('.info-header')
         results.infoHeaderPresent = infoHeader !== null
 
-        const selectedDetails = document.querySelector('#selected-details')
+        const selectedDetails = document.querySelector('#focus-stage #selected-details, #focus-stage .selected-details, #info-panel-content #selected-details:not([hidden]), .selected-card:not([hidden]) #selected-details')
         results.selectedDetailsPresent = selectedDetails !== null
         results.selectedDetailsVisible = selectedDetails
             ? getComputedStyle(selectedDetails).display !== 'none' &&

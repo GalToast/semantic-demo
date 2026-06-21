@@ -10,7 +10,6 @@
  * that entrypoint.
  */
 
-import { state, withStateMutation } from '../engine/state-bridge';
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
 import { buildMockCatalogForQuery, EXPLICIT_EMPTY_QUERY_PATTERN } from './mock-catalog';
 import {
@@ -175,6 +174,3 @@ export async function fetchSemanticSearchResults(
     }
     throw lastError || new Error('Semantic search is unavailable right now.');
 }
-
-void state;
-void withStateMutation;

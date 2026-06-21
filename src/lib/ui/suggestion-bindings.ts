@@ -3,7 +3,7 @@
  * Random/similar/neighbor suggestion controls.
  */
 
-import { state as _state } from '@lib/engine/state-bridge'
+import { appState as _state } from '@lib/state/app.svelte'
 const state = _state as any
 import { bindClick } from '@lib/ui/view-bindings'
 import { focusOnNode } from '@lib/engine/camera-choreography'

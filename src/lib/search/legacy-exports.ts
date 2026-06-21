@@ -104,7 +104,6 @@ export type { SearchResultPoint as Point, ServiceResultRow };
 
 // ── Focus reset (search-state side-effect shim) ──────────────────────────
 
-import { state as _legacyState } from '../engine/state-bridge';
 import { appState } from '@lib/state/app.svelte';
 import { clearTrailThreadState as _clearTrailThreadState } from '@lib/orchestration/navigation-state';
 
@@ -116,7 +115,7 @@ import { clearTrailThreadState as _clearTrailThreadState } from '@lib/orchestrat
  */
 export function clearSearchRelatedFocusState(context: Record<string, unknown> = {}): Record<string, unknown> {
   const reason = (context && typeof context.reason === 'string') ? context.reason : 'filter-invalidate';
-  _legacyState.selectedPoint = null;
+  appState.selectedPoint = null;
   publish(EVENTS.STATE_RESET, { reason, silent: true });
   _clearTrailThreadState();
   appState.trailIndices?.clear?.();
