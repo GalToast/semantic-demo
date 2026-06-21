@@ -113,7 +113,7 @@
     left: auto;
     transform: none;
     width: 100%;
-    z-index: 2;
+    z-index: var(--z-search-bar, 2);
     margin: -2rem -1rem 0;
     padding: 0 1rem;
   }

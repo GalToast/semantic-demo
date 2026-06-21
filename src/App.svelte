@@ -141,7 +141,7 @@
           MapViewComponent = mod.default;
         })
         .catch((err) => {
-          console.error('[App] MapView lazy-load failed:', err);
+          if (import.meta.env.DEV) console.error('[App] MapView lazy-load failed:', err);
         })
         .finally(() => {
           mapViewImportPending = false;
@@ -231,7 +231,7 @@
           DevGuiComponent = mod.default;
         })
         .catch((err) => {
-          console.error('[App] DevGui lazy-load failed:', err);
+          if (import.meta.env.DEV) console.error('[App] DevGui lazy-load failed:', err);
         })
         .finally(() => {
           devGuiImportPending = false;
@@ -245,7 +245,7 @@
           SpectorInspectorComponent = mod.default;
         })
         .catch((err) => {
-          console.error('[App] SpectorInspector lazy-load failed:', err);
+          if (import.meta.env.DEV) console.error('[App] SpectorInspector lazy-load failed:', err);
         })
         .finally(() => {
           spectorInspectorImportPending = false;
@@ -341,7 +341,9 @@
         }
         applyUrlState();
       })
-      .catch(console.error);
+      .catch((err) => {
+        if (import.meta.env.DEV) console.error('[App] initData failed:', err);
+      });
 
     // W5-T1: Defer triggers.ts subscribe() registration until after FCP.
     // The 15+ subscribe() calls in triggers.ts register handlers that synchronously
@@ -600,7 +602,7 @@
         })
       )
         .catch((err) => {
-          console.error('[App] Canvas lazy-load failed:', err);
+          if (import.meta.env.DEV) console.error('[App] Canvas lazy-load failed:', err);
         })
         .finally(() => {
           canvasImportPending = false;

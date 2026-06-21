@@ -123,6 +123,7 @@
         onclick={() => handleAction(step.phase)}
         aria-label="Navigate to {step.phase}"
         aria-current={step.state === 'current' ? 'step' : undefined}
+        type="button"
       >
         <span class="step-dot"></span>
         <span class="step-label">{step.phase}</span>

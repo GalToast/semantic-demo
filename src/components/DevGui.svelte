@@ -47,14 +47,14 @@
           try {
             localStorage.clear();
             sessionStorage.clear();
-            console.log('[dev-gui] cleared local + session storage');
+            if (import.meta.env.DEV) console.log('[dev-gui] cleared local + session storage');
           } catch (err) {
-            console.error('[dev-gui] clearStorage failed', err);
+            if (import.meta.env.DEV) console.error('[dev-gui] clearStorage failed', err);
           }
         },
         logSemanticState: () => {
           const state = (window as unknown as { __semanticState?: unknown }).__semanticState;
-          console.log('[dev-gui] window.__semanticState:', state);
+          if (import.meta.env.DEV) console.log('[dev-gui] window.__semanticState:', state);
         },
       };
       gui.add(actions, 'triggerDemo').name('▶ Trigger demo');
@@ -74,9 +74,9 @@
           }).__semanticCamera;
           if (camera) {
             camera.autoRotate = v;
-            console.log('[dev-gui] camera.autoRotate =', v);
+            if (import.meta.env.DEV) console.log('[dev-gui] camera.autoRotate =', v);
           } else {
-            console.log('[dev-gui] autoRotate toggle =', v, '(no camera bridge yet)');
+            if (import.meta.env.DEV) console.log('[dev-gui] autoRotate toggle =', v, '(no camera bridge yet)');
           }
         });
 
@@ -96,9 +96,9 @@
           }).__semanticState;
           if (state) {
             state.focusPersonalityOverride = v === 'auto' ? undefined : v;
-            console.log('[dev-gui] focusPersonalityOverride =', v);
+            if (import.meta.env.DEV) console.log('[dev-gui] focusPersonalityOverride =', v);
           } else {
-            console.log('[dev-gui] focusPersonalityOverride =', v, '(no state bridge yet)');
+            if (import.meta.env.DEV) console.log('[dev-gui] focusPersonalityOverride =', v, '(no state bridge yet)');
           }
         });
 
@@ -123,7 +123,7 @@
           }).__semanticPostprocessing;
           if (pp?.setPremiumMode) {
             pp.setPremiumMode(v);
-            console.log('[dev-gui] premium mode =', v);
+            if (import.meta.env.DEV) console.log('[dev-gui] premium mode =', v);
           } else {
             // Fallback: set body attribute directly
             if (v) {
@@ -131,7 +131,7 @@
             } else {
               delete document.body.dataset.premiumMode;
             }
-            console.log('[dev-gui] premium mode =', v, '(body attr only)');
+            if (import.meta.env.DEV) console.log('[dev-gui] premium mode =', v, '(body attr only)');
           }
         });
 
@@ -177,7 +177,7 @@
             __semanticPostprocessing?: { setDofEnabled?: (v: boolean) => void };
           }).__semanticPostprocessing;
           pp?.setDofEnabled?.(v);
-          console.log('[dev-gui] DOF =', v);
+          if (import.meta.env.DEV) console.log('[dev-gui] DOF =', v);
         });
 
       ppFolder.open();

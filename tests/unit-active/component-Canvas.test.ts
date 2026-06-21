@@ -15,9 +15,12 @@
  *  8. a11y suppression comment is present for interactive/noninteractive role
  */
 import { describe, it, expect, beforeAll } from 'vitest'
+// @ts-ignore — tests/ excluded from workspace tsconfig; node types not available
 import { readFileSync } from 'fs'
+// @ts-ignore — tests/ excluded from workspace tsconfig; node types not available
 import { resolve } from 'path'
 
+// @ts-ignore — tests/ excluded from workspace tsconfig; __dirname is a node global
 const CANVAS_PATH = resolve(__dirname, '../../src/components/Canvas.svelte')
 
 function readSource(): string {
@@ -70,14 +73,16 @@ describe('Canvas component (source-inspection)', () => {
 
     // --- Regression coverage for 2026-06-18 fixes ---
 
-    it('onDestroy resets canvasReady to false so loading overlay reappears on remount', () => {
+    it('onDestroy resets canvasReady to false and gates overlayVisible on engineLifecycleDestroyed', () => {
         // Find onDestroy block
         const onDestroyStart = source.indexOf('onDestroy(() => {')
         expect(onDestroyStart).toBeGreaterThanOrEqual(0)
         const onDestroyEnd = source.indexOf('});', onDestroyStart)
         const onDestroyBody = source.slice(onDestroyStart, onDestroyEnd)
         expect(onDestroyBody).toContain('canvasReady = false')
-        expect(onDestroyBody).toContain('overlayVisible = true')
+        // W6-T5: overlayVisible is gated so remount after a successful engine
+        // lifecycle doesn't flash the overlay again.
+        expect(onDestroyBody).toContain('overlayVisible = !engineLifecycleDestroyed')
     })
 
     it('onDestroy clears overlayTimeout to prevent post-unmount setTimeout leaks', () => {

@@ -154,7 +154,7 @@
     try {
       updateUrlState({}, { reason: 'mode-switch' });
     } catch (e) {
-      console.warn('Header.selectMode: URL update failed', e);
+      if (import.meta.env.DEV) console.warn('Header.selectMode: URL update failed', e);
     }
     // Keep roving tabindex index in sync with the selected mode
     const idx = modes.findIndex((m) => m.id === modeId);
@@ -172,7 +172,7 @@
       initKeyboardShortcutsHint();
       showKeyboardShortcutsHint();
     } catch (error) {
-      console.warn('Header.openKeyboardHelp: keyboard help unavailable', error);
+      if (import.meta.env.DEV) console.warn('Header.openKeyboardHelp: keyboard help unavailable', error);
     }
   }
 </script>

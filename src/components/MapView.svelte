@@ -113,7 +113,7 @@
       status = 'ready';
       statusDetail = 'County terrain active';
     } catch (error) {
-      console.warn('MapView Leaflet activation failed:', error);
+      if (import.meta.env.DEV) console.warn('MapView Leaflet activation failed:', error);
       status = 'error';
       statusDetail = error instanceof Error ? error.message : 'Map failed to load';
     }
@@ -221,7 +221,7 @@
   .map-status {
     position: absolute;
     pointer-events: auto;
-    z-index: 1;
+    z-index: var(--z-controls, 1);
   }
 
   .map-view-header {
@@ -385,7 +385,7 @@
   .map-shimmer {
     position: absolute;
     inset: 0;
-    z-index: 0;
+    z-index: var(--z-canvas, 0);
     display: flex;
     flex-direction: column;
     justify-content: center;

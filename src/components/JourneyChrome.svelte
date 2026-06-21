@@ -422,6 +422,7 @@
           aria-disabled={!canGoBack}
           title={!canGoBack ? 'No previous stops in this walk history' : 'Previous stop'}
           onclick={goPrev}
+          type="button"
         >
           &larr; Prev
         </button>
@@ -447,6 +448,7 @@
           aria-disabled={!hasNext}
           title={!hasNext ? 'No nearby stops to continue to' : 'Next stop'}
           onclick={goNext}
+          type="button"
         >
           Next &rarr;
         </button>

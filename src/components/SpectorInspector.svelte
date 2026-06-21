@@ -91,7 +91,7 @@
       const isImportError = err instanceof TypeError && /import|fetch|module/i.test(message);
       loadError = isImportError ? 'import-failed' : 'init-failed';
       phase = 'error';
-      console.warn('[spector-inspector] failed to load spectorjs', err);
+      if (import.meta.env.DEV) console.warn('[spector-inspector] failed to load spectorjs', err);
       publishStatus();
       return;
     }
@@ -160,7 +160,7 @@
           // Non-fatal — Spector will report "No frames detected" if the
           // engine is mid-teardown, but the bridge shouldn't fail the
           // call for this.
-          console.debug('[spector-inspector] pre-render threw:', renderErr);
+          if (import.meta.env.DEV) console.debug('[spector-inspector] pre-render threw:', renderErr);
         }
         return new Promise((resolve) => {
           const timeout = setTimeout(() => {
@@ -234,7 +234,7 @@
     (window as unknown as { __spector: typeof bridge }).__spector = bridge;
     phase = 'ready';
     publishStatus();
-    console.log('[spector-inspector] ready; call window.__spector.capture() to begin');
+    if (import.meta.env.DEV) console.log('[spector-inspector] ready; call window.__spector.capture() to begin');
   });
 
   // Publish a read-only status snapshot on window.__spectorStatus so
@@ -305,7 +305,7 @@
     position: fixed;
     top: 6px;
     right: 6px;
-    z-index: 5;
+    z-index: var(--z-devtools, 5);
     pointer-events: none;
     display: inline-flex;
     align-items: center;

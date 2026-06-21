@@ -89,6 +89,7 @@
     type="button"
     aria-expanded={isVisible}
     aria-controls="focus-pocket-a11y"
+    aria-label={isVisible ? 'Hide focus pocket list' : 'Show focus pocket list'}
     onclick={toggleList}
   >
     {isVisible ? 'Hide list' : 'View as list'}

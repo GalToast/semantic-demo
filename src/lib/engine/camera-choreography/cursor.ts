@@ -33,6 +33,14 @@ import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 import { animateCameraToNode } from './focus'
 
+// W6-T5: Track pending parity-attr timeouts so rapid focusOnNode calls
+// don't stack up deferred DOM mutations.
+const parityTimeoutHandles: ReturnType<typeof setTimeout>[] = []
+function clearParityTimeouts(): void {
+  for (const t of parityTimeoutHandles) clearTimeout(t)
+  parityTimeoutHandles.length = 0
+}
+
 // Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)
 type OnboardingHint = HTMLElement & {
     _dismissedThisSession?: boolean
@@ -181,7 +189,8 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     // rebuilding the Svelte bundle (npm run build:svelte) so the legacy code
     // no longer overwrites the parity attrs.
     queueMicrotask(() => applyParityAttributes(computeParityAttributes()))
-    setTimeout(() => applyParityAttributes(computeParityAttributes()), 50)
-    setTimeout(() => applyParityAttributes(computeParityAttributes()), 250)
+    clearParityTimeouts()
+    parityTimeoutHandles.push(setTimeout(() => applyParityAttributes(computeParityAttributes()), 50))
+    parityTimeoutHandles.push(setTimeout(() => applyParityAttributes(computeParityAttributes()), 250))
     return true
 }

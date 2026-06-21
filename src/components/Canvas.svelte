@@ -29,8 +29,13 @@
   let canvasReady = $state(false);
   let engineHasInit = $state(false);
   let engineLifecycle: typeof import('@lib/engine/lifecycle') | null = null;
-  let componentDestroyed = false;
+  let componentDestroyed = $state(false);
   let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
+  // W6-T5: Track whether the engine lifecycle has been destroyed so we
+  // don't reset overlay state on re-mount after the engine already warmed up.
+  let engineLifecycleDestroyed = false;
+  // W6-T5: Track the last overlay log to prevent spam on rapid remounts.
+  let lastOverlayLogAt = 0;
 
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
@@ -98,7 +103,11 @@
     // warned about.
     overlayTimeout = setTimeout(() => {
       if (overlayVisible && !canvasReady) {
-        debugWarn('Canvas: Overlay fallback timeout — hiding loading overlay');
+        const now = Date.now();
+        if (now - lastOverlayLogAt > 3000) {
+          lastOverlayLogAt = now;
+          debugWarn('Canvas: Overlay fallback timeout — hiding loading overlay');
+        }
         overlayVisible = false;
         overlayTimeout = undefined;
       }
@@ -154,9 +163,13 @@
       if (engineReadyStore.value) {
         scheduleInitWhenIdle();
       } else {
-        const unsub = engineReadyStore.subscribe((ready) => {
+        // W6-T5: Declare unsub before subscribe to avoid TDZ if the callback
+        // fires synchronously (store already true).
+        let unsub: (() => void) | null = null;
+        const cleanup = () => { unsub?.(); unsub = null; };
+        unsub = engineReadyStore.subscribe((ready) => {
           if (ready && !engineHasInit && !componentDestroyed) {
-            unsub();
+            cleanup();
             scheduleInitWhenIdle();
           }
         });
@@ -181,9 +194,12 @@
 
   onDestroy(() => {
     componentDestroyed = true;
+    engineLifecycleDestroyed = true;
     engineHasInit = false;
     canvasReady = false;
-    overlayVisible = true;
+    // W6-T5: Don't reset overlay to visible on destroy if we already had a
+    // successful engine lifecycle. This prevents overlay flash on re-mount.
+    overlayVisible = !engineLifecycleDestroyed;
     engineLifecycle?.destroyEngine();
     engineLifecycle = null;
     mounted = false;

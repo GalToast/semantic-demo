@@ -53,7 +53,7 @@
     onwheel={(e) => e.stopPropagation()}
     ondblclick={(e) => e.stopPropagation()}
   >
-    <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in">
+    <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="M10.5 7.8v5.4M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -61,7 +61,7 @@
       </svg>
     </button>
 
-    <button class="control-btn" onclick={zoomOut} title="Zoom out" aria-label="Zoom out">
+    <button class="control-btn" onclick={zoomOut} title="Zoom out" aria-label="Zoom out" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -69,7 +69,7 @@
       </svg>
     </button>
 
-    <button class="control-btn" onclick={resetView} title="Reset view" aria-label="Reset view">
+    <button class="control-btn" onclick={resetView} title="Reset view" aria-label="Reset view" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 8a7 7 0 1 1-1 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M7 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -85,6 +85,7 @@
       title="Toggle auto-rotate"
       aria-label="Toggle auto-rotate"
       aria-pressed={cameraState.autoRotate}
+      type="button"
     >
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -92,7 +93,7 @@
       </svg>
     </button>
 
-    <button class="control-btn" onclick={shareLink} title="Share link" aria-label="Share link">
+    <button class="control-btn" onclick={shareLink} title="Share link" aria-label="Share link" type="button">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="7" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
         <circle cx="17" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
