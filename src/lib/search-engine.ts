@@ -12,7 +12,7 @@
  * legacy search-mapper.js which depends on state.js Proxy globals.
  */
 import type { SearchResult } from '@lib/types/state'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn as _debugWarn } from '@lib/utils/diagnostic-adapter'
 import { rerankResults } from '@lib/utils/rerank'
 import { searchUseRerank } from '@lib/stores/search.svelte'
 import { get } from 'svelte/store'
@@ -61,7 +61,7 @@ function getPayloadResults(payload: unknown): RawServiceRow[] {
 /**
  * Get total matches from the payload.
  */
-function getTotalMatches(payload: unknown, results: RawServiceRow[]): number {
+function _getTotalMatches(payload: unknown, results: RawServiceRow[]): number {
     if (!payload || typeof payload !== 'object') return results.length
     const p = payload as Record<string, unknown>
     if (typeof p.count === 'number') return p.count
@@ -95,6 +95,9 @@ async function fetchSemanticSearchResultsDirect(
     offset = 0,
     limit = 18
 ): Promise<SearchResult[]> {
+    if (shouldBypassApiSearch()) {
+        throw new Error('API search bypassed by staticOnly/offline mode.')
+    }
     const safeOffset = Math.max(0, Math.floor(offset))
     const safeLimit = normalizeSearchLimit(limit)
     const controller = new AbortController()
@@ -116,6 +119,11 @@ async function fetchSemanticSearchResultsDirect(
                 signal: controller.signal
             }
         )
+
+        if (!response.ok) {
+            throw new Error(`Semantic search returned HTTP status ${response.status}`)
+        }
+
         const responseText = await response.text()
         const trimmedText = responseText.trim()
         if (trimmedText.startsWith('<?php') || (trimmedText.includes('<?php') && trimmedText.indexOf('<?php') < 100)) {
@@ -129,7 +137,7 @@ async function fetchSemanticSearchResultsDirect(
             throw new Error('Semantic search returned invalid JSON.', { cause: jsonErr })
         }
 
-        if (!response.ok || !payload?.ok) {
+        if (!payload?.ok) {
             throw new Error(payload?.error || 'Semantic search is unavailable right now.')
         }
 
@@ -139,6 +147,13 @@ async function fetchSemanticSearchResultsDirect(
             .filter((r): r is SearchResult => r !== null)
             .slice(0, safeLimit)
     } catch (err) {
+        if (canUseStaticDevFallback()) {
+            try {
+                window.sessionStorage.setItem('api_unreachable', '1')
+            } catch (_err) {
+                // sessionStorage read/write blocked
+            }
+        }
         if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
             throw new Error(`Semantic search timed out after ${timeoutMs}ms.`)
         }
@@ -407,7 +422,27 @@ function canUseStaticDevFallback(): boolean {
     return params.get('staticDev') !== '0'
 }
 
-function raceWithStaticFallback<T>(primary: Promise<T>, fallback: Promise<T>, signal?: AbortSignal): Promise<T> {
+function shouldBypassApiSearch(): boolean {
+    if (typeof window === 'undefined' || !window.location) return false
+    try {
+        if (window.sessionStorage.getItem('api_unreachable') === '1') return true
+    } catch (_err) {
+        // storage disabled or forbidden in iframe
+    }
+    const params = new URLSearchParams(window.location.search || '')
+    const bypass = params.get('staticOnly') === '1' || params.get('offline') === '1' || params.get('noApi') === '1'
+    if (bypass) {
+        try {
+            window.sessionStorage.setItem('api_unreachable', '1')
+        } catch (_err) {
+            // session storage write-blocked
+        }
+        return true
+    }
+    return false
+}
+
+function _raceWithStaticFallback<T>(primary: Promise<T>, fallback: Promise<T>, signal?: AbortSignal): Promise<T> {
     return new Promise((resolve, reject) => {
         let settled = false
         const onAbort = (): void => {

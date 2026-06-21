@@ -48,6 +48,7 @@
   let isExpanded = $derived(expanded || hasQuery || showResults);
   let showLoading = $derived(testLoadingPhase === 'searching');
   let isError = $derived(testLoadingPhase === 'error');
+  let isStoreError = $derived($searchState.status === 'error');
   let isEmpty = $derived(testLoadingPhase === 'empty');
 
   // ── Lazy-load SearchResults (27 KB) ─────────────────────────────────────────
@@ -57,7 +58,7 @@
   let SearchResultsComponent: SearchResultsModule['default'] | null = $state(null);
 
   $effect(() => {
-    if (showResults || showLoading || isError || isEmpty) {
+    if (showResults || showLoading || isError || isStoreError || isEmpty) {
       import('./SearchResults.svelte').then(mod => {
         SearchResultsComponent = mod.default;
       });

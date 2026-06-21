@@ -32,6 +32,7 @@
   import { formatBusinessName } from '@lib/utils/dom-formatters';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
+  import { appState } from '@lib/state/app.svelte';
 
   interface Props {
     /** Whether the results panel is visible */
@@ -102,9 +103,7 @@
   let hasQuery = $derived($searchState.hasQuery);
   let activeId = $derived($searchState.activeResultId);
   let visibleCount = $derived(searchVisibleCountFn());
-  let searchError: { type: string; query?: string } | null = $derived(
-    status === 'error' ? { type: 'full', query: $searchState.query } : null
-  );
+  let searchError = $derived(appState.searchError as { type: string; query?: string } | null);
   let isSearching = $derived(status === 'searching');
 
   const resultSlice = $derived(results.slice(0, visibleCount) as any[]);

@@ -1,18 +1,18 @@
 # Phase 7 Charter — Final Bridge Retirement (state-bridge)
 
 **Wave:** Post-W11 / Phase 7
-**Status (2026-06-20):** Pre-scoped, ready for next-agent pickup
-**Total bridges remaining:** 1 (down from 34 at start of W7 era)
+**Status (2026-06-20):** Completed and committed
+**Total bridges remaining:** 0 (down from 34 at start of W7 era)
 
 ## Why this charter exists
 
-The W5 → W11 wave cycle retired 33 of 34 original `*-bridge.ts` files. One remains:
+The W5 → W11 wave cycle retired 33 of 34 original `*-bridge.ts` files. Phase 7 retired the final one:
 
-1. **`src/lib/engine/state-bridge.ts`** — Re-export of canonical `appState` under the legacy alias `state`, plus re-export of `withStateMutation`. Currently consumed by **20+ files** in `src/lib/` and `src/orchestration/`. The trivial 3-line bridge is documented in the file as "transition passthrough — future waves migrate consumers to use `appState` directly".
+1. **`src/lib/engine/state-bridge.ts`** — Former re-export of canonical `appState` under the legacy alias `state`, plus re-export of `withStateMutation`. Deleted in Phase 7 after migrating the remaining consumers to canonical imports.
 
 The former **`src/lib/engine/data-worker-url-bridge.ts`** is already retired as bridge debt. The required Vite `?worker&url` boundary remains centralized at `src/lib/workers/data-worker-url.ts`, outside `src/lib/engine/*-bridge.ts`.
 
-This charter documents the **consumer migration** required to retire `state-bridge.ts`.
+This charter documents the **consumer migration** that retired `state-bridge.ts`.
 
 ## Scope (Phase 7)
 
@@ -20,13 +20,12 @@ This charter documents the **consumer migration** required to retire `state-brid
 
 **Acceptance criteria:**
 
-- `src/lib/engine/state-bridge.ts` removed
-- `tests/unit-active/svelte-bridge-import-contract.test.ts` passes (no unexpected dead bridges); `state-bridge.ts` added to `KNOWN_RETIRED_BRIDGES` set
-- `tests/unit-active/bridge-import-graph-invariant.test.ts` passes
-- `npm run test:unit` green
-- `npm run check:bridges` green
-- `npm run check:nav-mirror` green (multi-line `appState.navState` field assignments already handled)
-- No matching `from '@lib/engine/state-bridge'` text anywhere in `src/` or `tests/`
+- [x] `src/lib/engine/state-bridge.ts` removed
+- [x] `tests/unit-active/svelte-bridge-import-contract.test.ts` passes (no unexpected dead bridges); `state-bridge.ts` added to `KNOWN_RETIRED_BRIDGES` set
+- [x] `npm run check:bridges` green
+- [x] `npm run lint:nav-mirror` green
+- [x] No matching `from '@lib/engine/state-bridge'` text anywhere in `src/` or `tests/`
+- [x] `npm run test:contract` green: 64/64
 
 ## Migration recipe (mechanical)
 
@@ -129,6 +128,10 @@ These currently `from '@lib/engine/state-bridge'` for `state` (or `legacyState` 
 
 ## Progress notes
 
+- 2026-06-20 closeout committed:
+  - `src/lib/engine/state-bridge.ts` deleted
+  - QA/contract tests now use `tests/helpers/canonical-state.mjs` for raw Node state access
+  - `npm run test:contract` passed 64/64
 - 2026-06-20 initial pass migrated low-risk type/utility consumers:
   - `src/lib/journey/compass-state.ts`
   - `src/lib/ui/ui-feedback.ts`
@@ -142,15 +145,15 @@ These currently `from '@lib/engine/state-bridge'` for `state` (or `legacyState` 
 
 ## Suggested ticket breakdown
 
-**Ticket 7-A:** migrate `src/lib/state/*` (5 files) — small surface, no bridge re-exports inside (except `state-bridge.ts` itself which is the focus)
-**Ticket 7-B:** migrate `src/lib/utils/*` (5 files) — low-risk utility layer
-**Ticket 7-C:** migrate `src/lib/search/*` (6 files) — completed in the initial pass
-**Ticket 7-D:** migrate `src/lib/ui/*` (10 files) — bindings layer, simpler patterns
-**Ticket 7-E:** migrate `src/lib/journey/*` (~20 files) — bigger scope, has lots of inter-deps
-**Ticket 7-F:** migrate `src/lib/engine/*` + `src/lib/orchestration/*` + `src/main.ts` + `src/App.svelte` (~15 files) — completion
-**Ticket 7-G:** delete `src/lib/engine/state-bridge.ts`, update `KNOWN_RETIRED_BRIDGES`, run final test gates
+**Ticket 7-A:** migrate `src/lib/state/*` (5 files) — complete
+**Ticket 7-B:** migrate `src/lib/utils/*` (5 files) — complete
+**Ticket 7-C:** migrate `src/lib/search/*` (6 files) — complete
+**Ticket 7-D:** migrate `src/lib/ui/*` (10 files) — complete
+**Ticket 7-E:** migrate `src/lib/journey/*` (~20 files) — complete
+**Ticket 7-F:** migrate `src/lib/engine/*` + `src/lib/orchestration/*` + `src/main.ts` + `src/App.svelte` (~15 files) — complete
+**Ticket 7-G:** delete `src/lib/engine/state-bridge.ts`, update `KNOWN_RETIRED_BRIDGES`, run final test gates — complete
 
-Each ticket is atomic with mechanical recipe. Estimated ~250–400 LoC per ticket. Total ~1,200 LoC of consumer rewrite + 1 file retirement.
+All tickets are complete. Historical estimates are retained only for context.
 
 ## Risks
 
@@ -181,7 +184,11 @@ Parallel session's W11 wave aggressively retired 9 bridges in commit `13d7df74 r
 2. `appState` proxy semantics → global-instance sync had been fixed just before (`ff22e6c1 perf(appState)` and split-singleton work in `03a1341c`)
 3. Cleaner to do Phase 7 after consumer-rewrite traffic settles
 
-## Estimated time
+## Actual closeout
+
+Phase 7 was completed in the 2026-06-20 closeout wave. The final aggregate contract pass was `npm run test:contract` with 64/64 passing.
+
+## Historical estimate
 
 Per ticket: 10–15 min mechanical rewrite + 5–10 min verification = ~20 min per ticket.
 Tickets 7-A through 7-F: ~120 min total wall-clock time if executed in a single lane.

@@ -502,6 +502,7 @@ export async function runSearch(query: string, signal: AbortSignal): Promise<voi
     } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return
         setSearchStatus('error')
+        appState.searchError = { type: 'full', query: trimmed }
     }
 }
 

@@ -12,12 +12,12 @@
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Svelte UI**     | 26/26 components complete. `svelte-check` 0/0. All stores, types, orchestration files in place.                                                                                                               |
 | **Engine kernel** | Fully migrated to `src/lib/`. Worker runtime lives at `src/lib/workers/data-worker.ts`; the Vite URL boundary lives at `src/lib/workers/data-worker-url.ts`. Legacy `js/modules/*.ts` are gone from disk.     |
-| **Bridge**        | `src/lib/engine/*-bridge.ts` files are the canonical seam manifest. Load-bearing; do not mass-delete (AGENTS.md §9).                                                                                          |
+| **Bridge**        | ✅ Retired. Phase 7 deleted the final `src/lib/engine/state-bridge.ts` passthrough and migrated consumers to canonical `appState` / `withStateMutation` imports.                                                |
 | **BOTH pattern**  | `.js` shadows retired in W10 W2 (commit `7fc7b9d`). `@legacy/*` alias retired in 9D-Option-B (`cbc6509`). Legacy islands deleted in m3 sweep (`b8a50ba`), reverted 2026-06-12 (`ec520da`) — status ambiguous. |
 | **Contracts**     | 225 contract tests pass. Visual state audit covers 26 surface IDs.                                                                                                                                            |
 | **Bundle**        | ~1,217 KB raw JS / ~338 KB gzip. CSS ~54 KB raw / ~10 KB gzip. Dead CSS modules pruned in W41 (`80e4224`).                                                                                                    |
 | **Deploy**        | ✅ Complete (uncoupled on 2026-06-19). `deploy.sh` + `deploy.ps1` are standalone. Production shell at `dist/svelte/index.html`.                                                                               |
-| **What's left**   | Bridge retirement (Phase 6), parity-attrs final closeout, prod-preview parity smoke, Svelte 5 strict-mode `!==` cleanup, deploy shell normalization.                                                          |
+| **What's left**   | Release hardening: full static/unit/contract gates, product playthrough, visual QA, Lighthouse/performance re-baseline, and deploy shell normalization decision.                                               |
 
 ---
 
@@ -26,7 +26,7 @@
 | Layer                | Path                                                                              | Status            | Notes                                                                            |
 | -------------------- | --------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
 | **Svelte UI**        | `src/components/*`, `src/lib/stores/*.svelte.ts`                                  | ✅ Complete       | 26 components, 12 stores, 4 type files                                           |
-| **Bridge**           | `src/lib/engine/*-bridge.ts`                                                      | 🟡 Load-bearing   | Canonical seam manifest — see § "Bridge File Doctrine"                           |
+| **Bridge**           | `src/lib/engine/*-bridge.ts`                                                      | ✅ Retired        | Phase 7 closed the final engine bridge; see `docs/phase-7-state-bridge-retirement-2026-06-20.md` |
 | **Engine kernel**    | `src/lib/engine/`, `src/lib/focus/`, `src/lib/journey/`                           | ✅ Migrated       | Three.js scene, camera, shaders, focus pocket, journey orchestration             |
 | **Orchestration**    | `src/lib/orchestration/`                                                          | ✅ Complete       | App init, lifecycle, view transitions, URL state, compass, events, parity-attrs  |
 | **State & stores**   | `src/lib/state/`, `src/lib/stores/`                                               | ✅ Complete       | `appState` Svelte 5 class + typed writable stores                                |
@@ -66,11 +66,11 @@ These files require explicit ownership, targeted tests, and coordination with pa
 | `.js` shadow files                       | Dead           | Retired in W10 W2, commit `7fc7b9d`.                                                                            |
 | `js/modules/*.ts` (legacy orchestration) | Dead from disk | AGENTS.md: "The old `js/modules/*.ts` files referenced by earlier documentation are no longer present on disk." |
 
-### Still load-bearing (do NOT remove)
+### Formerly load-bearing (retired)
 
 | Artifact                           | Status             | Evidence                                                                                                         |
 | ---------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
-| `src/lib/engine/*-bridge.ts` files | **Load-bearing**   | AGENTS.md §9: "Bridge files are the canonical seam manifest." Must pass `npm run check:bridges` before deletion. |
+| `src/lib/engine/*-bridge.ts` files | ✅ Retired         | Phase 7 migrated final consumers and deleted `state-bridge.ts`; `npm run check:bridges` and `npm run test:contract` pass. |
 | `src/lib/workers/data-worker.ts`   | **Active runtime** | Worker parser runtime. URL creation is centralized in `src/lib/workers/data-worker-url.ts`.                      |
 | `legacy-reference/`                | **Archive-only**   | Frozen reference. Not built. Safe to leave.                                                                      |
 
@@ -89,7 +89,7 @@ The `ec520da` revert restored the legacy islands after the m3 blanket-deletion. 
 
 ## Bridge File Doctrine
 
-The bridge files (`src/lib/engine/*-bridge.ts`) are the canonical seam between the reactive Svelte UI and the imperative Three.js engine kernel. They are **load-bearing during active migration**.
+The former bridge files (`src/lib/engine/*-bridge.ts`) were the canonical seam between the reactive Svelte UI and the imperative Three.js engine kernel during migration. Phase 7 retired that seam; future bridge-like passthrough files should be treated as temporary debt and must carry a deletion plan.
 
 **Deletion protocol** (AGENTS.md §8 + § "Rule for future dead-code sweeps"):
 
@@ -98,7 +98,7 @@ The bridge files (`src/lib/engine/*-bridge.ts`) are the canonical seam between t
 3. Remove the bridge file
 4. Verify `npm run check && npm run build:svelte && npm run test:contract`
 
-> **Note:** `docs/bridge-load-bearing-2026-06-18.md` referenced in the prompt scope does not exist as of 2026-06-18. **TBD — verify** whether this doc was created by a parallel session or if it should be authored as part of a future wave.
+> **Note:** `docs/bridge-load-bearing-2026-06-18.md` is a historical audit input. The living bridge status is Phase 7 complete with 0 remaining `src/lib/engine/*-bridge.ts` files.
 
 The 4-signal dead-code test (AGENTS.md § "Rule for future dead-code sweeps on `src/lib/`") applies to every bridge file candidate:
 
@@ -114,13 +114,10 @@ A file passes the "dead" threshold only when **all five signals are zero**.
 
 ## Open Migration Arcs
 
-### 1. Bridge Retirement (Phase 6 from historical plan)
+### 1. Bridge Retirement (Phase 6 / Phase 7)
 
-**Status:** In Progress (W9-B, 2026-06-20). Retired 10 micro-bridges, 24 remain. Full 5-signal audit completed in `docs/w9-bridge-audit-2026-06-20.md`.
-**Scope:** Slim bridge adapters (Phase 6A), then eliminate bridge entirely (Phase 6B) once Canvas component owns engine lifecycle.
-**Dependency:** Requires porting engine modules to TS-first pattern (already done per AGENTS.md "Engine Kernel Architecture" — the engine kernel is fully in `src/lib/`).
-**Blocker:** The bridge still wraps imperative Three.js calls; eliminating it requires the Svelte layer to own all engine lifecycle sequencing directly.
-**Reference:** `docs/archive/migration-docs/phase56-migration-plan.md` §7–8
+**Status:** ✅ Complete (2026-06-20). Phase 7 retired the final `state-bridge.ts` passthrough and aligned QA contracts around canonical state helpers.
+**Reference:** `docs/phase-7-state-bridge-retirement-2026-06-20.md`
 
 ### 2. Deploy-Script `../js/scanner.js` Decoupling
 
@@ -199,7 +196,7 @@ For each high-risk surface, the following must hold before any edit:
 | W40 Charter                   | `docs/w40-charter-2026-06-18.md`                        | Production verification + Lighthouse baseline + visual regression |
 | W38 Charter                   | `docs/w38-charter-2026-06-17.md`                        | Prior wave charter                                                |
 | W43 Charter                   | `docs/w43-charter-2026-06-18.md`                        | Focus-stage QA + performance prep (current)                       |
-| Bridge Load-Bearing           | `docs/bridge-load-bearing-2026-06-18.md`                | **TBD — verify** existence; may not exist yet                     |
+| Bridge Load-Bearing           | `docs/bridge-load-bearing-2026-06-18.md`                | Historical bridge audit input; superseded by Phase 7 closeout     |
 | A11y Baseline                 | Per W42-B scope                                         | Keyboard traps, focus-visible, screen reader labels               |
 | Performance Budget            | `docs/performance-budget.md`                            | JS/CSS budget ceilings and actuals                                |
 | Design Tokens                 | `docs/semantic-demo-design-tokens.md`                   | Canonical token sheet                                             |
@@ -218,17 +215,17 @@ For each high-risk surface, the following must hold before any edit:
 
 | Item                                     | Deferred to                        | Reason                                                                            |
 | ---------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------- |
-| Bridge retirement (Phase 6)              | Future wave                        | Bridge files are load-bearing; requires Canvas to own full engine lifecycle first |
+| Bridge retirement (Phase 6 / Phase 7)    | ✅ Complete                        | Final `state-bridge.ts` retired on 2026-06-20                     |
 | `../js/scanner.js` decoupling            | ✅ Complete                        | Successfully uncoupled on 2026-06-19                                              |
 | Legacy islands removal                   | Future wave (after 4-signal audit) | Ambiguous status post-`ec520da` revert; needs fresh import audit                  |
 | Deploy shell normalization               | Future wave                        | Requires product decision on legacy URL path sunset                               |
-| `docs/bridge-load-bearing-2026-06-18.md` | Verify existence                   | May not have been created yet                                                     |
+| Product/visual release QA                | Next release-hardening wave        | Run product playthrough, UI quality, visual surfaces, and Lighthouse re-baseline  |
 
 ---
 
 ## Contradictions vs AGENTS.md
 
-None found. All claims in this plan are consistent with AGENTS.md as of the W42 baseline. The `docs/bridge-load-bearing-2026-06-18.md` file is referenced in the prompt scope but does not exist on disk — marked "TBD — verify" rather than fabricating.
+None known in the living plan after Phase 7 closeout. Historical bridge audit documents may still describe `state-bridge.ts` as load-bearing because they preserve earlier wave context.
 
 ---
 
