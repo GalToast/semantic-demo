@@ -43,7 +43,10 @@
   // a $derived does NOT register as a tracked dependency under Svelte 5 runes.
   // Mirror it into a $state rune so $derived/$effect track its changes.
   let nav = $state(navStore());
-  $effect(() => navStore.subscribe(($s) => (nav = $s)));
+  $effect(() => {
+    const unsub = navStore.subscribe(($s) => (nav = $s));
+    return unsub;
+  });
 
   // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
 

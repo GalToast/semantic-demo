@@ -19,7 +19,10 @@
 
   // Reactive navStore mirror — bridge svelte/store writable into Svelte 5 $state.
   let nav = $state(navStore());
-  $effect(() => navStore.subscribe(($s) => (nav = $s)));
+  $effect(() => {
+    const unsub = navStore.subscribe(($s) => (nav = $s));
+    return unsub;
+  });
 
   const focusedIndex_ = $derived(
     typeof nav.focusedIndex === 'number' && Number.isFinite(nav.focusedIndex)
