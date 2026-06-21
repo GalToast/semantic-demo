@@ -194,6 +194,8 @@
     padding: 0.75rem;
     max-height: 60vh;
     overflow-y: auto;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
     transform: translateX(-120%);
     transition: transform 0.3s ease;
   }

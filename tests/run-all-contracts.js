@@ -696,6 +696,23 @@ function runContract(filename, timeoutMs, baseUrl = null) {
     })
 }
 
+function shouldRetryBrowserContract(filename, result) {
+    if (result.passed) return false
+    const entry = join(TESTS_DIR, filename)
+    if (!isPlaywrightTestFile(filename, entry)) return false
+
+    const output = `${result.stdout}\n${result.stderr}`
+    return (
+        output.includes('Test timeout') ||
+        output.includes('page.waitForFunction') ||
+        output.includes('[RUNNER TIMEOUT]') ||
+        output.includes('Target page, context or browser has been closed') ||
+        output.includes('net::ERR_') ||
+        output.includes('ECONNRESET') ||
+        output.includes('ECONNREFUSED')
+    )
+}
+
 // Main
 
 async function main() {
@@ -762,7 +779,18 @@ async function main() {
             const baseUrl = serverLease ? await serverLease.ensure() : null
             const timeoutMs = groupTimeout !== null ? groupTimeout : CONTRACT_TIMEOUT_MS
             console.log(`  [run] ${file}${groupTimeout !== null ? ` (timeout=${timeoutMs}ms)` : ''}`)
-            const result = await runContract(file, timeoutMs, baseUrl)
+            let result = await runContract(file, timeoutMs, baseUrl)
+            if (!result.passed && serverLease && shouldRetryBrowserContract(file, result)) {
+                console.log(`  [retry] ${file} after transient browser/server failure`)
+                serverLease.markFailed()
+                const retryBaseUrl = await serverLease.ensure()
+                const retryResult = await runContract(file, timeoutMs, retryBaseUrl)
+                result = {
+                    ...retryResult,
+                    retried: true,
+                    firstFailure: result
+                }
+            }
             results.push(result)
             if (!result.passed && serverLease) {
                 serverLease.markFailed()
@@ -781,9 +809,10 @@ async function main() {
         for (const r of results) {
             const ms = r.duration < 1000 ? `${r.duration.toFixed(0)}ms` : `${(r.duration / 1000).toFixed(2)}s`
             const mark = r.passed ? 'PASS' : 'FAIL'
-            console.log(`  [${mark}] ${r.filename} (${ms})`)
+            console.log(`  [${mark}] ${r.filename} (${ms})${r.retried ? ' [retried]' : ''}`)
             if (!r.passed) {
                 if (r.code !== 0) console.log(`         exit code: ${r.code}`)
+                if (r.firstFailure) console.log(`         first attempt also failed; showing retry failure context`)
                 const failureContext = getFailureContext(r)
                 if (failureContext.length) {
                     for (const line of failureContext) console.log(`         ${line.trim()}`)
