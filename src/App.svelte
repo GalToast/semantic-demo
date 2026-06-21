@@ -18,6 +18,7 @@
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
   import { initData } from '@lib/data-store';
+  import { resetSemanticThreadWorker } from '@lib/semantic-threads';
   const legacyState = appState as any;
   import { appState } from '@lib/state/app.svelte.ts';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
@@ -360,6 +361,7 @@
       delete contractWindow.__forceSemanticDiveContractSurface;
       cleanupViewport();
       cleanupParity();
+      resetSemanticThreadWorker();
     };
   });
 

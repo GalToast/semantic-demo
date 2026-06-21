@@ -116,6 +116,13 @@ export interface SearchResultPoint {
     phone?: string | null
 }
 
+export interface SearchRenderContext {
+    trimmedQuery: string
+    topIndex: number | null
+    anchorIndex: number | null
+    topScore: number
+}
+
 export interface SearchSummary {
     query: string
     totalMatches: number
@@ -128,7 +135,7 @@ export interface SearchSummary {
     resultIndices: number[]
     summaryType: 'semantic' | 'text' | 'mixed'
     reason?: string
-    renderContext?: any
+    renderContext?: SearchRenderContext
     mode?: string
 }
 
