@@ -767,7 +767,13 @@ async function assert_search_error(page, ctx) {
         }
     )
 
-    await loadIdleAndTypeSearch(page, 'forced-surface-contract-search-error', { staticDev: '0' })
+    const url = new URL(positionalUrl)
+    url.searchParams.set('nodemo', '1')
+    url.searchParams.set('view', 'galaxy')
+    url.searchParams.set('staticDev', '0')
+    url.searchParams.set('q', 'forced-surface-contract-search-error')
+    url.searchParams.delete('anchor')
+    await loadAndWait(page, url.toString())
     await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 10000 })
 
     const info = await page.evaluate(() => {

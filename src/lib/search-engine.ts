@@ -407,11 +407,18 @@ function canUseStaticDevFallback(): boolean {
     const host = window.location.hostname
     if (!['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(host)) return false
     const params = new URLSearchParams(window.location.search || '')
-    return params.get('staticDev') !== '0'
+    return !(params.get('staticDev') === '0')
+}
+
+function shouldSurfaceApiFailures(): boolean {
+    if (typeof window === 'undefined' || !window.location) return false
+    const params = new URLSearchParams(window.location.search || '')
+    return params.get('staticDev') === '0'
 }
 
 function shouldBypassApiSearch(): boolean {
     if (typeof window === 'undefined' || !window.location) return false
+    if (shouldSurfaceApiFailures()) return false
     try {
         if (window.sessionStorage.getItem('api_unreachable') === '1') return true
     } catch (_err) {
@@ -869,17 +876,22 @@ export async function performSearch(query: string, signal: AbortSignal, page = 0
 
     const normalizedPage = normalizeSearchPage(page)
     const effectiveOffset = normalizeSearchOffset(normalizedPage, offset)
+    const forceApiFailureSurface = shouldSurfaceApiFailures()
 
     // ── Cache check ──────────────────────────────────────────────────────────
     // Cache key is composite: {query, page, offset}.  This prevents page 2
     // from overwriting page 1 in the cache, and keeps pagination isolated.
-    const cached = getCachedSearch(trimmed, normalizedPage, effectiveOffset)
-    if (cached) return cached
+    if (!forceApiFailureSurface) {
+        const cached = getCachedSearch(trimmed, normalizedPage, effectiveOffset)
+        if (cached) return cached
+    }
 
     // Advisory deduplication: if an identical key is already in-flight,
     // piggyback on that promise instead of issuing a duplicate fetch.
-    const pending = getPendingSearch(trimmed, normalizedPage, effectiveOffset)
-    if (pending) return pending
+    if (!forceApiFailureSurface) {
+        const pending = getPendingSearch(trimmed, normalizedPage, effectiveOffset)
+        if (pending) return pending
+    }
 
     const searchPromise = _executeSearch(trimmed, signal, normalizedPage, effectiveOffset)
     setPendingSearch(trimmed, normalizedPage, effectiveOffset, searchPromise)
@@ -895,6 +907,7 @@ async function _executeSearch(
 ): Promise<SearchResult[]> {
     const preferLive = shouldPreferLiveSearch()
     const staticDevFallbackAllowed = canUseStaticDevFallback()
+    console.error('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
     let results: SearchResult[] = []
     const limit = normalizeSearchLimit(PAGE_SIZE)
 
@@ -975,8 +988,11 @@ async function _executeSearch(
         }
     }
 
-    // Cache results so subsequent requests for the same key are instant
-    setCachedSearch(trimmed, page, offset, results)
+    // Cache normal results so subsequent requests for the same key are instant.
+    // Forced API-failure surfaces must not reuse or poison the normal cache.
+    if (!shouldSurfaceApiFailures()) {
+        setCachedSearch(trimmed, page, offset, results)
+    }
     return results
 }
 

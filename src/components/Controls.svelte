@@ -48,6 +48,9 @@
     role="toolbar"
     aria-label="Map controls"
     hidden={!visible}
+    onpointerdown={(e) => e.stopPropagation()}
+    onwheel={(e) => e.stopPropagation()}
+    ondblclick={(e) => e.stopPropagation()}
   >
     <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in">
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">

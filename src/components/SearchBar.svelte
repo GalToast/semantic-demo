@@ -78,6 +78,9 @@
   class:info-panel-contained={panelContained}
   role="search"
   aria-label="Search businesses in the semantic field"
+  onpointerdown={(e) => e.stopPropagation()}
+  onwheel={(e) => e.stopPropagation()}
+  ondblclick={(e) => e.stopPropagation()}
 >
   <SearchInput expanded={isExpanded} />
   {#if SearchResultsComponent}

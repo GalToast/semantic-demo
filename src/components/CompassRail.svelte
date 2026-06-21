@@ -110,6 +110,9 @@
     id="compass-rail"
     role="navigation"
     aria-label="Journey compass"
+    onpointerdown={(e) => e.stopPropagation()}
+    onwheel={(e) => e.stopPropagation()}
+    ondblclick={(e) => e.stopPropagation()}
   >
     {#each compassSteps() as step (step.phase)}
       <button

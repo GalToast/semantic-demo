@@ -428,6 +428,9 @@
   aria-label={panelAriaLabel}
   aria-live="polite"
   id="info-panel"
+  onpointerdown={(e) => e.stopPropagation()}
+  onwheel={(e) => e.stopPropagation()}
+  ondblclick={(e) => e.stopPropagation()}
 >
   <!--
     The App-level <SearchBar> is provided through the content snippet in

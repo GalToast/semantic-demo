@@ -148,6 +148,9 @@
   aria-hidden={!open || concealedByFocus}
   aria-label="Business category legend"
   id="legend-panel"
+  onpointerdown={(e) => e.stopPropagation()}
+  onwheel={(e) => e.stopPropagation()}
+  ondblclick={(e) => e.stopPropagation()}
 >
   <h3 class="legend-title">Categories</h3>
   {#if filtered}

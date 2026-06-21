@@ -72,6 +72,7 @@
   // ── Search dispatch ───────────────────────────────────────────────────────────
 
   function dispatchSearch(query: string): void {
+    console.log('[SearchInput] dispatchSearch called with query:', query);
     if (searchAbortController) {
       searchAbortController.abort();
       searchAbortController = null;
@@ -115,11 +116,13 @@
   }
 
   function debounceDispatch(query: string): void {
+    console.log('[SearchInput] debounceDispatch called with query:', query);
     if (debounceTimer !== null) {
       clearTimeout(debounceTimer);
     }
     debounceTimer = setTimeout(() => {
       debounceTimer = null;
+      console.log('[SearchInput] debounce timer fired, calling dispatchSearch');
       dispatchSearch(query);
     }, debounceMs);
   }
@@ -176,7 +179,12 @@
 
   onMount(() => {
     const query = new URLSearchParams(window.location.search || '').get('q')?.trim();
-    if (!query || queryInput || query.length < 2) return;
+    if (!query || query.length < 2) return;
+    const storeQuery = ($searchState.query ?? '').trim();
+    if (storeQuery === query && ['searching', 'results', 'error'].includes($searchState.status)) {
+      queryInput = query;
+      return;
+    }
     queryInput = query;
     setSearchQuery(query);
     dispatchSearch(query);
