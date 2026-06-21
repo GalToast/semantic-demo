@@ -18,10 +18,10 @@
     searchState,
     setSearchQuery,
     setSearchStatus,
-    setSearchResults
+    setSearchResults,
+    setSearchError
   } from '@lib/stores/search.svelte';
   import { performSearch } from '@lib/search-engine';
-  import { appState } from '@lib/state/app.svelte';
   import {
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS
@@ -109,12 +109,7 @@
       .catch((err: unknown) => {
         if (err instanceof DOMException && err.name === 'AbortError') return;
         if (searchAbortController !== null && signal === searchAbortController.signal) {
-          setSearchStatus('error');
-          appState.searchError = {
-            query: trimmed,
-            type: 'full',
-            message: err instanceof Error ? err.message : String(err)
-          };
+          setSearchError(trimmed, err);
         }
       });
   }

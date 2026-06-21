@@ -12,7 +12,6 @@
  * legacy search-mapper.js which depends on state.js Proxy globals.
  */
 import type { SearchResult } from '@lib/types/state'
-import { debugWarn as _debugWarn } from '@lib/utils/diagnostic-adapter'
 import { rerankResults } from '@lib/utils/rerank'
 import { searchUseRerank } from '@lib/stores/search.svelte'
 import { get } from 'svelte/store'
@@ -56,17 +55,6 @@ function getPayloadResults(payload: unknown): RawServiceRow[] {
     const p = payload as Record<string, unknown>
     const raw = (p.results ?? p.data ?? []) as unknown[]
     return Array.isArray(raw) ? (raw.filter(Boolean) as RawServiceRow[]) : []
-}
-
-/**
- * Get total matches from the payload.
- */
-function _getTotalMatches(payload: unknown, results: RawServiceRow[]): number {
-    if (!payload || typeof payload !== 'object') return results.length
-    const p = payload as Record<string, unknown>
-    if (typeof p.count === 'number') return p.count
-    if (typeof p.total === 'number') return p.total
-    return results.length
 }
 
 // ── Pagination ─────────────────────────────────────────────────────────────────
@@ -440,28 +428,6 @@ function shouldBypassApiSearch(): boolean {
         return true
     }
     return false
-}
-
-function _raceWithStaticFallback<T>(primary: Promise<T>, fallback: Promise<T>, signal?: AbortSignal): Promise<T> {
-    return new Promise((resolve, reject) => {
-        let settled = false
-        const onAbort = (): void => {
-            if (settled) return
-            settled = true
-            signal?.removeEventListener('abort', onAbort)
-            reject(new DOMException('Aborted', 'AbortError'))
-        }
-        const finish = (value: T): void => {
-            if (settled) return
-            settled = true
-            signal?.removeEventListener('abort', onAbort)
-            resolve(value)
-        }
-
-        signal?.addEventListener('abort', onAbort, { once: true })
-        fallback.then(finish, () => undefined)
-        primary.then(finish, () => undefined)
-    })
 }
 
 // ── Local Index Search (8,406-record fallback) ────────────────────────────────

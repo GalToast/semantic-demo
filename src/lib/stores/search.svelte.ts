@@ -295,6 +295,20 @@ export function setSearchStatus(status: SearchStatus): void {
     })
 }
 
+type SearchErrorType = 'full' | 'inline'
+
+export function setSearchError(query: string, error: unknown, type: SearchErrorType = 'full'): void {
+    withSearchNotify(() => {
+        appState.searchStatus = 'error'
+        appState.searchError = {
+            query,
+            type,
+            message: error instanceof Error ? error.message : String(error || 'Search failed')
+        }
+        appState.isSearching = false
+    })
+}
+
 export function setSearchSummary(summary: SearchSummary | null): void {
     withSearchNotify(() => {
         appState.currentSearchSummary = summary
@@ -395,6 +409,8 @@ export function clearSearch(): void {
     withSearchNotify(() => {
         appState.currentSearchSummary = null
         appState.searchStatus = 'idle'
+        appState.searchError = null
+        appState.isSearching = false
         appState.searchAnchorIndex = null
         appState.searchPreviewIndex = null
         appState.searchGlowIndices = new Set()
@@ -416,6 +432,8 @@ export function clearSearchResults(): void {
             appState.currentSearchSummary.topIndex = null
         }
         appState.searchStatus = (appState.currentSearchSummary?.query ?? '').trim() ? 'idle' : 'idle'
+        appState.searchError = null
+        appState.isSearching = false
         appState.searchAnchorIndex = null
         appState.searchPreviewIndex = null
     })
@@ -474,6 +492,8 @@ export function setSearchResults(results: SearchResult[]): void {
         appState.currentSearchSummary.resultIndices = results.map((r) => r.index)
         appState.currentSearchSummary.resultCount = results.length
         appState.searchStatus = 'results'
+        appState.searchError = null
+        appState.isSearching = false
     })
 }
 
@@ -501,8 +521,7 @@ export async function runSearch(query: string, signal: AbortSignal): Promise<voi
         }
     } catch (err) {
         if (err instanceof DOMException && err.name === 'AbortError') return
-        setSearchStatus('error')
-        appState.searchError = { type: 'full', query: trimmed }
+        setSearchError(trimmed, err)
     }
 }
 

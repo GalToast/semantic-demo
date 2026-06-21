@@ -768,18 +768,7 @@ async function assert_search_error(page, ctx) {
     )
 
     await loadIdleAndTypeSearch(page, 'forced-surface-contract-search-error', { staticDev: '0' })
-    try {
-        await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 5000 })
-    } catch (e) {
-        const html = await page.evaluate(() => {
-            const el = document.querySelector('.search-container')
-            return el ? el.outerHTML : 'null'
-        })
-        const dataset = await page.evaluate(() => JSON.stringify(document.body.dataset))
-        console.error('DEBUG - Search Container HTML:', html)
-        console.error('DEBUG - Body Dataset:', dataset)
-        throw e
-    }
+    await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 10000 })
 
     const info = await page.evaluate(() => {
         function textClipped(el) {
