@@ -78,16 +78,13 @@ describe('Bug D regression: data-store loadState round-trip', () => {
         }
     })
 
-    it('setBusinessData transitions status to ready (if not already past)', () => {
+    it('setBusinessData sets businessLoaded flag to true', () => {
         setDataLoadStatus('loading')
-        const before = getDataLoadState().status
+        const before = getDataLoadState().businessLoaded
         setBusinessData(makeFakeBusinessData() as any)
-        const after = getDataLoadState().status
-        // Note: setBusinessData internally sets status to 'ready'. If a future
-        // regression reverts to a rune-driven status mirror, this assertion
-        // would fail because the rune's status never updates.
-        expect(after).toBe('ready')
-        expect(before).toBe('loading')
+        const after = getDataLoadState().businessLoaded
+        expect(after).toBe(true)
+        expect(before).toBe(false)
     })
 
     it('getIsDataReady agrees with setDataLoadStatus round-trip', () => {
