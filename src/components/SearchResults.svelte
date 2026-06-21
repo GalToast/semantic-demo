@@ -111,7 +111,7 @@
   const remaining = $derived(total - visibleCount);
   const showMore = $derived(total > visibleCount);
 
-  const renderContext = $derived((summary as any)?.renderContext || {
+  const renderContext = $derived(summary?.renderContext || {
     trimmedQuery: '',
     topIndex: null,
     anchorIndex: null,
@@ -442,7 +442,7 @@
       <div id="search-results-count" class="search-results-count" role="status" aria-live="polite" aria-atomic="true">
         {#if total === 1}
           <span class="search-results-count-anchor">Top match</span>
-        {:else if (summary as any)?.mode === 'peek'}
+        {:else if summary?.mode === 'peek'}
           <span class="search-results-count-anchor">Top match</span>
           <span class="search-results-count-divider" aria-hidden="true">·</span>
           <span class="search-results-count-hidden">{total - visibleCount} more</span>

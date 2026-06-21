@@ -167,10 +167,10 @@
 
   $effect(() => {
     return () => {
-      if (debounceTimer !== null) clearTimeout(debounceTimer);
-      // Do not abort an in-flight search just because this input remounts
-      // during the intentional idle -> search surface transition. The result
-      // store is global and should be allowed to settle.
+      // Do not clear debounceTimer on unmount — the search store is global and
+      // the query may still need to be dispatched after the input remounts during
+      // the idle -> search surface transition.
+      // if (debounceTimer !== null) clearTimeout(debounceTimer);
     };
   });
 

@@ -128,6 +128,8 @@ export interface SearchSummary {
     resultIndices: number[]
     summaryType: 'semantic' | 'text' | 'mixed'
     reason?: string
+    renderContext?: any
+    mode?: string
 }
 
 // ── Journey State ─────────────────────────────────────────────────────────────
