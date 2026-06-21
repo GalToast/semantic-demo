@@ -337,9 +337,9 @@ export function getMyceliumPresentationProfile() {
         return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }
     }
     if (state.trailDepth >= 1) {
-        return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+        return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
     }
-    return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+    return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────

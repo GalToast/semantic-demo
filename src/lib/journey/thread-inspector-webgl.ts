@@ -6,8 +6,8 @@
  * Uses `any` at the Three.js boundary since the engine files stay as JS.
  *
  * Local selectors replace the 12 imports from js/state/selectors/index.ts.
- * Each selector is a thin getter that reads from the legacy state singleton
- * via the state-bridge, matching the original selector contract.
+ * Each selector is a thin getter that reads from canonical appState, matching
+ * the original selector contract.
  */
 
 /* eslint-disable @typescript-eslint/no-explicit-any */

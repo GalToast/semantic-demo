@@ -88,7 +88,7 @@ globalThis.cancelAnimationFrame = globalThis.window.cancelAnimationFrame.bind(gl
 // Module imports
 // ---------------------------------------------------------------------------
 
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs');
 const {
     getFocusConstellationViewportProfile,
     getFocusConstellationPlacement,

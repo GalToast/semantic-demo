@@ -163,7 +163,7 @@ function assertEq(actual, expected, label) {
 
 import './helpers/svelte-rune-shim.mjs'
 
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
 const { updateNavState } = await import('../src/lib/stores/navigation.svelte')
 const { searchStore, setSearchSummary } = await import('../src/lib/stores/search.svelte')
 const { focusStore } = await import('../src/lib/stores/focus.svelte')

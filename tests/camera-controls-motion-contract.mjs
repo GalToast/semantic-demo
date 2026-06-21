@@ -126,7 +126,7 @@ globalThis.$derived = Object.assign((value) => value, {
 // ---------------------------------------------------------------------------
 // Imports
 // ---------------------------------------------------------------------------
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
 const {
     setAutoRotateSuspended,
     scheduleAutoRotateResume,

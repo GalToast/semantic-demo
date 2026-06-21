@@ -6,7 +6,7 @@
 import { navStore } from '../../src/lib/stores/navigation.svelte.ts';
 import { focusStore } from '../../src/lib/stores/focus.svelte.ts';
 import { searchStore } from '../../src/lib/stores/search.svelte.ts';
-import { withStateMutation } from '../../src/lib/engine/state-bridge.ts';
+import { withStateMutation } from './canonical-state.mjs';
 
 function readSearchInputValue() {
   try {

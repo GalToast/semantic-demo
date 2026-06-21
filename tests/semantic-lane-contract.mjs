@@ -7,7 +7,7 @@
  * using direct module calls and state verification.
  */
 
-import { state, withStateMutation } from '../src/lib/engine/state-bridge.ts';
+import { state, withStateMutation } from './helpers/canonical-state.mjs';
 import * as lane from '../src/lib/orchestration/semantic-lane.ts';
 
 function assert(condition, message) {

@@ -3566,10 +3566,11 @@ async function assert_info_panel_populated(page, ctx) {
         const selectedCardCandidates = document.querySelectorAll(
             '#focus-stage #selected-card, #focus-stage .selected-card, #info-panel-content #selected-card'
         )
-        const selectedCard = Array.from(selectedCardCandidates).find((el) => {
-            const style = getComputedStyle(el)
-            return style.display !== 'none' && style.visibility !== 'hidden'
-        }) || null
+        const selectedCard =
+            Array.from(selectedCardCandidates).find((el) => {
+                const style = getComputedStyle(el)
+                return style.display !== 'none' && style.visibility !== 'hidden'
+            }) || null
         results.selectedCardPresent = selectedCard !== null
         if (selectedCard) {
             const style = getComputedStyle(selectedCard)
@@ -3585,10 +3586,11 @@ async function assert_info_panel_populated(page, ctx) {
         const selectedDetailsCandidates = document.querySelectorAll(
             '#focus-stage #selected-details, #focus-stage .selected-details, #info-panel-content #selected-details, .selected-card #selected-details'
         )
-        const selectedDetails = Array.from(selectedDetailsCandidates).find((el) => {
-            const style = getComputedStyle(el)
-            return style.display !== 'none' && style.visibility !== 'hidden'
-        }) || null
+        const selectedDetails =
+            Array.from(selectedDetailsCandidates).find((el) => {
+                const style = getComputedStyle(el)
+                return style.display !== 'none' && style.visibility !== 'hidden'
+            }) || null
         results.selectedDetailsPresent = selectedDetails !== null
         results.selectedDetailsVisible = selectedDetails
             ? getComputedStyle(selectedDetails).display !== 'none' &&

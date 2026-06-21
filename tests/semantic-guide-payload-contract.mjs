@@ -14,6 +14,7 @@
 
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import './helpers/svelte-rune-shim.mjs';
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const SEMDEMO_ROOT = path.resolve(process.cwd());
@@ -286,7 +287,7 @@ async function testGetAnchorPointViaAdapter() {
 async function testPayloadHelpersHonorExplicitSummary() {
   console.log('\n[RUNTIME] payload helpers — honor explicit summary arguments');
 
-  const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
+  const { state, withStateMutation } = await import('./helpers/canonical-state.mjs');
   const {
     getSemanticGuidePayloadResults,
     getSemanticGuideAnchorPoint
@@ -329,7 +330,7 @@ async function testPayloadHelpersHonorExplicitSummary() {
 async function testSearchContextSnapshotReturnsCurrentState() {
   console.log('\n[RUNTIME] getSearchContextSnapshot — returns current state values');
 
-  const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
+  const { state, withStateMutation } = await import('./helpers/canonical-state.mjs');
   const { getSearchContextSnapshot } = await import('../src/lib/journey/semantic-guide-payload-adapter.ts');
 
   // Set up state

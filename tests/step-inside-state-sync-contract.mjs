@@ -68,7 +68,7 @@ Object.defineProperty(globalThis, 'navigator', {
 })
 
 // Now safe to import modules
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
 const { setSemanticDiveModeProxy: setSemanticDiveMode, refreshCompositionState } =
     await import('../src/lib/orchestration/lifecycle.ts')
 const { updateNavState } = await import('../src/lib/stores/navigation.svelte.ts')

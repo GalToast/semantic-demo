@@ -10,7 +10,7 @@ import './helpers/svelte-rune-shim.mjs'
 
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { state } from '../src/lib/engine/state-bridge.ts'
+import { state } from './helpers/canonical-state.mjs'
 import { buildSelectedMatchNarrative, getInterestingBusinessNote } from '../src/lib/ui-renderers.ts'
 
 const ROOT = process.cwd()

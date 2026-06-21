@@ -9,7 +9,7 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 | Svelte UI (26 components)                     | ✅ Complete                        | W40          |
 | Typed stores / state                          | ✅ Complete                        | W41          |
 | Engine kernel in `src/lib/`                   | ✅ Complete                        | W40          |
-| Bridge files (`src/lib/engine/*-bridge.ts`)   | ✅ 1 remaining (`state-bridge.ts`) | W10          |
+| Bridge files (`src/lib/engine/*-bridge.ts`)   | ✅ Complete (0 remaining)          | Phase 7      |
 | Worker (`src/lib/workers/data-worker.ts`)     | ✅ Complete                        | W10          |
 | Legacy islands (`legacy-reference/`)          | 🟢 Archive only                    | W42          |
 | BOTH-pattern `.js` shadows                    | ✅ Retired                         | W10          |
@@ -31,17 +31,22 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 ### Scope
 
 - Retired 20 single-consumer and passthrough bridges via 5-signal dead-code audit:
-    - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`, `thread-inspector-bridge.ts`, `journey-point-color-bridge.ts`, `journey-thread-model-bridge.ts`, `journey-thread-settler-bridge.ts`, `inspected-strand-overlay-bridge.ts`, `route-arrival-overlay-bridge.ts`, `camera-controls-restore-bridge.ts`, `journey-focus-ui-bridge.ts`, `journey-neighborhood-bridge.ts`, `journey-webgl-bridge.ts`, `journey-compass-controller-bridge.ts`, `window-actions-bridge.ts`, `search-state-bridge.ts`, `strand-continuity-bridge.ts`, `lifecycle-bridge.ts`
-    - Total: 34 → 1 bridge file remaining (`state-bridge.ts`).
+  - `weather-ui-bridge.ts`, `role-label-bridge.ts`, `event-bindings-bridge.ts`, `camera-orbit-slack-bridge.ts`, `adapters-bridge.ts`, `thread-inspector-bridge.ts`, `journey-point-color-bridge.ts`, `journey-thread-model-bridge.ts`, `journey-thread-settler-bridge.ts`, `inspected-strand-overlay-bridge.ts`, `route-arrival-overlay-bridge.ts`, `camera-controls-restore-bridge.ts`, `journey-focus-ui-bridge.ts`, `journey-neighborhood-bridge.ts`, `journey-webgl-bridge.ts`, `journey-compass-controller-bridge.ts`, `window-actions-bridge.ts`, `search-state-bridge.ts`, `strand-continuity-bridge.ts`, `lifecycle-bridge.ts`
+  - Total: 34 → 1 bridge file remaining (`state-bridge.ts`).
 - Closed the worker URL wrapper as bridge debt by moving the Vite `?worker&url` boundary to `src/lib/workers/data-worker-url.ts`.
 - Refactored `tests/unit-active/w11-t7-adapters-init.test.ts` to assert all 11 adapters are imported from their canonical owners (no longer requires reading the obsolete `adapters-bridge.ts`).
 - Fixed the W9-era `component-SearchBar.test.ts` isolation bug (vacuous `vi.mock` hoisting).
 - Verified `npm run test:unit` green: **1135/1135 passing**, 102/102 test files.
 - Verified all core (12) and smoke (8) QA visual contracts pass perfectly with 0 regressions.
 
+- Deleted the final legacy bridge: `src/lib/engine/state-bridge.ts`.
+- Migrated all remaining ~58 consumers to use `appState` and `withStateMutation` natively.
+- No matching `from '@lib/engine/state-bridge'` imports remain in the entire codebase.
+- Verified all core and smoke QA visual contracts pass perfectly with 0 regressions.
+
 ### Open Items
 
-- [ ] State bridge boundary map — decide which `state-bridge.ts` consumers are legitimate compatibility use vs easy direct `appState` ports.
+- [x] State bridge boundary map — migrated all 58 callers of `state-bridge.ts` to use `appState` directly and deleted the final bridge.
 - [x] Worker URL wrapper closeout — Vite `?worker&url` remains centralized at `src/lib/workers/data-worker-url.ts`, outside the engine bridge inventory.
 
 ### Parallel-Session Safety

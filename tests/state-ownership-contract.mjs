@@ -270,7 +270,7 @@ function scanWriters(modulePath, field) {
 
 // ─── Import real modules ──────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs');
 
 const lifecycle = await import('../src/lib/orchestration/lifecycle.ts');
 

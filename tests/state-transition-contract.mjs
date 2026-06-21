@@ -154,7 +154,7 @@ function ds(key) {
 
 // ── Import modules ─────────────────────────────────────────────────────────────
 
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
 const { resetNavState, updateNavState } = await import('../src/lib/stores/navigation.svelte.ts')
 const { resetFocus, setSelectedBusiness, setSemanticDiveMode } = await import('../src/lib/stores/focus.svelte.ts')
 const { clearSearch, setSearchQuery, setSearchSummary } = await import('../src/lib/stores/search.svelte.ts')

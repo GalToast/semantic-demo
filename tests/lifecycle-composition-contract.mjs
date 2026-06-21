@@ -95,7 +95,7 @@ elementsById.set('semantic-lane-assist', laneAssist)
 elementsById.set('semantic-lane-assist-copy', new FakeElement('div'))
 elementsById.set('semantic-lane-assist-meta', new FakeElement('div'))
 
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts')
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs')
 
 const { refreshCompositionState } = await import('../src/lib/stores/lifecycle.ts')
 const { setSemanticLaneUiState } = await import('../src/lib/orchestration/lifecycle.ts')

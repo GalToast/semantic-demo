@@ -12,7 +12,7 @@ globalThis.document = {
 globalThis.window = {};
 globalThis.performance = { now: () => 0 };
 
-const { state, withStateMutation } = await import('../src/lib/engine/state-bridge.ts');
+const { state, withStateMutation } = await import('./helpers/canonical-state.mjs');
 const {
   getBoundedNeighborhoodWalkCandidate,
   getNextWalkCandidateForIndex,

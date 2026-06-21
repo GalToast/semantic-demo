@@ -4,7 +4,7 @@
  * Stress test for search race conditions and rapid view transitions.
  */
 
-import { state, withStateMutation } from '../src/lib/engine/state-bridge.ts';
+import { state, withStateMutation } from './helpers/canonical-state.mjs';
 
 function assert(condition, message) {
   if (!condition) throw new Error('ASSERTION FAILED: ' + message);

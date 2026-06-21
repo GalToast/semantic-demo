@@ -146,7 +146,7 @@ function assert(cond, msg) {
 
 // ─── Load modules under test (after fake DOM is set up) ──────────────────────
 
-const { state } = await import('../src/lib/engine/state-bridge.ts')
+const { state } = await import('./helpers/canonical-state.mjs')
 const { filterState, activeClusterFilter, setFilter, setActiveClusterFilter, resetFilters } =
     await import('../src/lib/stores/filter.svelte.ts')
 

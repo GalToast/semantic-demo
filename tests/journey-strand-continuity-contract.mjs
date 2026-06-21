@@ -12,7 +12,7 @@ globalThis.document = {
 globalThis.window = {};
 globalThis.performance = { now: () => 12345 };
 
-const { state } = await import('../src/lib/engine/state-bridge.ts');
+const { state } = await import('./helpers/canonical-state.mjs');
 const {
   setStrandContinuityState,
   clearStrandContinuityState,

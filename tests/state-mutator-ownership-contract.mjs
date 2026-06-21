@@ -40,20 +40,15 @@ function collectJsFiles(dir) {
 }
 
 const appStateSrc = read('src/lib/state/app.svelte.ts');
-const stateBridgeSrc = read('src/lib/engine/state-bridge.ts');
 const mutatorSrc = read('src/lib/state/mutators.ts');
 const withStateMutationSrc = read('src/lib/state/with-state-mutation.ts');
 
-const combinedStateSrc = appStateSrc + '\n' + stateBridgeSrc + '\n' + withStateMutationSrc;
+const combinedStateSrc = appStateSrc + '\n' + withStateMutationSrc;
 
 assert(
-  /export\s+function\s+withStateMutation\s*\(/.test(combinedStateSrc) ||
+  /export\s+function\s+withStateMutation(?:<[^>]+>)?\s*\(/.test(combinedStateSrc) ||
   /export\s*\{[\s\S]*\bwithStateMutation\b[\s\S]*\}/.test(combinedStateSrc),
-  'canonical state bridge must export withStateMutation()'
-);
-assert(
-  /export\s+const\s+state\s*=\s*appState/.test(stateBridgeSrc),
-  'state bridge must expose appState as the compatibility state export'
+  'canonical state modules must export withStateMutation()'
 );
 
 for (const field of OWNED_FIELDS) {
