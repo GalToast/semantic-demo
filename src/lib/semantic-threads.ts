@@ -63,7 +63,10 @@ export function attachLegacyState(stateRef: Record<string, unknown> | unknown): 
 // ── Constants ─────────────────────────────────────────────────────────────────
 
 const SEMANTIC_THREAD_RETRY_DELAYS_MS = [2500, 8000, 15000] as const
-const SEMANTIC_THREAD_WORKER_TIMEOUT_MS = 75_000
+// W6-T5: Increased from 75s to 180s to accommodate 79MB semantic thread artifacts
+// on slower connections. The fetch + JSON.parse of a 79MB file can easily exceed
+// 60s on a 10 Mbps connection.
+const SEMANTIC_THREAD_WORKER_TIMEOUT_MS = 180_000
 
 // ── Worker singleton & hardening ───────────────────────────────────────────────
 
@@ -645,8 +648,9 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
             } catch (err) {
                 // Worker failed — do not fall back to main thread for >40 MB files.
                 _dataWorker = null
+                const cause = err instanceof Error ? err : new Error(String(err))
                 throw new Error('Worker-based thread loading failed (artifacts exceed main-thread budget).', {
-                    cause: err
+                    cause
                 })
             }
         } catch (error) {

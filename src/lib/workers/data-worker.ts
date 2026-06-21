@@ -101,7 +101,7 @@ self.onmessage = async (event: MessageEvent) => {
     try {
         if (type === 'LOAD_RECORDS') {
             const result = await handleLoadRecords(payload)
-            if (requestId !== _activeRequestId && !incomingRequestId) return
+            if (requestId !== _activeRequestId) return
             // Transfer buffers to main thread to eliminate cloning overhead
             ;(self as unknown as { postMessage(message: unknown, transfer?: Transferable[]): void }).postMessage(
                 { type: 'LOAD_RECORDS_SUCCESS', payload: result, requestId },
@@ -109,15 +109,15 @@ self.onmessage = async (event: MessageEvent) => {
             )
         } else if (type === 'LOAD_THREADS') {
             const result = await handleLoadThreads(payload, requestId)
-            if (requestId !== _activeRequestId && !incomingRequestId) return
+            if (requestId !== _activeRequestId) return
             self.postMessage({ type: 'LOAD_THREADS_SUCCESS', payload: result, requestId })
         } else if (type === 'LOAD_LEAD_ENRICHMENT') {
             const result = await handleLoadLeadEnrichment(payload, requestId)
-            if (requestId !== _activeRequestId && !incomingRequestId) return
+            if (requestId !== _activeRequestId) return
             self.postMessage({ type: 'LOAD_LEAD_ENRICHMENT_SUCCESS', payload: result, requestId })
         }
     } catch (error: unknown) {
-        if (requestId !== _activeRequestId && !incomingRequestId) return
+        if (requestId !== _activeRequestId) return
         const err = error instanceof Error ? error : new Error(String(error))
         self.postMessage({
             type: 'ERROR',
@@ -203,14 +203,14 @@ async function handleLoadThreads(
     let lastError: unknown = null
 
     outer: for (const url of urls) {
-        if (requestId !== _activeRequestId) return null
+        if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
         const artifactName = artifactNameFromUrl(url)
         for (const config of attemptConfigs) {
             try {
                 const cacheMode = typeof config === 'string' ? config : (config as AttemptConfig)?.cache
                 const response = await fetch(url, cacheMode ? { cache: cacheMode as RequestCache } : undefined)
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
-                if (requestId !== _activeRequestId) return null
+                if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
                 bundle = await response.json()
                 loadedArtifactName = artifactName
                 break outer
@@ -221,7 +221,7 @@ async function handleLoadThreads(
         }
     }
 
-    if (requestId !== _activeRequestId) return null
+    if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
     if (!bundle) throw lastError || new Error('No thread artifacts could be loaded')
 
     // Transform node map to entries for Map reconstruction on main thread
