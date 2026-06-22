@@ -34,6 +34,8 @@
   // importPending flag + $effect pattern is no longer needed.
 
   import Splash from '@components/Splash.svelte';
+  import Placeholder2D from '@components/Placeholder2D.svelte';
+  import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import Legend from '@components/Legend.svelte';
   import SearchBar from '@components/SearchBar.svelte';
@@ -147,6 +149,12 @@
 
   let { forceDemo = false, noDemo = false }: Props = $props();
   let semanticDiveContractForced = $state(false);
+
+  // W45-A: Decide initial render kind synchronously at mount time.
+  // Mobile / narrow-viewport / automated sessions get the 2D placeholder
+  // so the 587 KB three.js chunk stays off the cold-load critical path.
+  const renderKind = typeof window !== 'undefined' ? getInitialRenderKind() : 'webgl';
+
   const devToolsVisible = import.meta.env.MODE === 'development'
     && typeof window !== 'undefined'
     && (() => {
@@ -456,6 +464,8 @@
   {#if engineReady.value && canvasLazy.current}
     {@const Cmp = canvasLazy.current}
     <Cmp interactive={true} defer={true} />
+  {:else if renderKind === 'placeholder2d'}
+    <Placeholder2D />
   {:else}
     <Splash />
   {/if}

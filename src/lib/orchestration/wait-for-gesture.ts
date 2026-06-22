@@ -44,6 +44,15 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
 
     function handleReady(): void {
         if (fired) return
+        // W45-A: Skip auto-fire when the 2D placeholder is shown; the CTA is the
+        // exclusive gate for entering the 3D scene. On desktop (webgl) this is a
+        // no-op because the render kind is not 'placeholder2d'.
+        if (
+            typeof document !== 'undefined' &&
+            document.body?.dataset?.renderKind === 'placeholder2d'
+        ) {
+            return
+        }
         fired = true
         opts.onReady()
         // Safety: remove all listeners after the cooldown even if teardown wasn't called.

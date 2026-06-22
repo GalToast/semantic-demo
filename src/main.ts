@@ -18,6 +18,7 @@ import { appState } from '@lib/state/app.svelte.ts'
 import { appInit } from '@lib/orchestration/app-init'
 const legacyState = appState as any
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
+import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
 import './lib/css/biofield.css'
 
 // ── URL parameter initialization ──────────────────────────────────────────────
@@ -67,22 +68,41 @@ appInit({ forceDemo, noDemo })
 // Initialize legacy route trace event subscriptions so the Svelte track
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics
 // for visual-audit compatibility.
-// Dynamic import to keep Three.js out of the main bundle
-import('@lib/journey/route-trace')
-    .then(({ initRouteTraceSubscriptions }) => {
-        initRouteTraceSubscriptions()
-    })
-    .catch(() => {})
-
-// W44: Preload journey WebGL overlay modules after initial render so they're
-// available when the user first opens the thread inspector or reaches the
-// arrival phase. The bridge is static, but the heavy overlay modules remain
-// lazy-loaded inside preloadJourneyWebgl().
-preloadJourneyWebgl()
+// W45: These two calls pull `three` into the cold-load modulepreload set:
+// route-trace.ts statically imports three, and preloadJourneyWebgl() dynamic-
+// imports @lib/journey/webgl + thread-inspector-webgl (which static-import
+// three). Firing them at module eval forced the 587 KB three chunk to
+// download+parse on every cold load — the mobile LCP killer (see
+// docs/w44-performance-recheck-2026-06-21.md). Gate them behind the first
+// user gesture so three stays off the network until engaged.
+//
+// Safe to defer: route-trace overlays are only consumed during the demo
+// arrival phase (which begins after splash dismiss = the same gesture), and
+// preloadJourneyWebgl only primes the thread inspector (user-initiated).
+let journeyWebglPreloaded = false
+engineReady.subscribe((ready) => {
+    if (!ready || journeyWebglPreloaded) return
+    journeyWebglPreloaded = true
+    // Dynamic import to keep Three.js out of the main bundle
+    import('@lib/journey/route-trace')
+        .then(({ initRouteTraceSubscriptions }) => {
+            initRouteTraceSubscriptions()
+        })
+        .catch(() => {})
+    // Preload journey WebGL overlay modules so they're available when the
+    // user first opens the thread inspector or reaches the arrival phase.
+    preloadJourneyWebgl()
+})
 
 // ── W6-T1 gesture-driven engine-ready signal ─────────────────────────────────
 // The engine waits for first user gesture (or visibility flip) before any
 // heavy init runs from <Canvas defer />. Idempotent — safe to call once.
+//
+// W45-A: Set the render kind on body BEFORE installing the gesture monitor so
+// the monitor can skip auto-fire when the 2D placeholder is shown on mobile.
+if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.renderKind = getInitialRenderKind()
+}
 const teardownGestureMonitor = installGestureMonitor({
     onReady: () => engineReady.signalReady()
 })
