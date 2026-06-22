@@ -26,8 +26,7 @@ import { readFileSync } from 'node:fs'
 // @ts-ignore
 import { resolve } from 'node:path'
 
-const ORCH = (file: string) =>
-    resolve(import.meta.dirname, `../../src/lib/orchestration/${file}`)
+const ORCH = (file: string) => resolve(import.meta.dirname, `../../src/lib/orchestration/${file}`)
 const src = (file: string) => readFileSync(ORCH(file), 'utf-8')
 
 // ════════════════════════════════════════════════════════════════════════════
@@ -48,9 +47,7 @@ describe('W46-C3: toast.ts contract', () => {
     })
 
     it('showExperienceToast sets body data attrs and dismissToast clears them', async () => {
-        const { showExperienceToast, dismissToast } = await import(
-            `../../src/lib/orchestration/${file}`
-        )
+        const { showExperienceToast, dismissToast } = await import(`../../src/lib/orchestration/${file}`)
         showExperienceToast('Test title', 'Test copy')
         expect(document.body.dataset.toastMessage).toBe('Test title\nTest copy')
         expect(document.body.dataset.toastState).toBe('active')
@@ -328,8 +325,9 @@ describe('W46-C3: event-bus.ts contract', () => {
     })
 
     it('runtime: subscribe + publish + cleanup works end-to-end', async () => {
-        const { subscribe, publish, getSubscriberCount, clearAllSubscribers } =
-            await import(`../../src/lib/orchestration/${file}`)
+        const { subscribe, publish, getSubscriberCount, clearAllSubscribers } = await import(
+            `../../src/lib/orchestration/${file}`
+        )
         clearAllSubscribers() // ensure clean slate
         let received: unknown = null
         const unsub = subscribe('search-summary-changed' as any, (payload: unknown) => {
@@ -344,18 +342,14 @@ describe('W46-C3: event-bus.ts contract', () => {
     })
 
     it('runtime: publish with no subscribers does not throw', async () => {
-        const { publish, clearAllSubscribers } = await import(
-            `../../src/lib/orchestration/${file}`
-        )
+        const { publish, clearAllSubscribers } = await import(`../../src/lib/orchestration/${file}`)
         clearAllSubscribers()
         expect(() => publish('search-summary-changed' as any, {})).not.toThrow()
         clearAllSubscribers()
     })
 
     it('runtime: getSubscriberCount returns 0 for an event with no subscribers', async () => {
-        const { getSubscriberCount, clearAllSubscribers } = await import(
-            `../../src/lib/orchestration/${file}`
-        )
+        const { getSubscriberCount, clearAllSubscribers } = await import(`../../src/lib/orchestration/${file}`)
         clearAllSubscribers()
         expect(getSubscriberCount('search-summary-changed' as any)).toBe(0)
     })
@@ -368,9 +362,7 @@ describe('W46-C3: event-bus.ts contract', () => {
 describe('W46-C3: compass-state.ts contract', () => {
     const file = 'compass-state.ts'
     it('exports CompassStateContext interface', () => {
-        const block = src(file).match(
-            /export\s+interface\s+CompassStateContext\s*\{[\s\S]*?\n\s{2}\}/
-        )
+        const block = src(file).match(/export\s+interface\s+CompassStateContext\s*\{[\s\S]*?\n\s{2}\}/)
         expect(block).not.toBeNull()
         expect(block![0]).toBeTruthy()
     })
@@ -415,12 +407,8 @@ describe('W46-C3: cluster-filter-controller.ts contract', () => {
     const file = 'cluster-filter-controller.ts'
     it('exports CLUSTER_COLORS and CLUSTER_NAMES as readonly arrays', () => {
         const s = src(file)
-        expect(s).toMatch(
-            /export\s+const\s+CLUSTER_COLORS\s*:\s*readonly\s+string\[\]/
-        )
-        expect(s).toMatch(
-            /export\s+const\s+CLUSTER_NAMES\s*:\s*readonly\s+string\[\]/
-        )
+        expect(s).toMatch(/export\s+const\s+CLUSTER_COLORS\s*:\s*readonly\s+string\[\]/)
+        expect(s).toMatch(/export\s+const\s+CLUSTER_NAMES\s*:\s*readonly\s+string\[\]/)
     })
 
     it('exports 8 functions: lookup, state mutators, async refresh, sync', () => {
@@ -440,16 +428,18 @@ describe('W46-C3: cluster-filter-controller.ts contract', () => {
         )
     })
 
-    it('runtime: CLUSTER_COLORS and CLUSTER_NAMES are non-empty arrays', async () => {
-        // Note: as of this commit, CLUSTER_COLORS (20) and CLUSTER_NAMES (21)
-        // differ in length by 1 -- a known data inconsistency in the source.
-        // This test just confirms both are present and populated; the length
-        // mismatch should be tracked separately and is out of scope for W46-C3.
+    it('runtime: CLUSTER_COLORS and CLUSTER_NAMES have equal length and are non-empty', async () => {
+        // CLUSTER_COLORS[i] is the color paired with CLUSTER_NAMES[i]. If the
+        // arrays differ in length, indexing wraps modulo and the last few
+        // names get the wrong color (or, worse, undefined falls through to
+        // a hardcoded fallback). Asserting length-equality is the actual
+        // invariant the runtime code relies on.
         const mod = await import(`../../src/lib/orchestration/${file}`)
         expect(Array.isArray(mod.CLUSTER_COLORS)).toBe(true)
         expect(Array.isArray(mod.CLUSTER_NAMES)).toBe(true)
         expect(mod.CLUSTER_COLORS.length).toBeGreaterThan(0)
         expect(mod.CLUSTER_NAMES.length).toBeGreaterThan(0)
+        expect(mod.CLUSTER_COLORS.length).toBe(mod.CLUSTER_NAMES.length)
     })
 
     it('runtime: findClusterByKeyword returns number or null', async () => {
@@ -475,9 +465,7 @@ describe('W46-C3: cluster-filter-controller.ts contract', () => {
 describe('W46-C3: window-actions.ts contract', () => {
     const file = 'window-actions.ts'
     it('exports installWindowActions function returning cleanup', () => {
-        expect(src(file)).toMatch(
-            /export\s+function\s+installWindowActions\s*\(\s*\)\s*:\s*\(\s*\)\s*=>\s*void/
-        )
+        expect(src(file)).toMatch(/export\s+function\s+installWindowActions\s*\(\s*\)\s*:\s*\(\s*\)\s*=>\s*void/)
     })
 
     it('installs debug/test window globals (__APP_ACTIONS__ etc.)', () => {
@@ -487,9 +475,7 @@ describe('W46-C3: window-actions.ts contract', () => {
     })
 
     it('runtime: installWindowActions returns a cleanup function', async () => {
-        const { installWindowActions } = await import(
-            `../../src/lib/orchestration/${file}`
-        )
+        const { installWindowActions } = await import(`../../src/lib/orchestration/${file}`)
         const cleanup = installWindowActions()
         expect(typeof cleanup).toBe('function')
         cleanup()

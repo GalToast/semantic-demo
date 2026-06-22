@@ -32,7 +32,8 @@ export const CLUSTER_COLORS: readonly string[] = [
   "#4ecdc4", "#ff6b6b", "#ffe66d", "#a8e6cf", "#ffd3b6",
   "#c7ceea", "#f8b500", "#7dd3fc", "#fda4af", "#a5f3fc",
   "#fdba74", "#bfdbfe", "#fecaca", "#d8b4fe", "#bbf7d0",
-  "#fef08a", "#fecaca", "#e9d5ff", "#fde68a", "#fed7aa"
+  "#fef08a", "#bae6fd", "#e9d5ff", "#fde68a", "#fed7aa",
+  "#ddd6fe"
 ] as const;
 
 export const CLUSTER_NAMES: readonly string[] = [
