@@ -94,7 +94,12 @@ npm run qa:surface:all
 npm run qa:surface:mobile-idle
 npm run test:microdemo
 npm run serve
+npm run audit:a11y           # a11y lint for src/components/*.svelte (tabulated)
+npm run audit:a11y:strict    # same, exit 1 on any HIGH finding
+npm run audit:a11y:json      # same, machine-readable JSON
 ```
+
+`scripts/audit-a11y.mjs` checks 8 rules: button type, button aria-label, form input id/aria, interactive non-semantic containers, image alt, low-alpha colors, outline suppression, aria-hidden wrapping focusable children. Use `--file=<Substring>` and `--severity=HIGH|MED|LOW` to filter.
 
 Use narrower checks when validating a scoped change.
 
