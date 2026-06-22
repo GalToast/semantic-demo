@@ -1,105 +1,136 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <title>Semantic Explorer | MoCo Business Mycelium</title>
-  <meta name="description" content="Explore 8,406 Montgomery County businesses through a 3D semantic explorer mapping similarity and neighborhood context.">
-  <meta name="theme-color" content="#071018">
-  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,600;12..96,700;12..96,800&family=Nunito+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+        <title>Semantic Explorer | MoCo Business Mycelium</title>
+        <meta
+            name="description"
+            content="Explore 8,406 Montgomery County businesses through a 3D semantic explorer mapping similarity and neighborhood context."
+        />
+        <meta name="theme-color" content="#071018" />
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+        <!-- W45-A.3: Self-hosted fonts. The 3 variable-font woff2 files (~127 KB) replace the
+       ~190 ms googleapis.com RTT. Nunito Sans is the body font, so it's preloaded
+       for a synchronous fetch; Bricolage Grotesque + JetBrains Mono follow via the
+       regular CSS cascade. -->
+        <link
+            rel="preload"
+            href="/fonts/nunito-sans-latin-29e3890496.woff2"
+            as="font"
+            type="font/woff2"
+            crossorigin="anonymous"
+        />
+        <link rel="stylesheet" href="/fonts/fonts.css" />
 
-  <!--
+        <link
+            rel="icon"
+            href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>M</text></svg>"
+        />
+
+        <!--
     Z-index layer CSS custom properties.
     Import this or reference via z-layers.css in component <style> blocks.
   -->
-  <style>
-    :root {
-      --z-canvas: 0;
-      --z-field-nodes: 10;
-      --z-threads: 20;
-      --z-overlays: 30;
-      --z-legend: 50;
-      --z-panels: 80;
-      --z-panels-elevated: 90;
-      --z-search: 100;
-      --z-journey-chrome: 200;
-      --z-journey-active: 500;
-      --z-focus-card: 600;
-      --z-compass: 700;
-      --z-controls: 800;
-      --z-journey-block: 900;
-      --z-blocker: 1000;
-      --z-journey-modal: 2000;
-      --z-loading: 3000;
-    }
+        <style>
+            :root {
+                --z-canvas: 0;
+                --z-field-nodes: 10;
+                --z-threads: 20;
+                --z-overlays: 30;
+                --z-legend: 50;
+                --z-panels: 80;
+                --z-panels-elevated: 90;
+                --z-search: 100;
+                --z-journey-chrome: 200;
+                --z-journey-active: 500;
+                --z-focus-card: 600;
+                --z-compass: 700;
+                --z-controls: 800;
+                --z-journey-block: 900;
+                --z-blocker: 1000;
+                --z-journey-modal: 2000;
+                --z-loading: 3000;
+            }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+            *,
+            *::before,
+            *::after {
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+            }
 
-    html, body {
-      width: 100%;
-      height: 100%;
-      overflow: hidden;
-      background: #071018;
-      color: #e0f0f0;
-      font-family: 'Nunito Sans', sans-serif;
-    }
+            html,
+            body {
+                width: 100%;
+                height: 100%;
+                overflow: hidden;
+                background: #071018;
+                color: #e0f0f0;
+                font-family: 'Nunito Sans', sans-serif;
+            }
 
-    /* Skip link for accessibility */
-    .skip-link {
-      position: absolute;
-      top: -100%;
-      left: 0;
-      z-index: 9999;
-      padding: 0.5rem 1rem;
-      background: #0d2137;
-      color: #4ecdc4;
-      text-decoration: none;
-    }
-    .skip-link:focus { top: 0; }
+            /* Skip link for accessibility */
+            .skip-link {
+                position: absolute;
+                top: -100%;
+                left: 0;
+                z-index: 9999;
+                padding: 0.5rem 1rem;
+                background: #0d2137;
+                color: #4ecdc4;
+                text-decoration: none;
+            }
+            .skip-link:focus {
+                top: 0;
+            }
 
-    /* App root fills viewport */
-    #app {
-      width: 100%;
-      height: 100%;
-      position: relative;
-    }
-  </style>
+            /* App root fills viewport */
+            #app {
+                width: 100%;
+                height: 100%;
+                position: relative;
+            }
+        </style>
 
-  <!--
+        <!--
     NOTE: The existing CSS files (semantic-demo.css, mobile_premium__*.css, etc.)
     will be loaded here during migration coexistence. For now, they are NOT loaded
     to keep the scaffold clean. Add them back as needed during phased migration.
   -->
-</head>
-<body
-  data-panel-surface="idle"
-  data-journey-phase="idle"
-  data-journey-compass="idle"
-  data-demo-phase="IDLE"
-  data-strand-journey="idle"
->
-  <a href="#main-content" class="skip-link">Skip to main content</a>
+    </head>
+    <body
+        data-panel-surface="idle"
+        data-journey-phase="idle"
+        data-journey-compass="idle"
+        data-demo-phase="IDLE"
+        data-strand-journey="idle"
+    >
+        <a href="#main-content" class="skip-link">Skip to main content</a>
 
-  <!-- SVG icon sprite (hidden) -->
-  <svg class="semantic-icon-sprite" width="0" height="0" aria-hidden="true" focusable="false"
-    style="position:absolute;inline-size:0;block-size:0;overflow:hidden">
-    <!-- Icon symbols will be migrated here during component development -->
-  </svg>
+        <!-- SVG icon sprite (hidden) -->
+        <svg
+            class="semantic-icon-sprite"
+            width="0"
+            height="0"
+            aria-hidden="true"
+            focusable="false"
+            style="position: absolute; inline-size: 0; block-size: 0; overflow: hidden"
+        >
+            <!-- Icon symbols will be migrated here during component development -->
+        </svg>
 
-  <!-- Svelte mounts here -->
-  <div id="app"></div>
+        <!-- Svelte mounts here -->
+        <div id="app"></div>
 
-  <!--
+        <!--
     Legacy app shell for coexistence. During migration, both the old
     vector-explorer-polished.html and this Svelte shell can coexist.
     Remove this block once migration is complete.
   -->
-  <div id="app-root" style="display:none;"></div>
+        <div id="app-root" style="display: none"></div>
 
-  <script type="module" src="/src/main.ts"></script>
-</body>
+        <script type="module" src="/src/main.ts"></script>
+    </body>
 </html>
