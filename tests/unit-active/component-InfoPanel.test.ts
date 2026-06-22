@@ -27,16 +27,23 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 const INFO_PANEL_PATH = resolve(__dirname, '../../src/components/InfoPanel.svelte')
+const INFO_PANEL_CSS_PATH = resolve(__dirname, '../../src/components/InfoPanel.css')
 
 function readSource(): string {
     return readFileSync(INFO_PANEL_PATH, 'utf-8')
 }
 
+function readCssSource(): string {
+    return readFileSync(INFO_PANEL_CSS_PATH, 'utf-8')
+}
+
 describe('InfoPanel component', () => {
     let source: string
+    let css: string
 
     beforeAll(() => {
         source = readSource()
+        css = readCssSource()
     })
 
     it('root aside#info-panel has aria-label and aria-live', () => {
@@ -77,7 +84,8 @@ describe('InfoPanel component', () => {
 
     it('#selected-role-badge and .selected-hero elements exist', () => {
         expect(source).toContain('id="selected-role-badge"')
-        expect(source).toContain('.selected-role-badge')
+        // Class selector lives in the sibling CSS file (extracted in W46-E).
+        expect(css).toContain('.selected-role-badge')
         expect(source).toContain('class="selected-hero"')
     })
 
