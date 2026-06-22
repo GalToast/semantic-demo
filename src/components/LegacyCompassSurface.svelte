@@ -9,9 +9,9 @@
       <div id="journey-compass-title"></div>
       <div id="journey-compass-note"></div>
       <div class="journey-compass-actions">
-        <button id="btn-journey-primary"></button>
-        <button id="btn-journey-secondary"></button>
-    <button id="btn-journey-tertiary"></button>
+        <button id="btn-journey-primary" aria-label="Begin primary journey step"></button>
+        <button id="btn-journey-secondary" aria-label="Begin secondary journey step"></button>
+    <button id="btn-journey-tertiary" aria-label="Begin tertiary journey step"></button>
       </div>
     </section>
     <div id="map-trail-strip" hidden></div>

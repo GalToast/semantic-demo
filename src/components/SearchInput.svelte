@@ -220,6 +220,7 @@
     </svg>
     <input
       id="search-input"
+      aria-label="Search businesses"
       type="search"
       class="search-input"
       {placeholder}
@@ -231,7 +232,6 @@
       autocapitalize="off"
       spellcheck="false"
       role="combobox"
-      aria-label="Search businesses"
       aria-controls="search-result-list"
       aria-haspopup="listbox"
       aria-expanded={hasQuery}

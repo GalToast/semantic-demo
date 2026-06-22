@@ -2,8 +2,8 @@
  * component-CompassRail.test.ts — Component test for CompassRail.svelte
  *
  * Verifies:
- *  1. Renders div.compass-rail with role="navigation" and aria-label="Journey compass"
- *  2. Root element has id="compass-rail"
+ *  1. Renders <nav class="compass-rail" id="compass-rail"> with aria-label="Journey compass"
+ *  2. Root element has id="compass-rail" and is a <nav> landmark (implicit role="navigation")
  *  3. Renders each compass step as a button.compass-step
  *  4. Each step button has aria-label starting with "Navigate to"
  *  5. Each step contains a .step-dot span and .step-label span
@@ -16,19 +16,19 @@ import { render } from '@testing-library/svelte';
 import CompassRail from '../../src/components/CompassRail.svelte';
 
 describe('CompassRail component', () => {
-    it('renders div.compass-rail with role="navigation" and aria-label="Journey compass"', () => {
+    it('renders nav.compass-rail with aria-label="Journey compass"', () => {
         const { container } = render(CompassRail, { props: { visible: true } });
         const rail = container.querySelector('.compass-rail');
         expect(rail).toBeTruthy();
-        expect(rail!.getAttribute('role')).toBe('navigation');
+        expect(rail!.tagName).toBe('NAV');
         expect(rail!.getAttribute('aria-label')).toBe('Journey compass');
     });
 
-    it('root element has id="compass-rail"', () => {
+    it('root element has id="compass-rail" as a navigation landmark', () => {
         const { container } = render(CompassRail, { props: { visible: true } });
         const rail = container.querySelector('#compass-rail');
         expect(rail).toBeTruthy();
-        expect(rail!.tagName).toBe('DIV');
+        expect(rail!.tagName).toBe('NAV');
     });
 
     it('renders each compass step as a button.compass-step', () => {

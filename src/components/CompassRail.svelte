@@ -102,13 +102,12 @@
 </script>
 
 {#if visible}
-  <div
+  <nav
     class="compass-rail compass-steps"
     class:active={compassPhase() === 'active'}
     class:checking={compassPhase() === 'checking'}
     class:synthesizing={compassPhase() === 'synthesizing'}
     id="compass-rail"
-    role="navigation"
     aria-label="Journey compass"
     onpointerdown={(e) => e.stopPropagation()}
     onwheel={(e) => e.stopPropagation()}
@@ -128,8 +127,8 @@
         <span class="step-dot"></span>
         <span class="step-label">{step.phase}</span>
       </button>
-    {/each}
-  </div>
+        {/each}
+  </nav>
 {/if}
 
 <style>

@@ -158,6 +158,7 @@
       <h4 class="filter-group-title">City</h4>
       <select
         id="city-filter"
+        aria-label="Filter by city"
         class="city-filter"
         value={getFilterState().city}
         onchange={handleCityChange}
