@@ -494,6 +494,8 @@ class AppState {
     infoPanelOpen = $state<boolean>(true)
     pocketListVisible = $state<boolean>(false)
     semanticNeighborMapByLeadId = $state<Map<string, any>>(new Map())
+    semanticThreadBundle = $state<unknown>(null)
+    semanticThreadArtifactName = $state<string | null>(null)
 
     // ==== CAMERA / ANIMATION STATE ====
     autoRotateResumeTimer = $state<ReturnType<typeof setTimeout> | null>(null)
