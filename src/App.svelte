@@ -18,7 +18,6 @@
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
   import { resetSemanticThreadWorker } from '@lib/semantic-threads';
-  const legacyState = appState as any;
   import { appState } from '@lib/state/app.svelte.ts';
   import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
   import { updateUrlState } from '@lib/orchestration/url-state';
