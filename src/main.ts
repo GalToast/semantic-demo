@@ -219,4 +219,23 @@ window.addEventListener('beforeunload', () => {
     if (app) unmount(app)
 })
 
+// Hot Module Replacement (dev mode only): Vite re-executes this module on
+// every hot reload, but unlike page navigation it does not fire
+// `beforeunload`. Without explicit cleanup, appInit subscriptions, window
+// listeners, gesture-monitor timers, and the previously mounted App all
+// leak across reloads -- visible as duplicate subscriptions, growing
+// memory, and stale renders in dev.
+//
+// Mirror the beforeunload cleanup in import.meta.hot.dispose so dev
+// sessions stay sane. Production builds tree-shake this branch.
+if (import.meta.hot) {
+    import.meta.hot.dispose(() => {
+        unsubTestState()
+        cleanupWindowActions()
+        teardownGestureMonitor()
+        appInitCleanup?.()
+        if (app) unmount(app)
+    })
+}
+
 export default app
