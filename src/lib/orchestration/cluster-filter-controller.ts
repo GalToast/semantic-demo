@@ -28,21 +28,12 @@ import type { ActiveFilters } from "@lib/types/state";
 
 // ── Configuration (ported from js/modules/config.js) ───────────────────────────
 
-export const CLUSTER_COLORS: readonly string[] = [
-  "#4ecdc4", "#ff6b6b", "#ffe66d", "#a8e6cf", "#ffd3b6",
-  "#c7ceea", "#f8b500", "#7dd3fc", "#fda4af", "#a5f3fc",
-  "#fdba74", "#bfdbfe", "#fecaca", "#d8b4fe", "#bbf7d0",
-  "#fef08a", "#bae6fd", "#e9d5ff", "#fde68a", "#fed7aa",
-  "#ddd6fe"
-] as const;
-
-export const CLUSTER_NAMES: readonly string[] = [
-  "General Business", "Professional Services", "Food & Hospitality", "Construction & Trades",
-  "Retail & Shops", "Beauty & Wellness", "Real Estate & Property", "Industrial & Logistics",
-  "Agriculture & Ranching", "Automotive", "Healthcare & Medical", "Therapy & Counseling",
-  "Education & Childcare", "Churches", "Faith Ministries", "Community Nonprofits",
-  "Foundations", "Arts & Culture", "Economic Development", "Public Agencies", "Enterprise Brands"
-] as const;
+// Canonical cluster taxonomy is now sourced from cluster-metadata.ts.
+// Imported here for use by internal functions in this file, and
+// re-exported so existing consumers of @lib/orchestration/cluster-
+// filter-controller continue to work without import path changes.
+import { CLUSTER_COLORS, CLUSTER_NAMES } from './cluster-metadata'
+export { CLUSTER_COLORS, CLUSTER_NAMES }
 
 const MAX_VISIBLE_CLUSTERS = 8;
 

@@ -405,10 +405,24 @@ describe('W46-C3: compass-state.ts contract', () => {
 
 describe('W46-C3: cluster-filter-controller.ts contract', () => {
     const file = 'cluster-filter-controller.ts'
-    it('exports CLUSTER_COLORS and CLUSTER_NAMES as readonly arrays', () => {
+    it('exports CLUSTER_COLORS and CLUSTER_NAMES (as readonly const or re-export)', () => {
+        // W47: cluster-filter-controller.ts now re-exports these from the
+        // sibling ./cluster-metadata module rather than declaring them
+        // inline. Accept either form so this assertion survives both
+        // declarations.
         const s = src(file)
-        expect(s).toMatch(/export\s+const\s+CLUSTER_COLORS\s*:\s*readonly\s+string\[\]/)
-        expect(s).toMatch(/export\s+const\s+CLUSTER_NAMES\s*:\s*readonly\s+string\[\]/)
+        expect(s).toMatch(/export\s+(?:const\s+CLUSTER_COLORS|\{[^}]*CLUSTER_COLORS)/)
+        expect(s).toMatch(/export\s+(?:const\s+CLUSTER_NAMES|\{[^}]*CLUSTER_NAMES)/)
+    })
+
+    it('imports CLUSTER_COLORS and CLUSTER_NAMES from ./cluster-metadata (W47 source)', () => {
+        // The canonical taxonomy now lives in ./cluster-metadata.ts; this
+        // file imports from there. Guards against accidentally reintroducing
+        // inline declarations (the bug class W47 was created to fix).
+        const s = src(file)
+        expect(s).toMatch(/from\s+['"]\.\/cluster-metadata['"]/)
+        expect(s).toMatch(/CLUSTER_COLORS/)
+        expect(s).toMatch(/CLUSTER_NAMES/)
     })
 
     it('exports 8 functions: lookup, state mutators, async refresh, sync', () => {
