@@ -84,15 +84,33 @@ function auditFile(filePath) {
     lines.forEach((line, index) => {
         const lineNum = index + 1
 
-        // rule_1 quick pass (multi-line parser refines below)
-        if (line.includes('<button') && !line.includes('type=')) {
-            pushOnce({
-                file: baseName,
-                line: lineNum,
-                severity: 'LOW',
-                rule: 1,
-                desc: 'Button element without explicit type attribute'
-            })
+        // rule_1 quick pass (arrow-function safe: skips ">" preceded by "=" to ignore lambda arrow)
+        if (line.includes('<button')) {
+            const btnOffset = content.indexOf('<button', content.indexOf(line))
+            if (btnOffset !== -1) {
+                let endOffset = btnOffset
+                let angleDepth = 0
+                for (let i = btnOffset; i < content.length; i++) {
+                    const c = content[i]
+                    if (c === '<') angleDepth++
+                    else if (c === '>') {
+                        if (content[i - 1] === '=') continue
+                        if (angleDepth > 1) { angleDepth--; continue }
+                        endOffset = i
+                        break
+                    }
+                }
+                const tagAttrs = content.substring(btnOffset, endOffset + 1)
+                if (!/type\s*=/.test(tagAttrs)) {
+                    pushOnce({
+                        file: baseName,
+                        line: lineNum,
+                        severity: 'LOW',
+                        rule: 1,
+                        desc: 'Button element without explicit type attribute'
+                    })
+                }
+            }
         }
 
         // rule_3 quick pass (cross-line aware: avoids false positives on multi-line input/select/textarea tags)
@@ -200,8 +218,19 @@ function auditFile(filePath) {
         const lineNumber = content.substring(0, offset).split('\n').length
 
         if (tagName === 'button') {
-            const typeLiteral = attrsText.match(/type=["']([^"']+)["']/i)
-            const typeExpression = attrsText.match(/type=\{/)
+            // Refind the actual closing > with arrow-function safety, in case attrsText
+            // got truncated prematurely by the [^>]*? regex's stop at the first ">".
+            let buttonEndOffset = offset + fullTag.length
+            for (let i = offset + 1; i < content.length; i++) {
+                const ch = content[i]
+                if (ch === '>' && content[i - 1] !== '=') {
+                    buttonEndOffset = i + 1
+                    break
+                }
+            }
+            const buttonAttrs = content.substring(offset, buttonEndOffset)
+            const typeLiteral = buttonAttrs.match(/type=["']([^"']+)["']/i)
+            const typeExpression = buttonAttrs.match(/type=\{/)
             if (!typeLiteral && !typeExpression) {
                 pushOnce({
                     file: baseName,

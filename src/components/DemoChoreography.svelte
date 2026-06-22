@@ -121,7 +121,7 @@
     aria-live="polite"
     aria-label="Guided demo"
   >
-    <button class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo">&times;</button>
+    <button type="button" class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo">&times;</button>
     <p class="demo-status">{phaseLabels[demoPhase()] ?? demoPhase()}</p>
   </div>
 {/if}

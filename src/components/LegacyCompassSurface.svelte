@@ -9,13 +9,13 @@
       <div id="journey-compass-title"></div>
       <div id="journey-compass-note"></div>
       <div class="journey-compass-actions">
-        <button id="btn-journey-primary" aria-label="Begin primary journey step"></button>
-        <button id="btn-journey-secondary" aria-label="Begin secondary journey step"></button>
-    <button id="btn-journey-tertiary" aria-label="Begin tertiary journey step"></button>
+        <button type="button" id="btn-journey-primary" aria-label="Begin primary journey step"></button>
+        <button type="button" id="btn-journey-secondary" aria-label="Begin secondary journey step"></button>
+    <button type="button" id="btn-journey-tertiary" aria-label="Begin tertiary journey step"></button>
       </div>
     </section>
     <div id="map-trail-strip" hidden></div>
-    <button id="btn-focus-dive" hidden>...</button>
+    <button type="button" id="btn-focus-dive" hidden>...</button>
 
   This is the Svelte-side replacement for the DOM that
   js/modules/journey-compass-controller.js + semantic-dive-ui.js

@@ -235,7 +235,7 @@
       onfocusin={handleModeFocusin}
     >
       {#each modes as mode (mode.id)}
-        <button
+        <button type="button"
           class="mode-chip"
           class:active={isActive(mode.id)}
           role="radio"

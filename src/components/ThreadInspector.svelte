@@ -130,7 +130,7 @@
     >
       <div class="inspector-header">
         <span class="focus-thread-inspector-kicker">Connection Preview</span>
-        <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
+        <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
         {inspectedIndex != null ? `Thread connection to node ${inspectedIndex}` : 'Connection Inspector'}
@@ -196,7 +196,7 @@
     >
       <div class="inspector-header">
         <span class="focus-thread-inspector-kicker">Connection Preview</span>
-        <button class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
+        <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
         Connection Inspector

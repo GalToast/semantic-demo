@@ -34,7 +34,13 @@ import { setEngineStatus, getEngineStatus as _getEngineStatus } from '@lib/store
 import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 
 // Engine sub-modules
-import { initThreeJS, onWindowResize, cancelAnimate, updateCameraViewportOffset, createPoints } from '@lib/engine/three-engine'
+import {
+    initThreeJS,
+    onWindowResize,
+    cancelAnimate,
+    updateCameraViewportOffset,
+    createPoints
+} from '@lib/engine/three-engine'
 import { destroyMap } from '@lib/engine/map-state'
 import { createMycelium } from '@lib/engine/thread-manager'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
