@@ -23,6 +23,13 @@ function read(path, label) {
 
 const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts')
 const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts')
+// Post-W46: the WebGL-fallback switchView('map') dispatch moved into
+// renderer/webgl-fallback.ts (showWebGLFallback), invoked by three-engine via
+// the fallback button handler. The dewindowing invariant (no window.switchView)
+// must hold across both modules.
+const webglFallbackPath = resolve(CWD, 'src/lib/engine/renderer/webgl-fallback.ts')
+const webglFallbackSrc = read(webglFallbackPath, 'src/lib/engine/renderer/webgl-fallback.ts')
+const fallbackCombinedSrc = threeSetupSrc + '\n' + webglFallbackSrc
 // TS split (post-W7): app-init.ts delegates bootstrap through @lib/orchestration/lifecycle.
 // engine/lifecycle.ts is the canonical home of the initThreeJS() call site, replacing the
 // retired engine/adapters/lifecycle-bridge.ts shim. Kept here for W8-A bridge retirement
@@ -98,9 +105,9 @@ const checks = [
         // dispatch pattern, not just the bare switchView('map') legacy form.
         name: 'three-engine WebGL fallback calls switchView directly',
         pass:
-            /switchView\s*\(\s*['"]map['"]\s*\)/.test(threeSetupSrc) ||
-            /\bswitchView\s*\(\s*['"]map['"]\s*\)/.test(threeSetupSrc) ||
-            (/['"]map['"]/.test(threeSetupSrc) && /switchView/.test(threeSetupSrc))
+            /switchView\s*\(\s*['"]map['"]\s*\)/.test(fallbackCombinedSrc) ||
+            /\bswitchView\s*\(\s*['"]map['"]\s*\)/.test(fallbackCombinedSrc) ||
+            (/['"]map['"]/.test(fallbackCombinedSrc) && /switchView/.test(fallbackCombinedSrc))
     },
     {
         name: 'three-engine does not call window.switchView',

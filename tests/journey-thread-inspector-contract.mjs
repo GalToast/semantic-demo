@@ -54,6 +54,13 @@ function assertNotContains(haystack, needle, label) {
     assert(!found, `${label}: source should NOT contain "${needle}" (removed dead code), but it was found`)
 }
 
+// Whitespace/paren-tolerant matcher for ternary brightness factors that a style
+// sweep (no-semicolons, multi-line ternaries) may reflow across lines. Matches
+// the value sequence regardless of formatting, with optional parentheses.
+function assertMatches(haystack, regex, label) {
+    assert(regex.test(haystack), `${label}: expected source to match ${regex}, but it did not`)
+}
+
 function getThreadInspectorDiagnosticBlock(src) {
     const probeStart = src.indexOf("registerDiagnosticProbe('_ti', {")
     if (probeStart !== -1) {
@@ -177,17 +184,17 @@ function testApplyPointFilterColorsFactorRanges() {
     assertContains(pointColorSrc, 'Math.max(raw, nodeMinFloor)', 'nodeMinFloor applied via Math.max')
 
     // Trail mode unvisited factor must be >= 0.08 (not invisible)
-    assertContains(
+    assertMatches(
         pointColorSrc,
-        'isVisited ? 1.18 : (semanticFocus ? 0.24 : 0.18)',
+        /isVisited\s*\?\s*1\.18\s*:\s*\(?\s*semanticFocus\s*\?\s*0\.24\s*:\s*0\.18\s*\)?/,
         'trail mode unvisited factor >= 0.18'
     )
-    assertContains(pointColorSrc, 'isVisited ? 1.18 : 0.28', 'trail mode pre-trailIndices unvisited factor')
+    assertMatches(pointColorSrc, /isVisited\s*\?\s*1\.18\s*:\s*0\.28/, 'trail mode pre-trailIndices unvisited factor')
 
     // Pocket mode non-focusLocalIndices factor must be >= 0.22
-    assertContains(
+    assertMatches(
         pointColorSrc,
-        'isVisited ? 1.28 : (semanticFocus ? 0.32 : 0.22)',
+        /isVisited\s*\?\s*1\.28\s*:\s*\(?\s*semanticFocus\s*\?\s*0\.32\s*:\s*0\.22\s*\)?/,
         'pocket mode non-focusLocal factor >= 0.22'
     )
 
@@ -195,7 +202,7 @@ function testApplyPointFilterColorsFactorRanges() {
     assertContains(pointColorSrc, 'visible ? 1 : 0.08', 'invisible factor is 0.08')
 
     // Focus anchor factor must be brightest (> 2.0)
-    assertContains(pointColorSrc, 'i === _state.navState.focusedIndex ? 2.14', 'focus anchor factor 2.14')
+    assertMatches(pointColorSrc, /i\s*===\s*_state\.navState\.focusedIndex\s*\?\s*2\.14/, 'focus anchor factor 2.14')
 
     console.log('  OK applyPointFilterColors factor ranges verified')
 }

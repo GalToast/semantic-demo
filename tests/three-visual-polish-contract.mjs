@@ -8,6 +8,11 @@ const appPath = path.join(repoRoot, 'src', 'lib', 'orchestration', 'app-init.ts'
 const app = fs.readFileSync(appPath, 'utf8')
 const threeSetupPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine.ts')
 const threeSetup = fs.readFileSync(threeSetupPath, 'utf8')
+// Post-W46-P2: scene graph construction (camera pose, clear alpha, tone mapping)
+// was extracted into renderer/scene-init.ts. Visual-polish assertions check both.
+const sceneInitPath = path.join(repoRoot, 'src', 'lib', 'engine', 'renderer', 'scene-init.ts')
+const sceneInit = fs.existsSync(sceneInitPath) ? fs.readFileSync(sceneInitPath, 'utf8') : ''
+const sceneGraphSrc = threeSetup + '\n' + sceneInit
 const nodeManagerPath = path.join(repoRoot, 'src', 'lib', 'engine', 'node-manager.ts')
 const nodeManager = fs.readFileSync(nodeManagerPath, 'utf8')
 const threadManagerPath = path.join(repoRoot, 'src', 'lib', 'engine', 'thread-manager.ts')
@@ -89,8 +94,15 @@ const initThreeSource = sectionBetween(
 )
 includesAll(
     initThreeSource,
-    ['camera.position.set(2.05, 1.55, 2.75)', 'createPoints()', 'createMycelium()', 'compilePointMaterialForReadiness'],
+    ['createPoints()', 'createMycelium()', 'compilePointMaterialForReadiness'],
     'three-engine init should build points and mycelium before readiness'
+)
+// Camera overview pose moved into renderer/scene-init.ts (buildThreeScene) during
+// the W46-P2 extraction; verify it survives in either the engine or the extracted
+// scene-init module.
+assert(
+    sceneGraphSrc.includes('camera.position.set(2.05, 1.55, 2.75)'),
+    'three-engine init should build points and mycelium before readiness missing camera.position.set(2.05, 1.55, 2.75)'
 )
 
 includesAll(
@@ -106,12 +118,12 @@ includesAll(
 )
 
 assert(
-    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.22 : 0.5) : 0;'),
+    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.22 : 0.5) : 0'),
     'selected node filament opacity should be visible enough to read as a halo'
 )
 assert(
-    interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0;') &&
-        interactionVisuals.includes('const auraScale = isInside ? 0.044 : 0.082;'),
+    interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0') &&
+        interactionVisuals.includes('const auraScale = isInside ? 0.044 : 0.082'),
     'focus halo should stay restrained so it does not wash out the selected-node scene'
 )
 
