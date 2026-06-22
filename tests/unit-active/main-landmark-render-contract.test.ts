@@ -58,7 +58,10 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
     const mainStart = appSrc.indexOf('<main id="main-content"');
     const mainEnd = appSrc.indexOf('</main>', mainStart);
     const mainContent = appSrc.substring(mainStart, mainEnd);
-    expect(mainContent).toContain('<Canvas');
+    // W46-B2b: lazy components render via {@const Cmp = xxxLazy.current} + <Cmp />,
+    // so we assert the gating condition is inside main rather than the literal
+    // component tag name (which now appears only as `Cmp`).
+    expect(mainContent).toContain('canvasLazy.current');
   });
 
   it('contains Legend inside the main element', () => {
@@ -79,6 +82,8 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
     const mainStart = appSrc.indexOf('<main id="main-content"');
     const mainEnd = appSrc.indexOf('</main>', mainStart);
     const mainContent = appSrc.substring(mainStart, mainEnd);
-    expect(mainContent).toMatch(/<InfoPanel(?:Component)?\s/);
+    // W46-B2b: see Canvas test above. The lazy-handle gating condition is
+    // the source of truth for "this component renders inside main".
+    expect(mainContent).toContain('infoPanelLazy.current');
   });
 });

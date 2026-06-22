@@ -94,8 +94,13 @@ describe('W11-T7: adapters.ts imports all 11 adapter init functions from canonic
         it(`imports ${name}`, () => {
             const source = ADAPTER_IMPORT_SOURCES[name]
             const escapedSource = source.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-            const pattern = new RegExp(`import\\s+\\{[^}]*\\b${name}\\b[^}]*\\}\\s+from\\s+['"]${escapedSource}['"]`)
-            expect(pattern.test(src)).toBe(true)
+            // Accept either a static `import { name } from source` or a
+            // dynamic `import(source)` (the route-trace adapter is loaded
+            // dynamically as part of W45 perf work to keep three.js out of
+            // the cold-load modulepreload set).
+            const staticPattern = new RegExp(`import\\s+\\{[^}]*\\b${name}\\b[^}]*\\}\\s+from\\s+['"]${escapedSource}['"]`)
+            const dynamicPattern = new RegExp(`import\\(\\s*['"]${escapedSource}['"]\\s*\\)`)
+            expect(staticPattern.test(src) || dynamicPattern.test(src)).toBe(true)
         })
     }
 })
@@ -180,6 +185,14 @@ describe('W11-T7: runtime — initAdapters() invokes all 11 adapters', () => {
         // Should not throw
         expect(() => initAdapters(mockDeps)).not.toThrow()
 
+        // W45: initRouteTraceSubscriptions is now loaded via dynamic import
+        // (route-trace statically imports three.js for WebGL overlay rendering;
+        // deferring keeps three out of the cold-load modulepreload set). The
+        // dynamic import is fire-and-forget inside initAdapters, so we wait
+        // for the microtask + dynamic-resolution cycle to complete before
+        // asserting.
+        await new Promise((resolve) => setTimeout(resolve, 50))
+
         // All 11 should have been called exactly once
         for (const name of ADAPTER_INIT_NAMES) {
             expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
@@ -190,6 +203,7 @@ describe('W11-T7: runtime — initAdapters() invokes all 11 adapters', () => {
 
         // Calling again should be a no-op (still 1 call each)
         initAdapters(mockDeps)
+        await new Promise((resolve) => setTimeout(resolve, 50))
         for (const name of ADAPTER_INIT_NAMES) {
             expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
         }

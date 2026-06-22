@@ -27,50 +27,57 @@
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
 
-  // W6-T2: Lazy-loaded components use a generic type to avoid Vite analyzing
-  // typeof import() references, which would add chunk references to the cold bundle.
-  type LazyComponent = any;
+  // W46-B2b: Lazy components consolidated via createLazyComponent() helper.
+  // See src/lib/utils/lazy-component.svelte.ts. Each handle exposes a reactive
+  // `current` (the component class once loaded) and `ensure(condition)` to
+  // drive loading from a $effect. The previous inline $state holder +
+  // importPending flag + $effect pattern is no longer needed.
 
-  let CanvasComponent: LazyComponent | null = $state(null);
-  let canvasImportPending = $state(false);
   import Splash from '@components/Splash.svelte';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
-  let InfoPanelComponent: LazyComponent | null = $state(null);
-  let infoPanelImportPending = false;
   import Legend from '@components/Legend.svelte';
-  let MapViewComponent: LazyComponent | null = $state(null);
-  let mapViewImportPending = false;
   import SearchBar from '@components/SearchBar.svelte';
-  let FocusPocketComponent: LazyComponent | null = $state(null);
-  let focusPocketImportPending = false;
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
   import Filters from '@components/Filters.svelte';
   import CompassRail from '@components/CompassRail.svelte';
   import LoadingOverlay from '@components/LoadingOverlay.svelte';
-  let ThreadInspectorComponent: LazyComponent | null = $state(null);
-  let threadInspectorImportPending = false;
-  let DemoChoreographyComponent: LazyComponent | null = $state(null);
-  let demoChoreographyImportPending = false;
   import Controls from '@components/Controls.svelte';
   import Header from '@components/Header.svelte';
-  let FocusCardComponent: LazyComponent | null = $state(null);
-  let focusCardImportPending = false;
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
-  type WeatherWidgetModule = typeof import('@components/WeatherWidget.svelte');
-  let WeatherWidgetComponent: WeatherWidgetModule['default'] | null = $state(null);
-  let weatherWidgetImportPending = false;
   import Toast from '@components/Toast.svelte';
-  type DevGuiModule = typeof import('@components/DevGui.svelte');
-  let DevGuiComponent: DevGuiModule['default'] | null = $state(null);
-  let devGuiImportPending = false;
-  type SpectorInspectorModule = typeof import('@components/SpectorInspector.svelte');
-  let SpectorInspectorComponent: SpectorInspectorModule['default'] | null = $state(null);
-  let spectorInspectorImportPending = false;
-  type LegacyCompassSurfaceModule = typeof import('@components/LegacyCompassSurface.svelte');
-  let LegacyCompassSurfaceComponent: LegacyCompassSurfaceModule['default'] | null = $state(null);
-  let legacyCompassSurfaceImportPending = false;
+  import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
   import { legendOpen } from '@lib/stores/legend.svelte';
+
+  // Lazy component handles -- driven by $effects further down. Each handle's
+  // `current` becomes the imported component class once `ensure(condition)`
+  // resolves; the template reads `current` inside an {#if} + {@const} pair.
+  const canvasLazy = createLazyComponent(
+    () => import('@components/Canvas.svelte'),
+    { logOnError: true }
+  )
+  const infoPanelLazy = createLazyComponent(() => import('@components/InfoPanel.svelte'))
+  const mapViewLazy = createLazyComponent(
+    () => import('@components/MapView.svelte'),
+    { idle: false, logOnError: true }
+  )
+  const focusPocketLazy = createLazyComponent(() => import('@components/FocusPocket.svelte'))
+  const threadInspectorLazy = createLazyComponent(() => import('@components/ThreadInspector.svelte'))
+  const demoChoreographyLazy = createLazyComponent(() => import('@components/DemoChoreography.svelte'))
+  const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
+  const weatherWidgetLazy = createLazyComponent(() => import('@components/WeatherWidget.svelte'))
+  const devGuiLazy = createLazyComponent(
+    () => import('@components/DevGui.svelte'),
+    { idle: false, logOnError: true }
+  )
+  const spectorInspectorLazy = createLazyComponent(
+    () => import('@components/SpectorInspector.svelte'),
+    { idle: false, logOnError: true }
+  )
+  const legacyCompassSurfaceLazy = createLazyComponent(
+    () => import('@components/LegacyCompassSurface.svelte')
+  )
+  const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
 
   type SemanticGuideSuggestion = {
     lead_id?: string | number;
@@ -94,161 +101,37 @@
 
   // In Playwright tests, eagerly pre-load components that are required by
   // contract tests but now lazy-loaded in production for performance.
+  // W46-B2b: pre-load via the helper handles' ensure(true) so we don't reach
+  // into module-internal $state holders (which no longer exist).
   if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__) {
-    import('@components/MapView.svelte')
-      .then((mod) => { MapViewComponent = mod.default; })
-      .catch(() => {});
-    import('@components/LegacyCompassSurface.svelte')
-      .then((mod) => { LegacyCompassSurfaceComponent = mod.default; })
-      .catch(() => {});
-    import('@components/ThreadInspector.svelte')
-      .then((mod) => { ThreadInspectorComponent = mod.default; })
-      .catch(() => {});
+    mapViewLazy.ensure(true)
+    legacyCompassSurfaceLazy.ensure(true)
+    threadInspectorLazy.ensure(true)
   }
 
   const isPlaywright = typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__;
 
-  function scheduleIdleComponentImport<T>(
-    load: () => Promise<T>,
-  ): Promise<T> {
-    const run = (): Promise<T> => load();
+  // W46-B2b: scheduleIdleComponentImport was moved to lazy-component.svelte.ts
+  // as scheduleIdleImport, used internally by createLazyComponent. No call
+  // sites remain in App.svelte; deletion.
 
-    if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__) {
-      return run();
-    }
-
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      return new Promise((resolve, reject) => {
-        window.requestIdleCallback(
-          () => run().then(resolve, reject),
-          { timeout: 1500 }
-        );
-      });
-    }
-
-    return new Promise((resolve, reject) => {
-      setTimeout(() => run().then(resolve, reject), 0);
-    });
-  }
-
-  $effect(() => {
-    if (mapModeActive && !MapViewComponent && !mapViewImportPending) {
-      mapViewImportPending = true;
-      import('@components/MapView.svelte')
-        .then((mod) => {
-          MapViewComponent = mod.default;
-        })
-        .catch((err) => {
-          if (import.meta.env.DEV) console.error('[App] MapView lazy-load failed:', err);
-        })
-        .finally(() => {
-          mapViewImportPending = false;
-        });
-    }
-  });
+  $effect(() => mapViewLazy.ensure(mapModeActive));
 
   // W5-T3b: idle-schedule ThreadInspector — only mounts when Thread view is active.
-  $effect(() => {
-    const threadActive = threadInspectorActive();
-    if (threadActive && !ThreadInspectorComponent && !threadInspectorImportPending) {
-      threadInspectorImportPending = true;
-      scheduleIdleComponentImport(() =>
-        import('@components/ThreadInspector.svelte').then((mod) => {
-          ThreadInspectorComponent = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        threadInspectorImportPending = false;
-      });
-    }
-  });
+  $effect(() => threadInspectorLazy.ensure(threadInspectorActive()));
 
-  $effect(() => {
-    if (!DemoChoreographyComponent && !demoChoreographyImportPending) {
-      demoChoreographyImportPending = true;
-      scheduleIdleComponentImport(() =>
-        import('@components/DemoChoreography.svelte').then((mod) => {
-          DemoChoreographyComponent = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        demoChoreographyImportPending = false;
-      });
-    }
-  });
+  $effect(() => demoChoreographyLazy.ensure(true));
 
   // W5-T3b: idle-schedule FocusPocket — only mounts when Focus view is active.
-  $effect(() => {
-    if (focusStageActive && !FocusPocketComponent && !focusPocketImportPending) {
-      focusPocketImportPending = true;
-      scheduleIdleComponentImport(() =>
-        import('@components/FocusPocket.svelte').then((mod) => {
-          FocusPocketComponent = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        focusPocketImportPending = false;
-      });
-    }
-  });
+  $effect(() => focusPocketLazy.ensure(focusStageActive));
+
+  $effect(() => focusCardLazy.ensure(focusStageActive));
+
+  $effect(() => weatherWidgetLazy.ensure(weatherVisible));
 
   $effect(() => {
-    if (focusStageActive && !FocusCardComponent && !focusCardImportPending) {
-      focusCardImportPending = true;
-      // W44-S4: idle-deferred for cold-load
-      scheduleIdleComponentImport(() =>
-        import('@components/FocusCard.svelte').then((mod) => {
-          FocusCardComponent = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        focusCardImportPending = false;
-      });
-    }
-  });
-
-  $effect(() => {
-    if (weatherVisible && !WeatherWidgetComponent && !weatherWidgetImportPending) {
-      weatherWidgetImportPending = true;
-      scheduleIdleComponentImport(() =>
-        import('@components/WeatherWidget.svelte').then((mod) => {
-          WeatherWidgetComponent = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        weatherWidgetImportPending = false;
-      });
-    }
-  });
-
-  $effect(() => {
-    if (devToolsVisible && !DevGuiComponent && !devGuiImportPending) {
-      devGuiImportPending = true;
-      import('@components/DevGui.svelte')
-        .then((mod) => {
-          DevGuiComponent = mod.default;
-        })
-        .catch((err) => {
-          if (import.meta.env.DEV) console.error('[App] DevGui lazy-load failed:', err);
-        })
-        .finally(() => {
-          devGuiImportPending = false;
-        });
-    }
-
-    if (devToolsVisible && !SpectorInspectorComponent && !spectorInspectorImportPending) {
-      spectorInspectorImportPending = true;
-      import('@components/SpectorInspector.svelte')
-        .then((mod) => {
-          SpectorInspectorComponent = mod.default;
-        })
-        .catch((err) => {
-          if (import.meta.env.DEV) console.error('[App] SpectorInspector lazy-load failed:', err);
-        })
-        .finally(() => {
-          spectorInspectorImportPending = false;
-        });
-    }
+    devGuiLazy.ensure(devToolsVisible)
+    spectorInspectorLazy.ensure(devToolsVisible)
   });
 
   interface Props {
@@ -497,25 +380,10 @@
   let focusStageActive = $derived(focusActive && !mapModeActive);
 
   // Lazy-load JourneyChrome (34 KB source) — only needed in focus/trail/inside mode
-  type JourneyChromeModule = typeof import('@components/JourneyChrome.svelte');
-  let JourneyChrome: JourneyChromeModule['default'] | null = $state(null);
-  let journeyChromeImportPending = false;
-  $effect(() => {
-    if (focusActive && !JourneyChrome && !journeyChromeImportPending) {
-      journeyChromeImportPending = true;
-      // W44-S4: idle-deferred for cold-load
-      scheduleIdleComponentImport(() =>
-        import('@components/JourneyChrome.svelte').then(mod => {
-          JourneyChrome = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        journeyChromeImportPending = false;
-      });
-    } else if (!focusActive) {
-      JourneyChrome = null;
-    }
-  });
+  // W46-B2b: JourneyChrome uses clearOnFalse so it tears down when focus
+  // leaves (the only component that needed that pre-migration — the others
+  // just gate mount by `condition`).
+  $effect(() => journeyChromeLazy.ensure(focusActive, { clearOnFalse: true }));
 
   // Idle owns the full header. Search/focus keep only utility chrome so the
   // escape affordances exist for the mobile/short-landscape CSS contracts.
@@ -540,20 +408,7 @@
       !(($viewport.isCompact || bodyCompact) && idleSurfaceActive && !focusActive && !searchSurfaceActive)
   );
 
-  $effect(() => {
-    if ((infoPanelOpen || focusActive) && !InfoPanelComponent && !infoPanelImportPending) {
-      infoPanelImportPending = true;
-      // W44-S4: idle-deferred for cold-load
-      scheduleIdleComponentImport(() =>
-        import('@components/InfoPanel.svelte').then((mod) => {
-          InfoPanelComponent = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        infoPanelImportPending = false;
-      });
-    }
-  });
+  $effect(() => infoPanelLazy.ensure(infoPanelOpen || focusActive));
 
   // W5-T3: idle-load LegacyCompassSurface (legacy-compass parity surface)
   let legacyCompassSurfaceActive = $derived(
@@ -566,41 +421,9 @@
 
   // Lazy-import Canvas module when the gesture gate flips to true.
   // W6-T2: keeps Three.js + postprocessing out of the cold-load bundle.
-  $effect(() => {
-    if (engineReady.value && !CanvasComponent && !canvasImportPending) {
-      canvasImportPending = true;
-      scheduleIdleComponentImport(() =>
-        import('@components/Canvas.svelte').then((mod) => {
-          CanvasComponent = mod.default;
-          return mod.default;
-        })
-      )
-        .catch((err) => {
-          if (import.meta.env.DEV) console.error('[App] Canvas lazy-load failed:', err);
-        })
-        .finally(() => {
-          canvasImportPending = false;
-        });
-    }
-  });
+  $effect(() => canvasLazy.ensure(engineReady.value));
 
-  $effect(() => {
-    if (
-      legacyCompassSurfaceActive &&
-      !LegacyCompassSurfaceComponent &&
-      !legacyCompassSurfaceImportPending
-    ) {
-      legacyCompassSurfaceImportPending = true;
-      scheduleIdleComponentImport(() =>
-        import('@components/LegacyCompassSurface.svelte').then((mod) => {
-          LegacyCompassSurfaceComponent = mod.default;
-          return mod.default;
-        })
-      ).finally(() => {
-        legacyCompassSurfaceImportPending = false;
-      });
-    }
-  });
+  $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));
 </script>
 
 {#snippet searchPanelContent()}
@@ -630,8 +453,9 @@
   class:is-overview={$navStore.mode === 'overview'}
 >
   <!-- Layer 0: WebGL canvas (gated behind user gesture; module import lazy) -->
-  {#if engineReady.value && CanvasComponent}
-    <CanvasComponent interactive={true} defer={true} />
+  {#if engineReady.value && canvasLazy.current}
+    {@const Cmp = canvasLazy.current}
+    <Cmp interactive={true} defer={true} />
   {:else}
     <Splash />
   {/if}
@@ -649,21 +473,24 @@
   </section>
 
   <!-- Full-screen map view (Map chip) -->
-  {#if (mapModeActive || isPlaywright) && MapViewComponent}
-    <MapViewComponent />
+  {#if (mapModeActive || isPlaywright) && mapViewLazy.current}
+    {@const Cmp = mapViewLazy.current}
+    <Cmp />
   {/if}
 
   <!-- Layer 50: Legend panel (UI-2: concealed in focus states to resolve bottom-left triple collision) -->
   <Legend open={$legendOpen} mapView={mapModeActive} concealedByFocus={focusActive} />
 
   <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
-  {#if WeatherWidgetComponent}
-    <WeatherWidgetComponent visible={weatherVisible} />
+  {#if weatherWidgetLazy.current}
+    {@const Cmp = weatherWidgetLazy.current}
+    <Cmp visible={weatherVisible} />
   {/if}
 
   <!-- Layer 80: Info panel -->
-  {#if InfoPanelComponent}
-    <InfoPanelComponent open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
+  {#if infoPanelLazy.current}
+    {@const Cmp = infoPanelLazy.current}
+    <Cmp open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
   {/if}
 
   {#if idleSearchVisible || mapTrailSearchLaneActive}
@@ -696,13 +523,15 @@
     style:pointer-events={focusStageActive ? 'none' : undefined}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
-    {#if FocusCardComponent}
-      <FocusCardComponent visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
+    {#if focusCardLazy.current}
+      {@const Cmp = focusCardLazy.current}
+      <Cmp visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
     {/if}
 
     <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
-    {#if JourneyChrome}
-      <JourneyChrome visible={true} />
+    {#if journeyChromeLazy.current}
+      {@const Cmp = journeyChromeLazy.current}
+      <Cmp visible={true} />
     {/if}
 
     <!-- Layer 500: Active journey visualization — rendered by Three.js -->
@@ -715,8 +544,9 @@
       rebuilds the pocket (via applyLocalNeighborhoodFocus) when focusedIndex
       changes. The keyboard/screen-reader surface lives in FocusPocketA11y.
     -->
-    {#if FocusPocketComponent}
-      <FocusPocketComponent />
+    {#if focusPocketLazy.current}
+      {@const Cmp = focusPocketLazy.current}
+      <Cmp />
     {:else if focusStageActive}
       <!-- W5-T3b: skeleton placeholder prevents CLS while FocusPocket idle-hydrates -->
       <div id="focus-pocket" class="focus-pocket-skeleton" aria-hidden="true"></div>
@@ -743,16 +573,18 @@
   <Filters open={false} />
 
   <!-- Thread inspector (overlay, self-gates via visible && threadInspectorActive()) -->
-  {#if ThreadInspectorComponent}
-    <ThreadInspectorComponent visible={threadInspectorActive()} />
+  {#if threadInspectorLazy.current}
+    {@const Cmp = threadInspectorLazy.current}
+    <Cmp visible={threadInspectorActive()} />
   {:else if threadInspectorActive()}
     <!-- W5-T3b: skeleton placeholder prevents CLS while ThreadInspector idle-hydrates -->
     <div class="thread-inspector-skeleton" aria-hidden="true"></div>
   {/if}
 
   <!-- Demo choreography overlay -->
-  {#if DemoChoreographyComponent}
-    <DemoChoreographyComponent force={forceDemo} suppress={noDemo} />
+  {#if demoChoreographyLazy.current}
+    {@const Cmp = demoChoreographyLazy.current}
+    <Cmp force={forceDemo} suppress={noDemo} />
   {/if}
 
   <!--
@@ -762,11 +594,13 @@
     of normal app startup.
   -->
   {#if import.meta.env.DEV}
-    {#if DevGuiComponent}
-      <DevGuiComponent visible={devToolsVisible} />
+    {#if devGuiLazy.current}
+      {@const Cmp = devGuiLazy.current}
+      <Cmp visible={devToolsVisible} />
     {/if}
-    {#if SpectorInspectorComponent}
-      <SpectorInspectorComponent visible={devToolsVisible} />
+    {#if spectorInspectorLazy.current}
+      {@const Cmp = spectorInspectorLazy.current}
+      <Cmp visible={devToolsVisible} />
     {/if}
   {/if}
 
@@ -841,8 +675,9 @@
 <!-- Layer 3000: Loading overlay (highest z-index) -->
 <LoadingOverlay visible={true} />
 
-{#if LegacyCompassSurfaceComponent}
-  <LegacyCompassSurfaceComponent noDemo={noDemo} />
+{#if legacyCompassSurfaceLazy.current}
+  {@const Cmp = legacyCompassSurfaceLazy.current}
+  <Cmp noDemo={noDemo} />
 {/if}
 
 <!--
