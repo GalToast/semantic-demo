@@ -20,9 +20,8 @@ import { updateUrlState } from "@lib/orchestration/url-state";
 import { normalizeCityForFilter } from "@lib/utils/geo-data";
 import { describeCluster } from "@lib/utils/ui-presentation";
 import { el, setChildren } from "@lib/utils/dom-builder";
-import { appState as _legacyState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const legacyState = _legacyState as any;
+import { legacyState } from '@lib/state/legacy-state-adapter'
 import type { BusinessRecord } from "@lib/types/business";
 import type { ActiveFilters } from "@lib/types/state";
 

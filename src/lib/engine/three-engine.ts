@@ -86,9 +86,8 @@ import * as eventBindingsMod from '@lib/ui/event-bindings'
 import * as loadingUiMod from '../ui/loading'
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
-import { appState as _legacyState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const legacyState = _legacyState as any
+import { legacyState } from '@lib/state/legacy-state-adapter'
 import * as clusterLabelsMod from '@lib/ui/cluster-labels'
 import * as focusPocketMod from '@lib/journey/focus-pocket'
 import * as sceneRevealMod from './scene-reveal'
@@ -527,7 +526,7 @@ export async function initThreeJS() {
     if (_state) _state.scene = scene
 
     webglContext.camera = camera
-    ;(appState as any).camera = camera
+    ;legacyState.camera = camera
     if (_state) _state.camera = camera
 
     webglContext.renderer = renderer
@@ -539,11 +538,11 @@ export async function initThreeJS() {
     if (_state) _state.controls = controls
 
     webglContext.hemiLight = hemiLight
-    ;(appState as any).hemiLight = hemiLight
+    ;legacyState.hemiLight = hemiLight
     if (_state) _state.hemiLight = hemiLight
 
     webglContext.dirLight = dirLight
-    ;(appState as any).dirLight = dirLight
+    ;legacyState.dirLight = dirLight
     if (_state) _state.dirLight = dirLight
 
     // Initialize DisposableRegistry for all DOM/Three.js event listeners.
@@ -629,7 +628,7 @@ export async function initThreeJS() {
     appState.myceliumCoreLines = webglContext.myceliumCoreLines
     appState.myceliumWispyLines = webglContext.myceliumWispyLines
     appState.myceliumBridgeLines = webglContext.myceliumBridgeLines
-    ;(appState as any).myceliumConnectionPairs = webglContext.myceliumConnectionPairs
+    ;legacyState.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
     if (_state) {
         _state.myceliumGroup = webglContext.myceliumGroup
         _state.myceliumCoreLines = webglContext.myceliumCoreLines

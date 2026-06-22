@@ -6,9 +6,8 @@
  * bridge until those scene mutations are fully ported to src/.
  */
 
-import { appState as _legacyState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const legacyState = _legacyState as any
+import { legacyState } from '@lib/state/legacy-state-adapter'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { search, clearSearch } from '@lib/search/state'
 import { switchView } from '@lib/orchestration/view-controller'

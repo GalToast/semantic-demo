@@ -16,7 +16,7 @@ import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { appInit } from '@lib/orchestration/app-init'
-const legacyState = appState as any
+import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
 import './lib/css/biofield.css'
@@ -167,7 +167,7 @@ function getCompatValue(prop: string | symbol): unknown {
             ...asRecord(svelteState.state),
             currentView: svelteState.currentView ?? legacyState.currentView,
             navState: getCompatNavState(),
-            points: (appState as any).points
+            points: legacyState.points as unknown
         }
     }
     const svelteValue = svelteState[prop]
@@ -175,7 +175,7 @@ function getCompatValue(prop: string | symbol): unknown {
     const legacyValue = legacyState[prop]
     if (legacyValue !== undefined) return legacyValue
     // Fallback to Svelte appState for properties not synced to legacy/testState
-    return (appState as any)[prop]
+    return legacyState[prop]
 }
 
 function createTestCompatProxy(): Record<string, unknown> {
