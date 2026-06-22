@@ -108,10 +108,7 @@ describe('URL anchor valid focus (?anchor=42)', () => {
     it('source: _restoreAnchorFromParams validates numericId against appState.points.length', () => {
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
         // Must validate numericId >= 0 and numericId < pointCount
         expect(source).toMatch(/numericId\s*<\s*0/)
         expect(source).toMatch(/numericId\s*>=\s*pointCount/)
@@ -120,10 +117,7 @@ describe('URL anchor valid focus (?anchor=42)', () => {
     it('source: _restoreAnchorFromParams calls applyLocalNeighborhoodFocus for valid anchors', () => {
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
         // Must call applyLocalNeighborhoodFocus in the valid-anchor branch
         expect(source).toMatch(/applyLocalNeighborhoodFocus\s*\(\s*numericId\s*\)/)
     })
@@ -131,10 +125,7 @@ describe('URL anchor valid focus (?anchor=42)', () => {
     it('source: _restoreAnchorFromParams dispatches SEARCH_FOCUS_REQUESTED for valid anchors', () => {
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
         // Must publish SEARCH_FOCUS_REQUESTED in the valid branch
         expect(source).toMatch(/EVENTS\.SEARCH_FOCUS_REQUESTED/)
         expect(source).toMatch(/publish\s*\(\s*EVENTS\.SEARCH_FOCUS_REQUESTED/)
@@ -143,10 +134,7 @@ describe('URL anchor valid focus (?anchor=42)', () => {
     it('source: applyUrlState calls _restoreAnchorFromParams before _restoreSearchFromParams', () => {
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
         // Must call _restoreAnchorFromParams before _restoreSearchFromParams
         // so numeric anchors are settled before search results populate
         const anchorMatch = source.match(/_restoreAnchorFromParams\s*\(/)
@@ -159,10 +147,7 @@ describe('URL anchor valid focus (?anchor=42)', () => {
     it('source: valid anchor publishes SEARCH_FOCUS_REQUESTED with numericId', () => {
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/lib/orchestration/url-state.ts'), 'utf-8')
         // The valid-anchor branch publishes SEARCH_FOCUS_REQUESTED with the index
         expect(source).toMatch(/publish\s*\(\s*EVENTS\.SEARCH_FOCUS_REQUESTED\s*,\s*\{\s*index:\s*numericId\s*\}\)/)
     })

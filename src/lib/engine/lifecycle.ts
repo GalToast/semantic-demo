@@ -29,21 +29,12 @@ export interface EngineCallbacks {
 
 // ── Imports ──────────────────────────────────────────────────────────────────
 
-import { get } from 'svelte/store'
-import {
-    isDataReady,
-    businessRecords,
-    positionBuffer,
-    clustersBuffer,
-    leadEnrichment,
-    pointIndexByLeadId
-} from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte'
 import { setEngineStatus, getEngineStatus as _getEngineStatus } from '@lib/stores/engine.svelte.ts'
 import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 
 // Engine sub-modules
-import { initThreeJS, onWindowResize, cancelAnimate, updateCameraViewportOffset } from '@lib/engine/three-engine'
+import { initThreeJS, onWindowResize, cancelAnimate, updateCameraViewportOffset, createPoints } from '@lib/engine/three-engine'
 import { destroyMap } from '@lib/engine/map-state'
 import { createMycelium } from '@lib/engine/thread-manager'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
@@ -62,67 +53,44 @@ import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions }
 // Event bus
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 
+// Data readiness
+import { isDataReady } from '@lib/data-store'
+
 // ── Module-scoped State ──────────────────────────────────────────────────────
 
 let _eventUnsubs: Array<() => void> = []
 let _sceneReadyHandler: (() => void) | null = null
 let _canvasInteractionBound = false
 let _destroyed = false
+let _dataReadyUnsub: (() => void) | null = null
 
-// ── Data Sync (temporary — mirrors adapters/data-bridge.ts) ──────────────────
+// ── Data readiness subscription ─────────────────────────────────────────────
 
 /**
- * Sync Svelte data stores into the legacy state singleton so the Three.js
- * engine can consume them during init.
- *
- * Polls for data readiness with a 15-second ceiling.
- * Temporarily retained as a bridge call during migration.
+ * When data arrives after the engine has already initialized (e.g. user
+ * clicked Enter before the data worker finished), create the points and
+ * mycelium geometry that were skipped during the earlier init pass.
  */
-async function syncDataToLegacyState(): Promise<void> {
-    if (get(isDataReady)) {
-        _syncDataFields()
-        return
-    }
+function _onDataReady(): void {
+    if (_getEngineStatus() !== 'ready') return
+    if (!appState.renderer) return
+    if (appState.pointsMesh) return
 
-    const start = Date.now()
-    while (!get(isDataReady) && Date.now() - start < 35_000) {
-        await new Promise((r) => setTimeout(r, 200))
+    try {
+        createPoints()
+        if (appState.points?.length && appState.nodePositions?.length) {
+            createMycelium()
+        }
+    } catch (err) {
+        if (import.meta.env.DEV) console.warn('[engine/lifecycle] Late geometry creation failed:', err)
     }
-
-    if (!get(isDataReady)) {
-        if (import.meta.env.DEV)
-            console.warn('[engine/lifecycle] syncDataToLegacyState: data not ready after 35s, proceeding anyway')
-    }
-
-    _syncDataFields()
 }
 
-function _syncDataFields(): void {
-    const records = get(businessRecords)
-    const posBuf = get(positionBuffer)
-    const clustBuf = get(clustersBuffer)
-    const enrichment = get(leadEnrichment)
-    const indexMap = get(pointIndexByLeadId)
-
-    appState.withMutation(() => {
-        if (records.length > 0) {
-            appState.points = records as unknown as typeof appState.points
-        }
-        if (posBuf) {
-            appState.rawPositionsBuffer = posBuf
-        }
-        if (clustBuf) {
-            appState.rawClustersBuffer = clustBuf as unknown as typeof appState.rawClustersBuffer
-        }
-    })
-
-    if (enrichment) {
-        ;(appState as unknown as Record<string, unknown>).leadEnrichment = enrichment
-    }
-    if (indexMap) {
-        ;(appState as unknown as Record<string, unknown>).pointIndexByLeadId = indexMap
-    }
-}
+// Subscribe once at module load; the guard inside _onDataReady makes it safe
+// to fire before or after initEngine() runs.
+_dataReadyUnsub = isDataReady.subscribe((ready) => {
+    if (ready) _onDataReady()
+})
 
 // ── Event Bridge ─────────────────────────────────────────────────────────────
 
@@ -216,9 +184,6 @@ export async function initEngine(canvas: HTMLCanvasElement, callbacks: EngineCal
     try {
         const _perf = typeof performance !== 'undefined'
         if (_perf) performance.mark('engine-init-start')
-
-        // 1. Sync Svelte data stores into the legacy state singleton
-        await syncDataToLegacyState()
 
         if (_perf) performance.mark('engine-init-sync-done')
 
@@ -317,18 +282,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         await yieldToBrowser()
         if (!engineInitStillActive('three-init-yield')) return
 
-        // 4. Sync geometry from legacy state to Svelte appState
-        const legacyState = appState as unknown as Record<string, unknown>
-        const nodePositions = legacyState.nodePositions
-        const targetPositions = legacyState.targetPositions
-        const originalPositions = legacyState.originalPositions
-        if (Array.isArray(nodePositions)) appState.nodePositions = nodePositions as typeof appState.nodePositions
-        if (Array.isArray(targetPositions))
-            appState.targetPositions = targetPositions as typeof appState.targetPositions
-        if (Array.isArray(originalPositions))
-            appState.originalPositions = originalPositions as typeof appState.originalPositions
-
-        // 5. Set canvas CSS sizing
+        // 4. Set canvas CSS sizing
         if (appState.renderer?.domElement) {
             const liveCanvas = appState.renderer.domElement
             liveCanvas.style.width = '100%'
@@ -342,7 +296,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         await yieldToBrowser()
         if (!engineInitStillActive('geometry-yield')) return
 
-        // 6. Create mycelium thread geometry
+        // 5. Create mycelium thread geometry
         if (appState.points?.length && appState.nodePositions?.length) {
             try {
                 createMycelium()
@@ -356,7 +310,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         await yieldToBrowser()
         if (!engineInitStillActive('interaction-yield')) return
 
-        // 7. Wire canvas click/hover interaction bindings
+        // 6. Wire canvas click/hover interaction bindings
         try {
             ensureCanvasNodeInteractionBindings()
             _canvasInteractionBound = true
@@ -368,7 +322,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             return
         }
 
-        // 8. Expose engine handle for tests and visual audit tools
+        // 7. Expose engine handle for tests and visual audit tools
         if (typeof window !== 'undefined') {
             const w = window as unknown as Record<string, unknown>
             w.__THREE_APP__ = {
@@ -415,7 +369,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         await yieldToBrowser()
         if (!engineInitStillActive('semantic-thread-yield')) return
 
-        // 9. Attach legacy state to semantic threads (thread loading is deferred to
+        // 8. Attach legacy state to semantic threads (thread loading is deferred to
         // the deferred-hydration phase in ui/loading.ts to avoid blocking startup).
         const semanticThreads = await import('@lib/semantic-threads')
         semanticThreads.attachLegacyState(appState as unknown as Record<string, unknown>)
@@ -423,19 +377,19 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             if (import.meta.env.DEV) console.warn('[engine/lifecycle] semantic-thread load failed:', err)
         })
 
-        // 10. Subscribe to the legacy event bus
+        // 9. Subscribe to the legacy event bus
         bindEventBridge(callbacks)
 
-        // 11. Wire tooltip event-bus subscriptions
+        // 10. Wire tooltip event-bus subscriptions
         initTooltipEventBusSubscriptions()
 
-        // 12. Start the animation loop
+        // 11. Start the animation loop
         // _animate() is started internally by initThreeJS on success
 
-        // 13. Mark ready
+        // 12. Mark ready
         setEngineStatus('ready')
 
-        // 14. Notify Canvas.svelte and other consumers that the scene is ready.
+        // 13. Notify Canvas.svelte and other consumers that the scene is ready.
         //     bindEventBridge wires a listener for 'scene-ready', but nothing
         //     on the new path dispatches it. We fire both the direct callback
         //     and the window event so both in-process callers and legacy
@@ -505,6 +459,10 @@ export function destroyEngine(): void {
 
     // 2. Unbind event bridge
     unbindEventBridge()
+
+    // 2a. Unsubscribe from data readiness
+    _dataReadyUnsub?.()
+    _dataReadyUnsub = null
 
     // 3. Remove canvas interaction bindings
     if (_canvasInteractionBound) {

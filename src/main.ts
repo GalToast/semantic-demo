@@ -56,11 +56,13 @@ if (mountTarget) {
 // This replaces the ad-hoc initData() + applyUrlState() that previously
 // lived in App.svelte onMount.
 let appInitCleanup: (() => void) | undefined
-appInit({ forceDemo, noDemo }).then((cleanup) => {
-    appInitCleanup = cleanup
-}).catch((err) => {
-    if (import.meta.env.DEV) console.error('[main] appInit failed:', err)
-})
+appInit({ forceDemo, noDemo })
+    .then((cleanup) => {
+        appInitCleanup = cleanup
+    })
+    .catch((err) => {
+        if (import.meta.env.DEV) console.error('[main] appInit failed:', err)
+    })
 
 // Initialize legacy route trace event subscriptions so the Svelte track
 // still builds WebGL route trace overlays and writes routeTraceDiagnostics

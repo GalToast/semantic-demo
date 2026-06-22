@@ -32,14 +32,14 @@ const mockAppState = vi.hoisted(() => ({
         focusedIndex: null as number | null,
         threadCandidates: [] as unknown[],
         threadSource: 'geometric-fallback' as string,
-        currentPersonality: null as unknown,
+        currentPersonality: null as unknown
     },
     pocketTransitionStartedAt: 0,
     recentArrangements: [] as string[],
     withMutation: <T>(fn: () => T): T => fn(),
     camera: null,
     renderer: null,
-    scene: null,
+    scene: null
 }))
 
 vi.mock('../../src/lib/state/app.svelte', () => ({
@@ -63,7 +63,7 @@ vi.mock('../../src/lib/stores/focus.svelte', () => ({
     clearFocusPocketMotionByIndex: vi.fn(),
     setFocusPocketRoleForIndex: vi.fn(),
     setFocusPocketMotionForIndex: vi.fn(),
-    syncPocketNodesToStore: vi.fn(),
+    syncPocketNodesToStore: vi.fn()
 }))
 
 vi.mock('../../src/lib/stores/engine.svelte', () => ({
@@ -149,8 +149,24 @@ describe('applyLocalNeighborhoodFocus boolean return', () => {
             { x: 2, y: 2, z: 2 }
         ]
         mockAppState.navState.threadCandidates = [
-            { index: 1, score: 0.8, semanticScore: 0.7, relationshipRole: 'neighbor', relationshipAxis: 'city', reason: 'same city', sameCity: true },
-            { index: 2, score: 0.6, semanticScore: 0.5, relationshipRole: 'neighbor', relationshipAxis: 'city', reason: 'same city', sameCity: true }
+            {
+                index: 1,
+                score: 0.8,
+                semanticScore: 0.7,
+                relationshipRole: 'neighbor',
+                relationshipAxis: 'city',
+                reason: 'same city',
+                sameCity: true
+            },
+            {
+                index: 2,
+                score: 0.6,
+                semanticScore: 0.5,
+                relationshipRole: 'neighbor',
+                relationshipAxis: 'city',
+                reason: 'same city',
+                sameCity: true
+            }
         ]
 
         const result = applyLocalNeighborhoodFocus(0)
@@ -163,20 +179,14 @@ describe('FocusPocket component engine-status subscription', () => {
         // Source-level assertion: the component must import engineStatusStore
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/components/FocusPocket.svelte'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/components/FocusPocket.svelte'), 'utf-8')
         expect(source).toMatch(/import.*engineStatusStore.*from.*['"]@lib\/stores\/engine\.svelte/)
     })
 
     it('FocusPocket.svelte subscribes to engineStatusStore via $effect', () => {
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/components/FocusPocket.svelte'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/components/FocusPocket.svelte'), 'utf-8')
         // Must have an $effect that subscribes to engineStatusStore
         expect(source).toMatch(/engineStatusStore\.subscribe/)
         // Must be inside an $effect
@@ -186,10 +196,7 @@ describe('FocusPocket component engine-status subscription', () => {
     it('FocusPocket.svelte gates applyLocalNeighborhoodFocus on engineStatus', () => {
         const fs = require('fs')
         const path = require('path')
-        const source = fs.readFileSync(
-            path.resolve(__dirname, '../../src/components/FocusPocket.svelte'),
-            'utf-8'
-        )
+        const source = fs.readFileSync(path.resolve(__dirname, '../../src/components/FocusPocket.svelte'), 'utf-8')
         // Must check engineStatus before calling applyLocalNeighborhoodFocus
         // The code uses: if (!(engineStatus === 'ready')) return;
         expect(source).toMatch(/engineStatus\s*===\s*['"]ready['"]/)

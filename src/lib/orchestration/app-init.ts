@@ -201,8 +201,9 @@ function installWindowGlobals(): () => void {
         window.__APP_STATE__ = {
             get state() {
                 const liveAppState =
-                    ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as typeof appState | undefined) ||
-                    appState
+                    ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as
+                        | typeof appState
+                        | undefined) || appState
                 return {
                     currentView: get(navStore).currentView,
                     navState: get(navStore),

@@ -69,9 +69,36 @@ describe('data-loader worker settle/cleanup', () => {
     beforeEach(() => {
         MockWorker.instances = []
         vi.stubGlobal('Worker', MockWorker)
-        vi.stubGlobal('fetch', vi.fn(() => {
-            return Promise.resolve(new Response(JSON.stringify([['x','y','z','cluster','name','what','city','lead_id','lat','lng','website','email','phone','trivia','status','naics']]), { status: 200 }))
-        }))
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(() => {
+                return Promise.resolve(
+                    new Response(
+                        JSON.stringify([
+                            [
+                                'x',
+                                'y',
+                                'z',
+                                'cluster',
+                                'name',
+                                'what',
+                                'city',
+                                'lead_id',
+                                'lat',
+                                'lng',
+                                'website',
+                                'email',
+                                'phone',
+                                'trivia',
+                                'status',
+                                'naics'
+                            ]
+                        ]),
+                        { status: 200 }
+                    )
+                )
+            })
+        )
     })
 
     afterEach(() => {

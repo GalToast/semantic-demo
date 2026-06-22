@@ -372,6 +372,18 @@ export function shouldRenderBridgeThreads(): boolean {
 
 export function createPoints(): void {
     createPointsPort()
+    appState.pointsMesh = webglContext.pointsMesh
+    appState.pointsMaterial = webglContext.pointsMaterial
+    appState.nodeSporeMesh = webglContext.nodeSporeMesh
+    appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
+    appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
+    if (_state) {
+        _state.pointsMesh = webglContext.pointsMesh
+        _state.pointsMaterial = webglContext.pointsMaterial
+        _state.nodeSporeMesh = webglContext.nodeSporeMesh
+        _state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
+        _state.nodeSporeMaterial = webglContext.nodeSporeMaterial
+    }
 }
 
 export function createMycelium(): void {
@@ -875,18 +887,6 @@ export async function initThreeJS() {
     await _yieldToBrowser()
 
     createPoints()
-    appState.pointsMesh = webglContext.pointsMesh
-    appState.pointsMaterial = webglContext.pointsMaterial
-    appState.nodeSporeMesh = webglContext.nodeSporeMesh
-    appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
-    appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    if (_state) {
-        _state.pointsMesh = webglContext.pointsMesh
-        _state.pointsMaterial = webglContext.pointsMaterial
-        _state.nodeSporeMesh = webglContext.nodeSporeMesh
-        _state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
-        _state.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    }
 
     // W8: yield between createPoints() and createMycelium() to keep individual
     // tasks under 200ms. createMycelium() uploads 100k+ edge line segments.
