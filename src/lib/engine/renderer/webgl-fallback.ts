@@ -8,7 +8,7 @@
 
 import { appState } from '@lib/state/app.svelte'
 
-interface WebGLSupportDetail {
+export interface WebGLSupportDetail {
     supported: boolean
     reason: string
     renderer?: string | null

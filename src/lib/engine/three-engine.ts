@@ -16,29 +16,13 @@
 
 // ── Static @lib/* imports ────────────────────────────────────────────────────
 
-import {
-    Scene,
-    PerspectiveCamera,
-    WebGLRenderer,
-    Vector3,
-    FogExp2,
-    ACESFilmicToneMapping,
-    SRGBColorSpace,
-    HemisphereLight,
-    DirectionalLight,
-    SphereGeometry,
-    MeshBasicMaterial,
-    Mesh,
-    AdditiveBlending,
-    Material,
-    MeshPhongMaterial,
-    BackSide
-} from 'three'
+import { buildThreeScene } from './renderer/scene-init'
+import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, Material, MeshPhongMaterial } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 export { getSceneRenderableDiagnostics } from './renderer/renderer-diagnostics'
 
 import { webglContext } from '@lib/engine/webgl-context'
-import { detectWebGLSupport, showWebGLFallback } from './renderer/webgl-fallback'
+import { showWebGLFallback } from './renderer/webgl-fallback'
 import { getSceneRenderableDiagnostics, sampleScenePerformance } from './renderer/renderer-diagnostics'
 import { CONFIG } from '@lib/engine/config'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
@@ -526,211 +510,44 @@ export async function initThreeJS() {
     const container = document.getElementById('canvas-container')
     if (!container) throw new Error('initThreeJS: #canvas-container element not found in DOM')
 
-    const support = detectWebGLSupport()
-    if (!support.supported) {
+    const width = container.clientWidth || window.innerWidth
+    const height = container.clientHeight || window.innerHeight
+
+    const result = await buildThreeScene(container, width, height)
+    if (!result.success) {
         _mapButtonClickHandler = showWebGLFallback(
             container,
-            { reason: support.reason },
+            { reason: result.reason || 'webgl-unavailable' },
             { state: _state, viewController: _viewController, mapState: _mapState, uiFeedback: _uiFeedback }
         )
         return false
     }
 
-    const width = container.clientWidth || window.innerWidth
-    const height = container.clientHeight || window.innerHeight
+    const { scene, camera, renderer, controls, hemiLight, dirLight, support } = result.setup
 
-    const scene = new Scene()
-    scene.fog = new FogExp2(
-        (SCENE_ATMOSPHERE as any).fogColor ?? 0x0d2024,
-        (SCENE_ATMOSPHERE as any).fogDensity ?? 0.62
-    )
     webglContext.scene = scene
     appState.scene = scene
     if (_state) _state.scene = scene
 
-    const camera = new PerspectiveCamera(60, width / height, 0.1, 1000)
-    camera.position.set(2.05, 1.55, 2.75)
-    camera.lookAt(0, 0, 0)
     webglContext.camera = camera
     ;(appState as any).camera = camera
     if (_state) _state.camera = camera
 
-    let renderer: WebGLRenderer
-    try {
-        renderer = new WebGLRenderer({
-            antialias: true,
-            alpha: true,
-            preserveDrawingBuffer: false,
-            powerPreference: 'high-performance'
-        })
-    } catch (error) {
-        if (import.meta.env.DEV)
-            console.error('WebGL renderer creation failed; using semantic demo graphics fallback.', error)
-        _mapButtonClickHandler = showWebGLFallback(
-            container,
-            { reason: (error as Error)?.message || 'renderer-create-failed' },
-            { state: _state, viewController: _viewController, mapState: _mapState, uiFeedback: _uiFeedback }
-        )
-        return false
-    }
-
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
-    renderer.setSize(width, height)
-    // Keep the canvas slightly translucent so the subtle radial gradient behind
-    // #canvas-container can bleed through without changing scene fog/lighting.
-    renderer.setClearColor((SCENE_ATMOSPHERE as any).fogColor ?? 0x0d2024, (SCENE_ATMOSPHERE as any).clearAlpha ?? 0.96)
-    renderer.toneMapping = ACESFilmicToneMapping
-    renderer.toneMappingExposure = (SCENE_ATMOSPHERE as any).toneExposure ?? 1.0
-    renderer.outputColorSpace = SRGBColorSpace
-    container.querySelectorAll('canvas').forEach((c) => {
-        if (c !== renderer.domElement) c.remove()
-    })
-    renderer.domElement.setAttribute(
-        'aria-label',
-        'Semantic business visualization of Montgomery County businesses. Use arrow keys to navigate.'
-    )
-    renderer.domElement.setAttribute('tabindex', '0')
-    renderer.domElement.setAttribute('role', 'application')
-    container.appendChild(renderer.domElement)
     webglContext.renderer = renderer
     appState.renderer = renderer as any
     if (_state) _state.renderer = renderer
 
-    _webglContextLostHandler = (event: any) => {
-        event.preventDefault()
-        _webglContextLost = true
-        pauseRenderLoopTimers({ clearRestoreTimer: true })
-        _uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
-    }
-    renderer.domElement.addEventListener('webglcontextlost', _webglContextLostHandler, false)
-
-    _webglContextRestoredHandler = () => {
-        _webglContextLost = false
-        _webglRestoreTimer = window.setTimeout(() => {
-            _webglRestore?.restoreWebGLContext().catch((err) => {
-                if (import.meta.env.DEV) console.error('Failed to restore WebGL context:', err)
-            })
-            if (
-                _rafId === null &&
-                !_circuitBreakerTripped &&
-                webglContext.renderer &&
-                webglContext.scene &&
-                webglContext.camera
-            ) {
-                animate()
-            }
-        }, 1000)
-    }
-    renderer.domElement.addEventListener('webglcontextrestored', _webglContextRestoredHandler, false)
-
-    // Resume the animate() loop when the document becomes visible again.
-    // Paired with the document.hidden gate at the top of animate() to let
-    // Lighthouse find an idle period while the page is backgrounded.
-    // Stored as a named reference so it can be removed in cancelAnimate()/deinit()
-    // to prevent duplicate handlers on repeated initThreeJS() calls (W1-H1).
-    _visibilityChangeHandler = () => {
-        if (
-            !document.hidden &&
-            _rafId === null &&
-            _idleFrameTimerId === null &&
-            !_webglContextLost &&
-            !_circuitBreakerTripped &&
-            webglContext.renderer &&
-            webglContext.scene &&
-            webglContext.camera
-        ) {
-            animate()
-        }
-    }
-    document.addEventListener('visibilitychange', _visibilityChangeHandler)
-
-    const controls = new OrbitControls(camera, renderer.domElement)
-    controls.enableDamping = true
-    controls.dampingFactor = 0.05
-    controls.rotateSpeed = 0.5
-    controls.zoomSpeed = 0.8
-    controls.minDistance = CONFIG.ORBIT_MIN_DISTANCE_DEFAULT
-    controls.maxDistance = CONFIG.ORBIT_MAX_DISTANCE_DEFAULT
-    controls.enablePan = true
-    controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_DEFAULT
     webglContext.controls = controls
     appState.controls = controls as any
     if (_state) _state.controls = controls
 
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
-        appState.autoRotate = false
-        if (_state) _state.autoRotate = false
-        const rotateBtn = document.getElementById('btn-rotate')
-        if (rotateBtn) rotateBtn.setAttribute('aria-pressed', 'false')
-    }
-
-    controls.autoRotate = !!(
-        (appState.autoRotate || _state?.autoRotate) &&
-        !(appState.autoRotateSuspended || _state?.autoRotateSuspended)
-    )
-    controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED
-    _controlsStartHandler = () => {
-        _cameraControls?.releaseFocusCameraAssist('user-control')
-        _cameraControls?.noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
-    }
-    controls.addEventListener('start', _controlsStartHandler)
-    _controlsEndHandler = () => {
-        _cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
-    }
-    controls.addEventListener('end', _controlsEndHandler)
-
-    const hemiLight = new HemisphereLight(0xe8f4ff, 0x080820, 0)
-    hemiLight.position.set(0, 20, 0)
-    scene.add(hemiLight)
     webglContext.hemiLight = hemiLight
     ;(appState as any).hemiLight = hemiLight
     if (_state) _state.hemiLight = hemiLight
 
-    const dirLight = new DirectionalLight(0xffffff, 0)
-    dirLight.position.set(5, 5, 5)
-    scene.add(dirLight)
     webglContext.dirLight = dirLight
     ;(appState as any).dirLight = dirLight
     if (_state) _state.dirLight = dirLight
-
-    appState.withMutation(() => {
-        const diagnostics = appState.scenePerformanceDiagnostics as any
-        diagnostics.active = true
-        diagnostics.renderer = support.renderer
-        diagnostics.vendor = support.vendor
-
-        if (_state) {
-            _state.scenePerformanceDiagnostics.active = true
-            ;(_state.scenePerformanceDiagnostics as any).renderer = support.renderer
-            ;(_state.scenePerformanceDiagnostics as any).vendor = support.vendor
-        }
-    })
-
-    const glowGeo = new SphereGeometry(3.15, 32, 16)
-    const glowMat = new MeshBasicMaterial({
-        color: 0x0d2024,
-        transparent: true,
-        opacity: 0.026,
-        side: BackSide
-    })
-    const glowSphere = new Mesh(glowGeo, glowMat)
-    glowSphere.scale.set(1.16, 0.9, 1.34)
-    glowSphere.name = 'semantic-depth-atmosphere'
-    scene.add(glowSphere)
-
-    const refGeo = new SphereGeometry(2.35, 48, 24)
-    const refMat = new MeshBasicMaterial({
-        color: 0x4ecdc4,
-        wireframe: true,
-        transparent: true,
-        opacity: 0.0045,
-        depthWrite: false,
-        blending: AdditiveBlending
-    })
-    const refSphere = new Mesh(refGeo, refMat)
-    refSphere.scale.set(1.12, 0.86, 1.28)
-    refSphere.name = 'county-depth-reference'
-    scene.add(refSphere)
 
     // W8: yield before heavy geometry/buffer work to break the init long task.
     // createPoints() uploads 8,406 × 3 floats + 8,406 × 16 instance matrices;
