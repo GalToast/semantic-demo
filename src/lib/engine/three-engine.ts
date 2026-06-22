@@ -35,8 +35,11 @@ import {
     BackSide
 } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+export { getSceneRenderableDiagnostics } from './renderer/renderer-diagnostics'
 
-import { webglContext, getLiveResourceCounts } from '@lib/engine/webgl-context'
+import { webglContext } from '@lib/engine/webgl-context'
+import { detectWebGLSupport, showWebGLFallback } from './renderer/webgl-fallback'
+import { getSceneRenderableDiagnostics, sampleScenePerformance } from './renderer/renderer-diagnostics'
 import { CONFIG } from '@lib/engine/config'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import {
@@ -460,107 +463,6 @@ function scheduleNextAnimationFrame(continuous: boolean): void {
     }, IDLE_STATIC_FRAME_INTERVAL_MS)
 }
 
-function detectWebGLSupport() {
-    if (typeof document === 'undefined') return { supported: false, reason: 'document-unavailable' }
-    const canvas = document.createElement('canvas')
-    const contextAttributes = { alpha: true, antialias: true }
-    try {
-        const context = (canvas.getContext('webgl2', contextAttributes) ||
-            canvas.getContext('webgl', contextAttributes) ||
-            canvas.getContext('experimental-webgl', contextAttributes)) as WebGLRenderingContext | null
-        if (!context) return { supported: false, reason: 'context-unavailable' }
-        const debugInfo = context.getExtension?.('WEBGL_debug_renderer_info')
-        return {
-            supported: true,
-            reason: 'available',
-            renderer: debugInfo ? context.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL) : null,
-            vendor: debugInfo ? context.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL) : null
-        }
-    } catch (error) {
-        return { supported: false, reason: (error as Error)?.message || 'context-probe-threw' }
-    }
-}
-
-function showWebGLFallback(container: HTMLElement, detail: { supported?: boolean; reason?: string } = {}) {
-    if (!container) return
-    document.body.dataset.graphicsMode = 'fallback'
-    _withStateMutation?.(() => {
-        if (!_state) return
-        _state.scenePerformanceDiagnostics.active = false
-        _state.scenePerformanceDiagnostics.reason = detail.reason || 'webgl-unavailable'
-    })
-    if (_state) {
-        _state.scene = null
-        _state.camera = null
-        _state.renderer = null
-        _state.controls = null
-    }
-
-    container.querySelectorAll('canvas').forEach((c) => c.remove())
-    const existingNotice = container.querySelector('.webgl-fallback-notice')
-    if (existingNotice) existingNotice.remove()
-
-    const notice = document.createElement('section')
-    notice.className = 'webgl-fallback-notice'
-    notice.setAttribute('role', 'status')
-    notice.setAttribute('aria-live', 'polite')
-    const kicker = document.createElement('div')
-    kicker.className = 'webgl-fallback-kicker'
-    kicker.textContent = 'Graphics fallback'
-    const heading = document.createElement('h2')
-    heading.textContent = '3D view is unavailable on this device.'
-    const body = document.createElement('p')
-    body.textContent =
-        'The county records still load. Use the map view while graphics acceleration is blocked or unavailable.'
-    const mapButton = document.createElement('button')
-    mapButton.type = 'button'
-    mapButton.className = 'webgl-fallback-map'
-    mapButton.setAttribute('data-webgl-fallback-map', '')
-    mapButton.textContent = 'Open map view'
-    notice.append(kicker, heading, body, mapButton)
-    container.appendChild(notice)
-
-    _mapButtonClickHandler = (event: MouseEvent) => {
-        event.preventDefault()
-        if (_viewController?.switchView) {
-            _viewController.switchView('map')
-            return
-        }
-        document.getElementById('map-container')?.classList.add('active')
-        container.classList.add('hidden')
-        _mapState?.initMap?.()
-    }
-    mapButton.addEventListener('click', _mapButtonClickHandler)
-
-    _uiFeedback?.showExperienceToast(
-        'Graphics fallback active',
-        'Map view remains available while 3D graphics are unavailable.'
-    )
-}
-
-function smoothDiagnosticValue(current: number, next: number, sampleCount: number): number {
-    const divisor = Math.max(1, Math.min(sampleCount, 120))
-    return (current * (divisor - 1) + next) / divisor
-}
-
-// ── Exported Functions ───────────────────────────────────────────────────────
-
-export function getSceneRenderableDiagnostics() {
-    const perf = _state?.scenePerformanceDiagnostics
-    const resources = getLiveResourceCounts()
-    return {
-        active: perf?.active ?? false,
-        fps: Math.round(1000 / Math.max(1, perf?.avgFrameMs || 0)),
-        drawCalls: perf?.drawCalls ?? 0,
-        triangles: perf?.triangles ?? 0,
-        points: _state?.points?.length || 0,
-        myceliumCoreSegments: perf?.myceliumCoreSegments ?? 0,
-        myceliumWispySegments: perf?.myceliumWispySegments ?? 0,
-        myceliumBridgeSegments: perf?.myceliumBridgeSegments ?? 0,
-        memory: resources
-    }
-}
-
 interface ScenePerformanceTimings {
     controlsMs?: number
     nodeMotionMs?: number
@@ -570,64 +472,6 @@ interface ScenePerformanceTimings {
     updateMs?: number
     renderMs?: number
     overlayUpdateMs?: number
-}
-
-function sampleScenePerformance(frameMs: number, timings: ScenePerformanceTimings = {}) {
-    appState.withMutation(() => {
-        const diagnostics = appState.scenePerformanceDiagnostics
-        diagnostics.active = !!(
-            appState.renderer &&
-            appState.scene &&
-            appState.camera &&
-            appState.currentView === 'galaxy'
-        )
-        diagnostics.reason = diagnostics.active ? 'sampling' : 'inactive-view'
-        diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1)
-        diagnostics.avgFrameMs = smoothDiagnosticValue(diagnostics.avgFrameMs || 0, frameMs, diagnostics.sampleCount)
-        diagnostics.maxFrameMs = Math.max(frameMs, (diagnostics.maxFrameMs || 0) * SCENE_PERF_EMA_DECAY)
-        diagnostics.avgControlsMs = smoothDiagnosticValue(
-            diagnostics.avgControlsMs || 0,
-            timings.controlsMs || 0,
-            diagnostics.sampleCount
-        )
-        diagnostics.avgNodeMotionMs = smoothDiagnosticValue(
-            diagnostics.avgNodeMotionMs || 0,
-            timings.nodeMotionMs || 0,
-            diagnostics.sampleCount
-        )
-        diagnostics.avgThreadUpdateMs = smoothDiagnosticValue(
-            diagnostics.avgThreadUpdateMs || 0,
-            timings.threadUpdateMs || 0,
-            diagnostics.sampleCount
-        )
-        diagnostics.avgGlowMs = smoothDiagnosticValue(
-            diagnostics.avgGlowMs || 0,
-            timings.glowMs || 0,
-            diagnostics.sampleCount
-        )
-        diagnostics.avgLensMs = smoothDiagnosticValue(
-            diagnostics.avgLensMs || 0,
-            timings.lensMs || 0,
-            diagnostics.sampleCount
-        )
-        diagnostics.avgUpdateMs = smoothDiagnosticValue(
-            diagnostics.avgUpdateMs || 0,
-            timings.updateMs || 0,
-            diagnostics.sampleCount
-        )
-        diagnostics.maxUpdateMs = Math.max(timings.updateMs || 0, (diagnostics.maxUpdateMs || 0) * SCENE_PERF_EMA_DECAY)
-        diagnostics.avgRenderMs = smoothDiagnosticValue(
-            diagnostics.avgRenderMs || 0,
-            timings.renderMs || 0,
-            diagnostics.sampleCount
-        )
-        diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * SCENE_PERF_EMA_DECAY)
-        ;(diagnostics as any).renderables = getSceneRenderableDiagnostics()
-
-        if (_state) {
-            Object.assign(_state.scenePerformanceDiagnostics, diagnostics)
-        }
-    })
 }
 
 export function updateCameraViewportOffset() {
@@ -684,7 +528,11 @@ export async function initThreeJS() {
 
     const support = detectWebGLSupport()
     if (!support.supported) {
-        showWebGLFallback(container, { reason: support.reason })
+        _mapButtonClickHandler = showWebGLFallback(
+            container,
+            { reason: support.reason },
+            { state: _state, viewController: _viewController, mapState: _mapState, uiFeedback: _uiFeedback }
+        )
         return false
     }
 
@@ -718,7 +566,11 @@ export async function initThreeJS() {
     } catch (error) {
         if (import.meta.env.DEV)
             console.error('WebGL renderer creation failed; using semantic demo graphics fallback.', error)
-        showWebGLFallback(container, { reason: (error as Error)?.message || 'renderer-create-failed' })
+        _mapButtonClickHandler = showWebGLFallback(
+            container,
+            { reason: (error as Error)?.message || 'renderer-create-failed' },
+            { state: _state, viewController: _viewController, mapState: _mapState, uiFeedback: _uiFeedback }
+        )
         return false
     }
 
@@ -1403,10 +1255,14 @@ export function animate() {
 
         const renderEnd = performance.now()
 
-        sampleScenePerformance(sceneFrameMs, {
-            updateMs: updateEnd - updateStart,
-            renderMs: renderEnd - renderStart
-        })
+        sampleScenePerformance(
+            sceneFrameMs,
+            {
+                updateMs: updateEnd - updateStart,
+                renderMs: renderEnd - renderStart
+            },
+            _state
+        )
     } catch (err) {
         if (import.meta.env.DEV) console.error('[three-engine] Unhandled exception in animate loop:', err)
         _circuitBreakerTripped = true
