@@ -54,8 +54,10 @@ describe('createLazyComponent runtime behavior', () => {
         const lc = createLazyComponent(fake.loader)
         lc.ensure(true)
         expect(lc.isPending).toBe(true)
-        // wait for the fake loader's setTimeout to fire
-        await new Promise((r) => setTimeout(r, 20))
+        // Wait for the fake loader's setTimeout to fire AND any microtask
+        // queue to drain. 50ms is comfortable in batch runs (20ms was
+        // occasionally flaky under parallel test load).
+        await new Promise((r) => setTimeout(r, 50))
         expect(lc.current).toEqual({ name: 'TestComponent' })
         expect(lc.isPending).toBe(false)
     })
@@ -66,7 +68,7 @@ describe('createLazyComponent runtime behavior', () => {
         lc.ensure(true)
         lc.ensure(true)
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 20))
+        await new Promise((r) => setTimeout(r, 50))
         expect(fake.callCount).toBe(1)
         expect(lc.current).toEqual({ x: 1 })
     })
@@ -85,7 +87,7 @@ describe('createLazyComponent runtime behavior', () => {
         const fake = makeFakeLoader({ x: 1 }, { delay: 5 })
         const lc = createLazyComponent(fake.loader)
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 20))
+        await new Promise((r) => setTimeout(r, 50))
         expect(lc.current).not.toBeNull()
         lc.ensure(false, { clearOnFalse: true })
         expect(lc.current).toBeNull()
@@ -96,7 +98,7 @@ describe('createLazyComponent runtime behavior', () => {
         const fake = makeFakeLoader({ x: 1 }, { delay: 5 })
         const lc = createLazyComponent(fake.loader)
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 20))
+        await new Promise((r) => setTimeout(r, 50))
         expect(lc.current).not.toBeNull()
         lc.ensure(false) // no clearOnFalse
         expect(lc.current).not.toBeNull()
@@ -107,7 +109,7 @@ describe('createLazyComponent runtime behavior', () => {
         const lc = createLazyComponent(fake.loader, { logOnError: false })
         lc.ensure(true)
         expect(lc.isPending).toBe(true)
-        await new Promise((r) => setTimeout(r, 20))
+        await new Promise((r) => setTimeout(r, 50))
         expect(lc.isPending).toBe(false)
         expect(lc.current).toBeNull()
     })
@@ -121,7 +123,7 @@ describe('createLazyComponent runtime behavior', () => {
         const failing = makeFakeLoader({}, { shouldReject: true })
         const lc = createLazyComponent(failing.loader, { logOnError: false })
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 20))
+        await new Promise((r) => setTimeout(r, 50))
         expect(lc.isPending).toBe(false)
         // The handle's isPending flag is the gate; since it's false, a
         // future ensure(true) would proceed. Confirm by checking state.
@@ -135,13 +137,13 @@ describe('createLazyComponent idle option', () => {
         // (microtask boundary, no idle callback). We can't directly observe
         // the absence of requestIdleCallback here, but we CAN observe that
         // a short-delay loader resolves before the test would have given
-        // requestIdleCallback a chance to fire (test waits 20ms; rIC timeout
+        // requestIdleCallback a chance to fire (test waits 50ms; rIC timeout
         // is 1500ms in the helper, so if it went through rIC we'd see
-        // callCount=0 after 20ms).
+        // callCount=0 after 50ms).
         const fake = makeFakeLoader({ x: 1 }, { delay: 1 })
         const lc = createLazyComponent(fake.loader, { idle: false })
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 20))
+        await new Promise((r) => setTimeout(r, 50))
         expect(fake.callCount).toBe(1)
         expect(lc.current).toEqual({ x: 1 })
     })
