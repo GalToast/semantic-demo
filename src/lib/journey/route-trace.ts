@@ -83,17 +83,19 @@ function buildRouteTraceMaterial(): ShaderMaterial {
 }
 
 export function resetRouteTraceDiagnostics(reason: string = 'inactive'): void {
-    (state as any).routeTraceDiagnostics = {
-        active: false,
-        reason,
-        phase: document.body?.dataset?.journeyPhase || 'overview',
-        indexCount: 0,
-        edgeCount: 0,
-        segmentCount: 0,
-        anchorIndex: null,
-        mapPointCount: (state as any).routeTraceDiagnostics?.mapPointCount || 0,
-        mapPathActive: !!(state as any).routeTraceDiagnostics?.mapPathActive
-    };
+    state.withMutation(() => {
+        state.routeTraceDiagnostics = {
+            active: false,
+            reason,
+            phase: document.body?.dataset?.journeyPhase || 'overview',
+            indexCount: 0,
+            edgeCount: 0,
+            segmentCount: 0,
+            anchorIndex: null,
+            mapPointCount: state.routeTraceDiagnostics?.mapPointCount || 0,
+            mapPathActive: !!state.routeTraceDiagnostics?.mapPathActive
+        };
+    });
 }
 
 export function removeRouteTraceOverlay(): void {
@@ -197,17 +199,19 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         .filter((index: number) => index !== anchorIndex)
         .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }));
     (state as any).myceliumGroup.add((state as any).routeTraceLines);
-    (state as any).routeTraceDiagnostics = {
-        active: true,
-        reason: options.reason || (state as any).routeChoreographyState?.reason || 'route',
-        phase: document.body?.dataset?.journeyPhase || (state as any).routeChoreographyState?.phase || 'focus',
-        indexCount: indices.length,
-        edgeCount,
-        segmentCount,
-        anchorIndex,
-        mapPointCount: (state as any).routeTraceDiagnostics?.mapPointCount || 0,
-        mapPathActive: !!(state as any).routeTraceDiagnostics?.mapPathActive
-    };
+    state.withMutation(() => {
+        state.routeTraceDiagnostics = {
+            active: true,
+            reason: options.reason || (state as any).routeChoreographyState?.reason || 'route',
+            phase: document.body?.dataset?.journeyPhase || (state as any).routeChoreographyState?.phase || 'focus',
+            indexCount: indices.length,
+            edgeCount,
+            segmentCount,
+            anchorIndex,
+            mapPointCount: state.routeTraceDiagnostics?.mapPointCount || 0,
+            mapPathActive: !!state.routeTraceDiagnostics?.mapPathActive
+        };
+    });
     if (document.body?.dataset) {
         (document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? 'focus' : 'inactive';
     }
@@ -244,7 +248,9 @@ export function updateRouteTraceOverlayPositions(now: number = performance.now()
         line.material.uniforms.baseOpacity.value = targetOpacity;
         line.material.uniforms.opacity.value = targetOpacity;
     }
-    (state as any).routeTraceDiagnostics.segmentCount = getLineSegmentCount(line);
+    state.withMutation(() => {
+        state.routeTraceDiagnostics.segmentCount = getLineSegmentCount(line);
+    });
 }
 
 export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw as any);
