@@ -64,6 +64,7 @@ export class DisposableRegistry {
     /** Register a raw cleanup function */
     add(dispose: DisposeFn): void
     add(disposable: { dispose(): void }): void
+    add(disposable: DisposeLike): void
     add(fn: DisposeLike): void {
         if (this.disposed && this.warnAfterDispose) {
             // eslint-disable-next-line no-console
@@ -87,12 +88,7 @@ export class DisposableRegistry {
 
     /** Track a DOM / EventTarget listener.  Removes it on disposeAll().
      *  Accepts any object with removeEventListener (e.g. Three.js OrbitControls). */
-    listener(
-        target: any,
-        type: string,
-        handler: EventListener,
-        options?: EventListenerOptions | boolean
-    ): void {
+    listener(target: any, type: string, handler: EventListener, options?: EventListenerOptions | boolean): void {
         this.add(() => target.removeEventListener(type, handler, options))
     }
 
@@ -108,7 +104,13 @@ export class DisposableRegistry {
 
     /** Convenience: track multiple disposables at once */
     addMany(...disposables: DisposeLike[]): void {
-        for (const d of disposables) this.add(d)
+        for (const d of disposables) {
+            if (typeof d === 'function') {
+                this.add(d)
+            } else {
+                this.add(d)
+            }
+        }
     }
 
     /**
@@ -162,7 +164,7 @@ export function assertDisposed(registry: DisposableRegistry, label?: string): vo
     if (!registry.isDisposed) {
         throw new Error(
             `Expected ${label ?? 'DisposableRegistry'} to be disposed, but it was not. ` +
-            `Remaining disposables: ${registry.size}`
+                `Remaining disposables: ${registry.size}`
         )
     }
 }

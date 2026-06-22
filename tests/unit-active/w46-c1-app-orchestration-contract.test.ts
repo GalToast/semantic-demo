@@ -143,9 +143,7 @@ describe('W46-C1: interface fields are complete', () => {
 
 describe('W46-C1: createAppOrchestration wires everything', () => {
     it('exports createAppOrchestration returning AppOrchestration', () => {
-        expect(src).toMatch(
-            /export\s+function\s+createAppOrchestration\(\):\s*AppOrchestration\s*\{/
-        )
+        expect(src).toMatch(/export\s+function\s+createAppOrchestration\(\):\s*AppOrchestration\s*\{/)
     })
 
     it('creates nav mirror, body sync, contract surface, and visibility inside', () => {
@@ -163,17 +161,13 @@ describe('W46-C1: createAppOrchestration wires everything', () => {
         expect(src).toMatch(/function setup\(\)\s*:\s*void\s*\{/)
         // After the `function setup(): void {` opening brace, the body
         // calls deferTriggersImport() then sets cleanupKeyboard.
-        expect(src).toMatch(
-            /function setup\(\)\s*:\s*void\s*\{[\s\S]{0,200}?deferTriggersImport\(\)/
-        )
+        expect(src).toMatch(/function setup\(\)\s*:\s*void\s*\{[\s\S]{0,200}?deferTriggersImport\(\)/)
         expect(src).toMatch(/cleanupKeyboard\s*=\s*setupKeyboardShortcuts/)
     })
 
     it('teardown() cleans up contract + app shell + worker + keyboard', () => {
         expect(src).toMatch(/function teardown\(\)\s*:\s*void\s*\{/)
-        expect(src).toMatch(
-            /function teardown\(\)\s*:\s*void\s*\{[\s\S]{0,400}?teardownContractSurface\(\)/
-        )
+        expect(src).toMatch(/function teardown\(\)\s*:\s*void\s*\{[\s\S]{0,400}?teardownContractSurface\(\)/)
         expect(src).toContain('teardownAppShell()')
         expect(src).toContain('resetSemanticThreadWorker()')
         expect(src).toContain('cleanupKeyboard?.()')
@@ -186,9 +180,7 @@ describe('W46-C1: createAppOrchestration wires everything', () => {
         // createAppOrchestration return object. Match each field by name with a
         // regex that tolerates trailing comma OR end-of-block (last field has no
         // trailing comma in the parallel session's refactor).
-        const returnBlock = src.match(
-            /function createAppOrchestration\(\)[\s\S]*?\n\s{4}return\s*\{[\s\S]*?\n\s{4}\}/
-        )
+        const returnBlock = src.match(/function createAppOrchestration\(\)[\s\S]*?\n\s{4}return\s*\{[\s\S]*?\n\s{4}\}/)
         expect(returnBlock).not.toBeNull()
         const body = returnBlock![0]
         for (const field of [
@@ -208,9 +200,7 @@ describe('W46-C1: createAppOrchestration wires everything', () => {
         ]) {
             // Match `<field>` followed by `,` or `}` or whitespace + `,`/ `}` (covers
             // `field,` and `field\n  }` cases)
-            expect(body).toMatch(
-                new RegExp(`\\b${field}\\b\\s*[,}]`)
-            )
+            expect(body).toMatch(new RegExp(`\\b${field}\\b\\s*[,}]`))
         }
     })
 })
@@ -231,9 +221,7 @@ describe('W46-C1: setupKeyboardShortcuts installs and cleans up a window listene
 
     it('registers a keydown listener and returns a cleanup that removes it', async () => {
         // Lazy-import so the heavy appState chain doesn't pull in at module load
-        const { setupKeyboardShortcuts } = await import(
-            '../../src/lib/orchestration/app-orchestration.svelte'
-        )
+        const { setupKeyboardShortcuts } = await import('../../src/lib/orchestration/app-orchestration.svelte')
 
         // Provide minimal deps (the handler only calls them on key events)
         const cleanup = setupKeyboardShortcuts({

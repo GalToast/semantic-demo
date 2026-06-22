@@ -323,9 +323,9 @@ export function setBusinessData(result: BusinessDataResult): void {
     // and focus flows (focusOnNode) see the data.
     try {
         withStateMutation(() => {
-            appState.points = result.records
+            appState.points = result.records as any
             appState.rawPositionsBuffer = result.positionsBuffer
-            appState.rawClustersBuffer = result.clustersBuffer
+            appState.rawClustersBuffer = result.clustersBuffer as any
             appState.leadEnrichment = result.enrichment
             appState.pointIndexByLeadId = result.pointIndexByLeadId
         })
