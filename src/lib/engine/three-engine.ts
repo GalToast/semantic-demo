@@ -16,6 +16,7 @@
 
 // ── Static @lib/* imports ────────────────────────────────────────────────────
 
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
 import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, Material, MeshPhongMaterial } from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
@@ -392,11 +393,7 @@ let _circuitBreakerTripped = false
 let _webglRestoreTimer: number | null = null
 let _lastHoveredNode: number | null = null
 let _hoverEmissiveFlash = 0
-let _visibilityChangeHandler: (() => void) | null = null
-let _webglContextLostHandler: ((event: any) => void) | null = null
-let _webglContextRestoredHandler: (() => void) | null = null
-let _controlsStartHandler: (() => void) | null = null
-let _controlsEndHandler: (() => void) | null = null
+let _sceneRegistry: DisposableRegistry | null = null
 let _mapButtonClickHandler: ((event: MouseEvent) => void) | null = null
 
 const SCENE_PERF_EMA_DECAY = 0.992
@@ -549,6 +546,72 @@ export async function initThreeJS() {
     ;(appState as any).dirLight = dirLight
     if (_state) _state.dirLight = dirLight
 
+    // Initialize DisposableRegistry for all DOM/Three.js event listeners.
+    // Registering at creation time means we can never forget to remove them.
+    _sceneRegistry?.disposeAll()
+    _sceneRegistry = new DisposableRegistry({ label: 'three-engine' })
+
+    _sceneRegistry.listener(renderer.domElement, 'webglcontextlost', (event: any) => {
+        event.preventDefault()
+        _webglContextLost = true
+        pauseRenderLoopTimers({ clearRestoreTimer: true })
+        _uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
+    })
+
+    _sceneRegistry.listener(renderer.domElement, 'webglcontextrestored stimulus', () => {
+        _webglContextLost = false
+        _webglRestoreTimer = window.setTimeout(() => {
+            _webglRestore?.restoreWebGLContext().catch((err) => {
+                if (import.meta.env.DEV) console.error('Failed to restore WebGL context:', err)
+            })
+            if (
+                _rafId === null &&
+                !_circuitBreakerTripped &&
+                webglContext.renderer &&
+                webglContext.scene &&
+                webglContext.camera
+            ) {
+                animate()
+            }
+        }, 1000)
+    })
+
+    _sceneRegistry.listener(document, 'visibilitychange', () => {
+        if (
+            !document.hidden &&
+            _rafId === null &&
+            _idleFrameTimerId === null &&
+            !_webglContextLost &&
+            !_circuitBreakerTripped &&
+            webglContext.renderer &&
+            webglContext.scene &&
+            webglContext.camera
+        ) {
+            animate()
+        }
+    })
+
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        appState.autoRotate = false
+        if (_state) _state.autoRotate = false
+        const rotateBtn = document.getElementById('btn-rotate')
+        if (rotateBtn) rotateBtn.setAttribute('aria-pressed', 'false')
+    }
+
+    controls.autoRotate = !!(
+        (appState.autoRotate || _state?.autoRotate) &&
+        !(appState.autoRotateSuspended || _state?.autoRotateSuspended)
+    )
+    controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED
+
+    _sceneRegistry.listener(controls, 'start', () => {
+        _cameraControls?.releaseFocusCameraAssist('user-control')
+        _cameraControls?.noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
+    })
+    _sceneRegistry.listener(controls, 'end', () => {
+        _cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
+    })
+
     // W8: yield before heavy geometry/buffer work to break the init long task.
     // createPoints() uploads 8,406 × 3 floats + 8,406 × 16 instance matrices;
     // createMycelium() uploads 100,872 edge line segments. Both are O(n)
@@ -685,30 +748,10 @@ function pauseRenderLoopTimers(options: { clearRestoreTimer?: boolean } = {}): v
 
 export function cancelAnimate() {
     pauseRenderLoopTimers({ clearRestoreTimer: true })
-    // Remove the visibilitychange handler to prevent accumulation on re-init (W1-H1)
-    if (_visibilityChangeHandler) {
-        document.removeEventListener('visibilitychange', _visibilityChangeHandler)
-        _visibilityChangeHandler = null
-    }
-    // Remove WebGL canvas event listeners to prevent leaks on re-init
-    const _renderer = webglContext.renderer || _state?.renderer
-    if (_webglContextLostHandler && _renderer?.domElement) {
-        _renderer.domElement.removeEventListener('webglcontextlost', _webglContextLostHandler)
-        _webglContextLostHandler = null
-    }
-    if (_webglContextRestoredHandler && _renderer?.domElement) {
-        _renderer.domElement.removeEventListener('webglcontextrestored', _webglContextRestoredHandler)
-        _webglContextRestoredHandler = null
-    }
-    // Remove OrbitControls custom event listeners
-    if (_controlsStartHandler && webglContext.controls) {
-        webglContext.controls.removeEventListener('start', _controlsStartHandler)
-        _controlsStartHandler = null
-    }
-    if (_controlsEndHandler && webglContext.controls) {
-        webglContext.controls.removeEventListener('end', _controlsEndHandler)
-        _controlsEndHandler = null
-    }
+    // Dispose all registered event listeners and timers via the central
+    // registry.  Replaces the previous per-handler null-check dance.
+    _sceneRegistry?.disposeAll()
+    _sceneRegistry = null
     // Remove mapButton click listener (defensive cleanup)
     if (_mapButtonClickHandler) {
         const mapBtn = document.querySelector('.webgl-fallback-map')

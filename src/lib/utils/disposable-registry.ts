@@ -85,8 +85,14 @@ export class DisposableRegistry {
         this.add(() => cancelAnimationFrame(id))
     }
 
-    /** Track a DOM / EventTarget listener.  Removes it on disposeAll() */
-    listener(target: EventTarget, type: string, handler: EventListener, options?: EventListenerOptions | boolean): void {
+    /** Track a DOM / EventTarget listener.  Removes it on disposeAll().
+     *  Accepts any object with removeEventListener (e.g. Three.js OrbitControls). */
+    listener(
+        target: any,
+        type: string,
+        handler: EventListener,
+        options?: EventListenerOptions | boolean
+    ): void {
         this.add(() => target.removeEventListener(type, handler, options))
     }
 
