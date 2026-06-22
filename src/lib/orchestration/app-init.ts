@@ -21,6 +21,7 @@ import { get } from 'svelte/store'
 import { initData, setLoadingPhase } from '@lib/data-store'
 import { navStore } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
+import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
 import { appState } from '@lib/state/app.svelte'
 import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle'
 import {
@@ -35,6 +36,7 @@ import { switchView as switchViewAction } from '@lib/orchestration/view-controll
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
+import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
 import { search } from '@lib/search/state'
 import { setTrailFromSeed } from '@lib/journey/neighborhood'
 import { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settler'
@@ -99,6 +101,8 @@ let _initCalled = false
 let _safetyTimers: SafetyTimers | null = null
 let _unsubWindowGlobals: (() => void) | null = null
 let _unsubWebglRestore: (() => void) | null = null
+let _unsubViewport: (() => void) | null = null
+let _unsubParity: (() => void) | null = null
 
 function refreshTraversalUiForCompatAction(action: string): void {
     try {
@@ -388,6 +392,15 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // ── Phase 2: Window globals (immediate, before async work) ────────────────
     _unsubWindowGlobals = installWindowGlobals()
 
+    // ── Phase 2.5: Viewport listeners + parity attribute sync ─────────────────
+    // W46-B1: These were previously installed by App.svelte's onMount, which
+    // duplicated the orchestration seam. Moving them here makes App.svelte a
+    // thin shell that delegates lifecycle to appInit(). Cleanups are exposed
+    // via teardownAppShell() so App.svelte's onMount return-cleanup can drive
+    // teardown without re-importing the installers.
+    _unsubViewport = initViewportListeners()
+    _unsubParity = installParityAttributeSync()
+
     // ── Phase 3: Data loading ─────────────────────────────────────────────────
     //
     // initData() is async and loads business records + semantic threads.
@@ -443,6 +456,8 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         clearSafetyTimers(_safetyTimers)
         _safetyTimers = null
         _unsubWindowGlobals?.()
+        _unsubViewport?.()
+        _unsubParity?.()
         _unsubWebglRestore?.()
         _initCalled = false
     }
@@ -453,4 +468,16 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
  */
 export function isAppInitComplete(): boolean {
     return _initCalled
+}
+
+/**
+ * Explicit teardown for App.svelte's onMount return-cleanup.
+ * Calls the viewport and parity cleanups installed by appInit() Phase 2.5.
+ * Safe to call even if appInit() never ran (no-op).
+ */
+export function teardownAppShell(): void {
+    _unsubViewport?.()
+    _unsubViewport = null
+    _unsubParity?.()
+    _unsubParity = null
 }

@@ -16,10 +16,10 @@
   import { onMount, type Snippet } from 'svelte';
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
-  import { viewport, initViewportListeners } from '@lib/stores/viewport.svelte.ts';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { resetSemanticThreadWorker } from '@lib/semantic-threads';
   import { appState } from '@lib/state/app.svelte.ts';
-  import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts';
+  import { teardownAppShell } from '@lib/orchestration/app-init';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
 
@@ -319,17 +319,6 @@
       }
     };
 
-    const cleanupViewport = initViewportListeners();
-    const cleanupParity = installParityAttributeSync();
-    const params = new URLSearchParams(window.location.search || '');
-    if (params.get('q')?.trim()) {
-      navStore.update((state) => ({
-        ...state,
-        mode: 'search',
-        surface: 'search'
-      }));
-    }
-
     // W5-T1: Defer triggers.ts subscribe() registration until after FCP.
     // The 15+ subscribe() calls in triggers.ts register handlers that synchronously
     // call refreshCompositionState(), updateJourneyCompass(), navStore.update(), etc.
@@ -346,8 +335,7 @@
     }
     return () => {
       delete contractWindow.__forceSemanticDiveContractSurface;
-      cleanupViewport();
-      cleanupParity();
+      teardownAppShell();
       resetSemanticThreadWorker();
       import('@lib/ui/weather-ui').then(({ disposeWeatherUi }) => disposeWeatherUi()).catch(() => {});
     };

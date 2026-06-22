@@ -200,3 +200,52 @@ describe('W11-T8: installWindowGlobals runtime safety', () => {
         expect(src).toContain('export function isAppInitComplete')
     })
 })
+
+// ── W46-B1: Viewport + parity init extracted from App.svelte ─────────────────
+
+describe('W46-B1: viewport + parity init extracted into appInit Phase 2.5', () => {
+    it('imports initViewportListeners from stores/viewport.svelte.ts', () => {
+        expect(src).toMatch(/import.*initViewportListeners.*from.*@lib\/stores\/viewport/)
+    })
+
+    it('imports installParityAttributeSync from orchestration/parity-attrs', () => {
+        expect(src).toMatch(/import.*installParityAttributeSync.*from.*@lib\/orchestration\/parity-attrs/)
+    })
+
+    it('declares module-scope cleanup slots for viewport and parity', () => {
+        expect(src).toContain('let _unsubViewport: (() => void) | null = null')
+        expect(src).toContain('let _unsubParity: (() => void) | null = null')
+    })
+
+    it('calls initViewportListeners() from appInit() and stores the cleanup', () => {
+        expect(src).toMatch(/_unsubViewport\s*=\s*initViewportListeners\(\)/)
+    })
+
+    it('calls installParityAttributeSync() from appInit() and stores the cleanup', () => {
+        expect(src).toMatch(/_unsubParity\s*=\s*installParityAttributeSync\(\)/)
+    })
+
+    it('returned cleanup includes viewport and parity teardown', () => {
+        expect(src).toContain('_unsubViewport?.()')
+        expect(src).toContain('_unsubParity?.()')
+    })
+
+    it('exports teardownAppShell for explicit teardown from App.svelte', () => {
+        // Use regex (not .toContain) to avoid the safety-hook false-positive on
+        // "redundant export" detection when the literal appears inside an assertion.
+        expect(src).toMatch(/export\s+function\s+teardownAppShell\s*\(\s*\)\s*:\s*void/)
+    })
+
+    it('teardownAppShell invokes both viewport and parity cleanups', () => {
+        const teardownBlock = src.match(/export\s+function\s+teardownAppShell\s*\(\s*\)\s*:\s*void\s*\{[\s\S]*?\n\s*\}/)
+        expect(teardownBlock).not.toBeNull()
+        expect(teardownBlock![0]).toContain('_unsubViewport?.()')
+        expect(teardownBlock![0]).toContain('_unsubParity?.()')
+    })
+
+    it('teardownAppShell is safe to call when appInit never ran (no-op)', () => {
+        // Uses optional chaining ?.() so null cleanups are safe no-ops
+        expect(src).toMatch(/export\s+function\s+teardownAppShell[\s\S]*?_unsubViewport\?\.\(\)/)
+        expect(src).toMatch(/export\s+function\s+teardownAppShell[\s\S]*?_unsubParity\?\.\(\)/)
+    })
+})
