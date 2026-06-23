@@ -277,8 +277,11 @@ export function updateUrlState(
 
     const params = getSearchParams()
 
-    // View
-    params.set('view', $nav.currentView)
+    // View — only encode when non-default (galaxy) so a fresh visit keeps a
+    // clean URL. applyUrlState() already defaults a missing `view` param to
+    // galaxy, so omitting it on the default is lossless.
+    if ($nav.currentView !== 'galaxy') params.set('view', $nav.currentView)
+    else params.delete('view')
 
     // Search query
     const searchInput = document.getElementById('search-input') as HTMLInputElement | null
