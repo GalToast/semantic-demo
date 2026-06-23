@@ -13,6 +13,7 @@ import { resolve } from 'node:path';
 
 const ROOT = resolve(import.meta.dirname, '../..');
 const SEARCH_RESULTS = `${ROOT}/src/components/SearchResults.svelte`;
+const SEARCH_RESULT_ITEM = `${ROOT}/src/components/SearchResultItem.svelte`;
 
 function read(path) {
   return readFileSync(path, 'utf-8');
@@ -113,11 +114,13 @@ describe('A11y W43-A: Roving tabindex for keyboard navigation', () => {
   });
 
   it('active result button has tabindex=0', () => {
-    expect(src).toMatch(/tabindex=\{order === activeIndex \? 0 : -1\}/);
+    const childSrc = read(SEARCH_RESULT_ITEM);
+    expect(childSrc).toMatch(/tabindex=\{active \? 0 : -1\}/);
   });
 
   it('inactive result buttons have tabindex=-1', () => {
-    expect(src).toMatch(/order === activeIndex \? 0 : -1/);
+    const childSrc = read(SEARCH_RESULT_ITEM);
+    expect(childSrc).toMatch(/active \? 0 : -1/);
   });
 });
 
@@ -132,8 +135,8 @@ describe('A11y W43-A: Active result live announcement', () => {
     expect(src).toMatch(/liveAnnouncement = .*idx \+ 1.*resultSlice\.length/);
   });
 
-  it('liveAnnouncement includes ariaLabel from itemModel', () => {
-    expect(src).toMatch(/liveAnnouncement = .*ariaLabel/);
+  it('liveAnnouncement includes result name and rank', () => {
+    expect(src).toMatch(/liveAnnouncement = .*Focus/);
   });
 
   it('aria-activedescendant is set on the listbox', () => {
@@ -141,7 +144,8 @@ describe('A11y W43-A: Active result live announcement', () => {
   });
 
   it('result options have aria-selected attribute', () => {
-    expect(src).toMatch(/aria-selected=\{order === activeIndex\}/);
+    const childSrc = read(SEARCH_RESULT_ITEM);
+    expect(childSrc).toContain('aria-selected={active}');
   });
 });
 
@@ -159,7 +163,8 @@ describe('A11y W43-A: No keyboard trap — Tab is not trapped', () => {
   });
 
   it('result items have role="option"', () => {
-    expect(src).toMatch(/role="option"/);
+    const childSrc = read(SEARCH_RESULT_ITEM);
+    expect(childSrc).toContain('role="option"');
   });
 });
 

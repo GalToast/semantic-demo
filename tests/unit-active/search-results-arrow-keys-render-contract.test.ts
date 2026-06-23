@@ -11,6 +11,7 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 const SEARCH_RESULTS = resolve(import.meta.dirname, '../../src/components/SearchResults.svelte');
+const SEARCH_RESULT_ITEM = resolve(import.meta.dirname, '../../src/components/SearchResultItem.svelte');
 
 function readSource(): string {
   return readFileSync(SEARCH_RESULTS, 'utf-8');
@@ -25,12 +26,14 @@ describe('A2-8: search results arrow-key navigation', () => {
   });
 
   it('exposes only the active result as a tab stop (roving tabindex)', () => {
-    expect(src).toMatch(/tabindex=\{order\s*===\s*activeIndex\s*\?\s*0\s*:\s*-1\}/);
+    const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8');
+    expect(childSrc).toMatch(/tabindex=\{active \? 0 : -1\}/);
   });
 
   it('uses listbox/option ARIA roles on the container and results', () => {
     expect(src).toContain('role="listbox"');
-    expect(src).toContain('role="option"');
+    const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8');
+    expect(childSrc).toContain('role="option"');
   });
 
   it('declares aria-activedescendant on the listbox container', () => {
@@ -38,7 +41,8 @@ describe('A2-8: search results arrow-key navigation', () => {
   });
 
   it('marks each option with aria-selected', () => {
-    expect(src).toContain('aria-selected={order === activeIndex}');
+    const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8');
+    expect(childSrc).toContain('aria-selected={active}');
   });
 
   it('has a keydown handler on the results list container', () => {
@@ -74,7 +78,8 @@ describe('A2-8: search results arrow-key navigation', () => {
   });
 
   it('applies visual focus indicator via active class on focused result', () => {
-    expect(src).toMatch(/activeIndex.*' active'/);
+    const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8');
+    expect(childSrc).toMatch(/active \? ' active' : ''/);
   });
 
   it('does not trap Tab — lets it move to the next landmark', () => {

@@ -14,6 +14,7 @@ const ROOT = resolve(import.meta.dirname, '../..');
 const CANVAS = join(ROOT, 'src/components/Canvas.svelte');
 const THREAD_INSPECTOR = join(ROOT, 'src/components/ThreadInspector.svelte');
 const SEARCH_RESULTS = join(ROOT, 'src/components/SearchResults.svelte');
+const SEARCH_RESULT_ITEM = join(ROOT, 'src/components/SearchResultItem.svelte');
 
 function read(path) {
   return readFileSync(path, 'utf-8');
@@ -115,7 +116,7 @@ describe('A11y W42-B: Search results live announcement', () => {
   });
 
   it('liveAnnouncement is updated when activeIndex changes', () => {
-    expect(src).toMatch(/liveAnnouncement = .*ariaLabel/);
+    expect(src).toMatch(/liveAnnouncement = .*Focus/);
   });
 
   it('result listbox has aria-label', () => {
@@ -131,6 +132,7 @@ describe('A11y W42-B: Search results live announcement', () => {
   });
 
   it('result options have aria-selected', () => {
-    expect(src).toMatch(/role="option"[\s\S]*?aria-selected=\{order === activeIndex\}/);
+    const childSrc = readFileSync(SEARCH_RESULT_ITEM, 'utf8');
+    expect(childSrc).toMatch(/role="option"[\s\S]*?aria-selected=\{active\}/);
   });
 });
