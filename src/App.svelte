@@ -402,11 +402,12 @@
   );
   let infoPanelOpen = $derived(
     (idleSurfaceActive || searchSurfaceActive || (focusActive && ($viewport.isCompact || bodyCompact))) &&
-      !mapModeActive &&
-      // On compact/mobile, the idle surface shows an empty bottom-sheet that
-      // overlays the 3D canvas. Keep the panel closed on idle mobile/compact;
-      // focus and search surfaces can still open it on mobile.
-      !(($viewport.isCompact || bodyCompact) && idleSurfaceActive && !focusActive && !searchSurfaceActive)
+      !mapModeActive
+    // W46: On compact/mobile idle the search bar is hosted inside InfoPanel
+    // and is the primary entry point. The panel must be considered open so
+    // it receives pointer events and renders at full opacity (0.92) instead of
+    // the collapsed peek state (0.72 / pointer-events:none) which made the
+    // search input unreachable on mobile.
   );
 
   // Preload InfoPanel (host of the panel-contained <SearchBar>) whenever the

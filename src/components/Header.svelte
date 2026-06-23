@@ -464,12 +464,24 @@
     .mode-chip .chip-label {
       display: none;
     }
+    /* W46-D1: show the active chip label on mobile so users know which
+       mode they're in without relying on icon recognition alone. */
+    .mode-chip.active .chip-label,
+    .mode-chip.is-locked .chip-label {
+      display: inline;
+      margin-left: 0.25rem;
+    }
     .mode-chip .chip-icon {
       display: block;
     }
     .mode-chip {
       padding: 0.25rem;
       justify-content: center;
+    }
+    .mode-chip.active,
+    .mode-chip.is-locked {
+      padding: 0.25rem 0.5rem;
+      gap: 0.3rem;
     }
   }
 </style>

@@ -674,7 +674,12 @@ export async function initThreeJS() {
             }
         })
     } else {
-        debugInfo('[three-engine] postprocessing skipped on mobile viewport')
+        // W46-A: Mark the intentional mobile performance path so tests and
+        // future UI can detect it without relying on console text.
+        if (typeof document !== 'undefined' && document.body) {
+            document.body.dataset.postprocessing = 'skipped'
+        }
+        debugInfo('[three-engine] postprocessing skipped on mobile viewport (performance mode)')
     }
 
     // Dev-only: expose engine handle for the Spector.js frame-capture bridge.

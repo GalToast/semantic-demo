@@ -354,8 +354,11 @@ body[data-trail-depth='2'] #canvas-container::after {
 #map-container {
     z-index: var(--z-base);
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transition: opacity 0.4s ease;
+    transition:
+        opacity 0.4s ease,
+        visibility 0.4s ease;
     overflow: hidden;
     isolation: isolate;
     background: radial-gradient(
@@ -372,6 +375,7 @@ body[data-trail-depth='2'] #canvas-container::after {
 
 #map-container.active {
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
 }
 
