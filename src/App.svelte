@@ -16,7 +16,7 @@
   import { onMount, type Snippet } from 'svelte';
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
-  import { viewport } from '@lib/stores/viewport.svelte.ts';
+  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
   import { resetSemanticThreadWorker } from '@lib/semantic-threads';
   import { appState } from '@lib/state/app.svelte.ts';
   import { teardownAppShell } from '@lib/orchestration/app-init';
