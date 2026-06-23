@@ -318,8 +318,10 @@
 </script>
 
 {#if visible}
-  <!-- Screen reader live region for announcing active result during keyboard navigation (WCAG 4.1.3) -->
-  <div class="sr-only" aria-live="assertive" aria-atomic="true" role="status">
+  <!-- Screen reader live region for announcing active result during keyboard navigation (WCAG 4.1.3).
+       aria-live="polite": this announces selection/navigiation position, not an error,
+       so it must not interrupt (assertive is reserved for critical alerts/errors). -->
+  <div class="sr-only" aria-live="polite" aria-atomic="true" role="status">
     {liveAnnouncement}
   </div>
   <div id="search-results" class="search-results-wrapper" class:active={isResultsSurfaceActive}>
@@ -468,6 +470,21 @@
     overflow-y: auto;
     overscroll-behavior: contain;
     touch-action: pan-y;
+    /* Visual styles previously on orphaned .search-results selector */
+    background: rgba(7, 16, 24, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 0.5rem;
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    scrollbar-width: thin;
+    scrollbar-color: rgba(78, 205, 196, 0.2) transparent;
+  }
+  .search-results-wrapper::-webkit-scrollbar {
+    width: 4px;
+  }
+  .search-results-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(78, 205, 196, 0.2);
+    border-radius: 2px;
   }
 
   :global(.search-container.info-panel-contained) .search-results-wrapper {
@@ -484,143 +501,5 @@
     .search-results-wrapper {
       max-height: min(40vh, 320px);
     }
-  }
-
-  /* ── Status messages ──────────────────────────────────────────────────────── */
-  .search-status {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.4rem;
-    text-align: center;
-    padding: 0.5rem;
-    font-size: 0.75rem;
-    color: #4ecdc4;
-  }
-  .search-error {
-    color: #ff6b6b;
-  }
-  .search-empty {
-    color: rgba(224, 240, 240, 0.45);
-  }
-  .search-hint {
-    color: rgba(224, 240, 240, 0.3);
-    font-style: italic;
-  }
-
-  /* ── Summary bar ──────────────────────────────────────────────────────────── */
-  .search-summary {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.3rem 0.75rem;
-    font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.4);
-    margin-bottom: 0.35rem;
-  }
-  .summary-score {
-    font-family: 'JetBrains Mono', monospace;
-    color: #96ceb4;
-  }
-  .summary-type {
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    opacity: 0.6;
-  }
-
-  /* ── Results list ─────────────────────────────────────────────────────────── */
-  .search-results {
-    background: rgba(7, 16, 24, 0.95);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border-radius: 0.5rem;
-    border: 1px solid rgba(78, 205, 196, 0.15);
-    max-height: 320px;
-    overflow-y: auto;
-    overscroll-behavior: contain;
-    touch-action: pan-y;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(78, 205, 196, 0.2) transparent;
-  }
-  .search-results::-webkit-scrollbar {
-    width: 4px;
-  }
-  .search-results::-webkit-scrollbar-thumb {
-    background: rgba(78, 205, 196, 0.2);
-    border-radius: 2px;
-  }
-  .search-results.is-compact {
-    max-height: 40vh;
-  }
-
-  /* ── Individual result row ────────────────────────────────────────────────── */
-  .search-result {
-    display: flex;
-    flex-direction: column;
-    gap: 0.15rem;
-    width: 100%;
-    padding: 0.55rem 0.75rem;
-    background: none;
-    border: none;
-    border-bottom: 1px solid rgba(78, 205, 196, 0.06);
-    color: #e0f0f0;
-    cursor: pointer;
-    text-align: left;
-    font-family: 'Nunito Sans', system-ui, sans-serif;
-    font-size: 0.8rem;
-    transition: background 0.1s ease;
-  }
-  .search-result:last-child {
-    border-bottom: none;
-  }
-  .search-result:hover {
-    background: rgba(78, 205, 196, 0.08);
-  }
-  .search-result.active {
-    background: rgba(78, 205, 196, 0.14);
-    border-left: 2px solid #4ecdc4;
-  }
-  /* A2-8: Visible focus ring for keyboard navigation on active result */
-  .search-result.active:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.8);
-    outline-offset: -2px;
-  }
-
-  .result-main {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-  }
-  .result-name {
-    flex: 1;
-    font-weight: 600;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  .result-score {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.65rem;
-    color: #96ceb4;
-    flex-shrink: 0;
-  }
-
-  .result-meta {
-    display: flex;
-    align-items: center;
-    gap: 0.4rem;
-    font-size: 0.7rem;
-  }
-  .result-category {
-    color: #4ecdc4;
-    opacity: 0.8;
-    white-space: nowrap;
-  }
-  .result-snippet {
-    color: rgba(224, 240, 240, 0.4);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 220px;
   }
 </style>

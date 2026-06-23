@@ -16,6 +16,7 @@
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS,
     navStore,
+    focusedIndex,
     type NavStoreApi
   } from '@lib/stores/navigation.svelte.ts';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
@@ -64,6 +65,7 @@
   // Using $derived with get() doesn't work for svelte/store writables.
   let activeMode = $state(currentMode());
   let activeView = $state(currentView());
+  let hasSelection = $state(focusedIndex() != null);
   let activeIndex = $state(Math.max(0, modes.findIndex((m) => {
     if (m.id === 'map') return currentView() === 'map';
     return currentMode() === m.id;
@@ -73,6 +75,7 @@
     const unsub = navStore.subscribe((s) => {
       activeMode = s.mode;
       activeView = s.currentView;
+      hasSelection = s.focusedIndex !== null && Number.isFinite(s.focusedIndex as number);
       // Keep roving tabindex index in sync with the active mode
       const idx = modes.findIndex((m) => {
         if (m.id === 'map') return s.currentView === 'map';
@@ -83,33 +86,54 @@
     return () => unsub();
   });
 
+  /** Modes that require a focused business node to be meaningful.
+   * These match the selection guard in navigation.svelte.ts (mode ===
+   * 'focus' || 'inside' || focusedIndex != null) and the trail lock in
+   * mode-bindings.ts. They render empty/no-op without a selection, so they
+   * are proactively disabled (aria-disabled) rather than appearing active. */
+  const SELECTION_DEPENDENT_MODES = new Set<string>(['trail', 'focus', 'inside']);
+
+  function isModeLocked(modeId: NavMode | 'map'): boolean {
+    return SELECTION_DEPENDENT_MODES.has(modeId) && !hasSelection;
+  }
+
   function isActive(modeId: NavMode | 'map'): boolean {
     if (modeId === 'map') return activeView === 'map';
     return activeMode === modeId;
   }
 
-  /** Roving tabindex keyboard handler for the mode-chip radiogroup */
+  /** Roving tabindex keyboard handler for the mode-chip radiogroup.
+   *  Skips disabled (locked) chips per WAI-ARIA radiogroup guidance. */
   function handleModeKeydown(e: KeyboardEvent): void {
     let newIndex = activeIndex;
+
+    const firstEnabled = modes.findIndex((m) => !isModeLocked(m.id));
+    const lastEnabled = (() => {
+      for (let i = modes.length - 1; i >= 0; i--) {
+        const m = modes[i];
+        if (m && !isModeLocked(m.id)) return i;
+      }
+      return activeIndex;
+    })();
 
     switch (e.key) {
       case 'ArrowRight':
       case 'ArrowDown':
         e.preventDefault();
-        newIndex = (activeIndex + 1) % modes.length;
+        newIndex = nextEnabledIndex(activeIndex, 1);
         break;
       case 'ArrowLeft':
       case 'ArrowUp':
         e.preventDefault();
-        newIndex = (activeIndex - 1 + modes.length) % modes.length;
+        newIndex = nextEnabledIndex(activeIndex, -1);
         break;
       case 'Home':
         e.preventDefault();
-        newIndex = 0;
+        newIndex = firstEnabled;
         break;
       case 'End':
         e.preventDefault();
-        newIndex = modes.length - 1;
+        newIndex = lastEnabled;
         break;
       default:
         return; // Let Enter/Space pass through to native button click behavior
@@ -120,6 +144,17 @@
     if (!target) return;
     const chip = document.querySelector<HTMLElement>(`.mode-chip[data-mode="${target.id}"]`);
     chip?.focus();
+  }
+
+  /** Find the next/previous non-locked mode index, wrapping around. */
+  function nextEnabledIndex(from: number, dir: 1 | -1): number {
+    const n = modes.length;
+    for (let step = 1; step <= n; step++) {
+      const candidate = ((from + dir * step) % n + n) % n;
+      const m = modes[candidate];
+      if (m && !isModeLocked(m.id)) return candidate;
+    }
+    return from;
   }
 
   /** Sync activeIndex when a chip receives focus (roving tabindex pattern) */
@@ -133,6 +168,7 @@
   }
 
   function selectMode(modeId: NavMode | 'map'): void {
+    if (isModeLocked(modeId)) return; // disabled chips no-op (defense in depth)
     if (modeId === 'overview') {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
     } else if (modeId === 'search') {
@@ -238,11 +274,13 @@
         <button type="button"
           class="mode-chip"
           class:active={isActive(mode.id)}
+          disabled={isModeLocked(mode.id)}
+          aria-disabled={isModeLocked(mode.id)}
           role="radio"
           tabindex={isActive(mode.id) ? 0 : -1}
           aria-checked={isActive(mode.id)}
           aria-label={mode.label}
-          title={mode.description}
+          title={isModeLocked(mode.id) ? `${mode.label}: select a business first` : mode.description}
           data-mode={mode.id}
           onclick={() => selectMode(mode.id)}
         >

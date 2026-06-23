@@ -429,6 +429,20 @@
   // W6-T2: keeps Three.js + postprocessing out of the cold-load bundle.
   $effect(() => canvasLazy.ensure(engineReady.value));
 
+  // A11y: move focus into the app when it first becomes interactive.
+  // The Splash modal trap restores focus to <body> (its previouslyFocused)
+  // on dismiss, leaving keyboard/screen-reader users stranded in document
+  // limbo. Land them on the primary entry point instead. rAF defers past the
+  // trap teardown; the compact guard avoids popping the mobile keyboard.
+  $effect(() => {
+    if (!engineReady.value) return;
+    requestAnimationFrame(() => {
+      if (isCompact()) return;
+      const input = document.getElementById('search-input') as HTMLInputElement | null;
+      if (input && document.activeElement !== input) input.focus();
+    });
+  });
+
   $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));
 </script>
 

@@ -99,8 +99,8 @@ describe('A11y W42-B: Search results live announcement', () => {
         src = read(SEARCH_RESULTS)
     })
 
-    it('has sr-only live region with aria-live="assertive"', () => {
-        expect(src).toMatch(/aria-live="assertive"[\s\S]*?role="status"/)
+    it('has sr-only live region with aria-live="polite"', () => {
+        expect(src).toMatch(/aria-live="polite"[\s\S]*?role="status"/)
     })
 
     it('live region uses sr-only class for offscreen positioning', () => {

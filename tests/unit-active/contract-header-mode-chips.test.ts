@@ -74,26 +74,33 @@ describe('A2-5b: Header mode-chip roving tabindex radiogroup', () => {
   // ── 4. Keyboard handler logic ─────────────────────────────────────────
 
   describe('handleModeKeydown function', () => {
-    it('handles ArrowRight and ArrowDown with wrap', () => {
+    it('handles ArrowRight and ArrowDown with skip-disabled wrap', () => {
       expect(src).toMatch(/case 'ArrowRight':/);
       expect(src).toMatch(/case 'ArrowDown':/);
-      expect(src).toMatch(/\(activeIndex \+ 1\) % modes\.length/);
+      // Skip-disabled navigation: arrows advance to the next *enabled* chip.
+      expect(src).toMatch(/nextEnabledIndex\(activeIndex, 1\)/);
     });
 
-    it('handles ArrowLeft and ArrowUp with wrap', () => {
+    it('handles ArrowLeft and ArrowUp with skip-disabled wrap', () => {
       expect(src).toMatch(/case 'ArrowLeft':/);
       expect(src).toMatch(/case 'ArrowUp':/);
-      expect(src).toMatch(/\(activeIndex - 1 \+ modes\.length\) % modes\.length/);
+      expect(src).toMatch(/nextEnabledIndex\(activeIndex, -1\)/);
     });
 
-    it('handles Home to jump to first chip', () => {
+    it('handles Home to jump to first enabled chip', () => {
       expect(src).toMatch(/case 'Home':/);
-      expect(src).toMatch(/newIndex = 0;/);
+      expect(src).toMatch(/newIndex = firstEnabled;/);
     });
 
-    it('handles End to jump to last chip', () => {
+    it('handles End to jump to last enabled chip', () => {
       expect(src).toMatch(/case 'End':/);
-      expect(src).toMatch(/newIndex = modes\.length - 1;/);
+      expect(src).toMatch(/newIndex = lastEnabled;/);
+    });
+
+    it('skips locked (disabled) chips in arrow navigation', () => {
+      // nextEnabledIndex uses isModeLocked to skip selection-dependent chips.
+      expect(src).toMatch(/function nextEnabledIndex/);
+      expect(src).toMatch(/isModeLocked\(m\.id\)/);
     });
 
     it('focuses the target chip via .mode-chip[data-mode] selector', () => {
@@ -138,6 +145,37 @@ describe('A2-5b: Header mode-chip roving tabindex radiogroup', () => {
 
     it('updates activeIndex in the navStore subscription', () => {
       expect(src).toMatch(/if \(idx >= 0\) activeIndex = idx;/);
+    });
+  });
+
+  // ── 8. Selection-dependent mode disabling (a11y UX) ────────────────────
+  // trail/focus/inside require a focused node; they are proactively disabled
+  // (aria-disabled) rather than appearing active but no-oping without a selection.
+
+  describe('selection-dependent mode disabling', () => {
+    it('defines the selection-dependent mode set (trail/focus/inside)', () => {
+      expect(src).toMatch(/SELECTION_DEPENDENT_MODES/);
+      expect(src).toMatch(/'trail'/);
+      expect(src).toMatch(/'focus'/);
+      expect(src).toMatch(/'inside'/);
+    });
+
+    it('tracks whether a selection exists via focusedIndex', () => {
+      expect(src).toMatch(/hasSelection/);
+      expect(src).toMatch(/focusedIndex\(\)/);
+    });
+
+    it('exposes isModeLocked(modeId) helper', () => {
+      expect(src).toMatch(/function isModeLocked/);
+    });
+
+    it('renders disabled + aria-disabled on chips when locked', () => {
+      expect(src).toMatch(/disabled=\{isModeLocked\(mode\.id\)\}/);
+      expect(src).toMatch(/aria-disabled=\{isModeLocked\(mode\.id\)\}/);
+    });
+
+    it('guards selectMode against locked modes (defense in depth)', () => {
+      expect(src).toMatch(/if \(isModeLocked\(modeId\)\) return/);
     });
   });
 });

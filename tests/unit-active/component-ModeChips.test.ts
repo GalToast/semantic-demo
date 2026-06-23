@@ -11,7 +11,7 @@
  *  2. Contains 6 mode-chip buttons (Overview, Search, Trail, Focus, Inside, Map)
  *  3. Each button has role="radio" with aria-checked attribute
  *  4. Each button has aria-label matching its label text
- *  5. Each button has title attribute with mode description
+ *  5. Each button has title attribute (mode description, or locked hint when selection-required)
  *  6. Each button contains an SVG with aria-hidden="true"
  *  7. Each button contains a .chip-label span
  */
@@ -60,8 +60,11 @@ describe('Header mode chips', () => {
         }
     });
 
-    it('each button has title attribute with mode description', () => {
-        expect(source).toContain('title={mode.description}');
+    it('each button has title attribute (mode description, or locked hint when selection-required)', () => {
+        // Non-locked chips show mode.description; selection-dependent chips
+        // show a "select a business first" hint when no node is focused.
+        expect(source).toMatch(/title=\{isModeLocked/);
+        expect(source).toContain('mode.description');
     });
 
     it('each button contains an SVG with aria-hidden="true"', () => {

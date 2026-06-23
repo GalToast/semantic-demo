@@ -128,7 +128,7 @@ describe('A11y W43-A: Roving tabindex for keyboard navigation', () => {
 
 describe('A11y W43-A: Active result live announcement', () => {
     it('aria-live region exists for keyboard navigation announcements', () => {
-        expect(src).toMatch(/aria-live="assertive"/)
+        expect(src).toMatch(/aria-live="polite"/)
     })
 
     it('liveAnnouncement includes result count (e.g., "X of Y")', () => {
