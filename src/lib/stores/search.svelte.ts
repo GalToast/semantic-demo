@@ -269,6 +269,29 @@ export function withSearchNotify<T>(fn: () => T): T {
     return result
 }
 
+// ── Focus-intent bridge (idle↔search-surface remount) ───────────────────────
+//
+// Typing into #search-input flips the panel surface 'idle'→'search' (parity
+// layer), which unmounts the idle <SearchBar> (App.svelte {#if idleSearchVisible})
+// and mounts the panel-contained one inside InfoPanel. That remount destroys
+// the focused <input>, dropping focus to <body> and swallowing every keystroke
+// after the first. This module-scoped flag bridges the two SearchInput
+// instances: the dying instance sets it on input; the freshly-mounted instance
+// consumes it in onMount and restores focus.
+let _searchInputFocusIntent = false
+
+/** Mark that #search-input should reclaim focus after the next mount. */
+export function requestSearchInputFocus(): void {
+    _searchInputFocusIntent = true
+}
+
+/** One-shot: returns true if focus should be restored, then resets the flag. */
+export function consumeSearchInputFocusIntent(): boolean {
+    const v = _searchInputFocusIntent
+    _searchInputFocusIntent = false
+    return v
+}
+
 export function setSearchQuery(query: string): void {
     withSearchNotify(() => {
         if (!appState.currentSearchSummary) {

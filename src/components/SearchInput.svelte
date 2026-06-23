@@ -19,7 +19,9 @@
     setSearchQuery,
     setSearchStatus,
     setSearchResults,
-    setSearchError
+    setSearchError,
+    requestSearchInputFocus,
+    consumeSearchInputFocusIntent
   } from '@lib/stores/search.svelte';
   import { performSearch } from '@lib/search-engine';
   import {
@@ -45,6 +47,7 @@
   // ── Local state ───────────────────────────────────────────────────────────────
 
   let queryInput = $state('');
+  let inputEl: HTMLInputElement | undefined = undefined;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let searchAbortController: AbortController | null = null;
   let surfaceSwitchedToSearch = false;
@@ -129,6 +132,9 @@
   function handleInput(e: Event): void {
     const target = e.target as HTMLInputElement;
     queryInput = target.value;
+    // User is typing — flag that the next mount (idle→search-surface swap)
+    // must reclaim focus so the keystroke stream isn't interrupted.
+    requestSearchInputFocus();
     setSearchQuery(queryInput);
     debounceDispatch(queryInput);
   }
@@ -173,6 +179,11 @@
   });
 
   onMount(() => {
+    // Restore focus if this input was just remounted mid-typing (the
+    // idle→search-surface swap destroys the previously-focused input).
+    if (consumeSearchInputFocusIntent()) {
+      requestAnimationFrame(() => inputEl?.focus());
+    }
     const query = new URLSearchParams(window.location.search || '').get('q')?.trim();
     if (!query || query.length < 2) return;
     const storeQuery = ($searchState.query ?? '').trim();
@@ -219,6 +230,7 @@
       <path d="m15 15 5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
     </svg>
     <input
+      bind:this={inputEl}
       id="search-input"
       aria-label="Search businesses"
       type="search"

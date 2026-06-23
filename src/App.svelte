@@ -401,7 +401,12 @@
       !(($viewport.isCompact || bodyCompact) && idleSurfaceActive && !focusActive && !searchSurfaceActive)
   );
 
-  $effect(() => infoPanelLazy.ensure(infoPanelOpen || focusActive));
+  // Preload InfoPanel (host of the panel-contained <SearchBar>) whenever the
+  // search bar is visible, so the idle→search-surface swap is gap-free.
+  // Without this, typing into #search-input flips the panel surface and the
+  // focused input vanishes while InfoPanel's chunk loads (requestIdleCallback),
+  // swallowing every keystroke after the first.
+  $effect(() => infoPanelLazy.ensure(infoPanelOpen || focusActive || idleSearchVisible || mapTrailSearchLaneActive));
 
   // W5-T3: idle-load LegacyCompassSurface (legacy-compass parity surface)
   let legacyCompassSurfaceActive = $derived(
