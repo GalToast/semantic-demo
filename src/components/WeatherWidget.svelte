@@ -57,7 +57,7 @@
     id="weather-widget"
     aria-label="Weather conditions"
   >
-    <button class="weather-toggle" onclick={toggleExpanded} aria-label="Toggle weather details" type="button">
+    <button class="weather-toggle" onclick={toggleExpanded} aria-label="Toggle weather details" aria-expanded={expanded} aria-controls="weather-details" type="button">
       <span class="weather-icon">{icon}</span>
       {#if loaded}
         <span class="weather-temp">{temperature}&deg;</span>
@@ -65,7 +65,7 @@
     </button>
 
     {#if expanded && loaded}
-      <div class="weather-details">
+      <div class="weather-details" id="weather-details">
         <div class="weather-detail-row">
           <span class="detail-label">Condition</span>
           <span class="detail-value">{label}</span>
@@ -86,15 +86,33 @@
 <style>
   .weather-widget {
     position: absolute;
-    /* Clear the 60.8px app header so the pill no longer renders behind it.
-       Previously top: 0.5rem left the widget at ~45.6px, which sliced the
-       temperature label under the header. Use the same token App.svelte
-       uses for .focus-stage.active so the two stay in sync if the header
-       height ever changes. */
-    top: calc(var(--app-header-height, 60.8px) + 0.4rem);
+    /* Clear the app header (60.8px) AND the fixed chrome buttons that
+       sit below the header at top:117px (legend) and top:169px (help).
+       W46-D2: previous value of `+ 0.5rem` (~67px) put the pill behind
+       the legend button (z=100, fixed). `+ 10rem` (~221px) clears both
+       buttons with an 8px gap. */
+    top: calc(var(--app-header-height, 60.8px) + 10rem);
     right: 0.5rem;
     z-index: var(--z-legend, 50);
     pointer-events: auto;
+    display: block;
+
+    /* Reset legacy time_weather.css styles that leak onto this component.
+       The old CSS treats .weather-widget as the pill itself; this component
+       uses the div as a positioning wrapper and styles the button inside. */
+    padding: 0;
+    border: none;
+    border-radius: 0;
+    background: none;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    overflow: visible;
+    font-size: inherit;
+    color: inherit;
+    gap: 0;
+    align-items: stretch;
+    transition: none;
   }
 
   /* Collapsed pill: circular icon-only chip. Expands horizontally on hover
@@ -203,7 +221,7 @@
     border: 1px solid rgba(78, 205, 196, 0.18);
     border-radius: 0.55rem;
     padding: 0.55rem 0.7rem;
-    min-width: 180px;
+    min-width: 220px;
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.04) inset,
       0 10px 28px rgba(0, 0, 0, 0.5);
@@ -243,12 +261,14 @@
     font-family: 'Nunito Sans', sans-serif;
   }
   .detail-value.forecast {
-    font-size: 0.6rem;
-    color: rgba(176, 208, 208, 0.7);
-    max-width: 130px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    font-size: 0.62rem;
+    color: rgba(176, 208, 208, 0.78);
+    max-width: 14rem;
+    line-height: 1.35;
+    /* W46-D3 polish: wrap to 2 lines, no ellipsis truncation. */
+    white-space: normal;
+    overflow-wrap: anywhere;
+    text-align: right;
   }
 
   .weather-widget.compact {
@@ -257,6 +277,7 @@
        pill never overlaps the chrome bar. */
     top: calc(var(--app-header-height, 60.8px) + 0.3rem);
     right: 0.3rem;
+    display: block;
   }
 
   /* Respect reduced motion: skip the expand/hover transitions. */

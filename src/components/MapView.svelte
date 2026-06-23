@@ -41,21 +41,29 @@
   let activationToken = 0;
 
   function activateMapShell(): void {
-    switchView('map', {
-      skipTerrainPrelude: true,
-      skipUrlSync: true,
-      silentHandoff: true,
-    });
-
-    const mapContainer = document.getElementById('map-container');
-    if (mapContainer) {
-      mapContainer.classList.add('active');
-      mapContainer.classList.remove('arriving');
-      mapContainer.setAttribute('aria-hidden', 'false');
-      mapContainer.dataset.activeView = 'map';
-      mapContainer.style.removeProperty('opacity');
-      mapContainer.style.removeProperty('pointer-events');
+    // Ensure the map container exists — Canvas.svelte may not be loaded yet
+    // when MapView mounts (e.g., Playwright contract tests preload MapView
+    // but Canvas is gated on engineReady.value).
+    let mapContainer = document.getElementById('map-container');
+    if (!mapContainer) {
+      mapContainer = document.createElement('div');
+      mapContainer.id = 'map-container';
+      mapContainer.className = 'map-container';
+      mapContainer.setAttribute('aria-hidden', 'true');
+      mapContainer.dataset.activeView = 'idle';
+      const semanticExplorer = document.getElementById('semantic-explorer');
+      if (semanticExplorer) {
+        semanticExplorer.insertBefore(mapContainer, semanticExplorer.firstChild);
+      } else {
+        document.body.appendChild(mapContainer);
+      }
     }
+    mapContainer.classList.add('active');
+    mapContainer.classList.remove('arriving');
+    mapContainer.setAttribute('aria-hidden', 'false');
+    mapContainer.dataset.activeView = 'map';
+    mapContainer.style.removeProperty('opacity');
+    mapContainer.style.removeProperty('pointer-events');
   }
 
   function setLegacyView(view: 'galaxy' | 'map'): void {

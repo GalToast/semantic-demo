@@ -92,6 +92,13 @@
     mapViewLazy.ensure(true)
     legacyCompassSurfaceLazy.ensure(true)
     threadInspectorLazy.ensure(true)
+    // Contract tests need #canvas-container and #map-container in the DOM.
+    // Canvas.svelte is gated on engineReady.value; signal it so the component
+    // renders without waiting for a user gesture that never happens in headless
+    // Playwright. The Three.js engine init is deferred via requestIdleCallback
+    // and does not block the DOM element creation.
+    engineReady.signalReady()
+    canvasLazy.ensure(true)
   }
 
   const isPlaywright = typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__;

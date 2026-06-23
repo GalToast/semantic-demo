@@ -152,6 +152,14 @@
     }
 }
 
+/*
+  LEGACY .weather-widget rule removed — superseded by @components/WeatherWidget.svelte.
+  The scoped component resets these properties explicitly (padding:0, border:none,
+  background:none, etc.) so the old global rule no longer applies.
+  Keep the rest of the file (weather overlay, rain/snow/fog, lightning, time-display)
+  intact — they are independent of the widget DOM structure.
+*/
+/*
 .weather-widget {
     position: fixed;
     top: calc(8px + env(safe-area-inset-top, 0px));
@@ -182,17 +190,23 @@
         border-color 180ms ease,
         box-shadow 180ms ease;
 }
+*/
 
+/*
 .weather-widget .weather-desc,
 .weather-widget .weather-wind,
 .weather-widget .weather-staleness {
     display: none;
 }
+*/
 
+/*
 .weather-widget[hidden] {
     display: none;
 }
+*/
 
+/*
 .weather-widget::before {
     content: '';
     position: absolute;
@@ -203,7 +217,9 @@
     transform: translateX(-62%);
     pointer-events: none;
 }
+*/
 
+/*
 .weather-widget:hover,
 .weather-widget:focus-within {
     transform: translateY(-1px);
@@ -213,6 +229,7 @@
         inset 0 1px 0 var(--glass-reflection-strong),
         0 0 38px rgba(var(--color-primary-rgb), 0.14);
 }
+*/
 
 .weather-icon {
     position: relative;
@@ -302,9 +319,11 @@
     }
 }
 
+/*
 .weather-widget > div:not(.weather-wind) {
     min-width: 0;
 }
+*/
 
 .weather-temp {
     color: rgba(255, 246, 206, 0.98);
@@ -414,9 +433,7 @@
 }
 
 @media (max-width: 768px) {
-    .weather-widget {
-        display: none;
-    }
+    /* .weather-widget { display: none; }  -- removed: Svelte component owns visibility */
 
     .time-display {
         top: calc(12px + env(safe-area-inset-top, 0px));
@@ -459,6 +476,7 @@
         opacity: 0.74;
     }
 
+    /*
     body.is-active[data-panel-surface='focus'] .weather-widget,
     body.is-active[data-panel-surface='focus-search'] .weather-widget {
         display: inline-flex;
@@ -466,8 +484,10 @@
         pointer-events: auto;
         opacity: 1;
     }
+    */
 }
 
+/*
 body[data-panel-surface^='map-'] .weather-widget,
 body[data-panel-surface='focus'] .weather-widget,
 body[data-panel-surface='focus-search'] .weather-widget,
@@ -476,6 +496,7 @@ body[data-panel-surface='semantic-dive'] .weather-widget {
     display: none;
     pointer-events: none;
 }
+*/
 
 @media (max-width: 768px) and (max-height: 740px) {
     body[data-active-view='map'] #map-container .leaflet-control-attribution {
