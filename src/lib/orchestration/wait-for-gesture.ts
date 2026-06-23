@@ -1,9 +1,15 @@
 /**
  * @lib/orchestration/wait-for-gesture.ts — Gesture-driven init gate (W6-T1)
  *
- * Listens for the first user gesture (pointer, keyboard, wheel, touch)
- * and fires a one-shot callback. A visibility-change fallback covers
- * kiosk-style displays where no physical gesture ever fires.
+ * Listens for the first pointer/touch engagement and fires a one-shot
+ * callback. A visibility-change fallback covers kiosk-style displays
+ * where no physical gesture ever fires.
+ *
+ * Keyboard input is deliberately excluded: the Splash gate exposes a
+ * primary CTA ("Explore") as the keyboard path into the engine. Treating
+ * ambient key navigation (Tab/Shift+Tab/Arrows) as a launch gesture would
+ * dismiss the gate a keyboard user is trying to read and steal focus into
+ * the 3D scene before they opt in. See Splash.svelte's modal focus mgmt.
  *
  * Usage:
  *   const teardown = installGestureMonitor({ onReady: signalReady });
@@ -22,12 +28,26 @@ export interface GestureMonitorOpts {
 const DEFAULT_COOLDOWN = 200
 
 /** Window-level events that signal user intent. */
-const GESTURE_EVENTS: Array<keyof WindowEventMap> = ['pointerdown', 'keydown', 'wheel', 'touchstart', 'mousemove']
+const GESTURE_EVENTS: Array<keyof WindowEventMap> = ['pointerdown', 'wheel', 'touchstart', 'mousemove']
+
+/**
+ * Whether an event originated on the active Splash gate (the fullscreen
+ * modal shown until the user opts in). Pointer/touch/mouse activity on the
+ * gate itself is the user operating the gate's UI (typing a search, pressing
+ * the Explore CTA), not gesturing to launch the 3D engine. Those interactions
+ * drive readiness through the gate's own handlers, so the gesture monitor
+ * ignores them. Synthetic events dispatched directly on `window` (e.g. test
+ * harnesses) have a non-Element target and are NOT treated as gate-internal.
+ */
+function isInsideGestureGate(target: EventTarget | null): boolean {
+    if (!(target instanceof Element)) return false
+    return Boolean(target.closest('.splash[role="dialog"]'))
+}
 
 function isAutomatedBrowserSession(): boolean {
     return Boolean(
         typeof window !== 'undefined' &&
-            ((window as any).__PLAYWRIGHT__ || (typeof navigator !== 'undefined' && navigator.webdriver))
+        ((window as any).__PLAYWRIGHT__ || (typeof navigator !== 'undefined' && navigator.webdriver))
     )
 }
 
@@ -42,15 +62,20 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     let wasHidden = false
     let timer: ReturnType<typeof setTimeout> | undefined
 
-    function handleReady(): void {
+    function handleReady(event?: Event): void {
         if (fired) return
         // W45-A: Skip auto-fire when the 2D placeholder is shown; the CTA is the
         // exclusive gate for entering the 3D scene. On desktop (webgl) this is a
         // no-op because the render kind is not 'placeholder2d'.
-        if (
-            typeof document !== 'undefined' &&
-            document.body?.dataset?.renderKind === 'placeholder2d'
-        ) {
+        if (typeof document !== 'undefined' && document.body?.dataset?.renderKind === 'placeholder2d') {
+            return
+        }
+        // The Splash gate is a fullscreen modal with explicit entry actions
+        // (search submit / Explore CTA). Pointer/touch/mouse events landing on
+        // the gate are the user operating its UI, not gesturing to launch —
+        // let the gate's own handlers drive readiness. Visibility/test fallbacks
+        // call handleReady() with no event and are unaffected.
+        if (event && isInsideGestureGate(event.target)) {
             return
         }
         fired = true
@@ -80,7 +105,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     // ── Gesture listeners ────────────────────────────────────────────────────
 
     for (const evt of GESTURE_EVENTS) {
-        listen(window, evt, () => handleReady(), { passive: true })
+        listen(window, evt, (e: Event) => handleReady(e), { passive: true })
     }
 
     // ── Visibility fallback (kiosk / no-gesture scenario) ───────────────────

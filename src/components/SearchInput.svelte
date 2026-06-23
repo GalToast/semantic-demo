@@ -24,6 +24,8 @@
     consumeSearchInputFocusIntent
   } from '@lib/stores/search.svelte';
   import { performSearch } from '@lib/search-engine';
+  import { engineReady } from '@lib/stores/engine-ready.svelte';
+  import { pendingSearch } from '@lib/stores/pending-search.svelte';
   import {
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS
@@ -70,6 +72,23 @@
     if (queryInput !== storeQuery) {
       queryInput = storeQuery;
     }
+  });
+
+  // ── Deferred splash-search fulfillment ───────────────────────────────────────
+  // This component mounts early (during the idle-surface splash phase) but must
+  // not run a search until the user opts in via the gate. The Splash component
+  // stages an intent here on submit; once engineReady flips true we fulfill it
+  // through the normal dispatch path. onMount's one-shot `?q=` read already ran
+  // at boot, so the URL param alone is not enough for the splash-submit case.
+  $effect(() => {
+    const staged = pendingSearch.value;
+    if (!engineReady.value || !staged) return;
+    pendingSearch.consume();
+    if (staged.length < 2) return;
+    queryInput = staged;
+    setSearchQuery(staged);
+    dispatchSearch(staged);
+    requestAnimationFrame(() => inputEl?.focus());
   });
 
   // ── Search dispatch ───────────────────────────────────────────────────────────
