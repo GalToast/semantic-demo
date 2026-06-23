@@ -180,16 +180,21 @@
     }
   });
 
-  // Sync DOM focus with the roving active index (runs after each render).
+  // Sync DOM focus with the roving active index — but ONLY when the user is
+  // already navigating within the result list (DOM focus inside the listbox).
+  // Never steal focus from the search input while the user is typing: when
+  // results render mid-keystroke, activeIndex flips -1→0 and an ungated effect
+  // would yank focus to the first result, freezing the query. Entry into the
+  // list is the explicit ArrowDown gesture in SearchInput.handleKeydown; this
+  // effect only keeps focus in sync once that gesture has happened.
   $effect(() => {
     const idx = activeIndex;
     if (idx < 0) return;
-    // Use tick() to ensure the DOM has updated before focusing.
     void tick().then(() => {
       const list = document.getElementById('search-result-list');
-      const btn = list?.querySelector(
-        `[data-order="${idx}"]`
-      ) as HTMLElement | null;
+      // If focus is on the input (user typing) or outside the list, don't move it.
+      if (!list || !list.contains(document.activeElement)) return;
+      const btn = list.querySelector(`[data-order="${idx}"]`) as HTMLElement | null;
       if (btn && document.activeElement !== btn) {
         btn.focus({ preventScroll: false });
       }
