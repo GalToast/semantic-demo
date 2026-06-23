@@ -23,7 +23,6 @@
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
 
-  import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide';
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
 
@@ -48,6 +47,9 @@
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import Toast from '@components/Toast.svelte';
+  import HoverTooltip from '@components/HoverTooltip.svelte';
+  import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
+  import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
   import { legendOpen } from '@lib/stores/legend.svelte';
 
@@ -81,25 +83,6 @@
   )
   const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
 
-  type SemanticGuideSuggestion = {
-    lead_id?: string | number;
-    label?: string;
-    name?: string;
-    city?: string;
-    reason?: string;
-  };
-
-  type SemanticGuideCardConfig = {
-    title?: string;
-    text?: string;
-    laneStatus?: string;
-    suggestions?: SemanticGuideSuggestion[];
-  };
-
-  const semanticGuideConfig = $derived((appState.semanticGuideState.config ?? {}) as SemanticGuideCardConfig);
-  const semanticGuideSuggestions = $derived(
-    Array.isArray(semanticGuideConfig.suggestions) ? semanticGuideConfig.suggestions : []
-  );
 
   // In Playwright tests, eagerly pre-load components that are required by
   // contract tests but now lazy-loaded in production for performance.
@@ -154,6 +137,8 @@
   // Mobile / narrow-viewport / automated sessions get the 2D placeholder
   // so the 587 KB three.js chunk stays off the cold-load critical path.
   const renderKind = typeof window !== 'undefined' ? getInitialRenderKind() : 'webgl';
+  let s3dSceneReady = $state(false);
+  let s3dSceneError = $state(false);
 
   const devToolsVisible = import.meta.env.MODE === 'development'
     && typeof window !== 'undefined'
@@ -460,14 +445,26 @@
   class:reduced-motion={$viewport.reducedMotion}
   class:is-overview={$navStore.mode === 'overview'}
 >
-  <!-- Layer 0: WebGL canvas (gated behind user gesture; module import lazy) -->
-  {#if engineReady.value && canvasLazy.current}
-    {@const Cmp = canvasLazy.current}
-    <Cmp interactive={true} defer={true} />
-  {:else if renderKind === 'placeholder2d'}
-    <Placeholder2D />
+  <!-- Layer 0: WebGL canvas / placeholder crossfade -->
+  {#if renderKind === 'placeholder2d'}
+    <div class="layer-0-crossfade">
+      <div class="layer canvas-layer" class:active={engineReady.value && canvasLazy.current}>
+        {#if engineReady.value && canvasLazy.current}
+          {@const Cmp = canvasLazy.current}
+          <Cmp interactive={true} defer={true} onSceneReady={() => (s3dSceneReady = true)} onSceneError={() => (s3dSceneError = true)} />
+        {/if}
+      </div>
+      <div class="layer placeholder-layer" class:active={!s3dSceneReady && !s3dSceneError}>
+        <Placeholder2D />
+      </div>
+    </div>
   {:else}
-    <Splash />
+    {#if engineReady.value && canvasLazy.current}
+      {@const Cmp = canvasLazy.current}
+      <Cmp interactive={true} defer={true} />
+    {:else}
+      <Splash />
+    {/if}
   {/if}
 
   <!--
@@ -619,64 +616,11 @@
   <!-- Layer 1200: Toast notification -->
   <Toast />
 
-  <!-- Hover tooltip for canvas node hover (port of js/modules/tooltip.js) -->
-  <div id="hover-tooltip" class="hover-tooltip" role="tooltip" aria-hidden="true" hidden>
-    <div id="tooltip-name" class="tooltip-name"></div>
-    <div id="tooltip-what" class="tooltip-what"></div>
-  </div>
+  <HoverTooltip />
 
-  <!-- Synthesis summary card (legacy-compatible semantic guide surface) -->
-  <div
-    id="synthesize-trigger"
-    class="synthesize-trigger hidden"
-    hidden
-    aria-hidden="true"
-  >
-    <button id="btn-synthesize" type="button" class="btn-synthesize" onclick={requestSemanticGuide}>Synthesize trail</button>
-  </div>
+  <SemanticGuideCard />
 
-  <div
-    id="semantic-summary-card"
-    class="summary-card"
-    class:hidden={!appState.semanticGuideState.isVisible}
-    class:is-synthesizing={appState.semanticGuideState.isSynthesizing}
-    role="region"
-    aria-label="Synthesis summary"
-  >
-    <div class="summary-card-header">
-      <div class="summary-title" id="summary-card-title-text">{semanticGuideConfig.title || 'Synthesis'}</div>
-      <button id="btn-close-summary" type="button" class="summary-close" aria-label="Close synthesis" onclick={hideSummaryCard}>Close</button>
-    </div>
-    <div id="summary-text" class="typewriter-content">{semanticGuideConfig.text || ''}</div>
-    <div id="summary-suggestions" class="summary-suggestions">
-      {#each semanticGuideSuggestions as suggestion}
-        <button
-          class="suggestion-btn"
-          type="button"
-          data-lead-id={String(suggestion.lead_id ?? '')}
-        >
-          <span class="suggestion-label">{suggestion.label || 'Suggestion'}</span>
-          <span class="suggestion-name">{suggestion.name || 'Related business'}</span>
-          {#if suggestion.reason}
-            <span class="suggestion-reason">{suggestion.reason}</span>
-          {/if}
-        </button>
-      {/each}
-    </div>
-    <div id="summary-lane-status" class="summary-lane-status">{semanticGuideConfig.laneStatus || 'Ready'}</div>
-  </div>
-
-  <!-- Search trail cue (port of trail discovery tooltip) -->
-  <div id="search-trail-cue" class="search-trail-cue" role="status" aria-live="polite" hidden>
-    <div class="search-trail-cue-kicker" id="search-trail-cue-kicker">Connection cue</div>
-    <div class="search-trail-cue-title" id="search-trail-cue-title">Search opens a trail.</div>
-    <div class="search-trail-cue-stage" aria-hidden="true">
-      <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
-      <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
-      <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
-    </div>
-    <div class="search-trail-cue-note" id="search-trail-cue-note">The first strong match becomes the anchor; from there you can center it and explore the neighborhood.</div>
-  </div>
+  <SearchTrailCue />
 
   <!-- Toast is rendered at layer 1200 (see <Toast /> above the hover tooltip) -->
 </div>
@@ -772,196 +716,6 @@
     pointer-events: auto;
   }
 
-  /* Hover tooltip */
-  .hover-tooltip {
-    position: absolute;
-    z-index: var(--z-tooltip, 900);
-    pointer-events: none;
-    background: rgba(7, 16, 24, 0.92);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.18);
-    border-radius: 0.5rem;
-    padding: 0.5rem 0.75rem;
-    max-width: 280px;
-  }
-  .tooltip-name {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #e0f0f0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-  .tooltip-what {
-    font-size: 0.7rem;
-    color: rgba(224, 240, 240, 0.6);
-    margin-top: 0.2rem;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  /* Synthesis summary card */
-  .summary-card {
-    position: absolute;
-    bottom: 5rem;
-    right: 1rem;
-    z-index: var(--z-panels, 80);
-    width: 300px;
-    max-height: 60vh;
-    overflow-y: auto;
-    background: rgba(7, 16, 24, 0.92);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.18);
-    border-radius: 0.5rem;
-    padding: 0.75rem;
-  }
-  .summary-card.hidden {
-    display: none;
-  }
-  .summary-card.is-synthesizing {
-    cursor: progress;
-  }
-  .summary-card-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 0.75rem;
-    margin-bottom: 0.45rem;
-  }
-  .summary-title {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.75rem;
-    font-weight: 600;
-    color: #4ecdc4;
-    margin-bottom: 0;
-    text-transform: uppercase;
-  }
-  .summary-close {
-    border: 1px solid rgba(224, 240, 240, 0.22);
-    border-radius: 0.35rem;
-    background: rgba(224, 240, 240, 0.06);
-    color: rgba(224, 240, 240, 0.78);
-    font-size: 0.62rem;
-    line-height: 1;
-    padding: 0.35rem 0.45rem;
-    cursor: pointer;
-  }
-  .summary-close:hover {
-    background: rgba(224, 240, 240, 0.12);
-    color: rgba(224, 240, 240, 0.95);
-  }
-  .typewriter-content {
-    font-size: 0.7rem;
-    color: rgba(224, 240, 240, 0.7);
-    line-height: 1.5;
-    overflow-wrap: break-word;
-  }
-  .summary-suggestions {
-    display: grid;
-    gap: 0.45rem;
-    margin-top: 0.7rem;
-  }
-  .suggestion-btn {
-    display: grid;
-    gap: 0.16rem;
-    width: 100%;
-    min-width: 0;
-    border: 1px solid rgba(78, 205, 196, 0.16);
-    border-radius: 0.45rem;
-    background: rgba(78, 205, 196, 0.07);
-    color: rgba(224, 240, 240, 0.84);
-    padding: 0.48rem 0.55rem;
-    text-align: left;
-    cursor: pointer;
-  }
-  .suggestion-btn:hover {
-    border-color: rgba(78, 205, 196, 0.34);
-    background: rgba(78, 205, 196, 0.12);
-  }
-  .suggestion-label {
-    color: #4ecdc4;
-    font-size: 0.55rem;
-    font-weight: 700;
-    text-transform: uppercase;
-  }
-  .suggestion-name {
-    overflow-wrap: anywhere;
-    font-size: 0.68rem;
-    font-weight: 600;
-  }
-  .suggestion-reason {
-    color: rgba(224, 240, 240, 0.62);
-    font-size: 0.62rem;
-    line-height: 1.35;
-    overflow-wrap: anywhere;
-  }
-  .summary-lane-status {
-    margin-top: 0.65rem;
-    color: rgba(224, 240, 240, 0.54);
-    font-size: 0.56rem;
-    letter-spacing: 0;
-    text-transform: uppercase;
-  }
-  .synthesize-trigger[hidden] {
-    display: none;
-  }
-  .btn-synthesize {
-    border: 1px solid rgba(78, 205, 196, 0.28);
-    border-radius: 0.45rem;
-    background: rgba(78, 205, 196, 0.1);
-    color: rgba(224, 240, 240, 0.9);
-    padding: 0.45rem 0.6rem;
-  }
-
-  /* Search trail cue */
-  .search-trail-cue {
-    position: absolute;
-    bottom: 5rem;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: var(--z-toast, 700);
-    width: min(90vw, 400px);
-    background: rgba(7, 16, 24, 0.92);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.18);
-    border-radius: 0.5rem;
-    padding: 0.6rem 0.75rem;
-    display: flex;
-    flex-direction: column;
-    gap: 0.3rem;
-  }
-  .search-trail-cue-kicker {
-    font-size: 0.55rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: #4ecdc4;
-  }
-  .search-trail-cue-title {
-    font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.8rem;
-    font-weight: 700;
-    color: #e0f0f0;
-  }
-  .search-trail-cue-stage {
-    display: flex;
-    gap: 0.4rem;
-  }
-  .search-trail-cue-step {
-    font-size: 0.6rem;
-    padding: 0.15rem 0.4rem;
-    border-radius: 0.2rem;
-    background: rgba(78, 205, 196, 0.1);
-    color: #b0d0d0;
-  }
-  .search-trail-cue-note {
-    font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.5);
-    line-height: 1.4;
-    overflow-wrap: break-word;
-  }
 
   /* Responsive adjustments */
   @media (max-width: 768px) {
@@ -1023,4 +777,30 @@
       pointer-events: none;
     }
   }
+  /* W45-B: Crossfade for placeholder-to-3D transition */
+  .layer-0-crossfade {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+  .layer {
+    position: absolute;
+    inset: 0;
+    transition: opacity 300ms ease, visibility 300ms ease;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+  }
+  .layer.active {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+  }
+  /* Layers are stacked by DOM order (later = higher). No z-index needed,
+     which lets children (e.g. error overlays) escape the crossfade stack
+     and draw above the placeholder if they create their own stacking context. */
+  @media (prefers-reduced-motion: reduce) {
+    .layer { transition: none; }
+  }
+
 </style>

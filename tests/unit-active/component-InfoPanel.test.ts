@@ -28,6 +28,7 @@ import { resolve } from 'path'
 
 const INFO_PANEL_PATH = resolve(__dirname, '../../src/components/InfoPanel.svelte')
 const INFO_PANEL_CSS_PATH = resolve(__dirname, '../../src/components/InfoPanel.css')
+const CHILD_PATH = resolve(__dirname, '../../src/components/SelectedBusinessDetails.svelte')
 
 function readSource(): string {
     return readFileSync(INFO_PANEL_PATH, 'utf-8')
@@ -83,10 +84,12 @@ describe('InfoPanel component', () => {
     })
 
     it('#selected-role-badge and .selected-hero elements exist', () => {
-        expect(source).toContain('id="selected-role-badge"')
+        // After Phase 3: these moved to SelectedBusinessDetails.svelte
+        const childSource = readFileSync(CHILD_PATH, 'utf8')
+        expect(childSource).toContain('id="selected-role-badge"')
         // Class selector lives in the sibling CSS file (extracted in W46-E).
         expect(css).toContain('.selected-role-badge')
-        expect(source).toContain('class="selected-hero"')
+        expect(childSource).toContain('class="selected-hero"')
     })
 
     it('ARIA_LABEL_BY_SURFACE maps correct labels per surface', () => {
@@ -98,9 +101,11 @@ describe('InfoPanel component', () => {
     })
 
     it('#selected-name, #selected-what, #selected-theme elements in markup', () => {
-        expect(source).toContain('id="selected-name"')
-        expect(source).toContain('id="selected-what"')
-        expect(source).toContain('id="selected-theme"')
+        // After Phase 3: these moved to SelectedBusinessDetails.svelte
+        const childSource = readFileSync(CHILD_PATH, 'utf8')
+        expect(childSource).toContain('id="selected-name"')
+        expect(childSource).toContain('id="selected-what"')
+        expect(childSource).toContain('id="selected-theme"')
     })
 
     it('selected-empty section uses contentDescriptor for copy', () => {

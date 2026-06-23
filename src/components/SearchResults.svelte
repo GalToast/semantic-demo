@@ -29,10 +29,11 @@
   import { activeClusterFilter } from '@lib/stores/filter.svelte';
   import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
-  import { formatBusinessName } from '@lib/utils/dom-formatters';
+
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { appState } from '@lib/state/app.svelte';
+  import SearchResultItem from '@components/SearchResultItem.svelte';
 
   interface Props {
     /** Whether the results panel is visible */
@@ -75,24 +76,6 @@
   interface SearchError {
     type: string;
     query?: string;
-  }
-
-  interface HighlightSegment {
-    text: string;
-    match: boolean;
-  }
-
-  interface SearchResultProps {
-    index: number | string;
-    order: number;
-    strength: number;
-    strengthLabel: string;
-    rankLabel: string;
-    cardClasses: string;
-    point: NonNullable<SearchResult['point']>;
-    snippetText: string;
-    contextText: string;
-    businessName: string;
   }
 
   // ── Derived ───────────────────────────────────────────────────────────────────
@@ -188,8 +171,12 @@
     }
     const active = (resultSlice as SearchResult[])[idx];
     if (active) {
-      const model = itemModel(active, idx);
-      liveAnnouncement = `${model.ariaLabel} (${idx + 1} of ${resultSlice.length})`;
+      const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;
+      const name = pt?.name ?? active.name ?? 'Unknown';
+      const snippet = pt?.what ?? active.snippet ?? '';
+      const context = pt?.city ?? active.category ?? '';
+      const rank = idx === 0 ? 'Top match' : `Match ${idx + 1}`;
+      liveAnnouncement = `Focus ${name}. ${rank}. ${snippet} ${context}. (${idx + 1} of ${resultSlice.length})`;
     }
   });
 
@@ -271,6 +258,21 @@
     // Do NOT preventDefault for Tab — let Tab move to the next landmark.
   }
 
+  function getResultPoint(result: SearchResult): NonNullable<SearchResult['point']> | null {
+    if (result.point) return result.point;
+    const record = getBusinessRecords()[Number(result.index)];
+    if (!record && !result.name) return null;
+    return {
+      name: record?.name ?? result.name ?? 'Unknown',
+      what: record?.what ?? result.snippet ?? result.category ?? '',
+      cluster: record?.cluster,
+      city: record?.city ?? result.category ?? '',
+      website: record?.website ?? undefined,
+      email: record?.email ?? undefined,
+      phone: record?.phone ?? undefined
+    };
+  }
+
   function handleResultClick(index: number | string): void {
     const result = (results as unknown as SearchResult[]).find((item) => Number(item.index) === Number(index));
     const point = result ? getResultPoint(result) : null;
@@ -288,77 +290,6 @@
       publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) } as any);
       actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
     }
-  }
-
-  function getResultPoint(result: SearchResult): NonNullable<SearchResult['point']> | null {
-    if (result.point) return result.point;
-    const record = getBusinessRecords()[Number(result.index)];
-    if (!record && !result.name) return null;
-    return {
-      name: record?.name ?? result.name ?? 'Unknown',
-      what: record?.what ?? result.snippet ?? result.category ?? '',
-      cluster: record?.cluster,
-      city: record?.city ?? result.category ?? '',
-      website: record?.website ?? undefined,
-      email: record?.email ?? undefined,
-      phone: record?.phone ?? undefined
-    };
-  }
-
-  function highlightSegments(text: string | undefined, query: string | undefined): HighlightSegment[] {
-    const safeText = String(text || '');
-    const safeQuery = query === null || query === undefined ? '' : String(query);
-    if (!safeText || !safeQuery) return [{ text: safeText, match: false }];
-
-    const index = safeText.toLowerCase().indexOf(safeQuery.toLowerCase());
-    if (index === -1) return [{ text: safeText, match: false }];
-
-    return [
-      { text: safeText.slice(0, index), match: false },
-      { text: safeText.slice(index, index + safeQuery.length), match: true },
-      { text: safeText.slice(index + safeQuery.length), match: false }
-    ].filter((segment: HighlightSegment) => segment.text);
-  }
-
-  function itemModel(result: SearchResult, order: number): SearchResultProps & { highlight: HighlightSegment[]; animationDelay: string; ariaLabel: string } {
-    const point = getResultPoint(result) ?? {
-      name: result.name ?? 'Unknown',
-      what: result.snippet ?? '',
-      city: result.category ?? ''
-    };
-    const deps = {
-      getSearchResultStrength: (r: SearchResult) => r.score || 0,
-      getSearchResultStrengthLabel: (strength: number) => strength > 0.8 ? 'Strong match' : strength > 0.5 ? 'Good match' : 'Related',
-      buildSearchRankLabel: (order: number, _ctx: typeof renderContext) => order === 0 ? 'Top match' : `Match ${order + 1}`,
-      getSearchResultCardClasses: () => 'search-result',
-      buildSearchResultSnippet: () => point.what || result.snippet || '',
-      describeCluster,
-      formatBusinessName
-    };
-
-    const strength = deps.getSearchResultStrength(result);
-    const strengthLabel = deps.getSearchResultStrengthLabel(strength);
-    const rankLabel = deps.buildSearchRankLabel(order, renderContext);
-    const cardClasses = `${deps.getSearchResultCardClasses()} search-result-item`;
-    const snippetText = deps.buildSearchResultSnippet();
-    const contextText = point.city || result.category || '';
-    const businessName = deps.formatBusinessName(point.name || result.name || 'Unknown');
-
-    return {
-      index: result.index,
-      order,
-      strength,
-      strengthLabel,
-      rankLabel,
-      cardClasses,
-      point,
-      snippetText,
-      contextText,
-      businessName,
-      highlight: highlightSegments(businessName, renderContext.trimmedQuery),
-      animationDelay: `${Math.min(order * 32, 224)}ms`,
-      ariaLabel: `Focus ${businessName}. ${rankLabel}. ${snippetText} ${contextText}.`
-    };
   }
 
   function onSuggestionClick(suggestion: string): void {
@@ -468,71 +399,15 @@
         onkeydown={handleContainerKeyDown}
       >
         {#each resultSlice as result, order (result.index ?? order)}
-          {@const item = itemModel(result, order)}
-          <div class="search-result-listitem" role="option" id={`search-result-option-${order}`} aria-selected={order === activeIndex}>
-            <button
-              class={`${item.cardClasses}${order === activeIndex ? ' active' : ''}`}
-              id={`search-result-${Number(result.index)}`}
-              data-index={result.index}
-              data-order={order}
-              type="button"
-              tabindex={order === activeIndex ? 0 : -1}
-              aria-label={item.ariaLabel}
-              style={`animation-delay: ${item.animationDelay}`}
-              onclick={() => handleResultClick(result.index)}
-            >
-              <div class="search-result-row">
-                <div class="search-result-eyebrow">
-                  <span class="search-result-rank">{item.rankLabel}</span>
-                  <span class="search-result-strength">{item.strengthLabel}</span>
-                </div>
-                <div class="search-result-name">
-                  {#each item.highlight as segment}
-                    {#if segment.match}
-                      <mark class="search-result-match">{segment.text}</mark>
-                    {:else}
-                      {segment.text}
-                    {/if}
-                  {/each}
-                </div>
-                {#if item.point.website || item.point.email || item.point.phone}
-                  <div class="search-result-badges">
-                    {#if item.point.website}
-                      <span class="search-result-badge website" title="Website available" aria-label="Website available">
-                        <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <circle cx="12" cy="12" r="9"></circle>
-                          <path d="M3 12h18"></path>
-                          <path d="M12 3a13.5 13.5 0 0 1 0 18"></path>
-                          <path d="M12 3a13.5 13.5 0 0 0 0 18"></path>
-                        </svg>
-                      </span>
-                    {/if}
-                    {#if item.point.email}
-                      <span class="search-result-badge email" title="Email available" aria-label="Email available">
-                        <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <rect x="3.5" y="5.5" width="17" height="13" rx="2"></rect>
-                          <path d="m4.5 7 7.5 6 7.5-6"></path>
-                        </svg>
-                      </span>
-                    {/if}
-                    {#if item.point.phone}
-                      <span class="search-result-badge phone" title="Phone available" aria-label="Phone available">
-                        <svg class="search-result-badge-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                          <path d="M7.5 4.5 10 7 8.4 9.1c1 2.2 2.3 3.5 4.5 4.5L15 12l2.5 2.5-.8 3.1c-.2.7-.9 1.1-1.6 1A12.5 12.5 0 0 1 5.4 8.9c-.1-.7.3-1.4 1-1.6l1.1-.3Z"></path>
-                        </svg>
-                      </span>
-                    {/if}
-                  </div>
-                {/if}
-              </div>
-              <div class="search-result-what">{item.snippetText}</div>
-              <div class="search-result-context">{item.contextText}</div>
-              <div class="search-result-bar">
-                <span style={`width: ${item.strength}%`}></span>
-              </div>
-            </button>
-          </div>
+          <SearchResultItem
+            {result}
+            {order}
+            active={order === activeIndex}
+            trimmedQuery={renderContext.trimmedQuery}
+            onClick={() => handleResultClick(result.index)}
+          />
         {/each}
+
       </div>
 
       {#if showMore}

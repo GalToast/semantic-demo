@@ -23,9 +23,12 @@
   import { viewport, isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport.svelte.ts';
   import { searchSummary, isSearching } from '@lib/stores/search.svelte';
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
-  import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles';
+  import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
   import type { BusinessRecord } from '@lib/types/business';
   import type { RelationshipRole } from '@lib/utils/relationship-roles';
+  import WalkBreadcrumb from '@components/WalkBreadcrumb.svelte';
+  import TrailControls from '@components/TrailControls.svelte';
+  import NeighborRail from '@components/NeighborRail.svelte';
 
   type CandidateLike = number | {
     index?: number;
@@ -368,167 +371,24 @@
     <div class="focus-stage-journey" id="focus-stage-journey" class:active={chromeHasFocus}>
     <!-- ├─ Walk Breadcrumb ─────────────────────────────────────────────────── -->
     {#if showBreadcrumb}
-      <div class="walk-breadcrumb" id="walk-breadcrumb" class:visible={showBreadcrumb} role="navigation" aria-label="Trail history">
-        <span class="walk-breadcrumb-label">Trail</span>
-        {#each dedupedWalkHistory as idx, i}
-          {#if i > 0}
-            <span class="walk-breadcrumb-sep" aria-hidden="true">/</span>
-          {/if}
-          {@const point = getPointForIndex(idx)}
-          {@const name = point?.name ?? 'Stop'}
-          {@const isCurrent = idx === currentFocusedIndex}
-          <button
-            class="walk-breadcrumb-chip"
-            class:current={isCurrent}
-            type="button"
-            data-walk-index={idx}
-            data-walk-order={i}
-            aria-current={isCurrent ? 'step' : undefined}
-            aria-label={isCurrent ? `Current stop: ${name}` : `Return to ${name}`}
-            onclick={() => walkToBreadcrumbIndex(idx, i)}
-          >
-            {name}
-          </button>
-        {/each}
-      </div>
+      <WalkBreadcrumb history={dedupedWalkHistory} focusedIndex={currentFocusedIndex} getPointForIndex={getPointForIndex} onWalk={walkToBreadcrumbIndex} />
     {/if}
 
     <!-- ├─ Trail Controls ──────────────────────────────────────────────────── -->
-    {#if chromeHasFocus || chromeHasTrail}
-      <div
-        class="trail-controls focus-stage-actions"
-        id="trail-controls"
-        class:active={chromeHasFocus || chromeHasTrail}
-        role="toolbar"
-        aria-label="Trail navigation"
-      >
-        <button
-          id="btn-focus-path"
-          class="focus-stage-action-btn"
-          type="button"
-          aria-label="Show trail"
-          onclick={() => {
-            const overlay = document.getElementById('trail-review-overlay');
-            if (overlay) overlay.hidden = !overlay.hidden;
-          }}
-        >
-          Show trail
-        </button>
-
-        <button
-          class="trail-btn focus-stage-action-btn biofield-glow"
-          id="btn-prev-node"
-          disabled={!canGoBack}
-          aria-disabled={!canGoBack}
-          title={!canGoBack ? 'No previous stops in this walk history' : 'Previous stop'}
-          onclick={goPrev}
-          type="button"
-        >
-          &larr; Prev
-        </button>
-
-        <div class="trail-context-wrapper">
-          <div class="trail-context" id="trail-context">
-            <span class="trail-context-text">{trailContextText}</span>
-          </div>
-          <div class="trail-progress" id="focus-stage-progress">
-            <span class="progress-text">{progressText}</span>
-          </div>
-          {#if nextStopName}
-            <div class="trail-next" id="focus-stage-next">
-              <span class="next-label">Next: {nextStopName}</span>
-            </div>
-          {/if}
-        </div>
-
-        <button
-          class="trail-btn focus-stage-action-btn biofield-glow"
-          id="btn-next-node"
-          disabled={!hasNext}
-          aria-disabled={!hasNext}
-          title={!hasNext ? 'No nearby stops to continue to' : 'Next stop'}
-          onclick={goNext}
-          type="button"
-        >
-          Next &rarr;
-        </button>
-      </div>
-
-      <div class="route-state" id="focus-stage-route" data-state={neighborCount ? 'walking' : 'empty'}></div>
-    {:else}
-      <div class="trail-controls focus-stage-actions idle" id="trail-controls">
-        <div class="trail-context" id="trail-context">
-          <span class="trail-context-text">Pick a business, then explore its nearby neighbors.</span>
-        </div>
-      </div>
-    {/if}
+    <TrailControls
+      active={chromeHasFocus || chromeHasTrail}
+      canGoBack={canGoBack}
+      hasNext={hasNext}
+      contextText={trailContextText}
+      progressText={progressText}
+      nextStopName={nextStopName}
+      onPrev={goPrev}
+      onNext={goNext}
+    />
 
     <!-- ├─ Neighbor Rail ───────────────────────────────────────────────────── -->
     {#if showNeighborRail}
-      <div class="focus-stage-neighbors active" id="focus-stage-neighbors" role="navigation" aria-label="Nearby neighbors">
-        <div class="neighbor-count" id="focus-stage-neighbor-count" aria-live="polite">{filteredCandidates.length} visible {filteredCandidates.length === 1 ? 'neighbor' : 'neighbors'}</div>
-        <div class="focus-stage-neighbor-list" id="focus-stage-neighbor-list">
-          {#each filteredCandidates as candidate, i}
-            {@const idx = candidate.index}
-            {@const point = getPointForIndex(idx)}
-            {@const name = point?.name ?? 'Nearby business'}
-            {@const city = point?.city ?? 'Montgomery County'}
-            {@const isNextStop = i === 0}
-            {@const relationshipRole = candidate.relationshipRole}
-            {@const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')}
-            {@const reasonLabel = candidate.roleReason || candidate.reason || 'Neighborhood connection'}
-            <div
-              class="focus-stage-neighbor-pill"
-              class:is-next-stop={isNextStop}
-              data-index={idx}
-              data-relationship-role={relationshipRole}
-              data-reason={reasonLabel}
-            >
-              <div
-                class="focus-stage-neighbor-main"
-                role="button"
-                tabindex="0"
-                aria-label={`Walk to ${name}`}
-                onclick={() => walkToCandidate(candidate)}
-                onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); walkToCandidate(candidate); } }}
-              >
-                <span class="focus-stage-neighbor-index">{String(i + 1).padStart(2, '0')}</span>
-                <span class="focus-stage-neighbor-copy">
-                  <span class="focus-stage-neighbor-name">
-                    {name}
-                    <span class="focus-stage-neighbor-city">{city}</span>
-                    <span class="focus-stage-neighbor-role">{relationshipLabel}</span>
-                    {#if isNextStop}
-                      <span class="focus-stage-neighbor-next-stop-badge">Next stop</span>
-                    {/if}
-                  </span>
-                  <span class="focus-stage-neighbor-reason">{reasonLabel}</span>
-                </span>
-              </div>
-              <span class="focus-stage-neighbor-actions" aria-label="Strand actions">
-                <span
-                  class="focus-stage-neighbor-action"
-                  role="button"
-                  tabindex="0"
-                  data-neighbor-action="inspect"
-                  aria-label="Inspect connection"
-                  onclick={() => inspectCandidate(idx)}
-                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); inspectCandidate(idx); } }}
-                >Inspect</span>
-                <span
-                  class="focus-stage-neighbor-action primary"
-                  role="button"
-                  tabindex="0"
-                  data-neighbor-action="pin"
-                  aria-label="Pin connection"
-                  onclick={() => pinCandidate(idx)}
-                  onkeydown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); pinCandidate(idx); } }}
-                >Pin</span>
-              </span>
-            </div>
-          {/each}
-        </div>
-      </div>
+      <NeighborRail candidates={filteredCandidates} getPointForIndex={getPointForIndex} onInspect={inspectCandidate} onPin={pinCandidate} onWalk={walkToCandidate} />
     {:else if chromeHasFocus && filteredCandidates.length === 0 && !threadInspectorActive()}
       <div class="focus-stage-neighbors" id="focus-stage-neighbors">
         <div class="neighbor-count" id="focus-stage-neighbor-count">0 visible neighbors</div>
