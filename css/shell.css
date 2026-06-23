@@ -287,7 +287,6 @@ body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-conta
         );
 }
 
-
 body[data-route-motion='inside-pocket'] #canvas-container::before {
     opacity: 0.72;
     background: radial-gradient(
@@ -737,4 +736,3 @@ body[data-active-view='map'][data-terrain-handoff='landing']
         transform: scale(1);
     }
 }
-

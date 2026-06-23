@@ -19,6 +19,13 @@ const _subscribers = new Set<(v: boolean) => void>();
 function signalReady(): void {
   if (_value) return;
   _value = true;
+  // W46-F1: once the engine is ready the mobile 2D placeholder is no longer
+  // shown, so flip the body data attribute to 'webgl'. This unblocks the
+  // legend (and any other CSS gated on render-kind) after the user enters
+  // the 3D scene.
+  if (typeof document !== 'undefined' && document.body) {
+    document.body.dataset.renderKind = 'webgl';
+  }
   for (const fn of _subscribers) {
     fn(_value);
   }

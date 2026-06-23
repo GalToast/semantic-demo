@@ -215,6 +215,12 @@
   :global(body[data-panel-surface='focus-search']) .legend {
     display: none;
   }
+  /* W46-F1: hide the legend while the mobile 2D placeholder is showing
+     so it doesn't cover the "Enter 3D Scene" CTA. The legend reappears
+     once the user enters the 3D scene and renderKind flips to 'webgl'. */
+  :global(body[data-render-kind='placeholder2d']) .legend {
+    display: none;
+  }
   .legend-title {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.8rem;
