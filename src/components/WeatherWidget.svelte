@@ -1,26 +1,25 @@
 <!--
   @components/WeatherWidget.svelte — Weather display
 
-  Ported from:
-    - js/modules/weather-widget.js (weather data fetch + render)
-
-  Shows current weather conditions for Montgomery County TX.
-  Fetches weather data on mount and displays temperature, condition, and forecast.
+  W46-D4 polish: real Open-Meteo data via @lib/stores/weather, inline SVG
+  icons (sun/cloud/rain), temperature always visible in the pill, and the
+  FORECAST row removed (CONDITION + FEELS LIKE + HUMIDITY + WIND are
+  sufficient — real data is more useful than a redundant text string).
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
   import {
-    weatherData,
     weatherTemperature,
     weatherCondition,
     weatherLabel,
-    weatherForecast,
+    weatherIconKey,
+    weatherHumidity,
+    weatherWindSpeed,
+    weatherWindDirection,
     hasWeather,
-    CONDITION_ICONS,
     fetchWeather
   } from '@lib/stores/weather.svelte';
-  import type { WeatherCondition } from '@lib/stores/weather.svelte';
-  import { viewport, isCompact } from '@lib/stores/viewport.svelte';
+  import { viewport } from '@lib/stores/viewport.svelte';
 
   interface Props {
     /** Whether the widget is visible */
@@ -34,9 +33,11 @@
   let temperature = $derived(weatherTemperature());
   let condition = $derived(weatherCondition());
   let label = $derived(weatherLabel());
-  let forecast = $derived(weatherForecast());
+  let iconKey = $derived(weatherIconKey());
+  let humidity = $derived(weatherHumidity());
+  let windSpeed = $derived(weatherWindSpeed());
+  let windDir = $derived(weatherWindDirection());
   let loaded = $derived(hasWeather());
-  let icon = $derived(CONDITION_ICONS[weatherCondition()] ?? '\u2600');
 
   onMount(() => {
     fetchWeather().catch(() => {
@@ -49,6 +50,44 @@
   }
 </script>
 
+{#snippet iconSvg(key: string)}
+  {#if key === 'sun'}
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+      <circle cx="12" cy="12" r="4" fill="#4ecdc4" />
+      <g stroke="#4ecdc4" stroke-width="2" stroke-linecap="round">
+        <line x1="12" y1="2" x2="12" y2="5" />
+        <line x1="12" y1="19" x2="12" y2="22" />
+        <line x1="2" y1="12" x2="5" y2="12" />
+        <line x1="19" y1="12" x2="22" y2="12" />
+        <line x1="5.6" y1="5.6" x2="7.7" y2="7.7" />
+        <line x1="16.3" y1="16.3" x2="18.4" y2="18.4" />
+        <line x1="5.6" y1="18.4" x2="7.7" y2="16.3" />
+        <line x1="16.3" y1="7.7" x2="18.4" y2="5.6" />
+      </g>
+    </svg>
+  {:else if key === 'rain'}
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+      <path
+        d="M17.5 13a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 13h13.5z"
+        fill="#4ecdc4"
+      />
+      <g stroke="#4ecdc4" stroke-width="2" stroke-linecap="round">
+        <line x1="8" y1="17" x2="7" y2="20" />
+        <line x1="12" y1="17" x2="11" y2="20" />
+        <line x1="16" y1="17" x2="15" y2="20" />
+      </g>
+    </svg>
+  {:else}
+    <!-- cloud (default) -->
+    <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+      <path
+        d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 19h13.5z"
+        fill="#4ecdc4"
+      />
+    </svg>
+  {/if}
+{/snippet}
+
 {#if visible}
   <div
     class="weather-widget"
@@ -57,8 +96,15 @@
     id="weather-widget"
     aria-label="Weather conditions"
   >
-    <button class="weather-toggle" onclick={toggleExpanded} aria-label="Toggle weather details" aria-expanded={expanded} aria-controls="weather-details" type="button">
-      <span class="weather-icon">{icon}</span>
+    <button
+      class="weather-toggle"
+      onclick={toggleExpanded}
+      aria-label="Toggle weather details"
+      aria-expanded={expanded}
+      aria-controls="weather-details"
+      type="button"
+    >
+      <span class="weather-icon">{@render iconSvg(iconKey)}</span>
       {#if loaded}
         <span class="weather-temp">{temperature}&deg;</span>
       {/if}
@@ -75,8 +121,12 @@
           <span class="detail-value">{temperature}&deg;F</span>
         </div>
         <div class="weather-detail-row">
-          <span class="detail-label">Forecast</span>
-          <span class="detail-value forecast">{forecast}</span>
+          <span class="detail-label">Humidity</span>
+          <span class="detail-value">{humidity}%</span>
+        </div>
+        <div class="weather-detail-row">
+          <span class="detail-label">Wind</span>
+          <span class="detail-value">{windSpeed} mph {windDir}</span>
         </div>
       </div>
     {/if}
@@ -115,15 +165,13 @@
     transition: none;
   }
 
-  /* Collapsed pill: circular icon-only chip. Expands horizontally on hover
-     or when .expanded (clicked). Keeps the weather visible without crowding
-     the map controls directly below. */
+  /* W46-D4: pill always shows icon + temperature. No more icon-only
+     collapsed state — the temperature is the primary signal. */
   .weather-toggle {
     display: inline-flex;
     align-items: center;
-    gap: 0;
-    padding: 0.45rem 0.5rem;
-    /* W46-D: forced rebuild marker 2026-06-23 */
+    gap: 0.45rem;
+    padding: 0.45rem 0.75rem;
     background: linear-gradient(
       180deg,
       rgba(11, 22, 32, 0.78),
@@ -142,8 +190,6 @@
       0 1px 0 rgba(255, 255, 255, 0.04) inset,
       0 6px 18px rgba(0, 0, 0, 0.35);
     transition:
-      padding 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-      gap 0.22s cubic-bezier(0.4, 0, 0.2, 1),
       border-color 0.18s ease,
       background 0.18s ease,
       box-shadow 0.18s ease,
@@ -152,8 +198,6 @@
   .weather-toggle:hover,
   .weather-widget.expanded .weather-toggle,
   .weather-toggle:focus-visible {
-    padding: 0.45rem 0.75rem;
-    gap: 0.45rem;
     border-color: rgba(78, 205, 196, 0.45);
     background: linear-gradient(
       180deg,
@@ -175,38 +219,26 @@
   }
 
   .weather-icon {
-    font-size: 0.95rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    height: 14px;
     line-height: 1;
     filter: drop-shadow(0 0 4px rgba(78, 205, 196, 0.25));
   }
+  .weather-icon :global(svg) {
+    display: block;
+  }
 
-  /* Temperature label is hidden when the pill is collapsed and slides in on
-     hover or when the details panel is open. Keeps the icon-only footprint
-     at rest. */
+  /* W46-D4: temperature is always visible — primary data point. */
   .weather-temp {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     font-size: 0.75rem;
     color: #4ecdc4;
-    max-width: 0;
-    opacity: 0;
-    overflow: hidden;
     white-space: nowrap;
-    transition:
-      max-width 0.22s cubic-bezier(0.4, 0, 0.2, 1),
-      opacity 0.18s ease;
-  }
-  .weather-toggle:hover .weather-temp,
-  .weather-widget.expanded .weather-temp,
-  .weather-toggle:focus-visible .weather-temp {
-    max-width: 3.5rem;
-    opacity: 1;
-  }
-
-  /* Skeleton state while weather is loading — subtle pulse on the chip. */
-  .weather-toggle:has(.weather-temp:not(:empty))::after,
-  .weather-toggle:not(:has(.weather-temp))::after {
-    /* no-op: kept for future */
+    line-height: 1;
   }
 
   .weather-details {
@@ -221,7 +253,7 @@
     border: 1px solid rgba(78, 205, 196, 0.18);
     border-radius: 0.55rem;
     padding: 0.55rem 0.7rem;
-    min-width: 220px;
+    min-width: 200px;
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.04) inset,
       0 10px 28px rgba(0, 0, 0, 0.5);
@@ -241,7 +273,7 @@
     padding: 0.18rem 0;
   }
   .weather-detail-row + .weather-detail-row {
-    border-top: 1px solid rgba(78, 205, 196, 0.07);
+    border-top: 1px solid rgba(78, 205, 206, 0.07);
     margin-top: 0.1rem;
     padding-top: 0.28rem;
   }
@@ -260,16 +292,6 @@
     text-align: right;
     font-family: 'Nunito Sans', sans-serif;
   }
-  .detail-value.forecast {
-    font-size: 0.62rem;
-    color: rgba(176, 208, 208, 0.78);
-    max-width: 14rem;
-    line-height: 1.35;
-    /* W46-D3 polish: wrap to 2 lines, no ellipsis truncation. */
-    white-space: normal;
-    overflow-wrap: anywhere;
-    text-align: right;
-  }
 
   .weather-widget.compact {
     /* Mobile header collapses to ~48px on compact; keep the same
@@ -283,7 +305,6 @@
   /* Respect reduced motion: skip the expand/hover transitions. */
   @media (prefers-reduced-motion: reduce) {
     .weather-toggle,
-    .weather-temp,
     .weather-details {
       transition: none;
       animation: none;

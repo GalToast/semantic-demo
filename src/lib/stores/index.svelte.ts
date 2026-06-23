@@ -184,9 +184,7 @@ export {
     weatherLabel,
     weatherForecast,
     hasWeather,
-    updateWeather,
-    fetchWeather,
-    CONDITION_ICONS
+    fetchWeather
 } from './weather.svelte.ts'
 
 // ── Camera ───────────────────────────────────────────────────────────────────
