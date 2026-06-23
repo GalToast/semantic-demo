@@ -34,6 +34,10 @@
   -->
         <style>
             :root {
+                /* Header chrome height — drives .focus-stage.active top offset
+                   so Trail/Focus chrome (journey-chrome, trail-controls)
+                   renders below the 60.8px app header instead of behind it. */
+                --app-header-height: 60.8px;
                 --z-canvas: 0;
                 --z-field-nodes: 10;
                 --z-threads: 20;

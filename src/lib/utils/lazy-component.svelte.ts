@@ -88,10 +88,7 @@ export function scheduleIdleImport<T>(load: () => Promise<T>): Promise<T> {
 
     if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
         return new Promise((resolve, reject) => {
-            window.requestIdleCallback(
-                () => run().then(resolve, reject),
-                { timeout: 1500 }
-            )
+            window.requestIdleCallback(() => run().then(resolve, reject), { timeout: 1500 })
         })
     }
 

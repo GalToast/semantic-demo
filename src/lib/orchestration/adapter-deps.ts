@@ -21,7 +21,7 @@ import {
     shouldUseFloatingFocusJourneyOnly
 } from '@lib/journey/focus-ui'
 import { revealSelectedBusinessCard } from '@lib/ui/panel-bindings'
-import { describeThreadLensForPoint } from '@lib/journey/point-color'
+import { describeThreadLensForPoint } from '@lib/journey/thread-lens'
 import { _getSelectedBusinessRoleLabel } from '@lib/utils/role-label'
 
 export function buildAdapterDeps(): AdapterDeps {

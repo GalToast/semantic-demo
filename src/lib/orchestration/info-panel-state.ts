@@ -31,12 +31,17 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         // component when it is mounted. On mobile/compact viewports, the panel
         // is NOT mounted at all on idle (see App.svelte infoPanelOpen
         // derivation). Keep these two gates in sync when adding new surfaces.
-        headerText: 'Business Details',
-        headerVisible: true,
-        emptyHeadline: 'Select a business to see details',
-        emptySubtext: 'Click a node in the field or choose a search result to explore.',
+        //
+        // W45-B: the idle surface now shows a search-first panel. The SearchBar
+        // is the primary (and only visible) content; header and empty-state
+        // selection card are suppressed so the panel reads as a clean search
+        // bar rather than a cluttered business-details panel.
+        headerText: 'Search Businesses',
+        headerVisible: false,
+        emptyHeadline: 'Search Montgomery County businesses',
+        emptySubtext: 'Type to search by name, category, or keyword.',
         panelVisible: true,
-        selectionSuppressed: false
+        selectionSuppressed: true
     },
     focus: {
         headerText: 'Business Details',

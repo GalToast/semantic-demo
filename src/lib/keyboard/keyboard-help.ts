@@ -249,3 +249,38 @@ export function showKeyboardShortcutsHint(): void {
         panel._autoDismissTimer = null
     }, 5000)
 }
+
+/**
+ * Toggle the keyboard-shortcuts panel without auto-dismiss.
+ *
+ * The "?" key still uses `showKeyboardShortcutsHint` (which auto-closes after
+ * 5 s) so the hint can't get stuck on screen if invoked accidentally. But the
+ * header "?" button is a real toggle affordance, so we open/close on click
+ * and leave the panel open until the user dismisses it.
+ */
+export function toggleKeyboardShortcutsHint(): void {
+    const panel = document.getElementById('keyboard-hint-panel') as KeyboardHintPanelElement | null
+    if (!panel) return
+    if (panel._autoDismissTimer) {
+        clearTimeout(panel._autoDismissTimer)
+        panel._autoDismissTimer = null
+    }
+    if (panel.classList.contains('visible')) {
+        if (typeof panel._closeKeyboardHintPanel === 'function') {
+            panel._closeKeyboardHintPanel()
+        } else {
+            panel.classList.remove('visible')
+            panel.setAttribute('aria-hidden', 'true')
+        }
+        return
+    }
+    if (typeof panel._openKeyboardHintPanel === 'function') {
+        panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
+    } else {
+        const onboarding = document.getElementById('onboarding-hint')
+        onboarding?.classList.remove('visible')
+        onboarding?.setAttribute('aria-hidden', 'true')
+        panel.classList.add('visible')
+        panel.setAttribute('aria-hidden', 'false')
+    }
+}

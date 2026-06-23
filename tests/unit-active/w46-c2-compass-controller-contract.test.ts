@@ -42,18 +42,10 @@ describe('W46-C2: compass-controller.ts exists and has expected shape', () => {
 
     it('imports from canonical store sources', () => {
         // Each import statement as a whole -- robust to whitespace and brace position
-        expect(src).toMatch(
-            /import\s*\{[^}]*\bnavStore\b[^}]*\}\s*from\s+['"]@lib\/stores\/navigation\.svelte\.ts['"]/
-        )
-        expect(src).toMatch(
-            /import\s*\{[^}]*\bsearchStore\b[^}]*\}\s*from\s+['"]@lib\/stores\/search\.svelte['"]/
-        )
-        expect(src).toMatch(
-            /import\s*\{[^}]*\bfocusStore\b[^}]*\}\s*from\s+['"]@lib\/stores\/focus\.svelte\.ts['"]/
-        )
-        expect(src).toMatch(
-            /import\s*\{[^}]*\bappState\b[^}]*\}\s*from\s+['"]@lib\/state\/app\.svelte['"]/
-        )
+        expect(src).toMatch(/import\s*\{[^}]*\bnavStore\b[^}]*\}\s*from\s+['"]@lib\/stores\/navigation\.svelte\.ts['"]/)
+        expect(src).toMatch(/import\s*\{[^}]*\bsearchStore\b[^}]*\}\s*from\s+['"]@lib\/stores\/search\.svelte['"]/)
+        expect(src).toMatch(/import\s*\{[^}]*\bfocusStore\b[^}]*\}\s*from\s+['"]@lib\/stores\/focus\.svelte\.ts['"]/)
+        expect(src).toMatch(/import\s*\{[^}]*\bappState\b[^}]*\}\s*from\s+['"]@lib\/state\/app\.svelte['"]/)
         expect(src).toMatch(
             /import\s*\{[^}]*\bJOURNEY_ACTIONS\b[^}]*\}\s*from\s+['"]@lib\/stores\/compass\.svelte\.ts['"]/
         )
@@ -67,9 +59,7 @@ describe('W46-C2: public exports -- 11 functions + 2 interfaces', () => {
     })
 
     it('exports initJourneyCompassAdapter (legacy compat entry point)', () => {
-        expect(src).toMatch(
-            /export\s+function\s+initJourneyCompassAdapter\s*\(\s*opts:\s*\{\s*switchView/
-        )
+        expect(src).toMatch(/export\s+function\s+initJourneyCompassAdapter\s*\(\s*opts:\s*\{\s*switchView/)
     })
 
     it('exports the three presentation/state sync functions', () => {
@@ -96,9 +86,7 @@ describe('W46-C2: public exports -- 11 functions + 2 interfaces', () => {
 
 describe('W46-C2: interface shape', () => {
     it('CompassPresentationState has density/copy/actions/navigationOwner fields', () => {
-        const block = src.match(
-            /export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/
-        )
+        const block = src.match(/export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/)
         expect(block).not.toBeNull()
         const b = block![0]
         expect(b).toContain('density')
@@ -108,9 +96,7 @@ describe('W46-C2: interface shape', () => {
     })
 
     it('CompassPresentationState.density has 3 allowed values', () => {
-        const block = src.match(
-            /export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/
-        )
+        const block = src.match(/export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/)
         expect(block).not.toBeNull()
         // density: 'hidden' | 'compact' | 'expanded';
         const densityLine = block![0].match(/density:\s*([^;]+);/)
@@ -121,9 +107,7 @@ describe('W46-C2: interface shape', () => {
     })
 
     it('CompassPresentationState.copy has 2 allowed values', () => {
-        const block = src.match(
-            /export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/
-        )
+        const block = src.match(/export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/)
         expect(block).not.toBeNull()
         const copyLine = block![0].match(/copy:\s*([^;]+);/)
         expect(copyLine).not.toBeNull()
@@ -211,9 +195,7 @@ describe('W46-C2: getJourneyCompassPresentationState phase mapping (structural)'
         // Capture the full map-branch return block (up to the closing `}` of
         // the return object) and confirm both 'hidden' and 'compact' literals
         // appear inside -- the ternary picks one based on hasActiveRouteContext.
-        const mapContext = src.match(
-            /phase\s*===\s*['"]map['"][\s\S]{0,200}?return\s*\{[\s\S]*?\}/
-        )
+        const mapContext = src.match(/phase\s*===\s*['"]map['"][\s\S]{0,200}?return\s*\{[\s\S]*?\}/)
         expect(mapContext).not.toBeNull()
         expect(mapContext![0]).toMatch(/['"]hidden['"]/)
         expect(mapContext![0]).toMatch(/['"]compact['"]/)
@@ -222,9 +204,7 @@ describe('W46-C2: getJourneyCompassPresentationState phase mapping (structural)'
 
 describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases', () => {
     it('returns the standard expanded branch when phase is overview', async () => {
-        const { getJourneyCompassPresentationState } = await import(
-            '../../src/lib/orchestration/compass-controller'
-        )
+        const { getJourneyCompassPresentationState } = await import('../../src/lib/orchestration/compass-controller')
         const result = getJourneyCompassPresentationState({ phase: 'overview' })
         expect(result.density).toBe('expanded')
         expect(result.copy).toBe('full')
@@ -233,9 +213,7 @@ describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases
     })
 
     it('returns the compact branch when phase is search', async () => {
-        const { getJourneyCompassPresentationState } = await import(
-            '../../src/lib/orchestration/compass-controller'
-        )
+        const { getJourneyCompassPresentationState } = await import('../../src/lib/orchestration/compass-controller')
         const result = getJourneyCompassPresentationState({ phase: 'search' })
         expect(result.density).toBe('compact')
         expect(result.copy).toBe('quiet')
@@ -244,9 +222,7 @@ describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases
     })
 
     it('returns the inside-walk branch when phase is inside', async () => {
-        const { getJourneyCompassPresentationState } = await import(
-            '../../src/lib/orchestration/compass-controller'
-        )
+        const { getJourneyCompassPresentationState } = await import('../../src/lib/orchestration/compass-controller')
         const result = getJourneyCompassPresentationState({ phase: 'inside' })
         expect(result.density).toBe('compact')
         expect(result.copy).toBe('quiet')
@@ -255,9 +231,7 @@ describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases
     })
 
     it('returns default (overview branch) when phase is omitted', async () => {
-        const { getJourneyCompassPresentationState } = await import(
-            '../../src/lib/orchestration/compass-controller'
-        )
+        const { getJourneyCompassPresentationState } = await import('../../src/lib/orchestration/compass-controller')
         const result = getJourneyCompassPresentationState({})
         // No phase = defaults to 'overview' fallback
         expect(result.density).toBe('expanded')
@@ -269,9 +243,7 @@ describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases
 
 describe('W46-C2: runtime -- getViewHandoffModel returns well-formed ViewHandoffModel', () => {
     it('returns a ViewHandoffModel with all 4 required fields', async () => {
-        const { getViewHandoffModel } = await import(
-            '../../src/lib/orchestration/compass-controller'
-        )
+        const { getViewHandoffModel } = await import('../../src/lib/orchestration/compass-controller')
         const model = getViewHandoffModel('galaxy')
         expect(model).toHaveProperty('icon')
         expect(model).toHaveProperty('kicker')
@@ -285,9 +257,7 @@ describe('W46-C2: runtime -- getViewHandoffModel returns well-formed ViewHandoff
     })
 
     it('returns distinct models for different views', async () => {
-        const { getViewHandoffModel } = await import(
-            '../../src/lib/orchestration/compass-controller'
-        )
+        const { getViewHandoffModel } = await import('../../src/lib/orchestration/compass-controller')
         const galaxy = getViewHandoffModel('galaxy')
         const map = getViewHandoffModel('map')
         // Different views should produce different kicker/title

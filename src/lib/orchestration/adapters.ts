@@ -12,7 +12,6 @@ import { initJourneyCompassAdapter } from '@lib/orchestration/compass-controller
 import { initJourneySelectedCard } from '@lib/journey/selected-card'
 import { initSemanticDiveUiSubscriptions } from '@lib/journey/semantic-dive'
 import { initFocusNeighborRailSubscriptions } from '@lib/journey/focus-ui'
-import { initRouteTraceSubscriptions } from '@lib/journey/route-trace'
 import { initThreadInspectorAdapter } from '@lib/journey/thread-inspector-adapter'
 import { initMapStateSubscriptions } from '@lib/engine/map-state'
 import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
@@ -173,7 +172,13 @@ export function initAdapters(deps: AdapterDeps): void {
     initFocusNeighborRailSubscriptions()
 
     // 7. Route trace subscriptions (no deps)
-    initRouteTraceSubscriptions()
+    // W45: dynamic import — route-trace statically imports three (ShaderMaterial,
+    // Color, etc.) for WebGL overlay rendering. Deferring keeps three out of the
+    // cold-load modulepreload set. Fire-and-forget: subscriptions register before
+    // the demo arrival phase (post-gesture) needs them.
+    import('@lib/journey/route-trace')
+        .then(({ initRouteTraceSubscriptions }) => initRouteTraceSubscriptions())
+        .catch(() => {})
 
     // 8. Thread inspector adapter (4 deps)
     initThreadInspectorAdapter(deps.threadInspector)

@@ -55,9 +55,14 @@ describe('W46-C3: toast.ts contract', () => {
         expect(document.body.dataset.toastState).toBe('dismissed')
     })
 
-    it('auto-dismisses after 3.5s (verifies the timing literal)', () => {
-        // Don't actually wait 3.5s — verify the literal exists in source
-        expect(src(file)).toMatch(/setTimeout\([\s\S]*?3500\s*\)/)
+    it('delegates auto-dismiss to the Toast component via a variant flag', () => {
+        // W46-C3: toast.ts no longer owns a dismiss timer. It sets a
+        // `toastVariant` ('info' | 'error') on <body>; Toast.svelte owns the
+        // auto-dismiss (DISMISS_DELAY = 8000 for error, 5000 otherwise) plus a
+        // close button. Verify the bridge contract instead of the old 3500ms
+        // literal that moved out of this module.
+        expect(src(file)).toMatch(/toastVariant/)
+        expect(src(file)).not.toMatch(/setTimeout\([\s\S]*?3500\s*\)/)
     })
 })
 
@@ -215,14 +220,18 @@ describe('W46-C3: info-panel-state.ts contract', () => {
         expect(s).toMatch(/\bidle\s*:\s*\{/)
     })
 
-    it('runtime: getInfoPanelContent for idle returns the empty-state defaults', async () => {
+    it('runtime: getInfoPanelContent for idle returns the search-first defaults', async () => {
+        // W45-B: the idle surface is now search-first — header suppressed,
+        // selection suppressed, and copy framed around search rather than
+        // business details. See info-panel-state.ts CONTENT_BY_SURFACE.idle.
         const mod = await import(`../../src/lib/orchestration/${file}`)
         const content = mod.getInfoPanelContent('idle')
-        expect(content.headerText).toBe('Business Details')
+        expect(content.headerText).toBe('Search Businesses')
+        expect(content.headerVisible).toBe(false)
         expect(content.emptyHeadline).toBeTruthy()
         expect(content.emptySubtext).toBeTruthy()
         expect(content.panelVisible).toBe(true)
-        expect(content.selectionSuppressed).toBe(false)
+        expect(content.selectionSuppressed).toBe(true)
     })
 
     it('runtime: header is hidden in search-mode surface', async () => {

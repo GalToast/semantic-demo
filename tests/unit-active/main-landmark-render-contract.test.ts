@@ -67,10 +67,7 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
         // current App.svelte while the parallel-session orchestrator-driven
         // l.canvas.current form (app-orchestration.svelte.ts) is still WIP.
         // Both forms prove "Canvas is gated through a lazy handle inside main".
-        expect(
-            mainContent.includes('l.canvas.current') ||
-            mainContent.includes('canvasLazy.current')
-        ).toBe(true)
+        expect(mainContent.includes('l.canvas.current') || mainContent.includes('canvasLazy.current')).toBe(true)
     })
 
     it('contains Legend inside the main element', () => {
@@ -97,9 +94,6 @@ describe('A2-1 + A2-2: main#main-content landmark', () => {
         // Tolerate the local-handle form (infoPanelLazy.current) used by the
         // current App.svelte while the parallel-session orchestrator-driven
         // l.infoPanel.current form is still WIP. Same rationale as Canvas.
-        expect(
-            mainContent.includes('l.infoPanel.current') ||
-            mainContent.includes('infoPanelLazy.current')
-        ).toBe(true)
+        expect(mainContent.includes('l.infoPanel.current') || mainContent.includes('infoPanelLazy.current')).toBe(true)
     })
 })

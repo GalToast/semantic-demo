@@ -11,14 +11,14 @@
     pointer-events: auto;
     width: auto;
     max-width: min(90vw, 640px);
-  }
+}
 
-  /* ── Compass Status Header ──────────────────────────────────────────────── */
-  .focus-stage-journey {
+/* ── Compass Status Header ──────────────────────────────────────────────── */
+.focus-stage-journey {
     display: contents;
-  }
+}
 
-  .journey-header {
+.journey-header {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -28,32 +28,32 @@
     border-radius: 0.5rem;
     padding: 0.35rem 0.85rem;
     border: 1px solid rgba(78, 205, 196, 0.1);
-  }
-  .journey-kicker {
+}
+.journey-kicker {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.6rem;
     font-weight: 600;
     color: #4ecdc4;
     text-transform: uppercase;
     letter-spacing: 0.06em;
-  }
-  .journey-title {
+}
+.journey-title {
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.75rem;
     color: #e0f0f0;
     font-weight: 600;
-  }
-  .journey-note {
+}
+.journey-note {
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.6rem;
     color: #8aaeae;
     max-width: 400px;
     text-align: center;
     line-height: 1.3;
-  }
+}
 
-  /* ── Walk Breadcrumb ────────────────────────────────────────────────────── */
-  .walk-breadcrumb {
+/* ── Walk Breadcrumb ────────────────────────────────────────────────────── */
+.walk-breadcrumb {
     display: none;
     align-items: center;
     gap: 0.3rem;
@@ -64,19 +64,19 @@
     font-size: 0.7rem;
     color: #b0d0d0;
     border: 1px solid rgba(78, 205, 196, 0.1);
-  }
-  .walk-breadcrumb.visible {
+}
+.walk-breadcrumb.visible {
     display: flex;
-  }
-  .walk-breadcrumb-label {
+}
+.walk-breadcrumb-label {
     font-size: 0.55rem;
     font-weight: 600;
     color: #6a8a8a;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-right: 0.2rem;
-  }
-  .walk-breadcrumb-chip {
+}
+.walk-breadcrumb-chip {
     background: none;
     border: none;
     color: #8aaeae;
@@ -86,27 +86,27 @@
     padding: 0.1rem 0.3rem;
     border-radius: 0.2rem;
     transition: all 0.15s;
-  }
-  .walk-breadcrumb-chip:hover {
+}
+.walk-breadcrumb-chip:hover {
     color: #e0f0f0;
     background: rgba(78, 205, 196, 0.1);
-  }
-  .walk-breadcrumb-chip.current {
+}
+.walk-breadcrumb-chip.current {
     color: #4ecdc4;
     font-weight: 600;
     cursor: default;
-  }
-  .walk-breadcrumb-chip.current:hover {
+}
+.walk-breadcrumb-chip.current:hover {
     background: none;
-  }
-  .walk-breadcrumb-sep {
+}
+.walk-breadcrumb-sep {
     color: #4a6a6a;
     font-size: 0.6rem;
     opacity: 0.5;
-  }
+}
 
-  /* ── Trail Controls ─────────────────────────────────────────────────────── */
-  .trail-controls {
+/* ── Trail Controls ─────────────────────────────────────────────────────── */
+.trail-controls {
     display: flex;
     align-items: center;
     gap: 0.5rem;
@@ -115,26 +115,26 @@
     border-radius: 0.5rem;
     padding: 0.35rem 0.65rem;
     border: 1px solid rgba(78, 205, 196, 0.12);
-  }
-  :global(.trail-controls.focus-stage-actions),
-  :global(#trail-controls) {
+}
+:global(.trail-controls.focus-stage-actions),
+:global(#trail-controls) {
     display: grid;
     grid-auto-flow: column;
-  }
-  /* Override legacy CSS that hides #trail-controls in focus-search/field-node mode.
+}
+/* Override legacy CSS that hides #trail-controls in focus-search/field-node mode.
      Higher specificity than the legacy rule to ensure grid display wins. */
-  :global(body.is-active[data-panel-surface='focus-search'] #trail-controls.focus-stage-actions) {
+:global(body.is-active[data-panel-surface='focus-search'] #trail-controls.focus-stage-actions) {
     display: grid;
-  }
-  :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-actions) {
+}
+:global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-actions) {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
-  }
-  .trail-controls.idle {
+}
+.trail-controls.idle {
     opacity: 0.6;
-  }
-  .trail-btn {
+}
+.trail-btn {
     background: none;
     border: 1px solid rgba(78, 205, 196, 0.2);
     border-radius: 0.3rem;
@@ -146,23 +146,23 @@
     font-weight: 600;
     transition: all 0.15s;
     white-space: nowrap;
-  }
-  .trail-btn:disabled {
+}
+.trail-btn:disabled {
     opacity: 0.3;
     cursor: default;
-  }
-  .trail-btn:not(:disabled):hover {
+}
+.trail-btn:not(:disabled):hover {
     background: rgba(78, 205, 196, 0.1);
     border-color: rgba(78, 205, 196, 0.4);
-  }
-  .trail-context-wrapper {
+}
+.trail-context-wrapper {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.15rem;
     min-width: 0;
-  }
-  .trail-context-text {
+}
+.trail-context-text {
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.6rem;
     color: #b0d0d0;
@@ -177,47 +177,47 @@
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
-  }
-  .progress-text {
+}
+.progress-text {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
     color: #6a8a8a;
-  }
-  .next-label {
+}
+.next-label {
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.55rem;
     color: #4ecdc4;
     opacity: 0.8;
-  }
-  .route-state {
+}
+.route-state {
     display: none;
-  }
+}
 
-  /* ── Neighbor Rail ──────────────────────────────────────────────────────── */
-  .focus-stage-neighbors {
+/* ── Neighbor Rail ──────────────────────────────────────────────────────── */
+.focus-stage-neighbors {
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 0.3rem;
     width: 100%;
-  }
-  .focus-stage-neighbors.active {
+}
+.focus-stage-neighbors.active {
     display: flex;
-  }
-  .neighbor-count {
+}
+.neighbor-count {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
     color: #6a8a8a;
-  }
-  .focus-stage-neighbor-list {
+}
+.focus-stage-neighbor-list {
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
     width: 100%;
     max-height: min(40vh, 280px);
     overflow-y: auto;
-  }
-  .focus-stage-neighbor-pill {
+}
+.focus-stage-neighbor-pill {
     display: flex;
     justify-content: space-between;
     align-items: center;
@@ -231,12 +231,12 @@
     font-family: 'Nunito Sans', sans-serif;
     text-align: left;
     width: 100%;
-  }
-  .focus-stage-neighbor-pill.is-next-stop {
+}
+.focus-stage-neighbor-pill.is-next-stop {
     border-color: rgba(78, 205, 196, 0.3);
     background: rgba(78, 205, 196, 0.05);
-  }
-  .focus-stage-neighbor-main {
+}
+.focus-stage-neighbor-main {
     display: flex;
     align-items: center;
     gap: 0.4rem;
@@ -246,36 +246,36 @@
     padding: 0.1rem;
     border-radius: 0.2rem;
     transition: background 0.15s;
-  }
-  .focus-stage-neighbor-main:hover {
+}
+.focus-stage-neighbor-main:hover {
     background: rgba(78, 205, 196, 0.08);
-  }
-  .focus-stage-neighbor-index {
+}
+.focus-stage-neighbor-index {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
     color: #6a8a8a;
     min-width: 1.2rem;
-  }
-  .focus-stage-neighbor-copy {
+}
+.focus-stage-neighbor-copy {
     display: flex;
     flex-direction: column;
     gap: 0.05rem;
     min-width: 0;
-  }
-  .focus-stage-neighbor-name {
+}
+.focus-stage-neighbor-name {
     font-size: 0.65rem;
     color: #e0f0f0;
     display: flex;
     align-items: center;
     gap: 0.3rem;
     flex-wrap: wrap;
-  }
-  .focus-stage-neighbor-city {
+}
+.focus-stage-neighbor-city {
     font-size: 0.55rem;
     color: #6a8a8a;
     font-weight: 400;
-  }
-  .focus-stage-neighbor-next-stop-badge {
+}
+.focus-stage-neighbor-next-stop-badge {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.5rem;
     color: #4ecdc4;
@@ -284,21 +284,21 @@
     border-radius: 0.2rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-  }
-  .focus-stage-neighbor-reason {
+}
+.focus-stage-neighbor-reason {
     font-size: 0.55rem;
     color: #8aaeae;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
     max-width: 200px;
-  }
-  .focus-stage-neighbor-actions {
+}
+.focus-stage-neighbor-actions {
     display: flex;
     gap: 0.2rem;
     flex-shrink: 0;
-  }
-  .focus-stage-neighbor-action {
+}
+.focus-stage-neighbor-action {
     background: none;
     border: 1px solid rgba(78, 205, 196, 0.2);
     border-radius: 0.2rem;
@@ -308,74 +308,74 @@
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.55rem;
     transition: all 0.15s;
-  }
-  .focus-stage-neighbor-action:hover {
+}
+.focus-stage-neighbor-action:hover {
     background: rgba(78, 205, 196, 0.1);
     border-color: rgba(78, 205, 196, 0.4);
     color: #4ecdc4;
-  }
-  .focus-stage-neighbor-action.primary {
+}
+.focus-stage-neighbor-action.primary {
     color: #4ecdc4;
     border-color: rgba(78, 205, 196, 0.3);
-  }
-  .focus-stage-neighbor-action.primary:hover {
+}
+.focus-stage-neighbor-action.primary:hover {
     background: rgba(78, 205, 196, 0.2);
-  }
-  .empty-state {
+}
+.empty-state {
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.6rem;
     color: #6a8a8a;
     padding: 0.5rem;
     text-align: center;
-  }
+}
 
-  /* ── Mobile / Compact ───────────────────────────────────────────────────── */
-  @media (max-width: 768px) {
+/* ── Mobile / Compact ───────────────────────────────────────────────────── */
+@media (max-width: 768px) {
     .journey-chrome {
-      bottom: 3.5rem;
-      max-width: 95vw;
-      /* Cap height so the neighbor rail cannot grow upward into the
+        bottom: 3.5rem;
+        max-width: 95vw;
+        /* Cap height so the neighbor rail cannot grow upward into the
          FocusCard zone at the top (top: 3.5rem). Leave 56px + 8px
          breathing room above and below. */
-      max-height: calc(100dvh - 7.5rem);
-      overflow-y: auto;
-      overscroll-behavior: contain;
-      scrollbar-width: none;
+        max-height: calc(100dvh - 7.5rem);
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        scrollbar-width: none;
     }
     .journey-chrome::-webkit-scrollbar {
-      display: none;
+        display: none;
     }
     .journey-note {
-      max-width: 260px;
+        max-width: 260px;
     }
     .trail-controls {
-      padding: 0.25rem 0.4rem;
-      gap: 0.3rem;
-      flex-wrap: wrap;
-      justify-content: center;
+        padding: 0.25rem 0.4rem;
+        gap: 0.3rem;
+        flex-wrap: wrap;
+        justify-content: center;
     }
     .trail-btn {
-      font-size: 0.6rem;
-      padding: 0.2rem 0.4rem;
+        font-size: 0.6rem;
+        padding: 0.2rem 0.4rem;
     }
     .trail-context-text {
-      max-width: 180px;
-      font-size: 0.55rem;
+        max-width: 180px;
+        font-size: 0.55rem;
     }
     .focus-stage-neighbor-main {
-      gap: 0.25rem;
+        gap: 0.25rem;
     }
     .focus-stage-neighbor-index {
-      min-width: 0.9rem;
+        min-width: 0.9rem;
     }
     .focus-stage-neighbor-name {
-      font-size: 0.6rem;
+        font-size: 0.6rem;
     }
     .focus-stage-neighbor-reason {
-      max-width: 140px;
+        max-width: 140px;
     }
     .focus-stage-neighbor-actions {
-      flex-direction: column;
-      gap: 0.15rem;
+        flex-direction: column;
+        gap: 0.15rem;
     }
-  }
+}

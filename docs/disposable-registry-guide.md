@@ -36,15 +36,15 @@ reg.disposeAll()
 
 ## API Quick Reference
 
-| Method | What it tracks | Cleanup on `disposeAll()` |
-|---|---|---|
-| `timer(id)` | `setTimeout` / `setInterval` id | `clearTimeout(id)` + `clearInterval(id)` |
-| `raf(id)` | `requestAnimationFrame` id | `cancelAnimationFrame(id)` |
-| `listener(target, type, handler, opts?)` | DOM / EventTarget listener | `target.removeEventListener(...)` |
-| `subscription(unsub)` | Store `.subscribe()` return | Calls `unsub()` |
-| `resource(obj)` | Object with `.dispose()` | Calls `obj.dispose()` |
-| `add(fn)` | Raw cleanup function | Calls `fn()` |
-| `addMany(...)` | Batch of any above | Same as individual |
+| Method                                   | What it tracks                  | Cleanup on `disposeAll()`                |
+| ---------------------------------------- | ------------------------------- | ---------------------------------------- |
+| `timer(id)`                              | `setTimeout` / `setInterval` id | `clearTimeout(id)` + `clearInterval(id)` |
+| `raf(id)`                                | `requestAnimationFrame` id      | `cancelAnimationFrame(id)`               |
+| `listener(target, type, handler, opts?)` | DOM / EventTarget listener      | `target.removeEventListener(...)`        |
+| `subscription(unsub)`                    | Store `.subscribe()` return     | Calls `unsub()`                          |
+| `resource(obj)`                          | Object with `.dispose()`        | Calls `obj.dispose()`                    |
+| `add(fn)`                                | Raw cleanup function            | Calls `fn()`                             |
+| `addMany(...)`                           | Batch of any above              | Same as individual                       |
 
 ---
 
@@ -87,7 +87,7 @@ import { onDestroy } from 'svelte'
 const reg = disposable('MyComponent')
 
 onDestroy(() => {
-  reg.disposeAll()
+    reg.disposeAll()
 })
 ```
 
@@ -118,12 +118,12 @@ another reason.** This keeps risk low and avoids unnecessary churn.
 
 ### What to migrate first (highest ROI)
 
-| File | Why | Risk |
-|---|---|---|
-| `src/lib/engine/three-engine.ts` | 5+ event listeners, manual remove in `cancelAnimate()` | **Low** — just swap `addEventListener` → `registry.listener` |
-| `src/components/InfoPanel.svelte` | 2× `setInterval` at 16ms | **Low** — simple timer replacement |
-| `src/components/LegacyCompassSurface.svelte` | `setInterval`, store subscriptions | **Low** |
-| `src/App.svelte` | Multiple dynamic imports | **Medium** — use `add(unsub)` for abort controllers |
+| File                                         | Why                                                    | Risk                                                         |
+| -------------------------------------------- | ------------------------------------------------------ | ------------------------------------------------------------ |
+| `src/lib/engine/three-engine.ts`             | 5+ event listeners, manual remove in `cancelAnimate()` | **Low** — just swap `addEventListener` → `registry.listener` |
+| `src/components/InfoPanel.svelte`            | 2× `setInterval` at 16ms                               | **Low** — simple timer replacement                           |
+| `src/components/LegacyCompassSurface.svelte` | `setInterval`, store subscriptions                     | **Low**                                                      |
+| `src/App.svelte`                             | Multiple dynamic imports                               | **Medium** — use `add(unsub)` for abort controllers          |
 
 ### Files to leave alone for now
 
@@ -139,12 +139,12 @@ another reason.** This keeps risk low and avoids unnecessary churn.
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 it('lifetime is cleanly managed', () => {
-  const reg = new DisposableRegistry()
-  reg.timer(setTimeout(() => {}, 1_000_000))
-  expect(reg.size).toBe(1)
-  reg.disposeAll()
-  expect(reg.size).toBe(0)
-  expect(reg.isDisposed).toBe(true)
+    const reg = new DisposableRegistry()
+    reg.timer(setTimeout(() => {}, 1_000_000))
+    expect(reg.size).toBe(1)
+    reg.disposeAll()
+    expect(reg.size).toBe(0)
+    expect(reg.isDisposed).toBe(true)
 })
 ```
 
@@ -153,13 +153,13 @@ it('lifetime is cleanly managed', () => {
 ## Anti-patterns to avoid
 
 1. **Double disposal**: Don't call `disposeAll()` from both `onDestroy` AND a
-cleanup function. The registry is idempotent, but it's confusing.
+   cleanup function. The registry is idempotent, but it's confusing.
 
 2. **Registering after disposeAll**: In DEV mode, the registry warns if you add
-a new disposable after `disposeAll()`. Fix: re-create the registry before adding.
+   a new disposable after `disposeAll()`. Fix: re-create the registry before adding.
 
 3. **Holding onto registry after dispose**: Always null out the reference after
-dispose:
+   dispose:
 
 ```ts
 // Good
@@ -174,13 +174,13 @@ _registry?.disposeAll()
 
 ## Where this would have prevented recent bugs
 
-| Commit | Bug | How DisposableRegistry would have prevented |
-|---|---|---|
-| `55407d0d` | Missing `.catch()` on dynamic import | `reg.add(() => { /* cancel in-flight import */ })` |
-| `80243db5` | Subscription cleanup missed | `reg.subscription(store.subscribe(...))` |
-| `3f82b364` | Canvas / weather UI leak | `reg.listener(canvas, '...', handler)` + `reg.timer(id)` |
-| `1dd5f217` | Cursor timeout leaks | `reg.timer(setTimeout(...))` |
-| `54ec6c32` | Hydration loop leak | Not directly, but registry makes it obvious when timers aren't cleared |
+| Commit     | Bug                                  | How DisposableRegistry would have prevented                            |
+| ---------- | ------------------------------------ | ---------------------------------------------------------------------- |
+| `55407d0d` | Missing `.catch()` on dynamic import | `reg.add(() => { /* cancel in-flight import */ })`                     |
+| `80243db5` | Subscription cleanup missed          | `reg.subscription(store.subscribe(...))`                               |
+| `3f82b364` | Canvas / weather UI leak             | `reg.listener(canvas, '...', handler)` + `reg.timer(id)`               |
+| `1dd5f217` | Cursor timeout leaks                 | `reg.timer(setTimeout(...))`                                           |
+| `54ec6c32` | Hydration loop leak                  | Not directly, but registry makes it obvious when timers aren't cleared |
 
 ---
 

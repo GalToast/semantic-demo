@@ -420,7 +420,6 @@
   class="info-panel"
   class:open={panelOpen}
   class:active={panelOpen}
-  hidden={!panelOpen}
   aria-hidden={!panelOpen}
   aria-label={panelAriaLabel}
   aria-live="polite"

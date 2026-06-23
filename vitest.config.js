@@ -8,7 +8,11 @@ const __dirname = dirname(__filename)
 const SRC_DIR = resolve(__dirname, 'src')
 
 export default defineConfig({
-    plugins: [svelte()],
+    // Override runes: true from svelte.config.js for tests so that
+    // @testing-library/svelte-core's wrapper-scaffold.svelte (which uses
+    // export let) compiles in legacy mode while our own runes-using
+    // components still auto-detect correctly.
+    plugins: [svelte({ compilerOptions: { runes: undefined } })],
     // Mirror the @lib / @components / @ aliases from vite.config.ts so active
     // Svelte/TS unit tests resolve the same module graph as the app.
     resolve: {
@@ -34,6 +38,17 @@ export default defineConfig({
         setupFiles: ['tests/unit-active/vitest.setup.js'],
         sequence: {
             concurrent: false
+        },
+        coverage: {
+            provider: 'v8',
+            reporter: ['text', 'json', 'html'],
+            thresholds: {
+                statements: 25,
+                branches: 14,
+                functions: 28,
+                lines: 24
+            },
+            exclude: ['**/*.d.ts', 'src/app.d.ts', 'src/app.html', 'src/main.ts']
         }
     }
 })

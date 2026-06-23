@@ -21,7 +21,7 @@
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
-  import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
+  import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
 
   interface Props {
     /** Whether the header is visible */
@@ -170,7 +170,7 @@
   function openKeyboardHelp(): void {
     try {
       initKeyboardShortcutsHint();
-      showKeyboardShortcutsHint();
+      toggleKeyboardShortcutsHint();
     } catch (error) {
       if (import.meta.env.DEV) console.warn('Header.openKeyboardHelp: keyboard help unavailable', error);
     }

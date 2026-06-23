@@ -18,9 +18,13 @@
      * preserve existing behaviour for non-lazy callers.
      */
     defer?: boolean;
+    /** W45-B: callback fired when the 3D scene is fully ready */
+    onSceneReady?: () => void;
+    /** W45-B: callback fired when the 3D scene fails to initialize */
+    onSceneError?: (message: string) => void;
   }
 
-  let { interactive = true, defer = false }: Props = $props();
+  let { interactive = true, defer = false, onSceneReady, onSceneError }: Props = $props();
 
   let containerEl: HTMLDivElement | undefined = $state(undefined);
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
@@ -37,6 +41,8 @@
   let engineLifecycleDestroyed = false;
   // W6-T5: Track the last overlay log to prevent spam on rapid remounts.
   let lastOverlayLogAt = 0;
+  let canvasError = $state(false);
+  let canvasErrorMessage = $state('');
 
   const callbacks: EngineCallbacks = {
     onNodePicked: (index) => {
@@ -78,6 +84,7 @@
         debugLog('Canvas: Scene ready', progress);
         canvasReady = true;
         hideOverlay();
+        onSceneReady?.(); // W45-B: signal to parent that the scene is ready
       }
     },
     onGraphicsStateChange: (state) => {
@@ -128,6 +135,9 @@
         lifecycle.resizeEngine(viewportWidth(), viewportHeight());
       } catch (err) {
         debugError('Canvas: Engine init failed:', err);
+        canvasError = true;
+        canvasErrorMessage = err instanceof Error ? err.message : 'Unknown error';
+        onSceneError?.(canvasErrorMessage);
       }
     };
 
@@ -252,6 +262,19 @@
     </div>
   {/if}
 
+  <!-- W45-B: Error overlay -->
+  {#if canvasError}
+    <div class="canvas-error-overlay" role="alert" aria-live="assertive">
+      <div class="error-content">
+        <p class="error-title">3D scene unavailable</p>
+        <p class="error-message">{canvasErrorMessage || 'WebGL could not be initialized.'}</p>
+        <button type="button" class="error-dismiss" onclick={() => canvasError = false}>
+          Continue in 2D
+        </button>
+      </div>
+    </div>
+  {/if}
+
 <style>
   .semantic-canvas-container {
     position: absolute;
@@ -301,6 +324,48 @@
     color: rgba(255, 255, 255, 0.85);
     letter-spacing: 0.04em;
     animation: pulse 2s ease-in-out infinite;
+  }
+
+  .canvas-error-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: calc(var(--z-canvas, 10) + 2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(7, 16, 24, 0.92);
+    backdrop-filter: blur(8px);
+    padding: 1.5rem;
+  }
+  .error-content {
+    text-align: center;
+    max-width: 320px;
+  }
+  .error-title {
+    font-family: system-ui, -apple-system, sans-serif;
+    font-size: 1rem;
+    font-weight: 700;
+    color: #e0f0f0;
+    margin-bottom: 0.5rem;
+  }
+  .error-message {
+    font-size: 0.8rem;
+    color: rgba(224, 240, 240, 0.7);
+    margin-bottom: 1.5rem;
+  }
+  .error-dismiss {
+    border: 1px solid rgba(78, 205, 196, 0.3);
+    border-radius: 0.45rem;
+    background: rgba(78, 205, 196, 0.1);
+    color: #e0f0f0;
+    padding: 0.45rem 0.8rem;
+    font-size: 0.8rem;
+    cursor: pointer;
+    min-height: 44px;
+    min-width: 44px;
+  }
+  .error-dismiss:hover {
+    background: rgba(78, 205, 196, 0.2);
   }
 
   @keyframes pulse {

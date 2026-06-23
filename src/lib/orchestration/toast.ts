@@ -5,46 +5,45 @@
  * Pattern mirrors bodyFocusPanelMode / bodyPanelSurface body-data-attr bridges.
  *
  * Replaces the legacy DOM-direct showExperienceToast from ui-feedback.ts.
- * The Svelte Toast component handles rendering and auto-dismiss.
+ * The Svelte Toast component handles rendering, auto-dismiss, and close button.
  */
-
-let _dismissTimer: ReturnType<typeof setTimeout> | null = null;
 
 /**
  * Show a transient toast notification.
  *
  * Sets `data-toast-message` and `data-toast-state="active"` on `<body>`.
  * Toast.svelte observes these via MutationObserver, renders the toast,
- * and auto-hides after ~3.5 seconds.
+ * and auto-hides after 5s (info) or 8s (error). The user can also
+ * dismiss early via the close button or clicking the toast.
  */
 export function showExperienceToast(title: string, copy: string): void {
-  if (typeof document === 'undefined' || !document.body) return;
+    if (typeof document === 'undefined' || !document.body) return
 
-  // Clear any in-flight dismiss timer
-  if (_dismissTimer !== null) {
-    clearTimeout(_dismissTimer);
-    _dismissTimer = null;
-  }
+    const body = document.body
+    body.dataset.toastMessage = `${title}\n${copy}`
+    body.dataset.toastVariant = 'info'
+    body.dataset.toastState = 'active'
+}
 
-  const body = document.body;
-  body.dataset.toastMessage = `${title}\n${copy}`;
-  body.dataset.toastState = 'active';
+/**
+ * Show an error toast notification.
+ *
+ * Same as showExperienceToast but with error variant styling
+ * and longer auto-dismiss (8s vs 5s).
+ */
+export function showErrorToast(title: string, copy: string): void {
+    if (typeof document === 'undefined' || !document.body) return
 
-  // Auto-dismiss after 3.5 seconds
-  _dismissTimer = setTimeout(() => {
-    body.dataset.toastState = 'dismissed';
-    _dismissTimer = null;
-  }, 3500);
+    const body = document.body
+    body.dataset.toastMessage = `${title}\n${copy}`
+    body.dataset.toastVariant = 'error'
+    body.dataset.toastState = 'active'
 }
 
 /**
  * Dismiss the toast immediately.
  */
 export function dismissToast(): void {
-  if (typeof document === 'undefined' || !document.body) return;
-  if (_dismissTimer !== null) {
-    clearTimeout(_dismissTimer);
-    _dismissTimer = null;
-  }
-  document.body.dataset.toastState = 'dismissed';
+    if (typeof document === 'undefined' || !document.body) return
+    document.body.dataset.toastState = 'dismissed'
 }

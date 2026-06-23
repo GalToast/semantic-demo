@@ -204,7 +204,7 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
     ;(state as any).routeTraceConnectionPairs = indices
         .filter((index: number) => index !== anchorIndex)
         .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }))
-    ;state.myceliumGroup!.add((state as any).routeTraceLines)
+    state.myceliumGroup!.add((state as any).routeTraceLines)
     state.withMutation(() => {
         state.routeTraceDiagnostics = {
             active: true,

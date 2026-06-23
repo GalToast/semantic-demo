@@ -46,7 +46,7 @@
     class:compact={$viewport.isCompact}
     id="camera-controls"
     role="toolbar"
-    aria-label="Map controls"
+    aria-label="Camera controls"
     tabindex="0"
     hidden={!visible}
     onpointerdown={(e) => e.stopPropagation()}

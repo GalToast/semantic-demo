@@ -98,7 +98,9 @@ describe('W11-T7: adapters.ts imports all 11 adapter init functions from canonic
             // dynamic `import(source)` (the route-trace adapter is loaded
             // dynamically as part of W45 perf work to keep three.js out of
             // the cold-load modulepreload set).
-            const staticPattern = new RegExp(`import\\s+\\{[^}]*\\b${name}\\b[^}]*\\}\\s+from\\s+['"]${escapedSource}['"]`)
+            const staticPattern = new RegExp(
+                `import\\s+\\{[^}]*\\b${name}\\b[^}]*\\}\\s+from\\s+['"]${escapedSource}['"]`
+            )
             const dynamicPattern = new RegExp(`import\\(\\s*['"]${escapedSource}['"]\\s*\\)`)
             expect(staticPattern.test(src) || dynamicPattern.test(src)).toBe(true)
         })

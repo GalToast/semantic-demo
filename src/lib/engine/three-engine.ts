@@ -526,7 +526,7 @@ export async function initThreeJS() {
     if (_state) _state.scene = scene
 
     webglContext.camera = camera
-    ;legacyState.camera = camera
+    legacyState.camera = camera
     if (_state) _state.camera = camera
 
     webglContext.renderer = renderer
@@ -538,11 +538,11 @@ export async function initThreeJS() {
     if (_state) _state.controls = controls
 
     webglContext.hemiLight = hemiLight
-    ;legacyState.hemiLight = hemiLight
+    legacyState.hemiLight = hemiLight
     if (_state) _state.hemiLight = hemiLight
 
     webglContext.dirLight = dirLight
-    ;legacyState.dirLight = dirLight
+    legacyState.dirLight = dirLight
     if (_state) _state.dirLight = dirLight
 
     // Initialize DisposableRegistry for all DOM/Three.js event listeners.
@@ -628,7 +628,7 @@ export async function initThreeJS() {
     appState.myceliumCoreLines = webglContext.myceliumCoreLines
     appState.myceliumWispyLines = webglContext.myceliumWispyLines
     appState.myceliumBridgeLines = webglContext.myceliumBridgeLines
-    ;legacyState.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
+    legacyState.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
     if (_state) {
         _state.myceliumGroup = webglContext.myceliumGroup
         _state.myceliumCoreLines = webglContext.myceliumCoreLines

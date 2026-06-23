@@ -10,10 +10,19 @@
     - Full-viewport (covers the WebGL canvas area)
     - Reuses existing color tokens (--color-primary, --color-primary-alt,
       --color-accent, --color-text-strong)
-    - Conveys "8,406 businesses, 4 clusters" with cluster-shape silhouettes
-    - "Enter 3D scene" CTA, large tap target (≥ 44×44 px)
-    - prefers-reduced-motion: static, no parallax or pulse
-    - SVG raw weight target ≤ 12 KB
+    - Conveys "8,406 businesses, 4 clusters" with vibrant orb silhouettes
+      in an asymmetric modern-art composition
+    - "Enter 3D Scene" CTA, large tap target (≥ 44×44 px), with subtle
+      drop shadow + cyan glow that wins the eye-test against the blurred
+      orb cluster behind it
+    - CSS-only scrim behind the title block ensures contrast regardless
+      of where the orbs land
+    - Subtle motion: slow drift on each orb (asynchronous, organic) and
+      a soft expanding pulse on the CTA — both gated by
+      prefers-reduced-motion: reduce via @media query
+    - SVG raw weight target ≤ 12 KB — orb geometry is a single unit
+      <circle id="orb"> reused via <use>, sphere shading is a single
+      radialGradient, scrim is CSS (no extra SVG defs)
 
   On tap, the CTA fires engineReady.signalReady(), which triggers the
   existing Canvas mount + three.js lazy load flow.
@@ -25,10 +34,6 @@
     e.preventDefault()
     engineReady.signalReady()
   }
-
-  const reduced =
-    typeof window !== 'undefined' &&
-    window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
 </script>
 
 <main
@@ -43,23 +48,30 @@
     aria-hidden="true"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <!-- Background gradient -->
     <defs>
+      <!-- Background wash -->
       <radialGradient id="bg-grad" cx="50%" cy="40%" r="70%">
         <stop offset="0%" stop-color="rgba(78,205,196,0.14)" />
         <stop offset="60%" stop-color="rgba(7,16,24,0.95)" />
         <stop offset="100%" stop-color="rgba(0,0,0,0.98)" />
       </radialGradient>
 
-      <!-- Cluster blob shape (reused via <use>) -->
-      <path
-        id="cluster-blob"
-        d="M50,0 C75,-5 95,15 100,40 C105,70 85,95 55,100 C25,105 -5,85 0,55 C-5,25 20,-5 50,0Z"
-      />
+      <!-- Unit orb (radius = 1). Reused via <use> + scale to draw each
+           cluster as a vibrant colored circle without duplicating geometry. -->
+      <circle id="orb" cx="0" cy="0" r="1" />
 
-      <!-- Soft glow filter -->
-      <filter id="soft-glow" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="4" result="blur" />
+      <!-- Sphere shading: soft highlight upper-left, gentle vignette lower-right.
+           Painted on top of the colored base via a second <use href="#orb">. -->
+      <radialGradient id="orb-shade" cx="32%" cy="28%" r="78%">
+        <stop offset="0%" stop-color="rgba(255,255,255,0.45)" />
+        <stop offset="42%" stop-color="rgba(255,255,255,0)" />
+        <stop offset="100%" stop-color="rgba(0,0,0,0.35)" />
+      </radialGradient>
+
+      <!-- Soft glow filter: blurs the orb stack then composites crisp shape on top
+           so the cluster reads as a hazy, modern-art disc. -->
+      <filter id="soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+        <feGaussianBlur stdDeviation="6" result="blur" />
         <feMerge>
           <feMergeNode in="blur" />
           <feMergeNode in="SourceGraphic" />
@@ -70,16 +82,35 @@
     <!-- Full-viewport background -->
     <rect width="375" height="812" fill="url(#bg-grad)" />
 
-    <!-- Four cluster silhouettes arranged in a soft diamond -->
-    <g transform="translate(187, 320)" filter="url(#soft-glow)">
-      <!-- Cluster 1: teal (General Business) -->
-      <use href="#cluster-blob" x="-60" y="-50" fill="#4ecdc4" opacity="0.22" transform="scale(1.2) rotate(12)" />
-      <!-- Cluster 2: coral (Professional Services) -->
-      <use href="#cluster-blob" x="35" y="-55" fill="#ff6b6b" opacity="0.18" transform="scale(1.05) rotate(-8)" />
-      <!-- Cluster 3: amber (Food & Hospitality) -->
-      <use href="#cluster-blob" x="-45" y="45" fill="#ffd93d" opacity="0.16" transform="scale(0.95) rotate(20)" />
-      <!-- Cluster 4: green (Construction & Trades) -->
-      <use href="#cluster-blob" x="50" y="40" fill="#6bcb77" opacity="0.20" transform="scale(1.1) rotate(-15)" />
+    <!-- Vibrant orb cluster. Each orb is a colored disc + sphere-shading overlay,
+         placed in an asymmetric modern-art composition. The outer .orb-anim wrapper
+         exists so CSS keyframes can drift it without disturbing the scale/translate
+         on the inner <g>. -->
+    <g class="orb-cluster" filter="url(#soft-glow)">
+      <g class="orb-anim orb-1">
+        <g style="color:#4ecdc4" transform="translate(95,250) scale(115)">
+          <use href="#orb" fill="currentColor" opacity="0.88" />
+          <use href="#orb" fill="url(#orb-shade)" />
+        </g>
+      </g>
+      <g class="orb-anim orb-2">
+        <g style="color:#ff6b6b" transform="translate(270,195) scale(88)">
+          <use href="#orb" fill="currentColor" opacity="0.85" />
+          <use href="#orb" fill="url(#orb-shade)" />
+        </g>
+      </g>
+      <g class="orb-anim orb-3">
+        <g style="color:#ffd93d" transform="translate(130,410) scale(78)">
+          <use href="#orb" fill="currentColor" opacity="0.82" />
+          <use href="#orb" fill="url(#orb-shade)" />
+        </g>
+      </g>
+      <g class="orb-anim orb-4">
+        <g style="color:#6bcb77" transform="translate(260,430) scale(100)">
+          <use href="#orb" fill="currentColor" opacity="0.86" />
+          <use href="#orb" fill="url(#orb-shade)" />
+        </g>
+      </g>
     </g>
 
     <!-- Fine spore dots -->
@@ -92,12 +123,12 @@
       {/each}
     </g>
 
-    <!-- Thread lines between clusters (subtle) -->
+    <!-- Thread lines between orbs (subtle) -->
     <g stroke="#4ecdc4" stroke-width="0.5" opacity="0.08" fill="none">
-      <path d="M127,270 Q187,240 247,265" />
-      <path d="M142,370 Q187,400 232,365" />
-      <path d="M127,270 Q100,320 142,370" />
-      <path d="M247,265 Q275,320 232,365" />
+      <path d="M95,250 Q187,210 270,195" />
+      <path d="M130,410 Q187,420 260,430" />
+      <path d="M95,250 Q90,330 130,410" />
+      <path d="M270,195 Q280,310 260,430" />
     </g>
   </svg>
 
@@ -118,9 +149,7 @@
       Enter 3D Scene
     </button>
 
-    {#if !reduced}
-      <p class="placeholder-hint">Tap to explore the full 3D network</p>
-    {/if}
+    <p class="placeholder-hint">Enter to explore the full 3D network</p>
   </div>
 </main>
 
@@ -154,6 +183,25 @@
     pointer-events: none; /* let clicks pass through to the CTA only */
   }
 
+  /* CSS-only scrim behind the title block. Lives in the overlay's stacking
+     context so it sits in front of the SVG (z-index 0) but behind every line
+     of copy. Pointer-events disabled so it never intercepts the CTA. */
+  .placeholder-overlay::before {
+    content: '';
+    position: absolute;
+    inset: -10% -18% -14%;
+    background: radial-gradient(
+      ellipse at center,
+      rgba(2, 8, 14, 0.74) 0%,
+      rgba(2, 8, 14, 0.48) 48%,
+      rgba(2, 8, 14, 0) 86%
+    );
+    z-index: -1;
+    pointer-events: none;
+    border-radius: 28px;
+    filter: blur(2px);
+  }
+
   .placeholder-title {
     font-size: 2rem;
     font-weight: 200;
@@ -183,39 +231,114 @@
     gap: 0.5rem;
     background: rgba(78, 205, 196, 0.18);
     border: 1px solid rgba(78, 205, 196, 0.6);
-    color: inherit;
+    color: rgba(255, 255, 255, 0.98);
     font-size: 1rem;
     padding: 0.75rem 2rem;
     border-radius: 4px;
     cursor: pointer;
     letter-spacing: 0.08em;
-    transition: background 160ms ease;
     min-height: 44px;
     min-width: 44px;
     pointer-events: auto;
+    /* Stack: cyan halo + deep drop shadow + inset top highlight.
+       Together they make the CTA win the eye-test against the blurred orbs
+       behind it without looking like a stacked card. */
+    box-shadow:
+      0 0 24px rgba(82, 229, 215, 0.28),
+      0 10px 28px rgba(0, 0, 0, 0.55),
+      inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    transition:
+      background 160ms ease,
+      border-color 160ms ease,
+      box-shadow 220ms ease,
+      transform 220ms ease;
   }
 
   .placeholder-cta:hover,
   .placeholder-cta:focus-visible {
     background: rgba(78, 205, 196, 0.32);
-    outline: 2px solid rgba(78, 205, 196, 0.8);
+    border-color: rgba(78, 229, 215, 0.85);
+    box-shadow:
+      0 0 32px rgba(82, 229, 215, 0.45),
+      0 12px 32px rgba(0, 0, 0, 0.6),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
+    transform: translateY(-1px);
+    outline: 2px solid rgba(78, 205, 196, 0.85);
     outline-offset: 2px;
   }
 
   .cta-icon {
     font-size: 0.75em;
-    opacity: 0.8;
+    opacity: 0.85;
   }
 
   .placeholder-hint {
     font-size: 0.8rem;
-    opacity: 0.45;
+    opacity: 0.5;
     margin: 1rem 0 0;
+    letter-spacing: 0.02em;
+  }
+
+  /* ── Motion ────────────────────────────────────────────────────────────
+     Each orb drifts a few pixels on its own slow loop with a negative
+     delay so they don't pulse in lock-step. The CTA breathes a soft
+     expanding ring so it keeps catching the eye against the moving orbs.
+     Both gated by @media (prefers-reduced-motion: no-preference). */
+
+  @keyframes orb-drift-a {
+    0%, 100% { transform: translate(0, 0); }
+    50%      { transform: translate(8px, -6px); }
+  }
+  @keyframes orb-drift-b {
+    0%, 100% { transform: translate(0, 0); }
+    50%      { transform: translate(-7px, 6px); }
+  }
+  @keyframes orb-drift-c {
+    0%, 100% { transform: translate(0, 0); }
+    50%      { transform: translate(6px, 7px); }
+  }
+  @keyframes orb-drift-d {
+    0%, 100% { transform: translate(0, 0); }
+    50%      { transform: translate(-9px, -5px); }
+  }
+
+  @keyframes cta-pulse {
+    0% {
+      box-shadow:
+        0 0 0 0 rgba(82, 229, 215, 0.45),
+        0 0 24px rgba(82, 229, 215, 0.28),
+        0 10px 28px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+    70% {
+      box-shadow:
+        0 0 0 14px rgba(82, 229, 215, 0),
+        0 0 24px rgba(82, 229, 215, 0.28),
+        0 10px 28px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+    100% {
+      box-shadow:
+        0 0 0 0 rgba(82, 229, 215, 0),
+        0 0 24px rgba(82, 229, 215, 0.28),
+        0 10px 28px rgba(0, 0, 0, 0.55),
+        inset 0 1px 0 rgba(255, 255, 255, 0.14);
+    }
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .orb-1 { animation: orb-drift-a 9s ease-in-out infinite; }
+    .orb-2 { animation: orb-drift-b 11s ease-in-out infinite -2s; }
+    .orb-3 { animation: orb-drift-c 8s ease-in-out infinite -3s; }
+    .orb-4 { animation: orb-drift-d 10s ease-in-out infinite -1s; }
+    .placeholder-cta { animation: cta-pulse 2.6s ease-out infinite; }
   }
 
   @media (prefers-reduced-motion: reduce) {
+    .orb-anim,
     .placeholder-cta {
-      transition: none;
+      animation: none !important;
+      transition: none !important;
     }
   }
 </style>

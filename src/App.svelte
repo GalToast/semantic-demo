@@ -384,7 +384,8 @@
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use positive equality + negation instead.
   let controlsVisible = $derived(
-    !(navSurface === 'focus-search') &&
+    s3dSceneReady &&
+      !(navSurface === 'focus-search') &&
       !focusSearchForced &&
       !($viewport.isCompact && (bodyPanelSurface === 'idle' || navSurface === 'idle')) &&
       // A3: suppress camera controls on mobile search surface — the search
@@ -393,7 +394,7 @@
       !($viewport.isCompact && (bodyPanelSurface === 'search' || navSurface === 'search'))
   );
   let infoPanelOpen = $derived(
-    (searchSurfaceActive || (focusActive && ($viewport.isCompact || bodyCompact))) &&
+    (idleSurfaceActive || searchSurfaceActive || (focusActive && ($viewport.isCompact || bodyCompact))) &&
       !mapModeActive &&
       // On compact/mobile, the idle surface shows an empty bottom-sheet that
       // overlays the 3D canvas. Keep the panel closed on idle mobile/compact;
@@ -425,7 +426,7 @@
 </script>
 
 {#snippet searchPanelContent()}
-  {#if searchFamilySurfaceActive}
+  {#if idleSurfaceActive || searchFamilySurfaceActive}
     <SearchBar panelContained />
   {/if}
 {/snippet}
@@ -466,7 +467,7 @@
   {:else}
     {#if engineReady.value && canvasLazy.current}
       {@const Cmp = canvasLazy.current}
-      <Cmp interactive={true} defer={true} />
+      <Cmp interactive={true} defer={true} onSceneReady={() => (s3dSceneReady = true)} onSceneError={() => (s3dSceneError = true)} />
     {:else}
       <Splash />
     {/if}
@@ -493,8 +494,13 @@
   <!-- Layer 50: Legend panel (UI-2: concealed in focus states to resolve bottom-left triple collision) -->
   <Legend open={$legendOpen} mapView={mapModeActive} concealedByFocus={focusActive} />
 
-  <!-- Layer 50: Weather widget (top-right chrome, same layer as legend) -->
-  {#if weatherWidgetLazy.current}
+  <!-- Layer 50: Weather widget (top-right chrome, same layer as legend).
+       Wrapped in `s3dSceneReady` so the pill doesn't render over the
+       Placeholder2D splash — chrome is meaningless until the WebGL
+       canvas paints. Matches the gate added to <Controls /> via
+       `controlsVisible` so camera controls and weather appear together
+       once the scene is ready. -->
+  {#if s3dSceneReady && weatherWidgetLazy.current}
     {@const Cmp = weatherWidgetLazy.current}
     <Cmp visible={weatherVisible} />
   {/if}
@@ -505,15 +511,15 @@
     <Cmp open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
   {/if}
 
-  {#if idleSearchVisible || mapTrailSearchLaneActive}
+  {#if mapTrailSearchLaneActive}
     <!--
-      Layer 100: Search bar.
+      Layer 100: Map-trail floating search bar.
+      The primary search now lives inside InfoPanel as a single instance
+      (see searchPanelContent snippet) that never remounts across the
+      idle↔search transition. This floating instance is kept only for the
+      map-trail lane where InfoPanel is not visible.
       SearchBar composes <SearchInput> + <SearchResults>, so the result list
-      lives inside the same positioning context as the input and inherits the
-      container's stacking order. Rendering an additional <SearchResults>
-      sibling here previously caused a duplicate result list to drop to the
-      top-left of the document (y≈5px) and intercept pointer events against
-      the absolutely-positioned search input.
+      lives inside the same positioning context as the input.
     -->
     <SearchBar />
   {/if}
@@ -711,10 +717,19 @@
     pointer-events: none;
   }
 
-  /* Focus stage — when active, establish positioned context for absolute children */
+  /* Focus stage — when active, establish positioned context for absolute children.
+     The top offset clears the 60.8px .app-header so journey-chrome content
+     (description text, trail navigator) no longer renders behind it in
+     Trail/Focus modes. Matches the intent of the legacy
+     `inset: 96px 16px 14px auto` clamp(320px, 27vw, 392px) side-panel rule
+     without re-introducing its width clamp (focus-stage.active is meant to
+     stretch full-width so the mycelium remains visible). */
   .focus-stage.active {
     position: absolute;
-    inset: 0;
+    top: var(--app-header-height, 64px);
+    right: 0;
+    bottom: 0;
+    left: 0;
     pointer-events: none;
   }
   :global(.focus-stage.active > *) {
