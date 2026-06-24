@@ -381,6 +381,33 @@ body[data-active-view='map'] .onboarding-hint {
     color: var(--color-text-primary);
 }
 
+/* W47-T2 #2.3: "Replay tour" button at the bottom of the keyboard
+   shortcuts panel. Lets users re-trigger the first-visit demo after
+   closing it. Full-width below the shortcut list. */
+.kh-replay-btn {
+    display: block;
+    width: 100%;
+    margin-top: 12px;
+    padding: 8px 12px;
+    background: rgba(78, 205, 196, 0.14);
+    border: 1px solid rgba(78, 205, 196, 0.45);
+    border-radius: 6px;
+    color: rgba(78, 205, 196, 0.96);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    cursor: pointer;
+    text-transform: uppercase;
+    transition: background 160ms ease, border-color 160ms ease;
+}
+.kh-replay-btn:hover,
+.kh-replay-btn:focus-visible {
+    background: rgba(78, 205, 196, 0.24);
+    border-color: rgba(78, 229, 215, 0.7);
+    outline: 2px solid rgba(78, 205, 196, 0.85);
+    outline-offset: 2px;
+}
+
 /* Mode-grid computing state (pulse during heavy recomputation) */
 .mode-grid.computing .mode-chip {
     opacity: 0.6;

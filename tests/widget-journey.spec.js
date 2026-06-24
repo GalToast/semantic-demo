@@ -729,3 +729,54 @@ test.describe('Widget Journey Tests — search error detail', () => {
         ).toContain('data-testid="search-error-detail"')
     })
 })
+
+// ── Replay tour button tests ──────────────────────────────────────────────────────
+//
+// Locks in the W47-T2 #2.3 fix: a "Replay tour" button in the keyboard
+// shortcuts panel that lets users re-trigger the first-visit demo after
+// closing it. The button clears the choreography session-storage gate
+// and fires requestSemanticGuide().
+test.describe('Widget Journey Tests — replay tour', () => {
+    test('17. replay tour button clears the demo session gate', async ({ browser }) => {
+        const ctx = await browser.newContext()
+        const page = await ctx.newPage()
+
+        try {
+            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+            await page.locator('.search-container').waitFor({ state: 'attached', timeout: 30000 })
+
+            // Simulate a user who already saw and dismissed the demo.
+            await page.evaluate(() => {
+                window.sessionStorage.setItem('moco_mycelium_demo_session_v1', '2026-01-01T00:00:00.000Z')
+            })
+
+            // Open the keyboard shortcuts panel (the replay button lives
+            // inside it).
+            const helpButton = page.locator('#btn-keyboard-help').first()
+            await helpButton.click()
+            await page.waitForTimeout(500)
+
+            // The replay button should be visible inside the panel.
+            const replayBtn = page.locator('#btn-replay-tour').first()
+            await replayBtn.waitFor({ state: 'visible', timeout: 5000 })
+            expect(
+                (await replayBtn.textContent())?.toLowerCase().trim(),
+                'replay button should be labeled "replay tour"'
+            ).toBe('replay tour')
+
+            // Click the replay button. It should clear the session gate.
+            await replayBtn.click()
+            await page.waitForTimeout(500)
+
+            const flag = await page.evaluate(() =>
+                window.sessionStorage.getItem('moco_mycelium_demo_session_v1')
+            )
+            expect(
+                flag,
+                'replay button should clear moco_mycelium_demo_session_v1 so the demo can re-run'
+            ).toBeNull()
+        } finally {
+            await ctx.close()
+        }
+    })
+})

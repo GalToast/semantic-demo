@@ -131,6 +131,37 @@ export function initKeyboardShortcutsHint(): void {
     closeBtn.textContent = '×'
     panel.appendChild(closeBtn)
 
+    // W47-T2 #2.3: a "Replay tour" button at the bottom of the panel so
+    // users who closed the first-visit demo (or whose session expired)
+    // can re-trigger it. Clears the choreography session-storage gate and
+    // fires requestSemanticGuide() to start a fresh demo.
+    const replayBtn = document.createElement('button')
+    replayBtn.id = 'btn-replay-tour'
+    replayBtn.className = 'kh-replay-btn'
+    replayBtn.type = 'button'
+    replayBtn.setAttribute('aria-label', 'Replay the first-visit tour')
+    replayBtn.textContent = 'Replay tour'
+    replayBtn.addEventListener('click', () => {
+        try {
+            // Clear the session storage gate so shouldRunMicroDemo() returns
+            // true on the next call. The lifetime key (moco_mycelium_demo_v1)
+            // is left alone — replay is per-session, not lifetime.
+            sessionStorage.removeItem('moco_mycelium_demo_session_v1')
+        } catch {
+            // sessionStorage unavailable in sandboxed mode; replay may not
+            // work but the click handler still closes the panel and tries.
+        }
+        closePanel()
+        // Fire the demo. The request is fire-and-forget; the choreography
+        // module is responsible for eligibility checks and the
+        // session-storage gate (now cleared).
+        import('@lib/journey/semantic-guide').then((m) => m.requestSemanticGuide()).catch(() => {
+            // Ignore: if the module fails to load, the user can still
+            // interact with the rest of the app.
+        })
+    })
+    panel.appendChild(replayBtn)
+
     document.body.appendChild(panel)
 
     function closePanel(): void {
