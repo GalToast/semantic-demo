@@ -13,7 +13,7 @@
  */
 
 import type { WebGLContextState } from '@lib/engine/webgl-context'
-import type { SemanticNeighborEntry } from '@lib/types/business'
+import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 
 export interface Vector3Like {
     x: number
@@ -535,7 +535,7 @@ export interface SemanticState extends StateConfig {
     scenePerformanceDiagnostics: ScenePerformanceDiagnostics
     focusFrameDiagnostics: FocusFrameDiagnostics
     focusThreadDiagnostics: FocusThreadDiagnostics
-    semanticThreadBundle: unknown
+    semanticThreadBundle: SemanticThreadBundle | null
     semanticThreadArtifactName: string | null
     semanticSpaceLayoutManifest: unknown
     semanticSpaceLayoutStatus: string

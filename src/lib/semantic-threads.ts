@@ -563,7 +563,7 @@ function finalizeThreadLoad(): void {
  * Returns null if not yet loaded or if attachLegacyState() was never called.
  */
 export function getSemanticThreadBundle(): SemanticThreadBundle | null {
-    return (_state?.semanticThreadBundle as SemanticThreadBundle | null) ?? null
+    return _state?.semanticThreadBundle ?? null
 }
 
 /**
