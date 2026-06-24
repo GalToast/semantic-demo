@@ -90,7 +90,7 @@ requireNoDevEntryRefs(productionShell, distHtml)
 requireIncludes(
     'src/App.svelte',
     appSvelteSource,
-    'l.canvas',
+    "import('@components/Canvas.svelte')",
     'Svelte app owns the WebGL canvas component (lazy-loaded)'
 )
 requireIncludes(legacyShell, legacyHtml, 'dist/bundle.js', 'legacy shell is preserved only as rollback/reference')
@@ -182,7 +182,9 @@ if (failures.length) {
 
 console.log('Semantic demo shell contract OK: src/index.html -> dist/svelte/index.html is the production app shell.')
 console.log('')
-console.log("QA NOTE: The archived docs/archive/vector-explorer-polished-legacy.html is a LEGACY REFERENCE shell (loads dist/bundle.js).")
+console.log(
+    'QA NOTE: The archived docs/archive/vector-explorer-polished-legacy.html is a LEGACY REFERENCE shell (loads dist/bundle.js).'
+)
 console.log(
     'The DEPLOYED vector-explorer-polished.html is the SAME as dist/svelte/index.html (Svelte production shell).'
 )
