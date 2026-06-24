@@ -4,7 +4,8 @@
  * Svelte-native ownership contract for the map+focus+search composition.
  *
  * After the chrome migration, the map-focus-search composition is owned by:
- *   1. InfoPanel.svelte — owns #selected-card, #selected-details, all child IDs.
+ *   1. InfoPanel.svelte — owns #selected-card, #selected-details, and imports
+ *      SelectedBusinessDetails.svelte which renders the child IDs.
  *   2. FocusCard.svelte — owns the focus-stage overlay #selected-card variant.
  *   3. src/lib/focus/stage-renderer.ts — manages structural slot visibility
  *      (hidden/aria-hidden) on #selected-card, #selected-details,
@@ -24,6 +25,8 @@
  *      in the renderer's null-check path. The map summary content variant
  *      was retired; MapSummary.svelte is a separate mini-map overlay.
  *   D. InfoPanel.svelte owns all surface IDs and data-content-owner attrs.
+ *      SelectedBusinessDetails.svelte owns the child IDs (selected-name,
+ *      selected-what, selected-meta-strip, selected-action-row, btn-selected-map).
  *   E. Composition updates flow through event-bus COMPOSITION_UPDATED,
  *      not legacy direct-DOM calls.
  *
@@ -46,6 +49,7 @@ const JOURNEY_STAGE_RENDERER = 'src/lib/journey/focus-stage-renderer.ts'
 const JOURNEY_SELECTED_CARD = 'src/lib/journey/selected-card.ts'
 const JOURNEY_MODULE = 'src/lib/journey/journey.ts'
 const INFO_PANEL = 'src/components/InfoPanel.svelte'
+const SELECTED_BUSINESS_DETAILS = 'src/components/SelectedBusinessDetails.svelte'
 const FOCUS_CARD = 'src/components/FocusCard.svelte'
 const INFO_PANEL_STATE = 'src/lib/orchestration/info-panel-state.ts'
 const EVENT_BUS = 'src/lib/orchestration/event-bus.ts'
@@ -53,7 +57,8 @@ const LIFECYCLE = 'src/lib/stores/lifecycle.ts'
 const PARITY_ATTRS = 'src/lib/orchestration/parity-attrs.svelte.ts'
 const APP_SHELL = 'src/App.svelte'
 
-// ── Svelte-owned child IDs (stage-renderer must NOT write these) ──────────────
+// ── Svelte-owned child IDs (SelectedBusinessDetails.svelte renders these;
+// stage-renderer and journey modules must NOT write them) ─────────────────────
 
 const SVELTE_OWNED_CHILD_IDS = [
     'selected-name',
@@ -234,30 +239,37 @@ function testRetiredMapSummaryElementsRemoved() {
     console.log('  OK - retired map-summary elements removed from Svelte sources and HTML shell')
 }
 
-// ── Test D: InfoPanel.svelte owns surface IDs and content-owner attrs ────────
+// ── Test D: InfoPanel.svelte owns surface IDs; SelectedBusinessDetails owns children ─
 
 function testInfoPanelOwnsSurface() {
-    const src = read(INFO_PANEL)
+    const infoPanelSrc = read(INFO_PANEL)
+    const selectedDetailsSrc = read(SELECTED_BUSINESS_DETAILS)
 
     // Must own #info-panel as root element
-    assert(src.includes('id="info-panel"'), 'InfoPanel.svelte must render #info-panel')
+    assert(infoPanelSrc.includes('id="info-panel"'), 'InfoPanel.svelte must render #info-panel')
 
     // Must own #info-panel-content
-    assert(src.includes('id="info-panel-content"'), 'InfoPanel.svelte must own #info-panel-content')
+    assert(infoPanelSrc.includes('id="info-panel-content"'), 'InfoPanel.svelte must own #info-panel-content')
 
     // Must own #selected-card with data-content-owner
     assert(
-        src.includes('id="selected-card"') && src.includes('data-content-owner='),
+        infoPanelSrc.includes('id="selected-card"') && infoPanelSrc.includes('data-content-owner='),
         'InfoPanel.svelte must own #selected-card with data-content-owner attribute'
     )
 
     // Must own #selected-details
-    assert(src.includes('id="selected-details"'), 'InfoPanel.svelte must own #selected-details')
+    assert(infoPanelSrc.includes('id="selected-details"'), 'InfoPanel.svelte must own #selected-details')
 
     // Must own #selected-empty
-    assert(src.includes('id="selected-empty"'), 'InfoPanel.svelte must own #selected-empty')
+    assert(infoPanelSrc.includes('id="selected-empty"'), 'InfoPanel.svelte must own #selected-empty')
 
-    // Must own Svelte-child IDs (selected-name, selected-what, etc.)
+    // Must import SelectedBusinessDetails (which owns the child IDs)
+    assert(
+        infoPanelSrc.includes('SelectedBusinessDetails') || infoPanelSrc.includes('selected-business-details'),
+        'InfoPanel.svelte must import/render SelectedBusinessDetails.svelte'
+    )
+
+    // Child IDs live in SelectedBusinessDetails.svelte, not InfoPanel.svelte
     for (const id of [
         'selected-name',
         'selected-what',
@@ -265,16 +277,19 @@ function testInfoPanelOwnsSurface() {
         'selected-action-row',
         'btn-selected-map'
     ]) {
-        assert(src.includes(`id="${id}"`), `InfoPanel.svelte must own #${id}`)
+        assert(
+            selectedDetailsSrc.includes(`id="${id}"`),
+            `SelectedBusinessDetails.svelte must own #${id}`
+        )
     }
 
     // Must use getInfoPanelContent() for per-surface content descriptors
     assert(
-        src.includes('getInfoPanelContent') || src.includes('contentDescriptor'),
+        infoPanelSrc.includes('getInfoPanelContent') || infoPanelSrc.includes('contentDescriptor'),
         'InfoPanel.svelte must use info-panel-state for per-surface content descriptors'
     )
 
-    console.log('  OK - InfoPanel.svelte owns all surface IDs and content-owner attrs')
+    console.log('  OK - InfoPanel.svelte owns surface IDs; SelectedBusinessDetails.svelte owns child IDs')
 }
 
 // ── Test E: FocusCard.svelte is the focus-stage overlay card ──────────────────
