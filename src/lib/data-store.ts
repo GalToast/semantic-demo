@@ -14,8 +14,7 @@ import type {
     SemanticThreadBundle,
     SemanticThreadDataResult,
     SemanticNeighborEntry,
-    LayoutManifest,
-    PositionBufferDescriptor
+    LayoutManifest
 } from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
@@ -257,31 +256,6 @@ export function getIsDataReady(): boolean {
 export function getIsLoading(): boolean {
     return get(isLoading)
 }
-
-/** Position buffer as a PositionBufferDescriptor (ready for WebGL) */
-export const positionDescriptor = derived(
-    [positionBuffer, clustersBuffer],
-    ([$pos, $clust]): PositionBufferDescriptor | null => {
-        if (!$pos || !$clust) return null
-        return {
-            buffer: $pos,
-            count: $pos.length / 3,
-            clusters: $clust
-        }
-    }
-)
-
-/** Total number of semantic thread edges */
-export const threadEdgeCount = derived(semanticThreadBundle, ($bundle) => {
-    if (!$bundle?.nodes) return 0
-    return Object.values($bundle.nodes).reduce(
-        (sum, node) => sum + (Array.isArray(node?.neighbors) ? node.neighbors.length : 0),
-        0
-    )
-})
-
-/** Number of entries in the semantic neighbor map */
-export const neighborMapSize = derived(semanticNeighborMap, ($map) => $map.size)
 
 // ── Actions ───────────────────────────────────────────────────────────────────
 
