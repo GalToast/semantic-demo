@@ -23,6 +23,10 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - If durable repo behavior changes, update the appropriate repo doc in the same turn.
 - Before presenting work as finished, verify against the real success criteria and state what was run.
 
+## Session Lock Protocol (multi-session coordination)
+
+Before starting multi-commit work that will touch files another Pi/Codex/subagent session is likely working on, run `node scripts/session-lock.mjs acquire "<intent>"` (see `docs/session-coordination.md`). The lock is **advisory, not mandatory** — a stale lock (>30 min no heartbeat) can be taken over with `--force`. The lock file (`.session-lock`) is gitignored. Always release at end of session.
+
 ## Parallel Sessions
 
 Multiple Pi/Codex/subagent sessions may share this repo.
@@ -68,6 +72,7 @@ Read these only when relevant:
 - Migration plan: `docs/migration-plan.md`
 - Performance: `docs/performance-budget.md`, `docs/w44-performance-attack-plan.md`
 - Type discipline: `docs/typing-contract.md` — global `as any` budget, typing-contract tests, and file-specific tightening rules.
+- Session coordination: `docs/session-coordination.md` — when to acquire/release the multi-session lock before multi-commit work.
 - Historical full agent reference: `docs/archive/agents-full-reference-2026-06-19.md`
 
 If a referenced doc is missing, use the archived full reference as fallback and consider restoring a concise dedicated doc.

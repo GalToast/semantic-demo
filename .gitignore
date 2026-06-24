@@ -10,6 +10,9 @@ playwright-report/
 .playwright-mcp/
 scratch/
 
+# Session coordination lock (W46-E4) — owned by scripts/session-lock.mjs
+.session-lock
+
 # Local server and deployment scratch
 check-output.txt
 *.log
