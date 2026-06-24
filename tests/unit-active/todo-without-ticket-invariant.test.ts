@@ -22,6 +22,9 @@
  *   - Issue #XXX   (e.g., Issue #123)
  *   - BOTH-XXX     (e.g., BOTH-1, BOTH-9D)
  *   - Wave X       where X is a digit (e.g., Wave 9)
+ *   - W##-X##      wave-day form (e.g., W6-T1, W46-D4) — the team's
+ *                  canonical convention for feature work, distinct from
+ *                  Wave X which is the simpler single-digit form
  *
  * What counts as a "TODO":
  *   - The literal word TODO (word-boundary) in a code comment line.
@@ -63,7 +66,7 @@ const SKIP_PATTERNS = [
 // Ticket reference patterns. A TODO with any of these within 2 lines
 // (same line or next 2 lines) is considered "tracked".
 const TICKET_REGEX =
-    /\b(?:T-\w+|#\d+|Ticket\s+[\w+]+|Issue\s+#\d+|BOTH-\d+|Wave\s+\d+)\b/i;
+    /\b(?:T-\w+|#\d+|Ticket\s+[\w+]+|Issue\s+#\d+|BOTH-\d+|Wave\s+\d+|W\d+-[A-Z]\d+)\b/i;
 
 // TODO detection — match TODO as a word.
 const TODO_REGEX = /\bTODO\b/;
@@ -180,7 +183,7 @@ describe('TODO-without-ticket regression detector', () => {
             );
             throw new Error(
                 `Found ${newViolations.length} new TODO-without-ticket violation(s) beyond the approved baseline of ${APPROVED_BASELINE}:\n${lines.join('\n')}\n\n` +
-                    `Per the working agreement, every TODO must reference a ticket (T-XXX, #XXX, "Ticket XXX", "Issue #XXX", "BOTH-XXX", or "Wave X"). Either:\n` +
+                    `Per the working agreement, every TODO must reference a ticket (T-XXX, #XXX, "Ticket XXX", "Issue #XXX", "BOTH-XXX", "Wave X", or "W##-X##"). Either:\n` +
                     `  1. Add a ticket reference to the TODO comment (within 2 lines of the TODO)\n` +
                     `  2. If the TODO is justified and tracked elsewhere, update APPROVED_BASELINE in tests/unit-active/todo-without-ticket-invariant.test.ts to ${violations.length} and commit the test update + the TODO together`
             );
