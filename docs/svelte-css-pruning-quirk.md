@@ -27,13 +27,13 @@ Wrap the dynamic-class half of a comma-separated selector in
 /* Svelte strips the .is-locked half — class is "unused" per static analysis */
 .mode-chip.active .chip-label,
 .mode-chip.is-locked .chip-label {
-  display: inline;
+    display: inline;
 }
 
 /* Works — :global() bypasses pruning for the dynamic-class selector */
 .mode-chip.active .chip-label,
 :global(.mode-chip.is-locked .chip-label) {
-  display: inline;
+    display: inline;
 }
 ```
 
@@ -66,3 +66,25 @@ Tempting to wrap every dynamic-class selector in `:global()`. Don't —
 into other components that happen to use the same class name. Use
 `:global()` only on the dynamic half of a comma-separated selector
 where the scoping would otherwise prune it.
+
+## Historical Note: W46-D4 → W46-D4 Polish → Option F
+
+The original W46-D4 chip-locking feature shipped with the `:global()`
+workaround applied to the mobile `.mode-chip.is-locked .chip-label`
+rule (so locked chips would show their labels alongside the icon on
+narrow viewports). The fix in commit `81d65978` made the labels fire
+at runtime, but added ~120px to the chip row, pushing Map off-screen
+on a 390px viewport.
+
+The follow-up "Option F" polish (commit pending) replaced that
+workaround by removing the `.is-locked` half of the mobile selector
+entirely. Locked chips now show **icon-only on mobile**, with the
+mode description surfaced through the enriched `title` attribute on
+long-press. The `:global()` workaround is no longer needed for
+Header.svelte — the rules it protected have been simplified away.
+
+The workaround remains valid and useful in general: any future dynamic
+class that needs scoped CSS targeting can hit the same pruning
+limitation. Don't remove this doc when the Header.svelte case is
+cleaned up — it's a reference for the next time you add
+`class:foo={...}` and find the corresponding `.foo` rule stripped.

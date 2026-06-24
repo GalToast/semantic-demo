@@ -281,7 +281,9 @@
           tabindex={isActive(mode.id) ? 0 : -1}
           aria-checked={isActive(mode.id)}
           aria-label={mode.label}
-          title={isModeLocked(mode.id) ? `${mode.label}: select a business first` : mode.description}
+          title={isModeLocked(mode.id)
+            ? `${mode.label}: ${mode.description} Select a business to unlock.`
+            : mode.description}
           data-mode={mode.id}
           onclick={() => selectMode(mode.id)}
         >
@@ -465,14 +467,24 @@
     .mode-chip .chip-label {
       display: none;
     }
-    /* W46-D1: show the active chip label on mobile so users know which
-       mode they're in without relying on icon recognition alone.
-       The .is-locked half is wrapped in :global() because Svelte's CSS
-       analyzer doesn't track dynamic `class:is-locked` directives and
-       would otherwise strip the rule as unused — even though the class
-       is applied at runtime via Header.svelte's chip-locking template. */
-    .mode-chip.active .chip-label,
-    :global(.mode-chip.is-locked .chip-label) {
+    /* Mobile mode-chip label policy (W46-D4 polish):
+       - Active chip: label visible so the user always knows which mode
+         they're in (W46-D1 rationale). This is the most important
+         orientation signal and survives in the limited mobile space.
+       - Locked chips: icon-only. Locked status is communicated by the
+         dimmed locked styling (`#mode-chips .mode-chip.is-locked` tint
+         in the global rule above) and the enriched `title` attribute
+         on each chip — long-press / hover surfaces the full mode
+         description so users learn what each dimmed icon means.
+       - Other chips: icon-only by default (`.mode-chip .chip-label`
+         rule above sets `display: none`).
+
+       Without this policy, adding labels to locked chips pushed the
+       row to 387px (Map pushed off-screen at 390px viewport). Icons-
+       only except active brings the row to 311px — fits in the 339px
+       budget with 28px to spare. See `docs/svelte-css-pruning-quirk.md`
+       for the related Svelte `:global()` workaround history. */
+    .mode-chip.active .chip-label {
       display: inline;
       margin-left: 0.25rem;
     }
@@ -483,8 +495,7 @@
       padding: 0.25rem;
       justify-content: center;
     }
-    .mode-chip.active,
-    :global(.mode-chip.is-locked) {
+    .mode-chip.active {
       padding: 0.25rem 0.5rem;
       gap: 0.3rem;
     }
