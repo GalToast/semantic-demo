@@ -116,6 +116,7 @@
   aria-hidden={toastActive ? 'false' : 'true'}
   aria-live={isError ? 'assertive' : 'polite'}
   role={isError ? 'alert' : 'status'}
+  tabindex="0"
   onclick={dismiss}
   onkeydown={(e) => e.key === 'Enter' && dismiss()}
 >

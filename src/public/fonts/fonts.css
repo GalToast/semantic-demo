@@ -1,23 +1,23 @@
 @font-face {
-  font-family: 'Bricolage Grotesque';
-  font-style: normal;
-  font-weight: 400 800;
-  font-display: swap;
-  src: url('/fonts/bricolage-grotesque-latin-a79fdb52d4.woff2') format('woff2');
+    font-family: 'Bricolage Grotesque';
+    font-style: normal;
+    font-weight: 400 800;
+    font-display: swap;
+    src: url('./bricolage-grotesque-latin-a79fdb52d4.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'JetBrains Mono';
-  font-style: normal;
-  font-weight: 500;
-  font-display: swap;
-  src: url('/fonts/jetbrains-mono-latin-cb182feeed.woff2') format('woff2');
+    font-family: 'JetBrains Mono';
+    font-style: normal;
+    font-weight: 500;
+    font-display: swap;
+    src: url('./jetbrains-mono-latin-cb182feeed.woff2') format('woff2');
 }
 
 @font-face {
-  font-family: 'Nunito Sans';
-  font-style: normal;
-  font-weight: 400 700;
-  font-display: swap;
-  src: url('/fonts/nunito-sans-latin-29e3890496.woff2') format('woff2');
+    font-family: 'Nunito Sans';
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url('./nunito-sans-latin-29e3890496.woff2') format('woff2');
 }

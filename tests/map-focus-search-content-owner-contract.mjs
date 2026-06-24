@@ -277,10 +277,7 @@ function testInfoPanelOwnsSurface() {
         'selected-action-row',
         'btn-selected-map'
     ]) {
-        assert(
-            selectedDetailsSrc.includes(`id="${id}"`),
-            `SelectedBusinessDetails.svelte must own #${id}`
-        )
+        assert(selectedDetailsSrc.includes(`id="${id}"`), `SelectedBusinessDetails.svelte must own #${id}`)
     }
 
     // Must use getInfoPanelContent() for per-surface content descriptors
