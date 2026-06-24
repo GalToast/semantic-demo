@@ -67,8 +67,10 @@ export class DisposableRegistry {
     add(disposable: DisposeLike): void
     add(fn: DisposeLike): void {
         if (this.disposed && this.warnAfterDispose) {
-            // eslint-disable-next-line no-console
-            console.warn(`[${this.label}] Adding disposable after disposeAll() — leak risk`, fn)
+            if (import.meta.env.DEV) {
+                // eslint-disable-next-line no-console
+                console.warn(`[${this.label}] Adding disposable after disposeAll() — leak risk`, fn)
+            }
         }
         this.items.push(fn)
     }

@@ -337,7 +337,7 @@ function setupWebglContextRestore(): () => void {
     }
 
     const handleContextRestored = async () => {
-        console.warn('[app-init] WebGL context restored; reinitializing')
+        if (import.meta.env.DEV) console.warn('[app-init] WebGL context restored; reinitializing')
         // Re-run the Svelte-first init. The init guard (_initCalled) will
         // prevent double-init, so we reset it first.
         _initCalled = false
