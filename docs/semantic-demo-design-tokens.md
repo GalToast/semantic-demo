@@ -234,3 +234,17 @@ For CSS token value changes:
 - `npm run check:ownership`
 - Relevant `qa:contract:*` surface checks
 - Relevant visual QA screenshots or reels when the change affects layout, motion, or composition
+
+## Top Nav Mobile Chrome Policy
+
+On viewports ≤768px, the header mode chips follow an **icons-only except active** policy. The header itself stays at its compact `--top-chrome-mobile` height (82px); canvas height is preserved.
+
+| Chip state | Mobile treatment | Discoverability channel |
+|---|---|---|
+| Active (e.g., Overview) | Icon + label visible inline | Always-visible (primary orientation signal) |
+| Locked (Trail, Focus, Inside) | Icon-only with dimmed locked styling + `disabled` / `aria-disabled` | Long-press `title` attribute: full mode description + "Select a business to unlock" |
+| Other (Search, Map) | Icon-only | Long-press `title` attribute: mode description |
+
+**Why:** Adding labels to locked chips pushed the row from 290px to 387px on a 390px viewport, clipping Map off-screen. Icons-only except active brings the row to 311px — fits in the 339px chip budget with 28px to spare.
+
+**Reference:** commit `9983b0f0 fix(header): mobile icons-only mode chips (Option F — polished)`. Locked-chip tooltip enrichment lives at `Header.svelte:284-286`. The rule is enforced by tests in `tests/unit-active/contract-header-mode-chips.test.ts`.
