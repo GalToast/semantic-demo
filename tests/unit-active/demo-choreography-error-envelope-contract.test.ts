@@ -56,9 +56,7 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
     const src = readSource()
 
     it('imports debugWarn from @lib/utils/diagnostic-adapter', () => {
-        expect(src).toMatch(
-            /import\s*\{[^}]*\bdebugWarn\b[^}]*\}\s*from\s*['"]@lib\/utils\/diagnostic-adapter['"]/
-        )
+        expect(src).toMatch(/import\s*\{[^}]*\bdebugWarn\b[^}]*\}\s*from\s*['"]@lib\/utils\/diagnostic-adapter['"]/)
     })
 
     it('has zero unchecked "as number" casts coercing _demoNodeIndex to number', () => {
@@ -139,14 +137,12 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
         expect(callbacks).toHaveLength(9)
         for (let i = 0; i < callbacks.length; i++) {
             const cb = callbacks[i]
-            expect(
-                cb,
-                `setTimeout callback #${i + 1} (one of 9 phase timers) is not wrapped in try/catch`
-            ).toMatch(/try\s*\{/)
-            expect(
-                cb,
-                `setTimeout callback #${i + 1} (one of 9 phase timers) has try but no catch`
-            ).toMatch(/catch\s*\(/)
+            expect(cb, `setTimeout callback #${i + 1} (one of 9 phase timers) is not wrapped in try/catch`).toMatch(
+                /try\s*\{/
+            )
+            expect(cb, `setTimeout callback #${i + 1} (one of 9 phase timers) has try but no catch`).toMatch(
+                /catch\s*\(/
+            )
         }
     })
 
@@ -171,10 +167,9 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
         for (const m of catchBodyMatches) {
             total++
             const block = m[1]
-            expect(
-                block,
-                `catch block #${total} does not call debugWarn — raw console would leak in prod`
-            ).toMatch(/debugWarn/)
+            expect(block, `catch block #${total} does not call debugWarn — raw console would leak in prod`).toMatch(
+                /debugWarn/
+            )
         }
         expect(total).toBeGreaterThanOrEqual(9) // 6 functions + runDemo's outer
     })

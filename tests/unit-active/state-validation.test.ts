@@ -250,7 +250,9 @@ const _appState = vi.hoisted(() => ({
         email: false,
         geocoded: false
     },
-    withMutation(fn: () => void) { return fn() }
+    withMutation(fn: () => void) {
+        return fn()
+    }
 }))
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
@@ -259,7 +261,7 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
             return (_appState as any)[prop]
         },
         set(_target, prop, value) {
-            (_appState as any)[prop] = value
+            ;(_appState as any)[prop] = value
             return true
         }
     })

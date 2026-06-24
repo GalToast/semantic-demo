@@ -119,12 +119,8 @@ describe('choreography.ts — start-race re-entrancy contract (W47)', () => {
 
         // The callback should call _startMicroDemo directly (bypassing
         // the public guard check), not the public startMicroDemo.
-        expect(callback, 'callback should call _startMicroDemo() directly').toMatch(
-            /void\s+_startMicroDemo\s*\(\s*\)/
-        )
-        expect(callback, 'callback must NOT call the public startMicroDemo()').not.toMatch(
-            /\bstartMicroDemo\s*\(\s*\)/
-        )
+        expect(callback, 'callback should call _startMicroDemo() directly').toMatch(/void\s+_startMicroDemo\s*\(\s*\)/)
+        expect(callback, 'callback must NOT call the public startMicroDemo()').not.toMatch(/\bstartMicroDemo\s*\(\s*\)/)
     })
 
     it('the setTimeout callback does NOT release the guard (keeps it claimed across the 150ms wait)', () => {

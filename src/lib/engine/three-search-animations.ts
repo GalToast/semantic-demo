@@ -329,8 +329,8 @@ export function triggerCorridorNodeGlow(anchorIndex: number, routeIndices: numbe
         delete _corridorGlowNodes[Number(k)]
     }
 
-    const allIndices = [...new Set([anchorIndex, ...(routeIndices || [])])].filter(
-        (i): i is number => Number.isFinite(i)
+    const allIndices = [...new Set([anchorIndex, ...(routeIndices || [])])].filter((i): i is number =>
+        Number.isFinite(i)
     )
     const reduceMotion =
         typeof window !== 'undefined' &&

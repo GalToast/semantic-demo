@@ -131,8 +131,7 @@ function checkGating(file: string): Finding[] {
 
         // 1. Same-line guard
         const sameLineGuard =
-            /if\s*\(\s*import\.meta\.env\.DEV\s*\)/.test(line) &&
-            /console\.(log|warn|error)\b/.test(line)
+            /if\s*\(\s*import\.meta\.env\.DEV\s*\)/.test(line) && /console\.(log|warn|error)\b/.test(line)
 
         // 2. Multi-line guard
         let multiLineGuard = false
@@ -144,10 +143,7 @@ function checkGating(file: string): Finding[] {
                     break
                 }
                 // Continue walking through multi-line `if` headers
-                if (
-                    /if\s*\($/.test(prev) ||
-                    (/if\s*\(/.test(prev) && !/\)/.test(prev))
-                ) {
+                if (/if\s*\($/.test(prev) || (/if\s*\(/.test(prev) && !/\)/.test(prev))) {
                     continue
                 }
                 if (/^\}/.test(prev)) break
@@ -177,9 +173,7 @@ describe('no-ungated-console-calls — production console hygiene (W47)', () => 
 
     it('has zero un-gated console.* calls in src/ (production paths)', () => {
         if (allFindings.length > 0) {
-            const summary = allFindings
-                .map((f) => `  L${f.line}: ${f.text}\n     ${f.file}`)
-                .join('\n\n')
+            const summary = allFindings.map((f) => `  L${f.line}: ${f.text}\n     ${f.file}`).join('\n\n')
             throw new Error(
                 `Found ${allFindings.length} un-gated console.* call(s) in src/:\n\n${summary}\n\n` +
                     `Each console.* must be either:\n` +

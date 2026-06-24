@@ -23,20 +23,20 @@
  *   a second demo in parallel.
  */
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import {
-  isAppReadyForDemo,
-  guardNotSeen,
-  guardReducedMotion,
-  guardWebGL,
-  guardUrlParam,
-  notifyDemoUnableToStart,
-  SESSION_STORAGE_KEY,
-} from './guards';
-import { seededUnit } from '@lib/utils/seeded-random';
-import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo.svelte.ts';
-import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '../engine/demo-choreography';
-import { appState } from '@lib/state/app.svelte';
+    isAppReadyForDemo,
+    guardNotSeen,
+    guardReducedMotion,
+    guardWebGL,
+    guardUrlParam,
+    notifyDemoUnableToStart,
+    SESSION_STORAGE_KEY
+} from './guards'
+import { seededUnit } from '@lib/utils/seeded-random'
+import { demoPhase, isDemoActive, startDemo, cancelDemo } from '@lib/stores/demo.svelte.ts'
+import { setDemoNodeIndex, runDemo, cancelChoreography as _cancelChoreographyLegacy } from '../engine/demo-choreography'
+import { appState } from '@lib/state/app.svelte'
 
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
 // The actual timed camera/UI choreography is still in the legacy JS module,
@@ -45,39 +45,39 @@ import { appState } from '@lib/state/app.svelte';
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
-const DEMO_START_DELAY_MS = 25000;
-const MAX_START_RETRIES = 100;
+const DEMO_START_DELAY_MS = 25000
+const MAX_START_RETRIES = 100
 
-const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938];
+const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938]
 
 // ── Fisher-Yates Shuffle (deterministic) ────────────────────────────────────
 
-function _fisherYatesShuffle(array: readonly number[], seed = 0xDEAD): number[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(seededUnit(i, seed) * (i + 1));
-    const tmp = arr[i]!;
-    arr[i] = arr[j]!;
-    arr[j] = tmp;
-  }
-  return arr;
+function _fisherYatesShuffle(array: readonly number[], seed = 0xdead): number[] {
+    const arr = [...array]
+    for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(seededUnit(i, seed) * (i + 1))
+        const tmp = arr[i]!
+        arr[i] = arr[j]!
+        arr[j] = tmp
+    }
+    return arr
 }
 
-const _shuffledPool = _fisherYatesShuffle(SHOWCASE_POOL);
+const _shuffledPool = _fisherYatesShuffle(SHOWCASE_POOL)
 
 // ── Retry State ─────────────────────────────────────────────────────────────
 
-let _startRetryTimer: number | null = null;
-let _startRetryDeadline = 0;
-let _startRetryCount = 0;
-let _startGuardClaimed = false;
+let _startRetryTimer: number | null = null
+let _startRetryDeadline = 0
+let _startRetryCount = 0
+let _startGuardClaimed = false
 
 function _clearRetryTimer(): void {
-  if (_startRetryTimer !== null) {
-    window.clearTimeout(_startRetryTimer);
-    _startRetryTimer = null;
-  }
-  _startRetryDeadline = 0;
+    if (_startRetryTimer !== null) {
+        window.clearTimeout(_startRetryTimer)
+        _startRetryTimer = null
+    }
+    _startRetryDeadline = 0
 }
 
 /**
@@ -89,62 +89,76 @@ function _clearRetryTimer(): void {
  * keeping the guard claimed.
  */
 function _releaseStartGuard(): void {
-  _startGuardClaimed = false;
-  _startRetryDeadline = 0;
-  _clearRetryTimer();
+    _startGuardClaimed = false
+    _startRetryDeadline = 0
+    _clearRetryTimer()
 }
 
 function _getDemoNode(): number | null {
-  const points = appState.points as Array<Record<string, unknown>> | undefined;
-  if (!points) return null;
+    const points = appState.points as Array<Record<string, unknown>> | undefined
+    if (!points) return null
 
-  for (const idx of _shuffledPool) {
-    const point = points[idx];
-    if (!point) continue;
-    if (point.status === 'disqualified') continue;
-    const name = ((point.name as string) || '').trim();
-    if (!name || name.length < 3) continue;
-    return idx;
-  }
-  if (!points.length) return null;
-  for (let i = 0; i < points.length; i++) {
-    const point = points[i];
-    if (!point) continue;
-    if (point.status === 'disqualified') continue;
-    const name = ((point.name as string) || '').trim();
-    if (!name || name.length < 3) continue;
-    return i;
-  }
-  return null;
+    for (const idx of _shuffledPool) {
+        const point = points[idx]
+        if (!point) continue
+        if (point.status === 'disqualified') continue
+        const name = ((point.name as string) || '').trim()
+        if (!name || name.length < 3) continue
+        return idx
+    }
+    if (!points.length) return null
+    for (let i = 0; i < points.length; i++) {
+        const point = points[i]
+        if (!point) continue
+        if (point.status === 'disqualified') continue
+        const name = ((point.name as string) || '').trim()
+        if (!name || name.length < 3) continue
+        return i
+    }
+    return null
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function initMicroDemo(): void {
-  const params = new URLSearchParams(window.location.search);
-  const forceDemo = params.get('demo') === 'force';
+    const params = new URLSearchParams(window.location.search)
+    const forceDemo = params.get('demo') === 'force'
 
-  if (!forceDemo) {
-    if (!guardNotSeen()) { debugWarn('[demo] blocked \u2014 already seen'); return; }
-    if (!guardReducedMotion()) { debugWarn('[demo] blocked \u2014 reduced motion'); return; }
-    if (!guardWebGL()) { debugWarn('[demo] blocked \u2014 no WebGL / software renderer'); return; }
-    if (!guardUrlParam()) { debugWarn('[demo] blocked \u2014 nodemo URL param'); return; }
-  }
-  startMicroDemo();
+    if (!forceDemo) {
+        if (!guardNotSeen()) {
+            debugWarn('[demo] blocked \u2014 already seen')
+            return
+        }
+        if (!guardReducedMotion()) {
+            debugWarn('[demo] blocked \u2014 reduced motion')
+            return
+        }
+        if (!guardWebGL()) {
+            debugWarn('[demo] blocked \u2014 no WebGL / software renderer')
+            return
+        }
+        if (!guardUrlParam()) {
+            debugWarn('[demo] blocked \u2014 nodemo URL param')
+            return
+        }
+    }
+    startMicroDemo()
 }
 
 export function shouldRunMicroDemo(): boolean {
-  const params = new URLSearchParams(window.location.search);
-  const forceDemo = params.get('demo') === 'force';
+    const params = new URLSearchParams(window.location.search)
+    const forceDemo = params.get('demo') === 'force'
 
-  if (!forceDemo) {
-    try {
-      const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-      if (raw) return false;
-    } catch { /* sessionStorage unavailable */ }
-  }
-  if (!isAppReadyForDemo()) return false;
-  return true;
+    if (!forceDemo) {
+        try {
+            const raw = sessionStorage.getItem(SESSION_STORAGE_KEY)
+            if (raw) return false
+        } catch {
+            /* sessionStorage unavailable */
+        }
+    }
+    if (!isAppReadyForDemo()) return false
+    return true
 }
 
 /**
@@ -153,21 +167,21 @@ export function shouldRunMicroDemo(): boolean {
  * early — there is already a start attempt in progress.
  */
 export function startMicroDemo(): void {
-  // Phase check first: if a demo is already running or completed this
-  // session, don't even claim the guard.
-  const phase = demoPhase();
-  if (phase !== 'IDLE') {
-    debugWarn('[demo] already active or completed');
-    return;
-  }
+    // Phase check first: if a demo is already running or completed this
+    // session, don't even claim the guard.
+    const phase = demoPhase()
+    if (phase !== 'IDLE') {
+        debugWarn('[demo] already active or completed')
+        return
+    }
 
-  // Re-entry guard: the FIRST public entry claims it; subsequent entries
-  // (including the retry loop's recursive call, which goes to
-  // _startMicroDemo() directly to bypass this check) see it as claimed.
-  if (_startGuardClaimed) return;
-  _startGuardClaimed = true;
+    // Re-entry guard: the FIRST public entry claims it; subsequent entries
+    // (including the retry loop's recursive call, which goes to
+    // _startMicroDemo() directly to bypass this check) see it as claimed.
+    if (_startGuardClaimed) return
+    _startGuardClaimed = true
 
-  void _startMicroDemo();
+    void _startMicroDemo()
 }
 
 /**
@@ -177,80 +191,94 @@ export function startMicroDemo(): void {
  * concurrent UI click from starting a parallel demo.
  */
 async function _startMicroDemo(): Promise<void> {
-  const params = new URLSearchParams(window.location.search);
-  const forceDemo = params.get('demo') === 'force';
+    const params = new URLSearchParams(window.location.search)
+    const forceDemo = params.get('demo') === 'force'
 
-  if (!forceDemo) {
+    if (!forceDemo) {
+        try {
+            const raw = sessionStorage.getItem(SESSION_STORAGE_KEY)
+            if (raw) {
+                _releaseStartGuard()
+                return
+            }
+        } catch {
+            /* sessionStorage unavailable */
+        }
+        if (!guardNotSeen()) {
+            _releaseStartGuard()
+            return
+        }
+    }
+
+    if (!isAppReadyForDemo()) {
+        const now = performance.now()
+        if (!_startRetryDeadline) {
+            _startRetryDeadline = now + DEMO_START_DELAY_MS
+            _startRetryCount = 0
+        }
+        if (now < _startRetryDeadline && _startRetryCount < MAX_START_RETRIES) {
+            _startRetryCount++
+            // Retry path: schedule the next attempt WITHOUT releasing the guard.
+            // The recursive call goes to _startMicroDemo() directly, bypassing
+            // the public re-entry guard. The guard stays claimed until the
+            // function exits via a terminal path (success, no-conditions,
+            // no-node, or out-of-retries).
+            _startRetryTimer = window.setTimeout(() => {
+                _startRetryTimer = null
+                void _startMicroDemo()
+            }, 150)
+            return
+        }
+        // Out of retries: terminal. Release the guard so a future call can start.
+        try {
+            sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-conditions')
+        } catch {
+            /* ignore */
+        }
+        notifyDemoUnableToStart()
+        _releaseStartGuard()
+        return
+    }
+
+    const node = _getDemoNode()
+    if (node === null) {
+        try {
+            sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-node')
+        } catch {
+            /* ignore */
+        }
+        notifyDemoUnableToStart()
+        _releaseStartGuard()
+        return
+    }
+
     try {
-      const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-      if (raw) {
-        _releaseStartGuard();
-        return;
-      }
-    } catch { /* sessionStorage unavailable */ }
-    if (!guardNotSeen()) {
-      _releaseStartGuard();
-      return;
+        sessionStorage.setItem(SESSION_STORAGE_KEY, new Date().toISOString())
+    } catch {
+        /* ignore */
     }
-  }
 
-  if (!isAppReadyForDemo()) {
-    const now = performance.now();
-    if (!_startRetryDeadline) {
-      _startRetryDeadline = now + DEMO_START_DELAY_MS;
-      _startRetryCount = 0;
+    // Update store
+    startDemo()
+
+    // Delegate to legacy choreography module via engine bridge. Wrap in
+    // try/catch so a synchronous throw from the legacy module doesn't leak
+    // the guard (which would block all future start attempts).
+    setDemoNodeIndex(node)
+    try {
+        runDemo(cancelMicroDemo)
+    } catch (err) {
+        debugWarn('[demo] runDemo threw:', err)
     }
-    if (now < _startRetryDeadline && _startRetryCount < MAX_START_RETRIES) {
-      _startRetryCount++;
-      // Retry path: schedule the next attempt WITHOUT releasing the guard.
-      // The recursive call goes to _startMicroDemo() directly, bypassing
-      // the public re-entry guard. The guard stays claimed until the
-      // function exits via a terminal path (success, no-conditions,
-      // no-node, or out-of-retries).
-      _startRetryTimer = window.setTimeout(() => {
-        _startRetryTimer = null;
-        void _startMicroDemo();
-      }, 150);
-      return;
-    }
-    // Out of retries: terminal. Release the guard so a future call can start.
-    try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-conditions'); } catch { /* ignore */ }
-    notifyDemoUnableToStart();
-    _releaseStartGuard();
-    return;
-  }
 
-  const node = _getDemoNode();
-  if (node === null) {
-    try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-node'); } catch { /* ignore */ }
-    notifyDemoUnableToStart();
-    _releaseStartGuard();
-    return;
-  }
-
-  try { sessionStorage.setItem(SESSION_STORAGE_KEY, new Date().toISOString()); } catch { /* ignore */ }
-
-  // Update store
-  startDemo();
-
-  // Delegate to legacy choreography module via engine bridge. Wrap in
-  // try/catch so a synchronous throw from the legacy module doesn't leak
-  // the guard (which would block all future start attempts).
-  setDemoNodeIndex(node);
-  try {
-    runDemo(cancelMicroDemo);
-  } catch (err) {
-    debugWarn('[demo] runDemo threw:', err);
-  }
-
-  _releaseStartGuard();
+    _releaseStartGuard()
 }
 
 export function cancelMicroDemo(reason = 'user-input'): void {
-  _cancelChoreographyLegacy(reason);
-  cancelDemo();
+    _cancelChoreographyLegacy(reason)
+    cancelDemo()
 }
 
 export function isMicroDemoRunning(): boolean {
-  return isDemoActive();
+    return isDemoActive()
 }

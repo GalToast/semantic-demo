@@ -26,20 +26,20 @@ on `as any` and `as unknown as` counts.
 
 ### Top consumers (by `state.X` access count)
 
-| File | `state.X` accesses | Status |
-|---|---:|---|
-| `engine/three-interaction-visuals.ts` | 118 | W47 tightened (8 → 1 `any`) |
-| `orchestration/semantic-lane.ts` | 46 | untouched |
-| `engine/thread-manager.ts` | 34 | untouched |
-| `engine/node-manager.ts` | 34 | untouched |
-| `engine/mycelium-engine.ts` | 25 | untouched |
-| `engine/three-search-animations.ts` | 19 | W47 tightened (16 → 1 `any`) |
-| `ui/suggestion-bindings.ts` | 12 | untouched |
-| `ui/journey-bindings.ts` | 11 | untouched |
-| `audio/audio-scape.ts` | 10 | untouched |
-| `ui/view-bindings.ts` | 8 | untouched |
-| `ui/onboarding-bindings.ts` | 5 | untouched |
-| (10 more files, 1-4 accesses each) | — | untouched |
+| File                                  | `state.X` accesses | Status                       |
+| ------------------------------------- | -----------------: | ---------------------------- |
+| `engine/three-interaction-visuals.ts` |                118 | W47 tightened (8 → 1 `any`)  |
+| `orchestration/semantic-lane.ts`      |                 46 | untouched                    |
+| `engine/thread-manager.ts`            |                 34 | untouched                    |
+| `engine/node-manager.ts`              |                 34 | untouched                    |
+| `engine/mycelium-engine.ts`           |                 25 | untouched                    |
+| `engine/three-search-animations.ts`   |                 19 | W47 tightened (16 → 1 `any`) |
+| `ui/suggestion-bindings.ts`           |                 12 | untouched                    |
+| `ui/journey-bindings.ts`              |                 11 | untouched                    |
+| `audio/audio-scape.ts`                |                 10 | untouched                    |
+| `ui/view-bindings.ts`                 |                  8 | untouched                    |
+| `ui/onboarding-bindings.ts`           |                  5 | untouched                    |
+| (10 more files, 1-4 accesses each)    |                  — | untouched                    |
 
 ### The right long-term fix
 
@@ -49,7 +49,7 @@ unnecessary. That's a multi-day refactor of the state class,
 not a per-file bite.
 
 **Short-term bites (still useful):** Continue the W47 pattern of
-*typed selectors at the engine boundary* (see thread-inspector-webgl.ts
+_typed selectors at the engine boundary_ (see thread-inspector-webgl.ts
 `InspectionState`, three-search-animations.ts `CorridorGlowState`).
 
 ---
@@ -61,28 +61,28 @@ TypeScript treats this as a request to shut up and trust the author.
 
 ### Top consumers (by occurrence count)
 
-| File | Count | Why |
-|---|---:|---|
-| `state/app.svelte.ts` | 23 | The Proxy `set` trap uses `Reflect.set(target, prop, value)` after a type-narrowing chain. Mostly unavoidable until `appState` gets typed properties. |
-| `engine/three-engine.ts` | 23 | Three.js object access (`scene.children[0]` → `Mesh`). Often `as unknown as <ThreeClass>`. |
-| `journey/focus-pocket.ts` | 18 | Three.js BufferGeometry access. |
-| `journey/canvas-node-picking.ts` | 16 | Three.js raycasting results cast to `Mesh`/`Object3D`. |
-| `journey/canvas-hit-test.ts` | 8 | Similar raycasting pattern. |
-| `engine/map-state.ts` | 8 | Leaflet object access. |
-| `engine/demo-choreography.ts` | 8 | Legacy module dynamic-import returns. |
-| `engine/camera-controls-restore.svelte.ts` | 8 | Three.js controls access. |
-| `components/SpectorInspector.svelte` | 8 | Spector.js JSON responses. |
-| `components/DevGui.svelte` | 8 | Tweakpane / dat.gui access. |
+| File                                       | Count | Why                                                                                                                                                   |
+| ------------------------------------------ | ----: | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `state/app.svelte.ts`                      |    23 | The Proxy `set` trap uses `Reflect.set(target, prop, value)` after a type-narrowing chain. Mostly unavoidable until `appState` gets typed properties. |
+| `engine/three-engine.ts`                   |    23 | Three.js object access (`scene.children[0]` → `Mesh`). Often `as unknown as <ThreeClass>`.                                                            |
+| `journey/focus-pocket.ts`                  |    18 | Three.js BufferGeometry access.                                                                                                                       |
+| `journey/canvas-node-picking.ts`           |    16 | Three.js raycasting results cast to `Mesh`/`Object3D`.                                                                                                |
+| `journey/canvas-hit-test.ts`               |     8 | Similar raycasting pattern.                                                                                                                           |
+| `engine/map-state.ts`                      |     8 | Leaflet object access.                                                                                                                                |
+| `engine/demo-choreography.ts`              |     8 | Legacy module dynamic-import returns.                                                                                                                 |
+| `engine/camera-controls-restore.svelte.ts` |     8 | Three.js controls access.                                                                                                                             |
+| `components/SpectorInspector.svelte`       |     8 | Spector.js JSON responses.                                                                                                                            |
+| `components/DevGui.svelte`                 |     8 | Tweakpane / dat.gui access.                                                                                                                           |
 
 ### Categories of `as unknown as`
 
-| Pattern | Example | Realistic fix |
-|---|---|---|
-| **Three.js object narrowing** | `mesh as unknown as Mesh` | Replace with `instanceof Mesh` check + type guard. |
-| **Leaflet object narrowing** | `layer as unknown as L.Marker` | Same: `instanceof L.Marker`. |
-| **Dynamic-import narrowing** | `mod as unknown as CameraControlsModule` | Define a typed wrapper that imports and re-exports with explicit type. |
-| **JSON response narrowing** | `capture as unknown as SpectorCapture` | Use `zod` or a runtime type guard. |
-| **Untyped bridge function** | `(mod as unknown as MyModule).foo()` | Type the module interface at the bridge. |
+| Pattern                       | Example                                  | Realistic fix                                                          |
+| ----------------------------- | ---------------------------------------- | ---------------------------------------------------------------------- |
+| **Three.js object narrowing** | `mesh as unknown as Mesh`                | Replace with `instanceof Mesh` check + type guard.                     |
+| **Leaflet object narrowing**  | `layer as unknown as L.Marker`           | Same: `instanceof L.Marker`.                                           |
+| **Dynamic-import narrowing**  | `mod as unknown as CameraControlsModule` | Define a typed wrapper that imports and re-exports with explicit type. |
+| **JSON response narrowing**   | `capture as unknown as SpectorCapture`   | Use `zod` or a runtime type guard.                                     |
+| **Untyped bridge function**   | `(mod as unknown as MyModule).foo()`     | Type the module interface at the bridge.                               |
 
 ### Bite candidate
 
@@ -100,17 +100,17 @@ disables type checking on the casted expression.
 
 ### Top consumers (by occurrence count)
 
-| File | Count | Note |
-|---|---:|---|
-| `journey/semantic-overlay.ts` | 26 | Untested. |
-| `journey/route-trace.ts` | 22 | Untested. |
-| `journey/thread-settler.ts` | 20 | Untested. |
-| `journey/thread-inspector.ts` | 20 | Has tests. |
-| `journey/focus-ui.ts` | 16 | Untested. |
-| `journey/neighborhood.ts` | 14 | Untested. |
-| `journey/thread-model.ts` | 11 | Untested. |
-| `engine/three-engine.ts` | 10 | Has tests. |
-| (11 more files, 3-9 each) | — | — |
+| File                          | Count | Note       |
+| ----------------------------- | ----: | ---------- |
+| `journey/semantic-overlay.ts` |    26 | Untested.  |
+| `journey/route-trace.ts`      |    22 | Untested.  |
+| `journey/thread-settler.ts`   |    20 | Untested.  |
+| `journey/thread-inspector.ts` |    20 | Has tests. |
+| `journey/focus-ui.ts`         |    16 | Untested.  |
+| `journey/neighborhood.ts`     |    14 | Untested.  |
+| `journey/thread-model.ts`     |    11 | Untested.  |
+| `engine/three-engine.ts`      |    10 | Has tests. |
+| (11 more files, 3-9 each)     |     — | —          |
 
 **Pattern:** 6 of the top 7 are in `src/lib/journey/`. The journey
 subsystem has the worst `any` density of any subsystem (6.0 `any`/file,
@@ -167,11 +167,11 @@ code, not the types.
 
 ## Reference: W47 type-safety bites (committed)
 
-| Commit | File | Before → After |
-|---|---|---|
-| `669448ab` | `journey/thread-inspector-webgl.ts` | 35 → 8 `any` |
-| `0bb89d5a` | `engine/three-search-animations.ts` | 16 → 1 `any` |
-| `f3afcb1a` | `engine/three-interaction-visuals.ts` | 8 → 1 `any` |
+| Commit     | File                                  | Before → After |
+| ---------- | ------------------------------------- | -------------- |
+| `669448ab` | `journey/thread-inspector-webgl.ts`   | 35 → 8 `any`   |
+| `0bb89d5a` | `engine/three-search-animations.ts`   | 16 → 1 `any`   |
+| `f3afcb1a` | `engine/three-interaction-visuals.ts` | 8 → 1 `any`    |
 
 Each commit introduced a typed interface at the engine boundary
 (`InspectionState`, `CorridorGlowState`/`CorridorAnimState`, etc.) and

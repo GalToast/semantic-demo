@@ -38,7 +38,7 @@ const _filterState = vi.hoisted(() => ({
         city: '' as string,
         website: false,
         email: false,
-        geocoded: false,
+        geocoded: false
     }
 }))
 
@@ -114,56 +114,150 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         },
         withMutation: (fn: () => unknown) => fn(),
         // Legend mock shape
-        get legendOpen() { return _legendState.legendOpen },
-        set legendOpen(v: boolean) { _legendState.legendOpen = v },
+        get legendOpen() {
+            return _legendState.legendOpen
+        },
+        set legendOpen(v: boolean) {
+            _legendState.legendOpen = v
+        },
         // Filter mock shape
-        get filterVersion() { return _filterState.filterVersion },
-        set filterVersion(v: number) { _filterState.filterVersion = v },
-        get filterColorVersion() { return _filterState.filterColorVersion },
-        set filterColorVersion(v: number) { _filterState.filterColorVersion = v },
-        get activeClusterFilter() { return _filterState.activeClusterFilter },
-        set activeClusterFilter(v: number | null) { _filterState.activeClusterFilter = v },
-        get activeFilters() { return _filterState.activeFilters },
-        set activeFilters(v: any) { _filterState.activeFilters = v },
+        get filterVersion() {
+            return _filterState.filterVersion
+        },
+        set filterVersion(v: number) {
+            _filterState.filterVersion = v
+        },
+        get filterColorVersion() {
+            return _filterState.filterColorVersion
+        },
+        set filterColorVersion(v: number) {
+            _filterState.filterColorVersion = v
+        },
+        get activeClusterFilter() {
+            return _filterState.activeClusterFilter
+        },
+        set activeClusterFilter(v: number | null) {
+            _filterState.activeClusterFilter = v
+        },
+        get activeFilters() {
+            return _filterState.activeFilters
+        },
+        set activeFilters(v: any) {
+            _filterState.activeFilters = v
+        },
         // Search mock shape
-        get currentSearchSummary() { return _searchState.currentSearchSummary },
-        set currentSearchSummary(v: any) { _searchState.currentSearchSummary = v },
-        get searchStatus() { return _searchState.searchStatus },
-        set searchStatus(v: string) { _searchState.searchStatus = v },
-        get searchRequestSequence() { return _searchState.searchRequestSequence },
-        set searchRequestSequence(v: number) { _searchState.searchRequestSequence = v },
-        get searchAnchorIndex() { return _searchState.searchAnchorIndex },
-        set searchAnchorIndex(v: number | null) { _searchState.searchAnchorIndex = v },
-        get searchPreviewIndex() { return _searchState.searchPreviewIndex },
-        set searchPreviewIndex(v: number | null) { _searchState.searchPreviewIndex = v },
-        get searchGlowIndices() { return _searchState.searchGlowIndices },
-        set searchGlowIndices(v: Set<number>) { _searchState.searchGlowIndices = v },
-        get searchGlowTopIndex() { return _searchState.searchGlowTopIndex },
-        set searchGlowTopIndex(v: number | null) { _searchState.searchGlowTopIndex = v },
-        get searchGlowActive() { return _searchState.searchGlowActive },
-        set searchGlowActive(v: boolean) { _searchState.searchGlowActive = v },
-        get currentEmptyQuery() { return _searchState.currentEmptyQuery },
-        set currentEmptyQuery(v: string | null) { _searchState.currentEmptyQuery = v },
-        get searchFocusTransitionToken() { return _searchState.searchFocusTransitionToken },
-        set searchFocusTransitionToken(v: number) { _searchState.searchFocusTransitionToken = v },
-        get semanticTrailCue() { return _searchState.semanticTrailCue },
-        set semanticTrailCue(v: string) { _searchState.semanticTrailCue = v },
-        get isCompactViewport() { return _searchState.isCompactViewport },
-        set isCompactViewport(v: boolean) { _searchState.isCompactViewport = v },
-        get semanticGuideRequestSequence() { return _searchState.semanticGuideRequestSequence },
-        set semanticGuideRequestSequence(v: number) { _searchState.semanticGuideRequestSequence = v },
-        get currentSemanticGuide() { return _searchState.currentSemanticGuide },
-        set currentSemanticGuide(v: string | null) { _searchState.currentSemanticGuide = v },
-        get summaryCardTypeToken() { return _searchState.summaryCardTypeToken },
-        set summaryCardTypeToken(v: number) { _searchState.summaryCardTypeToken = v },
+        get currentSearchSummary() {
+            return _searchState.currentSearchSummary
+        },
+        set currentSearchSummary(v: any) {
+            _searchState.currentSearchSummary = v
+        },
+        get searchStatus() {
+            return _searchState.searchStatus
+        },
+        set searchStatus(v: string) {
+            _searchState.searchStatus = v
+        },
+        get searchRequestSequence() {
+            return _searchState.searchRequestSequence
+        },
+        set searchRequestSequence(v: number) {
+            _searchState.searchRequestSequence = v
+        },
+        get searchAnchorIndex() {
+            return _searchState.searchAnchorIndex
+        },
+        set searchAnchorIndex(v: number | null) {
+            _searchState.searchAnchorIndex = v
+        },
+        get searchPreviewIndex() {
+            return _searchState.searchPreviewIndex
+        },
+        set searchPreviewIndex(v: number | null) {
+            _searchState.searchPreviewIndex = v
+        },
+        get searchGlowIndices() {
+            return _searchState.searchGlowIndices
+        },
+        set searchGlowIndices(v: Set<number>) {
+            _searchState.searchGlowIndices = v
+        },
+        get searchGlowTopIndex() {
+            return _searchState.searchGlowTopIndex
+        },
+        set searchGlowTopIndex(v: number | null) {
+            _searchState.searchGlowTopIndex = v
+        },
+        get searchGlowActive() {
+            return _searchState.searchGlowActive
+        },
+        set searchGlowActive(v: boolean) {
+            _searchState.searchGlowActive = v
+        },
+        get currentEmptyQuery() {
+            return _searchState.currentEmptyQuery
+        },
+        set currentEmptyQuery(v: string | null) {
+            _searchState.currentEmptyQuery = v
+        },
+        get searchFocusTransitionToken() {
+            return _searchState.searchFocusTransitionToken
+        },
+        set searchFocusTransitionToken(v: number) {
+            _searchState.searchFocusTransitionToken = v
+        },
+        get semanticTrailCue() {
+            return _searchState.semanticTrailCue
+        },
+        set semanticTrailCue(v: string) {
+            _searchState.semanticTrailCue = v
+        },
+        get isCompactViewport() {
+            return _searchState.isCompactViewport
+        },
+        set isCompactViewport(v: boolean) {
+            _searchState.isCompactViewport = v
+        },
+        get semanticGuideRequestSequence() {
+            return _searchState.semanticGuideRequestSequence
+        },
+        set semanticGuideRequestSequence(v: number) {
+            _searchState.semanticGuideRequestSequence = v
+        },
+        get currentSemanticGuide() {
+            return _searchState.currentSemanticGuide
+        },
+        set currentSemanticGuide(v: string | null) {
+            _searchState.currentSemanticGuide = v
+        },
+        get summaryCardTypeToken() {
+            return _searchState.summaryCardTypeToken
+        },
+        set summaryCardTypeToken(v: number) {
+            _searchState.summaryCardTypeToken = v
+        },
         // Weather mock shape
-        get weather() { return _weatherState.weather },
-        set weather(v: any) { _weatherState.weather = v },
-        get weatherInitialized() { return _weatherState.weatherInitialized },
-        set weatherInitialized(v: boolean) { _weatherState.weatherInitialized = v },
-        get weatherState() { return _weatherState.weatherState },
-        set weatherState(v: any) { _weatherState.weatherState = v },
-        withMutation(fn: () => void) { fn() }
+        get weather() {
+            return _weatherState.weather
+        },
+        set weather(v: any) {
+            _weatherState.weather = v
+        },
+        get weatherInitialized() {
+            return _weatherState.weatherInitialized
+        },
+        set weatherInitialized(v: boolean) {
+            _weatherState.weatherInitialized = v
+        },
+        get weatherState() {
+            return _weatherState.weatherState
+        },
+        set weatherState(v: any) {
+            _weatherState.weatherState = v
+        },
+        withMutation(fn: () => void) {
+            fn()
+        }
     }
 }))
 
@@ -820,7 +914,7 @@ describe('search store — T4 writable + withSearchNotify migration', () => {
     it('setSearchResults updates result indices and count', () => {
         setSearchResults([
             { id: '1', name: 'A', index: 0, score: 1, category: '', snippet: '' },
-            { id: '2', name: 'B', index: 1, score: 0.9, category: '', snippet: '' },
+            { id: '2', name: 'B', index: 1, score: 0.9, category: '', snippet: '' }
         ])
         expect(_searchState.currentSearchSummary.resultIndices).toEqual([0, 1])
         expect(_searchState.currentSearchSummary.resultCount).toBe(2)
@@ -923,9 +1017,16 @@ describe('search store — T4 writable + withSearchNotify migration', () => {
 
     it('derived getters read from appState', () => {
         _searchState.currentSearchSummary = {
-            query: 'pizza', totalMatches: 5, totalSemanticMatches: 3, visibleMatches: 5,
-            resultCount: 5, topScore: 0.9, anchorIndex: 0, topIndex: 0,
-            resultIndices: [1, 2, 3, 4, 5], summaryType: 'text'
+            query: 'pizza',
+            totalMatches: 5,
+            totalSemanticMatches: 3,
+            visibleMatches: 5,
+            resultCount: 5,
+            topScore: 0.9,
+            anchorIndex: 0,
+            topIndex: 0,
+            resultIndices: [1, 2, 3, 4, 5],
+            summaryType: 'text'
         }
         _searchState.searchStatus = 'results'
 

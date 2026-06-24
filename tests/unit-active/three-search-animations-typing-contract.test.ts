@@ -53,27 +53,21 @@ describe('three-search-animations — typing contract (W47 tightening)', () => {
 
     it('triggerSearchHeroMoment uses `number` for anchorIndex (not any)', () => {
         // Strip line comments + block comments to avoid matching prose
-        const stripped = src
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/\/\/.*$/gm, '')
+        const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
         const match = stripped.match(/export\s+function\s+triggerSearchHeroMoment\s*\(\s*anchorIndex\s*:\s*([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('number')
     })
 
     it('triggerCorridorNodeGlow uses `number` for anchorIndex (not any)', () => {
-        const stripped = src
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/\/\/.*$/gm, '')
+        const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
         const match = stripped.match(/export\s+function\s+triggerCorridorNodeGlow\s*\(\s*anchorIndex\s*:\s*([^,)]+)/)
         expect(match, 'function signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('number')
     })
 
     it('triggerSearchCorridorAnimation uses `number` for anchorIndex (not any)', () => {
-        const stripped = src
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/\/\/.*$/gm, '')
+        const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
         const match = stripped.match(
             /export\s+function\s+triggerSearchCorridorAnimation\s*\(\s*anchorIndex\s*:\s*([^,)]+)/
         )
@@ -82,20 +76,14 @@ describe('three-search-animations — typing contract (W47 tightening)', () => {
     })
 
     it('updateCorridorNodeGlow uses `number` for frameNow (not any)', () => {
-        const stripped = src
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/\/\/.*$/gm, '')
-        const match = stripped.match(
-            /export\s+function\s+updateCorridorNodeGlow\s*\(\s*frameNow\s*:\s*([^)]+)\)/
-        )
+        const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+        const match = stripped.match(/export\s+function\s+updateCorridorNodeGlow\s*\(\s*frameNow\s*:\s*([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('number')
     })
 
     it('updateSearchCorridorAnimation uses `number` for frameNow (not any)', () => {
-        const stripped = src
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/\/\/.*$/gm, '')
+        const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
         const match = stripped.match(
             /export\s+function\s+updateSearchCorridorAnimation\s*\(\s*frameNow\s*:\s*([^)]+)\)/
         )
@@ -104,9 +92,7 @@ describe('three-search-animations — typing contract (W47 tightening)', () => {
     })
 
     it('getCorridorPathPoints accepts Vector3, not any', () => {
-        const stripped = src
-            .replace(/\/\*[\s\S]*?\*\//g, '')
-            .replace(/\/\/.*$/gm, '')
+        const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
         const match = stripped.match(
             /function\s+getCorridorPathPoints\s*\(\s*anchorPos\s*:\s*([^,]+),\s*targetPos\s*:\s*([^,)]+)/
         )
@@ -147,9 +133,7 @@ describe('three-search-animations — typing contract (W47 tightening)', () => {
 
     it('_corridorAnimState is typed (not any)', () => {
         // Either `null | CorridorAnimState` or `CorridorAnimState | null` are both fine.
-        const match = src.match(
-            /let\s+_corridorAnimState\s*:\s*CorridorAnimState\s*\|\s*null\s*=\s*null/
-        )
+        const match = src.match(/let\s+_corridorAnimState\s*:\s*CorridorAnimState\s*\|\s*null\s*=\s*null/)
         expect(match, '_corridorAnimState type annotation not found').toBeTruthy()
     })
 

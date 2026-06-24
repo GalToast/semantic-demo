@@ -12,23 +12,9 @@
 
 // ── Valid value sets (mirrored from @lib/types/state) ───────────────────────
 
-export const VALID_VIEWS = new Set<string>([
-    'galaxy',
-    'map',
-    'focus',
-    'trail',
-    'semantic'
-])
+export const VALID_VIEWS = new Set<string>(['galaxy', 'map', 'focus', 'trail', 'semantic'])
 
-export const VALID_NAV_MODES = new Set<string>([
-    'overview',
-    'search',
-    'trail',
-    'focus',
-    'inside',
-    'map',
-    'bridge'
-])
+export const VALID_NAV_MODES = new Set<string>(['overview', 'search', 'trail', 'focus', 'inside', 'map', 'bridge'])
 
 export const VALID_PANEL_SURFACES = new Set<string>([
     'idle',
@@ -66,21 +52,9 @@ export const VALID_LOADING_PHASES = new Set<string>([
     'complete'
 ])
 
-export const VALID_SEMANTIC_LANE_STATES = new Set<string>([
-    'checking',
-    'idle',
-    'warming',
-    'active',
-    'cooling',
-    'error'
-])
+export const VALID_SEMANTIC_LANE_STATES = new Set<string>(['checking', 'idle', 'warming', 'active', 'cooling', 'error'])
 
-export const VALID_FOCUS_TRANSITION_MODES = new Set<string>([
-    'idle',
-    'entering',
-    'settling',
-    'exiting'
-])
+export const VALID_FOCUS_TRANSITION_MODES = new Set<string>(['idle', 'entering', 'settling', 'exiting'])
 
 export const VALID_MYCELIUM_MODES = new Set<string>([
     'default',
@@ -119,27 +93,11 @@ export const VALID_ROUTE_CHOREOGRAPHY_PHASES = new Set<string>([
     'trail'
 ])
 
-export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>([
-    'idle',
-    'starting',
-    'flying',
-    'arriving',
-    'settling'
-])
+export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>(['idle', 'starting', 'flying', 'arriving', 'settling'])
 
-export const VALID_FOCUS_ORBIT_SLACK_PHASES = new Set<string>([
-    'idle',
-    'active',
-    'settling'
-])
+export const VALID_FOCUS_ORBIT_SLACK_PHASES = new Set<string>(['idle', 'active', 'settling'])
 
-export const VALID_ARRIVAL_HANDOFF_PHASES = new Set<string>([
-    'idle',
-    'prelude',
-    'flying',
-    'arriving',
-    'settling'
-])
+export const VALID_ARRIVAL_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'flying', 'arriving', 'settling'])
 
 export const VALID_COMPOSITION_PANEL_SURFACES = new Set<string>([
     'idle',
@@ -152,24 +110,11 @@ export const VALID_COMPOSITION_PANEL_SURFACES = new Set<string>([
     'inside'
 ])
 
-export const VALID_COMPOSITION_PANEL_SURFACE_DETAILS = new Set<string>([
-    'peek',
-    'open',
-    'full'
-])
+export const VALID_COMPOSITION_PANEL_SURFACE_DETAILS = new Set<string>(['peek', 'open', 'full'])
 
-export const VALID_COMPOSITION_TRAIL_STATES = new Set<string>([
-    'inactive',
-    'active',
-    'deep',
-    'exiting'
-])
+export const VALID_COMPOSITION_TRAIL_STATES = new Set<string>(['inactive', 'active', 'deep', 'exiting'])
 
-export const VALID_COMPOSITION_TRAIL_DEPTHS = new Set<string>([
-    '0',
-    '1',
-    '2'
-])
+export const VALID_COMPOSITION_TRAIL_DEPTHS = new Set<string>(['0', '1', '2'])
 
 export const VALID_COMPOSITION_GRAPH_CONTEXTS = new Set<string>([
     'idle',
@@ -180,33 +125,13 @@ export const VALID_COMPOSITION_GRAPH_CONTEXTS = new Set<string>([
     'bridge'
 ])
 
-export const VALID_COMPOSITION_MAP_CONTEXTS = new Set<string>([
-    'idle',
-    'map',
-    'map-trail',
-    'map-focus'
-])
+export const VALID_COMPOSITION_MAP_CONTEXTS = new Set<string>(['idle', 'map', 'map-trail', 'map-focus'])
 
-export const VALID_COMPOSITION_SEMANTIC_DIVE_STATES = new Set<string>([
-    'inactive',
-    'active',
-    'exiting'
-])
+export const VALID_COMPOSITION_SEMANTIC_DIVE_STATES = new Set<string>(['inactive', 'active', 'exiting'])
 
-export const VALID_COMPOSITION_SEARCH_GLOW_STATES = new Set<string>([
-    'inactive',
-    'active',
-    'fading'
-])
+export const VALID_COMPOSITION_SEARCH_GLOW_STATES = new Set<string>(['inactive', 'active', 'fading'])
 
-export const VALID_DEMO_PHASES = new Set<string>([
-    'IDLE',
-    'ARRIVAL',
-    'EXPLORATION',
-    'FOCUS',
-    'COMPLETION',
-    'RESET'
-])
+export const VALID_DEMO_PHASES = new Set<string>(['IDLE', 'ARRIVAL', 'EXPLORATION', 'FOCUS', 'COMPLETION', 'RESET'])
 
 export const VALID_WEATHER_SOURCE_STRINGS = new Set<string>([
     'open-meteo',
@@ -554,7 +479,7 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     isSearching: passthrough,
     searchQuery: passthrough,
     _settlingWatchdogStartedAt: passthrough,
-    _settlingLowFrames: passthrough,
+    _settlingLowFrames: passthrough
 }
 
 // ── Deep-path validator (for nested properties like navState.mode) ───────────

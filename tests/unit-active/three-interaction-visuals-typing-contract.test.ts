@@ -33,9 +33,7 @@ function readSource(): string {
 
 // Strip line + block comments so regexes don't false-positive on JSDoc prose.
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('three-interaction-visuals — typing contract (W47 tightening)', () => {
@@ -54,25 +52,19 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('getSemanticLensNeighborIndices uses `number` for focusedNode (not any)', () => {
-        const match = stripped.match(
-            /function\s+getSemanticLensNeighborIndices\s*\(\s*focusedNode\s*:\s*([^)]+)\)/
-        )
+        const match = stripped.match(/function\s+getSemanticLensNeighborIndices\s*\(\s*focusedNode\s*:\s*([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('number')
     })
 
     it('getSemanticLensNeighborIndices returns number[]', () => {
-        const match = stripped.match(
-            /function\s+getSemanticLensNeighborIndices\s*\([^)]+\)\s*:\s*([^{]+)/
-        )
+        const match = stripped.match(/function\s+getSemanticLensNeighborIndices\s*\([^)]+\)\s*:\s*([^{]+)/)
         expect(match, 'return type not found').toBeTruthy()
         expect(match![1].trim()).toBe('number[]')
     })
 
     it('updateSelectedNodeMotes uses (Vector3 | null, number, boolean)', () => {
-        const match = stripped.match(
-            /function\s+updateSelectedNodeMotes\s*\(([^)]+)\)/
-        )
+        const match = stripped.match(/function\s+updateSelectedNodeMotes\s*\(([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         const params = match![1]
         expect(params).toMatch(/worldPos\s*:\s*Vector3\s*\|\s*null/)
@@ -81,9 +73,7 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('updateSelectedNodePetals uses (Vector3 | null, number, boolean)', () => {
-        const match = stripped.match(
-            /function\s+updateSelectedNodePetals\s*\(([^)]+)\)/
-        )
+        const match = stripped.match(/function\s+updateSelectedNodePetals\s*\(([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         const params = match![1]
         expect(params).toMatch(/worldPos\s*:\s*Vector3\s*\|\s*null/)
@@ -92,9 +82,7 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('updateSelectedNodeFilaments uses (Vector3 | null, number, boolean)', () => {
-        const match = stripped.match(
-            /function\s+updateSelectedNodeFilaments\s*\(([^)]+)\)/
-        )
+        const match = stripped.match(/function\s+updateSelectedNodeFilaments\s*\(([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         const params = match![1]
         expect(params).toMatch(/worldPos\s*:\s*Vector3\s*\|\s*null/)
@@ -103,9 +91,7 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('updateInteractionVisuals uses (number, number, number | null): void', () => {
-        const match = stripped.match(
-            /export\s+function\s+updateInteractionVisuals\s*\(([^)]+)\)\s*:\s*([^{]+)/
-        )
+        const match = stripped.match(/export\s+function\s+updateInteractionVisuals\s*\(([^)]+)\)\s*:\s*([^{]+)/)
         expect(match, 'function signature not found').toBeTruthy()
         const params = match![1]
         expect(params).toMatch(/now\s*:\s*number/)
@@ -115,17 +101,13 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('petal in forEach is typed `Mesh` (not any)', () => {
-        const match = stripped.match(
-            /state\.focusPetals\.forEach\s*\(\s*\(\s*petal\s*:\s*([^,)]+)/
-        )
+        const match = stripped.match(/state\.focusPetals\.forEach\s*\(\s*\(\s*petal\s*:\s*([^,)]+)/)
         expect(match, 'forEach signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('Mesh')
     })
 
     it('petal in `some` callback is typed `Mesh` (not any)', () => {
-        const match = stripped.match(
-            /state\.focusPetals\.some\s*\(\s*\(\s*petal\s*:\s*([^)]+)/
-        )
+        const match = stripped.match(/state\.focusPetals\.some\s*\(\s*\(\s*petal\s*:\s*([^)]+)/)
         expect(match, 'some signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('Mesh')
     })
@@ -136,11 +118,7 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
         // Vector3 inside the `if (hasFocus)` block. The function body
         // accesses worldPos.x/y/z, which would be a TS error without
         // narrowing.
-        const helpers = [
-            'updateSelectedNodeMotes',
-            'updateSelectedNodePetals',
-            'updateSelectedNodeFilaments'
-        ]
+        const helpers = ['updateSelectedNodeMotes', 'updateSelectedNodePetals', 'updateSelectedNodeFilaments']
         for (const name of helpers) {
             // Find the body of each helper. The body starts after the
             // opening `{` and ends at the matching `}`.
@@ -157,14 +135,10 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
                 i++
             }
             const body = stripped.slice(start, i - 1)
-            expect(
-                body,
-                `${name} must use worldPos !== null for narrowing`
-            ).toMatch(/worldPos\s*!==\s*null/)
-            expect(
-                body,
-                `${name} must NOT use Boolean(worldPos) (doesn't narrow)`
-            ).not.toMatch(/Boolean\s*\(\s*worldPos\s*\)/)
+            expect(body, `${name} must use worldPos !== null for narrowing`).toMatch(/worldPos\s*!==\s*null/)
+            expect(body, `${name} must NOT use Boolean(worldPos) (doesn't narrow)`).not.toMatch(
+                /Boolean\s*\(\s*worldPos\s*\)/
+            )
         }
     })
 })

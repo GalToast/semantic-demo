@@ -42,9 +42,7 @@ function readSource(): string {
 
 // Strip block + line comments so regexes don't false-positive on prose.
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('semantic-overlay — typing contract (W47-Bite-C tightening)', () => {
@@ -67,17 +65,13 @@ describe('semantic-overlay — typing contract (W47-Bite-C tightening)', () => {
     })
 
     it('getFocusCurvePointLocal uses ThreadEdge (not any)', () => {
-        const match = stripped.match(
-            /function\s+getFocusCurvePointLocal\s*\(\s*edge\s*:\s*([^,)]+)/
-        )
+        const match = stripped.match(/function\s+getFocusCurvePointLocal\s*\(\s*edge\s*:\s*([^,)]+)/)
         expect(match, 'function signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('ThreadEdge')
     })
 
     it('buildFocusThreadLineMaterial returns LineMaterial (not any)', () => {
-        const match = stripped.match(
-            /function\s+buildFocusThreadLineMaterial\s*\([^)]*\)\s*:\s*([^{]+)/
-        )
+        const match = stripped.match(/function\s+buildFocusThreadLineMaterial\s*\([^)]*\)\s*:\s*([^{]+)/)
         expect(match, 'function return type not found').toBeTruthy()
         expect(match![1].trim()).toBe('LineMaterial')
     })
