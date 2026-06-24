@@ -17,6 +17,7 @@ import {
     getThreadCandidatesForIndex
 } from '@lib/journey/thread-model'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
+import type { ThreadCandidateRef } from '@lib/types/state'
 import {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,
@@ -111,8 +112,8 @@ export function getThreadInspectionState(
         focusedIndex !== null && focusedIndex >= 0 && focusedIndex < pts.length ? pts[focusedIndex] : null
 
     const candidate = Number.isFinite(index)
-        ? (appState.navState.threadCandidates as any[])?.find(
-              (item: any) => item && (typeof item === 'number' ? item === index : item.index === index)
+        ? (appState.navState.threadCandidates as ThreadCandidateRef[])?.find(
+              (item) => item && (typeof item === 'number' ? item === index : item.index === index)
           )
         : null
     const candidateIndex =
@@ -511,7 +512,7 @@ export function pinFirstAvailableNeighbor(options: ThreadInspectionOptions = {})
 
     // Prefer thread candidates (semantic/geometric neighbors) — these are
     // the actual connection targets for the inspector.
-    const candidates = appState.navState.threadCandidates as any[]
+    const candidates = appState.navState.threadCandidates as ThreadCandidateRef[]
     if (Array.isArray(candidates)) {
         for (const entry of candidates) {
             const idx = entry && typeof entry === 'object' ? entry.index : entry
@@ -570,7 +571,7 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
             clearThreadInspection()
         }
     }, delay)
-    appState.canvasThreadInspectionClearTimer = id as any
+    appState.canvasThreadInspectionClearTimer = id
 }
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
@@ -643,8 +644,8 @@ export function exploreThreadNeighbor(
         : getFocusedIndex() !== null
           ? getFocusedIndex()
           : null
-    const candidate = (appState.navState.threadCandidates as any[])?.find(
-        (item: any) => item && (typeof item === 'number' ? item === index : item.index === index)
+    const candidate = (appState.navState.threadCandidates as ThreadCandidateRef[])?.find(
+        (item) => item && (typeof item === 'number' ? item === index : item.index === index)
     )
     const targetPoint = Number.isFinite(index) && index >= 0 && index < pts.length ? pts[index] : null
     if (!targetPoint) return null
