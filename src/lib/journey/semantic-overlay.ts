@@ -17,12 +17,11 @@ import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/jo
 import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket'
 import type { ThreadEdge } from '@lib/journey/focus-pocket-geometry'
 import type { ThreadCandidate } from '@lib/journey/thread-model'
+import type { ThreadCandidateRef } from '@lib/types/state'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens'
 import { getLineSegmentCount } from '@lib/journey/webgl-utils'
 import { registerDiagnosticProbe } from '@lib/utils/diagnostic-adapter'
-
-const _state = state as any
 
 // Phase 3: Declarative synchronization
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, () => {
@@ -30,7 +29,7 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, () => {
 })
 
 export function resetFocusThreadDiagnostics(reason: string = 'inactive'): void {
-    _state.focusThreadDiagnostics = {
+    state.focusThreadDiagnostics = {
         active: false,
         reason,
         edgeCount: 0,
@@ -43,19 +42,21 @@ export function resetFocusThreadDiagnostics(reason: string = 'inactive'): void {
         nextCueSegments: 0,
         denseBundleMode: false,
         buildMs: 0,
-        avgFrameMs: _state.focusFrameDiagnostics?.avgFrameMs || 0,
-        maxFrameMs: _state.focusFrameDiagnostics?.maxFrameMs || 0
+        avgFrameMs: state.focusFrameDiagnostics?.avgFrameMs || 0,
+        maxFrameMs: state.focusFrameDiagnostics?.maxFrameMs || 0
     }
 }
 
 export function removeFocusSemanticOverlay(): void {
-    if (!_state.focusSemanticLines) return
-    const parent = _state.focusSemanticLines.parent || _state.myceliumGroup || _state.scene
-    if (parent) parent.remove(_state.focusSemanticLines)
-    _state.focusSemanticLines.geometry?.dispose?.()
-    _state.focusSemanticLines.material?.dispose?.()
-    _state.focusSemanticLines = null
-    _state.focusSemanticConnectionPairs = []
+    if (!state.focusSemanticLines) return
+    const parent = state.focusSemanticLines.parent || state.myceliumGroup || state.scene
+    if (parent) parent.remove(state.focusSemanticLines)
+    state.focusSemanticLines.geometry?.dispose?.()
+    const mat = state.focusSemanticLines.material
+    if (Array.isArray(mat)) mat.forEach((m) => m.dispose?.())
+    else mat?.dispose?.()
+    state.focusSemanticLines = null
+    state.focusSemanticConnectionPairs = []
 }
 
 function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
@@ -63,8 +64,8 @@ function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
         const point = getFocusThreadCurvePoint(edge, t)
         return new Vector3(point.x, point.y, point.z)
     }
-    const a = _state.nodePositions[edge.a]
-    const b = _state.nodePositions[edge.b]
+    const a = state.nodePositions[edge.a]
+    const b = state.nodePositions[edge.b]
     if (!a || !b) return new Vector3()
     const ax = Number.isFinite(a.x) ? a.x : 0
     const ay = Number.isFinite(a.y) ? a.y : 0
@@ -76,7 +77,7 @@ function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
 }
 
 function buildFocusThreadLineMaterial(): LineMaterial {
-    const baseOpacity = _state.navState.focusPocketMeta?.active ? 0.18 : 0.24
+    const baseOpacity = state.navState.focusPocketMeta?.active ? 0.18 : 0.24
     const lineMaterial = new LineMaterial({
         linewidth: 1.35,
         transparent: true,
@@ -85,8 +86,8 @@ function buildFocusThreadLineMaterial(): LineMaterial {
         depthWrite: false,
         depthTest: false,
         blending: AdditiveBlending
-    } as any)
-    lineMaterial.uniforms.time = { value: performance.now() / 1000 }
+    })
+    ;(lineMaterial as any).uniforms.time = { value: performance.now() / 1000 }
     lineMaterial.uniforms.semanticScore = { value: 0.5 }
     lineMaterial.uniforms.reducedMotion = { value: prefersReducedMotion() ? 1 : 0 }
     lineMaterial.uniforms.denseBundleMode = { value: 0 }
@@ -174,13 +175,17 @@ function buildFocusThreadLineMaterial(): LineMaterial {
 }
 
 function getActiveNextFocusIndex(): number | null {
-    const focusedIndex = Number.isFinite(_state.navState.focusedIndex)
-        ? _state.navState.focusedIndex
-        : getCurrentTrailFocusIndex(_state.navState.focusedIndex ?? null)
+    const focusedIndex = Number.isFinite(state.navState.focusedIndex)
+        ? state.navState.focusedIndex
+        : getCurrentTrailFocusIndex(state.navState.focusedIndex ?? null)
     if (!Number.isFinite(focusedIndex)) return null
-    const candidate = getNextExploreCandidateForIndex(focusedIndex, getNextWalkCandidateForIndex as any, {
-        requireOnCanvas: _state.currentView === 'galaxy'
-    })
+    const candidate = getNextExploreCandidateForIndex(
+        focusedIndex,
+        getNextWalkCandidateForIndex as unknown as Parameters<typeof getNextExploreCandidateForIndex>[1],
+        {
+            requireOnCanvas: state.currentView === 'galaxy'
+        }
+    )
     if (!candidate) return null
     return Number.isFinite(candidate.index) ? candidate.index : null
 }
@@ -190,39 +195,44 @@ export function refreshFocusSemanticOverlay(): void {
     removeFocusSemanticOverlay()
     resetFocusThreadDiagnostics('refreshing')
 
-    const focusLineParent = _state.myceliumGroup || _state.scene
+    const focusLineParent = state.myceliumGroup || state.scene
     if (!focusLineParent) {
         resetFocusThreadDiagnostics('no-mycelium')
         return
     }
-    if (!Number.isFinite(_state.navState.focusedIndex)) {
+    if (!Number.isFinite(state.navState.focusedIndex)) {
         resetFocusThreadDiagnostics('no-focus')
         return
     }
-    if (_state.navState.threadSource !== 'semantic') {
+    if (state.navState.threadSource !== 'semantic') {
         resetFocusThreadDiagnostics('non-semantic-thread')
         return
     }
 
-    const focusIndex = _state.navState.focusedIndex
+    const focusIndexRaw = state.navState.focusedIndex
     const nextFocusIndex = getActiveNextFocusIndex()
+    if (focusIndexRaw === null || focusIndexRaw === undefined) {
+        resetFocusThreadDiagnostics('missing-focused-index')
+        return
+    }
+    const focusIndex: number = focusIndexRaw
     const focusPointAtFocus =
-        Number.isFinite(focusIndex) && focusIndex >= 0 && focusIndex < _state.points.length
-            ? _state.points[focusIndex]
+        Number.isFinite(focusIndex) && focusIndex >= 0 && focusIndex < state.points.length
+            ? state.points[focusIndex]
             : null
     const focusCluster = focusPointAtFocus?.cluster ?? 0
-    const semanticCandidates = (_state.navState.threadCandidates || [])
-        .filter((candidate: ThreadCandidate) => candidate?.source === 'semantic' && candidate.index !== focusIndex)
-        .filter((candidate: ThreadCandidate) =>
-            isPointVisible(candidate.index, _state.points, null, _state.activeFilters)
+    const semanticCandidates = (state.navState.threadCandidates || [])
+        .filter((candidate: ThreadCandidateRef) => candidate?.source === 'semantic' && candidate.index !== focusIndex)
+        .filter((candidate: ThreadCandidateRef) =>
+            isPointVisible(candidate.index, state.points, null, state.activeFilters)
         )
         .slice(0, 10)
     const roleByIndex =
-        _state.navState.focusPocketRoleByIndex instanceof Map ? _state.navState.focusPocketRoleByIndex : new Map()
+        state.navState.focusPocketRoleByIndex instanceof Map ? state.navState.focusPocketRoleByIndex : new Map()
     const roleBudgets: Record<string, number> = { primary: 12, support: 6, halo: 3, trail: 4 }
     const roleOrder: Record<string, number> = { primary: 0, support: 1, halo: 2, trail: 3 }
     const roleCounts: Record<string, number> = { primary: 0, support: 0, halo: 0, trail: 0 }
-    const pocketThreadIndices = (_state.navState.focusPocketIndices || [])
+    const pocketThreadIndices = (state.navState.focusPocketIndices || [])
         .filter((index: number) => Number.isFinite(index) && index !== focusIndex)
         .sort((a: number, b: number) => {
             const roleA = roleByIndex.get(a) || 'trail'
@@ -239,7 +249,7 @@ export function refreshFocusSemanticOverlay(): void {
         })
     const pocketThreadSet = new Set(pocketThreadIndices)
     const stagedSemanticIndices = semanticCandidates
-        .map((candidate: ThreadCandidate) => candidate.index)
+        .map((candidate: ThreadCandidateRef) => candidate.index)
         .filter((index: number) => pocketThreadSet.has(index))
     const overlayIndices = [...new Set([nextFocusIndex, ...pocketThreadIndices, ...stagedSemanticIndices])].filter(
         (index): index is number => Number.isFinite(index) && index !== focusIndex
@@ -258,12 +268,12 @@ export function refreshFocusSemanticOverlay(): void {
     const lane: number[] = []
     const semanticScore: number[] = []
     const localEdgeKeys = new Set<string>()
-    const pocketSet = new Set(_state.navState.focusPocketIndices || [])
-    const focusColor = new Color((CLUSTER_COLORS as any)[focusCluster % (CLUSTER_COLORS as any).length]).lerp(
-        new Color((FOCUS_SEMANTIC_COLORS as any).focusLerp),
+    const pocketSet = new Set(state.navState.focusPocketIndices || [])
+    const focusColor = new Color(CLUSTER_COLORS[focusCluster % CLUSTER_COLORS.length]).lerp(
+        new Color(FOCUS_SEMANTIC_COLORS.focusLerp),
         0.42
     )
-    const cueColor = new Color((FOCUS_SEMANTIC_COLORS as any).cue)
+    const cueColor = new Color(FOCUS_SEMANTIC_COLORS.cue)
     let nextCueSegments = 0
     let directEdgeCount = 0
     let supportEdgeCount = 0
@@ -272,7 +282,7 @@ export function refreshFocusSemanticOverlay(): void {
     const addEdge = (a: number, b: number, role: string = 'direct', edgePriority: number = 0.66): void => {
         const edgeKey = a < b ? `${a}:${b}` : `${b}:${a}`
         if (localEdgeKeys.has(edgeKey)) return
-        if (!_state.nodePositions[a] || !_state.nodePositions[b]) return
+        if (!state.nodePositions[a] || !state.nodePositions[b]) return
         localEdgeKeys.add(edgeKey)
         if (role === 'direct') directEdgeCount += 1
         else supportEdgeCount += 1
@@ -281,10 +291,11 @@ export function refreshFocusSemanticOverlay(): void {
         const isNextEdge =
             Number.isFinite(nextFocusIndex) &&
             ((a === focusIndex && b === nextFocusIndex) || (b === focusIndex && a === nextFocusIndex))
-        const candidateCluster = _state.points[b]?.cluster ?? focusCluster
-        const candidateColor = new Color(
-            (CLUSTER_COLORS as any)[candidateCluster % (CLUSTER_COLORS as any).length]
-        ).lerp(isNextEdge ? cueColor : new Color((FOCUS_SEMANTIC_COLORS as any).candidate), isNextEdge ? 0.58 : 0.24)
+        const candidateCluster = state.points[b]?.cluster ?? focusCluster
+        const candidateColor = new Color(CLUSTER_COLORS[candidateCluster % CLUSTER_COLORS.length]).lerp(
+            isNextEdge ? cueColor : new Color(FOCUS_SEMANTIC_COLORS.candidate),
+            isNextEdge ? 0.58 : 0.24
+        )
         const edge = {
             a,
             b,
@@ -298,11 +309,11 @@ export function refreshFocusSemanticOverlay(): void {
             priority: edgePriority
         }
 
-        for (let segment = 0; segment < _state.FOCUS_THREAD_SEGMENTS; segment += 1) {
-            const t0 = segment / _state.FOCUS_THREAD_SEGMENTS
-            const t1 = (segment + 1) / _state.FOCUS_THREAD_SEGMENTS
+        for (let segment = 0; segment < state.FOCUS_THREAD_SEGMENTS; segment += 1) {
+            const t0 = segment / state.FOCUS_THREAD_SEGMENTS
+            const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS
             const segmentEdge = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
-            _state.focusSemanticConnectionPairs.push(segmentEdge)
+            ;(state.focusSemanticConnectionPairs as unknown as Array<typeof segmentEdge>).push(segmentEdge)
             const p0 = getFocusCurvePointLocal(segmentEdge, t0)
             const p1 = getFocusCurvePointLocal(segmentEdge, t1)
             const c0 = focusColor.clone().lerp(candidateColor, t0)
@@ -373,9 +384,9 @@ export function refreshFocusSemanticOverlay(): void {
         lineMaterial.uniforms.denseBundleMode.value = denseBundleMode
     }
 
-    _state.focusSemanticLines = new Line2(lineGeometry, lineMaterial)
-    _state.focusSemanticLines.computeLineDistances()
-    _state.focusSemanticLines.userData = {
+    state.focusSemanticLines = new Line2(lineGeometry, lineMaterial) as unknown as typeof state.focusSemanticLines
+    state.focusSemanticLines!.computeLineDistances()
+    state.focusSemanticLines!.userData = {
         focusedIndex: focusIndex,
         nextIndex: Number.isFinite(nextFocusIndex) ? nextFocusIndex : null,
         nextCueSegments,
@@ -383,48 +394,56 @@ export function refreshFocusSemanticOverlay(): void {
         directEdgeCount,
         supportEdgeCount,
         subduedEdgeCount,
-        segmentCount: _state.focusSemanticConnectionPairs.length,
+        segmentCount: state.focusSemanticConnectionPairs.length,
         vertexCount: positions.length / 3,
         overlayNodeCount: overlayIndices.length,
-        parentKind: _state.myceliumGroup ? 'mycelium' : 'scene',
+        parentKind: state.myceliumGroup ? 'mycelium' : 'scene',
         denseBundleMode,
         buildMs: performance.now() - startedAt
     }
-    _state.focusFrameDiagnostics = {
+    focusLineParent.add(state.focusSemanticLines as never)
+    state.focusFrameDiagnostics = {
         lastFrameAt: 0,
         sampleCount: 0,
         avgFrameMs: 0,
         maxFrameMs: 0
     }
-    _state.focusThreadDiagnostics = {
+    state.focusThreadDiagnostics = {
         active: true,
         reason: 'built',
         edgeCount: localEdgeKeys.size,
         directEdgeCount,
         supportEdgeCount,
         subduedEdgeCount,
-        segmentCount: _state.focusSemanticConnectionPairs.length,
+        segmentCount: state.focusSemanticConnectionPairs.length,
         vertexCount: positions.length / 3,
         overlayNodeCount: overlayIndices.length,
-        parentKind: _state.myceliumGroup ? 'mycelium' : 'scene',
+        parentKind: state.myceliumGroup ? 'mycelium' : 'scene',
         denseBundleMode: denseBundleMode === 1,
         nextCueSegments,
         buildMs: performance.now() - startedAt,
         avgFrameMs: 0,
         maxFrameMs: 0
     }
-    focusLineParent.add(_state.focusSemanticLines)
+    focusLineParent.add(state.focusSemanticLines as never)
 }
 
 export function updateFocusSemanticOverlayPositions(now: number = performance.now()): void {
-    const line = _state.focusSemanticLines
-    const pairs = _state.focusSemanticConnectionPairs || []
+    const line = state.focusSemanticLines
+    const pairs = (state.focusSemanticConnectionPairs || []) as Array<{
+        t0: number
+        t1: number
+        cue: number
+        a: number
+        b: number
+        layer: number
+    }>
     if (!line?.geometry?.attributes?.instanceStart || !pairs.length) return
     const reducedMotion = prefersReducedMotion()
-    const startAttr = line.geometry.attributes.instanceStart
-    const endAttr = line.geometry.attributes.instanceEnd
+    const startAttr = line.geometry.attributes.instanceStart!
+    const endAttr = line.geometry.attributes.instanceEnd!
     let offset = 0
-    pairs.forEach((edge: { t0: number; t1: number; cue: number; a: number; b: number; layer: number }) => {
+    pairs.forEach((edge) => {
         const p0 = getFocusCurvePointLocal(edge, edge.t0)
         const p1 = getFocusCurvePointLocal(edge, edge.t1)
         startAttr.array[offset] = Number.isFinite(p0.x) ? p0.x : 0
@@ -437,39 +456,40 @@ export function updateFocusSemanticOverlayPositions(now: number = performance.no
     })
     startAttr.needsUpdate = true
     endAttr.needsUpdate = true
-    if (line.material?.userData?.shader) {
-        line.material.userData.shader.uniforms.reducedMotion.value = reducedMotion ? 1 : 0
-        line.material.userData.shader.uniforms.denseBundleMode.value = line.userData?.denseBundleMode ? 1 : 0
+    const mat = line.material as any
+    if (mat?.userData?.shader) {
+        mat.userData.shader.uniforms.reducedMotion.value = reducedMotion ? 1 : 0
+        mat.userData.shader.uniforms.denseBundleMode.value = line.userData?.denseBundleMode ? 1 : 0
         if (!reducedMotion) {
-            line.material.userData.shader.uniforms.time.value = now / 1000
+            mat.userData.shader.uniforms.time.value = now / 1000
         }
     }
-    if (!reducedMotion && line.material?.uniforms?.time) {
-        line.material.uniforms.time.value = now / 1000
+    if (!reducedMotion && mat?.uniforms?.time) {
+        mat.uniforms.time.value = now / 1000
     }
-    if (line.material?.uniforms?.reducedMotion) {
-        line.material.uniforms.reducedMotion.value = reducedMotion ? 1 : 0
+    if (mat?.uniforms?.reducedMotion) {
+        mat.uniforms.reducedMotion.value = reducedMotion ? 1 : 0
     }
-    if (line.material?.uniforms?.denseBundleMode) {
-        line.material.uniforms.denseBundleMode.value = line.userData?.denseBundleMode ? 1 : 0
+    if (mat?.uniforms?.denseBundleMode) {
+        mat.uniforms.denseBundleMode.value = line.userData?.denseBundleMode ? 1 : 0
     }
 }
 
 export function getSemanticFocusCueProbeSnapshot(): Record<string, unknown> {
     return {
-        visible: !!_state.focusSemanticLines && !!_state.focusThreadDiagnostics?.active,
-        threadSource: _state.navState.threadSource || null,
-        focusedIndex: Number.isFinite(_state.navState.focusedIndex) ? _state.navState.focusedIndex : null,
-        nextIndex: Number.isFinite(_state.focusSemanticLines?.userData?.nextIndex)
-            ? _state.focusSemanticLines.userData.nextIndex
+        visible: !!state.focusSemanticLines && !!state.focusThreadDiagnostics?.active,
+        threadSource: state.navState.threadSource || null,
+        focusedIndex: Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : null,
+        nextIndex: Number.isFinite(state.focusSemanticLines?.userData?.nextIndex)
+            ? state.focusSemanticLines!.userData.nextIndex
             : null,
-        lineNextIndex: Number.isFinite(_state.focusSemanticLines?.userData?.nextIndex)
-            ? _state.focusSemanticLines.userData.nextIndex
+        lineNextIndex: Number.isFinite(state.focusSemanticLines?.userData?.nextIndex)
+            ? state.focusSemanticLines!.userData.nextIndex
             : null,
         nextCueSegments:
-            _state.focusSemanticLines?.userData?.nextCueSegments || _state.focusThreadDiagnostics?.nextCueSegments || 0,
-        focusThreadSegments: getLineSegmentCount(_state.focusSemanticLines),
-        threadDiagnostics: { ...(_state.focusThreadDiagnostics || {}) }
+            state.focusSemanticLines?.userData?.nextCueSegments || state.focusThreadDiagnostics?.nextCueSegments || 0,
+        focusThreadSegments: getLineSegmentCount(state.focusSemanticLines),
+        threadDiagnostics: { ...(state.focusThreadDiagnostics || {}) }
     }
 }
 
