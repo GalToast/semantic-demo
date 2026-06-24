@@ -8,6 +8,19 @@
  * in the legacy micro-demo-choreography.js module (port pending).
  *
  * Uses the demoStore for canonical demo state (get(demoPhase)).
+ *
+ * Re-entrancy design (W47 fix):
+ *   The `_startGuardClaimed` flag is owned by the public `startMicroDemo()`
+ *   entry. `_startMicroDemo()` does the actual work and does NOT re-check
+ *   the guard, so the retry setTimeout can re-enter the work loop without
+ *   bouncing off the public guard. The guard is released only at terminal
+ *   exit (success, no-conditions, no-node, out-of-retries) via
+ *   `_releaseStartGuard()`. The retry path intentionally leaves the guard
+ *   claimed so a concurrent UI click sees "start in progress" rather than
+ *   starting a parallel attempt. The previous design released the guard
+ *   inside the setTimeout callback BEFORE the recursive call, which opened
+ *   a 1-2ms race window for a UI click to grab the freed guard and start
+ *   a second demo in parallel.
  */
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
 import { debugWarn } from '@lib/utils/diagnostic-adapter';
@@ -67,6 +80,20 @@ function _clearRetryTimer(): void {
   _startRetryDeadline = 0;
 }
 
+/**
+ * Release the re-entry guard and clear all retry state. Called at every
+ * terminal exit from the start sequence: success, no-conditions terminal,
+ * no-node terminal, out-of-retries terminal, and the catch around
+ * `runDemo(cancelMicroDemo)`. The retry path intentionally does NOT
+ * call this — its setTimeout re-enters _startMicroDemo() directly while
+ * keeping the guard claimed.
+ */
+function _releaseStartGuard(): void {
+  _startGuardClaimed = false;
+  _startRetryDeadline = 0;
+  _clearRetryTimer();
+}
+
 function _getDemoNode(): number | null {
   const points = appState.points as Array<Record<string, unknown>> | undefined;
   if (!points) return null;
@@ -120,31 +147,51 @@ export function shouldRunMicroDemo(): boolean {
   return true;
 }
 
+/**
+ * Public entry. Owns the re-entry guard. A concurrent call (e.g., a UI
+ * click while a retry loop is pending) sees the claimed guard and returns
+ * early — there is already a start attempt in progress.
+ */
 export function startMicroDemo(): void {
-  void _startMicroDemo();
-}
-
-async function _startMicroDemo(): Promise<void> {
-  // Use demo phase from store for re-entrancy check
+  // Phase check first: if a demo is already running or completed this
+  // session, don't even claim the guard.
   const phase = demoPhase();
   if (phase !== 'IDLE') {
     debugWarn('[demo] already active or completed');
     return;
   }
 
-  // Atomic re-entry guard
+  // Re-entry guard: the FIRST public entry claims it; subsequent entries
+  // (including the retry loop's recursive call, which goes to
+  // _startMicroDemo() directly to bypass this check) see it as claimed.
   if (_startGuardClaimed) return;
   _startGuardClaimed = true;
 
+  void _startMicroDemo();
+}
+
+/**
+ * Internal work function. Does NOT re-check the guard (the public
+ * `startMicroDemo()` owns it). The retry setTimeout calls this directly
+ * so the guard stays claimed across the 150ms wait, which prevents a
+ * concurrent UI click from starting a parallel demo.
+ */
+async function _startMicroDemo(): Promise<void> {
   const params = new URLSearchParams(window.location.search);
   const forceDemo = params.get('demo') === 'force';
 
   if (!forceDemo) {
     try {
       const raw = sessionStorage.getItem(SESSION_STORAGE_KEY);
-      if (raw) { _startGuardClaimed = false; return; }
+      if (raw) {
+        _releaseStartGuard();
+        return;
+      }
     } catch { /* sessionStorage unavailable */ }
-    if (!guardNotSeen()) { _startGuardClaimed = false; return; }
+    if (!guardNotSeen()) {
+      _releaseStartGuard();
+      return;
+    }
   }
 
   if (!isAppReadyForDemo()) {
@@ -155,24 +202,29 @@ async function _startMicroDemo(): Promise<void> {
     }
     if (now < _startRetryDeadline && _startRetryCount < MAX_START_RETRIES) {
       _startRetryCount++;
+      // Retry path: schedule the next attempt WITHOUT releasing the guard.
+      // The recursive call goes to _startMicroDemo() directly, bypassing
+      // the public re-entry guard. The guard stays claimed until the
+      // function exits via a terminal path (success, no-conditions,
+      // no-node, or out-of-retries).
       _startRetryTimer = window.setTimeout(() => {
         _startRetryTimer = null;
-        _startGuardClaimed = false;
-        startMicroDemo();
+        void _startMicroDemo();
       }, 150);
       return;
     }
-    _startGuardClaimed = false;
+    // Out of retries: terminal. Release the guard so a future call can start.
     try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-conditions'); } catch { /* ignore */ }
     notifyDemoUnableToStart();
+    _releaseStartGuard();
     return;
   }
 
   const node = _getDemoNode();
   if (node === null) {
-    _startGuardClaimed = false;
     try { sessionStorage.setItem(SESSION_STORAGE_KEY, 'skipped-no-node'); } catch { /* ignore */ }
     notifyDemoUnableToStart();
+    _releaseStartGuard();
     return;
   }
 
@@ -181,13 +233,17 @@ async function _startMicroDemo(): Promise<void> {
   // Update store
   startDemo();
 
-  // Delegate to legacy choreography module via engine bridge
+  // Delegate to legacy choreography module via engine bridge. Wrap in
+  // try/catch so a synchronous throw from the legacy module doesn't leak
+  // the guard (which would block all future start attempts).
   setDemoNodeIndex(node);
-  runDemo(cancelMicroDemo);
+  try {
+    runDemo(cancelMicroDemo);
+  } catch (err) {
+    debugWarn('[demo] runDemo threw:', err);
+  }
 
-  _startGuardClaimed = false;
-  _startRetryDeadline = 0;
-  _clearRetryTimer();
+  _releaseStartGuard();
 }
 
 export function cancelMicroDemo(reason = 'user-input'): void {
