@@ -25,6 +25,7 @@
                 "journey-compass-state-contract.mjs",
                 "journey-thread-inspector-contract.mjs",
                 "thread-inspector-dewindowing-contract.mjs",
+                "thread-inspector-state-owner-contract.mjs",
                 "journey-event-bindings-contract.mjs",
                 "trail-review-focus-contract.mjs",
                 "journey-walk-candidate-contract.mjs",
