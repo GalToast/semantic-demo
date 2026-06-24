@@ -25,7 +25,7 @@ import { chromium } from 'playwright';
 
 const DEFAULT_URL = 'http://127.0.0.1:8813/vector-explorer-polished.html';
 const PORT = 8813;
-const HTML_FILE = path.resolve(process.cwd(), 'vector-explorer-polished.html');
+const HTML_FILE = path.resolve(process.cwd(), 'docs/archive/vector-explorer-polished-legacy.html');
 
 // ---------------------------------------------------------------------------
 // Embedded HTTP server — serves the HTML file only
@@ -37,7 +37,7 @@ function startServer(port) {
       // Strip query string and decode URI; on Windows, path.resolve treats '/foo' as absolute (no drive)
       // so we strip the leading slash to treat it as a relative path from cwd
       const reqPath = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '');
-      const fp = path.resolve(process.cwd(), reqPath === '' ? 'vector-explorer-polished.html' : reqPath);
+      const fp = path.resolve(process.cwd(), reqPath === '' ? 'docs/archive/vector-explorer-polished-legacy.html' : reqPath);
       try {
         const data = fs.readFileSync(fp);
         const ext = path.extname(fp).toLowerCase();

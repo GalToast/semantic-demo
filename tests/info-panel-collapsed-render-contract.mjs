@@ -11,7 +11,7 @@
  * Usage:
  *   node tests/info-panel-collapsed-render-contract.mjs [--url=<url>]
  *
- * Default URL: http://127.0.0.1:8814/vector-explorer-polished.html
+ * Default URL: http://127.0.0.1:8814/docs/archive/vector-explorer-polished-legacy.html
  */
 
 import fs from 'node:fs';
@@ -32,7 +32,7 @@ const cliArgs = process.argv.slice(2);
 const urlArg = cliArgs.find((a) => a.startsWith('--url='));
 const positionalUrl = urlArg
   ? urlArg.slice('--url='.length)
-  : `http://127.0.0.1:${DEFAULT_PORT}/vector-explorer-polished.html`;
+  : `http://127.0.0.1:${DEFAULT_PORT}/docs/archive/vector-explorer-polished-legacy.html`;
 
 // ---------------------------------------------------------------------------
 // Minimal static file server
@@ -44,11 +44,10 @@ function startServer(dir, port) {
       // Parse the URL, removing query strings and decode URI
       const urlPath = decodeURIComponent(req.url.split('?')[0]);
 
-      // Route: serve vector-explorer-polished.html for root
-      // All other paths are served from workspace root
+      // Route: serve docs/archive/vector-explorer-polished-legacy.html for root
       let filePath;
-      if (urlPath === '/' || urlPath === '/vector-explorer-polished.html') {
-        filePath = path.join(dir, 'vector-explorer-polished.html');
+      if (urlPath === '/' || urlPath === '/docs/archive/vector-explorer-polished-legacy.html') {
+        filePath = path.join(dir, 'docs/archive/vector-explorer-polished-legacy.html');
       } else {
         // Remove leading slash and resolve
         const cleanPath = urlPath.replace(/^\//, '');
@@ -170,10 +169,10 @@ async function run() {
   const scriptDir = decodeURIComponent(path.dirname(new URL(import.meta.url).pathname));
   const normalizedScriptDir = scriptDir.replace(/^\/([A-Za-z]):/, '$1:');
   const workspaceRoot = path.resolve(normalizedScriptDir, '..');
-  const htmlPath = path.join(workspaceRoot, 'vector-explorer-polished.html');
+  const htmlPath = path.join(workspaceRoot, 'docs/archive/vector-explorer-polished-legacy.html');
 
   if (!fs.existsSync(htmlPath)) {
-    console.error(`ERROR: vector-explorer-polished.html not found at ${htmlPath}`);
+    console.error(`ERROR: docs/archive/vector-explorer-polished-legacy.html not found at ${htmlPath}`);
     process.exit(1);
   }
 
@@ -189,7 +188,7 @@ async function run() {
     browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
     const page = await makePage(browser);
 
-    const targetUrl = `http://127.0.0.1:${DEFAULT_PORT}/vector-explorer-polished.html`;
+    const targetUrl = `http://127.0.0.1:${DEFAULT_PORT}/docs/archive/vector-explorer-polished-legacy.html`;
     await loadAndWait(page, targetUrl);
 
     // -------------------------------------------------------------------------

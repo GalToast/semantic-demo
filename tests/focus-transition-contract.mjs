@@ -28,7 +28,7 @@ const require = createRequire(import.meta.url);
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.resolve(__dirname, '..');
 const DEFAULT_PORT = 8795;
-const HTML_FILE = 'vector-explorer-polished.html';
+const HTML_FILE = 'docs/archive/vector-explorer-polished-legacy.html';
 
 // ---------------------------------------------------------------------------
 // Embedded HTTP server

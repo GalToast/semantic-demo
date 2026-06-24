@@ -112,16 +112,16 @@ for (const fragment of requiredFragments) {
   }
 }
 
-const shellHtml = read('vector-explorer-polished.html');
+const shellHtml = read('docs/archive/vector-explorer-polished-legacy.html');
 if (!shellHtml.includes('semantic-demo.css')) {
-  failures.push('vector-explorer-polished.html must reference semantic-demo.css');
+  failures.push('docs/archive/vector-explorer-polished-legacy.html must reference semantic-demo.css');
 }
 let loadedSplits = 0;
 for (const file of MOBILE_PREMIUM_SPLIT) {
   if (shellHtml.includes(file)) loadedSplits++;
 }
 if (loadedSplits < MOBILE_PREMIUM_SPLIT.length) {
-  failures.push(`vector-explorer-polished.html must reference all ${MOBILE_PREMIUM_SPLIT.length} mobile_premium split files; found ${loadedSplits}`);
+  failures.push(`docs/archive/vector-explorer-polished-legacy.html must reference all ${MOBILE_PREMIUM_SPLIT.length} mobile_premium split files; found ${loadedSplits}`);
 }
 
 if (failures.length) {

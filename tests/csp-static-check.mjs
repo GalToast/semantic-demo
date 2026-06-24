@@ -28,7 +28,7 @@ const cspRaw = cspMatch[1].replace(/\s+/g, ' ').trim()
 console.log('CSP header found in .htaccess')
 console.log(`Raw:\n  ${cspRaw}\n`)
 
-const html = readFileSync(resolve(ROOT, 'vector-explorer-polished.html'), 'utf-8')
+const html = readFileSync(resolve(ROOT, 'docs/archive/vector-explorer-polished-legacy.html'), 'utf-8')
 
 // Parse directives
 const directives = {}

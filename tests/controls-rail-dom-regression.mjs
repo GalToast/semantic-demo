@@ -2,7 +2,7 @@
  * Regression test for the controls-rail 3-control overlap fix.
  *
  * Bug: The HTML wrapper `<div class="controls controls-rail" data-controls-rail>`
- *      was lost from vector-explorer-polished.html via a `git reset HEAD^`
+ *      was lost from the legacy shell (docs/archive/vector-explorer-polished-legacy.html) via a `git reset HEAD^`
  *      operation. With no parent, the 3 controls (#view-toggle, #info-controls,
  *      #camera-controls) all anchored to the same `position: fixed; right: 16px;
  *      bottom: 16px` and stacked on top of each other.

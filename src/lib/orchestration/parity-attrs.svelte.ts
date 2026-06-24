@@ -2,7 +2,7 @@
  * @lib/orchestration/parity-attrs.svelte.ts
  *
  * Single source of truth for the body DOM state that the legacy
- * production shell (vector-explorer-polished.html) requires: body
+ * production shell (archived at docs/archive/vector-explorer-polished-legacy.html) requires: body
  * data-* attributes (focus-search, journey-compass, semantic-dive,
  * navigation, viewport, filter, etc.) AND the body classes that
  * gate mobile CSS rules (`is-active` is the main one — see

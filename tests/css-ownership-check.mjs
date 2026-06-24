@@ -13,7 +13,7 @@ import path from 'node:path';
 const cssDir = path.resolve(process.cwd(), 'css');
 
 // The app shell loads the double-underscore mobile premium split directly.
-// Keep this baseline aligned with vector-explorer-polished.html so selector
+// Keep this baseline aligned with the legacy shell (docs/archive/vector-explorer-polished-legacy.html) so selector
 // counts describe the loaded cascade instead of the deleted collapsed file.
 const selectorBaselines = {
   '.close-icon': {

@@ -4,7 +4,7 @@ import path from 'node:path'
 const root = process.cwd()
 const sourceShell = 'src/index.html'
 const productionShell = 'dist/svelte/index.html'
-const legacyShell = 'vector-explorer-polished.html'
+const legacyShell = 'docs/archive/vector-explorer-polished-legacy.html'
 const frontDoor = 'index.html'
 const failures = []
 
@@ -182,7 +182,7 @@ if (failures.length) {
 
 console.log('Semantic demo shell contract OK: src/index.html -> dist/svelte/index.html is the production app shell.')
 console.log('')
-console.log("QA NOTE: The repo's vector-explorer-polished.html is a LEGACY REFERENCE shell (loads dist/bundle.js).")
+console.log("QA NOTE: The archived docs/archive/vector-explorer-polished-legacy.html is a LEGACY REFERENCE shell (loads dist/bundle.js).")
 console.log(
     'The DEPLOYED vector-explorer-polished.html is the SAME as dist/svelte/index.html (Svelte production shell).'
 )
