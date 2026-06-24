@@ -107,6 +107,72 @@ session-lock is independent and complementary:
 The hook does **not** read the session-lock — we don't want a stale lock to
 block commits. The lock is purely advisory.
 
+## The test-strategy gap — why journey tests come first
+
+Contract tests (1,135/1,135 passing) catch the things they cover. They
+do not cover **user-visible behavior** the way a real user experiences
+it. This is the "test strategy gap":
+
+1. A feature ships (e.g., the weather widget in W45–W46).
+2. Contract tests pass. CI is green.
+3. A UX critique sweep — done by a session using Playwright MCP —
+   finds 4 real bugs:
+   - The desktop branch in `App.svelte:470` was missing `onSceneReady`,
+     so the weather widget never mounted
+   - The pill at y=105 was hidden behind the legend button at y=117
+     (z-index 50 vs 100), so clicks were eaten
+   - The FORECAST row had `text-overflow: ellipsis` with
+     `max-width: 130px`, truncating the value
+   - `fetchWeather` was a `Math.random()` stub, not the canonical
+     Open-Meteo client
+
+The 4 bugs all shipped despite 1,135/1,135 contract tests passing. The
+root cause: contract tests assert on state shapes and function
+contracts, not on what the user can see and click.
+
+**Rule:** for any user-visible feature (one that touches a Svelte
+component, the desktop/mobile mount branches, or any DOM the user
+interacts with), the merge must include **at least one journey test**
+in `tests/widget-journey.spec.js` (or a similar user-journey spec). A
+journey test exercises the feature end-to-end through Playwright,
+asserting on what the user actually sees — pill geometry, click-through,
+console errors, focus behavior. Contract tests are not a substitute.
+
+### When a journey test is required
+
+Add a journey test when the feature:
+
+- Adds a new UI element (button, pill, panel, modal, toast)
+- Changes the z-index, click-target geometry, or focus order of an
+  existing element
+- Replaces a stub or mock with a real implementation (e.g., the
+  weather `Math.random()` → Open-Meteo wiring)
+- Adds a keyboard shortcut, focus behavior, or a11y semantic
+- Touches a high-reversion-risk CSS file (the pre-commit hook's
+  warning list)
+
+If the change is purely internal (a refactor, a renamed function, a
+new helper), no journey test is needed. If in doubt, write the journey
+test — it is cheap, and the user is the first to notice when it fails.
+
+### Pattern
+
+`tests/widget-journey.spec.js` is the canonical pattern. Each test:
+
+1. Boots the dev server (or uses `TEST_BASE_URL`)
+2. Navigates to the page
+3. Waits for the feature to be ready (no fixed `setTimeout` — wait for
+   the visible state)
+4. Asserts on visible state (temperature, pill geometry, focus, etc.)
+5. Asserts on console errors (the user is the first to notice JS
+   exceptions)
+6. Cleans up
+
+`npm run qa:journey:headless` runs all 10 tests against a running dev
+server. The 10 tests in `widget-journey.spec.js` were written **after**
+the W46 sweep found 4 weather-widget bugs. The right time to have
+written them was **before** the weather widget feature merged.
+
 ## Future work
 
 - **Worktree-based isolation**: each session gets its own worktree
