@@ -14,6 +14,7 @@
 -->
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
+  import { get } from 'svelte/store';
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
@@ -426,7 +427,27 @@
     navSurface.startsWith('map-')
   );
 
-  // Lazy-import Canvas module when the gesture gate flips to true.
+  // Reactive panel cleanup: close panels that don't belong in the current view
+  // (W46-C2b: reduces panel stacking clutter in search/trail/focus/inside/map)
+  $effect(() => {
+    const surface = navSurface;
+    const mode = navMode;
+
+    // Close legend when entering search, trail, focus, inside, or map modes
+    // The legend is only relevant in idle/overview and info-panel states
+    if (
+      surface === 'search' ||
+      surface === 'focus-search' ||
+      mode === 'trail' ||
+      mode === 'focus' ||
+      mode === 'inside' ||
+      navView === 'map'
+    ) {
+      if (get(legendOpen)) {
+        setLegendOpen(false);
+      }
+    }
+  });
   // W6-T2: keeps Three.js + postprocessing out of the cold-load bundle.
   $effect(() => canvasLazy.ensure(engineReady.value));
 
