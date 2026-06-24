@@ -33,6 +33,7 @@ import type {
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
+import type { SemanticNeighborEntry } from '@lib/types/business'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
@@ -499,7 +500,7 @@ class AppState {
     pocketTransitionStartedAt = $state<number>(0)
     infoPanelOpen = $state<boolean>(true)
     pocketListVisible = $state<boolean>(false)
-    semanticNeighborMapByLeadId = $state<Map<string, any>>(new Map())
+    semanticNeighborMapByLeadId = $state<Map<string, SemanticNeighborEntry>>(new Map())
     semanticThreadBundle = $state<unknown>(null)
     semanticThreadArtifactName = $state<string | null>(null)
 

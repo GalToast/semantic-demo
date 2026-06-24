@@ -2,9 +2,10 @@
  * focus-ui — typing contract test
  *
  * Lock-in: ensures the W47-Bite-E type-safety tightening pass on
- * src/lib/journey/focus-ui.ts does not regress.
+ * src/lib/journey/focus-ui.ts does not regress, AND the W48 Phase 2
+ * state-class cascade that further reduced the count.
  *
- * What got tightened (20 → 13 `any` occurrences):
+ * What got tightened (20 → 13 `any` occurrences in W47-Bite-E):
  *   - Removed 7× `(document.body as any)?.dataset?.X` casts in
  *     `shouldUseSingleNeighborFocusRail` (3 sites),
  *     `shouldSuppressSelectedBusinessNeighborRail` (3 sites), and
@@ -13,6 +14,15 @@
  *     typed as `DOMStringMap | undefined` and `document.body` is
  *     `HTMLElement | null`. The optional chain `document.body?.dataset?.X`
  *     gives the same runtime safety with proper typing.
+ *
+ * W48 Phase 2 cascade (13 → 11 `any` occurrences):
+ *   - Tightened `appState.semanticNeighborMapByLeadId` from
+ *     `Map<string, any>` to `Map<string, SemanticNeighborEntry>` in
+ *     src/lib/state/app.svelte.ts (see commit ac9bf69f + W48 Phase 2).
+ *   - As a result, `state.semanticNeighborMapByLeadId.get(leadId)`
+ *     is now `SemanticNeighborEntry | undefined` instead of `any`,
+ *     letting 2× `as any` casts on the record's field accesses be
+ *     dropped from this file.
  *
  * Deferred (documented for future bites):
  *   - `(candidate: any)` callbacks at L141, L142, L164: need a
@@ -26,7 +36,7 @@
  *   - File-level escape hatch at L32: matches the W47 project pattern.
  *
  * What this guards:
- *   1. any count is exactly 13 (post-Bite-E baseline)
+ *   1. any count is exactly 11 (post-W48-Phase-2 baseline; was 13)
  *   2. No `(document.body as any)?.dataset?.X` casts remain
  *   3. The 3 functions that previously had the cast use the typed
  *      `document.body?.dataset?.X` pattern instead
@@ -48,21 +58,21 @@ function readSource(): string {
 }
 
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('focus-ui — typing contract (W47-Bite-E tightening)', () => {
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 13 (post-Bite-E baseline; was 20)', () => {
+    it('any occurrence count is 11 (post-W48-Phase-2 baseline; was 13)', () => {
         const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // 13 = post-Bite-E baseline. If a future contributor adds a
+        // 11 = post-W48-Phase-2 baseline (was 13 after W47-Bite-E; the
+        // 2 reduction came from the state.semanticNeighborMapByLeadId
+        // cascade — see file header). If a future contributor adds a
         // new any, this test fails and forces them to either tighten
         // or update the documented baseline.
-        expect(matches.length).toBe(13)
+        expect(matches.length).toBe(11)
     })
 
     it('no `(document.body as any)?.dataset?.X` casts remain', () => {

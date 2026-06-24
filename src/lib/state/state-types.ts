@@ -13,6 +13,7 @@
  */
 
 import type { WebGLContextState } from '@lib/engine/webgl-context'
+import type { SemanticNeighborEntry } from '@lib/types/business'
 
 export interface Vector3Like {
     x: number
@@ -539,7 +540,7 @@ export interface SemanticState extends StateConfig {
     semanticSpaceLayoutManifest: unknown
     semanticSpaceLayoutStatus: string
     semanticSpaceLayoutError: string | null
-    semanticNeighborMapByLeadId: Map<string, SemanticNode>
+    semanticNeighborMapByLeadId: Map<string, SemanticNeighborEntry>
     semanticThreadsLoadPromise: Promise<unknown> | null
     semanticThreadsStatus: string
     semanticThreadsRetryAttempt: number
