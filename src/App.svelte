@@ -15,14 +15,13 @@
 <script lang="ts">
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
-  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
   import { resetSemanticThreadWorker } from '@lib/semantic-threads';
   import { appState } from '@lib/state/app.svelte.ts';
   import { teardownAppShell } from '@lib/orchestration/app-init';
-  import { updateUrlState } from '@lib/orchestration/url-state';
-  import { showKeyboardShortcutsHint, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
+  import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
 
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
@@ -226,81 +225,17 @@
   });
 
   // ── Global keyboard shortcuts ──────────────────────────────────────────────
-  // P1: `/` focuses the search input; `Esc` clears it when focused.
-  $effect(() => {
-    function handleGlobalKeydown(e: KeyboardEvent): void {
-      const target = e.target as HTMLElement;
-      const tag = target?.tagName?.toLowerCase();
-      const isFormField = tag === 'input' || tag === 'textarea' || tag === 'select'
-        || target?.isContentEditable === true;
-
-      // A2-4: Ctrl/Cmd+1-6 keyboard shortcuts for mode switching.
-      // Fires before all other handlers so shortcuts are never masked.
-      if ((e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)) {
-        if (isFormField) return;
-        e.preventDefault();
-        switch (e.key) {
-          case '1': dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW); break;
-          case '2': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' }); break;
-          case '3': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any }); break;
-          case '4': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' }); break;
-          case '5': dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' }); break;
-          case '6':
-            dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
-            dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
-            break;
-        }
-        return;
-      }
-
-      if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
-        e.preventDefault();
-        document.getElementById('search-input')?.focus();
-        return;
-      }
-
-      // A2-7: `?` keybinding opens the keyboard shortcuts overlay.
-      // Was missing from the Svelte port — Round 2/3 QA flagged it.
-      // Ensure the panel DOM is created (idempotent), then show it.
-      if ((e.key === '?' || (e.key === '/' && e.shiftKey)) && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
-        e.preventDefault();
-        initKeyboardShortcutsHint();
-        showKeyboardShortcutsHint();
-        return;
-      }
-
-      if (e.key === 'w' && !e.metaKey && !e.ctrlKey && !e.altKey && !isFormField) {
-        e.preventDefault();
-        weatherVisible = !weatherVisible;
-        return;
-      }
-
-      if (e.key === 'Escape') {
-        // A2-4: Escape always returns to Overview from any non-idle mode.
-        // If the search input is focused, clear its text as a side effect.
-        // Visual QA Round 3 found that without `preventDefault()` the
-        // browser's default back-nav fires AFTER the handler and overwrites
-        // the page to about:blank. preventDefault() here preserves the
-        // app-side return-to-overview behavior.
-        e.preventDefault();
-        const searchInput = document.getElementById('search-input') as HTMLInputElement | null;
-        if (searchInput) {
-          searchInput.value = '';
-          searchInput.dispatchEvent(new Event('input', { bubbles: true }));
-        }
-        const { mode, surface } = navStore();
-        if (mode !== 'overview' || surface !== 'idle') { // audit-ok: plain Ln() callback, not transformed
-          dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-          // A2-7: after returning to overview, sync the URL to reflect
-          // the galaxy view so the back button works correctly.
-          updateUrlState({}, { reason: 'return-overview' });
-        }
-      }
+  // W46-B3: handler extracted to src/lib/keyboard/global-shortcuts.ts so the
+  // keyboard concern has a single source of truth. App.svelte wires the
+  // callbacks that toggle weather visibility and audio mute.
+  $effect(() => setupGlobalShortcuts({
+    toggleWeather: () => { weatherVisible = !weatherVisible },
+    toggleAudioMute: () => {
+      import('@lib/audio/audio-scape')
+        .then(({ setAudioMuted, isAudioMuted }) => setAudioMuted(!isAudioMuted()))
+        .catch(() => {})
     }
-
-    window.addEventListener('keydown', handleGlobalKeydown);
-    return () => window.removeEventListener('keydown', handleGlobalKeydown);
-  });
+  }));
 
   // The parity-attrs installer is the single source of truth for all body
   // data-* attributes.  All pre-parity $effect blocks that previously lived
