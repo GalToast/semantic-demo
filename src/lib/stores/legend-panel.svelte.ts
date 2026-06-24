@@ -92,7 +92,7 @@ export function buildLegend(): void {
         .sort((a, b) => b[1] - a[1] || a[0] - b[0])
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const guide = appState.currentSemanticGuide as Record<string, any> | null
+    const guide = appState.semanticGuideState.config as Record<string, any> | null
     const guideTitle = guide ? getSemanticGuideTitle(guide) : 'Read the scene'
     const guideNote: string =
         (guide?.text as string) ||
@@ -217,7 +217,7 @@ export function buildLegend(): void {
 
 export function updateLegendGuideState(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const guide = appState.currentSemanticGuide as Record<string, any> | null
+    const guide = appState.semanticGuideState.config as Record<string, any> | null
     if (!guide) {
         if (isLegendPanelOpen()) closeLegendPanel()
         return

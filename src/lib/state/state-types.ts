@@ -631,7 +631,17 @@ export interface SemanticState extends StateConfig {
     semanticGuideRequestSequence: number
     semanticTrailStoryAbortController: AbortController | null
     semanticTrailStoryRequestSequence: number
-    currentSemanticGuide: unknown
+    /**
+ * Plain-text semantic guide payload. Distinct from GuideConfig (object shape
+ * with .title/.text/.suggestions) — this field is the source of truth for
+ * the simple text-only guide state set by setSemanticGuide(text).
+ *
+ * GuideConfig objects belong in appState.semanticGuideState.config — see
+ * showSummaryCard() in semantic-guide.ts. Mixing the two shapes here caused
+ * a latent dual-write bug (W48 fix in currentSemanticGuide-locked-test
+ * shipped the reconciliation).
+ */
+currentSemanticGuide: string | null
     summaryCardTypeToken: number
     autoRotateResumeTimer: ReturnType<typeof setTimeout> | null
     autoRotateResumeDueAt: number

@@ -65,11 +65,14 @@ interface SemanticGuidePayload {
 
 function getMostFrequent(values: Array<string | undefined | null>): string | null {
     if (!values?.length) return null
-    const counts: Record<string, number> = values.reduce((acc: Record<string, number>, value: string | undefined | null) => {
-        if (!value) return acc
-        acc[value] = (acc[value] || 0) + 1
-        return acc
-    }, {})
+    const counts: Record<string, number> = values.reduce(
+        (acc: Record<string, number>, value: string | undefined | null) => {
+            if (!value) return acc
+            acc[value] = (acc[value] || 0) + 1
+            return acc
+        },
+        {}
+    )
     return Object.keys(counts).reduce((a, b) => ((counts[a] ?? 0) > (counts[b] ?? 0) ? a : b))
 }
 
@@ -186,7 +189,6 @@ function normalizeSummaryCardConfig(config: GuideConfig | string = {}): GuideCon
 
 export function showSummaryCard(config: GuideConfig | string = {}): void {
     const settings = normalizeSummaryCardConfig(config)
-    appState.currentSemanticGuide = settings as unknown as string | null
     appState.summaryCardTypeToken = (appState.summaryCardTypeToken || 0) + 1
 
     appState.semanticGuideState.isVisible = true
@@ -213,7 +215,10 @@ function getSemanticGuideTimeoutMs(): number {
     return 30000
 }
 
-async function fetchSemanticGuide(payload: SemanticGuideRequestPayload, signal: AbortSignal | undefined): Promise<unknown> {
+async function fetchSemanticGuide(
+    payload: SemanticGuideRequestPayload,
+    signal: AbortSignal | undefined
+): Promise<unknown> {
     const timeoutController = new AbortController()
     let timedOut = false
     const timeoutMs = getSemanticGuideTimeoutMs()
