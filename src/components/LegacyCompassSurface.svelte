@@ -42,7 +42,7 @@
   import {
     getJourneyCompassState,
     type CompassStateContext
-  } from '@lib/orchestration/compass-state';
+  } from '@lib/journey/compass-state';
   import {
     getJourneyCompassPresentationState,
     executeJourneyCompassAction,

@@ -25,7 +25,7 @@ import {
 import { searchStore } from '@lib/stores/search.svelte'
 import { focusStore, setSemanticDiveMode as setFocusDiveMode, setSelectedBusiness } from '@lib/stores/focus.svelte.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { getFocusedJourneyPoint, getJourneyCompassState, JOURNEY_ACTIONS } from '@lib/orchestration/compass-state'
+import { getFocusedJourneyPoint, getJourneyCompassState, JOURNEY_ACTIONS } from '@lib/journey/compass-state'
 import {
     executeJourneyCompassAction,
     updateJourneyCompass,

@@ -165,7 +165,7 @@ vi.mock('@lib/data-store', () => ({
     }
 }))
 
-vi.mock('@lib/orchestration/compass-state', () => ({
+vi.mock('@lib/journey/compass-state', () => ({
     getJourneyCompassState: () => _compassState
 }))
 

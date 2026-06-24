@@ -368,40 +368,48 @@ describe('W46-C3: event-bus.ts contract', () => {
 // compass-state.ts — 285 lines, 3 functions + interfaces
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: compass-state.ts contract', () => {
+describe('W46-C3: compass-state.ts contract (journey/ canonical)', () => {
     const file = 'compass-state.ts'
-    it('exports CompassStateContext interface', () => {
-        const block = src(file).match(/export\s+interface\s+CompassStateContext\s*\{[\s\S]*?\n\s{2}\}/)
-        expect(block).not.toBeNull()
-        expect(block![0]).toBeTruthy()
+    // Override ORCH path: compass-state.ts is now the journey/ canonical
+    // (W46-T3 migration). The legacy orchestration/ stub will be deleted
+    // in the W46-T3-cleanup commit.
+    const journeySrc = (f: string) => readFileSync(resolve(import.meta.dirname, `../../src/lib/journey/${f}`), 'utf-8')
+
+    it('exports CompassState interface (CompassStateContext is an alias)', () => {
+        const s = journeySrc(file)
+        // journey/ defines CompassState as the primary interface, with
+        // CompassStateContext exported as a back-compat type alias for
+        // legacy orchestration/compass-state consumers.
+        expect(s).toMatch(/export\s+interface\s+CompassState\s*\{/)
+        expect(s).toMatch(/export\s+type\s+CompassStateContext\s*=\s*CompassState/)
     })
 
-    it('re-exports JOURNEY_ACTIONS, CompassStatus, CompassAction types from compass store', () => {
-        const s = src(file)
-        // Re-exports can be combined (e.g. `export type { A, B, C }`), so just
-        // assert each name appears inside an export block rather than
-        // requiring each on its own line.
-        expect(s).toMatch(/export\s*\{\s*[^}]*\bJOURNEY_ACTIONS\b[^}]*\}/)
+    it('exports JOURNEY_ACTIONS, CompassAction, CompassStatus, JourneyAction', () => {
+        const s = journeySrc(file)
+        // journey/ defines JOURNEY_ACTIONS inline (Object.freeze) and
+        // CompassAction as an interface, then re-exports CompassStatus
+        // and JourneyAction from the compass store.
+        expect(s).toMatch(/export\s+const\s+JOURNEY_ACTIONS\b/)
+        expect(s).toMatch(/export\s+interface\s+CompassAction\s*\{/)
         expect(s).toMatch(/export\s+type\s*\{[^}]*\bCompassStatus\b[^}]*\}/)
-        expect(s).toMatch(/export\s+type\s*\{[^}]*\bCompassAction\b[^}]*\}/)
         expect(s).toMatch(/export\s+type\s*\{[^}]*\bJourneyAction\b[^}]*\}/)
     })
 
     it('exports registerRouteEmbodimentReader, getFocusedJourneyPoint, getJourneyCompassState', () => {
-        const s = src(file)
+        const s = journeySrc(file)
         expect(s).toMatch(/export\s+function\s+registerRouteEmbodimentReader\s*\(/)
         expect(s).toMatch(/export\s+function\s+getFocusedJourneyPoint\s*\(/)
         expect(s).toMatch(/export\s+function\s+getJourneyCompassState\s*\(/)
     })
 
     it('runtime: getFocusedJourneyPoint returns null or object', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await import(`../../src/lib/journey/${file}`)
         const point = mod.getFocusedJourneyPoint()
         expect(point === null || typeof point === 'object').toBe(true)
     })
 
-    it('runtime: getJourneyCompassState returns CompassStateContext shape', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+    it('runtime: getJourneyCompassState returns CompassState shape', async () => {
+        const mod = await import(`../../src/lib/journey/${file}`)
         const state = mod.getJourneyCompassState()
         expect(state).toBeDefined()
         expect(typeof state).toBe('object')

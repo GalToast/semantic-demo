@@ -29,7 +29,7 @@ import {
   getJourneyCompassState,
   getFocusedJourneyPoint,
   type CompassStateContext
-} from './compass-state';
+} from '@lib/journey/compass-state';
 import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
 import type { PanelSurface } from '@lib/types/state';
 

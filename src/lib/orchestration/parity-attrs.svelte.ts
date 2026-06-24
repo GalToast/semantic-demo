@@ -30,7 +30,7 @@ import { cameraStore } from '@lib/stores/camera.svelte'
 import { demoStore, demoPhase as demoPhaseGetter } from '@lib/stores/demo.svelte'
 import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
-import { getJourneyCompassState } from './compass-state'
+import { getJourneyCompassState } from '@lib/journey/compass-state'
 import { getJourneyCompassPresentationState, type CompassPresentationState } from './compass-controller'
 import type { LoadingPhase } from '@lib/types/state'
 
