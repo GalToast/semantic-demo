@@ -163,7 +163,7 @@ export function initJourneyState(): void {
         state.bridgeScores ??= []
         state.semanticDiveMode ??= false
         state.focusPocketTransitionStartedAt ??= 0
-        state.focusPocketMotionByIndex ??= new Map()
+        state.pocketMotionByIndex ??= new Map()
     })
 }
 

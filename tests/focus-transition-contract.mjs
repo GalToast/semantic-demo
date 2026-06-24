@@ -270,19 +270,19 @@ async function auditNodeGrouping(page) {
             }
         }
 
-        // Check 2: focusPocketMotionByIndex holds animation metadata per node
-        if (s.focusPocketMotionByIndex instanceof Map) {
-            passes.push(`focusPocketMotionByIndex has ${s.focusPocketMotionByIndex.size} entries`)
-            for (const [idx, motion] of s.focusPocketMotionByIndex) {
+        // Check 2: pocketMotionByIndex holds animation metadata per node
+        if (s.pocketMotionByIndex instanceof Map) {
+            passes.push(`pocketMotionByIndex has ${s.pocketMotionByIndex.size} entries`)
+            for (const [idx, motion] of s.pocketMotionByIndex) {
                 if (motion.role === undefined) {
-                    failures.push(`focusPocketMotionByIndex[${idx}] missing role`)
+                    failures.push(`pocketMotionByIndex[${idx}] missing role`)
                 }
                 if (typeof motion.duration !== 'number' || motion.duration <= 0) {
-                    failures.push(`focusPocketMotionByIndex[${idx}] has invalid duration=${motion.duration}`)
+                    failures.push(`pocketMotionByIndex[${idx}] has invalid duration=${motion.duration}`)
                 }
             }
         } else {
-            failures.push('focusPocketMotionByIndex is not a Map')
+            failures.push('pocketMotionByIndex is not a Map')
         }
 
         // Check 3: nodesAreSettling flag reflects transition state

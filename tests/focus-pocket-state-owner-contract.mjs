@@ -75,7 +75,7 @@ function isInsideOwnerApi(file, offset) {
 
 for (const file of listJsFiles(MODULES_DIR)) {
     const fileSource = readFileSync(file, 'utf8');
-    const directWrite = /state\.navState\.focusPocket(?:Indices|Meta|RoleByIndex)\s*=|state\.focusPocketMotionByIndex\s*=|state\.navState\.focusPocketRoleByIndex\.set\(|state\.focusPocketMotionByIndex\.set\(/g;
+    const directWrite = /state\.navState\.focusPocket(?:Indices|Meta|RoleByIndex)\s*=|state\.pocketMotionByIndex\s*=|state\.navState\.focusPocketRoleByIndex\.set\(|state\.pocketMotionByIndex\.set\(/g;
     let match;
 
     while ((match = directWrite.exec(fileSource)) !== null) {

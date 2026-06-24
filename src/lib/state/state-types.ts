@@ -16,6 +16,7 @@ import type { WebGLContextState } from '@lib/engine/webgl-context'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
+import type { PocketMotionWithFrame } from '@lib/types/state'
 
 /**
  * Structural type for Leaflet map layer objects (L.Map, L.LayerGroup).
@@ -266,6 +267,7 @@ export interface FocusThreadDiagnostics {
     overlayNodeCount: number
     nextCueSegments: number
     denseBundleMode: boolean
+    parentKind?: 'mycelium' | 'scene'
     buildMs: number
     avgFrameMs: number
     maxFrameMs: number
@@ -674,7 +676,7 @@ export interface SemanticState extends StateConfig {
     focusCameraAssistReason: string
     focusCameraOffset: Vector3Like | null
     focusCameraTargetOffset: Vector3Like | null
-    focusPocketMotionByIndex: Map<number, unknown>
+    pocketMotionByIndex: Map<number, PocketMotionWithFrame>
     focusPocketTransitionStartedAt: number
     focusLens: WebGLContextState['focusLens']
     focusHalo: WebGLContextState['focusHalo']
