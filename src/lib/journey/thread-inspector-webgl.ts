@@ -238,7 +238,7 @@ export function updateInspectedStrandEndpointSprites(): void {
     })
 }
 
-export function syncInspectedStrandOverlay(inspectionState: InspectionState, options: { surface?: string } = {}): void {
+export function syncInspectedStrandOverlay(inspectionState: InspectionState | null, options: { surface?: string } = {}): void {
     const currentView = getCurrentView()
     const scene = getScene()
     const nodePos = getNodePositions()

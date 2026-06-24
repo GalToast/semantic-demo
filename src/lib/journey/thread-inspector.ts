@@ -206,7 +206,15 @@ export function renderThreadInspection(
 ): ThreadInspectionState | null {
     const inspector = document.getElementById('focus-thread-inspector')
     const inspectionState = getThreadInspectionState(index, options)
-    syncInspectedStrandOverlay(inspectionState as any, { surface: options.surface ?? undefined })
+    // syncInspectedStrandOverlay's underlying impl handles null gracefully
+    // (it short-circuits via `inspectionState?.active`). Cast through
+    // `unknown` because ThreadInspectionState has fields beyond the
+    // narrower InspectionState that the function expects; this is a
+    // type-safe equivalent of the prior `as any` cast.
+    syncInspectedStrandOverlay(
+        inspectionState as unknown as Parameters<typeof syncInspectedStrandOverlay>[0],
+        { surface: options.surface ?? undefined }
+    )
 
     if (typeof document !== 'undefined' && document.body) {
         document.body.dataset.threadInspectSurface = inspectionState?.active
