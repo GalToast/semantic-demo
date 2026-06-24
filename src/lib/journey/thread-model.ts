@@ -136,7 +136,7 @@ export function buildProjectedNeighborGrid(): SpatialGrid {
 	if (state.projectedNeighborGrid) {
 		return state.projectedNeighborGrid as unknown as SpatialGrid;
 	}
-	state.projectedNeighborGrid = buildSpatialGrid(0.12) as unknown as any;
+	state.projectedNeighborGrid = buildSpatialGrid(0.12);
 	return state.projectedNeighborGrid as unknown as SpatialGrid;
 }
 
@@ -262,14 +262,14 @@ export function getProjectedNeighborCandidates(
 					if (!Number.isFinite(ox) || !Number.isFinite(oy) || !Number.isFinite(oz)) continue;
 					const dist = Math.hypot(ox - origin.x, oy - origin.y, oz - origin.z);
 					if (!Number.isFinite(dist)) continue;
-					const selfCity = (points[index] as any)?.city;
-					const otherCity = (points[otherIndex] as any)?.city;
+					const selfCity = points[index]?.city;
+					const otherCity = points[otherIndex]?.city;
 					let score = 1 / Math.max(dist, 0.0001);
 					if (normalizeCityForFilter(otherCity) === normalizeCityForFilter(selfCity)) score += 0.9;
 					score += getNumericAt(state.signalScores as number[], otherIndex) * 0.12;
 					score += getNumericAt(state.bridgeScores as number[], otherIndex) * 0.08;
-					const selfCluster = (points[index] as any)?.cluster;
-					const otherCluster = (points[otherIndex] as any)?.cluster;
+					const selfCluster = points[index]?.cluster;
+					const otherCluster = points[otherIndex]?.cluster;
 					if (otherCluster === selfCluster && Number.isFinite(selfCluster)) score += 0.45;
 
 					candidates.push({ index: otherIndex, score, dist });
@@ -362,14 +362,14 @@ export function getSemanticThreadCandidates(
 	// Legacy path — read from state
 	if (!Number.isFinite(index) || index < 0 || index >= state.points.length) return [];
 	const point = state.points[index];
-	const leadId = normalizeLeadId((point as any)?.lead_id);
+	const leadId = normalizeLeadId(point?.lead_id);
 	if (!leadId) return [];
 
 	const threadNode = (state.semanticNeighborMapByLeadId as Map<string, any>).get(leadId);
 	if (!threadNode?.neighbors?.length) return [];
 
-	return (threadNode.neighbors as any[])
-		.map((neighbor: any) => {
+	return threadNode.neighbors
+		.map((neighbor: { leadId: string; score?: number; semanticScore?: number; sameCity?: boolean; sameStatus?: boolean; bridgeScore?: number; signalScore?: number; threadType?: string; relationshipRole?: string; relationshipAxis?: string; roleReason?: string; reason?: string }) => {
 			const candidateIndex = (state.pointIndexByLeadId as Map<string, number>).get(neighbor.leadId);
 			if (candidateIndex === undefined || candidateIndex === index) return null;
 
@@ -389,7 +389,7 @@ export function getSemanticThreadCandidates(
 				source: 'semantic'
 			};
 		})
-		.filter((c): c is ThreadCandidate => c !== null);
+		.filter((c: ThreadCandidate | null): c is ThreadCandidate => c !== null);
 }
 
 /* ── getGeometricThreadCandidates ───────────────────────────────────────── */
@@ -436,14 +436,14 @@ export function getGeometricThreadCandidates(
 
 	// Legacy path — read from state
 	if (!Number.isFinite(index) || index < 0 || index >= state.points.length) return [];
-	const selfCity = normalizeCityForFilter((state.points[index] as any)?.city);
-	const selfStatus = (state.points[index] as any)?.status || 'active';
+	const selfCity = normalizeCityForFilter(state.points[index]?.city);
+	const selfStatus = state.points[index]?.status || 'active';
 	return getProjectedNeighborCandidates(index).map((candidateIndex) => ({
 		index: candidateIndex,
 		score: 0,
 		semanticScore: 0,
-		sameCity: normalizeCityForFilter((state.points[candidateIndex] as any)?.city) === selfCity,
-		sameStatus: ((state.points[candidateIndex] as any)?.status || 'active') === selfStatus,
+		sameCity: normalizeCityForFilter(state.points[candidateIndex]?.city) === selfCity,
+		sameStatus: (state.points[candidateIndex]?.status || 'active') === selfStatus,
 		bridgeScore: getNumericAt(state.bridgeScores as number[], candidateIndex),
 		signalScore: getNumericAt(state.signalScores as number[], candidateIndex),
 		threadType: 'approximate_projected_neighbor',
