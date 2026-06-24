@@ -1,7 +1,5 @@
 node_modules/
-dist/*.map
-dist/meta.json
-dist/bundle.js
+dist/
 .env
 
 # Local/runtime evidence
@@ -84,11 +82,7 @@ semantic-sweep-*
 # runtime artifacts here: metadata.json, prompt.txt, stderr/stdout.log, vendor bins).
 .agents/
 
-# Svelte/Vite build artifacts
-dist/svelte/
-# Stale misconfigured build output (vite outDir relative to src/ when
-# root: 'src' is set). The canonical build is dist/svelte/ above. Anything
-# under src/dist/ is from a stale build and should not be tracked.
+# Build artifacts — entire directories should never be tracked
 src/dist/
 
 # Lockfiles (npm is canonical; bun.lock is local-only)
