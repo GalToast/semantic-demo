@@ -90,19 +90,30 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
   test('2. pill center hits the weather toggle, not a chrome button', async ({ page }) => {
     const box = await page.locator('.weather-toggle').first().boundingBox();
     expect(box).not.toBeNull();
-    const top = await page.evaluate(({ x, y }) => {
-      const el = document.elementFromPoint(x, y);
+    // elementFromPoint returns the DEEPEST element under the point — the SVG
+    // <span class="weather-icon"> inside the <button class="weather-toggle">.
+    // Walk up the ancestor chain to find the closest <button>: that's the
+    // element that would actually receive the click. If it's the weather
+    // toggle, the pill is reachable. If it's a legend/help chrome button,
+    // the click is being eaten (W46-D2 regression: widget at y=105 was
+    // hidden behind legend at y=117).
+    const closestButton = await page.evaluate(({ x, y }) => {
+      let el = document.elementFromPoint(x, y);
+      while (el && el.tagName !== 'BUTTON') el = el.parentElement;
+      if (!el) return { found: false };
       return {
-        tag: el?.tagName ?? null,
-        cls: (typeof el?.className === 'string' ? el.className : el?.className?.baseVal ?? '').slice(0, 80),
-        aria: el?.getAttribute('aria-label') ?? ''
+        found: true,
+        id: el.id || null,
+        cls: (typeof el.className === 'string' ? el.className : '').slice(0, 80),
+        aria: el.getAttribute('aria-label') ?? ''
       };
     }, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
 
-    // The topmost element must be the weather toggle (or its icon child).
-    // The legend/help buttons are NOT acceptable here.
-    expect(top.cls, `topmost element was ${top.cls} (aria: ${top.aria})`).toContain('weather-toggle');
-    expect(top.aria).not.toMatch(/category legend|keyboard shortcuts/i);
+    expect(closestButton.found, 'no <button> at pill center').toBe(true);
+    const isWeather = closestButton.cls.includes('weather-toggle');
+    const isChrome = /category legend|keyboard shortcuts/i.test(closestButton.aria);
+    expect(isWeather, `closest button was ${closestButton.id || closestButton.cls} (aria: ${closestButton.aria})`).toBe(true);
+    expect(isChrome, `chrome button ate the click: ${closestButton.aria}`).toBe(false);
   });
 
   /**
