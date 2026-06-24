@@ -45,7 +45,7 @@ import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
  * and matches the local cast in engine/map-state.ts.
  */
 type LeafletLayer = Record<string, unknown> | null
-import type { Scene, Points, PointsMaterial, InstancedMesh, Material } from 'three'
+import type { Scene, Points, PointsMaterial, InstancedMesh, Material, LineSegments, Group, Mesh, Sprite, HemisphereLight, DirectionalLight } from 'three'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
@@ -126,39 +126,23 @@ class AppState {
     rawPositionsBuffer = $state<Float32Array | null>(null)
     rawClustersBuffer = $state<Uint16Array | null>(null)
     leadEnrichment = $state<Record<string, unknown> | null>(null)
-    myceliumLines = $state<SemanticState['myceliumLines']>(null as unknown as SemanticState['myceliumLines'])
-    myceliumGroup = $state<SemanticState['myceliumGroup']>(null as unknown as SemanticState['myceliumGroup'])
-    myceliumCoreLines = $state<SemanticState['myceliumCoreLines']>(
-        null as unknown as SemanticState['myceliumCoreLines']
-    )
-    myceliumWispyLines = $state<SemanticState['myceliumWispyLines']>(
-        null as unknown as SemanticState['myceliumWispyLines']
-    )
-    myceliumBridgeLines = $state<SemanticState['myceliumBridgeLines']>(
-        null as unknown as SemanticState['myceliumBridgeLines']
-    )
-    focusSemanticLines = $state<SemanticState['focusSemanticLines']>(
-        null as unknown as SemanticState['focusSemanticLines']
-    )
-    focusAnchorGroup = $state<SemanticState['focusAnchorGroup']>(null as unknown as SemanticState['focusAnchorGroup'])
-    focusAnchorRingMesh = $state<SemanticState['focusAnchorRingMesh']>(
-        null as unknown as SemanticState['focusAnchorRingMesh']
-    )
-    focusAnchorHaloSprite = $state<SemanticState['focusAnchorHaloSprite']>(
-        null as unknown as SemanticState['focusAnchorHaloSprite']
-    )
+    myceliumLines = $state<LineSegments | null>(null)
+    myceliumGroup = $state<Group | null>(null)
+    myceliumCoreLines = $state<LineSegments | null>(null)
+    myceliumWispyLines = $state<LineSegments | null>(null)
+    myceliumBridgeLines = $state<LineSegments | null>(null)
+    focusSemanticLines = $state<LineSegments | null>(null)
+    focusAnchorGroup = $state<Group | null>(null)
+    focusAnchorRingMesh = $state<Mesh | null>(null)
+    focusAnchorHaloSprite = $state<Sprite | null>(null)
     focusSemanticConnectionPairs = $state<Array<{ a: number; b: number; layer: number }>>([])
-    semanticLensGroup = $state<SemanticState['semanticLensGroup']>(
-        null as unknown as SemanticState['semanticLensGroup']
-    )
-    semanticLensGlow = $state<SemanticState['semanticLensGlow']>(null as unknown as SemanticState['semanticLensGlow'])
-    semanticLensSpokes = $state<SemanticState['semanticLensSpokes']>(
-        null as unknown as SemanticState['semanticLensSpokes']
-    )
+    semanticLensGroup = $state<Group | null>(null)
+    semanticLensGlow = $state<Mesh | null>(null)
+    semanticLensSpokes = $state<LineSegments | null>(null)
     myceliumConnectionPairs = $state<Array<{ a: number; b: number; layer: number }>>([])
     myceliumDirty = $state<boolean>(true)
-    hemiLight = $state<SemanticState['hemiLight']>(null as unknown as SemanticState['hemiLight'])
-    dirLight = $state<SemanticState['dirLight']>(null as unknown as SemanticState['dirLight'])
+    hemiLight = $state<HemisphereLight | null>(null)
+    dirLight = $state<DirectionalLight | null>(null)
     nodePositions = $state<NodePosition[]>([])
     targetPositions = $state<NodePosition[]>([])
     originalPositions = $state<NodePosition[]>([])
