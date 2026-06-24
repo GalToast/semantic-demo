@@ -14,7 +14,10 @@ import {
     updateWeatherUi as updateWeatherUiState
 } from '@lib/ui/weather-ui'
 
-const WEATHER_REFRESH_MS: number = 5 * 60 * 1000;
+// W46-D5: 1-minute refresh (was 5 min). Open-Meteo data refreshes ~15 min
+// for most stations, so 1-min polling is a reasonable cadence without
+// hammering the API. Override via ?weather-refresh=<seconds> if needed.
+const WEATHER_REFRESH_MS: number = 1 * 60 * 1000;
 const state = appState as typeof appState & Record<string, unknown>;
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 } as const;
 const OPEN_METEO_CURRENT_FIELDS: string = [
