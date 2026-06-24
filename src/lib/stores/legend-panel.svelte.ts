@@ -1,11 +1,11 @@
 /**
- * @lib/stores/legend-panel.svelte.ts — Legend panel state & action functions
+ * @lib/stores/legend-panel.svelte.ts — Legend panel UI (build + open/close/keyboard)
  *
  * Replaces js/modules/legend-ui.ts kernel (308 LOC).
  * Panel state lives in the existing `legendOpen` store (legend.svelte.ts).
  * This module provides the imperative action surface that legacy importers
  * need: open/close transitions, guide management, canvas color key, and
- * focus tracking.
+ * keyboard handling.
  */
 
 import { get } from 'svelte/store';
@@ -14,32 +14,12 @@ import { appState } from '@lib/state/app.svelte';
 import { escapeHtml } from '@lib/utils/dom-formatters';
 import { describeCluster, isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { getSemanticGuideTitle } from '@lib/journey/semantic-guide';
+import { CONFIG } from '@lib/engine/config';
+import type { SemanticGuide } from '@lib/journey/semantic-guide';
+import type { CloseLegendGuideOptions } from '@lib/stores/legend-panel.svelte';
 import { getFilteredClusterCounts, setClusterFilter } from '@lib/orchestration/cluster-filter-controller';
 import { getActiveClusterFilter } from '@lib/stores/filter.svelte';
-import { setFocusPanelMode, getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode';
-import { CONFIG } from '@lib/engine/config';
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-/** Minimal shape for the current semantic guide */
-interface SemanticGuide {
-    text?: string;
-    laneStatus?: string;
-    nextLabel?: string;
-    anchorIndex?: number;
-    [key: string]: unknown;
-}
-
-interface CloseLegendGuideOptions {
-    restoreFocusPanel?: boolean;
-    restoreFocus?: boolean;
-}
-
-// ── Module-scoped focus scrap ───────────────────────────────────────────────
-
-let _previouslyFocusedLegend: HTMLElement | null = null;
-
-// ── Panel state queries & transitions ───────────────────────────────────────
+import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 
 /** Returns true if the legend panel is currently open. */
 export function isLegendPanelOpen(): boolean {
@@ -52,21 +32,21 @@ export function openLegendPanel(): void {
     setLegendOpen(true);
 
     if (typeof document !== 'undefined' && document.documentElement) {
-        const panel = document.getElementById('legend-panel');
-        const toggle = document.getElementById('btn-legend');
-        if (panel) {
-            panel.setAttribute('aria-hidden', 'false');
-            panel.classList.add('active');
-        }
-        if (toggle) {
-            toggle.setAttribute('aria-expanded', 'true');
-            toggle.setAttribute('aria-pressed', 'true');
-            toggle.setAttribute('aria-label', 'Hide field guide');
-        }
+        document.documentElement.classList.add('legend-panel-open');
     }
 
-    // Always (re)build so the panel has content even when no semantic guide is active.
-    buildLegend();
+    const legendPanel = document.getElementById('legend-panel');
+    if (!legendPanel) return;
+    legendPanel.classList.add('open');
+    legendPanel.removeAttribute('hidden');
+    legendPanel.setAttribute('aria-hidden', 'false');
+
+    const legendToggle = document.getElementById('btn-legend');
+    if (legendToggle) legendToggle.setAttribute('aria-expanded', 'true');
+
+    // Focus first item for keyboard users
+    const firstItem = legendPanel.querySelector('[data-legend-cluster]') as HTMLElement | null;
+    if (firstItem) firstItem.focus();
 }
 
 /** Closes the legend panel. Safe to call when already closed. */
@@ -75,35 +55,29 @@ export function closeLegendPanel(): void {
     setLegendOpen(false);
 
     if (typeof document !== 'undefined' && document.documentElement) {
-        const panel = document.getElementById('legend-panel');
-        const toggle = document.getElementById('btn-legend');
-        if (panel) {
-            panel.setAttribute('aria-hidden', 'true');
-            panel.classList.remove('active');
-        }
-        if (toggle) {
-            toggle.setAttribute('aria-expanded', 'false');
-            toggle.setAttribute('aria-pressed', 'false');
-            toggle.setAttribute('aria-label', 'Show field guide');
-        }
+        document.documentElement.classList.remove('legend-panel-open');
+    }
+
+    const legendPanel = document.getElementById('legend-panel');
+    if (!legendPanel) return;
+    legendPanel.classList.remove('open');
+    legendPanel.setAttribute('hidden', '');
+    legendPanel.setAttribute('aria-hidden', 'true');
+
+    const legendToggle = document.getElementById('btn-legend');
+    if (legendToggle) legendToggle.setAttribute('aria-expanded', 'false');
+}
+
+/** Toggle the legend panel open/closed. */
+export function toggleLegendPanel(): void {
+    if (isLegendPanelOpen()) {
+        closeLegendPanel();
+    } else {
+        openLegendPanel();
     }
 }
 
-// ── Compact focus-stage restore (cross-module bridge) ───────────────────────
-
-/** Restores the info panel after the legend is closed in compact focus-stage view. */
-export function restoreLegendCollapsedPanel(
-    infoPanel: HTMLElement | null,
-    panelBtn: HTMLElement | null
-): void {
-    if (!isCompactFocusStageViewport()) return;
-    if (getFocusPanelMode() !== FOCUS_PANEL_MODE.LEGEND_OPEN) return;
-    if (infoPanel) infoPanel.classList.add('active');
-    setFocusPanelMode(FOCUS_PANEL_MODE.OVERVIEW);
-    if (panelBtn) panelBtn.setAttribute('aria-expanded', 'true');
-}
-
-// ── Legend Core & Guide UI Controls ─────────────────────────────────────────
+// ── Build legend DOM (safe, no innerHTML) ───────────────────────────────────
 
 export function buildLegend(): void {
     const legendPanel = document.getElementById('legend-panel');
@@ -121,45 +95,114 @@ export function buildLegend(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const activeCluster = getActiveClusterFilter();
 
-    legendPanel.innerHTML = `
-        <div class="legend-guide">
-            <div class="legend-guide-head">
-                <span class="legend-guide-kicker">${escapeHtml(guide?.laneStatus || 'Field Guide')}</span>
-                <span class="legend-state-badge">${activeCluster === null ? 'County overview' : 'Filtered neighborhood'}</span>
-            </div>
-            <div class="legend-guide-title">${escapeHtml(guideTitle)}</div>
-            <div class="legend-guide-note">${escapeHtml(guideNote)}</div>
-            ${guide?.nextLabel ? `<div class="legend-guide-next">${escapeHtml(guide.nextLabel)}</div>` : ''}
-        </div>
-        <div class="legend-lens-truth">
-            <span class="legend-lens-truth-mark" aria-hidden="true"></span>
-            <span>Glowing lines show semantic relationships; the constellation shape is staged for readability.</span>
-        </div>
-        <div class="legend-divider"></div>
-        <div class="legend-section-title">Neighborhood palette</div>
-        <div class="legend-subtitle">Semantic neighborhoods group businesses by shared language, trade, civic role &amp; business texture</div>
-        <div class="legend-list" id="legend-list">
-            ${rows.map(([cluster, count]) => {
-                const active = activeCluster !== null && activeCluster === cluster;
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                const colors = CONFIG.COLORS as string[];
-                const color = colors[cluster % colors.length] || '#4ecdc4';
-                return `
-                    <button class="legend-item${active ? ' active' : ''}" type="button" data-legend-cluster="${cluster}" aria-pressed="${String(active)}">
-                        <span class="legend-dot" style="background:${escapeHtml(color)}"></span>
-                        <span class="legend-copy">
-                            <span class="legend-label">${escapeHtml(describeCluster(cluster))}</span>
-                            <span class="legend-meta">${active ? '<span class="legend-pill filter">filter</span>' : ''}</span>
-                        </span>
-                        <span class="legend-count">${count.toLocaleString()}</span>
-                    </button>
-                `;
-            }).join('') || '<div class="legend-guide-note">No neighborhoods match the current filters.</div>'}
-        </div>
-    `;
+    // Clear and rebuild with DOM API (avoids innerHTML slop warning)
+    legendPanel.replaceChildren();
 
+    // ── Guide section ──────────────────────────────────────────────────────
+    const guideSection = document.createElement('div');
+    guideSection.className = 'legend-guide';
+
+    const guideHead = document.createElement('div');
+    guideHead.className = 'legend-guide-head';
+
+    const kicker = document.createElement('span');
+    kicker.className = 'legend-guide-kicker';
+    kicker.textContent = guide?.laneStatus || 'Field Guide';
+    guideHead.appendChild(kicker);
+
+    const badge = document.createElement('span');
+    badge.className = 'legend-state-badge';
+    badge.textContent = activeCluster === null ? 'County overview' : 'Filtered neighborhood';
+    guideHead.appendChild(badge);
+    guideSection.appendChild(guideHead);
+
+    const title = document.createElement('div');
+    title.className = 'legend-guide-title';
+    title.textContent = guideTitle;
+    guideSection.appendChild(title);
+
+    const note = document.createElement('div');
+    note.className = 'legend-guide-note';
+    note.textContent = guideNote;
+    guideSection.appendChild(note);
+
+    if (guide?.nextLabel) {
+        const next = document.createElement('div');
+        next.className = 'legend-guide-next';
+        next.textContent = guide.nextLabel;
+        guideSection.appendChild(next);
+    }
+    legendPanel.appendChild(guideSection);
+
+    // ── Lens truth ─────────────────────────────────────────────────────────
+    const lensTruth = document.createElement('div');
+    lensTruth.className = 'legend-lens-truth';
+
+    const lensMark = document.createElement('span');
+    lensMark.className = 'legend-lens-truth-mark';
+    lensMark.setAttribute('aria-hidden', 'true');
+    lensTruth.appendChild(lensMark);
+
+    const lensText = document.createElement('span');
+    lensText.textContent = 'Glowing lines show semantic relationships; the constellation shape is staged for readability.';
+    lensTruth.appendChild(lensText);
+    legendPanel.appendChild(lensTruth);
+
+    // ── Divider ──────────────────────────────────────────────────────────────
+    const divider = document.createElement('div');
+    divider.className = 'legend-divider';
+    legendPanel.appendChild(divider);
+
+    // ── Section title ────────────────────────────────────────────────────────
+    const sectionTitle = document.createElement('div');
+    sectionTitle.className = 'legend-section-title';
+    sectionTitle.textContent = 'Neighborhood palette';
+    legendPanel.appendChild(sectionTitle);
+
+    const subtitle = document.createElement('div');
+    subtitle.className = 'legend-subtitle';
+    subtitle.textContent = 'Semantic neighborhoods group businesses by shared language, trade, civic role & business texture';
+    legendPanel.appendChild(subtitle);
+
+    // ── Legend list ──────────────────────────────────────────────────────────
+    const list = document.createElement('div');
+    list.className = 'legend-list';
+    list.id = 'legend-list';
+
+    for (const [cluster, count] of rows) {
+        const active = activeCluster !== null && activeCluster === cluster;
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const colors = CONFIG.COLORS as string[];
+        const color = colors[cluster % colors.length] || '#4ecdc4';
+
+        const item = document.createElement('button');
+        item.className = 'legend-item' + (active ? ' active' : '');
+        item.type = 'button';
+        item.dataset.legendCluster = String(cluster);
+        item.setAttribute('aria-pressed', String(active));
+
+        const dot = document.createElement('span');
+        dot.className = 'legend-dot';
+        dot.style.background = color;
+        item.appendChild(dot);
+
+        const name = document.createElement('span');
+        name.className = 'legend-name';
+        name.textContent = describeCluster(cluster);
+        item.appendChild(name);
+
+        const countEl = document.createElement('span');
+        countEl.className = 'legend-count';
+        countEl.textContent = String(count);
+        item.appendChild(countEl);
+
+        list.appendChild(item);
+    }
+    legendPanel.appendChild(list);
+
+    // Attach click handlers
     legendPanel.querySelectorAll('[data-legend-cluster]').forEach((item) => {
-        item.addEventListener('click', () => setClusterFilter(Number((item as HTMLElement).dataset.legendCluster)));
+        item.addEventListener('click', () => _setClusterFilter(Number((item as HTMLElement).dataset.legendCluster)));
     });
     // Rebuild the always-visible compact key from current cluster counts.
     buildCanvasColorLegend();
@@ -172,7 +215,14 @@ export function updateLegendGuideState(): void {
         if (isLegendPanelOpen()) closeLegendPanel();
         return;
     }
-    // Auto-open the legend panel when guide data is available
+    // F1: Don't auto-open the legend on mobile (compact) where the panel
+    // would block the "Enter 3D Scene" CTA on the Placeholder2D.
+    // Desktop still auto-opens for discoverability.
+    if (appState.viewportIsCompact) {
+        buildLegend();
+        return;
+    }
+    // Auto-open the legend panel when guide data is available (desktop only)
     if (!isLegendPanelOpen()) openLegendPanel();
     buildLegend();
 }
@@ -188,58 +238,117 @@ export function closeLegendGuide(options: CloseLegendGuideOptions = {}): void {
         const panelBtn = document.getElementById('btn-panel');
         restoreLegendCollapsedPanel(infoPanel, panelBtn);
     }
-    if (options.restoreFocus) {
-        if (_previouslyFocusedLegend) {
-            _previouslyFocusedLegend.focus({ preventScroll: true });
-        } else if (legendToggle) {
-            legendToggle.focus({ preventScroll: true });
-        }
+
+    if (options.restoreFocus !== false) {
+        if (legendToggle) legendToggle.focus();
     }
 }
 
-// ── Compact canvas-anchored color key ──────────────────────────────────────
+function restoreLegendCollapsedPanel(
+    infoPanel: HTMLElement | null,
+    panelBtn: HTMLElement | null
+): void {
+    if (!infoPanel) return;
+
+    if (!infoPanel.classList.contains('active')) {
+        infoPanel.classList.add('active');
+    }
+    if (panelBtn) {
+        panelBtn.setAttribute('aria-expanded', 'true');
+    }
+}
+
+export function setPreviouslyFocusedLegend(element: HTMLElement | null): void {
+    const legendToggle = document.getElementById('btn-legend');
+    if (legendToggle && element) {
+        legendToggle.dataset.previousFocus = element.id || '';
+    }
+}
+
+export function getPreviouslyFocusedLegend(): HTMLElement | null {
+    const legendToggle = document.getElementById('btn-legend');
+    if (!legendToggle || !legendToggle.dataset.previousFocus) return null;
+    const el = document.getElementById(legendToggle.dataset.previousFocus);
+    if (el) el.focus();
+    return el;
+}
 
 export function buildCanvasColorLegend(): void {
-    const root = document.getElementById('canvas-color-legend-rows');
-    if (!root) return;
+    const canvas = document.getElementById('canvas-color-legend') as HTMLCanvasElement | null;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
     const counts = getFilteredClusterCounts();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const colors: string[] = Array.isArray(CONFIG.COLORS) ? (CONFIG.COLORS as string[]) : [];
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const names: string[] = Array.isArray(CONFIG.CLUSTER_NAMES) ? (CONFIG.CLUSTER_NAMES as unknown as string[]) : [];
+    const dpr = window.devicePixelRatio || 1;
+    const width = canvas.clientWidth;
+    const height = canvas.clientHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.scale(dpr, dpr);
+    ctx.clearRect(0, 0, width, height);
 
-    let top: number[] | null = counts && counts.size > 0
-        ? Array.from(counts.entries())
-            .filter(([, count]) => count > 0)
-            .sort((a, b) => b[1] - a[1] || a[0] - b[0])
-            .slice(0, 4)
-            .map(([cluster]) => cluster)
-        : null;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const colors = CONFIG.COLORS as string[];
+    const activeCluster = getActiveClusterFilter();
+    let x = 0;
+    const total = Array.from(counts.values()).reduce((a, b) => a + b, 0) || 1;
 
-    if (!top || top.length < 4) {
-        const padded = Array.from(new Set([...(top || []), 0, 1, 2, 3])).slice(0, 4);
-        top = padded;
+    for (const [cluster, count] of counts) {
+        const color = colors[cluster % colors.length] || '#4ecdc4';
+        const w = (count / total) * width;
+        ctx.fillStyle = color;
+        ctx.fillRect(x, 0, w, height);
+        if (activeCluster !== null && activeCluster === cluster) {
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(x + 1, 1, w - 2, height - 2);
+        }
+        x += w;
     }
-
-    root.replaceChildren(
-        ...top.map((cluster) => {
-            const color = colors[cluster % colors.length] || '#4ecdc4';
-            const label = names[cluster] || `Cluster ${cluster}`;
-            const row = document.createElement('div');
-            row.className = 'canvas-color-legend-row';
-            const swatch = document.createElement('span');
-            swatch.className = 'canvas-color-legend-swatch';
-            swatch.style.setProperty('--swatch-color', color);
-            const text = document.createElement('span');
-            text.className = 'canvas-color-legend-label';
-            text.textContent = label;
-            row.append(swatch, text);
-            return row;
-        })
-    );
 }
 
-// ── Focus tracking ─────────────────────────────────────────────────────────
+// ── Keyboard shortcut ───────────────────────────────────────────────────────
 
-export function setPreviouslyFocusedLegend(el: HTMLElement | null): void { _previouslyFocusedLegend = el; }
-export function getPreviouslyFocusedLegend(): HTMLElement | null { return _previouslyFocusedLegend; }
+export function initLegendKeyboardShortcut(): void {
+    if (typeof document === 'undefined') return;
+
+    document.addEventListener('keydown', (e: KeyboardEvent) => {
+        if (e.key === 'l' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+            const target = e.target as HTMLElement | null;
+            if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+                return;
+            }
+            e.preventDefault();
+            toggleLegendPanel();
+        }
+    });
+}
+
+/** Subscribe to nav/reset events that should close the legend. */
+export function initLegendEventBusSubscriptions(): void {
+    subscribe(EVENTS.VIEW_CHANGED, () => {
+        setLegendOpen(false);
+    });
+
+    subscribe(EVENTS.STATE_RESET, () => {
+        setLegendOpen(false);
+    });
+}
+
+// ── Cluster filter click ────────────────────────────────────────────────────
+
+function _setClusterFilter(cluster: number): void {
+    import('@lib/orchestration/cluster-filter-controller').then((mod) => {
+        mod.setClusterFilter(cluster);
+    });
+}
+
+// ── Re-export helpers needed by legend-bindings ───────────────────────────
+
+export {
+    restoreLegendCollapsedPanel
+};
+
+export type { CloseLegendGuideOptions } from '@lib/stores/legend-panel.svelte';
