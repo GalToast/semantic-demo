@@ -12,9 +12,19 @@
  * `_demoCancelled` module variables are preserved here as private scratch so
  * that the external contract (exports) stays identical.
  *
- * Known issue (Phase 4 fix): the caller's `startMicroDemo()` retry loop has a
- * race condition. This port preserves the existing behavior — the fix is owned
- * by a separate migration wave.
+ * Known issues (W47 state):
+ *   - The caller's `startMicroDemo()` retry loop in `src/lib/demo/choreography.ts`
+ *     has a race condition where the re-entry guard is released before the
+ *     recursive retry call, allowing concurrent invocations to slip through.
+ *     This port preserves the existing behavior — the fix is owned by a
+ *     separate migration wave.
+ *   - As of W47, all async work in this file is wrapped in try/catch envelopes
+ *     and `runDemo`'s 9 fire-and-forget phase-timer callbacks are guarded
+ *     individually. Any throw inside a phase timer is now logged via
+ *     `debugWarn` (dev-gated) instead of silently corrupting demo state.
+ *   - The previous `_demoNodeIndex as number` silent null→0 coercion was
+ *     replaced with an explicit null/finiteness check that aborts with a
+ *     state reset.
  */
 
 import type { DemoPhase } from '@lib/types/state'
@@ -26,6 +36,7 @@ import * as journeyCompassStaticModule from '@lib/orchestration/compass-controll
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import * as panelBindingsStaticModule from '@lib/ui/panel-bindings'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -190,74 +201,85 @@ async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
 // Resets all demo-related state and UI chrome back to overview.
 
 async function demoReset(): Promise<void> {
-    const [focusPocket, lifecycle, compass, _journey, panel] = await Promise.all([
-        loadFocusPocket(),
-        loadLifecycle(),
-        loadJourneyCompass(),
-        loadJourney(),
-        loadPanelBindings()
-    ])
+    try {
+        const [focusPocket, lifecycle, compass, _journey, panel] = await Promise.all([
+            loadFocusPocket(),
+            loadLifecycle(),
+            loadJourneyCompass(),
+            loadJourney(),
+            loadPanelBindings()
+        ])
 
-    appState.selectedPoint = null
-    // Write to both legacy navState and Svelte 5 navStore in one call.
-    writeNavStateMirror({
-        mode: 'overview',
-        focusedIndex: null,
-        trailSeedIndex: null,
-        trailNeighborIndices: [],
-        trailCursor: -1,
-        walkHistoryIndices: []
-    })
+        appState.selectedPoint = null
+        // Write to both legacy navState and Svelte 5 navStore in one call.
+        writeNavStateMirror({
+            mode: 'overview',
+            focusedIndex: null,
+            trailSeedIndex: null,
+            trailNeighborIndices: [],
+            trailCursor: -1,
+            walkHistoryIndices: []
+        })
 
-    focusPocket.clearFocusPocketIndices()
-    focusPocket.clearFocusPocketMeta()
+        focusPocket.clearFocusPocketIndices()
+        focusPocket.clearFocusPocketMeta()
 
-    appState.focusCameraAssistActive = false
-    appState.focusCameraOffset = null
-    appState.focusTransitionMode = 'idle'
-    document.body.dataset.focusTransition = ''
-    document.body.dataset.focusTransitionPhase = ''
+        appState.focusCameraAssistActive = false
+        appState.focusCameraOffset = null
+        appState.focusTransitionMode = 'idle'
+        document.body.dataset.focusTransition = ''
+        document.body.dataset.focusTransitionPhase = ''
 
-    if (appState.controls) appState.controls.enabled = true
+        if (appState.controls) appState.controls.enabled = true
 
-    updateSelectedBusiness(null)
-    const { applyPointFilterColors } = await import('@lib/journey/point-color')
-    applyPointFilterColors()
-    lifecycle.refreshCompositionState()
-    compass.updateJourneyCompass()
-    panel.setInfoPanelOpen(true)
+        updateSelectedBusiness(null)
+        const { applyPointFilterColors } = await import('@lib/journey/point-color')
+        applyPointFilterColors()
+        lifecycle.refreshCompositionState()
+        compass.updateJourneyCompass()
+        panel.setInfoPanelOpen(true)
+    } catch (err) {
+        debugWarn('[demo-choreography] demoReset failed:', err)
+        // best-effort state recovery so we don't leave the app stuck mid-demo
+        try { _demoPhase = PHASE.IDLE } catch { /* swallow */ }
+    }
 }
 
 // ── demoFocusSetup ────────────────────────────────────────────────────────────
 // Enters focus mode on the given demo node.
 
 async function demoFocusSetup(demoNode: number): Promise<void> {
-    const [focusPocket, lifecycle, compass, _journey] = await Promise.all([
-        loadFocusPocket(),
-        loadLifecycle(),
-        loadJourneyCompass(),
-        loadJourney()
-    ])
+    try {
+        const [focusPocket, lifecycle, compass, _journey] = await Promise.all([
+            loadFocusPocket(),
+            loadLifecycle(),
+            loadJourneyCompass(),
+            loadJourney()
+        ])
 
-    const point = appState.points?.[demoNode] ?? null
-    appState.selectedPoint = point
-    // Write to both legacy navState and Svelte 5 navStore in one call.
-    writeNavStateMirror({
-        mode: 'focus',
-        focusedIndex: demoNode,
-        walkHistoryIndices: [demoNode]
-    })
+        const point = appState.points?.[demoNode] ?? null
+        appState.selectedPoint = point
+        // Write to both legacy navState and Svelte 5 navStore in one call.
+        writeNavStateMirror({
+            mode: 'focus',
+            focusedIndex: demoNode,
+            walkHistoryIndices: [demoNode]
+        })
 
-    updateSelectedBusiness(point, { revealCard: true })
-    const { applyPointFilterColors } = await import('@lib/journey/point-color')
-    applyPointFilterColors()
-    lifecycle.updateExplorationUi()
-    compass.updateJourneyCompass('focus')
-    lifecycle.refreshCompositionState()
-    lifecycle.resetNodePositions()
+        updateSelectedBusiness(point, { revealCard: true })
+        const { applyPointFilterColors } = await import('@lib/journey/point-color')
+        applyPointFilterColors()
+        lifecycle.updateExplorationUi()
+        compass.updateJourneyCompass('focus')
+        lifecycle.refreshCompositionState()
+        lifecycle.resetNodePositions()
 
-    if (typeof focusPocket.applyLocalNeighborhoodFocus === 'function') {
-        focusPocket.applyLocalNeighborhoodFocus(demoNode)
+        if (typeof focusPocket.applyLocalNeighborhoodFocus === 'function') {
+            focusPocket.applyLocalNeighborhoodFocus(demoNode)
+        }
+    } catch (err) {
+        debugWarn('[demo-choreography] demoFocusSetup failed:', err)
+        try { _demoPhase = PHASE.CANCELLED; _demoCancelled = true } catch { /* swallow */ }
     }
 }
 
@@ -265,27 +287,38 @@ async function demoFocusSetup(demoNode: number): Promise<void> {
 // Tears down all demo DOM artifacts and resets scratch state.
 
 async function cleanup(): Promise<void> {
-    const ui = await loadMicroDemoUi()
-    document.body.removeAttribute('data-demo-active')
-    clearDemoTimers()
-    ui.hideVeil()
-    ui.removePill()
-    ui.unbindInputInterceptor()
-    _demoPhase = PHASE.IDLE
-    _demoNodeIndex = null
-    _demoCancelled = false
+    try {
+        const ui = await loadMicroDemoUi()
+        document.body.removeAttribute('data-demo-active')
+        clearDemoTimers()
+        ui.hideVeil()
+        ui.removePill()
+        ui.unbindInputInterceptor()
+        _demoPhase = PHASE.IDLE
+        _demoNodeIndex = null
+        _demoCancelled = false
+    } catch (err) {
+        debugWarn('[demo-choreography] cleanup failed:', err)
+        // state is best-effort: ensure scratch flags are sane even if DOM teardown failed
+        try { _demoPhase = PHASE.IDLE } catch { /* swallow */ }
+        try { _demoCancelled = false } catch { /* swallow */ }
+    }
 }
 
 // ── endDemo ───────────────────────────────────────────────────────────────────
 
 async function endDemo(notifyEvent: string, shouldRecordCompletion: boolean): Promise<void> {
-    const camera = await loadCameraControls()
-    const guards = await loadMicroDemoGuards()
+    try {
+        const camera = await loadCameraControls()
+        const guards = await loadMicroDemoGuards()
 
-    await cleanup()
-    camera.setAutoRotateSuspended(false)
-    if (shouldRecordCompletion) guards.recordCompletion()
-    document.dispatchEvent(new CustomEvent(notifyEvent))
+        await cleanup()
+        camera.setAutoRotateSuspended(false)
+        if (shouldRecordCompletion) guards.recordCompletion()
+        document.dispatchEvent(new CustomEvent(notifyEvent))
+    } catch (err) {
+        debugWarn('[demo-choreography] endDemo failed:', err)
+    }
 }
 
 // ── runDemo ───────────────────────────────────────────────────────────────────
@@ -293,147 +326,205 @@ async function endDemo(notifyEvent: string, shouldRecordCompletion: boolean): Pr
 // wide → return → complete. All phases are timed via setTimeout.
 
 export async function runDemo(cancelMicroDemo: (reason: string) => void): Promise<void> {
-    // Pre-load all modules needed directly in this function.
-    // demoFocusSetup and demoReset load their own dependencies internally.
-    const [camera, microDemoCamera, ui, panel] = await Promise.all([
-        loadCameraControls(),
-        loadMicroDemoCamera(),
-        loadMicroDemoUi(),
-        loadPanelBindings()
-    ])
+    try {
+        // Pre-load all modules needed directly in this function.
+        // demoFocusSetup and demoReset load their own dependencies internally.
+        const [camera, microDemoCamera, ui, panel] = await Promise.all([
+            loadCameraControls(),
+            loadMicroDemoCamera(),
+            loadMicroDemoUi(),
+            loadPanelBindings()
+        ])
 
-    ui.injectMicroDemoStyles()
-    document.body.dataset.demoActive = 'true'
-    _demoPhase = PHASE.GLIDING
-    _demoCancelled = false
+        ui.injectMicroDemoStyles()
+        document.body.dataset.demoActive = 'true'
+        _demoPhase = PHASE.GLIDING
+        _demoCancelled = false
 
-    microDemoCamera.captureOverviewCameraSnapshot()
-    camera.setAutoRotateSuspended(true)
-    if (appState.controls) appState.controls.enabled = false
+        microDemoCamera.captureOverviewCameraSnapshot()
+        camera.setAutoRotateSuspended(true)
+        if (appState.controls) appState.controls.enabled = false
 
-    ui.showVeil(true)
-    ui.showPill('Demo -- watch it works', (reason: string) => cancelMicroDemo(reason))
-    ui.bindInputInterceptor((reason: string) => cancelMicroDemo(reason))
+        ui.showVeil(true)
+        ui.showPill('Demo -- watch it works', (reason: string) => cancelMicroDemo(reason))
+        ui.bindInputInterceptor((reason: string) => cancelMicroDemo(reason))
 
-    const demoNode = _demoNodeIndex as number
+        // Guard against missing node index. The previous `as number` cast
+        // silently coerced null to 0, which would focus the demo on the
+        // first business instead of failing loudly. Bail with state reset
+        // so a stale retry can't re-enter with bad data.
+        const demoNode = _demoNodeIndex
+        if (demoNode === null || !Number.isFinite(demoNode)) {
+            debugWarn('[demo-choreography] runDemo called without setDemoNodeIndex; aborting')
+            _demoPhase = PHASE.IDLE
+            _demoCancelled = false
+            try { clearDemoTimers() } catch { /* swallow */ }
+            try { document.body.removeAttribute('data-demo-active') } catch { /* swallow */ }
+            return
+        }
 
-    // 50ms — glow highlight
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            document.dispatchEvent(
-                new CustomEvent('micro-demo-node-highlight', {
-                    detail: { index: demoNode, phase: 'glow' }
-                })
-            )
-        }, 50)
-    )
+        // 50ms — glow highlight
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    document.dispatchEvent(
+                        new CustomEvent('micro-demo-node-highlight', {
+                            detail: { index: demoNode, phase: 'glow' }
+                        })
+                    )
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (50ms glow) failed:', err)
+                }
+            }, 50)
+        )
 
-    // 100ms — start camera glide (1200ms animation, arrives at ~1400ms)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            camera.animateCameraToNode(demoNode, {
-                transitionStyle: 'focus',
-                duration: 1200,
-                verticalLift: 0.05,
-                distance: 0.45
-            })
-            document.dispatchEvent(
-                new CustomEvent('micro-demo-node-highlight', {
-                    detail: { index: demoNode, phase: 'gliding' }
-                })
-            )
-        }, 100)
-    )
+        // 100ms — start camera glide (1200ms animation, arrives at ~1400ms)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    camera.animateCameraToNode(demoNode, {
+                        transitionStyle: 'focus',
+                        duration: 1200,
+                        verticalLift: 0.05,
+                        distance: 0.45
+                    })
+                    document.dispatchEvent(
+                        new CustomEvent('micro-demo-node-highlight', {
+                            detail: { index: demoNode, phase: 'gliding' }
+                        })
+                    )
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (100ms glide) failed:', err)
+                }
+            }, 100)
+        )
 
-    // 1400ms — arrived, setup focus (GLIDING_MS)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            _demoPhase = PHASE.ARRIVED
-            // Fire-and-forget: demoFocusSetup is async but caller does not need to await.
-            void demoFocusSetup(demoNode)
-            document.body.dataset.focusOrigin = 'micro-demo'
-            document.dispatchEvent(
-                new CustomEvent('micro-demo-node-highlight', {
-                    detail: { index: demoNode, phase: 'arrived' }
-                })
-            )
-        }, 1400)
-    )
+        // 1400ms — arrived, setup focus (GLIDING_MS)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    _demoPhase = PHASE.ARRIVED
+                    // Fire-and-forget: demoFocusSetup is async but caller does not need to await.
+                    void demoFocusSetup(demoNode)
+                    document.body.dataset.focusOrigin = 'micro-demo'
+                    document.dispatchEvent(
+                        new CustomEvent('micro-demo-node-highlight', {
+                            detail: { index: demoNode, phase: 'arrived' }
+                        })
+                    )
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (1400ms arrived) failed:', err)
+                }
+            }, 1400)
+        )
 
-    // 1520ms — card visible (GLIDING_MS + ARRIVED_HOLD_MS)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            _demoPhase = PHASE.CARD_VISIBLE
-            document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
-        }, 1520)
-    )
+        // 1520ms — card visible (GLIDING_MS + ARRIVED_HOLD_MS)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    _demoPhase = PHASE.CARD_VISIBLE
+                    document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (1520ms card) failed:', err)
+                }
+            }, 1520)
+        )
 
-    // 2520ms — second name pulse (midway through CARD_VISIBLE)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
-        }, 2520)
-    )
+        // 2520ms — second name pulse (midway through CARD_VISIBLE)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (2520ms pulse) failed:', err)
+                }
+            }, 2520)
+        )
 
-    // 3320ms — pullback (GLIDING_MS + ARRIVED_HOLD_MS + CARD_VISIBLE_MS)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            _demoPhase = PHASE.PULLBACK
-            camera.animateCameraToNode(demoNode, {
-                transitionStyle: 'focus',
-                duration: 1200,
-                distance: 1.8,
-                verticalLift: 0.12
-            })
-        }, 3320)
-    )
+        // 3320ms — pullback (GLIDING_MS + ARRIVED_HOLD_MS + CARD_VISIBLE_MS)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    _demoPhase = PHASE.PULLBACK
+                    camera.animateCameraToNode(demoNode, {
+                        transitionStyle: 'focus',
+                        duration: 1200,
+                        distance: 1.8,
+                        verticalLift: 0.12
+                    })
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (3320ms pullback) failed:', err)
+                }
+            }, 3320)
+        )
 
-    // 4520ms — wide view (above + PULLBACK_MS)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            _demoPhase = PHASE.WIDE_VIEW
-            document.dispatchEvent(
-                new CustomEvent('micro-demo-node-highlight', {
-                    detail: { index: demoNode, phase: 'wide_view' }
-                })
-            )
-            panel.setInfoPanelOpen(false)
-        }, 4520)
-    )
+        // 4520ms — wide view (above + PULLBACK_MS)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    _demoPhase = PHASE.WIDE_VIEW
+                    document.dispatchEvent(
+                        new CustomEvent('micro-demo-node-highlight', {
+                            detail: { index: demoNode, phase: 'wide_view' }
+                        })
+                    )
+                    panel.setInfoPanelOpen(false)
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (4520ms wide-view) failed:', err)
+                }
+            }, 4520)
+        )
 
-    // 4870ms — returning to overview (above + WIDE_VIEW_HOLD_MS)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            _demoPhase = PHASE.RETURNING
-            // Fire-and-forget: demoReset is async but caller does not need to await.
-            void demoReset()
-            microDemoCamera.animateCameraToOverview(1000)
-            document.dispatchEvent(
-                new CustomEvent('micro-demo-node-highlight', {
-                    detail: { index: demoNode, phase: 'cleanup' }
-                })
-            )
-        }, 4870)
-    )
+        // 4870ms — returning to overview (above + WIDE_VIEW_HOLD_MS)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    _demoPhase = PHASE.RETURNING
+                    // Fire-and-forget: demoReset is async but caller does not need to await.
+                    void demoReset()
+                    microDemoCamera.animateCameraToOverview(1000)
+                    document.dispatchEvent(
+                        new CustomEvent('micro-demo-node-highlight', {
+                            detail: { index: demoNode, phase: 'cleanup' }
+                        })
+                    )
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (4870ms return) failed:', err)
+                }
+            }, 4870)
+        )
 
-    // 5870ms — complete (above + RETURNING_MS)
-    _demoTimers.push(
-        window.setTimeout(() => {
-            if (_demoCancelled) return
-            _demoPhase = PHASE.COMPLETE
-            ui.showEndToast()
-            // Fire-and-forget: endDemo is async but the demo is complete at this point.
-            void endDemo('demo-complete', true)
-        }, 5870)
-    )
+        // 5870ms — complete (above + RETURNING_MS)
+        _demoTimers.push(
+            window.setTimeout(() => {
+                try {
+                    if (_demoCancelled) return
+                    _demoPhase = PHASE.COMPLETE
+                    ui.showEndToast()
+                    // Fire-and-forget: endDemo is async but the demo is complete at this point.
+                    void endDemo('demo-complete', true)
+                } catch (err) {
+                    debugWarn('[demo-choreography] phase timer (5870ms complete) failed:', err)
+                }
+            }, 5870)
+        )
+    } catch (err) {
+        // If anything before the timers were registered (preload, snapshot,
+        // veil, pill) throws, the demo can't start cleanly. Reset scratch
+        // state and tear down UI so a retry can re-enter from scratch.
+        debugWarn('[demo-choreography] runDemo failed:', err)
+        try { _demoPhase = PHASE.CANCELLED; _demoCancelled = true } catch { /* swallow */ }
+        try { clearDemoTimers() } catch { /* swallow */ }
+        try { document.body.removeAttribute('data-demo-active') } catch { /* swallow */ }
+    }
 }
 
 // ── cancelChoreography ────────────────────────────────────────────────────────
@@ -442,21 +533,24 @@ export async function cancelChoreography(reason: string = 'user-input'): Promise
     if (_demoPhase === PHASE.IDLE || _demoPhase === PHASE.COMPLETE || _demoCancelled) {
         return false
     }
-
-    const microDemoCamera = await loadMicroDemoCamera()
-
     _demoCancelled = true
     _demoPhase = PHASE.CANCELLED
     clearDemoTimers()
-    await demoReset()
+    try {
+        const microDemoCamera = await loadMicroDemoCamera()
+        await demoReset()
 
-    if (appState.camera && appState.controls && (reason === 'escape-key' || reason === 'user-input')) {
-        microDemoCamera.animateCameraToOverview(800)
+        if (appState.camera && appState.controls && (reason === 'escape-key' || reason === 'user-input')) {
+            microDemoCamera.animateCameraToOverview(800)
+        }
+
+        const shouldRecord = reason === 'user-input' || reason === 'escape-key' || reason === 'skip-button'
+        await endDemo('demo-cancelled', shouldRecord)
+        return true
+    } catch (err) {
+        debugWarn('[demo-choreography] cancelChoreography failed:', err)
+        return false
     }
-
-    const shouldRecord = reason === 'user-input' || reason === 'escape-key' || reason === 'skip-button'
-    await endDemo('demo-cancelled', shouldRecord)
-    return true
 }
 
 // ── isMicroDemoRunning ────────────────────────────────────────────────────────
