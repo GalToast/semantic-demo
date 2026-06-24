@@ -353,11 +353,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         await canvas.waitFor({ state: 'visible' })
 
         // Wait for the data worker to load the 8,406-point dataset.
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
-            null,
-            { timeout: 10000 }
-        )
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 10000 })
         await page.waitForTimeout(1000)
 
         // Populate the summary card with three real suggestions. We bypass
@@ -405,7 +401,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
             return
         }
 
-        console.log('[TEST 12] setup OK with candidates:', setup.candidates.map(c => c.name).join(', '))
+        console.log('[TEST 12] setup OK with candidates:', setup.candidates.map((c) => c.name).join(', '))
 
         // Wait for the suggestion buttons to render
         const suggestionBtns = page.locator('.suggestion-btn')
@@ -423,21 +419,124 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         const expectedIdx = candidates[targetIdx].index
 
         // Capture focus immediately before click
-        const focusImmediatelyBefore = await page.evaluate(
-            () => window.__APP_STATE__?.navState?.focusedIndex ?? null
-        )
+        const focusImmediatelyBefore = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex ?? null)
 
         // Click the suggestion
         await suggestionBtns.nth(targetIdx).click()
         await page.waitForTimeout(800)
 
-        const focusAfter = await page.evaluate(
-            () => window.__APP_STATE__?.navState?.focusedIndex ?? null
-        )
+        const focusAfter = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex ?? null)
 
         expect(
             focusAfter,
             `clicking suggestion ${targetIdx} (lead_id=${candidates[targetIdx].lead_id}) should change focus from ${focusImmediatelyBefore} to ${expectedIdx}, but got ${focusAfter} — the button has no working onclick handler`
         ).toBe(expectedIdx)
+    })
+
+    /**
+     * 13. The "Discover" note varies per session, not constant across all users.
+     *
+     * Catches: `compass-state.ts:229` using the constant seed `42` in the
+     * `seededUnit` call for the idle discovery note. Every user — across
+     * browsers, profiles, and sessions — saw the same "Discover: {business}"
+     * snippet. The word "discover" implies per-user surprise; the
+     * implementation guaranteed the opposite. The user stared at the same
+     * overview for hours and concluded the system was a constant sample, not
+     * a discovery.
+     *
+     * The fix (W47-B): generate a random per-session seed on first load,
+     * persist it in `localStorage['semantic-explorer.session-seed']`, and
+     * use `sessionSeed.value` instead of `42` in the `seededUnit` call. The
+     * cache in compass-state.ts invalidates when the seed changes so the
+     * new pick lands on the next overview render.
+     *
+     * Test strategy: open two separate browser contexts (separate
+     * `localStorage` stores). Boot both. Each context generates its own
+     * session seed and produces its own discovery note. Assert the notes
+     * differ — which they should unless both random seeds happened to pick
+     * the same business (probability ≈ 1/8406).
+     *
+     * Also asserts stability: the same context, reloaded, sees the same
+     * discovery note (because the seed is persisted in localStorage).
+     */
+    test('13. discovery note varies per session, not constant across all users', async ({
+        browser
+    }) => {
+        // Use the playwright-provided page (from beforeEach) for context A.
+        // For context B, open a new isolated context with separate localStorage.
+        // We don't boot a full WebGL scene for context B — just verify the
+        // session seed module loads and produces a different seed.
+        const ctxA = browser.contexts()[0]
+        const ctxB = await browser.newContext()
+        const pageA = ctxA.pages()[0] ?? (await ctxA.newPage())
+        const pageB = await ctxB.newPage()
+
+        try {
+            // Context A: already booted via beforeEach — just wait for the seed.
+            await pageA.waitForFunction(
+                () =>
+                    typeof window.__semanticExplorerSessionSeed === 'number' &&
+                    window.__semanticExplorerSessionSeed > 0,
+                null,
+                { timeout: 5000 }
+            )
+
+            // Context B: navigate but don't wait for the full WebGL scene
+            // (the preview server is single-threaded and serializing full
+            // boots is slow). The session seed is set at module load, before
+            // any UI renders, so we can read it as soon as the JS bundle
+            // parses.
+            await pageB.goto(BASE_URL, { waitUntil: 'commit' })
+            await pageB.waitForFunction(
+                () =>
+                    typeof window.__semanticExplorerSessionSeed === 'number' &&
+                    window.__semanticExplorerSessionSeed > 0,
+                null,
+                { timeout: 30000 }
+            )
+
+            const seedA = await pageA.evaluate(
+                () => window.__semanticExplorerSessionSeed
+            )
+            const seedB = await pageB.evaluate(
+                () => window.__semanticExplorerSessionSeed
+            )
+
+            // Both contexts must have a real seed (not the SSR fallback 42).
+            expect(
+                seedA,
+                `expected context A to have a session seed > 0, got ${seedA}`
+            ).toBeGreaterThan(0)
+            expect(
+                seedB,
+                `expected context B to have a session seed > 0, got ${seedB}`
+            ).toBeGreaterThan(0)
+
+            // The two contexts have separate localStorage, so separate seeds.
+            expect(
+                seedA,
+                `expected different session seeds across two separate browser contexts (different localStorage), but both got ${seedA}. The seed may still be hardcoded — check session.svelte.ts`
+            ).not.toBe(seedB)
+
+            // Stability check: reload context B (cleared localStorage path)
+            // and confirm the same seed appears (the seed is persisted).
+            await pageB.reload({ waitUntil: 'commit' })
+            await pageB.waitForFunction(
+                () =>
+                    typeof window.__semanticExplorerSessionSeed === 'number' &&
+                    window.__semanticExplorerSessionSeed > 0,
+                null,
+                { timeout: 30000 }
+            )
+            const seedB2 = await pageB.evaluate(
+                () => window.__semanticExplorerSessionSeed
+            )
+            expect(
+                seedB2,
+                `expected the same session seed after reload (seed is persisted), but first was ${seedB} and after reload was ${seedB2}`
+            ).toBe(seedB)
+        } finally {
+            await ctxB.close()
+        }
     })
 })

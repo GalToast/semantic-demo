@@ -13,14 +13,22 @@ import { getNextWalkCandidateForIndex } from './lifecycle-adapter'
 import { seededUnit } from '@lib/utils/seeded-random'
 import type { Point } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
+import { sessionSeed } from '@lib/state/session.svelte'
 
 let routeEmbodimentReader: () => any[] = () => []
 
 // Idle-note cache: prevents non-deterministic flicker when getJourneyCompassState()
-// is called repeatedly in the overview phase.  The index is re-seeded only when
-// the points array length changes (data mutation) or the cache is cold.
+// is called repeatedly in the overview phase. The index is re-seeded when:
+//   - the cache is cold (`_cachedIdleIndex < 0`)
+//   - the points array length changes (data mutation)
+//   - the session seed changes (new browser session, or after a reset)
+//
+// W47-B: the seed is no longer the constant 42 — it's per-session via
+// `sessionSeed.value`, persisted in localStorage so the user's discovery
+// stays stable across reloads but varies across sessions.
 let _cachedIdleIndex = -1
 let _cachedIdlePointsLength = 0
+let _cachedIdleSeed = -1
 
 export function registerRouteEmbodimentReader(fn: () => any[]): void {
     routeEmbodimentReader = fn
@@ -225,9 +233,15 @@ export function getJourneyCompassState(): CompassState {
         // note from flickering on every recomputation while still giving a
         // fresh discovery on data reload.
         const pointsLength = appState.points!.length
-        if (_cachedIdleIndex < 0 || _cachedIdlePointsLength !== pointsLength) {
-            _cachedIdleIndex = Math.floor(seededUnit(pointsLength, 42) * pointsLength)
+        const seed = sessionSeed.value
+        if (
+            _cachedIdleIndex < 0 ||
+            _cachedIdlePointsLength !== pointsLength ||
+            _cachedIdleSeed !== seed
+        ) {
+            _cachedIdleIndex = Math.floor(seededUnit(pointsLength, seed) * pointsLength)
             _cachedIdlePointsLength = pointsLength
+            _cachedIdleSeed = seed
         }
         const randomPoint = appState.points![_cachedIdleIndex]
         const snippet: string | null = randomPoint ? getInterestingBusinessNote(randomPoint) : null
