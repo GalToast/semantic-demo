@@ -11,7 +11,7 @@ import {
     Group
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any;
+const state = _state as any
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { triggerCorridorBloom } from '@lib/audio/audio-scape'
@@ -34,14 +34,43 @@ const CORRIDOR_SOFT_TOTAL_DURATION = 2800
 const ANCHOR_GLOW_PERSIST_MS = 4200
 const ANCHOR_GLOW_PERSIST_INTENSITY = 0.28
 
+// ── Types ──────────────────────────────────────────────────────────────────
+
+/**
+ * Per-node glow state, populated by triggerCorridorNodeGlow and consumed
+ * by updateCorridorNodeGlow. May be `null` while a node's glow is
+ * dormant; the key is kept in the record so iteration order is stable.
+ */
+export interface CorridorGlowState {
+    startedAt: number
+    fadeStartDelay: number
+    fadeDuration: number
+    targetBoost: number
+}
+
+/**
+ * Per-animation state, populated by triggerSearchCorridorAnimation and
+ * consumed by updateSearchCorridorAnimation. `null` when no animation
+ * is in flight. `line` and `material` are required; `particles` is
+ * optional because the helper can return null when no targets remain.
+ */
+export interface CorridorAnimState {
+    anchorIndex: number
+    routeIndices: number[]
+    line: LineSegments
+    particles: Points | null
+    material: ShaderMaterial
+    done: boolean
+}
+
 // ── Private State ───────────────────────────────────────────────────────────
 
 let _corridorGlowToken = 0
-const _corridorGlowNodes: Record<number, any> = {}
-const _corridorGlowTimers = new Set<any>()
+const _corridorGlowNodes: Record<number, CorridorGlowState | null> = {}
+const _corridorGlowTimers = new Set<ReturnType<typeof setTimeout>>()
 
-let _corridorAnimState: any = null
-let _corridorAnimStartTime: any = null
+let _corridorAnimState: CorridorAnimState | null = null
+let _corridorAnimStartTime: number | null = null
 let _heroRafId = 0
 
 // Persistent anchor glow state: tracks the anchor node and remaining
@@ -57,8 +86,8 @@ let _anchorGlowLastFrame: number | null = null
  * Creates a bezier-approximated corridor path from anchor to a target point.
  * Returns an array of Vector3 positions along the curve.
  */
-function getCorridorPathPoints(anchorPos: any, targetPos: any, segments = 20) {
-    const points: any[] = []
+function getCorridorPathPoints(anchorPos: Vector3, targetPos: Vector3, segments = 20): Vector3[] {
+    const points: Vector3[] = []
     for (let i = 0; i <= segments; i++) {
         const t = i / segments
         // Slight arch upward in Y for the corridor feel
@@ -85,8 +114,8 @@ function buildCorridorLineGeometry(anchorIndex: number, routeIndices: number[]) 
     if (targetIndices.length === 0) return null
 
     const SEGMENTS = 24
-    const positions: any[] = []
-    const colors: any[] = []
+    const positions: number[] = []
+    const colors: number[] = []
 
     targetIndices.forEach((targetIdx: number) => {
         const targetPos = state.nodePositions[targetIdx]
@@ -96,6 +125,7 @@ function buildCorridorLineGeometry(anchorIndex: number, routeIndices: number[]) 
         // Build continuous path for LineGeometry
         for (let s = 0; s <= SEGMENTS; s++) {
             const p = pathPoints[s]
+            if (!p) continue
             const t = s / SEGMENTS
             positions.push(p.x, p.y, p.z)
             colors.push(0.42 + (0.74 - 0.42) * t, 0.92 + (0.86 - 0.92) * t, 0.88 + (0.68 - 0.88) * t)
@@ -150,6 +180,7 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
             const offset = (seededUnit(pIdx, 0x5eed) - 0.5) * 0.08
             const segIdx = Math.min(Math.floor(baseProgress * (pathPoints.length - 1)), pathPoints.length - 1)
             const pt = pathPoints[segIdx]
+            if (!pt) continue
 
             positions[pIdx * 3] = pt.x + offset
             positions[pIdx * 3 + 1] = pt.y + offset * 0.5
@@ -238,7 +269,7 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
-export function triggerSearchHeroMoment(anchorIndex: any) {
+export function triggerSearchHeroMoment(anchorIndex: number) {
     if (!webglContext.pointsMaterial || !webglContext.pointsMaterial.userData.shader || !state.nodePositions) return
     const shader = webglContext.pointsMaterial.userData.shader
 
@@ -262,7 +293,7 @@ export function triggerSearchHeroMoment(anchorIndex: any) {
     const duration = 2400
     const startTime = performance.now()
 
-    function animateHero(now: any) {
+    function animateHero(now: number) {
         const elapsed = now - startTime
         const progress = Math.min(elapsed / duration, 1.0)
 
@@ -289,7 +320,7 @@ export function triggerSearchHeroMoment(anchorIndex: any) {
     _heroRafId = requestAnimationFrame(animateHero)
 }
 
-export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices: number[] = []) {
+export function triggerCorridorNodeGlow(anchorIndex: number, routeIndices: number[] = []) {
     if (!webglContext.pointsMaterial?.userData?.shader || !state.nodePositions) return
     const shader = webglContext.pointsMaterial.userData.shader
 
@@ -298,8 +329,8 @@ export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices: number[]
         delete _corridorGlowNodes[Number(k)]
     }
 
-    const allIndices = [...new Set([anchorIndex, ...(routeIndices || [])])].filter((i: any): i is number =>
-        Number.isFinite(i)
+    const allIndices = [...new Set([anchorIndex, ...(routeIndices || [])])].filter(
+        (i): i is number => Number.isFinite(i)
     )
     const reduceMotion =
         typeof window !== 'undefined' &&
@@ -340,7 +371,7 @@ export function triggerCorridorNodeGlow(anchorIndex: any, routeIndices: number[]
     })
 }
 
-export function updateCorridorNodeGlow(frameNow: any) {
+export function updateCorridorNodeGlow(frameNow: number): boolean {
     if (!webglContext.pointsMaterial?.userData?.shader) return false
     const shader = webglContext.pointsMaterial.userData.shader
     let anyActive = false
@@ -349,10 +380,10 @@ export function updateCorridorNodeGlow(frameNow: any) {
         const key = Number(idx)
         const glowState = _corridorGlowNodes[key]
         if (!glowState) continue
-        const startedAt = typeof glowState === 'number' ? glowState : glowState.startedAt
-        const fadeStartDelay = typeof glowState === 'number' ? CORRIDOR_NODE_FADE_DELAY : glowState.fadeStartDelay
-        const fadeDuration = typeof glowState === 'number' ? CORRIDOR_NODE_FADE_DURATION : glowState.fadeDuration
-        const targetBoost = typeof glowState === 'number' ? CORRIDOR_NODE_BOOST : glowState.targetBoost
+        const startedAt = glowState.startedAt
+        const fadeStartDelay = glowState.fadeStartDelay
+        const fadeDuration = glowState.fadeDuration
+        const targetBoost = glowState.targetBoost
         const elapsed = frameNow - startedAt
         if (elapsed > fadeStartDelay) {
             const fadeProgress = Math.min((elapsed - fadeStartDelay) / fadeDuration, 1)
@@ -390,7 +421,7 @@ export function updateCorridorNodeGlow(frameNow: any) {
     return anyActive
 }
 
-export function triggerSearchCorridorAnimation(anchorIndex: any, routeIndices: number[] = []) {
+export function triggerSearchCorridorAnimation(anchorIndex: number, routeIndices: number[] = []) {
     disposeSearchCorridorAnimation()
     const reduceMotion =
         typeof window !== 'undefined' &&
@@ -473,21 +504,26 @@ export function triggerSearchCorridorAnimation(anchorIndex: any, routeIndices: n
     }
 }
 
-export function updateSearchCorridorAnimation(frameNow: any) {
-    if (!_corridorAnimState || !_corridorAnimState.line) return false
+export function updateSearchCorridorAnimation(frameNow: number): boolean {
     const st = _corridorAnimState
+    if (!st || !st.line) return false
+    if (_corridorAnimStartTime === null) return false
     const elapsed = frameNow - _corridorAnimStartTime
 
     const drawProgress = Math.min(elapsed / CORRIDOR_SOFT_DRAW_DURATION, 1.0)
 
-    if (st.material?.uniforms) {
+    if (st.material?.uniforms?.uDrawProgress && st.material.uniforms.uTime) {
         st.material.uniforms.uDrawProgress.value = drawProgress
         st.material.uniforms.uTime.value = frameNow / 1000
     }
 
-    if (st.particles?.material?.uniforms) {
-        st.particles.material.uniforms.uDrawProgress.value = drawProgress
-        st.particles.material.uniforms.uTime.value = frameNow / 1000
+    // particles.material is typed Material | Material[] in three.js but we
+    // assign a ShaderMaterial in buildCorridorParticleTrail; narrow here
+    // so the uniform access doesn't go through `as any`.
+    const particlesMaterial = st.particles?.material as ShaderMaterial | undefined
+    if (particlesMaterial?.uniforms?.uDrawProgress && particlesMaterial.uniforms.uTime) {
+        particlesMaterial.uniforms.uDrawProgress.value = drawProgress
+        particlesMaterial.uniforms.uTime.value = frameNow / 1000
     }
 
     if (elapsed > CORRIDOR_SOFT_DRAW_DURATION) {
@@ -498,9 +534,8 @@ export function updateSearchCorridorAnimation(frameNow: any) {
         const lineOpacity = 1.0 - fadeProgress
         if (st.material?.uniforms?.uFadeOpacity) st.material.uniforms.uFadeOpacity.value = lineOpacity
         if (st.material) st.material.opacity = lineOpacity
-        if (st.particles?.material?.uniforms?.uFadeOpacity)
-            st.particles.material.uniforms.uFadeOpacity.value = lineOpacity
-        if (st.particles?.material) st.particles.material.opacity = lineOpacity
+        if (particlesMaterial?.uniforms?.uFadeOpacity) particlesMaterial.uniforms.uFadeOpacity.value = lineOpacity
+        if (particlesMaterial) particlesMaterial.opacity = lineOpacity
     }
 
     if (elapsed >= CORRIDOR_SOFT_TOTAL_DURATION) {
@@ -512,7 +547,7 @@ export function updateSearchCorridorAnimation(frameNow: any) {
 
 export function disposeSearchCorridorAnimation() {
     if (state.searchCorridorGroup) {
-        if (state.scene) state.scene.remove(state.searchCorridorGroup as any)
+        if (state.scene) state.scene.remove(state.searchCorridorGroup)
         disposeObject3D(state.searchCorridorGroup)
         state.searchCorridorGroup = null
     }
