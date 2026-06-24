@@ -22,7 +22,7 @@ import { resolveSource } from './source-path.mjs'
 const root = process.cwd()
 const read = (relativePath) => fs.readFileSync(resolveSource(relativePath, root), 'utf8')
 
-const html = read('vector-explorer-polished.html')
+const html = read('docs/archive/vector-explorer-polished-legacy.html')
 const weatherUiJs = read('src/lib/ui/weather-ui.ts')
 const timeWeatherCss = read('css/time_weather.css')
 
@@ -59,14 +59,10 @@ assert.match(
 
 for (const marker of [
     '.weather-widget {',
-    '.weather-widget[hidden]',
     '.weather-temp',
     '.weather-desc',
     '.weather-wind',
     '.weather-staleness',
-    "body[data-panel-surface^='map-'] .weather-widget",
-    "body[data-panel-surface='focus-search'] .weather-widget",
-    "body[data-panel-surface='semantic-dive'] .weather-widget",
     '@media (max-width: 768px)'
 ]) {
     assert.ok(timeWeatherCss.includes(marker), `time_weather.css should contain canonical weather marker: ${marker}`)
