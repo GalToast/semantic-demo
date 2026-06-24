@@ -27,7 +27,8 @@ import type {
     Vector3Like,
     SearchSummary,
     SearchErrorData,
-    SearchResult
+    SearchResult,
+    LaneHealthPayload
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
@@ -76,7 +77,7 @@ class AppState {
     semanticLaneOpsRefreshTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     semanticLanePendingWarm = $state<boolean>(false)
     semanticLaneState = $state<string>('checking')
-    semanticLaneSnapshot = $state<unknown>(null)
+    semanticLaneSnapshot = $state<LaneHealthPayload | null>(null)
     semanticSearchResultCache = $state<Map<string, unknown>>(new Map())
     semanticSearchCacheDiagnostics = $state<SemanticSearchCacheDiagnostics>({
         hits: 0,

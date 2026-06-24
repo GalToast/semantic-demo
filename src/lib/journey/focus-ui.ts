@@ -422,10 +422,7 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
         chip.dataset.walkIndex = String(index)
         chip.dataset.walkOrder = String(order)
         if (isCurrent) chip.setAttribute('aria-current', 'step')
-        chip.setAttribute(
-            'aria-label',
-            isCurrent ? `Current stop: ${name}` : `Return to ${name}`
-        )
+        chip.setAttribute('aria-label', isCurrent ? `Current stop: ${name}` : `Return to ${name}`)
         chip.textContent = name
 
         if (!isCurrent) {
@@ -543,8 +540,8 @@ export function updateTraversalUi(): void {
         focusRouteEl.dataset.state = neighborCount ? (nav.mode === 'trail' ? 'walking' : 'ready') : 'empty'
 
     if (coldDegradedNoRail) {
-        const queryLabel = (appState.semanticLaneSnapshot as any)?.query
-            ? `"${(appState.semanticLaneSnapshot as any).query}"`
+        const queryLabel = appState.semanticLaneSnapshot?.query
+            ? `"${appState.semanticLaneSnapshot.query}"`
             : 'this semantic trail'
         prevBtn.disabled = true
         nextBtn.disabled = true

@@ -447,6 +447,8 @@ export interface SearchSummary {
     reason?: string
 }
 
+export type { LaneHealthPayload } from '../orchestration/semantic-lane'
+
 /**
  * Shape of state.searchError — set by search.svelte.ts (setSearchError) and
  * results-ui.ts (searchErrorEnvelopes). Consumed by triggers.ts as a truthy
