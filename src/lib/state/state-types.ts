@@ -15,6 +15,7 @@
 import type { WebGLContextState } from '@lib/engine/webgl-context'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
+import type { SpatialGrid } from '@lib/journey/thread-model'
 import type { Vector3 } from 'three'
 
 export interface Vector3Like {
@@ -707,7 +708,7 @@ export interface SemanticState extends StateConfig {
     bloomIndices: Set<number>
     bridgeIndices: Set<number>
     trailIndices: Set<number>
-    projectedNeighborGrid: unknown
+    projectedNeighborGrid: SpatialGrid | null
     projectedNeighborCache: Map<number, unknown>
     pointIndexByLeadId: Map<string | number, number>
     deferredHydrationStarted: boolean

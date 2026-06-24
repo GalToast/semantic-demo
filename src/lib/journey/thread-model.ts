@@ -134,10 +134,10 @@ export function buildSpatialGrid(
 
 export function buildProjectedNeighborGrid(): SpatialGrid {
 	if (state.projectedNeighborGrid) {
-		return state.projectedNeighborGrid as unknown as SpatialGrid;
+		return state.projectedNeighborGrid;
 	}
 	state.projectedNeighborGrid = buildSpatialGrid(0.12);
-	return state.projectedNeighborGrid as unknown as SpatialGrid;
+	return state.projectedNeighborGrid;
 }
 
 /* ── getProjectedNeighborCandidates ─────────────────────────────────────── */

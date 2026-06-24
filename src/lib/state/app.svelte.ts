@@ -35,6 +35,7 @@ import type {
 import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
+import type { SpatialGrid } from '@lib/journey/thread-model'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 import type { Scene, Points, PointsMaterial, InstancedMesh, Material } from 'three'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
@@ -419,7 +420,7 @@ class AppState {
     bloomIndices = $state<Set<number>>(new Set())
     bridgeIndices = $state<Set<number>>(new Set())
     trailIndices = $state<Set<number>>(new Set())
-    projectedNeighborGrid = $state<unknown>(null)
+    projectedNeighborGrid = $state<SpatialGrid | null>(null)
     projectedNeighborCache = $state<Map<number, unknown>>(new Map())
     pointIndexByLeadId = $state<Map<string | number, number>>(new Map())
     deferredHydrationStarted = $state<boolean>(false)
