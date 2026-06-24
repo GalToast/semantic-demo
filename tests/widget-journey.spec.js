@@ -745,9 +745,13 @@ test.describe('Widget Journey Tests — replay tour', () => {
             await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
             await page.locator('.search-container').waitFor({ state: 'attached', timeout: 30000 })
 
-            // Simulate a user who already saw and dismissed the demo.
+            // Simulate a user who already saw and dismissed the demo
+            // some time in the past.
             await page.evaluate(() => {
-                window.sessionStorage.setItem('moco_mycelium_demo_session_v1', '2026-01-01T00:00:00.000Z')
+                window.sessionStorage.setItem(
+                    'moco_mycelium_demo_session_v1',
+                    '2026-01-01T00:00:00.000Z'
+                )
             })
 
             // Open the keyboard shortcuts panel (the replay button lives
@@ -764,17 +768,26 @@ test.describe('Widget Journey Tests — replay tour', () => {
                 'replay button should be labeled "replay tour"'
             ).toBe('replay tour')
 
-            // Click the replay button. It should clear the session gate.
+            // Click the replay button. The handler clears the OLD flag
+            // and then re-fires the demo flow. After the demo's
+            // `startDemo()` runs, the flag is set to "1" (the start guard).
+            // After `_startMicroDemo()` succeeds, the flag is set to an
+            // ISO timestamp. Either is acceptable — the key contract is
+            // that the OLD date I set is gone (the replay cleared it).
             await replayBtn.click()
             await page.waitForTimeout(500)
 
-            const flag = await page.evaluate(() =>
+            const newFlag = await page.evaluate(() =>
                 window.sessionStorage.getItem('moco_mycelium_demo_session_v1')
             )
             expect(
-                flag,
-                'replay button should clear moco_mycelium_demo_session_v1 so the demo can re-run'
-            ).toBeNull()
+                newFlag,
+                'replay button should clear the stale session flag — was "2026-01-01...", got the new value'
+            ).not.toBe('2026-01-01T00:00:00.000Z')
+            expect(
+                newFlag,
+                'replay button should result in a non-null session flag (the demo re-ran)'
+            ).not.toBeNull()
         } finally {
             await ctx.close()
         }

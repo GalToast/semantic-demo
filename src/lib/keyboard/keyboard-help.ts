@@ -134,7 +134,7 @@ export function initKeyboardShortcutsHint(): void {
     // W47-T2 #2.3: a "Replay tour" button at the bottom of the panel so
     // users who closed the first-visit demo (or whose session expired)
     // can re-trigger it. Clears the choreography session-storage gate and
-    // fires requestSemanticGuide() to start a fresh demo.
+    // fires startMicroDemo() to start a fresh demo.
     const replayBtn = document.createElement('button')
     replayBtn.id = 'btn-replay-tour'
     replayBtn.className = 'kh-replay-btn'
@@ -152,10 +152,10 @@ export function initKeyboardShortcutsHint(): void {
             // work but the click handler still closes the panel and tries.
         }
         closePanel()
-        // Fire the demo. The request is fire-and-forget; the choreography
-        // module is responsible for eligibility checks and the
-        // session-storage gate (now cleared).
-        import('@lib/journey/semantic-guide').then((m) => m.requestSemanticGuide()).catch(() => {
+        // Fire the choreography demo. startMicroDemo() owns the re-entry
+        // guard (W47 fix) and clears the session gate via shouldRunMicroDemo().
+        // It returns silently if guards fail (reduced-motion, no WebGL, etc.).
+        import('../demo/choreography').then((m) => m.startMicroDemo()).catch(() => {
             // Ignore: if the module fails to load, the user can still
             // interact with the rest of the app.
         })
