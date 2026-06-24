@@ -669,3 +669,63 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
         }
     })
 })
+
+// ── Search error message tests ──────────────────────────────────────────────
+//
+// Locks in the W47-T2 #2.5 fix: the search error UI shows the underlying
+// error message from the search engine (e.g. "Semantic search timed
+// out after 8000ms."). Without this, the user only sees "Retry needed"
+// with no indication of why the search failed.
+//
+// Behavioral test was attempted but the searchState store has a
+// function-based snapshot that doesn't refresh on direct appState writes
+// — only via withSearchNotify() from inside the search action. The
+// search action in preview mode falls back to the mock catalog and
+// never errors, so a behavioral test that exercises the real path is
+// also blocked by the same env. Structural test below locks in the
+// contract without those dependencies.
+import { readFileSync } from 'node:fs'
+import { fileURLToPath } from 'node:url'
+import { dirname, resolve } from 'node:path'
+
+const __filename2 = fileURLToPath(import.meta.url)
+const __dirname2 = dirname(__filename2)
+const SEARCH_RESULTS_PATH = resolve(__dirname2, '../src/components/SearchResults.svelte')
+
+test.describe('Widget Journey Tests — search error detail', () => {
+    test('16. search-error-detail element renders the engine message (structural)', () => {
+        const src = readFileSync(SEARCH_RESULTS_PATH, 'utf8')
+        // 1. The data-testid must be present (test selector stability).
+        expect(
+            src,
+            'search-error-detail element must have data-testid="search-error-detail"'
+        ).toMatch(/data-testid=['"]search-error-detail['"]/)
+        // 2. The element must display searchError.message (the engine
+        //    error, not a generic string).
+        expect(
+            src,
+            'search-error-detail must display searchError.message'
+        ).toMatch(/\{searchError\.?\s*message\}/)
+        // 3. The element must live inside the isFullError conditional,
+        //    not the inline-error variant (different UX position).
+        //    Split source on {:else if isFullError} then take everything
+        //    up to the next {:else or {/if} marker.
+        const startMarker = '{:else if isFullError}'
+        const startIdx = src.indexOf(startMarker)
+        expect(startIdx, 'isFullError block start not found').toBeGreaterThan(-1)
+        const afterStart = src.slice(startIdx + startMarker.length)
+        // Find the next `{:else` or `{/if}` after the block starts
+        const nextElse = afterStart.indexOf('{:else')
+        const nextEndIf = afterStart.indexOf('{/if}')
+        let endIdx
+        if (nextElse === -1 && nextEndIf === -1) endIdx = afterStart.length
+        else if (nextElse === -1) endIdx = nextEndIf
+        else if (nextEndIf === -1) endIdx = nextElse
+        else endIdx = Math.min(nextElse, nextEndIf)
+        const fullErrorBlock = afterStart.slice(0, endIdx)
+        expect(
+            fullErrorBlock,
+            'search-error-detail must live inside the isFullError block'
+        ).toContain('data-testid="search-error-detail"')
+    })
+})
