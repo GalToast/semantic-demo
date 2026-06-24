@@ -63,7 +63,8 @@ const _searchState = vi.hoisted(() => ({
 
 const _weatherState = vi.hoisted(() => ({
     weather: null as any,
-    weatherInitialized: false
+    weatherInitialized: false,
+    weatherState: { lastFetch: 0, fallback: false }
 }))
 
 // ── Mock factories ───────────────────────────────────────────────────────────
@@ -159,7 +160,10 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         get weather() { return _weatherState.weather },
         set weather(v: any) { _weatherState.weather = v },
         get weatherInitialized() { return _weatherState.weatherInitialized },
-        set weatherInitialized(v: boolean) { _weatherState.weatherInitialized = v }
+        set weatherInitialized(v: boolean) { _weatherState.weatherInitialized = v },
+        get weatherState() { return _weatherState.weatherState },
+        set weatherState(v: any) { _weatherState.weatherState = v },
+        withMutation(fn: () => void) { fn() }
     }
 }))
 
@@ -252,10 +256,7 @@ import {
     hasWeather,
     isWeatherInitialized,
     setWeatherInitialized,
-    updateWeather,
-    CONDITION_ICONS,
-    type WeatherData,
-    type WeatherCondition
+    fetchWeather
 } from '@lib/stores/weather.svelte.ts'
 
 // ── Compass tests ────────────────────────────────────────────────────────────
@@ -1024,18 +1025,20 @@ describe('engine status store — canonical engine lifecycle status', () => {
 // ── Weather tests ────────────────────────────────────────────────────────────
 
 describe('weather store — state-class appState regression', () => {
-    const FAKE_WEATHER: WeatherData = {
-        temperature: 72,
-        feelsLike: 74,
-        condition: 'clear' as WeatherCondition,
-        label: 'Clear Sky',
+    /** Canonical weather shape written by the Open-Meteo client. */
+    const FAKE_WEATHER = {
+        temp: 72,
         humidity: 55,
+        code: 0,
+        description: 'Clear Sky',
+        icon: 'sun' as const,
+        condition: 'sun' as const,
         windSpeed: 5,
-        windDirection: 'N',
-        forecast: 'Clear skies today',
-        location: 'Montgomery County, TX',
-        updatedAt: 1,
+        windDirection: 0,
+        windGust: null,
+        source: 'open-meteo'
     }
+
     beforeEach(() => {
         _weatherState.weather = null
         _weatherState.weatherInitialized = false
@@ -1046,31 +1049,27 @@ describe('weather store — state-class appState regression', () => {
         expect(weatherData.condition).toBe('clear')
         expect(weatherData.label).toBe('--')
         expect(weatherData.forecast).toBe('')
-        expect(weatherData.updatedAt).toBe(0)
     })
 
-    it('weatherData getters read from appState when set', () => {
+    it('weatherData getters read from appState when canonical shape is set', () => {
         _weatherState.weather = FAKE_WEATHER
         expect(weatherData.temperature).toBe(72)
         expect(weatherData.condition).toBe('clear')
         expect(weatherData.label).toBe('Clear Sky')
-        expect(weatherData.forecast).toBe('Clear skies today')
-        expect(weatherData.updatedAt).toBe(1)
     })
 
-    it('derived getters read from appState', () => {
+    it('derived getters read from canonical shape', () => {
         _weatherState.weather = FAKE_WEATHER
         expect(weatherTemperature()).toBe(72)
         expect(weatherCondition()).toBe('clear')
         expect(weatherLabel()).toBe('Clear Sky')
-        expect(weatherForecast()).toBe('Clear skies today')
     })
 
     it('hasWeather returns false when weather is null', () => {
         expect(hasWeather()).toBe(false)
     })
 
-    it('hasWeather returns true when updatedAt > 0', () => {
+    it('hasWeather returns true when canonical weather is set', () => {
         _weatherState.weather = FAKE_WEATHER
         expect(hasWeather()).toBe(true)
     })
@@ -1088,30 +1087,8 @@ describe('weather store — state-class appState regression', () => {
         expect(_weatherState.weatherInitialized).toBe(false)
     })
 
-    it('updateWeather merges into appState and sets initialized', () => {
-        updateWeather({ temperature: 85, condition: 'rain', label: 'Light Rain' })
-        const w = _weatherState.weather as WeatherData
-        expect(w.temperature).toBe(85)
-        expect(w.condition).toBe('rain')
-        expect(w.label).toBe('Light Rain')
-        expect(_weatherState.weatherInitialized).toBe(true)
-    })
-
-    it('updateWeather preserves untouched fields', () => {
-        _weatherState.weather = FAKE_WEATHER
-        updateWeather({ temperature: 90 })
-        const w = _weatherState.weather as WeatherData
-        expect(w.temperature).toBe(90)
-        expect(w.condition).toBe('clear')
-        expect(w.windSpeed).toBe(5)
-    })
-
-    it('CONDITION_ICONS contains unicode icons for each condition', () => {
-        expect(CONDITION_ICONS.clear).toBeTruthy()
-        expect(CONDITION_ICONS.clouds).toBeTruthy()
-        expect(CONDITION_ICONS.rain).toBeTruthy()
-        expect(CONDITION_ICONS.storm).toBeTruthy()
-        expect(CONDITION_ICONS.fog).toBeTruthy()
-        expect(CONDITION_ICONS.wind).toBeTruthy()
+    it('fetchWeather delegates to canonical client without throwing', async () => {
+        // fetchWeather swallows errors so the widget's onMount doesn't reject.
+        await expect(fetchWeather()).resolves.toBeUndefined()
     })
 })

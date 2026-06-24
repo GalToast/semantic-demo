@@ -239,11 +239,11 @@ For CSS token value changes:
 
 On viewports ≤768px, the header mode chips follow an **icons-only except active** policy. The header itself stays at its compact `--top-chrome-mobile` height (82px); canvas height is preserved.
 
-| Chip state | Mobile treatment | Discoverability channel |
-|---|---|---|
-| Active (e.g., Overview) | Icon + label visible inline | Always-visible (primary orientation signal) |
+| Chip state                    | Mobile treatment                                                    | Discoverability channel                                                             |
+| ----------------------------- | ------------------------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| Active (e.g., Overview)       | Icon + label visible inline                                         | Always-visible (primary orientation signal)                                         |
 | Locked (Trail, Focus, Inside) | Icon-only with dimmed locked styling + `disabled` / `aria-disabled` | Long-press `title` attribute: full mode description + "Select a business to unlock" |
-| Other (Search, Map) | Icon-only | Long-press `title` attribute: mode description |
+| Other (Search, Map)           | Icon-only                                                           | Long-press `title` attribute: mode description                                      |
 
 **Why:** Adding labels to locked chips pushed the row from 290px to 387px on a 390px viewport, clipping Map off-screen. Icons-only except active brings the row to 311px — fits in the 339px chip budget with 28px to spare.
 

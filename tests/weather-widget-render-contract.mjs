@@ -174,6 +174,26 @@ async function main() {
         await context.addInitScript(() => {
             window.__PLAYWRIGHT__ = true
         })
+
+        // Intercept Open-Meteo API so the widget never fetches real weather
+        // during tests — keeps test data deterministic.
+        await context.route('https://api.open-meteo.com/v1/forecast**', (route) => {
+            route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                body: JSON.stringify({
+                    current: {
+                        temperature_2m: 72,
+                        relative_humidity_2m: 65,
+                        weather_code: 61,
+                        wind_speed_10m: 9,
+                        wind_direction_10m: 135,
+                        wind_gusts_10m: 15
+                    }
+                })
+            })
+        })
+
         const page = await context.newPage()
         await waitForWeatherWidget(page)
 

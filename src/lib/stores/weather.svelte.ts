@@ -47,67 +47,11 @@ interface CanonicalWeather {
 function readCanonical(): CanonicalWeather | null {
     const w = appState.weather
     if (!w) return null
-    // Happy path: the canonical Open-Meteo client (@lib/utils/weather) writes
-    // { temp, description, condition, icon, humidity, windSpeed, windDirection }.
+    // Canonical Open-Meteo client writes this shape.
     if (typeof (w as Record<string, unknown>).temp === 'number') {
         return w as CanonicalWeather
     }
-    // Legacy write path: updateWeather() and any caller still holding a
-    // WeatherData reference write the legacy shape
-    // { temperature, label, windDirection: 'NW', ... }. Adapt on read so the
-    // public API surface and existing tests stay stable while the canonical
-    // client becomes the primary writer.
-    // TODO (Ticket W46-D4): delete this branch once all writers go through the
-    // canonical client and the legacy WeatherData exports are retired.
-    const legacy = w as unknown as Partial<WeatherData>
-    if (typeof legacy.temperature === 'number') {
-        return {
-            temp: legacy.temperature,
-            description: legacy.label ?? '',
-            condition: LEGACY_CONDITION_TO_CANONICAL[legacy.condition ?? 'clear'],
-            icon: LEGACY_CONDITION_TO_ICON[legacy.condition ?? 'clear'],
-            humidity: legacy.humidity ?? 0,
-            windSpeed: legacy.windSpeed ?? 0,
-            // Legacy stored wind as a compass string ('NW'); canonical wants degrees.
-            // Lossy on read — degToCompass() returns '--' for non-finite values.
-            windDirection: NaN
-        }
-    }
     return null
-}
-
-/** Legacy WeatherCondition → CanonicalCondition slug. */
-const LEGACY_CONDITION_TO_CANONICAL: Record<WeatherCondition, CanonicalCondition> = {
-    clear: 'sun',
-    clouds: 'cloud',
-    fog: 'fog',
-    rain: 'rain',
-    storm: 'storm',
-    wind: 'cloud'
-}
-
-/** Legacy WeatherCondition → canonical icon key. */
-const LEGACY_CONDITION_TO_ICON: Record<WeatherCondition, WeatherIconKey> = {
-    clear: 'sun',
-    clouds: 'cloud',
-    fog: 'cloud',
-    rain: 'rain',
-    storm: 'rain',
-    wind: 'cloud'
-}
-
-/**
- * Read a field that only the legacy WeatherData shape carries (e.g. `forecast`).
- * The canonical Open-Meteo writer does not put these fields on appState.weather,
- * so the getter falls back to '' for canonical writes and to the legacy field
- * for legacy writes (updateWeather, tests, fixtures).
- * TODO (Ticket W46-D4): delete once legacy writers are retired.
- */
-function readLegacyOnlyField<T>(key: keyof WeatherData): T | undefined {
-    const w = appState.weather
-    if (!w) return undefined
-    if (typeof (w as Record<string, unknown>).temp === 'number') return undefined
-    return (w as unknown as WeatherData)[key] as T | undefined
 }
 
 function readLastFetch(): number {
@@ -156,15 +100,9 @@ export const weatherData = {
         return readCanonical()?.description ?? '--'
     },
     get forecast(): string {
-        return readLegacyOnlyField<string>('forecast') ?? ''
+        return ''
     },
     get updatedAt(): number {
-        // Legacy writers (updateWeather, tests, fixtures) carry `updatedAt`
-        // directly on appState.weather. Canonical writers set
-        // weatherState.lastFetch instead. Prefer legacy when present so the
-        // old contract (passing `updatedAt: 1` round-trips) keeps working.
-        const legacyUpdatedAt = readLegacyOnlyField<number>('updatedAt')
-        if (legacyUpdatedAt !== undefined) return legacyUpdatedAt
         return readLastFetch() || (readCanonical() ? Date.now() : 0)
     }
 }
@@ -242,40 +180,4 @@ export async function fetchWeather(): Promise<void> {
         // Canonical already catches its own errors and sets appState.weatherState.fallback.
         // Swallow here so the widget's onMount promise doesn't reject.
     }
-}
-
-/**
- * Legacy WeatherCondition → unicode emoji icon. The widget no longer reads
- * this (it uses `weatherIconKey()` + inline SVG), but the export is kept
- * for tests and any external consumer still keyed off the legacy enum.
- * TODO (Ticket W46-D4): delete when the legacy WeatherCondition enum is retired.
- */
-export const CONDITION_ICONS: Record<WeatherCondition, string> = {
-    clear: '☀',
-    clouds: '☁',
-    rain: '🌧',
-    storm: '☈',
-    fog: '🌫',
-    wind: '🌬'
-}
-
-/**
- * Legacy write API. The canonical client (@lib/utils/weather.fetchWeather)
- * is now the primary writer; this remains as a backward-compatible hook
- * for tests, fixtures, and any caller still holding a WeatherData reference.
- * Writes the legacy shape so existing read sites keyed off `temperature` /
- * `label` / `condition` keep working. The readCanonical() adapter then
- * translates legacy → canonical for the new getters.
- * TODO (Ticket W46-D4): delete once all writers route through the canonical client.
- */
-export function updateWeather(data: Partial<WeatherData>): void {
-    appState.withMutation(() => {
-        const current = (appState.weather as unknown as Partial<WeatherData>) ?? {}
-        appState.weather = {
-            ...current,
-            ...data,
-            updatedAt: performance.now()
-        }
-        appState.weatherInitialized = true
-    })
 }
