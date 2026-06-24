@@ -23,6 +23,11 @@ import {
 import { findNearestCanvasFieldNode } from './canvas-node-picking';
 import { clearCanvasFieldHover, setCanvasFieldHover } from './canvas-hover';
 import type { HoverCandidate } from './canvas-hover';
+import { showExperienceToast } from '@lib/orchestration/toast';
+
+// F3: Track whether the empty-click hint has been shown this session so
+// users aren't spammed with toasts.
+let _emptyClickHintShown = false;
 
 export { initJourneyCanvasInteractionAdapter, isThreadCandidateVisibleOnCanvas };
 
@@ -105,6 +110,10 @@ export function ensureCanvasNodeInteractionBindings(): void {
         noteSceneInteraction();
         releaseFocusCameraAssist('canvasHover');
         focusOnNode(candidate.index);
+      } else if (!_emptyClickHintShown) {
+        // F3: First empty-space click → gentle hint to guide the user
+        _emptyClickHintShown = true;
+        showExperienceToast('Explore the mycelium', 'Tap a glowing node to focus on a business.');
       }
     }
     ev.preventDefault();
