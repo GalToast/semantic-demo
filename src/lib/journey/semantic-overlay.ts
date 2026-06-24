@@ -16,6 +16,7 @@ import { getNextExploreCandidateForIndex, getThreadCandidatesForIndex } from '@l
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/journey/neighborhood'
 import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket'
 import type { ThreadEdge } from '@lib/journey/focus-pocket-geometry'
+import type { ThreadCandidate } from '@lib/journey/thread-model'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens'
 import { getLineSegmentCount } from '@lib/journey/webgl-utils'
@@ -85,13 +86,13 @@ function buildFocusThreadLineMaterial(): LineMaterial {
         depthTest: false,
         blending: AdditiveBlending
     } as any)
-    ;(lineMaterial as any).uniforms.time = { value: performance.now() / 1000 }
-    ;(lineMaterial as any).uniforms.semanticScore = { value: 0.5 }
-    ;(lineMaterial as any).uniforms.reducedMotion = { value: prefersReducedMotion() ? 1 : 0 }
-    ;(lineMaterial as any).uniforms.denseBundleMode = { value: 0 }
-    ;(lineMaterial as any).userData.shader = { uniforms: (lineMaterial as any).uniforms }
+    lineMaterial.uniforms.time = { value: performance.now() / 1000 }
+    lineMaterial.uniforms.semanticScore = { value: 0.5 }
+    lineMaterial.uniforms.reducedMotion = { value: prefersReducedMotion() ? 1 : 0 }
+    lineMaterial.uniforms.denseBundleMode = { value: 0 }
+    lineMaterial.userData.shader = { uniforms: lineMaterial.uniforms }
 
-    ;(lineMaterial as any).onBeforeCompile = (shader: any) => {
+    lineMaterial.onBeforeCompile = (shader) => {
         shader.vertexShader = shader.vertexShader.replace(
             'void main() {',
             `attribute float progress;
@@ -161,12 +162,12 @@ function buildFocusThreadLineMaterial(): LineMaterial {
             diffuseColor = vec4(finalColor, min(alpha, 0.42));`
         )
 
-        shader.uniforms.time = (lineMaterial as any).uniforms.time
-        shader.uniforms.semanticScore = (lineMaterial as any).uniforms.semanticScore
-        shader.uniforms.reducedMotion = (lineMaterial as any).uniforms.reducedMotion
-        shader.uniforms.denseBundleMode = (lineMaterial as any).uniforms.denseBundleMode
+        shader.uniforms.time = lineMaterial.uniforms.time!
+        shader.uniforms.semanticScore = lineMaterial.uniforms.semanticScore!
+        shader.uniforms.reducedMotion = lineMaterial.uniforms.reducedMotion!
+        shader.uniforms.denseBundleMode = lineMaterial.uniforms.denseBundleMode!
 
-        ;(lineMaterial as any).userData.shader = shader
+        lineMaterial.userData.shader = shader
     }
 
     return lineMaterial
@@ -211,8 +212,10 @@ export function refreshFocusSemanticOverlay(): void {
             : null
     const focusCluster = focusPointAtFocus?.cluster ?? 0
     const semanticCandidates = (_state.navState.threadCandidates || [])
-        .filter((candidate: any) => candidate?.source === 'semantic' && candidate.index !== focusIndex)
-        .filter((candidate: any) => isPointVisible(candidate.index, _state.points, null, _state.activeFilters))
+        .filter((candidate: ThreadCandidate) => candidate?.source === 'semantic' && candidate.index !== focusIndex)
+        .filter((candidate: ThreadCandidate) =>
+            isPointVisible(candidate.index, _state.points, null, _state.activeFilters)
+        )
         .slice(0, 10)
     const roleByIndex =
         _state.navState.focusPocketRoleByIndex instanceof Map ? _state.navState.focusPocketRoleByIndex : new Map()
@@ -236,7 +239,7 @@ export function refreshFocusSemanticOverlay(): void {
         })
     const pocketThreadSet = new Set(pocketThreadIndices)
     const stagedSemanticIndices = semanticCandidates
-        .map((candidate: any) => candidate.index)
+        .map((candidate: ThreadCandidate) => candidate.index)
         .filter((index: number) => pocketThreadSet.has(index))
     const overlayIndices = [...new Set([nextFocusIndex, ...pocketThreadIndices, ...stagedSemanticIndices])].filter(
         (index): index is number => Number.isFinite(index) && index !== focusIndex
@@ -336,9 +339,12 @@ export function refreshFocusSemanticOverlay(): void {
 
     overlayIndices.slice(0, 3).forEach((index: number) => {
         getThreadCandidatesForIndex(index)
-            .filter((candidate: any) => overlayIndices.includes(candidate.index) && candidate.index !== focusIndex)
+            .filter(
+                (candidate: ThreadCandidate) =>
+                    overlayIndices.includes(candidate.index) && candidate.index !== focusIndex
+            )
             .slice(0, 1)
-            .forEach((candidate: any) => addEdge(index, candidate.index, 'support', 0.28))
+            .forEach((candidate: ThreadCandidate) => addEdge(index, candidate.index, 'support', 0.28))
     })
 
     const lineGeometry = new LineGeometry()
@@ -353,18 +359,18 @@ export function refreshFocusSemanticOverlay(): void {
 
     const denseBundleMode = overlayIndices.length >= 6 ? 1 : 0
     const lineMaterial = buildFocusThreadLineMaterial()
-    ;(lineMaterial as any).userData.denseBundleMode = denseBundleMode
+    lineMaterial.userData.denseBundleMode = denseBundleMode
     const avgSemanticScore =
         semanticScore.length > 0 ? semanticScore.reduce((s: number, v: number) => s + v, 0) / semanticScore.length : 0.5
-    if ((lineMaterial as any).userData?.shader) {
-        ;(lineMaterial as any).userData.shader.uniforms.semanticScore.value = avgSemanticScore
-        ;(lineMaterial as any).userData.shader.uniforms.denseBundleMode.value = denseBundleMode
+    if (lineMaterial.userData?.shader) {
+        lineMaterial.userData.shader.uniforms.semanticScore.value = avgSemanticScore
+        lineMaterial.userData.shader.uniforms.denseBundleMode.value = denseBundleMode
     }
-    if ((lineMaterial as any).uniforms?.semanticScore) {
-        ;(lineMaterial as any).uniforms.semanticScore.value = avgSemanticScore
+    if (lineMaterial.uniforms?.semanticScore) {
+        lineMaterial.uniforms.semanticScore.value = avgSemanticScore
     }
-    if ((lineMaterial as any).uniforms?.denseBundleMode) {
-        ;(lineMaterial as any).uniforms.denseBundleMode.value = denseBundleMode
+    if (lineMaterial.uniforms?.denseBundleMode) {
+        lineMaterial.uniforms.denseBundleMode.value = denseBundleMode
     }
 
     _state.focusSemanticLines = new Line2(lineGeometry, lineMaterial)
@@ -418,7 +424,7 @@ export function updateFocusSemanticOverlayPositions(now: number = performance.no
     const startAttr = line.geometry.attributes.instanceStart
     const endAttr = line.geometry.attributes.instanceEnd
     let offset = 0
-    pairs.forEach((edge: any) => {
+    pairs.forEach((edge: { t0: number; t1: number; cue: number; a: number; b: number; layer: number }) => {
         const p0 = getFocusCurvePointLocal(edge, edge.t0)
         const p1 = getFocusCurvePointLocal(edge, edge.t1)
         startAttr.array[offset] = Number.isFinite(p0.x) ? p0.x : 0
