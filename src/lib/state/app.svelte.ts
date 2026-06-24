@@ -35,6 +35,7 @@ import type {
 import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
+import type { Scene, Points, PointsMaterial, InstancedMesh, Material } from 'three'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
@@ -103,17 +104,15 @@ class AppState {
     mapRouteLayer = $state<unknown>(null)
     mapInitialized = $state<boolean>(false)
     leafletAssetsPromise = $state<Promise<unknown> | null>(null)
-    scene = $state<SemanticState['scene']>(null as unknown as SemanticState['scene'])
+    scene = $state<Scene | null>(null)
     camera = $state<CameraLike>(null as unknown as CameraLike)
     renderer = $state<RendererLike>(null as unknown as RendererLike)
     controls = $state<ControlsLike>(null as unknown as ControlsLike)
-    pointsMesh = $state<SemanticState['pointsMesh']>(null as unknown as SemanticState['pointsMesh'])
-    pointsMaterial = $state<SemanticState['pointsMaterial']>(null as unknown as SemanticState['pointsMaterial'])
-    nodeSporeMesh = $state<SemanticState['nodeSporeMesh']>(null as unknown as SemanticState['nodeSporeMesh'])
-    nodeSporeHitMesh = $state<SemanticState['nodeSporeHitMesh']>(null as unknown as SemanticState['nodeSporeHitMesh'])
-    nodeSporeMaterial = $state<SemanticState['nodeSporeMaterial']>(
-        null as unknown as SemanticState['nodeSporeMaterial']
-    )
+    pointsMesh = $state<Points | null>(null)
+    pointsMaterial = $state<PointsMaterial | null>(null)
+    nodeSporeMesh = $state<InstancedMesh | null>(null)
+    nodeSporeHitMesh = $state<InstancedMesh | null>(null)
+    nodeSporeMaterial = $state<Material | null>(null)
     rawPositionsBuffer = $state<Float32Array | null>(null)
     rawClustersBuffer = $state<Uint16Array | null>(null)
     leadEnrichment = $state<Record<string, unknown> | null>(null)
@@ -164,7 +163,6 @@ class AppState {
     rippleStartTime = $state<number>(0)
     bloomPulseStartTime = $state<number>(0)
     bridgePulseStartTime = $state<number>(0)
-    rippleCenter = $state<unknown>(null)
     pointColorStateVersion = $state<number>(0)
     pulsePhase = $state<number>(0)
     nodesAreSettling = $state<boolean>(false)
@@ -353,7 +351,6 @@ class AppState {
     filterColorStateKey = $state<string>('')
     registeredEvents = $state<Set<string>>(new Set())
     activeClusterFilter = $state<number | null>(null)
-    activeStoryPrompt = $state<unknown>(null)
     _showAllClusters = $state<boolean>(true)
     myceliumMode = $state<string>('default')
     trailDepth = $state<number>(0)
@@ -441,7 +438,6 @@ class AppState {
     // ==== UI COMPONENT STATE ====
     legendOpen = $state<boolean>(false)
     demoPhase = $state<string>('IDLE')
-    engineBridge = $state<unknown>(null) // Cast to EngineBridge in stores
 
     // ==== SEMANTIC GUIDE UI STATE ====
     semanticGuideState = $state<{

@@ -130,7 +130,6 @@ vi.mock('@lib/stores/engine.svelte', () => {
 vi.mock('@lib/state/app.svelte', () => ({
   appState: {
     withMutation: <T>(fn: () => T) => fn(),
-    engineBridge: null,
     navState: {
       mode: 'overview',
       surface: 'idle',

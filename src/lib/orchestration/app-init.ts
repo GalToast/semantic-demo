@@ -18,7 +18,7 @@
  */
 
 import { get } from 'svelte/store'
-import { initData, setLoadingPhase } from '@lib/data-store'
+import { initData, setLoadingPhase, setDataLoadError } from '@lib/data-store'
 import { navStore } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
@@ -171,6 +171,13 @@ function setupSafetyValves(): SafetyTimers {
         overlay.removeAttribute('aria-hidden')
         overlay.classList.remove('hidden', 'launching')
         overlay.dataset.loadingState = 'error'
+        // W47-D: also update the store so the reactively-bound LoadingOverlay
+        // can hide on the error state. Previously the safety valve only
+        // touched the DOM, leaving dataLoadState.status stuck at 'loading'
+        // and LoadingOverlay blocking all subsequent clicks.
+        setDataLoadError(
+            'Loading timed out after 15 seconds. Refresh after the connection recovers.'
+        )
     }, SAFETY_VALVE_MS)
 
     return { slowProgress, safetyValve }

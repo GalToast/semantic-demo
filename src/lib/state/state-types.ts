@@ -560,7 +560,6 @@ export interface SemanticState extends StateConfig {
     rippleStartTime: number
     bloomPulseStartTime: number
     bridgePulseStartTime: number
-    rippleCenter: unknown
     pointColorStateVersion: number
     pulsePhase: number
     nodesAreSettling: boolean
@@ -597,7 +596,6 @@ export interface SemanticState extends StateConfig {
     filterColorStateKey: string
     registeredEvents: Set<string>
     activeClusterFilter: number | null
-    activeStoryPrompt: unknown
     _showAllClusters: boolean
     myceliumMode: string
     trailDepth: number

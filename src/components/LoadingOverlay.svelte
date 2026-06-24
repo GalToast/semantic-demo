@@ -17,7 +17,7 @@
 -->
 <script lang="ts">
   import { fade } from 'svelte/transition';
-  import { loadingPhaseStore } from '@lib/data-store';
+  import { loadingPhaseStore, dataLoadState } from '@lib/data-store';
   import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
   interface Props {
@@ -43,9 +43,20 @@
   let progress = $derived(phaseMeta[phase as LoadingPhase]?.progress ?? 0);
   let note = $derived(phaseMeta[phase as LoadingPhase]?.note ?? '');
   let foot = $derived(phaseMeta[phase as LoadingPhase]?.foot ?? '');
-  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-  // inverts `!==` to `===`. Use positive equality + negation instead.
-  let actuallyVisible = $derived(visible && !(phase === 'launch'));
+  // W47-D: hide on launch (success) OR on data-load error (failure).
+  // The app-init.ts safety-valve timeout fires after 15s of stalling and
+  // shows the "Failed to load" UI but historically left the overlay visible
+  // because phase stayed at 'restore' — the 15s timeout didn't advance the
+  // phase to 'launch'. Result: the overlay stayed on top of everything,
+  // intercepting clicks in tests and (rarely) in real browsers on slow
+  // networks. Now `dataLoadState.status === 'error'` also dismisses the
+  // overlay. Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler
+  // bug inverts `!==` to `===`. Use positive equality + negation instead.
+  let actuallyVisible = $derived(
+    visible &&
+      !(phase === 'launch') &&
+      !($dataLoadState.status === 'error')
+  );
 
   /** Derive the active index for chip highlighting */
   let activePhaseIndex = $derived(PHASE_ORDER.indexOf(phase));
