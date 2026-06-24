@@ -32,6 +32,7 @@ import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 import { withStateMutation } from './with-state-mutation'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
 // ── App State class ─────────────────────────────────────────────────────────
 
@@ -615,14 +616,17 @@ export const appState: AppState = new Proxy({} as AppState, {
     set(_target, prop, value, _receiver) {
         // ── State validation (Phase 4) ─────────────────────────────────────
         // Guards catch invalid runtime values before they propagate downstream.
-        // In dev mode: throw. In prod: warn and reject the write.
+        // In dev mode: throw. In prod: silently reject the write (with a
+        // dev-gated debugWarn so we can still trace rejections during local
+        // development, but production users don't get console spam from
+        // benign validation failures).
         if (typeof prop === 'string') {
             const error = validateStateProperty(prop, value)
             if (error) {
                 if (STATE_VALIDATION_STRICT) {
                     throw new Error(`[appState] ${error}`)
                 } else {
-                    console.warn(`[appState] Invalid value rejected: ${error}`)
+                    debugWarn(`[appState] Invalid value rejected: ${error}`)
                     return false
                 }
             }
