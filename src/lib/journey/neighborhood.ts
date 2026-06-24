@@ -766,8 +766,8 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
   if (!hasSemanticSource) return;
   const limit = getSemanticThreadDisplayLimit();
   const threadRoute = valueArray(nav.threadCandidates)
-    .filter((candidate: any) => candidate?.source === 'semantic')
-    .map((candidate: any) => candidateIndex(candidate))
+    .filter((candidate: unknown) => (candidate as { source?: string } | null)?.source === 'semantic')
+    .map((candidate: unknown) => candidateIndex(candidate))
     .filter((index): index is number => index !== null);
   const pocketRoute = [...threadRoute, ...finiteIndexList(nav.focusPocketIndices)]
     .filter((candidateIndex: number) => Number.isFinite(candidateIndex) && candidateIndex !== seedIndex)
@@ -812,8 +812,8 @@ export function setTrailFromSeed(seedIndex: number): void {
   const limit = getSemanticThreadDisplayLimit();
   const allCandidates = (semanticCandidates.length ? semanticCandidates : getGeometricThreadCandidates(seedIndex))
     .sort((a, b) => {
-      const as = (a as any).semanticScore || 0;
-      const bs = (b as any).semanticScore || 0;
+      const as = a.semanticScore || 0;
+      const bs = b.semanticScore || 0;
       if (bs !== as) return bs - as;
       const sa = a.score || 0;
       const sb = b.score || 0;
@@ -825,8 +825,8 @@ export function setTrailFromSeed(seedIndex: number): void {
   const candidates = allCandidates
     .filter((candidate) => isPointVisible(candidate.index, records, null, filters))
     .slice(0, limit);
-  const source = semanticCandidates.length ? 'semantic' : ((candidates[0] as any)?.source || 'geometric-fallback');
-  const reasonByIndex = new Map<number, string>(candidates.map((candidate) => [candidate.index, (candidate as any).reason || '']));
+  const source = semanticCandidates.length ? 'semantic' : (candidates[0]?.source || 'geometric-fallback');
+  const reasonByIndex = new Map<number, string>(candidates.map((candidate) => [candidate.index, candidate.reason || '']));
   const neighborIndices = candidates.map((candidate) => candidate.index);
   const nav = appState.navState as any;
   const cursor = (() => {
@@ -862,7 +862,7 @@ export function updateTrailIndices(seedIndex: number | null = getCurrentTrailFoc
       ? valueArray(nav.threadCandidates)
       : getThreadCandidatesForIndex(seedIndex).slice(0, limit);
     candidates
-      .map((candidate: any) => candidateIndex(candidate))
+      .map((candidate: unknown) => candidateIndex(candidate))
       .filter((index): index is number => index !== null && isPointVisible(index, records, null, filters))
       .forEach((index: number) => appState.trailIndices.add(index));
   });
