@@ -466,7 +466,7 @@ export interface SemanticState extends StateConfig {
     nodeSporeHitMesh: WebGLContextState['nodeSporeHitMesh']
     nodeSporeMaterial: WebGLContextState['nodeSporeMaterial']
     rawPositionsBuffer: Float32Array | null
-    rawClustersBuffer: Float32Array | null
+    rawClustersBuffer: Uint16Array | null
     leadEnrichment: Record<string, unknown> | null
     myceliumLines: WebGLContextState['myceliumLines']
     myceliumGroup: WebGLContextState['myceliumGroup']

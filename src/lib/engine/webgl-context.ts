@@ -30,7 +30,7 @@ export interface WebGLContextState {
   nodeSporeHitMesh: InstancedMesh | null;
   nodeSporeMaterial: Material | null;
   rawPositionsBuffer: Float32Array | null;
-  rawClustersBuffer: Float32Array | null;
+  rawClustersBuffer: Uint16Array | null;
   myceliumLines: LineSegments | null;
   myceliumGroup: Group | null;
   myceliumCoreLines: LineSegments | null;

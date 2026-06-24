@@ -111,7 +111,7 @@ class AppState {
         null as unknown as SemanticState['nodeSporeMaterial']
     )
     rawPositionsBuffer = $state<Float32Array | null>(null)
-    rawClustersBuffer = $state<Float32Array | null>(null)
+    rawClustersBuffer = $state<Uint16Array | null>(null)
     leadEnrichment = $state<Record<string, unknown> | null>(null)
     myceliumLines = $state<SemanticState['myceliumLines']>(null as unknown as SemanticState['myceliumLines'])
     myceliumGroup = $state<SemanticState['myceliumGroup']>(null as unknown as SemanticState['myceliumGroup'])
@@ -359,6 +359,7 @@ class AppState {
     inspectedThreadIndex = $state<number | null>(null)
     pinnedThreadIndex = $state<number | null>(null)
     canvasThreadInspectionClearTimer = $state<ReturnType<typeof setTimeout> | null>(null)
+    suppressCanvasFocusUntil = $state<number>(0)
     threadInspectorPointerInside = $state<boolean>(false)
     inspectedStrandDiagnostics = $state<InspectedStrandDiagnostics>({
         active: false,
@@ -560,11 +561,13 @@ class AppState {
     applyingUrlState = $state<boolean>(false)
     restoringBrowserHistory = $state<boolean>(false)
 
-    // ==== MUTATION GUARD ====
+    // ==== MUTATION GUARD (deprecated — now no-op) ====
 
-    /** Batched mutation: sets _isMutatingRef, runs fn, restores. */
+    /** @deprecated — withStateMutation is inert; property writes are
+     *  validated by the appState proxy (state-validation.ts). Kept for
+     *  backwards compat during removal wave. */
     withMutation<T>(fn: () => T): T {
-        return withStateMutation(fn)
+        return fn()
     }
 }
 

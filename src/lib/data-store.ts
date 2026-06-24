@@ -14,13 +14,13 @@ import type {
     SemanticThreadBundle,
     SemanticThreadDataResult,
     SemanticNeighborEntry,
-    LayoutManifest
+    LayoutManifest,
+    PositionBufferDescriptor
 } from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
 import { appState } from '@lib/state/app.svelte'
-import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // ── Cross-chunk singleton helpers ────────────────────────────────────────────
 // When Vite code-splits, this module can be duplicated into multiple chunks.
@@ -257,6 +257,22 @@ export function getIsLoading(): boolean {
     return get(isLoading)
 }
 
+/**
+ * Engine-ready bundle: positions (Float32Array) + cluster assignments
+ * (Uint16Array) + point count, in one shape. The canonical accessor for
+ * consumers that need the full geometric surface — any future engine
+ * refactor that wants {buffer, count, clusters} should call this rather
+ * than re-composing the two writables.
+ *
+ * Returns null until both underlying stores are populated.
+ */
+export function getPositionBufferDescriptor(): PositionBufferDescriptor | null {
+    const buffer = get(positionBuffer)
+    const clusters = get(clustersBuffer)
+    if (!buffer || !clusters) return null
+    return { buffer, count: buffer.length / 3, clusters }
+}
+
 // ── Actions ───────────────────────────────────────────────────────────────────
 
 /**
@@ -272,13 +288,11 @@ export function setBusinessData(result: BusinessDataResult): void {
     // Sync back to legacy state so legacy engine selectors (getPoints())
     // and focus flows (focusOnNode) see the data.
     try {
-        withStateMutation(() => {
-            appState.points = result.records as any
-            appState.rawPositionsBuffer = result.positionsBuffer
-            appState.rawClustersBuffer = result.clustersBuffer as any
-            appState.leadEnrichment = result.enrichment
-            appState.pointIndexByLeadId = result.pointIndexByLeadId
-        })
+        appState.points = result.records as any
+        appState.rawPositionsBuffer = result.positionsBuffer
+        appState.rawClustersBuffer = result.clustersBuffer
+        appState.leadEnrichment = result.enrichment
+        appState.pointIndexByLeadId = result.pointIndexByLeadId
     } catch (e) {
         if (import.meta.env.DEV) console.warn('[data-store] Legacy state sync failed:', e)
     }
@@ -296,9 +310,7 @@ export function setBusinessData(result: BusinessDataResult): void {
 export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment> | null): void {
     leadEnrichment.set(enrichment)
     try {
-        withStateMutation(() => {
-            appState.leadEnrichment = enrichment
-        })
+        appState.leadEnrichment = enrichment
     } catch (e) {
         if (import.meta.env.DEV) console.warn('[data-store] Legacy enrichment sync failed:', e)
     }
@@ -345,11 +357,9 @@ export function setSemanticThreadData(result: SemanticThreadDataResult): void {
 
     // Sync back to legacy state so legacy neighborhood / thread builders see the data.
     try {
-        withStateMutation(() => {
-            appState.semanticNeighborMapByLeadId = result.neighborMap
-            appState.semanticThreadBundle = result.bundle
-            appState.semanticThreadArtifactName = result.artifactName
-        })
+        appState.semanticNeighborMapByLeadId = result.neighborMap
+        appState.semanticThreadBundle = result.bundle
+        appState.semanticThreadArtifactName = result.artifactName
     } catch (e) {
         if (import.meta.env.DEV) console.warn('[data-store] Legacy semantic thread sync failed:', e)
     }
