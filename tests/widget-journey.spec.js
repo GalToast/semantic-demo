@@ -459,9 +459,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
      * Also asserts stability: the same context, reloaded, sees the same
      * discovery note (because the seed is persisted in localStorage).
      */
-    test('13. discovery note varies per session, not constant across all users', async ({
-        browser
-    }) => {
+    test('13. discovery note varies per session, not constant across all users', async ({ browser }) => {
         // Use the playwright-provided page (from beforeEach) for context A.
         // For context B, open a new isolated context with separate localStorage.
         // We don't boot a full WebGL scene for context B — just verify the
@@ -495,22 +493,12 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
                 { timeout: 30000 }
             )
 
-            const seedA = await pageA.evaluate(
-                () => window.__semanticExplorerSessionSeed
-            )
-            const seedB = await pageB.evaluate(
-                () => window.__semanticExplorerSessionSeed
-            )
+            const seedA = await pageA.evaluate(() => window.__semanticExplorerSessionSeed)
+            const seedB = await pageB.evaluate(() => window.__semanticExplorerSessionSeed)
 
             // Both contexts must have a real seed (not the SSR fallback 42).
-            expect(
-                seedA,
-                `expected context A to have a session seed > 0, got ${seedA}`
-            ).toBeGreaterThan(0)
-            expect(
-                seedB,
-                `expected context B to have a session seed > 0, got ${seedB}`
-            ).toBeGreaterThan(0)
+            expect(seedA, `expected context A to have a session seed > 0, got ${seedA}`).toBeGreaterThan(0)
+            expect(seedB, `expected context B to have a session seed > 0, got ${seedB}`).toBeGreaterThan(0)
 
             // The two contexts have separate localStorage, so separate seeds.
             expect(
@@ -528,15 +516,98 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
                 null,
                 { timeout: 30000 }
             )
-            const seedB2 = await pageB.evaluate(
-                () => window.__semanticExplorerSessionSeed
-            )
+            const seedB2 = await pageB.evaluate(() => window.__semanticExplorerSessionSeed)
             expect(
                 seedB2,
                 `expected the same session seed after reload (seed is persisted), but first was ${seedB} and after reload was ${seedB2}`
             ).toBe(seedB)
         } finally {
             await ctxB.close()
+        }
+    })
+
+    /**
+     * 14. The mobile 2D placeholder is labeled as a "Preview" — not as the
+     *    real product. Catches: `Placeholder2D.svelte` previously rendered
+     *    copy like "8,406 businesses · 4 clusters" that implied the user
+     *    was looking at the real 3D mycelium, when actually they were
+     *    looking at a static SVG fallback. A user who tapped the CTA to
+     *    "Enter 3D Scene" expected to see 8,406 businesses — and then had
+     *    to wait for the 587 KB three.js chunk to load. Mobile users
+     *    concluded the product was slow or broken.
+     *
+     *    The fix (W47-C): title now carries a "Preview" badge; subtitle
+     *    says "Mobile preview"; the hint invites the user to "open on
+     *    desktop for the full 3D experience." The CTA stays the same
+     *    ("Enter 3D Scene") because it accurately describes what tapping
+     *    does — it's the honest part.
+     *
+     *    Test strategy: load the page with a mobile viewport (≤768px).
+     *    The responsive-renderer decision logic picks 'placeholder2d'.
+     *    Read the placeholder text and assert it contains "Preview"
+     *    (or "preview") and a desktop-fallback hint.
+     */
+})
+
+// ── Mobile placeholder tests ───────────────────────────────────────────────
+//
+// These tests use a fresh browser context with a mobile viewport so the
+// responsive renderer picks 'placeholder2d' without polluting state from
+// the main boot sequence. They live in a separate `test.describe` block
+// without the heavy `beforeEach` that drives the desktop full-scene boot.
+test.describe('Widget Journey Tests — mobile viewport', () => {
+    test('14. mobile placeholder copy is labeled as a "Preview", not as the real product', async ({
+        browser
+    }) => {
+        // Use a fresh browser context with a mobile viewport so the
+        // responsive renderer picks 'placeholder2d' and the loading overlay
+        // doesn't intercept clicks. Sharing the playwright-provided context
+        // with prior tests can leave state behind that surfaces here.
+        const ctx = await browser.newContext({
+            viewport: { width: 375, height: 667 }
+        })
+        const page = await ctx.newPage()
+
+        try {
+            await page.goto(BASE_URL, { waitUntil: 'commit' })
+            await page
+                .locator('[data-testid="placeholder-2d"]')
+                .waitFor({ state: 'visible', timeout: 15000 })
+
+            const titleText = (
+                (await page.locator('.placeholder-title').first().textContent()) ?? ''
+            ).trim()
+            const subtitleText = (
+                (await page.locator('.placeholder-subtitle').first().textContent()) ?? ''
+            ).trim()
+            const hintText = (
+                (await page.locator('.placeholder-hint').first().textContent()) ?? ''
+            ).trim()
+
+            // The title must include "Preview" — that's the whole point of
+            // the W47-C fix. A user staring at this string should immediately
+            // know they're looking at a fallback, not the real product.
+            expect(
+                titleText.toLowerCase().includes('preview'),
+                `placeholder title "${titleText}" should include "Preview" so the user knows this is the mobile fallback, not the real product`
+            ).toBe(true)
+
+            // The subtitle must include "Mobile" so the user knows why
+            // they're seeing a fallback.
+            expect(
+                subtitleText.toLowerCase().includes('mobile'),
+                `placeholder subtitle "${subtitleText}" should include "Mobile" so the user knows this is the mobile fallback`
+            ).toBe(true)
+
+            // The hint should mention "desktop" as an alternative path —
+            // gives the user a way out of the mobile experience if they
+            // want the full 3D rendering.
+            expect(
+                hintText.toLowerCase().includes('desktop'),
+                `placeholder hint "${hintText}" should mention "desktop" as an alternative path`
+            ).toBe(true)
+        } finally {
+            await ctx.close()
         }
     })
 })

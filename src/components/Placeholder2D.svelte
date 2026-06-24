@@ -1,17 +1,26 @@
 <!--
-  @components/Placeholder2D.svelte — W45-A: Mobile 2D Placeholder
+  @components/Placeholder2D.svelte — W45-A + W47-C: Mobile 2D Placeholder
 
   Static SVG preview of the semantic mycelium for mobile cold loads.
   Replaces the WebGL canvas on narrow viewports so the 587 KB three.js
   chunk stays off the cold-load critical path. The LCP element is the
   static SVG, which paints fast.
 
+  W47-C: copy was previously aspirational ("8,406 businesses · 4 clusters"
+  implied the user was looking at the real product) when actually this is
+  a static fallback. Now the title and subtitle explicitly label this as a
+  "Preview" and invite the user to open on desktop for the full 3D
+  experience. The CTA stays the same ("Enter 3D Scene") because it's already
+  honest about what tapping it does.
+
   Visual contract:
     - Full-viewport (covers the WebGL canvas area)
     - Reuses existing color tokens (--color-primary, --color-primary-alt,
       --color-accent, --color-text-strong)
-    - Conveys "8,406 businesses, 4 clusters" with vibrant orb silhouettes
-      in an asymmetric modern-art composition
+    - "Preview" label in the title (W47-C) so the user knows this is the
+      fallback, not the real product
+    - "Open on desktop for the full 3D experience" subtitle (W47-C) gives
+      the user a clear alternative path
     - "Enter 3D Scene" CTA, large tap target (≥ 44×44 px), with subtle
       drop shadow + cyan glow that wins the eye-test against the blurred
       orb cluster behind it
@@ -132,11 +141,16 @@
     </g>
   </svg>
 
-  <!-- Text overlay (HTML for accessibility + tap target) -->
+  <!-- Text overlay (HTML for accessibility + tap target). W47-C: copy is now
+       explicitly labeled as a "Preview" so the user knows this is the mobile
+       fallback, not the real product. The CTA stays the same ("Enter 3D
+       Scene") because it accurately describes what tapping it does. -->
   <div class="placeholder-overlay">
-    <h1 class="placeholder-title">Semantic Explorer</h1>
-    <p class="placeholder-subtitle">Montgomery County Business Mycelium</p>
-    <p class="placeholder-count">8,406 businesses · 4 clusters</p>
+    <h1 class="placeholder-title">
+      Semantic Explorer
+      <span class="placeholder-badge">Preview</span>
+    </h1>
+    <p class="placeholder-subtitle">Mobile preview · Montgomery County business mycelium</p>
 
     <button
       class="placeholder-cta"
@@ -149,7 +163,9 @@
       Enter 3D Scene
     </button>
 
-    <p class="placeholder-hint">Enter to explore the full 3D network</p>
+    <p class="placeholder-hint">
+      Tap to load the full scene, or open on desktop for the full 3D experience.
+    </p>
   </div>
 </main>
 
@@ -209,6 +225,23 @@
     margin: 0 0 0.5rem;
     text-transform: uppercase;
     color: rgba(255, 255, 255, 0.98);
+  }
+
+  /* W47-C: "Preview" badge next to the title so the user knows this is the
+     mobile fallback, not the real product. Inline so the title stays on
+     one line on small viewports. */
+  .placeholder-badge {
+    display: inline-block;
+    margin-left: 0.6rem;
+    padding: 0.15rem 0.55rem;
+    font-size: 0.55em;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: rgba(78, 205, 196, 0.95);
+    border: 1px solid rgba(78, 205, 196, 0.45);
+    border-radius: 4px;
+    vertical-align: middle;
+    text-transform: uppercase;
   }
 
   .placeholder-subtitle {
