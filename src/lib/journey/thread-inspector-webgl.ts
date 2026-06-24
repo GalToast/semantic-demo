@@ -229,7 +229,7 @@ export function updateInspectedStrandEndpointSprites(): void {
     strandGroup.children.forEach((child: Object3D) => {
         const endpointIndex = (child.userData as { endpointIndex?: number } | undefined)?.endpointIndex
         if (!Number.isFinite(endpointIndex) || !nodePos[endpointIndex as number]) return
-        const pos = nodePos[endpointIndex as number] as any
+        const pos = nodePos[endpointIndex as number]
         child.position.set(
             Number.isFinite(pos.x) ? pos.x : 0,
             Number.isFinite(pos.y) ? pos.y : 0,
@@ -248,8 +248,10 @@ export function syncInspectedStrandOverlay(inspectionState: InspectionState, opt
         !scene ||
         !Number.isFinite(inspectionState.index) ||
         !Number.isFinite(inspectionState.focusedIndex) ||
-        !nodePos[inspectionState.index] ||
-        !nodePos[inspectionState.focusedIndex]
+        inspectionState.index < 0 ||
+        inspectionState.index >= nodePos.length ||
+        inspectionState.focusedIndex < 0 ||
+        inspectionState.focusedIndex >= nodePos.length
     ) {
         disposeInspectedStrandOverlay()
         return

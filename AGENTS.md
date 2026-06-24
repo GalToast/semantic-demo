@@ -67,6 +67,7 @@ Read these only when relevant:
 - Window/global policy: `docs/window-global-allowlist.md`
 - Migration plan: `docs/migration-plan.md`
 - Performance: `docs/performance-budget.md`, `docs/w44-performance-attack-plan.md`
+- Type discipline: `docs/typing-contract.md` — global `as any` budget, typing-contract tests, and file-specific tightening rules.
 - Historical full agent reference: `docs/archive/agents-full-reference-2026-06-19.md`
 
 If a referenced doc is missing, use the archived full reference as fallback and consider restoring a concise dedicated doc.

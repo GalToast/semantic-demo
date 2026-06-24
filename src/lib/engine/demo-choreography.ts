@@ -241,7 +241,11 @@ async function demoReset(): Promise<void> {
     } catch (err) {
         debugWarn('[demo-choreography] demoReset failed:', err)
         // best-effort state recovery so we don't leave the app stuck mid-demo
-        try { _demoPhase = PHASE.IDLE } catch { /* swallow */ }
+        try {
+            _demoPhase = PHASE.IDLE
+        } catch {
+            /* swallow */
+        }
     }
 }
 
@@ -279,7 +283,12 @@ async function demoFocusSetup(demoNode: number): Promise<void> {
         }
     } catch (err) {
         debugWarn('[demo-choreography] demoFocusSetup failed:', err)
-        try { _demoPhase = PHASE.CANCELLED; _demoCancelled = true } catch { /* swallow */ }
+        try {
+            _demoPhase = PHASE.CANCELLED
+            _demoCancelled = true
+        } catch {
+            /* swallow */
+        }
     }
 }
 
@@ -300,8 +309,16 @@ async function cleanup(): Promise<void> {
     } catch (err) {
         debugWarn('[demo-choreography] cleanup failed:', err)
         // state is best-effort: ensure scratch flags are sane even if DOM teardown failed
-        try { _demoPhase = PHASE.IDLE } catch { /* swallow */ }
-        try { _demoCancelled = false } catch { /* swallow */ }
+        try {
+            _demoPhase = PHASE.IDLE
+        } catch {
+            /* swallow */
+        }
+        try {
+            _demoCancelled = false
+        } catch {
+            /* swallow */
+        }
     }
 }
 
@@ -358,8 +375,16 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
             debugWarn('[demo-choreography] runDemo called without setDemoNodeIndex; aborting')
             _demoPhase = PHASE.IDLE
             _demoCancelled = false
-            try { clearDemoTimers() } catch { /* swallow */ }
-            try { document.body.removeAttribute('data-demo-active') } catch { /* swallow */ }
+            try {
+                clearDemoTimers()
+            } catch {
+                /* swallow */
+            }
+            try {
+                document.body.removeAttribute('data-demo-active')
+            } catch {
+                /* swallow */
+            }
             return
         }
 
@@ -521,9 +546,10 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         // veil, pill) throws, the demo can't start cleanly. Reset scratch
         // state and tear down UI so a retry can re-enter from scratch.
         debugWarn('[demo-choreography] runDemo failed:', err)
-        try { _demoPhase = PHASE.CANCELLED; _demoCancelled = true } catch { /* swallow */ }
-        try { clearDemoTimers() } catch { /* swallow */ }
-        try { document.body.removeAttribute('data-demo-active') } catch { /* swallow */ }
+        _demoPhase = PHASE.CANCELLED
+        _demoCancelled = true
+        clearDemoTimers()
+        document.body.removeAttribute('data-demo-active')
     }
 }
 
