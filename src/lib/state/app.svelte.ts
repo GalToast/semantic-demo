@@ -25,12 +25,12 @@ import type {
     RendererLike,
     ControlsLike,
     Vector3Like,
-    SearchSummary
+    SearchSummary,
+    SearchErrorData
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
-import { withStateMutation } from './with-state-mutation'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
@@ -65,7 +65,7 @@ class AppState {
     searchResults = $state<Array<Record<string, unknown>>>([])
     searchSummary = $state<Record<string, unknown> | null>(null)
     isSearching = $state<boolean>(false)
-    searchError = $state<unknown | null>(null)
+    searchError = $state<SearchErrorData | null>(null)
     searchVisibleCount = $state<number>(5)
     mobileRouteFieldPeekToken = $state<number>(0)
     semanticLaneMonitorTimer = $state<ReturnType<typeof setTimeout> | null>(null)

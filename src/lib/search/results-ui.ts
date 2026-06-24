@@ -15,7 +15,7 @@ import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetTogg
 import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte'
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane'
 import { appState } from '@lib/state/app.svelte'
-import type { SemanticState } from '@lib/state/state-types'
+import type { SemanticState, SearchErrorData } from '@lib/state/state-types'
 import { formatBusinessName } from '../utils/dom-formatters'
 import {
     getSearchResultStrength,
@@ -62,12 +62,6 @@ interface SearchPanelStateOptions {
     degraded?: boolean
     error?: boolean
     hasResults?: boolean
-}
-
-interface SearchErrorData {
-    query: string
-    type: 'inline' | 'full'
-    message: string
 }
 
 interface SearchSummaryState {

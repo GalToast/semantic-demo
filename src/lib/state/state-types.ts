@@ -447,6 +447,21 @@ export interface SearchSummary {
     reason?: string
 }
 
+/**
+ * Shape of state.searchError — set by search.svelte.ts (setSearchError) and
+ * results-ui.ts (searchErrorEnvelopes). Consumed by triggers.ts as a truthy
+ * sentinel only — no consumer currently reads inner fields directly, but the
+ * runtime shape is well-defined: a single object per failed search.
+ *
+ * Promotion: was a local interface in src/lib/search/results-ui.ts.
+ * Hoisted to state-types.ts so appState can declare the field's shape.
+ */
+export interface SearchErrorData {
+    query: string
+    type: 'inline' | 'full'
+    message: string
+}
+
 export interface SemanticState extends StateConfig {
     /** Allow legacy string-indexed access for Proxy compatibility */
     [key: string]: unknown
