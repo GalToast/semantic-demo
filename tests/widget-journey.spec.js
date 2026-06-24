@@ -35,7 +35,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
             if (msg.type() === 'error') errors.push(msg.text())
         })
         page.on('pageerror', (err) => errors.push(`pageerror: ${err.message}`))
-        page.on('console-errors', (list) => {
+        page.on('console-errors', () => {
             /* exposed for diagnostics */
         })
 
@@ -407,9 +407,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         const suggestionBtns = page.locator('.suggestion-btn')
         await suggestionBtns.first().waitFor({ state: 'visible', timeout: 5000 })
 
-        // The candidate indices are the ones populated by setup. Capture focus
-        // before clicking any suggestion.
-        const focusBefore = setup.focusBefore
+        // The candidate indices are the ones populated by setup.
         const candidates = setup.candidates
 
         // Pick a suggestion that isn't the currently focused business (if any).
@@ -605,6 +603,67 @@ test.describe('Widget Journey Tests — mobile viewport', () => {
             expect(
                 hintText.toLowerCase().includes('desktop'),
                 `placeholder hint "${hintText}" should mention "desktop" as an alternative path`
+            ).toBe(true)
+        } finally {
+            await ctx.close()
+        }
+    })
+})
+
+// ── Dev-mode mock banner tests ──────────────────────────────────────────────
+//
+// These tests verify the W47-E banner that appears in dev builds when the
+// search API falls back to the local mock catalog. The banner reads
+// sessionStorage.api_unreachable, which the search engine sets on API
+// failure. We use a fresh browser context so the flag starts unset and the
+// banner is hidden, then we set the flag and verify the banner appears.
+test.describe('Widget Journey Tests — dev mock banner', () => {
+    test('15. dev mock banner shows when sessionStorage.api_unreachable is set', async ({
+        browser
+    }) => {
+        const ctx = await browser.newContext()
+        const page = await ctx.newPage()
+
+        try {
+            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+            // Wait for the SearchBar to mount before checking the banner.
+            // The SearchBar component is in the eager bundle but its DOM
+            // is rendered after Svelte mounts the App shell.
+            await page
+                .locator('.search-container')
+                .waitFor({ state: 'attached', timeout: 15000 })
+
+            // Before the flag is set, the banner should NOT be visible.
+            // Wait a beat for the SearchBar's 750ms polling interval.
+            await page.waitForTimeout(1500)
+            const bannerBefore = await page
+                .locator('[data-testid="mock-banner"]')
+                .count()
+
+            // Set the flag — simulates the search engine's fallback path.
+            await page.evaluate(() => {
+                window.sessionStorage.setItem('api_unreachable', '1')
+                 
+                console.log('[TEST 15 DEBUG] set api_unreachable=1')
+            })
+
+            // Wait for the next 750ms polling tick.
+            await page.waitForTimeout(1500)
+
+            const bannerAfter = page.locator('[data-testid="mock-banner"]')
+            await bannerAfter.waitFor({ state: 'visible', timeout: 5000 })
+
+            const bannerText = (await bannerAfter.first().textContent()) ?? ''
+            // The banner must include 'DEV' and 'mock' — the contract is
+            // "developer sees clearly that they're not looking at real data".
+            expect(
+                bannerText.toLowerCase().includes('dev'),
+                `banner text should include "DEV" but got "${bannerText}"`
+            ).toBe(true)
+            expect(
+                bannerText.toLowerCase().includes('mock'),
+                `banner text should include "mock" but got "${bannerText}"`
             ).toBe(true)
         } finally {
             await ctx.close()

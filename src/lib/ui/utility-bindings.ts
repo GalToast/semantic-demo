@@ -1,8 +1,8 @@
 import { bindClick } from '@lib/ui/view-bindings'
-import { hideSummaryCard, resetExplorationFocus } from '@lib/orchestration/lifecycle'
+import { resetExplorationFocus } from '@lib/orchestration/lifecycle'
 import { hideExploreTrailReview } from '@lib/stores/lifecycle'
 import { closeLegendGuide } from '@lib/stores/legend-panel'
-import { requestSemanticGuide } from '@lib/journey/semantic-guide'
+import { requestSemanticGuide, hideSummaryCard } from '@lib/journey/semantic-guide'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 
 export function bindUtilityButtons(): void {
