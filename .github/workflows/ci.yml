@@ -93,10 +93,14 @@ jobs:
       - run: npm run lint:svelte5-strict-mode
 
   test-integration:
+    # W46-T4: hard gate for deploy — closes the test strategy gap
+    # (docs/session-coordination.md). User-visible features without a
+    # journey test in tests/widget-journey.spec.js will fail this job
+    # and block deploy. `continue-on-error` was removed; `deploy` now
+    # waits on this job via the `needs:` list below.
     name: Integration Tests (Playwright)
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -129,7 +133,13 @@ jobs:
     name: Deploy Artifacts
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/master' && github.event_name == 'push'
-    needs: [svelte-check, test-unit, build, lint-nav-mirror, lint-svelte5-strict-mode]
+    needs:
+      - svelte-check
+      - test-unit
+      - build
+      - test-integration
+      - lint-nav-mirror
+      - lint-svelte5-strict-mode
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
