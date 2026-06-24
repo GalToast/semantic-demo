@@ -85,7 +85,7 @@ const FOCUS_WISP_SEGMENTS = 18
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-function getSemanticLensNeighborIndices(focusedNode: any) {
+function getSemanticLensNeighborIndices(focusedNode: number): number[] {
     const point = state.points?.[focusedNode]
     const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id)
     if (!leadId) return []
@@ -100,9 +100,9 @@ function getSemanticLensNeighborIndices(focusedNode: any) {
         .slice(0, 12)
 }
 
-function updateSelectedNodeMotes(worldPos: any, time: any, isInside: any) {
+function updateSelectedNodeMotes(worldPos: Vector3 | null, time: number, isInside: boolean): void {
     if (!state.focusMoteGroup || !Array.isArray(state.focusMotes)) return
-    const hasFocus = Boolean(worldPos)
+    const hasFocus = worldPos !== null
     const targetOpacity = hasFocus ? (isInside ? 0.4 : 0.82) : 0
     state.focusMoteGroup.visible = hasFocus || state.focusMotes.some((mote: SpriteLike) => mote.material.opacity > 0.01)
     if (hasFocus) {
@@ -139,12 +139,12 @@ function updateSelectedNodeMotes(worldPos: any, time: any, isInside: any) {
     })
 }
 
-function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
+function updateSelectedNodePetals(worldPos: Vector3 | null, time: number, isInside: boolean): void {
     if (!state.focusPetalGroup || !Array.isArray(state.focusPetals)) return
-    const hasFocus = Boolean(worldPos)
+    const hasFocus = worldPos !== null
     const targetOpacity = hasFocus ? (isInside ? 0.24 : 0.65) : 0
     state.focusPetalGroup.visible =
-        hasFocus || state.focusPetals.some((petal: any) => asSingleMaterial(petal.material).opacity > 0.01)
+        hasFocus || state.focusPetals.some((petal: Mesh) => asSingleMaterial(petal.material).opacity > 0.01)
     if (hasFocus) {
         state.focusPetalGroup.position.copy(worldPos)
         state.focusPetalGroup.rotation.set(
@@ -154,7 +154,7 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
         )
     }
 
-    state.focusPetals.forEach((petal: any, index: number) => {
+    state.focusPetals.forEach((petal: Mesh, index: number) => {
         const data = petal.userData || {}
         const mat = asSingleMaterial(petal.material)
         mat.opacity += (targetOpacity - mat.opacity) * 0.1
@@ -179,10 +179,10 @@ function updateSelectedNodePetals(worldPos: any, time: any, isInside: any) {
     })
 }
 
-function updateSelectedNodeFilaments(worldPos: any, time: any, isInside: any) {
+function updateSelectedNodeFilaments(worldPos: Vector3 | null, time: number, isInside: boolean): void {
     if (!state.focusFilaments?.geometry?.attributes?.position) return
     const positions = state.focusFilaments.geometry.attributes.position.array
-    const hasFocus = Boolean(worldPos)
+    const hasFocus = worldPos !== null
     const targetOpacity = hasFocus ? (isInside ? 0.22 : 0.5) : 0
     const filMat = asSingleMaterial(state.focusFilaments.material)
     filMat.opacity += (targetOpacity - filMat.opacity) * 0.1
@@ -496,12 +496,12 @@ export function initSemanticLens() {
     createFocusAnchorIndicator()
 }
 
-export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode: any) {
+export function updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void {
     if (!state.pointsMesh) return
     const time = now / 1000
 
     const activeNode =
-        Number.isFinite(focusedNode) && focusedNode >= 0
+        focusedNode !== null && Number.isFinite(focusedNode) && focusedNode >= 0
             ? focusedNode
             : Number.isFinite(hoveredNode) && hoveredNode >= 0
               ? hoveredNode
@@ -514,8 +514,11 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
     }
 
     if (state.focusCore) {
-        const focusIdx = focusedNode
-        const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0
+        // Narrow the nullable focusedNode once at the top. `hasFocus` is
+        // derived from this narrowed value so subsequent uses can rely on
+        // `focusIdx !== null` for index access.
+        const focusIdx: number | null = focusedNode !== null && focusedNode >= 0 ? focusedNode : null
+        const hasFocus = focusIdx !== null
         const isInside = isSemanticDiveActive()
         const isActive = hasFocus && isFocused
         const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0
@@ -543,7 +546,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         coreMat.opacity += (coreTargetOpacity - coreMat.opacity) * 0.15
         state.focusCore.visible = coreMat.opacity > 0.01
 
-        if (hasFocus && state.nodePositions[focusIdx]) {
+        if (focusIdx !== null && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx]
             const worldPos = new Vector3(pos.x, pos.y, pos.z)
             if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos)
@@ -570,8 +573,8 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
     }
 
     if (state.semanticLensGroup && state.semanticLensGlow && state.semanticLensSpokes) {
-        const focusIdx = focusedNode
-        const focusPos = Number.isFinite(focusIdx) && focusIdx >= 0 ? state.nodePositions?.[focusIdx] : null
+        const focusIdx: number | null = focusedNode !== null && focusedNode >= 0 ? focusedNode : null
+        const focusPos = focusIdx !== null ? state.nodePositions?.[focusIdx] : undefined
         const hasFocus = Boolean(focusPos)
         const isInside = isSemanticDiveActive()
         const group = state.semanticLensGroup
@@ -595,7 +598,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
             const targetOpacity = isInside ? 0.2 : 0.11
             opacityUniform.value += (targetOpacity - opacityUniform.value) * 0.12
 
-            if (glowUniforms.uSignalScore) {
+            if (glowUniforms.uSignalScore && focusIdx !== null) {
                 const targetSignal =
                     typeof calculateSignalScore === 'function' ? calculateSignalScore(state.points?.[focusIdx]) : 0
                 glowUniforms.uSignalScore.value += (targetSignal - glowUniforms.uSignalScore.value) * 0.12
@@ -611,7 +614,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
                 positions.fill(0)
                 alphas.fill(0)
 
-                if (isInside) {
+                if (isInside && focusIdx !== null) {
                     const maxSpokeLength = 0.12
                     let positionOffset = 0
                     let alphaOffset = 0
@@ -642,8 +645,8 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
     }
 
     if (state.focusLens) {
-        const focusIdx = focusedNode
-        const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0
+        const focusIdx: number | null = focusedNode !== null && focusedNode >= 0 ? focusedNode : null
+        const hasFocus = focusIdx !== null
         const isDiving = hasFocus && state.semanticDiveMode
 
         const targetOpacity = hasFocus ? (isDiving ? 0.36 : 0.24) : 0.0
@@ -661,7 +664,7 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
         }
         state.focusLens.visible = (opacityUniform?.value ?? 0) > 0.01
 
-        if (state.focusLens.visible && hasFocus && state.nodePositions[focusIdx]) {
+        if (state.focusLens.visible && focusIdx !== null && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx]
             const worldPos = new Vector3(pos.x, pos.y, pos.z)
             if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos)
@@ -681,12 +684,12 @@ export function updateInteractionVisuals(now: any, hoveredNode: any, focusedNode
 
     // 4. Step Inside anchor bloom light
     if (state.anchorBloomLight) {
-        const focusIdx = focusedNode
-        const hasFocus = Number.isFinite(focusIdx) && focusIdx >= 0
+        const focusIdx: number | null = focusedNode !== null && focusedNode >= 0 ? focusedNode : null
+        const hasFocus = focusIdx !== null
         const isInside = isSemanticDiveActive()
         const targetIntensity = hasFocus ? (isInside ? 0.14 : 0.24) : 0.0
         state.anchorBloomLight.intensity += (targetIntensity - state.anchorBloomLight.intensity) * 0.08
-        if (hasFocus && state.nodePositions[focusIdx]) {
+        if (focusIdx !== null && state.nodePositions[focusIdx]) {
             const pos = state.nodePositions[focusIdx]
             state.anchorBloomLight.position.set(pos.x, pos.y, pos.z)
             if (state.pointsMesh) state.anchorBloomLight.position.applyMatrix4(state.pointsMesh.matrixWorld)
