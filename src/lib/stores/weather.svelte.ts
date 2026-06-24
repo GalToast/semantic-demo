@@ -15,109 +15,123 @@
  *   windSpeed     → weatherWindSpeed()
  *   windDirection → weatherWindDirection() (deg → compass)
  */
-import { appState } from '@lib/state/app.svelte.ts';
-import { fetchWeather as fetchWeatherCanonical } from '@lib/utils/weather';
+import { appState } from '@lib/state/app.svelte.ts'
+import { fetchWeather as fetchWeatherCanonical } from '@lib/utils/weather'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 /** UI-facing condition enum (stable API for the widget). */
-export type WeatherCondition = 'clear' | 'clouds' | 'rain' | 'storm' | 'fog' | 'wind';
+export type WeatherCondition = 'clear' | 'clouds' | 'rain' | 'storm' | 'fog' | 'wind'
 
 /** Canonical icon key, used by the widget to pick the inline SVG. */
-export type WeatherIconKey = 'sun' | 'cloud' | 'rain';
+export type WeatherIconKey = 'sun' | 'cloud' | 'rain'
 
 /** Canonical (open-meteo) condition slug, used for the condition→icon map. */
-export type CanonicalCondition = 'sun' | 'cloud' | 'fog' | 'rain' | 'snow' | 'storm';
+export type CanonicalCondition = 'sun' | 'cloud' | 'fog' | 'rain' | 'snow' | 'storm'
 
 // ── Canonical shape (internal) ────────────────────────────────────────────────
 
 interface CanonicalWeather {
-  temp: number;
-  humidity: number | null;
-  code: number;
-  description: string;
-  icon: WeatherIconKey;
-  condition: CanonicalCondition;
-  windSpeed: number;
-  windDirection: number;
-  windGust: number | null;
-  source: string;
+    temp: number
+    humidity: number | null
+    code: number
+    description: string
+    icon: WeatherIconKey
+    condition: CanonicalCondition
+    windSpeed: number
+    windDirection: number
+    windGust: number | null
+    source: string
 }
 
 function readCanonical(): CanonicalWeather | null {
-  const w = appState.weather;
-  if (!w) return null;
-  // Happy path: the canonical Open-Meteo client (@lib/utils/weather) writes
-  // { temp, description, condition, icon, humidity, windSpeed, windDirection }.
-  if (typeof (w as Record<string, unknown>).temp === 'number') {
-    return w as CanonicalWeather;
-  }
-  // Legacy write path: updateWeather() and any caller still holding a
-  // WeatherData reference write the legacy shape
-  // { temperature, label, windDirection: 'NW', ... }. Adapt on read so the
-  // public API surface and existing tests stay stable while the canonical
-  // client becomes the primary writer.
-  // TODO(W46-D4): delete this branch once all writers go through the
-  // canonical client and the legacy WeatherData exports are retired.
-  const legacy = w as unknown as Partial<WeatherData>;
-  if (typeof legacy.temperature === 'number') {
-    return {
-      temp: legacy.temperature,
-      description: legacy.label ?? '',
-      condition: LEGACY_CONDITION_TO_CANONICAL[legacy.condition ?? 'clear'],
-      icon: LEGACY_CONDITION_TO_ICON[legacy.condition ?? 'clear'],
-      humidity: legacy.humidity ?? 0,
-      windSpeed: legacy.windSpeed ?? 0,
-      // Legacy stored wind as a compass string ('NW'); canonical wants degrees.
-      // Lossy on read — degToCompass() returns '--' for non-finite values.
-      windDirection: NaN
-    };
-  }
-  return null;
+    const w = appState.weather
+    if (!w) return null
+    // Happy path: the canonical Open-Meteo client (@lib/utils/weather) writes
+    // { temp, description, condition, icon, humidity, windSpeed, windDirection }.
+    if (typeof (w as Record<string, unknown>).temp === 'number') {
+        return w as CanonicalWeather
+    }
+    // Legacy write path: updateWeather() and any caller still holding a
+    // WeatherData reference write the legacy shape
+    // { temperature, label, windDirection: 'NW', ... }. Adapt on read so the
+    // public API surface and existing tests stay stable while the canonical
+    // client becomes the primary writer.
+    // TODO (Ticket W46-D4): delete this branch once all writers go through the
+    // canonical client and the legacy WeatherData exports are retired.
+    const legacy = w as unknown as Partial<WeatherData>
+    if (typeof legacy.temperature === 'number') {
+        return {
+            temp: legacy.temperature,
+            description: legacy.label ?? '',
+            condition: LEGACY_CONDITION_TO_CANONICAL[legacy.condition ?? 'clear'],
+            icon: LEGACY_CONDITION_TO_ICON[legacy.condition ?? 'clear'],
+            humidity: legacy.humidity ?? 0,
+            windSpeed: legacy.windSpeed ?? 0,
+            // Legacy stored wind as a compass string ('NW'); canonical wants degrees.
+            // Lossy on read — degToCompass() returns '--' for non-finite values.
+            windDirection: NaN
+        }
+    }
+    return null
 }
 
 /** Legacy WeatherCondition → CanonicalCondition slug. */
 const LEGACY_CONDITION_TO_CANONICAL: Record<WeatherCondition, CanonicalCondition> = {
-  clear: 'sun',
-  clouds: 'cloud',
-  fog: 'fog',
-  rain: 'rain',
-  storm: 'storm',
-  wind: 'cloud'
-};
+    clear: 'sun',
+    clouds: 'cloud',
+    fog: 'fog',
+    rain: 'rain',
+    storm: 'storm',
+    wind: 'cloud'
+}
 
 /** Legacy WeatherCondition → canonical icon key. */
 const LEGACY_CONDITION_TO_ICON: Record<WeatherCondition, WeatherIconKey> = {
-  clear: 'sun',
-  clouds: 'cloud',
-  fog: 'cloud',
-  rain: 'rain',
-  storm: 'rain',
-  wind: 'cloud'
-};
+    clear: 'sun',
+    clouds: 'cloud',
+    fog: 'cloud',
+    rain: 'rain',
+    storm: 'rain',
+    wind: 'cloud'
+}
+
+/**
+ * Read a field that only the legacy WeatherData shape carries (e.g. `forecast`).
+ * The canonical Open-Meteo writer does not put these fields on appState.weather,
+ * so the getter falls back to '' for canonical writes and to the legacy field
+ * for legacy writes (updateWeather, tests, fixtures).
+ * TODO (Ticket W46-D4): delete once legacy writers are retired.
+ */
+function readLegacyOnlyField<T>(key: keyof WeatherData): T | undefined {
+    const w = appState.weather
+    if (!w) return undefined
+    if (typeof (w as Record<string, unknown>).temp === 'number') return undefined
+    return (w as unknown as WeatherData)[key] as T | undefined
+}
 
 function readLastFetch(): number {
-  const ws = (appState as { weatherState?: { lastFetch?: number } }).weatherState;
-  return ws?.lastFetch ?? 0;
+    const ws = (appState as { weatherState?: { lastFetch?: number } }).weatherState
+    return ws?.lastFetch ?? 0
 }
 
 // ── Maps ──────────────────────────────────────────────────────────────────────
 
 /** Canonical condition slug → UI enum. */
 const ICON_TO_CONDITION: Record<CanonicalCondition, WeatherCondition> = {
-  sun: 'clear',
-  cloud: 'clouds',
-  fog: 'fog',
-  rain: 'rain',
-  snow: 'clouds',
-  storm: 'storm'
-};
+    sun: 'clear',
+    cloud: 'clouds',
+    fog: 'fog',
+    rain: 'rain',
+    snow: 'clouds',
+    storm: 'storm'
+}
 
 /** Wind direction in degrees → compass string. */
 function degToCompass(deg: number): string {
-  if (!Number.isFinite(deg)) return '--';
-  const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
-  return dirs[Math.round(deg / 22.5) % 16] ?? '--';
+    if (!Number.isFinite(deg)) return '--'
+    const dirs = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW']
+    return dirs[Math.round(deg / 22.5) % 16] ?? '--'
 }
 
 // ── Store proxy ──────────────────────────────────────────────────────────────
@@ -128,54 +142,88 @@ function degToCompass(deg: number): string {
  * the widget already uses.
  */
 export const weatherData = {
-  get temperature(): number { return readCanonical()?.temp ?? 0; },
-  get feelsLike(): number { return readCanonical()?.temp ?? 0; },
-  get condition(): WeatherCondition {
-    const c = readCanonical()?.condition;
-    return c ? ICON_TO_CONDITION[c] : 'clear';
-  },
-  get label(): string { return readCanonical()?.description ?? '--'; },
-  get forecast(): string { return ''; },
-  get updatedAt(): number { return readLastFetch() || (readCanonical() ? Date.now() : 0); }
-};
+    get temperature(): number {
+        return readCanonical()?.temp ?? 0
+    },
+    get feelsLike(): number {
+        return readCanonical()?.temp ?? 0
+    },
+    get condition(): WeatherCondition {
+        const c = readCanonical()?.condition
+        return c ? ICON_TO_CONDITION[c] : 'clear'
+    },
+    get label(): string {
+        return readCanonical()?.description ?? '--'
+    },
+    get forecast(): string {
+        return readLegacyOnlyField<string>('forecast') ?? ''
+    },
+    get updatedAt(): number {
+        // Legacy writers (updateWeather, tests, fixtures) carry `updatedAt`
+        // directly on appState.weather. Canonical writers set
+        // weatherState.lastFetch instead. Prefer legacy when present so the
+        // old contract (passing `updatedAt: 1` round-trips) keeps working.
+        const legacyUpdatedAt = readLegacyOnlyField<number>('updatedAt')
+        if (legacyUpdatedAt !== undefined) return legacyUpdatedAt
+        return readLastFetch() || (readCanonical() ? Date.now() : 0)
+    }
+}
 
 // ── Initialization guard ──────────────────────────────────────────────────────
 
 /** Whether weather has been initialized (prevents double-init). */
-export function isWeatherInitialized(): boolean { return appState.weatherInitialized; }
+export function isWeatherInitialized(): boolean {
+    return appState.weatherInitialized
+}
 
 /** Backward-compatible derived getter exported by the store barrel. */
-export const weatherInitialized = isWeatherInitialized;
+export const weatherInitialized = isWeatherInitialized
 
 /** Mark weather as initialized. */
 export function setWeatherInitialized(value: boolean): void {
-  appState.withMutation(() => {
-    appState.weatherInitialized = value;
-  });
+    appState.withMutation(() => {
+        appState.weatherInitialized = value
+    })
 }
 
 // ── Derived (UI-facing) ───────────────────────────────────────────────────────
 
-export function weatherTemperature(): number { return weatherData.temperature; }
-export function weatherFeelsLike(): number { return weatherData.feelsLike; }
-export function weatherCondition(): WeatherCondition { return weatherData.condition; }
-export function weatherLabel(): string { return weatherData.label; }
-export function weatherForecast(): string { return ''; }
-export function hasWeather(): boolean { return readCanonical() !== null; }
-export function weatherHumidity(): number { return readCanonical()?.humidity ?? 0; }
-export function weatherWindSpeed(): number { return readCanonical()?.windSpeed ?? 0; }
+export function weatherTemperature(): number {
+    return weatherData.temperature
+}
+export function weatherFeelsLike(): number {
+    return weatherData.feelsLike
+}
+export function weatherCondition(): WeatherCondition {
+    return weatherData.condition
+}
+export function weatherLabel(): string {
+    return weatherData.label
+}
+export function weatherForecast(): string {
+    return weatherData.forecast
+}
+export function hasWeather(): boolean {
+    return readCanonical() !== null
+}
+export function weatherHumidity(): number {
+    return readCanonical()?.humidity ?? 0
+}
+export function weatherWindSpeed(): number {
+    return readCanonical()?.windSpeed ?? 0
+}
 export function weatherWindDirection(): string {
-  const deg = readCanonical()?.windDirection;
-  return typeof deg === 'number' ? degToCompass(deg) : '--';
+    const deg = readCanonical()?.windDirection
+    return typeof deg === 'number' ? degToCompass(deg) : '--'
 }
 export function weatherWindGust(): number {
-  return readCanonical()?.windGust ?? 0;
+    return readCanonical()?.windGust ?? 0
 }
 export function weatherIconKey(): WeatherIconKey {
-  return readCanonical()?.icon ?? 'cloud';
+    return readCanonical()?.icon ?? 'cloud'
 }
 export function weatherLocation(): string {
-  return 'Montgomery County, TX';
+    return 'Montgomery County, TX'
 }
 
 // ── Actions ───────────────────────────────────────────────────────────────────
@@ -188,10 +236,46 @@ export function weatherLocation(): string {
  * path keeps working.
  */
 export async function fetchWeather(): Promise<void> {
-  try {
-    await fetchWeatherCanonical();
-  } catch {
-    // Canonical already catches its own errors and sets appState.weatherState.fallback.
-    // Swallow here so the widget's onMount promise doesn't reject.
-  }
+    try {
+        await fetchWeatherCanonical()
+    } catch {
+        // Canonical already catches its own errors and sets appState.weatherState.fallback.
+        // Swallow here so the widget's onMount promise doesn't reject.
+    }
+}
+
+/**
+ * Legacy WeatherCondition → unicode emoji icon. The widget no longer reads
+ * this (it uses `weatherIconKey()` + inline SVG), but the export is kept
+ * for tests and any external consumer still keyed off the legacy enum.
+ * TODO (Ticket W46-D4): delete when the legacy WeatherCondition enum is retired.
+ */
+export const CONDITION_ICONS: Record<WeatherCondition, string> = {
+    clear: '☀',
+    clouds: '☁',
+    rain: '🌧',
+    storm: '☈',
+    fog: '🌫',
+    wind: '🌬'
+}
+
+/**
+ * Legacy write API. The canonical client (@lib/utils/weather.fetchWeather)
+ * is now the primary writer; this remains as a backward-compatible hook
+ * for tests, fixtures, and any caller still holding a WeatherData reference.
+ * Writes the legacy shape so existing read sites keyed off `temperature` /
+ * `label` / `condition` keep working. The readCanonical() adapter then
+ * translates legacy → canonical for the new getters.
+ * TODO (Ticket W46-D4): delete once all writers route through the canonical client.
+ */
+export function updateWeather(data: Partial<WeatherData>): void {
+    appState.withMutation(() => {
+        const current = (appState.weather as unknown as Partial<WeatherData>) ?? {}
+        appState.weather = {
+            ...current,
+            ...data,
+            updatedAt: performance.now()
+        }
+        appState.weatherInitialized = true
+    })
 }
