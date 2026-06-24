@@ -554,9 +554,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
 // the main boot sequence. They live in a separate `test.describe` block
 // without the heavy `beforeEach` that drives the desktop full-scene boot.
 test.describe('Widget Journey Tests — mobile viewport', () => {
-    test('14. mobile placeholder copy is labeled as a "Preview", not as the real product', async ({
-        browser
-    }) => {
+    test('14. mobile placeholder copy is labeled as a "Preview", not as the real product', async ({ browser }) => {
         // Use a fresh browser context with a mobile viewport so the
         // responsive renderer picks 'placeholder2d' and the loading overlay
         // doesn't intercept clicks. Sharing the playwright-provided context
@@ -568,19 +566,11 @@ test.describe('Widget Journey Tests — mobile viewport', () => {
 
         try {
             await page.goto(BASE_URL, { waitUntil: 'commit' })
-            await page
-                .locator('[data-testid="placeholder-2d"]')
-                .waitFor({ state: 'visible', timeout: 15000 })
+            await page.locator('[data-testid="placeholder-2d"]').waitFor({ state: 'visible', timeout: 15000 })
 
-            const titleText = (
-                (await page.locator('.placeholder-title').first().textContent()) ?? ''
-            ).trim()
-            const subtitleText = (
-                (await page.locator('.placeholder-subtitle').first().textContent()) ?? ''
-            ).trim()
-            const hintText = (
-                (await page.locator('.placeholder-hint').first().textContent()) ?? ''
-            ).trim()
+            const titleText = ((await page.locator('.placeholder-title').first().textContent()) ?? '').trim()
+            const subtitleText = ((await page.locator('.placeholder-subtitle').first().textContent()) ?? '').trim()
+            const hintText = ((await page.locator('.placeholder-hint').first().textContent()) ?? '').trim()
 
             // The title must include "Preview" — that's the whole point of
             // the W47-C fix. A user staring at this string should immediately
@@ -604,6 +594,21 @@ test.describe('Widget Journey Tests — mobile viewport', () => {
                 hintText.toLowerCase().includes('desktop'),
                 `placeholder hint "${hintText}" should mention "desktop" as an alternative path`
             ).toBe(true)
+
+            // W47-C2 (Tier 2 #2.4): mobile users need terminology access too.
+            // Verify the inline legend renders the first 5 cluster names.
+            const legendItems = await page
+                .locator('[data-testid="placeholder-legend"] > li')
+                .allTextContents()
+            expect(
+                legendItems.length,
+                `expected placeholder legend to have 5 items, got ${legendItems.length}`
+            ).toBe(5)
+            // The first item should match the first CLUSTER_NAMES entry.
+            expect(
+                legendItems[0].trim().length,
+                `expected first legend item to be a non-empty category name, got "${legendItems[0]}"`
+            ).toBeGreaterThan(0)
         } finally {
             await ctx.close()
         }
@@ -618,9 +623,7 @@ test.describe('Widget Journey Tests — mobile viewport', () => {
 // failure. We use a fresh browser context so the flag starts unset and the
 // banner is hidden, then we set the flag and verify the banner appears.
 test.describe('Widget Journey Tests — dev mock banner', () => {
-    test('15. dev mock banner shows when sessionStorage.api_unreachable is set', async ({
-        browser
-    }) => {
+    test('15. dev mock banner shows when sessionStorage.api_unreachable is set', async ({ browser }) => {
         const ctx = await browser.newContext()
         const page = await ctx.newPage()
 
@@ -630,21 +633,17 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
             // Wait for the SearchBar to mount before checking the banner.
             // The SearchBar component is in the eager bundle but its DOM
             // is rendered after Svelte mounts the App shell.
-            await page
-                .locator('.search-container')
-                .waitFor({ state: 'attached', timeout: 15000 })
+            await page.locator('.search-container').waitFor({ state: 'attached', timeout: 15000 })
 
             // Before the flag is set, the banner should NOT be visible.
             // Wait a beat for the SearchBar's 750ms polling interval.
             await page.waitForTimeout(1500)
-            const bannerBefore = await page
-                .locator('[data-testid="mock-banner"]')
-                .count()
+            const bannerBefore = await page.locator('[data-testid="mock-banner"]').count()
 
             // Set the flag — simulates the search engine's fallback path.
             await page.evaluate(() => {
                 window.sessionStorage.setItem('api_unreachable', '1')
-                 
+
                 console.log('[TEST 15 DEBUG] set api_unreachable=1')
             })
 

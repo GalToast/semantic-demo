@@ -38,11 +38,26 @@
 -->
 <script lang="ts">
   import { engineReady } from '@lib/stores/engine-ready.svelte'
+  import { CONFIG } from '@lib/engine/config'
+  import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 
   const enter3d = (e: Event): void => {
     e.preventDefault()
     engineReady.signalReady()
   }
+
+  // W47-C2 (Tier 2 #2.4): compact inline legend so mobile users see what
+  // categories they're looking at. The full Legend.svelte panel is hidden
+  // on the placeholder via CSS (body[data-render-kind='placeholder2d'])
+  // because it would otherwise overlap the CTA — so users have NO
+  // terminology access at all on mobile. Showing the first 5 cluster
+  // names with their canonical dot colors closes that gap without
+  // disrupting the CTA layout. Categories are pulled from CONFIG so
+  // the labels stay in sync with the rest of the app.
+  const previewCategories = CONFIG.CLUSTER_NAMES.slice(0, 5).map((name, i) => ({
+    name,
+    color: CLUSTER_COLORS[i] ?? '#888'
+  }))
 </script>
 
 <main
@@ -162,6 +177,15 @@
       <span class="cta-icon" aria-hidden="true">◆</span>
       Enter 3D Scene
     </button>
+
+    <ul class="placeholder-legend" data-testid="placeholder-legend" aria-label="Business categories in the dataset">
+      {#each previewCategories as cat (cat.name)}
+        <li class="placeholder-legend-item">
+          <span class="placeholder-legend-dot" style="background-color: {cat.color}" aria-hidden="true"></span>
+          <span class="placeholder-legend-label">{cat.name}</span>
+        </li>
+      {/each}
+    </ul>
 
     <p class="placeholder-hint">
       Tap to load the full scene, or open on desktop for the full 3D experience.
@@ -310,6 +334,41 @@
     opacity: 0.5;
     margin: 1rem 0 0;
     letter-spacing: 0.02em;
+  }
+
+  /* W47-C2 (Tier 2 #2.4): compact inline legend so mobile users get
+     terminology access even though the full Legend.svelte panel is
+     hidden behind the CTA on the placeholder. Two-column grid of 5 items;
+     capped at 320px wide so it doesn't dominate the placeholder. */
+  .placeholder-legend {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.35rem 0.9rem;
+    margin: 1.1rem auto 0;
+    padding: 0;
+    list-style: none;
+    max-width: 20rem;
+    pointer-events: auto;
+  }
+  .placeholder-legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+    font-size: 0.7rem;
+    color: rgba(231, 240, 240, 0.78);
+    letter-spacing: 0.01em;
+  }
+  .placeholder-legend-dot {
+    display: inline-block;
+    width: 0.6rem;
+    height: 0.6rem;
+    border-radius: 999px;
+    flex-shrink: 0;
+  }
+  .placeholder-legend-label {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   /* ── Motion ────────────────────────────────────────────────────────────
