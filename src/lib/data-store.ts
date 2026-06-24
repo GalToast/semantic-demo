@@ -220,12 +220,6 @@ export const isLoading = derived(dataLoadState, ($s) => $s.status === 'loading')
 
 // ── Getter wrappers (match the .svelte.ts API for compatibility) ──────────
 
-export function getPositionBuffer(): Float32Array | null {
-    return get(positionBuffer)
-}
-export function getClustersBuffer(): Uint16Array | null {
-    return get(clustersBuffer)
-}
 export function getPointIndexByLeadId(): Map<string, number> {
     return get(pointIndexByLeadId)
 }
@@ -247,15 +241,6 @@ export function getLayoutManifest(): LayoutManifest | null {
 export function getDataLoadState(): DataLoadState {
     return get(dataLoadState)
 }
-export function getLoadingPhaseStore(): LoadingPhase {
-    return get(loadingPhaseStore)
-}
-export function getGraphicsModeStore(): 'webgl' | 'fallback' {
-    return get(graphicsModeStore)
-}
-export function getRecordCount(): number {
-    return get(recordCount)
-}
 export function getIsDataReady(): boolean {
     const local = get(isDataReady)
     if (local) return true
@@ -271,15 +256,6 @@ export function getIsDataReady(): boolean {
 }
 export function getIsLoading(): boolean {
     return get(isLoading)
-}
-export function getPositionDescriptor(): PositionBufferDescriptor | null {
-    return get(positionDescriptor)
-}
-export function getThreadEdgeCount(): number {
-    return get(threadEdgeCount)
-}
-export function getNeighborMapSize(): number {
-    return get(neighborMapSize)
 }
 
 /** Position buffer as a PositionBufferDescriptor (ready for WebGL) */
