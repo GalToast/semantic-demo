@@ -29,6 +29,7 @@ import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { inspectThreadNeighbor, clearThreadInspection, renderThreadInspection } from './thread-inspector'
+import type { ThreadInspectionState } from './thread-inspector'
 import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
@@ -233,7 +234,7 @@ export class ThreadSettler {
 
         const nav = get(navStore)
         const candidate = (nav.threadCandidates || []).find(
-            (item: any) => item && (typeof item === 'number' ? item === index : item.index === index)
+            (item: { index: number }) => item.index === index
         )
         const records = getBusinessRecords()
         const targetPoint: BusinessRecord | null =
@@ -270,7 +271,7 @@ export class ThreadSettler {
             fromIndex: fromIndex ?? undefined,
             appendHistory: !options.restoreHistory
         })
-        renderThreadInspection(null, { force: true, surface: 'idle' } as any)
+        renderThreadInspection(null, { force: true, surface: 'idle' })
 
         withStateMutation(() => {
             ;(legacyState.navState as any).lastTraversalReason = reason
@@ -460,7 +461,7 @@ export class ThreadSettler {
         })
     }
 
-    previewInsideNextThread(options: PreviewInsideOptions = {}): any {
+    previewInsideNextThread(options: PreviewInsideOptions = {}): ThreadInspectionState | null {
         if (!appState.semanticDiveMode || legacyState.currentView !== 'galaxy') return null
         const currentIndex = getCurrentTrailFocusIndex(get(navStore).focusedIndex)
         if (currentIndex === null || !Number.isFinite(currentIndex)) return null
@@ -481,7 +482,7 @@ export class ThreadSettler {
             force: true,
             preserveJourney: true,
             surface: 'inside-cue'
-        } as any)
+        })
     }
 
     clearAllTimers(): void {
@@ -505,6 +506,6 @@ export function traverseNeighbor(step: number): void {
     getThreadSettler().traverseNeighbor(step)
 }
 
-export function previewInsideNextThread(options: PreviewInsideOptions = {}): any {
+export function previewInsideNextThread(options: PreviewInsideOptions = {}): ThreadInspectionState | null {
     return getThreadSettler().previewInsideNextThread(options)
 }
