@@ -9,6 +9,7 @@ import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } fro
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { getViewportSize } from '@lib/utils/environment'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import type { Point } from '@lib/state/state-types'
 
 let tooltipRevealFrame: number | null = null
@@ -175,8 +176,8 @@ export function disposeTooltipEventBusSubscriptions(): void {
     for (const unsub of _tooltipUnsubs) {
         try {
             unsub()
-        } catch (_) {
-            /* best-effort */
+        } catch (error) {
+            debugWarn('[ui/tooltip] Best-effort unsubscribe failed:', error)
         }
     }
     _tooltipUnsubs = []

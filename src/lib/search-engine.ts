@@ -16,6 +16,7 @@ import { rerankResults } from '@lib/utils/rerank'
 import { searchUseRerank } from '@lib/stores/search.svelte'
 import { get } from 'svelte/store'
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { getBusinessRecords } from '@lib/data-store'
 import type { BusinessRecord } from '@lib/types/business'
 import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search-cache'
@@ -138,8 +139,8 @@ async function fetchSemanticSearchResultsDirect(
         if (canUseStaticDevFallback()) {
             try {
                 window.sessionStorage.setItem('api_unreachable', '1')
-            } catch (_err) {
-                // sessionStorage read/write blocked
+            } catch (error) {
+                debugWarn('[search-engine] sessionStorage read/write blocked:', error)
             }
         }
         if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
@@ -421,16 +422,16 @@ function shouldBypassApiSearch(): boolean {
     if (shouldSurfaceApiFailures()) return false
     try {
         if (window.sessionStorage.getItem('api_unreachable') === '1') return true
-    } catch (_err) {
-        // storage disabled or forbidden in iframe
+    } catch (error) {
+        debugWarn('[search-engine] storage disabled or forbidden in iframe:', error)
     }
     const params = new URLSearchParams(window.location.search || '')
     const bypass = params.get('staticOnly') === '1' || params.get('offline') === '1' || params.get('noApi') === '1'
     if (bypass) {
         try {
             window.sessionStorage.setItem('api_unreachable', '1')
-        } catch (_err) {
-            // session storage write-blocked
+        } catch (error) {
+            debugWarn('[search-engine] session storage write-blocked:', error)
         }
         return true
     }
@@ -994,8 +995,11 @@ async function _executeSearch(
     if (results.length > 0 && shouldApplyRerank()) {
         try {
             results = await rerankResults(trimmed, results)
-        } catch (_err) {
-            // belt-and-suspenders: rerankResults already catches internally
+        } catch (error) {
+            debugWarn(
+                '[search-engine] rerankResults threw (belt-and-suspenders catch, should not happen):',
+                error
+            )
         }
     }
 

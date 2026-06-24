@@ -50,6 +50,7 @@ import {
 import { applyClusterUiAccent } from '@lib/ui/cluster-ui-accent'
 import { isMapSummarySurface } from '@lib/utils/environment'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { seededUnit } from '@lib/utils/seeded-random'
 import { appState } from '@lib/state/app.svelte'
 
@@ -128,8 +129,11 @@ export function syncFocusStage(point: any): void {
         if (getPreviouslyFocusedFocusStage()) {
             try {
                 ;(getPreviouslyFocusedFocusStage() as HTMLElement).focus()
-            } catch (_e) {
-                // Focus restore failure is non-critical — accessibility degraded
+            } catch (error) {
+                debugWarn(
+                    '[journey/selected-card] Focus restore failure is non-critical (a11y degraded):',
+                    error
+                )
             }
             setPreviouslyFocusedFocusStage(null)
         }

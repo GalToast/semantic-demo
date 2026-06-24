@@ -86,7 +86,7 @@ import * as eventBindingsMod from '@lib/ui/event-bindings'
 import * as loadingUiMod from '../ui/loading'
 
 // ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
-import { withStateMutation } from '@lib/state/with-state-mutation'
+
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import * as clusterLabelsMod from '@lib/ui/cluster-labels'
 import * as focusPocketMod from '@lib/journey/focus-pocket'
@@ -272,7 +272,7 @@ function _ensureModules(): void {
             ;(window as unknown as { __LEGACY_APP_STATE__?: unknown }).__LEGACY_APP_STATE__ = legacyState
             ;(window as unknown as { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.()
         }
-        _withStateMutation = withStateMutation as unknown as WithStateMutationFn
+        _withStateMutation = ((fn: () => void) => fn()) as unknown as WithStateMutationFn
         _viewController = viewControllerMod as unknown as ViewControllerModule
         _clusterLabels = clusterLabelsMod as unknown as ClusterLabelsModule
         _focusPocket = focusPocketMod as unknown as FocusPocketModule
@@ -772,15 +772,15 @@ export function cancelAnimate() {
     if (!contextWasLost && renderer && scene && camera) {
         try {
             renderer.render(scene, camera)
-        } catch (_) {
-            /* context already gone */
+        } catch (error) {
+            debugWarn('[three-engine] renderer.render failed (context likely lost):', error)
         }
     }
     if (_state?.controls && typeof _state.controls.dispose === 'function') {
         try {
             _state.controls.dispose()
-        } catch (_) {
-            /* already disposed */
+        } catch (error) {
+            debugWarn('[three-engine] controls already disposed:', error)
         }
     }
     if (_state) {
@@ -790,8 +790,8 @@ export function cancelAnimate() {
     }
     try {
         disposeObject3D(scene as any)
-    } catch (_) {
-        /* already cleaned up */
+    } catch (error) {
+        debugWarn('[three-engine] disposeObject3D already cleaned up:', error)
     }
     _focusAnchor?.disposeFocusAnchorIndicator()
     // Dispose postprocessing composer BEFORE renderer.dispose() so the
@@ -807,8 +807,8 @@ export function cancelAnimate() {
         const canvas = renderer.domElement
         try {
             canvas?.parentNode?.removeChild(canvas)
-        } catch (_) {
-            /* already removed */
+        } catch (error) {
+            debugWarn('[three-engine] canvas already removed from DOM:', error)
         }
     }
     if (_state) {

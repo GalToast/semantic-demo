@@ -7,6 +7,7 @@
 import { Vector3 } from 'three';
 import { getViewportSize } from '@lib/utils/environment';
 import { appState as _state } from '@lib/state/app.svelte'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 const state = _state as any;
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -131,8 +132,8 @@ export function getCanvasUnobstructedRegion(): CanvasRegion {
             break;
         }
       }
-    } catch (_) {
-      /* cross-origin or shadow DOM, skip */
+    } catch (error) {
+      debugWarn('[engine/framing-utils] cross-origin or shadow DOM intersection skipped:', error)
     }
   }
 

@@ -25,6 +25,7 @@ import {
 import { performSearch } from '@lib/search-engine'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { updateSearchTrailCue as renderSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './search-panel-adapter'
@@ -89,8 +90,8 @@ function _clearSearchFocusTimers(): void {
 export async function search(query: string, options: SearchOptions = {}): Promise<void> {
     try {
         sessionStorage.removeItem('searchVisibleCount')
-    } catch (_e) {
-        /* sessionStorage may be unavailable */
+    } catch (error) {
+        debugWarn('[search/orchestration] sessionStorage may be unavailable:', error)
     }
     const trimmedQuery = String(query || '').trim()
     const resultsEl = document.getElementById('search-results')

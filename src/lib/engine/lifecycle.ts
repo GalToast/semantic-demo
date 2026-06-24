@@ -61,6 +61,7 @@ import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 
 // Data readiness
 import { isDataReady } from '@lib/data-store'
+import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
 // ── Module-scoped State ──────────────────────────────────────────────────────
 
@@ -154,8 +155,8 @@ function unbindEventBridge(): void {
     for (const unsub of _eventUnsubs) {
         try {
             unsub()
-        } catch (_) {
-            /* best-effort */
+        } catch (error) {
+            debugWarn('[engine/lifecycle] Best-effort event unsubscribe failed:', error)
         }
     }
     _eventUnsubs = []
@@ -405,8 +406,8 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             try {
                 performance.measure('engine-init-total', 'engine-init-start', 'engine-init-ready')
                 performance.measure('engine-init-gpu', 'engine-init-gpu-start', 'engine-init-ready')
-            } catch (_) {
-                /* ignore if marks absent (SSR) */
+            } catch (error) {
+                debugWarn('[engine/lifecycle] performance marks absent (SSR or pre-init):', error)
             }
         }
         callbacks.onLoadingPhase?.('launch', 1)
@@ -474,8 +475,11 @@ export function destroyEngine(): void {
     if (_canvasInteractionBound) {
         try {
             disposeCanvasNodeInteractionBindings()
-        } catch (_) {
-            /* best-effort */
+        } catch (error) {
+            debugWarn(
+                '[engine/lifecycle] Best-effort canvas interaction dispose failed:',
+                error
+            )
         }
         _canvasInteractionBound = false
     }
@@ -483,15 +487,18 @@ export function destroyEngine(): void {
     // FIX #2: Dispose tooltip event-bus subscriptions (was missing in bridge)
     try {
         disposeTooltipEventBusSubscriptions()
-    } catch (_) {
-        /* best-effort */
+    } catch (error) {
+        debugWarn(
+            '[engine/lifecycle] Best-effort tooltip event-bus dispose failed:',
+            error
+        )
     }
 
     // FIX #3: Dispose Leaflet Map state recursively (was missing in bridge)
     try {
         destroyMap()
-    } catch (_) {
-        /* best-effort */
+    } catch (error) {
+        debugWarn('[engine/lifecycle] Best-effort Leaflet map dispose failed:', error)
     }
 
     // 4. Clear engine handle from window
