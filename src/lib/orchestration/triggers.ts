@@ -34,9 +34,9 @@ import {
     returnToOverview,
     recenterFocusedNode,
     resetExplorationFocus,
-    hideSummaryCard,
     setSemanticLaneUiState
 } from './lifecycle'
+import { hideSummaryCard } from '@lib/journey/semantic-guide'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
@@ -315,9 +315,10 @@ subscribeKeyed(
 
 /**
  * SUMMARY_CARD_HIDE_REQUESTED is published when the summary card should
- * be hidden. The Svelte focus store already owns the selected business
- * state; hideSummaryCard is a no-op proxy that lives in the orchestration
- * layer for API symmetry with the legacy event-bus contract.
+ * be hidden. Delegates to the canonical implementation in
+ * journey/semantic-guide.ts (was previously a no-op proxy via
+ * orchestration/lifecycle.ts — fixed in W46-T2-a when the dead no-op
+ * stubs in lifecycle.ts were traced to their real implementations).
  */
 subscribeKeyed('triggers.ts:SUMMARY_CARD_HIDE_REQUESTED', EVENTS.SUMMARY_CARD_HIDE_REQUESTED, () => {
     hideSummaryCard()
