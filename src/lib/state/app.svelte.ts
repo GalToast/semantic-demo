@@ -37,6 +37,14 @@ import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/bus
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
+
+/**
+ * Structural type for Leaflet map layer objects (L.Map, L.LayerGroup).
+ * Leaflet is loaded via CDN (not npm-imported), so we can't reference
+ * its types directly. This type documents the shape consumers expect
+ * and matches the local cast in engine/map-state.ts.
+ */
+type LeafletLayer = Record<string, unknown> | null
 import type { Scene, Points, PointsMaterial, InstancedMesh, Material } from 'three'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
@@ -101,9 +109,9 @@ class AppState {
 
     // ==== POSITION / GEOMETRY STATE ====
     points = $state<Point[]>([])
-    map = $state<unknown>(null)
-    markersLayer = $state<unknown>(null)
-    mapRouteLayer = $state<unknown>(null)
+    map = $state<LeafletLayer>(null)
+    markersLayer = $state<LeafletLayer>(null)
+    mapRouteLayer = $state<LeafletLayer>(null)
     mapInitialized = $state<boolean>(false)
     leafletAssetsPromise = $state<Promise<unknown> | null>(null)
     scene = $state<Scene | null>(null)

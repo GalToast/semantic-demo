@@ -16,6 +16,14 @@ import type { WebGLContextState } from '@lib/engine/webgl-context'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
+
+/**
+ * Structural type for Leaflet map layer objects (L.Map, L.LayerGroup).
+ * Leaflet is loaded via CDN (not npm-imported), so we can't reference
+ * its types directly. This type documents the shape consumers expect
+ * and matches the local cast in engine/map-state.ts.
+ */
+type LeafletLayer = Record<string, unknown> | null
 import type { Vector3 } from 'three'
 
 export interface Vector3Like {
@@ -504,9 +512,9 @@ export interface SemanticState extends StateConfig {
     /** Allow legacy string-indexed access for Proxy compatibility */
     [key: string]: unknown
     points: Point[]
-    map: unknown
-    markersLayer: unknown
-    mapRouteLayer: unknown
+    map: LeafletLayer
+    markersLayer: LeafletLayer
+    mapRouteLayer: LeafletLayer
     mapInitialized: boolean
     leafletAssetsPromise: Promise<unknown> | null
     scene: WebGLContextState['scene']
