@@ -5,6 +5,7 @@
 <script lang="ts">
   import { appState } from '@lib/state/app.svelte.ts'
   import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide'
+  import { focusOnNode } from '@lib/engine/camera-choreography'
 
   type Suggestion = {
     lead_id?: string | number
@@ -24,6 +25,26 @@
   const suggestions = $derived(
     Array.isArray(config.suggestions) ? config.suggestions : []
   )
+
+  /**
+   * W47-A: suggestion-btn click handler. Previously the buttons rendered with
+   * data-lead-id but no onclick handler at all — they were decorative. The
+   * `bindSuggestionControls` module that handled clicks for this region was
+   * dead code (no import graph), and even if registered its [data-action]
+   * selector wouldn't match the rendered `data-lead-id` attribute.
+   *
+   * Now: lookup the lead_id in `appState.pointIndexByLeadId` and call
+   * focusOnNode(idx). The summary card stays open so the user can chain
+   * clicks (Trail anchor → Next stop → Side trail). The `fromCanvasNode: true`
+   * flag tells focusOnNode to use the field-node focus panel mode.
+   */
+  function handleSuggestionClick(suggestion: Suggestion): void {
+    if (suggestion?.lead_id == null) return
+    const leadKey = String(suggestion.lead_id)
+    const idx = appState.pointIndexByLeadId?.get?.(leadKey)
+    if (!Number.isFinite(idx)) return
+    focusOnNode(idx as number, { fromCanvasNode: true })
+  }
 </script>
 
 <div
@@ -59,6 +80,7 @@
           class="suggestion-btn"
           type="button"
           data-lead-id={String(suggestion.lead_id ?? '')}
+          onclick={() => handleSuggestionClick(suggestion)}
         >
           <span class="suggestion-label">{suggestion.label || 'Suggestion'}</span>
           <span class="suggestion-name">{suggestion.name || 'Related business'}</span>

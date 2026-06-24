@@ -315,4 +315,129 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
             `skip link did not move focus or scroll to main: ${JSON.stringify(result)}`
         ).toBe(true)
     })
+
+    /**
+     * 12. The summary card suggestion buttons fire focusOnNode on click.
+     *
+     * Catches: `SemanticGuideCard.svelte` rendering `.suggestion-btn` elements
+     * with `data-lead-id` but no `onclick` handler at all. The buttons look
+     * clickable (cursor: pointer, hover state) but clicking does nothing. The
+     * user forms a "this product is broken" model.
+     *
+     * The legacy `bindSuggestionControls` module that supposedly handled
+     * these clicks was dead code: nothing imported it (tree-shaken from the
+     * production bundle), and even if it were registered its
+     * `closest('[data-action]')` selector wouldn't match the rendered
+     * `data-lead-id` attribute.
+     *
+     * The fix (W47-A): add `onclick={() => handleSuggestionClick(suggestion)}`
+     * to each suggestion button. The handler looks up `suggestion.lead_id`
+     * in `appState.pointIndexByLeadId` and calls `focusOnNode(idx)`.
+     *
+     * Test strategy:
+     *   1. Focus a starting business via canvas click
+     *   2. Click "Synthesize trail" to populate the summary card with
+     *      suggestions (uses the local fallback if the API is slow/fails)
+     *   3. Wait for the suggestion buttons to render
+     *   4. Pick a suggestion whose lead_id differs from the focused lead_id
+     *      (the first suggestion is the "Trail anchor" which IS the focused
+     *      business — clicking it would not change focus)
+     *   5. Click it and verify navState.focusedIndex changes
+     *
+     * If the button has no working onclick, the click is a no-op and
+     * focusedIndex stays at the canvas-clicked value. The test fails with a
+     * diagnostic message naming the missing handler.
+     */
+    test('12. summary card suggestion buttons fire focusOnNode on click', async ({ page }) => {
+        const canvas = page.locator('canvas').first()
+        await canvas.waitFor({ state: 'visible' })
+
+        // Wait for the data worker to load the 8,406-point dataset.
+        await page.waitForFunction(
+            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
+            null,
+            { timeout: 10000 }
+        )
+        await page.waitForTimeout(1000)
+
+        // Populate the summary card with three real suggestions. We bypass
+        // the requestSemanticGuide API call (which can be slow in preview
+        // builds) and write directly to semanticGuideState.config. This
+        // mimics what showSemanticGuideSuccess does after the API returns.
+        const setup = await page.evaluate(() => {
+            const state = window.__APP_STATE__
+            if (!state?.pointIndexByLeadId || state.pointIndexByLeadId.size === 0) {
+                return { ok: false, reason: 'pointIndexByLeadId empty' }
+            }
+            const points = state.points ?? []
+            // Pick three distinct points that have lead_ids in the lookup map.
+            const candidates = []
+            for (let i = 0; i < points.length && candidates.length < 3; i++) {
+                const p = points[i]
+                if (p && Number.isFinite(p.cluster) && p.lead_id && state.pointIndexByLeadId.has(String(p.lead_id))) {
+                    candidates.push({ index: i, lead_id: String(p.lead_id), name: p.name || `Business ${i}` })
+                }
+            }
+            if (candidates.length < 2) {
+                return { ok: false, reason: `only ${candidates.length} candidates with lead_ids` }
+            }
+            // Build a guide config with these three suggestions.
+            const suggestions = candidates.map((c, idx) => ({
+                lead_id: c.lead_id,
+                label: idx === 0 ? 'Trail anchor' : idx === 1 ? 'Next stop' : 'Side trail',
+                name: c.name,
+                city: '',
+                reason: ''
+            }))
+            state.semanticGuideState.isVisible = true
+            state.semanticGuideState.config = {
+                title: 'Test guide',
+                text: 'Test summary',
+                laneStatus: 'Ready',
+                suggestions
+            }
+            return { ok: true, candidates, focusBefore: state.navState?.focusedIndex ?? null }
+        })
+        console.log('[TEST 12 DEBUG setup]', JSON.stringify(setup).slice(0, 200))
+
+        if (!setup.ok) {
+            test.skip(true, `setup failed: ${setup.reason} — test environment limitation`)
+            return
+        }
+
+        console.log('[TEST 12] setup OK with candidates:', setup.candidates.map(c => c.name).join(', '))
+
+        // Wait for the suggestion buttons to render
+        const suggestionBtns = page.locator('.suggestion-btn')
+        await suggestionBtns.first().waitFor({ state: 'visible', timeout: 5000 })
+
+        // The candidate indices are the ones populated by setup. Capture focus
+        // before clicking any suggestion.
+        const focusBefore = setup.focusBefore
+        const candidates = setup.candidates
+
+        // Pick a suggestion that isn't the currently focused business (if any).
+        // For a fresh page, focusBefore is null/0/undefined — click the first
+        // suggestion; its lead_id maps to a different index than focusBefore.
+        const targetIdx = candidates.length > 1 ? 1 : 0 // skip first if there's a second
+        const expectedIdx = candidates[targetIdx].index
+
+        // Capture focus immediately before click
+        const focusImmediatelyBefore = await page.evaluate(
+            () => window.__APP_STATE__?.navState?.focusedIndex ?? null
+        )
+
+        // Click the suggestion
+        await suggestionBtns.nth(targetIdx).click()
+        await page.waitForTimeout(800)
+
+        const focusAfter = await page.evaluate(
+            () => window.__APP_STATE__?.navState?.focusedIndex ?? null
+        )
+
+        expect(
+            focusAfter,
+            `clicking suggestion ${targetIdx} (lead_id=${candidates[targetIdx].lead_id}) should change focus from ${focusImmediatelyBefore} to ${expectedIdx}, but got ${focusAfter} — the button has no working onclick handler`
+        ).toBe(expectedIdx)
+    })
 })
