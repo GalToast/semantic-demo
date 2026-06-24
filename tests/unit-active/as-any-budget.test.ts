@@ -62,15 +62,15 @@ function runAudit(): AuditResult {
 describe('Global as-any budget', () => {
   const audit = runAudit()
 
-  it('does not exceed the 2026-06-24 baseline of 478 casts', () => {
+  it('does not exceed the 2026-06-24 baseline of 477 casts', () => {
     // This test locks in the global `as any` count. If it increases,
     // someone added a new `as any` without justification. Fix the cast
     // or update the budget with a comment in docs/typing-contract.md.
     expect(
       audit.totalCount,
       `Global as-any count increased to ${audit.totalCount}. ` +
-      `Budget: 478. See docs/typing-contract.md for how to fix or justify.`,
-    ).toBeLessThanOrEqual(478)
+      `Budget: 477. See docs/typing-contract.md for how to fix or justify.`,
+    ).toBeLessThanOrEqual(477)
   })
 
   it('lists the top 10 offenders when the budget is exceeded', () => {

@@ -29,7 +29,7 @@ Every `as any` must have a comment explaining why it cannot be typed properly. N
 
 | Metric | Value | Date |
 |--------|-------|------|
-| `as any` / `: any` / `any[]` / `<any>` count | **478** | 2026-06-24 |
+| `as any` / `: any` / `any[]` / `<any>` count | **477** | 2026-06-24 |
 | Files affected | **76** | 2026-06-24 |
 | Thread-inspector-webgl budget | **8** | contract enforced |
 
