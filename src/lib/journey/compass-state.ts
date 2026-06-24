@@ -55,11 +55,19 @@ export interface CompassState {
     kicker: string;
     title: string;
     note: string;
-    primaryAction: CompassAction | null;
+    primaryAction: CompassAction;
     secondaryAction: CompassAction | null;
     tertiaryAction: CompassAction | null;
     discovery?: boolean;
 }
+
+// ── Back-compat aliases ────────────────────────────────────────────────────────
+// These re-exports let the legacy `orchestration/compass-state.ts` importers
+// (compass-controller, parity-attrs, lifecycle, LegacyCompassSurface) move to
+// this module without renaming every type reference. Remove once the legacy
+// stub is deleted (W46-T3-cleanup).
+export type CompassStateContext = CompassState;
+export type { CompassStatus, JourneyAction } from '@lib/stores/compass.svelte.ts';
 
 export function getJourneyCompassState(): CompassState {
     const cueBeat: string = appState.semanticTrailCue || 'idle';
