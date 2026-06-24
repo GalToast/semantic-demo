@@ -15,6 +15,7 @@ import { isPointVisible } from '@lib/utils/geo-data';
 import { getNextExploreCandidateForIndex, getThreadCandidatesForIndex } from '@lib/journey/thread-model';
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/journey/neighborhood';
 import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket';
+import type { ThreadEdge } from '@lib/journey/focus-pocket-geometry';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens';
 import { getLineSegmentCount } from '@lib/journey/webgl-utils';
@@ -56,7 +57,7 @@ export function removeFocusSemanticOverlay(): void {
     _state.focusSemanticConnectionPairs = [];
 }
 
-function getFocusCurvePointLocal(edge: any, t: number): Vector3 {
+function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
     if (typeof getFocusThreadCurvePoint === 'function') {
         const point = getFocusThreadCurvePoint(edge, t);
         return new Vector3(point.x, point.y, point.z);
@@ -73,7 +74,7 @@ function getFocusCurvePointLocal(edge: any, t: number): Vector3 {
     return new Vector3(ax, ay, az).lerp(new Vector3(bx, by, bz), t);
 }
 
-function buildFocusThreadLineMaterial(): any {
+function buildFocusThreadLineMaterial(): LineMaterial {
     const baseOpacity = _state.navState.focusPocketMeta?.active ? 0.18 : 0.24;
     const lineMaterial = new LineMaterial({
         linewidth: 1.35,
