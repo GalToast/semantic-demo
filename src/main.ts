@@ -15,6 +15,7 @@ import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import { appState } from '@lib/state/app.svelte.ts'
+import type { ViewName } from '@lib/state/state-types'
 import { appInit } from '@lib/orchestration/app-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
@@ -199,7 +200,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                         stalenessMsg: string
                     }
                 } else if (prop === 'currentView' && appState) {
-                    appState.currentView = value as 'galaxy' | 'map' | 'focus' | 'trail' | 'semantic'
+                    appState.currentView = value as ViewName
                 } else if (prop === 'weather' && appState) {
                     appState.weather = value
                 }

@@ -50,7 +50,6 @@ import {
 import { updateTraversalUi } from '@lib/journey/focus-ui'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
-import type { ViewName } from '@lib/types/state'
 
 const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
 
@@ -225,7 +224,7 @@ function installWindowGlobals(): () => void {
     // promises, so these wrappers must not use lazy dynamic imports.
     window.__APP_ACTIONS__ = {
         switchView: (view: string) => {
-            switchViewAction(view as ViewName)
+            switchViewAction(view as any)
         },
         focusOnNode: (index: number, options?: Record<string, unknown>) => {
             const result = focusOnNodeAction(index, options)

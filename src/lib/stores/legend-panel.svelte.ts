@@ -15,11 +15,14 @@ import { escapeHtml } from '@lib/utils/dom-formatters';
 import { describeCluster, isCompactFocusStageViewport } from '@lib/utils/ui-presentation';
 import { getSemanticGuideTitle } from '@lib/journey/semantic-guide';
 import { CONFIG } from '@lib/engine/config';
-import type { SemanticGuide } from '@lib/journey/semantic-guide';
-import type { CloseLegendGuideOptions } from '@lib/stores/legend-panel.svelte';
 import { getFilteredClusterCounts, setClusterFilter } from '@lib/orchestration/cluster-filter-controller';
 import { getActiveClusterFilter } from '@lib/stores/filter.svelte';
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
+
+type CloseLegendGuideOptions = {
+    restoreFocusPanel?: boolean;
+    restoreFocus?: boolean;
+};
 
 /** Returns true if the legend panel is currently open. */
 export function isLegendPanelOpen(): boolean {
@@ -89,9 +92,9 @@ export function buildLegend(): void {
         .sort((a, b) => b[1] - a[1] || a[0] - b[0]);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const guide = appState.currentSemanticGuide as SemanticGuide | null;
-    const guideTitle = guide ? getSemanticGuideTitle(guide as Record<string, unknown>) : 'Read the scene';
-    const guideNote: string = guide?.text || 'Neighborhood colors group records by shared language, trade, civic role, and business texture.';
+    const guide = appState.currentSemanticGuide as Record<string, any> | null;
+    const guideTitle = guide ? getSemanticGuideTitle(guide) : 'Read the scene';
+    const guideNote: string = (guide?.text as string) || 'Neighborhood colors group records by shared language, trade, civic role, and business texture.';
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const activeCluster = getActiveClusterFilter();
 
@@ -210,7 +213,7 @@ export function buildLegend(): void {
 
 export function updateLegendGuideState(): void {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const guide = appState.currentSemanticGuide as SemanticGuide | null;
+    const guide = appState.currentSemanticGuide as Record<string, any> | null;
     if (!guide) {
         if (isLegendPanelOpen()) closeLegendPanel();
         return;
@@ -350,5 +353,3 @@ function _setClusterFilter(cluster: number): void {
 export {
     restoreLegendCollapsedPanel
 };
-
-export type { CloseLegendGuideOptions } from '@lib/stores/legend-panel.svelte';

@@ -49,15 +49,12 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 const getNavState = () => state.navState
 const getFocusConstellationMotifs = (): Record<string, any> =>
     (state as any).FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS
-const getFocusThreadSegments = (): number =>
-    (state as any).FOCUS_THREAD_SEGMENTS ?? 0
-const getInspectedStrandGroup = (): Group | null =>
-    state.inspectedStrandGroup as Group | null
+const getFocusThreadSegments = (): number => (state as any).FOCUS_THREAD_SEGMENTS ?? 0
+const getInspectedStrandGroup = (): Group | null => state.inspectedStrandGroup as Group | null
 const setInspectedStrandGroup = (g: Group | null): void => {
     state.inspectedStrandGroup = g
 }
-const getNodePositions = (): Vector3[] =>
-    state.nodePositions as Vector3[]
+const getNodePositions = (): Vector3[] => state.nodePositions as Vector3[]
 const getCurrentView = () => state.currentView
 const getScene = (): Scene | null => state.scene as Scene | null
 const getFocusRingTexture = () => state.focusRingTexture
@@ -103,7 +100,7 @@ export function getInspectedStrandEdge(index: number, lane: number = 0): Inspect
     const motifConfig = { ...(motifs[motifKey as string] || motifs.market || FOCUS_CONSTELLATION_MOTIFS.market || {}) }
     const directLift = Number.isFinite(motifConfig.directLift) ? motifConfig.directLift : 0.6
     const braid = Number.isFinite(motifConfig.braid) ? motifConfig.braid : 0.3
-    const side = ((focusIndex * 31 + index * 17) % 2) === 0 ? 1 : -1
+    const side = (focusIndex * 31 + index * 17) % 2 === 0 ? 1 : -1
     const rawRise = (((focusIndex + index) % 5) - 2) / 2
     const rise = Number.isFinite(rawRise) ? rawRise : 0.45
     return {
@@ -139,8 +136,8 @@ export function writeInspectedStrandPositions(lineObject: LineSegments): void {
             // curveLift, side, rise, depth, motifBraid, anchorPull, role) plus
             // a couple of extras (cue, priority) that ThreadEdge tolerates via
             // its `[key: string]: unknown` index signature.
-            const p0 = getFocusThreadCurvePoint(edge as ThreadEdge, t0) || new Vector3()
-            const p1 = getFocusThreadCurvePoint(edge as ThreadEdge, t1) || new Vector3()
+            const p0 = getFocusThreadCurvePoint(edge as unknown as ThreadEdge, t0) || new Vector3()
+            const p1 = getFocusThreadCurvePoint(edge as unknown as ThreadEdge, t1) || new Vector3()
             positions[offset] = Number.isFinite(p0.x) ? p0.x : 0
             positions[offset + 1] = Number.isFinite(p0.y) ? p0.y : 0
             positions[offset + 2] = Number.isFinite(p0.z) ? p0.z : 0

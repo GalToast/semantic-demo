@@ -103,7 +103,7 @@ export interface ActiveFilters {
     geocoded: boolean;
 }
 
-export type ViewName = 'galaxy' | 'map' | 'overview';
+export type ViewName = 'galaxy' | 'map' | 'focus' | 'trail' | 'semantic';
 
 export type CompassPhase = 'overview' | 'search' | 'focus' | 'inside' | 'map';
 
