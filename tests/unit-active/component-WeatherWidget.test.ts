@@ -12,7 +12,7 @@
  *  3. Toggle button has class="weather-toggle" with aria-label="Toggle weather details"
  *  4. Toggle button has type="button" to prevent form submission
  *  5. Toggle contains .weather-icon span
- *  6. Expanded panel .weather-details has 3 detail rows (Condition, Feels like, Forecast)
+ *  6. Expanded panel .weather-details has 4 detail rows (Condition, Feels like, Humidity, Wind)
  *  7. Each detail row has .detail-label and .detail-value spans
  *  8. Widget supports .compact class for viewport state
  */
@@ -56,20 +56,23 @@ describe('WeatherWidget component', () => {
         expect(source).toContain('class="weather-temp"');
     });
 
-    it('expanded panel .weather-details has 3 detail rows', () => {
+    it('expanded panel .weather-details has 4 detail rows', () => {
         expect(source).toContain('class="weather-details"');
         const detailRows = source.match(/class="weather-detail-row"/g);
         expect(detailRows).toBeTruthy();
-        expect(detailRows!.length).toBe(3);
+        expect(detailRows!.length).toBe(4);
     });
 
     it('each detail row has .detail-label and .detail-value spans', () => {
         expect(source).toContain('class="detail-label"');
         expect(source).toContain('class="detail-value"');
-        // Check specific labels
+        // Check specific labels — W46-D4 widget design: Condition, Feels like,
+        // Humidity, Wind (FORECAST row intentionally removed; temperature is
+        // always visible in the pill, so a Feels like row covers delta only).
         expect(source).toContain('>Condition<');
         expect(source).toContain('>Feels like<');
-        expect(source).toContain('>Forecast<');
+        expect(source).toContain('>Humidity<');
+        expect(source).toContain('>Wind<');
     });
 
     it('widget supports .compact class for viewport state', () => {
