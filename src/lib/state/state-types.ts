@@ -448,6 +448,7 @@ export interface SearchSummary {
 }
 
 export type { LaneHealthPayload } from '../orchestration/semantic-lane'
+export type { CacheEntry } from '../search/cache'
 
 /**
  * Shape of state.searchError — set by search.svelte.ts (setSearchError) and
