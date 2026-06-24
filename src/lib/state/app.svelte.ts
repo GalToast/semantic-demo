@@ -26,7 +26,8 @@ import type {
     ControlsLike,
     Vector3Like,
     SearchSummary,
-    SearchErrorData
+    SearchErrorData,
+    SearchResult
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
@@ -62,7 +63,7 @@ class AppState {
     compactSearchRevealToken = $state<number>(0)
     compactSearchRevealTimers = $state<Array<ReturnType<typeof setTimeout>>>([])
     // Migrated from legacy stores (searchResultsStore, searchSummaryStore, isSearchingStore, searchErrorStore, searchVisibleCountStore)
-    searchResults = $state<Array<Record<string, unknown>>>([])
+    searchResults = $state<SearchResult[]>([])
     searchSummary = $state<Record<string, unknown> | null>(null)
     isSearching = $state<boolean>(false)
     searchError = $state<SearchErrorData | null>(null)

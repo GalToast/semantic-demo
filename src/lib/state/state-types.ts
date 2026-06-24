@@ -462,6 +462,37 @@ export interface SearchErrorData {
     message: string
 }
 
+/**
+ * A single point referenced by a search result.
+ * Index signature allows custom fields from external sources.
+ *
+ * Promotion: was a local interface in src/lib/search/results-ui.ts.
+ */
+export interface SearchResultPoint {
+    lead_id?: string | number
+    name?: string
+    city?: string
+    [key: string]: unknown
+}
+
+/**
+ * Shape of state.searchResults entries — produced by results-ui.ts and
+ * consumed by search-result-renderer. The index signature preserves
+ * back-compat with external sources that inject custom fields.
+ *
+ * Promotion: was a local interface in src/lib/search/results-ui.ts.
+ * Hoisted to state-types.ts so appState can declare the field's shape
+ * without `Array<Record<string, unknown>>`.
+ */
+export interface SearchResult {
+    point: SearchResultPoint | null
+    index: number
+    score: number
+    publicNote?: string
+    publicDetail?: string
+    [key: string]: unknown
+}
+
 export interface SemanticState extends StateConfig {
     /** Allow legacy string-indexed access for Proxy compatibility */
     [key: string]: unknown

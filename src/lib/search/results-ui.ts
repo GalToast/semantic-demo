@@ -15,7 +15,7 @@ import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetTogg
 import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte'
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane'
 import { appState } from '@lib/state/app.svelte'
-import type { SemanticState, SearchErrorData } from '@lib/state/state-types'
+import type { SemanticState, SearchErrorData, SearchResult, SearchResultPoint } from '@lib/state/state-types'
 import { formatBusinessName } from '../utils/dom-formatters'
 import {
     getSearchResultStrength,
@@ -30,21 +30,7 @@ const state = appState as unknown as SemanticState
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface SearchResultPoint {
-    lead_id?: string | number
-    name?: string
-    city?: string
-    [key: string]: unknown
-}
 
-interface SearchResult {
-    point: SearchResultPoint | null
-    index: number
-    score: number
-    publicNote?: string
-    publicDetail?: string
-    [key: string]: unknown
-}
 
 interface RenderContext {
     trimmedQuery: string
