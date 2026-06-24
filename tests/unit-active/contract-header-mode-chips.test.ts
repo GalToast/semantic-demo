@@ -177,5 +177,21 @@ describe('A2-5b: Header mode-chip roving tabindex radiogroup', () => {
     it('guards selectMode against locked modes (defense in depth)', () => {
       expect(src).toMatch(/if \(isModeLocked\(modeId\)\) return/);
     });
+
+    // W46-D4 polish lock-in (commits 81d65978 -> 9983b0f0).
+    // Mobile label policy: active chip visible, locked chips icon-only,
+    // discoverability moved to the title attribute (long-press surfaces
+    // the full mode description). Prevents regression to the 81d65978
+    // pattern that pushed Map off-screen at 390px viewport.
+    it('mobile CSS keeps active chip label visible, hides locked chip labels', () => {
+      expect(src).toMatch(/\.mode-chip\.active\s+\.chip-label\s*\{\s*display:\s*inline/);
+      expect(src).not.toMatch(/is-locked\s+\.chip-label\s*\{\s*display:\s*inline/);
+    });
+
+    it('locked chip tooltip includes the mode description (discoverability fallback)', () => {
+      // On mobile the locked chip is icon-only; long-press must surface the
+      // full mode description so users learn what the dimmed icon means.
+      expect(src).toContain('Select a business to unlock');
+    });
   });
 });
