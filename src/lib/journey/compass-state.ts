@@ -62,10 +62,9 @@ export interface CompassState {
 }
 
 // ── Back-compat aliases ────────────────────────────────────────────────────────
-// These re-exports let the legacy `orchestration/compass-state.ts` importers
-// (compass-controller, parity-attrs, lifecycle, LegacyCompassSurface) move to
-// this module without renaming every type reference. Remove once the legacy
-// stub is deleted (W46-T3-cleanup).
+// Kept after the W46-T3 cleanup of orchestration/compass-state.ts. Any code
+// that previously imported these names from the legacy stub continues to
+// work. Safe to remove in a future pass once no consumers reference them.
 export type CompassStateContext = CompassState;
 export type { CompassStatus, JourneyAction } from '@lib/stores/compass.svelte.ts';
 
