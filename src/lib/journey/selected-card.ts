@@ -272,7 +272,7 @@ export function updateSelectedBusiness(point: any, options: UpdateSelectedBusine
 
     const cascadeBg = document.getElementById('vector-cascade-bg')
     if (cascadeBg && detailsEl && !detailsEl.hidden) {
-        cascadeBg.innerHTML = ''
+        cascadeBg.textContent = ''
         cascadeBg.classList.remove('active')
         cascadeBg.classList.add('active')
         const generateVectorLine = (lineIdx: number): string =>

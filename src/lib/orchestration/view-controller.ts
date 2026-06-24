@@ -89,7 +89,22 @@ export function showViewHandoff(view: ViewName): void {
   const noteEl = document.getElementById('view-handoff-note');
 
   if (runeEl) {
-    runeEl.innerHTML = semanticGuideIcon(model.icon, view === 'map' ? 'Map view' : 'Mycelium view');
+    // Build the SVG rune via DOM API to avoid innerHTML. semanticGuideIcon
+    // returns a <svg> string with escaped label/icon; we replicate the same
+    // output via createElementNS to keep the DOM API invariant.
+    const iconId = model.icon
+    const label = view === 'map' ? 'Map view' : 'Mycelium view'
+    runeEl.replaceChildren()
+    if (iconId) {
+      const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
+      svg.classList.add('ui-icon')
+      svg.setAttribute('aria-hidden', label ? 'false' : 'true')
+      if (label) svg.setAttribute('aria-label', label)
+      const use = document.createElementNS('http://www.w3.org/2000/svg', 'use')
+      use.setAttribute('href', `#icon-${iconId}`)
+      svg.appendChild(use)
+      runeEl.appendChild(svg)
+    }
   }
   if (kickerEl) kickerEl.textContent = model.kicker;
   if (titleEl) titleEl.textContent = model.title;
