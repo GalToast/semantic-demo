@@ -91,7 +91,7 @@ export function disposeTextures(): void {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
-export function getNodeSporeScale(index: any) {
+export function getNodeSporeScale(index: number) {
     let emphasis = 1
     if (Number.isFinite(state.focusedNode)) {
         if (index === state.focusedNode) {
@@ -147,7 +147,7 @@ export function setNodeSporeInstanceMatrix(
     }
 }
 
-export function getNodeSporeColor(index: any, factor = 1) {
+export function getNodeSporeColor(index: number, factor = 1) {
     const colorOffset = index * 3
     const baseR = state.pointBaseColors?.[colorOffset] ?? 0.45
     const baseG = state.pointBaseColors?.[colorOffset + 1] ?? 0.82
@@ -376,8 +376,8 @@ export function createPoints() {
     disposeNodeVisuals()
     if (!state.points || !state.points.length) return
     const geometry = new BufferGeometry()
-    const positions: any[] = []
-    const colors: any[] = []
+    const positions: number[] = []
+    const colors: number[] = []
 
     state.nodePositions = []
     state.targetPositions = []
@@ -474,13 +474,13 @@ export function createPoints() {
 /**
  * Draws a 4-segment line at the X-Y plane of the point cloud's bounding box.
  */
-function createCountyOutline({ min, max, center }: { min: any; max: any; center: any }) {
+function createCountyOutline({ min, max, center }: { min: Vector3 | null | undefined; max: Vector3 | null | undefined; center: Vector3 | null | undefined }) {
     if (!webglContext.scene) return
     const existing = webglContext.scene.getObjectByName('county-outline')
     if (existing) {
         disposeObject3D(existing)
     }
-    if (!min || !max) return
+    if (!min || !max || !center) return
     const inset = 0.02
     const minX = (min.x - center.x) * MYCELIUM_FIELD_SCALE.x + inset
     const maxX = (max.x - center.x) * MYCELIUM_FIELD_SCALE.x - inset

@@ -27,11 +27,11 @@ Every `as any` must have a comment explaining why it cannot be typed properly. N
 
 ## Current Budget
 
-| Metric | Value | Date |
-|--------|-------|------|
-| `as any` / `: any` / `any[]` / `<any>` count | **477** | 2026-06-24 |
-| Files affected | **76** | 2026-06-24 |
-| Thread-inspector-webgl budget | **8** | contract enforced |
+| Metric                                       | Value   | Date              |
+| -------------------------------------------- | ------- | ----------------- |
+| `as any` / `: any` / `any[]` / `<any>` count | **470** | 2026-06-24        |
+| Files affected                               | **76**  | 2026-06-24        |
+| Thread-inspector-webgl budget                | **8**   | contract enforced |
 
 ---
 
@@ -50,8 +50,8 @@ For files with a documented budget (like `thread-inspector-webgl.ts` with 8), ad
 ```ts
 // tests/unit-active/thread-inspector-webgl-typing-contract.test.ts
 it('uses <=8 any occurrences', () => {
-  expect(countAnyOccurrences(src)).toBeLessThanOrEqual(8);
-});
+    expect(countAnyOccurrences(src)).toBeLessThanOrEqual(8)
+})
 ```
 
 ### 3. CI Gate
@@ -63,10 +63,10 @@ it('uses <=8 any occurrences', () => {
 
 ## Hall of Fame (files that got tightened)
 
-| File | Before | After | Notes |
-|------|--------|-------|-------|
-| `thread-inspector-webgl.ts` | 35 | 8 | Engine bridge casts kept; Three.js boundary typed |
-| `three-search-animations.ts` | 16 | 1 | Shader uniform narrowing |
+| File                         | Before | After | Notes                                             |
+| ---------------------------- | ------ | ----- | ------------------------------------------------- |
+| `thread-inspector-webgl.ts`  | 35     | 8     | Engine bridge casts kept; Three.js boundary typed |
+| `three-search-animations.ts` | 16     | 1     | Shader uniform narrowing                          |
 
 ---
 
