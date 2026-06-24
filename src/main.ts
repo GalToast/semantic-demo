@@ -189,6 +189,15 @@ function createTestCompatProxy(): Record<string, unknown> {
                 if (typeof prop !== 'string') return false
                 const { legacyState } = getCompatSources()
                 legacyState[prop] = value
+                // Also write to Svelte appState so tests that target the
+                // Svelte build see their mutations reflected in the UI.
+                if (prop === 'weatherState' && appState) {
+                    appState.weatherState = value as { weather: Record<string, unknown> | null; lastFetch: number | null; fallback: boolean; stalenessMsg: string }
+                } else if (prop === 'currentView' && appState) {
+                    appState.currentView = value as 'galaxy' | 'map' | 'focus' | 'trail' | 'semantic'
+                } else if (prop === 'weather' && appState) {
+                    appState.weather = value
+                }
                 return true
             },
             has(_target, prop) {
