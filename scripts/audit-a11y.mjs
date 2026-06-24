@@ -114,7 +114,9 @@ function auditFile(filePath) {
         }
 
         // rule_3 quick pass (cross-line aware: avoids false positives on multi-line input/select/textarea tags)
-        if (line.match(/<(input|select|textarea)/i)) {
+        // \b word boundary prevents <select matching <SelectedBusinessDetails,
+        // <input matching <inputs, <textarea matching <textareas, etc.
+        if (line.match(/<(input|select|textarea)\b/i)) {
             // Find the matching close angle bracket by scanning forward, tracking < depth.
             // For input/select/textarea the tag is rarely nested; a simple forward scan suffices.
             const startOffset = content.indexOf(line)
