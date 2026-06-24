@@ -31,6 +31,7 @@ import type {
 import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 import { withStateMutation } from './with-state-mutation'
+import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 
 // ── App State class ─────────────────────────────────────────────────────────
 
@@ -612,6 +613,20 @@ export const appState: AppState = new Proxy({} as AppState, {
         return typeof value === 'function' ? (value as Function).bind(instance) : value
     },
     set(_target, prop, value, _receiver) {
+        // ── State validation (Phase 4) ─────────────────────────────────────
+        // Guards catch invalid runtime values before they propagate downstream.
+        // In dev mode: throw. In prod: warn and reject the write.
+        if (typeof prop === 'string') {
+            const error = validateStateProperty(prop, value)
+            if (error) {
+                if (STATE_VALIDATION_STRICT) {
+                    throw new Error(`[appState] ${error}`)
+                } else {
+                    console.warn(`[appState] Invalid value rejected: ${error}`)
+                    return false
+                }
+            }
+        }
         return Reflect.set(getAppState(), prop, value)
     },
     has(_target, prop) {
