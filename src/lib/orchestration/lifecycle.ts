@@ -214,34 +214,6 @@ export function exploreInsideToNextStop(): void {
 // lifecycle.ts as a re-export hub.
 export { probeSemanticLane, setSemanticLaneUiState } from './semantic-lane'
 
-// ── UI Feedback Stubs ─────────────────────────────────────────────────────────
-// The functions below are genuine no-op stubs. Per the bridge retirement
-// plan, they remain here until phase 6 replaces lifecycle.ts re-exports.
-
-/** Sync search status for a focused business point. Actual implementation
- *  lives in the UI feedback module behind the engine bridge.
- */
-export function syncSearchStatusForFocus(
-    _point: Record<string, unknown> | null,
-    _options?: Record<string, unknown>
-): void {
-    // No-op in store port
-}
-
-/**
- * Hide the summary card.
- */
-export function hideSummaryCard(): void {
-    // The focus store handles selected business; the engine bridge hides the card
-}
-
-/**
- * Show an experience toast message.
- */
-export function showExperienceToast(_message: string, _detail?: string): void {
-    // No-op in store port — notification system TBD
-}
-
 /**
  * Focus on node by index.
  * Delegates to dispatchNavTransition.

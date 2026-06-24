@@ -34,17 +34,6 @@ interface WeatherStateValue {
     stalenessMsg: string
 }
 
-/**
- * Reactive wiring — called once at module init.
- * Reads appState.weatherState and appState.composition directly,
- * replacing the legacy .subscribe() callbacks.
- */
-export function initWeatherUiListeners(): void {
-    // No-op placeholder: callers that previously relied on .subscribe()
-    // now call updateWeatherUi / clearWeatherEffects explicitly.
-    // Kept for backward-compat so existing init sequences don't break.
-}
-
 /** Reactive handler — call whenever appState.weatherState changes. */
 export function onWeatherStateChange(): void {
     if (!canUseWeatherDom()) return
