@@ -13,6 +13,7 @@ import { isPointVisible } from '@lib/utils/geo-data';
 import { getCanvasPointerPosition, getCanvasFieldNodeClickRadius } from './canvas-hit-test';
 import type { CanvasPointerPosition } from './canvas-hit-test';
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data';
+import type { CanvasHoverCandidate } from '@lib/state/state-types';
 
 const canvasFieldRaycaster = new Raycaster();
 
@@ -62,12 +63,12 @@ function getCanvasNodePickingMode(): 'nearest' | 'raycast' {
 // ── World Threshold ─────────────────────────────────────────────────────────
 
 function getCanvasPointWorldThreshold(pixelRadius: number, rect: DOMRect): number {
-  const camera = appState.camera as unknown as PerspectiveCamera | undefined;
-  const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined;
+  const camera = appState.camera;
+  const pointsMesh = appState.pointsMesh;
   if (!camera || !rect?.height) return 0.035;
   const cloudCenter = pointsMesh?.position || new Vector3(0, 0, 0);
   const distance = Math.max(0.25, camera.position.distanceTo(cloudCenter));
-  const fov = Number.isFinite(camera.fov) ? MathUtils.degToRad(camera.fov) : MathUtils.degToRad(45);
+  const fov = Number.isFinite(camera.fov) ? MathUtils.degToRad(camera.fov!) : MathUtils.degToRad(45);
   const worldPerPixel = (2 * Math.tan(fov / 2) * distance) / rect.height;
   return MathUtils.clamp(worldPerPixel * pixelRadius * 0.42, 0.012, 0.09);
 }
@@ -94,7 +95,7 @@ function getCanvasNodeScreenCandidate(
   const vector = new Vector3(position.x, position.y, position.z);
   if (pointsMesh.localToWorld) pointsMesh.localToWorld(vector);
   const projected = vector.clone().project(camera);
-  if ((projected as unknown as { z: number }).z < -1 || (projected as unknown as { z: number }).z > 1) return null;
+  if (projected.z < -1 || projected.z > 1) return null;
 
   const screenX = ((projected.x + 1) / 2) * pointer.rect.width + pointer.rect.left;
   const screenY = ((-projected.y + 1) / 2) * pointer.rect.height + pointer.rect.top;
@@ -196,7 +197,7 @@ export function findNearestCanvasFieldNode(
   if (getCanvasNodePickingMode() === 'raycast') {
     const raycastCandidate = findRaycastCanvasFieldNode(event, pointer, maxDistance);
     if (raycastCandidate) {
-      appState.lastCanvasNodePick = raycastCandidate as unknown as typeof appState.lastCanvasNodePick;
+      appState.lastCanvasNodePick = raycastCandidate as unknown as CanvasHoverCandidate;
       return raycastCandidate;
     }
   }
@@ -221,6 +222,6 @@ export function findNearestCanvasFieldNode(
   });
 
   const resolved = nearest && nearestDistance <= maxDistance ? nearest : null;
-  appState.lastCanvasNodePick = resolved as unknown as typeof appState.lastCanvasNodePick;
+  appState.lastCanvasNodePick = resolved as unknown as CanvasHoverCandidate;
   return resolved;
 }
