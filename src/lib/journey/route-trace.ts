@@ -117,7 +117,7 @@ function getRouteEmbodimentIndices(): number[] {
     const summary = appState.currentSearchSummary as any
     if (summary?.anchorIndex !== undefined) push(summary.anchorIndex)
     ;(summary?.resultIndices || []).slice(0, 7).forEach(push)
-    ;(appState.navState.threadCandidates || []).slice(0, 6).forEach((candidate: any) => push(candidate?.index))
+    ;(appState.navState.threadCandidates || []).slice(0, 6).forEach((candidate: { index: number }) => push(candidate.index))
     return indices
 }
 
@@ -130,7 +130,7 @@ export function setRouteChoreographyPhase(phase: string = 'overview', details: R
         startedAt: performance.now()
     }
     if (document.body?.dataset) {
-        ;(document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? phase : 'inactive'
+        document.body.dataset.routeMotion = appState.currentView === 'galaxy' ? phase : 'inactive'
     }
     refreshRouteTraceOverlay({ reason: details.reason || phase })
 }
@@ -197,8 +197,8 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
     geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
     const material = buildRouteTraceMaterial()
     if (appState.semanticDiveMode) {
-        ;(material.uniforms as any).baseOpacity.value = 0.34
-        ;(material.uniforms as any).opacity.value = 0.34
+        material.uniforms.baseOpacity!.value = 0.34
+        material.uniforms.opacity!.value = 0.34
     }
     ;(state as any).routeTraceLines = new LineSegments(geometry, material)
     ;(state as any).routeTraceConnectionPairs = indices
@@ -219,7 +219,7 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         }
     })
     if (document.body?.dataset) {
-        ;(document.body.dataset as any).routeMotion = appState.currentView === 'galaxy' ? 'focus' : 'inactive'
+        document.body.dataset.routeMotion = appState.currentView === 'galaxy' ? 'focus' : 'inactive'
     }
 }
 
