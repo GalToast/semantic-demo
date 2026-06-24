@@ -99,12 +99,12 @@ export function clearFocusPocketRoleByIndex(): void {
 }
 
 export function getFocusPocketMotionByIndex(): Map<number, PocketMotion> {
-    return (appState.pocketMotionByIndex as Map<number, PocketMotion>) ?? new Map()
+    return appState.pocketMotionByIndex ?? new Map()
 }
 
 export function setFocusPocketMotionByIndex(map: Map<number, PocketMotionWithFrame>): void {
     appState.withMutation(() => {
-        appState.pocketMotionByIndex = map as Map<number, any>
+        appState.pocketMotionByIndex = map
     })
     focusStore.update((s) => ({ ...s, pocketMotionByIndex: new Map(map) }))
 }
@@ -425,7 +425,7 @@ export function applyFocusPocketBreathing(
 ): boolean {
     const navState = appState.navState as unknown as Record<string, unknown>
     const focusPocketMeta = navState.focusPocketMeta as { active?: boolean } | null
-    const pocketMotionByIndex = appState.pocketMotionByIndex as Map<number, Record<string, unknown>>
+    const pocketMotionByIndex = appState.pocketMotionByIndex
     const targetPositions = appState.targetPositions
     const nodePositions = appState.nodePositions
     const originalPositions = appState.originalPositions
@@ -450,12 +450,7 @@ export function applyFocusPocketBreathing(
     }
 
     let changed = false
-    ;(
-        pocketMotionByIndex as Map<
-            number,
-            { delay?: number; duration?: number; breatheAmp?: number; phase?: number; role?: string; speed?: number }
-        >
-    ).forEach((motion, index) => {
+    pocketMotionByIndex.forEach((motion, index) => {
         const basePosition = targetPositions[index] || nodePositions[index] || originalPositions[index]
         if (!basePosition) return
         if (index === anchorIndex || !anchor) return

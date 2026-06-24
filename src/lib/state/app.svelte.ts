@@ -32,7 +32,7 @@ import type {
     CacheEntry
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
-import type { NavState, ActiveFilters, SearchStatus } from '@lib/types/state'
+import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
 import type { SemanticNeighborEntry } from '@lib/types/business'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
@@ -285,6 +285,8 @@ class AppState {
         mapPointCount: 0,
         mapPathActive: false
     })
+    routeTraceLines = $state<object | null>(null)
+    routeTraceConnectionPairs = $state<Array<{ a: number; b: number; side: number }>>([])
 
     // ==== CONFIGURATION CONSTANTS ====
     readonly MAP_HANDOFF_PRELUDE_MS = 430
@@ -496,7 +498,7 @@ class AppState {
     })
 
     // ==== newly consolidated state (MIGRATED FROM INDIVIDUAL STORES) ====
-    pocketMotionByIndex = $state<Map<number, any>>(new Map())
+    pocketMotionByIndex = $state<Map<number, PocketMotionWithFrame>>(new Map())
     pocketTransitionStartedAt = $state<number>(0)
     infoPanelOpen = $state<boolean>(true)
     pocketListVisible = $state<boolean>(false)

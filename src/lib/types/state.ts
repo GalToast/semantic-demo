@@ -221,6 +221,12 @@ export interface PocketMotion {
     duration: number
     speed: number
     personality?: string
+    /** Breathing amplitude for the focus-pocket settle animation. Optional;
+     *  consumers default to 0.02 when absent. */
+    breatheAmp?: number
+    /** Phase offset for the breathing oscillation. Optional; consumers
+     *  default to 0 when absent. */
+    phase?: number
 }
 
 export interface PocketMotionWithFrame extends PocketMotion {
