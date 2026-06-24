@@ -45,20 +45,20 @@ function supportsHoverPreview(): boolean {
 
 function shouldUseSingleNeighborFocusRail(): boolean {
     if (typeof window === 'undefined' || typeof document === 'undefined') return false
-    const surface = (document.body as any)?.dataset?.panelSurface
+    const surface = document.body?.dataset?.panelSurface
     if (surface !== 'focus' && surface !== 'focus-search') return false
-    if ((document.body as any)?.dataset?.focusPanelMode === 'field-node') return false
-    const threadSurface = (document.body as any)?.dataset?.threadInspectSurface
+    if (document.body?.dataset?.focusPanelMode === 'field-node') return false
+    const threadSurface = document.body?.dataset?.threadInspectSurface
     if (threadSurface && threadSurface !== 'idle') return false
     return typeof window.matchMedia === 'function' && window.matchMedia('(max-width: 768px)').matches
 }
 
 function shouldSuppressSelectedBusinessNeighborRail(): boolean {
     if (typeof document === 'undefined') return false
-    const surface = (document.body as any)?.dataset?.panelSurface
+    const surface = document.body?.dataset?.panelSurface
     if (surface !== 'focus' && surface !== 'focus-search') return false
-    if ((document.body as any)?.dataset?.focusPanelMode === 'field-node') return false
-    const threadSurface = (document.body as any)?.dataset?.threadInspectSurface
+    if (document.body?.dataset?.focusPanelMode === 'field-node') return false
+    const threadSurface = document.body?.dataset?.threadInspectSurface
     if (threadSurface && threadSurface !== 'idle') return false
     const shortLandscapeFocusViewport =
         typeof window !== 'undefined' &&
@@ -93,7 +93,7 @@ export function updateFocusNeighborRail(): void {
     const countEl = document.getElementById('focus-stage-neighbor-count')
     if (!rail || !list) return
 
-    const threadInspectSurface = (document.body as any)?.dataset?.threadInspectSurface
+    const threadInspectSurface = document.body?.dataset?.threadInspectSurface
     const threadInspectorOwnsSurface = !!threadInspectSurface && threadInspectSurface !== 'idle'
     if (threadInspectorOwnsSurface) {
         rail.classList.remove('active')
