@@ -6,6 +6,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
+import type { WeatherData } from '@lib/utils/weather'
 import { seededUnit } from '@lib/utils/seeded-random'
 
 let lightningTimer: number | null = null
@@ -28,7 +29,7 @@ function canUseWeatherDom(): boolean {
 }
 
 interface WeatherStateValue {
-    weather: Record<string, unknown> | null
+    weather: WeatherData | null
     lastFetch: number | null
     fallback: boolean
     stalenessMsg: string
@@ -50,7 +51,7 @@ export function onCompositionChange(): void {
     if (!canUseWeatherDom()) return
     const state = appState.weatherState
     if (appState.composition.activeView === 'map' && state.weather) {
-        applyWeatherEffects(state.weather as Record<string, unknown>)
+        applyWeatherEffects(state.weather as unknown as Record<string, unknown>)
     } else {
         clearWeatherEffects()
     }
@@ -87,7 +88,7 @@ export function updateWeatherUi(state: WeatherStateValue): void {
     const weatherIconEl = document.getElementById('weather-icon')
     const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use') as SVGSVGElement | null
 
-    const temp = Number(weather.temperature)
+    const temp = Number(weather.temp)
     const condition = String(weather.condition || '')
     const icon = String(weather.icon || 'clear')
     const windSpeed = Number(weather.windSpeed)
@@ -103,7 +104,7 @@ export function updateWeatherUi(state: WeatherStateValue): void {
     updateWeatherStaleness(state.lastFetch)
 
     if (appState.composition.activeView === 'map') {
-        applyWeatherEffects(weather)
+        applyWeatherEffects(weather as unknown as Record<string, unknown>)
     }
 
     if (!stalenessIntervalId && typeof window !== 'undefined') {

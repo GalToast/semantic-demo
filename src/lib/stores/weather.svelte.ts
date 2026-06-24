@@ -48,7 +48,7 @@ function readCanonical(): CanonicalWeather | null {
     const w = appState.weather
     if (!w) return null
     // Canonical Open-Meteo client writes this shape.
-    if (typeof (w as Record<string, unknown>).temp === 'number') {
+    if (typeof w.temp === 'number') {
         return w as CanonicalWeather
     }
     return null

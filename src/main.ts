@@ -14,6 +14,7 @@ import { installWindowActions } from '@lib/orchestration/window-actions'
 import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
+import type { WeatherData } from '@lib/utils/weather'
 import { appState } from '@lib/state/app.svelte.ts'
 import type { ViewName } from '@lib/state/state-types'
 import { appInit } from '@lib/orchestration/app-init'
@@ -194,7 +195,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                 // Svelte build see their mutations reflected in the UI.
                 if (prop === 'weatherState' && appState) {
                     appState.weatherState = value as {
-                        weather: Record<string, unknown> | null
+                        weather: WeatherData | null
                         lastFetch: number | null
                         fallback: boolean
                         stalenessMsg: string

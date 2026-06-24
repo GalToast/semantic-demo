@@ -14,6 +14,8 @@
 
 import type { WebGLContextState } from '@lib/engine/webgl-context'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
+import type { WeatherData } from '@lib/utils/weather'
+import type { Vector3 } from 'three'
 
 export interface Vector3Like {
     x: number
@@ -42,7 +44,7 @@ export interface NodePosition {
 }
 
 export interface CameraLike {
-    position: Vector3Like
+    position: Vector3
     fov?: number
     aspect?: number
     updateProjectionMatrix?(): void
@@ -50,7 +52,7 @@ export interface CameraLike {
 }
 
 export interface ControlsLike {
-    target: Vector3Like
+    target: Vector3
     update(): void
     enabled: boolean
     autoRotate?: boolean
@@ -552,7 +554,7 @@ export interface SemanticState extends StateConfig {
     currentView: ViewName
     autoRotate: boolean
     autoRotateSuspended: boolean
-    weather: unknown
+    weather: WeatherData | null
     weatherInitialized: boolean
     clockTimer: ReturnType<typeof setTimeout> | null
     selectedPoint: Point | null
@@ -630,16 +632,16 @@ export interface SemanticState extends StateConfig {
     semanticTrailStoryAbortController: AbortController | null
     semanticTrailStoryRequestSequence: number
     /**
- * Plain-text semantic guide payload. Distinct from GuideConfig (object shape
- * with .title/.text/.suggestions) — this field is the source of truth for
- * the simple text-only guide state set by setSemanticGuide(text).
- *
- * GuideConfig objects belong in appState.semanticGuideState.config — see
- * showSummaryCard() in semantic-guide.ts. Mixing the two shapes here caused
- * a latent dual-write bug (W48 fix in currentSemanticGuide-locked-test
- * shipped the reconciliation).
- */
-currentSemanticGuide: string | null
+     * Plain-text semantic guide payload. Distinct from GuideConfig (object shape
+     * with .title/.text/.suggestions) — this field is the source of truth for
+     * the simple text-only guide state set by setSemanticGuide(text).
+     *
+     * GuideConfig objects belong in appState.semanticGuideState.config — see
+     * showSummaryCard() in semantic-guide.ts. Mixing the two shapes here caused
+     * a latent dual-write bug (W48 fix in currentSemanticGuide-locked-test
+     * shipped the reconciliation).
+     */
+    currentSemanticGuide: string | null
     summaryCardTypeToken: number
     autoRotateResumeTimer: ReturnType<typeof setTimeout> | null
     autoRotateResumeDueAt: number

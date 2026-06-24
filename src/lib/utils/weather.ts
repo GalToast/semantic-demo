@@ -75,7 +75,7 @@ export async function fetchWeather(): Promise<void> {
         (state as Record<string, unknown>).lastSuccessfulFetch = Date.now();
 
         appState.weatherState = {
-            weather: appState.weather as Record<string, unknown> | null,
+            weather: appState.weather,
             lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number,
             fallback: false,
             stalenessMsg: ''
@@ -98,7 +98,7 @@ export function updateWeatherUi(): void {
         return;
     }
     updateWeatherUiState({
-        weather: appState.weather as unknown as Record<string, unknown>,
+        weather: appState.weather,
         lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number,
         fallback: false,
         stalenessMsg: ''

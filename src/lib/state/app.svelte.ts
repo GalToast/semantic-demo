@@ -34,6 +34,7 @@ import type {
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
+import type { WeatherData } from '@lib/utils/weather'
 import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 import type { Scene, Points, PointsMaterial, InstancedMesh, Material } from 'three'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
@@ -155,7 +156,7 @@ class AppState {
     currentView = $state<ViewName>('galaxy')
     autoRotate = $state<boolean>(false)
     autoRotateSuspended = $state<boolean>(false)
-    weather = $state<unknown>(null)
+    weather = $state<WeatherData | null>(null)
     weatherInitialized = $state<boolean>(false)
     clockTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     selectedPoint = $state<Point | null>(null)
@@ -457,7 +458,7 @@ class AppState {
 
     // ==== WEATHER STATE (MIGRATED FROM weatherStateStore) ====
     weatherState = $state<{
-        weather: Record<string, unknown> | null
+        weather: WeatherData | null
         lastFetch: number | null
         fallback: boolean
         stalenessMsg: string
