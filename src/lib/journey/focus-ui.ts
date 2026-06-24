@@ -99,7 +99,7 @@ export function updateFocusNeighborRail(): void {
         rail.classList.remove('active')
         rail.hidden = true
         rail.setAttribute('aria-hidden', 'true')
-        list.innerHTML = ''
+        list.textContent = ''
         if (countEl) countEl.textContent = '0 visible neighbors'
         return
     }
@@ -109,7 +109,7 @@ export function updateFocusNeighborRail(): void {
 
     if (!Number.isFinite(appState.navState?.focusedIndex) || hasColdDegradedSemanticFallback()) {
         rail.classList.remove('active')
-        list.innerHTML = ''
+        list.textContent = ''
         if (countEl) countEl.textContent = '0 visible neighbors'
         clearThreadInspection({
             force: true,
@@ -124,7 +124,7 @@ export function updateFocusNeighborRail(): void {
         rail.classList.remove('active')
         rail.hidden = true
         rail.setAttribute('aria-hidden', 'true')
-        list.innerHTML = ''
+        list.textContent = ''
         if (countEl) countEl.textContent = '0 visible neighbors'
         return
     }
@@ -144,7 +144,11 @@ export function updateFocusNeighborRail(): void {
 
     if (!candidates.length) {
         rail.classList.remove('active')
-        list.innerHTML = '<div class="empty-state">No neighboring stops found in this area.</div>'
+        list.replaceChildren()
+        const emptyState = document.createElement('div')
+        emptyState.className = 'empty-state'
+        emptyState.textContent = 'No neighboring stops found in this area.'
+        list.appendChild(emptyState)
         if (countEl) countEl.textContent = '0 visible neighbors'
         clearThreadInspection({
             force: true,
@@ -155,7 +159,7 @@ export function updateFocusNeighborRail(): void {
         return
     }
 
-    list.innerHTML = ''
+    list.textContent = ''
     if (countEl) {
         const source = candidates.length === 1 ? 'neighbor' : 'neighbors'
         countEl.textContent = `${candidates.length} visible ${source}`
@@ -191,19 +195,66 @@ export function updateFocusNeighborRail(): void {
             order === 0 ? `Next stop: ${name}. ${relationshipTitle}.` : `Explore ${name}: ${relationshipTitle}.`
         button.setAttribute('aria-label', ariaLabel)
         const nextStopBadge = order === 0 ? '<span class="focus-stage-neighbor-next-stop-badge">Next stop</span>' : ''
-        button.innerHTML = `
-            <span class="focus-stage-neighbor-main">
-                <span class="focus-stage-neighbor-index">${String(order + 1).padStart(2, '0')}</span>
-                <span class="focus-stage-neighbor-copy">
-                    <span class="focus-stage-neighbor-name">${escapeHtml(name)} <span class="focus-stage-neighbor-role">${escapeHtml(relationshipLabel)}</span>${nextStopBadge}</span>
-                    <span class="focus-stage-neighbor-reason">${escapeHtml(reasonLabel)}</span>
-                </span>
-            </span>
-            <span class="focus-stage-neighbor-actions" aria-label="Strand actions">
-                <button class="focus-stage-neighbor-action" type="button" data-neighbor-action="inspect" aria-label="Inspect connection">Inspect</button>
-                <button class="focus-stage-neighbor-action primary" type="button" data-neighbor-action="pin" aria-label="Pin connection">Pin</button>
-            </span>
-        `
+        button.replaceChildren()
+
+        const mainSpan = document.createElement('span')
+        mainSpan.className = 'focus-stage-neighbor-main'
+
+        const indexSpan = document.createElement('span')
+        indexSpan.className = 'focus-stage-neighbor-index'
+        indexSpan.textContent = String(order + 1).padStart(2, '0')
+        mainSpan.appendChild(indexSpan)
+
+        const copySpan = document.createElement('span')
+        copySpan.className = 'focus-stage-neighbor-copy'
+
+        const nameSpan = document.createElement('span')
+        nameSpan.className = 'focus-stage-neighbor-name'
+        nameSpan.textContent = name
+
+        const roleSpan = document.createElement('span')
+        roleSpan.className = 'focus-stage-neighbor-role'
+        roleSpan.textContent = relationshipLabel
+        nameSpan.appendChild(roleSpan)
+
+        if (order === 0) {
+            const badge = document.createElement('span')
+            badge.className = 'focus-stage-neighbor-next-stop-badge'
+            badge.textContent = 'Next stop'
+            nameSpan.appendChild(badge)
+        }
+
+        copySpan.appendChild(nameSpan)
+
+        const reasonSpan = document.createElement('span')
+        reasonSpan.className = 'focus-stage-neighbor-reason'
+        reasonSpan.textContent = reasonLabel
+        copySpan.appendChild(reasonSpan)
+
+        mainSpan.appendChild(copySpan)
+
+        const actionsSpan = document.createElement('span')
+        actionsSpan.className = 'focus-stage-neighbor-actions'
+        actionsSpan.setAttribute('aria-label', 'Strand actions')
+
+        const inspectBtn = document.createElement('button')
+        inspectBtn.className = 'focus-stage-neighbor-action'
+        inspectBtn.type = 'button'
+        inspectBtn.dataset.neighborAction = 'inspect'
+        inspectBtn.setAttribute('aria-label', 'Inspect connection')
+        inspectBtn.textContent = 'Inspect'
+        actionsSpan.appendChild(inspectBtn)
+
+        const pinBtn = document.createElement('button')
+        pinBtn.className = 'focus-stage-neighbor-action primary'
+        pinBtn.type = 'button'
+        pinBtn.dataset.neighborAction = 'pin'
+        pinBtn.setAttribute('aria-label', 'Pin connection')
+        pinBtn.textContent = 'Pin'
+        actionsSpan.appendChild(pinBtn)
+
+        button.appendChild(mainSpan)
+        button.appendChild(actionsSpan)
         list.appendChild(button)
     })
 
@@ -341,48 +392,61 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
     if (!hasFocus || history.length <= 1) {
         breadcrumb.hidden = true
         breadcrumb.classList.remove('visible')
-        breadcrumb.innerHTML = ''
+        breadcrumb.textContent = ''
         return
     }
 
     breadcrumb.hidden = false
     breadcrumb.classList.add('visible')
-    breadcrumb.innerHTML = `
-        <span class="walk-breadcrumb-label">Trail</span>
-        ${history
-            .map((index: number, order: number) => {
-                const point = points[index]
-                const name = formatBusinessName(point?.name || 'Stop')
-                const isCurrent = order === history.length - 1
-                return `
-                <button class="walk-breadcrumb-chip${isCurrent ? ' current' : ''}" type="button"
-                    data-walk-index="${index}" data-walk-order="${order}"
-                    ${isCurrent ? 'aria-current="step"' : ''}
-                    aria-label="${escapeHtml(isCurrent ? `Current stop: ${name}` : `Return to ${name}`)}">
-                    ${escapeHtml(name)}
-                </button>
-            `
-            })
-            .join('<span class="walk-breadcrumb-sep" aria-hidden="true">/</span>')}
-    `
+    breadcrumb.replaceChildren()
 
-    breadcrumb.querySelectorAll('.walk-breadcrumb-chip:not(.current)').forEach((chip: Element) => {
-        const chipBtn = chip as HTMLButtonElement
-        chipBtn.onclick = () => {
-            const targetIndex = Number(chipBtn.dataset.walkIndex)
-            const targetOrder = Number(chipBtn.dataset.walkOrder)
-            if (!Number.isFinite(targetIndex) || !Number.isFinite(targetOrder)) return
-            dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, {
-                index: targetIndex,
-                restoreHistoryIndices: history.slice(0, targetOrder + 1),
-                appendHistory: false
-            })
-            focusOnNode(targetIndex, {
-                fromTraversal: true,
-                restoreHistory: true,
-                historyMode: 'push'
-            } as any)
+    const labelSpan = document.createElement('span')
+    labelSpan.className = 'walk-breadcrumb-label'
+    labelSpan.textContent = 'Trail'
+    breadcrumb.appendChild(labelSpan)
+
+    history.forEach((index: number, order: number) => {
+        if (order > 0) {
+            const sep = document.createElement('span')
+            sep.className = 'walk-breadcrumb-sep'
+            sep.setAttribute('aria-hidden', 'true')
+            sep.textContent = '/'
+            breadcrumb.appendChild(sep)
         }
+        const point = points[index]
+        const name = formatBusinessName(point?.name || 'Stop')
+        const isCurrent = order === history.length - 1
+        const chip = document.createElement('button')
+        chip.className = `walk-breadcrumb-chip${isCurrent ? ' current' : ''}`
+        chip.type = 'button'
+        chip.dataset.walkIndex = String(index)
+        chip.dataset.walkOrder = String(order)
+        if (isCurrent) chip.setAttribute('aria-current', 'step')
+        chip.setAttribute(
+            'aria-label',
+            isCurrent ? `Current stop: ${name}` : `Return to ${name}`
+        )
+        chip.textContent = name
+
+        if (!isCurrent) {
+            chip.onclick = () => {
+                const targetIndex = Number(chip.dataset.walkIndex)
+                const targetOrder = Number(chip.dataset.walkOrder)
+                if (!Number.isFinite(targetIndex) || !Number.isFinite(targetOrder)) return
+                dispatchNavTransition(NAV_TRANSITION_ACTIONS.WALK_TO, {
+                    index: targetIndex,
+                    restoreHistoryIndices: history.slice(0, targetOrder + 1),
+                    appendHistory: false
+                })
+                focusOnNode(targetIndex, {
+                    fromTraversal: true,
+                    restoreHistory: true,
+                    historyMode: 'push'
+                } as any)
+            }
+        }
+
+        breadcrumb.appendChild(chip)
     })
 }
 
