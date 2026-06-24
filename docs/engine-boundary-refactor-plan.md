@@ -1,7 +1,26 @@
 # Engine-boundary refactor plan (W48 candidate)
 
-**Status:** Phase 1 (recon + plan). No code changes proposed in this commit.
+**Status:** Phase 1 (recon + plan) ✅ DONE. Phase 2 in progress (6 bites shipped).
 **Goal:** remove the `const state = _X as any` escape hatch from consumer files by tightening the `appState` class typing.
+
+---
+
+## Progress summary (as of last refresh)
+
+| Phase | Bite | Field | Author | Commit |
+| --- | --- | --- | --- | --- |
+| 1 | — | Plan doc + inventory | Mine | `38b1e08a` |
+| 2 | P2-1 | `searchError` (unknown → SearchErrorData) | Mine | `d4cb97dc` |
+| 2 | P2-2 | `searchResults` (Record<string,unknown>[] → SearchResult[]) | Mine | `58bf91c7` |
+| 2 | P2-3 | `semanticLaneSnapshot` (unknown → LaneHealthPayload) | Mine | `e35e9c66` |
+| 2 | P2-4 | `semanticSearchResultCache` (unknown → CacheEntry) | Mine | `24c1c5e6` |
+| 2 | P2-5 | `semanticNeighborMapByLeadId` (any → SemanticNeighborEntry) | **Parallel session** | `b0129004` |
+| 2 | P2-6 | `pocketMotionByIndex` (any → PocketMotionWithFrame) | **Parallel session** | `59ab14d9` |
+| 2 | P2-bug | `currentSemanticGuide` (unknown → string \| null, latent dual-write fix) | Mine | `40580644` |
+
+**Cumulative Phase 2 impact:** 6 state class fields tightened, ~9 consumer escape hatches removed, 0 new TypeScript errors introduced, 6 new lock-in test files.
+
+**Coordination note:** parallel session is independently running the W48 plan in parallel — they tightened 2 different fields (semanticNeighborMapByLeadId, pocketMotionByIndex) and surfaced their own latent bug (SemanticState had wrong type — `SemanticNode` instead of `SemanticNeighborEntry`). Their work validates the plan structure: each bite is independent and the systemic fix is real.
 
 ---
 
@@ -19,33 +38,33 @@ The root cause is `src/lib/state/app.svelte.ts`. Its `$state<T>()` declarations 
 
 ### State class profile (`src/lib/state/app.svelte.ts`)
 
-| Metric | Value |
-| --- | ---: |
-| Total LOC | 663 |
-| `$state<...>` declarations | ~100 |
-| `as any` within class | 2 |
-| `as unknown as` within class | 23 |
-| `$state<unknown>(...)` fields | 6 |
+| Metric                        | Value |
+| ----------------------------- | ----: |
+| Total LOC                     |   663 |
+| `$state<...>` declarations    |  ~100 |
+| `as any` within class         |     2 |
+| `as unknown as` within class  |    23 |
+| `$state<unknown>(...)` fields |     6 |
 
 ### Engine escape-hatch consumers (28 files)
 
 The audit originally cited "21 files" but the current count is **28** (added: arrival-handoff, focus-pocket-geometry, focus-pocket, focus-ui, journey, thread-inspector-webgl).
 
-| File | Escape-hatch count |
-| --- | ---: |
-| `engine/three-postprocessing.ts` | 3 |
-| 13 engine/ui files | 2 each |
-| 7 journey/ui/orchestration files | 1 each |
+| File                             | Escape-hatch count |
+| -------------------------------- | -----------------: |
+| `engine/three-postprocessing.ts` |                  3 |
+| 13 engine/ui files               |             2 each |
+| 7 journey/ui/orchestration files |             1 each |
 
 ### `as unknown as` casts across codebase (47 total, down from 248)
 
-| File | Count |
-| --- | ---: |
-| `state/app.svelte.ts` | 14 |
-| `journey/focus-pocket.ts` | 10 |
-| `search/result-renderer.ts` | 3 |
-| 5 other files | 2 each |
-| 7 other files | 1 each |
+| File                        |  Count |
+| --------------------------- | -----: |
+| `state/app.svelte.ts`       |     14 |
+| `journey/focus-pocket.ts`   |     10 |
+| `search/result-renderer.ts` |      3 |
+| 5 other files               | 2 each |
+| 7 other files               | 1 each |
 
 The state class itself has 14 `as unknown as` casts (used for `Reflect.set` in the Proxy `set` trap and similar pattern-narrowing).
 
@@ -73,31 +92,31 @@ Examples:
 
 These fields use `unknown`, `Map<X, any>`, or `Record<string, any>`. The runtime shape is known — we just need to surface the type. **This is the systemic gap.** Estimated 10-15 fields.
 
-| Field | Current type | Proposed type |
-| --- | --- | --- |
-| `routeTraceLines` | `unknown` | `LineSegments \| null` (Three.js) |
-| `routeTraceConnectionPairs` | `Array<unknown>` | `Array<{ a: number; b: number; side: number }>` |
-| `routeChoreographyState` | `unknown` | `Partial<RouteChoreographyState>` |
-| `currentSemanticGuide` | `string \| null` (declared) — runtime stores GuideConfig object | `GuideConfig \| null` (Bite-Roughest already created this) |
-| `semanticLaneSnapshot` | `unknown` | `SemanticLaneSnapshot \| null` (type exists in state-types.ts) |
-| `currentSearchSummary` | `SearchSummary \| null` | ✓ already typed — but accessed as `as any` in route-trace.ts:117 |
-| `searchResults` | `Array<Record<string, unknown>>` | `SearchResult[]` |
-| `searchSummary` | `Record<string, unknown> \| null` | `SearchSummary \| null` |
-| `searchError` | `unknown \| null` | `string \| null` (runtime always string) |
-| `semanticSearchResultCache` | `Map<string, unknown>` | `Map<string, SemanticSearchResult>` |
-| `semanticThreadsDetailController` (in journey/connection-analysis.ts:66, not appState) | `AbortController \| null` | ✓ already typed |
-| `searchVectorScrambleInterval/Timer` | `ReturnType<...>` | ✓ typed |
-| `summaryCardTypeToken` | `number` | ✓ typed (Bite-Roughest already uses this) |
+| Field                                                                                  | Current type                                                    | Proposed type                                                    |
+| -------------------------------------------------------------------------------------- | --------------------------------------------------------------- | ---------------------------------------------------------------- |
+| `routeTraceLines`                                                                      | `unknown`                                                       | `LineSegments \| null` (Three.js)                                |
+| `routeTraceConnectionPairs`                                                            | `Array<unknown>`                                                | `Array<{ a: number; b: number; side: number }>`                  |
+| `routeChoreographyState`                                                               | `unknown`                                                       | `Partial<RouteChoreographyState>`                                |
+| `currentSemanticGuide`                                                                 | `string \| null` (declared) — runtime stores GuideConfig object | `GuideConfig \| null` (Bite-Roughest already created this)       |
+| `semanticLaneSnapshot`                                                                 | `unknown`                                                       | `SemanticLaneSnapshot \| null` (type exists in state-types.ts)   |
+| `currentSearchSummary`                                                                 | `SearchSummary \| null`                                         | ✓ already typed — but accessed as `as any` in route-trace.ts:117 |
+| `searchResults`                                                                        | `Array<Record<string, unknown>>`                                | `SearchResult[]`                                                 |
+| `searchSummary`                                                                        | `Record<string, unknown> \| null`                               | `SearchSummary \| null`                                          |
+| `searchError`                                                                          | `unknown \| null`                                               | `string \| null` (runtime always string)                         |
+| `semanticSearchResultCache`                                                            | `Map<string, unknown>`                                          | `Map<string, SemanticSearchResult>`                              |
+| `semanticThreadsDetailController` (in journey/connection-analysis.ts:66, not appState) | `AbortController \| null`                                       | ✓ already typed                                                  |
+| `searchVectorScrambleInterval/Timer`                                                   | `ReturnType<...>`                                               | ✓ typed                                                          |
+| `summaryCardTypeToken`                                                                 | `number`                                                        | ✓ typed (Bite-Roughest already uses this)                        |
 
 ### Tier C: Intentionally `unknown` (deferred)
 
 Some fields are genuinely dynamic — runtime shape comes from external sources (API responses, third-party libs).
 
-| Field | Rationale |
-| --- | --- |
-| `semanticLaneState` | State machine string; runtime validates via VALID_SEMANTIC_LANE_STATES |
-| `semanticTrailCue` | String-typed UI cue state; runtime validates via VALID_* |
-| Various timer/interval handles | `ReturnType<typeof setTimeout>` already typed correctly |
+| Field                          | Rationale                                                              |
+| ------------------------------ | ---------------------------------------------------------------------- |
+| `semanticLaneState`            | State machine string; runtime validates via VALID_SEMANTIC_LANE_STATES |
+| `semanticTrailCue`             | String-typed UI cue state; runtime validates via VALID\_\*             |
+| Various timer/interval handles | `ReturnType<typeof setTimeout>` already typed correctly                |
 
 These should stay `unknown` until a domain-specific type is introduced.
 
@@ -105,12 +124,12 @@ These should stay `unknown` until a domain-specific type is introduced.
 
 Fields like `scene`, `camera`, `renderer`, `controls`, `pointsMesh`, `myceliumGroup` are typed via `SemanticState['X']` (which is `unknown` in state-types.ts for these specific fields).
 
-| Field | Current type | Proposed type |
-| --- | --- | --- |
-| `scene` | `SemanticState['scene']` (unknown) | `Scene \| null` |
-| `camera` | `SemanticState['camera']` | `CameraLike \| null` |
-| `renderer` | `SemanticState['renderer']` | `RendererLike \| null` |
-| `controls` | `SemanticState['controls']` | `ControlsLike \| null` |
+| Field      | Current type                       | Proposed type          |
+| ---------- | ---------------------------------- | ---------------------- |
+| `scene`    | `SemanticState['scene']` (unknown) | `Scene \| null`        |
+| `camera`   | `SemanticState['camera']`          | `CameraLike \| null`   |
+| `renderer` | `SemanticState['renderer']`        | `RendererLike \| null` |
+| `controls` | `SemanticState['controls']`        | `ControlsLike \| null` |
 
 These require changing `SemanticState['X']` to use the `*Like` interfaces already defined in state-types.ts (`CameraLike`, `RendererLike`, `ControlsLike`). High-value but high-touch — touching the central state class requires coordinated care.
 
@@ -144,12 +163,12 @@ Each tightening:
 
 After Phase 2 tightens the state class, **28 consumer files** can drop their escape hatches:
 
-| Consumer category | Files | Expected outcome |
-| --- | --- | --- |
-| `engine/*` | 12 files | `const state = _state as any` → typed `appState.X` access |
-| `ui/*-bindings.ts` | 9 files | Same pattern; all use engine-binding-template structure |
-| `journey/*` | 6 files | Mixed — some already typed, some need updating |
-| `orchestration/*` | 2 files | Mostly already typed (semantic-lane uses escape) |
+| Consumer category  | Files    | Expected outcome                                          |
+| ------------------ | -------- | --------------------------------------------------------- |
+| `engine/*`         | 12 files | `const state = _state as any` → typed `appState.X` access |
+| `ui/*-bindings.ts` | 9 files  | Same pattern; all use engine-binding-template structure   |
+| `journey/*`        | 6 files  | Mixed — some already typed, some need updating            |
+| `orchestration/*`  | 2 files  | Mostly already typed (semantic-lane uses escape)          |
 
 For each consumer file:
 
@@ -188,7 +207,7 @@ Each Phase 2 field tightening is a separate commit. If one breaks consumers, rev
 
 ---
 
-## Phase 1 deliverables (this commit)
+## Phase 1 deliverables
 
 - ✅ This plan doc (`docs/engine-boundary-refactor-plan.md`)
 - ✅ Inventory of state fields by tier (A/B/C/D)
@@ -196,21 +215,29 @@ Each Phase 2 field tightening is a separate commit. If one breaks consumers, rev
 - ✅ Cascade plan (28 consumer files)
 - ✅ Risk + rollback plan
 
-**No source code changes in Phase 1.** This is a planning bite only.
+**Phase 1 made no source code changes** — planning bite only. Shipped in commit `38b1e08a`.
 
 ---
 
-## Phase 2/3 schedule (proposed)
+## Phase 2/3 schedule (updated)
 
-| Phase | Scope | Bites | Estimated effort |
-| --- | --- | --- | --- |
-| Phase 2 | Tighten 10 Tier-B state fields | 1-3 bites | 1-2 sessions |
-| Phase 3 | Cascade to 28 consumer files | 5-10 bites | 2-3 sessions |
-| Phase 4 | Document win, refresh audit doc | 1 bite | 30 min |
+| Phase   | Scope                                              | Bites                | Status                          |
+| ------- | -------------------------------------------------- | -------------------- | ------------------------------- |
+| Phase 2 | Tighten Tier-B state fields (loose types)          | 6 bites shipped, 4 deferred | IN PROGRESS (60% complete) |
+| Phase 3 | Cascade to consumer files (drop escape hatches)    | ~9 escape hatches removed so far | IN PROGRESS (~5% complete) |
+| Phase 4 | Document win, refresh audit doc                    | 1 bite               | NOT STARTED                     |
 
-**Total: 7-14 bites over 3-5 sessions.** Comparable to the W47 type-safety campaign in scope.
+**Remaining Phase 2 first-cut candidates:**
 
-**Coordination required:** before starting Phase 2, confirm the parallel session has landed their thread-settler W48 WIP. Otherwise Phase 2 might conflict.
+- `currentSemanticGuide` (DONE in P2-bug — surfaced latent bug)
+- `searchSummary` (DEFERRED — no readers, writes-only field)
+- `routeTraceLines` / `routeTraceConnectionPairs` (DEFERRED — needs new field declarations, parallel session has WIP on route-trace.ts)
+- `routeChoreographyState` (ALREADY TYPED — plan was wrong)
+- `semanticThreadsDetailController` (ALREADY TYPED — plan was wrong)
+
+**Phase 2 outcome (so far):** the systemic fix is working as intended. Each Phase 2 bite unblocks the corresponding consumer escape hatches, validating the plan structure. Parallel session's independent run confirms the plan is generalizable.
+
+**Coordination:** no conflicts encountered. Each bite touched distinct files; state-types.ts re-exports don't conflict because they're additive.
 
 ---
 
@@ -218,13 +245,13 @@ Each Phase 2 field tightening is a separate commit. If one breaks consumers, rev
 
 Sampled state field types (full inventory in `src/lib/state/app.svelte.ts`):
 
-| Category | Count | Example |
-| --- | ---: | --- |
-| Properly typed (Tier A) | ~85 | `navState: NavState`, `points: Point[]`, `searchStatus: SearchStatus` |
-| Loosely typed Map (Tier B) | ~5 | `routeTraceLines: unknown`, `routeTraceConnectionPairs: Array<unknown>` |
-| Loosely typed Record (Tier B) | ~3 | `searchResults: Array<Record<string, unknown>>` |
-| Intentionally `unknown` (Tier C) | ~6 | `semanticLaneSnapshot: unknown`, `currentSearchSummary: SearchSummary \| null` |
-| Three.js handles via SemanticState (Tier D) | ~40 | `scene: SemanticState['scene']`, `camera: SemanticState['camera']` |
+| Category                                    | Count | Example                                                                        |
+| ------------------------------------------- | ----: | ------------------------------------------------------------------------------ |
+| Properly typed (Tier A)                     |   ~85 | `navState: NavState`, `points: Point[]`, `searchStatus: SearchStatus`          |
+| Loosely typed Map (Tier B)                  |    ~5 | `routeTraceLines: unknown`, `routeTraceConnectionPairs: Array<unknown>`        |
+| Loosely typed Record (Tier B)               |    ~3 | `searchResults: Array<Record<string, unknown>>`                                |
+| Intentionally `unknown` (Tier C)            |    ~6 | `semanticLaneSnapshot: unknown`, `currentSearchSummary: SearchSummary \| null` |
+| Three.js handles via SemanticState (Tier D) |   ~40 | `scene: SemanticState['scene']`, `camera: SemanticState['camera']`             |
 
 The Tier B and Tier D fields are the targets for Phase 2. Tier A needs no work. Tier C is intentionally dynamic.
 
