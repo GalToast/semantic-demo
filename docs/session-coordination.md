@@ -185,6 +185,71 @@ written them was **before** the weather widget feature merged.
   heartbeat on a timer. Skipped for now; sessions can call `touch`
   manually.
 
+## Automated enforcement (W48-T3)
+
+W48-T3 (2026-06-25) added a third check to the pre-commit hook
+(`scripts/git-hooks/pre-commit` + `.ps1` shim) that warns when a
+user-visible file is staged without a journey test. The check is
+**warn-only by default** and matches the existing high-reversion-risk
+file pattern (no blocking; human judgment still wins).
+
+### What the check does
+
+1. Lists staged files via `git diff --cached --name-only`
+2. Splits them into two buckets:
+   - **User-visible**: `src/components/*.svelte`, `src/App.svelte`,
+     `src/lib/ui/*.ts`, `src/lib/keyboard/*.ts`
+   - **Journey test**: `tests/widget-journey.spec.js`,
+     `tests/*-journey*.spec.{js,ts}`, `tests/journey/*.spec.{js,ts}`
+3. If the user-visible bucket has files but the journey bucket is
+   empty, prints a yellow reminder with the file list and points at
+   `docs/session-coordination.md` → "The test-strategy gap"
+
+### Override
+
+Pass `--SkipTestStrategyGapCheck` (bash) or `-SkipTestStrategyGapCheck`
+(PowerShell) to suppress the warning for a single commit. Use for pure
+internal refactors that don't need a new journey test.
+
+### Coverage rationale
+
+The patterns above are intentionally narrow:
+
+- **`src/components/*.svelte`** — every user-facing Svelte component
+- **`src/App.svelte`** — root, controls the desktop/mobile mount branches
+- **`src/lib/ui/*.ts`** — event/UI binding logic (one removed
+  binding breaks the user's click flow)
+- **`src/lib/keyboard/*.ts`** — keyboard shortcuts and a11y
+
+Things NOT covered (and why):
+
+- **`src/lib/orchestration/*.ts`** — often refactored without behavior
+  change; the W47 wave edited these heavily without adding new journey
+  tests for each commit. Treat as "use judgment."
+- **`src/lib/state/*.svelte.ts`** — state plumbing; the user's
+  experience is mediated by components, not state files.
+- **`src/lib/journey/*.ts`** — mostly internal data shaping.
+
+The principle: warn about changes that DIRECTLY touch what the user
+sees or clicks. Plumbing is exempted.
+
+### Testing the check
+
+The bash hook is unit-testable. A 30-line scratch script in
+`/tmp/test-hook-repo` exercises 8 scenarios:
+
+1. Svelte + journey test → no warning
+2. Svelte only, no journey test → warns
+3. `src/lib/ui/*.ts` only → warns (binding changes are user-visible)
+4. Svelte only, `--SkipTestStrategyGapCheck` → no warning
+5. Internal `.ts` (e.g. `src/lib/state/internal.ts`) → no warning
+6. `App.svelte` + journey test → no warning
+7. `src/lib/orchestration/*.ts` (not in patterns) → no warning
+8. Override flag suppresses the warning for a single commit
+
+The PowerShell shim has identical semantics; it runs the same pattern
+list via `-like` globs.
+
 ## See also
 
 - `scripts/session-lock.mjs` — the tool

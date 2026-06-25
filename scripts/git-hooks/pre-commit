@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 #
-# Git pre-commit hook — branch guard + high-reversion-risk file warning.
+# Git pre-commit hook — branch guard + high-reversion-risk file warning
+# + test-strategy-gap check.
 # Cross-platform: runs natively on macOS/Linux/git-bash.
 # On Windows, the installed .cmd wrapper invokes pwsh on the .ps1 shim instead.
 
@@ -16,12 +17,14 @@ branch=$(git branch --show-current)
 expectedBranch="master"
 allowAnyBranch=false
 skipHighRiskCheck=false
+skipTestStrategyGapCheck=false
 
 # Parse flags passed from the .ps1 shim or .cmd wrapper
 for arg in "$@"; do
     case "$arg" in
         --AllowAnyBranch) allowAnyBranch=true ;;
         --SkipHighRiskCheck) skipHighRiskCheck=true ;;
+        --SkipTestStrategyGapCheck) skipTestStrategyGapCheck=true ;;
     esac
 done
 
@@ -68,6 +71,67 @@ if [ "$matchingCount" -gt 0 ] && [ "$skipHighRiskCheck" = false ]; then
     for f in $matchingFiles; do
         echo "  $f"
     done
+fi
+
+# ── Test-strategy-gap check ────────────────────────────────────────────────
+# Enforce the rule from docs/session-coordination.md → "The test-strategy gap":
+# when a user-visible file is staged, at least one journey test must also be
+# staged. Warn-only by default (matches the high-reversion-risk check);
+# override with --SkipTestStrategyGapCheck for pure internal refactors.
+if [ "$skipTestStrategyGapCheck" = false ]; then
+    userVisibleFiles=""
+    journeyFiles=""
+
+    for file in $stagedFiles; do
+        case "$file" in
+            src/components/*.svelte|\
+src/App.svelte|\
+src/lib/ui/*.ts|\
+src/lib/keyboard/*.ts)
+                userVisibleFiles="$userVisibleFiles $file"
+                ;;
+        esac
+    done
+
+    for file in $stagedFiles; do
+        case "$file" in
+            tests/widget-journey.spec.js|\
+tests/*-journey*.spec.js|\
+tests/*-journey*.spec.ts|\
+tests/journey/*.spec.js|\
+tests/journey/*.spec.ts)
+                journeyFiles="$journeyFiles $file"
+                ;;
+        esac
+    done
+
+    userVisibleCount=0
+    for f in $userVisibleFiles; do
+        userVisibleCount=$((userVisibleCount + 1))
+    done
+
+    journeyCount=0
+    for f in $journeyFiles; do
+        journeyCount=$((journeyCount + 1))
+    done
+
+    if [ "$userVisibleCount" -gt 0 ] && [ "$journeyCount" -eq 0 ]; then
+        echo ""
+        echo "Reminder: test-strategy-gap rule (docs/session-coordination.md)."
+        echo "  User-visible files staged but no journey test staged."
+        echo "  Contract tests do not catch click-eating z-index, missing callbacks,"
+        echo "  or stubs dressed as data. A journey test is required for features"
+        echo "  that touch Svelte components or other user-facing DOM."
+        echo ""
+        echo "  Files staged:"
+        for f in $userVisibleFiles; do
+            echo "    $f"
+        done
+        echo ""
+        echo "  -> Add a test to tests/widget-journey.spec.js (or tests/*-journey*.spec.js)"
+        echo "  -> Or pass --SkipTestStrategyGapCheck if this is a pure internal refactor"
+        echo ""
+    fi
 fi
 
 echo "reversion-guard: OK (branch=$branch, high-risk files=$matchingCount)"
