@@ -69,7 +69,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     if (!Number.isFinite(index) || index < 0 || !points || index >= points.length) return false
     const point = points[index]
     if (!point) return false
-    const suppressCanvasFocusUntil = Number((appState as any).suppressCanvasFocusUntil) || 0
+    const suppressCanvasFocusUntil = Number(appState.suppressCanvasFocusUntil) || 0
     if (options.fromCanvasNode && typeof performance !== 'undefined' && performance.now() < suppressCanvasFocusUntil) {
         return false
     }
@@ -122,7 +122,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
         setTrailDepth(1, { skipUrlSync: true })
     }
 
-    if ((appState as any).navState?.mode === 'trail' && appState.myceliumMode !== 'trail') {
+    if (appState.navState?.mode === 'trail' && appState.myceliumMode !== 'trail') {
         setMyceliumMode('trail', { skipUrlSync: true })
     }
 

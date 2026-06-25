@@ -476,10 +476,7 @@ export function destroyEngine(): void {
         try {
             disposeCanvasNodeInteractionBindings()
         } catch (error) {
-            debugWarn(
-                '[engine/lifecycle] Best-effort canvas interaction dispose failed:',
-                error
-            )
+            debugWarn('[engine/lifecycle] Best-effort canvas interaction dispose failed:', error)
         }
         _canvasInteractionBound = false
     }
@@ -488,10 +485,7 @@ export function destroyEngine(): void {
     try {
         disposeTooltipEventBusSubscriptions()
     } catch (error) {
-        debugWarn(
-            '[engine/lifecycle] Best-effort tooltip event-bus dispose failed:',
-            error
-        )
+        debugWarn('[engine/lifecycle] Best-effort tooltip event-bus dispose failed:', error)
     }
 
     // FIX #3: Dispose Leaflet Map state recursively (was missing in bridge)
@@ -510,7 +504,7 @@ export function destroyEngine(): void {
     // 5. Null out scene/renderer/camera references so reinit starts clean
     appState.scene = null as unknown as typeof appState.scene
     appState.renderer = null as unknown as typeof appState.renderer
-    ;(appState as any).camera = null
+    appState.camera = null
 
     // 6. Set status to idle
     setEngineStatus('idle')

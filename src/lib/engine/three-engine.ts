@@ -19,12 +19,11 @@
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
 import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, Material, MeshPhongMaterial } from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 export { getSceneRenderableDiagnostics } from './renderer/renderer-diagnostics'
 
 import { webglContext } from '@lib/engine/webgl-context'
 import { showWebGLFallback } from './renderer/webgl-fallback'
-import { getSceneRenderableDiagnostics, sampleScenePerformance } from './renderer/renderer-diagnostics'
+import { sampleScenePerformance } from './renderer/renderer-diagnostics'
 import { CONFIG } from '@lib/engine/config'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import {
@@ -395,7 +394,6 @@ let _hoverEmissiveFlash = 0
 let _sceneRegistry: DisposableRegistry | null = null
 let _mapButtonClickHandler: ((event: MouseEvent) => void) | null = null
 
-const SCENE_PERF_EMA_DECAY = 0.992
 const IDLE_STATIC_FRAME_INTERVAL_MS = 125
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
@@ -441,17 +439,6 @@ function scheduleNextAnimationFrame(continuous: boolean): void {
         _idleFrameTimerId = null
         if (_rafId === null) _rafId = window.requestAnimationFrame(animate)
     }, IDLE_STATIC_FRAME_INTERVAL_MS)
-}
-
-interface ScenePerformanceTimings {
-    controlsMs?: number
-    nodeMotionMs?: number
-    threadUpdateMs?: number
-    glowMs?: number
-    lensMs?: number
-    updateMs?: number
-    renderMs?: number
-    overlayUpdateMs?: number
 }
 
 export function updateCameraViewportOffset() {
@@ -519,7 +506,7 @@ export async function initThreeJS() {
         return false
     }
 
-    const { scene, camera, renderer, controls, hemiLight, dirLight, support } = result.setup
+    const { scene, camera, renderer, controls, hemiLight, dirLight } = result.setup
 
     webglContext.scene = scene
     appState.scene = scene
