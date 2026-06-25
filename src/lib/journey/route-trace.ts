@@ -5,6 +5,7 @@
  * Route trace overlay rendering, subscriptions, and frame updates.
  */
 import { appState as state } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { ShaderMaterial, AdditiveBlending, Color, BufferGeometry, Float32BufferAttribute, LineSegments } from 'three'
@@ -132,13 +133,15 @@ export interface RouteChoreographyPayload {
 }
 
 export function setRouteChoreographyPhase(phase: string = 'overview', details: RouteChoreographyDetails = {}): void {
-    state.routeChoreographyState = {
-        ...(state.routeChoreographyState || {}),
-        ...details,
-        phase,
-        reason: details.reason || state.routeChoreographyState?.reason || 'state',
-        startedAt: performance.now()
-    }
+    withStateMutation(() => {
+        state.routeChoreographyState = {
+            ...(state.routeChoreographyState || {}),
+            ...details,
+            phase,
+            reason: details.reason || state.routeChoreographyState?.reason || 'state',
+            startedAt: performance.now()
+        }
+    })
     if (document.body?.dataset) {
         document.body.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive'
     }

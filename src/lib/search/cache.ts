@@ -8,6 +8,7 @@
 
 import { appState } from '@lib/state/app.svelte'
 import type { SemanticSearchCacheDiagnostics, SemanticState } from '@lib/state/state-types'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import * as idb from '../utils/idb-service'
 
@@ -36,18 +37,24 @@ export interface CacheDiagnosticsSnapshot extends SemanticSearchCacheDiagnostics
     maxEntries: number
 }
 
-    if (!state.semanticSearchResultCache) state.semanticSearchResultCache = new Map<string, CacheEntry>()
-if (!state.semanticSearchCacheDiagnostics) {
-        state.semanticSearchCacheDiagnostics = {
-            hits: 0,
-            misses: 0,
-            stores: 0,
-            evictions: 0,
-            lastKey: null,
-            lastSource: null,
-            lastAgeMs: null
-        }
-}
+    if (!state.semanticSearchResultCache) {
+        withStateMutation(() => {
+            state.semanticSearchResultCache = new Map<string, CacheEntry>()
+        })
+    }
+    if (!state.semanticSearchCacheDiagnostics) {
+        withStateMutation(() => {
+            state.semanticSearchCacheDiagnostics = {
+                hits: 0,
+                misses: 0,
+                stores: 0,
+                evictions: 0,
+                lastKey: null,
+                lastSource: null,
+                lastAgeMs: null
+            }
+        })
+    }
 
 export async function initSearchCache(): Promise<void> {
     try {
@@ -98,11 +105,13 @@ function validatePayloadSchema(payload: SearchPayload): boolean {
 }
 
 function markSemanticSearchCache(source: string, key: string, entry: CacheEntry | null = null): void {
+    withStateMutation(() => {
         state.semanticSearchCacheDiagnostics.lastSource = source
         state.semanticSearchCacheDiagnostics.lastKey = key || null
         state.semanticSearchCacheDiagnostics.lastAgeMs = entry
             ? Math.max(0, Math.round(Date.now() - entry.storedAt))
             : null
+    })
 }
 
 export function getCachedSemanticSearchPayload(query: string, offset: number = 0): SearchPayload | null {

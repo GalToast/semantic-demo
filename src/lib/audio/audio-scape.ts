@@ -8,7 +8,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
 // ── Local boundary types ────────────────────────────────────────────────────

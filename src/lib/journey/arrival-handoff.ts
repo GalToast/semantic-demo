@@ -16,7 +16,8 @@ import {
     LineBasicMaterial,
     LineSegments,
     AdditiveBlending,
-    MathUtils
+    MathUtils,
+    Object3D
 } from 'three'
 import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens'
 import {

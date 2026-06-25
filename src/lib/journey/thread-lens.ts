@@ -12,7 +12,7 @@ import { formatBusinessName } from '@lib/utils/dom-formatters'
 
 const _state = state
 
-export function describeThreadLensForPoint(point: any): string {
+export function describeThreadLensForPoint(point: BusinessRecord): string {
     if (!point) return 'Waiting for a semantic thread.'
 
     const leadId = point.lead_id !== undefined && point.lead_id !== null ? String(point.lead_id).trim() : null

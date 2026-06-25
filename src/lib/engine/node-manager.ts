@@ -26,7 +26,8 @@ import {
     Points,
     LineBasicMaterial,
     LineLoop,
-    MeshBasicMaterial
+    MeshBasicMaterial,
+    Material
 } from 'three'
 import type { BusinessRecord } from '@lib/types/business'
 import { appState as _state } from '@lib/state/app.svelte'

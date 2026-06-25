@@ -308,14 +308,14 @@ describe('state validation — allowed value sets', () => {
 
     it('VALID_SEARCH_STATUS contains all search statuses', () => {
         expect(VALID_SEARCH_STATUS.has('idle')).toBe(true)
-        expect(VALID_SEARCH_STATUS.has('loading')).toBe(true)
-        expect(VALID_SEARCH_STATUS.has('success')).toBe(true)
+        expect(VALID_SEARCH_STATUS.has('searching')).toBe(true)
+        expect(VALID_SEARCH_STATUS.has('results')).toBe(true)
         expect(VALID_SEARCH_STATUS.has('error')).toBe(true)
     })
 
     it('VALID_LOADING_PHASES contains all loading phases', () => {
         expect(VALID_LOADING_PHASES.has('records')).toBe(true)
-        expect(VALID_LOADING_PHASES.has('complete')).toBe(true)
+        expect(VALID_LOADING_PHASES.has('scene')).toBe(true)
     })
 
     it('VALID_MYCELIUM_MODES contains all mycelium modes', () => {
@@ -367,8 +367,8 @@ describe('state validation — validateStateProperty', () => {
 
     it('allows valid searchStatus values', () => {
         expect(validateStateProperty('searchStatus', 'idle')).toBeNull()
-        expect(validateStateProperty('searchStatus', 'loading')).toBeNull()
-        expect(validateStateProperty('searchStatus', 'success')).toBeNull()
+        expect(validateStateProperty('searchStatus', 'searching')).toBeNull()
+        expect(validateStateProperty('searchStatus', 'results')).toBeNull()
     })
 
     it('rejects invalid searchStatus values', () => {
@@ -378,7 +378,7 @@ describe('state validation — validateStateProperty', () => {
 
     it('allows valid loadingPhaseKey values', () => {
         expect(validateStateProperty('loadingPhaseKey', 'records')).toBeNull()
-        expect(validateStateProperty('loadingPhaseKey', 'complete')).toBeNull()
+        expect(validateStateProperty('loadingPhaseKey', 'scene')).toBeNull()
     })
 
     it('rejects invalid loadingPhaseKey values', () => {
@@ -388,7 +388,7 @@ describe('state validation — validateStateProperty', () => {
 
     it('allows valid semanticLaneState values', () => {
         expect(validateStateProperty('semanticLaneState', 'checking')).toBeNull()
-        expect(validateStateProperty('semanticLaneState', 'idle')).toBeNull()
+        expect(validateStateProperty('semanticLaneState', 'healthy')).toBeNull()
     })
 
     it('rejects invalid semanticLaneState values', () => {
@@ -486,7 +486,7 @@ describe('state validation — validateStateProperty', () => {
 
     it('allows valid demoPhase values', () => {
         expect(validateStateProperty('demoPhase', 'IDLE')).toBeNull()
-        expect(validateStateProperty('demoPhase', 'ARRIVAL')).toBeNull()
+        expect(validateStateProperty('demoPhase', 'ARRIVED')).toBeNull()
     })
 
     it('rejects invalid demoPhase values', () => {

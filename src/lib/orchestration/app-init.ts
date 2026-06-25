@@ -61,7 +61,7 @@ const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
 declare global {
     interface Window {
         __APP_STATE__?: unknown
-        __APP_ACTIONS__?: Record<string, (...args: unknown[]) => unknown>
+        __APP_ACTIONS__?: Record<string, unknown>
     }
 }
 

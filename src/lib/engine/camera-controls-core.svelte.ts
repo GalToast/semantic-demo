@@ -16,7 +16,7 @@
 
 import { appState as _state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const state = _state as any
+const state = _state
 import type { SemanticState } from '@lib/state/state-types'
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
 
@@ -65,7 +65,14 @@ class CameraControlsCore {
 
     setFocusTransitionMode(mode: string, options: TransitionOptions = {}): void {
         const normalizedMode = String(mode || 'idle').replace(/[^a-z0-9-]/gi, '') || 'idle'
-        this.focusTransitionMode = normalizedMode
+        // FocusTransitionMode is a coarse-grained state machine value
+        // ('idle' | 'entering' | 'settling' | 'inside' | 'exiting'). The DOM
+        // dataset and Svelte store carry the raw style name ('focus',
+        // 'search', 'walk', etc.) for CSS hooks, but the validated legacy
+        // state field must only receive canonical mode values to satisfy
+        // the runtime state validator.
+        const canonicalMode: 'idle' | 'entering' = normalizedMode === 'idle' ? 'idle' : 'entering'
+        this.focusTransitionMode = canonicalMode
         this.focusTransitionStartedAt = performance.now()
         if (this.focusTransitionSettleTimer != null) {
             window.clearTimeout(this.focusTransitionSettleTimer)
@@ -73,19 +80,19 @@ class CameraControlsCore {
         }
         // Legacy mirror for choreography files that still read from state.focusTransitionMode
         const _s = state as unknown as SemanticState
-        _s.focusTransitionMode = normalizedMode
+        _s.focusTransitionMode = canonicalMode
         _s.focusTransitionStartedAt = this.focusTransitionStartedAt
 
         if (document.body) {
             document.body.dataset.focusTransition = normalizedMode
-            document.body.dataset.focusTransitionPhase = normalizedMode === 'idle' ? 'idle' : 'arriving'
+            document.body.dataset.focusTransitionPhase = canonicalMode === 'idle' ? 'idle' : 'arriving'
         }
         const duration = Math.max(0, Number.isFinite(options.duration) ? options.duration! : 720)
-        if (normalizedMode === 'idle') return
+        if (canonicalMode === 'idle') return
         this.focusTransitionSettleTimer = window.setTimeout(() => {
             // Note: avoid `!==` on $state properties — Svelte 5 strict-mode compiler
             // bug inverts `!==` to `===`. Use positive equality + negation instead.
-            if (this.focusTransitionMode === normalizedMode) {
+            if (this.focusTransitionMode === canonicalMode) {
                 /* still current */
             } else return
             if (document.body) document.body.dataset.focusTransitionPhase = 'settled'

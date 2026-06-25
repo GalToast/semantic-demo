@@ -390,7 +390,7 @@ function createCameraStoreApi(): CameraStoreApi {
                 return cameraStoreImpl[key]
             },
             set(v) {
-                ;(cameraStoreImpl as any)[key] = v
+                ;(cameraStoreImpl as Record<string, unknown>)[key] = v
             },
             enumerable: true,
             configurable: true

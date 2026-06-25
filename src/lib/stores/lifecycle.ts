@@ -170,7 +170,7 @@ export function applyCompositionState(): void {
         ]) {
             if (!appSt) continue
             appSt.focusedNode = hasFocus
-                ? $nav.focusedIndex || ($focus.selectedBusiness ? ($focus.selectedBusiness as any).index : null)
+                ? $nav.focusedIndex || ($focus.selectedBusiness ? ($focus.selectedBusiness as { index?: number }).index : null)
                 : null
             appSt.selectedPoint = $focus.selectedBusiness
             appSt.semanticDiveMode = semanticDive === 'active'

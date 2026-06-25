@@ -18,7 +18,7 @@ import {
     Group
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations'
 import { calculateSignalScore } from '@lib/utils/geo-data'
 import {

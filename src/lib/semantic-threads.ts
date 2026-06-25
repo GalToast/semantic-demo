@@ -501,7 +501,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
 
     withStateMutation(() => {
         state.semanticThreadsRetryAttempt += 1
-        state.semanticThreadsRetryTimer = (globalThis as any).setTimeout(() => {
+        state.semanticThreadsRetryTimer = globalThis.setTimeout(() => {
             withStateMutation(() => {
                 state.semanticThreadsRetryTimer = null
             })

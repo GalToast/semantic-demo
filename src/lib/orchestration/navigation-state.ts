@@ -13,7 +13,7 @@ import { navStore } from '@lib/stores/navigation.svelte';
 // ── Types ──────────────────────────────────────────────────────────────────
 
 export interface SetTrailNavStateOpts {
-    candidates?: any[];
+    candidates?: ThreadCandidateLike[];
     source?: string;
     reasonByIndex?: Map<number, string>;
     neighborIndices?: number[];

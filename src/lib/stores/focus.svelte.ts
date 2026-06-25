@@ -196,7 +196,7 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
         appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
         appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
         appState.navState.focusPocketMeta = next.pocketMeta
-        appState.selectedPoint = next.selectedBusiness as any
+        appState.selectedPoint = next.selectedBusiness as unknown as Point | null
         appState.inspectedThreadIndex = inspectedThreadIndex
         appState.pinnedThreadIndex = next.pinnedThreadIndex
         appState.nodesAreSettling = next.nodesAreSettling
@@ -263,7 +263,7 @@ function _createFocusStore(): FocusStoreApi {
             appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
             appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
             appState.navState.focusPocketMeta = value.pocketMeta
-            appState.selectedPoint = value.selectedBusiness as any
+            appState.selectedPoint = value.selectedBusiness as unknown as Point | null
             appState.inspectedThreadIndex = inspectedThreadIndex
             appState.pinnedThreadIndex = value.pinnedThreadIndex
             appState.nodesAreSettling = value.nodesAreSettling

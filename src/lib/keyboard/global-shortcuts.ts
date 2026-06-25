@@ -72,7 +72,7 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
                     // surface enum is currently loose; `trail` is
                     // intentionally narrow-typed as `any` here until
                     // the navigation surface union is tightened.
-                    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any })
+                    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' })
                     break
                 case '4':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' })

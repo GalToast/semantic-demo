@@ -265,7 +265,7 @@ export function transitionCompass(phase: string): void {
     // Compass phase is typically tied to nav mode or a sub-state.
     // For now, we'll map it to nav mode if it matches a milestone.
     if ((JOURNEY_COMPASS_PHASE_ORDER as readonly string[]).includes(phase)) {
-        withJourneyNotify((s) => ({ ...s, phase: phase as any }))
+        withJourneyNotify((s) => ({ ...s, phase: phase as string }))
     }
 }
 

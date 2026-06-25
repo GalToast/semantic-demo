@@ -483,6 +483,31 @@ export function getRuntimeStateSnapshot(): Record<string, unknown> {
     }
 }
 
+/**
+ * Restore runtime state from a snapshot produced by getRuntimeStateSnapshot().
+ * Only fields present in the snapshot are restored — callers control partial
+ * restoration. Writes go through withStateMutation so dependents update.
+ */
+export function syncRuntimeState(snapshot: Record<string, unknown>): void {
+    const s = snapshot as Partial<{
+        navState: typeof appState.navState
+        targetPositions: typeof appState.targetPositions
+        pocketMotionByIndex: typeof appState.pocketMotionByIndex
+        pocketTransitionStartedAt: number
+        nodesAreSettling: boolean
+        autoRotate: boolean
+    }>
+    appState.withMutation(() => {
+        if (s.navState !== undefined) appState.navState = s.navState
+        if (s.targetPositions !== undefined) appState.targetPositions = s.targetPositions
+        if (s.pocketMotionByIndex !== undefined) appState.pocketMotionByIndex = s.pocketMotionByIndex
+        if (s.pocketTransitionStartedAt !== undefined)
+            appState.pocketTransitionStartedAt = s.pocketTransitionStartedAt
+        if (s.nodesAreSettling !== undefined) appState.nodesAreSettling = s.nodesAreSettling
+        if (s.autoRotate !== undefined) appState.autoRotate = s.autoRotate
+    })
+}
+
 // ── Pocket Node Sync ─────────────────────────────────────────────────────────
 // Migrated from focus/pocket.ts (W7-B Pair 3 collapse).
 // Derives FocusPocketNode[] from current navState indices/roles/positions

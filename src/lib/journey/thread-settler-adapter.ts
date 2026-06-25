@@ -16,7 +16,7 @@ export function traverseNeighbor(step: number) {
 	return _traverseNeighborImpl(step);
 }
 
-export function previewInsideNextThread(options?: any) {
+export function previewInsideNextThread(options?: Record<string, unknown>) {
 	return _previewInsideNextThreadImpl(options);
 }
 

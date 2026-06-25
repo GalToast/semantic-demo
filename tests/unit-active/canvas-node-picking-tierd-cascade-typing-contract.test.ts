@@ -21,7 +21,9 @@ function readSource(rel: string): string {
 describe('canvas-node-picking.ts / Tier D cascade', () => {
     it('CanvasHoverCandidate is imported from @lib/state/state-types', () => {
         const source = readSource('src/lib/journey/canvas-node-picking.ts')
-        expect(source).toMatch(/import\s+type\s*\{[^}]*\bCanvasHoverCandidate\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/)
+        expect(source).toMatch(
+            /import\s+type\s*\{[^}]*\bCanvasHoverCandidate\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/
+        )
     })
 
     it('Raycaster accessors use typed helpers (getRaycastCamera/getRaycastPointsMesh)', () => {
@@ -59,7 +61,10 @@ describe('canvas-node-picking.ts / Tier D cascade', () => {
     it('preserved: getRaycastPoints uses as unknown as GeoPoint[]', () => {
         const source = readSource('src/lib/journey/canvas-node-picking.ts')
         const pointsCasts = source.match(/appState\.points\s+as\s+unknown\s+as\s+GeoPoint\[\]/g) || []
-        expect(pointsCasts.length, `expected GeoPoint[] cast preserved, got ${pointsCasts.length}`).toBeGreaterThanOrEqual(1)
+        expect(
+            pointsCasts.length,
+            `expected GeoPoint[] cast preserved, got ${pointsCasts.length}`
+        ).toBeGreaterThanOrEqual(1)
     })
 
     it('preserved: getRaycastSporeMesh uses as unknown as InstancedMesh', () => {

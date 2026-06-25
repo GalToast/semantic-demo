@@ -4,7 +4,7 @@
 
 import { Vec3, clamp } from '@lib/utils/math-vec3'
 import { appState } from '@lib/state/app.svelte'
-const state = appState as any
+const state = appState
 import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 import type { ConstellationMotifName } from '@lib/state/state-types'
 import { getViewportSize } from '@lib/utils/environment'
@@ -294,7 +294,7 @@ export interface PlacementParams {
 
 export function getFocusConstellationPlacement(
     motif: ConstellationMotif,
-    entry: any,
+    entry: Record<string, unknown>,
     order: number,
     group: string,
     total: number,

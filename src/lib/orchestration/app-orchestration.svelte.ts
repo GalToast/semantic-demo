@@ -292,7 +292,7 @@ export function setupKeyboardShortcuts(opts: { getNavMirror: () => NavMirror; we
                     dispatchNavTransitionAction(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
                     break
                 case '3':
-                    dispatchNavTransitionAction(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' as any })
+                    dispatchNavTransitionAction(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' })
                     break
                 case '4':
                     dispatchNavTransitionAction(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' })

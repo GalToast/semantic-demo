@@ -119,7 +119,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
             handleReady()
         }
     }
-    listen(document as unknown as Window, 'visibilitychange' as any, onVisibilityChange)
+    listen(document as unknown as Window, 'visibilitychange', onVisibilityChange)
 
     // Playwright test auto-fire: skip gesture wait in automated tests so
     // canvas mounts without requiring every test to simulate a gesture.

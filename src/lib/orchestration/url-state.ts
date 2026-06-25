@@ -595,7 +595,7 @@ async function _restoreSearchFromParams(query: string, anchorId: string | null):
         // duplicate trail stops. See docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md
         const numericAnchor = Number.isFinite(Number(anchorId))
         const results = searchStore().results
-        const byId = results && results.length > 0 ? results.find((r: any) => r.id === anchorId) : null
+        const byId = results && results.length > 0 ? results.find((r: { id: string }) => r.id === anchorId) : null
         if (byId) {
             publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: byId.index })
         } else if (numericAnchor) {

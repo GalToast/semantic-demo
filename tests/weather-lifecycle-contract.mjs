@@ -31,7 +31,7 @@ assert.match(
 )
 assert.match(
     src,
-    /clearWeatherRefreshTimer\(\);\s*state\.weatherInitialized\s*=\s*true;\s*fetchWeather\(\);/,
+    /clearWeatherRefreshTimer\(\)\s*state\.weatherInitialized\s*=\s*true\s*fetchWeather\(\)/,
     'initWeather should clear stale timer state before starting a fresh lifecycle'
 )
 assert.match(

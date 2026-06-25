@@ -35,7 +35,7 @@ function truncateDiveStatusCopy(text: string | null | undefined, max = 74): stri
     return `${slice.slice(0, cutAt).replace(/[,\s;:.]+$/, '')}...`
 }
 
-function getShortConnectionCue(reason: any): string {
+function getShortConnectionCue(reason: string | unknown): string {
     const reasonText = (cleanOptionalValue(reason) || '')
         .replace(/\bgrounded in\b/gi, 'from')
         .replace(/\bsame-city relationship\b/gi, 'same-city link')
@@ -51,7 +51,7 @@ function getShortConnectionCue(reason: any): string {
     return truncateDiveStatusCopy(reasonText, isCompactFocusStageViewport() ? 24 : 32).replace(/\.\.\.$/, '')
 }
 
-function getStepInsideConnectionCopy(candidate: any, focusIndex: number | null): string | null {
+function getStepInsideConnectionCopy(candidate: ThreadCandidateLike, focusIndex: number | null): string | null {
     if (!candidate || !Number.isFinite(candidate.index)) return null
     const point = appState.points?.[candidate.index] || null
     if (!point) return null

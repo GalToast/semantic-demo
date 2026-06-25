@@ -43,8 +43,8 @@ export function describeThreadLensForPoint(point: BusinessPoint | null | undefin
         return result
     }
 
-    const neighborCount = Array.isArray((neighborRecord as any).neighbors)
-        ? (neighborRecord as any).neighbors.length
+    const neighborCount = Array.isArray(neighborRecord.neighbors)
+        ? neighborRecord.neighbors.length
         : 0
     const clusterLabel = describeCluster(point.cluster)
 

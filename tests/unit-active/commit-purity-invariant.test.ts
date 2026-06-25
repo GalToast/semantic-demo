@@ -163,7 +163,12 @@ const EXEMPTED_SHAS = new Set<string>([
     'f5ac10555c9378de0f99d84aae320fe1e6cca0ee',
     // c652fa2 — docs(archive): move 7 closed-wave charter docs into docs/archive/
     // — Mixed commit that touches non-doc test file tests/integration/w6-splash-t1-contract.mjs
-    'c652fa2f949884dc115bfca83f2441acc47ecb43'
+    'c652fa2f949884dc115bfca83f2441acc47ecb43',
+    // 693f9bf — test(css): lock in W44 CSS minification contract for build output
+    // — Bundled package.json (budget targets) under a test prefix. The config
+    // file is a companion verification artifact co-located with the CSS minification
+    // contract test; re-splitting would require a rebase.
+    '693f9bf31ca2066d57513aea51f399910dab0a5a'
 ])
 
 // Conventional-commit prefix regex. Captures:
