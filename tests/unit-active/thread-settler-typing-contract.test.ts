@@ -34,7 +34,7 @@
  *     the module-level `previewInsideNextThread` export (delegates to
  *     the class method).
  *
- * Added import: `import type { ThreadInspectionState } from './thread-inspector'`
+ * Added import: `import type { ThreadInspectionState } from './thread-inspector-state'`
  *
  * Deferred (kept as baseline):
  *   - L255-257, L316-319, L338-342: `(legacyState as any).X = null`
@@ -135,9 +135,9 @@ describe('thread-settler — typing contract (W47-Bite-F tightening)', () => {
         expect(stripped.match(badReturn), 'old `: any` return type still present').toBeNull()
     })
 
-    it('imports ThreadInspectionState type from thread-inspector', () => {
+    it('imports ThreadInspectionState type from thread-inspector-state', () => {
         // The new return type requires importing ThreadInspectionState
-        const importLine = /import\s+type\s*\{\s*ThreadInspectionState\s*\}\s+from\s+['"]\.\/thread-inspector['"]/
+        const importLine = /import\s+type\s*\{\s*ThreadInspectionState\s*\}\s+from\s+['"]\.\/thread-inspector-state['"]/
         expect(stripped.match(importLine), 'ThreadInspectionState type import not found').toBeTruthy()
     })
 })

@@ -71,18 +71,18 @@ const _appState = vi.hoisted(() => ({
     withMutation: (fn: () => unknown) => {
         return fn()
     }
-}));
+}))
 
-const _focusStoreUpdates = vi.hoisted(() => [] as Array<{ next: unknown; prev: unknown }>);
+const _focusStoreUpdates = vi.hoisted(() => [] as Array<{ next: unknown; prev: unknown }>)
 
 // ── Module mocks ───────────────────────────────────────────────────────────
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
     appState: _appState
-}));
+}))
 
 vi.mock('@lib/stores/focus.svelte.ts', async (importOriginal) => {
-    const actual = await importOriginal<typeof import('@lib/stores/focus.svelte')>();
+    const actual = await importOriginal<typeof import('@lib/stores/focus.svelte')>()
     return {
         ...actual,
         // Replace focusStore with a writable that captures updates.
@@ -102,7 +102,7 @@ vi.mock('@lib/stores/focus.svelte.ts', async (importOriginal) => {
             }
         }
     }
-});
+})
 
 // Stub the event-bus + utilities that thread-inspector / url-state depend on
 vi.mock('@lib/orchestration/event-bus', () => ({
@@ -113,7 +113,7 @@ vi.mock('@lib/orchestration/event-bus', () => ({
         FOCUS_NODE_FOCUSED: 'FOCUS_NODE_FOCUSED',
         THREAD_INSPECTION_CLEARED: 'THREAD_INSPECTION_CLEARED'
     }
-}));
+}))
 
 vi.mock('@lib/utils/diagnostic-adapter', async (importOriginal) => {
     const actual = await importOriginal<typeof import('@lib/utils/diagnostic-adapter')>()
@@ -121,125 +121,125 @@ vi.mock('@lib/utils/diagnostic-adapter', async (importOriginal) => {
         ...actual,
         debugWarn: () => {}
     }
-});
+})
 
 // ── Imports (must appear AFTER vi.mock) ──────────────────────────────────────
 
-import { clearExplorationFocusSelection } from '@lib/orchestration/url-state';
-import { inspectThreadNeighbor } from '@lib/journey/thread-inspector';
+import { clearExplorationFocusSelection } from '@lib/orchestration/url-state'
+import { inspectThreadNeighbor } from '@lib/journey/thread-inspector-state'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function resetCallLogs(): void {
-    _focusStoreUpdates.length = 0;
+    _focusStoreUpdates.length = 0
 }
 
 function lastFocusUpdate(): { next: unknown; prev: unknown } | undefined {
-    return _focusStoreUpdates[_focusStoreUpdates.length - 1];
+    return _focusStoreUpdates[_focusStoreUpdates.length - 1]
 }
 
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe('store parity mirror (GAP-4 + GAP-5 from store-parity-audit-2026-06-17.md)', () => {
-  beforeEach(() => {
-    resetCallLogs();
-    // Reset navState between tests
-    _appState.navState.mode = 'overview';
-    _appState.navState.surface = 'idle';
-    _appState.navState.focusedIndex = null;
-    _appState.navState.trailDepth = 0;
-    _appState.navState.trailSeedIndex = null;
-    _appState.navState.trailNeighborIndices = [];
-    _appState.navState.trailCursor = -1;
-    _appState.navState.walkHistoryIndices = [];
-    _appState.inspectedThreadIndex = null;
-    _appState.pinnedThreadIndex = null;
-    _appState.threadInspectorPointerInside = false;
-  });
+    beforeEach(() => {
+        resetCallLogs()
+        // Reset navState between tests
+        _appState.navState.mode = 'overview'
+        _appState.navState.surface = 'idle'
+        _appState.navState.focusedIndex = null
+        _appState.navState.trailDepth = 0
+        _appState.navState.trailSeedIndex = null
+        _appState.navState.trailNeighborIndices = []
+        _appState.navState.trailCursor = -1
+        _appState.navState.walkHistoryIndices = []
+        _appState.inspectedThreadIndex = null
+        _appState.pinnedThreadIndex = null
+        _appState.threadInspectorPointerInside = false
+    })
 
-  // ── GAP-5: url-state.ts: clearExplorationFocusSelection ──
-  //
-  // Before fix (commit aed8bd8): direct appState.withMutation wrote to
-  // legacy state only, leaving the Svelte 5 navStore stale. After URL
-  // reset, body data-attrs (data-nav-mode, data-nav-surface,
-  // data-focused-node) showed stale 'focus' values instead of
-  // 'overview'/'idle'/null.
-  //
-  // After fix: the withMutation block is replaced with
-  // writeNavStateMirror which writes to both legacy and Svelte 5.
-  // We verify the LEGACY write (the side effect) and that withMutation
-  // was called (proving the mirror path ran).
+    // ── GAP-5: url-state.ts: clearExplorationFocusSelection ──
+    //
+    // Before fix (commit aed8bd8): direct appState.withMutation wrote to
+    // legacy state only, leaving the Svelte 5 navStore stale. After URL
+    // reset, body data-attrs (data-nav-mode, data-nav-surface,
+    // data-focused-node) showed stale 'focus' values instead of
+    // 'overview'/'idle'/null.
+    //
+    // After fix: the withMutation block is replaced with
+    // writeNavStateMirror which writes to both legacy and Svelte 5.
+    // We verify the LEGACY write (the side effect) and that withMutation
+    // was called (proving the mirror path ran).
 
-  it('GAP-5: clearExplorationFocusSelection calls appState.withMutation (mirror path)', () => {
-    let mutationRan = false
-    const originalWithMutation = _appState.withMutation
-    _appState.withMutation = (fn: () => unknown) => {
-      mutationRan = true
-      return fn()
-    }
-    try {
-      clearExplorationFocusSelection()
-      expect(mutationRan, 'writeNavStateMirror must call appState.withMutation').toBe(true)
-    } finally {
-      _appState.withMutation = originalWithMutation
-    }
-  })
+    it('GAP-5: clearExplorationFocusSelection calls appState.withMutation (mirror path)', () => {
+        let mutationRan = false
+        const originalWithMutation = _appState.withMutation
+        _appState.withMutation = (fn: () => unknown) => {
+            mutationRan = true
+            return fn()
+        }
+        try {
+            clearExplorationFocusSelection()
+            expect(mutationRan, 'writeNavStateMirror must call appState.withMutation').toBe(true)
+        } finally {
+            _appState.withMutation = originalWithMutation
+        }
+    })
 
-  it('GAP-5: clearExplorationFocusSelection resets legacy navState to overview/idle/null', () => {
-    // Seed the legacy state with a 'focused' context (simulating user
-    // was on a focused node before the URL reset)
-    _appState.navState.mode = 'focus'
-    _appState.navState.surface = 'focus'
-    _appState.navState.focusedIndex = 42
-    _appState.navState.trailDepth = 1
+    it('GAP-5: clearExplorationFocusSelection resets legacy navState to overview/idle/null', () => {
+        // Seed the legacy state with a 'focused' context (simulating user
+        // was on a focused node before the URL reset)
+        _appState.navState.mode = 'focus'
+        _appState.navState.surface = 'focus'
+        _appState.navState.focusedIndex = 42
+        _appState.navState.trailDepth = 1
 
-    clearExplorationFocusSelection()
+        clearExplorationFocusSelection()
 
-    // The mirror must have reset all 3 fields via the legacy write
-    expect(_appState.navState.mode).toBe('overview')
-    expect(_appState.navState.focusedIndex).toBeNull()
-    expect(_appState.navState.trailDepth).toBe(0)
-  })
+        // The mirror must have reset all 3 fields via the legacy write
+        expect(_appState.navState.mode).toBe('overview')
+        expect(_appState.navState.focusedIndex).toBeNull()
+        expect(_appState.navState.trailDepth).toBe(0)
+    })
 
-  // ── GAP-4: thread-inspector.ts: inspectThreadNeighbor ──
-  //
-  // Before fix (commit aed8bd8): 12 sites wrote to
-  // appState.inspectedThreadIndex / appState.pinnedThreadIndex /
-  // appState.threadInspectorPointerInside without updating focusStore.
-  // The thread inspector overlay failed to render because
-  // focusStore.threadInspector.active stayed false.
-  //
-  // After fix: each write is followed by a focusStore.update that
-  // mirrors the same field. We verify the LEGACY write happened AND
-  // the focusStore.update was called with the right patch.
+    // ── GAP-4: thread-inspector.ts: inspectThreadNeighbor ──
+    //
+    // Before fix (commit aed8bd8): 12 sites wrote to
+    // appState.inspectedThreadIndex / appState.pinnedThreadIndex /
+    // appState.threadInspectorPointerInside without updating focusStore.
+    // The thread inspector overlay failed to render because
+    // focusStore.threadInspector.active stayed false.
+    //
+    // After fix: each write is followed by a focusStore.update that
+    // mirrors the same field. We verify the LEGACY write happened AND
+    // the focusStore.update was called with the right patch.
 
-  it('GAP-4: inspectThreadNeighbor mirrors to focusStore.update with the index', () => {
-    inspectThreadNeighbor(522, { force: true })
+    it('GAP-4: inspectThreadNeighbor mirrors to focusStore.update with the index', () => {
+        inspectThreadNeighbor(522, { force: true })
 
-    // focusStore must receive an update with the index in either
-    // inspectedStrandIndex or threadInspector.inspectedIndex
-    const last = lastFocusUpdate()
-    expect(last, 'inspectThreadNeighbor must call focusStore.update').toBeDefined()
-    const next = last!.next as Record<string, unknown>
-    const threadInspector = next.threadInspector as Record<string, unknown> | undefined
-    const inspectedStrandIndex = next.inspectedStrandIndex as number | undefined
-    const inspectedIndex = threadInspector?.inspectedIndex as number | undefined
-    // At least one of these must carry the index
-    const index = inspectedStrandIndex ?? inspectedIndex
-    expect(index).toBe(522)
-  })
+        // focusStore must receive an update with the index in either
+        // inspectedStrandIndex or threadInspector.inspectedIndex
+        const last = lastFocusUpdate()
+        expect(last, 'inspectThreadNeighbor must call focusStore.update').toBeDefined()
+        const next = last!.next as Record<string, unknown>
+        const threadInspector = next.threadInspector as Record<string, unknown> | undefined
+        const inspectedStrandIndex = next.inspectedStrandIndex as number | undefined
+        const inspectedIndex = threadInspector?.inspectedIndex as number | undefined
+        // At least one of these must carry the index
+        const index = inspectedStrandIndex ?? inspectedIndex
+        expect(index).toBe(522)
+    })
 
-  it('GAP-4: inspectThreadNeighbor(null) clears focusStore state', () => {
-    inspectThreadNeighbor(null as unknown as number, { force: true })
+    it('GAP-4: inspectThreadNeighbor(null) clears focusStore state', () => {
+        inspectThreadNeighbor(null as unknown as number, { force: true })
 
-    const last = lastFocusUpdate()
-    expect(last, 'inspectThreadNeighbor(null) must call focusStore.update').toBeDefined()
-    const next = last!.next as Record<string, unknown>
-    // Either the legacy field or threadInspector should be null
-    const inspectedStrandIndex = next.inspectedStrandIndex
-    const threadInspector = next.threadInspector as Record<string, unknown> | undefined
-    const inspectedIndex = threadInspector?.inspectedIndex
-    const cleared = inspectedStrandIndex === null || inspectedIndex === null
-    expect(cleared).toBe(true)
-  })
+        const last = lastFocusUpdate()
+        expect(last, 'inspectThreadNeighbor(null) must call focusStore.update').toBeDefined()
+        const next = last!.next as Record<string, unknown>
+        // Either the legacy field or threadInspector should be null
+        const inspectedStrandIndex = next.inspectedStrandIndex
+        const threadInspector = next.threadInspector as Record<string, unknown> | undefined
+        const inspectedIndex = threadInspector?.inspectedIndex
+        const cleared = inspectedStrandIndex === null || inspectedIndex === null
+        expect(cleared).toBe(true)
+    })
 })

@@ -1,40 +1,32 @@
 /**
  * @lib/journey/thread-inspector-render.ts — Thread inspection DOM rendering
  *
- * Split from thread-inspector.ts — contains renderThreadInspection only.
- * State/query functions live in thread-inspector-state.ts.
+ * Split from thread-inspector.ts (Wave70). Contains ONLY renderThreadInspection
+ * and its pointer-guard / surface-event-guard helpers. Imports state types and
+ * scheduleCanvasThreadInspectionClear from the state module (circular reference
+ * resolved at call time in ESM).
  */
 
 import { appState } from '@lib/state/app.svelte.ts'
 import { getFocusedIndex } from '@lib/stores/index.svelte.ts'
-import { focusStore, updateThreadInspector } from '@lib/stores/focus.svelte.ts'
+import { updateThreadInspector } from '@lib/stores/focus.svelte.ts'
 import {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,
     setInspectedStrandOverlayUpdater
 } from '@lib/engine/journey-webgl-lazy'
 import { withStateMutation } from '@lib/state/with-state-mutation'
+
+// Circular import — resolved at call time in ESM; state functions call
+// renderThreadInspection back.
 import {
     getThreadInspectionState,
     scheduleCanvasThreadInspectionClear
 } from './thread-inspector-state'
-import type { ThreadInspectionState, ThreadInspectionOptions } from './thread-inspector-state'
+import type { InspectorElement, ThreadInspectionOptions, ThreadInspectionState } from './thread-inspector-state'
 
-// Register the WebGL update callback (preserves original top-level side-effect)
+// Register the WebGL update callback
 setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay)
-
-// ── Types ──────────────────────────────────────────────────────────────────
-
-/** HTMLElement extension that carries the private pointer-event listeners
- *  we attach when binding/unbinding the canvas thread inspection overlay.
- *  Used to avoid `as any` casts when reading/writing `_pointerEnterListener`
- *  and `_pointerLeaveListener` on the inspector DOM node. */
-interface InspectorElement extends HTMLElement {
-    _pointerEnterListener?: EventListener
-    _pointerLeaveListener?: EventListener
-}
-
-// ── Render ─────────────────────────────────────────────────────────────────
 
 export function renderThreadInspection(
     index: number | null = appState.inspectedThreadIndex,

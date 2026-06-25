@@ -153,14 +153,14 @@ describe('W11-T8: window-test-bridge.ts imports the canonical modules', () => {
         expect(bridgeSrc).toMatch(/import.*\bwalkThreadNeighbor\b.*from.*journey\/thread-settler/)
     })
 
-    it('imports thread inspector methods from journey/thread-inspector', () => {
+    it('imports thread inspector methods from journey/thread-inspector-state', () => {
         // Imports are multiline: 'import {\n    inspectThreadNeighbor,\n    ...'
         // Use [\s\S]* to span newlines.
         expect(bridgeSrc).toMatch(
-            /import\s*\{[\s\S]*\binspectThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector/
+            /import\s*\{[\s\S]*\binspectThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector-state/
         )
         expect(bridgeSrc).toMatch(
-            /import\s*\{[\s\S]*\bpinThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector/
+            /import\s*\{[\s\S]*\bpinThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector-state/
         )
     })
 

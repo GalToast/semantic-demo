@@ -42,13 +42,13 @@ import {
 import { traverseNeighbor, previewInsideNextThread } from './thread-settler-adapter'
 import {
     getThreadInspectionState,
-    renderThreadInspection,
     inspectThreadNeighbor,
     pinThreadNeighbor,
     unpinThreadInspection,
     scheduleCanvasThreadInspectionClear,
     clearThreadInspection
-} from './thread-inspector'
+} from './thread-inspector-state'
+import { renderThreadInspection } from './thread-inspector-render'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import {
     initJourneyNeighborhoodAdapter,

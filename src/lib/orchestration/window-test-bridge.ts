@@ -46,7 +46,7 @@ import {
     pinFirstAvailableNeighbor,
     unpinThreadInspection,
     clearThreadInspection
-} from '@lib/journey/thread-inspector'
+} from '@lib/journey/thread-inspector-state'
 import { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { updateTraversalUi } from '@lib/journey/focus-ui'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'

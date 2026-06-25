@@ -27,7 +27,7 @@ import {
     pinThreadNeighbor,
     unpinThreadInspection,
     clearThreadInspection
-} from '@lib/journey/thread-inspector'
+} from '@lib/journey/thread-inspector-state'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
 import type { ViewName, SwitchViewOptions } from '@lib/orchestration/view-controller'
 import * as semanticGuideModule from '@lib/journey/semantic-guide'

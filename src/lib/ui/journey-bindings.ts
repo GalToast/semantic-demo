@@ -9,7 +9,11 @@ const state = _state
 import { bindClick } from '@lib/ui/view-bindings'
 import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller'
 import { setSemanticDiveMode, resetExplorationFocus, exploreInsideToNextStop } from '@lib/orchestration/lifecycle'
-import { pinThreadNeighbor, pinFirstAvailableNeighbor, unpinThreadInspection } from '@lib/journey/thread-inspector'
+import {
+    pinThreadNeighbor,
+    pinFirstAvailableNeighbor,
+    unpinThreadInspection
+} from '@lib/journey/thread-inspector-state'
 import { walkThreadNeighbor } from '@lib/journey/thread-settler'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
