@@ -19,20 +19,26 @@ const DEBUG_ENABLED = (() => {
     }
 })()
 
+export function debugInfo(message: string, ...args: unknown[]): void {
+    if (DEBUG_ENABLED) {
+        console.info(`[DEBUG] ${message}`, ...args)
+    }
+}
+
 export function debugWarn(message: string, ...args: unknown[]): void {
     if (DEBUG_ENABLED) {
-        console.warn(`[DEBUG] ${message}`, ...args);
+        console.warn(`[DEBUG] ${message}`, ...args)
     }
 }
 
 export function debugLog(message: string, ...args: unknown[]): void {
     if (DEBUG_ENABLED) {
-        console.log(`[DEBUG] ${message}`, ...args);
+        console.log(`[DEBUG] ${message}`, ...args)
     }
 }
 
 export function debugError(message: string, ...args: unknown[]): void {
     if (DEBUG_ENABLED) {
-        console.error(`[DEBUG] ${message}`, ...args);
+        console.error(`[DEBUG] ${message}`, ...args)
     }
 }

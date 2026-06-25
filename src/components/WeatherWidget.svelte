@@ -12,7 +12,6 @@
     weatherTemperature,
     weatherLabel,
     weatherIconKey,
-    weatherIconKey,
     weatherHumidity,
     weatherWindSpeed,
     weatherWindDirection,
