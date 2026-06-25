@@ -69,8 +69,8 @@ describe('Global as-any budget', () => {
     expect(
       audit.totalCount,
       `Global as-any count increased to ${audit.totalCount}. ` +
-      `Budget: 470. See docs/typing-contract.md for how to fix or justify.`,
-    ).toBeLessThanOrEqual(470)
+      `Budget: 58. See docs/typing-contract.md for how to fix or justify.`,
+    ).toBeLessThanOrEqual(58)
   })
 
   it('lists the top 10 offenders when the budget is exceeded', () => {

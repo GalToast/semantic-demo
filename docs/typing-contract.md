@@ -29,8 +29,8 @@ Every `as any` must have a comment explaining why it cannot be typed properly. N
 
 | Metric                                       | Value   | Date              |
 | -------------------------------------------- | ------- | ----------------- |
-| `as any` / `: any` / `any[]` / `<any>` count | **470** | 2026-06-24        |
-| Files affected                               | **76**  | 2026-06-24        |
+| `as any` / `: any` / `any[]` / `<any>` count | **58**  | 2026-06-25        |
+| Files affected                               | **43**  | 2026-06-25        |
 | Thread-inspector-webgl budget                | **8**   | contract enforced |
 
 ---
@@ -67,6 +67,19 @@ it('uses <=8 any occurrences', () => {
 | ---------------------------- | ------ | ----- | ------------------------------------------------- |
 | `thread-inspector-webgl.ts`  | 35     | 8     | Engine bridge casts kept; Three.js boundary typed |
 | `three-search-animations.ts` | 16     | 1     | Shader uniform narrowing                          |
+| `three-engine.ts`            | 23     | 1     | All module-bridge casts replaced with `typeof import(...)` (B-4a series) |
+| `focus-pocket.ts`            | 19     | 1     | Cross-file tightening; dead `syncRuntimeState` removed (B-1..B-3c) |
+
+## Global Budget History
+
+| Date       | Count | Delta | Reason                                              |
+| ---------- | ----- | ----- | --------------------------------------------------- |
+| 2026-06-19 | 575   | —     | Initial baseline (W47-A start)                      |
+| 2026-06-19 | 477   | -98   | W47-A bulk-remove across neighborhood/thread-settler/focus-ui |
+| 2026-06-19 | 470   | -7    | node-manager.ts 5 surgical edits (W47-T1)          |
+| 2026-06-25 | 58    | -412  | W48 mega-session: B-3 (focus-pocket), B-4a (three-engine), W48-T1/T2 owner refactors, bulk `as any` removal in 25+ files |
+
+The 2026-06-25 sync (470 → 58) locks in 5 sessions of type-tightening work that had not been reflected in the budget baseline. Net reduction: **90%** of `as any` occurrences removed since the W47-A start.
 
 ---
 
