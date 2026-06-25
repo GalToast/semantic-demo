@@ -45,8 +45,8 @@ export function animateCameraToSearchCorridor(
     resultIndices: number[] = [],
     options: RouteOptions = {}
 ): boolean {
-    const camera = appState.camera as ChoreographyCamera | null
-    const controls = appState.controls as ChoreographyControls | null
+    const camera = appState.camera
+    const controls = appState.controls
     if (!camera || !controls || appState.currentView !== 'galaxy') return false
     const activeCamera: ChoreographyCamera = camera
     const activeControls: ChoreographyControls = controls
@@ -180,8 +180,8 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
     publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } })
 
     try {
-        const camera = appState.camera as ChoreographyCamera | null
-        const controls = appState.controls as ChoreographyControls | null
+        const camera = appState.camera
+        const controls = appState.controls
         if (!camera || !controls) return
         const activeCamera: ChoreographyCamera = camera
         const activeControls: ChoreographyControls = controls
@@ -233,8 +233,8 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
 // ── applySemanticCentroidCamera ───────────────────────────────────────────────
 
 export function applySemanticCentroidCamera(now = performance.now()): void {
-    const camera = appState.camera as ChoreographyCamera | null
-    const controls = appState.controls as ChoreographyControls | null
+    const camera = appState.camera
+    const controls = appState.controls
     if (!camera || !controls) return
     const activeControls: ChoreographyControls = controls
     if (appState.trailDepth !== 2) {
@@ -313,8 +313,8 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
 // ── zoomCamera ───────────────────────────────────────────────────────────────
 
 export function zoomCamera(multiplier: number): void {
-    const camera = appState.camera as ChoreographyCamera | null
-    const controls = appState.controls as ChoreographyControls | null
+    const camera = appState.camera
+    const controls = appState.controls
     if (!camera || !controls) return
     const target = controls.target
     if (!target) return

@@ -4,7 +4,7 @@
  * Port of js/modules/cluster-labels.ts.
  * Renders and animates per-cluster text labels in the 3D galaxy view.
  */
-import { Vector3, PerspectiveCamera } from 'three'
+import { Vector3 } from 'three'
 
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { getViewportSize, isMobileViewport } from '@lib/utils/environment'
@@ -150,7 +150,7 @@ export function initClusterLabels(): void {
 }
 
 export function updateClusterLabels(): void {
-    const camera = appState.camera as PerspectiveCamera | null
+    const camera = appState.camera
     if (appState.currentView !== 'galaxy' || !_labelElements.size || !camera) {
         _labelElements.forEach((el) => {
             el.classList.toggle('visible', false)

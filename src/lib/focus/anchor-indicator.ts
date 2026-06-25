@@ -135,7 +135,7 @@ export function updateFocusAnchorIndicator(now: number, focusedNode: number | nu
     }
     group.position.copy(worldPos);
     if (appState.camera) {
-        group.lookAt(new Vector3().copy(appState.camera.position as Vector3));
+        group.lookAt(new Vector3().copy(appState.camera.position));
     }
     group.visible = true;
 
