@@ -40,15 +40,15 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('has exactly 1 `any` occurrence (the engine-boundary escape hatch)', () => {
+    it('has 0 any occurrences (fully tightened)', () => {
         const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        expect(matches.length).toBe(1)
+        expect(matches.length).toBe(0)
     })
 
-    it('the single `any` is the documented engine-boundary escape hatch', () => {
+    it('documented engine-boundary escape hatch was removed', () => {
         const lines = src.split('\n')
         const line = lines.find((l) => /as any/.test(l)) ?? ''
-        expect(line).toMatch(/const\s+state\s*=\s*_state\s+as\s+any/)
+        expect(line).toBe('')
     })
 
     it('getSemanticLensNeighborIndices uses `number` for focusedNode (not any)', () => {

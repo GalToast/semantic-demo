@@ -99,11 +99,14 @@ describe('engine-boundary refactor / Tier D first bite / Three.js handle typing'
         expect(source).toMatch(/camera\s*=\s*\$state<PerspectiveCamera\s*\|\s*null>/)
     })
 
-    it('renderer/controls still use the *Like interfaces (not regressed)', () => {
-        // These were already typed in a prior session and should remain
+    it('renderer/controls use real Three.js types (T-5 tightened)', () => {
+        // T-5: renderer and controls were tightened from RendererLike/ControlsLike
+        // facades to real Three.js types (WebGLRenderer | null, OrbitControls | null)
         const source = readSource('src/lib/state/app.svelte.ts')
-        expect(source).toMatch(/renderer\s*=\s*\$state<RendererLike>/)
-        expect(source).toMatch(/controls\s*=\s*\$state<ControlsLike>/)
+        expect(source).toMatch(/renderer\s*=\s*\$state<WebGLRenderer \| null>/)
+        expect(source).toMatch(/controls\s*=\s*\$state<OrbitControls \| null>/)
+        expect(source).not.toMatch(/renderer\s*=\s*\$state<RendererLike>/)
+        expect(source).not.toMatch(/controls\s*=\s*\$state<ControlsLike>/)
     })
 
     it('no `null as unknown as SemanticState[...]` boilerplate remains for these 6 fields', () => {

@@ -106,9 +106,11 @@ describe('engine-boundary refactor / Tier D second bite / Three.js handles batch
         expect(source).toMatch(/camera\s*=\s*\$state<PerspectiveCamera\s*\|\s*null>/)
     })
 
-    it('renderer/controls still use the *Like interfaces (not regressed)', () => {
+    it('renderer/controls use real Three.js types (T-5 tightened)', () => {
         const source = readSource('src/lib/state/app.svelte.ts')
-        expect(source).toMatch(/renderer\s*=\s*\$state<RendererLike>/)
-        expect(source).toMatch(/controls\s*=\s*\$state<ControlsLike>/)
+        expect(source).toMatch(/renderer\s*=\s*\$state<WebGLRenderer \| null>/)
+        expect(source).toMatch(/controls\s*=\s*\$state<OrbitControls \| null>/)
+        expect(source).not.toMatch(/renderer\s*=\s*\$state<RendererLike>/)
+        expect(source).not.toMatch(/controls\s*=\s*\$state<ControlsLike>/)
     })
 })
