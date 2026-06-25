@@ -181,15 +181,7 @@ type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overla
 
 type FocusAnchorModule = typeof import('@lib/journey/focus-anchor-indicator')
 
-interface ThreeSearchAnimationsModule {
-    triggerSearchHeroMoment(): void
-    triggerCorridorNodeGlow(now: number): void
-    updateCorridorNodeGlow(now: number): void
-    triggerSearchCorridorAnimation(now: number): void
-    updateSearchCorridorAnimation(now: number): void
-    disposeSearchCorridorAnimation(): void
-    disposeHeroAnimation(): void
-}
+type ThreeSearchAnimationsModule = typeof import('./three-search-animations')
 
 type AudioScapeModule = typeof import('@lib/audio/audio-scape')
 type EventBindingsModule = typeof import('@lib/ui/event-bindings')
@@ -264,8 +256,8 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
     _mapFlattening?.applyMapFlatteningLayout(enabled)
 }
 
-export function triggerSearchHeroMoment(): void {
-    _threeSearchAnimations?.triggerSearchHeroMoment()
+export function triggerSearchHeroMoment(anchorIndex: number): void {
+    _threeSearchAnimations?.triggerSearchHeroMoment(anchorIndex)
 }
 
 export function triggerCorridorNodeGlow(now: number): void {
