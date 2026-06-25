@@ -80,6 +80,55 @@ function auditFile(filePath) {
         findings.push(f)
     }
 
+    // === CSS rule block parser for rule_7 fallback detection ===
+    // Parse each <selector> { <properties> } block at file level so rule_7
+    // can verify a `:focus-visible` fallback exists before flagging `outline: none`.
+    const cssBlockRegex = /([^{}]+)\{([^{}]*)\}/g
+    const selectorToProps = new Map()
+    const cssBlocks = []
+    {
+        let cssMatch
+        while ((cssMatch = cssBlockRegex.exec(content)) !== null) {
+            const selector = cssMatch[1].trim()
+            const properties = cssMatch[2]
+            selectorToProps.set(selector, properties)
+            cssBlocks.push({
+                selector,
+                startOffset: cssMatch.index,
+                endOffset: cssMatch.index + cssMatch[0].length
+            })
+        }
+    }
+
+    // Build a line → selector map. Each rule block owns its full line range
+    // (selector line through closing brace), so any line containing
+    // `outline: none` can be traced back to its declaring selector.
+    const blockByLine = new Map()
+    const offsetToLine = (offset) => content.substring(0, offset).split('\n').length
+    for (const b of cssBlocks) {
+        const startLine = offsetToLine(b.startOffset)
+        const endLine = offsetToLine(b.endOffset)
+        for (let l = startLine; l <= endLine; l++) {
+            blockByLine.set(l, b.selector)
+        }
+    }
+
+    // True if every comma-separated selector in `selector` has a
+    // `<base-selector>:focus-visible` rule whose properties declare an `outline`.
+    // The base selector strips any trailing pseudo-class (`:hover`, `:focus`,
+    // `:focus-visible`, etc.) so that fallbacks for compound states like
+    // `.foo:hover` or `.foo:focus` correctly find `.foo:focus-visible`.
+    // Comma-separated fallback: at least one missing fallback means flag.
+    function hasFocusVisibleOutline(selector) {
+        const parts = selector.split(',').map((s) => s.trim()).filter(Boolean)
+        return parts.every((part) => {
+            const basePart = part.replace(/:[a-z-]+(\([^)]*\))?$/i, '')
+            const focusSel = `${basePart}:focus-visible`
+            const props = selectorToProps.get(focusSel)
+            return props !== undefined && /\boutline\s*:/i.test(props)
+        })
+    }
+
     // Per-line quick checks. The big multi-line tag parser follows.
     lines.forEach((line, index) => {
         const lineNum = index + 1
@@ -204,15 +253,19 @@ function auditFile(filePath) {
             }
         }
 
-        // rule_7
+        // rule_7: outline: none / 0 — only flag if no :focus-visible fallback exists
         if (line.includes('outline: none') || line.includes('outline: 0')) {
-            pushOnce({
-                file: baseName,
-                line: lineNum,
-                severity: 'MEDIUM',
-                rule: 7,
-                desc: 'outline disabled; confirm focus-visible fallback is provided'
-            })
+            const selector = blockByLine.get(lineNum)
+            const hasFallback = selector ? hasFocusVisibleOutline(selector) : false
+            if (!hasFallback) {
+                pushOnce({
+                    file: baseName,
+                    line: lineNum,
+                    severity: 'MEDIUM',
+                    rule: 7,
+                    desc: 'outline disabled; confirm focus-visible fallback is provided'
+                })
+            }
         }
     })
 
