@@ -41,8 +41,8 @@ import {
     shouldSurfaceApiFailures,
     shouldBypassApiSearch
 } from '@lib/search/mock-search-fallback'
-import {
 import { debugLog } from '@lib/utils/debug'
+import {
     performLocalIndexSearch,
     localHitsToResults,
     getSearchEngineEmptyStateSuggestions,

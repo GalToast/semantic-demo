@@ -424,7 +424,7 @@ export function refreshFocusSemanticOverlay(): void {
         denseBundleMode,
         buildMs: performance.now() - startedAt
     }
-    focusLineParent.add(state.focusSemanticLines as never)
+    focusLineParent.add(state.focusSemanticLines)
     state.focusFrameDiagnostics = {
         lastFrameAt: 0,
         sampleCount: 0,
@@ -448,7 +448,7 @@ export function refreshFocusSemanticOverlay(): void {
         avgFrameMs: 0,
         maxFrameMs: 0
     }
-    focusLineParent.add(state.focusSemanticLines as never)
+    focusLineParent.add(state.focusSemanticLines)
 }
 
 export function updateFocusSemanticOverlayPositions(now: number = performance.now()): void {
