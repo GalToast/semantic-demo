@@ -1,81 +1,86 @@
 /**
- * @lib/search-engine.ts — Real search engine for the semantic search API
+ * @lib/search-engine.ts — Semantic search orchestrator
  *
- * Executes live API searches against the Montgomery County business corpus and
- * falls back to a local index over the in-memory `businessRecords` writable
- * if the API is unavailable. The local index walks all 8,406 Montgomery
- * County businesses (name/what/category/city) so natural queries like
- * "restaurant", "real estate", or even a typo like "cofee" return real
- * results instead of "no matches".
+ * Public API surface for the search subsystem:
+ *   - initSearchEngine(): no-op compatibility hook
+ *   - performSearch(query, signal, page, offset): execute a search
+ *   - getSearchEngineEmptyStateSuggestions(): top-5 categories for chips
+ *   - getSearchEngineDiagnostics(): static-dev fallback status
  *
- * The mapper functions are duplicated here as pure TS to avoid importing the
- * legacy search-mapper.js which depends on state.js Proxy globals.
+ * The orchestrator composes four single-responsibility modules:
+ *   - semantic-search-types.ts: shared interfaces (RawServiceRow, etc.)
+ *   - semantic-search-mapper.ts: Row → SearchResult + pagination math
+ *   - mock-search-fallback.ts: static dev data + scoring + env flags
+ *   - local-search-index.ts: 8,406-record inverted-index search
+ *
+ * Each module is pure-TS where possible (no Svelte store mutation, no
+ * network), so it can be unit-tested in isolation. The orchestrator owns
+ * the cache, dedup, and routing logic.
  */
+
 import type { SearchResult } from '@lib/types/state'
 import { rerankResults } from '@lib/utils/rerank'
 import { searchUseRerank } from '@lib/stores/search.svelte'
 import { get } from 'svelte/store'
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
-import { getBusinessRecords } from '@lib/data-store'
-import type { BusinessRecord } from '@lib/types/business'
-import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search-cache'
+import {
+    getCachedSearch,
+    setCachedSearch,
+    getPendingSearch,
+    setPendingSearch
+} from '@lib/search-cache'
 
-// ── Result Mapping (pure TS, no legacy state dependency) ──────────────────────
+import {
+    PAGE_SIZE,
+    normalizeSearchPage,
+    normalizeSearchOffset,
+    normalizeSearchLimit,
+    mapServiceRow,
+    getPayloadResults
+} from '@lib/search/semantic-search-mapper'
+import type { RawServiceRow, SemanticSearchPayload } from '@lib/search/semantic-search-types'
+import {
+    performMockSearch,
+    canUseStaticDevFallback,
+    shouldSurfaceApiFailures,
+    shouldBypassApiSearch
+} from '@lib/search/mock-search-fallback'
+import {
+    performLocalIndexSearch,
+    localHitsToResults,
+    getSearchEngineEmptyStateSuggestions,
+    shouldPreferLiveSearch
+} from '@lib/search/local-search-index'
 
-interface RawServiceRow {
-    lead_id?: string
-    name?: string
-    index?: number
-    score?: number
-    semantic_score?: number
-    category?: string
-    public_note?: string
-    public_detail?: string
-    address?: string
-    naics?: string
-    isMock?: boolean
-    [key: string]: unknown
-}
+// Re-export the empty-state helper so its existing import path is preserved.
+export { getSearchEngineEmptyStateSuggestions }
 
-export interface SemanticSearchPayload {
-    ok: boolean
-    query?: string
-    results?: unknown[]
-    is_mock?: boolean
-    dev_mode?: string
-    error?: string
-    [key: string]: unknown
-}
+// ── Rerank Gate ──────────────────────────────────────────────────────────────
 
 /**
- * Extract the results array from the API payload.
+ * Determine whether the rerank step should run.
+ * Priority: URL param > localStorage > store flag > default (off).
  */
-function getPayloadResults(payload: unknown): RawServiceRow[] {
-    if (!payload || typeof payload !== 'object') return []
-    const p = payload as Record<string, unknown>
-    const raw = (p.results ?? p.data ?? []) as unknown[]
-    return Array.isArray(raw) ? (raw.filter(Boolean) as RawServiceRow[]) : []
+function shouldApplyRerank(): boolean {
+    try {
+        // 1. URL param ?rerank=1 → force-on for QA
+        if (typeof window !== 'undefined' && window.location) {
+            const params = new URLSearchParams(window.location.search || '')
+            if (params.get('rerank') === '1') return true
+        }
+        // 2. localStorage power-user opt-in
+        if (typeof localStorage !== 'undefined' && localStorage.getItem('semantic_explorer_rerank_v1') === '1') {
+            return true
+        }
+        // 3. Store flag (A/B test toggle, default false)
+        return get(searchUseRerank)
+    } catch {
+        return false
+    }
 }
 
-// ── Pagination ─────────────────────────────────────────────────────────────────
-
-/** Default page size for search results. */
-const PAGE_SIZE = 18
-
-function normalizeSearchPage(page: number): number {
-    return Number.isFinite(page) ? Math.max(0, Math.floor(page)) : 0
-}
-
-function normalizeSearchOffset(page: number, offset: number): number {
-    const explicitOffset = Number.isFinite(offset) ? Math.max(0, Math.floor(offset)) : 0
-    if (explicitOffset > 0) return explicitOffset
-    return normalizeSearchPage(page) * PAGE_SIZE
-}
-
-function normalizeSearchLimit(limit: number): number {
-    return Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : PAGE_SIZE
-}
+// ── Direct API fetch ─────────────────────────────────────────────────────────
 
 async function fetchSemanticSearchResultsDirect(
     query: string,
@@ -132,7 +137,7 @@ async function fetchSemanticSearchResultsDirect(
 
         const rawRows = getPayloadResults(payload)
         return rawRows
-            .map((row, idx) => mapServiceRow(row, idx))
+            .map((row: RawServiceRow, idx: number) => mapServiceRow(row, idx))
             .filter((r): r is SearchResult => r !== null)
             .slice(0, safeLimit)
     } catch (err) {
@@ -150,699 +155,6 @@ async function fetchSemanticSearchResultsDirect(
     } finally {
         window.clearTimeout(timeoutId)
         signal?.removeEventListener('abort', onAbort)
-    }
-}
-
-/**
- * Map a single raw service row to a typed SearchResult.
- * Pure function — reads only the row fields, no state dependency.
- */
-function mapServiceRow(row: RawServiceRow, order: number): SearchResult | null {
-    // Need at least a name or lead_id to produce a result
-    if (!row || (!row.name && !row.lead_id)) return null
-
-    return {
-        id: String(row.lead_id ?? row.name ?? `result-${order}`),
-        name: String(row.name || row.lead_id || 'Unknown'),
-        index: order,
-        score: Number(row.score ?? row.semantic_score ?? 0),
-        category: String(row.category ?? ''),
-        snippet: String(row.public_note ?? row.public_detail ?? row.address ?? ''),
-        point: {
-            name: row.name ? String(row.name) : undefined,
-            what:
-                row.public_note || row.public_detail || row.address
-                    ? String(row.public_note ?? row.public_detail ?? row.address ?? '')
-                    : undefined,
-            city: row.city ? String(row.city) : undefined,
-            website: row.website ? String(row.website) : undefined,
-            email: row.email ? String(row.email) : undefined,
-            phone: row.phone ? String(row.phone) : undefined
-        }
-    }
-}
-
-// ── Mock Fallback ─────────────────────────────────────────────────────────────
-
-interface MockBusiness {
-    id: string
-    name: string
-    index: number
-    category: string
-    snippet: string
-    keywords: string[]
-}
-
-const MOCK_BUSINESSES: readonly MockBusiness[] = [
-    {
-        id: 'b-001',
-        name: 'Conroe Coffee Roasters',
-        index: 42,
-        category: 'Food & Beverage',
-        snippet: 'Specialty coffee roasting in downtown Conroe',
-        keywords: ['coffee', 'roasters', 'conroe', 'beverage', 'cafe']
-    },
-    {
-        id: 'b-002',
-        name: 'Lone Star HVAC Solutions',
-        index: 187,
-        category: 'Home Services',
-        snippet: 'Residential and commercial HVAC installation and repair',
-        keywords: ['hvac', 'lone', 'star', 'heating', 'cooling', 'air']
-    },
-    {
-        id: 'b-003',
-        name: 'The Woodlands Dental Group',
-        index: 312,
-        category: 'Healthcare',
-        snippet: 'General and cosmetic dentistry serving The Woodlands area',
-        keywords: ['dental', 'dentist', 'woodlands', 'healthcare', 'teeth']
-    },
-    {
-        id: 'b-004',
-        name: 'Montgomery County Auto Body',
-        index: 55,
-        category: 'Automotive',
-        snippet: 'Full-service collision repair and paint matching',
-        keywords: ['auto', 'body', 'montgomery', 'car', 'repair', 'paint']
-    },
-    {
-        id: 'b-005',
-        name: 'Cypress Creek Landscape Design',
-        index: 203,
-        category: 'Home Services',
-        snippet: 'Custom landscape architecture and irrigation systems',
-        keywords: ['landscape', 'creek', 'design', 'garden', 'irrigation']
-    },
-    {
-        id: 'b-006',
-        name: 'Magnolia BBQ & Catering',
-        index: 78,
-        category: 'Food & Beverage',
-        snippet: 'Texas-style barbecue with full-service catering',
-        keywords: ['bbq', 'barbecue', 'magnolia', 'catering', 'food']
-    },
-    {
-        id: 'b-007',
-        name: 'TX Legal Associates',
-        index: 441,
-        category: 'Professional Services',
-        snippet: 'Business law, estate planning, and real estate closings',
-        keywords: ['legal', 'law', 'attorney', 'tx', 'texas', 'lawyer']
-    },
-    {
-        id: 'b-008',
-        name: 'Spring Community Pharmacy',
-        index: 129,
-        category: 'Healthcare',
-        snippet: 'Independent pharmacy with compounding and delivery services',
-        keywords: ['pharmacy', 'spring', 'drug', 'medication', 'health']
-    },
-    {
-        id: 'b-009',
-        name: 'Conroe Construction Partners',
-        index: 610,
-        category: 'Construction',
-        snippet: 'Commercial and residential general contracting',
-        keywords: ['construction', 'conroe', 'contractor', 'builder', 'build']
-    },
-    {
-        id: 'b-010',
-        name: 'Lake Conroe Marina & Boat Works',
-        index: 24,
-        category: 'Recreation',
-        snippet: 'Boat storage, slip rental, and marine repair on Lake Conroe',
-        keywords: ['marina', 'boat', 'lake', 'conroe', 'marine', 'water']
-    },
-    {
-        id: 'b-011',
-        name: 'Woodlands Tech Consulting',
-        index: 388,
-        category: 'Professional Services',
-        snippet: 'IT infrastructure, cloud migration, and managed services',
-        keywords: ['tech', 'technology', 'consulting', 'woodlands', 'IT']
-    },
-    {
-        id: 'b-012',
-        name: 'Piney Woods Pet Grooming',
-        index: 95,
-        category: 'Animal Services',
-        snippet: 'Full grooming, boarding, and daycare for dogs and cats',
-        keywords: ['pet', 'grooming', 'dog', 'cat', 'animal', 'piney']
-    },
-    {
-        id: 'b-013',
-        name: 'Montgomery Tax Services',
-        index: 501,
-        category: 'Professional Services',
-        snippet: 'Individual and business tax preparation, IRS representation',
-        keywords: ['tax', 'taxes', 'montgomery', 'accounting', 'irs']
-    },
-    {
-        id: 'b-014',
-        name: 'Greater Houston Flooring',
-        index: 167,
-        category: 'Home Services',
-        snippet: 'Hardwood, tile, and luxury vinyl plank installation',
-        keywords: ['flooring', 'floor', 'tile', 'hardwood', 'houston']
-    },
-    {
-        id: 'b-015',
-        name: 'Panther Creek Urgent Care',
-        index: 290,
-        category: 'Healthcare',
-        snippet: 'Walk-in clinic with X-ray and lab testing on-site',
-        keywords: ['urgent', 'care', 'clinic', 'panther', 'medical']
-    },
-    {
-        id: 'b-016',
-        name: 'Cafe Ole on the Square',
-        index: 11,
-        category: 'Food & Beverage',
-        snippet: 'Tex-Mex breakfast and lunch in historic downtown Conroe',
-        keywords: ['cafe', 'mexican', 'food', 'conroe', 'square', 'breakfast']
-    },
-    {
-        id: 'b-017',
-        name: 'Woodlands Orthodontics',
-        index: 420,
-        category: 'Healthcare',
-        snippet: 'Braces, Invisalign, and pediatric orthodontics',
-        keywords: ['orthodontics', 'braces', 'invisalign', 'woodlands', 'dental']
-    },
-    {
-        id: 'b-018',
-        name: 'Conroe Ace Hardware',
-        index: 33,
-        category: 'Retail',
-        snippet: 'Neighborhood hardware store with paint and tool rental',
-        keywords: ['hardware', 'ace', 'conroe', 'store', 'retail', 'paint']
-    },
-    {
-        id: 'b-019',
-        name: 'Twisted T Iron Works',
-        index: 577,
-        category: 'Construction',
-        snippet: 'Custom wrought iron gates, railings, and decorative metalwork',
-        keywords: ['iron', 'wrought', 'metal', 'fence', 'gate', 'twisted']
-    },
-    {
-        id: 'b-020',
-        name: 'Harvest Green Veterinary Clinic',
-        index: 305,
-        category: 'Animal Services',
-        snippet: 'Full-service veterinary care with emergency hours',
-        keywords: ['veterinary', 'vet', 'clinic', 'harvest', 'animal']
-    }
-]
-
-function sleep(ms: number, signal: AbortSignal): Promise<void> {
-    return new Promise<void>((resolve, reject) => {
-        if (signal.aborted) {
-            reject(new DOMException('Aborted', 'AbortError'))
-            return
-        }
-        const timer = setTimeout(resolve, ms)
-        const onAbort = (): void => {
-            clearTimeout(timer)
-            signal.removeEventListener('abort', onAbort)
-            reject(new DOMException('Aborted', 'AbortError'))
-        }
-        signal.addEventListener('abort', onAbort, { once: true })
-    })
-}
-
-function scoreBusiness(biz: MockBusiness, queryLower: string): number {
-    const nameLower = biz.name.toLowerCase()
-    if (nameLower.includes(queryLower)) return 0.85 + (nameLower.startsWith(queryLower) ? 0.15 : 0)
-    let keywordHits = 0
-    for (const kw of biz.keywords) {
-        if (kw.startsWith(queryLower)) keywordHits += 2
-        else if (kw.includes(queryLower)) keywordHits += 1
-    }
-    if (keywordHits === 0) return biz.category.toLowerCase().includes(queryLower) ? 0.45 : 0
-    return Math.min(0.8, 0.2 + keywordHits * 0.12)
-}
-
-function performMockSearch(query: string, signal: AbortSignal, offset = 0, limit = 10): Promise<SearchResult[]> {
-    const trimmed = query.trim()
-    if (trimmed.length < 2) return Promise.resolve([])
-    const queryLower = trimmed.toLowerCase()
-    const scored = MOCK_BUSINESSES.map((biz) => ({ biz, score: scoreBusiness(biz, queryLower) }))
-        .filter((entry) => entry.score > 0)
-        .sort((a, b) => b.score - a.score || a.biz.name.localeCompare(b.biz.name))
-    return sleep(165, signal).then(() =>
-        scored.slice(offset, offset + limit).map(({ biz, score }) => ({
-            id: biz.id,
-            name: biz.name,
-            index: biz.index,
-            score,
-            category: biz.category,
-            snippet: biz.snippet
-        }))
-    )
-}
-
-function canUseStaticDevFallback(): boolean {
-    if (typeof window === 'undefined' || !window.location) return false
-    const host = window.location.hostname
-    if (!['localhost', '127.0.0.1', '::1', '0.0.0.0'].includes(host)) return false
-    const params = new URLSearchParams(window.location.search || '')
-    return !(params.get('staticDev') === '0')
-}
-
-function shouldSurfaceApiFailures(): boolean {
-    if (typeof window === 'undefined' || !window.location) return false
-    const params = new URLSearchParams(window.location.search || '')
-    return params.get('staticDev') === '0'
-}
-
-function shouldBypassApiSearch(): boolean {
-    if (typeof window === 'undefined' || !window.location) return false
-    if (shouldSurfaceApiFailures()) return false
-    try {
-        if (window.sessionStorage.getItem('api_unreachable') === '1') return true
-    } catch (error) {
-        debugWarn('[search-engine] storage disabled or forbidden in iframe:', error)
-    }
-    const params = new URLSearchParams(window.location.search || '')
-    const bypass = params.get('staticOnly') === '1' || params.get('offline') === '1' || params.get('noApi') === '1'
-    if (bypass) {
-        try {
-            window.sessionStorage.setItem('api_unreachable', '1')
-        } catch (error) {
-            debugWarn('[search-engine] session storage write-blocked:', error)
-        }
-        return true
-    }
-    return false
-}
-
-// ── Local Index Search (8,406-record fallback) ────────────────────────────────
-
-/**
- * A single normalized token entry in the local index.
- * Each record contributes one entry per token; we score by token-frequency.
- */
-interface LocalIndexToken {
-    /** The 0-based record index in `businessRecords`. */
-    recordIndex: number
-    /** Which field this token came from (boosts name hits). */
-    field: 'name' | 'what' | 'category' | 'city'
-}
-
-/**
- * The local index: maps lowercased token → list of (recordIndex, field) hits.
- * Built lazily on first call, rebuilt if the records array identity changes.
- */
-let _localIndex: Map<string, LocalIndexToken[]> | null = null
-let _localIndexRecordCount = -1
-let _localIndexRecordRef: readonly BusinessRecord[] | null = null
-
-function tokenize(value: string | null | undefined): string[] {
-    if (!value || typeof value !== 'string') return []
-    return value
-        .toLowerCase()
-        .replace(/[^a-z0-9\s]/g, ' ')
-        .split(/\s+/)
-        .filter((token) => token.length > 0)
-}
-
-function buildLocalIndex(records: readonly BusinessRecord[]): Map<string, LocalIndexToken[]> {
-    const index = new Map<string, LocalIndexToken[]>()
-    for (let i = 0; i < records.length; i++) {
-        const record = records[i]
-        if (!record) continue
-        const seenForRecord = new Set<string>()
-        for (const field of ['name', 'what', 'category', 'city'] as const) {
-            const tokens = tokenize(record[field])
-            for (const token of tokens) {
-                // Dedupe per (record, token) pair so "Pizza Pizza" doesn't double-count.
-                const dedupeKey = `${field}:${token}`
-                if (seenForRecord.has(dedupeKey)) continue
-                seenForRecord.add(dedupeKey)
-                const bucket = index.get(token)
-                if (bucket) {
-                    bucket.push({ recordIndex: i, field })
-                } else {
-                    index.set(token, [{ recordIndex: i, field }])
-                }
-            }
-        }
-    }
-    return index
-}
-
-function getLocalIndex(): { index: Map<string, LocalIndexToken[]>; records: readonly BusinessRecord[] } | null {
-    const records = getBusinessRecords()
-    if (!Array.isArray(records) || records.length === 0) return null
-    if (_localIndex && _localIndexRecordCount === records.length && _localIndexRecordRef === records) {
-        return { index: _localIndex, records }
-    }
-    _localIndex = buildLocalIndex(records)
-    _localIndexRecordCount = records.length
-    _localIndexRecordRef = records
-    return { index: _localIndex, records }
-}
-
-/**
- * Cheap Levenshtein distance with an early-exit threshold. Bails out
- * (returns Infinity) as soon as the partial distance exceeds `max`.
- */
-function levenshteinCapped(a: string, b: string, max: number): number {
-    if (a === b) return 0
-    const aLen = a.length
-    const bLen = b.length
-    if (Math.abs(aLen - bLen) > max) return Infinity
-    if (aLen === 0) return bLen
-    if (bLen === 0) return aLen
-
-    // Single-row rolling Levenshtein.
-    let prev = new Array(bLen + 1)
-    let curr = new Array(bLen + 1)
-    for (let j = 0; j <= bLen; j++) prev[j] = j
-
-    for (let i = 1; i <= aLen; i++) {
-        curr[0] = i
-        let rowMin = curr[0]
-        const aChar = a.charCodeAt(i - 1)
-        for (let j = 1; j <= bLen; j++) {
-            const cost = aChar === b.charCodeAt(j - 1) ? 0 : 1
-            curr[j] = Math.min(
-                prev[j] + 1, // deletion
-                curr[j - 1] + 1, // insertion
-                prev[j - 1] + cost // substitution
-            )
-            if (curr[j] < rowMin) rowMin = curr[j]
-        }
-        if (rowMin > max) return Infinity
-        ;[prev, curr] = [curr, prev]
-    }
-    return prev[bLen]
-}
-
-interface ScoredHit {
-    recordIndex: number
-    score: number
-    fieldBoost: number
-}
-
-/**
- * Score a record against the query. Returns null if the record doesn't match.
- *
- * Priority: exact name > name prefix > whole-word token match > substring.
- */
-function scoreRecord(record: BusinessRecord, query: string, queryTokens: string[]): ScoredHit | null {
-    const nameLower = (record.name || '').toLowerCase().trim()
-    const whatLower = (record.what || '').toLowerCase().trim()
-    const categoryLower = (record.category || '').toLowerCase().trim()
-    const cityLower = (record.city || '').toLowerCase().trim()
-
-    // Field boost: name matches are the strongest signal.
-    const fieldBoost = (field: 'name' | 'what' | 'category' | 'city'): number => {
-        if (field === 'name') return 3.0
-        if (field === 'what') return 1.6
-        if (field === 'category') return 1.2
-        return 0.9 // city
-    }
-
-    let total = 0
-    let matchedAny = false
-
-    // 1. Exact name match (case-insensitive)
-    if (nameLower && nameLower === query) {
-        total += 1.0 * fieldBoost('name')
-        matchedAny = true
-    } else if (nameLower && nameLower.startsWith(query)) {
-        // 2. Name prefix match
-        total += 0.78 * fieldBoost('name')
-        matchedAny = true
-    }
-
-    // 3. Whole-word token match across fields
-    for (const token of queryTokens) {
-        if (nameLower && nameLower.split(/\s+/).includes(token)) {
-            total += 0.62 * fieldBoost('name')
-            matchedAny = true
-        }
-        if (whatLower && whatLower.split(/\s+/).includes(token)) {
-            total += 0.32 * fieldBoost('what')
-            matchedAny = true
-        }
-        if (categoryLower && categoryLower.split(/\s+/).includes(token)) {
-            total += 0.28 * fieldBoost('category')
-            matchedAny = true
-        }
-        if (cityLower && cityLower.split(/\s+/).includes(token)) {
-            total += 0.2 * fieldBoost('city')
-            matchedAny = true
-        }
-    }
-
-    // 4. Substring fallback (only if no other match)
-    if (!matchedAny) {
-        if (nameLower && nameLower.includes(query)) {
-            total += 0.55 * fieldBoost('name')
-            matchedAny = true
-        } else if (whatLower && whatLower.includes(query)) {
-            total += 0.42 * fieldBoost('what')
-            matchedAny = true
-        } else if (categoryLower && categoryLower.includes(query)) {
-            total += 0.38 * fieldBoost('category')
-            matchedAny = true
-        } else if (cityLower && cityLower.includes(query)) {
-            total += 0.3 * fieldBoost('city')
-            matchedAny = true
-        }
-    }
-
-    if (!matchedAny) return null
-    // Light per-record length normalization so a single-token "LLC" name
-    // doesn't dominate. Short records with the term in the name are best.
-    const nameLength = nameLower.length || 1
-    const lengthPenalty = Math.min(1.0, 18 / Math.max(18, nameLength))
-    return {
-        recordIndex: -1, // set by caller
-        score: total * lengthPenalty,
-        fieldBoost: 1
-    }
-}
-
-/**
- * Apply a single-token typo-tolerant search: if the literal token has zero
- * hits, look for tokens within Levenshtein distance N (1 for short, 2 for
- * long) and treat those as fuzzy matches. Returns a Map from fuzzy
- * token → list of (recordIndex, field) entries.
- */
-function expandFuzzyMatches(
-    index: Map<string, LocalIndexToken[]>,
-    token: string
-): { fuzzyToken: string; hits: LocalIndexToken[] }[] {
-    if (token.length < 3) return []
-    const maxDistance = token.length <= 5 ? 1 : 2
-    const matches: { fuzzyToken: string; hits: LocalIndexToken[] }[] = []
-    // Linear scan is fine here: the index is small (8,406 unique tokens at
-    // most), and this only runs when the literal token has zero hits.
-    for (const [indexToken, hits] of index.entries()) {
-        if (Math.abs(indexToken.length - token.length) > maxDistance) continue
-        const distance = levenshteinCapped(token, indexToken, maxDistance)
-        if (Number.isFinite(distance) && distance > 0 && distance <= maxDistance) {
-            matches.push({ fuzzyToken: indexToken, hits })
-        }
-    }
-    return matches
-}
-
-interface LocalSearchHit {
-    recordIndex: number
-    score: number
-    field: 'name' | 'what' | 'category' | 'city'
-}
-
-/**
- * Walk the local index for a query, returning ranked hits.
- * Returns null when the index is unavailable (no records loaded yet) so
- * callers can decide to fall back to a different strategy.
- */
-function performLocalIndexSearch(query: string, offset = 0, limit = 18): LocalSearchHit[] | null {
-    const idx = getLocalIndex()
-    if (!idx) return null
-    const { index, records } = idx
-    const queryLower = query.toLowerCase().trim()
-    if (!queryLower) return []
-    const queryTokens = tokenize(queryLower)
-    if (queryTokens.length === 0) return []
-
-    // Aggregate score per record: name exact/prefix first, then whole-word,
-    // then substring. Fuzzy fallback for any token with zero literal hits.
-    const scored = new Map<number, LocalSearchHit>()
-
-    // 1. Exact name + name prefix (single-token query only — otherwise the
-    //    whole-word / substring paths handle it cleanly).
-    if (queryTokens.length === 1) {
-        const exact = index.get(queryLower)
-        if (exact) {
-            for (const hit of exact) {
-                if (hit.field !== 'name') continue
-                const existing = scored.get(hit.recordIndex)
-                const boost = existing ? existing.score : 0
-                scored.set(hit.recordIndex, {
-                    recordIndex: hit.recordIndex,
-                    score: boost + 1.0 * 3.0,
-                    field: hit.field
-                })
-            }
-        }
-    }
-
-    // 2. Walk every query token; for each, find exact index hits, then fuzzy
-    //    matches if the literal token has zero hits.
-    for (const token of queryTokens) {
-        const literal = index.get(token)
-        if (literal && literal.length > 0) {
-            for (const hit of literal) {
-                const fieldBoost =
-                    hit.field === 'name' ? 3.0 : hit.field === 'what' ? 1.6 : hit.field === 'category' ? 1.2 : 0.9
-                const weight = 0.62 * fieldBoost
-                const existing = scored.get(hit.recordIndex)
-                if (existing) {
-                    existing.score += weight
-                } else {
-                    scored.set(hit.recordIndex, {
-                        recordIndex: hit.recordIndex,
-                        score: weight,
-                        field: hit.field
-                    })
-                }
-            }
-        } else {
-            // Fuzzy fallback
-            const fuzzyMatches = expandFuzzyMatches(index, token)
-            // Cap fuzzy results so a noisy expansion doesn't dominate. Take the
-            // top 5 closest by edit distance.
-            fuzzyMatches.sort((a, b) => a.fuzzyToken.length - b.fuzzyToken.length)
-            const cap = fuzzyMatches.slice(0, 5)
-            for (const fuzzy of cap) {
-                for (const hit of fuzzy.hits) {
-                    const fieldBoost =
-                        hit.field === 'name' ? 3.0 : hit.field === 'what' ? 1.6 : hit.field === 'category' ? 1.2 : 0.9
-                    // Fuzzy hits get ~0.55x the weight of exact hits, plus a distance
-                    // penalty so a closer match ranks above a farther one.
-                    const distance = levenshteinCapped(token, fuzzy.fuzzyToken, 2)
-                    const distanceMultiplier = Number.isFinite(distance) ? 1 / (1 + distance) : 0.4
-                    const weight = 0.55 * fieldBoost * distanceMultiplier
-                    const existing = scored.get(hit.recordIndex)
-                    if (existing) {
-                        existing.score += weight
-                    } else {
-                        scored.set(hit.recordIndex, {
-                            recordIndex: hit.recordIndex,
-                            score: weight,
-                            field: hit.field
-                        })
-                    }
-                }
-            }
-        }
-    }
-
-    // 3. Substring fallback: if no whole-word hits scored > 0, scan for
-    //    substring matches across name/what/category/city.
-    if (scored.size === 0 && queryLower.length >= 2) {
-        for (let i = 0; i < records.length; i++) {
-            const record = records[i]
-            if (!record) continue
-            const s = scoreRecord(record, queryLower, queryTokens)
-            if (s) {
-                scored.set(i, { recordIndex: i, score: s.score, field: 'name' })
-            }
-        }
-    }
-
-    // 4. Rank + return top 18.
-    const ranked = Array.from(scored.values()).sort((a, b) => b.score - a.score)
-    return ranked.slice(offset, offset + limit)
-}
-
-/**
- * Translate ranked local hits to the public SearchResult shape.
- */
-function localHitsToResults(hits: LocalSearchHit[]): SearchResult[] {
-    const records = getBusinessRecords()
-    const out: SearchResult[] = []
-    for (const hit of hits) {
-        const record = records[hit.recordIndex]
-        if (!record) continue
-        const name = record.name?.trim() || `Record ${hit.recordIndex}`
-        out.push({
-            id: record.lead_id || record.id || `record-${hit.recordIndex}`,
-            name,
-            index: hit.recordIndex,
-            score: Math.min(1, hit.score / 4.5), // normalize to a 0-1 confidence
-            category: record.category || '',
-            snippet: record.what || ''
-        })
-    }
-    return out
-}
-
-/**
- * Get the top 5 most-common categories in the live records, used to
- * populate the empty-state suggestion chips. Returns [] when the records
- * aren't loaded yet.
- */
-export function getSearchEngineEmptyStateSuggestions(): string[] {
-    const records = getBusinessRecords()
-    if (!Array.isArray(records) || records.length === 0) return []
-    const counts = new Map<string, number>()
-    for (const record of records) {
-        const category = (record.category || '').trim()
-        if (!category) continue
-        counts.set(category, (counts.get(category) ?? 0) + 1)
-    }
-    return Array.from(counts.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([category]) => category)
-}
-
-/**
- * When `VITE_USE_LIVE_SEARCH === '1'`, the API is treated as the source of
- * truth and we only use the local index when the API errors. When unset
- * (the dev/static-dev default), the local index is always preferred because
- * the API is unreachable in those environments. This keeps production
- * semantic ranking from regressing while making every dev query feel alive.
- */
-function shouldPreferLiveSearch(): boolean {
-    try {
-        const flag = (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_USE_LIVE_SEARCH
-        return flag === '1' || flag === 'true'
-    } catch {
-        return false
-    }
-}
-
-// ── Rerank Gate ──────────────────────────────────────────────────────────────
-
-/**
- * Determine whether the rerank step should run.
- * Priority: URL param > localStorage > store flag > default (off).
- */
-function shouldApplyRerank(): boolean {
-    try {
-        // 1. URL param ?rerank=1 → force-on for QA
-        if (typeof window !== 'undefined' && window.location) {
-            const params = new URLSearchParams(window.location.search || '')
-            if (params.get('rerank') === '1') return true
-        }
-        // 2. localStorage power-user opt-in
-        if (typeof localStorage !== 'undefined' && localStorage.getItem('semantic_explorer_rerank_v1') === '1') {
-            return true
-        }
-        // 3. Store flag (A/B test toggle, default false)
-        return get(searchUseRerank)
-    } catch {
-        return false
     }
 }
 
@@ -982,21 +294,18 @@ async function _executeSearch(
             }
         }
 
-        // Mock fallback
-        if (results.length === 0) {
+        // Mock fallback (last resort — only the static-dev path uses this)
+        if (results.length === 0 && canUseStaticDevFallback()) {
             results = await performMockSearch(trimmed, signal, offset, limit)
         }
-    }
 
-    // ── Rerank step ──────────────────────────────────────────────────────────
-    // Re-ranks top results via NIM when enabled. Runs AFTER all result paths
-    // converge and BEFORE caching. The rerank is a nice-to-have: on any failure
-    // the original results are returned unchanged by rerankResults() itself.
-    if (results.length > 0 && shouldApplyRerank()) {
-        try {
-            results = await rerankResults(trimmed, results)
-        } catch (error) {
-            debugWarn('[search-engine] rerankResults threw (belt-and-suspenders catch, should not happen):', error)
+        // Optional rerank
+        if (results.length > 0 && shouldApplyRerank()) {
+            try {
+                results = await rerankResults(trimmed, results)
+            } catch (err) {
+                debugWarn('[search-engine] rerank step failed; returning unreranked results:', err)
+            }
         }
     }
 
