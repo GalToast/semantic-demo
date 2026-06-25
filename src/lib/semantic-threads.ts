@@ -167,10 +167,12 @@ async function getWorker(): Promise<Worker | null> {
 async function _pingWorker(worker: Worker, timeoutMs: number): Promise<boolean> {
     return new Promise((resolve) => {
         const pingId = `__ping_${Date.now()}`
-        let handler: (e: MessageEvent) => void
+        const handlerRef: { current: ((e: MessageEvent) => void) | null } = { current: null }
 
         const cleanup = (): void => {
-            worker.removeEventListener('message', handler)
+            if (handlerRef.current) {
+                worker.removeEventListener('message', handlerRef.current)
+            }
         }
 
         const timer = setTimeout(() => {
@@ -178,7 +180,7 @@ async function _pingWorker(worker: Worker, timeoutMs: number): Promise<boolean> 
             resolve(false)
         }, timeoutMs)
 
-        handler = (event: MessageEvent): void => {
+        handlerRef.current = (event: MessageEvent): void => {
             if (event.data?.type === 'PONG' && event.data?.pingId === pingId) {
                 clearTimeout(timer)
                 cleanup()
@@ -186,7 +188,7 @@ async function _pingWorker(worker: Worker, timeoutMs: number): Promise<boolean> 
             }
         }
 
-        worker.addEventListener('message', handler)
+        worker.addEventListener('message', handlerRef.current)
         worker.postMessage({ type: 'PING', pingId })
     })
 }
@@ -653,9 +655,8 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
             } catch (err) {
                 // Worker failed — do not fall back to main thread for >40 MB files.
                 _dataWorker = null
-                const cause = err instanceof Error ? err : new Error(String(err))
                 throw new Error('Worker-based thread loading failed (artifacts exceed main-thread budget).', {
-                    cause
+                    cause: err
                 })
             }
         } catch (error) {
