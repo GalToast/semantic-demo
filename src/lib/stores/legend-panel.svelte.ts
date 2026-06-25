@@ -247,7 +247,7 @@ export function closeLegendGuide(options: CloseLegendGuideOptions = {}): void {
     }
 }
 
-function restoreLegendCollapsedPanel(infoPanel: HTMLElement | null, panelBtn: HTMLElement | null): void {
+export function restoreLegendCollapsedPanel(infoPanel: HTMLElement | null, panelBtn: HTMLElement | null): void {
     if (!infoPanel) return
 
     if (!infoPanel.classList.contains('active')) {
@@ -346,4 +346,4 @@ function _setClusterFilter(cluster: number): void {
 
 // ── Re-export helpers needed by legend-bindings ───────────────────────────
 
-export { restoreLegendCollapsedPanel }
+// restoreLegendCollapsedPanel already exported above

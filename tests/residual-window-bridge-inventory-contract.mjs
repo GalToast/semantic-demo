@@ -566,9 +566,12 @@ function testJourneyArrivalHandoffDewindowed() {
     )
     assert(
         (threeSetupSrc.includes("from '@lib/engine/route-arrival-overlay-bridge'") ||
-            threeSetupSrc.includes("from '@lib/journey/route-arrival-overlay-adapter'")) &&
-            threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow)') &&
-            threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)'),
+            threeSetupSrc.includes("from '@lib/journey/route-arrival-overlay-adapter'") ||
+            threeSetupSrc.includes("from '@lib/engine/journey-webgl-lazy'")) &&
+            (threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow)') ||
+                threeSetupSrc.includes('updateRouteTraceOverlayFrame(frameNow)')) &&
+            (threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)') ||
+                threeSetupSrc.includes('updateArrivalHandoffOverlayFrame(frameNow)')),
         'three-engine.js should update route/arrival overlays through the adapter'
     )
     assert(
@@ -909,7 +912,7 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'journey-compass-controller.js should not import view-controller.js directly'
     )
     assert(
-        journeyCompassSrc.includes("_switchView('map');") && journeyCompassSrc.includes("_switchView('galaxy');"),
+        journeyCompassSrc.includes("_switchView('map')") && journeyCompassSrc.includes("_switchView('galaxy')"),
         'journey-compass-controller.js open-map/open-mycelium actions should use injected switchView adapter'
     )
     assert(

@@ -239,13 +239,13 @@ function testBuildRouteTraceMaterial() {
     // Must update time uniform in refreshRouteTraceOverlay
     assertContains(
         webglSrc,
-        'material.uniforms.time.value = now / 1000',
+        'material.uniforms.time!.value = now / 1000',
         'time uniform updated in updateRouteTraceOverlayPositions'
     )
 
     // Semantic dive mode must boost baseOpacity to 0.34
-    assertContains(webglSrc, 'baseOpacity.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34')
-    assertContains(webglSrc, 'opacity.value = 0.34', 'semantic dive mode boosts opacity to 0.34')
+    assertContains(webglSrc, 'baseOpacity!.value = 0.34', 'semantic dive mode boosts baseOpacity to 0.34')
+    assertContains(webglSrc, 'opacity!.value = 0.34', 'semantic dive mode boosts opacity to 0.34')
 
     console.log('  OK buildRouteTraceMaterial verified')
 }
@@ -323,7 +323,7 @@ function testThreadInspectorSemanticFirst() {
     // getThreadCandidatesForIndex must use semantic-first: return semantic if length > 0
     assertContains(
         journeyModelSrc,
-        'if (semanticCandidates.length) return semanticCandidates;',
+        'if (semanticCandidates.length) return semanticCandidates',
         'journey-thread-model: semantic-first strategy'
     )
 
@@ -557,7 +557,7 @@ function testJourneyWebglLineShaderOwnership() {
     const hasThreeForm2 = webglSrc.includes('return new THREE.ShaderMaterial({')
     const hasBareForm2 = webglSrc.includes('return new ShaderMaterial({')
     assert(hasThreeForm2 || hasBareForm2, 'route trace returns ShaderMaterial')
-    assertContains(webglSrc, 'material.uniforms.time.value = now / 1000;', 'route trace updates direct uniforms')
+    assertContains(webglSrc, 'material.uniforms.time!.value = now / 1000', 'route trace updates direct uniforms')
 
     // Focus semantic lines use LineMaterial; onBeforeCompile must retain the
     // compiled shader handle for custom uniforms, and all update paths must guard it.
@@ -592,12 +592,12 @@ function testJourneyWebglLineShaderOwnership() {
     )
     assertContains(
         webglSemanticSrc,
-        'line.material?.userData?.shader',
-        'updateFocusSemanticOverlayPositions guards line.material.userData.shader'
+        'mat?.userData?.shader',
+        'updateFocusSemanticOverlayPositions guards mat (line.material) userData.shader'
     )
     assertContains(
         webglSemanticSrc,
-        'if (!reducedMotion && line.material?.uniforms?.time)',
+        'if (!reducedMotion && mat?.uniforms?.time)',
         'updateFocusSemanticOverlayPositions keeps direct-uniform fallback'
     )
 

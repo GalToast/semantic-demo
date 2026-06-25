@@ -752,6 +752,16 @@ export function exploreThreadNeighbor(
 // historically resolved them through thread-inspector (legacy js/modules/thread-inspector.ts)
 // still see them via substring references in source-only contracts.
 export { getStrandArrivalNote } from '@lib/journey/thread-settler'
+export {
+    getSemanticThreadCandidates,
+    getGeometricThreadCandidates,
+    getThreadCandidatesForIndex
+} from '@lib/journey/thread-model'
+export {
+    syncInspectedStrandOverlay,
+    updateInspectedStrandOverlay,
+    disposeInspectedStrandOverlay
+} from '@lib/engine/journey-webgl-lazy'
 
 // ── Wave70 dewindowing notes ────────────────────────────────────────────────────────────────
 // All thread-inspection surfaces route through direct named exports
