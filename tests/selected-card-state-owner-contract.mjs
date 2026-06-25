@@ -123,8 +123,12 @@ const mirrorWrites = (mirrorSource.match(WRITE_REGEX) ?? []).length
 
 if (failures === 0) {
     console.log('PASS: no module writes appState.selectedPoint outside owner/mirror')
-    console.log(`  - Owner module: src/lib/journey/selected-card.ts (${ownerWrites} direct writes — should be 0; all routed via focusOnPoint)`)
-    console.log(`  - Mirror module: src/lib/stores/focus.svelte.ts (${mirrorWrites} direct writes inside .update() callbacks)`)
+    console.log(
+        `  - Owner module: src/lib/journey/selected-card.ts (${ownerWrites} direct writes — should be 0; all routed via focusOnPoint)`
+    )
+    console.log(
+        `  - Mirror module: src/lib/stores/focus.svelte.ts (${mirrorWrites} direct writes inside .update() callbacks)`
+    )
     console.log(`  - Public API: ${requiredOwnerExports.join(', ')}`)
     console.log(`  - Scanned TS modules under ${relative(join(__dirname, '..'), MODULES_DIR)}`)
     process.exit(0)

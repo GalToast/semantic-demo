@@ -45,12 +45,13 @@ function countAnyOccurrences(source: string): number {
 }
 
 describe('W47-Bite-Continued / thread-inspector.ts / threadCandidates typing', () => {
-    it('any count is reduced from 23 baseline to ≤17 (post-tightening baseline)', () => {
+    it('any count is reduced from 23 baseline to ≤12 (post-W48-Phase-3 baseline)', () => {
         const source = readSource('src/lib/journey/thread-inspector.ts')
         const count = countAnyOccurrences(source)
-        // Tightened to 17 in this bite (was 23, a 26% reduction).
-        // Lock-in: must not regress back to the 23 baseline.
-        expect(count, `thread-inspector.ts has ${count} any occurrences (lock-in target ≤17)`).toBeLessThanOrEqual(17)
+        // Tightened to 12 in W48-Phase-3 (was 23 → 17 in W47-Bite-Continued,
+        // a 48% total reduction). Lock-in: must not regress past the W47 baseline
+        // of 17 OR the W48 baseline of 12.
+        expect(count, `thread-inspector.ts has ${count} any occurrences (lock-in target ≤12)`).toBeLessThanOrEqual(12)
     })
 
     it('all 3 reader sites use ThreadCandidateRef[] (no longer `as any[]`)', () => {
@@ -93,10 +94,10 @@ describe('W47-Bite-Continued / thread-inspector.ts / threadCandidates typing', (
         expect(source).toMatch(/typeof\s+\w+\s*===\s*['"]number['"]/)
     })
 
-    it('lock-in: 6 specific occurrences removed (3 + 2 + 1)', () => {
+    it('lock-in: 11 specific occurrences removed (23 baseline → 12)', () => {
         const source = readSource('src/lib/journey/thread-inspector.ts')
         const count = countAnyOccurrences(source)
-        // 23 baseline - 6 removed = 17. Lock-in: must be ≤17.
-        expect(count).toBeLessThanOrEqual(17)
+        // 23 baseline - 11 removed = 12. Lock-in: must be ≤12 (cannot regress past W47 ≤17 either).
+        expect(count).toBeLessThanOrEqual(12)
     })
 })

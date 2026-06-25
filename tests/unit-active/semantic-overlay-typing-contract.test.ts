@@ -50,7 +50,8 @@ describe('semantic-overlay — typing contract (W47-Bite-C tightening)', () => {
     const stripped = stripComments(src)
 
     it('any occurrence count is 0 (post-W48 tightening)', () => {
-        const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
+        // Strip comments so prose like "as any" in docstrings doesn't count.
+        const matches = stripped.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
         // W48: Removed the _state escape-hatch alias, added typed
         // SemanticLineMaterial interface for LineMaterial custom uniforms,
         // and removed color-constant any casts. All 37 prior any usages
@@ -81,7 +82,9 @@ describe('semantic-overlay — typing contract (W47-Bite-C tightening)', () => {
         // W48: The _state escape-hatch alias was removed in favor of
         // direct typed state access + a local SemanticLineMaterial
         // interface. All any casts were removed.
-        const lines = src.split('\n')
+        // Strip comments first so prose like `as any` in docstrings doesn't count.
+        const codeOnly = stripComments(src)
+        const lines = codeOnly.split('\n')
         let aliasCount = 0
         let otherAsAny = 0
         for (const line of lines) {

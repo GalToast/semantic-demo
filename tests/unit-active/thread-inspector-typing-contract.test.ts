@@ -68,13 +68,14 @@ describe('thread-inspector — typing contract (W47-Bite-D tightening)', () => {
     const src = readSource(SRC_PATH)
     const stripped = stripComments(src)
 
-    it('any occurrence count is 21 (post-tightening baseline)', () => {
-        const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // 21 = the post-Bite-D baseline. Was 22 before this bite.
-        // If a future contributor adds a new any, this test fails
-        // and forces them to either tighten or update the documented
-        // baseline.
-        expect(matches.length).toBe(21)
+    it('any occurrence count is 0 (post-W48-Phase-3 baseline; was 21)', () => {
+        // Strip comments so prose like "as any" in docstrings doesn't count.
+        const matches = stripped.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
+        // 0 = post-W48-Phase-3 baseline (was 21 after Bite-D; the
+        // full reduction came from W48-Phase-3 tightening wave —
+        // ThreadCandidateRef.role/relationshipRole were added to
+        // the canonical type, allowing all casts to be removed).
+        expect(matches.length).toBe(0)
     })
 
     it('no `(inspectionState as any)` cast remains at the syncInspectedStrandOverlay call site', () => {

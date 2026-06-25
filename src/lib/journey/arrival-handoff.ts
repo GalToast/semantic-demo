@@ -30,10 +30,10 @@ import {
 
 export function removeArrivalHandoffOverlay(): void {
     if (!state.arrivalHandoffGroup) return
-    const scene = state.scene as { remove?: (obj: any) => void } | null
+    const scene = state.scene as { remove?: (obj: Object3D) => void } | null
     scene?.remove?.(state.arrivalHandoffGroup)
-    const group = state.arrivalHandoffGroup as { traverse?: (cb: (child: any) => void) => void }
-    group.traverse?.((child: any) => disposeLineObject(child))
+    const group = state.arrivalHandoffGroup as { traverse?: (cb: (child: Object3D) => void) => void }
+    group.traverse?.((child: Object3D) => disposeLineObject(child))
     state.arrivalHandoffGroup = null
     withStateMutation(() => {
         state.arrivalHandoffDiagnostics = {
@@ -51,7 +51,7 @@ export function removeArrivalHandoffOverlay(): void {
 export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: number): void {
     const from = getNodeVector(fromIndex)
     const to = getNodeVector(targetIndex)
-    const scene = state.scene as { add?: (obj: any) => void } | null
+    const scene = state.scene as { add?: (obj: Object3D) => void } | null
     if (!from || !to || !scene?.add) return
     removeArrivalHandoffOverlay()
     const group = new Group()
@@ -120,7 +120,9 @@ export function updateArrivalHandoffOverlay(): void {
         if (group) removeArrivalHandoffOverlay()
         return
     }
-    const line = group.children?.[0]
+    const line = group.children?.[0] as
+        | (import('three').LineSegments & { material: import('three').Material | import('three').ShaderMaterial })
+        | undefined
     const fromIndex = group.userData?.fromIndex
     const targetIndex = group.userData?.targetIndex
     const from = getNodeVector(fromIndex)

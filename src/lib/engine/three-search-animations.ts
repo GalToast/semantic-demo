@@ -11,7 +11,7 @@ import {
     Group
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { triggerCorridorBloom } from '@lib/audio/audio-scape'

@@ -4,14 +4,15 @@
 
 import { appState as _state } from '@lib/state/app.svelte'
 
-const state = _state as any
+const state = _state
+import type { BusinessRecord } from '@lib/types/business'
 
 /**
  * Returns a snapshot of the state fields connection-analysis.js cares about.
  */
 export function getConnectionStateSnapshot(): {
     focusedNode: number | null
-    points: any[]
+    points: BusinessRecord[]
     currentSearchSummary: unknown
 } {
     return {

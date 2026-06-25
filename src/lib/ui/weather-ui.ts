@@ -85,12 +85,9 @@ export function updateWeatherUi(state: WeatherStateValue): void {
     const descEl = document.getElementById('weather-desc')
     const windSpeedEl = document.getElementById('wind-speed')
     const windArrowEl = document.getElementById('wind-arrow')
-    const weatherIconEl = document.getElementById('weather-icon')
-    const conditionUseEl = weatherIconEl?.querySelector('.weather-condition-icon use') as SVGSVGElement | null
 
     const temp = Number(weather.temp)
     const condition = String(weather.condition || '')
-    const icon = String(weather.icon || 'clear')
     const windSpeed = Number(weather.windSpeed)
     const windDirection = Number(weather.windDirection)
 
@@ -169,16 +166,6 @@ export function clearWeatherEffects(): void {
 function revealWeatherWidget(): void {
     const el = document.getElementById('weather-widget')
     if (el?.style) el.style.display = 'block'
-}
-
-function hideById(id: string): void {
-    const el = document.getElementById(id)
-    if (el?.style) el.style.display = 'none'
-}
-
-function clearChildren(id: string): void {
-    const el = document.getElementById(id)
-    if (el?.replaceChildren) el.replaceChildren()
 }
 
 function createRain(): void {

@@ -28,8 +28,9 @@ import {
     LineLoop,
     MeshBasicMaterial
 } from 'three'
+import type { BusinessRecord } from '@lib/types/business'
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { webglContext } from './webgl-context'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { computeOverviewScatterOffsets } from '@lib/utils/geo-data'
@@ -255,10 +256,10 @@ function createPointShaderUniforms() {
     }
 }
 
-function installPointMaterialShader(material: any) {
+function installPointMaterialShader(material: Material) {
     const uniforms = createPointShaderUniforms()
     material.userData.shader = { uniforms }
-    material.onBeforeCompile = (shader: any) => {
+    material.onBeforeCompile = (shader: { uniforms: Record<string, unknown>; vertexShader: string; fragmentShader: string }) => {
         Object.assign(shader.uniforms, uniforms)
         shader.vertexShader = shader.vertexShader
             .replace(
@@ -406,7 +407,7 @@ export function createPoints() {
 
     const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length
 
-    state.points.forEach((point: any, i: number) => {
+    state.points.forEach((point: BusinessRecord, i: number) => {
         const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
         let px, py, pz, cluster
 

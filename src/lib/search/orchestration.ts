@@ -125,12 +125,12 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     }
 
     // Clear exploration focus if needed
-    publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true } as any)
+    publish(EVENTS.SEARCH_STATE_RESET_REQUESTED, { preserveSearch: true, skipUrlSync: true })
 
     const requestId = incrementRequestSequence()
     setSearchStatus('searching')
 
-    publish(EVENTS.SEARCH_STARTED, { resultsEl, statusEl, query: trimmedQuery } as any)
+    publish(EVENTS.SEARCH_STARTED, { resultsEl, statusEl, query: trimmedQuery })
     startSearchVectorScramble()
 
     let searchResults: SearchResult[]
@@ -158,19 +158,14 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     if (!isRequestCurrent(requestId)) return
     if (!results.length) {
-        publish(EVENTS.SEARCH_EMPTY, {
-            resultsEl,
-            statusEl,
-            query: trimmedQuery,
-            restoreAnchorLeadId: options.restoreAnchorLeadId
-        } as any)
+        publish(EVENTS.SEARCH_EMPTY, { query: trimmedQuery })
         return
     }
 
     const topResult = results[0] || null
     const resultIndices = results.map((r) => r.index)
     const anchorResult = options.restoreAnchorLeadId
-        ? results.find((r) => String((r.point as any)?.lead_id) === String(options.restoreAnchorLeadId)) || topResult
+        ? results.find((r) => String(r.point?.lead_id) === String(options.restoreAnchorLeadId)) || topResult
         : topResult
     const anchorIndex = anchorResult?.index ?? topResult?.index ?? null
     const anchorName = anchorResult ? formatBusinessName(anchorResult.point?.name as string) : null
@@ -205,7 +200,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
             immediate: isCompactSearchViewport()
         })
         if (typeof soleIndex === 'number' && Number.isFinite(soleIndex)) {
-            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0]!.point, index: soleIndex } as any)
+            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point: results[0]!.point, index: soleIndex })
         }
         statusEl.textContent = `1 match for "${trimmedQuery}" — ${soleName} is the only record.`
         setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: false })
@@ -223,7 +218,12 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         anchorIndex,
         resultIndices
     }
-    renderSearchResultItems(resultsEl, results as any, renderContext, statusEl)
+    renderSearchResultItems(
+        resultsEl,
+        results as unknown as import('@lib/state/state-types').SearchResult[],
+        renderContext,
+        statusEl
+    )
     bindSearchResultInteractions(resultsEl, statusEl, results, renderContext)
 
     resultsEl.hidden = false
@@ -285,14 +285,14 @@ export function beginSearchFocusTransition(
         targetIndex,
         point,
         transitionToken: token
-    } as any)
+    })
 
     // Update active result
     setActiveResult(String(targetIndex))
     setAnchorIndex(targetIndex)
 
     // Focus the result in the 3D scene
-    publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: targetIndex } as any)
+    publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: targetIndex })
     publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, {
         resultsEl,
         statusEl,
@@ -300,7 +300,7 @@ export function beginSearchFocusTransition(
         targetIndex,
         point,
         transitionToken: token
-    } as any)
+    })
 }
 
 /**

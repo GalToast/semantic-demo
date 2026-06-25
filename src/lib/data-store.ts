@@ -18,6 +18,7 @@ import type {
     PositionBufferDescriptor
 } from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
+import type { Point } from '@lib/state/state-types'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
 import { appState } from '@lib/state/app.svelte'
@@ -28,13 +29,13 @@ import { appState } from '@lib/state/app.svelte'
 // in different chunks would see different (empty) stores.  We use a plain
 // *window* data property to share the canonical store instances.
 function getOrCreateWritable<T>(windowKey: string, initial: T) {
-    const existing = typeof window !== 'undefined' ? (window as any)[windowKey] : undefined
+    const existing = typeof window !== 'undefined' ? (window as Record<string, unknown>)[windowKey] : undefined
     if (existing && typeof existing.subscribe === 'function') {
         return existing as ReturnType<typeof writable<T>>
     }
     const store = writable<T>(initial)
     if (typeof window !== 'undefined') {
-        ;(window as any)[windowKey] = store
+        ;(window as Record<string, unknown>)[windowKey] = store
     }
     return store
 }
@@ -288,7 +289,7 @@ export function setBusinessData(result: BusinessDataResult): void {
     // Sync back to legacy state so legacy engine selectors (getPoints())
     // and focus flows (focusOnNode) see the data.
     try {
-        appState.points = result.records as any
+        appState.points = result.records as unknown as Point[]
         appState.rawPositionsBuffer = result.positionsBuffer
         appState.rawClustersBuffer = result.clustersBuffer
         appState.leadEnrichment = result.enrichment

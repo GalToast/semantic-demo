@@ -59,6 +59,8 @@ export interface CameraLike {
     aspect?: number
     updateProjectionMatrix?(): void
     lookAt?(x: number, y: number, z: number): void
+    setViewOffset?(fullWidth: number, fullHeight: number, x: number, y: number, width: number, height: number): void
+    clearViewOffset?(): void
 }
 
 export interface ControlsLike {
@@ -84,7 +86,7 @@ export interface RendererInfoMemory {
 
 export interface RendererInfo {
     memory: RendererInfoMemory
-    programs?: unknown[]
+    programs?: unknown[] | null
     render?: { calls?: number; triangles?: number }
 }
 
@@ -246,6 +248,37 @@ export interface ScenePerformanceDiagnostics {
     myceliumBridgeSegments: number
     drawCalls?: number
     triangles?: number
+    renderables?: ReturnType<typeof import('@lib/engine/renderer/renderer-diagnostics').getSceneRenderableDiagnostics>
+}
+/** A single segment in the focus-stage semantic thread rendering.
+ *  Each parent edge (a → b) is subdivided into many segments so the
+ *  GLSL shader can vary `progress` / `cue` per segment without rebuilding
+ *  the geometry. The runtime pushes these directly via semantic-overlay.ts
+ *  and reads them back in updateFocusSemanticOverlayPositions. */
+export interface FocusConnectionSegment {
+    a: number
+    b: number
+    layer: number
+    t0?: number
+    t1?: number
+    cue?: number
+    side?: number
+    rise?: number
+    depth?: number
+    curveLift?: number
+    motifBraid?: number
+    anchorPull?: number
+    role?: string
+    priority?: number
+    motif?: string
+    label?: string
+    directLift?: number
+    supportLift?: number
+    directPriority?: number
+    supportPriority?: number
+    braid?: number
+    boundedLoop?: boolean
+    motifLabel?: { name?: string; description?: string }
 }
 
 export interface FocusFrameDiagnostics {
@@ -374,20 +407,20 @@ export interface ConstellationMotif {
 export type ConstellationMotifName = 'rosette' | 'lattice' | 'delta' | 'market' | 'civic'
 
 export interface Point {
-    name?: string
-    what?: string
-    trivia?: string
-    public_note?: string
-    public_detail?: string
-    city?: string
-    cluster?: number
-    status?: string
-    phone?: string
-    email?: string
-    website?: string
-    lat?: number
-    lng?: number
-    lead_id?: string | number
+    name?: string | null
+    what?: string | null
+    trivia?: string | null
+    public_note?: string | null
+    public_detail?: string | null
+    city?: string | null
+    cluster?: number | null
+    status?: string | null
+    phone?: string | null
+    email?: string | null
+    website?: string | null
+    lat?: number | null
+    lng?: number | null
+    lead_id?: string | number | null
     x?: number
     y?: number
     z?: number
@@ -537,7 +570,7 @@ export interface SemanticState extends StateConfig {
     myceliumWispyLines: WebGLContextState['myceliumWispyLines']
     myceliumBridgeLines: WebGLContextState['myceliumBridgeLines']
     focusSemanticLines: WebGLContextState['focusSemanticLines']
-    focusSemanticConnectionPairs: Array<{ a: number; b: number; layer: number }>
+    focusSemanticConnectionPairs: Array<FocusConnectionSegment>
     semanticLensGroup: WebGLContextState['semanticLensGroup']
     semanticLensGlow: WebGLContextState['semanticLensGlow']
     semanticLensSpokes: WebGLContextState['semanticLensSpokes']

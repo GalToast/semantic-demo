@@ -26,7 +26,7 @@
   onMount(() => {
     if (!visible) return;
 
-    let guiInstance: any;
+    let guiInstance: unknown;
 
     void (async () => {
       // Lazy import — keeps the lil-gui bundle out of the main chunk and

@@ -87,7 +87,7 @@
   // contract tests but now lazy-loaded in production for performance.
   // W46-B2b: pre-load via the helper handles' ensure(true) so we don't reach
   // into module-internal $state holders (which no longer exist).
-  if (typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__) {
+  if (typeof window !== 'undefined' && (window as Record<string, unknown>).__PLAYWRIGHT__) {
     mapViewLazy.ensure(true)
     legacyCompassSurfaceLazy.ensure(true)
     threadInspectorLazy.ensure(true)
@@ -100,7 +100,7 @@
     canvasLazy.ensure(true)
   }
 
-  const isPlaywright = typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__;
+  const isPlaywright = typeof window !== 'undefined' && (window as Record<string, unknown>).__PLAYWRIGHT__;
 
   // W46-B2b: scheduleIdleComponentImport was moved to lazy-component.svelte.ts
   // as scheduleIdleImport, used internally by createLazyComponent. No call

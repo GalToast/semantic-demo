@@ -11,22 +11,24 @@
  * during the W14-T8 port.
  */
 
-import { publish, EVENTS } from '@lib/orchestration/event-bus';
-import * as tokenizerModule from '@lib/search/tokenizer';
-import * as mapperModule from '@lib/search/mapper';
-import type { ServiceResultRow } from '@lib/search/mapper';
-import type { SearchResultPoint } from '@lib/types/state';
-import * as filterCoreModule from '@lib/orchestration/search-filter-core';
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import * as tokenizerModule from '@lib/search/tokenizer'
+import * as mapperModule from '@lib/search/mapper'
+import type { ServiceResultRow } from '@lib/search/mapper'
+import type { SearchResultPoint } from '@lib/types/state'
+import * as filterCoreModule from '@lib/orchestration/search-filter-core'
 import {
-  refreshSearchResultHierarchy as refreshSearchResultHierarchyImpl,
-  getSearchResultStrength as getSearchResultStrengthImpl,
-  getSearchResultStrengthLabel as getSearchResultStrengthLabelImpl
-} from '@lib/search/result-renderer';
-import { getSearchCacheDiagnostics } from '@lib/search-cache';
+    refreshSearchResultHierarchy as refreshSearchResultHierarchyImpl,
+    getSearchResultStrength as getSearchResultStrengthImpl,
+    getSearchResultStrengthLabel as getSearchResultStrengthLabelImpl
+} from '@lib/search/result-renderer'
+import { getSearchCacheDiagnostics } from '@lib/search-cache'
 
 // ── Tokenizer re-exports ──────────────────────────────────────────────────
 
-export function tokenizeSearchText(query: string): string[] { return tokenizerModule.tokenizeSearchText(query); }
+export function tokenizeSearchText(query: string): string[] {
+    return tokenizerModule.tokenizeSearchText(query)
+}
 
 // NOTE: The legacy search-state kernel had incorrect signatures for
 // expandSearchIntent/countTokenMatches (passing `string` where the
@@ -35,27 +37,63 @@ export function tokenizeSearchText(query: string): string[] { return tokenizerMo
 // the public API is unchanged while the call into the canonical module
 // is well-typed.
 export function expandSearchIntent(text: string, intent: string): string[] {
-  const queryTokens = tokenizerModule.tokenizeSearchText(text);
-  return tokenizerModule.expandSearchIntent(text, intent ? tokenizerModule.tokenizeSearchText(intent) : queryTokens);
+    const queryTokens = tokenizerModule.tokenizeSearchText(text)
+    return tokenizerModule.expandSearchIntent(text, intent ? tokenizerModule.tokenizeSearchText(intent) : queryTokens)
 }
 export function countTokenMatches(text: string, query: string): { exact: number; prefix: number } {
-  const fieldTokens = tokenizerModule.tokenizeSearchText(text);
-  const queryTokens = tokenizerModule.tokenizeSearchText(query);
-  return tokenizerModule.countTokenMatches(fieldTokens, queryTokens);
+    const fieldTokens = tokenizerModule.tokenizeSearchText(text)
+    const queryTokens = tokenizerModule.tokenizeSearchText(query)
+    return tokenizerModule.countTokenMatches(fieldTokens, queryTokens)
 }
 
 // ── Mapper re-exports ─────────────────────────────────────────────────────
 
-export function getSemanticSearchServiceResults(payload: { results?: ServiceResultRow[] } | null): ServiceResultRow[] { return mapperModule.getSemanticSearchServiceResults(payload); }
-export function getSemanticSearchTotalMatches(payload: { count?: number } | null | undefined, serviceResults: ServiceResultRow[]): number { return mapperModule.getSemanticSearchTotalMatches(payload, serviceResults); }
-export function isNumericOnlySearchQuery(query: unknown): boolean { return mapperModule.isNumericOnlySearchQuery(query); }
-export function resultMatchesNumericSearchQuery(result: { point?: { lead_id?: string | number; phone?: string; lat?: number; lng?: number }; address?: string; publicNote?: string; publicDetail?: string; naics?: string } | null, query: unknown): boolean { return mapperModule.resultMatchesNumericSearchQuery(result, query); }
-export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: number): unknown { return mapperModule.mapSemanticSearchServiceResult(row, order); }
-export function mapSemanticSearchResults(serviceResults: ServiceResultRow[]): unknown[] { return mapperModule.mapSemanticSearchResults(serviceResults); }
-export function hydrateSemanticResultContexts(results: { point: { lead_id?: string | number; name?: string; city?: string; status?: string }; publicNote: string; publicDetail: string; address: string; naics: string }[]): void { return mapperModule.hydrateSemanticResultContexts(results as Parameters<typeof mapperModule.hydrateSemanticResultContexts>[0]); }
+export function getSemanticSearchServiceResults(payload: { results?: ServiceResultRow[] } | null): ServiceResultRow[] {
+    return mapperModule.getSemanticSearchServiceResults(payload)
+}
+export function getSemanticSearchTotalMatches(
+    payload: { count?: number } | null | undefined,
+    serviceResults: ServiceResultRow[]
+): number {
+    return mapperModule.getSemanticSearchTotalMatches(payload, serviceResults)
+}
+export function isNumericOnlySearchQuery(query: unknown): boolean {
+    return mapperModule.isNumericOnlySearchQuery(query)
+}
+export function resultMatchesNumericSearchQuery(
+    result: {
+        point?: { lead_id?: string | number; phone?: string; lat?: number; lng?: number }
+        address?: string
+        publicNote?: string
+        publicDetail?: string
+        naics?: string
+    } | null,
+    query: unknown
+): boolean {
+    return mapperModule.resultMatchesNumericSearchQuery(result, query)
+}
+export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: number): unknown {
+    return mapperModule.mapSemanticSearchServiceResult(row, order)
+}
+export function mapSemanticSearchResults(serviceResults: ServiceResultRow[]): unknown[] {
+    return mapperModule.mapSemanticSearchResults(serviceResults)
+}
+export function hydrateSemanticResultContexts(
+    results: {
+        point: { lead_id?: string | number; name?: string; city?: string; status?: string }
+        publicNote: string
+        publicDetail: string
+        address: string
+        naics: string
+    }[]
+): void {
+    return mapperModule.hydrateSemanticResultContexts(
+        results as Parameters<typeof mapperModule.hydrateSemanticResultContexts>[0]
+    )
+}
 
 export function recordEmptySearch(query: string): void {
-  publish(EVENTS.SEARCH_EMPTY, { query });
+    publish(EVENTS.SEARCH_EMPTY, { query })
 }
 
 // ── Filter re-exports ─────────────────────────────────────────────────────
@@ -64,26 +102,42 @@ export function recordEmptySearch(query: string): void {
  *  search-filter-core port). Wrapped here so the public search-state API
  *  stays stable. */
 export function pointMatchesActiveFilters(point: unknown): boolean {
-  return filterCoreModule.pointMatchesAllFilters(point as Parameters<typeof filterCoreModule.pointMatchesAllFilters>[0]);
+    return filterCoreModule.pointMatchesAllFilters(
+        point as Parameters<typeof filterCoreModule.pointMatchesAllFilters>[0]
+    )
 }
 export function applyFilters(_options: Record<string, unknown> = {}): void {
-  return filterCoreModule.applyFilters();
+    return filterCoreModule.applyFilters()
 }
-export function getFilteredIndices(): number[] { return [...filterCoreModule.getFilteredIndices()]; }
+export function getFilteredIndices(): number[] {
+    return [...filterCoreModule.getFilteredIndices()]
+}
 
 // ── Result renderer re-exports ────────────────────────────────────────────
 
-export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void { refreshSearchResultHierarchyImpl(resultsEl); }
-export function getSearchResultStrength(result: unknown, topScore: number): number { return getSearchResultStrengthImpl(result as any, topScore); }
-export function getSearchResultStrengthLabel(order: number, strength: number): string { return getSearchResultStrengthLabelImpl(order, strength); }
+export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void {
+    refreshSearchResultHierarchyImpl(resultsEl)
+}
+export function getSearchResultStrength(result: unknown, topScore: number): number {
+    return getSearchResultStrengthImpl(result as any, topScore)
+}
+export function getSearchResultStrengthLabel(order: number, strength: number): string {
+    return getSearchResultStrengthLabelImpl(order, strength)
+}
 
 // ── Tooltip re-exports (search-state-ui-adapter-contract.mjs) ───────────
 
-export function hideTooltip(): void { publish(EVENTS.TOOLTIP_HIDE_REQUESTED); }
-export function positionTooltip(): void { /* Managed by UI */ }
-export function updateTooltipContent(): void { /* Managed by UI */ }
+export function hideTooltip(): void {
+    publish(EVENTS.TOOLTIP_HIDE_REQUESTED)
+}
+export function positionTooltip(): void {
+    /* Managed by UI */
+}
+export function updateTooltipContent(): void {
+    /* Managed by UI */
+}
 
-export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics };
+export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics }
 
 // Filter-state legacy exports. These live in `js/modules/filter-state.ts`
 // and are not yet ported to a Svelte store. The bridge re-exports them
@@ -91,22 +145,22 @@ export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics };
 // forcing a parallel filter-state port. The bridge remains the single
 // seam that legacy consumers should depend on.
 export {
-  setActiveFilter,
-  toggleActiveFilterSignal,
-  resetActiveFilters,
-  restoreActiveFiltersFromUrl
-} from '@lib/stores/filter.svelte';
+    setActiveFilter,
+    toggleActiveFilterSignal,
+    resetActiveFilters,
+    restoreActiveFiltersFromUrl
+} from '@lib/stores/filter.svelte'
 
 // Type re-exports for downstream consumers. The legacy kernel exposed
 // `Point` as a name from the legacy state module; we now surface the
 // canonical `SearchResultPoint` under the same name.
-export type { SearchResultPoint as Point, ServiceResultRow };
+export type { SearchResultPoint as Point, ServiceResultRow }
 
 // ── Focus reset (search-state side-effect shim) ──────────────────────────
 
-import { appState } from '@lib/state/app.svelte';
-import { clearTrailThreadState as _clearTrailThreadState } from '@lib/orchestration/navigation-state';
-import { updateSelectedBusiness } from '@lib/journey/selected-card';
+import { appState } from '@lib/state/app.svelte'
+import { clearTrailThreadState as _clearTrailThreadState } from '@lib/orchestration/navigation-state'
+import { updateSelectedBusiness } from '@lib/journey/selected-card'
 
 /** Reset the focus-related state and publish a STATE_RESET event. The
  *  legacy kernel implementation walks the live `state.selectedPoint`,
@@ -115,10 +169,10 @@ import { updateSelectedBusiness } from '@lib/journey/selected-card';
  *  same shape and signal flow.
  */
 export function clearSearchRelatedFocusState(context: Record<string, unknown> = {}): Record<string, unknown> {
-  const reason = (context && typeof context.reason === 'string') ? context.reason : 'filter-invalidate';
-  updateSelectedBusiness(null);
-  publish(EVENTS.STATE_RESET, { reason, silent: true });
-  _clearTrailThreadState();
-  appState.trailIndices?.clear?.();
-  return { reason };
+    const reason = context && typeof context.reason === 'string' ? context.reason : 'filter-invalidate'
+    updateSelectedBusiness(null)
+    publish(EVENTS.STATE_RESET, { reason, silent: true })
+    _clearTrailThreadState()
+    appState.trailIndices?.clear?.()
+    return { reason }
 }

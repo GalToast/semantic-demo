@@ -144,7 +144,7 @@ export function animateCameraToSearchCorridor(
             indexCount: routeIndices.length,
             lastCameraMove: 'search-corridor'
         }
-    } as any)
+    })
     noteSceneInteraction(duration + 1200)
 
     const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025))
@@ -177,7 +177,7 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
     const reducedMotion = prefersReducedMotion()
     const duration = reducedMotion ? 1 : options.duration || appState.MAP_HANDOFF_PRELUDE_MS || 1200
 
-    publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } } as any)
+    publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'map-prelude', options: { duration } })
 
     try {
         const camera = appState.camera as ChoreographyCamera | null
@@ -277,7 +277,7 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
         Number.isFinite(anchorPos.z) ? anchorPos.z : 0
     )
 
-    const personality = ((appState.navState as any).currentPersonality || {}) as ChoreographyPersonality
+    const personality = (appState.navState.currentPersonality || {}) as ChoreographyPersonality
     let centroidWeight: number
     if (personality.type === 'TIGHT_CLUSTER') {
         centroidWeight = 0.12

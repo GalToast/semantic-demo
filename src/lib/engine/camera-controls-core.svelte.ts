@@ -53,7 +53,7 @@ class CameraControlsCore {
     });
 
     // ── Focus camera offset (set by choreography, read by focus.ts) ──────
-    focusCameraOffset = $state<any>(null);
+    focusCameraOffset = $state<{ x: number; y: number; z: number } | null>(null);
 
     // ── Derived helpers ───────────────────────────────────────────────────
     // Note: avoid `!==` on $state properties — Svelte 5 strict-mode compiler

@@ -8,6 +8,7 @@ import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { formatBusinessName, cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
 import { isPointVisible } from '@lib/utils/geo-data'
+import type { ThreadCandidateRef } from '@lib/types/state'
 import { truncateMicrocopy } from '@lib/journey/text-helpers'
 import { setStrandContinuityState } from '@lib/utils/strand-continuity'
 import { summarizeNeighborReason, walkThreadNeighbor } from '@lib/journey/thread-settler'
@@ -16,6 +17,7 @@ import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/jo
 import { ensureCanvasNodeInteractionBindings } from '@lib/journey/canvas-interaction'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts'
+import type { ThreadCandidateLike } from '@lib/state/state-types'
 import {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
@@ -135,8 +137,8 @@ export function updateFocusNeighborRail(): void {
             : 5
     const nav = appState.navState!
     const candidates = (nav.threadCandidates || [])
-        .filter((candidate: any) => candidate && candidate.index !== nav.focusedIndex)
-        .filter((candidate: any) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters))
+        .filter((candidate: ThreadCandidateRef) => candidate && candidate.index !== nav.focusedIndex)
+        .filter((candidate: ThreadCandidateRef) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters))
         .slice(0, candidateLimit)
 
     if (!candidates.length) {
@@ -162,7 +164,7 @@ export function updateFocusNeighborRail(): void {
         countEl.textContent = `${candidates.length} visible ${source}`
     }
 
-    candidates.forEach((candidate: any, order: number) => {
+    candidates.forEach((candidate: ThreadCandidateRef, order: number) => {
         const points = appState.points!
         const point =
             Number.isFinite(candidate.index) && candidate.index >= 0 && candidate.index < points.length

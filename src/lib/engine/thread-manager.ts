@@ -26,6 +26,7 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
+import type { SemanticNeighborDetail } from '@lib/types/business'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -153,11 +154,11 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
     const wispyDegree = new Map<number, number>()
     const bridgeDegree = new Map<number, number>()
 
-    state.points.forEach((point: any, index: number) => {
+    state.points.forEach((point, index: number) => {
         const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id)
         if (!leadId) return
         const record = state.semanticNeighborMapByLeadId.get(leadId)
-        record?.neighbors?.forEach((neighbor: any) => {
+        record?.neighbors?.forEach((neighbor: SemanticNeighborDetail) => {
             const otherIndex = state.pointIndexByLeadId.get(String(neighbor.leadId))
             if (otherIndex === undefined || otherIndex === index) return
             const key = pairKey(index, otherIndex)
@@ -273,24 +274,24 @@ function getNavigationMode() {
     return state.navState?.mode
 }
 
-function getLineSegmentCount(line: any) {
+function getLineSegmentCount(line: LineSegments) {
     const positionCount = line?.geometry?.attributes?.position?.count || 0
     return Math.floor(positionCount / 2)
 }
 
-export function getGroupLineSegmentCount(group: any) {
+export function getGroupLineSegmentCount(group: Group) {
     let total = 0
     if (group && group.children) {
         group.children.forEach((child: Object3D & { isLineSegments?: boolean }) => {
             if (child.isLineSegments) {
-                total += getLineSegmentCount(child)
+                total += getLineSegmentCount(child as unknown as LineSegments)
             }
         })
     }
     return total
 }
 
-function createLineSegments(positions: any, colors: any, opacity: any) {
+function createLineSegments(positions: number[], colors: number[], opacity: number) {
     if (!positions.length) return null
     const geometry = new BufferGeometry()
     geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
@@ -308,7 +309,12 @@ function createLineSegments(positions: any, colors: any, opacity: any) {
     )
 }
 
-export function getThreadPulseOpacity(baseOpacity: any, pulse: any, requestedAmplitude: any, revealProgress = 1) {
+export function getThreadPulseOpacity(
+    baseOpacity: number,
+    pulse: number,
+    requestedAmplitude: number,
+    revealProgress = 1
+) {
     const safeBase = Math.max(0, Number.isFinite(baseOpacity) ? baseOpacity : 0)
     const safeReveal = Math.max(0, Number.isFinite(revealProgress) ? revealProgress : 1)
     const amplitude = Math.min(
@@ -385,7 +391,7 @@ export function createMycelium() {
 
     const clusterMembers = new Map()
     const clusterCentroids = new Map()
-    state.points.forEach((point: any, index: number) => {
+    state.points.forEach((point, index: number) => {
         const pos = state.nodePositions[index]
         if (!pos) return
         if (!clusterMembers.has(point.cluster)) {
@@ -411,12 +417,12 @@ export function createMycelium() {
         | MyceliumEdgeSets
         | undefined
     if (!edgeSets) return
-    const coreConnections: any[] = []
-    const coreColors: any[] = []
-    const wispyConnections: any[] = []
-    const wispyColors: any[] = []
-    const bridgeConnections: any[] = []
-    const bridgeColors: any[] = []
+    const coreConnections: number[] = []
+    const coreColors: number[] = []
+    const wispyConnections: number[] = []
+    const wispyColors: number[] = []
+    const bridgeConnections: number[] = []
+    const bridgeColors: number[] = []
 
     edgeSets.corePairs.forEach((pair: EdgePair) => {
         pushBezierLinePair(coreConnections, coreColors, pair, semanticEdges ? 0.38 : 0.28)

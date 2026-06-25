@@ -34,9 +34,9 @@ import {
     Sprite,
     AdditiveBlending
 } from 'three'
-import { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
+import { CONFIG, FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 import { appState } from '@lib/state/app.svelte'
-const state = appState as any
+const state = appState
 import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // ── Local selectors (replacing js/state/selectors/index.ts imports) ─────────
@@ -47,9 +47,8 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 // the cast.
 
 const getNavState = () => state.navState
-const getFocusConstellationMotifs = (): Record<string, any> =>
-    (state as any).FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS
-const getFocusThreadSegments = (): number => (state as any).FOCUS_THREAD_SEGMENTS ?? 0
+const getFocusConstellationMotifs = (): Record<string, any> => FOCUS_CONSTELLATION_MOTIFS
+const getFocusThreadSegments = (): number => CONFIG.FOCUS_THREAD_SEGMENTS
 const getInspectedStrandGroup = (): Group | null => state.inspectedStrandGroup as Group | null
 const setInspectedStrandGroup = (g: Group | null): void => {
     state.inspectedStrandGroup = g
@@ -228,8 +227,9 @@ export function updateInspectedStrandEndpointSprites(): void {
     const nodePos = getNodePositions()
     strandGroup.children.forEach((child: Object3D) => {
         const endpointIndex = (child.userData as { endpointIndex?: number } | undefined)?.endpointIndex
-        if (!Number.isFinite(endpointIndex) || !nodePos[endpointIndex as number]) return
+        if (!Number.isFinite(endpointIndex)) return
         const pos = nodePos[endpointIndex as number]
+        if (!pos) return
         child.position.set(
             Number.isFinite(pos.x) ? pos.x : 0,
             Number.isFinite(pos.y) ? pos.y : 0,
@@ -238,7 +238,10 @@ export function updateInspectedStrandEndpointSprites(): void {
     })
 }
 
-export function syncInspectedStrandOverlay(inspectionState: InspectionState | null, options: { surface?: string } = {}): void {
+export function syncInspectedStrandOverlay(
+    inspectionState: InspectionState | null,
+    options: { surface?: string } = {}
+): void {
     const currentView = getCurrentView()
     const scene = getScene()
     const nodePos = getNodePositions()
@@ -306,7 +309,7 @@ export function syncInspectedStrandOverlay(inspectionState: InspectionState | nu
     }
     updateInspectedStrandEndpointSprites()
     withStateMutation(() => {
-        ;(state as any).inspectedStrandDiagnostics = {
+        state.inspectedStrandDiagnostics = {
             active: true,
             source:
                 getPinnedThreadIndex() === inspectionState.index
@@ -357,7 +360,7 @@ export function disposeInspectedStrandOverlay(): void {
     const strandGroup = getInspectedStrandGroup()
     if (!strandGroup) {
         withStateMutation(() => {
-            ;(state as any).inspectedStrandDiagnostics = {
+            state.inspectedStrandDiagnostics = {
                 active: false,
                 source: 'none',
                 index: null,
@@ -381,7 +384,7 @@ export function disposeInspectedStrandOverlay(): void {
     })
     setInspectedStrandGroup(null)
     withStateMutation(() => {
-        ;(state as any).inspectedStrandDiagnostics = {
+        state.inspectedStrandDiagnostics = {
             active: false,
             source: 'none',
             index: null,

@@ -88,14 +88,15 @@ describe('semantic-guide — typing contract (W47-Bite-Roughest tightening)', ()
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 3 (post-bite baseline; was 41)', () => {
-        const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // 3 = the post-bite baseline. All 3 remaining are the
-        // (window as any).__SEMANTIC_GUIDE_TIMEOUT_MS__ test-injection
-        // escape. A future contributor who adds a new any will fail
-        // this test and must either tighten or update the documented
-        // baseline.
-        expect(matches.length).toBe(3)
+    it('any occurrence count is 0 (post-W48-Phase-3 baseline; was 41 → 3)', () => {
+        // Strip comments so prose like `as any` in docstrings doesn't count.
+        const matches = stripped.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
+        // 0 = post-W48-Phase-3 baseline (was 41 → 3 in W47-Bite-Continued;
+        // the remaining 3 (window test-injection) were tightened to a
+        // typed Window augmentation). If a future contributor adds a
+        // new any, this test fails and forces them to either tighten
+        // or update the documented baseline.
+        expect(matches.length).toBe(0)
     })
 
     it('only ONE appState import (no dual-state smell)', () => {

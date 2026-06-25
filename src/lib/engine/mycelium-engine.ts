@@ -5,86 +5,90 @@
  * Extracted from three-setup.js (Seam #4).
  */
 
-import { webglContext } from '@lib/engine/webgl-context';
-import { Vector3 } from 'three';
+import { Vector3 } from 'three'
+import { webglContext } from '@lib/engine/webgl-context'
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any;
-import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three';
-import { CONFIG } from '@lib/engine/config';
+const state = _state
+import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
+import { CONFIG } from '@lib/engine/config'
 
 interface EdgePair {
-    a: number;
-    b: number;
+    a: number
+    b: number
 }
 
 interface NeighborLike {
-    leadId: string | number;
-    semanticScore?: number;
-    bridgeScore?: number;
-    sameCity?: boolean;
-    threadType?: string;
+    leadId: string | number
+    semanticScore?: number
+    bridgeScore?: number
+    sameCity?: boolean
+    threadType?: string
 }
 
 interface PositionedNode {
-    x: number;
-    y: number;
-    z: number;
-    index: number;
+    x: number
+    y: number
+    z: number
+    index: number
 }
 
 function pairKey(a: number, b: number) {
-    return a < b ? `${a}:${b}` : `${b}:${a}`;
+    return a < b ? `${a}:${b}` : `${b}:${a}`
 }
 
 // ── buildGeometricMyceliumEdges ───────────────────────────────────────────
 
-export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroids: any) {
-    if (!state.points || !Array.isArray(state.points) || state.points.length === 0) return;
-    const corePairs: EdgePair[] = [];
-    const wispyPairs: EdgePair[] = [];
-    const bridgePairs: EdgePair[] = [];
-    const seenPairs = new Set<string>();
-    const cellSize = 0.1;
-    const grid = new Map<string, number[]>();
+export function buildGeometricMyceliumEdges(
+    clusterMembers: Map<number, number[]>,
+    clusterCentroids: Map<number, { x: number; y: number; z: number }>
+) {
+    if (!state.points || !Array.isArray(state.points) || state.points.length === 0) return
+    const corePairs: EdgePair[] = []
+    const wispyPairs: EdgePair[] = []
+    const bridgePairs: EdgePair[] = []
+    const seenPairs = new Set<string>()
+    const cellSize = 0.1
+    const grid = new Map<string, number[]>()
 
     for (let i = 0; i < state.points.length; i += 1) {
-        const pos = state.nodePositions[i];
-        if (!pos) continue;
-        const key = `${Math.floor(pos.x / cellSize)},${Math.floor(pos.y / cellSize)},${Math.floor(pos.z / cellSize)}`;
-        if (!grid.has(key)) grid.set(key, []);
-        grid.get(key)!.push(i);
+        const pos = state.nodePositions[i]
+        if (!pos) continue
+        const key = `${Math.floor(pos.x / cellSize)},${Math.floor(pos.y / cellSize)},${Math.floor(pos.z / cellSize)}`
+        if (!grid.has(key)) grid.set(key, [])
+        grid.get(key)!.push(i)
     }
 
-    const coreDist = 0.048;
-    const wispyDist = 0.078;
+    const coreDist = 0.048
+    const wispyDist = 0.078
 
     for (let i = 0; i < state.points.length; i += 1) {
-        const source = state.nodePositions[i];
-        if (!source) continue;
-        const cx = Math.floor(source.x / cellSize);
-        const cy = Math.floor(source.y / cellSize);
-        const cz = Math.floor(source.z / cellSize);
+        const source = state.nodePositions[i]
+        if (!source) continue
+        const cx = Math.floor(source.x / cellSize)
+        const cy = Math.floor(source.y / cellSize)
+        const cz = Math.floor(source.z / cellSize)
 
         for (let dx = -1; dx <= 1; dx += 1) {
             for (let dy = -1; dy <= 1; dy += 1) {
                 for (let dz = -1; dz <= 1; dz += 1) {
-                    const cell = grid.get(`${cx + dx},${cy + dy},${cz + dz}`);
-                    if (!cell) continue;
+                    const cell = grid.get(`${cx + dx},${cy + dy},${cz + dz}`)
+                    if (!cell) continue
                     for (const j of cell) {
-                        const sourcePoint = state.points[i];
-                        const targetPoint = state.points[j];
-                        if (j <= i || !sourcePoint || !targetPoint || sourcePoint.cluster !== targetPoint.cluster) continue;
-                        const target = state.nodePositions[j];
-                        if (!target) continue;
-                        const dist = Math.hypot(source.x - target.x, source.y - target.y, source.z - target.z);
-                        const key = pairKey(i, j);
-                        if (seenPairs.has(key)) continue;
+                        const sourcePoint = state.points[i]
+                        const targetPoint = state.points[j]
+                        if (j <= i || !sourcePoint || !targetPoint || sourcePoint.cluster !== targetPoint.cluster)
+                            continue
+                        const target = state.nodePositions[j]
+                        if (!target) continue
+                        const dist = Math.hypot(source.x - target.x, source.y - target.y, source.z - target.z)
+                        const key = pairKey(i, j)
+                        if (seenPairs.has(key)) continue
                         if (dist < coreDist) {
-                            corePairs.push({ a: i, b: j });
-                            seenPairs.add(key);
+                            corePairs.push({ a: i, b: j })
+                            seenPairs.add(key)
                         } else if (dist < wispyDist) {
-                            wispyPairs.push({ a: i, b: j });
-                            seenPairs.add(key);
+                            wispyPairs.push({ a: i, b: j })
+                            seenPairs.add(key)
                         }
                     }
                 }
@@ -92,184 +96,194 @@ export function buildGeometricMyceliumEdges(clusterMembers: any, clusterCentroid
         }
     }
 
-    const seenBridgePairs = new Set<string>();
-    const clusterKeys = [...clusterMembers.keys()];
+    const seenBridgePairs = new Set<string>()
+    const clusterKeys = [...clusterMembers.keys()]
     clusterKeys.forEach((clusterA) => {
-        const centroidA = clusterCentroids.get(clusterA);
-        if (!centroidA) return;
+        const centroidA = clusterCentroids.get(clusterA)
+        if (!centroidA) return
         const nearest = clusterKeys
             .filter((clusterB) => clusterB !== clusterA)
             .map((clusterB) => {
-                const centroidB = clusterCentroids.get(clusterB);
+                const centroidB = clusterCentroids.get(clusterB)
+                if (!centroidB) return { clusterB, dist: Infinity }
                 return {
                     clusterB,
                     dist: Math.hypot(centroidA.x - centroidB.x, centroidA.y - centroidB.y, centroidA.z - centroidB.z)
-                };
+                }
             })
             .sort((a, b) => a.dist - b.dist)
-            .slice(0, 2);
+            .slice(0, 2)
 
         nearest.forEach(({ clusterB, dist }) => {
-            if (dist > 0.42) return;
-            const bridgeKey = [clusterA, clusterB].sort((a, b) => a - b).join(':');
-            if (seenBridgePairs.has(bridgeKey)) return;
-            seenBridgePairs.add(bridgeKey);
+            if (dist > 0.42) return
+            const bridgeKey = [clusterA, clusterB].sort((a, b) => a - b).join(':')
+            if (seenBridgePairs.has(bridgeKey)) return
+            seenBridgePairs.add(bridgeKey)
 
-            const centroidB = clusterCentroids.get(clusterB);
-            const source = (clusterMembers.get(clusterA) || [])
-                .slice()
-                .sort((a: number, b: number) => {
-                    const aPos = state.nodePositions[a];
-                    const bPos = state.nodePositions[b];
-                    if (!aPos || !bPos) return 0;
-                    return Math.hypot(aPos.x - centroidB.x, aPos.y - centroidB.y, aPos.z - centroidB.z)
-                        - Math.hypot(bPos.x - centroidB.x, bPos.y - centroidB.y, bPos.z - centroidB.z);
-                })[0];
-            const target = (clusterMembers.get(clusterB) || [])
-                .slice()
-                .sort((a: number, b: number) => {
-                    const aPos = state.nodePositions[a];
-                    const bPos = state.nodePositions[b];
-                    if (!aPos || !bPos) return 0;
-                    return Math.hypot(aPos.x - centroidA.x, aPos.y - centroidA.y, aPos.z - centroidA.z)
-                        - Math.hypot(bPos.x - centroidA.x, bPos.y - centroidA.y, bPos.z - centroidA.z);
-                })[0];
+            const centroidB = clusterCentroids.get(clusterB)
+            if (!centroidB) return
+            const source = (clusterMembers.get(clusterA) || []).slice().sort((a: number, b: number) => {
+                const aPos = state.nodePositions[a]
+                const bPos = state.nodePositions[b]
+                if (!aPos || !bPos) return 0
+                return (
+                    Math.hypot(aPos.x - centroidB.x, aPos.y - centroidB.y, aPos.z - centroidB.z) -
+                    Math.hypot(bPos.x - centroidB.x, bPos.y - centroidB.y, bPos.z - centroidB.z)
+                )
+            })[0]
+            const target = (clusterMembers.get(clusterB) || []).slice().sort((a: number, b: number) => {
+                const aPos = state.nodePositions[a]
+                const bPos = state.nodePositions[b]
+                if (!aPos || !bPos) return 0
+                return (
+                    Math.hypot(aPos.x - centroidA.x, aPos.y - centroidA.y, aPos.z - centroidA.z) -
+                    Math.hypot(bPos.x - centroidA.x, bPos.y - centroidA.y, bPos.z - centroidA.z)
+                )
+            })[0]
 
-            if (source === undefined || target === undefined) return;
-            bridgePairs.push({ a: source, b: target });
-        });
-    });
+            if (source === undefined || target === undefined) return
+            bridgePairs.push({ a: source, b: target })
+        })
+    })
 
-    return { corePairs, wispyPairs, bridgePairs };
+    return { corePairs, wispyPairs, bridgePairs }
 }
 
 // ── buildSemanticMyceliumEdges ─────────────────────────────────────────────
 
 export function buildSemanticMyceliumEdges() {
-    if (!state.semanticNeighborMapByLeadId?.size || !state.pointIndexByLeadId?.size) return null;
+    if (!state.semanticNeighborMapByLeadId?.size || !state.pointIndexByLeadId?.size) return null
 
-    const seenPairs = new Set<string>();
-    const corePairs: EdgePair[] = [];
-    const wispyPairs: EdgePair[] = [];
-    const bridgePairs: EdgePair[] = [];
+    const seenPairs = new Set<string>()
+    const corePairs: EdgePair[] = []
+    const wispyPairs: EdgePair[] = []
+    const bridgePairs: EdgePair[] = []
 
     // Strict connection caps to prevent the "ball of yarn" effect
-    const MAX_CORE_PER_NODE = 4;
-    const MAX_WISPY_PER_NODE = 5;
-    const MAX_BRIDGE_PER_NODE = 2;
+    const MAX_CORE_PER_NODE = 4
+    const MAX_WISPY_PER_NODE = 5
+    const MAX_BRIDGE_PER_NODE = 2
 
-    const coreCountByNode = new Map();
-    const wispyCountByNode = new Map();
-    const bridgeCountByNode = new Map();
+    const coreCountByNode = new Map()
+    const wispyCountByNode = new Map()
+    const bridgeCountByNode = new Map()
 
-    state.points.forEach((point: any, index: number) => {
-        const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id);
-        if (!leadId) return;
-        const threadNode = state.semanticNeighborMapByLeadId.get(leadId);
-        if (!threadNode?.neighbors?.length) return;
+    state.points.forEach((point, index: number) => {
+        const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id)
+        if (!leadId) return
+        const threadNode = state.semanticNeighborMapByLeadId.get(leadId)
+        if (!threadNode?.neighbors?.length) return
 
         threadNode.neighbors.forEach((neighbor: NeighborLike) => {
-            const candidateIndex = state.pointIndexByLeadId.get(String(neighbor.leadId));
-            if (candidateIndex === undefined || candidateIndex === index) return;
-            const key = pairKey(index, candidateIndex);
-            if (seenPairs.has(key)) return;
+            const candidateIndex = state.pointIndexByLeadId.get(String(neighbor.leadId))
+            if (candidateIndex === undefined || candidateIndex === index) return
+            const key = pairKey(index, candidateIndex)
+            if (seenPairs.has(key)) return
 
-            const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore as number : 0;
-            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore as number : 0;
-            const sameCluster = state.points[index]?.cluster === state.points[candidateIndex]?.cluster;
-            const sameCity = Boolean(neighbor.sameCity);
-            const isBridgeLike = String(neighbor.threadType || '').toLowerCase().includes('bridge') || bridgeScore >= 0.62;
+            const semanticScore = Number.isFinite(neighbor.semanticScore) ? (neighbor.semanticScore as number) : 0
+            const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? (neighbor.bridgeScore as number) : 0
+            const sameCluster = state.points[index]?.cluster === state.points[candidateIndex]?.cluster
+            const sameCity = Boolean(neighbor.sameCity)
+            const isBridgeLike =
+                String(neighbor.threadType || '')
+                    .toLowerCase()
+                    .includes('bridge') || bridgeScore >= 0.62
 
             if (!sameCluster) {
-                if (!isBridgeLike) return;
-                const aCount = bridgeCountByNode.get(index) || 0;
-                const bCount = bridgeCountByNode.get(candidateIndex) || 0;
-                if (aCount >= MAX_BRIDGE_PER_NODE || bCount >= MAX_BRIDGE_PER_NODE) return;
-                bridgeCountByNode.set(index, aCount + 1);
-                bridgeCountByNode.set(candidateIndex, bCount + 1);
-                bridgePairs.push({ a: index, b: candidateIndex });
-                seenPairs.add(key);
-                return;
+                if (!isBridgeLike) return
+                const aCount = bridgeCountByNode.get(index) || 0
+                const bCount = bridgeCountByNode.get(candidateIndex) || 0
+                if (aCount >= MAX_BRIDGE_PER_NODE || bCount >= MAX_BRIDGE_PER_NODE) return
+                bridgeCountByNode.set(index, aCount + 1)
+                bridgeCountByNode.set(candidateIndex, bCount + 1)
+                bridgePairs.push({ a: index, b: candidateIndex })
+                seenPairs.add(key)
+                return
             }
 
             if (semanticScore >= 0.62 || (semanticScore >= 0.56 && sameCity)) {
-                const aCount = coreCountByNode.get(index) || 0;
-                const bCount = coreCountByNode.get(candidateIndex) || 0;
-                if (aCount >= MAX_CORE_PER_NODE || bCount >= MAX_CORE_PER_NODE) return;
-                coreCountByNode.set(index, aCount + 1);
-                coreCountByNode.set(candidateIndex, bCount + 1);
-                corePairs.push({ a: index, b: candidateIndex });
-                seenPairs.add(key);
+                const aCount = coreCountByNode.get(index) || 0
+                const bCount = coreCountByNode.get(candidateIndex) || 0
+                if (aCount >= MAX_CORE_PER_NODE || bCount >= MAX_CORE_PER_NODE) return
+                coreCountByNode.set(index, aCount + 1)
+                coreCountByNode.set(candidateIndex, bCount + 1)
+                corePairs.push({ a: index, b: candidateIndex })
+                seenPairs.add(key)
             } else if (semanticScore >= 0.42 || sameCity) {
-                const aCount = wispyCountByNode.get(index) || 0;
-                const bCount = wispyCountByNode.get(candidateIndex) || 0;
-                if (aCount >= MAX_WISPY_PER_NODE || bCount >= MAX_WISPY_PER_NODE) return;
-                wispyCountByNode.set(index, aCount + 1);
-                wispyCountByNode.set(candidateIndex, bCount + 1);
-                wispyPairs.push({ a: index, b: candidateIndex });
-                seenPairs.add(key);
+                const aCount = wispyCountByNode.get(index) || 0
+                const bCount = wispyCountByNode.get(candidateIndex) || 0
+                if (aCount >= MAX_WISPY_PER_NODE || bCount >= MAX_WISPY_PER_NODE) return
+                wispyCountByNode.set(index, aCount + 1)
+                wispyCountByNode.set(candidateIndex, bCount + 1)
+                wispyPairs.push({ a: index, b: candidateIndex })
+                seenPairs.add(key)
             }
-        });
-    });
+        })
+    })
 
-    return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null;
+    return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null
 }
 
 // ── Bezier sag control for organic mycelium curves ────────────────────────
 
-export function getBezierControlPoint(a: any, b: any, edgeSide = 0, edgeRise = 0) {
-    const start = new Vector3(a.x, a.y, a.z);
-    const end = new Vector3(b.x, b.y, b.z);
-    const mid = start.clone().lerp(end, 0.5);
-    const span = new Vector3().subVectors(end, start);
-    const spanLength = Math.max(span.length(), 0.001);
+export function getBezierControlPoint(
+    a: { x: number; y: number; z: number },
+    b: { x: number; y: number; z: number },
+    edgeSide = 0,
+    edgeRise = 0
+) {
+    const start = new Vector3(a.x, a.y, a.z)
+    const end = new Vector3(b.x, b.y, b.z)
+    const mid = start.clone().lerp(end, 0.5)
+    const span = new Vector3().subVectors(end, start)
+    const spanLength = Math.max(span.length(), 0.001)
 
     const viewVector = webglContext.camera
         ? new Vector3().subVectors(webglContext.camera.position, mid).normalize()
-        : new Vector3(0.28, 0.2, 1).normalize();
+        : new Vector3(0.28, 0.2, 1).normalize()
 
-    const worldUp = new Vector3(0, 1, 0);
-    const rightVector = new Vector3().crossVectors(worldUp, viewVector);
-    if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0);
-    rightVector.normalize();
-    const upVector = new Vector3().crossVectors(viewVector, rightVector).normalize();
+    const worldUp = new Vector3(0, 1, 0)
+    const rightVector = new Vector3().crossVectors(worldUp, viewVector)
+    if (rightVector.lengthSq() < 0.0001) rightVector.set(1, 0, 0)
+    rightVector.normalize()
+    const upVector = new Vector3().crossVectors(viewVector, rightVector).normalize()
 
-    const baseSag = Math.min(0.12, Math.max(0.018, spanLength * 0.18));
-    const sideOffset = edgeSide * baseSag * 0.52;
-    const riseOffset = edgeRise * baseSag * 0.32;
+    const baseSag = Math.min(0.12, Math.max(0.018, spanLength * 0.18))
+    const sideOffset = edgeSide * baseSag * 0.52
+    const riseOffset = edgeRise * baseSag * 0.32
 
     return mid
         .clone()
         .addScaledVector(rightVector, sideOffset)
         .addScaledVector(upVector, -(baseSag * 0.78) + riseOffset)
-        .addScaledVector(viewVector, baseSag * 0.14);
+        .addScaledVector(viewVector, baseSag * 0.14)
 }
 
 export function pushBezierLinePair(target: number[], colorTarget: number[], pair: EdgePair, fade = 1, segments = 5) {
-    const a = state.nodePositions[pair.a];
-    const b = state.nodePositions[pair.b];
-    if (!a || !b) return;
+    const a = state.nodePositions[pair.a]
+    const b = state.nodePositions[pair.b]
+    if (!a || !b) return
 
-    const edgeSide = ((pair.a * 31 + pair.b * 17) % 2 === 0) ? 1 : -1;
-    const edgeRise = (((pair.a + pair.b) % 5) - 2) / 2 || 0.3;
+    const edgeSide = (pair.a * 31 + pair.b * 17) % 2 === 0 ? 1 : -1
+    const edgeRise = (((pair.a + pair.b) % 5) - 2) / 2 || 0.3
 
-    const control = getBezierControlPoint(a, b, edgeSide, edgeRise);
+    const control = getBezierControlPoint(a, b, edgeSide, edgeRise)
 
-    const colorA = getThreadCategoryColor(state.points[pair.a]?.cluster || 0, CONFIG.COLORS);
-    const colorB = getThreadCategoryColor(state.points[pair.b]?.cluster || 0, CONFIG.COLORS);
+    const colorA = getThreadCategoryColor(state.points[pair.a]?.cluster || 0, CONFIG.COLORS)
+    const colorB = getThreadCategoryColor(state.points[pair.b]?.cluster || 0, CONFIG.COLORS)
 
-    const samples = [];
+    const samples = []
     for (let i = 0; i <= segments; i++) {
-        const t = i / segments;
-        const invT = 1 - t;
+        const t = i / segments
+        const invT = 1 - t
 
-        const x = invT * invT * a.x + 2 * invT * t * control.x + t * t * b.x;
-        const y = invT * invT * a.y + 2 * invT * t * control.y + t * t * b.y;
-        const z = invT * invT * a.z + 2 * invT * t * control.z + t * t * b.z;
+        const x = invT * invT * a.x + 2 * invT * t * control.x + t * t * b.x
+        const y = invT * invT * a.y + 2 * invT * t * control.y + t * t * b.y
+        const z = invT * invT * a.z + 2 * invT * t * control.z + t * t * b.z
 
-        const r = colorA.r + (colorB.r - colorA.r) * t;
-        const g = colorA.g + (colorB.g - colorA.g) * t;
-        const bCol = colorA.b + (colorB.b - colorA.b) * t;
+        const r = colorA.r + (colorB.r - colorA.r) * t
+        const g = colorA.g + (colorB.g - colorA.g) * t
+        const bCol = colorA.b + (colorB.b - colorA.b) * t
 
         samples.push({
             x: Number.isFinite(x) ? x : 0,
@@ -278,117 +292,126 @@ export function pushBezierLinePair(target: number[], colorTarget: number[], pair
             r: r * fade,
             g: g * fade,
             b: bCol * fade
-        });
+        })
     }
 
     for (let i = 0; i < samples.length - 1; i++) {
-        const start = samples[i]!;
-        const end = samples[i + 1]!;
-        target.push(start.x, start.y, start.z, end.x, end.y, end.z);
-        colorTarget.push(start.r, start.g, start.b, end.r, end.g, end.b);
+        const start = samples[i]!
+        const end = samples[i + 1]!
+        target.push(start.x, start.y, start.z, end.x, end.y, end.z)
+        colorTarget.push(start.r, start.g, start.b, end.r, end.g, end.b)
     }
 }
 
 // ── updateMyceliumThreads ──────────────────────────────────────────────────
 
 export function updateMyceliumThreads() {
-    if (!webglContext.myceliumConnectionPairs?.length) return;
+    if (!webglContext.myceliumConnectionPairs?.length) return
 
     // five explicit segment pairs: 10 vertices / 30 floats
-    const FLOATS_PER_BEZIER_EDGE = 30;
+    const FLOATS_PER_BEZIER_EDGE = 30
 
-    const getSaggedPoint = (a: PositionedNode, b: PositionedNode): Array<{ x: number; y: number; z: number }> | null => {
-        if (!a || !b) return null;
-        const ax = Number.isFinite(a.x) ? a.x : 0;
-        const ay = Number.isFinite(a.y) ? a.y : 0;
-        const az = Number.isFinite(a.z) ? a.z : 0;
-        const bx = Number.isFinite(b.x) ? b.x : 0;
-        const by = Number.isFinite(b.y) ? b.y : 0;
-        const bz = Number.isFinite(b.z) ? b.z : 0;
+    const getSaggedPoint = (
+        a: PositionedNode,
+        b: PositionedNode
+    ): Array<{ x: number; y: number; z: number }> | null => {
+        if (!a || !b) return null
+        const ax = Number.isFinite(a.x) ? a.x : 0
+        const ay = Number.isFinite(a.y) ? a.y : 0
+        const az = Number.isFinite(a.z) ? a.z : 0
+        const bx = Number.isFinite(b.x) ? b.x : 0
+        const by = Number.isFinite(b.y) ? b.y : 0
+        const bz = Number.isFinite(b.z) ? b.z : 0
 
-        const verts: Array<{ x: number; y: number; z: number }> = [];
-        const edgeSide = ((a.index * 31 + b.index * 17) % 2 === 0) ? 1 : -1;
-        const edgeRise = (((a.index + b.index) % 5) - 2) / 2 || 0.3;
-        const control = getBezierControlPoint(
-            { x: ax, y: ay, z: az },
-            { x: bx, y: by, z: bz },
-            edgeSide,
-            edgeRise
-        );
+        const verts: Array<{ x: number; y: number; z: number }> = []
+        const edgeSide = (a.index * 31 + b.index * 17) % 2 === 0 ? 1 : -1
+        const edgeRise = (((a.index + b.index) % 5) - 2) / 2 || 0.3
+        const control = getBezierControlPoint({ x: ax, y: ay, z: az }, { x: bx, y: by, z: bz }, edgeSide, edgeRise)
 
-        const samples: Array<{ x: number; y: number; z: number }> = [];
-        const segments = 5;
+        const samples: Array<{ x: number; y: number; z: number }> = []
+        const segments = 5
         for (let i = 0; i <= segments; i++) {
-            const t = i / segments;
-            const invT = 1 - t;
+            const t = i / segments
+            const invT = 1 - t
             samples.push({
                 x: invT * invT * ax + 2 * invT * t * control.x + t * t * bx,
                 y: invT * invT * ay + 2 * invT * t * control.y + t * t * by,
                 z: invT * invT * az + 2 * invT * t * control.z + t * t * bz
-            });
+            })
         }
 
         for (let i = 0; i < samples.length - 1; i++) {
-            verts.push(samples[i]!, samples[i + 1]!);
+            verts.push(samples[i]!, samples[i + 1]!)
         }
-        return verts;
-    };
+        return verts
+    }
 
-    const updateLayer = (lines: any, layer: number) => {
-        if (!lines) return;
+    const updateLayer = (lines: unknown, layer: number) => {
+        if (!lines || typeof lines !== 'object') return
+        const line = lines as { geometry?: unknown }
+        const geo = line.geometry
+        if (!geo || typeof geo !== 'object') return
 
-        const isLineSegments2 = typeof lines.geometry?.setPositions === 'function';
-        let positions: any;
-        let offset = 0;
+        const isLineSegments2 =
+            'setPositions' in geo && typeof (geo as Record<string, unknown>).setPositions === 'function'
+        let positions: Float32Array
+        let offset = 0
 
         if (!isLineSegments2) {
-            if (!lines.geometry?.attributes?.position) return;
-            positions = lines.geometry.attributes.position.array;
+            const g = geo as { attributes?: { position?: { array: ArrayLike<number>; needsUpdate?: boolean } } }
+            if (!g.attributes?.position) return
+            positions = g.attributes.position.array as Float32Array
         } else {
             // Count matching layer pairs to size the float32 array
-            let count = 0;
+            let count = 0
             webglContext.myceliumConnectionPairs.forEach((pair) => {
-                if (pair.layer === layer) count++;
-            });
-            positions = new Float32Array(count * FLOATS_PER_BEZIER_EDGE);
+                if (pair.layer === layer) count++
+            })
+            positions = new Float32Array(count * FLOATS_PER_BEZIER_EDGE)
         }
 
         webglContext.myceliumConnectionPairs.forEach((pair) => {
-            if (pair.layer !== layer) return;
-            if (pair.a >= state.nodePositions.length || pair.b >= state.nodePositions.length) return;
-            const a = state.nodePositions[pair.a]!;
-            const b = state.nodePositions[pair.b]!;
-            if (!a || !b) return;
+            if (pair.layer !== layer) return
+            if (pair.a >= state.nodePositions.length || pair.b >= state.nodePositions.length) return
+            const a = state.nodePositions[pair.a]!
+            const b = state.nodePositions[pair.b]!
+            if (!a || !b) return
 
-            const verts = getSaggedPoint({ x: a.x, y: a.y, z: a.z, index: pair.a }, { x: b.x, y: b.y, z: b.z, index: pair.b });
+            const verts = getSaggedPoint(
+                { x: a.x, y: a.y, z: a.z, index: pair.a },
+                { x: b.x, y: b.y, z: b.z, index: pair.b }
+            )
             if (verts) {
                 for (let i = 0; i < verts.length; i++) {
-                    positions[offset++] = Number.isFinite(verts[i]!.x) ? verts[i]!.x : 0;
-                    positions[offset++] = Number.isFinite(verts[i]!.y) ? verts[i]!.y : 0;
-                    positions[offset++] = Number.isFinite(verts[i]!.z) ? verts[i]!.z : 0;
+                    positions[offset++] = Number.isFinite(verts[i]!.x) ? verts[i]!.x : 0
+                    positions[offset++] = Number.isFinite(verts[i]!.y) ? verts[i]!.y : 0
+                    positions[offset++] = Number.isFinite(verts[i]!.z) ? verts[i]!.z : 0
                 }
             } else {
-                positions[offset++] = Number.isFinite(a.x) ? a.x : 0;
-                positions[offset++] = Number.isFinite(a.y) ? a.y : 0;
-                positions[offset++] = Number.isFinite(a.z) ? a.z : 0;
-                positions[offset++] = Number.isFinite(b.x) ? b.x : 0;
-                positions[offset++] = Number.isFinite(b.y) ? b.y : 0;
-                positions[offset++] = Number.isFinite(b.z) ? b.z : 0;
-                const remaining = FLOATS_PER_BEZIER_EDGE - 6;
-                for (let z = 0; z < remaining; z++) positions[offset++] = 0;
+                positions[offset++] = Number.isFinite(a.x) ? a.x : 0
+                positions[offset++] = Number.isFinite(a.y) ? a.y : 0
+                positions[offset++] = Number.isFinite(a.z) ? a.z : 0
+                positions[offset++] = Number.isFinite(b.x) ? b.x : 0
+                positions[offset++] = Number.isFinite(b.y) ? b.y : 0
+                positions[offset++] = Number.isFinite(b.z) ? b.z : 0
+                const remaining = FLOATS_PER_BEZIER_EDGE - 6
+                for (let z = 0; z < remaining; z++) positions[offset++] = 0
             }
-        });
+        })
 
         if (isLineSegments2) {
-            lines.geometry.setPositions(positions);
+            const g = geo as { setPositions(positions: Float32Array): void }
+            g.setPositions(positions)
         } else {
-            lines.geometry.attributes.position.needsUpdate = true;
+            const g = geo as { attributes?: { position?: { array: ArrayLike<number>; needsUpdate?: boolean } } }
+            if (!g.attributes?.position) return
+            g.attributes.position.needsUpdate = true
         }
-    };
+    }
 
-    updateLayer(webglContext.myceliumCoreLines, 0);
-    updateLayer(webglContext.myceliumWispyLines, 1);
-    updateLayer(webglContext.myceliumBridgeLines, 2);
+    updateLayer(webglContext.myceliumCoreLines, 0)
+    updateLayer(webglContext.myceliumWispyLines, 1)
+    updateLayer(webglContext.myceliumBridgeLines, 2)
 
-    state.myceliumDirty = false;
+    state.myceliumDirty = false
 }

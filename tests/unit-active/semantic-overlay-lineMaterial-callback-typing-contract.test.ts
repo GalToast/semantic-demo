@@ -30,19 +30,25 @@ function readSource(rel: string): string {
     return fs.readFileSync(path.join(ROOT, rel), 'utf-8')
 }
 
+function stripComments(src: string): string {
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+}
+
 function countAnyOccurrences(source: string): number {
-    const matches = source.match(/:\s*any\b|\bas\s+any\b|\bas\s+unknown\s+as\b/g) || []
+    // Strip block + line comments so prose like `as any` in docstrings doesn't count.
+    const stripped = stripComments(source)
+    const matches = stripped.match(/:\s*any\b|\bas\s+any\b|\bas\s+unknown\s+as\b/g) || []
     return matches.length
 }
 
 describe('W47-Bite-Continued / semantic-overlay.ts / lineMaterial + callback typing', () => {
-    it('any count is reduced from 33 baseline to ≤10 (post-tightening baseline)', () => {
+    it('any count is reduced from 33 baseline to 0 (post-W48-Phase-3 baseline)', () => {
         const source = readSource('src/lib/journey/semantic-overlay.ts')
         const count = countAnyOccurrences(source)
-        // Tightened to 10 in this bite (was 33, a 70% reduction). Lock-in:
-        // must not regress back to the 33 baseline; future tightenings may
-        // lower further.
-        expect(count, `semantic-overlay.ts has ${count} any occurrences (lock-in target ≤10)`).toBeLessThanOrEqual(10)
+        // Tightened to 0 in W48-Phase-3 (was 33 → 10 in W47-Bite-Continued;
+        // a 100% total reduction via the SemanticLineMaterial typed
+        // extension of LineMaterial). Lock-in: must remain at 0.
+        expect(count, `semantic-overlay.ts has ${count} any occurrences (lock-in target 0)`).toBe(0)
     })
 
     it('no `(lineMaterial as any)` casts remain in buildFocusThreadLineMaterial', () => {
@@ -71,22 +77,26 @@ describe('W47-Bite-Continued / semantic-overlay.ts / lineMaterial + callback typ
         expect(nonNullAsserts.length, `expected ≥4 non-null assertions, got ${nonNullAsserts.length}`).toBeGreaterThanOrEqual(4)
     })
 
-    it('(candidate: any) callbacks are all replaced with ThreadCandidate typed callbacks', () => {
+    it('(candidate: any) callbacks are all replaced with typed ThreadCandidate/ThreadCandidateRef callbacks', () => {
         const source = readSource('src/lib/journey/semantic-overlay.ts')
         // No `(candidate: any)` should remain
         expect(source).not.toMatch(/\(candidate:\s*any\)/)
         // The ThreadCandidate import must exist
         expect(source).toMatch(/import\s+type\s*\{[^}]*\bThreadCandidate\b[^}]*\}\s+from\s+['"][^'"]*thread-model['"]/)
-        // At least 5 typed callbacks must be present
-        const typedCallbacks = source.match(/\(candidate:\s*ThreadCandidate\)/g) || []
-        expect(typedCallbacks.length, `expected ≥5 ThreadCandidate callbacks, got ${typedCallbacks.length}`).toBeGreaterThanOrEqual(5)
+        // At least 5 typed callbacks must be present (ThreadCandidate or ThreadCandidateRef)
+        const typedCallbacks = source.match(/\(candidate:\s*(ThreadCandidate|ThreadCandidateRef)\)/g) || []
+        expect(typedCallbacks.length, `expected ≥5 typed candidate callbacks, got ${typedCallbacks.length}`).toBeGreaterThanOrEqual(5)
     })
 
-    it('(edge: any) callback in pairs.forEach is tightened to a structural type', () => {
+    it('(edge: any) callback in pairs.forEach is tightened (structural type or inferred)', () => {
         const source = readSource('src/lib/journey/semantic-overlay.ts')
         expect(source).not.toMatch(/\(edge:\s*any\)/)
-        // Typed shape includes the runtime fields used: t0, t1, cue, a, b, layer
-        expect(source).toMatch(/\(edge:\s*\{\s*t0:\s*number;\s*t1:\s*number;\s*cue:\s*number;\s*a:\s*number;\s*b:\s*number;\s*layer:\s*number/)
+        // Either inline structural type, inferred from pairs Array<{...}>, or _edge prefix.
+        // W48-Phase-3 uses `pairs.forEach((edge) => ...)` with `pairs` cast to Array<{...}>
+        // — the inferred type satisfies the structural-intent.
+        const hasInlineStructural = /\(edge:\s*\{\s*t0:\s*number;\s*t1:\s*number;\s*cue:\s*number;\s*a:\s*number;\s*b:\s*number;\s*layer:\s*number/.test(source)
+        const hasTypedArrayCast = /pairs[^\n]*as\s+Array\s*<\s*\{/.test(source)
+        expect(hasInlineStructural || hasTypedArrayCast, 'pairs.forEach must use typed edge').toBe(true)
     })
 
     it('onBeforeCompile callback uses Three.js implicit shader type (not (shader: any))', () => {

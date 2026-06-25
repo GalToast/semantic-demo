@@ -3,11 +3,11 @@
 // of js/state.ts's _rawState as $state properties. The legacy file stays untouched.
 
 import type {
-    SemanticState,
     ViewName,
     Point,
     NodePosition,
     RouteExplorationState,
+    FocusConnectionSegment,
     RouteChoreographyState,
     TerrainHandoffState,
     StrandContinuityState,
@@ -56,7 +56,8 @@ import type {
     Mesh,
     Sprite,
     HemisphereLight,
-    DirectionalLight
+    DirectionalLight,
+    Texture
 } from 'three'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
@@ -147,7 +148,7 @@ class AppState {
     focusAnchorGroup = $state<Group | null>(null)
     focusAnchorRingMesh = $state<Mesh | null>(null)
     focusAnchorHaloSprite = $state<Sprite | null>(null)
-    focusSemanticConnectionPairs = $state<Array<{ a: number; b: number; layer: number }>>([])
+    focusSemanticConnectionPairs = $state<Array<FocusConnectionSegment>>([])
     semanticLensGroup = $state<Group | null>(null)
     semanticLensGlow = $state<Mesh | null>(null)
     semanticLensSpokes = $state<LineSegments | null>(null)
@@ -289,7 +290,7 @@ class AppState {
         mapPointCount: 0,
         mapPathActive: false
     })
-    routeTraceLines = $state<object | null>(null)
+    routeTraceLines = $state<import('three').LineSegments | null>(null)
     routeTraceConnectionPairs = $state<Array<{ a: number; b: number; side: number }>>([])
     arrivalHandoffGroup = $state<import('three').Group | null>(null)
     semanticThreadsStatus = $state<string>('idle')
@@ -384,6 +385,12 @@ class AppState {
         braidCount: 0,
         endpointCount: 0
     })
+    // ==== INSPECTOR / TEXTURE STATE ====
+    inspectedStrandGroup = $state<Group | null>(null)
+    focusRingTexture = $state<Texture | null>(null)
+    focusNextCueTexture = $state<Texture | null>(null)
+    focusBeaconTexture = $state<Texture | null>(null)
+
     arrivalHandoffDiagnostics = $state<ArrivalHandoffDiagnostics>({
         active: false,
         fromIndex: null,

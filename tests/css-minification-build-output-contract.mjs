@@ -46,7 +46,9 @@ function checkMinified(filePath, label) {
         // Allow the rare /*! important comments */ but flag normal ones.
         const nonImportant = css.match(/\/\*(?!!)[\s\S]*?\*\//g)
         if (nonImportant && nonImportant.length > 0) {
-            failures.push(`${label}: ${nonImportant.length} non-important comment(s) remain (minifier didn't strip them)`)
+            failures.push(
+                `${label}: ${nonImportant.length} non-important comment(s) remain (minifier didn't strip them)`
+            )
         }
     }
 }
@@ -117,8 +119,18 @@ function checkCompressed(filePath, label) {
 
 // Check all CSS files in dist/svelte/css/ and dist/svelte/assets/
 const allCssFiles = [
-    ...(fs.existsSync(cssDir) ? fs.readdirSync(cssDir).filter((f) => f.endsWith('.css')).map((f) => path.join(cssDir, f)) : []),
-    ...(fs.existsSync(path.join(distDir, 'assets')) ? fs.readdirSync(path.join(distDir, 'assets')).filter((f) => f.endsWith('.css')).map((f) => path.join(distDir, 'assets', f)) : []),
+    ...(fs.existsSync(cssDir)
+        ? fs
+              .readdirSync(cssDir)
+              .filter((f) => f.endsWith('.css'))
+              .map((f) => path.join(cssDir, f))
+        : []),
+    ...(fs.existsSync(path.join(distDir, 'assets'))
+        ? fs
+              .readdirSync(path.join(distDir, 'assets'))
+              .filter((f) => f.endsWith('.css'))
+              .map((f) => path.join(distDir, 'assets', f))
+        : []),
     path.join(distDir, 'semantic-demo.css'),
     path.join(distDir, 'vector-explorer-pandora.css')
 ].filter((f) => fs.existsSync(f))
@@ -134,7 +146,9 @@ const compressedBytes = compressible.reduce((sum, f) => {
     return sum + br
 }, 0)
 const compressedKB = (compressedBytes / 1024).toFixed(1)
-console.log(`Compressed (.br) CSS payload: ${compressedKB} KB (${compressible.length} files compressed, ${skipped.length} skipped — below ${COMPRESSION_MIN_BYTES}B threshold)\n`)
+console.log(
+    `Compressed (.br) CSS payload: ${compressedKB} KB (${compressible.length} files compressed, ${skipped.length} skipped — below ${COMPRESSION_MIN_BYTES}B threshold)\n`
+)
 
 compressible.forEach((f) => checkCompressed(f, path.relative(root, f)))
 if (skipped.length > 0) {

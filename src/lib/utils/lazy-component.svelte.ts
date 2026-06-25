@@ -65,7 +65,7 @@ export interface LazyComponentHandle<T> {
      * (no-op if already loaded or loading). When `false`, optionally clears
      * the cached component if `clearOnFalse` is set.
      */
-    ensure(condition: boolean, opts?: { clearOnFalse?: boolean }): void
+    ensure(_condition: boolean, _opts?: { clearOnFalse?: boolean }): void
 }
 
 // ── Schedule helper ──────────────────────────────────────────────────────────

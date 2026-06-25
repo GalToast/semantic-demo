@@ -49,6 +49,7 @@ import {
 } from '@lib/focus/stage-renderer'
 import { applyClusterUiAccent } from '@lib/ui/cluster-ui-accent'
 import type { Point } from '@lib/state/state-types'
+import type { BusinessRecord } from '@lib/types/business'
 import type { BusinessNamePresentation } from '@lib/utils/dom-formatters'
 import { isMapSummarySurface } from '@lib/utils/environment'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
@@ -120,7 +121,7 @@ export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {
     }
 }
 
-export function syncFocusStage(point: Point | null): void {
+export function syncFocusStage(point: Point | BusinessRecord | null): void {
     const points: Point[] = Array.isArray(appState.points) ? appState.points : []
     if (points.length === 0 && point !== null) return
     const stage = document.getElementById('focus-stage')
@@ -128,9 +129,10 @@ export function syncFocusStage(point: Point | null): void {
     if (!stage || !stageCard) return
 
     const cleanupFocusStageTrap = (): void => {
-        if ((stage as any)._focusStageKeydownListener) {
-            stage.removeEventListener('keydown', (stage as any)._focusStageKeydownListener)
-            ;(stage as any)._focusStageKeydownListener = null
+        const s = stage as HTMLElement & { _focusStageKeydownListener?: ((e: KeyboardEvent) => void) | null }
+        if (s._focusStageKeydownListener) {
+            s.removeEventListener('keydown', s._focusStageKeydownListener)
+            s._focusStageKeydownListener = null
         }
         if (getPreviouslyFocusedFocusStage()) {
             try {
@@ -222,10 +224,19 @@ export function syncFocusStage(point: Point | null): void {
             }
         }
 
-        if ((stage as any)._focusStageKeydownListener) {
-            stage.removeEventListener('keydown', (stage as any)._focusStageKeydownListener)
+        if (
+            (stage as HTMLElement & { _focusStageKeydownListener?: ((e: KeyboardEvent) => void) | null })
+                ._focusStageKeydownListener
+        ) {
+            stage.removeEventListener(
+                'keydown',
+                (stage as HTMLElement & { _focusStageKeydownListener?: ((e: KeyboardEvent) => void) | null })
+                    ._focusStageKeydownListener!
+            )
         }
-        ;(stage as any)._focusStageKeydownListener = keydownHandler
+        ;(
+            stage as HTMLElement & { _focusStageKeydownListener?: ((e: KeyboardEvent) => void) | null }
+        )._focusStageKeydownListener = keydownHandler
         stage.addEventListener('keydown', keydownHandler)
     }
 
@@ -243,8 +254,17 @@ export function syncFocusStage(point: Point | null): void {
     if (onboardingHint) {
         onboardingHint.classList.remove('visible')
         onboardingHint.setAttribute('aria-hidden', 'true')
-        ;(onboardingHint as any)._dismissedThisSession = true
-        if ((onboardingHint as any)._autoHideTimer) clearTimeout((onboardingHint as any)._autoHideTimer)
+        ;(
+            onboardingHint as HTMLElement & {
+                _dismissedThisSession?: boolean
+                _autoHideTimer?: ReturnType<typeof setTimeout>
+            }
+        )._dismissedThisSession = true
+        const hint = onboardingHint as HTMLElement & {
+            _dismissedThisSession?: boolean
+            _autoHideTimer?: ReturnType<typeof setTimeout>
+        }
+        if (hint._autoHideTimer) clearTimeout(hint._autoHideTimer)
     }
 }
 

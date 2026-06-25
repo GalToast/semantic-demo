@@ -3,8 +3,9 @@
  * Random/similar/neighbor suggestion controls.
  */
 
+import type { BusinessRecord } from '@lib/types/business'
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { bindClick } from '@lib/ui/view-bindings'
 import { focusOnNode } from '@lib/engine/camera-choreography'
 import { clearShortSemanticSearchState } from '@lib/search/state'
@@ -29,7 +30,7 @@ export function bindSuggestionControls(): void {
         }
 
         setTimeout(() => {
-            const eligible = state.points.filter((p: any) => p && p.status !== 'disqualified')
+            const eligible = state.points.filter((p: BusinessRecord) => p && p.status !== 'disqualified')
             if (!eligible.length) {
                 const summaryEl = document.getElementById('summary-text')
                 if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
@@ -91,8 +92,8 @@ export function bindSuggestionControls(): void {
             const cluster = state.points[focusedIdx]?.cluster
             if (Number.isFinite(cluster)) {
                 const sameCluster = state.points
-                    .map((p: any, i: number) => ({ p, i }))
-                    .filter(({ p, i }: { p: any; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
+                    .map((p: BusinessRecord, i: number) => ({ p, i }))
+                    .filter(({ p, i }: { p: BusinessRecord; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
                 if (sameCluster.length) {
                     const { i } = sameCluster[Math.floor(Math.random() * sameCluster.length)]
                     focusOnNode(i, { fromCanvasNode: true })
@@ -114,7 +115,7 @@ export function bindSuggestionControls(): void {
             if (fp) {
                 let nearest: number | null = null
                 let nearestDist = Infinity
-                state.points.forEach((p: any, i: number) => {
+                state.points.forEach((p: BusinessRecord, i: number) => {
                     if (!p || i === focusedIdx) return
                     const dx = p.x - fp.x
                     const dy = p.y - fp.y

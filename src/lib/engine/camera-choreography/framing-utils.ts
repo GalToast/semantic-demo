@@ -4,11 +4,12 @@
  *
  * Port of js/modules/camera-framing-utils.ts
  */
-import { Vector3 } from 'three';
+import { Vector3, PerspectiveCamera, WebGLRenderer, Points } from 'three';
+import type { NodePosition } from '@lib/state/state-types';
 import { getViewportSize } from '@lib/utils/environment';
 import { appState as _state } from '@lib/state/app.svelte'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
-const state = _state as any;
+const state = _state;
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -35,11 +36,11 @@ export interface ProjectedScreen {
 }
 
 export interface AppStateLike {
-  camera: any;
-  renderer: any;
-  pointsMesh?: any;
-  nodePositions: any[];
-  originalPositions: any[];
+  camera: PerspectiveCamera | null;
+  renderer: WebGLRenderer | null;
+  pointsMesh?: Points | null;
+  nodePositions: NodePosition[];
+  originalPositions: NodePosition[];
   [key: string]: unknown;
 }
 
@@ -53,7 +54,7 @@ export function getCanvasUnobstructedRegion(): CanvasRegion {
   const vw = vp.width;
   const vh = vp.height;
   const body = document.body;
-  const canvasRect = (state.renderer as any)?.domElement?.getBoundingClientRect?.() || {
+  const canvasRect = state.renderer?.domElement?.getBoundingClientRect?.() || {
     left: 0,
     top: 0,
     right: vw,
@@ -152,9 +153,9 @@ export function getCanvasUnobstructedRegion(): CanvasRegion {
  */
 function projectToScreen(
   worldPos: { x: number; y: number; z: number },
-  camera: any,
-  renderer: any,
-  pointsMesh: any = null,
+  camera: PerspectiveCamera | null,
+  renderer: WebGLRenderer | null,
+  pointsMesh: Points | null = null,
 ): ProjectedScreen | null {
   if (!camera || !renderer) return null;
   const v = new Vector3(worldPos.x, worldPos.y, worldPos.z);
@@ -220,8 +221,8 @@ export function computeSafeAreaCameraTargetOffset(
   pocketBounds: PocketBounds,
   canvasRegion: CanvasRegion,
   focusDistance: number,
-  camera: any,
-  controls: any,
+  camera: PerspectiveCamera | null,
+  controls: { target?: Vector3; update?: () => void; enabled?: boolean } | null,
 ): Vector3 | null {
   if (!pocketBounds || !canvasRegion || !camera || !controls) return null;
 

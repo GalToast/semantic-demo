@@ -308,12 +308,13 @@ export function disposePostProcessing(): void {
  * Update vignette parameters at runtime (for DevGui sliders).
  */
 export function updateVignetteParams(params: { offset?: number; darkness?: number }): void {
-    if (!_vignetteEffect) return
-    if (params.offset !== undefined && 'offset' in vignetteAny) {
-        _vignetteEffect.offset = params.offset
+    const vignette = _vignetteEffect as unknown as { offset: number; darkness: number } | null
+    if (!vignette) return
+    if (params.offset !== undefined) {
+        vignette.offset = params.offset
     }
-    if (params.darkness !== undefined && 'darkness' in vignetteAny) {
-        _vignetteEffect.darkness = params.darkness
+    if (params.darkness !== undefined) {
+        vignette.darkness = params.darkness
     }
 }
 
@@ -321,26 +322,25 @@ export function updateVignetteParams(params: { offset?: number; darkness?: numbe
  * Update chromatic aberration offset at runtime (for DevGui sliders).
  */
 export function updateChromaticAberrationParams(params: { offset?: Vector2 }): void {
-    if (!_chromaticAberrationEffect || !params.offset) return
-    if ('offset' in aberrationAny) {
-        _chromaticAberrationEffect.offset = params.offset
-    }
+    const aberration = _chromaticAberrationEffect as unknown as { offset: Vector2 } | null
+    if (!aberration || !params.offset) return
+    aberration.offset = params.offset
 }
 
 /**
  * Update bloom parameters at runtime (for DevGui sliders).
  */
 export function updateBloomParams(params: { luminanceThreshold?: number; intensity?: number; radius?: number }): void {
-    if (_bloomEffect) {
-        if (params.intensity !== undefined) {
-            _bloomEffect.intensity = params.intensity
-        }
-        if (params.luminanceThreshold !== undefined && 'luminanceThreshold' in bloomAny) {
-            _bloomEffect.luminanceThreshold = params.luminanceThreshold
-        }
-        if (params.radius !== undefined && 'radius' in bloomAny) {
-            _bloomEffect.radius = params.radius
-        }
+    if (!_bloomEffect) return
+    const bloom = _bloomEffect as unknown as { intensity: number; luminanceThreshold: number; radius: number }
+    if (params.intensity !== undefined) {
+        bloom.intensity = params.intensity
+    }
+    if (params.luminanceThreshold !== undefined) {
+        bloom.luminanceThreshold = params.luminanceThreshold
+    }
+    if (params.radius !== undefined) {
+        bloom.radius = params.radius
     }
 }
 

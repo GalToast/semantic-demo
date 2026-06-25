@@ -130,13 +130,13 @@ const INITIAL_NAV_STATE: NavState = {
 // Use a global window key so all chunks share the same _navWritable instance.
 function getOrCreateNavWritable(): ReturnType<typeof writable<NavState>> {
     const key = '__SEMANTIC_EXPLORER_NAV_WRITABLE__'
-    const existing = typeof window !== 'undefined' ? (window as any)[key] : undefined
+    const existing = typeof window !== 'undefined' ? (window as Record<string, unknown>)[key] : undefined
     if (existing && typeof existing.subscribe === 'function') {
         return existing
     }
     const store = writable<NavState>({ ...INITIAL_NAV_STATE })
     if (typeof window !== 'undefined') {
-        ;(window as any)[key] = store
+        ;(window as Record<string, unknown>)[key] = store
     }
     return store
 }
@@ -390,8 +390,8 @@ export function setActiveStoryPrompt(_id: string | null): void {
 }
 
 /** Set the mycelium mode (dormant|active|overdrive). */
-export function setMyceliumMode(mode: string, _options?: any): void {
-    _navWritable.update((s) => ({ ...s, myceliumMode: mode as any }))
+export function setMyceliumMode(mode: string, _options?: Record<string, unknown>): void {
+    _navWritable.update((s) => ({ ...s, myceliumMode: mode }))
 }
 
 /** Set whether URL state is currently being applied. */
@@ -486,7 +486,7 @@ export function dispatchNavTransition(
                     ? (_surfaceRaw as PanelSurface)
                     : ('focus' as PanelSurface)
             _navWritable.update((s) => {
-                const next: any = { ...s }
+                const next: NavState = { ...s }
                 if (_indexDefined) next.focusedIndex = payload.index as number
                 next.mode = _finalMode
                 next.surface = _finalSurface

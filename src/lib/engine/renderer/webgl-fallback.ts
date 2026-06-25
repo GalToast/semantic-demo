@@ -37,8 +37,14 @@ export function detectWebGLSupport(): WebGLSupportDetail {
 }
 
 export interface FallbackHandlerDeps {
-    state?: any
-    viewController?: { switchView(view: string, options?: any): void } | null
+    state?: {
+        scene: unknown
+        camera: unknown
+        renderer: unknown
+        controls: unknown
+        scenePerformanceDiagnostics: unknown
+    } | null
+    viewController?: { switchView(view: string, options?: Record<string, unknown>): void } | null
     mapState?: { initMap(): void } | null
     uiFeedback?: { showExperienceToast(title: string, message: string): void } | null
 }
@@ -59,14 +65,15 @@ export function showWebGLFallback(
 
     // Update diagnostics via modern appState first, then legacy state
     appState.withMutation(() => {
-        const diagnostics = appState.scenePerformanceDiagnostics as any
+        const diagnostics = appState.scenePerformanceDiagnostics
         diagnostics.active = false
         diagnostics.reason = detail.reason || 'webgl-unavailable'
     })
 
     if (deps.state) {
-        ;(deps.state as any).scenePerformanceDiagnostics.active = false
-        ;(deps.state as any).scenePerformanceDiagnostics.reason = detail.reason || 'webgl-unavailable'
+        const diagnostics = deps.state.scenePerformanceDiagnostics as { active: boolean; reason: string }
+        diagnostics.active = false
+        diagnostics.reason = detail.reason || 'webgl-unavailable'
     }
 
     // Clear existing renderer references (legacy path)

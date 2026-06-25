@@ -154,13 +154,13 @@ export function initJourneyState(): void {
         state.bridgeIndices ??= new Set<number>()
         state.projectedNeighborGrid ??= null
         state.projectedNeighborCache ??= new Map()
-        state.canvasFieldHoverClearTimer ??= null
+        state.canvasThreadInspectionClearTimer ??= null
         state.stableCanvasHover ??= null
         state.pointIndexByLeadId ??= new Map()
         state.signalScores ??= []
         state.bridgeScores ??= []
         state.semanticDiveMode ??= false
-        state.focusPocketTransitionStartedAt ??= 0
+        state.pocketTransitionStartedAt ??= 0
         state.pocketMotionByIndex ??= new Map()
     })
 }
@@ -201,21 +201,21 @@ export function setTrailDepth(depth: number, options: Record<string, unknown> = 
     publish(EVENTS.TRAIL_DEPTH_UPDATE_REQUESTED, { depth, options })
 }
 
-function restoreFocusTrailState(priorFocused: number | null = appState.focusedNode): void {
-    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= appState.points.length) return
+function restoreFocusTrailState(priorFocused: number | null = state.focusedNode): void {
+    if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= state.points.length) return
     setTrailFromSeed(priorFocused!)
 
     publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! } as never)
 
     withStateMutation(() => {
-        state.navState.lastTraversalReason = appState.navState?.lastTraversalReason || null
+        state.navState.lastTraversalReason = state.navState?.lastTraversalReason || null
     })
     updateTrailIndices(priorFocused!)
     refreshFocusSemanticOverlay()
     applyLocalNeighborhoodFocus(priorFocused!)
     applyPointFilterColors()
-    const priorPoint = appState.points[priorFocused!] || null
-    syncFocusStage((priorPoint || appState.selectedPoint || null) as never)
+    const priorPoint = state.points[priorFocused!] || null
+    syncFocusStage((priorPoint || state.selectedPoint || null) as never)
     updateTraversalUi()
 }
 

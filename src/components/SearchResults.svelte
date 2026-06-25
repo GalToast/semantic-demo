@@ -277,7 +277,7 @@
       // Publish focus-request event BEFORE calling the legacy focusOnNode so
       // triggers.ts can populate legacy navState (threadCandidates, etc.) before
       // the route-trace overlay refreshes in response to CAMERA_NODE_FOCUSED.
-      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) } as any);
+      publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) });
       actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
     }
   }
@@ -293,7 +293,7 @@
 
   function onRetry(): void {
     if (summary?.query) {
-      publish(EVENTS.SEARCH_CLEARED, { query: summary.query, preferCachedResults: false } as any);
+      publish(EVENTS.SEARCH_CLEARED, { query: summary.query, preferCachedResults: false });
     }
   }
 

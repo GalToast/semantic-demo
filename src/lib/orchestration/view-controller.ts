@@ -11,7 +11,6 @@
 import { get } from 'svelte/store';
 import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts';
 import { animateCameraToTerrainPrelude } from '@lib/engine/camera-controls';
-import { semanticGuideIcon } from '@lib/journey/semantic-guide';
 import { applyMapFlatteningLayout } from '@lib/utils/map-flattening-layout';
 
 // ── Types ─────────────────────────────────────────────────────────────────────

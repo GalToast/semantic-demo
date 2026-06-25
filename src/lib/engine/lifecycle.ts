@@ -30,6 +30,7 @@ export interface EngineCallbacks {
 // ── Imports ──────────────────────────────────────────────────────────────────
 
 import { appState } from '@lib/state/app.svelte'
+import type { CameraLike } from '@lib/state/state-types'
 import { setEngineStatus, getEngineStatus as _getEngineStatus } from '@lib/stores/engine.svelte.ts'
 import type { EngineStatus } from '@lib/stores/engine.svelte.ts'
 
@@ -504,7 +505,7 @@ export function destroyEngine(): void {
     // 5. Null out scene/renderer/camera references so reinit starts clean
     appState.scene = null as unknown as typeof appState.scene
     appState.renderer = null as unknown as typeof appState.renderer
-    appState.camera = null
+    appState.camera = null as unknown as CameraLike
 
     // 6. Set status to idle
     setEngineStatus('idle')

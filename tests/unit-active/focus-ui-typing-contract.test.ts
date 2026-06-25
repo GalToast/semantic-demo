@@ -65,14 +65,15 @@ describe('focus-ui — typing contract (W47-Bite-E tightening)', () => {
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 11 (post-W48-Phase-2 baseline; was 13)', () => {
-        const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // 11 = post-W48-Phase-2 baseline (was 13 after W47-Bite-E; the
-        // 2 reduction came from the state.semanticNeighborMapByLeadId
+    it('any occurrence count is 0 (post-W48-Phase-3 baseline; was 13 → 11 → 3)', () => {
+        // Strip comments so prose like "as any" in docstrings doesn't count.
+        const matches = stripped.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
+        // 0 = post-W48-Phase-3 baseline (was 13 → 11 in W47-Bite-E → 3 in W48; the
+        // final 3 came from tightening the remaining state.semanticNeighborMapByLeadId
         // cascade — see file header). If a future contributor adds a
         // new any, this test fails and forces them to either tighten
         // or update the documented baseline.
-        expect(matches.length).toBe(11)
+        expect(matches.length).toBe(0)
     })
 
     it('no `(document.body as any)?.dataset?.X` casts remain', () => {

@@ -322,7 +322,7 @@ export function syncFilterControls(): void {
  * Apply a story prompt (guided exploration mode).
  * Sets mycelium mode and filters based on the story.
  */
-export function applyStoryPrompt(story: string | null, options: Record<string, unknown> = {}): void {
+export function applyStoryPrompt(story: string | null, _options: Record<string, unknown> = {}): void {
     navStore.update((s) => ({ ...s, activeStoryPrompt: story || null }))
 
     overwriteActiveFilters({ status: 'all', city: 'all', website: false, email: false, geocoded: false })

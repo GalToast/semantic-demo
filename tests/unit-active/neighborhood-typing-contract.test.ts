@@ -71,13 +71,13 @@ describe('neighborhood — typing contract (W47-Bite-I tightening)', () => {
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 15 (post-Bite-I baseline; was 22)', () => {
-        const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // 15 = post-Bite-I baseline. Was 22 before this bite.
-        // If a future contributor adds a new any, this test fails
-        // and forces them to either tighten or update the documented
-        // baseline.
-        expect(matches.length).toBe(15)
+    it('any occurrence count is 0 (post-W48-Phase-3 baseline; was 22 → 15)', () => {
+        // Strip comments so prose like `as any` in docstrings doesn't count.
+        const matches = stripped.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
+        // 0 = post-W48-Phase-3 baseline (was 22 → 15 in W47-Bite-I;
+        // the remaining 15 (TypedRecord + manifest scaffolding) were
+        // tightened to a typed SemanticNeighborDetail scaffold).
+        expect(matches.length).toBe(0)
     })
 
     it('sort callback uses typed `a.semanticScore` (not `(a as any).semanticScore`)', () => {

@@ -12,7 +12,7 @@
  * Wave 11 3-step retirement path; the corresponding bridge file in
  * `src/lib/engine/` is dead and a deletion candidate for a follow-up ticket.
  */
-import { Vector3, PerspectiveCamera } from 'three'
+import { Vector3 } from 'three'
 import type { PocketMotion, PocketMotionWithFrame, FocusPocketMeta } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
@@ -312,7 +312,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             haloCount: 0,
             motif: fallbackPocket.motif?.key || 'market',
             motifLabel: fallbackPocket.motif?.label || 'threaded neighborhood',
-            viewportProfile: fallbackPocket.viewportProfile || viewportProfile,
+            viewportProfile: fallbackPocket.viewportProfile || viewportProfile
         })
         appState.withMutation(() => {
             appState.nodesAreSettling = true

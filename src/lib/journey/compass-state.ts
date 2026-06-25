@@ -12,9 +12,9 @@ import { getNextWalkCandidateForIndex } from './lifecycle-adapter'
 import type { Point } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 
-let routeEmbodimentReader: () => any[] = () => []
+let routeEmbodimentReader: () => unknown[] = () => []
 
-export function registerRouteEmbodimentReader(fn: () => any[]): void {
+export function registerRouteEmbodimentReader(fn: () => unknown[]): void {
     routeEmbodimentReader = fn
 }
 
@@ -64,7 +64,7 @@ export function getJourneyCompassState(): CompassState {
     const cueBeat: string = appState.semanticTrailCue || 'idle'
     const focusedPoint = getFocusedJourneyPoint()
     const focusedName: string = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : ''
-    const summary = appState.currentSearchSummary as Record<string, any> | null
+    const summary = appState.currentSearchSummary as Record<string, unknown> | null
     const queryLabel: string = summary?.query ? `"${summary.query}"` : 'semantic search'
     const isSearching: boolean = cueBeat === 'searching'
     const isFocusing: boolean = cueBeat === 'focusing'
@@ -95,7 +95,10 @@ export function getJourneyCompassState(): CompassState {
         const focusIndex: number = Number.isFinite(appState.navState?.focusedIndex)
             ? appState.navState!.focusedIndex!
             : appState.focusedNode!
-        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex as any)
+        const nextCandidate = getNextExploreCandidateForIndex(
+            focusIndex,
+            getNextWalkCandidateForIndex as (index: number) => number | null
+        )
         const pts = appState.points!
         const nextPointCandidate = nextCandidate ? (pts[nextCandidate.index] ?? null) : null
         const nextPoint = nextPointCandidate as Point | null
@@ -119,7 +122,7 @@ export function getJourneyCompassState(): CompassState {
     if (hasFocus || isFocusing) {
         const walkHistory: number[] = Array.isArray(appState.navState?.walkHistoryIndices)
             ? appState.navState!.walkHistoryIndices
-            : (appState.navState as any)?.explorationHistoryIndices || []
+            : appState.navState?.explorationHistoryIndices || []
         const walkHistoryLength: number = walkHistory.length
         const walkDepth: number = Math.max(0, walkHistory.length - 1)
         const isSearchFocus: boolean = !!summary && walkDepth === 0

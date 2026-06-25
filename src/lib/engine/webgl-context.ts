@@ -37,7 +37,7 @@ export interface WebGLContextState {
   myceliumWispyLines: LineSegments | null;
   myceliumBridgeLines: LineSegments | null;
   focusSemanticLines: LineSegments | null;
-  focusSemanticConnectionPairs: Array<{ a: number; b: number }>;
+  focusSemanticConnectionPairs: Array<import('@lib/state/state-types').FocusConnectionSegment>;
   semanticLensGroup: Group | null;
   semanticLensGlow: Mesh | null;
   semanticLensSpokes: LineSegments | null;

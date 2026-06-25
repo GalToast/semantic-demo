@@ -15,7 +15,7 @@ export type EngineStatus = 'idle' | 'loading' | 'ready' | 'degraded' | 'destroye
 
 class EngineStatusState {
     status = $state<EngineStatus>('idle')
-    private subscribers = new Set<(v: EngineStatus) => void>()
+    private subscribers = new Set<(_v: EngineStatus) => void>()
 
     set(next: EngineStatus): void {
         this.status = next
@@ -26,7 +26,7 @@ class EngineStatusState {
         return this.status
     }
 
-    subscribe(run: (v: EngineStatus) => void): () => void {
+    subscribe(run: (_v: EngineStatus) => void): () => void {
         this.subscribers.add(run)
         // Svelte 4 Readable contract: subscribe is executed immediately with the current value
         run(this.status)

@@ -32,13 +32,21 @@ import {
     cancelAllThreadTimers
 } from '@lib/journey/thread-settler'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { appState as legacyState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // Register the WebGL update callback
 setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay)
 
 // ── Types ──────────────────────────────────────────────────────────────────
+
+/** HTMLElement extension that carries the private pointer-event listeners
+ *  we attach when binding/unbinding the canvas thread inspection overlay.
+ *  Used to avoid `as any` casts when reading/writing `_pointerEnterListener`
+ *  and `_pointerLeaveListener` on the inspector DOM node. */
+interface InspectorElement extends HTMLElement {
+    _pointerEnterListener?: EventListener
+    _pointerLeaveListener?: EventListener
+}
 
 export interface ThreadInspectionState {
     active: boolean
@@ -117,7 +125,9 @@ export function getThreadInspectionState(
     const focusName = focusPoint ? formatBusinessName(focusPoint.name || 'this business') : ''
     const targetName = point ? formatBusinessName(point.name || 'nearby stop') : ''
 
-    const candidateObj = candidate && typeof candidate === 'object' ? candidate : { index: candidateIndex ?? undefined }
+    const candidateObj: ThreadCandidateRef = (
+        candidate && typeof candidate === 'object' ? candidate : { index: candidateIndex ?? 0, source: '', reason: '' }
+    ) as ThreadCandidateRef
     const reason = active ? summarizeNeighborReason(candidateObj, point, focusPoint) : ''
     const relationshipRole = active ? normalizeRelationshipRole(candidateObj.relationshipRole) : ''
     const relationshipTitle = active && relationshipRole ? getRelationshipRoleLabel(relationshipRole, 'title') : ''
@@ -197,7 +207,7 @@ export function renderThreadInspection(
     index: number | null = appState.inspectedThreadIndex,
     options: ThreadInspectionOptions = {}
 ): ThreadInspectionState | null {
-    const inspector = document.getElementById('focus-thread-inspector')
+    const inspector = document.getElementById('focus-thread-inspector') as InspectorElement | null
     const inspectionState = getThreadInspectionState(index, options)
     // syncInspectedStrandOverlay's underlying impl handles null gracefully
     // (it short-circuits via `inspectionState?.active`). Cast through
@@ -229,11 +239,15 @@ export function renderThreadInspection(
     if (!inspector) return inspectionState
 
     // Clean up pointer guards
-    if ((inspector as any)._pointerEnterListener) {
-        inspector.removeEventListener('pointerenter', (inspector as any)._pointerEnterListener)
-        inspector.removeEventListener('pointerleave', (inspector as any)._pointerLeaveListener)
-        delete (inspector as any)._pointerEnterListener
-        delete (inspector as any)._pointerLeaveListener
+    const inspectorEl = inspector as HTMLElement & {
+        _pointerEnterListener?: ((e: PointerEvent) => void) | null
+        _pointerLeaveListener?: ((e: PointerEvent) => void) | null
+    }
+    if (inspectorEl._pointerEnterListener) {
+        inspectorEl.removeEventListener('pointerenter', inspectorEl._pointerEnterListener)
+        inspectorEl.removeEventListener('pointerleave', inspectorEl._pointerLeaveListener!)
+        delete inspectorEl._pointerEnterListener
+        delete inspectorEl._pointerLeaveListener
         delete inspector.dataset.pointerGuardBound
     }
 
@@ -245,7 +259,7 @@ export function renderThreadInspection(
             if (clearTimerId) {
                 window.clearTimeout(clearTimerId)
                 withStateMutation(() => {
-                    ;(legacyState as any).canvasThreadInspectionClearTimer = null
+                    appState.canvasThreadInspectionClearTimer = null
                 })
                 appState.canvasThreadInspectionClearTimer = null
             }
@@ -260,8 +274,8 @@ export function renderThreadInspection(
                 scheduleCanvasThreadInspectionClear(1800)
             }
         }
-        ;(inspector as any)._pointerEnterListener = pointerEnter
-        ;(inspector as any)._pointerLeaveListener = pointerLeave
+        inspectorEl._pointerEnterListener = pointerEnter
+        inspectorEl._pointerLeaveListener = pointerLeave
         inspector.addEventListener('pointerenter', pointerEnter)
         inspector.addEventListener('pointerleave', pointerLeave)
     }
@@ -288,7 +302,7 @@ export function renderThreadInspection(
     if (inspectionState?.active && appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
         withStateMutation(() => {
-            ;(legacyState as any).canvasThreadInspectionClearTimer = null
+            appState.canvasThreadInspectionClearTimer = null
         })
         appState.canvasThreadInspectionClearTimer = null
     }
@@ -458,7 +472,7 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
         withStateMutation(() => {
-            ;(legacyState as any).canvasThreadInspectionClearTimer = null
+            appState.canvasThreadInspectionClearTimer = null
         })
         appState.canvasThreadInspectionClearTimer = null
     }
@@ -530,7 +544,7 @@ export function unpinThreadInspection(): ThreadInspectionState | null {
     if (appState.canvasThreadInspectionClearTimer) {
         window.clearTimeout(appState.canvasThreadInspectionClearTimer)
         withStateMutation(() => {
-            ;(legacyState as any).canvasThreadInspectionClearTimer = null
+            appState.canvasThreadInspectionClearTimer = null
         })
         appState.canvasThreadInspectionClearTimer = null
     }
@@ -562,7 +576,7 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
             clearThreadInspection()
         }
     }, delay)
-    appState.canvasThreadInspectionClearTimer = id
+    appState.canvasThreadInspectionClearTimer = id as unknown as ReturnType<typeof setTimeout>
 }
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
@@ -583,7 +597,7 @@ export function clearThreadInspection(options: ThreadInspectionOptions = {}): Th
         if (options.force && appState.canvasThreadInspectionClearTimer) {
             window.clearTimeout(appState.canvasThreadInspectionClearTimer)
             withStateMutation(() => {
-                ;(legacyState as any).canvasThreadInspectionClearTimer = null
+                appState.canvasThreadInspectionClearTimer = null
             })
             appState.canvasThreadInspectionClearTimer = null
         }
@@ -641,14 +655,16 @@ export function exploreThreadNeighbor(
     const targetPoint = Number.isFinite(index) && index >= 0 && index < pts.length ? pts[index] : null
     if (!targetPoint) return null
 
-    const candidateObj = candidate && typeof candidate === 'object' ? candidate : { index: index }
+    const candidateObj: ThreadCandidateRef = (
+        candidate && typeof candidate === 'object' ? candidate : { index, source: '', reason: '' }
+    ) as ThreadCandidateRef
     const reason =
         summarizeNeighborReason(
-            candidateObj || {},
+            candidateObj,
             targetPoint,
             Number.isFinite(fromIndex) && fromIndex! >= 0 && fromIndex! < pts.length ? pts[fromIndex!] : null
         ) ||
-        candidateObj?.reason ||
+        candidateObj.reason ||
         options.reason ||
         'nearby business relationship'
     cancelAllThreadTimers()
@@ -671,10 +687,10 @@ export function exploreThreadNeighbor(
         index,
         fromIndex: fromIndex ?? undefined,
         appendHistory: !options.restoreHistory
-    } as any)
+    })
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' })
     withStateMutation(() => {
-        ;(legacyState.navState as any).lastTraversalReason = reason
+        appState.navState.lastTraversalReason = reason
     })
     if (appState.currentView === 'map') {
         focusOnPoint(targetPoint, {
@@ -682,7 +698,7 @@ export function exploreThreadNeighbor(
             appendHistory: !options.restoreHistory,
             restoreHistory: !!options.restoreHistory,
             fromIndex: fromIndex ?? undefined
-        } as any)
+        } as unknown as Parameters<typeof focusOnPoint>[1])
     } else {
         focusOnNode(index, {
             fromCanvasNode: !!options.fromCanvasNode,

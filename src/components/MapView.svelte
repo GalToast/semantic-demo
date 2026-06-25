@@ -114,7 +114,7 @@
       centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = (appState as any).map;
+        const map = appState.map;
         map?.invalidateSize?.();
         setTimeout(() => map?.invalidateSize?.(), 120);
       });

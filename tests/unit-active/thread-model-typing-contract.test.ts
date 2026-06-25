@@ -138,8 +138,9 @@ describe('thread-model — typing contract (W47-Bite-J tightening)', () => {
 
     it('L372 neighbor callback is typed with inline structural type', () => {
         // The callback now uses an inline type with leadId and the
-        // optional fields the callback reads.
-        const usesTypedCallback = /\.map\(\(neighbor\s*:\s*\{\s*leadId\s*:\s*string/
+        // optional fields the callback reads. W48-Phase-3 reformatted
+        // to multi-line so the regex allows whitespace between `.map(` and `(neighbor`.
+        const usesTypedCallback = /\.map\s*\(\s*\(neighbor\s*:\s*\{\s*leadId\s*:\s*string/
         expect(stripped.match(usesTypedCallback), 'typed callback not found').toBeTruthy()
     })
 

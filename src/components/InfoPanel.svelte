@@ -289,7 +289,7 @@
   // Using Record<string, unknown> to match the view model's JSDoc-typed return.
   // The `any` here is intentional: it's a legacy port whose typed return would
   // touch ~20 fields; tightening it is tracked separately.
-  const viewModel: any = $derived.by(() => {
+  const viewModel: Record<string, unknown> = $derived.by(() => {
     if (!selectedRecord) return {
       name: COPY.selectedEmptyName,
       filedAs: '',
@@ -366,13 +366,13 @@
     }
 
     // Point data available — delegate to shared view-model
-    return buildSelectedBusinessProps(point as unknown as Record<string, unknown>, {}, selectedDetailsAdapter as any, {
+    return buildSelectedBusinessProps(point as unknown as Record<string, unknown>, {}, selectedDetailsAdapter as unknown, {
       getBusinessNamePresentation,
       sanitizePublicFacingNote,
       describeCluster,
       getPublicRecordStatusLabel,
       COPY
-    } as any);
+    } as Record<string, unknown>);
   });
 
   let selectedCity = $derived.by(() => {

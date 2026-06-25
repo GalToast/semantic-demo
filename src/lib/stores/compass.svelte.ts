@@ -39,12 +39,8 @@ export const JOURNEY_ACTIONS = Object.freeze({
 
 export type JourneyAction = (typeof JOURNEY_ACTIONS)[keyof typeof JOURNEY_ACTIONS]
 
-/** A compass action button descriptor. */
-export interface CompassAction {
-    readonly label: string
-    readonly action: JourneyAction
-    readonly hint?: string
-}
+import type { CompassAction } from '@lib/journey/compass-state'
+export type { CompassAction }
 
 /** The full compass status output for a given state. */
 export interface CompassStatus {

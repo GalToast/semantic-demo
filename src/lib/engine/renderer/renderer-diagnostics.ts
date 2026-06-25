@@ -5,7 +5,7 @@
  * Extracted from three-engine.ts during the W46 renderer decomposition.
  */
 
-import { getLiveResourceCounts, webglContext } from '@lib/engine/webgl-context'
+import { getLiveResourceCounts } from '@lib/engine/webgl-context'
 import { appState } from '@lib/state/app.svelte'
 
 export interface ScenePerformanceTimings {
@@ -43,7 +43,7 @@ export function getSceneRenderableDiagnostics() {
 export function sampleScenePerformance(
     frameMs: number,
     timings: ScenePerformanceTimings = {},
-    legacyState?: any
+    legacyState?: { scene?: unknown; camera?: unknown; renderer?: unknown }
 ): void {
     appState.withMutation(() => {
         const diagnostics = appState.scenePerformanceDiagnostics

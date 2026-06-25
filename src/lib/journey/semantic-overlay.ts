@@ -7,7 +7,7 @@
 
 import { appState as state } from '@lib/state/app.svelte'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { Vector3, Color, AdditiveBlending, Float32BufferAttribute } from 'three'
+import { Vector3, Color, AdditiveBlending, Float32BufferAttribute, LineSegments } from 'three'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
@@ -18,10 +18,37 @@ import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket'
 import type { ThreadEdge } from '@lib/journey/focus-pocket-geometry'
 import type { ThreadCandidate } from '@lib/journey/thread-model'
 import type { ThreadCandidateRef } from '@lib/types/state'
+import type { FocusConnectionSegment } from '@lib/state/state-types'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens'
 import { getLineSegmentCount } from '@lib/journey/webgl-utils'
 import { registerDiagnosticProbe } from '@lib/utils/diagnostic-adapter'
+
+/** Local typed extension of LineMaterial for the custom uniforms our GLSL shader injects.
+ *  Three.js' LineMaterial type doesn't include these custom fields; we use this
+ *  locally to avoid `as any` at every uniforms / shader access site. */
+export interface SemanticLineMaterialUniforms {
+    time: { value: number }
+    semanticScore: { value: number }
+    reducedMotion: { value: number }
+    denseBundleMode: { value: number }
+}
+export type SemanticLineMaterial = LineMaterial & {
+    uniforms: SemanticLineMaterialUniforms
+    userData: {
+        shader?: SemanticShaderLike
+        denseBundleMode?: boolean
+    }
+}
+
+/** Structural type for the GLSL shader object passed to onBeforeCompile.
+ *  Three.js' type for this is `any` in @types/three; we use this shape
+ *  throughout semantic-overlay.ts instead of `as unknown as`. */
+export interface SemanticShaderLike {
+    vertexShader: string
+    fragmentShader: string
+    uniforms: Record<string, { value: number }>
+}
 
 // Phase 3: Declarative synchronization
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, () => {
@@ -87,7 +114,7 @@ function buildFocusThreadLineMaterial(): LineMaterial {
         depthTest: false,
         blending: AdditiveBlending
     })
-    ;(lineMaterial as any).uniforms.time = { value: performance.now() / 1000 }
+    lineMaterial.uniforms.time = { value: performance.now() / 1000 }
     lineMaterial.uniforms.semanticScore = { value: 0.5 }
     lineMaterial.uniforms.reducedMotion = { value: prefersReducedMotion() ? 1 : 0 }
     lineMaterial.uniforms.denseBundleMode = { value: 0 }
@@ -181,7 +208,7 @@ function getActiveNextFocusIndex(): number | null {
     if (!Number.isFinite(focusedIndex)) return null
     const candidate = getNextExploreCandidateForIndex(
         focusedIndex,
-        getNextWalkCandidateForIndex as unknown as Parameters<typeof getNextExploreCandidateForIndex>[1],
+        getNextWalkCandidateForIndex,
         {
             requireOnCanvas: state.currentView === 'galaxy'
         }
@@ -312,8 +339,8 @@ export function refreshFocusSemanticOverlay(): void {
         for (let segment = 0; segment < state.FOCUS_THREAD_SEGMENTS; segment += 1) {
             const t0 = segment / state.FOCUS_THREAD_SEGMENTS
             const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS
-            const segmentEdge = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
-            ;(state.focusSemanticConnectionPairs as unknown as Array<typeof segmentEdge>).push(segmentEdge)
+            const segmentEdge: FocusConnectionSegment = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
+            state.focusSemanticConnectionPairs.push(segmentEdge)
             const p0 = getFocusCurvePointLocal(segmentEdge, t0)
             const p1 = getFocusCurvePointLocal(segmentEdge, t1)
             const c0 = focusColor.clone().lerp(candidateColor, t0)
@@ -384,7 +411,7 @@ export function refreshFocusSemanticOverlay(): void {
         lineMaterial.uniforms.denseBundleMode.value = denseBundleMode
     }
 
-    state.focusSemanticLines = new Line2(lineGeometry, lineMaterial) as unknown as typeof state.focusSemanticLines
+    state.focusSemanticLines = new Line2(lineGeometry, lineMaterial) as LineSegments
     state.focusSemanticLines!.computeLineDistances()
     state.focusSemanticLines!.userData = {
         focusedIndex: focusIndex,
@@ -456,12 +483,12 @@ export function updateFocusSemanticOverlayPositions(now: number = performance.no
     })
     startAttr.needsUpdate = true
     endAttr.needsUpdate = true
-    const mat = line.material as any
+    const mat = line.material as SemanticLineMaterial | undefined
     if (mat?.userData?.shader) {
-        mat.userData.shader.uniforms.reducedMotion.value = reducedMotion ? 1 : 0
-        mat.userData.shader.uniforms.denseBundleMode.value = line.userData?.denseBundleMode ? 1 : 0
+        mat.userData.shader.uniforms.reducedMotion!.value = reducedMotion ? 1 : 0
+        mat.userData.shader.uniforms.denseBundleMode!.value = line.userData?.denseBundleMode ? 1 : 0
         if (!reducedMotion) {
-            mat.userData.shader.uniforms.time.value = now / 1000
+            mat.userData.shader.uniforms.time!.value = now / 1000
         }
     }
     if (!reducedMotion && mat?.uniforms?.time) {

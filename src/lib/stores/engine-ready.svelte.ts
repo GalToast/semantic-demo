@@ -14,7 +14,7 @@
 // ── State ────────────────────────────────────────────────────────────────────
 
 let _value = $state(false);
-const _subscribers = new Set<(v: boolean) => void>();
+const _subscribers = new Set<(_v: boolean) => void>();
 
 function signalReady(): void {
   if (_value) return;
@@ -46,7 +46,7 @@ export const engineReady = {
   /** Named getter for compatibility with $store patterns. */
   getReady,
   /** Store-compatible subscription. Immediately invokes with current value and re-invokes on change. */
-  subscribe(fn: (v: boolean) => void) {
+  subscribe(fn: (_v: boolean) => void) {
     fn(_value);
     _subscribers.add(fn);
     return () => {

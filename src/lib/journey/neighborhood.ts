@@ -15,6 +15,8 @@ import { navStore } from '@lib/stores/navigation.svelte.ts'
 import { journeyStore, setTrailSeedIndex, setTrailNeighborIndices } from '@lib/stores/journey.svelte.ts'
 import { appState } from '@lib/state/app.svelte.ts'
 import { isPointVisible } from '@lib/utils/geo-data'
+import type { SemanticNeighborDetail } from '@lib/types/business'
+import type { WalkCandidate } from '@lib/journey/thread-model'
 import {
     getSemanticThreadCandidates,
     getGeometricThreadCandidates,
@@ -202,7 +204,7 @@ export function getNeighborhoodRouteIndices(
  * 1. primeBoundedSemanticNeighborhoodForTraversal was called (sets the flag), OR
  * 2. The journey store has trailDepth > 0 and walkHistoryIndices has entries
  */
-export function isBoundedNeighborhoodActive(source?: string, routeIndices?: number[]): boolean {
+export function isBoundedNeighborhoodActive(_source?: string, _routeIndices?: number[]): boolean {
     if (boundedNeighborhoodActive) return true
 
     // Derive from journey store state
@@ -225,7 +227,7 @@ export function isBoundedNeighborhoodActive(source?: string, routeIndices?: numb
  */
 export function getNeighborhoodCandidateForIndex(
     index: number | null
-): { index: number; reason: string; source: string } | null {
+): (SemanticNeighborDetail & { source: string; index: number }) | null {
     if (!Number.isFinite(index)) return null
 
     const idx = index as number
@@ -234,7 +236,11 @@ export function getNeighborhoodCandidateForIndex(
     if (boundedNeighborhoodActive && boundedNeighborhoodAnchorIndex !== null) {
         const pos = boundedNeighborhoodCandidates.indexOf(idx)
         if (pos >= 0) {
-            return { index: idx, reason: 'bounded neighbor', source: 'semantic' }
+            return {
+                ...defaultCandidateScaffold(idx),
+                reason: 'bounded neighbor',
+                source: 'semantic'
+            }
         }
     }
 
@@ -242,11 +248,40 @@ export function getNeighborhoodCandidateForIndex(
     const js = journeyStore()
     if (normalizeThreadCandidates(js.threadCandidates).includes(idx)) {
         const reason = js.threadReasonByIndex.get(idx) ?? 'semantic neighbor'
-        return { index: idx, reason, source: js.threadSource }
+        return {
+            ...defaultCandidateScaffold(idx),
+            reason,
+            source: js.threadSource
+        }
     }
 
     // Default: report as semantic neighbor (the index exists in the dataset)
-    return { index: idx, reason: 'semantic neighbor', source: 'semantic' }
+    return {
+        ...defaultCandidateScaffold(idx),
+        reason: 'semantic neighbor',
+        source: 'semantic'
+    }
+}
+
+/** Build a fully-typed SemanticNeighborDetail scaffold with sensible defaults
+ *  for callers that only have an index. The `score`/`semanticScore` fields
+ *  default to 0 since the lightweight caller path doesn't compute them. */
+function defaultCandidateScaffold(idx: number): SemanticNeighborDetail & { index: number } {
+    return {
+        index: idx,
+        leadId: '',
+        score: 0,
+        semanticScore: 0,
+        sameCity: false,
+        sameStatus: false,
+        bridgeScore: 0,
+        signalScore: 0,
+        threadType: 'semantic',
+        relationshipRole: 'support',
+        relationshipAxis: '',
+        roleReason: '',
+        reason: 'semantic neighbor'
+    }
 }
 
 /**
@@ -264,7 +299,7 @@ export function getNextWalkCandidateForIndex(
         commitNeighborhood?: boolean
         allowNeighborhood?: boolean
     } = {}
-): { index: number; reason?: string; source?: string; semanticScore?: number; score?: number } | null {
+): WalkCandidate | null {
     if (!Number.isFinite(currentIndex)) return null
 
     const idx = currentIndex as number
@@ -338,7 +373,7 @@ export function buildNeighborhoodManifest(
     anchorIndex: number,
     routeIndices: readonly number[],
     options: { displayLimit?: number } = {}
-): any {
+): Record<string, unknown> | null {
     const records = get(businessRecords)
     if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= records.length) return null
 
@@ -370,7 +405,7 @@ export function buildNeighborhoodManifest(
         appendRouteCandidate(candidateIndex)
     })
 
-    const candidates = new Map<number, any>()
+    const candidates = new Map<number, Record<string, unknown>>()
     const edges: Array<{ a: number; b: number; score: number; role: string; reason: string }> = []
     const anchorLeadId = normalizeLeadId(records[anchorIndex]?.lead_id)
     candidates.set(anchorIndex, {
@@ -388,7 +423,7 @@ export function buildNeighborhoodManifest(
 
     let scoredRoute = uniqueRoute
         .map((candidateIndex: number) => {
-            const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as any)
+            const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as Partial<SemanticNeighborDetail & { source: string }>)
             const fallbackCandidate = fallbackCandidateByIndex.get(candidateIndex)
             const anchorRecord = getSemanticNeighborRecordBetween(anchorIndex, candidateIndex)
             const score = Number(
@@ -430,7 +465,7 @@ export function buildNeighborhoodManifest(
 
         scoredRoute = uniqueRoute
             .map((candidateIndex: number) => {
-                const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as any)
+                const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as Record<string, unknown>)
                 const fallbackCandidate = fallbackCandidateByIndex.get(candidateIndex)
                 const anchorRecord = getSemanticNeighborRecordBetween(anchorIndex, candidateIndex)
                 const score = Number(
@@ -460,7 +495,7 @@ export function buildNeighborhoodManifest(
         const reason =
             candidate.reason ||
             anchorRecord?.reason ||
-            (appState.navState as any).neighborhoodReasonByIndex?.get(candidateIndex) ||
+            appState.navState.neighborhoodReasonByIndex?.get(candidateIndex) ||
             'semantic neighbor'
         candidates.set(candidateIndex, {
             index: candidateIndex,
@@ -498,7 +533,7 @@ export function buildNeighborhoodManifest(
         if (candidate.role !== 'peer') continue
         const candidateNode = nMap.get(candidate.leadId!)
         if (!candidateNode?.neighbors?.length) continue
-        candidateNode.neighbors.forEach((neighbor: any) => {
+        candidateNode.neighbors.forEach((neighbor: SemanticNeighborDetail) => {
             const peerIndex = idxMap.get(neighbor.leadId)
             if (
                 !Number.isFinite(peerIndex) ||
@@ -696,7 +731,10 @@ export function resetBoundedNeighborhood(): void {
  * Get the semantic neighbor record between a source and a target.
  * Ported from journey-neighborhood.js getSemanticNeighborRecordBetween().
  */
-export function getSemanticNeighborRecordBetween(sourceIndex: number, targetIndex: number): any {
+export function getSemanticNeighborRecordBetween(
+    sourceIndex: number,
+    targetIndex: number
+): SemanticNeighborDetail | null {
     const records = get(businessRecords)
     if (!Number.isFinite(sourceIndex) || sourceIndex < 0 || sourceIndex >= records.length) return null
     const sourcePoint = records[sourceIndex]
@@ -708,7 +746,7 @@ export function getSemanticNeighborRecordBetween(sourceIndex: number, targetInde
     if (!sourceNode?.neighbors?.length) return null
     const idxMap = get(pointIndexByLeadId)
     return (
-        sourceNode.neighbors.find((neighbor: any) => {
+        sourceNode.neighbors.find((neighbor: SemanticNeighborDetail) => {
             const candidateIndex = idxMap.get(neighbor.leadId)
             return candidateIndex === targetIndex
         }) || null
@@ -721,14 +759,14 @@ export function getSemanticNeighborRecordBetween(sourceIndex: number, targetInde
  */
 export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): void {
     if (!Number.isFinite(seedIndex)) return
-    const nav = appState.navState as any
+    const nav = appState.navState
     if (isBoundedNeighborhoodActive()) {
         if (nav.focusPocketMeta && !nav.focusPocketMeta.boundedLoop) {
             appState.withMutation(() => {
                 nav.focusPocketMeta = {
-                    ...(nav.focusPocketMeta as any),
+                    ...nav.focusPocketMeta,
                     boundedLoop: true,
-                    motifLabel: nav.focusPocketMeta.motifLabel || 'selected neighborhood loop'
+                    motifLabel: nav.focusPocketMeta!.motifLabel || 'selected neighborhood loop'
                 }
             })
         }
@@ -738,7 +776,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
                     seedIndex,
                     finiteIndexList(nav.neighborhoodIndices),
                     { displayLimit: getSemanticThreadDisplayLimit() }
-                ) as any
+                )
             })
         }
         return
@@ -746,7 +784,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     if (!nav.focusPocketMeta?.active) return
     const hasSemanticSource =
         nav.threadSource === 'semantic' ||
-        valueArray(nav.threadCandidates).some((candidate: any) => candidate?.source === 'semantic') ||
+        valueArray(nav.threadCandidates).some((candidate: ThreadCandidateLike) => candidate?.source === 'semantic') ||
         (nav.focusPocketMeta.motifLabel || '').toLowerCase().includes('semantic')
     if (!hasSemanticSource) return
     const limit = getSemanticThreadDisplayLimit()
@@ -779,9 +817,9 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
             ])
         )
         nav.neighborhoodSource = 'semantic'
-        nav.neighborhoodManifest = manifest as any
+        nav.neighborhoodManifest = manifest
         nav.focusPocketMeta = {
-            ...(nav.focusPocketMeta as any),
+            ...(nav.focusPocketMeta || {}),
             boundedLoop: true,
             motifLabel: 'selected neighborhood loop'
         }
@@ -816,19 +854,20 @@ export function setTrailFromSeed(seedIndex: number): void {
         candidates.map((candidate) => [candidate.index, candidate.reason || ''])
     )
     const neighborIndices = candidates.map((candidate) => candidate.index)
-    const nav = appState.navState as any
+    const nav = appState.navState
     const cursor = (() => {
         const tc = candidates.findIndex((candidate) => candidate.index === nav.focusedIndex)
         return tc >= 0 ? tc : 0
     })()
 
     appState.withMutation(() => {
-        nav.trailSeedIndex = seedIndex
-        nav.threadCandidates = candidates
-        nav.threadSource = source
-        nav.threadReasonByIndex = reasonByIndex
-        nav.trailNeighborIndices = neighborIndices
-        nav.trailCursor = cursor
+        const n = appState.navState
+        n.trailSeedIndex = seedIndex
+        n.threadCandidates = candidates
+        n.threadSource = source
+        n.threadReasonByIndex = reasonByIndex
+        n.trailNeighborIndices = neighborIndices
+        n.trailCursor = cursor
     })
 }
 
@@ -843,7 +882,7 @@ export function updateTrailIndices(
         appState.trailIndices.clear()
         const records = get(businessRecords)
         if (seedIndex === null || seedIndex === undefined || seedIndex < 0 || seedIndex >= records.length) return
-        const nav = appState.navState as any
+        const nav = appState.navState
         const filters = appState.activeFilters
         if (!isPointVisible(seedIndex, records, null, filters)) return
         appState.trailIndices.add(seedIndex)

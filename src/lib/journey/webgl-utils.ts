@@ -10,12 +10,12 @@ import { appState as state } from '@lib/state/app.svelte'
 export const ROUTE_TRACE_SEGMENT_STEPS: number = 7
 export const ARRIVAL_HANDOFF_SEGMENT_STEPS: number = 9
 
-export function getLineSegmentCount(lineObject: any): number {
+export function getLineSegmentCount(lineObject: { geometry?: { attributes?: { position?: { count: number } } } }): number {
     const positionAttr = lineObject?.geometry?.attributes?.position
     return positionAttr ? Math.floor(positionAttr.count / 2) : 0
 }
 
-export function disposeLineObject(lineObject: any): void {
+export function disposeLineObject(lineObject: { geometry?: { dispose?(): void }; material?: { dispose?(): void } }): void {
     lineObject?.geometry?.dispose?.()
     lineObject?.material?.dispose?.()
 }
@@ -23,9 +23,9 @@ export function disposeLineObject(lineObject: any): void {
 export function getNodeVector(index: number | null | undefined): Vec3 | null {
     if (!Number.isFinite(index) || index === null || index === undefined) return null
     const pos =
-        (state.nodePositions as any[])[index] ||
-        (state.targetPositions as any[])[index] ||
-        (state.originalPositions as any[])[index]
+        state.nodePositions[index] ||
+        state.targetPositions[index] ||
+        state.originalPositions[index]
     if (!pos) return null
     const px = Number.isFinite(pos.x) ? pos.x : 0
     const py = Number.isFinite(pos.y) ? pos.y : 0

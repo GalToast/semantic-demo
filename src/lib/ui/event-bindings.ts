@@ -67,6 +67,10 @@ export async function initEventListeners({
     setSemanticLaneUiState = () => {},
     updateUrlState = () => {}
 }: InitEventListenersOptions = {}): Promise<void> {
+    // `updateUrlState` is part of the InitEventListenersOptions contract for
+    // callers that historically passed it; the body uses the bound DOM listeners
+    // directly. Reference it once to keep the linter quiet without breaking the API.
+    void updateUrlState
     if (state.eventListenersInitialized) return
     state.eventListenersInitialized = true
 

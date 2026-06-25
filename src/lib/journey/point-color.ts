@@ -7,8 +7,6 @@
 import { Color } from 'three'
 import { appState as state } from '@lib/state/app.svelte'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
-import { describeCluster } from '@lib/utils/ui-presentation'
-import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { isPointVisible } from '@lib/utils/geo-data'
 
 const _state = state

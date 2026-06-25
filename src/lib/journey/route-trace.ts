@@ -19,7 +19,6 @@ import {
     pushArcSegments
 } from './webgl-utils'
 import { debounceRAF } from '@lib/utils/timer-utils'
-import { appState } from '@lib/state/app.svelte'
 
 // ShaderMaterial with glow effect for route trace lines (LineSegments-based overview lines)
 function buildRouteTraceMaterial(): ShaderMaterial {
@@ -102,27 +101,38 @@ export function removeRouteTraceOverlay(): void {
     if (!state.routeTraceLines) return
     if (state.myceliumGroup) state.myceliumGroup.remove(state.routeTraceLines)
     disposeLineObject(state.routeTraceLines)
-    ;state.routeTraceLines = null
-    ;state.routeTraceConnectionPairs = []
+    state.routeTraceLines = null
+    state.routeTraceConnectionPairs = []
 }
 
 function getRouteEmbodimentIndices(): number[] {
     const indices: number[] = []
     const push = (index: number): void => {
-        if (!Number.isFinite(index) || index < 0 || index >= appState.points.length) return
+        if (!Number.isFinite(index) || index < 0 || index >= state.points.length) return
         if (!indices.includes(index)) indices.push(index)
     }
-    if (Number.isFinite(appState.navState.focusedIndex)) push(appState.navState.focusedIndex!)
-    ;(appState.navState.walkHistoryIndices || []).forEach(push)
-    const summary = appState.currentSearchSummary
-    if (summary?.anchorIndex !== undefined) push(summary.anchorIndex)
+    if (Number.isFinite(state.navState.focusedIndex)) push(state.navState.focusedIndex!)
+    ;(state.navState.walkHistoryIndices || []).forEach(push)
+    const summary = state.currentSearchSummary
+    if (summary?.anchorIndex != null) push(summary.anchorIndex!)
     ;(summary?.resultIndices || []).slice(0, 7).forEach(push)
-    ;(appState.navState.threadCandidates || []).slice(0, 6).forEach((candidate: { index: number }) => push(candidate.index))
+    ;(state.navState.threadCandidates || [])
+        .slice(0, 6)
+        .forEach((candidate: { index: number }) => push(candidate.index))
     return indices
 }
 
-export function setRouteChoreographyPhase(phase: string = 'overview', details: Record<string, unknown> = {}): void {
-    ;state.routeChoreographyState = {
+export interface RouteChoreographyDetails {
+    reason?: string
+}
+
+export interface RouteChoreographyPayload {
+    phase?: string
+    details?: RouteChoreographyDetails
+}
+
+export function setRouteChoreographyPhase(phase: string = 'overview', details: RouteChoreographyDetails = {}): void {
+    state.routeChoreographyState = {
         ...(state.routeChoreographyState || {}),
         ...details,
         phase,
@@ -130,13 +140,18 @@ export function setRouteChoreographyPhase(phase: string = 'overview', details: R
         startedAt: performance.now()
     }
     if (document.body?.dataset) {
-        document.body.dataset.routeMotion = appState.currentView === 'galaxy' ? phase : 'inactive'
+        document.body.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive'
     }
     refreshRouteTraceOverlay({ reason: details.reason || phase })
 }
 
 export function initRouteTraceSubscriptions(): void {
-    // Phase 3: Declarative synchronization
+    // Phase 3: Declarative synchronization — `sync` is a pass-through; each
+    // subscribed event carries its own payload shape (e.g. CAMERA_NODE_FOCUSED
+    // passes `{ point, index, options }`, EXPLORATION_DEPTH_CHANGED passes
+    // `{ depth }`). We forward to `refreshRouteTraceOverlay` (which reads
+    // only `payload.reason`), so preserving `Record<string, unknown>` here
+    // keeps the subscribers structurally compatible.
     const sync = (payload: Record<string, unknown> = {}): void => refreshRouteTraceOverlay(payload)
     subscribeKeyed('route-trace:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync)
     subscribeKeyed('route-trace:search-success', EVENTS.SEARCH_SUCCESS, sync)
@@ -148,23 +163,23 @@ export function initRouteTraceSubscriptions(): void {
     subscribeKeyed(
         'route-trace:transition-phase-changed',
         EVENTS.TRANSITION_PHASE_CHANGED,
-        (payload: Record<string, unknown>) => {
-            setRouteChoreographyPhase(payload.phase as string, (payload.details as Record<string, unknown>) || {})
+        (payload: RouteChoreographyPayload) => {
+            setRouteChoreographyPhase(payload.phase ?? 'overview', payload.details ?? {})
         }
     )
     subscribeKeyed('route-trace:exploration-depth-changed', EVENTS.EXPLORATION_DEPTH_CHANGED, sync)
 }
 
-function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): void {
+function _refreshRouteTraceOverlayRaw(options: RouteChoreographyDetails = {}): void {
     removeRouteTraceOverlay()
-    if (!appState.myceliumGroup || appState.currentView !== 'galaxy') {
+    if (!state.myceliumGroup || state.currentView !== 'galaxy') {
         resetRouteTraceDiagnostics('inactive-view')
         return
     }
     const indices = getRouteEmbodimentIndices().filter((index: number) =>
-        isPointVisible(index, appState.points, null, appState.activeFilters)
+        isPointVisible(index, state.points, null, state.activeFilters)
     )
-    const rawAnchor = Number.isFinite(appState.navState.focusedIndex) ? appState.navState.focusedIndex : indices[0]
+    const rawAnchor = Number.isFinite(state.navState.focusedIndex) ? state.navState.focusedIndex : indices[0]
     if (!Number.isFinite(rawAnchor) || indices.length < 2) {
         resetRouteTraceDiagnostics(indices.length ? 'single-node' : 'not-built')
         return
@@ -196,19 +211,19 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
     geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
     geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
     const material = buildRouteTraceMaterial()
-    if (appState.semanticDiveMode) {
+    if (state.semanticDiveMode) {
         material.uniforms.baseOpacity!.value = 0.34
         material.uniforms.opacity!.value = 0.34
     }
-    ;state.routeTraceLines = new LineSegments(geometry, material)
-    ;state.routeTraceConnectionPairs = indices
+    state.routeTraceLines = new LineSegments(geometry, material)
+    state.routeTraceConnectionPairs = indices
         .filter((index: number) => index !== anchorIndex)
         .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }))
     state.myceliumGroup!.add(state.routeTraceLines)
     state.withMutation(() => {
         state.routeTraceDiagnostics = {
             active: true,
-            reason: options.reason || state.routeChoreographyState?.reason || 'route',
+            reason: String(options.reason || state.routeChoreographyState?.reason || 'route'),
             phase: document.body?.dataset?.journeyPhase || state.routeChoreographyState?.phase || 'focus',
             indexCount: indices.length,
             edgeCount,
@@ -219,7 +234,7 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         }
     })
     if (document.body?.dataset) {
-        document.body.dataset.routeMotion = appState.currentView === 'galaxy' ? 'focus' : 'inactive'
+        document.body.dataset.routeMotion = state.currentView === 'galaxy' ? 'focus' : 'inactive'
     }
 }
 
@@ -248,15 +263,16 @@ export function updateRouteTraceOverlayPositions(now: number = performance.now()
     })
     line.geometry.attributes.position.needsUpdate = true
     // Update ShaderMaterial uniforms for glow animation
-    if (line.material?.uniforms) {
-        line.material.uniforms.time.value = now / 1000
+    const material = line.material as ShaderMaterial
+    if (material.uniforms) {
+        material.uniforms.time!.value = now / 1000
         const targetOpacity = state.semanticDiveMode ? 0.34 : 0.22
-        line.material.uniforms.baseOpacity.value = targetOpacity
-        line.material.uniforms.opacity.value = targetOpacity
+        material.uniforms.baseOpacity!.value = targetOpacity
+        material.uniforms.opacity!.value = targetOpacity
     }
     state.withMutation(() => {
         state.routeTraceDiagnostics.segmentCount = getLineSegmentCount(line)
     })
 }
 
-export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw)
+export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw as (...args: unknown[]) => void)

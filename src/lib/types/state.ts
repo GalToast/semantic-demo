@@ -49,6 +49,15 @@ export interface NavState {
     currentPersonality: string | null
     neighborhoodIndices: readonly number[]
     explorationHistoryIndices: readonly number[]
+    /** Optional: per-index semantic reason for the neighborhood manifest.
+     *  Populated by neighborhood.ts buildNeighborhoodManifest for inspection UI. */
+    neighborhoodReasonByIndex?: Map<number, string>
+    /** Optional: serialized neighborhood manifest (set by neighborhood.ts). */
+    neighborhoodManifest?: unknown
+    /** Optional: source string for the current neighborhood (e.g. 'semantic', 'geometric'). */
+    neighborhoodSource?: string
+    /** Optional: anchor index for the bounded neighborhood (set by neighborhood.ts). */
+    neighborhoodAnchorIndex?: number | null
     // Extended fields used by navigation.svelte.ts
     currentView: 'galaxy' | 'map'
     myceliumMode: string

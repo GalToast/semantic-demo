@@ -179,9 +179,7 @@ type MapFlatteningModule = typeof import('../utils/map-flattening-layout')
 type WebGLRestoreModule = typeof import('@lib/utils/webgl-restore-adapter')
 type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overlay-adapter')
 
-interface FocusAnchorModule {
-    disposeFocusAnchorIndicator(): void
-}
+type FocusAnchorModule = typeof import('@lib/journey/focus-anchor-indicator')
 
 interface ThreeSearchAnimationsModule {
     triggerSearchHeroMoment(): void
@@ -193,24 +191,10 @@ interface ThreeSearchAnimationsModule {
     disposeHeroAnimation(): void
 }
 
-interface AudioScapeModule {
-    disposeAudio(): void
-}
-
-interface EventBindingsModule {
-    disposeEventListeners(): void
-}
-
-interface LoadingUiModule {
-    cancelLoadingHide(): void
-}
-
-interface ThreeInteractionVisualsModule {
-    updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void
-    disposeInteractionVisuals(): void
-    initSemanticLens(): void
-    initSemanticManifold(): void
-}
+type AudioScapeModule = typeof import('@lib/audio/audio-scape')
+type EventBindingsModule = typeof import('@lib/ui/event-bindings')
+type LoadingUiModule = typeof import('../ui/loading')
+type ThreeInteractionVisualsModule = typeof import('./three-interaction-visuals')
 
 // ── Lazy Module Cache ────────────────────────────────────────────────────────
 
@@ -256,12 +240,12 @@ function _ensureModules(): void {
         _mapFlattening = mapFlatteningMod
         _webglRestore = webglRestoreMod
         _inspectedStrand = inspectedStrandMod
-        _focusAnchor = focusAnchorMod as unknown as FocusAnchorModule
-        _threeSearchAnimations = threeSearchAnimationsMod as unknown as ThreeSearchAnimationsModule
-        _audioScape = audioScapeMod as unknown as AudioScapeModule
-        _eventBindings = eventBindingsMod as unknown as EventBindingsModule
-        _loadingUi = loadingUiMod as unknown as LoadingUiModule
-        _threeInteractionVisuals = threeInteractionVisualsMod as unknown as ThreeInteractionVisualsModule
+        _focusAnchor = focusAnchorMod
+        _threeSearchAnimations = threeSearchAnimationsMod
+        _audioScape = audioScapeMod
+        _eventBindings = eventBindingsMod
+        _loadingUi = loadingUiMod
+        _threeInteractionVisuals = threeInteractionVisualsMod
         _loaded = true
     } catch (err) {
         if (import.meta.env.DEV) console.error('[three-engine] Failed to load legacy modules:', err)

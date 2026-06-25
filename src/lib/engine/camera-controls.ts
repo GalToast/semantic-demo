@@ -21,11 +21,11 @@ import {
     cancelFocusCameraAnimation as runCancelFocusCameraAnimation
 } from './camera-choreography'
 
-export function animateCameraToNode(index: number, options?: any): void {
+export function animateCameraToNode(index: number, options?: Record<string, unknown>): void {
     runAnimateCameraToNode(index, options)
 }
 
-export function focusOnNode(index: number, options?: any): boolean {
+export function focusOnNode(index: number, options?: Record<string, unknown>): boolean {
     return runFocusOnNode(index, options)
 }
 

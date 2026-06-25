@@ -74,8 +74,8 @@ for (const file of listTsFiles(MODULES_DIR)) {
 // Verify owner module exports the public API
 const ownerSource = readFileSync(OWNER_PATH, 'utf8')
 const requiredOwnerExports = [
-    'CameraControlsCore',  // class
-    'cameraControlsCore'   // singleton instance
+    'CameraControlsCore', // class
+    'cameraControlsCore' // singleton instance
 ]
 const classMatch = ownerSource.includes('class CameraControlsCore')
 if (!classMatch) {
@@ -126,8 +126,12 @@ const mirrorWrites = (mirrorSource.match(WRITE_REGEX) ?? []).length
 
 if (failures === 0) {
     console.log('PASS: no module writes appState.focusTransitionMode outside owner/mirror')
-    console.log(`  - Owner module: src/lib/engine/camera-controls-core.svelte.ts (${ownerWrites} legacy-mirror write inside setFocusTransitionMode)`)
-    console.log(`  - Mirror module: src/lib/stores/focus.svelte.ts (${mirrorWrites} direct writes inside .update() callbacks)`)
+    console.log(
+        `  - Owner module: src/lib/engine/camera-controls-core.svelte.ts (${ownerWrites} legacy-mirror write inside setFocusTransitionMode)`
+    )
+    console.log(
+        `  - Mirror module: src/lib/stores/focus.svelte.ts (${mirrorWrites} direct writes inside .update() callbacks)`
+    )
     console.log(`  - Public API: cameraControlsCore.setFocusTransitionMode(mode, options)`)
     console.log(`  - Scanned TS modules under ${relative(join(__dirname, '..'), MODULES_DIR)}`)
     process.exit(0)
