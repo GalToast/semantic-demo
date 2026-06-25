@@ -51,7 +51,12 @@ import { dirname, resolve } from 'node:path'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
-const SRC_PATH = resolve(__dirname, '../../src/lib/journey/thread-inspector.ts')
+// Implementation moved from thread-inspector.ts (barrel) to
+// thread-inspector-state.ts during the W46 split. The render call site
+// that originally had `(inspectionState as any)` is now in
+// thread-inspector-render.ts (see renderThreadInspection).
+const SRC_PATH = resolve(__dirname, '../../src/lib/journey/thread-inspector-state.ts')
+const RENDER_SRC_PATH = resolve(__dirname, '../../src/lib/journey/thread-inspector-render.ts')
 const WEBGL_SRC_PATH = resolve(__dirname, '../../src/lib/journey/thread-inspector-webgl.ts')
 
 function readSource(path: string): string {
@@ -67,8 +72,10 @@ function stripComments(src: string): string {
 describe('thread-inspector — typing contract (W47-Bite-D tightening)', () => {
     const src = readSource(SRC_PATH)
     const stripped = stripComments(src)
+    const renderSrc = readSource(RENDER_SRC_PATH)
+    const renderStripped = stripComments(renderSrc)
 
-    it('any occurrence count is 0 (post-W48-Phase-3 baseline; was 21)', () => {
+    it('any occurrence count is 0 in thread-inspector-state.ts (post-W48-Phase-3 baseline; was 21)', () => {
         // Strip comments so prose like "as any" in docstrings doesn't count.
         const matches = stripped.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
         // 0 = post-W48-Phase-3 baseline (was 21 after Bite-D; the
@@ -82,13 +89,14 @@ describe('thread-inspector — typing contract (W47-Bite-D tightening)', () => {
         // The exact line we tightened: renderThreadInspection previously
         // had `syncInspectedStrandOverlay(inspectionState as any, ...)`.
         // Now uses a typed `as unknown as Parameters<...>` double-cast.
+        // The call site lives in thread-inspector-render.ts after the W46 split.
         const badCast = /syncInspectedStrandOverlay\s*\(\s*inspectionState\s+as\s+any/
-        expect(stripped.match(badCast), 'bad as any cast still present').toBeNull()
+        expect(renderStripped.match(badCast), 'bad as any cast still present in render file').toBeNull()
     })
 
     it('call site uses typed `as unknown as` (not `as any`)', () => {
         const goodCast = /syncInspectedStrandOverlay\s*\(\s*inspectionState\s+as\s+unknown\s+as/
-        expect(stripped.match(goodCast), 'typed double-cast not found').toBeTruthy()
+        expect(renderStripped.match(goodCast), 'typed double-cast not found in render file').toBeTruthy()
     })
 
     it('syncInspectedStrandOverlay accepts InspectionState | null (in the related webgl file)', () => {
