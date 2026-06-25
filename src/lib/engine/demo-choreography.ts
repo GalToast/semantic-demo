@@ -210,7 +210,6 @@ async function demoReset(): Promise<void> {
             loadPanelBindings()
         ])
 
-        appState.selectedPoint = null
         // Write to both legacy navState and Svelte 5 navStore in one call.
         writeNavStateMirror({
             mode: 'overview',
@@ -262,7 +261,6 @@ async function demoFocusSetup(demoNode: number): Promise<void> {
         ])
 
         const point = appState.points?.[demoNode] ?? null
-        appState.selectedPoint = point
         // Write to both legacy navState and Svelte 5 navStore in one call.
         writeNavStateMirror({
             mode: 'focus',
