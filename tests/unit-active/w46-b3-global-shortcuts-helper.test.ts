@@ -139,13 +139,18 @@ describe('W46-B3: form-field guard preserved (suppresses shortcuts in inputs)', 
 })
 
 describe('W46-B3: the `trail as any` cast is preserved with the audit comment', () => {
-    it('keeps the trail surface cast + a brief inline note', () => {
-        // The original inline code had: { surface: 'trail' as any }
-        // We preserved it (the surface enum is intentionally loose)
-        expect(src).toMatch(/surface:\s*['"]trail['"]\s+as\s+any/)
-        // And there's a comment explaining the cast
-        const trailContext = src.match(/['"]trail['"]\s+as\s+any[\s\S]{0,200}/)
+    it('dispatches SET_SURFACE with trail literal + a brief inline note', () => {
+        // W48-Phase-3: the original code was `{ surface: 'trail' as any }`
+        // with a comment that the surface enum was intentionally loose.
+        // After NAV_TRANSITION_ACTIONS.SET_SURFACE was tightened to accept
+        // string-literal surface names, the cast became unnecessary; the
+        // inline note was preserved as a documented future-work marker.
+        expect(src).toMatch(/surface:\s*['"]trail['"]/)
+        // Inline note explains the historical loose typing
+        const trailContext = src.match(/['"]trail['"][\s\S]{0,200}/)
         expect(trailContext).not.toBeNull()
-        expect(trailContext![0]).toMatch(/audit|enum|surface|narrow/i)
+        expect(trailContext![0]).toMatch(/narrow|enum|surface|intentional/i)
+        // Guard: no `as any` cast remains on the trail surface literal
+        expect(src).not.toMatch(/['"]trail['"]\s+as\s+any/)
     })
 })
