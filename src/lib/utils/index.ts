@@ -54,9 +54,9 @@ export {
 } from './environment';
 export {
   isDebugProbesEnabled,
-  registerDiagnosticProbe,
-  debugWarn
+  registerDiagnosticProbe
 } from './diagnostic-adapter';
+export { debugWarn } from './debug';
 export {
   FOCUS_PANEL_MODE,
   getFocusPanelMode,

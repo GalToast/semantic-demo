@@ -9,7 +9,7 @@
 
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 
 // ── Local boundary types ────────────────────────────────────────────────────
 

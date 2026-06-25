@@ -335,6 +335,9 @@
     font-weight: 600;
     display: block;
     margin-bottom: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     /* label is decorative; let clicks fall through to whatever sits below */
     pointer-events: none;
   }

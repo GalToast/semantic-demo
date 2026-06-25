@@ -61,7 +61,7 @@ import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 
 // Data readiness
 import { isDataReady } from '@lib/data-store'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import { debugLog, debugError } from '@lib/utils/debug'
 
 // ── Module-scoped State ──────────────────────────────────────────────────────

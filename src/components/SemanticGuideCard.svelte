@@ -67,14 +67,14 @@
   aria-label="Synthesis summary"
 >
   <div class="summary-card-header">
-    <div class="summary-title">{config.title || 'Synthesis'}</div>
+    <div id="summary-card-title-text" class="summary-title">{config.title || 'Synthesis'}</div>
     <button type="button" class="summary-close" aria-label="Close synthesis" onclick={hideSummaryCard}>
       Close
     </button>
   </div>
-  <div class="typewriter-content">{config.text || ''}</div>
+  <div id="summary-text" class="typewriter-content">{config.text || ''}</div>
   {#if suggestions.length > 0}
-    <div class="summary-suggestions">
+    <div id="summary-suggestions" class="summary-suggestions">
       {#each suggestions as suggestion}
         <button
           class="suggestion-btn"
@@ -91,7 +91,12 @@
       {/each}
     </div>
   {/if}
-  <div class="summary-lane-status">{config.laneStatus || 'Ready'}</div>
+  <div id="summary-lane-status" class="summary-lane-status">{config.laneStatus || 'Ready'}</div>
+
+  <div id="summary-gemma-story" class="summary-gemma-story hidden">
+    <p id="summary-gemma-story-text" class="summary-gemma-story-text"></p>
+    <span id="summary-gemma-story-source" class="summary-gemma-story-source"></span>
+  </div>
 </div>
 
 <style>
@@ -233,5 +238,28 @@
     font-size: 0.56rem;
     letter-spacing: 0;
     text-transform: uppercase;
+  }
+
+  .summary-gemma-story {
+    margin-top: 0.65rem;
+    padding-top: 0.55rem;
+    border-top: 1px solid rgba(78, 205, 196, 0.12);
+  }
+
+  .summary-gemma-story.hidden {
+    display: none;
+  }
+
+  .summary-gemma-story-text {
+    color: rgba(224, 240, 240, 0.64);
+    font-size: 0.65rem;
+    line-height: 1.45;
+  }
+
+  .summary-gemma-story-source {
+    display: block;
+    margin-top: 0.35rem;
+    color: rgba(224, 240, 240, 0.42);
+    font-size: 0.56rem;
   }
 </style>

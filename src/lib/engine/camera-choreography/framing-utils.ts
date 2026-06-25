@@ -9,7 +9,7 @@ import type { Vector3Like } from '@lib/state/state-types'
 import type { NodePosition } from '@lib/state/state-types'
 import { getViewportSize } from '@lib/utils/environment'
 import { appState as _state } from '@lib/state/app.svelte'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 const state = _state
 
 // ── Types ────────────────────────────────────────────────────────────────────

@@ -23,7 +23,7 @@
  *   a second demo in parallel.
  */
 // ── Legacy Choreography Bridge ──────────────────────────────────────────────
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import {
     isAppReadyForDemo,
     guardNotSeen,

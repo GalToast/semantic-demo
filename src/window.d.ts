@@ -36,15 +36,13 @@ declare global {
          * A bag of action handles for Playwright tests; the .state getter
          * returns a snapshot of the live AppState.
          */
-        __APP_STATE__?: {
-            readonly state: Record<string, unknown> | null
-        } & Record<string, unknown>
+        __APP_STATE__?: Record<string, unknown>
 
         /**
          * Test compat action proxy published by orchestration/app-init.ts.
          * Methods are added at runtime; type as a loose record.
          */
-        __APP_ACTIONS__?: Record<string, (...args: unknown[]) => unknown>
+        __APP_ACTIONS__?: Record<string, (...args: any[]) => any>
 
         /**
          * Set by main.ts at startup so semantic-threads.ts and other modules

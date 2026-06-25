@@ -15,7 +15,7 @@ import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { hideTooltip } from '@lib/ui/tooltip'
 import { hideViewHandoff } from '@lib/orchestration/view-controller'
 import { isMobileViewport } from '@lib/utils/environment'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 
 export const LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
 export const LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'

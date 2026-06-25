@@ -63,13 +63,13 @@ const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
  * Build the canonical action bag. Pure function — no side effects until
  * install() assigns the result to window.__APP_ACTIONS__.
  */
-function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
+function buildActionsBag(): Record<string, (...args: any[]) => any> {
     const refreshTraversalUiForCompatAction = (_action: string): void => {
         updateTraversalUi()
     }
 
-    const actions: Record<string, (...args: unknown[]) => unknown> = {
-        switchView: (view: string) => switchViewAction(view),
+    const actions: Record<string, (...args: any[]) => any> = {
+        switchView: (view: string) => (switchViewAction as (v: string) => void)(view),
         focusOnNode: (index: number, options?: Record<string, unknown>) => {
             const result = focusOnNodeAction(index, options)
             refreshTraversalUiForCompatAction('focusOnNode')
@@ -114,7 +114,8 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
 function buildStateProxy(): Record<string, unknown> {
     return {
         get state() {
-            const liveAppState = (window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] || appState
+            const liveAppState = ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] ||
+                appState) as Record<string, unknown>
             return {
                 currentView: get(navStore).currentView,
                 navState: get(navStore),

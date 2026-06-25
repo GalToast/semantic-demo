@@ -7,7 +7,7 @@
  */
 import { appState } from '@lib/state/app.svelte'
 import { prefersReducedMotion } from '@lib/utils/environment'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 
 export const STORAGE_KEY = 'moco_mycelium_demo_v1'
 export const SESSION_STORAGE_KEY = 'moco_mycelium_demo_session_v1'

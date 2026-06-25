@@ -17,7 +17,7 @@
 import { chromium } from 'playwright';
 import { createServer } from 'http';
 import { readFileSync } from 'fs';
-import { join, extname } from 'path';
+import { extname, resolve } from 'path';
 
 const ROOT = process.cwd();
 const headed = process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1';
@@ -26,18 +26,30 @@ const headed = process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEA
 // Inline HTTP server (serves project files, auto-shutdown)
 // ---------------------------------------------------------------------------
 
+// The contract fixture is docs/archive/vector-explorer-polished-legacy.html
+// (frozen build artifact preserved for browser-side CSS contract tests).
+// Its <link rel="stylesheet"> references resolve to live source css/ files
+// at the project root, so this test always exercises the current CSS state
+// machine, not a frozen copy.
+const LEGACY_HTML_FIXTURE = 'docs/archive/vector-explorer-polished-legacy.html'
+
 function startServer(port) {
   return new Promise((resolve) => {
     const server = createServer((req, res) => {
-      const pathname = new URL(req.url, `http://127.0.0.1:${port}`).pathname;
-      const url = pathname === '/' ? '/vector-explorer-polished.html' : pathname;
-      const file = join(ROOT, url);
+      // Strip query string and decode URI; on Windows, path.resolve treats
+      // '/foo' as absolute (no drive), so we strip leading slashes to
+      // resolve against cwd. Matches tests/focus-stage-render-contract.mjs.
+      const reqPath = decodeURIComponent(req.url.split('?')[0]).replace(/^\/+/, '')
+      const fp = resolve(
+        ROOT,
+        reqPath === '' || reqPath === 'vector-explorer-polished.html' ? LEGACY_HTML_FIXTURE : reqPath
+      );
       try {
-        const content = readFileSync(file);
-        const ct = extname(file) === '.css' ? 'text/css'
-          : extname(file) === '.ts' ? 'application/javascript'
+        const content = readFileSync(fp);
+        const ct = extname(fp) === '.css' ? 'text/css'
+          : extname(fp) === '.ts' ? 'application/javascript'
           : 'text/html';
-        res.writeHead(200, { 'Content-Type': ct });
+        res.writeHead(200, { 'Content-Type': ct, 'Cache-Control': 'no-cache' });
         res.end(content);
       } catch {
         res.writeHead(404);

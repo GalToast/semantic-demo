@@ -101,7 +101,7 @@ export function resetRouteTraceDiagnostics(reason: string = 'inactive'): void {
 export function removeRouteTraceOverlay(): void {
     if (!state.routeTraceLines) return
     if (state.myceliumGroup) state.myceliumGroup.remove(state.routeTraceLines)
-    disposeLineObject(state.routeTraceLines as any)
+    disposeLineObject(state.routeTraceLines)
     state.routeTraceLines = null
     state.routeTraceConnectionPairs = []
 }

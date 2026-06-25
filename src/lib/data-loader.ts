@@ -16,7 +16,7 @@ import type {
     SemanticNeighborDetail,
     LayoutManifest
 } from '@lib/types/business'
-import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles'
 import { workerUrl } from '@lib/workers/data-worker-url'

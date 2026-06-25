@@ -53,7 +53,7 @@ import type { BusinessRecord } from '@lib/types/business'
 import type { BusinessNamePresentation } from '@lib/utils/dom-formatters'
 import { isMapSummarySurface } from '@lib/utils/environment'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import { seededUnit } from '@lib/utils/seeded-random'
 import { appState } from '@lib/state/app.svelte'
 

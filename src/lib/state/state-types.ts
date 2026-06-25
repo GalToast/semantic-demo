@@ -497,6 +497,23 @@ export interface SearchSummary {
 export type { LaneHealthPayload } from '../orchestration/semantic-lane'
 export type { CacheEntry } from '../search/cache'
 
+/** Shape of state.semanticGuideState — drives the SemanticGuideCard component. */
+export interface SemanticGuideState {
+    isVisible: boolean
+    isSynthesizing: boolean
+    config: {
+        title?: string
+        text?: string
+        laneStatus?: string
+        suggestions?: Array<{
+            lead_id?: string
+            label?: string
+            name?: string
+            reason?: string
+        }>
+    }
+}
+
 /**
  * Shape of state.searchError — set by search.svelte.ts (setSearchError) and
  * results-ui.ts (searchErrorEnvelopes). Consumed by triggers.ts as a truthy

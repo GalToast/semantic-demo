@@ -10,7 +10,7 @@
  * that entrypoint.
  */
 
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { debugWarn } from '@lib/utils/debug';
 import { buildMockCatalogForQuery, EXPLICIT_EMPTY_QUERY_PATTERN } from './mock-catalog';
 import {
     initSearchCache,

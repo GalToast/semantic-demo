@@ -37,7 +37,7 @@ import * as journeyCompassStaticModule from '@lib/orchestration/compass-controll
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import * as panelBindingsStaticModule from '@lib/ui/panel-bindings'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //

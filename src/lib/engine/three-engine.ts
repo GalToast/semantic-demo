@@ -85,7 +85,7 @@ async function _loadPostProcessing(): Promise<PostProcessingModule> {
     return _ppLoading
 }
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
-import { debugWarn, debugInfo } from '@lib/utils/diagnostic-adapter'
+import { debugWarn, debugInfo } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame } from '@lib/engine/journey-webgl-lazy'

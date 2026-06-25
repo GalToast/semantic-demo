@@ -88,6 +88,10 @@
                 "short-landscape-transition-ui-paths.spec.js"
             ]
         },
+        "stress": {
+            "description": "Heavy stress and leak detection - 40-cycle full-app stress test via Playwright. Loaded on-demand; not part of any default run.",
+            "contracts": ["heavy-stress-leak.spec.js"]
+        },
         "render": {
             "description": "Backward-compatible alias for browser-backed render contracts. Prefer the browser group for new scripts.",
             "contracts": [

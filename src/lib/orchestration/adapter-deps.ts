@@ -79,12 +79,22 @@ export function buildAdapterDeps(): AdapterDeps {
                 candidate: LooseNeighborCandidate,
                 point: LoosePoint3D,
                 focusPoint: LoosePoint3D
-            ): string => summarizeNeighborReason(candidate, point as unknown as BusinessRecord, focusPoint as unknown as BusinessRecord),
+            ): string =>
+                summarizeNeighborReason(
+                    candidate,
+                    point as unknown as BusinessRecord,
+                    focusPoint as unknown as BusinessRecord
+                ),
             getInsideRelationshipLabel: (
                 candidate: LooseNeighborCandidate,
                 point: LoosePoint3D,
                 focusPoint: LoosePoint3D
-            ): string => getInsideRelationshipLabel(candidate, point as unknown as BusinessRecord, focusPoint as unknown as BusinessRecord),
+            ): string =>
+                getInsideRelationshipLabel(
+                    candidate,
+                    point as unknown as BusinessRecord,
+                    focusPoint as unknown as BusinessRecord
+                ),
             getCurrentTrailFocusIndex: () => getCurrentTrailFocusIndex(mutableAppState.navState?.focusedIndex ?? null)
         },
         refreshCompositionState,

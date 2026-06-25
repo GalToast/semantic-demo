@@ -16,7 +16,7 @@ import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import type { WeatherData } from '@lib/utils/weather'
 import { appState } from '@lib/state/app.svelte.ts'
-import type { ViewName } from '@lib/state/state-types'
+import type { ViewName, SearchSummary, Point } from '@lib/state/state-types'
 import { appInit } from '@lib/orchestration/app-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
@@ -205,6 +205,12 @@ function createTestCompatProxy(): Record<string, unknown> {
                     appState.currentView = value as ViewName
                 } else if (prop === 'weather' && appState) {
                     appState.weather = value
+                } else if (prop === 'currentSearchSummary' && appState) {
+                    appState.currentSearchSummary = value as SearchSummary
+                } else if (prop === 'points' && appState) {
+                    appState.points = value as Point[]
+                } else if (prop === 'focusedNode' && appState) {
+                    appState.focusedNode = value as number
                 }
                 return true
             },

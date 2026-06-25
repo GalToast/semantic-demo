@@ -26,7 +26,8 @@ import type {
     SearchErrorData,
     SearchResult,
     LaneHealthPayload,
-    CacheEntry
+    CacheEntry,
+    SemanticGuideState
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
@@ -62,7 +63,7 @@ import type {
 } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 
 // ── App State class ─────────────────────────────────────────────────────────
 
@@ -81,6 +82,11 @@ class AppState {
     semanticGuideRequestSequence = $state<number>(0)
     currentSemanticGuide = $state<string | null>(null)
     summaryCardTypeToken = $state<number>(0)
+    semanticGuideState = $state<SemanticGuideState>({
+        isVisible: false,
+        isSynthesizing: false,
+        config: {}
+    })
     searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null)
     searchAbortController = $state<AbortController | null>(null)
     currentSearchSummary = $state<SearchSummary | null>(null)
@@ -481,22 +487,6 @@ class AppState {
     // ==== UI COMPONENT STATE ====
     legendOpen = $state<boolean>(false)
     demoPhase = $state<string>('IDLE')
-
-    // ==== SEMANTIC GUIDE UI STATE ====
-    semanticGuideState = $state<{
-        isVisible: boolean
-        isSynthesizing: boolean
-        config: Record<string, unknown> | null
-        typeToken: number
-        buttonMode: string
-        buttonOptions?: Record<string, unknown>
-    }>({
-        isVisible: false,
-        isSynthesizing: false,
-        config: null,
-        typeToken: 0,
-        buttonMode: 'ready'
-    })
 
     // ==== WEATHER STATE (MIGRATED FROM weatherStateStore) ====
     weatherState = $state<{

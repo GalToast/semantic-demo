@@ -41,7 +41,7 @@ import {
     ChromaticAberrationEffect,
     Effect
 } from 'postprocessing'
-import { debugInfo } from '../utils/diagnostic-adapter'
+import { debugInfo } from '@lib/utils/debug'
 import { debugWarn, debugError } from '@lib/utils/debug'
 
 // ── Custom Effects ──────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@ import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } fro
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { getViewportSize } from '@lib/utils/environment'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import type { Point } from '@lib/state/state-types'
 
 let tooltipRevealFrame: number | null = null

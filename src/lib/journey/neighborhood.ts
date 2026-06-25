@@ -42,6 +42,41 @@ let boundedNeighborhoodCandidates: number[] = []
 
 type ThreadCandidateLike = number | { index?: number }
 
+interface NeighborhoodPeerThread {
+    peerIndex: number
+    score: number
+    reason: string
+}
+
+interface NeighborhoodCandidate {
+    index: number
+    role: 'anchor' | 'peer'
+    slotNumber: number
+    leadId: string | null
+    anchorThread: { path: number[]; type: string; reason: string }
+    peerThreads: NeighborhoodPeerThread[]
+    score: number
+    semanticScore: number
+    reason: string
+    source: string
+    sameCity?: boolean
+    sameStatus?: boolean
+    threadType?: string
+}
+
+interface NeighborhoodManifest {
+    anchorIndex: number
+    displayLimit: number
+    candidates: Map<number, NeighborhoodCandidate>
+    edges: Array<{ a: number; b: number; score: number; role: string; reason: string }>
+    candidateIndices: number[]
+    anchorEdgeCount: number
+    peerEdgeCount: number
+    totalPeerEdgeCandidates: number
+    peerEdgesCulled: number
+    hairballRisk: boolean
+}
+
 function valueArray(value: unknown): unknown[] {
     if (Array.isArray(value)) return value
     if (value instanceof Map) return [...value.values()]
@@ -52,7 +87,7 @@ function valueArray(value: unknown): unknown[] {
     return []
 }
 
-function candidateIndex(candidate: ThreadCandidateLike & { source?: string } | unknown): number | null {
+function candidateIndex(candidate: (ThreadCandidateLike & { source?: string }) | unknown): number | null {
     if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate
     if (!candidate || typeof candidate !== 'object') return null
     const index = Number((candidate as { index?: unknown }).index)
@@ -373,7 +408,7 @@ export function buildNeighborhoodManifest(
     anchorIndex: number,
     routeIndices: readonly number[],
     options: { displayLimit?: number } = {}
-): Record<string, unknown> | null {
+): NeighborhoodManifest | null {
     const records = get(businessRecords)
     if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= records.length) return null
 
@@ -405,7 +440,7 @@ export function buildNeighborhoodManifest(
         appendRouteCandidate(candidateIndex)
     })
 
-    const candidates = new Map<number, Record<string, unknown>>()
+    const candidates = new Map<number, NeighborhoodCandidate>()
     const edges: Array<{ a: number; b: number; score: number; role: string; reason: string }> = []
     const anchorLeadId = normalizeLeadId(records[anchorIndex]?.lead_id)
     candidates.set(anchorIndex, {
@@ -423,7 +458,9 @@ export function buildNeighborhoodManifest(
 
     let scoredRoute = uniqueRoute
         .map((candidateIndex: number) => {
-            const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as Partial<SemanticNeighborDetail & { source: string }>)
+            const candidate =
+                getNeighborhoodCandidateForIndex(candidateIndex) ||
+                ({} as Partial<SemanticNeighborDetail & { source: string }>)
             const fallbackCandidate = fallbackCandidateByIndex.get(candidateIndex)
             const anchorRecord = getSemanticNeighborRecordBetween(anchorIndex, candidateIndex)
             const score = Number(
@@ -766,8 +803,8 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
                 nav.focusPocketMeta = {
                     ...nav.focusPocketMeta,
                     boundedLoop: true,
-                    motifLabel: nav.focusPocketMeta!.motifLabel || 'selected neighborhood loop'
-                }
+                    motifLabel: String(nav.focusPocketMeta?.motifLabel ?? '') || 'selected neighborhood loop'
+                } as NonNullable<typeof nav.focusPocketMeta>
             })
         }
         if (!nav.neighborhoodManifest) {
@@ -784,8 +821,12 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     if (!nav.focusPocketMeta?.active) return
     const hasSemanticSource =
         nav.threadSource === 'semantic' ||
-        valueArray(nav.threadCandidates).some((candidate: ThreadCandidateLike & { source?: string }) => candidate?.source === 'semantic') ||
-        (nav.focusPocketMeta.motifLabel || '').toLowerCase().includes('semantic')
+        valueArray(nav.threadCandidates).some(
+            (candidate: unknown) => (candidate as ThreadCandidateLike & { source?: string })?.source === 'semantic'
+        ) ||
+        String(nav.focusPocketMeta?.motifLabel ?? '')
+            .toLowerCase()
+            .includes('semantic')
     if (!hasSemanticSource) return
     const limit = getSemanticThreadDisplayLimit()
     const threadRoute = valueArray(nav.threadCandidates)
@@ -806,9 +847,8 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     appState.withMutation(() => {
         nav.neighborhoodAnchorIndex = seedIndex
         nav.neighborhoodIndices = manifest.candidateIndices
-        nav.neighborhoodSource = 0
         nav.neighborhoodReasonByIndex = new Map(
-            manifest.candidateIndices.map((candidateIndex: number) => [
+            manifest.candidateIndices.map((candidateIndex) => [
                 candidateIndex,
                 manifest.candidates?.get(candidateIndex)?.reason ||
                     nav.threadReasonByIndex?.get(candidateIndex) ||
@@ -819,10 +859,10 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
         nav.neighborhoodSource = 'semantic'
         nav.neighborhoodManifest = manifest
         nav.focusPocketMeta = {
-            ...(nav.focusPocketMeta || {}),
+            ...(nav.focusPocketMeta || ({} as NonNullable<typeof nav.focusPocketMeta>)),
             boundedLoop: true,
             motifLabel: 'selected neighborhood loop'
-        }
+        } as NonNullable<typeof nav.focusPocketMeta>
     })
 }
 

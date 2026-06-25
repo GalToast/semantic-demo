@@ -13,7 +13,7 @@
  *  - The response field is `rankings` (not `rerank_results`).
  */
 import type { SearchResult } from '@lib/types/state';
-import { debugWarn } from '@lib/utils/diagnostic-adapter';
+import { debugWarn } from '@lib/utils/debug';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

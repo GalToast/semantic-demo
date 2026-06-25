@@ -20,7 +20,7 @@ import type {
 import type { LoadingPhase } from '@lib/types/state'
 import type { Point } from '@lib/state/state-types'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
-import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { appState } from '@lib/state/app.svelte'
 import { debugError } from '@lib/utils/debug'
 

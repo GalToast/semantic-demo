@@ -8,7 +8,7 @@ import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 import { switchView } from '@lib/orchestration/view-controller'
 import { toggleAutoRotate } from '@lib/engine/camera-controls-restore.svelte'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import { resetExperienceState, copyCurrentViewLink } from '@lib/orchestration/lifecycle'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
 import { zoomMap } from '@lib/engine/map-state'

@@ -104,6 +104,7 @@
         "test:contract:core": "node tests/run-all-contracts.js --group=core",
         "test:contract:smoke": "node tests/run-all-contracts.js --group=smoke",
         "test:contract:full": "node tests/run-all-contracts.js --group=full",
+        "test:stress": "playwright test tests/heavy-stress-leak.spec.js --browser=chromium",
         "test:all": "npm run test:fast && npm run test:unit && npm run test:contract && npm run test:e2e:click-flow",
         "test:unit": "vitest run --config vitest.config.js",
         "test:unit:watch": "vitest --config vitest.config.js",

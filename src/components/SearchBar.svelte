@@ -150,11 +150,11 @@
   .search-container.info-panel-contained {
     position: sticky;
     top: 0;
-    left: auto;
+    left: 0;
     transform: none;
     width: 100%;
     z-index: var(--z-search-bar, 2);
-    margin: -2rem -1rem 0;
+    margin: -1rem -1rem 0 0;
     padding: 0 1rem;
   }
 

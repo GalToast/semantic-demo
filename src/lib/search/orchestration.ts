@@ -14,7 +14,7 @@ import {
 import { performSearch } from '@lib/search-engine'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { updateSearchTrailCue as renderSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 import {

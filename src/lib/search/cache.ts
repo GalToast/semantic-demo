@@ -9,7 +9,7 @@
 import { appState } from '@lib/state/app.svelte'
 import type { SemanticSearchCacheDiagnostics, SemanticState } from '@lib/state/state-types'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import * as idb from '../utils/idb-service'
 
 export const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES: number = 8

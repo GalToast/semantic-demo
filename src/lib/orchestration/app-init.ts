@@ -19,7 +19,7 @@
 
 import { initData, setLoadingPhase, setDataLoadError } from '@lib/data-store'
 import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'

@@ -21,7 +21,7 @@ import type {
     LayoutManifest
 } from '@lib/types/business'
 import { normalizeRelationshipRole } from '@lib/utils/relationship-roles'
-import { debugWarn } from '@lib/utils/diagnostic-adapter'
+import { debugWarn } from '@lib/utils/debug'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store'
 
