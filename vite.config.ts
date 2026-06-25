@@ -217,6 +217,38 @@ function serveRootAssets(middlewares: RootAssetMiddlewareStack): void {
             res.setHeader('Cache-Control', 'no-cache')
         }
         res.setHeader('Content-Type', contentType(filePath))
+
+        // W44 Quick Win: apply runtime gzip/brotli compression for text assets
+        // served from project root (CSS, JS). Without this, Vite's compression
+        // middleware doesn't run because serveRootAssets bypasses the static
+        // handler. Browser sends Accept-Encoding; we honor it.
+        const acceptEncoding = (req.headers['accept-encoding'] || '').toLowerCase()
+        const isCompressible = /\.(css|js|mjs|json|html?|svg)$/.test(filePath)
+        if (isCompressible && acceptEncoding) {
+            try {
+                const raw = await readFile(filePath)
+                let body: Buffer = raw
+                let encoding: 'br' | 'gzip' | null = null
+                if (acceptEncoding.includes('br')) {
+                    body = await brotliCompressAsync(raw, {
+                        params: { [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY }
+                    })
+                    encoding = 'br'
+                } else if (acceptEncoding.includes('gzip')) {
+                    body = await gzipAsync(raw, { level: GZIP_LEVEL })
+                    encoding = 'gzip'
+                }
+                if (encoding) {
+                    res.setHeader('Content-Encoding', encoding)
+                    res.setHeader('Vary', 'Accept-Encoding')
+                    res.end(body)
+                    return
+                }
+            } catch {
+                // Fall through to raw stream on compression error
+            }
+        }
+
         createReadStream(filePath).pipe(res)
     })
 }
