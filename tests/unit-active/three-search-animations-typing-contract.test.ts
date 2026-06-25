@@ -90,14 +90,18 @@ describe('three-search-animations — typing contract (W47 tightening)', () => {
         expect(match![1].trim()).toBe('number')
     })
 
-    it('getCorridorPathPoints accepts Vector3, not any', () => {
+    it('getCorridorPathPoints accepts structural {x,y,z} (not any, not Vector3)', () => {
+        // W48-Phase-3: the function uses structural type { x, y, z } (NOT
+        // Vector3) so callers can pass NodePosition (or any plain {x,y,z}
+        // object) without forcing a Vector3 class import. The structural
+        // type is intentionally more permissive than Vector3.
         const stripped = src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
         const match = stripped.match(
             /function\s+getCorridorPathPoints\s*\(\s*anchorPos\s*:\s*([^,]+),\s*targetPos\s*:\s*([^,)]+)/
         )
         expect(match, 'function signature not found').toBeTruthy()
-        expect(match![1].trim()).toBe('Vector3')
-        expect(match![2].trim()).toBe('Vector3')
+        expect(match![1].trim()).toBe('{ x: number; y: number; z: number }')
+        expect(match![2].trim()).toBe('{ x: number; y: number; z: number }')
     })
 
     it('exports a CorridorGlowState interface with the 4 expected fields', () => {
