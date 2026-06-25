@@ -31,6 +31,17 @@ const COMPRESSION_ALLOWLIST = new Set([
     'leadEnrichment.public.json'
 ])
 
+// W44 Quick Win: CSS files benefit hugely from brotli (~70% off) and gzip
+// (~80% off). Total minified CSS payload is ~339KB; brotli cuts it to ~73KB.
+// This applies to root-level CSS files (css/*.css, semantic-demo.css,
+// vector-explorer-pandora.css) AND to hashed Svelte component CSS chunks in
+// assets/*.css — all of them are text with high redundancy.
+const COMPRESS_CSS = true
+
+// Brotli/gzip frame headers are ~30-50 bytes; files smaller than this produce
+// compressed output LARGER than the original. Skip them.
+const COMPRESSION_MIN_BYTES = 100
+
 const ROOT_ASSETS = new Map<string, string>([
     ['/semantic-demo.css', 'semantic-demo.css'],
     ['/vector-explorer-pandora.css', 'vector-explorer-pandora.css'],
@@ -147,7 +158,9 @@ function copyRuntimeAssetsPlugin(): Plugin {
                                     minify: true
                                 })
                                 // Compute the destination path relative to the source root
-                                const dest = normalize(join(targetPath, src.slice(sourcePath.length + 1).replace(/\\/g, '/')))
+                                const dest = normalize(
+                                    join(targetPath, src.slice(sourcePath.length + 1).replace(/\\/g, '/'))
+                                )
                                 await mkdir(dirname(dest), { recursive: true })
                                 await writeFile(dest, result.code)
                                 return false // tell cp to skip this file (we wrote it ourselves)
@@ -234,24 +247,34 @@ function w44AssetCompressionPlugin(): Plugin {
         apply: 'build',
         async closeBundle() {
             const entries = await readdir(SVELTE_OUT_DIR, { recursive: true, withFileTypes: true })
-            const tasks: Promise<unknown>[] = []
-            for (const entry of entries) {
-                if (!entry.isFile()) continue
-                if (!COMPRESSION_ALLOWLIST.has(entry.name)) continue
-                const filePath = join(entry.parentPath, entry.name)
-                tasks.push(
-                    readFile(filePath).then(async (buf) => {
-                        // Quality 11 blocks local builds for minutes on large data assets.
-                        // Defaults favor fast repeat builds; CI/release can override via env.
-                        const br = await brotliCompressAsync(buf, {
-                            params: { [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY }
-                        })
-                        const gz = await gzipAsync(buf, { level: GZIP_LEVEL })
-                        await mkdir(entry.parentPath, { recursive: true })
-                        await Promise.all([writeFile(`${filePath}.br`, br), writeFile(`${filePath}.gz`, gz)])
+            // First pass: stat each candidate to filter by size threshold.
+            // Files smaller than COMPRESSION_MIN_BYTES produce compressed output
+            // LARGER than the original (frame headers exceed the content).
+            const candidates: Array<{ filePath: string; parentPath: string }> = []
+            await Promise.all(
+                entries.map(async (entry) => {
+                    if (!entry.isFile()) return
+                    const isAllowlisted = COMPRESSION_ALLOWLIST.has(entry.name)
+                    const isCss = COMPRESS_CSS && entry.name.endsWith('.css')
+                    if (!isAllowlisted && !isCss) return
+                    const filePath = join(entry.parentPath, entry.name)
+                    const fileSize = (await stat(filePath)).size
+                    if (fileSize < COMPRESSION_MIN_BYTES) return
+                    candidates.push({ filePath, parentPath: entry.parentPath })
+                })
+            )
+            const tasks: Promise<unknown>[] = candidates.map(({ filePath, parentPath }) =>
+                readFile(filePath).then(async (buf) => {
+                    // Quality 11 blocks local builds for minutes on large data assets.
+                    // Defaults favor fast repeat builds; CI/release can override via env.
+                    const br = await brotliCompressAsync(buf, {
+                        params: { [zlibConstants.BROTLI_PARAM_QUALITY]: BROTLI_QUALITY }
                     })
-                )
-            }
+                    const gz = await gzipAsync(buf, { level: GZIP_LEVEL })
+                    await mkdir(parentPath, { recursive: true })
+                    await Promise.all([writeFile(`${filePath}.br`, br), writeFile(`${filePath}.gz`, gz)])
+                })
+            )
             await Promise.all(tasks)
         }
     }

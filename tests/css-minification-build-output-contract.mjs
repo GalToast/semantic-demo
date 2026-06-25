@@ -96,6 +96,51 @@ if (totalBytes > 400 * 1024) {
     failures.push(`Total CSS bytes ${totalBytes} exceeds 400 KB budget`)
 }
 
+// 4. Brotli + gzip precompression (W44 Quick Win)
+function checkCompressed(filePath, label) {
+    const brPath = `${filePath}.br`
+    const gzPath = `${filePath}.gz`
+    if (!fs.existsSync(brPath)) {
+        failures.push(`${label}: missing brotli sibling (.br) — precompression plugin skipped it`)
+    }
+    if (!fs.existsSync(gzPath)) {
+        failures.push(`${label}: missing gzip sibling (.gz) — precompression plugin skipped it`)
+    }
+    if (fs.existsSync(brPath)) {
+        const origSize = fs.statSync(filePath).size
+        const brSize = fs.statSync(brPath).size
+        if (brSize >= origSize) {
+            failures.push(`${label}: .br (${brSize}B) is not smaller than original (${origSize}B) — compression failed`)
+        }
+    }
+}
+
+// Check all CSS files in dist/svelte/css/ and dist/svelte/assets/
+const allCssFiles = [
+    ...(fs.existsSync(cssDir) ? fs.readdirSync(cssDir).filter((f) => f.endsWith('.css')).map((f) => path.join(cssDir, f)) : []),
+    ...(fs.existsSync(path.join(distDir, 'assets')) ? fs.readdirSync(path.join(distDir, 'assets')).filter((f) => f.endsWith('.css')).map((f) => path.join(distDir, 'assets', f)) : []),
+    path.join(distDir, 'semantic-demo.css'),
+    path.join(distDir, 'vector-explorer-pandora.css')
+].filter((f) => fs.existsSync(f))
+
+// Brotli/gzip frame headers are ~30-50 bytes; the build skips compression
+// for files smaller than 100 bytes. Filter those out of the compression check.
+const COMPRESSION_MIN_BYTES = 100
+const compressible = allCssFiles.filter((f) => fs.statSync(f).size >= COMPRESSION_MIN_BYTES)
+const skipped = allCssFiles.filter((f) => fs.statSync(f).size < COMPRESSION_MIN_BYTES)
+
+const compressedBytes = compressible.reduce((sum, f) => {
+    const br = fs.existsSync(`${f}.br`) ? fs.statSync(`${f}.br`).size : 0
+    return sum + br
+}, 0)
+const compressedKB = (compressedBytes / 1024).toFixed(1)
+console.log(`Compressed (.br) CSS payload: ${compressedKB} KB (${compressible.length} files compressed, ${skipped.length} skipped — below ${COMPRESSION_MIN_BYTES}B threshold)\n`)
+
+compressible.forEach((f) => checkCompressed(f, path.relative(root, f)))
+if (skipped.length > 0) {
+    console.log(`  ↷ Skipped (too small to benefit): ${skipped.map((f) => path.relative(root, f)).join(', ')}`)
+}
+
 // ── Report ──────────────────────────────────────────────────────────────────
 
 if (failures.length > 0) {
