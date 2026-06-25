@@ -1,28 +1,28 @@
 /* Layout base: info panel frame, shared scrollbars, and field guide. */
 
 @media (min-width: 769px) {
-.info-panel {
-position: fixed;
-left: 16px;
-top: 80px;
-bottom: 24px;
-width: 344px;
-display: flex;
-flex-direction: column;
-border-radius: var(--glass-radius-panel);
-background: var(--glass-bg);
-backdrop-filter: blur(var(--glass-blur));
--webkit-backdrop-filter: blur(var(--glass-blur));
-border: var(--glass-border);
-color: var(--color-text-strong);
-overflow: hidden;
-z-index: var(--z-panels);
-box-shadow: var(--shadow-glass);
-transform: translateX(calc(-100% - 16px));
-opacity: 0;
-pointer-events: none;
-transition: var(--transition-premium);
-}
+    .info-panel {
+        position: fixed;
+        left: 16px;
+        top: 80px;
+        bottom: 24px;
+        width: 344px;
+        display: flex;
+        flex-direction: column;
+        border-radius: var(--glass-radius-panel);
+        background: var(--glass-bg);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+        border: var(--glass-border);
+        color: var(--color-text-strong);
+        overflow: hidden;
+        z-index: var(--z-panels);
+        box-shadow: var(--shadow-glass);
+        transform: translateX(calc(-100% - 16px));
+        opacity: 0;
+        pointer-events: none;
+        transition: var(--transition-premium);
+    }
 }
 
 .info-panel::before {
@@ -30,7 +30,7 @@ transition: var(--transition-premium);
     position: absolute;
     inset: 0;
     background: var(--glass-bg-accent);
-    opacity: 0.6;
+    opacity: 0.15;
     pointer-events: none;
 }
 
@@ -129,8 +129,6 @@ transition: var(--transition-premium);
 .info-panel.collapsed .info-toggle-icon svg.ui-icon {
     transform: rotate(-90deg);
 }
-
-
 
 .info-panel-surface {
     display: contents;
@@ -1149,9 +1147,9 @@ body:has(.info-panel.active) .panel-toggle {
         display: none;
     }
 
-    body[data-panel-surface="map-trail"] .stats-row,
-    body[data-panel-surface="map-trail"] .surprise-btn,
-    body[data-panel-surface="map-trail"] .launch-btn {
+    body[data-panel-surface='map-trail'] .stats-row,
+    body[data-panel-surface='map-trail'] .surprise-btn,
+    body[data-panel-surface='map-trail'] .launch-btn {
         display: none;
     }
 
@@ -1244,5 +1242,4 @@ body:has(.info-panel.active) .panel-toggle {
         top: auto;
         bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     }
-
 }

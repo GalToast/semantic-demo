@@ -81,12 +81,11 @@ function testUpdateLegendGuideStateOwner() {
     const lifecycleSrc = readSrc(LIFECYCLE_PATH)
     const importDeclarations = lifecycleSrc.match(/^import[\s\S]*?;$/gm) || []
     const badImport = importDeclarations.some((d) => d.includes('updateLegendGuideState'))
-    assert(
-        !badImport,
-        'lifecycle must NOT import updateLegendGuideState (legend-panel.svelte.ts owns it)'
-    )
+    assert(!badImport, 'lifecycle must NOT import updateLegendGuideState (legend-panel.svelte.ts owns it)')
 
-    console.log('  OK — updateLegendGuideState: legend-panel.svelte.ts owns it; no direct call from view-controller or lifecycle')
+    console.log(
+        '  OK — updateLegendGuideState: legend-panel.svelte.ts owns it; no direct call from view-controller or lifecycle'
+    )
 }
 
 // ── TEST 2: restoreLegendCollapsedPanel is owned by legend-panel.svelte.ts ──

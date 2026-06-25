@@ -159,7 +159,7 @@ export function bindFocusControls(): void {
             // W7-C fix: when the inspected index is the focused node itself,
             // pinThreadNeighbor returns active:false (a node cannot inspect
             // its own thread). Fall back to the first available neighbor.
-            if (index !== state.focusedIndex) {
+            if (index !== state.focusedNode) {
                 pinThreadNeighbor(index, { surface: 'pinned' })
             } else {
                 pinFirstAvailableNeighbor({ surface: 'pinned' })

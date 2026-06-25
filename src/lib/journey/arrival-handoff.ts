@@ -34,7 +34,7 @@ export function removeArrivalHandoffOverlay(): void {
     const scene = state.scene as { remove?: (obj: Object3D) => void } | null
     scene?.remove?.(state.arrivalHandoffGroup)
     const group = state.arrivalHandoffGroup as { traverse?: (cb: (child: Object3D) => void) => void }
-    group.traverse?.((child: Object3D) => disposeLineObject(child))
+    group.traverse?.((child: Object3D) => disposeLineObject(child as any))
     state.arrivalHandoffGroup = null
     withStateMutation(() => {
         state.arrivalHandoffDiagnostics = {
@@ -88,7 +88,7 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
             fromIndex,
             targetIndex,
             phase: state.strandContinuityState.phase,
-            segmentCount: getLineSegmentCount(group.children[0]),
+            segmentCount: getLineSegmentCount(group.children[0] as any),
             endpointCount: 2,
             opacity: material.opacity
         }

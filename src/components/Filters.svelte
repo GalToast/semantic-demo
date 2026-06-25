@@ -11,7 +11,6 @@
 -->
 <script lang="ts">
   import {
-    filterState,
     hasActiveFilters,
     activeFilterCount,
     toggleFilter,

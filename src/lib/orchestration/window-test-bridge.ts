@@ -64,7 +64,7 @@ const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
  * install() assigns the result to window.__APP_ACTIONS__.
  */
 function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
-    const refreshTraversalUiForCompatAction = (action: string): void => {
+    const refreshTraversalUiForCompatAction = (_action: string): void => {
         updateTraversalUi()
     }
 
@@ -91,8 +91,7 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
         search: (query: string, options?: Record<string, unknown>) => search(query, options),
         setTrailFromSeed: (index: number) => setTrailFromSeed(index),
         traverseNeighbor: (step: number) => traverseNeighbor(step),
-        walkThreadNeighbor: (index: number, options?: Record<string, unknown>) =>
-            walkThreadNeighbor(index, options),
+        walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => walkThreadNeighbor(index, options),
         inspectThreadNeighbor: (index: number, options?: Record<string, unknown>) =>
             inspectThreadNeighbor(index, options),
         pinThreadNeighbor: (index: number, options?: Record<string, unknown>) => pinThreadNeighbor(index, options),
@@ -115,8 +114,7 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
 function buildStateProxy(): Record<string, unknown> {
     return {
         get state() {
-            const liveAppState =
-                (window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] || appState
+            const liveAppState = (window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] || appState
             return {
                 currentView: get(navStore).currentView,
                 navState: get(navStore),

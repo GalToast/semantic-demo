@@ -17,7 +17,6 @@
 -->
 <script lang="ts">
   import { compassSteps } from '@lib/stores/compass.svelte';
-  import type { CompassStep } from '@lib/stores/compass.svelte';
   import { compassPhase, transitionCompass } from '@lib/stores/journey.svelte';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 

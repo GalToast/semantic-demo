@@ -2,7 +2,8 @@ import type { AdapterDeps, LooseNeighborCandidate, LoosePoint, LoosePoint3D } fr
 import type { ViewName } from '@lib/orchestration/view-controller'
 import type { SwitchViewOptions } from '@lib/orchestration/view-controller'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
-import type { BusinessRecord, Point } from '@lib/types/business'
+import type { BusinessRecord } from '@lib/types/business'
+import type { Point } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import {
     setSemanticDiveMode,
@@ -38,16 +39,16 @@ export function buildAdapterDeps(): AdapterDeps {
 
     return {
         journeyLifecycle: {
-            previewInsideNextThread,
+            previewInsideNextThread: (opt?: unknown): void => {
+                previewInsideNextThread(opt as Record<string, unknown>)
+            },
             getNextWalkCandidateForIndex: (
                 currentIndex: number,
                 options?: WalkCandidateOptions
-            ): ThreadCandidate | null => getNextWalkCandidateForIndex(currentIndex, options),
+            ): ThreadCandidate | null => getNextWalkCandidateForIndex(currentIndex, options) as ThreadCandidate | null,
             setSemanticDiveMode: (mode: unknown) => setSemanticDiveMode(Boolean(mode)),
-            getInterestingBusinessNote: (point: LoosePoint): string | null =>
-                getInterestingBusinessNote(point),
-            buildSelectedMatchNarrative: (point: LoosePoint): string =>
-                buildSelectedMatchNarrative(point),
+            getInterestingBusinessNote: (point: LoosePoint): string | null => getInterestingBusinessNote(point),
+            buildSelectedMatchNarrative: (point: LoosePoint): string => buildSelectedMatchNarrative(point),
             hasColdDegradedSemanticFallback,
             getColdDegradedRouteCopy: () => null,
             getSelectedBusinessRoleLabel: (point: unknown) => _getSelectedBusinessRoleLabel(point as Point),
@@ -66,12 +67,11 @@ export function buildAdapterDeps(): AdapterDeps {
                 mutableAppState.lastCanvasNodeFocusPick = val || null
             }
         },
-        switchView: (view: string, options: SwitchViewOptions = {}): void =>
-            switchView(view as ViewName, options),
+        switchView: (view: string, options: SwitchViewOptions = {}): void => switchView(view as ViewName, options),
         journeySelectedCard: {
             getStrandArrivalNote,
             updateTraversalUi,
-            hydrateLeadContext: (point: unknown, options?: Record<string, unknown>): void =>
+            hydrateLeadContext: (point: unknown, _options?: Record<string, unknown>): void =>
                 _hydrateLeadContextLifecycle(point as BusinessRecord | null)
         },
         threadInspector: {
@@ -79,12 +79,12 @@ export function buildAdapterDeps(): AdapterDeps {
                 candidate: LooseNeighborCandidate,
                 point: LoosePoint3D,
                 focusPoint: LoosePoint3D
-            ): string => summarizeNeighborReason(candidate, point, focusPoint),
+            ): string => summarizeNeighborReason(candidate, point as unknown as BusinessRecord, focusPoint as unknown as BusinessRecord),
             getInsideRelationshipLabel: (
                 candidate: LooseNeighborCandidate,
                 point: LoosePoint3D,
                 focusPoint: LoosePoint3D
-            ): string => getInsideRelationshipLabel(candidate, point, focusPoint),
+            ): string => getInsideRelationshipLabel(candidate, point as unknown as BusinessRecord, focusPoint as unknown as BusinessRecord),
             getCurrentTrailFocusIndex: () => getCurrentTrailFocusIndex(mutableAppState.navState?.focusedIndex ?? null)
         },
         refreshCompositionState,

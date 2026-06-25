@@ -18,8 +18,6 @@
  */
 
 import { initData, setLoadingPhase, setDataLoadError } from '@lib/data-store'
-import { navStore } from '@lib/stores/navigation.svelte'
-import { focusStore } from '@lib/stores/focus.svelte'
 import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { initAdapters } from '@lib/orchestration/adapters'
@@ -27,6 +25,7 @@ import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
 import { installWindowTestBridge } from '@lib/orchestration/window-test-bridge'
 import { debugError } from '@lib/utils/debug'
+import { applyUrlState } from '@lib/orchestration/url-state'
 
 // ── Debug Window Extensions (Playwright test compat) ────────────────────────
 // `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims. Their types are
@@ -71,14 +70,6 @@ let _unsubWindowGlobals: (() => void) | null = null
 let _unsubWebglRestore: (() => void) | null = null
 let _unsubViewport: (() => void) | null = null
 let _unsubParity: (() => void) | null = null
-
-function refreshTraversalUiForCompatAction(action: string): void {
-    try {
-        updateTraversalUi()
-    } catch (error) {
-        debugWarn('AppInit', `${action}: traversal UI refresh failed`, error)
-    }
-}
 
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
@@ -163,7 +154,6 @@ function clearSafetyTimers(timers: SafetyTimers | null): void {
  */
 async function applyUrlStateAfterData(): Promise<void> {
     try {
-        const { applyUrlState } = await import('@lib/orchestration/url-state')
         await applyUrlState()
     } catch (err) {
         debugError('[app-init] applyUrlState failed during init:', err)

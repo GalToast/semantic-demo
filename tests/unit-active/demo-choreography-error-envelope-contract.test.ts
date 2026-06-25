@@ -154,9 +154,10 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
                 /if\s*\(\s*_demoCancelled\s*\)\s*return/
             )
             // Guard: per-callback try/catch is GONE (deliberately stripped)
-            expect(cb, `setTimeout callback #${i + 1} has per-callback try/catch — should have been stripped (8c2377c5)`).not.toMatch(
-                /try\s*\{/
-            )
+            expect(
+                cb,
+                `setTimeout callback #${i + 1} has per-callback try/catch — should have been stripped (8c2377c5)`
+            ).not.toMatch(/try\s*\{/)
         }
     })
 

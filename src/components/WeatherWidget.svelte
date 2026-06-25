@@ -10,8 +10,8 @@
   import { onMount } from 'svelte';
   import {
     weatherTemperature,
-    weatherCondition,
     weatherLabel,
+    weatherIconKey,
     weatherIconKey,
     weatherHumidity,
     weatherWindSpeed,
@@ -31,7 +31,6 @@
   let expanded = $state(false);
 
   let temperature = $derived(weatherTemperature());
-  let condition = $derived(weatherCondition());
   let label = $derived(weatherLabel());
   let iconKey = $derived(weatherIconKey());
   let humidity = $derived(weatherHumidity());

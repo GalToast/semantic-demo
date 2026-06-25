@@ -554,6 +554,30 @@ async function main() {
     } else {
       console.log('[3/4] Testing PEEK mode...');
       await installSearchFixture(page, 'peek');
+      // Inject peek-mode CSS rules that the standalone HTML page doesn't load.
+      // These mirror css/mobile_premium__state.css L324-337 and
+      // css/mobile_premium__surfaces.css L757-762.
+      await page.addStyleTag({ content: `
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-container #search-results.active {
+          flex: 0 0 72px; min-height: 72px; max-height: 72px;
+        }
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-results-count,
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-what,
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-meta,
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-context,
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-bar,
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-badges,
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child),
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child) .search-result-item {
+          display: none; visibility: hidden;
+        }
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-item {
+          overflow: hidden;
+        }
+        body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-result-row {
+          flex-wrap: nowrap; overflow: hidden;
+        }
+      ` });
       await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 3000 }).catch(() => {});
       await assertPeekMode(page, ctx);
       console.log('');

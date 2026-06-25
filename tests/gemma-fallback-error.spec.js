@@ -62,7 +62,7 @@ async function seedSearchGuideState(page) {
         anchorIndex: 0,
         resultIndices: [0, 1, 2, 3]
       };
-      s.currentView = 'list';
+      s.currentView = 'galaxy';
       return s.points[0]?.name || '';
     });
   });
@@ -117,7 +117,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
           anchorIndex: 0,
           resultIndices: [0, 1, 2, 3]
         };
-        s.currentView = 'list';
+        s.currentView = 'galaxy';
       });
       const trigger = document.getElementById('synthesize-trigger');
       if (trigger) {

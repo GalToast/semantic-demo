@@ -5,7 +5,7 @@
  * Manages the camera pull-in animation that runs when the 3D scene first
  * becomes visible, and resizes the renderer + camera when the window changes.
  */
-import { Vector3, WebGLRenderer } from 'three'
+import { Vector3 } from 'three'
 import { appState as state } from '@lib/state/app.svelte.ts'
 
 import {

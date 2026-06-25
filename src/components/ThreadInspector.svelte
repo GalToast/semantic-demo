@@ -72,8 +72,8 @@
     if (inspectedIndex === null || !Number.isFinite(inspectedIndex)) return;
     const actions = (window as unknown as {
       __APP_ACTIONS__?: {
-        walkThreadNeighbor?: (index: number, options?: Record<string, unknown>) => unknown;
-        clearThreadInspection?: (options?: Record<string, unknown>) => unknown;
+        walkThreadNeighbor?: (_index: number, _options?: Record<string, unknown>) => unknown;
+        clearThreadInspection?: (_options?: Record<string, unknown>) => unknown;
       };
     }).__APP_ACTIONS__;
 

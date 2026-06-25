@@ -8,6 +8,8 @@
  * until the panel is ported to a Svelte component.
  */
 
+import { startMicroDemo } from '@lib/demo/choreography'
+
 // ── Pure utilities (native, no legacy deps) ─────────────────────────────────
 
 export function isKeyboardTextEntryTarget(target: EventTarget | null): target is HTMLElement {
@@ -155,12 +157,7 @@ export function initKeyboardShortcutsHint(): void {
         // Fire the choreography demo. startMicroDemo() owns the re-entry
         // guard (W47 fix) and clears the session gate via shouldRunMicroDemo().
         // It returns silently if guards fail (reduced-motion, no WebGL, etc.).
-        import('../demo/choreography')
-            .then((m) => m.startMicroDemo())
-            .catch(() => {
-                // Ignore: if the module fails to load, the user can still
-                // interact with the rest of the app.
-            })
+        startMicroDemo()
     })
     panel.appendChild(replayBtn)
 

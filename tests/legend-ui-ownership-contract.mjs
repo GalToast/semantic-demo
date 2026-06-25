@@ -71,8 +71,7 @@ function testLegendBindingsImportsFromCanonicalStore() {
     const src = readSrc(LEGEND_BINDINGS)
 
     assert(
-        src.includes("from '@lib/stores/legend-panel.svelte.ts'") ||
-            src.includes("from '@lib/stores/legend-panel'"),
+        src.includes("from '@lib/stores/legend-panel.svelte.ts'") || src.includes("from '@lib/stores/legend-panel'"),
         'legend-bindings.ts must import from the canonical legend-panel store'
     )
 
@@ -90,7 +89,7 @@ function testLegendBindingsImportsFromCanonicalStore() {
 // ── TEST 3: No live source imports from the deleted kernel ──────────────────────
 
 function testNoLiveSourceImportsFromDeletedKernel() {
- console.log('\n[TEST 3] No live source file imports from deleted ')
+    console.log('\n[TEST 3] No live source file imports from deleted ')
 
     // Use ripgrep to find any imports from the deleted kernel path
     try {
@@ -101,7 +100,7 @@ function testNoLiveSourceImportsFromDeletedKernel() {
             { cwd: SEMDEMO_ROOT, encoding: 'utf-8', timeout: 15000 }
         ).trim()
 
- assert(result === '', `Found live imports from deleted kernel :\n${result}`)
+        assert(result === '', `Found live imports from deleted kernel :\n${result}`)
     } catch (err) {
         // rg exits 1 when no matches — that's success
         if (err.status !== 1) throw err

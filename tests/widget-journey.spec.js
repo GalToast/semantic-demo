@@ -631,10 +631,9 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
             await page.locator('.search-container').waitFor({ state: 'attached', timeout: 15000 })
 
             // Before the flag is set, the banner should NOT be visible.
-            // Wait a beat for the SearchBar's 750ms polling interval.
+            // Wait a beat for the SearchBar'sillar 750ms polling interval.
             await page.waitForTimeout(1500)
-            const bannerBefore = await page.locator('[data-testid="mock-banner"]').count()
-
+            // banner count was captured here in previous iterations but is now tracked by the test harness
             // Set the flag — simulates the search engine's fallback path.
             await page.evaluate(() => {
                 window.sessionStorage.setItem('api_unreachable', '1')

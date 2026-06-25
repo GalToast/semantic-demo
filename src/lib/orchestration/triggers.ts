@@ -30,12 +30,7 @@ import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { refreshCompositionState } from '@lib/stores/lifecycle/modes'
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync'
 import { setActiveResult, setSearchStatus } from '@lib/stores/search.svelte'
-import {
-    returnToOverview,
-    recenterFocusedNode,
-    resetExplorationFocus,
-    setSemanticLaneUiState
-} from './lifecycle'
+import { returnToOverview, recenterFocusedNode, resetExplorationFocus, setSemanticLaneUiState } from './lifecycle'
 import { hideSummaryCard } from '@lib/journey/semantic-guide'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
@@ -197,7 +192,7 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
     const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
     const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
         displayLimit: getSemanticThreadDisplayLimit()
-    })
+    }) as any
     const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])]
     const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
     const threadReasonByIndex = new Map<number, string>(

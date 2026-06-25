@@ -12,7 +12,7 @@
 <script lang="ts">
   import { hasFocus, focusedIndex, currentSurface } from '@lib/stores/navigation.svelte.ts';
   import { threadInspectorActive } from '@lib/stores/focus.svelte.ts';
-  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
 
   interface Props {
     /** Whether the overlay chrome is visible */

@@ -16,7 +16,7 @@
 
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
-import type { ControlsLike, SemanticState } from '@lib/state/state-types'
+import type { SemanticState } from '@lib/state/state-types'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { easeInOutCubic } from '@lib/utils/math-easing'
 

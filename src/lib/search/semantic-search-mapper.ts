@@ -10,7 +10,7 @@
  */
 
 import type { SearchResult } from '@lib/types/state'
-import type { RawServiceRow, SemanticSearchPayload } from './semantic-search-types'
+import type { RawServiceRow } from './semantic-search-types'
 import { PAGE_SIZE } from './semantic-search-types'
 
 export { PAGE_SIZE }

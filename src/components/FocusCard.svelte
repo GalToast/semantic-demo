@@ -95,7 +95,6 @@
 
   let bodyFocusedNode = $state('');
   let bodyNavMode = $state('');
-  let bodySceneReady = $state('');
 
   $effect(() => {
     if (typeof document === 'undefined') return;

@@ -24,14 +24,14 @@ import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-
  * narrower than the bridge contract. Use this loose form for adapter
  * bridges until the consumer is tightened.
  */
-type LoosePoint3D = { x?: number; y?: number; z?: number }
+export type LoosePoint3D = { x?: number; y?: number; z?: number }
 
 /**
  * Loose neighbor candidate — matches the structural shape of the legacy
  * `NeighborCandidate` in ``. The
  * legacy type allows `reason?: string` and arbitrary extra fields.
  */
-type LooseNeighborCandidate = { reason?: string; [key: string]: unknown }
+export type LooseNeighborCandidate = { reason?: string; [key: string]: unknown }
 
 /**
  * Loose business point — used where the legacy `Point` type from
@@ -39,7 +39,7 @@ type LooseNeighborCandidate = { reason?: string; [key: string]: unknown }
  * `BusinessRecord` from `@lib/types/business` is the canonical
  * replacement once the consumer is tightened.
  */
-type LoosePoint = Record<string, unknown>
+export type LoosePoint = Record<string, unknown>
 
 // ── Types ────────────────────────────────────────────────────────────────────
 

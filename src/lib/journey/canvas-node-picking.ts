@@ -7,7 +7,7 @@
  * (instanced mesh first, then Points threshold) with a screen-space nearest fallback.
  */
 import { Raycaster, PerspectiveCamera, Vector3, Vector2, MathUtils } from 'three'
-import type { Camera, Intersection, Object3D, InstancedMesh } from 'three'
+import type { Intersection, Object3D, InstancedMesh } from 'three'
 import { appState } from '@lib/state/app.svelte'
 import { isPointVisible } from '@lib/utils/geo-data'
 import { getCanvasPointerPosition, getCanvasFieldNodeClickRadius } from './canvas-hit-test'

@@ -34,8 +34,9 @@ function getPointClusterIndex(point: BusinessRecord): number | null {
  * Apply cluster-based accent color to a DOM element via CSS custom properties.
  * Returns the RGB value string used, or null if no color was applied.
  */
-export function applyClusterUiAccent(element: HTMLElement | null, point: BusinessRecord = null): string | null {
+export function applyClusterUiAccent(element: HTMLElement | null, point: BusinessRecord | null = null): string | null {
     if (!element) return null
+    if (!point) return null
 
     const clusterIndex = getPointClusterIndex(point)
     const colors = Array.isArray(state.COLORS) ? state.COLORS : []

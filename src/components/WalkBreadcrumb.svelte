@@ -2,8 +2,8 @@
   interface Props {
     history: number[];
     focusedIndex: number | null;
-    getPointForIndex: (idx: number) => { name?: string } | null;
-    onWalk: (index: number, order: number) => void;
+    getPointForIndex: (_idx: number) => { name?: string } | null;
+    onWalk: (_index: number, _order: number) => void;
   }
 
   let { history, focusedIndex, getPointForIndex, onWalk }: Props = $props();

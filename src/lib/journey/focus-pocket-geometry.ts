@@ -94,7 +94,7 @@ export function getFocusConstellationMotif(index: number): ConstellationMotif {
     const motif = motifs[motifKey] || motifs.market || FOCUS_CONSTELLATION_MOTIFS.market
     return {
         key,
-        ...motif,
+        ...(motif as unknown as ConstellationMotif),
         seed: (point.cluster ?? 0) * 0.41 + (index % 11) * 0.07
     }
 }
@@ -112,7 +112,7 @@ export function getFocusConstellationMotifForPersonality(
     if (!override) return fallback
     return {
         ...fallback,
-        ...override,
+        ...(override as unknown as ConstellationMotif),
         key: overrideKey,
         seed: fallback.seed
     }

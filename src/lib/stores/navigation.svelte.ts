@@ -131,8 +131,8 @@ const INITIAL_NAV_STATE: NavState = {
 function getOrCreateNavWritable(): ReturnType<typeof writable<NavState>> {
     const key = '__SEMANTIC_EXPLORER_NAV_WRITABLE__'
     const existing = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>)[key] : undefined
-    if (existing && typeof existing.subscribe === 'function') {
-        return existing
+    if (existing && typeof (existing as Record<string, unknown>).subscribe === 'function') {
+        return existing as ReturnType<typeof writable<NavState>>
     }
     const store = writable<NavState>({ ...INITIAL_NAV_STATE })
     if (typeof window !== 'undefined') {
@@ -199,7 +199,7 @@ export const currentMode = (): string => {
     const local = get(_navWritable).mode
     if (local) return local
     // Fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH/ENTER_INSIDE/EXIT_INSIDE
- // paths in mutate legacy state.navState.mode
+    // paths in mutate legacy state.navState.mode
     // without writing to navStore. Remove once those reducers are store-native.
     const legacy = readLegacyNavField<string>('mode')
     if (legacy) return legacy

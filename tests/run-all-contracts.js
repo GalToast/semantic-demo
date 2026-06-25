@@ -162,7 +162,6 @@ async function startStaticServer(port) {
             settled = true
             reject(new Error(`Static server exited before readiness check completed (code=${code}, signal=${signal})`))
         })
-
         ;(async () => {
             const deadline = Date.now() + SERVER_START_TIMEOUT_MS
             while (Date.now() < deadline) {
@@ -696,6 +695,17 @@ function runContract(filename, timeoutMs, baseUrl = null) {
     })
 }
 
+function isServerRelatedFailure(filename, result) {
+    const output = `${result.stdout}\n${result.stderr}`
+    return (
+        output.includes('[RUNNER TIMEOUT]') ||
+        output.includes('ECONNRESET') ||
+        output.includes('ECONNREFUSED') ||
+        output.includes('net::ERR_') ||
+        output.includes('Target page, context or browser has been closed')
+    )
+}
+
 function shouldRetryBrowserContract(filename, result) {
     if (result.passed) return false
     const entry = join(TESTS_DIR, filename)
@@ -792,7 +802,7 @@ async function main() {
                 }
             }
             results.push(result)
-            if (!result.passed && serverLease) {
+            if (!result.passed && serverLease && isServerRelatedFailure(file, result)) {
                 serverLease.markFailed()
             }
             if (stopOnFirstFail && !result.passed) {

@@ -21,18 +21,6 @@ import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
-interface OrbitSlackCamera {
-    position: Vector3
-}
-
-interface OrbitSlackControls {
-    target: Vector3
-    maxDistance?: number
-    rotateSpeed?: number
-    panSpeed?: number
-    update(): void
-}
-
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 const _s = state as unknown as SemanticState

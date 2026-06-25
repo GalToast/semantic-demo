@@ -95,10 +95,7 @@ export function getJourneyCompassState(): CompassState {
         const focusIndex: number = Number.isFinite(appState.navState?.focusedIndex)
             ? appState.navState!.focusedIndex!
             : appState.focusedNode!
-        const nextCandidate = getNextExploreCandidateForIndex(
-            focusIndex,
-            getNextWalkCandidateForIndex as (index: number) => number | null
-        )
+        const nextCandidate = getNextExploreCandidateForIndex(focusIndex, getNextWalkCandidateForIndex)
         const pts = appState.points!
         const nextPointCandidate = nextCandidate ? (pts[nextCandidate.index] ?? null) : null
         const nextPoint = nextPointCandidate as Point | null
@@ -120,7 +117,7 @@ export function getJourneyCompassState(): CompassState {
     }
 
     if (hasFocus || isFocusing) {
-        const walkHistory: number[] = Array.isArray(appState.navState?.walkHistoryIndices)
+        const walkHistory: readonly number[] = Array.isArray(appState.navState?.walkHistoryIndices)
             ? appState.navState!.walkHistoryIndices
             : appState.navState?.explorationHistoryIndices || []
         const walkHistoryLength: number = walkHistory.length
@@ -176,7 +173,7 @@ export function getJourneyCompassState(): CompassState {
     }
 
     if (hasSearch) {
-        const resultCount: number = summary?.dedupedResultCount ?? summary?.resultIndices?.length ?? 0
+        const resultCount: number = summary?.dedupedResultCount ?? (summary as any)?.resultIndices?.length ?? 0
         const hasNoResults: boolean = !isSearching && !!summary && resultCount === 0
         return {
             phase: 'search',

@@ -14,7 +14,7 @@ import { appState } from '@lib/state/app.svelte'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { getSemanticGuideTitle } from '@lib/journey/semantic-guide'
 import { CONFIG } from '@lib/engine/config'
-import { getFilteredClusterCounts } from '@lib/orchestration/cluster-filter-controller'
+import { getFilteredClusterCounts, setClusterFilter } from '@lib/orchestration/cluster-filter-controller'
 import { getActiveClusterFilter } from '@lib/stores/filter.svelte'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 
@@ -339,9 +339,7 @@ export function initLegendEventBusSubscriptions(): void {
 // ── Cluster filter click ────────────────────────────────────────────────────
 
 function _setClusterFilter(cluster: number): void {
-    import('@lib/orchestration/cluster-filter-controller').then((mod) => {
-        mod.setClusterFilter(cluster)
-    })
+    setClusterFilter(cluster)
 }
 
 // ── Re-export helpers needed by legend-bindings ───────────────────────────

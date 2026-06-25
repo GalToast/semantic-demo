@@ -57,9 +57,7 @@ function readSource(): string {
 }
 
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('thread-model — typing contract (W47-Bite-J tightening)', () => {
@@ -98,20 +96,14 @@ describe('thread-model — typing contract (W47-Bite-J tightening)', () => {
         // The pure path already used `points[index]?.X` correctly.
         // The legacy path was inconsistent; both should now match.
         // Pattern variants: `(points[index] as any)`, `(points[otherIndex] as any)`
-        const patterns = [
-            /\(points\[index\]\s+as\s+any\)/g,
-            /\(points\[otherIndex\]\s+as\s+any\)/g
-        ]
+        const patterns = [/\(points\[index\]\s+as\s+any\)/g, /\(points\[otherIndex\]\s+as\s+any\)/g]
         patterns.forEach((p) => {
             expect(stripped.match(p), `legacy-path pattern ${p} still present`).toBeNull()
         })
     })
 
     it('no `(state.points[index] as any)?.X` pattern remains in legacy paths', () => {
-        const patterns = [
-            /\(state\.points\[index\]\s+as\s+any\)/g,
-            /\(state\.points\[candidateIndex\]\s+as\s+any\)/g
-        ]
+        const patterns = [/\(state\.points\[index\]\s+as\s+any\)/g, /\(state\.points\[candidateIndex\]\s+as\s+any\)/g]
         patterns.forEach((p) => {
             expect(stripped.match(p), `legacy-path pattern ${p} still present`).toBeNull()
         })

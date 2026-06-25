@@ -14,7 +14,7 @@
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { searchState } from '@lib/stores/search.svelte';
   import SearchInput from './SearchInput.svelte';
-  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -29,7 +29,6 @@
 
   // ── Test Compatibility ────────────────────────────────────────────────────────
 
-  let testPanelSurface = $derived($testCompatStore.panelSurface || $testCompatStore.navSurface);
   let testLoadingPhase = $derived($testCompatStore.loadingPhase);
 
   // Sync test state on mount

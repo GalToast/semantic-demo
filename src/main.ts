@@ -237,7 +237,7 @@ function publishTestCompatState(): void {
     const w = window as TestCompatWindow
     testCompatProxy ??= createTestCompatProxy()
     w.__TEST_STATE__ = testCompatProxy
-    w.__APP_STATE__ = testCompatProxy
+    w.__APP_STATE__ = testCompatProxy as unknown as typeof w.__APP_STATE__
 }
 
 window.__refreshTestCompatState__ = publishTestCompatState

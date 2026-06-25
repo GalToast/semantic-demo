@@ -18,7 +18,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
 
-  interface Props {}
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
   let {} = $props();
 

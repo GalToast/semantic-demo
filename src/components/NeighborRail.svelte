@@ -12,10 +12,10 @@
 
   interface Props {
     candidates: CandidateItem[];
-    getPointForIndex: (idx: number) => { name?: string; city?: string } | null;
-    onInspect: (idx: number) => void;
-    onPin: (idx: number) => void;
-    onWalk: (candidate: CandidateItem) => void;
+    getPointForIndex: (_idx: number) => { name?: string; city?: string } | null;
+    onInspect: (_idx: number) => void;
+    onPin: (_idx: number) => void;
+    onWalk: (_candidate: CandidateItem) => void;
   }
 
   let { candidates, getPointForIndex, onInspect, onPin, onWalk }: Props = $props();

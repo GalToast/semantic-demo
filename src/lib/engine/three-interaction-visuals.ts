@@ -62,27 +62,6 @@ function isSemanticDiveActive() {
 
 // ── Local Types ───────────────────────────────────────────────────────────────
 
-interface SpriteUserData {
-    phase?: number
-    speed?: number
-    radius?: number
-    drift?: number
-    lift?: number
-    tilt?: number
-    scale?: number
-    length?: number
-    thickness?: number
-    [key: string]: unknown
-}
-
-interface SpriteLike {
-    material: Material & { opacity: number; rotation?: number }
-    position: Vector3
-    scale: Vector3
-    visible: boolean
-    userData: SpriteUserData
-}
-
 // ── Constants ───────────────────────────────────────────────────────────────
 
 const FOCUS_WISP_COUNT = 18
@@ -327,9 +306,7 @@ export function disposeSemanticLens() {
 
 export function initSemanticManifold() {
     if (!state.scene) {
-        debugWarn(
-                '[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init'
-            )
+        debugWarn('[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init')
         return
     }
     const manifoldGeo = new CircleGeometry(4, 64)
@@ -576,7 +553,7 @@ export function initSemanticLens() {
     const moteGeo = new CircleGeometry(1, 16)
     const MOTE_COUNT = 12
     for (let i = 0; i < MOTE_COUNT; i += 1) {
-const moteMat = new MeshBasicMaterial({
+        const moteMat = new MeshBasicMaterial({
             color: SCENE_PALETTE.threadTint,
             transparent: true,
             opacity: 0,
@@ -617,8 +594,8 @@ const moteMat = new MeshBasicMaterial({
         petal.userData = {
             phase: (i / PETAL_COUNT) * Math.PI * 2,
             speed: 0.18 + (i % 3) * 0.05,
-            radius: 0.020 + (i % 3) * 0.008,
-            length: 0.030 + (i % 3) * 0.012,
+            radius: 0.02 + (i % 3) * 0.008,
+            length: 0.03 + (i % 3) * 0.012,
             thickness: 0.005 + (i % 2) * 0.002,
             lift: 0.004 + (i % 3) * 0.003,
             tilt: 0.72

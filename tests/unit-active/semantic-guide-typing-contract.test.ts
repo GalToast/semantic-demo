@@ -153,9 +153,7 @@ describe('semantic-guide — typing contract (W47-Bite-Roughest tightening)', ()
         const winDts = readFileSync(resolve(__dirname, '../../src/window.d.ts'), 'utf-8')
         expect(winDts).toMatch(/__SEMANTIC_GUIDE_TIMEOUT_MS__\??:\s*number/)
         // The production code uses window.X directly (no cast)
-        const directReads = (
-            stripped.match(/window\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []
-        ).length
+        const directReads = (stripped.match(/window\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []).length
         expect(directReads).toBeGreaterThanOrEqual(3)
     })
 
