@@ -50,8 +50,6 @@ body[data-panel-surface] .controls {
     z-index: var(--z-overlay);
 }
 
-
-
 /* view-toggle is a direct child of [data-controls-rail] and needs ID-level
    specificity to override the base .controls position:fixed rule. */
 body[data-panel-surface] #view-toggle {
@@ -398,7 +396,9 @@ body[data-active-view='map'] .onboarding-hint {
     letter-spacing: 0.04em;
     cursor: pointer;
     text-transform: uppercase;
-    transition: background 160ms ease, border-color 160ms ease;
+    transition:
+        background 160ms ease,
+        border-color 160ms ease;
 }
 .kh-replay-btn:hover,
 .kh-replay-btn:focus-visible {
@@ -406,6 +406,68 @@ body[data-active-view='map'] .onboarding-hint {
     border-color: rgba(78, 229, 215, 0.7);
     outline: 2px solid rgba(78, 205, 196, 0.85);
     outline-offset: 2px;
+}
+
+/* W48-T3: progressive-disclosure terminology section in the keyboard
+   help panel. The <details>/<summary> pair collapses by default so
+   the help panel stays compact. The <dl> uses compact <dt>/<dd>
+   rows that match the panel's vertical rhythm. */
+.kh-terminology {
+    margin-top: 14px;
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding-top: 10px;
+}
+.kh-terminology > summary {
+    cursor: pointer;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    color: rgba(255, 255, 255, 0.7);
+    list-style: none;
+    padding: 4px 0;
+    user-select: none;
+}
+.kh-terminology > summary::-webkit-details-marker {
+    display: none;
+}
+.kh-terminology > summary::before {
+    content: '+ ';
+    color: rgba(78, 205, 196, 0.9);
+    font-weight: 700;
+}
+.kh-terminology[open] > summary::before {
+    content: '− ';
+}
+.kh-terminology > summary:hover,
+.kh-terminology > summary:focus-visible {
+    color: rgba(255, 255, 255, 0.92);
+    outline: 2px solid rgba(78, 205, 196, 0.55);
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+.kh-term-list {
+    margin: 8px 0 0 0;
+    padding: 0;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 4px 8px;
+}
+.kh-term-list dt {
+    font-size: 11px;
+    font-weight: 600;
+    color: rgba(78, 205, 196, 0.96);
+    letter-spacing: 0.02em;
+    margin-top: 6px;
+}
+.kh-term-list dt:first-of-type {
+    margin-top: 0;
+}
+.kh-term-list dd {
+    margin: 2px 0 0 0;
+    font-size: 12px;
+    line-height: 1.45;
+    color: rgba(255, 255, 255, 0.78);
 }
 
 /* Mode-grid computing state (pulse during heavy recomputation) */

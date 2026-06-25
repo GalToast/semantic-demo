@@ -597,13 +597,8 @@ test.describe('Widget Journey Tests — mobile viewport', () => {
 
             // W47-C2 (Tier 2 #2.4): mobile users need terminology access too.
             // Verify the inline legend renders the first 5 cluster names.
-            const legendItems = await page
-                .locator('[data-testid="placeholder-legend"] > li')
-                .allTextContents()
-            expect(
-                legendItems.length,
-                `expected placeholder legend to have 5 items, got ${legendItems.length}`
-            ).toBe(5)
+            const legendItems = await page.locator('[data-testid="placeholder-legend"] > li').allTextContents()
+            expect(legendItems.length, `expected placeholder legend to have 5 items, got ${legendItems.length}`).toBe(5)
             // The first item should match the first CLUSTER_NAMES entry.
             expect(
                 legendItems[0].trim().length,
@@ -696,16 +691,12 @@ test.describe('Widget Journey Tests — search error detail', () => {
     test('16. search-error-detail element renders the engine message (structural)', () => {
         const src = readFileSync(SEARCH_RESULTS_PATH, 'utf8')
         // 1. The data-testid must be present (test selector stability).
-        expect(
-            src,
-            'search-error-detail element must have data-testid="search-error-detail"'
-        ).toMatch(/data-testid=['"]search-error-detail['"]/)
+        expect(src, 'search-error-detail element must have data-testid="search-error-detail"').toMatch(
+            /data-testid=['"]search-error-detail['"]/
+        )
         // 2. The element must display searchError.message (the engine
         //    error, not a generic string).
-        expect(
-            src,
-            'search-error-detail must display searchError.message'
-        ).toMatch(/\{searchError\.?\s*message\}/)
+        expect(src, 'search-error-detail must display searchError.message').toMatch(/\{searchError\.?\s*message\}/)
         // 3. The element must live inside the isFullError conditional,
         //    not the inline-error variant (different UX position).
         //    Split source on {:else if isFullError} then take everything
@@ -723,10 +714,9 @@ test.describe('Widget Journey Tests — search error detail', () => {
         else if (nextEndIf === -1) endIdx = nextElse
         else endIdx = Math.min(nextElse, nextEndIf)
         const fullErrorBlock = afterStart.slice(0, endIdx)
-        expect(
-            fullErrorBlock,
-            'search-error-detail must live inside the isFullError block'
-        ).toContain('data-testid="search-error-detail"')
+        expect(fullErrorBlock, 'search-error-detail must live inside the isFullError block').toContain(
+            'data-testid="search-error-detail"'
+        )
     })
 })
 
@@ -748,10 +738,7 @@ test.describe('Widget Journey Tests — replay tour', () => {
             // Simulate a user who already saw and dismissed the demo
             // some time in the past.
             await page.evaluate(() => {
-                window.sessionStorage.setItem(
-                    'moco_mycelium_demo_session_v1',
-                    '2026-01-01T00:00:00.000Z'
-                )
+                window.sessionStorage.setItem('moco_mycelium_demo_session_v1', '2026-01-01T00:00:00.000Z')
             })
 
             // Open the keyboard shortcuts panel (the replay button lives
@@ -784,13 +771,69 @@ test.describe('Widget Journey Tests — replay tour', () => {
             await replayBtn.click()
             await page.waitForTimeout(500)
 
-            const newFlag = await page.evaluate(() =>
-                window.sessionStorage.getItem('moco_mycelium_demo_session_v1')
-            )
+            const newFlag = await page.evaluate(() => window.sessionStorage.getItem('moco_mycelium_demo_session_v1'))
             expect(
                 newFlag,
                 'replay button should clear the stale session flag — was "2026-01-01...", got the new value'
             ).not.toBe('2026-01-01T00:00:00.000Z')
+        } finally {
+            await ctx.close()
+        }
+    })
+})
+
+// W48-T3: progressive-disclosure terminology section. The product uses a
+// lot of jargon (mycelium, cluster, galaxy, focus, thread, trail anchor).
+// A new user hitting the keyboard shortcuts panel should be able to
+// expand a "Terminology" section to read plain-language definitions.
+test.describe('Widget Journey Tests — terminology section', () => {
+    test('18. help panel exposes a collapsible Terminology section with 6+ terms', async ({ browser }) => {
+        const ctx = await browser.newContext()
+        const page = await ctx.newPage()
+
+        try {
+            await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+            // Open the keyboard shortcuts panel.
+            const helpButton = page.locator('#btn-keyboard-help').first()
+            await helpButton.click()
+            await page.waitForTimeout(500)
+
+            // The terminology <details> element should be visible.
+            const termSection = page.locator('.kh-terminology').first()
+            await termSection.waitFor({ state: 'attached', timeout: 5000 })
+
+            // The <details> should start collapsed (progressive disclosure).
+            // Verify by checking the [open] attribute — null/undefined
+            // means it's collapsed.
+            const isOpen = await termSection.evaluate((el) => el.hasAttribute('open'))
+            expect(isOpen, 'terminology section should start collapsed (progressive disclosure)').toBe(false)
+
+            // Expand the section by clicking the <summary>.
+            const termSummary = page.locator('.kh-terminology > summary').first()
+            await termSummary.click()
+            await page.waitForTimeout(200)
+
+            // Now the <details> should be open.
+            const isOpenAfter = await termSection.evaluate((el) => el.hasAttribute('open'))
+            expect(isOpenAfter, 'clicking the summary should expand the terminology section').toBe(true)
+
+            // Count the <dt> terms. The product has 6 key terms.
+            const termCount = await page.locator('.kh-terminology .kh-term-list dt').count()
+            expect(
+                termCount,
+                'terminology section should expose at least 6 terms (mycelium, cluster, galaxy, focus, thread, trail anchor)'
+            ).toBeGreaterThanOrEqual(6)
+
+            // Spot-check that the most jargon-heavy term is rendered.
+            const myceliumText = await page.locator('.kh-terminology .kh-term-list').textContent()
+            expect(
+                myceliumText?.toLowerCase().includes('mycelium'),
+                'terminology section should define "mycelium"'
+            ).toBe(true)
+            expect(myceliumText?.toLowerCase().includes('cluster'), 'terminology section should define "cluster"').toBe(
+                true
+            )
         } finally {
             await ctx.close()
         }

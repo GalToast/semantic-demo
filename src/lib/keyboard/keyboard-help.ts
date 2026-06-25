@@ -155,12 +155,66 @@ export function initKeyboardShortcutsHint(): void {
         // Fire the choreography demo. startMicroDemo() owns the re-entry
         // guard (W47 fix) and clears the session gate via shouldRunMicroDemo().
         // It returns silently if guards fail (reduced-motion, no WebGL, etc.).
-        import('../demo/choreography').then((m) => m.startMicroDemo()).catch(() => {
-            // Ignore: if the module fails to load, the user can still
-            // interact with the rest of the app.
-        })
+        import('../demo/choreography')
+            .then((m) => m.startMicroDemo())
+            .catch(() => {
+                // Ignore: if the module fails to load, the user can still
+                // interact with the rest of the app.
+            })
     })
     panel.appendChild(replayBtn)
+
+    // W48-T3: progressive-disclosure terminology section. The product uses
+    // a lot of jargon ("mycelium", "cluster", "galaxy", "focus", "thread",
+    // "trail anchor") that maps to the visual model but isn't obvious to a
+    // new user. Hide the definitions behind a <details> element so the
+    // help panel stays compact for users who already know the terms.
+    const terminology = document.createElement('details')
+    terminology.className = 'kh-terminology'
+
+    const termSummary = document.createElement('summary')
+    termSummary.textContent = 'Terminology'
+    terminology.appendChild(termSummary)
+
+    const terms: ReadonlyArray<readonly [string, string]> = [
+        [
+            'Mycelium',
+            'The web of relationships connecting Montgomery County businesses. Each business is a node; shared ownership, addresses, and industry codes are the threads that link them.'
+        ],
+        [
+            'Cluster',
+            'A group of businesses with a similar category or industry. The 12 clusters are color-coded in the legend.'
+        ],
+        [
+            'Galaxy',
+            'The full 3D view showing all 8,406 businesses and the threads between them. The starting point for exploration.'
+        ],
+        [
+            'Focus',
+            'A single business selected in the scene. The summary card on the right shows that business and related ones.'
+        ],
+        [
+            'Thread',
+            'A relationship between two or more businesses, often through shared ownership or co-located operations.'
+        ],
+        [
+            'Trail anchor / Next stop / Side trail',
+            'Suggestions on the summary card. Trail anchor is the strongest connection, Next stop is the most likely next business to explore, Side trail is a related business for a sideways step.'
+        ]
+    ]
+
+    const termList = document.createElement('dl')
+    termList.className = 'kh-term-list'
+    for (const [term, def] of terms) {
+        const dt = document.createElement('dt')
+        dt.textContent = term
+        const dd = document.createElement('dd')
+        dd.textContent = def
+        termList.appendChild(dt)
+        termList.appendChild(dd)
+    }
+    terminology.appendChild(termList)
+    panel.appendChild(terminology)
 
     document.body.appendChild(panel)
 
