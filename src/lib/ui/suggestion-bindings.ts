@@ -3,7 +3,6 @@
  * Random/similar/neighbor suggestion controls.
  */
 
-import type { BusinessRecord } from '@lib/types/business'
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 import { bindClick } from '@lib/ui/view-bindings'
@@ -52,7 +51,7 @@ export function bindSuggestionControls(): void {
             }
 
             const rand = eligible[Math.floor(Math.random() * eligible.length)]
-            const idx = state.points.indexOf(rand)
+            const idx = state.points.indexOf(rand as Point)
 
             if (idx >= 0) {
                 const searchInput = document.getElementById('search-input') as HTMLInputElement | null
@@ -97,7 +96,8 @@ export function bindSuggestionControls(): void {
                         ({ p, i }: { p: any; i: number }) => p && p.cluster === cluster && i !== focusedIdx
                     )
                 if (sameCluster.length) {
-                    const { i } = sameCluster[Math.floor(Math.random() * sameCluster.length)]
+                    const _randPick = sameCluster[Math.floor(Math.random() * sameCluster.length)] as { p: any; i: number } | undefined
+                    const i = _randPick ? _randPick.i : -1
                     focusOnNode(i, { fromCanvasNode: true })
                 }
             }
@@ -119,9 +119,9 @@ export function bindSuggestionControls(): void {
                 let nearestDist = Infinity
                 state.points.forEach((p, i) => {
                     if (!p || i === focusedIdx) return
-                    const dx = p.x - fp.x
-                    const dy = p.y - fp.y
-                    const dz = p.z - fp.z
+                    const dx = (Number(p.x) || 0) - (Number(fp.x) || 0)
+                    const dy = (Number(p.y) || 0) - (Number(fp.y) || 0)
+                    const dz = (Number(p.z) || 0) - (Number(fp.z) || 0)
                     const d = dx * dx + dy * dy + dz * dz
                     if (d < nearestDist) {
                         nearestDist = d
