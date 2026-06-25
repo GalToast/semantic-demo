@@ -117,14 +117,14 @@ it. This is the "test strategy gap":
 2. Contract tests pass. CI is green.
 3. A UX critique sweep — done by a session using Playwright MCP —
    finds 4 real bugs:
-   - The desktop branch in `App.svelte:470` was missing `onSceneReady`,
-     so the weather widget never mounted
-   - The pill at y=105 was hidden behind the legend button at y=117
-     (z-index 50 vs 100), so clicks were eaten
-   - The FORECAST row had `text-overflow: ellipsis` with
-     `max-width: 130px`, truncating the value
-   - `fetchWeather` was a `Math.random()` stub, not the canonical
-     Open-Meteo client
+    - The desktop branch in `App.svelte:470` was missing `onSceneReady`,
+      so the weather widget never mounted
+    - The pill at y=105 was hidden behind the legend button at y=117
+      (z-index 50 vs 100), so clicks were eaten
+    - The FORECAST row had `text-overflow: ellipsis` with
+      `max-width: 130px`, truncating the value
+    - `fetchWeather` was a `Math.random()` stub, not the canonical
+      Open-Meteo client
 
 The 4 bugs all shipped despite 1,135/1,135 contract tests passing. The
 root cause: contract tests assert on state shapes and function
@@ -197,10 +197,10 @@ file pattern (no blocking; human judgment still wins).
 
 1. Lists staged files via `git diff --cached --name-only`
 2. Splits them into two buckets:
-   - **User-visible**: `src/components/*.svelte`, `src/App.svelte`,
-     `src/lib/ui/*.ts`, `src/lib/keyboard/*.ts`
-   - **Journey test**: `tests/widget-journey.spec.js`,
-     `tests/*-journey*.spec.{js,ts}`, `tests/journey/*.spec.{js,ts}`
+    - **User-visible**: `src/components/*.svelte`, `src/App.svelte`,
+      `src/lib/ui/*.ts`, `src/lib/keyboard/*.ts`
+    - **Journey test**: `tests/widget-journey.spec.js`,
+      `tests/*-journey*.spec.{js,ts}`, `tests/journey/*.spec.{js,ts}`
 3. If the user-visible bucket has files but the journey bucket is
    empty, prints a yellow reminder with the file list and points at
    `docs/session-coordination.md` → "The test-strategy gap"

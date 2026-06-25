@@ -95,7 +95,10 @@ function auditFile(filePath) {
                     if (c === '<') angleDepth++
                     else if (c === '>') {
                         if (content[i - 1] === '=') continue
-                        if (angleDepth > 1) { angleDepth--; continue }
+                        if (angleDepth > 1) {
+                            angleDepth--
+                            continue
+                        }
                         endOffset = i
                         break
                     }
@@ -127,10 +130,14 @@ function auditFile(filePath) {
                     const ch = content[i]
                     if (ch === String.fromCharCode(60)) depth++
                     else if (ch === String.fromCharCode(62)) {
-                        if (depth > 1) { depth--; continue }
+                        if (depth > 1) {
+                            depth--
+                            continue
+                        }
                         // Skip /> self-closing markers
                         if (i > startOffset && content[i - 1] === String.fromCharCode(47)) {
-                            depth--; continue
+                            depth--
+                            continue
                         }
                         endOffset = i
                         break
@@ -297,7 +304,8 @@ function auditFile(filePath) {
         // empty regions). role="navigation"/"search"/"region"/"complementary"/"main"/"form"
         // attributes on a generic container also imply landmark semantics.
         const NON_SEMANTIC = new Set(['div', 'span', 'p', 'li', 'ul', 'ol', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'svg'])
-        const isLandmarkRole = /roles*=s*["'{(](?:navigation|search|region|complementary|main|form|alertgroup|status)["'})]/i
+        const isLandmarkRole =
+            /roles*=s*["'{(](?:navigation|search|region|complementary|main|form|alertgroup|status)["'})]/i
         if (NON_SEMANTIC.has(tagName) && !isLandmarkRole.test(attrsText)) {
             const hasClick =
                 /on(click|pointerdown|mousedown|keydown)\s*=/i.test(attrsText) ||

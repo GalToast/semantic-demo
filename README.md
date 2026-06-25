@@ -35,21 +35,22 @@ src/
 ```
 
 **Key patterns:**
+
 - `data-panel-surface` and related `data-*` body attributes are the canonical state interface between JS and CSS.
 - Engine bridge layer in `src/lib/engine/` mediates between Svelte components and the Three.js rendering core.
 - Typed Svelte stores in `src/lib/state/` and `src/lib/stores/` replace legacy UI state slices.
 
 ## Commands
 
-| Command | Description |
-|---------|-------------|
-| `npm run dev:svelte` | Vite dev server with HMR |
-| `npm run build:svelte` | Production build (Vite) |
-| `npm run serve` | Static server on `127.0.0.1:8795` |
-| `npm run test` | Shell, CSS ownership, and cache checks |
-| `npm run test:contract` | Structural JS/DOM contract tests |
-| `npm run qa:contract:all` | Fast DOM/layout assertions (17 surfaces) |
-| `npm run qa:surface:all` | Visual screenshot audit (22 states) |
+| Command                              | Description                              |
+| ------------------------------------ | ---------------------------------------- |
+| `npm run dev:svelte`                 | Vite dev server with HMR                 |
+| `npm run build:svelte`               | Production build (Vite)                  |
+| `npm run serve`                      | Static server on `127.0.0.1:8795`        |
+| `npm run test`                       | Shell, CSS ownership, and cache checks   |
+| `npm run test:contract`              | Structural JS/DOM contract tests         |
+| `npm run qa:contract:all`            | Fast DOM/layout assertions (17 surfaces) |
+| `npm run qa:surface:all`             | Visual screenshot audit (22 states)      |
 | `npm run qa:short-landscape:release` | Constrained layout + transition behavior |
 
 ## QA & Verification
