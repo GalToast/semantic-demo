@@ -156,6 +156,10 @@
     color: #4ecdc4;
     background: rgba(78, 205, 196, 0.15);
   }
+  .control-btn:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+  }
   .control-divider {
     width: 1px;
     background: rgba(78, 205, 196, 0.15);
