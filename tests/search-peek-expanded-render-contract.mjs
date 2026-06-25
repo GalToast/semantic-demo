@@ -35,7 +35,7 @@ const headed =
 const LEGACY_HTML_FIXTURE = 'docs/archive/vector-explorer-polished-legacy.html'
 
 function startServer(port) {
-    return new Promise((resolve) => {
+    return new Promise((resolvePromise) => {
         const server = createServer((req, res) => {
             // Strip query string and decode URI; on Windows, path.resolve treats
             // '/foo' as absolute (no drive), so we strip leading slashes to
@@ -56,7 +56,7 @@ function startServer(port) {
                 res.end('Not found')
             }
         })
-        server.listen(port, () => resolve(server))
+        server.listen(port, () => resolvePromise(server))
     })
 }
 
