@@ -209,7 +209,6 @@
       0 8px 22px rgba(0, 0, 0, 0.45),
       0 0 0 1px rgba(78, 205, 196, 0.08),
       0 0 18px rgba(78, 205, 196, 0.12);
-    outline: none;
   }
   .weather-toggle:focus-visible {
     border-color: rgba(78, 205, 196, 0.6);

@@ -286,7 +286,6 @@
   .splash-cta:hover,
   .splash-cta:focus-visible {
     color: rgba(231, 240, 240, 0.9);
-    outline: none;
   }
 
   .splash-hint {
