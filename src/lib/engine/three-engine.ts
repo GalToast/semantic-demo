@@ -165,32 +165,11 @@ interface WithStateMutationFn {
     (fn: () => void): void
 }
 
-interface ViewControllerModule {
-    switchView(view: string, options?: Record<string, unknown>): void
-}
-
-interface ClusterLabelsModule {
-    updateClusterLabels(): void
-}
-
-interface FocusPocketModule {
-    applyFocusPocketBreathing(now: number, positions: NodePosition[]): boolean
-}
-
-interface SceneRevealModule {
-    getSceneRevealProgress(now: number): number
-    setSceneRevealDataset(active: boolean): void
-}
-
-interface CameraControlsModule {
-    releaseFocusCameraAssist(reason?: string): void
-    focusCameraAssistIsActive(now?: number): void
-    noteSceneInteraction(delay: number): void
-    scheduleAutoRotateResume(delay: number): void
-    updateAutoRotateSoftResume(now?: number): void
-    applySemanticCentroidCamera(now?: number): void
-    cancelFocusCameraAnimation(): void
-}
+type ViewControllerModule = typeof import('@lib/orchestration/view-controller')
+type ClusterLabelsModule = typeof import('@lib/ui/cluster-labels')
+type FocusPocketModule = typeof import('@lib/journey/focus-pocket')
+type SceneRevealModule = typeof import('./scene-reveal')
+type CameraControlsModule = typeof import('@lib/engine/camera-controls')
 
 type MapStateModule = typeof import('@lib/engine/map-state')
 
@@ -280,11 +259,11 @@ function _ensureModules(): void {
             ;(window as unknown as { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.()
         }
         _withStateMutation = ((fn: () => void) => fn()) as unknown as WithStateMutationFn
-        _viewController = viewControllerMod as unknown as ViewControllerModule
-        _clusterLabels = clusterLabelsMod as unknown as ClusterLabelsModule
-        _focusPocket = focusPocketMod as unknown as FocusPocketModule
-        _sceneReveal = sceneRevealMod as unknown as SceneRevealModule
-        _cameraControls = cameraControlsMod as unknown as CameraControlsModule
+        _viewController = viewControllerMod
+        _clusterLabels = clusterLabelsMod
+        _focusPocket = focusPocketMod
+        _sceneReveal = sceneRevealMod
+        _cameraControls = cameraControlsMod
         _mapState = mapStateMod
         _myceliumEngine = myceliumEngineMod as unknown as MyceliumEngineModule
         _uiFeedback = uiFeedbackMod as unknown as UiFeedbackModule
