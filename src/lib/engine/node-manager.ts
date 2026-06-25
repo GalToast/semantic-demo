@@ -60,7 +60,7 @@ export const SCENE_ATMOSPHERE = Object.freeze({
 
 const NODE_SPORE_BASE_RADIUS = 0.0019
 const NODE_SPORE_COLOR_LIFT = new Color(SCENE_PALETTE.sporeLift)
-const NODE_SPORE_ROLE_TINT_PRIMARY = new Color(0x4ecdc4) // teal - .direct
+const NODE_SPORE_ROLE_TINT_PRIMARY = new Color(SCENE_PALETTE.threadTint) // teal - .direct
 const NODE_SPORE_ROLE_TINT_SUPPORT = new Color(0xffd93d) // amber - .support
 const NODE_SPORE_ROLE_TINT_HALO = new Color(0xff6b6b) // rose - .civic
 const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint
@@ -510,7 +510,7 @@ function createCountyOutline({
     ]
     const geometry = new BufferGeometry().setFromPoints(points)
     const material = new LineBasicMaterial({
-        color: 0x4ecdc4,
+        color: SCENE_PALETTE.threadTint,
         transparent: true,
         opacity: 0.18,
         depthWrite: false

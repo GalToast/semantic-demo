@@ -24,6 +24,7 @@ import {
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { CONFIG } from '@lib/engine/config'
 import { SCENE_ATMOSPHERE } from '@lib/engine/node-manager'
+import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { detectWebGLSupport, type WebGLSupportDetail } from './webgl-fallback'
 
 export interface SceneSetup {
@@ -134,7 +135,7 @@ export async function buildThreeScene(
 
     const refGeo = new SphereGeometry(2.35, 48, 24)
     const refMat = new MeshBasicMaterial({
-        color: 0x4ecdc4,
+        color: SCENE_PALETTE.threadTint,
         wireframe: true,
         transparent: true,
         opacity: 0.0045,

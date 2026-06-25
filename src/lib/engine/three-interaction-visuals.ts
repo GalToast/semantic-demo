@@ -30,6 +30,7 @@ import {
     disposeFocusAnchorIndicator
 } from '@lib/journey/focus-anchor-indicator'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
+import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 
 // ── Three.js material narrowing helpers ───────────────────────────────────────
 // All focus/mote/petal/halo objects in this codebase are constructed with a single
@@ -337,7 +338,7 @@ export function initSemanticManifold() {
             uTime: { value: 0 },
             uRippleTime: { value: -1000.0 },
             uRippleCenter: { value: new Vector3(0, 0, 0) },
-            uColor: { value: new Color(0x4ecdc4) }
+            uColor: { value: new Color(SCENE_PALETTE.threadTint) }
         },
         vertexShader: `
             varying vec2 vUv;
@@ -408,7 +409,7 @@ export function initSemanticLens() {
     const glowMat = new ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
-            uColor: { value: new Color(0x4ecdc4) },
+            uColor: { value: new Color(SCENE_PALETTE.threadTint) },
             uOpacity: { value: 0 },
             uSignalScore: { value: 0 }
         },
@@ -576,8 +577,8 @@ export function initSemanticLens() {
     const moteGeo = new CircleGeometry(1, 16)
     const MOTE_COUNT = 12
     for (let i = 0; i < MOTE_COUNT; i += 1) {
-        const moteMat = new MeshBasicMaterial({
-            color: 0x4ecdc4,
+const moteMat = new MeshBasicMaterial({
+            color: SCENE_PALETTE.threadTint,
             transparent: true,
             opacity: 0,
             depthWrite: false,
@@ -632,7 +633,7 @@ export function initSemanticLens() {
     const filamentGeo = new BufferGeometry()
     filamentGeo.setAttribute('position', new BufferAttribute(filamentPosArray, 3))
     const filamentMat = new LineBasicMaterial({
-        color: 0x4ecdc4,
+        color: SCENE_PALETTE.threadTint,
         transparent: true,
         opacity: 0,
         depthWrite: false,
