@@ -6,11 +6,20 @@
  *
  * What this guards:
  *   1. Every async exported/internal function in the file has a try/catch
- *      envelope (so a thrown error doesn't bubble as an unhandled rejection).
- *   2. Every fire-and-forget setTimeout callback in runDemo is wrapped in
- *      try/catch (so a phase-timer throw doesn't corrupt demo state).
+ *      envelope at the outer level (so a thrown error doesn't bubble as an
+ *      unhandled rejection).
+ *   2. The runDemo function has an outer try/catch (NOT per-setTimeout
+ *      callbacks — see the W47-stripped comment below).
  *   3. The _demoNodeIndex "as number" silent null→0 coercion bug is gone.
  *   4. debugWarn is imported from @lib/utils/diagnostic-adapter.
+ *
+ * W47-stripped (2026-06-25, commit 8c2377c5 "refactor(slop): delete noop
+ * initClusterFilterAdapter, strip defensive try/catch in demo-choreography"):
+ *   - Per-setTimeout try/catch was removed from runDemo's 9 phase timers.
+ *     The setTimeouts all begin with `if (_demoCancelled) return` which
+ *     already short-circuits after demo cancellation. The outer try/catch
+ *     in runDemo catches any errors that escape the synchronous setTimeout
+ *     bodies; per-callback try/catch was defensive slop.
  *
  * What this does NOT guard:
  *   - The caller's (choreography.ts) retry-loop race — owned by a
@@ -55,8 +64,11 @@ function extractFunctionBody(src: string, name: string): string {
 describe('demo-choreography — error-envelope contract (W47)', () => {
     const src = readSource()
 
-    it('imports debugWarn from @lib/utils/diagnostic-adapter', () => {
-        expect(src).toMatch(/import\s*\{[^}]*\bdebugWarn\b[^}]*\}\s*from\s*['"]@lib\/utils\/diagnostic-adapter['"]/)
+    it('imports debugWarn from @lib/utils/debug', () => {
+        // The canonical debugWarn export lives at @lib/utils/debug
+        // (not @lib/utils/diagnostic-adapter, which is a different
+        // diagnostic-adapter surface). Updated from the W47 stub path.
+        expect(src).toMatch(/import\s*\{[^}]*\bdebugWarn\b[^}]*\}\s*from\s*['"]@lib\/utils\/debug['"]/)
     })
 
     it('has zero unchecked "as number" casts coercing _demoNodeIndex to number', () => {
@@ -111,13 +123,13 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
         expect(body).toMatch(/catch\s*\(/)
     })
 
-    it('all 9 phase-timer setTimeout callbacks in runDemo are wrapped in try/catch', () => {
-        // Count setTimeout callbacks inside runDemo. Each callback arrow
-        // should contain a `try {` block.
+    it('all 9 phase-timer setTimeout callbacks exist with _demoCancelled short-circuit (no per-callback try/catch)', () => {
+        // W47-stripped (commit 8c2377c5): per-setTimeout try/catch is gone.
+        // Each callback still starts with `if (_demoCancelled) return` which
+        // short-circuits after demo cancellation. The outer runDemo try/catch
+        // catches anything that escapes the synchronous setTimeout bodies.
         const body = extractFunctionBody(src, 'runDemo')
 
-        // Match all setTimeout(() => { ... }, N) blocks. We need a balanced-
-        // brace slice per callback; the helper below extracts each one.
         const callbacks: string[] = []
         const re = /window\.setTimeout\(\s*\(\)\s*=>\s*\{/g
         let m: RegExpExecArray | null
@@ -137,11 +149,13 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
         expect(callbacks).toHaveLength(9)
         for (let i = 0; i < callbacks.length; i++) {
             const cb = callbacks[i]
-            expect(cb, `setTimeout callback #${i + 1} (one of 9 phase timers) is not wrapped in try/catch`).toMatch(
-                /try\s*\{/
+            // Each callback must short-circuit if the demo was cancelled
+            expect(cb, `setTimeout callback #${i + 1} missing _demoCancelled short-circuit`).toMatch(
+                /if\s*\(\s*_demoCancelled\s*\)\s*return/
             )
-            expect(cb, `setTimeout callback #${i + 1} (one of 9 phase timers) has try but no catch`).toMatch(
-                /catch\s*\(/
+            // Guard: per-callback try/catch is GONE (deliberately stripped)
+            expect(cb, `setTimeout callback #${i + 1} has per-callback try/catch — should have been stripped (8c2377c5)`).not.toMatch(
+                /try\s*\{/
             )
         }
     })
@@ -162,6 +176,9 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
     it('all error-envelopes use debugWarn (not console.warn) for consistency with debug-probe gating', () => {
         // Find every catch ( ... ) block and verify it contains debugWarn,
         // not a raw console.warn/error that would leak in production.
+        // W47-stripped (commit 8c2377c5): per-setTimeout catch blocks removed.
+        // The 6 top-level function catches remain: demoReset, endDemo,
+        // runDemo (outer), and 3 others. Total >= 6.
         const catchBodyMatches = src.matchAll(/\}\s*catch\s*\([^)]*\)\s*\{([\s\S]*?)\n\s*\}/g)
         let total = 0
         for (const m of catchBodyMatches) {
@@ -171,6 +188,6 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
                 /debugWarn/
             )
         }
-        expect(total).toBeGreaterThanOrEqual(9) // 6 functions + runDemo's outer
+        expect(total).toBeGreaterThanOrEqual(6) // 6 top-level functions
     })
 })
