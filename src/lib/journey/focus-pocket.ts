@@ -13,7 +13,7 @@
  * `src/lib/engine/` is dead and a deletion candidate for a follow-up ticket.
  */
 import { Vector3, PerspectiveCamera } from 'three'
-import type { PocketMotion, PocketMotionWithFrame } from '@lib/types/state'
+import type { PocketMotion, PocketMotionWithFrame, FocusPocketMeta } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
@@ -60,7 +60,7 @@ export {
 }
 
 /** Read-only focus-pocket meta shape used for the setFocusPocketMeta API. */
-type FocusPocketMeta = Record<string, unknown> | null
+type FocusPocketMetaShape = Record<string, unknown> | null
 
 export function getFocusPocketIndices(): number[] {
     const indices = appState.navState.focusPocketIndices
@@ -135,8 +135,8 @@ export function getFocusPocketMeta(): unknown {
     return appState.navState.focusPocketMeta ?? null
 }
 
-export function setFocusPocketMeta(meta: FocusPocketMeta): void {
-    writeFocusPocketMirror({ pocketMeta: meta as any })
+export function setFocusPocketMeta(meta: FocusPocketMetaShape): void {
+    writeFocusPocketMirror({ pocketMeta: meta as unknown as FocusPocketMeta })
 }
 
 export function clearFocusPocketMeta(): void {
@@ -470,14 +470,6 @@ export function applyFocusPocketBreathing(
         }
     })
     return changed
-}
-
-export function syncRuntimeState(snapshot: Record<string, unknown> = {}): void {
-    appState.withMutation(() => {
-        Object.entries(snapshot).forEach(([key, value]) => {
-            ;(appState as unknown as Record<string, unknown>)[key] = value
-        })
-    })
 }
 
 export function getRuntimeStateSnapshot(): Record<string, unknown> {

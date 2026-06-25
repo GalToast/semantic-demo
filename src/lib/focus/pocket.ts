@@ -26,6 +26,5 @@ export {
     applyLocalNeighborhoodFocus,
     syncPocketNodesToStore,
     applyFocusPocketBreathing,
-    syncRuntimeState,
     getRuntimeStateSnapshot
 } from '@lib/journey/focus-pocket'
