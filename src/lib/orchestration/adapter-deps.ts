@@ -1,4 +1,4 @@
-import type { AdapterDeps, LooseNeighborCandidate, LoosePoint, LoosePoint3D } from '@lib/orchestration/adapters'
+import type { AdapterDeps, NeighborCandidate, Point3D } from '@lib/orchestration/adapters'
 import type { ViewName } from '@lib/orchestration/view-controller'
 import type { SwitchViewOptions } from '@lib/orchestration/view-controller'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
@@ -47,8 +47,10 @@ export function buildAdapterDeps(): AdapterDeps {
                 options?: WalkCandidateOptions
             ): ThreadCandidate | null => getNextWalkCandidateForIndex(currentIndex, options) as ThreadCandidate | null,
             setSemanticDiveMode: (mode: unknown) => setSemanticDiveMode(Boolean(mode)),
-            getInterestingBusinessNote: (point: LoosePoint): string | null => getInterestingBusinessNote(point),
-            buildSelectedMatchNarrative: (point: LoosePoint): string => buildSelectedMatchNarrative(point),
+            getInterestingBusinessNote: (point: Record<string, unknown> | null): string | null =>
+                getInterestingBusinessNote(point),
+            buildSelectedMatchNarrative: (point: Record<string, unknown> | null): string =>
+                buildSelectedMatchNarrative(point),
             hasColdDegradedSemanticFallback,
             getColdDegradedRouteCopy: () => null,
             getSelectedBusinessRoleLabel: (point: unknown) => _getSelectedBusinessRoleLabel(point as Point),
@@ -75,21 +77,16 @@ export function buildAdapterDeps(): AdapterDeps {
                 _hydrateLeadContextLifecycle(point as BusinessRecord | null)
         },
         threadInspector: {
-            summarizeNeighborReason: (
-                candidate: LooseNeighborCandidate,
-                point: LoosePoint3D,
-                focusPoint: LoosePoint3D
-            ): string =>
+            summarizeNeighborReason: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D): string =>
+                // Cast: thread-inspector-adapter exposes a loose Point3D shape;
+                // thread-settler's summarizeNeighborReason takes BusinessRecord | null.
+                // The point/focusPoint params are unused in the body — bridge only.
                 summarizeNeighborReason(
                     candidate,
                     point as unknown as BusinessRecord,
                     focusPoint as unknown as BusinessRecord
                 ),
-            getInsideRelationshipLabel: (
-                candidate: LooseNeighborCandidate,
-                point: LoosePoint3D,
-                focusPoint: LoosePoint3D
-            ): string =>
+            getInsideRelationshipLabel: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D): string =>
                 getInsideRelationshipLabel(
                     candidate,
                     point as unknown as BusinessRecord,

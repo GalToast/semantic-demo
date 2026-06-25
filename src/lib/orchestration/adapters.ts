@@ -18,28 +18,39 @@ import { setupMobileSearchSheetToggle } from '@lib/search/search-panel-adapter'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
 
 /**
- * Loose 3D point — matches the structural shape of the legacy
- * `Point3D` in `` (optional x/y/z).
- * The strict `Point3D` in `@lib/types/webgl` is required x/y/z, which is
- * narrower than the bridge contract. Use this loose form for adapter
- * bridges until the consumer is tightened.
+ * Neighbor candidate shape consumed by `summarizeNeighborReason` and
+ * `getInsideRelationshipLabel` in `@lib/journey/thread-settler`.
+ * Mirrors the consumer's inline parameter type; the index signature
+ * keeps the bridge permissive for legacy call sites that carry extra
+ * metadata fields.
  */
-export type LoosePoint3D = { x?: number; y?: number; z?: number }
+export interface NeighborCandidate {
+    index?: number
+    reason?: string
+    threadType?: string
+    source?: string
+    relationshipRole?: string
+    roleReason?: string
+    sameCity?: boolean
+    sameStatus?: boolean
+    [key: string]: unknown
+}
 
 /**
- * Loose neighbor candidate — matches the structural shape of the legacy
- * `NeighborCandidate` in ``. The
- * legacy type allows `reason?: string` and arbitrary extra fields.
+ * 3D position shape carried across the journey↔thread-inspector bridge.
+ * Fields are optional because legacy callers pass partial objects (e.g. seed
+ * clusters that only carry `cluster`); the index signature preserves any
+ * extra business fields the caller may want to thread through.
+ *
+ * Note: distinct from the stricter `Point3D` in `@lib/types/webgl` (which
+ * requires x/y/z). Use this loose form at adapter boundaries only.
  */
-export type LooseNeighborCandidate = { reason?: string; [key: string]: unknown }
-
-/**
- * Loose business point — used where the legacy `Point` type from
- * `js/state.ts` is consumed. No direct Svelte-5 equivalent exists yet;
- * `BusinessRecord` from `@lib/types/business` is the canonical
- * replacement once the consumer is tightened.
- */
-export type LoosePoint = Record<string, unknown>
+export interface Point3D {
+    x?: number
+    y?: number
+    z?: number
+    [key: string]: unknown
+}
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -57,8 +68,8 @@ export interface JourneyLifecycleDeps {
     previewInsideNextThread: (options?: unknown) => void
     getNextWalkCandidateForIndex: (currentIndex: number, options?: WalkCandidateOptions) => ThreadCandidate | null
     setSemanticDiveMode: (mode: unknown) => void
-    getInterestingBusinessNote: (point: LoosePoint) => string | null
-    buildSelectedMatchNarrative: (point: LoosePoint) => string
+    getInterestingBusinessNote: (point: Record<string, unknown> | null) => string | null
+    buildSelectedMatchNarrative: (point: Record<string, unknown> | null) => string
     hasColdDegradedSemanticFallback: () => boolean
     getColdDegradedRouteCopy: () => null
     getSelectedBusinessRoleLabel: (point: unknown) => string
@@ -82,16 +93,8 @@ export interface JourneyLifecycleDeps {
  * across the legacy adapter layer (sometimes Edge, sometimes Record).
  */
 export interface ThreadInspectorDeps {
-    summarizeNeighborReason: (
-        candidate: LooseNeighborCandidate,
-        point: LoosePoint3D,
-        focusPoint: LoosePoint3D
-    ) => string
-    getInsideRelationshipLabel: (
-        candidate: LooseNeighborCandidate,
-        point: LoosePoint3D,
-        focusPoint: LoosePoint3D
-    ) => string
+    summarizeNeighborReason: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string
+    getInsideRelationshipLabel: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D) => string
     getCurrentTrailFocusIndex: () => number | null
 }
 
@@ -167,8 +170,11 @@ export function initAdapters(deps: AdapterDeps): void {
         .then(({ initRouteTraceSubscriptions }) => initRouteTraceSubscriptions())
         .catch(() => {})
 
-    // 8. Thread inspector adapter (4 deps)
-    initThreadInspectorAdapter(deps.threadInspector)
+    // 8. Thread inspector adapter (4 deps).
+    // Adapter was tightened to `Point3D` during W12-T8 but the dependency
+    // bag above uses `BusinessRecord | null`. Cast at this boundary to keep
+    // the call site typed (the injected function tolerates any record shape).
+    initThreadInspectorAdapter(deps.threadInspector as unknown as Parameters<typeof initThreadInspectorAdapter>[0])
 
     // 9. Map state subscriptions (no deps)
     initMapStateSubscriptions()
