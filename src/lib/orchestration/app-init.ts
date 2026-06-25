@@ -17,54 +17,22 @@
  * orchestration glue.
  */
 
-import { get } from 'svelte/store'
 import { initData, setLoadingPhase, setDataLoadError } from '@lib/data-store'
 import { navStore } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { initViewportListeners } from '@lib/stores/viewport.svelte.ts'
-import { appState } from '@lib/state/app.svelte'
-import { returnToOverview as returnToOverviewAction } from '@lib/stores/lifecycle'
-import {
-    focusOnNode as focusOnNodeAction,
-    refreshCompositionState as refreshCompositionStateAction,
-    resetExperienceState as resetExperienceStateAction,
-    resetExplorationFocus as resetExplorationFocusAction,
-    setSemanticDiveMode as setSemanticDiveModeAction,
-    setTrailDepth as setTrailDepthAction
-} from '@lib/orchestration/lifecycle'
-import { switchView as switchViewAction } from '@lib/orchestration/view-controller'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
-import { search } from '@lib/search/state'
-import { setTrailFromSeed } from '@lib/journey/neighborhood'
-import { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settler'
-import {
-    inspectThreadNeighbor,
-    pinThreadNeighbor,
-    pinFirstAvailableNeighbor,
-    unpinThreadInspection,
-    clearThreadInspection
-} from '@lib/journey/thread-inspector'
-import { updateTraversalUi } from '@lib/journey/focus-ui'
-import { requestSemanticGuide } from '@lib/journey/semantic-guide'
-import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
+import { installWindowTestBridge } from '@lib/orchestration/window-test-bridge'
 import { debugError } from '@lib/utils/debug'
 
-const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
-
 // ── Debug Window Extensions (Playwright test compat) ────────────────────────
-// `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims exposing a grab-bag
-// of action handles and a state getter for Playwright page.evaluate(). They are
-// intentionally loosely typed here (Record<string, unknown>) because their
-// shape is driven by test contracts, not app internals.
-declare global {
-    interface Window {
-        __APP_STATE__?: unknown
-        __APP_ACTIONS__?: Record<string, unknown>
-    }
-}
+// `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims. Their types are
+// declared in src/window.d.ts (the canonical location for window globals).
+// The action bag itself lives in window-test-bridge.ts; this module only
+// invokes install/teardown.
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -186,124 +154,6 @@ function clearSafetyTimers(timers: SafetyTimers | null): void {
     if (timers?.safetyValve) clearTimeout(timers.safetyValve)
 }
 
-// ── Window Globals for Test Compat ───────────────────────────────────────────
-
-/**
- * Install window globals expected by Playwright surface tests and
- * visual audit harnesses. The testState derived store is the Svelte-native
- * source of truth; __TEST_STATE__ is synced via subscription in main.ts.
- *
- * __APP_STATE__ exposes the legacy state shape for backward compat with
- * contract tests that read window.__APP_STATE__.state.*.
- *
- * __APP_ACTIONS__ provides action handles for Playwright test automation.
- * Each action is a thin wrapper that delegates to the store or orchestration layer.
- */
-function installWindowGlobals(): () => void {
-    if (typeof window === 'undefined') return () => {}
-
-    // If a test compat proxy (or another init path) already set __APP_STATE__,
-    // preserve it. The canonical test proxy in main.ts is more comprehensive
-    // than the fallback snapshot here.
-    if (!window.__APP_STATE__) {
-        window.__APP_STATE__ = {
-            get state() {
-                const liveAppState =
-                    ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as
-                        | typeof appState
-                        | undefined) || appState
-                return {
-                    currentView: get(navStore).currentView,
-                    navState: get(navStore),
-                    activeFilters: focusStore(),
-                    routeTraceDiagnostics: liveAppState.routeTraceDiagnostics,
-                    routeTraceLines: (liveAppState as unknown as { routeTraceLines?: unknown }).routeTraceLines,
-                    points: liveAppState.points
-                }
-            }
-        }
-    }
-
-    // __APP_ACTIONS__: synchronous action handles for Playwright test automation.
-    // Contract tests call these inside page.evaluate() without awaiting returned
-    // promises, so these wrappers must not use lazy dynamic imports.
-    window.__APP_ACTIONS__ = {
-        switchView: (view: string) => {
-            switchViewAction(view)
-        },
-        focusOnNode: (index: number, options?: Record<string, unknown>) => {
-            const result = focusOnNodeAction(index, options)
-            refreshTraversalUiForCompatAction('focusOnNode')
-            return result
-        },
-        setTrailDepth: (depth: number, _options?: Record<string, unknown>) => {
-            setTrailDepthAction(depth)
-            refreshTraversalUiForCompatAction('setTrailDepth')
-        },
-        setSemanticDiveMode: (enabled: boolean) => {
-            setSemanticDiveModeAction(enabled)
-        },
-        refreshCompositionState: () => {
-            refreshCompositionStateAction()
-            refreshTraversalUiForCompatAction('refreshCompositionState')
-        },
-        resetExplorationFocus: (options?: Record<string, unknown>) => {
-            resetExplorationFocusAction(options)
-        },
-        resetExperienceState: () => {
-            resetExperienceStateAction()
-        },
-        clearSearch: () => {
-            returnToOverviewAction()
-        },
-        returnToOverview: () => {
-            returnToOverviewAction()
-        }
-    }
-
-    window.__APP_ACTIONS__.search = (query: string, options?: Record<string, unknown>) => {
-        return search(query, options)
-    }
-    window.__APP_ACTIONS__.setTrailFromSeed = (index: number) => {
-        setTrailFromSeed(index)
-    }
-    window.__APP_ACTIONS__.traverseNeighbor = (step: number) => {
-        traverseNeighbor(step)
-    }
-    window.__APP_ACTIONS__.inspectThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
-        return inspectThreadNeighbor(index, options)
-    }
-    window.__APP_ACTIONS__.pinThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
-        return pinThreadNeighbor(index, options)
-    }
-    window.__APP_ACTIONS__.pinFirstAvailableNeighbor = (options?: Record<string, unknown>) => {
-        return pinFirstAvailableNeighbor(options)
-    }
-    window.__APP_ACTIONS__.unpinThreadInspection = () => {
-        return unpinThreadInspection()
-    }
-    window.__APP_ACTIONS__.clearThreadInspection = (options?: Record<string, unknown>) => {
-        return clearThreadInspection(options)
-    }
-    window.__APP_ACTIONS__.walkThreadNeighbor = (index: number, options?: Record<string, unknown>) => {
-        return walkThreadNeighbor(index, options)
-    }
-    window.__APP_ACTIONS__.requestSemanticGuide = (_point?: unknown) => {
-        return requestSemanticGuide()
-    }
-    window.__APP_ACTIONS__.showSemanticThreadsDetail = () => {
-        return showSemanticThreadsDetail()
-    }
-
-    // No cleanup needed — window globals persist for the page lifetime.
-    return () => {
-        if (window.__APP_STATE__ && typeof window.__APP_STATE__ === 'object' && 'state' in window.__APP_STATE__) {
-            delete window.__APP_STATE__
-        }
-        delete window.__APP_ACTIONS__
-    }
-}
-
 // ── URL State Application ────────────────────────────────────────────────────
 
 /**
@@ -394,7 +244,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     _safetyTimers = setupSafetyValves()
 
     // ── Phase 2: Window globals (immediate, before async work) ────────────────
-    _unsubWindowGlobals = installWindowGlobals()
+    _unsubWindowGlobals = installWindowTestBridge()
 
     // ── Phase 2.5: Viewport listeners + parity attribute sync ─────────────────
     // W46-B1: These were previously installed by App.svelte's onMount, which
