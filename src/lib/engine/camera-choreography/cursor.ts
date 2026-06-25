@@ -27,6 +27,7 @@ import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
 import { syncFocusStage, updateSelectedBusiness } from '@lib/journey/selected-card'
+import { unpinThreadInspection } from '@lib/journey/thread-inspector'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../camera-controls-core'
@@ -76,8 +77,8 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
 
     appState.withMutation(() => {
         appState.hoverHighlightIndex = -1
-        appState.pinnedThreadIndex = null
     })
+    unpinThreadInspection()
     updateSelectedBusiness(point, { revealCard: true })
 
     // Preserve the 'focus-search' surface that the SEARCH_FOCUS_REQUESTED
