@@ -109,7 +109,7 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
     // it's a regression, not pending cleanup.
 
     describe('1. Hard invariants (regression gate)', () => {
- it('no js/modules/ file imports from ../../src/lib/... (or directory is gone)', () => {
+        it('no js/modules/ file imports from ../../src/lib/... (or directory is gone)', () => {
             const tsFiles = collectTsFiles(JS_MODULES)
             const violations: string[] = []
 
@@ -176,7 +176,7 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
             if (pending.length > 0) {
                 console.log(
                     `\n⚠ PENDING WAVE 4 CLEANUP — ${pending.length} file(s) still exist:\n` +
- pending.map((f) => ` • js/modules/${f}`).join('\n') +
+                        pending.map((f) => ` • js/modules/${f}`).join('\n') +
                         `\n\nThese should be deleted by the parallel session's W20 arc.\n` +
                         `Once deleted, these assertions will pass automatically.\n`
                 )
@@ -187,7 +187,7 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
             it(`${file} should be deleted`, () => {
                 expect(
                     existsSync(join(JS_MODULES, file)),
- `js/modules/${file} still exists — pending Wave 4 cleanup`
+                    `js/modules/${file} still exists — pending Wave 4 cleanup`
                 ).toBe(false)
             })
         }
@@ -212,12 +212,12 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
                     `\n⚠ PENDING WAVE 4 CLEANUP — ${lifecycleImporters.length} file(s) still import from ./lifecycle.ts:\n` +
                         lifecycleImporters.map((f) => `  • ${f}`).join('\n') +
                         `\n\nThese imports must be rewritten to @lib/orchestration/lifecycle\n` +
- `before can be deleted.\n`
+                        `before can be deleted.\n`
                 )
             }
         })
 
- it('no js/modules/ file imports from ./lifecycle.ts (deleted)', () => {
+        it('no js/modules/ file imports from ./lifecycle.ts (deleted)', () => {
             expect(
                 lifecycleImporters,
                 `Found ${lifecycleImporters.length} import(s) from deleted ./lifecycle.ts:\n` +

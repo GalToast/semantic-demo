@@ -83,9 +83,7 @@ describe('W11-T8: __APP_ACTIONS__ completeness (in window-test-bridge.ts)', () =
         // Count keys in the actions object literal (buildActionsBag function).
         // Use a permissive regex that matches keys regardless of brace indent.
         const actionsBlock = bridgeSrc.match(/buildActionsBag[\s\S]*?\n    return actions/)
-        const actionsKeys = actionsBlock
-            ? [...actionsBlock[0].matchAll(/^\s{8}(\w+)\s*:/gm)]
-            : []
+        const actionsKeys = actionsBlock ? [...actionsBlock[0].matchAll(/^\s{8}(\w+)\s*:/gm)] : []
         expect(actionsKeys.length).toBeGreaterThanOrEqual(19)
     })
 
@@ -158,8 +156,12 @@ describe('W11-T8: window-test-bridge.ts imports the canonical modules', () => {
     it('imports thread inspector methods from journey/thread-inspector', () => {
         // Imports are multiline: 'import {\n    inspectThreadNeighbor,\n    ...'
         // Use [\s\S]* to span newlines.
-        expect(bridgeSrc).toMatch(/import\s*\{[\s\S]*\binspectThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector/)
-        expect(bridgeSrc).toMatch(/import\s*\{[\s\S]*\bpinThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector/)
+        expect(bridgeSrc).toMatch(
+            /import\s*\{[\s\S]*\binspectThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector/
+        )
+        expect(bridgeSrc).toMatch(
+            /import\s*\{[\s\S]*\bpinThreadNeighbor\b[\s\S]*from\s+['"]@?lib\/journey\/thread-inspector/
+        )
     })
 
     it('imports requestSemanticGuide from journey/semantic-guide', () => {
