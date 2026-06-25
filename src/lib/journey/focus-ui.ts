@@ -4,9 +4,8 @@
  * Ported from: js/modules/journey-focus-ui.ts
  */
 
-import { get } from 'svelte/store'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
-import { formatBusinessName, escapeHtml, cleanOptionalValue } from '@lib/utils/dom-formatters'
+import { formatBusinessName, cleanOptionalValue } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
 import { isPointVisible } from '@lib/utils/geo-data'
 import { truncateMicrocopy } from '@lib/journey/text-helpers'
@@ -25,11 +24,9 @@ import {
 } from '@lib/engine/journey-webgl-lazy'
 import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment'
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles'
-import type { RelationshipRole } from '@lib/utils/relationship-roles'
 import type { BusinessRecord } from '@lib/types/business'
-import type { NavState, StrandContinuityState } from '@lib/types/state'
+import type { StrandContinuityState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
-const state = appState
 
 export function isCondensedFocusStageViewport(): boolean {
     return appState.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait())
@@ -200,7 +197,6 @@ export function updateFocusNeighborRail(): void {
         const ariaLabel =
             order === 0 ? `Next stop: ${name}. ${relationshipTitle}.` : `Explore ${name}: ${relationshipTitle}.`
         button.setAttribute('aria-label', ariaLabel)
-        const nextStopBadge = order === 0 ? '<span class="focus-stage-neighbor-next-stop-badge">Next stop</span>' : ''
         button.replaceChildren()
 
         const mainSpan = document.createElement('span')
@@ -586,7 +582,7 @@ export function updateTraversalUi(): void {
         if (focusNextEl) focusNextEl.textContent = 'No visible next stop in this filtered slice.'
     } else {
         const fallbackLeadIn =
-            state.semanticThreadsStatus === 'loading'
+            appState.semanticThreadsStatus === 'loading'
                 ? 'Semantic connections are still loading, so this is a temporary cloud fallback.'
                 : 'Semantic relationship data is missing here, so this trail is using the current cloud as an approximate fallback.'
         const focusPocketMeta = nav.focusPocketMeta
