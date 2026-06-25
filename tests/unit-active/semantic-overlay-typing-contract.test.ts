@@ -49,19 +49,13 @@ describe('semantic-overlay — typing contract (W47-Bite-C tightening)', () => {
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 37 (post-tightening baseline; engine escape hatch + local narrowings)', () => {
+    it('any occurrence count is 0 (post-W48 tightening)', () => {
         const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // 37 = the post-W47-Bite-C baseline (was 39 before this bite,
-        // which tightened 2 function-signature any usages:
-        // `getFocusCurvePointLocal(edge: any)` → `(edge: ThreadEdge)` and
-        // `buildFocusThreadLineMaterial(): any` → `(): LineMaterial`).
-        // The remaining 37 are 1 file-level escape hatch (`_state = state as any`),
-        // 1 function-callback shader param (`(shader: any)`), and the rest are
-        // local narrowings of Three.js objects inside `_state.X` chains.
-        // Follow the W47 pattern (see docs/type-system-smell-audit.md) to
-        // tighten further; update this baseline if you intentionally
-        // change the count.
-        expect(matches.length).toBe(37)
+        // W48: Removed the _state escape-hatch alias, added typed
+        // SemanticLineMaterial interface for LineMaterial custom uniforms,
+        // and removed color-constant any casts. All 37 prior any usages
+        // are now type-safe.
+        expect(matches.length).toBe(0)
     })
 
     it('getFocusCurvePointLocal uses ThreadEdge (not any)', () => {
@@ -83,11 +77,10 @@ describe('semantic-overlay — typing contract (W47-Bite-C tightening)', () => {
         expect(match, 'ThreadEdge type import not found').toBeTruthy()
     })
 
-    it('no inline `_state as any` outside the single escape-hatch alias line', () => {
-        // The file has ONE intentional escape hatch at the top:
-        //   `const _state = state as any`
-        // All other `_state.X` accessors inherit the any from that
-        // alias. We assert no other `as any` exists outside the alias.
+    it('no `_state as any` or inline `as any` remain (W48 fully tightened)', () => {
+        // W48: The _state escape-hatch alias was removed in favor of
+        // direct typed state access + a local SemanticLineMaterial
+        // interface. All any casts were removed.
         const lines = src.split('\n')
         let aliasCount = 0
         let otherAsAny = 0
@@ -98,13 +91,8 @@ describe('semantic-overlay — typing contract (W47-Bite-C tightening)', () => {
                 otherAsAny++
             }
         }
-        expect(aliasCount).toBe(1)
-        // The other 31 `as any` occurrences are all `_state.X as any`
-        // or `(lineMaterial as any)` patterns — type-narrowing within
-        // a broader any-typed expression. We don't lock their count
-        // here because they're legitimate Three.js / engine-boundary
-        // narrowings that follow the W47 pattern.
-        // Just assert there's no NEW escape hatch.
+        expect(aliasCount).toBe(0)
+        expect(otherAsAny).toBe(0)
     })
 
     it('function-signature any usages are zero (signature-level type safety)', () => {

@@ -73,24 +73,23 @@ function readSource(): string {
 }
 
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('thread-settler — typing contract (W47-Bite-F tightening)', () => {
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 21 (post-Bite-F baseline; was 26)', () => {
+    it('any occurrence count is 0 (post-W48 fully tightened)', () => {
         const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        expect(matches.length).toBe(21)
+        expect(matches.length).toBe(0)
     })
 
     it('.find() callback uses typed `{ index: number }` (not `any`)', () => {
         // L236: was `(item: any) => item && (typeof item === 'number' ? ...)`
         // now `(item: { index: number }) => item.index === index`
-        const goodCallback = /\.find\(\s*\(item\s*:\s*\{\s*index\s*:\s*number\s*\}\)\s*=>\s*item\.index\s*===\s*index\s*\)/
+        const goodCallback =
+            /\.find\(\s*\(item\s*:\s*\{\s*index\s*:\s*number\s*\}\)\s*=>\s*item\.index\s*===\s*index\s*\)/
         const badCallback = /\(item\s*:\s*any\)/
         expect(stripped.match(goodCallback), 'typed .find() callback not found').toBeTruthy()
         expect(stripped.match(badCallback), 'old `(item: any)` still present').toBeNull()
@@ -108,7 +107,8 @@ describe('thread-settler — typing contract (W47-Bite-F tightening)', () => {
     it('inspectThreadNeighbor spread options use ThreadInspectionOptions shape (no `as any`)', () => {
         // L484: was `} as any)` after the spread options object
         // now no `as any` after the closing brace
-        const goodCall = /inspectThreadNeighbor\(nextCandidate\.index,\s*\{\s*\.\.\.options,\s*force\s*:\s*true,\s*preserveJourney\s*:\s*true,\s*surface\s*:\s*['"]inside-cue['"]\s*\}\s*\)/
+        const goodCall =
+            /inspectThreadNeighbor\(nextCandidate\.index,\s*\{\s*\.\.\.options,\s*force\s*:\s*true,\s*preserveJourney\s*:\s*true,\s*surface\s*:\s*['"]inside-cue['"]\s*\}\s*\)/
         const badCall = /inspectThreadNeighbor\(nextCandidate\.index,\s*\{[^}]*\}\s*as\s+any/
         expect(stripped.match(goodCall), 'clean inspectThreadNeighbor call not found').toBeTruthy()
         expect(stripped.match(badCall), 'old `inspectThreadNeighbor(...) as any` still present').toBeNull()
@@ -117,7 +117,8 @@ describe('thread-settler — typing contract (W47-Bite-F tightening)', () => {
     it('previewInsideNextThread class method return type is ThreadInspectionState | null', () => {
         // L463: was `): any {`
         // now `): ThreadInspectionState | null {`
-        const goodReturn = /previewInsideNextThread\(options:\s*PreviewInsideOptions\s*=\s*\{\}\)\s*:\s*ThreadInspectionState\s*\|\s*null\s*\{/
+        const goodReturn =
+            /previewInsideNextThread\(options:\s*PreviewInsideOptions\s*=\s*\{\}\)\s*:\s*ThreadInspectionState\s*\|\s*null\s*\{/
         const badReturn = /previewInsideNextThread\(options:\s*PreviewInsideOptions\s*=\s*\{\}\)\s*:\s*any\s*\{/
         expect(stripped.match(goodReturn), 'typed return type not found').toBeTruthy()
         expect(stripped.match(badReturn), 'old `: any` return type still present').toBeNull()
@@ -126,8 +127,10 @@ describe('thread-settler — typing contract (W47-Bite-F tightening)', () => {
     it('previewInsideNextThread functional export return type is ThreadInspectionState | null', () => {
         // L508: was `): any {`
         // now `): ThreadInspectionState | null {`
-        const goodReturn = /export\s+function\s+previewInsideNextThread\(options:\s*PreviewInsideOptions\s*=\s*\{\}\)\s*:\s*ThreadInspectionState\s*\|\s*null\s*\{/
-        const badReturn = /export\s+function\s+previewInsideNextThread\(options:\s*PreviewInsideOptions\s*=\s*\{\}\)\s*:\s*any\s*\{/
+        const goodReturn =
+            /export\s+function\s+previewInsideNextThread\(options:\s*PreviewInsideOptions\s*=\s*\{\}\)\s*:\s*ThreadInspectionState\s*\|\s*null\s*\{/
+        const badReturn =
+            /export\s+function\s+previewInsideNextThread\(options:\s*PreviewInsideOptions\s*=\s*\{\}\)\s*:\s*any\s*\{/
         expect(stripped.match(goodReturn), 'typed return type not found').toBeTruthy()
         expect(stripped.match(badReturn), 'old `: any` return type still present').toBeNull()
     })

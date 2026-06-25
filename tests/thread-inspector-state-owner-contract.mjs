@@ -117,7 +117,9 @@ const mirrorWrites = (mirrorSource.match(WRITE_REGEX) ?? []).length
 if (failures === 0) {
     console.log('PASS: no module writes appState.threadInspectorPointerInside outside owner/mirror')
     console.log(`  - Owner module: src/lib/journey/thread-inspector.ts (${ownerWrites} direct writes)`)
-    console.log(`  - Mirror module: src/lib/stores/focus.svelte.ts (${mirrorWrites} direct writes inside .update() callbacks)`)
+    console.log(
+        `  - Mirror module: src/lib/stores/focus.svelte.ts (${mirrorWrites} direct writes inside .update() callbacks)`
+    )
     console.log(`  - Public API: ${requiredOwnerExports.join(', ')}`)
     console.log(`  - Scanned TS modules under ${relative(join(__dirname, '..'), MODULES_DIR)}`)
     process.exit(0)

@@ -87,13 +87,7 @@ describe('choreography.ts — public API surface (W47-T2 #2.2)', () => {
         // it and the public surface grows unintentionally.
         const exports = extractExports(src)
         expect(new Set(exports)).toEqual(
-            new Set([
-                'initMicroDemo',
-                'shouldRunMicroDemo',
-                'startMicroDemo',
-                'cancelMicroDemo',
-                'isMicroDemoRunning'
-            ])
+            new Set(['initMicroDemo', 'shouldRunMicroDemo', 'startMicroDemo', 'cancelMicroDemo', 'isMicroDemoRunning'])
         )
     })
 
@@ -101,10 +95,9 @@ describe('choreography.ts — public API surface (W47-T2 #2.2)', () => {
         // The storage key is the gate that prevents the demo from running
         // twice in one session. It must be imported (and used) from the
         // guards module, not duplicated or renamed.
-        expect(
-            src,
-            'SESSION_STORAGE_KEY must be imported from ./guards'
-        ).toMatch(/import\s*\{[^}]*SESSION_STORAGE_KEY[^}]*\}\s*from\s*['"]\.\/guards['"]/)
+        expect(src, 'SESSION_STORAGE_KEY must be imported from ./guards').toMatch(
+            /import\s*\{[^}]*SESSION_STORAGE_KEY[^}]*\}\s*from\s*['"]\.\/guards['"]/
+        )
     })
 
     it('SESSION_STORAGE_KEY is used at least twice (eligibility + start gate)', () => {
@@ -127,10 +120,9 @@ describe('choreography.ts — public API surface (W47-T2 #2.2)', () => {
         // that hasn't been ported to Svelte 5 yet. The header comment
         // is the only documentation. If someone removes the warning,
         // they may rip out the legacy bridge without realizing its weight.
-        expect(
-            src,
-            'header comment should mention "port pending" — the legacy bridge has not been ported yet'
-        ).toMatch(/port pending/i)
+        expect(src, 'header comment should mention "port pending" — the legacy bridge has not been ported yet').toMatch(
+            /port pending/i
+        )
     })
 
     it('header comment identifies this as a facade / legacy bridge', () => {
@@ -156,9 +148,8 @@ describe('choreography.ts — public API surface (W47-T2 #2.2)', () => {
         const match = guards.match(/export\s+const\s+SESSION_STORAGE_KEY\s*=\s*['"]([^'"]+)['"]/)
         expect(match, 'SESSION_STORAGE_KEY must be exported from ./guards').toBeTruthy()
         // Stable format: starts with app prefix, snake_case
-        expect(
-            match![1],
-            `SESSION_STORAGE_KEY should be a stable string, got "${match![1]}"`
-        ).toMatch(/^[a-z][a-z0-9_]*$/)
+        expect(match![1], `SESSION_STORAGE_KEY should be a stable string, got "${match![1]}"`).toMatch(
+            /^[a-z][a-z0-9_]*$/
+        )
     })
 })

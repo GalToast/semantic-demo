@@ -50,7 +50,7 @@
  *     utility or wrapping with explicit parameter types.
  *
  * What this guards:
- *   1. any occurrence count is exactly 18 (post-Bite-H baseline)
+ *   1. any occurrence count is 0 (all casts removed in W48 follow-up)
  *   2. .forEach() callback uses typed `{ index: number }`
  *   3. dataset.routeMotion uses typed DOMStringMap access (no `as any`)
  *   4. material.uniforms uses non-null assertion (not `as any`)
@@ -72,24 +72,23 @@ function readSource(): string {
 }
 
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('route-trace — typing contract (W47-Bite-H tightening)', () => {
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 18 (post-Bite-H baseline; was 23)', () => {
+    it('any occurrence count is 0 (post-W48 fully tightened)', () => {
         const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        expect(matches.length).toBe(18)
+        expect(matches.length).toBe(0)
     })
 
     it('.forEach() callback uses typed `{ index: number }` (not `any`)', () => {
         // L120: was `(candidate: any) => push(candidate?.index)`
         // now `(candidate: { index: number }) => push(candidate.index)`
-        const goodCallback = /\.forEach\(\(candidate\s*:\s*\{\s*index\s*:\s*number\s*\}\)\s*=>\s*push\(candidate\.index\)\)/
+        const goodCallback =
+            /\.forEach\(\(candidate\s*:\s*\{\s*index\s*:\s*number\s*\}\)\s*=>\s*push\(candidate\.index\)\)/
         const badCallback = /\.forEach\(\(candidate\s*:\s*any\)/
         expect(stripped.match(goodCallback), 'typed .forEach() callback not found').toBeTruthy()
         expect(stripped.match(badCallback), 'old `(candidate: any)` still present').toBeNull()

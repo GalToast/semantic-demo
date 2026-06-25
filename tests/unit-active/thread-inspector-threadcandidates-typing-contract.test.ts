@@ -73,7 +73,9 @@ describe('W47-Bite-Continued / thread-inspector.ts / threadCandidates typing', (
 
     it('ThreadCandidateRef type is imported from @lib/types/state', () => {
         const source = readSource('src/lib/journey/thread-inspector.ts')
-        expect(source).toMatch(/import\s+type\s*\{[^}]*\bThreadCandidateRef\b[^}]*\}\s+from\s+['"][^'"]*types\/state['"]/)
+        expect(source).toMatch(
+            /import\s+type\s*\{[^}]*\bThreadCandidateRef\b[^}]*\}\s+from\s+['"][^'"]*types\/state['"]/
+        )
     })
 
     it('appState.canvasThreadInspectionClearTimer = id (no `as any`)', () => {
