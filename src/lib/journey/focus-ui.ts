@@ -29,7 +29,7 @@ import type { RelationshipRole } from '@lib/utils/relationship-roles'
 import type { BusinessRecord } from '@lib/types/business'
 import type { NavState, StrandContinuityState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
-const state = appState as any
+const state = appState
 
 export function isCondensedFocusStageViewport(): boolean {
     return appState.currentView === 'galaxy' && (isCompactLandscape() || isUltraCompactPortrait())
@@ -169,14 +169,14 @@ export function updateFocusNeighborRail(): void {
         const points = appState.points!
         const point =
             Number.isFinite(candidate.index) && candidate.index >= 0 && candidate.index < points.length
-                ? (points[candidate.index] as any)
+                ? (points[candidate.index] ?? null)
                 : null
         const button = document.createElement('button')
         button.className = 'focus-stage-neighbor-pill' + (order === 0 ? ' is-next-stop' : '')
         button.type = 'button'
         button.tabIndex = 0
         button.dataset.index = String(candidate.index)
-        button.dataset.role = (nav as any).focusPocketRoleByIndex?.get(candidate.index) || 'trail'
+        button.dataset.role = nav.focusPocketRoleByIndex?.get(candidate.index) || 'trail'
         const relationshipRole = normalizeRelationshipRole(candidate.relationshipRole)
         button.dataset.relationshipRole = relationshipRole
         button.dataset.reason = candidate.reason || 'semantic neighbor'
@@ -184,8 +184,14 @@ export function updateFocusNeighborRail(): void {
         const city = cleanOptionalValue(point?.city) || 'Montgomery County'
         const focusIdx = nav.focusedIndex
         const focusPoint =
-            Number.isFinite(focusIdx) && focusIdx! >= 0 && focusIdx! < points.length ? (points[focusIdx!] as any) : null
-        const reason = summarizeNeighborReason(candidate, point, focusPoint)
+            Number.isFinite(focusIdx) && focusIdx! >= 0 && focusIdx! < points.length
+                ? (points[focusIdx!] ?? null)
+                : null
+        const reason = summarizeNeighborReason(
+            candidate,
+            point as unknown as BusinessRecord | null,
+            focusPoint as unknown as BusinessRecord | null
+        )
         const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')
         const relationshipTitle = getRelationshipRoleLabel(relationshipRole, 'title')
         const reasonLabel = isCompactFocusStageViewport()
@@ -439,7 +445,7 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
                     fromTraversal: true,
                     restoreHistory: true,
                     historyMode: 'push'
-                } as any)
+                })
             }
         }
 
@@ -534,7 +540,11 @@ export function updateTraversalUi(): void {
     const nextWalkPoint = nextWalkCandidate ? points[nextWalkCandidate.index] : null
     const nextWalkName = nextWalkPoint ? formatBusinessName(nextWalkPoint.name || 'next business') : null
     const nextWalkReason = nextWalkCandidate
-        ? summarizeNeighborReason(nextWalkCandidate, nextWalkPoint as any, currentFocusPoint as any)
+        ? summarizeNeighborReason(
+              nextWalkCandidate,
+              nextWalkPoint as unknown as BusinessRecord | null,
+              currentFocusPoint as unknown as BusinessRecord | null
+          )
         : ''
     if (focusRouteEl)
         focusRouteEl.dataset.state = neighborCount ? (nav.mode === 'trail' ? 'walking' : 'ready') : 'empty'
@@ -579,7 +589,7 @@ export function updateTraversalUi(): void {
             state.semanticThreadsStatus === 'loading'
                 ? 'Semantic connections are still loading, so this is a temporary cloud fallback.'
                 : 'Semantic relationship data is missing here, so this trail is using the current cloud as an approximate fallback.'
-        const focusPocketMeta = (nav as any).focusPocketMeta
+        const focusPocketMeta = nav.focusPocketMeta
         const pocketNote =
             nav.threadSource === 'semantic' && focusPocketMeta?.active
                 ? ` Focus lens is staging ${focusPocketMeta.nodeCount} related records as a ${focusPocketMeta.motifLabel || 'semantic constellation'} for readability; the links still come from the semantic trail.`

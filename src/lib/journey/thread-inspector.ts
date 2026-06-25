@@ -4,24 +4,17 @@
  * Ported from: js/modules/thread-inspector.ts
  */
 
-import { get } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords, getFocusedIndex } from '@lib/stores/index.svelte.ts'
 import { focusStore, updateThreadInspector } from '@lib/stores/focus.svelte.ts'
 import { formatBusinessName, stripTerminalPunctuation } from '@lib/utils/dom-formatters'
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles'
 import { truncateMicrocopy } from '@lib/journey/text-helpers'
-import {
-    getGeometricThreadCandidates,
-    getSemanticThreadCandidates,
-    getThreadCandidatesForIndex
-} from '@lib/journey/thread-model'
 import { setStrandContinuityState, clearStrandContinuityState } from '@lib/utils/strand-continuity'
 import type { ThreadCandidateRef } from '@lib/types/state'
 import {
     syncInspectedStrandOverlay,
     updateInspectedStrandOverlay,
-    disposeInspectedStrandOverlay,
     setInspectedStrandOverlayUpdater
 } from '@lib/engine/journey-webgl-lazy'
 import { focusOnNode } from '@lib/engine/camera-controls'
@@ -36,8 +29,7 @@ import {
     getInsideRelationshipLabel,
     setTimer,
     clearTimer,
-    cancelAllThreadTimers,
-    getStrandArrivalNote
+    cancelAllThreadTimers
 } from '@lib/journey/thread-settler'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { appState as legacyState } from '@lib/state/app.svelte'

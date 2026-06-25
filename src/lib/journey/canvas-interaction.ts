@@ -6,14 +6,12 @@
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
 import { appState } from '@lib/state/app.svelte'
-import { isPointVisible } from '@lib/utils/geo-data'
-import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data'
+import type { GeoPoint } from '@lib/utils/geo-data'
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from '@lib/engine/camera-controls'
 import {
     initJourneyCanvasInteractionAdapter,
     isThreadCandidateVisibleOnCanvas,
     canvasInteractionAdapter,
-    getNearestCanvasThreadCandidate,
     getCanvasFieldNodeClickRadius
 } from './canvas-hit-test'
 import { findNearestCanvasFieldNode } from './canvas-node-picking'
@@ -26,15 +24,6 @@ import { showExperienceToast } from '@lib/orchestration/toast'
 let _emptyClickHintShown = false
 
 export { initJourneyCanvasInteractionAdapter, isThreadCandidateVisibleOnCanvas }
-
-const CANVAS_THREAD_INSPECTION_CLEAR_DELAY_MS = 5200
-const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
-    status: 'all',
-    city: 'all',
-    website: false,
-    email: false,
-    geocoded: false
-}
 
 /** AbortController shared by canvas interaction listeners for clean teardown. */
 let _canvasInteractionAbort: AbortController | null = null
@@ -67,7 +56,7 @@ export function ensureCanvasNodeInteractionBindings(): void {
                 noteSceneInteraction()
                 releaseFocusCameraAssist('canvasHover')
                 if (isThreadCandidateVisibleOnCanvas(candidate.index)) {
-                    const { walkThreadNeighbor, inspectThreadNeighbor, summarizeNeighborReason } =
+                    const { walkThreadNeighbor, inspectThreadNeighbor } =
                         canvasInteractionAdapter
                     const threadOk = walkThreadNeighbor(candidate.index, { force: true })
                     if (threadOk) {

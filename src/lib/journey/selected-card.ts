@@ -99,9 +99,13 @@ export function initJourneySelectedCard(deps: Record<string, unknown> = {}): voi
         EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED,
         sync
     )
-    subscribeKeyed('journey-selected-card:exploration-focus-sync', EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { point?: unknown; options?: UpdateSelectedBusinessOptions }) => {
-        updateSelectedBusiness((payload.point as Point | null) ?? null, payload.options || {})
-    })
+    subscribeKeyed(
+        'journey-selected-card:exploration-focus-sync',
+        EVENTS.EXPLORATION_FOCUS_SYNC,
+        (payload: { point?: unknown; options?: UpdateSelectedBusinessOptions }) => {
+            updateSelectedBusiness((payload.point as Point | null) ?? null, payload.options || {})
+        }
+    )
 }
 
 export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {}): void {
@@ -132,10 +136,7 @@ export function syncFocusStage(point: Point | null): void {
             try {
                 ;(getPreviouslyFocusedFocusStage() as HTMLElement).focus()
             } catch (error) {
-                debugWarn(
-                    '[journey/selected-card] Focus restore failure is non-critical (a11y degraded):',
-                    error
-                )
+                debugWarn('[journey/selected-card] Focus restore failure is non-critical (a11y degraded):', error)
             }
             setPreviouslyFocusedFocusStage(null)
         }
