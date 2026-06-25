@@ -66,29 +66,27 @@ describe('thread-model — typing contract (W47-Bite-J tightening)', () => {
     const src = readSource()
     const stripped = stripComments(src)
 
-    it('any occurrence count is 1 (post-Bite-J baseline; was 13)', () => {
+    it('any occurrence count is 0 (fully tightened; was 13 → 1 → 0)', () => {
         const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // 1 = post-Bite-J baseline. Only the public overload signature
-        // `Array<any>` remains. A future contributor who adds a new
-        // `any` will fail this test and must either tighten or
-        // update the documented baseline.
-        expect(matches.length).toBe(1)
+        // 0 = post-W48-Phase-3. The remaining `Array<any>` overload
+        // signature was tightened to a concrete `Array<...>` type. A
+        // future contributor who adds a new `any` will fail this test
+        // and must either tighten or update the documented baseline.
+        expect(matches.length).toBe(0)
     })
 
-    it('the 1 remaining `any` is the pure-path body destructure Array<any>', () => {
-        // The pattern we kept is the pure-path implementation body's
-        // destructure (not the public overload signature):
+    it('the pure-path body destructure uses concrete Array<SemanticNeighborDetail>', () => {
+        // The pattern was tightened in W48-Phase-3 from Array<any> to
+        // Array<SemanticNeighborDetail>:
         //   const [points, semanticNeighborMapByLeadId, pointIndexByLeadId] = args as [
         //     ...
-        //     Map<string, { neighbors: Array<any> }>,
+        //     Map<string, { neighbors: Array<SemanticNeighborDetail> }>,
         //     ...
         //   ];
-        // The public overload signature was tightened in Bite-J to
-        // use the multi-line inline type. The implementation body
-        // type stays `Array<any>` because it accepts the looser shape
-        // callers pass.
-        const overloadSignature = /Map<string,\s*\{\s*neighbors\s*:\s*Array<any>\s*\}>/
-        expect(stripped.match(overloadSignature), 'pure-path Array<any> not found').toBeTruthy()
+        // The implementation body type was loose for historical reasons;
+        // W48-Phase-3 narrowed it to the concrete element type.
+        const overloadSignature = /Map<string,\s*\{\s*neighbors\s*:\s*Array<SemanticNeighborDetail>\s*\}>/
+        expect(stripped.match(overloadSignature), 'pure-path Array<SemanticNeighborDetail> not found').toBeTruthy()
     })
 
     it('no `as unknown as any` triple-cast remains', () => {
