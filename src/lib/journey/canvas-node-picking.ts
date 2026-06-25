@@ -27,7 +27,7 @@ const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
 
 // ── Candidate Types ─────────────────────────────────────────────────────────
 
-export interface CanvasNodePickCandidate {
+export interface CanvasNodePickCandidate extends CanvasHoverCandidate {
     index: number
     distance: number
     screenX: number
@@ -201,7 +201,7 @@ export function findNearestCanvasFieldNode(
     if (getCanvasNodePickingMode() === 'raycast') {
         const raycastCandidate = findRaycastCanvasFieldNode(event, pointer, maxDistance)
         if (raycastCandidate) {
-            appState.lastCanvasNodePick = raycastCandidate as unknown as CanvasHoverCandidate
+            appState.lastCanvasNodePick = raycastCandidate
             return raycastCandidate
         }
     }
@@ -226,6 +226,6 @@ export function findNearestCanvasFieldNode(
     })
 
     const resolved = nearest && nearestDistance <= maxDistance ? nearest : null
-    appState.lastCanvasNodePick = resolved as unknown as CanvasHoverCandidate
+    appState.lastCanvasNodePick = resolved
     return resolved
 }
