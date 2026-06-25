@@ -25,6 +25,30 @@ const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
     geocoded: false
 }
 
+// ── Typed AppState Accessors ────────────────────────────────────────────────
+// canvas-node-picking reads Three.js objects off the loosely-typed
+// appState fields. appState.camera is typed as CameraLike (a minimal
+// projection), appState.pointsMesh as Points, etc. The functions below
+// read with .localToWorld() / .project() / setFromCamera() which require
+// the full Three.js types. These helpers centralize the upcast once at
+// the module boundary instead of repeating 11 inline `as unknown as` casts.
+
+function getRaycastCamera(): Camera | null {
+    return appState.camera as unknown as Camera | null
+}
+
+function getRaycastPointsMesh(): Object3D | null {
+    return appState.pointsMesh as unknown as Object3D | null
+}
+
+function getRaycastPoints(): GeoPoint[] {
+    return appState.points as unknown as GeoPoint[]
+}
+
+function getRaycastSporeMesh(): InstancedMesh | null {
+    return (appState.nodeSporeHitMesh ?? appState.nodeSporeMesh) as unknown as InstancedMesh | null
+}
+
 // ── Candidate Types ─────────────────────────────────────────────────────────
 
 export interface CanvasNodePickCandidate extends CanvasHoverCandidate {
@@ -87,8 +111,8 @@ interface NodeScreenCandidate {
 
 function getCanvasNodeScreenCandidate(index: number, pointer: CanvasPointerPosition): NodeScreenCandidate | null {
     const position = appState.nodePositions[index]
-    const camera = appState.camera as unknown as Camera | undefined
-    const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined
+    const camera = getRaycastCamera()
+    const pointsMesh = getRaycastPointsMesh()
     if (!position || !camera || !pointsMesh) return null
 
     const vector = new Vector3(position.x, position.y, position.z)
@@ -100,7 +124,7 @@ function getCanvasNodeScreenCandidate(index: number, pointer: CanvasPointerPosit
     const screenY = ((-projected.y + 1) / 2) * pointer.rect.height + pointer.rect.top
     const distance = Math.hypot(screenX - pointer.x, screenY - pointer.y)
 
-    const points = appState.points as unknown as GeoPoint[]
+    const points = getRaycastPoints()
     return { index, distance, screenX, screenY, point: points[index] ?? null }
 }
 
@@ -111,9 +135,9 @@ function findRaycastCanvasFieldNode(
     pointer: CanvasPointerPosition,
     maxDistance: number
 ): CanvasNodePickCandidate | null {
-    const camera = appState.camera as unknown as PerspectiveCamera | undefined
-    const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined
-    const points = appState.points as unknown as GeoPoint[]
+    const camera = getRaycastCamera()
+    const pointsMesh = getRaycastPointsMesh()
+    const points = getRaycastPoints()
     if (!camera || !pointsMesh || !points?.length) return null
 
     const ndc = new Vector2(
@@ -125,9 +149,7 @@ function findRaycastCanvasFieldNode(
     const activeFilters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS
 
     // Try instanced mesh picking first
-    const sporePickMesh =
-        (appState.nodeSporeHitMesh as unknown as InstancedMesh | undefined) ??
-        (appState.nodeSporeMesh as unknown as InstancedMesh | undefined)
+    const sporePickMesh = getRaycastSporeMesh()
     if (sporePickMesh) {
         const sporeHits = canvasFieldRaycaster
             .intersectObject(sporePickMesh, false)
@@ -193,8 +215,8 @@ export function findNearestCanvasFieldNode(
     maxDistance: number = getCanvasFieldNodeClickRadius(event)
 ): CanvasNodePickCandidate | null {
     const pointer = getCanvasPointerPosition(event)
-    const camera = appState.camera as unknown as Camera | undefined
-    const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined
+    const camera = getRaycastCamera()
+    const pointsMesh = getRaycastPointsMesh()
     const nodePositions = appState.nodePositions
     if (!pointer || !camera || !pointsMesh || !nodePositions?.length) return null
 
@@ -208,7 +230,7 @@ export function findNearestCanvasFieldNode(
 
     let nearest: CanvasNodePickCandidate | null = null
     let nearestDistance = Infinity
-    const points = appState.points as unknown as GeoPoint[]
+    const points = getRaycastPoints()
     const activeFilters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS
 
     nodePositions.forEach((position, index) => {
