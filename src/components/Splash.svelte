@@ -237,6 +237,12 @@
     font-size: 1rem;
   }
 
+  .splash-search-input:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: -2px;
+    border-radius: 0.4rem;
+  }
+
   .splash-search-input::placeholder {
     color: rgba(231, 240, 240, 0.4);
   }
