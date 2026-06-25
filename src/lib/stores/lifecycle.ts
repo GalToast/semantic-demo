@@ -215,9 +215,7 @@ export function updateExplorationUi(): void {
  * and operates on the global state.points array, so we bridge through window.
  */
 export function getBloomIndices(): number[] {
-    const s = (window as unknown as Record<string, unknown>).__semanticState as
-        | { bloomIndices?: Set<number> }
-        | undefined
+    const s = window.__semanticState as { bloomIndices?: Set<number> } | undefined
     if (!s?.bloomIndices) return []
     return Array.from(s.bloomIndices)
 }
@@ -226,9 +224,7 @@ export function getBloomIndices(): number[] {
  * Get bridge indices from the legacy global state.
  */
 export function getBridgeIndices(): number[] {
-    const s = (window as unknown as Record<string, unknown>).__semanticState as
-        | { bridgeIndices?: Set<number> }
-        | undefined
+    const s = window.__semanticState as { bridgeIndices?: Set<number> } | undefined
     if (!s?.bridgeIndices) return []
     return Array.from(s.bridgeIndices)
 }

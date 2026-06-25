@@ -47,8 +47,7 @@ function isInsideGestureGate(target: EventTarget | null): boolean {
 function isAutomatedBrowserSession(): boolean {
     return Boolean(
         typeof window !== 'undefined' &&
-        (window.__PLAYWRIGHT__ ||
-            (typeof navigator !== 'undefined' && navigator.webdriver))
+        (window.__PLAYWRIGHT__ || (typeof navigator !== 'undefined' && navigator.webdriver))
     )
 }
 

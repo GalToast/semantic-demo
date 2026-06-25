@@ -53,7 +53,7 @@
           }
         },
         logSemanticState: () => {
-          const state = (window as unknown as { __semanticState?: unknown }).__semanticState;
+          const state = window.__semanticState
           if (import.meta.env.DEV) console.log('[dev-gui] window.__semanticState:', state);
         },
       };
@@ -69,9 +69,7 @@
         .onChange((v: boolean) => {
           autoRotateEnabled = v;
           // Bridge to legacy camera-controls when running in coexistence mode.
-          const camera = (window as unknown as {
-            __semanticCamera?: { autoRotate?: boolean; userAutoRotateSpeed?: number };
-          }).__semanticCamera;
+          const camera = window.__semanticCamera
           if (camera) {
             camera.autoRotate = v;
             if (import.meta.env.DEV) console.log('[dev-gui] camera.autoRotate =', v);
@@ -91,9 +89,7 @@
         .name('Force personality')
         .onChange((v: string) => {
           focusPersonalityOverride = v;
-          const state = (window as unknown as {
-            __semanticState?: { focusPersonalityOverride?: string };
-          }).__semanticState;
+          const state = window.__semanticState
           if (state) {
             state.focusPersonalityOverride = v === 'auto' ? undefined : v;
             if (import.meta.env.DEV) console.log('[dev-gui] focusPersonalityOverride =', v);
@@ -118,9 +114,7 @@
         .onChange((v: boolean) => {
           ppEnabled = v;
           // Bridge to three-postprocessing module
-          const pp = (window as unknown as {
-            __semanticPostprocessing?: { setPremiumMode?: (_v: boolean) => void };
-          }).__semanticPostprocessing;
+          const pp = window.__semanticPostprocessing
           if (pp?.setPremiumMode) {
             pp.setPremiumMode(v);
             if (import.meta.env.DEV) console.log('[dev-gui] premium mode =', v);
@@ -140,9 +134,7 @@
         .name('Bloom intensity')
         .onChange((v: number) => {
           bloomIntensity = v;
-          const pp = (window as unknown as {
-            __semanticPostprocessing?: { updateBloomParams?: (_p: Record<string, number>) => void };
-          }).__semanticPostprocessing;
+          const pp = window.__semanticPostprocessing;
           pp?.updateBloomParams?.({ intensity: v });
         });
 
@@ -151,9 +143,7 @@
         .name('Bloom threshold')
         .onChange((v: number) => {
           bloomThreshold = v;
-          const pp = (window as unknown as {
-            __semanticPostprocessing?: { updateBloomParams?: (_p: Record<string, number>) => void };
-          }).__semanticPostprocessing;
+          const pp = window.__semanticPostprocessing;
           pp?.updateBloomParams?.({ luminanceThreshold: v });
         });
 
@@ -162,9 +152,7 @@
         .name('Bloom radius')
         .onChange((v: number) => {
           bloomRadius = v;
-          const pp = (window as unknown as {
-            __semanticPostprocessing?: { updateBloomParams?: (_p: Record<string, number>) => void };
-          }).__semanticPostprocessing;
+          const pp = window.__semanticPostprocessing;
           pp?.updateBloomParams?.({ radius: v });
         });
 
@@ -173,9 +161,7 @@
         .name('Depth-of-field')
         .onChange((v: boolean) => {
           dofEnabled = v;
-          const pp = (window as unknown as {
-            __semanticPostprocessing?: { setDofEnabled?: (_v: boolean) => void };
-          }).__semanticPostprocessing;
+          const pp = window.__semanticPostprocessing;
           pp?.setDofEnabled?.(v);
           if (import.meta.env.DEV) console.log('[dev-gui] DOF =', v);
         });

@@ -207,10 +207,10 @@ export function hideSummaryCard(): void {
 function getSemanticGuideTimeoutMs(): number {
     if (
         typeof window !== 'undefined' &&
-        typeof (window as unknown as Record<string, unknown>).__SEMANTIC_GUIDE_TIMEOUT_MS__ === 'number' &&
-        (window as unknown as Record<string, unknown>).__SEMANTIC_GUIDE_TIMEOUT_MS__ > 0
+        typeof window.__SEMANTIC_GUIDE_TIMEOUT_MS__ === 'number' &&
+        (window.__SEMANTIC_GUIDE_TIMEOUT_MS__ ?? 0) > 0
     ) {
-        return (window as unknown as Record<string, unknown>).__SEMANTIC_GUIDE_TIMEOUT_MS__ as number
+        return window.__SEMANTIC_GUIDE_TIMEOUT_MS__
     }
     return 30000
 }

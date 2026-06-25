@@ -56,5 +56,5 @@ export const sessionSeed = {
 // — not part of the production API. Production code should import
 // `sessionSeed.value` from this module directly.
 if (typeof window !== 'undefined') {
-    ;(window as unknown as { __semanticExplorerSessionSeed?: number }).__semanticExplorerSessionSeed = _sessionSeed
+    window.__semanticExplorerSessionSeed = _sessionSeed
 }
