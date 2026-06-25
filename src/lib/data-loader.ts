@@ -512,7 +512,9 @@ async function fetchWithRetries(url: string, maxAttempts: number): Promise<unkno
             try {
                 return await response.json()
             } catch (jsonErr) {
-                throw new Error(`Invalid JSON: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`)
+                throw new Error(`Invalid JSON: ${jsonErr instanceof Error ? jsonErr.message : String(jsonErr)}`, {
+                    cause: jsonErr
+                })
             }
         } catch (err) {
             lastError = err instanceof Error ? err : new Error(String(err))

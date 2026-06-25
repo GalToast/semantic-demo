@@ -144,7 +144,7 @@ async function fetchSemanticSearchResultsDirect(
             }
         }
         if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
-            throw new Error(`Semantic search timed out after ${timeoutMs}ms.`)
+            throw new Error(`Semantic search timed out after ${timeoutMs}ms.`, { cause: err })
         }
         throw err
     } finally {
@@ -996,10 +996,7 @@ async function _executeSearch(
         try {
             results = await rerankResults(trimmed, results)
         } catch (error) {
-            debugWarn(
-                '[search-engine] rerankResults threw (belt-and-suspenders catch, should not happen):',
-                error
-            )
+            debugWarn('[search-engine] rerankResults threw (belt-and-suspenders catch, should not happen):', error)
         }
     }
 

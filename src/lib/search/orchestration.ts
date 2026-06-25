@@ -1,26 +1,15 @@
-import type { SearchResult, SearchSummary } from '@lib/types/state'
+import type { SearchResult } from '@lib/types/state'
 import {
     searchStore,
-    setSearchQuery,
     setSearchStatus,
     setSearchSummary,
     setAnchorIndex,
     setPreviewIndex,
-    setSearchGlow,
-    clearSearchGlow,
     incrementRequestSequence,
     isRequestCurrent,
     incrementFocusTransitionToken,
-    setTrailCue,
-    setSemanticGuide,
-    setCompactViewport,
     clearSearch,
-    clearSearchResults,
-    validateSearchQuery,
-    setActiveResult,
-    searchVisibleCount,
-    setSearchVisibleCount,
-    setSearchResults
+    setActiveResult
 } from '@lib/stores/search.svelte'
 import { performSearch } from '@lib/search-engine'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
@@ -28,29 +17,19 @@ import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { updateSearchTrailCue as renderSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
-import { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './search-panel-adapter'
 import {
     setSearchPanelState,
     renderSearchResultItems,
-    beginSemanticSearchUiState,
-    updateSemanticSearchRetryState,
     applySemanticSearchDegradedState,
-    finishSemanticSearchSuccessState,
-    applyEmptySemanticSearchState,
     stopSearchVectorScramble,
     startSearchVectorScramble,
     updateSearchPreviewOverlay,
     activateSearchGlow,
-    clearSearchGlow as clearResultsGlow,
     resetSemanticGuideUi,
     clearShortSemanticSearchState,
-    startMobileRouteFieldPeek,
-    clearSearchPreviewHoverTimer,
-    clearMobileRouteFieldPeek,
-    isMobileRouteFieldPeekActive,
-    focusSearchInputForReplacement,
-    updateSearchStatusMessage
+    clearSearchPreviewHoverTimer
 } from './results-ui'
+import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -97,9 +76,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     const resultsEl = document.getElementById('search-results')
     const statusEl = document.getElementById('search-status')
     const searchInput = document.getElementById('search-input') as HTMLInputElement | null
-    if (!resultsEl || !statusEl) return
-
-    // Self-register for circular dependency handling by UI module
+    if (!resultsEl || !statusEl) return // Self-register for circular dependency handling by UI module
     ;(resultsEl as unknown as Record<string, unknown>)._searchStateNamespace = {
         search,
         clearSearch: () => clearSearch(),
