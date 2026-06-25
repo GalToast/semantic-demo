@@ -60,9 +60,13 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
         expect(count, `selected-card.ts has ${count} any occurrences (lock-in target ≤10)`).toBeLessThanOrEqual(10)
     })
 
-    it('SelectedCardAdapter.hydrateLeadContext uses Point (not any)', () => {
+    it('SelectedCardAdapter.hydrateLeadContext uses BusinessRecord (not any)', () => {
         const source = readSource('src/lib/journey/selected-card.ts')
-        expect(source).toMatch(/hydrateLeadContext:\s*\(point:\s*Point,\s*options\?:/)
+        // W48-Phase-3: hydrateLeadContext uses BusinessRecord (not Point,
+        // not any). The function receives a full business record from
+        // the selected-business store; BusinessRecord is the correct type
+        // for downstream consumers that need id, category, website, etc.
+        expect(source).toMatch(/hydrateLeadContext:\s*\(point:\s*BusinessRecord,\s*options\?:/)
         expect(source).not.toMatch(/hydrateLeadContext:\s*\(point:\s*any,/)
     })
 
@@ -74,9 +78,12 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
         expect(source).toMatch(/EXPLORATION_FOCUS_SYNC,\s*\(payload:\s*\{[^}]*point[^}]*\}/)
     })
 
-    it('syncFocusStage function signature uses Point | BusinessRecord | null (not any)', () => {
+    it('syncFocusStage function signature uses BusinessRecord | null (not any)', () => {
         const source = readSource('src/lib/journey/selected-card.ts')
-        expect(source).toMatch(/export\s+function\s+syncFocusStage\(point:\s*Point\s*\|\s*BusinessRecord\s*\|\s*null\)/)
+        // W48-Phase-3: syncFocusStage takes BusinessRecord | null (was
+        // typed as `Point | BusinessRecord | null`, narrowed to the actual
+        // call-site type). The signature avoids the looser union.
+        expect(source).toMatch(/export\s+function\s+syncFocusStage\(point:\s*BusinessRecord\s*\|\s*null\)/)
         expect(source).not.toMatch(/export\s+function\s+syncFocusStage\(point:\s*any\)/)
     })
 
@@ -90,9 +97,11 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
         expect(body).not.toMatch(/const\s+points:\s*any\[\]/)
     })
 
-    it('updateSelectedBusiness function signature uses Point | null', () => {
+    it('updateSelectedBusiness function signature uses BusinessRecord | null', () => {
         const source = readSource('src/lib/journey/selected-card.ts')
-        expect(source).toMatch(/export\s+function\s+updateSelectedBusiness\(point:\s*Point\s*\|\s*null,/)
+        // W48-Phase-3: the parameter type is BusinessRecord | null
+        // (was `Point | null`; tightened to the actual data type).
+        expect(source).toMatch(/export\s+function\s+updateSelectedBusiness\(point:\s*BusinessRecord\s*\|\s*null,/)
         expect(source).not.toMatch(/export\s+function\s+updateSelectedBusiness\(point:\s*any,/)
     })
 

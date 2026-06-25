@@ -121,7 +121,7 @@ export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {
     }
 }
 
-export function syncFocusStage(point: BusinessRecord | BusinessRecord | null): void {
+export function syncFocusStage(point: BusinessRecord | null): void {
     const points: Point[] = Array.isArray(appState.points) ? appState.points : []
     if (points.length === 0 && point !== null) return
     const stage = document.getElementById('focus-stage')
