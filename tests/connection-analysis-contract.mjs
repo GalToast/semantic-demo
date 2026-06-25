@@ -305,16 +305,19 @@ async function testRuntimeCachedStory() {
 
   await promise;
 
-  assert(storyText.textContent === 'This business is highly connected via legal and insurance clusters.',
-    `story text rendered, got: "${storyText.textContent}"`);
-  assert(storySource.textContent.includes('semantic-guide-engine cached'),
-    `source text includes engine name, got: "${storySource.textContent}"`);
-  assert(storySource.textContent.includes('5m ago'),
-    `cache age shown as minutes, got: "${storySource.textContent}"`);
-  assert(!card.classList.contains('is-synthesizing'),
+  // Svelte 5 state-driven DOM: connection-analysis.ts writes to
+  // appState.semanticGuideState.* — assert state directly since FakeElement
+  // has no Svelte reactivity to bind the state to the DOM nodes.
+  assert(state.semanticGuideState.storyText === 'This business is highly connected via legal and insurance clusters.',
+    `story text rendered, got: "${state.semanticGuideState.storyText}"`);
+  assert(state.semanticGuideState.storySource.includes('semantic-guide-engine cached'),
+    `source text includes engine name, got: "${state.semanticGuideState.storySource}"`);
+  assert(state.semanticGuideState.storySource.includes('5m ago'),
+    `cache age shown as minutes, got: "${state.semanticGuideState.storySource}"`);
+  assert(!state.semanticGuideState.isSynthesizing,
     'is-synthesizing removed after success');
-  assert(!storyNote.classList.contains('hidden'),
-    'story note shown (not hidden)');
+  assert(state.semanticGuideState.showStory,
+    'story note shown (showStory=true)');
 
   console.log('  OK successful cached story rendered correctly');
 }
@@ -366,9 +369,9 @@ async function testRuntimeEmptyStory() {
 
   await promise;
 
-  assert(storyText.textContent === 'The connection report is still being prepared. Try again in a moment.',
-    `empty story message shown, got: "${storyText.textContent}"`);
-  assert(storySource.textContent === '',
+  assert(state.semanticGuideState.storyText === 'The connection report is still being prepared. Try again in a moment.',
+    `empty story message shown, got: "${state.semanticGuideState.storyText}"`);
+  assert(state.semanticGuideState.storySource === '',
     'source cleared for empty story');
 
   console.log('  OK empty story handled correctly');
@@ -413,10 +416,10 @@ async function testRuntimeInvalidJson() {
 
   await promise;
 
-  assert(storyText.textContent.startsWith('Connection report unavailable'),
-    `error message shown, got: "${storyText.textContent}"`);
-  assert(storySource.textContent === 'Connection report unavailable',
-    `error source shown, got: "${storySource.textContent}"`);
+  assert(state.semanticGuideState.storyText.startsWith('Connection report unavailable'),
+    `error message shown, got: "${state.semanticGuideState.storyText}"`);
+  assert(state.semanticGuideState.storySource === 'Connection report unavailable',
+    `error source shown, got: "${state.semanticGuideState.storySource}"`);
 
   console.log('  OK invalid JSON handled correctly');
 }
@@ -459,10 +462,10 @@ async function testRuntimeApiError() {
 
   await promise;
 
-  assert(storyText.textContent.startsWith('Connection report unavailable'),
-    `error message shown, got: "${storyText.textContent}"`);
-  assert(storySource.textContent === 'Connection report unavailable',
-    `error source shown, got: "${storySource.textContent}"`);
+  assert(state.semanticGuideState.storyText.startsWith('Connection report unavailable'),
+    `error message shown, got: "${state.semanticGuideState.storyText}"`);
+  assert(state.semanticGuideState.storySource === 'Connection report unavailable',
+    `error source shown, got: "${state.semanticGuideState.storySource}"`);
 
   console.log('  OK API error handled correctly');
 }
@@ -520,8 +523,8 @@ async function testRuntimeAbortLifecycle() {
   await promise2;
 
   // storyText should have second call's story
-  assert(storyText.textContent === 'Second call wins.',
-    `second call wins, got: "${storyText.textContent}"`);
+  assert(state.semanticGuideState.storyText === 'Second call wins.',
+    `second call wins, got: "${state.semanticGuideState.storyText}"`);
 
   console.log('  OK abort lifecycle verified');
 }
@@ -557,8 +560,8 @@ async function testRuntimeEarlyReturnNoFocusedPoint() {
 
   await showSemanticThreadsDetail();
 
-  assert(summaryText.textContent === 'Select a business first to load its full connection report.',
-    `early return message shown, got: "${summaryText.textContent}"`);
+  assert(state.semanticGuideState.config.text === 'Select a business first to load its full connection report.',
+    `early return message shown, got: "${state.semanticGuideState.config.text}"`);
 
   console.log('  OK early return / no focused point verified');
 }
@@ -584,8 +587,8 @@ async function testRuntimeFocusedIdxButNoPoint() {
 
   await showSemanticThreadsDetail();
 
-  assert(summaryText.textContent === 'Select a business first to load its full connection report.',
-    `early return for out-of-range idx, got: "${summaryText.textContent}"`);
+  assert(state.semanticGuideState.config.text === 'Select a business first to load its full connection report.',
+    `early return for out-of-range idx, got: "${state.semanticGuideState.config.text}"`);
 
   console.log('  OK out-of-range focusedIdx handled correctly');
 }

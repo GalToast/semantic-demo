@@ -19,42 +19,42 @@
  *   node tests/connection-analysis-render-state-contract.mjs
  */
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const SEMDEMO_ROOT = path.resolve(process.cwd());
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const SEMDEMO_ROOT = path.resolve(process.cwd())
 
 // ---------------------------------------------------------------------------
 // Assertions
 // ---------------------------------------------------------------------------
 
 function assert(cond, msg) {
-  if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+    if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
 }
 
 function assertEqual(actual, expected, label) {
-  if (actual !== expected) {
-    throw new Error(`ASSERTION FAILED: ${label}: expected "${expected}", got "${actual}"`);
-  }
+    if (actual !== expected) {
+        throw new Error(`ASSERTION FAILED: ${label}: expected "${expected}", got "${actual}"`)
+    }
 }
 
 function assertStartsWith(actual, prefix, label) {
-  if (!actual.startsWith(prefix)) {
-    throw new Error(`ASSERTION FAILED: ${label}: expected to start with "${prefix}", got "${actual}"`);
-  }
+    if (!actual.startsWith(prefix)) {
+        throw new Error(`ASSERTION FAILED: ${label}: expected to start with "${prefix}", got "${actual}"`)
+    }
 }
 
 function assertContains(haystack, needle, label) {
-  if (!haystack.includes(needle)) {
-    throw new Error(`ASSERTION FAILED: ${label}: expected "${needle}" in "${haystack}"`);
-  }
+    if (!haystack.includes(needle)) {
+        throw new Error(`ASSERTION FAILED: ${label}: expected "${needle}" in "${haystack}"`)
+    }
 }
 
 function assertNotContains(haystack, needle, label) {
-  if (haystack.includes(needle)) {
-    throw new Error(`ASSERTION FAILED: ${label}: expected NOT to contain "${needle}", got "${haystack}"`);
-  }
+    if (haystack.includes(needle)) {
+        throw new Error(`ASSERTION FAILED: ${label}: expected NOT to contain "${needle}", got "${haystack}"`)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -62,117 +62,137 @@ function assertNotContains(haystack, needle, label) {
 // ---------------------------------------------------------------------------
 
 class FakeClassList {
-  constructor() { this._items = new Set(); }
-  add(k)           { this._items.add(String(k)); }
-  remove(k)        { this._items.delete(String(k)); }
-  contains(k)      { return this._items.has(String(k)); }
-  toggle(k, force) {
-    const on = force !== undefined ? force : !this._items.has(String(k));
-    on ? this._items.add(String(k)) : this._items.delete(String(k));
-    return on;
-  }
+    constructor() {
+        this._items = new Set()
+    }
+    add(k) {
+        this._items.add(String(k))
+    }
+    remove(k) {
+        this._items.delete(String(k))
+    }
+    contains(k) {
+        return this._items.has(String(k))
+    }
+    toggle(k, force) {
+        const on = force !== undefined ? force : !this._items.has(String(k))
+        on ? this._items.add(String(k)) : this._items.delete(String(k))
+        return on
+    }
 }
 
 class FakeAttrMap extends Map {
-  get(k)      { return super.get(String(k)) ?? null; }
-  set(k, v)   { super.set(String(k), String(v)); }
+    get(k) {
+        return super.get(String(k)) ?? null
+    }
+    set(k, v) {
+        super.set(String(k), String(v))
+    }
 }
 
 class FakeElement {
-  constructor(tag = 'div') {
-    this.tagName   = tag.toUpperCase();
-    this.classList = new FakeClassList();
-    this.dataset   = {};
-    this._attr     = new FakeAttrMap();
-    this._text     = '';
-    this._handlers = {};
-  }
-  get textContent()    { return this._text; }
-  set textContent(v)   { this._text = String(v); }
-  setAttribute(k, v)  { this._attr.set(String(k), String(v)); }
-  getAttribute(k)     { return this._attr.get(String(k)) ?? null; }
-  removeAttribute(k)  { this._attr.delete(String(k)); }
-  addEventListener()  {}
-  removeEventListener() {}
+    constructor(tag = 'div') {
+        this.tagName = tag.toUpperCase()
+        this.classList = new FakeClassList()
+        this.dataset = {}
+        this._attr = new FakeAttrMap()
+        this._text = ''
+        this._handlers = {}
+    }
+    get textContent() {
+        return this._text
+    }
+    set textContent(v) {
+        this._text = String(v)
+    }
+    setAttribute(k, v) {
+        this._attr.set(String(k), String(v))
+    }
+    getAttribute(k) {
+        return this._attr.get(String(k)) ?? null
+    }
+    removeAttribute(k) {
+        this._attr.delete(String(k))
+    }
+    addEventListener() {}
+    removeEventListener() {}
 }
 
-const elementsById = new Map();
+const elementsById = new Map()
 
 const fakeDoc = {
-  body: new FakeElement('body'),
-  getElementById: (id) => elementsById.get(id) || null,
-  querySelectorAll: () => [],
-};
+    body: new FakeElement('body'),
+    getElementById: (id) => elementsById.get(id) || null,
+    querySelectorAll: () => []
+}
 
-globalThis.document = fakeDoc;
+globalThis.document = fakeDoc
 
-let _uuid = 0;
+let _uuid = 0
 Object.defineProperty(globalThis, 'crypto', {
-  value: { randomUUID: () => `fake-uuid-${++_uuid}` },
-  configurable: true,
-  writable: true,
-});
+    value: { randomUUID: () => `fake-uuid-${++_uuid}` },
+    configurable: true,
+    writable: true
+})
 
 // ---------------------------------------------------------------------------
 // Fake fetch — controllable resolution
 // ---------------------------------------------------------------------------
 
-let pendingFetch = null;
+let pendingFetch = null
 
 globalThis.fetch = function fakeFetch(url, options) {
-  return new Promise((resolve) => {
-    pendingFetch = { url, options, resolve, reject: () => {} };
-  });
-};
+    return new Promise((resolve) => {
+        pendingFetch = { url, options, resolve, reject: () => {} }
+    })
+}
 
 function resolveFetch(response) {
-  if (!pendingFetch) throw new Error('No pending fetch to resolve');
-  const { resolve } = pendingFetch;
-  pendingFetch = null;
-  resolve(response);
+    if (!pendingFetch) throw new Error('No pending fetch to resolve')
+    const { resolve } = pendingFetch
+    pendingFetch = null
+    resolve(response)
 }
 
 function rejectFetch(reason) {
-  if (!pendingFetch) throw new Error('No pending fetch to reject');
-  const { reject } = pendingFetch;
-  pendingFetch = null;
-  reject(reason);
+    if (!pendingFetch) throw new Error('No pending fetch to reject')
+    const { reject } = pendingFetch
+    pendingFetch = null
+    reject(reason)
 }
 
 // ---------------------------------------------------------------------------
 // State + adapter import
 // ---------------------------------------------------------------------------
 
-const { state } = await import('./helpers/canonical-state.mjs');
-const {
-  getConnectionStateSnapshot,
-} = await import('../src/lib/journey/connection-analysis-adapter.ts');
+const { state } = await import('./helpers/canonical-state.mjs')
+const { getConnectionStateSnapshot } = await import('../src/lib/journey/connection-analysis-adapter.ts')
 
 function resetState() {
-  state.currentSearchSummary = null;
-  state.focusedNode = null;
-  state.points = [];
-  elementsById.clear();
+    state.currentSearchSummary = null
+    state.focusedNode = null
+    state.points = []
+    elementsById.clear()
 }
 
 function setupDOM() {
-  const card = new FakeElement('div');
-  card.id = 'semantic-summary-card';
-  elementsById.set('semantic-summary-card', card);
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
 
-  const storyNote = new FakeElement('div');
-  storyNote.id = 'summary-gemma-story';
-  elementsById.set('summary-gemma-story', storyNote);
+    const storyNote = new FakeElement('div')
+    storyNote.id = 'summary-gemma-story'
+    elementsById.set('summary-gemma-story', storyNote)
 
-  const storyText = new FakeElement('div');
-  storyText.id = 'summary-gemma-story-text';
-  elementsById.set('summary-gemma-story-text', storyText);
+    const storyText = new FakeElement('div')
+    storyText.id = 'summary-gemma-story-text'
+    elementsById.set('summary-gemma-story-text', storyText)
 
-  const storySource = new FakeElement('div');
-  storySource.id = 'summary-gemma-story-source';
-  elementsById.set('summary-gemma-story-source', storySource);
+    const storySource = new FakeElement('div')
+    storySource.id = 'summary-gemma-story-source'
+    elementsById.set('summary-gemma-story-source', storySource)
 
-  return { card, storyNote, storyText, storySource };
+    return { card, storyNote, storyText, storySource }
 }
 
 // ---------------------------------------------------------------------------
@@ -180,31 +200,31 @@ function setupDOM() {
 // ---------------------------------------------------------------------------
 
 async function testAdapterStateSnapshot() {
-  console.log('\n[ADAPTER] getConnectionStateSnapshot fidelity');
+    console.log('\n[ADAPTER] getConnectionStateSnapshot fidelity')
 
-  resetState();
+    resetState()
 
-  state.focusedNode = 3;
-  state.points = [
-    { lead_id: 'LI_001', name: 'Biz A' },
-    { lead_id: 'LI_002', name: 'Biz B' },
-    { lead_id: 'LI_003', name: 'Biz C' },
-    { lead_id: 'LI_004', name: 'Biz D' },
-  ];
-  state.currentSearchSummary = { resultIndices: [3], anchorIndex: 3 };
+    state.focusedNode = 3
+    state.points = [
+        { lead_id: 'LI_001', name: 'Biz A' },
+        { lead_id: 'LI_002', name: 'Biz B' },
+        { lead_id: 'LI_003', name: 'Biz C' },
+        { lead_id: 'LI_004', name: 'Biz D' }
+    ]
+    state.currentSearchSummary = { resultIndices: [3], anchorIndex: 3 }
 
-  const snap = getConnectionStateSnapshot();
+    const snap = getConnectionStateSnapshot()
 
-  assertEqual(snap.focusedNode, 3, 'focusedNode in snapshot');
-  assertEqual(snap.points, state.points, 'points reference in snapshot');
-  assertEqual(snap.currentSearchSummary, state.currentSearchSummary, 'currentSearchSummary in snapshot');
+    assertEqual(snap.focusedNode, 3, 'focusedNode in snapshot')
+    assertEqual(snap.points, state.points, 'points reference in snapshot')
+    assertEqual(snap.currentSearchSummary, state.currentSearchSummary, 'currentSearchSummary in snapshot')
 
-  // Mutation of state is reflected in snapshot (same reference)
-  state.focusedNode = 1;
-  const snap2 = getConnectionStateSnapshot();
-  assertEqual(snap2.focusedNode, 1, 'snapshot reflects state mutation');
+    // Mutation of state is reflected in snapshot (same reference)
+    state.focusedNode = 1
+    const snap2 = getConnectionStateSnapshot()
+    assertEqual(snap2.focusedNode, 1, 'snapshot reflects state mutation')
 
-  console.log('  OK adapter state snapshot fidelity verified');
+    console.log('  OK adapter state snapshot fidelity verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -212,46 +232,51 @@ async function testAdapterStateSnapshot() {
 // ---------------------------------------------------------------------------
 
 async function testCachedStoryDOMRender() {
-  console.log('\n[RENDER] Successful cached story — DOM output');
+    console.log('\n[RENDER] Successful cached story — DOM output')
 
-  resetState();
-  const { card, storyNote, storyText, storySource } = setupDOM();
+    resetState()
+    const { card, storyNote, storyText, storySource } = setupDOM()
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({
-      ok: true,
-      mode: 'cached_trail_story',
-      story: 'This business connects to 12 others through legal and insurance clusters.',
-      source: 'semantic-guide-engine',
-      cache_age_seconds: 7200  // 2 hours
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_trail_story',
+                story: 'This business connects to 12 others through legal and insurance clusters.',
+                source: 'semantic-guide-engine',
+                cache_age_seconds: 7200 // 2 hours
+            })
     })
-  });
 
-  await promise;
+    await promise
 
-  assertEqual(
-    storyText.textContent,
-    'This business connects to 12 others through legal and insurance clusters.',
-    'story text rendered'
-  );
-  assertContains(storySource.textContent, 'semantic-guide-engine', 'source text includes engine name');
-  assertContains(storySource.textContent, 'cached', 'source text includes "cached"');
-  assertContains(storySource.textContent, '2h ago', 'cache age shown in hours');
-  assert(!card.classList.contains('is-synthesizing'), 'is-synthesizing removed after success');
-  assert(!storyNote.classList.contains('hidden'), 'story note visible (not hidden)');
-  assertEqual(storyNote.getAttribute('aria-hidden'), 'false', 'story note aria-hidden=false');
+    // Svelte 5 state-driven DOM: connection-analysis.ts writes to
+    // appState.semanticGuideState.*, which SemanticGuideCard.svelte binds to the
+    // real DOM. We assert state directly because FakeElement has no reactivity.
+    assertEqual(
+        state.semanticGuideState.storyText,
+        'This business connects to 12 others through legal and insurance clusters.',
+        'story text rendered'
+    )
+    assertContains(state.semanticGuideState.storySource, 'semantic-guide-engine', 'source text includes engine name')
+    assertContains(state.semanticGuideState.storySource, 'cached', 'source text includes "cached"')
+    assertContains(state.semanticGuideState.storySource, '2h ago', 'cache age shown in hours')
+    assert(!state.semanticGuideState.isSynthesizing, 'is-synthesizing removed after success')
+    assert(state.semanticGuideState.showStory, 'story note visible (showStory=true)')
 
-  console.log('  OK cached story DOM render verified');
+    console.log('  OK cached story state render verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -259,41 +284,44 @@ async function testCachedStoryDOMRender() {
 // ---------------------------------------------------------------------------
 
 async function testEmptyStoryRender() {
-  console.log('\n[RENDER] Empty story — "still being prepared" render');
+    console.log('\n[RENDER] Empty story — "still being prepared" render')
 
-  resetState();
-  const { card, storyText, storySource } = setupDOM();
+    resetState()
+    const { card, storyText, storySource } = setupDOM()
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({
-      ok: true,
-      mode: 'cached_trail_story',
-      story: '',
-      source: 'semantic-guide-engine'
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_trail_story',
+                story: '',
+                source: 'semantic-guide-engine'
+            })
     })
-  });
 
-  await promise;
+    await promise
 
-  assertEqual(
-    storyText.textContent,
-    'The connection report is still being prepared. Try again in a moment.',
-    'empty story message shown'
-  );
-  assertEqual(storySource.textContent, '', 'source cleared for empty story');
-  assert(!card.classList.contains('is-synthesizing'), 'is-synthesizing removed for empty story');
+    assertEqual(
+        state.semanticGuideState.storyText,
+        'The connection report is still being prepared. Try again in a moment.',
+        'empty story message shown'
+    )
+    assertEqual(state.semanticGuideState.storySource, '', 'source cleared for empty story')
+    assert(!state.semanticGuideState.isSynthesizing, 'is-synthesizing removed for empty story')
 
-  console.log('  OK empty story render verified');
+    console.log('  OK empty story render verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -301,32 +329,38 @@ async function testEmptyStoryRender() {
 // ---------------------------------------------------------------------------
 
 async function testInvalidJsonRender() {
-  console.log('\n[RENDER] Invalid JSON — error message render');
+    console.log('\n[RENDER] Invalid JSON — error message render')
 
-  resetState();
-  const { card, storyText, storySource } = setupDOM();
+    resetState()
+    const { card, storyText, storySource } = setupDOM()
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.reject(new SyntaxError('Unexpected token <'))
-  });
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('Unexpected token <'))
+    })
 
-  await promise;
+    await promise
 
-  assertStartsWith(storyText.textContent, 'Connection report unavailable:', 'error prefix shown for invalid JSON');
-  assertEqual(storySource.textContent, 'Connection report unavailable', 'error source shown');
-  assert(!card.classList.contains('is-synthesizing'), 'is-synthesizing removed after error');
+    assertStartsWith(
+        state.semanticGuideState.storyText,
+        'Connection report unavailable:',
+        'error prefix shown for invalid JSON'
+    )
+    assertEqual(state.semanticGuideState.storySource, 'Connection report unavailable', 'error source shown')
+    assert(!state.semanticGuideState.isSynthesizing, 'is-synthesizing removed after error')
 
-  console.log('  OK invalid JSON render verified');
+    console.log('  OK invalid JSON render verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -334,33 +368,38 @@ async function testInvalidJsonRender() {
 // ---------------------------------------------------------------------------
 
 async function testHttp500Render() {
-  console.log('\n[RENDER] HTTP 500 — error message render');
+    console.log('\n[RENDER] HTTP 500 — error message render')
 
-  resetState();
-  const { card, storyText, storySource } = setupDOM();
+    resetState()
+    const { card, storyText, storySource } = setupDOM()
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  resolveFetch({
-    ok: false,
-    status: 500,
-    json: () => Promise.resolve({ ok: false, error: 'Internal server error from API' })
-  });
+    resolveFetch({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ ok: false, error: 'Internal server error from API' })
+    })
 
-  await promise;
+    await promise
 
-  assertStartsWith(storyText.textContent, 'Connection report unavailable:', 'error prefix shown for 500');
-  assert(storyText.textContent.includes('Internal server error from API'), 'server error message included');
-  assertEqual(storySource.textContent, 'Connection report unavailable', 'error source shown');
-  assert(!card.classList.contains('is-synthesizing'), 'is-synthesizing removed after 500');
+    assertStartsWith(state.semanticGuideState.storyText, 'Connection report unavailable:', 'error prefix shown for 500')
+    assert(
+        state.semanticGuideState.storyText.includes('Internal server error from API'),
+        'server error message included'
+    )
+    assertEqual(state.semanticGuideState.storySource, 'Connection report unavailable', 'error source shown')
+    assert(!state.semanticGuideState.isSynthesizing, 'is-synthesizing removed after 500')
 
-  console.log('  OK HTTP 500 render verified');
+    console.log('  OK HTTP 500 render verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -368,43 +407,46 @@ async function testHttp500Render() {
 // ---------------------------------------------------------------------------
 
 async function testAbortStateCleanup() {
-  console.log('\n[RENDER] Abort — state cleanup and no DOM corruption');
+    console.log('\n[RENDER] Abort — state cleanup and no DOM corruption')
 
-  resetState();
-  const { card, storyText, storySource } = setupDOM();
+    resetState()
+    const { card, storyText, storySource } = setupDOM()
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  // First call — will be aborted
-  const promise1 = showSemanticThreadsDetail();
+    // First call — will be aborted
+    const promise1 = showSemanticThreadsDetail()
 
-  // Immediately fire second call, aborting the first
-  const promise2 = showSemanticThreadsDetail();
+    // Immediately fire second call, aborting the first
+    const promise2 = showSemanticThreadsDetail()
 
-  // Resolve second fetch with a story
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({
-      ok: true,
-      mode: 'cached_trail_story',
-      story: 'Second call succeeded.',
-      source: 'semantic-guide-engine'
+    // Resolve second fetch with a story
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_trail_story',
+                story: 'Second call succeeded.',
+                source: 'semantic-guide-engine'
+            })
     })
-  });
 
-  await promise2;
+    await promise2
 
-  // Second call's story should be rendered — first call's loading state must not leak
-  assertEqual(storyText.textContent, 'Second call succeeded.', 'second call rendered, first aborted');
-  assertEqual(storySource.textContent, 'semantic-guide-engine', 'source from second call');
-  assert(!card.classList.contains('is-synthesizing'), 'is-synthesizing removed after success');
+    // Second call's story should be rendered — first call's loading state must not leak
+    assertEqual(state.semanticGuideState.storyText, 'Second call succeeded.', 'second call rendered, first aborted')
+    assertEqual(state.semanticGuideState.storySource, 'semantic-guide-engine', 'source from second call')
+    assert(!state.semanticGuideState.isSynthesizing, 'is-synthesizing removed after success')
 
-  console.log('  OK abort state cleanup verified');
+    console.log('  OK abort state cleanup verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -412,38 +454,45 @@ async function testAbortStateCleanup() {
 // ---------------------------------------------------------------------------
 
 async function testCachedGemmaStoryRender() {
-  console.log('\n[RENDER] Cached gemma story mode variant');
+    console.log('\n[RENDER] Cached gemma story mode variant')
 
-  resetState();
-  const { storyText, storySource } = setupDOM();
+    resetState()
+    const { storyText, storySource } = setupDOM()
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({
-      ok: true,
-      mode: 'cached_gemma_story',
-      story: 'Gemma-generated narrative about business connections.',
-      source: 'gemma-engine',
-      cache_age_seconds: 300
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_gemma_story',
+                story: 'Gemma-generated narrative about business connections.',
+                source: 'gemma-engine',
+                cache_age_seconds: 300
+            })
     })
-  });
 
-  await promise;
+    await promise
 
-  assertEqual(storyText.textContent, 'Gemma-generated narrative about business connections.', 'gemma story rendered');
-  assertContains(storySource.textContent, 'gemma-engine', 'gemma engine source shown');
-  assertContains(storySource.textContent, '5m ago', 'cache age in minutes');
+    assertEqual(
+        state.semanticGuideState.storyText,
+        'Gemma-generated narrative about business connections.',
+        'gemma story rendered'
+    )
+    assertContains(state.semanticGuideState.storySource, 'gemma-engine', 'gemma engine source shown')
+    assertContains(state.semanticGuideState.storySource, '5m ago', 'cache age in minutes')
 
-  console.log('  OK cached gemma story render verified');
+    console.log('  OK cached gemma story render verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -451,29 +500,29 @@ async function testCachedGemmaStoryRender() {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log('================================================================');
-  console.log('connection-analysis-render-state-contract.mjs');
-  console.log('Render/state contract: connection-analysis via adapter seam');
-  console.log('================================================================');
+    console.log('================================================================')
+    console.log('connection-analysis-render-state-contract.mjs')
+    console.log('Render/state contract: connection-analysis via adapter seam')
+    console.log('================================================================')
 
-  try {
-    await testAdapterStateSnapshot();
-    await testCachedStoryDOMRender();
-    await testEmptyStoryRender();
-    await testInvalidJsonRender();
-    await testHttp500Render();
-    await testAbortStateCleanup();
-    await testCachedGemmaStoryRender();
+    try {
+        await testAdapterStateSnapshot()
+        await testCachedStoryDOMRender()
+        await testEmptyStoryRender()
+        await testInvalidJsonRender()
+        await testHttp500Render()
+        await testAbortStateCleanup()
+        await testCachedGemmaStoryRender()
 
-    console.log('\n================================================================');
-    console.log('ALL TESTS PASSED');
-    console.log('================================================================');
-    process.exit(0);
-  } catch (err) {
-    console.error('\nTEST FAILED:', err.message);
-    console.error(err.stack);
-    process.exit(1);
-  }
+        console.log('\n================================================================')
+        console.log('ALL TESTS PASSED')
+        console.log('================================================================')
+        process.exit(0)
+    } catch (err) {
+        console.error('\nTEST FAILED:', err.message)
+        console.error(err.stack)
+        process.exit(1)
+    }
 }
 
-main();
+main()
