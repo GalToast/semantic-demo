@@ -16,6 +16,7 @@ import {
     type SemanticCandidate
 } from '@lib/journey/focus-pocket-personality'
 import { getFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
+import type { PocketMotionWithFrame } from '@lib/types/state'
 
 // === Pure geometry/easing utilities ===
 
@@ -560,7 +561,7 @@ export interface PocketEntry {
 
 export interface PocketStagedResult {
     positions: Map<number, { x: number; y: number; z: number }>
-    motion: Map<number, any>
+    motion: Map<number, PocketMotionWithFrame>
     roles: Map<number, string>
     motif: ConstellationMotif | null
     viewportProfile: ViewportProfile | null
@@ -604,7 +605,7 @@ export function buildFocusedPocketStagedPositions(
     const motif = getFocusConstellationMotifForPersonality(index, personality)
 
     const vpProfile = getFocusConstellationViewportProfile()
-    const motion = new Map<number, any>()
+    const motion = new Map<number, PocketMotionWithFrame>()
     const roles = new Map<number, string>([[index, 'anchor']])
     motion.set(index, {
         role: 'anchor',
@@ -717,7 +718,7 @@ export function buildFocusedPocketStagedPositions(
 export interface SemanticPocketResult {
     positions: Map<number, { x: number; y: number; z: number }>
     indices: number[]
-    motion: Map<number, any>
+    motion: Map<number, PocketMotionWithFrame>
     roles: Map<number, string>
     meta: {
         active: boolean

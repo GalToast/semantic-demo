@@ -107,6 +107,7 @@ export interface SearchResult {
 }
 
 export interface SearchResultPoint {
+    lead_id?: string | number
     name?: string
     what?: string
     cluster?: number
@@ -213,6 +214,10 @@ export interface ThreadCandidateRef {
     index: number
     source: string
     reason: string
+    /** Optional: relationship role for inspection UI (title pill, role badge). */
+    relationshipRole?: string
+    /** Optional: pocket role override for the focus-pocket animation. */
+    role?: string
 }
 
 export interface PocketMotion {
@@ -231,7 +236,20 @@ export interface PocketMotion {
 
 export interface PocketMotionWithFrame extends PocketMotion {
     _preservePos?: { x: number; y: number; z: number }
+    /** Legacy field kept for backward compatibility with motion objects
+     *  produced by the geometry builder (focus-pocket-geometry.ts). The
+     *  newer path prefers _preservePos. Both carry the same origin
+     *  position; consumers should prefer _preservePos when both are set. */
+    _originPos?: { x: number; y: number; z: number }
     _firstFrameApplied?: boolean
+    /** Motif key for the focus constellation (set by geometry builder). */
+    motif?: string
+    /** Relationship role from the semantic candidate ref. */
+    relationshipRole?: string
+    /** Relationship axis for inspection UI rendering. */
+    relationshipAxis?: string
+    /** Human-readable reason for the role assignment. */
+    roleReason?: string
 }
 
 export interface FocusState {

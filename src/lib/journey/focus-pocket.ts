@@ -194,13 +194,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     })
 
     if (navState.threadSource === 'semantic') {
-        const pocket = buildFocusedSemanticPocket(index) as {
-            positions?: Map<number, { x: number; y: number; z: number }>
-            indices?: number[]
-            roles?: Map<number, string>
-            motion?: Map<number, Record<string, unknown>>
-            meta?: Record<string, unknown> & { motif?: string; motifLabel?: string }
-        } | null
+        const pocket = buildFocusedSemanticPocket(index)
         if (pocket?.positions?.size) {
             pocket.positions.forEach((position, pocketIndex) => {
                 if (position && targetPositions) {
@@ -211,9 +205,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             setFocusPocketRoleByIndex(pocket.roles || new Map())
 
             const newPocketSet = new Set(pocket.indices ?? [])
-            const motion =
-                (pocket.motion as unknown as Map<number, PocketMotionWithFrame>) ||
-                new Map<number, PocketMotionWithFrame>()
+            const motion = pocket.motion || new Map<number, PocketMotionWithFrame>()
             prevTargetByIndex.forEach((prevPos, pocketIndex) => {
                 if (newPocketSet.has(pocketIndex)) {
                     const existing = motion.get(pocketIndex)
@@ -298,13 +290,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     })
 
     const fallbackPocket = fallbackPocketEntries.size
-        ? (buildFocusedPocketStagedPositions(index, fallbackPocketEntries) as {
-              positions?: Map<number, { x: number; y: number; z: number }>
-              roles?: Map<number, string>
-              motion?: Map<number, Record<string, unknown>>
-              motif?: { key: string; label: string }
-              viewportProfile?: unknown
-          } | null)
+        ? buildFocusedPocketStagedPositions(index, fallbackPocketEntries)
         : null
     if (fallbackPocket?.positions?.size) {
         fallbackPocket.positions.forEach((position, pocketIndex) => {
@@ -326,7 +312,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             haloCount: 0,
             motif: fallbackPocket.motif?.key || 'market',
             motifLabel: fallbackPocket.motif?.label || 'threaded neighborhood',
-            viewportProfile: (fallbackPocket.viewportProfile || viewportProfile) as Record<string, unknown>
+            viewportProfile: fallbackPocket.viewportProfile || viewportProfile,
         })
         appState.withMutation(() => {
             appState.nodesAreSettling = true
