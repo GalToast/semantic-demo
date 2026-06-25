@@ -1,3 +1,18 @@
+interface PostprocessingAPI {
+    setPremiumMode: typeof setPremiumMode
+    updateBloomParams: typeof updateBloomParams
+    updateVignetteParams: typeof updateVignetteParams
+    updateChromaticAberrationParams: typeof updateChromaticAberrationParams
+    setDofEnabled: typeof setDofEnabled
+    isPremiumMode: typeof isPremiumMode
+}
+
+declare global {
+    interface Window {
+        __semanticPostprocessing?: PostprocessingAPI
+    }
+}
+
 /**
  * three-postprocessing.ts — EffectComposer wrapper for Semantic Explorer.
  *
@@ -126,7 +141,7 @@ export function setPremiumMode(enabled: boolean): void {
     if (_composer) {
         for (const pass of _composer.passes) {
             if ('enabled' in pass) {
-                ;(pass as any).enabled = enabled
+                pass.enabled = enabled
             }
         }
     }
@@ -149,7 +164,7 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
     // Expose API on window for DevGui bridge even when the heavy composer is
     // deferred. The composer is created lazily by setPremiumMode(true).
     if (typeof window !== 'undefined') {
-        ;(window as any).__semanticPostprocessing = {
+        window.__semanticPostprocessing = {
             setPremiumMode,
             updateBloomParams,
             updateVignetteParams,
@@ -222,7 +237,7 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
 
         // Expose API on window for DevGui bridge
         if (typeof window !== 'undefined') {
-            ;(window as any).__semanticPostprocessing = {
+            window.__semanticPostprocessing = {
                 setPremiumMode,
                 updateBloomParams,
                 updateVignetteParams,
@@ -274,8 +289,8 @@ export function resizePostProcessing(width: number, height: number): void {
 export function disposePostProcessing(): void {
     if (_composer) {
         for (const pass of _composer.passes) {
-            if (typeof (pass as any).dispose === 'function') {
-                ;(pass as any).dispose()
+            if (typeof pass.dispose === 'function') {
+                pass.dispose()
             }
         }
         _composer = null
@@ -294,12 +309,11 @@ export function disposePostProcessing(): void {
  */
 export function updateVignetteParams(params: { offset?: number; darkness?: number }): void {
     if (!_vignetteEffect) return
-    const vignetteAny = _vignetteEffect as any
     if (params.offset !== undefined && 'offset' in vignetteAny) {
-        vignetteAny.offset = params.offset
+        _vignetteEffect.offset = params.offset
     }
     if (params.darkness !== undefined && 'darkness' in vignetteAny) {
-        vignetteAny.darkness = params.darkness
+        _vignetteEffect.darkness = params.darkness
     }
 }
 
@@ -308,9 +322,8 @@ export function updateVignetteParams(params: { offset?: number; darkness?: numbe
  */
 export function updateChromaticAberrationParams(params: { offset?: Vector2 }): void {
     if (!_chromaticAberrationEffect || !params.offset) return
-    const aberrationAny = _chromaticAberrationEffect as any
     if ('offset' in aberrationAny) {
-        aberrationAny.offset = params.offset
+        _chromaticAberrationEffect.offset = params.offset
     }
 }
 
@@ -322,12 +335,11 @@ export function updateBloomParams(params: { luminanceThreshold?: number; intensi
         if (params.intensity !== undefined) {
             _bloomEffect.intensity = params.intensity
         }
-        const bloomAny = _bloomEffect as any
         if (params.luminanceThreshold !== undefined && 'luminanceThreshold' in bloomAny) {
-            bloomAny.luminanceThreshold = params.luminanceThreshold
+            _bloomEffect.luminanceThreshold = params.luminanceThreshold
         }
         if (params.radius !== undefined && 'radius' in bloomAny) {
-            bloomAny.radius = params.radius
+            _bloomEffect.radius = params.radius
         }
     }
 }
@@ -346,7 +358,7 @@ export function setDofEnabled(enabled: boolean): void {
     if (!_composer || !_premiumMode) return
     const dofPass = _composer.passes[4]
     if (dofPass && 'enabled' in dofPass) {
-        ;(dofPass as any).enabled = enabled
+        dofPass.enabled = enabled
     }
 }
 

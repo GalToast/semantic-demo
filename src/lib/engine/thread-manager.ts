@@ -21,9 +21,8 @@ import {
     Group,
     BufferAttribute
 } from 'three'
-import { appState as _state } from '@lib/state/app.svelte'
+import { appState as state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const state = _state as any
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
@@ -337,9 +336,9 @@ export function getMyceliumPresentationProfile() {
         return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }
     }
     if (state.trailDepth >= 1) {
-        return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+        return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
     }
-    return { core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+    return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────

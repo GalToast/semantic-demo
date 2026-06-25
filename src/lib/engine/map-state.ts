@@ -61,7 +61,7 @@ export async function loadLeafletAssets(): Promise<unknown> {
             document.head.appendChild(link)
         }
 
-        let existingScript = document.getElementById('leaflet-runtime-js')
+        const existingScript = document.getElementById('leaflet-runtime-js')
         if (existingScript) {
             if (window.L) {
                 resolve(window.L)

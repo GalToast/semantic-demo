@@ -106,7 +106,7 @@ export function showWebGLFallback(
     notice.append(kicker, heading, body, mapButton)
     container.appendChild(notice)
 
-    let _mapButtonClickHandler = (event: MouseEvent) => {
+    const _mapButtonClickHandler = (event: MouseEvent) => {
         event.preventDefault()
         if (deps.viewController?.switchView) {
             deps.viewController.switchView('map')

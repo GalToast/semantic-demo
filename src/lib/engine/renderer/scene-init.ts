@@ -57,10 +57,7 @@ export async function buildThreeScene(
 
     // ── Scene ───────────────────────────────────────────────────────────────
     const scene = new Scene()
-    scene.fog = new FogExp2(
-        (SCENE_ATMOSPHERE as any).fogColor ?? 0x0d2024,
-        (SCENE_ATMOSPHERE as any).fogDensity ?? 0.62
-    )
+    scene.fog = new FogExp2(SCENE_ATMOSPHERE.fogColor ?? 0x0d2024, SCENE_ATMOSPHERE.fogDensity ?? 0.62)
 
     // ── Camera ──────────────────────────────────────────────────────────────
     const camera = new PerspectiveCamera(60, width / height, 0.1, 1000)
@@ -85,9 +82,9 @@ export async function buildThreeScene(
 
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
     renderer.setSize(width, height)
-    renderer.setClearColor((SCENE_ATMOSPHERE as any).fogColor ?? 0x0d2024, (SCENE_ATMOSPHERE as any).clearAlpha ?? 0.96)
+    renderer.setClearColor(SCENE_ATMOSPHERE.fogColor ?? 0x0d2024, SCENE_ATMOSPHERE.clearAlpha ?? 0.96)
     renderer.toneMapping = ACESFilmicToneMapping
-    renderer.toneMappingExposure = (SCENE_ATMOSPHERE as any).toneExposure ?? 1.0
+    renderer.toneMappingExposure = SCENE_ATMOSPHERE.toneExposure ?? 1.0
     renderer.outputColorSpace = SRGBColorSpace
 
     // Remove any orphaned canvas elements from previous inits

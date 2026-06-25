@@ -25,14 +25,14 @@ export function smoothDiagnosticValue(current: number, next: number, sampleCount
 }
 
 export function getSceneRenderableDiagnostics() {
-    const perf = (appState as any).scenePerformanceDiagnostics
+    const perf = appState.scenePerformanceDiagnostics
     const resources = getLiveResourceCounts()
     return {
         active: perf?.active ?? false,
         fps: Math.round(1000 / Math.max(1, perf?.avgFrameMs || 0)),
         drawCalls: perf?.drawCalls ?? 0,
         triangles: perf?.triangles ?? 0,
-        points: (appState as any).points?.length || 0,
+        points: appState.points?.length || 0,
         myceliumCoreSegments: perf?.myceliumCoreSegments ?? 0,
         myceliumWispySegments: perf?.myceliumWispySegments ?? 0,
         myceliumBridgeSegments: perf?.myceliumBridgeSegments ?? 0,
@@ -46,12 +46,12 @@ export function sampleScenePerformance(
     legacyState?: any
 ): void {
     appState.withMutation(() => {
-        const diagnostics = appState.scenePerformanceDiagnostics as any
+        const diagnostics = appState.scenePerformanceDiagnostics
         diagnostics.active = !!(
             appState.renderer &&
             appState.scene &&
             appState.camera &&
-            (appState as any).currentView === 'galaxy'
+            appState.currentView === 'galaxy'
         )
         diagnostics.reason = diagnostics.active ? 'sampling' : 'inactive-view'
         diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1)
