@@ -18,6 +18,7 @@ import { focusStore } from '@lib/stores/focus.svelte'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '@lib/stores/filter.svelte'
 import { showExperienceToast } from '@lib/orchestration/toast'
+import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import { appState } from '@lib/state/app.svelte'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
 import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller'
@@ -101,9 +102,9 @@ export function clearExplorationFocusSelection(): void {
     })
     appState.withMutation(() => {
         appState.focusedNode = null
-        appState.selectedPoint = null
         appState.trailIndices?.clear?.()
     })
+    updateSelectedBusiness(null)
 }
 
 /**
