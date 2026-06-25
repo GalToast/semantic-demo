@@ -175,9 +175,7 @@ function setupSafetyValves(): SafetyTimers {
         // can hide on the error state. Previously the safety valve only
         // touched the DOM, leaving dataLoadState.status stuck at 'loading'
         // and LoadingOverlay blocking all subsequent clicks.
-        setDataLoadError(
-            'Loading timed out after 15 seconds. Refresh after the connection recovers.'
-        )
+        setDataLoadError('Loading timed out after 15 seconds. Refresh after the connection recovers.')
     }, SAFETY_VALVE_MS)
 
     return { slowProgress, safetyValve }

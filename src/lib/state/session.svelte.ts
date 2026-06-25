@@ -41,7 +41,7 @@ function getOrCreateSessionSeed(): number {
     }
 }
 
-let _sessionSeed = $state(getOrCreateSessionSeed())
+const _sessionSeed = $state(getOrCreateSessionSeed())
 
 export const sessionSeed = {
     /** Current per-session seed. Stable across reloads; varies per session. */
@@ -56,6 +56,5 @@ export const sessionSeed = {
 // — not part of the production API. Production code should import
 // `sessionSeed.value` from this module directly.
 if (typeof window !== 'undefined') {
-    ;(window as unknown as { __semanticExplorerSessionSeed?: number }).__semanticExplorerSessionSeed =
-        _sessionSeed
+    ;(window as unknown as { __semanticExplorerSessionSeed?: number }).__semanticExplorerSessionSeed = _sessionSeed
 }

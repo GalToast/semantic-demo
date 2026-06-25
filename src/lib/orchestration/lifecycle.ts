@@ -260,13 +260,11 @@ export function buildSelectedMatchNarrative(_point: Record<string, unknown> | nu
     return ''
 }
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 declare global {
     interface Window {
         animateCameraToNode?: (opts: { transitionStyle: string }) => void
     }
 }
-/* eslint-enable @typescript-eslint/no-explicit-any */
 
 /**
  * Recenter focused node.

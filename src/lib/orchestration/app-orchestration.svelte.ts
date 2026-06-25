@@ -6,22 +6,18 @@
  * that reads reactive handles from this module and renders markup.
  */
 
-import type { Snippet } from 'svelte'
 import {
     navStore,
     dispatchNavTransition as dispatchNavTransitionAction,
     NAV_TRANSITION_ACTIONS
 } from '@lib/stores/navigation.svelte'
-import { threadInspectorActive, setSemanticDiveMode } from '@lib/stores/focus.svelte'
-import { viewport } from '@lib/stores/viewport.svelte.ts'
+import { setSemanticDiveMode } from '@lib/stores/focus.svelte'
 import { appState } from '@lib/state/app.svelte.ts'
-import { engineReady } from '@lib/stores/engine-ready.svelte'
-import { createLazyComponent, type LazyComponentHandle } from '@lib/utils/lazy-component.svelte'
+import { createLazyComponent } from '@lib/utils/lazy-component.svelte'
 import { teardownAppShell } from '@lib/orchestration/app-init'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help'
 import { resetSemanticThreadWorker } from '@lib/semantic-threads'
-import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 

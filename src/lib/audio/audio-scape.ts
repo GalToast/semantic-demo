@@ -36,20 +36,28 @@ interface AudioPoint {
     z?: number
 }
 
-let audioCtx: AudioContext | null = null
-let mainOsc: OscillatorNode | null = null
-let gainNode: GainNode | null = null
-let filterNode: BiquadFilterNode | null = null
-let _audioRafId: number | null = null
-
-let lastCameraPos: Vector3Like | null = null
-let currentVelocity = 0
-let smoothVelocity = 0
+/**
+ * Module-scoped mutable state, consolidated into one object so the audio
+ * engine can be reasoned about as a unit. Replaces 8 separate `let` bindings
+ * that previously polluted the module scope. A future bite can promote
+ * this to a proper `class AudioEngine` with encapsulation and test
+ * isolation; for now, the consolidated object is the documented seam.
+ */
+const audioState = {
+    audioCtx: null as AudioContext | null,
+    mainOsc: null as OscillatorNode | null,
+    gainNode: null as GainNode | null,
+    filterNode: null as BiquadFilterNode | null,
+    rafId: null as number | null,
+    lastCameraPos: null as Vector3Like | null,
+    currentVelocity: 0,
+    smoothVelocity: 0
+}
 
 // ── Public API (export parity with audio-scape.js) ──────────────────────────
 
 export function initAudio(): void {
-    if (audioCtx) return
+    if (audioState.audioCtx) return
     if (navigator.webdriver) return
 
     // Start context on user interaction
@@ -62,67 +70,67 @@ export function initAudio(): void {
 }
 
 function handleVisibilityChange(): void {
-    if (document.visibilityState === 'visible' && audioCtx && audioCtx.state === 'suspended') {
-        audioCtx.resume().catch((err: unknown) => {
+    if (document.visibilityState === 'visible' && audioState.audioCtx && audioState.audioCtx.state === 'suspended') {
+        audioState.audioCtx.resume().catch((err: unknown) => {
             debugWarn('[audio] AudioContext resume failed on visibility change', err)
         })
     }
 }
 
 function startAudioContext(): void {
-    if (audioCtx) return
+    if (audioState.audioCtx) return
 
     try {
-        audioCtx = new (
+        audioState.audioCtx = new (
             (window as unknown as { AudioContext: typeof AudioContext }).AudioContext ||
             (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
         )()
 
-        mainOsc = audioCtx.createOscillator()
-        mainOsc.type = 'sine'
-        mainOsc.frequency.setValueAtTime(55, audioCtx.currentTime) // Low A
+        audioState.mainOsc = audioState.audioCtx.createOscillator()
+        audioState.mainOsc.type = 'sine'
+        audioState.mainOsc.frequency.setValueAtTime(55, audioState.audioCtx.currentTime) // Low A
 
-        gainNode = audioCtx.createGain()
-        gainNode.gain.setValueAtTime(0, audioCtx.currentTime)
+        audioState.gainNode = audioState.audioCtx.createGain()
+        audioState.gainNode.gain.setValueAtTime(0, audioState.audioCtx.currentTime)
 
-        filterNode = audioCtx.createBiquadFilter()
-        filterNode.type = 'lowpass'
-        filterNode.frequency.setValueAtTime(200, audioCtx.currentTime)
+        audioState.filterNode = audioState.audioCtx.createBiquadFilter()
+        audioState.filterNode.type = 'lowpass'
+        audioState.filterNode.frequency.setValueAtTime(200, audioState.audioCtx.currentTime)
 
-        mainOsc.connect(filterNode)
-        filterNode.connect(gainNode)
-        gainNode.connect(audioCtx.destination)
+        audioState.mainOsc.connect(audioState.filterNode)
+        audioState.filterNode.connect(audioState.gainNode)
+        audioState.gainNode.connect(audioState.audioCtx.destination)
 
-        mainOsc.start()
+        audioState.mainOsc.start()
 
         debugWarn('[audio] Reactive scape initialized.')
-        _audioRafId = requestAnimationFrame(updateAudio)
+        audioState.rafId = requestAnimationFrame(updateAudio)
     } catch (e: unknown) {
         debugWarn('[audio] Web Audio API initialization failed.', e)
     }
 }
 
 function updateAudio(): void {
-    if (!audioCtx || audioCtx.state === 'closed') return
+    if (!audioState.audioCtx || audioState.audioCtx.state === 'closed') return
     if (!state.camera) {
-        _audioRafId = requestAnimationFrame(updateAudio)
+        audioState.rafId = requestAnimationFrame(updateAudio)
         return
     }
 
     // 1. Calculate Camera Velocity
     const camera = state.camera as unknown as CameraLike
     const currentPos: Vector3Like = camera.position.clone()
-    if (lastCameraPos) {
-        const dist = camera.position.distanceTo(lastCameraPos)
-        currentVelocity = Number.isFinite(dist) ? dist * 60 : 0 // Normalize to approx units/sec
+    if (audioState.lastCameraPos) {
+        const dist = camera.position.distanceTo(audioState.lastCameraPos)
+        audioState.currentVelocity = Number.isFinite(dist) ? dist * 60 : 0 // Normalize to approx units/sec
     }
-    lastCameraPos = currentPos
+    audioState.lastCameraPos = currentPos
 
     // Smooth velocity to avoid audio pops
-    // Guard: ensure smoothVelocity never becomes NaN/Infinity
-    if (!Number.isFinite(smoothVelocity)) smoothVelocity = 0
-    smoothVelocity += (currentVelocity - smoothVelocity) * 0.1
-    if (!Number.isFinite(smoothVelocity)) smoothVelocity = 0
+    // Guard: ensure audioState.smoothVelocity never becomes NaN/Infinity
+    if (!Number.isFinite(audioState.smoothVelocity)) audioState.smoothVelocity = 0
+    audioState.smoothVelocity += (audioState.currentVelocity - audioState.smoothVelocity) * 0.1
+    if (!Number.isFinite(audioState.smoothVelocity)) audioState.smoothVelocity = 0
 
     // 2. Base Density & Path Proximity
     let density = 0.3
@@ -162,60 +170,60 @@ function updateAudio(): void {
 
     // 3. Map to Audio Parameters
     const baseFreq = 55 + clusterFreqOffset
-    const freqMod = smoothVelocity * 50 + density * 20 + pathProximity * 110
+    const freqMod = audioState.smoothVelocity * 50 + density * 20 + pathProximity * 110
     const rawTargetFreq = baseFreq + freqMod
     const targetFreq = Number.isFinite(rawTargetFreq) ? rawTargetFreq : 55
 
     const baseGain = 0.005
-    const gainMod = smoothVelocity * 0.02 + density * 0.01 + pathProximity * 0.03
+    const gainMod = audioState.smoothVelocity * 0.02 + density * 0.01 + pathProximity * 0.03
     const rawTargetGain = Math.min(0.06, baseGain + gainMod)
     const targetGain = Number.isFinite(rawTargetGain) ? rawTargetGain : 0.005
 
-    const rawTargetFilter = 150 + density * 400 + smoothVelocity * 200 + pathProximity * 800
+    const rawTargetFilter = 150 + density * 400 + audioState.smoothVelocity * 200 + pathProximity * 800
     const targetFilter = Number.isFinite(rawTargetFilter) ? rawTargetFilter : 200
 
     // Guard: audio nodes may be null after disposeAudio() races with RAF.
-    if (!mainOsc || !gainNode || !filterNode || !audioCtx) {
-        _audioRafId = requestAnimationFrame(updateAudio)
+    if (!audioState.mainOsc || !audioState.gainNode || !audioState.filterNode || !audioState.audioCtx) {
+        audioState.rafId = requestAnimationFrame(updateAudio)
         return
     }
-    mainOsc.frequency.setTargetAtTime(targetFreq, audioCtx.currentTime, 0.1)
-    gainNode.gain.setTargetAtTime(targetGain, audioCtx.currentTime, 0.1)
-    filterNode.frequency.setTargetAtTime(targetFilter, audioCtx.currentTime, 0.1)
+    audioState.mainOsc.frequency.setTargetAtTime(targetFreq, audioState.audioCtx.currentTime, 0.1)
+    audioState.gainNode.gain.setTargetAtTime(targetGain, audioState.audioCtx.currentTime, 0.1)
+    audioState.filterNode.frequency.setTargetAtTime(targetFilter, audioState.audioCtx.currentTime, 0.1)
 
-    _audioRafId = requestAnimationFrame(updateAudio)
+    audioState.rafId = requestAnimationFrame(updateAudio)
 }
 
 export function setAudioMuted(muted: boolean): void {
-    if (!gainNode || !audioCtx) return
-    gainNode.gain.setTargetAtTime(muted ? 0 : 0.01, audioCtx.currentTime, 0.2)
+    if (!audioState.gainNode || !audioState.audioCtx) return
+    audioState.gainNode.gain.setTargetAtTime(muted ? 0 : 0.01, audioState.audioCtx.currentTime, 0.2)
 }
 
 /**
  * 10/10 Polish: High-frequency 'shimmer' sound for corridor animations.
  */
 export function triggerCorridorBloom(): void {
-    if (!audioCtx || audioCtx.state === 'suspended') return
+    if (!audioState.audioCtx || audioState.audioCtx.state === 'suspended') return
 
     try {
-        const osc = audioCtx.createOscillator()
-        const g = audioCtx.createGain()
+        const osc = audioState.audioCtx.createOscillator()
+        const g = audioState.audioCtx.createGain()
 
         osc.type = 'sine'
         const freqWithRandom = 880 + Math.random() * 440
-        osc.frequency.setValueAtTime(freqWithRandom, audioCtx.currentTime)
+        osc.frequency.setValueAtTime(freqWithRandom, audioState.audioCtx.currentTime)
         const endFreqWithRandom = 1760 + Math.random() * 880
-        osc.frequency.exponentialRampToValueAtTime(endFreqWithRandom, audioCtx.currentTime + 0.4)
+        osc.frequency.exponentialRampToValueAtTime(endFreqWithRandom, audioState.audioCtx.currentTime + 0.4)
 
-        g.gain.setValueAtTime(0, audioCtx.currentTime)
-        g.gain.linearRampToValueAtTime(0.012, audioCtx.currentTime + 0.05)
-        g.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + 0.8)
+        g.gain.setValueAtTime(0, audioState.audioCtx.currentTime)
+        g.gain.linearRampToValueAtTime(0.012, audioState.audioCtx.currentTime + 0.05)
+        g.gain.exponentialRampToValueAtTime(0.0001, audioState.audioCtx.currentTime + 0.8)
 
         osc.connect(g)
-        g.connect(audioCtx.destination)
+        g.connect(audioState.audioCtx.destination)
 
         osc.start()
-        osc.stop(audioCtx.currentTime + 0.8)
+        osc.stop(audioState.audioCtx.currentTime + 0.8)
     } catch {
         // Silent fail for transient audio
     }
@@ -240,37 +248,37 @@ export const play = trigger
 export function disposeAudio(): void {
     document.removeEventListener('visibilitychange', handleVisibilityChange)
 
-    if (_audioRafId !== null) {
-        window.cancelAnimationFrame(_audioRafId)
-        _audioRafId = null
+    if (audioState.rafId !== null) {
+        window.cancelAnimationFrame(audioState.rafId)
+        audioState.rafId = null
     }
-    if (mainOsc) {
+    if (audioState.mainOsc) {
         try {
-            mainOsc.stop()
+            audioState.mainOsc.stop()
         } catch {
             // oscillator may already be stopped — safe to ignore
         }
-        mainOsc.disconnect()
-        mainOsc = null
+        audioState.mainOsc.disconnect()
+        audioState.mainOsc = null
     }
-    if (filterNode) {
-        filterNode.disconnect()
-        filterNode = null
+    if (audioState.filterNode) {
+        audioState.filterNode.disconnect()
+        audioState.filterNode = null
     }
-    if (gainNode) {
-        gainNode.disconnect()
-        gainNode = null
+    if (audioState.gainNode) {
+        audioState.gainNode.disconnect()
+        audioState.gainNode = null
     }
-    if (audioCtx && audioCtx.state !== 'closed') {
+    if (audioState.audioCtx && audioState.audioCtx.state !== 'closed') {
         try {
-            audioCtx.close()
+            audioState.audioCtx.close()
         } catch {
             // audioContext may already be closed — safe to ignore
         }
-        audioCtx = null
+        audioState.audioCtx = null
     }
-    lastCameraPos = null
-    currentVelocity = 0
-    smoothVelocity = 0
+    audioState.lastCameraPos = null
+    audioState.currentVelocity = 0
+    audioState.smoothVelocity = 0
     debugWarn('[audio] Reactive scape disposed.')
 }
