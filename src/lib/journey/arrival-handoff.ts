@@ -6,7 +6,7 @@
  * journey-arrival-handoff.js twin.
  */
 import { appState } from '@lib/state/app.svelte'
-const state = appState as any
+const state = appState
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import {
     Group,
@@ -87,7 +87,7 @@ export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: numbe
             fromIndex,
             targetIndex,
             phase: state.strandContinuityState.phase,
-            segmentCount: getLineSegmentCount((group.children as any[])[0]),
+            segmentCount: getLineSegmentCount(group.children[0]),
             endpointCount: 2,
             opacity: material.opacity
         }
@@ -106,7 +106,7 @@ export function syncArrivalHandoffOverlay(): void {
         removeArrivalHandoffOverlay()
         return
     }
-    const existing = (state.arrivalHandoffGroup as any)?.userData || {}
+    const existing = state.arrivalHandoffGroup?.userData || {}
     if (!state.arrivalHandoffGroup || existing.fromIndex !== fromIndex || existing.targetIndex !== targetIndex) {
         buildArrivalHandoffOverlay(fromIndex!, targetIndex!)
     }
@@ -114,7 +114,7 @@ export function syncArrivalHandoffOverlay(): void {
 }
 
 export function updateArrivalHandoffOverlay(): void {
-    const group = state.arrivalHandoffGroup as any
+    const group = state.arrivalHandoffGroup
     const phase = state.strandContinuityState?.phase
     if (!group || !['exploring', 'arrived'].includes(phase)) {
         if (group) removeArrivalHandoffOverlay()

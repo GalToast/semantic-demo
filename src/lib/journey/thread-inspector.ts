@@ -212,10 +212,9 @@ export function renderThreadInspection(
     // `unknown` because ThreadInspectionState has fields beyond the
     // narrower InspectionState that the function expects; this is a
     // type-safe equivalent of the prior `as any` cast.
-    syncInspectedStrandOverlay(
-        inspectionState as unknown as Parameters<typeof syncInspectedStrandOverlay>[0],
-        { surface: options.surface ?? undefined }
-    )
+    syncInspectedStrandOverlay(inspectionState as unknown as Parameters<typeof syncInspectedStrandOverlay>[0], {
+        surface: options.surface ?? undefined
+    })
 
     if (typeof document !== 'undefined' && document.body) {
         document.body.dataset.threadInspectSurface = inspectionState?.active

@@ -150,7 +150,9 @@ export function getJourneyCompassState(): CompassState {
         const hasAnchor: boolean = !!summary
         const clusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Focus'
 
+        // eslint-disable-next-line no-useless-assignment -- branches below overwrite in every reachable case; null is just a TS strict-mode placeholder.
         let primaryAction: CompassAction | null = null
+        // eslint-disable-next-line no-useless-assignment -- branches below overwrite in every reachable case; null is just a TS strict-mode placeholder.
         let secondaryAction: CompassAction | null = null
         let tertiaryAction: CompassAction | null = null
 
@@ -234,11 +236,7 @@ export function getJourneyCompassState(): CompassState {
         // fresh discovery on data reload.
         const pointsLength = appState.points!.length
         const seed = sessionSeed.value
-        if (
-            _cachedIdleIndex < 0 ||
-            _cachedIdlePointsLength !== pointsLength ||
-            _cachedIdleSeed !== seed
-        ) {
+        if (_cachedIdleIndex < 0 || _cachedIdlePointsLength !== pointsLength || _cachedIdleSeed !== seed) {
             _cachedIdleIndex = Math.floor(seededUnit(pointsLength, seed) * pointsLength)
             _cachedIdlePointsLength = pointsLength
             _cachedIdleSeed = seed

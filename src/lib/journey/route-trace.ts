@@ -99,11 +99,11 @@ export function resetRouteTraceDiagnostics(reason: string = 'inactive'): void {
 }
 
 export function removeRouteTraceOverlay(): void {
-    if (!(state as any).routeTraceLines) return
-    if (state.myceliumGroup) state.myceliumGroup.remove((state as any).routeTraceLines)
-    disposeLineObject((state as any).routeTraceLines)
-    ;(state as any).routeTraceLines = null
-    ;(state as any).routeTraceConnectionPairs = []
+    if (!state.routeTraceLines) return
+    if (state.myceliumGroup) state.myceliumGroup.remove(state.routeTraceLines)
+    disposeLineObject(state.routeTraceLines)
+    ;state.routeTraceLines = null
+    ;state.routeTraceConnectionPairs = []
 }
 
 function getRouteEmbodimentIndices(): number[] {
@@ -114,7 +114,7 @@ function getRouteEmbodimentIndices(): number[] {
     }
     if (Number.isFinite(appState.navState.focusedIndex)) push(appState.navState.focusedIndex!)
     ;(appState.navState.walkHistoryIndices || []).forEach(push)
-    const summary = appState.currentSearchSummary as any
+    const summary = appState.currentSearchSummary
     if (summary?.anchorIndex !== undefined) push(summary.anchorIndex)
     ;(summary?.resultIndices || []).slice(0, 7).forEach(push)
     ;(appState.navState.threadCandidates || []).slice(0, 6).forEach((candidate: { index: number }) => push(candidate.index))
@@ -122,11 +122,11 @@ function getRouteEmbodimentIndices(): number[] {
 }
 
 export function setRouteChoreographyPhase(phase: string = 'overview', details: Record<string, unknown> = {}): void {
-    ;(state as any).routeChoreographyState = {
-        ...((state as any).routeChoreographyState || {}),
+    ;state.routeChoreographyState = {
+        ...(state.routeChoreographyState || {}),
         ...details,
         phase,
-        reason: details.reason || (state as any).routeChoreographyState?.reason || 'state',
+        reason: details.reason || state.routeChoreographyState?.reason || 'state',
         startedAt: performance.now()
     }
     if (document.body?.dataset) {
@@ -200,16 +200,16 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
         material.uniforms.baseOpacity!.value = 0.34
         material.uniforms.opacity!.value = 0.34
     }
-    ;(state as any).routeTraceLines = new LineSegments(geometry, material)
-    ;(state as any).routeTraceConnectionPairs = indices
+    ;state.routeTraceLines = new LineSegments(geometry, material)
+    ;state.routeTraceConnectionPairs = indices
         .filter((index: number) => index !== anchorIndex)
         .map((index: number, order: number) => ({ a: anchorIndex, b: index, side: (order % 3) - 1 }))
-    state.myceliumGroup!.add((state as any).routeTraceLines)
+    state.myceliumGroup!.add(state.routeTraceLines)
     state.withMutation(() => {
         state.routeTraceDiagnostics = {
             active: true,
-            reason: options.reason || (state as any).routeChoreographyState?.reason || 'route',
-            phase: document.body?.dataset?.journeyPhase || (state as any).routeChoreographyState?.phase || 'focus',
+            reason: options.reason || state.routeChoreographyState?.reason || 'route',
+            phase: document.body?.dataset?.journeyPhase || state.routeChoreographyState?.phase || 'focus',
             indexCount: indices.length,
             edgeCount,
             segmentCount,
@@ -224,8 +224,8 @@ function _refreshRouteTraceOverlayRaw(options: Record<string, unknown> = {}): vo
 }
 
 export function updateRouteTraceOverlayPositions(now: number = performance.now()): void {
-    const line = (state as any).routeTraceLines
-    const pairs = (state as any).routeTraceConnectionPairs || []
+    const line = state.routeTraceLines
+    const pairs = state.routeTraceConnectionPairs || []
     if (!line?.geometry?.attributes?.position || !pairs.length) return
     const positions = line.geometry.attributes.position.array
     let offset = 0
@@ -250,7 +250,7 @@ export function updateRouteTraceOverlayPositions(now: number = performance.now()
     // Update ShaderMaterial uniforms for glow animation
     if (line.material?.uniforms) {
         line.material.uniforms.time.value = now / 1000
-        const targetOpacity = (state as any).semanticDiveMode ? 0.34 : 0.22
+        const targetOpacity = state.semanticDiveMode ? 0.34 : 0.22
         line.material.uniforms.baseOpacity.value = targetOpacity
         line.material.uniforms.opacity.value = targetOpacity
     }
@@ -259,4 +259,4 @@ export function updateRouteTraceOverlayPositions(now: number = performance.now()
     })
 }
 
-export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw as any)
+export const refreshRouteTraceOverlay = debounceRAF(_refreshRouteTraceOverlayRaw)

@@ -233,9 +233,7 @@ export class ThreadSettler {
             : getCurrentTrailFocusIndex(focusedIndex)
 
         const nav = get(navStore)
-        const candidate = (nav.threadCandidates || []).find(
-            (item: { index: number }) => item.index === index
-        )
+        const candidate = (nav.threadCandidates || []).find((item: { index: number }) => item.index === index)
         const records = getBusinessRecords()
         const targetPoint: BusinessRecord | null =
             index >= 0 && index < records.length ? (records[index] ?? null) : null
@@ -253,9 +251,9 @@ export class ThreadSettler {
             'nearby business relationship'
 
         withStateMutation(() => {
-            ;(legacyState as any).pinnedThreadIndex = null
-            ;(legacyState as any).inspectedThreadIndex = null
-            ;(legacyState as any).suppressCanvasFocusUntil =
+            legacyState.pinnedThreadIndex = null
+            legacyState.inspectedThreadIndex = null
+            legacyState.suppressCanvasFocusUntil =
                 typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
         })
 
@@ -274,19 +272,14 @@ export class ThreadSettler {
         renderThreadInspection(null, { force: true, surface: 'idle' })
 
         withStateMutation(() => {
-            ;(legacyState.navState as any).lastTraversalReason = reason
+            legacyState.navState.lastTraversalReason = reason
         })
 
         const preserveNeighborhood =
             legacyState.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood
 
         if (legacyState.currentView === 'map') {
-            focusOnPoint(targetPoint, {
-                fromTraversal: true,
-                appendHistory: !options.restoreHistory,
-                restoreHistory: !!options.restoreHistory,
-                fromIndex: fromIndex ?? undefined
-            } as any)
+            focusOnPoint(targetPoint)
         } else {
             focusOnNode(index, {
                 fromCanvasNode: !!options.fromCanvasNode,
@@ -298,7 +291,7 @@ export class ThreadSettler {
             })
         }
 
-        const nextHistory = copyFiniteIndexHistory((legacyState.navState as any).walkHistoryIndices)
+        const nextHistory = copyFiniteIndexHistory(legacyState.navState.walkHistoryIndices)
         if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && nextHistory.length === 0) {
             nextHistory.push(fromIndex)
         }
@@ -309,20 +302,20 @@ export class ThreadSettler {
             focusedIndex: index,
             mode: 'trail',
             surface: 'focus',
-            trailDepth: Math.max(1, Number((legacyState.navState as any).trailDepth) || 0),
+            trailDepth: Math.max(1, Number(legacyState.navState.trailDepth) || 0),
             walkHistoryIndices: nextHistory,
             lastTraversalReason: reason
         })
         withStateMutation(() => {
-            ;(legacyState as any).focusedNode = index
-            ;(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0)
-            ;(legacyState as any).inspectedThreadIndex = null
-            ;(legacyState as any).pinnedThreadIndex = null
+            legacyState.focusedNode = index
+            legacyState.trailDepth = Math.max(1, Number(legacyState.trailDepth) || 0)
+            legacyState.inspectedThreadIndex = null
+            legacyState.pinnedThreadIndex = null
         })
 
         const reassertThreadTarget = (): void => {
             const point = index >= 0 && index < records.length ? records[index] : null
-            const reassertHistory = copyFiniteIndexHistory((legacyState.navState as any).walkHistoryIndices)
+            const reassertHistory = copyFiniteIndexHistory(legacyState.navState.walkHistoryIndices)
             if (typeof fromIndex === 'number' && Number.isFinite(fromIndex) && reassertHistory.length === 0) {
                 reassertHistory.push(fromIndex)
             }
@@ -331,16 +324,18 @@ export class ThreadSettler {
                 focusedIndex: index,
                 mode: 'trail',
                 surface: 'focus',
-                trailDepth: Math.max(1, Number((legacyState.navState as any).trailDepth) || 0),
+                trailDepth: Math.max(1, Number(legacyState.navState.trailDepth) || 0),
                 walkHistoryIndices: reassertHistory,
                 lastTraversalReason: reason
             })
             withStateMutation(() => {
-                ;(legacyState as any).focusedNode = index
-                ;(legacyState as any).selectedPoint = point || (legacyState as any).selectedPoint
-                ;(legacyState as any).trailDepth = Math.max(1, Number((legacyState as any).trailDepth) || 0)
-                ;(legacyState as any).inspectedThreadIndex = null
-                ;(legacyState as any).pinnedThreadIndex = null
+                legacyState.focusedNode = index
+                legacyState.selectedPoint = (point ||
+                    legacyState.selectedPoint ||
+                    null) as unknown as typeof legacyState.selectedPoint
+                legacyState.trailDepth = Math.max(1, Number(legacyState.trailDepth) || 0)
+                legacyState.inspectedThreadIndex = null
+                legacyState.pinnedThreadIndex = null
             })
             syncFocusStage(point || legacyState.selectedPoint || null)
             syncSemanticDiveUi()

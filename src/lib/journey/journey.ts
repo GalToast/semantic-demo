@@ -5,8 +5,7 @@
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
 
-import { appState } from '@lib/state/app.svelte'
-const state = appState as any
+import { appState as state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 
 import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
@@ -99,7 +98,6 @@ import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from './point-color'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/orchestration/lifecycle'
-
 
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
     const index = typeof payload.index === 'number' ? payload.index : NaN
