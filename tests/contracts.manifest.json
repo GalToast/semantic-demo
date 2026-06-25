@@ -196,6 +196,7 @@
             "description": "UI quality, interaction, and CSS ownership contracts that may write tmp reports.",
             "contracts": [
                 "css-manifest-contract.mjs",
+                "css-minification-build-output-contract.mjs",
                 "design-token-doc-contract.mjs",
                 "surface-style-matrix-contract.mjs",
                 "focus-stage-css-ownership-contract.mjs",
