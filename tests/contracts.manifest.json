@@ -51,7 +51,8 @@
                 "mycelium-logic-contract.mjs",
                 "node-interaction-contract.spec.js",
                 "dynamic-lighting-contract.spec.js",
-                "focus-transition-contract.mjs"
+                "focus-transition-contract.mjs",
+                "camera-state-owner-contract.mjs"
             ]
         },
         "browser": {
