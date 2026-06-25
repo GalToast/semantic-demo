@@ -48,6 +48,8 @@ import {
     syncSelectedCardContentVariant
 } from '@lib/focus/stage-renderer'
 import { applyClusterUiAccent } from '@lib/ui/cluster-ui-accent'
+import type { Point } from '@lib/state/state-types'
+import type { BusinessNamePresentation } from '@lib/utils/dom-formatters'
 import { isMapSummarySurface } from '@lib/utils/environment'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
@@ -59,7 +61,7 @@ import { appState } from '@lib/state/app.svelte'
 interface SelectedCardAdapter {
     getStrandArrivalNote: () => string
     updateTraversalUi: () => void
-    hydrateLeadContext: (point: any, options?: Record<string, unknown>) => void
+    hydrateLeadContext: (point: Point, options?: Record<string, unknown>) => void
 }
 
 interface UpdateSelectedBusinessOptions {
@@ -97,8 +99,8 @@ export function initJourneySelectedCard(deps: Record<string, unknown> = {}): voi
         EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED,
         sync
     )
-    subscribeKeyed('journey-selected-card:exploration-focus-sync', EVENTS.EXPLORATION_FOCUS_SYNC, (payload: any) => {
-        updateSelectedBusiness(payload.point, payload.options || {})
+    subscribeKeyed('journey-selected-card:exploration-focus-sync', EVENTS.EXPLORATION_FOCUS_SYNC, (payload: { point?: unknown; options?: UpdateSelectedBusinessOptions }) => {
+        updateSelectedBusiness((payload.point as Point | null) ?? null, payload.options || {})
     })
 }
 
@@ -114,8 +116,8 @@ export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {
     }
 }
 
-export function syncFocusStage(point: any): void {
-    const points: any[] = Array.isArray(appState.points) ? (appState.points as any[]) : []
+export function syncFocusStage(point: Point | null): void {
+    const points: Point[] = Array.isArray(appState.points) ? appState.points : []
     if (points.length === 0 && point !== null) return
     const stage = document.getElementById('focus-stage')
     const stageCard = stage?.querySelector('.focus-stage-card') as HTMLElement | null
@@ -226,7 +228,7 @@ export function syncFocusStage(point: any): void {
         stage.addEventListener('keydown', keydownHandler)
     }
 
-    const presentation: any = getBusinessNamePresentation(effectivePoint.name)
+    const presentation: BusinessNamePresentation = getBusinessNamePresentation(effectivePoint.name)
     const pageTitle = `Focus: ${presentation.display} | Semantic Explorer`
     const pageDesc =
         sanitizePublicFacingNote(effectivePoint.what) ||
@@ -245,10 +247,10 @@ export function syncFocusStage(point: any): void {
     }
 }
 
-export function updateSelectedBusiness(point: any, options: UpdateSelectedBusinessOptions = {}): void {
+export function updateSelectedBusiness(point: Point | null, options: UpdateSelectedBusinessOptions = {}): void {
     // Push to Svelte store via canonical focusOnPoint (selectedPointStore is now a getter, not a writable)
     if (point) {
-        focusOnPoint(point, { revealCard: true })
+        focusOnPoint(point as unknown as Parameters<typeof focusOnPoint>[0], { revealCard: true })
     }
 
     if (!point) {
@@ -295,7 +297,7 @@ export function updateSelectedBusiness(point: any, options: UpdateSelectedBusine
         setTimeout(() => cascadeBg.classList.remove('active'), 2000)
     }
 
-    const namePresentation: any = getBusinessNamePresentation(point.name)
+    const namePresentation: BusinessNamePresentation = getBusinessNamePresentation(point.name)
     const pageTitle = `${namePresentation.display} | Semantic Explorer`
     const pageDesc = sanitizePublicFacingNote(point.what) || 'Montgomery County business record details.'
     updateDocumentMeta(pageTitle, pageDesc)
