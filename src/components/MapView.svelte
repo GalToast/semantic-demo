@@ -13,8 +13,8 @@
   import { switchView } from '@lib/orchestration/view-controller';
   import { appState } from '@lib/state/app.svelte';
   import { withStateMutation } from '@lib/state/with-state-mutation';
+  import { debugWarn } from '@lib/utils/debug'
   import {
-import { debugWarn } from '@lib/utils/debug'
     centerMapOnRouteAnchor,
     initMap,
     initMapStateSubscriptions,
