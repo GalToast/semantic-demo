@@ -18,7 +18,21 @@
 
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
-import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, Material, MeshPhongMaterial, Points, Group, LineSegments, HemisphereLight, DirectionalLight, InstancedMesh } from 'three'
+import {
+    Scene,
+    PerspectiveCamera,
+    WebGLRenderer,
+    Vector3,
+    FogExp2,
+    Material,
+    MeshPhongMaterial,
+    Points,
+    Group,
+    LineSegments,
+    HemisphereLight,
+    DirectionalLight,
+    InstancedMesh
+} from 'three'
 import type { NodePosition, NavState, ScenePerformanceDiagnostics, Point } from '@lib/state/state-types'
 import type { BusinessRecord } from '@lib/types/business'
 export { getSceneRenderableDiagnostics } from './renderer/renderer-diagnostics'
@@ -74,10 +88,7 @@ import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo } from '@lib/utils/diagnostic-adapter'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
-import {
-    updateRouteTraceOverlayFrame,
-    updateArrivalHandoffOverlayFrame
-} from '@lib/engine/journey-webgl-lazy'
+import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame } from '@lib/engine/journey-webgl-lazy'
 
 // ── Static ../../../js/* imports (COLD — init-only, consumed by ensureModules) ──
 import * as viewControllerMod from '@lib/orchestration/view-controller'
