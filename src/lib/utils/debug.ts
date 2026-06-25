@@ -6,7 +6,18 @@
 
 /// <reference types="vite/client" />
 
-const DEBUG_ENABLED = import.meta.env.DEV || import.meta.env.VITE_DEBUG === 'true';
+// import.meta.env is undefined in Node (test environments), so guard the
+// access. In the browser/Vite build the env is always present.
+const DEBUG_ENABLED = (() => {
+    try {
+        return (
+            (import.meta as { env?: { DEV?: boolean; VITE_DEBUG?: string } }).env?.DEV === true ||
+            (import.meta as { env?: { DEV?: boolean; VITE_DEBUG?: string } }).env?.VITE_DEBUG === 'true'
+        )
+    } catch {
+        return false
+    }
+})()
 
 export function debugWarn(message: string, ...args: unknown[]): void {
     if (DEBUG_ENABLED) {
