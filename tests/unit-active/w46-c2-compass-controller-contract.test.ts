@@ -36,8 +36,14 @@ describe('W46-C2: compass-controller.ts exists and has expected shape', () => {
     })
 
     it('has the orchestration-file JSDoc header', () => {
+        // T-4a (commit e0ac6f25) stripped the historical "Replaces
+        // js/modules/journey-compass-controller.js" porting note from
+        // file headers across the project. The header now contains
+        // only the path + brief description.
         expect(src).toMatch(/@lib\/orchestration\/compass-controller\.ts/)
-        expect(src).toMatch(/Replaces js\/modules\/journey-compass-controller\.js/)
+        expect(src).toMatch(/Execute compass actions based on state/)
+        // Guard: the historical "Replaces" line is intentionally gone
+        expect(src).not.toMatch(/Replaces js\/modules\/journey-compass-controller/)
     })
 
     it('imports from canonical store sources', () => {
