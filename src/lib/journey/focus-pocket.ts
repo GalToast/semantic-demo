@@ -246,8 +246,8 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
                 }
             )
             appState.withMutation(() => {
-                ;(appState as unknown as Record<string, unknown>).nodesAreSettling = true
-                ;(appState as unknown as Record<string, unknown>).autoRotate = false
+                appState.nodesAreSettling = true
+                appState.autoRotate = false
             })
         }
     }
@@ -255,8 +255,8 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     const focusPos = originalPositions?.[index]
     if (!focusPos) {
         appState.withMutation(() => {
-            ;(appState as unknown as Record<string, unknown>).nodesAreSettling = false
-            ;(appState as unknown as Record<string, unknown>).autoRotate = true
+            appState.nodesAreSettling = false
+            appState.autoRotate = true
         })
         return false
     }
@@ -331,8 +331,8 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             viewportProfile: (fallbackPocket.viewportProfile || viewportProfile) as Record<string, unknown>
         })
         appState.withMutation(() => {
-            ;(appState as unknown as Record<string, unknown>).nodesAreSettling = true
-            ;(appState as unknown as Record<string, unknown>).autoRotate = false
+            appState.nodesAreSettling = true
+            appState.autoRotate = false
         })
         return false
     }
@@ -414,7 +414,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         }
     }
     appState.withMutation(() => {
-        ;(appState as unknown as Record<string, unknown>).nodesAreSettling = true
+        appState.nodesAreSettling = true
     })
     return true
 }
@@ -507,8 +507,8 @@ export function getRuntimeStateSnapshot(): Record<string, unknown> {
         targetPositions: appState.targetPositions,
         pocketMotionByIndex: appState.pocketMotionByIndex,
         pocketTransitionStartedAt: appState.pocketTransitionStartedAt,
-        nodesAreSettling: (appState as unknown as Record<string, unknown>).nodesAreSettling,
-        autoRotate: (appState as unknown as Record<string, unknown>).autoRotate
+        nodesAreSettling: appState.nodesAreSettling,
+        autoRotate: appState.autoRotate
     }
 }
 
