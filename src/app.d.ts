@@ -1,4 +1,5 @@
-/// <reference types="svelte" />
+// Svelte types are imported below as `import type { ComponentType } from 'svelte'`,
+// so the legacy triple-slash ambient reference is no longer required.
 
 /**
  * @/src/app.d.ts — Ambient type declarations for the Svelte project

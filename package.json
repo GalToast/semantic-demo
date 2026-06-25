@@ -5,9 +5,10 @@
     "main": "eslint.config.js",
     "type": "module",
     "scripts": {
-        "lint": "eslint \"{js,tests}/**/*.{js,ts}\"",
-        "lint:fix": "eslint \"{js,tests}/**/*.{js,ts}\" --fix",
+        "lint": "eslint \"{js,tests}/**/*.{js,ts}\" && eslint \"src/**/*.{ts,svelte}\" --max-warnings=9999",
+        "lint:fix": "eslint \"{js,tests}/**/*.{js,ts}\" --fix && eslint \"src/**/*.{ts,svelte}\" --fix --max-warnings=9999",
         "lint:tests": "eslint \"tests/**/*.{js,ts}\" --no-warn-ignored",
+        "lint:src": "eslint \"src/**/*.{ts,svelte}\"",
         "lint:all": "npm run lint",
         "audit:a11y": "node scripts/audit-a11y.mjs",
         "audit:a11y:strict": "node scripts/audit-a11y.mjs --strict",
