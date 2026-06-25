@@ -15,7 +15,7 @@
  * - ../../../ (ensureFocusStageAuxiliaryDom, ensureDiveButton)
  */
 
-import { appState as state } from '@lib/state/app.svelte'
+import { appState, appState as state } from '@lib/state/app.svelte'
 import type { ThreadCandidateLike } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import type { BusinessRecord } from '@lib/types/business'
@@ -169,7 +169,7 @@ export function syncSemanticDiveUi(): void {
     if (insideStatusCopy) {
         insideStatusCopy.textContent = active
             ? hasNextCandidate
-                ? getStepInsideConnectionCopy(nextExploreCandidate, currentFocusIndex) ||
+                ? getStepInsideConnectionCopy(nextExploreCandidate as ThreadCandidateLike, currentFocusIndex) ||
                   'Follow a connection or go back.'
                 : hasWalked
                   ? 'All close links are mapped.'

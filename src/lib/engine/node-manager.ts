@@ -29,7 +29,6 @@ import {
     MeshBasicMaterial,
     Material
 } from 'three'
-import type { BusinessRecord } from '@lib/types/business'
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 import { webglContext } from './webgl-context'

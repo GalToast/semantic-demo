@@ -54,7 +54,7 @@ export function buildAdapterDeps(): AdapterDeps {
             getSelectedBusinessRoleLabel: (point: unknown) => _getSelectedBusinessRoleLabel(point as Point),
             isFieldNodeFocusContext: () => false,
             revealSelectedBusinessCard,
-            describeThreadLensForPoint,
+            describeThreadLensForPoint: (point: unknown) => describeThreadLensForPoint(point as BusinessRecord),
             hydrateLeadContext: (point: unknown) => _hydrateLeadContextLifecycle(point as BusinessRecord | null),
             shouldUseFloatingFocusJourneyOnly,
             setLastCanvasNodePick: (val: unknown) => {

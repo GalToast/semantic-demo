@@ -1,17 +1,5 @@
-interface PostprocessingAPI {
-    setPremiumMode: typeof setPremiumMode
-    updateBloomParams: typeof updateBloomParams
-    updateVignetteParams: typeof updateVignetteParams
-    updateChromaticAberrationParams: typeof updateChromaticAberrationParams
-    setDofEnabled: typeof setDofEnabled
-    isPremiumMode: typeof isPremiumMode
-}
-
-declare global {
-    interface Window {
-        __semanticPostprocessing?: PostprocessingAPI
-    }
-}
+// PostprocessingAPI shape is defined in src/window.d.ts (the canonical
+// declaration for window.__semanticPostprocessing). No local copy needed.
 
 /**
  * three-postprocessing.ts — EffectComposer wrapper for Semantic Explorer.

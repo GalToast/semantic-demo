@@ -119,7 +119,7 @@ export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void {
     refreshSearchResultHierarchyImpl(resultsEl)
 }
 export function getSearchResultStrength(result: unknown, topScore: number): number {
-    return getSearchResultStrengthImpl(result as SearchResult, topScore)
+    return getSearchResultStrengthImpl(result as unknown as any, topScore)
 }
 export function getSearchResultStrengthLabel(order: number, strength: number): string {
     return getSearchResultStrengthLabelImpl(order, strength)

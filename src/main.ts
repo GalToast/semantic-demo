@@ -16,6 +16,8 @@ import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import type { WeatherData } from '@lib/utils/weather'
 import { appState } from '@lib/state/app.svelte.ts'
+// Side-effect: generates and exposes window.__semanticExplorerSessionSeed
+import '@lib/state/session.svelte'
 import type { ViewName, SearchSummary, Point } from '@lib/state/state-types'
 import { appInit } from '@lib/orchestration/app-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'

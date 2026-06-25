@@ -7,9 +7,9 @@
  * never used Color; the WebGL color functions remain in point-color.ts.
  */
 import { appState as state } from '@lib/state/app.svelte'
+import type { BusinessRecord } from '@lib/types/business'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
-import type { BusinessRecord } from '@lib/types/business'
 
 const _state = state
 

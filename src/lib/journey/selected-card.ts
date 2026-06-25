@@ -338,6 +338,6 @@ export function updateSelectedBusiness(
     selectedCardAdapter.updateTraversalUi()
 
     if (!options.skipHydrate && !point.website && !point.email && !point.phone) {
-        void selectedCardAdapter.hydrateLeadContext(point, { refreshSelected: true })
+        void selectedCardAdapter.hydrateLeadContext(point as BusinessRecord, { refreshSelected: true })
     }
 }

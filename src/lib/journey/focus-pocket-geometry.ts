@@ -93,8 +93,8 @@ export function getFocusConstellationMotif(index: number): ConstellationMotif {
     const motifs = state.FOCUS_CONSTELLATION_MOTIFS || FOCUS_CONSTELLATION_MOTIFS
     const motif = motifs[motifKey] || motifs.market || FOCUS_CONSTELLATION_MOTIFS.market
     return {
-        key,
         ...(motif as unknown as ConstellationMotif),
+        key,
         seed: (point.cluster ?? 0) * 0.41 + (index % 11) * 0.07
     }
 }

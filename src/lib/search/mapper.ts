@@ -51,7 +51,7 @@ interface Point {
     [key: string]: unknown
 }
 
-interface SearchResult {
+export interface SearchResult {
     point: Point
     index: number
     score: number

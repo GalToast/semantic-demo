@@ -26,7 +26,7 @@ function parseHexColor(hexColor: string | null | undefined): RgbColor | null {
     }
 }
 
-function getPointClusterIndex(point: BusinessRecord): number | null {
+function getPointClusterIndex(point: BusinessRecord | Point): number | null {
     const cluster = Number(point?.cluster)
     return Number.isFinite(cluster) ? Math.abs(Math.trunc(cluster)) : null
 }
@@ -42,7 +42,7 @@ export function applyClusterUiAccent(
     if (!element) return null
     if (!point) return null
 
-    const clusterIndex = getPointClusterIndex(point)
+    const clusterIndex = getPointClusterIndex(point as BusinessRecord)
     const colors = Array.isArray(state.COLORS) ? state.COLORS : []
     const hexColor = clusterIndex !== null && colors.length ? colors[clusterIndex % colors.length] : null
     const rgb = parseHexColor(hexColor)

@@ -1,10 +1,14 @@
 // connection-analysis-adapter.ts
 // TypeScript shadow of connection-analysis-adapter.js
 // Thin adapter boundary: decouples connection-analysis.js from raw global DOM ids and raw state shape.
+//
+// DOM elements are resolved through the Svelte 5 state-class in app.svelte.ts,
+// so this file no longer needs the legacy local DOM helpers.
+// `getConnectionStateSnapshot` is kept for the render-state contract test
+// (tests/connection-analysis-render-state-contract.mjs).
 
 import { appState as _state } from '@lib/state/app.svelte'
 
-const state = _state
 import type { BusinessRecord } from '@lib/types/business'
 
 /**
@@ -16,40 +20,8 @@ export function getConnectionStateSnapshot(): {
     currentSearchSummary: unknown
 } {
     return {
-        focusedNode: state.focusedNode,
-        points: state.points,
-        currentSearchSummary: state.currentSearchSummary
+        focusedNode: _state.focusedNode,
+        points: _state.points as unknown as BusinessRecord[],
+        currentSearchSummary: _state.currentSearchSummary
     }
-}
-
-/**
- * Returns DOM element by id.
- */
-export function getElementById(id: string): Element | null {
-    return document.getElementById(id)
-}
-
-/** summary-text: shown on early-return when no search/focus is available */
-export function getSummaryTextEl(): HTMLElement | null {
-    return document.getElementById('summary-text')
-}
-
-/** semantic-summary-card: receives is-synthesizing class during load */
-export function getSummaryCardEl(): HTMLElement | null {
-    return document.getElementById('semantic-summary-card')
-}
-
-/** summary-gemma-story: toggled visible/hidden during load */
-export function getStoryNoteEl(): HTMLElement | null {
-    return document.getElementById('summary-gemma-story')
-}
-
-/** summary-gemma-story-text: populated with story text or error message */
-export function getStoryTextEl(): HTMLElement | null {
-    return document.getElementById('summary-gemma-story-text')
-}
-
-/** summary-gemma-story-source: populated with source name / cache age info */
-export function getStorySourceEl(): HTMLElement | null {
-    return document.getElementById('summary-gemma-story-source')
 }
