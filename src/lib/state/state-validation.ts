@@ -35,26 +35,24 @@ export const VALID_PANEL_SURFACES = new Set<string>([
 
 export const VALID_SEARCH_STATUS = new Set<string>([
     'idle',
-    'typing',
-    'submitted',
-    'loading',
-    'success',
-    'error',
-    'no-results'
+    'searching',
+    'focusing',
+    'results',
+    'empty',
+    'error'
 ])
 
-export const VALID_LOADING_PHASES = new Set<string>([
-    'records',
-    'clusters',
-    'semantic-threads',
-    'route-trace',
-    'journey-chrome',
-    'complete'
+export const VALID_LOADING_PHASES = new Set<string>(['records', 'scene', 'restore', 'launch'])
+
+export const VALID_SEMANTIC_LANE_STATES = new Set<string>(['checking', 'healthy', 'degraded', 'offline'])
+
+export const VALID_FOCUS_TRANSITION_MODES = new Set<string>([
+    'idle',
+    'entering',
+    'settling',
+    'inside',
+    'exiting'
 ])
-
-export const VALID_SEMANTIC_LANE_STATES = new Set<string>(['checking', 'idle', 'warming', 'active', 'cooling', 'error'])
-
-export const VALID_FOCUS_TRANSITION_MODES = new Set<string>(['idle', 'entering', 'settling', 'exiting'])
 
 export const VALID_MYCELIUM_MODES = new Set<string>([
     'default',
@@ -66,23 +64,9 @@ export const VALID_MYCELIUM_MODES = new Set<string>([
     'bridge'
 ])
 
-export const VALID_TERRAIN_HANDOFF_PHASES = new Set<string>([
-    'idle',
-    'prelude',
-    'flying',
-    'landing',
-    'settling',
-    'complete'
-])
+export const VALID_TERRAIN_HANDOFF_PHASES = new Set<string>(['idle', 'prelude', 'transition', 'settle'])
 
-export const VALID_ROUTE_EXPLORATION_PHASES = new Set<string>([
-    'idle',
-    'starting',
-    'building',
-    'active',
-    'fading',
-    'complete'
-])
+export const VALID_ROUTE_EXPLORATION_PHASES = new Set<string>(['idle', 'searching', 'focusing'])
 
 export const VALID_ROUTE_CHOREOGRAPHY_PHASES = new Set<string>([
     'overview',
@@ -93,7 +77,14 @@ export const VALID_ROUTE_CHOREOGRAPHY_PHASES = new Set<string>([
     'trail'
 ])
 
-export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>(['idle', 'starting', 'flying', 'arriving', 'settling'])
+export const VALID_STRAND_CONTINUITY_PHASES = new Set<string>([
+    'idle',
+    'preview',
+    'pinned',
+    'exploring',
+    'arrived',
+    'returning'
+])
 
 export const VALID_FOCUS_ORBIT_SLACK_PHASES = new Set<string>(['idle', 'active', 'settling'])
 
@@ -131,7 +122,17 @@ export const VALID_COMPOSITION_SEMANTIC_DIVE_STATES = new Set<string>(['inactive
 
 export const VALID_COMPOSITION_SEARCH_GLOW_STATES = new Set<string>(['inactive', 'active', 'fading'])
 
-export const VALID_DEMO_PHASES = new Set<string>(['IDLE', 'ARRIVAL', 'EXPLORATION', 'FOCUS', 'COMPLETION', 'RESET'])
+export const VALID_DEMO_PHASES = new Set<string>([
+    'IDLE',
+    'GLIDING',
+    'ARRIVED',
+    'CARD_VISIBLE',
+    'PULLBACK',
+    'WIDE_VIEW',
+    'RETURNING',
+    'COMPLETE',
+    'CANCELLED'
+])
 
 export const VALID_WEATHER_SOURCE_STRINGS = new Set<string>([
     'open-meteo',
