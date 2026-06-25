@@ -8,26 +8,27 @@
  * are imported via wildcards.
  */
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 // --- Catch-all wildcards for @lib/* ---
+// (the `any` types below are intentional: this file is a runtime path-alias
+// fallback for unresolvable @lib/* imports; the no-explicit-any rule is
+// disabled project-wide via eslint.config.js)
 
 declare module '@lib/stores/*.svelte' {
-  const mod: any;
-  export default mod;
+    const mod: any
+    export default mod
 }
 
 declare module '@lib/*.svelte' {
-  const mod: any;
-  export default mod;
+    const mod: any
+    export default mod
 }
 
 declare module '@lib/*/*.svelte' {
-  const mod: any;
-  export default mod;
+    const mod: any
+    export default mod
 }
 
 declare module '@lib/*' {
-  const mod: any;
-  export default mod;
+    const mod: any
+    export default mod
 }

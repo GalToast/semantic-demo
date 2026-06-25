@@ -91,13 +91,11 @@ export function buildLegend(): void {
         .filter(([, count]) => count > 0)
         .sort((a, b) => b[1] - a[1] || a[0] - b[0])
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const guide = appState.semanticGuideState.config as Record<string, any> | null
     const guideTitle = guide ? getSemanticGuideTitle(guide) : 'Read the scene'
     const guideNote: string =
         (guide?.text as string) ||
         'Neighborhood colors group records by shared language, trade, civic role, and business texture.'
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const activeCluster = getActiveClusterFilter()
 
     // Clear and rebuild with DOM API (avoids innerHTML slop warning)
@@ -178,7 +176,6 @@ export function buildLegend(): void {
 
     for (const [cluster, count] of rows) {
         const active = activeCluster !== null && activeCluster === cluster
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const colors = CONFIG.COLORS as string[]
         const color = colors[cluster % colors.length] || '#4ecdc4'
 
@@ -216,7 +213,6 @@ export function buildLegend(): void {
 }
 
 export function updateLegendGuideState(): void {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const guide = appState.semanticGuideState.config as Record<string, any> | null
     if (!guide) {
         if (isLegendPanelOpen()) closeLegendPanel()
@@ -294,7 +290,6 @@ export function buildCanvasColorLegend(): void {
     ctx.scale(dpr, dpr)
     ctx.clearRect(0, 0, width, height)
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const colors = CONFIG.COLORS as string[]
     const activeCluster = getActiveClusterFilter()
     let x = 0

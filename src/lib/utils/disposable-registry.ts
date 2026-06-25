@@ -35,7 +35,8 @@ function callDispose(d: DisposeLike): void {
     if (typeof d === 'function') {
         d()
     } else {
-        // @ts-ignore -- defensive
+        // Defensive: TS already narrows `d` to `{ dispose(): void }` here, but
+        // the runtime check keeps this safe for union members without dispose().
         if (d && typeof d.dispose === 'function') {
             d.dispose()
         }
@@ -68,7 +69,6 @@ export class DisposableRegistry {
     add(fn: DisposeLike): void {
         if (this.disposed && this.warnAfterDispose) {
             if (import.meta.env.DEV) {
-                // eslint-disable-next-line no-console
                 console.warn(`[${this.label}] Adding disposable after disposeAll() — leak risk`, fn)
             }
         }
@@ -133,7 +133,6 @@ export class DisposableRegistry {
                 callDispose(item)
             } catch (err) {
                 if (import.meta.env.DEV) {
-                    // eslint-disable-next-line no-console
                     console.warn(`[${this.label}] Disposable threw during cleanup:`, err)
                 }
             }
