@@ -1,4 +1,4 @@
-import type { AdapterDeps, NeighborCandidate, Point3D } from '@lib/orchestration/adapters'
+import type { AdapterDeps, NeighborCandidate } from '@lib/orchestration/adapters'
 import type { ViewName } from '@lib/orchestration/view-controller'
 import type { SwitchViewOptions } from '@lib/orchestration/view-controller'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
@@ -77,21 +77,10 @@ export function buildAdapterDeps(): AdapterDeps {
                 _hydrateLeadContextLifecycle(point as BusinessRecord | null)
         },
         threadInspector: {
-            summarizeNeighborReason: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D): string =>
-                // Cast: thread-inspector-adapter exposes a loose Point3D shape;
-                // thread-settler's summarizeNeighborReason takes BusinessRecord | null.
-                // The point/focusPoint params are unused in the body — bridge only.
-                summarizeNeighborReason(
-                    candidate,
-                    point as unknown as BusinessRecord,
-                    focusPoint as unknown as BusinessRecord
-                ),
-            getInsideRelationshipLabel: (candidate: NeighborCandidate, point: Point3D, focusPoint: Point3D): string =>
-                getInsideRelationshipLabel(
-                    candidate,
-                    point as unknown as BusinessRecord,
-                    focusPoint as unknown as BusinessRecord
-                ),
+            summarizeNeighborReason: (candidate: NeighborCandidate): string =>
+                summarizeNeighborReason(candidate),
+            getInsideRelationshipLabel: (candidate: NeighborCandidate): string =>
+                getInsideRelationshipLabel(candidate),
             getCurrentTrailFocusIndex: () => getCurrentTrailFocusIndex(mutableAppState.navState?.focusedIndex ?? null)
         },
         refreshCompositionState,

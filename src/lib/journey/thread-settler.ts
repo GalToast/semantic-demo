@@ -129,9 +129,7 @@ export function summarizeNeighborReason(
         roleReason?: string
         sameCity?: boolean
         sameStatus?: boolean
-    } = {},
-    _point?: BusinessRecord | null,
-    _focusPoint?: BusinessRecord | null
+    } = {}
 ): string {
     if (!candidate || Object.keys(candidate).length === 0) {
         return 'Nearby cloud stop.'
@@ -177,9 +175,7 @@ export function getInsideRelationshipLabel(
         relationshipRole?: string
         sameCity?: boolean
         sameStatus?: boolean
-    } = {},
-    _point?: BusinessRecord | null,
-    _focusPoint?: BusinessRecord | null
+    } = {}
 ): string {
     if (!candidate || Object.keys(candidate).length === 0) return 'Nearby connection'
 
@@ -238,15 +234,10 @@ export class ThreadSettler {
         const records = getBusinessRecords()
         const targetPoint: BusinessRecord | null =
             index >= 0 && index < records.length ? (records[index] ?? null) : null
-        const fromPoint =
-            fromIndex !== null && fromIndex >= 0 && fromIndex < records.length ? (records[fromIndex] ?? null) : null
-
         const reason =
             options.reason ||
             summarizeNeighborReason(
-                candidate && typeof candidate === 'object' ? candidate : {},
-                targetPoint,
-                fromPoint
+                candidate && typeof candidate === 'object' ? candidate : {}
             ) ||
             (candidate && typeof candidate === 'object' ? candidate.reason : null) ||
             'nearby business relationship'
