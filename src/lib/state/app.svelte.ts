@@ -45,7 +45,19 @@ import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
  * and matches the local cast in engine/map-state.ts.
  */
 type LeafletLayer = Record<string, unknown> | null
-import type { Scene, Points, PointsMaterial, InstancedMesh, Material, LineSegments, Group, Mesh, Sprite, HemisphereLight, DirectionalLight } from 'three'
+import type {
+    Scene,
+    Points,
+    PointsMaterial,
+    InstancedMesh,
+    Material,
+    LineSegments,
+    Group,
+    Mesh,
+    Sprite,
+    HemisphereLight,
+    DirectionalLight
+} from 'three'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
@@ -279,6 +291,11 @@ class AppState {
     })
     routeTraceLines = $state<object | null>(null)
     routeTraceConnectionPairs = $state<Array<{ a: number; b: number; side: number }>>([])
+    arrivalHandoffGroup = $state<import('three').Group | null>(null)
+    semanticThreadsStatus = $state<string>('idle')
+    semanticThreadsLoadPromise = $state<Promise<unknown> | null>(null)
+    semanticThreadsRetryTimer = $state<ReturnType<typeof setTimeout> | null>(null)
+    semanticThreadsRetryAttempt = $state<number>(0)
 
     // ==== CONFIGURATION CONSTANTS ====
     readonly MAP_HANDOFF_PRELUDE_MS = 430
