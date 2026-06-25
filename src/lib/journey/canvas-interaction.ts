@@ -6,7 +6,6 @@
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */
 import { appState } from '@lib/state/app.svelte'
-import type { GeoPoint } from '@lib/utils/geo-data'
 import { focusOnNode, noteSceneInteraction, releaseFocusCameraAssist } from '@lib/engine/camera-controls'
 import {
     initJourneyCanvasInteractionAdapter,
@@ -88,15 +87,8 @@ export function ensureCanvasNodeInteractionBindings(): void {
                 const { walkThreadNeighbor, summarizeNeighborReason } = canvasInteractionAdapter
                 const threadOk = walkThreadNeighbor(candidate.index, { force: true })
                 if (threadOk) {
-                    const points = appState.points as unknown as GeoPoint[]
-                    const candidatePoint = points[candidate.index] ?? null
-                    const focusIndex = appState.navState?.focusedIndex
-                    const focusPoint =
-                        focusIndex != null && focusIndex >= 0 && focusIndex < points.length ? points[focusIndex] : null
                     const reason = summarizeNeighborReason(
-                        candidate as unknown as Record<string, unknown>,
-                        candidatePoint as unknown as Record<string, unknown> | null,
-                        focusPoint as unknown as Record<string, unknown> | null
+                        candidate as unknown as Record<string, unknown>
                     )
                     setCanvasFieldHover(
                         {

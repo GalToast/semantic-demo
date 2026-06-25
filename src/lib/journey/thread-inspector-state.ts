@@ -126,7 +126,7 @@ export function getThreadInspectionState(
     const candidateObj: ThreadCandidateRef = (
         candidate && typeof candidate === 'object' ? candidate : { index: candidateIndex ?? 0, source: '', reason: '' }
     ) as ThreadCandidateRef
-    const reason = active ? summarizeNeighborReason(candidateObj, point, focusPoint) : ''
+    const reason = active ? summarizeNeighborReason(candidateObj) : ''
     const relationshipRole = active ? normalizeRelationshipRole(candidateObj.relationshipRole) : ''
     const relationshipTitle = active && relationshipRole ? getRelationshipRoleLabel(relationshipRole, 'title') : ''
     const role = active
@@ -153,7 +153,7 @@ export function getThreadInspectionState(
                 : 'idle'
     const cleanReason = stripTerminalPunctuation(reason)
     const displayReason =
-        active && reason.includes('...') ? getInsideRelationshipLabel(candidateObj, point, focusPoint) : cleanReason
+        active && reason.includes('...') ? getInsideRelationshipLabel(candidateObj) : cleanReason
     const rawCopy = active
         ? journeyPhase === 'exploring'
             ? `${displayReason}. Following this connection into the next neighborhood.`
@@ -460,11 +460,7 @@ export function exploreThreadNeighbor(
         candidate && typeof candidate === 'object' ? candidate : { index, source: '', reason: '' }
     ) as ThreadCandidateRef
     const reason =
-        summarizeNeighborReason(
-            candidateObj,
-            targetPoint,
-            Number.isFinite(fromIndex) && fromIndex! >= 0 && fromIndex! < pts.length ? pts[fromIndex!] : null
-        ) ||
+        summarizeNeighborReason(candidateObj) ||
         candidateObj.reason ||
         options.reason ||
         'nearby business relationship'

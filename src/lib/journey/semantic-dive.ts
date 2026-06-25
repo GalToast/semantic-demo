@@ -18,7 +18,6 @@
 import { appState, appState as state } from '@lib/state/app.svelte'
 import type { ThreadCandidateLike } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
-import type { BusinessRecord } from '@lib/types/business'
 import { cleanOptionalValue, formatBusinessName } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
 import { getNextExploreCandidateForIndex } from './thread-model'
@@ -52,19 +51,14 @@ function getShortConnectionCue(reason: string | unknown): string {
     return truncateDiveStatusCopy(reasonText, isCompactFocusStageViewport() ? 24 : 32).replace(/\.\.\.$/, '')
 }
 
-function getStepInsideConnectionCopy(candidate: ThreadCandidateLike, focusIndex: number | null): string | null {
+function getStepInsideConnectionCopy(candidate: ThreadCandidateLike, _focusIndex?: number | null): string | null {
     if (!candidate || !Number.isFinite(candidate.index)) return null
     const point = appState.points?.[candidate.index] || null
     if (!point) return null
-    const focusPoint = Number.isFinite(focusIndex) ? appState.points?.[focusIndex as number] || null : null
     const targetName = truncateDiveStatusCopy(formatBusinessName(point.name || 'next stop'), 42)
     const reason =
         typeof summarizeNeighborReason === 'function'
-            ? summarizeNeighborReason(
-                  candidate,
-                  point as unknown as BusinessRecord,
-                  focusPoint as unknown as BusinessRecord | null
-              )
+            ? summarizeNeighborReason(candidate)
             : candidate.reason
     const cue = getShortConnectionCue(reason)
     if (!cue) return `Next: ${targetName}`

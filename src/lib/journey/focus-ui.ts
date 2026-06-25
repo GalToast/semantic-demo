@@ -26,7 +26,6 @@ import {
 } from '@lib/engine/journey-webgl-lazy'
 import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment'
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles'
-import type { BusinessRecord } from '@lib/types/business'
 import type { StrandContinuityState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 
@@ -183,16 +182,7 @@ export function updateFocusNeighborRail(): void {
         button.dataset.reason = candidate.reason || 'semantic neighbor'
         const name = formatBusinessName(point?.name || 'Nearby business')
         const city = cleanOptionalValue(point?.city) || 'Montgomery County'
-        const focusIdx = nav.focusedIndex
-        const focusPoint =
-            Number.isFinite(focusIdx) && focusIdx! >= 0 && focusIdx! < points.length
-                ? (points[focusIdx!] ?? null)
-                : null
-        const reason = summarizeNeighborReason(
-            candidate,
-            point as unknown as BusinessRecord | null,
-            focusPoint as unknown as BusinessRecord | null
-        )
+        const reason = summarizeNeighborReason(candidate)
         const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')
         const relationshipTitle = getRelationshipRoleLabel(relationshipRole, 'title')
         const reasonLabel = isCompactFocusStageViewport()
@@ -540,11 +530,7 @@ export function updateTraversalUi(): void {
     const nextWalkPoint = nextWalkCandidate ? points[nextWalkCandidate.index] : null
     const nextWalkName = nextWalkPoint ? formatBusinessName(nextWalkPoint.name || 'next business') : null
     const nextWalkReason = nextWalkCandidate
-        ? summarizeNeighborReason(
-              nextWalkCandidate,
-              nextWalkPoint as unknown as BusinessRecord | null,
-              currentFocusPoint as unknown as BusinessRecord | null
-          )
+        ? summarizeNeighborReason(nextWalkCandidate)
         : ''
     if (focusRouteEl)
         focusRouteEl.dataset.state = neighborCount ? (nav.mode === 'trail' ? 'walking' : 'ready') : 'empty'

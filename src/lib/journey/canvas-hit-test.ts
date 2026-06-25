@@ -26,9 +26,7 @@ const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
 
 export interface CanvasInteractionAdapter {
     summarizeNeighborReason: (
-        candidate: Record<string, unknown> | null,
-        candidatePoint: Record<string, unknown> | null,
-        focusPoint: Record<string, unknown> | null
+        candidate: Record<string, unknown> | null
     ) => string
     walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => boolean
     inspectThreadNeighbor: (index: number, options?: Record<string, unknown>) => void
@@ -163,9 +161,6 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
                 screenY <= rect.bottom
             const element = inViewport ? document.elementFromPoint(screenX, screenY) : null
 
-            const candidatePoint = ci >= 0 && ci < points.length ? points[ci] : null
-            const focusPointForReason =
-                focusIndex != null && focusIndex >= 0 && focusIndex < points.length ? points[focusIndex] : null
             const focusPos = focusIndex != null ? nodePositions[focusIndex] : undefined
             const distFocus =
                 focusIndex != null && focusPos
@@ -180,9 +175,7 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
             return {
                 index: ci,
                 reason: canvasInteractionAdapter.summarizeNeighborReason(
-                    candidate,
-                    candidatePoint as unknown as Record<string, unknown> | null,
-                    focusPointForReason as unknown as Record<string, unknown> | null
+                    candidate
                 ),
                 source: candidate.source as string,
                 screenX,
