@@ -30,7 +30,7 @@ export function bindSuggestionControls(): void {
         }
 
         setTimeout(() => {
-            const eligible = state.points.filter((p: BusinessRecord) => p && p.status !== 'disqualified')
+            const eligible = state.points.filter((p) => p && p.status !== 'disqualified')
             if (!eligible.length) {
                 const summaryEl = document.getElementById('summary-text')
                 if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
@@ -92,9 +92,9 @@ export function bindSuggestionControls(): void {
             const cluster = state.points[focusedIdx]?.cluster
             if (Number.isFinite(cluster)) {
                 const sameCluster = state.points
-                    .map((p: BusinessRecord, i: number) => ({ p, i }))
+                    .map((p, i) => ({ p, i }))
                     .filter(
-                        ({ p, i }: { p: BusinessRecord; i: number }) => p && p.cluster === cluster && i !== focusedIdx
+                        ({ p, i }: { p: any; i: number }) => p && p.cluster === cluster && i !== focusedIdx
                     )
                 if (sameCluster.length) {
                     const { i } = sameCluster[Math.floor(Math.random() * sameCluster.length)]
@@ -117,7 +117,7 @@ export function bindSuggestionControls(): void {
             if (fp) {
                 let nearest: number | null = null
                 let nearestDist = Infinity
-                state.points.forEach((p: BusinessRecord, i: number) => {
+                state.points.forEach((p, i) => {
                     if (!p || i === focusedIdx) return
                     const dx = p.x - fp.x
                     const dy = p.y - fp.y

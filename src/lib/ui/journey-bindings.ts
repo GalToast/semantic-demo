@@ -27,13 +27,13 @@ export function disposeJourneyBindings(): void {
 
 export function expandNeighborhoodFromCurrentNode(): void {
     const index = state.focusedNode
-    if (!Number.isFinite(index)) return
+    if (typeof index !== 'number' || !Number.isFinite(index)) return
     applyLocalNeighborhoodFocus(index)
 }
 
 export function recenterFocusedNode(): void {
     const index = state.focusedNode
-    if (!Number.isFinite(index)) return
+    if (typeof index !== 'number' || !Number.isFinite(index)) return
     animateCameraToNode(index, { transitionStyle: 'focus' })
 }
 
@@ -152,7 +152,7 @@ export function bindFocusControls(): void {
     // 10/10 Polish: Thread Inspector stable bindings
     bindClick('btn-thread-pin', () => {
         const index = state.inspectedThreadIndex
-        if (!Number.isFinite(index)) return
+        if (typeof index !== 'number' || !Number.isFinite(index)) return
         if (state.pinnedThreadIndex === index) {
             unpinThreadInspection()
         } else {
@@ -175,7 +175,7 @@ export function bindFocusControls(): void {
         event?.preventDefault()
         event?.stopPropagation()
         const index = state.inspectedThreadIndex
-        if (!Number.isFinite(index)) return
+        if (typeof index !== 'number' || !Number.isFinite(index)) return
         const phase = state.strandContinuityState?.phase
         if (index === state.navState.focusedIndex || phase === 'exploring') return
         const activeSurface = (document.body as HTMLElement).dataset.threadInspectSurface
