@@ -159,6 +159,10 @@
     color: #e0f0f0;
     border-color: rgba(78, 205, 196, 0.5);
   }
+  .demo-dismiss:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+  }
   .demo-status {
     font-size: 0.65rem;
     color: rgba(78, 205, 196, 0.4);
