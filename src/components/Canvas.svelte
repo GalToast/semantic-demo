@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { viewport, viewportWidth, viewportHeight, dpr } from '@lib/stores/viewport.svelte.ts';
+  import { viewport, viewportWidth, viewportHeight } from '@lib/stores/viewport.svelte.ts';
   import { completeCameraTransition } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
   import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
@@ -21,14 +21,13 @@
     /** W45-B: callback fired when the 3D scene is fully ready */
     onSceneReady?: () => void;
     /** W45-B: callback fired when the 3D scene fails to initialize */
-    onSceneError?: (message: string) => void;
+    onSceneError?: (_message: string) => void;
   }
 
   let { interactive = true, defer = false, onSceneReady, onSceneError }: Props = $props();
 
   let containerEl: HTMLDivElement | undefined = $state(undefined);
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
-  let mounted = $state(false);
   let overlayVisible = $state(true);
   let canvasReady = $state(false);
   let engineHasInit = $state(false);
@@ -102,7 +101,6 @@
   }
 
   onMount(() => {
-    mounted = true;
     if (!canvasEl) return;
 
     // Fallback: hide overlay after 5 seconds if engine hasn't signalled ready.
@@ -216,7 +214,6 @@
     overlayVisible = !engineLifecycleDestroyed;
     engineLifecycle?.destroyEngine();
     engineLifecycle = null;
-    mounted = false;
     if (overlayTimeout !== undefined) { // audit-ok: onDestroy is a plain hook, not a reactive block
       clearTimeout(overlayTimeout);
       overlayTimeout = undefined;

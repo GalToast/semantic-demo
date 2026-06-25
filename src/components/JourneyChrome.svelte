@@ -20,7 +20,7 @@
   import { buildCompassStatus } from '@lib/stores/compass.svelte.ts';
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus.svelte.ts';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores/index.svelte.ts';
-  import { viewport, isCompact, isMobile, isCompactLandscape, isUltraCompactPortrait } from '@lib/stores/viewport.svelte.ts';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { searchSummary, isSearching } from '@lib/stores/search.svelte';
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
   import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';

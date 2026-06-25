@@ -119,7 +119,7 @@
           ppEnabled = v;
           // Bridge to three-postprocessing module
           const pp = (window as unknown as {
-            __semanticPostprocessing?: { setPremiumMode?: (v: boolean) => void };
+            __semanticPostprocessing?: { setPremiumMode?: (_v: boolean) => void };
           }).__semanticPostprocessing;
           if (pp?.setPremiumMode) {
             pp.setPremiumMode(v);
@@ -141,7 +141,7 @@
         .onChange((v: number) => {
           bloomIntensity = v;
           const pp = (window as unknown as {
-            __semanticPostprocessing?: { updateBloomParams?: (p: Record<string, number>) => void };
+            __semanticPostprocessing?: { updateBloomParams?: (_p: Record<string, number>) => void };
           }).__semanticPostprocessing;
           pp?.updateBloomParams?.({ intensity: v });
         });
@@ -152,7 +152,7 @@
         .onChange((v: number) => {
           bloomThreshold = v;
           const pp = (window as unknown as {
-            __semanticPostprocessing?: { updateBloomParams?: (p: Record<string, number>) => void };
+            __semanticPostprocessing?: { updateBloomParams?: (_p: Record<string, number>) => void };
           }).__semanticPostprocessing;
           pp?.updateBloomParams?.({ luminanceThreshold: v });
         });
@@ -163,7 +163,7 @@
         .onChange((v: number) => {
           bloomRadius = v;
           const pp = (window as unknown as {
-            __semanticPostprocessing?: { updateBloomParams?: (p: Record<string, number>) => void };
+            __semanticPostprocessing?: { updateBloomParams?: (_p: Record<string, number>) => void };
           }).__semanticPostprocessing;
           pp?.updateBloomParams?.({ radius: v });
         });
@@ -174,7 +174,7 @@
         .onChange((v: boolean) => {
           dofEnabled = v;
           const pp = (window as unknown as {
-            __semanticPostprocessing?: { setDofEnabled?: (v: boolean) => void };
+            __semanticPostprocessing?: { setDofEnabled?: (_v: boolean) => void };
           }).__semanticPostprocessing;
           pp?.setDofEnabled?.(v);
           if (import.meta.env.DEV) console.log('[dev-gui] DOF =', v);
