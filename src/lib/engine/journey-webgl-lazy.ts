@@ -128,6 +128,44 @@ export function disposeArrivalHandoffOverlay(): void {
     webglModule.disposeArrivalHandoffOverlay()
 }
 
+// ── route-arrival-overlay-adapter.ts lazy wrappers ─────────────────────────────
+//
+// W44 Phase 4: these were previously consumed via `import * as routeArrivalMod`
+// from three-engine.ts. That static import pulled route-trace.ts + arrival-handoff.ts
+// (and thus the three.js chunk) into the main entry graph. Routing the per-frame
+// calls through this lazy bridge keeps three.js off the mobile cold path.
+
+type RouteArrivalModule = typeof import('@lib/journey/route-arrival-overlay-adapter')
+let routeArrivalModule: RouteArrivalModule | null = null
+let routeArrivalPromise: Promise<RouteArrivalModule> | null = null
+
+function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
+    if (routeArrivalModule) return Promise.resolve(routeArrivalModule)
+    if (!routeArrivalPromise) {
+        routeArrivalPromise = import('@lib/journey/route-arrival-overlay-adapter').then((mod) => {
+            routeArrivalModule = mod
+            return mod
+        })
+    }
+    return routeArrivalPromise
+}
+
+export function updateRouteTraceOverlayFrame(now: number = performance.now()): void {
+    if (!routeArrivalModule) {
+        ensureRouteArrivalModule()
+        return
+    }
+    routeArrivalModule.updateRouteTraceOverlayFrame(now)
+}
+
+export function updateArrivalHandoffOverlayFrame(now: number = performance.now()): void {
+    if (!routeArrivalModule) {
+        ensureRouteArrivalModule()
+        return
+    }
+    routeArrivalModule.updateArrivalHandoffOverlayFrame(now)
+}
+
 // ── thread-inspector-webgl.ts lazy wrappers ────────────────────────────────────
 
 function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/thread-inspector-webgl')> {

@@ -18,7 +18,9 @@
 
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
-import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, Material, MeshPhongMaterial } from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, Vector3, FogExp2, Material, MeshPhongMaterial, Points, Group, LineSegments, HemisphereLight, DirectionalLight, InstancedMesh } from 'three'
+import type { NodePosition, NavState, ScenePerformanceDiagnostics, Point } from '@lib/state/state-types'
+import type { BusinessRecord } from '@lib/types/business'
 export { getSceneRenderableDiagnostics } from './renderer/renderer-diagnostics'
 
 import { webglContext } from '@lib/engine/webgl-context'
@@ -72,6 +74,10 @@ import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo } from '@lib/utils/diagnostic-adapter'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
+import {
+    updateRouteTraceOverlayFrame,
+    updateArrivalHandoffOverlayFrame
+} from '@lib/engine/journey-webgl-lazy'
 
 // ── Static ../../../js/* imports (COLD — init-only, consumed by ensureModules) ──
 import * as viewControllerMod from '@lib/orchestration/view-controller'
@@ -93,7 +99,6 @@ import * as sceneRevealMod from './scene-reveal'
 import * as cameraControlsMod from '@lib/engine/camera-controls'
 import * as myceliumEngineMod from './mycelium-engine'
 import * as inspectedStrandMod from '@lib/journey/inspected-strand-overlay-adapter'
-import * as routeArrivalMod from '@lib/journey/route-arrival-overlay-adapter'
 import * as threeSearchAnimationsMod from './three-search-animations'
 import * as threeInteractionVisualsMod from './three-interaction-visuals'
 
@@ -103,19 +108,19 @@ interface LegacyState {
     scene: Scene | null
     camera: PerspectiveCamera | null
     renderer: WebGLRenderer | null
-    controls: any
-    pointsMesh: any
-    pointsMaterial: any
-    nodeSporeMesh: any
-    nodeSporeHitMesh: any
-    nodeSporeMaterial: any
-    myceliumGroup: any
-    myceliumCoreLines: any
-    myceliumWispyLines: any
-    myceliumBridgeLines: any
-    myceliumConnectionPairs: any
-    hemiLight: any
-    dirLight: any
+    controls: { update(): void; enabled: boolean; target: Vector3; dispose(): void } | null
+    pointsMesh: Points | null
+    pointsMaterial: Material | null
+    nodeSporeMesh: InstancedMesh | null
+    nodeSporeHitMesh: InstancedMesh | null
+    nodeSporeMaterial: Material | null
+    myceliumGroup: Group | null
+    myceliumCoreLines: LineSegments | null
+    myceliumWispyLines: LineSegments | null
+    myceliumBridgeLines: LineSegments | null
+    myceliumConnectionPairs: Array<{ a: number; b: number; layer?: number }>
+    hemiLight: HemisphereLight | null
+    dirLight: DirectionalLight | null
     autoRotate: boolean
     autoRotateSuspended: boolean
     autoRotateResumeDueAt?: number
@@ -123,25 +128,25 @@ interface LegacyState {
     forceAnimate: boolean
     focusedNode: number | null
     trailDepth: number
-    nodePositions: any[]
-    targetPositions: any[]
+    nodePositions: NodePosition[]
+    targetPositions: NodePosition[]
     nodesAreSettling: boolean
-    focusPocketMotionByIndex: any[]
+    focusPocketMotionByIndex: number[]
     hoverHighlightIndex: number
     pulsePhase: number
     weather: { wind_speed_10m?: number }
     myceliumDirty: boolean
-    selectedPoint: any
+    selectedPoint: BusinessRecord | null
     sceneRevealActive: boolean
     searchGlowActive?: boolean
     inspectedThreadIndex?: number | null
     pinnedThreadIndex?: number | null
     sceneRevealCameraStart: Vector3 | null
     sceneRevealCameraEnd: Vector3 | null
-    inspectedStrandGroup: any
-    scenePerformanceDiagnostics: any
-    navState: any
-    points: any[]
+    inspectedStrandGroup: Group | null
+    scenePerformanceDiagnostics: ScenePerformanceDiagnostics | null
+    navState: NavState | null
+    points: Point[]
     [key: string]: unknown
 }
 
@@ -150,7 +155,7 @@ interface WithStateMutationFn {
 }
 
 interface ViewControllerModule {
-    switchView(view: string, options?: any): void
+    switchView(view: string, options?: Record<string, unknown>): void
 }
 
 interface ClusterLabelsModule {
@@ -158,7 +163,7 @@ interface ClusterLabelsModule {
 }
 
 interface FocusPocketModule {
-    applyFocusPocketBreathing(now: number, positions: any[]): boolean
+    applyFocusPocketBreathing(now: number, positions: NodePosition[]): boolean
 }
 
 interface SceneRevealModule {
@@ -202,11 +207,6 @@ interface InspectedStrandModule {
 
 interface FocusAnchorModule {
     disposeFocusAnchorIndicator(): void
-}
-
-interface RouteArrivalModule {
-    updateArrivalHandoffOverlayFrame(now: number): void
-    updateRouteTraceOverlayFrame(now: number): void
 }
 
 interface ThreeSearchAnimationsModule {
@@ -254,7 +254,6 @@ let _mapFlattening: MapFlatteningModule | null = null
 let _webglRestore: WebGLRestoreModule | null = null
 let _inspectedStrand: InspectedStrandModule | null = null
 let _focusAnchor: FocusAnchorModule | null = null
-let _routeArrival: RouteArrivalModule | null = null
 let _threeSearchAnimations: ThreeSearchAnimationsModule | null = null
 let _audioScape: AudioScapeModule | null = null
 let _eventBindings: EventBindingsModule | null = null
@@ -284,7 +283,6 @@ function _ensureModules(): void {
         _webglRestore = webglRestoreMod as unknown as WebGLRestoreModule
         _inspectedStrand = inspectedStrandMod as unknown as InspectedStrandModule
         _focusAnchor = focusAnchorMod as unknown as FocusAnchorModule
-        _routeArrival = routeArrivalMod as unknown as RouteArrivalModule
         _threeSearchAnimations = threeSearchAnimationsMod as unknown as ThreeSearchAnimationsModule
         _audioScape = audioScapeMod as unknown as AudioScapeModule
         _eventBindings = eventBindingsMod as unknown as EventBindingsModule
@@ -442,7 +440,7 @@ function scheduleNextAnimationFrame(continuous: boolean): void {
 }
 
 export function updateCameraViewportOffset() {
-    const camera = (webglContext.camera || appState.camera) as any
+    const camera = webglContext.camera || appState.camera
     if (!camera) return
     const width = window.innerWidth
     const height = window.innerHeight
@@ -464,11 +462,11 @@ export function updateCameraViewportOffset() {
     if (panel && hasContent && panel.classList.contains('active') && width > 768) {
         const rect = panel.getBoundingClientRect()
         const offset = rect.right / 2
-        camera.setViewOffset(width, height, -offset, 0, width, height)
+        camera.setViewOffset?.(width, height, -offset, 0, width, height)
     } else {
-        camera.clearViewOffset()
+        camera.clearViewOffset?.()
     }
-    camera.updateProjectionMatrix()
+    camera.updateProjectionMatrix?.()
 }
 
 // ── Yield helper for breaking up long tasks (W5-T1b / W8) ──────────────────────
@@ -517,11 +515,11 @@ export async function initThreeJS() {
     if (_state) _state.camera = camera
 
     webglContext.renderer = renderer
-    appState.renderer = renderer as any
+    appState.renderer = renderer
     if (_state) _state.renderer = renderer
 
     webglContext.controls = controls
-    appState.controls = controls as any
+    appState.controls = controls
     if (_state) _state.controls = controls
 
     webglContext.hemiLight = hemiLight
@@ -537,7 +535,7 @@ export async function initThreeJS() {
     _sceneRegistry?.disposeAll()
     _sceneRegistry = new DisposableRegistry({ label: 'three-engine' })
 
-    _sceneRegistry.listener(renderer.domElement, 'webglcontextlost', (event: any) => {
+    _sceneRegistry.listener(renderer.domElement, 'webglcontextlost', (event: Event) => {
         event.preventDefault()
         _webglContextLost = true
         pauseRenderLoopTimers({ clearRestoreTimer: true })
@@ -776,7 +774,7 @@ export function cancelAnimate() {
         _state.controls = null
     }
     try {
-        disposeObject3D(scene as any)
+        disposeObject3D(scene)
     } catch (error) {
         debugWarn('[three-engine] disposeObject3D already cleaned up:', error)
     }
@@ -877,7 +875,7 @@ export function animate() {
             ? Math.min(250, Math.max(0, frameNow - _state.scenePerformanceDiagnostics.lastFrameAt))
             : 0
         _withStateMutation?.(() => {
-            if (_state) _state.scenePerformanceDiagnostics.lastFrameAt = frameNow
+            if (_state?.scenePerformanceDiagnostics) _state.scenePerformanceDiagnostics.lastFrameAt = frameNow
         })
 
         _cameraControls?.updateAutoRotateSoftResume(frameNow)
@@ -894,7 +892,7 @@ export function animate() {
         let anyNodeMoved = false
         if (_state?.nodePositions && _state?.targetPositions) {
             const lerpFactor = _state.nodesAreSettling ? 0.14 : 0.08
-            _state.nodePositions.forEach((pos: any, i: number) => {
+            _state.nodePositions.forEach((pos: NodePosition, i: number) => {
                 const target = _state!.targetPositions[i]
                 if (!target) return
                 const dx = target.x - pos.x
@@ -909,10 +907,11 @@ export function animate() {
                 }
             })
 
+            if (!_state) return
             if (_focusPocket?.applyFocusPocketBreathing(frameNow, _state.nodePositions)) {
-                _state.focusPocketMotionByIndex.forEach((_: any, idx: number) => {
+                _state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
                     setNodeSporeInstanceMatrixPort(idx)
-                    if (webglContext.nodeSporeHitMesh && _state!.navState.focusPocketIndices?.includes(idx)) {
+                    if (webglContext.nodeSporeHitMesh && _state.navState?.focusPocketIndices?.includes(idx)) {
                         setNodeSporeInstanceMatrixPort(idx, webglContext.nodeSporeHitMesh)
                     }
                 })
@@ -1011,31 +1010,33 @@ export function animate() {
         if (_state) _state.pulsePhase = (_state.pulsePhase + pulseIncrement) % (Math.PI * 2)
 
         const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
-        const graphProfile = getMyceliumPresentationProfilePort()
+        const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<
+            typeof getMyceliumPresentationProfilePort
+        >
         const semanticDiveThreadScale = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
         if (threadsVisible) {
             if (webglContext.myceliumCoreLines)
                 (webglContext.myceliumCoreLines.material as Material).opacity =
                     (getThreadPulseOpacityPort(
-                        (graphProfile as any).core,
+                        graphProfile.core,
                         Math.sin(_state?.pulsePhase ?? 0),
-                        (graphProfile as any).pulse,
+                        graphProfile.pulse,
                         threadRevealProgress
                     ) ?? 0) * semanticDiveThreadScale
             if (webglContext.myceliumWispyLines)
                 (webglContext.myceliumWispyLines.material as Material).opacity =
                     (getThreadPulseOpacityPort(
-                        (graphProfile as any).wispy,
+                        graphProfile.wispy,
                         Math.sin((_state?.pulsePhase ?? 0) * 0.7),
-                        (graphProfile as any).pulse * 0.36,
+                        graphProfile.pulse * 0.36,
                         threadRevealProgress
                     ) ?? 0) * semanticDiveThreadScale
             if (webglContext.myceliumBridgeLines)
                 (webglContext.myceliumBridgeLines.material as Material).opacity =
                     (getThreadPulseOpacityPort(
-                        (graphProfile as any).bridge,
+                        graphProfile.bridge,
                         Math.sin((_state?.pulsePhase ?? 0) * 0.45),
-                        (graphProfile as any).pulse * 0.28,
+                        graphProfile.pulse * 0.28,
                         threadRevealProgress
                     ) ?? 0) * semanticDiveThreadScale
         } else {
@@ -1062,8 +1063,8 @@ export function animate() {
 
             try {
                 _inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
-                _routeArrival?.updateRouteTraceOverlayFrame(frameNow)
-                _routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)
+                updateRouteTraceOverlayFrame(frameNow)
+                updateArrivalHandoffOverlayFrame(frameNow)
             } catch (overlayErr) {
                 debugWarn('overlay update threw:', overlayErr)
             }
@@ -1098,7 +1099,7 @@ export function animate() {
             }
 
             _withStateMutation?.(() => {
-                if (!_state) return
+                if (!_state?.scenePerformanceDiagnostics) return
                 _state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls
                 _state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles
             })
