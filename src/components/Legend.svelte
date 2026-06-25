@@ -239,6 +239,7 @@
     align-items: center;
     gap: 0.5rem;
     padding: 0.15rem 0;
+    min-height: 44px;
     font-size: 0.7rem;
     color: #b0d0d0;
   }
@@ -262,6 +263,11 @@
   .legend-item {
     cursor: pointer;
     user-select: none;
+  }
+  .legend-item:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+    border-radius: 0.25rem;
   }
   .legend-filtered-badge {
     display: inline-block;
