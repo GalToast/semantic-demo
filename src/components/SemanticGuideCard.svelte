@@ -111,6 +111,7 @@
     background: rgba(78, 205, 196, 0.1);
     color: rgba(224, 240, 240, 0.9);
     padding: 0.45rem 0.6rem;
+    min-height: 44px;
     cursor: pointer;
   }
 
@@ -160,6 +161,7 @@
     font-size: 0.62rem;
     line-height: 1;
     padding: 0.35rem 0.45rem;
+    min-height: 44px;
     cursor: pointer;
   }
   .summary-close:hover {
@@ -190,12 +192,19 @@
     background: rgba(78, 205, 196, 0.07);
     color: rgba(224, 240, 240, 0.84);
     padding: 0.48rem 0.55rem;
+    min-height: 44px;
     text-align: left;
     cursor: pointer;
   }
   .suggestion-btn:hover {
     border-color: rgba(78, 205, 196, 0.34);
     background: rgba(78, 205, 196, 0.12);
+  }
+  .btn-synthesize:focus-visible,
+  .summary-close:focus-visible,
+  .suggestion-btn:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
   }
 
   .suggestion-label {
