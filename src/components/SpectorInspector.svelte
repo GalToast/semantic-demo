@@ -65,7 +65,7 @@
         (mod.default as unknown) ??
         mod;
       const Ctor = candidate as new () => {
-        captureCanvas: (canvas: HTMLCanvasElement) => void;
+        captureCanvas: (_canvas: HTMLCanvasElement) => void;
         pauseCapture: () => void;
         playCapture: () => void;
         getCurrentResult: () => unknown;
@@ -97,12 +97,12 @@
     }
 
     type SpectorHandle = {
-      captureCanvas: (canvas: HTMLCanvasElement, maxFrames?: number, quickCapture?: boolean, fullCapture?: boolean) => void;
+      captureCanvas: (_canvas: HTMLCanvasElement, _maxFrames?: number, _quickCapture?: boolean, _fullCapture?: boolean) => void;
       captureContext: (
-        context: WebGLRenderingContext | WebGL2RenderingContext,
-        maxFrames?: number,
-        quickCapture?: boolean,
-        fullCapture?: boolean,
+        _context: WebGLRenderingContext | WebGL2RenderingContext,
+        _maxFrames?: number,
+        _quickCapture?: boolean,
+        _fullCapture?: boolean,
       ) => void;
       pauseCapture: () => void;
       playCapture: () => void;
@@ -182,7 +182,7 @@
               });
             };
             type SpectorEventHandle = {
-              add: (cb: (...args: unknown[]) => void) => void;
+              add: (_cb: (..._args: unknown[]) => void) => void;
             };
             const spectorWithEvents = spector as unknown as {
               onCapture?: SpectorEventHandle;
@@ -198,11 +198,11 @@
               publishStatus();
               onCapture(capture);
             };
-            spectorWithEvents.onCapture?.add(onCaptureTracked as unknown as (...args: unknown[]) => void);
+            spectorWithEvents.onCapture?.add(onCaptureTracked as unknown as (..._args: unknown[]) => void);
             spectorWithEvents.onError?.add(((err: unknown) => {
               clearTimeout(timeout);
               resolve({ ok: false, reason: 'spector-error', error: String(err) });
-            }) as unknown as (...args: unknown[]) => void);
+            }) as unknown as (..._args: unknown[]) => void);
             // maxFrames=0 means "capture the next frame"
             spector.captureContext(existingCtx, maxFrames, false, false);
           } catch (err) {

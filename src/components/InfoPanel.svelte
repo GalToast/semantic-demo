@@ -19,7 +19,7 @@
     #selected-map, #selected-thread, #selected-trivia
 -->
 <script lang="ts">
-  import { hasFocus, currentSurface, navStore } from '@lib/stores/navigation.svelte.ts';
+  import { currentSurface, navStore } from '@lib/stores/navigation.svelte.ts';
   import { activeResult, searchSummary } from '@lib/stores/search.svelte';
   import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import type { BusinessRecord } from '@lib/types/business';
@@ -44,26 +44,6 @@
   }
 
   let { open = false, content }: Props = $props();
-
-  // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
-
-  const CLUSTER_NAMES: readonly string[] = [
-    'Food & Dining',
-    'Professional Services',
-    'Retail & Shopping',
-    'Health & Medical',
-    'Home & Garden',
-    'Automotive',
-    'Education & Childcare',
-    'Entertainment & Events',
-    'Construction & Trades',
-    'Real Estate',
-    'Nonprofit & Civic',
-    'Technology',
-    'Manufacturing & Industrial',
-    'Financial Services',
-    'Agriculture & Land'
-  ];
 
   // ── Test Compatibility: Read from test-compat store ───────────────────────────
   // Contract tests set up DOM via body data-attrs, synced via syncTestStateFromBody()
@@ -116,11 +96,11 @@
 
   // ── Adapters ──────────────────────────────────────────────────────────────────
 
-  const selectedDetailsAdapter: Record<string, (...args: unknown[]) => unknown> = {
+  const selectedDetailsAdapter: Record<string, (..._args: unknown[]) => unknown> = {
     getSelectedBusinessRoleLabel: () => 'Business',
-    getInterestingBusinessNote: getInterestingBusinessNote as (...args: unknown[]) => unknown,
-    buildSelectedMatchNarrative: buildPointMatchNarrative as (...args: unknown[]) => unknown,
-    describeThreadLensForPoint: describeThreadLensForPoint as (...args: unknown[]) => unknown
+    getInterestingBusinessNote: getInterestingBusinessNote as (..._args: unknown[]) => unknown,
+    buildSelectedMatchNarrative: buildPointMatchNarrative as (..._args: unknown[]) => unknown,
+    describeThreadLensForPoint: describeThreadLensForPoint as (..._args: unknown[]) => unknown
   };
 
   const COPY = {
@@ -306,8 +286,9 @@
   });
   // ── View Model (ports legacy buildSelectedBusinessProps) ──────────────────────
 
-  // Using Record<string, unknown> to match the view model's JSDoc-typed return
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Using Record<string, unknown> to match the view model's JSDoc-typed return.
+  // The `any` here is intentional: it's a legacy port whose typed return would
+  // touch ~20 fields; tightening it is tracked separately.
   const viewModel: any = $derived.by(() => {
     if (!selectedRecord) return {
       name: COPY.selectedEmptyName,

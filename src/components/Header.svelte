@@ -105,8 +105,6 @@
   /** Roving tabindex keyboard handler for the mode-chip radiogroup.
    *  Skips disabled (locked) chips per WAI-ARIA radiogroup guidance. */
   function handleModeKeydown(e: KeyboardEvent): void {
-    let newIndex = activeIndex;
-
     const firstEnabled = modes.findIndex((m) => !isModeLocked(m.id));
     const lastEnabled = (() => {
       for (let i = modes.length - 1; i >= 0; i--) {
@@ -116,6 +114,7 @@
       return activeIndex;
     })();
 
+    let newIndex: number;
     switch (e.key) {
       case 'ArrowRight':
       case 'ArrowDown':

@@ -19,7 +19,6 @@
   import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
   import { resetSemanticThreadWorker } from '@lib/semantic-threads';
-  import { appState } from '@lib/state/app.svelte.ts';
   import { teardownAppShell } from '@lib/orchestration/app-init';
   import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
 
@@ -51,7 +50,7 @@
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
-  import { legendOpen } from '@lib/stores/legend.svelte';
+  import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
 
   // Lazy component handles -- driven by $effects further down. Each handle's
   // `current` becomes the imported component class once `ensure(condition)`
