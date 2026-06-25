@@ -5,6 +5,8 @@
  * Replaces the fragile 'adapter_' pattern with typed, event-driven intent.
  */
 
+import { debugError } from '@lib/utils/debug'
+
 // ── Event Manifest ─────────────────────────────────────────────────────────
 
 export const EVENTS = {

@@ -22,6 +22,7 @@ import type {
     PocketMotionWithFrame
 } from '@lib/types/state'
 import type { BusinessRecord } from '@lib/types/business'
+import type { Point } from '@lib/state/state-types'
 import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'

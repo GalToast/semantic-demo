@@ -272,11 +272,13 @@ function _ensureModules(): void {
 export const engineDelegates = {
     updateMyceliumThreads: (): void => _myceliumEngine?.updateMyceliumThreads(),
     applyMapFlatteningLayout: (enabled: boolean): void => _mapFlattening?.applyMapFlatteningLayout(enabled),
-    triggerSearchHeroMoment: (anchorIndex: number): void => _threeSearchAnimations?.triggerSearchHeroMoment(anchorIndex),
-    triggerCorridorNodeGlow: (now: number): void => _threeSearchAnimations?.triggerCorridorNodeGlow(now),
-    updateCorridorNodeGlow: (now: number): void => _threeSearchAnimations?.updateCorridorNodeGlow(now),
+    triggerSearchHeroMoment: (anchorIndex: number): void =>
+        void _threeSearchAnimations?.triggerSearchHeroMoment(anchorIndex),
+    triggerCorridorNodeGlow: (now: number): void => void _threeSearchAnimations?.triggerCorridorNodeGlow(now),
+    updateCorridorNodeGlow: (now: number): void => void _threeSearchAnimations?.updateCorridorNodeGlow(now),
     triggerSearchCorridorAnimation: (now: number): void => _threeSearchAnimations?.triggerSearchCorridorAnimation(now),
-    updateSearchCorridorAnimation: (now: number): void => _threeSearchAnimations?.updateSearchCorridorAnimation(now),
+    updateSearchCorridorAnimation: (now: number): void =>
+        void _threeSearchAnimations?.updateSearchCorridorAnimation(now),
     disposeSearchCorridorAnimation: (): void => _threeSearchAnimations?.disposeSearchCorridorAnimation(),
     updateInteractionVisuals: (now: number, hoveredNode: number, focusedNode: number | null): void =>
         _threeInteractionVisuals?.updateInteractionVisuals(now, hoveredNode, focusedNode),
@@ -909,7 +911,7 @@ export function animate() {
             if (_focusPocket?.applyFocusPocketBreathing(frameNow, _state.nodePositions)) {
                 _state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
                     setNodeSporeInstanceMatrixPort(idx)
-                    if (webglContext.nodeSporeHitMesh && _state.navState?.focusPocketIndices?.includes(idx)) {
+                    if (webglContext.nodeSporeHitMesh && _state!.navState?.focusPocketIndices?.includes(idx)) {
                         setNodeSporeInstanceMatrixPort(idx, webglContext.nodeSporeHitMesh)
                     }
                 })

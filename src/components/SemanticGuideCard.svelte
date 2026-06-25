@@ -93,9 +93,9 @@
   {/if}
   <div id="summary-lane-status" class="summary-lane-status">{config.laneStatus || 'Ready'}</div>
 
-  <div id="summary-gemma-story" class="summary-gemma-story hidden">
-    <p id="summary-gemma-story-text" class="summary-gemma-story-text"></p>
-    <span id="summary-gemma-story-source" class="summary-gemma-story-source"></span>
+  <div id="summary-gemma-story" class="summary-gemma-story" class:hidden={!appState.semanticGuideState.showStory}>
+    <p id="summary-gemma-story-text" class="summary-gemma-story-text">{appState.semanticGuideState.storyText}</p>
+    <span id="summary-gemma-story-source" class="summary-gemma-story-source">{appState.semanticGuideState.storySource}</span>
   </div>
 </div>
 

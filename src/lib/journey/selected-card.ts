@@ -121,7 +121,7 @@ export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {
     }
 }
 
-export function syncFocusStage(point: BusinessRecord | null): void {
+export function syncFocusStage(point: BusinessRecord | Point | null): void {
     const points: Point[] = Array.isArray(appState.points) ? appState.points : []
     if (points.length === 0 && point !== null) return
     const stage = document.getElementById('focus-stage')
@@ -268,7 +268,10 @@ export function syncFocusStage(point: BusinessRecord | null): void {
     }
 }
 
-export function updateSelectedBusiness(point: BusinessRecord | null, options: UpdateSelectedBusinessOptions = {}): void {
+export function updateSelectedBusiness(
+    point: BusinessRecord | Point | null,
+    options: UpdateSelectedBusinessOptions = {}
+): void {
     // Push to Svelte store via canonical focusOnPoint (selectedPointStore is now a getter, not a writable)
     if (point) {
         focusOnPoint(point as unknown as Parameters<typeof focusOnPoint>[0], { revealCard: true })

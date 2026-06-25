@@ -10,7 +10,7 @@
  *     the engine bridge so journey.ts never imports directly from js/.
  */
 
-import type { BusinessRecord } from '@lib/types/business'
+import type { BusinessRecord, SemanticNeighborDetail } from '@lib/types/business'
 import type { Point3D } from '@lib/types/webgl'
 import { appState as state } from '@lib/state/app.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'

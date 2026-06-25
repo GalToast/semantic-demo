@@ -249,11 +249,7 @@ async function _executeSearch(
                     throw err
                 }
                 if (shouldLogStaticDevFallback()) {
-                    debugWarn(
-                            '[search-engine] Live search failed, falling back to local index for:',
-                            trimmed,
-                            err
-                        )
+                    debugWarn('[search-engine] Live search failed, falling back to local index for:', trimmed, err)
                 }
             }
         } else {
@@ -270,11 +266,7 @@ async function _executeSearch(
                     throw err
                 }
                 if (canUseStaticDevFallback() && shouldLogStaticDevFallback()) {
-                    debugWarn(
-                            '[search-engine] API unavailable on static dev, using local index for:',
-                            trimmed,
-                            err
-                        )
+                    debugWarn('[search-engine] API unavailable on static dev, using local index for:', trimmed, err)
                 }
             }
         }

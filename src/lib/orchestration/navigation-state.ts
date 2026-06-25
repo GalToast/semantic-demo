@@ -8,6 +8,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte';
+import type { ThreadCandidateLike } from '@lib/state/state-types';
 import { navStore } from '@lib/stores/navigation.svelte';
 
 // ── Types ──────────────────────────────────────────────────────────────────

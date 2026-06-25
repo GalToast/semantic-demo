@@ -4,6 +4,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
+import type { Point } from '@lib/state/state-types'
 const state = _state
 import { bindClick } from '@lib/ui/view-bindings'
 import { focusOnNode } from '@lib/engine/camera-choreography'
@@ -93,10 +94,10 @@ export function bindSuggestionControls(): void {
                 const sameCluster = state.points
                     .map((p, i) => ({ p, i }))
                     .filter(
-                        ({ p, i }: { p: any; i: number }) => p && p.cluster === cluster && i !== focusedIdx
+                        ({ p, i }: { p: Point; i: number }) => p && p.cluster === cluster && i !== focusedIdx
                     )
                 if (sameCluster.length) {
-                    const _randPick = sameCluster[Math.floor(Math.random() * sameCluster.length)] as { p: any; i: number } | undefined
+                    const _randPick = sameCluster[Math.floor(Math.random() * sameCluster.length)] as { p: Point; i: number } | undefined
                     const i = _randPick ? _randPick.i : -1
                     focusOnNode(i, { fromCanvasNode: true })
                 }

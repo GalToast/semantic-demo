@@ -9,16 +9,16 @@
 // timeout fires, aborts the transaction, and resets `dbPromise` so the
 // next call re-opens the database instead of permanently blocking.
 
-import { debugWarn } from '@lib/utils/debug';
+import { debugWarn } from '@lib/utils/debug'
 
-const DB_NAME = 'SemanticExplorerDB';
-const STORE_NAME = 'SearchCache';
-const DB_VERSION = 1;
+const DB_NAME = 'SemanticExplorerDB'
+const STORE_NAME = 'SearchCache'
+const DB_VERSION = 1
 
 /** Maximum time (ms) to wait for a transaction before aborting. */
-const TX_TIMEOUT_MS = 5_000;
+const TX_TIMEOUT_MS = 5_000
 
-let dbPromise: Promise<IDBDatabase> | null = null;
+let dbPromise: Promise<IDBDatabase> | null = null
 
 // ── Internal helpers ─────────────────────────────────────────────────────────
 
@@ -27,7 +27,7 @@ let dbPromise: Promise<IDBDatabase> | null = null;
  * Called after a timeout to prevent a permanent "corruption lock".
  */
 function resetDB(): void {
-    dbPromise = null;
+    dbPromise = null
 }
 
 /**
@@ -45,52 +45,56 @@ function resetDB(): void {
 function withTxTimeout<T>(
     db: IDBDatabase,
     mode: IDBTransactionMode,
-    fn: (tx: IDBTransaction, store: IDBObjectStore) => void,
+    fn: (tx: IDBTransaction, store: IDBObjectStore) => void
 ): Promise<T> {
     return new Promise<T>((resolve, reject) => {
-        let settled = false;
+        let settled = false
 
         const timer = setTimeout(() => {
-            if (settled) return;
-            settled = true;
-            debugWarn('[idb-service] Transaction timed out after ' + TX_TIMEOUT_MS + 'ms — aborting');
-            try { tx.abort(); } catch (_) { /* best-effort */ }
-            resetDB();
-            reject(new Error('IndexedDB transaction timed out'));
-        }, TX_TIMEOUT_MS);
+            if (settled) return
+            settled = true
+            debugWarn('[idb-service] Transaction timed out after ' + TX_TIMEOUT_MS + 'ms — aborting')
+            try {
+                tx.abort()
+            } catch (abortErr) {
+                debugWarn('[idb-service] tx.abort() failed during timeout cleanup:', abortErr)
+            }
+            resetDB()
+            reject(new Error('IndexedDB transaction timed out'))
+        }, TX_TIMEOUT_MS)
 
-        const tx = db.transaction(STORE_NAME, mode);
-        const store = tx.objectStore(STORE_NAME);
+        const tx = db.transaction(STORE_NAME, mode)
+        const store = tx.objectStore(STORE_NAME)
 
-        fn(tx, store);
+        fn(tx, store)
 
         tx.oncomplete = () => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
+            if (settled) return
+            settled = true
+            clearTimeout(timer)
             // Resolve with void-ish for mutations; callers that need
             // a result must resolve from their own request handler.
-            resolve(undefined as T);
-        };
+            resolve(undefined as T)
+        }
 
         tx.onerror = () => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            debugWarn('[idb-service] Transaction error:', tx.error);
-            resetDB();
-            reject(tx.error ?? new Error('IndexedDB transaction failed'));
-        };
+            if (settled) return
+            settled = true
+            clearTimeout(timer)
+            debugWarn('[idb-service] Transaction error:', tx.error)
+            resetDB()
+            reject(tx.error ?? new Error('IndexedDB transaction failed'))
+        }
 
         tx.onabort = () => {
-            if (settled) return;
-            settled = true;
-            clearTimeout(timer);
-            debugWarn('[idb-service] Transaction aborted');
-            resetDB();
-            reject(new Error('IndexedDB transaction aborted'));
-        };
-    });
+            if (settled) return
+            settled = true
+            clearTimeout(timer)
+            debugWarn('[idb-service] Transaction aborted')
+            resetDB()
+            reject(new Error('IndexedDB transaction aborted'))
+        }
+    })
 }
 
 // ── Public API ───────────────────────────────────────────────────────────────
@@ -103,49 +107,49 @@ export function initDB(): Promise<IDBDatabase> {
     if (!dbPromise) {
         dbPromise = new Promise<IDBDatabase>((resolve, reject) => {
             if (typeof window === 'undefined' || !window.indexedDB) {
-                reject(new Error('IndexedDB not available'));
-                return;
+                reject(new Error('IndexedDB not available'))
+                return
             }
 
-            let settled = false;
+            let settled = false
 
             // Safety timeout for the open request itself (which can hang on
             // version upgrade conflicts in some browsers).
             const timer = setTimeout(() => {
-                if (settled) return;
-                settled = true;
-                debugWarn('[idb-service] Database open timed out after ' + TX_TIMEOUT_MS + 'ms');
-                dbPromise = null;
-                reject(new Error('IndexedDB open timed out'));
-            }, TX_TIMEOUT_MS);
+                if (settled) return
+                settled = true
+                debugWarn('[idb-service] Database open timed out after ' + TX_TIMEOUT_MS + 'ms')
+                dbPromise = null
+                reject(new Error('IndexedDB open timed out'))
+            }, TX_TIMEOUT_MS)
 
-            const request = window.indexedDB.open(DB_NAME, DB_VERSION);
+            const request = window.indexedDB.open(DB_NAME, DB_VERSION)
 
             request.onerror = (event) => {
-                if (settled) return;
-                settled = true;
-                clearTimeout(timer);
-                debugWarn('[idb-service] Database error:', (event.target as IDBOpenDBRequest).error);
-                dbPromise = null;
-                reject((event.target as IDBOpenDBRequest).error!);
-            };
+                if (settled) return
+                settled = true
+                clearTimeout(timer)
+                debugWarn('[idb-service] Database error:', (event.target as IDBOpenDBRequest).error)
+                dbPromise = null
+                reject((event.target as IDBOpenDBRequest).error!)
+            }
 
             request.onsuccess = (event) => {
-                if (settled) return;
-                settled = true;
-                clearTimeout(timer);
-                resolve((event.target as IDBOpenDBRequest).result);
-            };
+                if (settled) return
+                settled = true
+                clearTimeout(timer)
+                resolve((event.target as IDBOpenDBRequest).result)
+            }
 
             request.onupgradeneeded = (event) => {
-                const db = (event.target as IDBOpenDBRequest).result;
+                const db = (event.target as IDBOpenDBRequest).result
                 if (!db.objectStoreNames.contains(STORE_NAME)) {
-                    db.createObjectStore(STORE_NAME);
+                    db.createObjectStore(STORE_NAME)
                 }
-            };
-        });
+            }
+        })
     }
-    return dbPromise;
+    return dbPromise
 }
 
 /**
@@ -153,13 +157,15 @@ export function initDB(): Promise<IDBDatabase> {
  * Transaction is protected by a 5-second timeout.
  */
 export async function get(key: string): Promise<unknown> {
-    const db = await initDB();
-    let result: unknown;
+    const db = await initDB()
+    let result: unknown
     await withTxTimeout(db, 'readonly', (_tx, store) => {
-        const req = store.get(key);
-        req.onsuccess = () => { result = req.result; };
-    });
-    return result;
+        const req = store.get(key)
+        req.onsuccess = () => {
+            result = req.result
+        }
+    })
+    return result
 }
 
 /**
@@ -167,10 +173,10 @@ export async function get(key: string): Promise<unknown> {
  * Transaction is protected by a 5-second timeout.
  */
 export async function set(key: string, value: unknown): Promise<void> {
-    const db = await initDB();
+    const db = await initDB()
     await withTxTimeout<void>(db, 'readwrite', (_tx, store) => {
-        store.put(value, key);
-    });
+        store.put(value, key)
+    })
 }
 
 /**
@@ -178,10 +184,10 @@ export async function set(key: string, value: unknown): Promise<void> {
  * Transaction is protected by a 5-second timeout.
  */
 export async function remove(key: string): Promise<void> {
-    const db = await initDB();
+    const db = await initDB()
     await withTxTimeout<void>(db, 'readwrite', (_tx, store) => {
-        store.delete(key);
-    });
+        store.delete(key)
+    })
 }
 
 /**
@@ -189,13 +195,15 @@ export async function remove(key: string): Promise<void> {
  * Transaction is protected by a 5-second timeout.
  */
 export async function keys(): Promise<IDBValidKey[]> {
-    const db = await initDB();
-    let result: IDBValidKey[] = [];
+    const db = await initDB()
+    let result: IDBValidKey[] = []
     await withTxTimeout(db, 'readonly', (_tx, store) => {
-        const req = store.getAllKeys();
-        req.onsuccess = () => { result = req.result; };
-    });
-    return result;
+        const req = store.getAllKeys()
+        req.onsuccess = () => {
+            result = req.result
+        }
+    })
+    return result
 }
 
 /**
@@ -203,36 +211,36 @@ export async function keys(): Promise<IDBValidKey[]> {
  * Transaction is protected by a 5-second timeout.
  */
 export async function entries(): Promise<[IDBValidKey, unknown][]> {
-    const db = await initDB();
-    let result: [IDBValidKey, unknown][] = [];
+    const db = await initDB()
+    let result: [IDBValidKey, unknown][] = []
     await withTxTimeout(db, 'readonly', (_tx, store) => {
-        const keysReq = store.getAllKeys();
-        const valsReq = store.getAll();
-        let keys: IDBValidKey[] | null = null;
-        let values: unknown[] | null = null;
+        const keysReq = store.getAllKeys()
+        const valsReq = store.getAll()
+        let keys: IDBValidKey[] | null = null
+        let values: unknown[] | null = null
 
         const collectIfReady = () => {
-            if (!keys || !values) return;
-            result = [];
+            if (!keys || !values) return
+            result = []
             for (let i = 0; i < keys.length; i++) {
-                const key = keys[i];
+                const key = keys[i]
                 if (key !== undefined) {
-                    result.push([key, values[i]]);
+                    result.push([key, values[i]])
                 }
             }
-        };
+        }
 
         keysReq.onsuccess = () => {
-            keys = [...keysReq.result];
-            collectIfReady();
-        };
+            keys = [...keysReq.result]
+            collectIfReady()
+        }
 
         valsReq.onsuccess = () => {
-            values = [...valsReq.result];
-            collectIfReady();
-        };
-    });
-    return result;
+            values = [...valsReq.result]
+            collectIfReady()
+        }
+    })
+    return result
 }
 
 /**
@@ -240,8 +248,8 @@ export async function entries(): Promise<[IDBValidKey, unknown][]> {
  * Transaction is protected by a 5-second timeout.
  */
 export async function clear(): Promise<void> {
-    const db = await initDB();
+    const db = await initDB()
     await withTxTimeout<void>(db, 'readwrite', (_tx, store) => {
-        store.clear();
-    });
+        store.clear()
+    })
 }

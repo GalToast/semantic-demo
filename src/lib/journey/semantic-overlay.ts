@@ -511,7 +511,7 @@ export function getSemanticFocusCueProbeSnapshot(): Record<string, unknown> {
             : null,
         nextCueSegments:
             state.focusSemanticLines?.userData?.nextCueSegments || state.focusThreadDiagnostics?.nextCueSegments || 0,
-        focusThreadSegments: getLineSegmentCount(state.focusSemanticLines),
+        focusThreadSegments: state.focusSemanticLines ? getLineSegmentCount(state.focusSemanticLines) : 0,
         threadDiagnostics: { ...(state.focusThreadDiagnostics || {}) }
     }
 }

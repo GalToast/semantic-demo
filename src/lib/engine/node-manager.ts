@@ -413,7 +413,7 @@ export function createPoints() {
 
     const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length
 
-    state.points.forEach((point: BusinessRecord, i: number_rules) => {
+    state.points.forEach((point: any, i: number) => {
         const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
         let px, py, pz, cluster
 

@@ -85,7 +85,10 @@ class AppState {
     semanticGuideState = $state<SemanticGuideState>({
         isVisible: false,
         isSynthesizing: false,
-        config: {}
+        config: {},
+        storyText: '',
+        storySource: '',
+        showStory: false
     })
     searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null)
     searchAbortController = $state<AbortController | null>(null)

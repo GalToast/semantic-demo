@@ -227,8 +227,10 @@
     <span class="lane-pill-dot"></span>
   </div>
 
-  <!-- Search label -->
-  <span class="search-label-text">Search</span>
+  <!-- Search label (only shown when query is active) -->
+  {#if hasQuery}
+    <span class="search-label-text">Search</span>
+  {/if}
 
   <!-- Input row -->
   <div class="search-input-wrap">

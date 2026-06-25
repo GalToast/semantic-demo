@@ -143,6 +143,10 @@ export function installWindowTestBridge(): () => void {
     }
     window.__APP_ACTIONS__ = buildActionsBag()
 
+    // Publish key semantic-guide functions on window for contract-test compat
+    window.requestSemanticGuide = requestSemanticGuide
+    window.showSemanticThreadsDetail = showSemanticThreadsDetail
+
     return () => {
         if (window.__APP_STATE__ && typeof window.__APP_STATE__ === 'object' && 'state' in window.__APP_STATE__) {
             delete window.__APP_STATE__

@@ -64,7 +64,12 @@ export function getJourneyCompassState(): CompassState {
     const cueBeat: string = appState.semanticTrailCue || 'idle'
     const focusedPoint = getFocusedJourneyPoint()
     const focusedName: string = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : ''
-    const summary = appState.currentSearchSummary as Record<string, unknown> | null
+    const summary = appState.currentSearchSummary as {
+        query?: string
+        dedupedResultCount?: number
+        resultIndices?: unknown[]
+        anchorIndex?: number
+    } | null
     const queryLabel: string = summary?.query ? `"${summary.query}"` : 'semantic search'
     const isSearching: boolean = cueBeat === 'searching'
     const isFocusing: boolean = cueBeat === 'focusing'
@@ -173,7 +178,7 @@ export function getJourneyCompassState(): CompassState {
     }
 
     if (hasSearch) {
-        const resultCount: number = summary?.dedupedResultCount ?? (summary as any)?.resultIndices?.length ?? 0
+        const resultCount: number = summary?.dedupedResultCount ?? summary?.resultIndices?.length ?? 0
         const hasNoResults: boolean = !isSearching && !!summary && resultCount === 0
         return {
             phase: 'search',

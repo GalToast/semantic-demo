@@ -258,7 +258,7 @@ export interface ScenePerformanceDiagnostics {
 export interface FocusConnectionSegment {
     a: number
     b: number
-    layer: number
+    layer?: number
     t0?: number
     t1?: number
     cue?: number
@@ -279,6 +279,7 @@ export interface FocusConnectionSegment {
     braid?: number
     boundedLoop?: boolean
     motifLabel?: { name?: string; description?: string }
+    [key: string]: unknown
 }
 
 export interface FocusFrameDiagnostics {
@@ -506,12 +507,23 @@ export interface SemanticGuideState {
         text?: string
         laneStatus?: string
         suggestions?: Array<{
-            lead_id?: string
+            lead_id?: string | number | null
             label?: string
             name?: string
             reason?: string
         }>
-    }
+        degraded?: boolean
+        cached?: boolean
+        instant?: boolean
+        summary?: string
+        [key: string]: unknown
+    } | null
+    storyText?: string
+    storySource?: string
+    showStory?: boolean
+    buttonMode?: string
+    buttonOptions?: Record<string, unknown>
+    typeToken?: number
 }
 
 /**

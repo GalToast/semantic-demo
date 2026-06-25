@@ -1,0 +1,234 @@
+/**
+ * @lib/journey/thread-inspector-render.ts — Thread inspection DOM rendering
+ *
+ * Split from thread-inspector.ts — contains renderThreadInspection only.
+ * State/query functions live in thread-inspector-state.ts.
+ */
+
+import { appState } from '@lib/state/app.svelte.ts'
+import { getFocusedIndex } from '@lib/stores/index.svelte.ts'
+import { focusStore, updateThreadInspector } from '@lib/stores/focus.svelte.ts'
+import {
+    syncInspectedStrandOverlay,
+    updateInspectedStrandOverlay,
+    setInspectedStrandOverlayUpdater
+} from '@lib/engine/journey-webgl-lazy'
+import { withStateMutation } from '@lib/state/with-state-mutation'
+import {
+    getThreadInspectionState,
+    scheduleCanvasThreadInspectionClear
+} from './thread-inspector-state'
+import type { ThreadInspectionState, ThreadInspectionOptions } from './thread-inspector-state'
+
+// Register the WebGL update callback (preserves original top-level side-effect)
+setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay)
+
+// ── Types ──────────────────────────────────────────────────────────────────
+
+/** HTMLElement extension that carries the private pointer-event listeners
+ *  we attach when binding/unbinding the canvas thread inspection overlay.
+ *  Used to avoid `as any` casts when reading/writing `_pointerEnterListener`
+ *  and `_pointerLeaveListener` on the inspector DOM node. */
+interface InspectorElement extends HTMLElement {
+    _pointerEnterListener?: EventListener
+    _pointerLeaveListener?: EventListener
+}
+
+// ── Render ─────────────────────────────────────────────────────────────────
+
+export function renderThreadInspection(
+    index: number | null = appState.inspectedThreadIndex,
+    options: ThreadInspectionOptions = {}
+): ThreadInspectionState | null {
+    const inspector = document.getElementById('focus-thread-inspector') as InspectorElement | null
+    const inspectionState = getThreadInspectionState(index, options)
+    // syncInspectedStrandOverlay's underlying impl handles null gracefully
+    // (it short-circuits via `inspectionState?.active`). Cast through
+    // `unknown` because ThreadInspectionState has fields beyond the
+    // narrower InspectionState that the function expects; this is a
+    // type-safe equivalent of the prior `as any` cast.
+    syncInspectedStrandOverlay(inspectionState as unknown as Parameters<typeof syncInspectedStrandOverlay>[0], {
+        surface: options.surface ?? undefined
+    })
+
+    if (typeof document !== 'undefined' && document.body) {
+        document.body.dataset.threadInspectSurface = inspectionState?.active
+            ? inspectionState.surface || options.surface || 'rail'
+            : 'idle'
+    }
+
+    // Notify Svelte focus store reactively
+    updateThreadInspector({
+        active: !!inspectionState?.active,
+        source: options.surface || 'none',
+        inspectedIndex: index,
+        pinnedIndex: appState.pinnedThreadIndex,
+        pointerInside: appState.threadInspectorPointerInside,
+        segmentCount: inspectionState?.strandVisual.segmentCount || 0,
+        braidCount: inspectionState?.strandVisual.braidCount || 0,
+        endpointCount: inspectionState?.strandVisual.endpointCount || 0
+    })
+
+    if (!inspector) return inspectionState
+
+    // Clean up pointer guards
+    const inspectorEl = inspector as HTMLElement & {
+        _pointerEnterListener?: ((e: PointerEvent) => void) | null
+        _pointerLeaveListener?: ((e: PointerEvent) => void) | null
+    }
+    if (inspectorEl._pointerEnterListener) {
+        inspectorEl.removeEventListener('pointerenter', inspectorEl._pointerEnterListener)
+        inspectorEl.removeEventListener('pointerleave', inspectorEl._pointerLeaveListener!)
+        delete inspectorEl._pointerEnterListener
+        delete inspectorEl._pointerLeaveListener
+        delete inspector.dataset.pointerGuardBound
+    }
+
+    if (!inspector.dataset.pointerGuardBound) {
+        inspector.dataset.pointerGuardBound = 'true'
+        const pointerEnter = (): void => {
+            appState.threadInspectorPointerInside = true
+            const clearTimerId = appState.canvasThreadInspectionClearTimer
+            if (clearTimerId) {
+                window.clearTimeout(clearTimerId)
+                withStateMutation(() => {
+                    appState.canvasThreadInspectionClearTimer = null
+                })
+                appState.canvasThreadInspectionClearTimer = null
+            }
+        }
+        const pointerLeave = (): void => {
+            appState.threadInspectorPointerInside = false
+            if (
+                typeof document !== 'undefined' &&
+                document.body.dataset.threadInspectSurface === 'canvas' &&
+                appState.pinnedThreadIndex === null
+            ) {
+                scheduleCanvasThreadInspectionClear(1800)
+            }
+        }
+        inspectorEl._pointerEnterListener = pointerEnter
+        inspectorEl._pointerLeaveListener = pointerLeave
+        inspector.addEventListener('pointerenter', pointerEnter)
+        inspector.addEventListener('pointerleave', pointerLeave)
+    }
+
+    if (!inspector.dataset.surfaceEventGuardBound) {
+        inspector.dataset.surfaceEventGuardBound = 'true'
+        const stopSurfaceEvent = (event: Event): void => {
+            event.stopPropagation()
+            event.stopImmediatePropagation?.()
+        }
+        for (const eventName of [
+            'pointerdown',
+            'pointerup',
+            'mousedown',
+            'mouseup',
+            'click',
+            'touchstart',
+            'touchend'
+        ]) {
+            inspector.addEventListener(eventName, stopSurfaceEvent)
+        }
+    }
+
+    if (inspectionState?.active && appState.canvasThreadInspectionClearTimer) {
+        window.clearTimeout(appState.canvasThreadInspectionClearTimer)
+        withStateMutation(() => {
+            appState.canvasThreadInspectionClearTimer = null
+        })
+        appState.canvasThreadInspectionClearTimer = null
+    }
+
+    inspector.classList.toggle('active', !!inspectionState?.active)
+    inspector.classList.toggle('from-canvas', !!inspectionState?.active && inspectionState.surface === 'canvas')
+    inspector.classList.toggle('is-pinned', !!inspectionState?.pinned)
+
+    if (inspectionState?.active && inspectionState.relationshipRole) {
+        inspector.dataset.relationshipRole = inspectionState.relationshipRole
+    } else {
+        delete inspector.dataset.relationshipRole
+    }
+    inspector.setAttribute('aria-hidden', inspectionState?.active ? 'false' : 'true')
+
+    const titleEl = document.getElementById('focus-thread-inspector-title')
+    const copyEl = document.getElementById('focus-thread-inspector-copy')
+    const metaEl = document.getElementById('focus-thread-inspector-meta')
+    const pinBtn = document.getElementById('btn-thread-pin') as HTMLButtonElement | null
+    const followBtn = document.getElementById('btn-thread-follow') as HTMLButtonElement | null
+    const clearBtn = document.getElementById('btn-thread-clear') as HTMLButtonElement | null
+    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
+
+    if (titleEl) titleEl.textContent = inspectionState?.title ?? null
+    if (copyEl) copyEl.textContent = inspectionState?.copy ?? null
+    if (metaEl) metaEl.textContent = inspectionState?.meta ?? null
+
+    if (pinBtn) {
+        pinBtn.disabled = !inspectionState?.active
+        pinBtn.textContent = inspectionState?.pinned
+            ? isMobile
+                ? 'Unpin'
+                : 'Unpin Connection'
+            : isMobile
+              ? 'Pin'
+              : 'Pin Connection'
+        pinBtn.setAttribute('aria-pressed', String(!!inspectionState?.pinned))
+    }
+    if (followBtn) {
+        const followTargetsCurrent =
+            !!inspectionState?.active &&
+            Number.isFinite(inspectionState?.index) &&
+            inspectionState?.index === getFocusedIndex()
+        followBtn.disabled =
+            !inspectionState?.active || !!followTargetsCurrent || inspectionState?.journeyPhase === 'exploring'
+        followBtn.setAttribute('aria-disabled', String(followBtn.disabled))
+        followBtn.setAttribute('aria-busy', String(inspectionState?.journeyPhase === 'exploring'))
+        followBtn.textContent =
+            inspectionState?.journeyPhase === 'exploring'
+                ? 'Following'
+                : followTargetsCurrent
+                  ? isMobile
+                      ? 'Current'
+                      : 'Current Stop'
+                  : isMobile
+                    ? 'Follow'
+                    : 'Follow Connection'
+        followBtn.setAttribute(
+            'aria-label',
+            inspectionState?.journeyPhase === 'exploring'
+                ? 'Following this connection'
+                : followTargetsCurrent
+                  ? 'This connection is the current path stop'
+                  : 'Follow this connection as the next path stop'
+        )
+    }
+    if (clearBtn) {
+        clearBtn.disabled = !inspectionState?.active && appState.pinnedThreadIndex === null
+        clearBtn.setAttribute('aria-disabled', String(clearBtn.disabled))
+        clearBtn.setAttribute(
+            'aria-label',
+            appState.pinnedThreadIndex !== null ? 'Clear pinned connection' : 'Clear connection preview'
+        )
+    }
+
+    if (typeof document !== 'undefined') {
+        document
+            .querySelectorAll<HTMLElement>('.focus-stage-neighbor-pill.is-inspected')
+            .forEach((item) => item.classList.remove('is-inspected'))
+        document
+            .querySelectorAll<HTMLElement>('.focus-stage-neighbor-pill.is-pinned')
+            .forEach((item) => item.classList.remove('is-pinned'))
+        document
+            .querySelectorAll<HTMLElement>('.focus-stage-neighbor-pill.is-exploring')
+            .forEach((item) => item.classList.remove('is-exploring'))
+        if (inspectionState?.active) {
+            const railItem = document.querySelector<HTMLElement>(
+                `.focus-stage-neighbor-pill[data-index="${inspectionState.index}"]`
+            )
+            railItem?.classList.add('is-inspected')
+            railItem?.classList.toggle('is-pinned', inspectionState.pinned)
+            railItem?.classList.toggle('is-exploring', inspectionState.journeyPhase === 'exploring')
+        }
+    }
+    return inspectionState
+}

@@ -115,6 +115,18 @@ declare global {
         }
 
         /**
+         * Test-only function hook set by the semantic guide module so Playwright
+         * can trigger a guide request without clicking the UI button.
+         */
+        requestSemanticGuide?: () => void
+
+        /**
+         * Test-only function hook set by the connection analysis module so Playwright
+         * can trigger a story fetch without clicking the UI button.
+         */
+        showSemanticThreadsDetail?: () => Promise<void>
+
+        /**
          * Read-only status snapshot published alongside `__spector` so
          * DevGui and tests can poll capture state without invoking the
          * capture itself.

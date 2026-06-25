@@ -26,5 +26,3 @@ export function registerDiagnosticProbe(key: string, probe: object | (() => void
     if (typeof window === 'undefined') return
     ;(window as unknown as Record<string, unknown>)[key] = probe
 }
-
-

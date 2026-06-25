@@ -16,13 +16,14 @@
  */
 
 import { appState as state } from '@lib/state/app.svelte'
+import type { ThreadCandidateLike } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import type { BusinessRecord } from '@lib/types/business'
 import { cleanOptionalValue, formatBusinessName } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
 import { getNextExploreCandidateForIndex } from './thread-model'
 import { summarizeNeighborReason } from './thread-settler'
-import { appState } from '@lib/state/app.svelte'
+
 import { getNextWalkCandidateForIndex } from '@lib/journey/neighborhood'
 import { ensureFocusStageAuxiliaryDom, ensureDiveButton } from '@lib/journey/focus-stage-dom'
 

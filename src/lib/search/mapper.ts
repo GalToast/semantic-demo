@@ -6,10 +6,19 @@
  */
 
 import { appState as state } from '@lib/state/app.svelte'
+import type { ActiveFilters } from '@lib/state/state-types'
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
 import { isPointVisible } from '../utils/geo-data'
 
 // ── Types ──────────────────────────────────────────────────────────────────
+
+interface MapperAppState {
+    points: Point[]
+    pointIndexByLeadId: Map<string, number>
+    activeClusterFilter: number | null
+    activeFilters: ActiveFilters
+    semanticResultContextByLeadId: Map<string, unknown>
+}
 
 export interface ServiceResultRow {
     lead_id?: string | number
@@ -116,16 +125,16 @@ function scoreMockPointForRow(point: Point, terms: string[]): number {
 }
 
 function getMockFallbackPointIndex(row: ServiceResultRow, order: number = 0): number | null {
-    const s = state as unknown as Record<string, unknown>
+    const s = state as unknown as MapperAppState
     if (!Array.isArray(s.points) || s.points.length === 0) return null
-    const points: Point[] = s.points
+    const points = s.points
     const terms = getMockRowTerms(row)
     const hintedIndex = Number(row?.index)
     if (
         Number.isFinite(hintedIndex) &&
         hintedIndex >= 0 &&
         hintedIndex < points.length &&
-        isPointVisible(hintedIndex, points, s.activeClusterFilter, s.activeFilters) &&
+        isPointVisible(hintedIndex, points, s.activeClusterFilter as number | null, s.activeFilters) &&
         (!terms.length || scoreMockPointForRow(points[hintedIndex]!, terms) > 0)
     ) {
         return hintedIndex
@@ -133,7 +142,7 @@ function getMockFallbackPointIndex(row: ServiceResultRow, order: number = 0): nu
 
     const visibleIndices: number[] = []
     points.forEach((point: Point, index: number) => {
-        if (point && isPointVisible(index, points, s.activeClusterFilter, s.activeFilters)) {
+        if (point && isPointVisible(index, points, s.activeClusterFilter as number | null, s.activeFilters)) {
             visibleIndices.push(index)
         }
     })
@@ -154,8 +163,8 @@ function getMockFallbackPointIndex(row: ServiceResultRow, order: number = 0): nu
 export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: number = 0): SearchResult | null {
     // For mock-fallback rows, use the supplied metadata directly so the demo reads believably
     // even when data.dat has slug-style names. For real rows, look up the hydrated point.
-    const s = state as unknown as Record<string, unknown>
-    const points: Point[] = s.points
+    const s = state as unknown as MapperAppState
+    const points = s.points
     const isMockRow = String(row.lead_id || '').startsWith('mock-')
     let point: Point
     let rawPointIndex: number | null | undefined
@@ -169,7 +178,11 @@ export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: num
         if (rawPointIndex === undefined || rawPointIndex === null) return null
         if (!(Number.isFinite(rawPointIndex) && rawPointIndex >= 0 && rawPointIndex < points.length)) return null
         const sourcePoint: Point | undefined = points[rawPointIndex] as Point | undefined
-        if (!sourcePoint || !isPointVisible(rawPointIndex, points, s.activeClusterFilter, s.activeFilters)) return null
+        if (
+            !sourcePoint ||
+            !isPointVisible(rawPointIndex, points, s.activeClusterFilter as number | null, s.activeFilters)
+        )
+            return null
         point = row.name && row.name !== sourcePoint.name ? { ...sourcePoint, name: row.name } : sourcePoint
     }
 

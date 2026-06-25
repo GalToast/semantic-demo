@@ -19,10 +19,15 @@ export function getLineSegmentCount(lineObject: {
 
 export function disposeLineObject(lineObject: {
     geometry?: { dispose?(): void }
-    material?: { dispose?(): void }
+    material?: { dispose?(): void } | { dispose?(): void }[]
 }): void {
     lineObject?.geometry?.dispose?.()
-    lineObject?.material?.dispose?.()
+    const m = lineObject?.material
+    if (Array.isArray(m)) {
+        for (const mat of m) mat?.dispose?.()
+    } else {
+        m?.dispose?.()
+    }
 }
 
 export function getNodeVector(index: number | null | undefined): Vec3 | null {
