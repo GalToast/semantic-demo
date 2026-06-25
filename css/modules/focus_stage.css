@@ -225,6 +225,15 @@
         0 12px 26px var(--shadow-antumbra);
 }
 
+/* Keyboard focus indicator (WCAG 2.4.7) — outlines the button with
+   the cluster's --cluster-rgb at full opacity, matching the design
+   system's teal accent. Outset 2px so it doesn't crowd the button. */
+.focus-stage-action-btn:focus-visible,
+.focus-stage-dive-btn:focus-visible {
+    outline: 2px solid rgb(var(--cluster-rgb, 78 205 196));
+    outline-offset: 2px;
+}
+
 /* Use aria-disabled (not the native disabled attribute) so the title
    tooltip is still discoverable on hover; click handler no-ops instead. */
 .focus-stage-action-btn[aria-disabled='true'] {
