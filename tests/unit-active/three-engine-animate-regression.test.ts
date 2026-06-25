@@ -2,7 +2,12 @@ import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const SRC_PATH = resolve(__dirname, '../../src/lib/engine/three-engine.ts')
+// animate() moved from src/lib/engine/three-engine.ts to
+// src/lib/engine/three-engine-core.ts during the W47 submodule split
+// (commit ae4770aa·family). three-engine.ts is now a barrel re-export
+// and no longer contains the function source. The two tests below guard
+// the same animate() body via its real source path.
+const SRC_PATH = resolve(__dirname, '../../src/lib/engine/three-engine-core.ts')
 
 function animateSource() {
     const src = readFileSync(SRC_PATH, 'utf8')
