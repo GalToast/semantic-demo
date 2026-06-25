@@ -23,8 +23,7 @@
 -->
 <script lang="ts">
   import { tick } from 'svelte';
-  import { searchState, hasResults, activeResult, setActiveResult, clearSearch } from '@lib/stores/search.svelte';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+  import { searchState, setActiveResult } from '@lib/stores/search.svelte';
   import { searchVisibleCount as searchVisibleCountFn, setSearchVisibleCount } from '@lib/stores/search.svelte';
   import { activeClusterFilter } from '@lib/stores/filter.svelte';
   import { getBusinessRecords } from '@lib/data-store';
@@ -62,28 +61,11 @@
     score?: number;
   }
 
-  interface SearchSummary {
-    query?: string;
-    mode?: string;
-    renderContext?: {
-      trimmedQuery: string;
-      topIndex: number | null;
-      anchorIndex: number | null;
-      topScore: number;
-    };
-  }
-
-  interface SearchError {
-    type: string;
-    query?: string;
-  }
-
   // ── Derived ───────────────────────────────────────────────────────────────────
 
   let results = $derived($searchState.results);
   let status = $derived($searchState.status);
   let summary = $derived($searchState.summary);
-  let hasQuery = $derived($searchState.hasQuery);
   let activeId = $derived($searchState.activeResultId);
   let visibleCount = $derived(searchVisibleCountFn());
   let searchError = $derived(appState.searchError as { type: string; query?: string } | null);
@@ -210,7 +192,10 @@
     setSearchVisibleCount(nextVisibleCount);
     try {
       sessionStorage.setItem('searchVisibleCount', String(nextVisibleCount));
-    } catch {}
+    } catch {
+      // sessionStorage may be unavailable (Safari private mode, disabled storage).
+      // Failure is non-fatal: the in-memory count is still accurate for this tab.
+    }
 
     publish(EVENTS.URL_SYNC_REQUESTED, { params: { offset: null }, reason: 'search-more' });
 
@@ -285,7 +270,7 @@
       const actions = typeof window !== 'undefined'
         ? (window as unknown as {
             __APP_ACTIONS__?: {
-              focusOnNode?: (nodeIndex: number, options?: Record<string, unknown>) => unknown;
+              focusOnNode?: (_nodeIndex: number, _options?: Record<string, unknown>) => unknown;
             };
           }).__APP_ACTIONS__
         : undefined;
@@ -337,6 +322,12 @@
         <div class="search-error-text">
           We could not finish "<strong>{searchError?.query}</strong>" just now. Retry the live search or clear it and keep exploring.
         </div>
+        {#if searchError?.message}
+          <div class="search-error-detail" data-testid="search-error-detail">
+            <span class="search-error-detail-label">Reason:</span>
+            <code class="search-error-detail-message">{searchError.message}</code>
+          </div>
+        {/if}
         <div class="search-error-actions">
           <button class="search-error-retry-btn" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
           <button class="search-error-dismiss-btn" type="button" aria-label="Clear search and dismiss" onclick={onClear}>Clear</button>

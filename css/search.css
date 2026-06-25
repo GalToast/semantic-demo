@@ -1477,7 +1477,8 @@ body[data-panel-surface='map-focus-search'] .search-container {
         linear-gradient(180deg, rgba(12, 18, 26, 0.98), rgba(11, 14, 23, 0.9));
 }
 
-body.is-active[data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'] .search-container {
+body.is-active[data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip']
+    .search-container {
     position: fixed;
     display: block !important;
     visibility: visible !important;
@@ -1641,6 +1642,37 @@ body[data-panel-surface='map-focus-search'] .semantic-lane-assist-meta {
 .search-error-retry-btn:hover,
 .search-error-dismiss-btn:hover {
     transform: translateY(-1px);
+}
+
+/* W47-T2 #2.5: the error message from the search engine (e.g.
+   "Semantic search timed out after 8000ms.") tells the user WHY the
+   search failed, not just that it did. Small monospace pill below the
+   prose so it doesn't compete visually with the action buttons. */
+.search-error-detail {
+    display: flex;
+    align-items: baseline;
+    gap: 0.5rem;
+    margin: 0.4rem 0 0.7rem;
+    padding: 0.45rem 0.65rem;
+    background: rgba(8, 14, 22, 0.55);
+    border: 1px solid rgba(255, 130, 130, 0.18);
+    border-radius: 6px;
+    font-size: 0.72rem;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+}
+.search-error-detail-label {
+    color: rgba(255, 200, 200, 0.78);
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    font-size: 0.62rem;
+    flex-shrink: 0;
+}
+.search-error-detail-message {
+    color: rgba(255, 220, 220, 0.92);
+    font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+    font-size: 0.72rem;
 }
 
 .semantic-lane-ops {
