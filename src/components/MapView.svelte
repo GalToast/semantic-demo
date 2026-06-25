@@ -14,6 +14,7 @@
   import { appState } from '@lib/state/app.svelte';
   import { withStateMutation } from '@lib/state/with-state-mutation';
   import {
+import { debugWarn } from '@lib/utils/debug'
     centerMapOnRouteAnchor,
     initMap,
     initMapStateSubscriptions,
@@ -122,7 +123,7 @@
       status = 'ready';
       statusDetail = 'County terrain active';
     } catch (error) {
-      if (import.meta.env.DEV) console.warn('MapView Leaflet activation failed:', error);
+      debugWarn('MapView Leaflet activation failed:', error);
       status = 'error';
       statusDetail = error instanceof Error ? error.message : 'Map failed to load';
     }

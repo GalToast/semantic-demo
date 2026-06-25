@@ -42,6 +42,7 @@ import {
     shouldBypassApiSearch
 } from '@lib/search/mock-search-fallback'
 import {
+import { debugLog } from '@lib/utils/debug'
     performLocalIndexSearch,
     localHitsToResults,
     getSearchEngineEmptyStateSuggestions,
@@ -215,8 +216,7 @@ async function _executeSearch(
 ): Promise<SearchResult[]> {
     const preferLive = shouldPreferLiveSearch()
     const staticDevFallbackAllowed = canUseStaticDevFallback()
-    if (import.meta.env.DEV)
-        console.debug('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
+    debugLog('DEBUG - canUseStaticDevFallback():', staticDevFallbackAllowed, 'search:', window.location.search)
     let results: SearchResult[] = []
     const limit = normalizeSearchLimit(PAGE_SIZE)
 
@@ -249,8 +249,7 @@ async function _executeSearch(
                     throw err
                 }
                 if (shouldLogStaticDevFallback()) {
-                    if (import.meta.env.DEV)
-                        console.warn(
+                    debugWarn(
                             '[search-engine] Live search failed, falling back to local index for:',
                             trimmed,
                             err
@@ -271,8 +270,7 @@ async function _executeSearch(
                     throw err
                 }
                 if (canUseStaticDevFallback() && shouldLogStaticDevFallback()) {
-                    if (import.meta.env.DEV)
-                        console.warn(
+                    debugWarn(
                             '[search-engine] API unavailable on static dev, using local index for:',
                             trimmed,
                             err

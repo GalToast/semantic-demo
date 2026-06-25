@@ -42,6 +42,7 @@ import {
     Effect
 } from 'postprocessing'
 import { debugWarn, debugInfo } from '../utils/diagnostic-adapter'
+import { debugWarn, debugError } from '@lib/utils/debug'
 
 // ── Custom Effects ──────────────────────────────────────────────────────────
 
@@ -254,7 +255,7 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
 
         debugInfo('[postprocessing] initialized — vignette + CA + bloom + DOF ready')
     } catch (err) {
-        if (import.meta.env.DEV) console.error('[postprocessing] init failed, falling back to vanilla renderer:', err)
+        debugError('[postprocessing] init failed, falling back to vanilla renderer:', err)
         disposePostProcessing()
     }
 }
