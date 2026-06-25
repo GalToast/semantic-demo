@@ -165,6 +165,18 @@ interface WithStateMutationFn {
     (fn: () => void): void
 }
 
+interface WindowWithDevGlobals extends Window {
+    __LEGACY_APP_STATE__?: unknown
+    __refreshTestCompatState__?: () => void
+    __semanticEngine?: {
+        readonly renderer: WebGLRenderer | null
+        readonly scene: Scene | null
+        readonly camera: PerspectiveCamera | null
+        readonly canvas: HTMLCanvasElement | null
+        renderOnce: () => void
+    }
+}
+
 type ViewControllerModule = typeof import('@lib/orchestration/view-controller')
 type ClusterLabelsModule = typeof import('@lib/ui/cluster-labels')
 type FocusPocketModule = typeof import('@lib/journey/focus-pocket')
@@ -217,10 +229,10 @@ function _ensureModules(): void {
     try {
         _state = legacyState as unknown as LegacyState
         if (typeof window !== 'undefined') {
-            ;(window as unknown as { __LEGACY_APP_STATE__?: unknown }).__LEGACY_APP_STATE__ = legacyState
-            ;(window as unknown as { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.()
+            ;(window as WindowWithDevGlobals).__LEGACY_APP_STATE__ = legacyState
+            ;(window as WindowWithDevGlobals).__refreshTestCompatState__?.()
         }
-        _withStateMutation = ((fn: () => void) => fn()) as unknown as WithStateMutationFn
+        _withStateMutation = (fn: () => void) => fn()
         _viewController = viewControllerMod
         _clusterLabels = clusterLabelsMod
         _focusPocket = focusPocketMod
@@ -324,11 +336,12 @@ export function createMycelium(): void {
     createMyceliumPort()
 }
 
-export const SCENE_ATMOSPHERE: Record<string, any> = {}
-export const MYCELIUM_FIELD_SCALE = { x: 3.2, y: 2.6, z: 3.7 }
-
-Object.assign(SCENE_ATMOSPHERE, PORT_SCENE_ATMOSPHERE)
-Object.assign(MYCELIUM_FIELD_SCALE, PORT_MYCELIUM_FIELD_SCALE)
+export const SCENE_ATMOSPHERE: typeof import('@lib/engine/node-manager').SCENE_ATMOSPHERE = {
+    ...PORT_SCENE_ATMOSPHERE
+}
+export const MYCELIUM_FIELD_SCALE: typeof import('@lib/engine/node-manager').MYCELIUM_FIELD_SCALE = {
+    ...PORT_MYCELIUM_FIELD_SCALE
+}
 
 // ── Module-level Mutable State ───────────────────────────────────────────────
 
@@ -623,7 +636,7 @@ export async function initThreeJS() {
     // production by the import.meta.env.DEV guard (Vite dead-code-eliminates
     // the false branch during the production build).
     if (import.meta.env.DEV && typeof window !== 'undefined') {
-        ;(window as unknown as { __semanticEngine?: unknown }).__semanticEngine = {
+        ;(window as WindowWithDevGlobals).__semanticEngine = {
             get renderer() {
                 return webglContext.renderer
             },
