@@ -173,25 +173,11 @@ type CameraControlsModule = typeof import('@lib/engine/camera-controls')
 
 type MapStateModule = typeof import('@lib/engine/map-state')
 
-interface MyceliumEngineModule {
-    updateMyceliumThreads(): void
-}
-
-interface UiFeedbackModule {
-    showExperienceToast(title: string, message: string): void
-}
-
-interface MapFlatteningModule {
-    applyMapFlatteningLayout(): void
-}
-
-interface WebGLRestoreModule {
-    restoreWebGLContext(): Promise<void>
-}
-
-interface InspectedStrandModule {
-    updateInspectedStrandOverlayFrame(now: number): void
-}
+type MyceliumEngineModule = typeof import('./mycelium-engine')
+type UiFeedbackModule = typeof import('@lib/ui/ui-feedback')
+type MapFlatteningModule = typeof import('../utils/map-flattening-layout')
+type WebGLRestoreModule = typeof import('@lib/utils/webgl-restore-adapter')
+type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overlay-adapter')
 
 interface FocusAnchorModule {
     disposeFocusAnchorIndicator(): void
@@ -265,11 +251,11 @@ function _ensureModules(): void {
         _sceneReveal = sceneRevealMod
         _cameraControls = cameraControlsMod
         _mapState = mapStateMod
-        _myceliumEngine = myceliumEngineMod as unknown as MyceliumEngineModule
-        _uiFeedback = uiFeedbackMod as unknown as UiFeedbackModule
-        _mapFlattening = mapFlatteningMod as unknown as MapFlatteningModule
-        _webglRestore = webglRestoreMod as unknown as WebGLRestoreModule
-        _inspectedStrand = inspectedStrandMod as unknown as InspectedStrandModule
+        _myceliumEngine = myceliumEngineMod
+        _uiFeedback = uiFeedbackMod
+        _mapFlattening = mapFlatteningMod
+        _webglRestore = webglRestoreMod
+        _inspectedStrand = inspectedStrandMod
         _focusAnchor = focusAnchorMod as unknown as FocusAnchorModule
         _threeSearchAnimations = threeSearchAnimationsMod as unknown as ThreeSearchAnimationsModule
         _audioScape = audioScapeMod as unknown as AudioScapeModule
@@ -290,8 +276,8 @@ export function updateMyceliumThreads(): void {
     _myceliumEngine?.updateMyceliumThreads()
 }
 
-export function applyMapFlatteningLayout(): void {
-    _mapFlattening?.applyMapFlatteningLayout()
+export function applyMapFlatteningLayout(enabled: boolean): void {
+    _mapFlattening?.applyMapFlatteningLayout(enabled)
 }
 
 export function triggerSearchHeroMoment(): void {
