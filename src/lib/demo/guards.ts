@@ -46,10 +46,7 @@ export function guardReducedMotion(): boolean {
 }
 
 export function guardWebGL(): boolean {
-  const renderer = appState.renderer as unknown as {
-    domElement?: HTMLCanvasElement;
-    getContext?: () => WebGLRenderingContext | null;
-  };
+  const renderer = appState.renderer;
   if (!renderer?.domElement) return false;
   const gl = renderer.getContext?.();
   if (!gl) return false;

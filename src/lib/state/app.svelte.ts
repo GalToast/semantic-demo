@@ -21,8 +21,6 @@ import type {
     SemanticSearchCacheDiagnostics,
     CanvasHoverCandidate,
     LoadingPhaseKey,
-    RendererLike,
-    ControlsLike,
     Vector3Like,
     SearchSummary,
     SearchErrorData,
@@ -59,8 +57,10 @@ import type {
     Sprite,
     HemisphereLight,
     DirectionalLight,
+    WebGLRenderer,
     Texture
 } from 'three'
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'
 
@@ -133,8 +133,8 @@ class AppState {
     leafletAssetsPromise = $state<Promise<unknown> | null>(null)
     scene = $state<Scene | null>(null)
     camera = $state<PerspectiveCamera | null>(null)
-    renderer = $state<RendererLike>(null as unknown as RendererLike)
-    controls = $state<ControlsLike>(null as unknown as ControlsLike)
+    renderer = $state<WebGLRenderer | null>(null)
+    controls = $state<OrbitControls | null>(null)
     pointsMesh = $state<Points | null>(null)
     pointsMaterial = $state<PointsMaterial | null>(null)
     nodeSporeMesh = $state<InstancedMesh | null>(null)

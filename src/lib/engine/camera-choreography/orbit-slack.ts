@@ -10,10 +10,11 @@
  */
 
 import { Vector3, Box3, PerspectiveCamera } from 'three'
+import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { appState as _state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 const state = _state
-import type { SemanticState, ControlsLike } from '@lib/state/state-types'
+import type { SemanticState } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
@@ -40,7 +41,7 @@ function getTypedCamera(): PerspectiveCamera | null {
     return appState.camera
 }
 
-function getTypedControls(): ControlsLike | null {
+function getTypedControls(): OrbitControls | null {
     return appState.controls
 }
 

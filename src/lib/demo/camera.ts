@@ -38,8 +38,8 @@ function getDemoCameraPosition(): Vector3 | null {
 }
 
 function getDemoControls(): DemoCameraControls | null {
-    const controls = appState.controls as unknown as { target?: unknown; update?: unknown } | null
-    if (!isThreeVector(controls?.target) || typeof controls?.update !== 'function') return null
+    const controls = appState.controls
+    if (!controls || !isThreeVector(controls.target)) return null
     return {
         target: controls.target,
         update: controls.update.bind(controls)

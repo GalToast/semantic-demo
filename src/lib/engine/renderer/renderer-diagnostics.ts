@@ -7,6 +7,7 @@
 
 import { getLiveResourceCounts } from '@lib/engine/webgl-context'
 import { appState } from '@lib/state/app.svelte'
+import type { ScenePerformanceDiagnostics } from '@lib/state/state-types'
 
 export interface ScenePerformanceTimings {
     controlsMs?: number
@@ -43,7 +44,7 @@ export function getSceneRenderableDiagnostics() {
 export function sampleScenePerformance(
     frameMs: number,
     timings: ScenePerformanceTimings = {},
-    legacyState?: { scene?: unknown; camera?: unknown; renderer?: unknown }
+    legacyState?: { scene?: unknown; camera?: unknown; renderer?: unknown; scenePerformanceDiagnostics?: ScenePerformanceDiagnostics | null }
 ): void {
     appState.withMutation(() => {
         const diagnostics = appState.scenePerformanceDiagnostics
@@ -96,7 +97,7 @@ export function sampleScenePerformance(
         diagnostics.maxRenderMs = Math.max(timings.renderMs || 0, (diagnostics.maxRenderMs || 0) * 0.992)
         diagnostics.renderables = getSceneRenderableDiagnostics()
 
-        if (legacyState) {
+        if (legacyState?.scenePerformanceDiagnostics) {
             Object.assign(legacyState.scenePerformanceDiagnostics, diagnostics)
         }
     })

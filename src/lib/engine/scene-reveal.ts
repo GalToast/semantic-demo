@@ -5,7 +5,7 @@
  * Manages the camera pull-in animation that runs when the 3D scene first
  * becomes visible, and resizes the renderer + camera when the window changes.
  */
-import { Vector3 } from 'three'
+import { Vector3, WebGLRenderer } from 'three'
 import { appState as state } from '@lib/state/app.svelte.ts'
 
 import {
@@ -62,8 +62,8 @@ export function getSceneRevealProgress(frameNow: number): number {
 }
 
 export function onWindowResize(): void {
-    const camera = state.camera as { aspect: number; updateProjectionMatrix(): void } | null
-    const renderer = state.renderer as { setSize(w: number, h: number): void } | null
+    const camera = state.camera
+    const renderer = state.renderer
     if (!camera || !renderer) return
     const { width, height } = getViewportSize()
     const isMobile = isMobileViewport()
