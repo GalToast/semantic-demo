@@ -50,7 +50,7 @@ const pushBezierSource = sectionBetween(myceliumEngine, 'function pushBezierLine
 includesAll(
     pushBezierSource,
     [
-        'const samples = [];',
+        'const samples = []',
         'for (let i = 0; i < samples.length - 1; i++)',
         'target.push(start.x, start.y, start.z, end.x, end.y, end.z)',
         'colorTarget.push(start.r, start.g, start.b, end.r, end.g, end.b)'
@@ -82,7 +82,7 @@ includesAll(
         'core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04',
         'core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008',
         'core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072',
-        'core: 0.20, wispy: 0.08, bridge: 0.13, pulse: 0.044'
+        'core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044'
     ],
     'mycelium presentation opacity profile'
 )
@@ -130,7 +130,7 @@ assert(
 const updateThreadsSource = sectionBetween(
     myceliumEngine,
     'export function updateMyceliumThreads',
-    'state.myceliumDirty = false;'
+    'state.myceliumDirty = false'
 )
 includesAll(
     updateThreadsSource,

@@ -33,26 +33,13 @@ export const VALID_PANEL_SURFACES = new Set<string>([
     'settling'
 ])
 
-export const VALID_SEARCH_STATUS = new Set<string>([
-    'idle',
-    'searching',
-    'focusing',
-    'results',
-    'empty',
-    'error'
-])
+export const VALID_SEARCH_STATUS = new Set<string>(['idle', 'searching', 'focusing', 'results', 'empty', 'error'])
 
 export const VALID_LOADING_PHASES = new Set<string>(['records', 'scene', 'restore', 'launch'])
 
 export const VALID_SEMANTIC_LANE_STATES = new Set<string>(['checking', 'healthy', 'degraded', 'offline'])
 
-export const VALID_FOCUS_TRANSITION_MODES = new Set<string>([
-    'idle',
-    'entering',
-    'settling',
-    'inside',
-    'exiting'
-])
+export const VALID_FOCUS_TRANSITION_MODES = new Set<string>(['idle', 'entering', 'settling', 'inside', 'exiting'])
 
 export const VALID_MYCELIUM_MODES = new Set<string>([
     'default',

@@ -501,8 +501,7 @@ export function syncRuntimeState(snapshot: Record<string, unknown>): void {
         if (s.navState !== undefined) appState.navState = s.navState
         if (s.targetPositions !== undefined) appState.targetPositions = s.targetPositions
         if (s.pocketMotionByIndex !== undefined) appState.pocketMotionByIndex = s.pocketMotionByIndex
-        if (s.pocketTransitionStartedAt !== undefined)
-            appState.pocketTransitionStartedAt = s.pocketTransitionStartedAt
+        if (s.pocketTransitionStartedAt !== undefined) appState.pocketTransitionStartedAt = s.pocketTransitionStartedAt
         if (s.nodesAreSettling !== undefined) appState.nodesAreSettling = s.nodesAreSettling
         if (s.autoRotate !== undefined) appState.autoRotate = s.autoRotate
     })

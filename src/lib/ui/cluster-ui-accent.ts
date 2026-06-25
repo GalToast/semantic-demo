@@ -3,6 +3,7 @@
 // Applies cluster-based CSS custom properties to DOM elements.
 
 import { appState as state } from '@lib/state/app.svelte'
+import type { BusinessRecord } from '@lib/types/business'
 
 const DEFAULT_CLUSTER_RGB = '78 205 196'
 

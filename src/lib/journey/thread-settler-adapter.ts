@@ -8,30 +8,30 @@
  */
 
 import {
-	traverseNeighbor as _traverseNeighborImpl,
-	previewInsideNextThread as _previewInsideNextThreadImpl
-} from './thread-settler';
+    traverseNeighbor as _traverseNeighborImpl,
+    previewInsideNextThread as _previewInsideNextThreadImpl
+} from './thread-settler'
 
 export function traverseNeighbor(step: number) {
-	return _traverseNeighborImpl(step);
+    return _traverseNeighborImpl(step)
 }
 
 export function previewInsideNextThread(options?: Record<string, unknown>) {
-	return _previewInsideNextThreadImpl(options);
+    return _previewInsideNextThreadImpl(options)
 }
 
 // Re-exports from thread-settler for backward compatibility and type safety
 
 export {
-	setTimer,
-	clearTimer,
-	cancelAllThreadTimers,
-	initJourneyTimerAdapter,
-	summarizeNeighborReason,
-	getInsideRelationshipLabel,
-	getStrandArrivalNote,
-	walkThreadNeighbor
-} from './thread-settler';
+    setTimer,
+    clearTimer,
+    cancelAllThreadTimers,
+    initJourneyTimerAdapter,
+    summarizeNeighborReason,
+    getInsideRelationshipLabel,
+    getStrandArrivalNote,
+    walkThreadNeighbor
+} from './thread-settler'
 
-export type { ThreadCandidate } from './thread-model';
-export type { WalkOptions, WalkResult, PreviewInsideOptions } from './thread-settler';
+export type { ThreadCandidate } from './thread-model'
+export type { WalkOptions, WalkResult, PreviewInsideOptions } from './thread-settler'

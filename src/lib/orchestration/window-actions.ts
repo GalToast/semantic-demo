@@ -10,6 +10,7 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { search, clearSearch } from '@lib/search/state'
+import type { ThreadCandidateLike } from '@lib/state/state-types'
 import { switchView } from '@lib/orchestration/view-controller'
 import {
     setTrailDepth,

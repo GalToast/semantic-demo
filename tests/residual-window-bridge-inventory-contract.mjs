@@ -722,7 +722,9 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     )
     assert(
         /import\s+\{\s*appState\s*\}\s+from\s+['"]@lib\/state\/app\.svelte['"]/.test(mapFlatteningLayoutSrc) &&
-            /import\s+type\s+\{\s*SemanticState\s*\}\s+from\s+['"]@lib\/state\/state-types['"]/.test(mapFlatteningLayoutSrc) &&
+            /import\s+type\s+\{\s*SemanticState\s*\}\s+from\s+['"]@lib\/state\/state-types['"]/.test(
+                mapFlatteningLayoutSrc
+            ) &&
             /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
         'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
     )

@@ -107,9 +107,11 @@ function testCallerWiring() {
             /import\s+\{[^}]*\bgetNextWalkCandidateForIndex\b[^}]*\}\s+from\s+['"][^'"]*(?:lifecycle-adapter|neighborhood)['"]/,
             `${label} adapter import`
         )
-        assertIncludes(
+        assertMatches(
             source,
-            `getNextExploreCandidateForIndex(${focusName}, getNextWalkCandidateForIndex`,
+            new RegExp(
+                `getNextExploreCandidateForIndex\\s*\\(?\\s*${focusName}\\s*,?\\s*\\n?\\s*getNextWalkCandidateForIndex`
+            ),
             `${label} helper call`
         )
         assertNotIncludes(source, 'window.getNextWalkCandidateForIndex', `${label} no getNextWalk window bridge`)

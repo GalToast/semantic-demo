@@ -54,6 +54,8 @@ import type {
     LineSegments,
     Group,
     Mesh,
+    Object3D,
+    PointLight,
     Sprite,
     HemisphereLight,
     DirectionalLight,
@@ -148,10 +150,22 @@ class AppState {
     focusAnchorGroup = $state<Group | null>(null)
     focusAnchorRingMesh = $state<Mesh | null>(null)
     focusAnchorHaloSprite = $state<Sprite | null>(null)
+    focusLens = $state<Mesh | null>(null)
+    focusHalo = $state<Sprite | null>(null)
+    focusCore = $state<Mesh | null>(null)
+    focusMoteGroup = $state<Group | null>(null)
+    focusMotes = $state<Sprite[]>([])
+    focusPetalGroup = $state<Group | null>(null)
+    focusPetals = $state<Mesh[]>([])
+    focusFilaments = $state<LineSegments | null>(null)
+    hoverHalo = $state<Mesh | null>(null)
+    anchorBloomLight = $state<PointLight | null>(null)
+    semanticManifold = $state<Object3D | null>(null)
     focusSemanticConnectionPairs = $state<Array<FocusConnectionSegment>>([])
     semanticLensGroup = $state<Group | null>(null)
     semanticLensGlow = $state<Mesh | null>(null)
     semanticLensSpokes = $state<LineSegments | null>(null)
+    routeTraceRenderStateKey = $state<string>('')
     myceliumConnectionPairs = $state<Array<{ a: number; b: number; layer: number }>>([])
     myceliumDirty = $state<boolean>(true)
     hemiLight = $state<HemisphereLight | null>(null)
@@ -376,6 +390,13 @@ class AppState {
     canvasThreadInspectionClearTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     suppressCanvasFocusUntil = $state<number>(0)
     threadInspectorPointerInside = $state<boolean>(false)
+    focusPocketTransitionStartedAt = $state<number>(0)
+    mobileRouteFieldPeekTimer = $state<ReturnType<typeof setTimeout> | null>(null)
+    urlStateRestoreToken = $state<number>(0)
+    dataLoadAttempt = $state<number>(0)
+    semanticSpaceLayoutManifest = $state<unknown>(null)
+    semanticSpaceLayoutStatus = $state<string>('')
+    semanticSpaceLayoutError = $state<string | null>(null)
     inspectedStrandDiagnostics = $state<InspectedStrandDiagnostics>({
         active: false,
         source: 'none',
@@ -615,13 +636,15 @@ function getAppState(): AppState {
         // `Object.defineProperty(window, GLOBAL_APP_STATE_KEY, { get: getAppState })`,
         // so reading it triggers `getAppState()` again — infinite recursion.
         const directInstance =
-            typeof window !== 'undefined' ? ((window as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as AppState | undefined) : undefined
+            typeof window !== 'undefined'
+                ? ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] as AppState | undefined)
+                : undefined
         if (directInstance) {
             _appStateInstance = directInstance
         } else {
             _appStateInstance = new AppState()
             if (typeof window !== 'undefined') {
-                ;(window as Record<string, unknown>)[APP_STATE_DIRECT_KEY] = _appStateInstance
+                ;(window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] = _appStateInstance
             }
         }
     }

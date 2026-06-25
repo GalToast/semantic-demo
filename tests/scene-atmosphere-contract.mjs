@@ -38,13 +38,13 @@ const checks = [
         name: 'renderer clear alpha is centralized for translucent atmosphere',
         pass:
             /clearAlpha:\s*0\.96\b/.test(nodeManagerSrc) &&
-            /setClearColor\s*\(\s*\(SCENE_ATMOSPHERE\s+as\s+any\)\.fogColor\s*\?\?\s*0x0d2024\s*,\s*\(SCENE_ATMOSPHERE\s+as\s+any\)\.clearAlpha\s*\?\?\s*0\.96\s*\)/.test(
+            /setClearColor\s*\(\s*SCENE_ATMOSPHERE\.fogColor\s*\?\?\s*0x0d2024\s*,\s*SCENE_ATMOSPHERE\.clearAlpha\s*\?\?\s*0\.96\s*\)/.test(
                 rendererSrc
             )
     },
     {
         name: 'renderer uses tone mapping exposure from scene atmosphere',
-        pass: /toneMappingExposure\s*=\s*\(SCENE_ATMOSPHERE\s+as\s+any\)\.toneExposure\s*\?\?\s*1\.0/.test(rendererSrc)
+        pass: /toneMappingExposure\s*=\s*SCENE_ATMOSPHERE\.toneExposure\s*\?\?\s*1\.0/.test(rendererSrc)
     },
     {
         name: 'county point cloud does not use additive blending',

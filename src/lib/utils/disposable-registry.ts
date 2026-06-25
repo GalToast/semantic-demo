@@ -90,7 +90,12 @@ export class DisposableRegistry {
 
     /** Track a DOM / EventTarget listener.  Removes it on disposeAll().
      *  Accepts any object with removeEventListener (e.g. Three.js OrbitControls). */
-    listener(target: EventTarget, type: string, handler: EventListener, options?: EventListenerOptions | boolean): void {
+    listener(
+        target: EventTarget,
+        type: string,
+        handler: EventListener,
+        options?: EventListenerOptions | boolean
+    ): void {
         this.add(() => target.removeEventListener(type, handler, options))
     }
 

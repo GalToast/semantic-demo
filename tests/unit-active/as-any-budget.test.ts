@@ -11,10 +11,18 @@ const srcDir = resolve(import.meta.dirname, '../../src')
  *   `as any` (cast)
  *   `<any>` (generic arg)
  *   ` any[]` (array type)
+ *
+ * Comments are stripped first so docstrings like "// `appState as any` cast"
+ * don't count.
  */
 function countAnyOccurrences(src: string): number {
     const re = /: any\b| as any\b|<any>| any\[]/g
     return (src.match(re) || []).length
+}
+
+/** Strip both block (`/* ... */ ;`) and line (` // ...`) comments. */
+function stripComments(src: string): string {
+    return src.replace(/\/[\/*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 function walk(dir: string, callback: (path: string) => void): void {
@@ -22,7 +30,7 @@ function walk(dir: string, callback: (path: string) => void): void {
         const fullPath = join(dir, entry.name)
         if (entry.isDirectory()) {
             walk(fullPath, callback)
-        } else if (entry.name.endsWith('.ts') || entry.name.endsWith('.svelte')) {
+        } else if ((entry.name.endsWith('.ts') || entry.name.endsWith('.svelte')) && !entry.name.endsWith('.d.ts')) {
             callback(fullPath)
         }
     }
@@ -40,7 +48,8 @@ function runAudit(): AuditResult {
 
     walk(srcDir, (filePath) => {
         const src = readFileSync(filePath, 'utf-8')
-        const count = countAnyOccurrences(src)
+        const stripped = stripComments(src)
+        const count = countAnyOccurrences(stripped)
         if (count > 0) {
             totalCount += count
             fileCounts.set(filePath, count)
@@ -62,15 +71,16 @@ function runAudit(): AuditResult {
 describe('Global as-any budget', () => {
     const audit = runAudit()
 
-    it('does not exceed the 2026-06-24 baseline of 470 casts', () => {
-        // This test locks in the global `as any` count. If it increases,
-        // someone added a new `as any` without justification. Fix the cast
-        // or update the budget with a comment in docs/typing-contract.md.
+    it('does not exceed the 2026-06-25 baseline of 5 casts', () => {
+        // Budget: 5 — the codebase is effectively as-any-free.
+        // Most patterns should be 0. A tiny buffer (5) allows for
+        // legitimate edge cases (test globals, external API boundaries)
+        // but any addition must be justified in docs/typing-contract.md.
         expect(
             audit.totalCount,
             `Global as-any count increased to ${audit.totalCount}. ` +
-                `Budget: 58. See docs/typing-contract.md for how to fix or justify.`
-        ).toBeLessThanOrEqual(58)
+                `Budget: 5. See docs/typing-contract.md for how to fix or justify.`
+        ).toBeLessThanOrEqual(5)
     })
 
     it('lists the top 10 offenders when the budget is exceeded', () => {

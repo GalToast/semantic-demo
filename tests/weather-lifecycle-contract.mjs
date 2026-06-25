@@ -36,7 +36,7 @@ assert.match(
 )
 assert.match(
     src,
-    /state\.weatherInitialized\s*=\s*false;/,
+    /state\.weatherInitialized\s*=\s*false/,
     'clearWeatherRefreshTimer should reset weatherInitialized so hydration can restart timers'
 )
 // Trailing semicolons optional — weather-ui.ts dropped semicolons in a style sweep;

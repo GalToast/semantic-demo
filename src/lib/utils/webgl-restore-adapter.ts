@@ -7,17 +7,15 @@
  * Port of js/modules/webgl-restore-adapter.ts
  */
 
-let _restoreHandler: (() => Promise<unknown> | unknown) | null = null;
+let _restoreHandler: (() => Promise<unknown> | unknown) | null = null
 
 /**
  * Register (or clear) the handler that restores the WebGL context.
  *
  * @param fn - Async or sync restore function, or null to clear.
  */
-export function setWebGLContextRestoreHandler(
-  fn: (() => Promise<any> | any) | null,
-): void {
-  _restoreHandler = typeof fn === 'function' ? fn : null;
+export function setWebGLContextRestoreHandler(fn: (() => Promise<unknown> | unknown) | null): void {
+    _restoreHandler = typeof fn === 'function' ? fn : null
 }
 
 /**
@@ -26,6 +24,6 @@ export function setWebGLContextRestoreHandler(
  * @returns true if a handler was invoked, false if none was registered.
  */
 export function restoreWebGLContext(): Promise<boolean> {
-  if (!_restoreHandler) return Promise.resolve(false);
-  return Promise.resolve(_restoreHandler()).then(() => true);
+    if (!_restoreHandler) return Promise.resolve(false)
+    return Promise.resolve(_restoreHandler()).then(() => true)
 }

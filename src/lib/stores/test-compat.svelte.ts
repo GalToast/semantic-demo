@@ -129,7 +129,7 @@ if (typeof document !== 'undefined' && typeof MutationObserver !== 'undefined') 
 
 // Expose for contract tests that set body dataset without firing observers
 if (typeof window !== 'undefined') {
-    ;(window as Record<string, unknown>).syncTestStateFromBody = syncTestStateFromBody
+    ;(window as unknown as Record<string, unknown>).syncTestStateFromBody = syncTestStateFromBody
 }
 
 /** Sync body dataset from test store (for components that write to body) */

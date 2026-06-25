@@ -311,7 +311,7 @@ export function getSemanticThreadCandidates(index: number, ...args: unknown[]): 
         // Pure path
         const [points, semanticNeighborMapByLeadId, pointIndexByLeadId] = args as [
             readonly BusinessRecord[],
-            Map<string, { neighbors: Array<any> }>,
+            Map<string, { neighbors: Array<SemanticNeighborDetail> }>,
             Map<string, number>
         ]
         if (!Number.isFinite(index) || index < 0 || index >= points.length) return []

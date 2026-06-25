@@ -106,7 +106,7 @@ await test('setMyceliumMode delegates to navigation store owner', () => {
     )
     const body = exportedFunctionSource(navigationSrc, 'setMyceliumMode')
     assert(/_navWritable\.update/.test(body), 'navigation setMyceliumMode updates nav writable')
-    assert(/myceliumMode:\s*mode\s+as\s+any/.test(body), 'navigation setMyceliumMode writes myceliumMode')
+    assert(/myceliumMode:\s*mode/.test(body), 'navigation setMyceliumMode writes myceliumMode')
     assert(!/window\./.test(body), 'navigation setMyceliumMode avoids window bridge calls')
     assert(!/updateUrlState\s*\(/.test(body), 'navigation setMyceliumMode avoids direct URL state writes')
 })
