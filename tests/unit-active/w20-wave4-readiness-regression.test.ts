@@ -109,7 +109,7 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
     // it's a regression, not pending cleanup.
 
     describe('1. Hard invariants (regression gate)', () => {
- it('no js/modules/ file imports from ../../src/lib/... (or directory is gone)', => {
+ it('no js/modules/ file imports from ../../src/lib/... (or directory is gone)', () => {
             const tsFiles = collectTsFiles(JS_MODULES)
             const violations: string[] = []
 
@@ -217,7 +217,7 @@ describe('W20 Wave 4 readiness: no cross-track legacy imports', () => {
             }
         })
 
- it('no js/modules/ file imports from ./lifecycle.ts (deleted)', => {
+ it('no js/modules/ file imports from ./lifecycle.ts (deleted)', () => {
             expect(
                 lifecycleImporters,
                 `Found ${lifecycleImporters.length} import(s) from deleted ./lifecycle.ts:\n` +
