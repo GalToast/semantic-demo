@@ -75,8 +75,13 @@ describe('SpectorInspector component (source-inspection)', () => {
     });
 
     it('onDestroy cleanup removes window.__spector and window.__spectorStatus', () => {
+        // W48-Phase-3: src/window.d.ts declares typed Window properties
+        // for __spector and __spectorStatus, so the cleanup uses
+        // `delete window.__spector` directly (no per-use cast needed).
         expect(source).toContain('onDestroy');
-        expect(source).toContain('delete (window as unknown as { __spector?: unknown }).__spector');
-        expect(source).toContain('delete (window as unknown as { __spectorStatus?: unknown }).__spectorStatus');
+        expect(source).toContain('delete window.__spector');
+        expect(source).toContain('delete window.__spectorStatus');
+        // Guard: no per-use `as unknown as` cast on the delete
+        expect(source).not.toMatch(/delete\s+\(window\s+as\s+unknown/);
     });
 });
