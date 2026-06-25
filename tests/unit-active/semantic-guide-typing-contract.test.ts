@@ -4,8 +4,8 @@
  * Lock-in: ensures the W47-Bite-Roughest type-safety tightening pass
  * on src/lib/journey/semantic-guide.ts does not regress.
  *
- * What got tightened (41 → 3 `any` occurrences, the largest single
- * tightening this session):
+ * What got tightened (41 → 3 → 0 `any` occurrences, the largest
+ * single tightening this session):
  *
  *   - **Dedupe imports** (L22-23): removed the dual-state import
  *     (same module imported twice with different names —
@@ -49,9 +49,9 @@
  *
  * Deferred (kept as baseline, 3 sites):
  *   - L208, L209, L211: `(window as any).__SEMANTIC_GUIDE_TIMEOUT_MS__`
- *     This is a deliberate test-injection global (set in test code,
- *     read in production code). The cast bypasses Window's strict
- *     type. Changing it would require a typed Window extension.
+ *     REPLACED in W48-Phase-3 by typed Window augmentation in
+ *     src/window.d.ts (`__SEMANTIC_GUIDE_TIMEOUT_MS__?: number`).
+ *     The production code now reads `window.X` directly with no cast.
  *
  * What this guards:
  *   1. any occurrence count is exactly 3 (post-bite baseline; was 41)
@@ -139,16 +139,24 @@ describe('semantic-guide — typing contract (W47-Bite-Roughest tightening)', ()
         expect(stripped.match(/catch\s*\(\s*error\s*:\s*any\s*\)/g), '`catch (error: any)` still present').toBeNull()
     })
 
-    it('window.__SEMANTIC_GUIDE_TIMEOUT_MS__ test-injection uses Record<string, unknown>', () => {
-        // The 3 prior `as any` casts for the test-injection global were
-        // tightened to `Record<string, unknown>` in W48. Guard this so
-        // future contributors know not to loosen back to `as any`.
+    it('window.__SEMANTIC_GUIDE_TIMEOUT_MS__ uses typed Window augmentation (no per-use cast)', () => {
+        // W48-Phase-3: the 3 prior `(window as any).__SEMANTIC_GUIDE_TIMEOUT_MS__`
+        // casts were tightened by adding a typed Window augmentation in
+        // src/window.d.ts (`__SEMANTIC_GUIDE_TIMEOUT_MS__?: number`).
+        // The production code now reads `window.__SEMANTIC_GUIDE_TIMEOUT_MS__`
+        // directly with no per-use cast. Guard this so future contributors
+        // know to extend the Window interface rather than adding more
+        // casts at use-sites.
         const asAny = (stripped.match(/window\s+as\s+any\)\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []).length
-        const asRecord = (
-            stripped.match(/window\s+as\s+(?:unknown\s+as\s+)?Record<[^)]+>\)\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []
-        ).length
         expect(asAny).toBe(0)
-        expect(asRecord).toBeGreaterThanOrEqual(3)
+        // The typed Window interface must declare the property
+        const winDts = readFileSync(resolve(__dirname, '../../src/window.d.ts'), 'utf-8')
+        expect(winDts).toMatch(/__SEMANTIC_GUIDE_TIMEOUT_MS__\??:\s*number/)
+        // The production code uses window.X directly (no cast)
+        const directReads = (
+            stripped.match(/window\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []
+        ).length
+        expect(directReads).toBeGreaterThanOrEqual(3)
     })
 
     it('ensureSemanticGuideCorrelationId uses `unknown` with object guard', () => {
