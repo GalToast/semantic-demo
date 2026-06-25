@@ -108,7 +108,9 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
     it('Point and BusinessNamePresentation types are imported', () => {
         const source = readSource('src/lib/journey/selected-card.ts')
         expect(source).toMatch(/import\s+type\s*\{[^}]*\bPoint\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/)
-        expect(source).toMatch(/import\s+type\s*\{[^}]*\bBusinessNamePresentation\b[^}]*\}\s+from\s+['"][^'"]*dom-formatters['"]/)
+        expect(source).toMatch(
+            /import\s+type\s*\{[^}]*\bBusinessNamePresentation\b[^}]*\}\s+from\s+['"][^'"]*dom-formatters['"]/
+        )
     })
 
     it('focusOnPoint call uses Parameters<...> cast (documents pre-existing mismatch)', () => {

@@ -96,8 +96,14 @@ describe('Axis 4 / audio-scape singleton refactor', () => {
 
         // Outside the declaration, count audioState.X references
         const outside = source.replace(declBlock, '')
-        const stateRefs = outside.match(/audioState\.(audioCtx|mainOsc|gainNode|filterNode|rafId|lastCameraPos|currentVelocity|smoothVelocity)\b/g) || []
-        expect(stateRefs.length, `expected ≥30 audioState references outside declaration, got ${stateRefs.length}`).toBeGreaterThanOrEqual(30)
+        const stateRefs =
+            outside.match(
+                /audioState\.(audioCtx|mainOsc|gainNode|filterNode|rafId|lastCameraPos|currentVelocity|smoothVelocity)\b/g
+            ) || []
+        expect(
+            stateRefs.length,
+            `expected ≥30 audioState references outside declaration, got ${stateRefs.length}`
+        ).toBeGreaterThanOrEqual(30)
     })
 
     it('public API exports preserved (initAudio, setAudioMuted, etc)', () => {
