@@ -8,9 +8,6 @@ import {
     refreshCompositionState
 } from '@lib/orchestration/lifecycle'
 import { switchView } from '@lib/orchestration/view-controller'
-import { updateUrlState } from '@lib/orchestration/url-state'
-import { applyFilters, clearShortSemanticSearchState } from '@lib/orchestration/search-filter-core'
-import { clearSearchGlow } from '@lib/stores/search.svelte'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { previewInsideNextThread } from '@lib/journey/thread-settler-adapter'
 import { getNextWalkCandidateForIndex, getCurrentTrailFocusIndex } from '@lib/journey/neighborhood'
@@ -61,14 +58,6 @@ export function buildAdapterDeps(): AdapterDeps {
             setLastCanvasNodeFocusPick: (val: unknown) => {
                 mutableAppState.lastCanvasNodeFocusPick = val || null
             }
-        },
-        clusterFilter: {
-            applyFilters,
-            clearSearchGlow,
-            updateUrlState: (extra: Record<string, unknown>, options: Record<string, unknown>) =>
-                updateUrlState(extra as Record<string, string | null | undefined>, options as never),
-            clearShortSemanticSearchState: (resultsEl: Element | null, statusEl: Element | null) =>
-                clearShortSemanticSearchState(resultsEl as HTMLElement | null, statusEl as HTMLElement | null)
         },
         switchView: (view: string) => switchView(view as never),
         journeySelectedCard: {

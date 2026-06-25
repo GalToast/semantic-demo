@@ -5,9 +5,9 @@
  *
  * Verifies:
  *  - src/lib/orchestration/adapters.ts exists and exports initAdapters
- *  - adapters.ts imports all 11 adapter init functions from their canonical owners
- *  - adapters.ts body calls all 11 init functions
- *  - calling initAdapters() with mock deps doesn't throw and invokes all 11
+ *  - adapters.ts imports all 10 adapter init functions from their canonical owners
+ *  - adapters.ts body calls all 10 init functions
+ *  - calling initAdapters() with mock deps doesn't throw and invokes all 10
  *    adapter init functions exactly once
  *  - adapters.ts tracks initialization state via areAdaptersInitialized()
  *
@@ -41,11 +41,10 @@ const W11_MUTABLE_MOCK_FNS: Record<AdapterInitName, ReturnType<typeof vi.fn>> = 
     ReturnType<typeof vi.fn>
 >
 
-// ── The 11 adapter init functions (canonical names) ──────────────────────────
+// ── The 10 adapter init functions (canonical names) ──────────────────────────
 
 const ADAPTER_INIT_NAMES = [
     'initJourneyLifecycleAdapter',
-    'initClusterFilterAdapter',
     'initJourneyCompassAdapter',
     'initJourneySelectedCard',
     'initSemanticDiveUiSubscriptions',
@@ -61,7 +60,6 @@ type AdapterInitName = (typeof ADAPTER_INIT_NAMES)[number]
 
 const ADAPTER_IMPORT_SOURCES: Record<AdapterInitName, string> = {
     initJourneyLifecycleAdapter: '@lib/journey/lifecycle-adapter',
-    initClusterFilterAdapter: '@lib/orchestration/cluster-filter-controller',
     initJourneyCompassAdapter: '@lib/orchestration/compass-controller',
     initJourneySelectedCard: '@lib/journey/selected-card',
     initSemanticDiveUiSubscriptions: '@lib/journey/semantic-dive',
@@ -87,7 +85,7 @@ describe('W11-T7: adapters.ts exports initAdapters API', () => {
     })
 })
 
-describe('W11-T7: adapters.ts imports all 11 adapter init functions from canonical owners', () => {
+describe('W11-T7: adapters.ts imports all 10 adapter init functions from canonical owners', () => {
     const src = readOrchestrationSource()
 
     for (const name of ADAPTER_INIT_NAMES) {
@@ -107,7 +105,7 @@ describe('W11-T7: adapters.ts imports all 11 adapter init functions from canonic
     }
 })
 
-describe('W11-T7: adapters.ts body calls all 11 init functions', () => {
+describe('W11-T7: adapters.ts body calls all 10 init functions', () => {
     const src = readOrchestrationSource()
 
     for (const name of ADAPTER_INIT_NAMES) {
@@ -121,7 +119,7 @@ describe('W11-T7: adapters.ts body calls all 11 init functions', () => {
 
 // ── Runtime Test ─────────────────────────────────────────────────────────────
 
-describe('W11-T7: runtime — initAdapters() invokes all 11 adapters', () => {
+describe('W11-T7: runtime — initAdapters() invokes all 10 adapters', () => {
     beforeEach(async () => {
         // Reset the module state by re-importing (vitest module cache)
         vi.resetModules()
@@ -131,7 +129,7 @@ describe('W11-T7: runtime — initAdapters() invokes all 11 adapters', () => {
         }
     })
 
-    it('calls all 11 adapter init functions exactly once without throwing', async () => {
+    it('calls all 10 adapter init functions exactly once without throwing', async () => {
         for (const [name, source] of Object.entries(ADAPTER_IMPORT_SOURCES) as [AdapterInitName, string][]) {
             vi.doMock(source, () => ({ [name]: W11_MUTABLE_MOCK_FNS[name] }))
         }
@@ -162,12 +160,6 @@ describe('W11-T7: runtime — initAdapters() invokes all 11 adapters', () => {
                 setLastCanvasNodeHover: vi.fn(),
                 setLastCanvasNodeFocusPick: vi.fn()
             },
-            clusterFilter: {
-                applyFilters: vi.fn(),
-                clearSearchGlow: vi.fn(),
-                updateUrlState: vi.fn(),
-                clearShortSemanticSearchState: vi.fn()
-            },
             switchView: vi.fn(),
             journeySelectedCard: {
                 getStrandArrivalNote: vi.fn(),
@@ -195,7 +187,7 @@ describe('W11-T7: runtime — initAdapters() invokes all 11 adapters', () => {
         // asserting.
         await new Promise((resolve) => setTimeout(resolve, 50))
 
-        // All 11 should have been called exactly once
+        // All 10 should have been called exactly once
         for (const name of ADAPTER_INIT_NAMES) {
             expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
         }

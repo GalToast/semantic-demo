@@ -256,8 +256,6 @@ function _ensureModules(): void {
     }
 }
 
-void _ensureModules()
-
 // ── Re-exported legacy helpers (delegation wrappers) ─────────────────────────
 
 export function updateMyceliumThreads(): void {
@@ -445,6 +443,7 @@ function _yieldToBrowser(_timeoutMs = 50): Promise<void> {
 }
 
 export async function initThreeJS() {
+    _ensureModules()
     cancelAnimate()
 
     // Reset circuit breaker so a fresh init can start the loop even if a

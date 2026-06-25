@@ -7,7 +7,6 @@
  * not yet available in the Svelte layer).
  */
 import { initJourneyLifecycleAdapter } from '@lib/journey/lifecycle-adapter'
-import { initClusterFilterAdapter } from '@lib/orchestration/cluster-filter-controller'
 import { initJourneyCompassAdapter } from '@lib/orchestration/compass-controller'
 import { initJourneySelectedCard } from '@lib/journey/selected-card'
 import { initSemanticDiveUiSubscriptions } from '@lib/journey/semantic-dive'
@@ -76,13 +75,6 @@ export interface JourneyLifecycleDeps {
 /**
  * Dependencies for the cluster filter adapter (4 functions).
  */
-export interface ClusterFilterDeps {
-    applyFilters: () => void
-    clearSearchGlow: () => void
-    updateUrlState: (extra: Record<string, unknown>, options: Record<string, unknown>) => void
-    clearShortSemanticSearchState: (resultsEl: Element | null, statusEl: Element | null) => void
-}
-
 /**
  * Dependencies for the thread inspector adapter (4 functions).
  *
@@ -110,8 +102,6 @@ export interface ThreadInspectorDeps {
 export interface AdapterDeps {
     /** 14-function deps bag for journey lifecycle */
     journeyLifecycle: JourneyLifecycleDeps
-    /** 4-function deps bag for cluster filter */
-    clusterFilter: ClusterFilterDeps
     /** View-switch function for compass adapter */
     switchView: (view: string) => void
     /** Journey selected card deps */
@@ -156,16 +146,13 @@ export function initAdapters(deps: AdapterDeps): void {
     // 1. Journey lifecycle adapter (14 deps)
     initJourneyLifecycleAdapter(deps.journeyLifecycle)
 
-    // 2. Cluster filter adapter (4 deps)
-    initClusterFilterAdapter(deps.clusterFilter)
-
-    // 3. Journey compass adapter (view-switch)
+    // 2. Journey compass adapter (view-switch)
     initJourneyCompassAdapter({ switchView: deps.switchView })
 
-    // 4. Journey selected card adapter (3 deps)
+    // 3. Journey selected card adapter (3 deps)
     initJourneySelectedCard(deps.journeySelectedCard)
 
-    // 5. Semantic dive UI subscriptions (no deps)
+    // 4. Semantic dive UI subscriptions (no deps)
     initSemanticDiveUiSubscriptions()
 
     // 6. Focus neighbor rail subscriptions (no deps)

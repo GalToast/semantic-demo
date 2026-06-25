@@ -64,17 +64,11 @@ export {
     setTrailDepth,
     setSemanticDiveMode,
     getBloomIndices,
-    getBridgeIndices
-} from '@lib/stores/lifecycle'
-
-export {
+    getBridgeIndices,
     resetExplorationFocus,
     resetNodePositions,
     resetExperienceState,
-    returnToOverview
-} from '@lib/stores/lifecycle'
-
-export {
+    returnToOverview,
     activateSearchGlow,
     showExploreTrailReview,
     hideExploreTrailReview,

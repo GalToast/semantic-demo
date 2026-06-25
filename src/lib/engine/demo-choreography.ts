@@ -388,154 +388,118 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         // 50ms — glow highlight
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    document.dispatchEvent(
-                        new CustomEvent('micro-demo-node-highlight', {
-                            detail: { index: demoNode, phase: 'glow' }
-                        })
-                    )
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (50ms glow) failed:', err)
-                }
+                if (_demoCancelled) return
+                document.dispatchEvent(
+                    new CustomEvent('micro-demo-node-highlight', {
+                        detail: { index: demoNode, phase: 'glow' }
+                    })
+                )
             }, 50)
         )
 
         // 100ms — start camera glide (1200ms animation, arrives at ~1400ms)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    camera.animateCameraToNode(demoNode, {
-                        transitionStyle: 'focus',
-                        duration: 1200,
-                        verticalLift: 0.05,
-                        distance: 0.45
+                if (_demoCancelled) return
+                camera.animateCameraToNode(demoNode, {
+                    transitionStyle: 'focus',
+                    duration: 1200,
+                    verticalLift: 0.05,
+                    distance: 0.45
+                })
+                document.dispatchEvent(
+                    new CustomEvent('micro-demo-node-highlight', {
+                        detail: { index: demoNode, phase: 'gliding' }
                     })
-                    document.dispatchEvent(
-                        new CustomEvent('micro-demo-node-highlight', {
-                            detail: { index: demoNode, phase: 'gliding' }
-                        })
-                    )
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (100ms glide) failed:', err)
-                }
+                )
             }, 100)
         )
 
         // 1400ms — arrived, setup focus (GLIDING_MS)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    _demoPhase = PHASE.ARRIVED
-                    // Fire-and-forget: demoFocusSetup is async but caller does not need to await.
-                    void demoFocusSetup(demoNode)
-                    document.body.dataset.focusOrigin = 'micro-demo'
-                    document.dispatchEvent(
-                        new CustomEvent('micro-demo-node-highlight', {
-                            detail: { index: demoNode, phase: 'arrived' }
-                        })
-                    )
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (1400ms arrived) failed:', err)
-                }
+                if (_demoCancelled) return
+                _demoPhase = PHASE.ARRIVED
+                // Fire-and-forget: demoFocusSetup is async but caller does not need to await.
+                void demoFocusSetup(demoNode)
+                document.body.dataset.focusOrigin = 'micro-demo'
+                document.dispatchEvent(
+                    new CustomEvent('micro-demo-node-highlight', {
+                        detail: { index: demoNode, phase: 'arrived' }
+                    })
+                )
             }, 1400)
         )
 
         // 1520ms — card visible (GLIDING_MS + ARRIVED_HOLD_MS)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    _demoPhase = PHASE.CARD_VISIBLE
-                    document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (1520ms card) failed:', err)
-                }
+                if (_demoCancelled) return
+                _demoPhase = PHASE.CARD_VISIBLE
+                document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
             }, 1520)
         )
 
         // 2520ms — second name pulse (midway through CARD_VISIBLE)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (2520ms pulse) failed:', err)
-                }
+                if (_demoCancelled) return
+                document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
             }, 2520)
         )
 
         // 3320ms — pullback (GLIDING_MS + ARRIVED_HOLD_MS + CARD_VISIBLE_MS)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    _demoPhase = PHASE.PULLBACK
-                    camera.animateCameraToNode(demoNode, {
-                        transitionStyle: 'focus',
-                        duration: 1200,
-                        distance: 1.8,
-                        verticalLift: 0.12
-                    })
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (3320ms pullback) failed:', err)
-                }
+                if (_demoCancelled) return
+                _demoPhase = PHASE.PULLBACK
+                camera.animateCameraToNode(demoNode, {
+                    transitionStyle: 'focus',
+                    duration: 1200,
+                    distance: 1.8,
+                    verticalLift: 0.12
+                })
             }, 3320)
         )
 
         // 4520ms — wide view (above + PULLBACK_MS)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    _demoPhase = PHASE.WIDE_VIEW
-                    document.dispatchEvent(
-                        new CustomEvent('micro-demo-node-highlight', {
-                            detail: { index: demoNode, phase: 'wide_view' }
-                        })
-                    )
-                    panel.setInfoPanelOpen(false)
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (4520ms wide-view) failed:', err)
-                }
+                if (_demoCancelled) return
+                _demoPhase = PHASE.WIDE_VIEW
+                document.dispatchEvent(
+                    new CustomEvent('micro-demo-node-highlight', {
+                        detail: { index: demoNode, phase: 'wide_view' }
+                    })
+                )
+                panel.setInfoPanelOpen(false)
             }, 4520)
         )
 
         // 4870ms — returning to overview (above + WIDE_VIEW_HOLD_MS)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    _demoPhase = PHASE.RETURNING
-                    // Fire-and-forget: demoReset is async but caller does not need to await.
-                    void demoReset()
-                    microDemoCamera.animateCameraToOverview(1000)
-                    document.dispatchEvent(
-                        new CustomEvent('micro-demo-node-highlight', {
-                            detail: { index: demoNode, phase: 'cleanup' }
-                        })
-                    )
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (4870ms return) failed:', err)
-                }
+                if (_demoCancelled) return
+                _demoPhase = PHASE.RETURNING
+                // Fire-and-forget: demoReset is async but caller does not need to await.
+                void demoReset()
+                microDemoCamera.animateCameraToOverview(1000)
+                document.dispatchEvent(
+                    new CustomEvent('micro-demo-node-highlight', {
+                        detail: { index: demoNode, phase: 'cleanup' }
+                    })
+                )
             }, 4870)
         )
 
         // 5870ms — complete (above + RETURNING_MS)
         _demoTimers.push(
             window.setTimeout(() => {
-                try {
-                    if (_demoCancelled) return
-                    _demoPhase = PHASE.COMPLETE
-                    ui.showEndToast()
-                    // Fire-and-forget: endDemo is async but the demo is complete at this point.
-                    void endDemo('demo-complete', true)
-                } catch (err) {
-                    debugWarn('[demo-choreography] phase timer (5870ms complete) failed:', err)
-                }
+                if (_demoCancelled) return
+                _demoPhase = PHASE.COMPLETE
+                ui.showEndToast()
+                // Fire-and-forget: endDemo is async but the demo is complete at this point.
+                void endDemo('demo-complete', true)
             }, 5870)
         )
     } catch (err) {

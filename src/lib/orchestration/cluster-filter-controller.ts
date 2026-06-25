@@ -355,21 +355,6 @@ export { applyFilters, clearShortSemanticSearchState } from '@lib/orchestration/
 export { updateUrlState } from '@lib/orchestration/url-state'
 export { clearSearchGlow } from '@lib/stores/search.svelte'
 
-/**
- * Legacy adapter injection — no-op. The controller imports real
- * implementations directly; injection is no longer needed.
- */
-export function initClusterFilterAdapter(_deps?: unknown): void {
-    // intentionally empty — direct imports replace injection
-}
-
-/**
- * Legacy adapter readiness check — always true.
- */
-export function isClusterFilterAdapterReady(): boolean {
-    return true
-}
-
 // ── Event Subscriptions ────────────────────────────────────────────────────────
 
 subscribe(EVENTS.FILTER_CHANGED, () => {
