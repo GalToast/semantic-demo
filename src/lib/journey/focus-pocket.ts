@@ -132,7 +132,7 @@ export function clearFocusPocketIndices(): void {
 }
 
 export function getFocusPocketMeta(): unknown {
-    return (appState.navState.focusPocketMeta as unknown) ?? null
+    return appState.navState.focusPocketMeta ?? null
 }
 
 export function setFocusPocketMeta(meta: FocusPocketMeta): void {
@@ -150,9 +150,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     const targetPositions = appState.targetPositions
     const navState = appState.navState
 
-    const prevPocketIndexArray = Array.isArray(navState.focusPocketIndices)
-        ? [...navState.focusPocketIndices]
-        : []
+    const prevPocketIndexArray = Array.isArray(navState.focusPocketIndices) ? [...navState.focusPocketIndices] : []
     const prevPocketMeta = navState.focusPocketMeta as { active?: boolean } | null
     const prevPocketIndices = prevPocketMeta?.active ? new Set([index, ...prevPocketIndexArray]) : new Set<number>()
     const prevTargetByIndex = new Map<number, { x: number; y: number; z: number }>()
@@ -359,7 +357,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         primaryCount: primaryIndices.length,
         supportCount: supportIndices.length,
         haloCount: 0,
-        viewportProfile: viewportProfile as unknown as Record<string, unknown>,
+        viewportProfile,
         personality: personality.type
     })
 
@@ -441,12 +439,7 @@ export function applyFocusPocketBreathing(
 
     const viewVec = new Vector3(0, 0, 1)
     if (appState.camera && anchor) {
-        viewVec
-            .subVectors(
-                appState.camera.position,
-                new Vector3(anchor.x, anchor.y, anchor.z)
-            )
-            .normalize()
+        viewVec.subVectors(appState.camera.position, new Vector3(anchor.x, anchor.y, anchor.z)).normalize()
     }
 
     let changed = false
