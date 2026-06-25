@@ -205,7 +205,7 @@ function restoreFocusTrailState(priorFocused: number | null = state.focusedNode)
     if (!Number.isFinite(priorFocused) || priorFocused! < 0 || priorFocused! >= state.points.length) return
     setTrailFromSeed(priorFocused!)
 
-    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! } as never)
+    publish(EVENTS.EXPLORATION_FOCUS_SYNC, { index: priorFocused! })
 
     withStateMutation(() => {
         state.navState.lastTraversalReason = state.navState?.lastTraversalReason || null
@@ -215,7 +215,7 @@ function restoreFocusTrailState(priorFocused: number | null = state.focusedNode)
     applyLocalNeighborhoodFocus(priorFocused!)
     applyPointFilterColors()
     const priorPoint = state.points[priorFocused!] || null
-    syncFocusStage((priorPoint || state.selectedPoint || null) as never)
+    syncFocusStage(priorPoint || state.selectedPoint || null)
     updateTraversalUi()
 }
 
