@@ -32,12 +32,6 @@ const MAX_PEER_THREAD_DISPLAY = 14
 
 // ── Module-level adapter state ───────────────────────────────────────────────
 
-let adapterDeps: {
-    isThreadCandidateVisibleOnCanvas?: (index: number) => boolean
-    setTrailFromSeed?: (seedIndex: number) => void
-    applyLocalNeighborhoodFocus?: (seedIndex: number) => void
-} = {}
-
 let boundedNeighborhoodActive = false
 let boundedNeighborhoodAnchorIndex: number | null = null
 let boundedNeighborhoodCandidates: number[] = []
@@ -680,13 +674,15 @@ export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex: number):
  * bounded neighborhood walk and thread candidate resolution.
  */
 export function initJourneyNeighborhoodAdapter(
-    deps: {
+    _deps: {
         isThreadCandidateVisibleOnCanvas?: (index: number) => boolean
         setTrailFromSeed?: (seedIndex: number) => void
         applyLocalNeighborhoodFocus?: (seedIndex: number) => void
     } = {}
 ): void {
-    adapterDeps = { ...deps }
+    // Adapter deps were migrated to direct module-level function imports during
+    // W48 any-tightening. This no-op preserves the public API for callers
+    // that still invoke the bridge function.
 }
 
 /**

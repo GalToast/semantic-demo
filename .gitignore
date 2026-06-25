@@ -9,6 +9,11 @@ test-results/
 playwright-report/
 .playwright-mcp/
 scratch/
+# W48 take-over: parallel session's scratch dir; not project-owned
+.tmp/
+# W48 take-over: Windows redirection artifact (e.g. `> nul` in PowerShell)
+# Anchored to root only — does not match `nul` substring in legitimate paths
+/nul
 
 # Session coordination lock (W46-E4) — owned by scripts/session-lock.mjs
 .session-lock
