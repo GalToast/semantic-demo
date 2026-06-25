@@ -40,6 +40,7 @@ import { createSporeTexture, createFocusRingTexture, createFocusNextCueTexture }
 import { seededUnit } from '@lib/utils/seeded-random'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
+import { debugWarn } from '@lib/utils/debug'
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -241,7 +242,7 @@ export function compilePointMaterialForReadiness() {
             webglContext.renderer.render(webglContext.scene, webglContext.camera)
         }
     } catch (error) {
-        if (import.meta.env.DEV) console.warn('Semantic point shader precompile failed:', error)
+        debugWarn('Semantic point shader precompile failed:', error)
     }
 }
 
@@ -412,20 +413,20 @@ export function createPoints() {
 
     const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length
 
-    state.points.forEach((point: BusinessRecord, i: number) => {
+    state.points.forEach((point: BusinessRecord, i: number_rules) => {
         const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
         let px, py, pz, cluster
 
         if (hasRawBuffers) {
-            px = rawPositionsBuffer[i * 3]
-            py = rawPositionsBuffer[i * 3 + 1]
-            pz = rawPositionsBuffer[i * 3 + 2]
-            cluster = rawClustersBuffer[i]
+            px = rawPositionsBuffer[i * 3] ?? 0
+            py = rawPositionsBuffer[i * 3 + 1] ?? 0
+            pz = rawPositionsBuffer[i * 3 + 2] ?? 0
+            cluster = rawClustersBuffer[i] ?? 0
         } else {
-            px = Number.isFinite(point.x) ? point.x : 0
-            py = Number.isFinite(point.y) ? point.y : 0
-            pz = Number.isFinite(point.z) ? point.z : 0
-            cluster = point.cluster
+            px = Number.isFinite(point.x) ? (point.x ?? 0) : 0
+            py = Number.isFinite(point.y) ? (point.y ?? 0) : 0
+            pz = Number.isFinite(point.z) ? (point.z ?? 0) : 0
+            cluster = point.cluster ?? 0
         }
 
         const fx = (px - renderCenter.x + scatter.x) * MYCELIUM_FIELD_SCALE.x

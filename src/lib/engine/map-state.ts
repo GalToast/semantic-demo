@@ -248,7 +248,7 @@ export async function initMap(): Promise<void> {
             mapContainer.style.pointerEvents = ''
         }
     } catch (error) {
-        if (import.meta.env.DEV) console.warn('initMap failed:', error)
+        debugWarn('initMap failed:', error)
         const ms = mapState as unknown as {
             mapInitialized: boolean
             map: unknown

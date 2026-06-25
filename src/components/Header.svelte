@@ -23,6 +23,7 @@
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
+import { debugWarn } from '@lib/utils/debug'
 
   interface Props {
     /** Whether the header is visible */
@@ -189,7 +190,7 @@
     try {
       updateUrlState({}, { reason: 'mode-switch' });
     } catch (e) {
-      if (import.meta.env.DEV) console.warn('Header.selectMode: URL update failed', e);
+      debugWarn('Header.selectMode: URL update failed', e);
     }
     // Keep roving tabindex index in sync with the selected mode
     const idx = modes.findIndex((m) => m.id === modeId);
@@ -207,7 +208,7 @@
       initKeyboardShortcutsHint();
       toggleKeyboardShortcutsHint();
     } catch (error) {
-      if (import.meta.env.DEV) console.warn('Header.openKeyboardHelp: keyboard help unavailable', error);
+      debugWarn('Header.openKeyboardHelp: keyboard help unavailable', error);
     }
   }
 </script>

@@ -112,6 +112,7 @@ import * as myceliumEngineMod from './mycelium-engine'
 import * as inspectedStrandMod from '@lib/journey/inspected-strand-overlay-adapter'
 import * as threeSearchAnimationsMod from './three-search-animations'
 import * as threeInteractionVisualsMod from './three-interaction-visuals'
+import { debugError } from '@lib/utils/debug'
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
@@ -252,7 +253,7 @@ function _ensureModules(): void {
         _threeInteractionVisuals = threeInteractionVisualsMod
         _loaded = true
     } catch (err) {
-        if (import.meta.env.DEV) console.error('[three-engine] Failed to load legacy modules:', err)
+        debugError('[three-engine] Failed to load legacy modules:', err)
     }
 }
 
@@ -508,7 +509,7 @@ export async function initThreeJS() {
         _webglContextLost = false
         _webglRestoreTimer = window.setTimeout(() => {
             _webglRestore?.restoreWebGLContext().catch((err) => {
-                if (import.meta.env.DEV) console.error('Failed to restore WebGL context:', err)
+                debugError('Failed to restore WebGL context:', err)
             })
             if (
                 _rafId === null &&
@@ -550,11 +551,11 @@ export async function initThreeJS() {
     )
     controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED
 
-    _sceneRegistry.listener(controls, 'start', () => {
+    _sceneRegistry.listener(controls as unknown as EventTarget, 'start', () => {
         _cameraControls?.releaseFocusCameraAssist('user-control')
         _cameraControls?.noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
     })
-    _sceneRegistry.listener(controls, 'end', () => {
+    _sceneRegistry.listener(controls as unknown as EventTarget, 'end', () => {
         _cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
     })
 
@@ -1078,7 +1079,7 @@ export function animate() {
             _state
         )
     } catch (err) {
-        if (import.meta.env.DEV) console.error('[three-engine] Unhandled exception in animate loop:', err)
+        debugError('[three-engine] Unhandled exception in animate loop:', err)
         _circuitBreakerTripped = true
     }
 }

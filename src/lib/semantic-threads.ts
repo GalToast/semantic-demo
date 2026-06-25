@@ -31,6 +31,7 @@ import { setSemanticThreadData, setSemanticThreadFailure } from '@lib/data-store
 // the CJS require fails under Vite's ESM pipeline and creates a second
 // stateProxy instance that diverges from the live one.
 import type { SemanticState } from '@lib/state/state-types'
+import { debugError } from '@lib/utils/debug'
 
 let _state: SemanticState | null = null
 // Promise gate: resolves when attachLegacyState() is called, so
@@ -109,8 +110,7 @@ async function getWorker(): Promise<Worker | null> {
 
     // Circuit breaker: if we've failed too many times, wait before retrying
     if (_workerFailureCount >= WORKER_MAX_FAILURES) {
-        if (import.meta.env.DEV)
-            console.warn(
+        debugWarn(
                 `[semantic-threads] Worker circuit breaker open (${_workerFailureCount} consecutive failures). ` +
                     `Retrying in 30s...`
             )
@@ -140,8 +140,7 @@ async function getWorker(): Promise<Worker | null> {
             return worker
         } catch (err) {
             const delay = WORKER_RETRY_DELAYS[attempt]
-            if (import.meta.env.DEV)
-                console.warn(
+            debugWarn(
                     `[semantic-threads] Worker instantiation attempt ${attempt + 1} failed, ` +
                         `retrying in ${delay}ms...`,
                     err instanceof Error ? err.message : err
@@ -153,8 +152,7 @@ async function getWorker(): Promise<Worker | null> {
     }
 
     _workerFailureCount++
-    if (import.meta.env.DEV)
-        console.error(
+    debugError(
             `[semantic-threads] Worker creation failed after ${WORKER_RETRY_DELAYS.length} attempts. ` +
                 `Consecutive failure count: ${_workerFailureCount}/${WORKER_MAX_FAILURES}`
         )
@@ -606,8 +604,7 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
     if (_state === null) {
         await Promise.race([_stateReady, new Promise<void>((resolve) => setTimeout(resolve, 500))])
         if (_state === null) {
-            if (import.meta.env.DEV)
-                console.warn(
+            debugWarn(
                     '[semantic-threads] loadSemanticThreads called before attachLegacyState(); degrading gracefully'
                 )
             return false
@@ -660,8 +657,7 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                 })
             }
         } catch (error) {
-            if (import.meta.env.DEV)
-                console.warn('Failed to load semantic thread artifact; using geometric fallback.', error)
+            debugWarn('Failed to load semantic thread artifact; using geometric fallback.', error)
             const errMessage = error instanceof Error ? error.message : String(error)
             withStateMutation(() => {
                 state.semanticThreadBundle = null

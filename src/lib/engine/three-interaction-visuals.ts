@@ -31,6 +31,7 @@ import {
 } from '@lib/journey/focus-anchor-indicator'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
+import { debugWarn } from '@lib/utils/debug'
 
 // ── Three.js material narrowing helpers ───────────────────────────────────────
 // All focus/mote/petal/halo objects in this codebase are constructed with a single
@@ -326,8 +327,7 @@ export function disposeSemanticLens() {
 
 export function initSemanticManifold() {
     if (!state.scene) {
-        if (import.meta.env.DEV)
-            console.warn(
+        debugWarn(
                 '[three-interaction-visuals] initSemanticManifold: state.scene is null, skipping manifold init'
             )
         return
@@ -396,8 +396,7 @@ export function initSemanticManifold() {
 
 export function initSemanticLens() {
     if (!state.scene) {
-        if (import.meta.env.DEV)
-            console.warn('[three-interaction-visuals] initSemanticLens: state.scene is null, skipping lens init')
+        debugWarn('[three-interaction-visuals] initSemanticLens: state.scene is null, skipping lens init')
         return
     }
     disposeSemanticLens()

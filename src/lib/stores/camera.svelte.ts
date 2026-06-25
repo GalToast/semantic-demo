@@ -10,6 +10,7 @@
 import type { Readable } from 'svelte/store'
 import type { CameraState, CameraTransition, FocusOrbitSlackState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte.ts'
+import { debugError } from '@lib/utils/debug'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -313,7 +314,7 @@ class CameraStoreControl {
             try {
                 run(snap)
             } catch (err) {
-                if (import.meta.env.DEV) console.error('[CameraStore] Subscription notification error:', err)
+                debugError('[CameraStore] Subscription notification error:', err)
             }
         }
     }

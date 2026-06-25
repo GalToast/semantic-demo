@@ -22,6 +22,7 @@ import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
 import './lib/css/biofield.css'
+import { debugError } from '@lib/utils/debug'
 
 // ── URL parameter initialization ──────────────────────────────────────────────
 
@@ -64,7 +65,7 @@ appInit({ forceDemo, noDemo })
         appInitCleanup = cleanup
     })
     .catch((err) => {
-        if (import.meta.env.DEV) console.error('[main] appInit failed:', err)
+        debugError('[main] appInit failed:', err)
     })
 
 // Initialize legacy route trace event subscriptions so the Svelte track

@@ -232,7 +232,7 @@ export function applySemanticLaneHealthPayload(
         win.scheduleSemanticLaneCooldownProbe(payload || {})
     if (state.semanticLaneOpsMode) {
         refreshSemanticLaneOpsSummary().catch((err: unknown) => {
-            if (import.meta.env.DEV) console.warn('refreshSemanticLaneOpsSummary failed:', err)
+            debugWarn('refreshSemanticLaneOpsSummary failed:', err)
         })
     }
     const laneState = payload?.state || 'degraded'
@@ -348,7 +348,7 @@ export async function probeSemanticLane({
         } catch (err: unknown) {
             const isTimeout = (err as Error)?.name === 'AbortError'
             if (isTimeout) {
-                if (import.meta.env.DEV) console.warn('Semantic lane probe timed out after 5s')
+                debugWarn('Semantic lane probe timed out after 5s')
             }
 
             if (

@@ -50,6 +50,7 @@ import {
 import { updateTraversalUi } from '@lib/journey/focus-ui'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
+import { debugError } from '@lib/utils/debug'
 
 const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
 
@@ -136,8 +137,7 @@ function setupSafetyValves(): SafetyTimers {
         if (overlay?.classList.contains('hidden')) return
 
         if (!overlay) return
-        if (import.meta.env.DEV)
-            console.error('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
+        debugError('[app-init] Safety valve: loading overlay stuck after 15s. Showing error state.')
 
         // Apply error state to the overlay (matches legacy applyLoadingErrorState)
         // — built with DOM API per pi-lens innerHTML safety rule.
@@ -316,7 +316,7 @@ async function applyUrlStateAfterData(): Promise<void> {
         const { applyUrlState } = await import('@lib/orchestration/url-state')
         await applyUrlState()
     } catch (err) {
-        if (import.meta.env.DEV) console.error('[app-init] applyUrlState failed during init:', err)
+        debugError('[app-init] applyUrlState failed during init:', err)
     }
 }
 
@@ -337,18 +337,18 @@ function setupWebglContextRestore(): () => void {
 
     const handleContextLost = (event: Event) => {
         event.preventDefault()
-        if (import.meta.env.DEV) console.warn('[app-init] WebGL context lost')
+        debugWarn('[app-init] WebGL context lost')
     }
 
     const handleContextRestored = async () => {
-        if (import.meta.env.DEV) console.warn('[app-init] WebGL context restored; reinitializing')
+        debugWarn('[app-init] WebGL context restored; reinitializing')
         // Re-run the Svelte-first init. The init guard (_initCalled) will
         // prevent double-init, so we reset it first.
         _initCalled = false
         try {
             await appInit()
         } catch (err) {
-            if (import.meta.env.DEV) console.error('[app-init] WebGL restore reinit failed:', err)
+            debugError('[app-init] WebGL restore reinit failed:', err)
         }
     }
 
@@ -415,7 +415,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // bridge initializes WebGL via Canvas.svelte. The URL state application
     // (Phase 4) awaits data readiness before running.
     const dataReadyPromise = initData().catch((err) => {
-        if (import.meta.env.DEV) console.error('[app-init] initData failed:', err)
+        debugError('[app-init] initData failed:', err)
         // Non-fatal: data-store sets error state; UI shows error overlay
     })
 
@@ -450,7 +450,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
         const { initAudio } = await import('@lib/audio/audio-scape')
         initAudio()
     } catch (err) {
-        if (import.meta.env.DEV) console.error('[app-init] initAudio failed:', err)
+        debugError('[app-init] initAudio failed:', err)
     }
 
     debugWarn('[app-init] Initialization orchestration complete.')

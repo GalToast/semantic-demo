@@ -62,7 +62,7 @@ import { appState } from '@lib/state/app.svelte'
 interface SelectedCardAdapter {
     getStrandArrivalNote: () => string
     updateTraversalUi: () => void
-    hydrateLeadContext: (point: Point, options?: Record<string, unknown>) => void
+    hydrateLeadContext: (point: BusinessRecord, options?: Record<string, unknown>) => void
 }
 
 interface UpdateSelectedBusinessOptions {
@@ -121,7 +121,7 @@ export function initJourneySelectedCardAdapter(deps: Record<string, unknown> = {
     }
 }
 
-export function syncFocusStage(point: Point | BusinessRecord | null): void {
+export function syncFocusStage(point: BusinessRecord | BusinessRecord | null): void {
     const points: Point[] = Array.isArray(appState.points) ? appState.points : []
     if (points.length === 0 && point !== null) return
     const stage = document.getElementById('focus-stage')
@@ -268,7 +268,7 @@ export function syncFocusStage(point: Point | BusinessRecord | null): void {
     }
 }
 
-export function updateSelectedBusiness(point: Point | null, options: UpdateSelectedBusinessOptions = {}): void {
+export function updateSelectedBusiness(point: BusinessRecord | null, options: UpdateSelectedBusinessOptions = {}): void {
     // Push to Svelte store via canonical focusOnPoint (selectedPointStore is now a getter, not a writable)
     if (point) {
         focusOnPoint(point as unknown as Parameters<typeof focusOnPoint>[0], { revealCard: true })

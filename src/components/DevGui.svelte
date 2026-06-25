@@ -13,6 +13,7 @@
 -->
 <script lang="ts">
   import { onMount } from 'svelte';
+import { debugLog, debugError } from '@lib/utils/debug'
 
   interface Props {
     visible?: boolean;
@@ -47,14 +48,14 @@
           try {
             localStorage.clear();
             sessionStorage.clear();
-            if (import.meta.env.DEV) console.log('[dev-gui] cleared local + session storage');
+            debugLog('[dev-gui] cleared local + session storage');
           } catch (err) {
-            if (import.meta.env.DEV) console.error('[dev-gui] clearStorage failed', err);
+            debugError('[dev-gui] clearStorage failed', err);
           }
         },
         logSemanticState: () => {
           const state = window.__semanticState
-          if (import.meta.env.DEV) console.log('[dev-gui] window.__semanticState:', state);
+          debugLog('[dev-gui] window.__semanticState:', state);
         },
       };
       gui.add(actions, 'triggerDemo').name('▶ Trigger demo');
@@ -72,9 +73,9 @@
           const camera = window.__semanticCamera
           if (camera) {
             camera.autoRotate = v;
-            if (import.meta.env.DEV) console.log('[dev-gui] camera.autoRotate =', v);
+            debugLog('[dev-gui] camera.autoRotate =', v);
           } else {
-            if (import.meta.env.DEV) console.log('[dev-gui] autoRotate toggle =', v, '(no camera bridge yet)');
+            debugLog('[dev-gui] autoRotate toggle =', v, '(no camera bridge yet)');
           }
         });
 
@@ -92,9 +93,9 @@
           const state = window.__semanticState
           if (state) {
             state.focusPersonalityOverride = v === 'auto' ? undefined : v;
-            if (import.meta.env.DEV) console.log('[dev-gui] focusPersonalityOverride =', v);
+            debugLog('[dev-gui] focusPersonalityOverride =', v);
           } else {
-            if (import.meta.env.DEV) console.log('[dev-gui] focusPersonalityOverride =', v, '(no state bridge yet)');
+            debugLog('[dev-gui] focusPersonalityOverride =', v, '(no state bridge yet)');
           }
         });
 
@@ -117,7 +118,7 @@
           const pp = window.__semanticPostprocessing
           if (pp?.setPremiumMode) {
             pp.setPremiumMode(v);
-            if (import.meta.env.DEV) console.log('[dev-gui] premium mode =', v);
+            debugLog('[dev-gui] premium mode =', v);
           } else {
             // Fallback: set body attribute directly
             if (v) {
@@ -125,7 +126,7 @@
             } else {
               delete document.body.dataset.premiumMode;
             }
-            if (import.meta.env.DEV) console.log('[dev-gui] premium mode =', v, '(body attr only)');
+            debugLog('[dev-gui] premium mode =', v, '(body attr only)');
           }
         });
 
@@ -163,7 +164,7 @@
           dofEnabled = v;
           const pp = window.__semanticPostprocessing;
           pp?.setDofEnabled?.(v);
-          if (import.meta.env.DEV) console.log('[dev-gui] DOF =', v);
+          debugLog('[dev-gui] DOF =', v);
         });
 
       ppFolder.open();

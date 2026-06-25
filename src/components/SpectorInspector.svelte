@@ -19,6 +19,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+import { debugWarn, debugLog } from '@lib/utils/debug'
 
   interface Props {
     visible?: boolean;
@@ -91,7 +92,7 @@
       const isImportError = err instanceof TypeError && /import|fetch|module/i.test(message);
       loadError = isImportError ? 'import-failed' : 'init-failed';
       phase = 'error';
-      if (import.meta.env.DEV) console.warn('[spector-inspector] failed to load spectorjs', err);
+      debugWarn('[spector-inspector] failed to load spectorjs', err);
       publishStatus();
       return;
     }
@@ -160,7 +161,7 @@
           // Non-fatal — Spector will report "No frames detected" if the
           // engine is mid-teardown, but the bridge shouldn't fail the
           // call for this.
-          if (import.meta.env.DEV) console.debug('[spector-inspector] pre-render threw:', renderErr);
+          debugLog('[spector-inspector] pre-render threw:', renderErr);
         }
         return new Promise((resolve) => {
           const timeout = setTimeout(() => {
@@ -234,7 +235,7 @@
     window.__spector = bridge;
     phase = 'ready';
     publishStatus();
-    if (import.meta.env.DEV) console.log('[spector-inspector] ready; call window.__spector.capture() to begin');
+    debugLog('[spector-inspector] ready; call window.__spector.capture() to begin');
   });
 
   // Publish a read-only status snapshot on window.__spectorStatus so

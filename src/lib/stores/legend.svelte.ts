@@ -7,6 +7,7 @@
  */
 import { appState } from '@lib/state/app.svelte.ts'
 import type { Readable } from 'svelte/store'
+import { debugError } from '@lib/utils/debug'
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
@@ -51,7 +52,7 @@ class LegendStore {
             try {
                 run(this.open)
             } catch (err) {
-                if (import.meta.env.DEV) console.error('[LegendStore] Subscription notification error:', err)
+                debugError('[LegendStore] Subscription notification error:', err)
             }
         }
     }

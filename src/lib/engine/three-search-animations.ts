@@ -86,7 +86,11 @@ let _anchorGlowLastFrame: number | null = null
  * Creates a bezier-approximated corridor path from anchor to a target point.
  * Returns an array of Vector3 positions along the curve.
  */
-function getCorridorPathPoints(anchorPos: Vector3, targetPos: Vector3, segments = 20): Vector3[] {
+function getCorridorPathPoints(
+    anchorPos: { x: number; y: number; z: number },
+    targetPos: { x: number; y: number; z: number },
+    segments = 20
+): Vector3[] {
     const points: Vector3[] = []
     for (let i = 0; i <= segments; i++) {
         const t = i / segments

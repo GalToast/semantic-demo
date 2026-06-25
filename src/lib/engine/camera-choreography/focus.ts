@@ -134,7 +134,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
             const camDist = camera.position.distanceTo(controls.target)
             const safeOffset = computeSafeAreaCameraTargetOffset(pocketBounds, region, camDist, camera, controls)
             if (safeOffset) {
-                const pocketProfile = navState.focusPocketMeta?.viewportProfile || {}
+                const pocketProfile = navState.focusPocketMeta?.viewportProfile || ({} as PocketProfile)
                 const rawOffsetLimit = pocketProfile.targetOffsetLimit
                 const offsetLimit = Number.isFinite(rawOffsetLimit) ? Number(rawOffsetLimit) : 0.12
                 if (safeOffset.length() > offsetLimit) safeOffset.setLength(offsetLimit)
@@ -170,7 +170,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
             transitionStyle === 'dive-walk') &&
         isSemanticPocketFocus
     ) {
-        const pocketProfile = getTypedNavState().focusPocketMeta?.viewportProfile || {}
+        const pocketProfile = getTypedNavState().focusPocketMeta?.viewportProfile || ({} as PocketProfile)
         const res = computeOrbitBiasHeading(currentHeading, transitionStyle, pocketProfile)
         heading = res.heading
         stageRightVector = res.stageRightVector
@@ -238,7 +238,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     let targetControlPoint: Vector3 | null = null
 
     if (stageArcActive) {
-        const pocketProfile = appState.navState.focusPocketMeta?.viewportProfile || {}
+        const pocketProfile = appState.navState.focusPocketMeta?.viewportProfile || ({} as PocketProfile)
         const res = computeCameraArcControlPoints(
             startPos,
             startTarget,

@@ -22,6 +22,7 @@ import type { Point } from '@lib/state/state-types'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/diagnostic-adapter'
 import { appState } from '@lib/state/app.svelte'
+import { debugError } from '@lib/utils/debug'
 
 // ── Cross-chunk singleton helpers ────────────────────────────────────────────
 // When Vite code-splits, this module can be duplicated into multiple chunks.
@@ -296,7 +297,7 @@ export function setBusinessData(result: BusinessDataResult): void {
         appState.leadEnrichment = result.enrichment
         appState.pointIndexByLeadId = result.pointIndexByLeadId
     } catch (e) {
-        if (import.meta.env.DEV) console.warn('[data-store] Legacy state sync failed:', e)
+        debugWarn('[data-store] Legacy state sync failed:', e)
     }
     dataLoadState.update((s) => ({
         ...s,
@@ -314,7 +315,7 @@ export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment>
     try {
         appState.leadEnrichment = enrichment
     } catch (e) {
-        if (import.meta.env.DEV) console.warn('[data-store] Legacy enrichment sync failed:', e)
+        debugWarn('[data-store] Legacy enrichment sync failed:', e)
     }
 }
 
@@ -363,7 +364,7 @@ export function setSemanticThreadData(result: SemanticThreadDataResult): void {
         appState.semanticThreadBundle = result.bundle
         appState.semanticThreadArtifactName = result.artifactName
     } catch (e) {
-        if (import.meta.env.DEV) console.warn('[data-store] Legacy semantic thread sync failed:', e)
+        debugWarn('[data-store] Legacy semantic thread sync failed:', e)
     }
 
     dataLoadState.update((s) => ({
@@ -384,7 +385,7 @@ export function setSemanticThreadFailure(error: string): void {
     semanticNeighborMap.set(new Map())
     layoutManifest.set(null)
 
-    if (import.meta.env.DEV) console.warn('[data-store] Semantic threads failed; using geometric fallback.', error)
+    debugWarn('[data-store] Semantic threads failed; using geometric fallback.', error)
 
     dataLoadState.update((s) => ({
         ...s,
@@ -485,7 +486,7 @@ export async function initData(): Promise<void> {
         debugInfo('[data-store] Data initialization complete.')
     } catch (err) {
         const msg = err instanceof Error ? err.message : String(err)
-        if (import.meta.env.DEV) console.error('[data-store] Unexpected error during init:', msg)
+        debugError('[data-store] Unexpected error during init:', msg)
         setDataLoadError(msg)
         setLoadingPhase('launch') // dismiss overlay on error
     }

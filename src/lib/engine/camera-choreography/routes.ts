@@ -12,6 +12,7 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { noteSceneInteraction } from '@lib/engine/camera-controls-restore.svelte'
 import { setFocusTransitionMode } from '@lib/engine/camera-controls-core'
 import { appState } from '@lib/state/app.svelte'
+import { debugError } from '@lib/utils/debug'
 
 // ── Local Types ──────────────────────────────────────────────────────────────
 
@@ -224,7 +225,7 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         }
         requestAnimationFrame(step)
     } catch (_err) {
-        if (import.meta.env.DEV) console.error('animateCameraToTerrainPrelude failed:', _err)
+        debugError('animateCameraToTerrainPrelude failed:', _err)
     } finally {
         publish(EVENTS.TRANSITION_PHASE_CHANGED, { phase: 'idle' })
     }

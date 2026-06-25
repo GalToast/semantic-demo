@@ -40,6 +40,7 @@ import {
 } from '@lib/stores/lifecycle'
 import { navStore } from '@lib/stores/navigation.svelte'
 import { journeyStore } from '@lib/stores/journey.svelte'
+import { debugError } from '@lib/utils/debug'
 
 type LegacyActionModules = {
     state?: Record<string, unknown>
@@ -334,7 +335,7 @@ export function installWindowActions(): () => void {
     }
 
     void loadLegacyActionModules().catch((error) => {
-        if (import.meta.env.DEV) console.error('[window-actions] Failed to preload legacy action modules:', error)
+        debugError('[window-actions] Failed to preload legacy action modules:', error)
     })
 
     return () => {

@@ -52,7 +52,7 @@ function valueArray(value: unknown): unknown[] {
     return []
 }
 
-function candidateIndex(candidate: ThreadCandidateLike | unknown): number | null {
+function candidateIndex(candidate: ThreadCandidateLike & { source?: string } | unknown): number | null {
     if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate
     if (!candidate || typeof candidate !== 'object') return null
     const index = Number((candidate as { index?: unknown }).index)
@@ -784,7 +784,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     if (!nav.focusPocketMeta?.active) return
     const hasSemanticSource =
         nav.threadSource === 'semantic' ||
-        valueArray(nav.threadCandidates).some((candidate: ThreadCandidateLike) => candidate?.source === 'semantic') ||
+        valueArray(nav.threadCandidates).some((candidate: ThreadCandidateLike & { source?: string }) => candidate?.source === 'semantic') ||
         (nav.focusPocketMeta.motifLabel || '').toLowerCase().includes('semantic')
     if (!hasSemanticSource) return
     const limit = getSemanticThreadDisplayLimit()
@@ -806,7 +806,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     appState.withMutation(() => {
         nav.neighborhoodAnchorIndex = seedIndex
         nav.neighborhoodIndices = manifest.candidateIndices
-        nav.neighborhoodCursor = 0
+        nav.neighborhoodSource = 0
         nav.neighborhoodReasonByIndex = new Map(
             manifest.candidateIndices.map((candidateIndex: number) => [
                 candidateIndex,
