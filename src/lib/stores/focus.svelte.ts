@@ -186,7 +186,7 @@ const _focusWritable = writable<FocusStoreState>(_readFocusSnapshot())
  * The writable notifies subscribers; the appState sync keeps the kernel
  * in sync for legacy readers and the engine bridge.
  */
-function withFocusNotify(updater: (s: FocusStoreState) => FocusStoreState): void {
+function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): void {
     const current = get(_focusWritable)
     const next = updater(current)
     _focusWritable.set(next)
@@ -244,8 +244,8 @@ export function writeFocusPocketMirror(
 /** FocusStore type: callable function + Readable + actions. */
 export type FocusStoreApi = (() => FocusStoreState) &
     Readable<FocusStoreState> & {
-        update(fn: (s: FocusStoreState) => FocusStoreState): void
-        set(value: FocusStoreState): void
+        update(_fn: (_s: FocusStoreState) => FocusStoreState): void
+        set(_value: FocusStoreState): void
     }
 
 function _createFocusStore(): FocusStoreApi {
@@ -254,7 +254,7 @@ function _createFocusStore(): FocusStoreApi {
     const fn = (() => get(_focusWritable)) as unknown as FocusStoreApi
 
     fn.subscribe = _focusWritable.subscribe
-    fn.update = (updater: (s: FocusStoreState) => FocusStoreState) => withFocusNotify(updater)
+    fn.update = (updater: (_s: FocusStoreState) => FocusStoreState) => withFocusNotify(updater)
     fn.set = (value: FocusStoreState) => {
         _focusWritable.set(value)
         // Sync all bridged properties back to appState (same as withFocusNotify)

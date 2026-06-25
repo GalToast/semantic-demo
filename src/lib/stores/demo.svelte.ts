@@ -82,7 +82,7 @@ let _startGuardClaimed = false
  * The writable notifies subscribers; the appState sync keeps the kernel
  * in sync for legacy readers and the engine bridge.
  */
-function withDemoNotify(updater: (s: DemoStoreState) => DemoStoreState): void {
+function withDemoNotify(updater: (_s: DemoStoreState) => DemoStoreState): void {
     const current = get(_demoWritable)
     const to = updater(current)
     _demoWritable.set(to)
@@ -100,15 +100,15 @@ function withDemoNotify(updater: (s: DemoStoreState) => DemoStoreState): void {
  */
 export type DemoStoreApi = (() => DemoStoreState) &
     Readable<DemoStoreState> & {
-        update(fn: (s: DemoStoreState) => DemoStoreState): void
-        set(value: DemoStoreState): void
+        update(_fn: (_s: DemoStoreState) => DemoStoreState): void
+        set(_value: DemoStoreState): void
     }
 
 function _createDemoStore(): DemoStoreApi {
     const fn = (() => get(_demoWritable)) as unknown as DemoStoreApi
 
     fn.subscribe = _demoWritable.subscribe
-    fn.update = (updater: (s: DemoStoreState) => DemoStoreState) => withDemoNotify(updater)
+    fn.update = (updater: (_s: DemoStoreState) => DemoStoreState) => withDemoNotify(updater)
     fn.set = (value: DemoStoreState) => {
         _demoWritable.set(value)
         appState.withMutation(() => {

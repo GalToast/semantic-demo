@@ -53,7 +53,7 @@ function _readViewportFromKernel(): ViewportState {
 const _viewportWritable = writable<ViewportState>(_readViewportFromKernel())
 
 /** Push viewport mutations to both writable and appState. */
-function withViewportNotify(updater: (s: ViewportState) => ViewportState): void {
+function withViewportNotify(updater: (_s: ViewportState) => ViewportState): void {
     const current = get(_viewportWritable)
     const next = updater(current)
     _viewportWritable.set(next)
@@ -72,8 +72,8 @@ function withViewportNotify(updater: (s: ViewportState) => ViewportState): void 
  */
 export type ViewportStoreApi = (() => ViewportState) &
     Readable<ViewportState> & {
-        update(fn: (s: ViewportState) => ViewportState): void
-        set(value: ViewportState): void
+        update(_fn: (_s: ViewportState) => ViewportState): void
+        set(_value: ViewportState): void
     }
 
 function _createViewportStore(): ViewportStoreApi {
@@ -93,7 +93,7 @@ function _createViewportStore(): ViewportStoreApi {
     })) as unknown as ViewportStoreApi
 
     fn.subscribe = _viewportWritable.subscribe
-    fn.update = (updater: (s: ViewportState) => ViewportState) => withViewportNotify(updater)
+    fn.update = (updater: (_s: ViewportState) => ViewportState) => withViewportNotify(updater)
     fn.set = (value: ViewportState) => {
         _viewportWritable.set(value)
         appState.withMutation(() => {

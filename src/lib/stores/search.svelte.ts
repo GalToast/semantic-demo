@@ -125,8 +125,8 @@ const _searchWritable = writable<SearchStoreState>({
 /** SearchStore type: callable function + Readable + actions. */
 export type SearchStoreApi = (() => SearchStoreState) &
     Readable<SearchStoreState> & {
-        update(fn: (s: SearchStoreState) => SearchStoreState): void
-        set(value: SearchStoreState): void
+        update(_fn: (_s: SearchStoreState) => SearchStoreState): void
+        set(_value: SearchStoreState): void
     }
 
 function buildSearchResultsFromIndices(indices: number[] | undefined): SearchResult[] {

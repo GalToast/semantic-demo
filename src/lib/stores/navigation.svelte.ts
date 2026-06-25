@@ -150,8 +150,8 @@ const _navWritable = getOrCreateNavWritable()
 /** NavStore type: callable function that also satisfies Readable + Writable-ish. */
 export type NavStoreApi = (() => NavState) &
     Readable<NavState> & {
-        update(fn: (s: NavState) => NavState): void
-        set(value: NavState): void
+        update(_fn: (_s: NavState) => NavState): void
+        set(_value: NavState): void
     }
 
 /** Backward-compat alias used by barrel exports. */

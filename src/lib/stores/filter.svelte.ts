@@ -46,7 +46,7 @@ const _activeClusterFilterWritable = writable<string | null>(
 )
 
 /** Active cluster filter exposed as a Readable + set action. */
-export const activeClusterFilter: Readable<string | null> & { set(value: string | null): void } = {
+export const activeClusterFilter: Readable<string | null> & { set(_value: string | null): void } = {
     subscribe: _activeClusterFilterWritable.subscribe,
     set: (value: string | null) => {
         _activeClusterFilterWritable.set(value)
@@ -65,7 +65,7 @@ const _filterStateWritable = writable<ActiveFilters>({ ...INITIAL_FILTERS })
 /** Push filterState mutations to both writable and appState.
  *  Clones the snapshot before storing so callers cannot accidentally alias
  *  the store value to the legacy state object (see state-store-sync-contract). */
-function withFilterStateNotify(updater: (s: ActiveFilters) => ActiveFilters): void {
+function withFilterStateNotify(updater: (_s: ActiveFilters) => ActiveFilters): void {
     const next = updater(get(_filterStateWritable))
     const cloned = { ...next }
     _filterStateWritable.set(cloned)
@@ -76,11 +76,11 @@ function withFilterStateNotify(updater: (s: ActiveFilters) => ActiveFilters): vo
 
 /** Active filters exposed as a Readable + update/set actions. */
 export const filterState: Readable<ActiveFilters> & {
-    update(fn: (s: ActiveFilters) => ActiveFilters): void
-    set(value: ActiveFilters): void
+    update(_fn: (_s: ActiveFilters) => ActiveFilters): void
+    set(_value: ActiveFilters): void
 } = {
     subscribe: _filterStateWritable.subscribe,
-    update: (updater: (s: ActiveFilters) => ActiveFilters) => withFilterStateNotify(updater),
+    update: (updater: (_s: ActiveFilters) => ActiveFilters) => withFilterStateNotify(updater),
     set: (value: ActiveFilters) => {
         const cloned = { ...value }
         _filterStateWritable.set(cloned)
@@ -147,9 +147,9 @@ export const contactFilters: Readable<{ website: boolean; email: boolean; geocod
  * - For `website`, `email`, `geocoded`: boolean toggle.
  * - For `city`: sets the city string (pass empty string to clear).
  */
-export function toggleFilter(type: 'status', value: string): void
-export function toggleFilter(type: 'website' | 'email' | 'geocoded', value: boolean): void
-export function toggleFilter(type: 'city', value: string): void
+export function toggleFilter(_type: 'status', _value: string): void
+export function toggleFilter(_type: 'website' | 'email' | 'geocoded', _value: boolean): void
+export function toggleFilter(_type: 'city', _value: string): void
 export function toggleFilter(type: keyof ActiveFilters, value: string | boolean): void {
     filterState.update((current) => {
         const next = { ...current }

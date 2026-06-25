@@ -11,8 +11,8 @@ import type { Readable } from 'svelte/store'
 // ── Store ────────────────────────────────────────────────────────────────────
 
 interface LegendStoreApi extends Readable<boolean> {
-    update(fn: (v: boolean) => boolean): void
-    set(value: boolean): void
+    update(_fn: (_v: boolean) => boolean): void
+    set(_value: boolean): void
 }
 
 class LegendStore {
@@ -29,13 +29,13 @@ class LegendStore {
     }
 
     // Backwards-compatibility subscribers
-    private subscribers = new Set<(v: boolean) => void>()
+    private subscribers = new Set<(_v: boolean) => void>()
 
     /**
      * Subscribe method to meet Readable<boolean> contract.
      * Enables Svelte 4/5 `$store` prefix subscription syntax in legacy wrappers.
      */
-    subscribe = (run: (v: boolean) => void): (() => void) => {
+    subscribe = (run: (_v: boolean) => void): (() => void) => {
         this.subscribers.add(run)
         run(this.open)
         return () => {
@@ -56,7 +56,7 @@ class LegendStore {
         }
     }
 
-    update(fn: (v: boolean) => boolean): void {
+    update(fn: (_v: boolean) => boolean): void {
         this.open = fn(this.open)
     }
 

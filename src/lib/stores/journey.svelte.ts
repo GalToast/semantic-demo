@@ -146,7 +146,7 @@ const _journeyWritable = writable<JourneyStoreState>(_readJourneyFromAppState())
  * in sync. The 5 bridged properties are: mode, trailCursor, trailDepth,
  * threadSource, lastTraversalReason.
  */
-function withJourneyNotify(updater: (s: JourneyStoreState) => JourneyStoreState): void {
+function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState): void {
     const current = get(_journeyWritable)
     const next = updater(current)
     // depth and trailDepth are aliases in the journey state. The W11-T4
@@ -175,8 +175,8 @@ function withJourneyNotify(updater: (s: JourneyStoreState) => JourneyStoreState)
 /** JourneyStore type: callable function + Readable + actions. */
 export type JourneyStoreApi = (() => JourneyStoreState) &
     Readable<JourneyStoreState> & {
-        update(fn: (s: JourneyStoreState) => JourneyStoreState): void
-        set(value: JourneyStoreState): void
+        update(_fn: (_s: JourneyStoreState) => JourneyStoreState): void
+        set(_value: JourneyStoreState): void
     }
 
 function _createJourneyStore(): JourneyStoreApi {
@@ -190,7 +190,7 @@ function _createJourneyStore(): JourneyStoreApi {
     fn.subscribe = _journeyWritable.subscribe
     // Wrap update/set to also sync appState via withJourneyNotify, so the
     // callable getter (which reads appState) returns fresh values immediately.
-    fn.update = (updater: (s: JourneyStoreState) => JourneyStoreState) => {
+    fn.update = (updater: (_s: JourneyStoreState) => JourneyStoreState) => {
         withJourneyNotify(updater)
     }
     fn.set = (value: JourneyStoreState) => {

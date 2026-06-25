@@ -11,11 +11,10 @@
 import { get } from 'svelte/store'
 import { legendOpen, setLegendOpen } from './legend.svelte'
 import { appState } from '@lib/state/app.svelte'
-import { escapeHtml } from '@lib/utils/dom-formatters'
-import { describeCluster, isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
+import { describeCluster } from '@lib/utils/ui-presentation'
 import { getSemanticGuideTitle } from '@lib/journey/semantic-guide'
 import { CONFIG } from '@lib/engine/config'
-import { getFilteredClusterCounts, setClusterFilter } from '@lib/orchestration/cluster-filter-controller'
+import { getFilteredClusterCounts } from '@lib/orchestration/cluster-filter-controller'
 import { getActiveClusterFilter } from '@lib/stores/filter.svelte'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
 

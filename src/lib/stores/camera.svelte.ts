@@ -132,7 +132,7 @@ class CameraStoreControl {
     private _cameraIdleOrbitAllowed = $state<boolean>(true)
 
     // Synchronized subscribers
-    private subscribers = new Set<(s: CameraStoreState) => void>()
+    private subscribers = new Set<(_s: CameraStoreState) => void>()
 
     // Getters & Setters mapping to local reactive fields or appState mirrors
     get position() {
@@ -299,7 +299,7 @@ class CameraStoreControl {
     /**
      * Enable Svelte Readable/Writable store contract.
      */
-    subscribe = (run: (s: CameraStoreState) => void): (() => void) => {
+    subscribe = (run: (_s: CameraStoreState) => void): (() => void) => {
         this.subscribers.add(run)
         run(this.getSnapshot())
         return () => {
@@ -318,7 +318,7 @@ class CameraStoreControl {
         }
     }
 
-    update(updater: (s: CameraStoreState) => CameraStoreState): void {
+    update(updater: (_s: CameraStoreState) => CameraStoreState): void {
         const next = updater(this.getSnapshot())
         // Assign fields individually or update the Svelte state
         this._position = next.position
@@ -353,8 +353,8 @@ const cameraStoreImpl = new CameraStoreControl()
 
 /** CameraStore type: Readable + property accessors + Writable-ish. */
 export type CameraStoreApi = Readable<CameraStoreState> & {
-    update(fn: (s: CameraStoreState) => CameraStoreState): void
-    set(value: CameraStoreState): void
+    update(_fn: (_s: CameraStoreState) => CameraStoreState): void
+    set(_value: CameraStoreState): void
 } & { [K in keyof CameraStoreState]: CameraStoreState[K] }
 
 /** Create the proxied API so that cameraStore.property accessor lookups work. */
