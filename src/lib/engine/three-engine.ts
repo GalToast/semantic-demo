@@ -192,9 +192,7 @@ interface CameraControlsModule {
     cancelFocusCameraAnimation(): void
 }
 
-interface MapStateModule {
-    initMap(): void
-}
+type MapStateModule = typeof import('@lib/engine/map-state')
 
 interface MyceliumEngineModule {
     updateMyceliumThreads(): void
@@ -287,7 +285,7 @@ function _ensureModules(): void {
         _focusPocket = focusPocketMod as unknown as FocusPocketModule
         _sceneReveal = sceneRevealMod as unknown as SceneRevealModule
         _cameraControls = cameraControlsMod as unknown as CameraControlsModule
-        _mapState = mapStateMod as unknown as MapStateModule
+        _mapState = mapStateMod
         _myceliumEngine = myceliumEngineMod as unknown as MyceliumEngineModule
         _uiFeedback = uiFeedbackMod as unknown as UiFeedbackModule
         _mapFlattening = mapFlatteningMod as unknown as MapFlatteningModule
