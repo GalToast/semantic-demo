@@ -31,6 +31,7 @@ import type { DemoPhase } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { setAutoRotateSuspended } from '@lib/engine/camera-controls-restore.svelte'
+import { setFocusTransitionMode } from '@lib/engine/camera-controls-core'
 import * as lifecycleStaticModule from '@lib/orchestration/lifecycle'
 import * as journeyCompassStaticModule from '@lib/orchestration/compass-controller'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
@@ -225,9 +226,7 @@ async function demoReset(): Promise<void> {
 
         appState.focusCameraAssistActive = false
         appState.focusCameraOffset = null
-        appState.focusTransitionMode = 'idle'
-        document.body.dataset.focusTransition = ''
-        document.body.dataset.focusTransitionPhase = ''
+        setFocusTransitionMode('idle')
 
         if (appState.controls) appState.controls.enabled = true
 
