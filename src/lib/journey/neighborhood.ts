@@ -269,7 +269,6 @@ export function getNextWalkCandidateForIndex(
 
     const idx = currentIndex as number
     const js = journeyStore()
-    const nav = get(navStore)
 
     // Build exclusion set (already visited)
     const visited = new Set<number>([...finiteIndexList(js.walkHistoryIndices), idx])
@@ -654,7 +653,6 @@ export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex: number):
     setTrailNeighborIndices(allIndices)
 
     // Update nav store trail state
-    const nav = get(navStore)
     navStore.update((s) => ({
         ...s,
         trailSeedIndex: seedIndex,
