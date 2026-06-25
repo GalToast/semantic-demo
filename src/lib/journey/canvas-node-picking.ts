@@ -33,8 +33,8 @@ const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
 // the full Three.js types. These helpers centralize the upcast once at
 // the module boundary instead of repeating 11 inline `as unknown as` casts.
 
-function getRaycastCamera(): Camera | null {
-    return appState.camera as unknown as Camera | null
+function getRaycastCamera(): PerspectiveCamera | null {
+    return appState.camera
 }
 
 function getRaycastPointsMesh(): Object3D | null {

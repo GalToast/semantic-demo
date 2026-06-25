@@ -9,11 +9,11 @@
  * for freer exploration.
  */
 
-import { Vector3, Box3 } from 'three'
+import { Vector3, Box3, PerspectiveCamera } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 const state = _state as any
-import type { SemanticState, CameraLike, ControlsLike } from '@lib/state/state-types'
+import type { SemanticState, ControlsLike } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
@@ -36,7 +36,7 @@ interface OrbitSlackControls {
 
 const _s = state as unknown as SemanticState
 
-function getTypedCamera(): CameraLike | null {
+function getTypedCamera(): PerspectiveCamera | null {
     return appState.camera
 }
 

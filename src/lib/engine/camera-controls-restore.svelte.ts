@@ -16,7 +16,7 @@
 
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state;
-import type { CameraLike, ControlsLike, SemanticState } from '@lib/state/state-types';
+import type { ControlsLike, SemanticState } from '@lib/state/state-types';
 import { prefersReducedMotion } from '@lib/utils/environment';
 import { easeInOutCubic } from '@lib/utils/math-easing';
 
@@ -56,8 +56,8 @@ class CameraControlsRestore {
         if (_mode === 'overview') { /* ok — fall through */ } else return false;
         if (_s.trailDepth === 0) { /* ok — fall through */ } else return false;
 
-        const cam = _s.camera as CameraLike;
-        const ctrl = _s.controls as ControlsLike;
+        const cam = _s.camera;
+        const ctrl = _s.controls;
         const [px, py, pz] = OVERVIEW_CAMERA_POSE.position;
         const [tx, ty, tz] = OVERVIEW_CAMERA_POSE.target;
         cam.position.set?.(px, py, pz);

@@ -21,7 +21,6 @@ import type {
     SemanticSearchCacheDiagnostics,
     CanvasHoverCandidate,
     LoadingPhaseKey,
-    CameraLike,
     RendererLike,
     ControlsLike,
     Vector3Like,
@@ -47,6 +46,7 @@ import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
 type LeafletLayer = Record<string, unknown> | null
 import type {
     Scene,
+    PerspectiveCamera,
     Points,
     PointsMaterial,
     InstancedMesh,
@@ -128,7 +128,7 @@ class AppState {
     mapInitialized = $state<boolean>(false)
     leafletAssetsPromise = $state<Promise<unknown> | null>(null)
     scene = $state<Scene | null>(null)
-    camera = $state<CameraLike>(null as unknown as CameraLike)
+    camera = $state<PerspectiveCamera | null>(null)
     renderer = $state<RendererLike>(null as unknown as RendererLike)
     controls = $state<ControlsLike>(null as unknown as ControlsLike)
     pointsMesh = $state<Points | null>(null)
