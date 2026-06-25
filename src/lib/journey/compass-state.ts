@@ -1,7 +1,7 @@
 /**
  * @lib/journey/compass-state.ts
  *
- * Ported from: js/modules/journey-compass-state.ts
+ * Ported from:
  * Journey compass state machine and action synthesis.
  */
 

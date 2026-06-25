@@ -1,7 +1,7 @@
 /**
  * @lib/journey/semantic-dive.ts — Semantic dive UI synchronization
  *
- * Ported from: js/modules/semantic-dive-ui.ts (251 lines)
+ * Ported from: (251 lines)
  *
  * Provides the DOM update orchestration for semantic-dive mode:
  *   - initSemanticDiveUiSubscriptions(): wires event-bus listeners
@@ -11,8 +11,8 @@
  * Dependencies that are still in the legacy path (will migrate later):
  *   - ../../../js/state/selectors/index (state selectors)
  *   - @lib/state/app.svelte (canonical AppState)
- *   - ../../../js/modules/journey-lifecycle-adapter.ts (getNextWalkCandidateForIndex)
- *   - ../../../js/modules/focus-stage-dom.ts (ensureFocusStageAuxiliaryDom, ensureDiveButton)
+ * - ../../../ (getNextWalkCandidateForIndex)
+ * - ../../../ (ensureFocusStageAuxiliaryDom, ensureDiveButton)
  */
 
 import { appState as state } from '@lib/state/app.svelte'

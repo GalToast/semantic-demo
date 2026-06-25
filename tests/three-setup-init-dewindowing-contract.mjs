@@ -46,7 +46,7 @@ const combinedAppOrLifecycleSrc = appSrc + '\n' + lifecycleModuleSrc
 try {
     execFileSync(process.execPath, ['--check', threeSetupPath], { stdio: 'pipe' })
 } catch (err) {
-    console.error('FAIL: js/modules/three-engine.js must parse with node --check')
+ console.error('FAIL: must parse with node --check')
     const output = `${err.stdout || ''}${err.stderr || ''}`.trim()
     if (output) console.error(output)
     process.exit(1)

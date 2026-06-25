@@ -1,7 +1,7 @@
 /**
  * @lib/demo/ui.ts — DOM UI helpers for the micro-demo
  *
- * Port of js/modules/micro-demo-ui.js
+ * Port of
  *
  * Veil, input interceptor, pill, end toast, and keyframe injection for the micro-demo overlay.
  */

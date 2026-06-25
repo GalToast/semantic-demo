@@ -1,7 +1,7 @@
 /**
  * @lib/engine/camera-choreography/types.ts — Shared type vocabulary
  *
- * Port of js/modules/camera-controls-choreography-types.ts
+ * Port of
  *
  * Bridges the gap between SemanticState's Vector3Like interfaces
  * and the concrete THREE.Vector3 used in animation loops.

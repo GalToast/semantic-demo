@@ -1,6 +1,6 @@
 /**
  * global-bindings.ts
- * Canonical location (ported from js/modules/bindings/global-bindings.ts — W15).
+ * Canonical location (ported from — W15).
  * Global keyboard, focus, popstate, and visibility bindings.
  */
 

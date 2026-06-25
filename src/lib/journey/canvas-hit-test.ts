@@ -1,7 +1,7 @@
 /**
  * @lib/journey/canvas-hit-test.ts — Raycaster hit testing and thread candidate screen projection
  *
- * Port of js/modules/journey-canvas-hit-test.js
+ * Port of
  *
  * Provides canvas interaction adapter, thread candidate visibility checking,
  * nearest-thread-candidate lookup, and pointer position utilities.

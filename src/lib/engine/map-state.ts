@@ -1,7 +1,7 @@
 /**
  * @lib/engine/map-state.ts — Leaflet map state, route embodiment, terrain handoff
  *
- * Port of js/modules/map-state.ts.
+ * Port of
  * Manages Leaflet map initialization, marker refresh, route embodiment,
  * terrain handoff, and route director state synchronization.
  */

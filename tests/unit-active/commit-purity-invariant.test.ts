@@ -88,7 +88,7 @@ const EXEMPTED_SHAS = new Set<string>([
     // the same audit before consolidation into 637a1dc.
     '42e986d964d86bd64678fcd3254b035a24d045be',
     // 498238b — test(navigation): regression coverage for Svelte 5
-    // state-class T4 migration — Bundled js/modules/three-postprocessing.ts
+ // state-class T4 migration — Bundled
     // (a code file, not test) under a test prefix. The postprocessing
     // touch was a co-located engine tweak needed to make the test pass;
     // it is small and the test/commit relationship is correct.

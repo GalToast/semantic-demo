@@ -2,8 +2,8 @@
   @components/FocusCard.svelte — Selected business focus card
 
   Ported from:
-    - js/modules/journey-selected-card.js (card rendering, selected business hydration)
-    - js/modules/ui-renderers.js (card chrome, selected-card template)
+ - (card rendering, selected business hydration)
+ - (card chrome, selected-card template)
 
   Displays the currently focused business record with full details.
   Surfaces: idle (empty), search match, field focus.

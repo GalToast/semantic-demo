@@ -3,7 +3,7 @@
  * Central event binding orchestrator. Imports each binding module and
  * dispatches its bind function during app initialization.
  *
- * Ported from js/modules/event-bindings.ts (W15 Wave E).
+ * Ported from (W15 Wave E).
  */
 
 import { appState as _state } from '@lib/state/app.svelte'

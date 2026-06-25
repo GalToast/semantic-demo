@@ -1,7 +1,7 @@
 /**
  * @lib/utils/dom-formatters.ts — HTML sanitization, string manipulation, business formatting
  *
- * Port of js/modules/utils/dom-formatters.js
+ * Port of
  */
 
 export function escapeHtml(value: unknown): string {

@@ -3,7 +3,7 @@
  *
  * No-resurrection guard for the retired search focus transition timer behavior.
  *
- * The old transition timer used `js/modules/search-state.ts` which is MISSING.
+ * The old transition timer used `` which is MISSING.
  * This contract ensures:
  * 1. No read of the retired module.
  * 2. Current focus transition code avoids `window.setTimeout`.

@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:8795';
-const cameraControlsSource = readFileSync('js/modules/camera-controls.js', 'utf8');
+const cameraControlsSource = readFileSync('', 'utf8');
 
 test.describe('Extraction & De-monolith Contract Verification', () => {
   
@@ -43,7 +43,7 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
     // Verify that functions moved to ui-renderers.js are exported as module APIs.
     // These helpers are intentionally dewindowed; live rendering is covered below.
     const exports = await page.evaluate(async () => {
-      const ui = await import('./js/modules/ui-renderers.js');
+ const ui = await import('./');
       return {
         buildLegend: typeof ui.buildLegend === 'function',
         renderSignalBadges: typeof ui.renderSignalBadges === 'function',
@@ -66,7 +66,7 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
 
   test('Module Seam: Mycelium Engine', async ({ page }) => {
     const exports = await page.evaluate(async () => {
-      const mycelium = await import('./js/modules/mycelium-engine.js');
+ const mycelium = await import('./');
       return {
         buildSemanticMyceliumEdges: typeof mycelium.buildSemanticMyceliumEdges === 'function',
         updateMyceliumThreads: typeof mycelium.updateMyceliumThreads === 'function'

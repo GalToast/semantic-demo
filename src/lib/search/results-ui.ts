@@ -6,7 +6,7 @@
  * shows rows. Svelte stores are also updated so the future Svelte focus
  * track can re-render the same data from the canonical source of truth.
  *
- * Port of js/modules/search-results-ui.ts
+ * Port of
  */
 
 import { publish, EVENTS } from '@lib/orchestration/event-bus'

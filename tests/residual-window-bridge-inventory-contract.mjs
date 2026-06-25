@@ -744,7 +744,7 @@ function testRestoreLegendCollapsedPanelBridgeRetired() {
     const lifecycleSrc = read('lifecycle')
     const eventBindingsSrc = read('eventBindings')
 
-    // The legacy js/modules/legend-ui.ts kernel is deleted.
+ // The legacy kernel is deleted.
     // The canonical owner is now src/lib/stores/legend-panel.svelte.ts.
     const legendPanelSrc = fs.readFileSync(path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts'), 'utf-8')
     assert(

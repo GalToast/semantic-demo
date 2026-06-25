@@ -1,7 +1,7 @@
 /**
  * @lib/utils/math-easing.ts — Pure math operations, clamp, and easing curves
  *
- * Port of js/modules/utils/math-easing.js
+ * Port of
  */
 
 export function parseFiniteNumber(value: unknown): number | null {

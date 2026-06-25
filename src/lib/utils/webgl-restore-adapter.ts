@@ -4,7 +4,7 @@
  * Allows the engine to register a restore callback that is invoked
  * when the WebGL context is lost and needs recovery.
  *
- * Port of js/modules/webgl-restore-adapter.ts
+ * Port of
  */
 
 let _restoreHandler: (() => Promise<unknown> | unknown) | null = null

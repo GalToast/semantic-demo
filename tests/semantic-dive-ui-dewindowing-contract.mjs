@@ -21,7 +21,7 @@ const SEMDEMO_ROOT = path.resolve(process.cwd());
 const SEMANTIC_DIVE_UI_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/semantic-overlay.ts');
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts');
 const RUNTIME_SYNC_CALLERS = [
-  'js/modules/camera-controls-choreography-cursor.ts',
+ ''
   'src/lib/journey/compass-state.ts',
   'src/lib/journey/thread-settler.ts',
   'src/lib/journey/thread-inspector.ts'

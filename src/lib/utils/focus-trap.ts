@@ -4,7 +4,7 @@
  * Constrains Tab key cycling within a set of container selectors
  * so modal/overlay UIs remain keyboard-accessible.
  *
- * Port of js/modules/utils/focus-trap.ts
+ * Port of
  */
 
 /** CSS selector string matching all standard focusable elements. */

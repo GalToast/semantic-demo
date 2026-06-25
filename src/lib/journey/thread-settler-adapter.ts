@@ -4,7 +4,7 @@
  * Provides the bridge functions that thread-settler imports from the legacy
  * runtime. Once fully ported, these become direct implementations.
  *
- * Ported from: js/modules/journey-thread-settler.js (adapter functions)
+ * Ported from: (adapter functions)
  */
 
 import {

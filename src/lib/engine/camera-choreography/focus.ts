@@ -2,7 +2,7 @@
  * @lib/engine/camera-choreography/focus.ts
  * Focus camera animation — animateCameraToNode, cancelFocusCameraAnimation
  *
- * Ported from: js/modules/camera-controls-choreography-focus.ts
+ * Ported from:
  */
 import { Vector3 } from 'three'
 import { appState } from '@lib/state/app.svelte'

@@ -1,7 +1,7 @@
 /**
  * @lib/engine/camera-controls.ts — Camera controls facade
  *
- * Port of js/modules/camera-controls.ts.
+ * Port of
  *
  * Re-exports choreography functions from @lib/engine/camera-choreography
  * (already ported), core functions from the local camera-controls-core port,

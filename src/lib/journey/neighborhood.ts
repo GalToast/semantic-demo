@@ -1,7 +1,7 @@
 /**
  * @lib/journey/neighborhood.ts — Bounded neighborhood manifest and walk candidates
  *
- * Ported from: js/modules/journey-neighborhood.js
+ * Ported from:
  *
  * Provides neighborhood computation utilities backed by the semantic
  * neighbor map and spatial proximity. Functions read from Svelte stores

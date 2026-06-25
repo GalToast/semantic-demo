@@ -1,7 +1,7 @@
 // idb-service.ts
 // Canonical home for the dependency-free IndexedDB wrapper.
 //
-// Ported from js/modules/idb-service.ts (W15 Wave D).
+// Ported from (W15 Wave D).
 // Zero logic changes — only import paths adapted for src/lib/utils/ location.
 //
 // Resilience: every transaction races a 5-second timeout.  If the

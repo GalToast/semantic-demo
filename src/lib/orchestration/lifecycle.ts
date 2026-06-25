@@ -1,7 +1,7 @@
 /**
  * @lib/orchestration/lifecycle.ts — Semantic Demo Lifecycle & Global State Bridge
  *
- * Replaces js/modules/lifecycle.js.
+ *
  *
  * Orchestrates mode switching, trail depth, search glow, exploration focus,
  * and semantic dive. Writes to stores (navStore, searchStore, focusStore,

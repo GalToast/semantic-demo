@@ -1,7 +1,7 @@
 /**
  * @lib/journey/canvas-interaction.ts — Canvas pointer event bindings for thread walking and field-node focus
  *
- * Port of js/modules/journey-canvas-interaction.js
+ * Port of
  *
  * Re-exports core adapters from extracted modules and owns canvas DOM event binding lifecycle.
  */

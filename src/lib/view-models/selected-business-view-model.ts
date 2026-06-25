@@ -2,9 +2,9 @@
  * src/lib/view-models/selected-business-view-model.ts
  *
  * Pure view-model extraction for the selected business card.
- * Faithful TS port of js/modules/view-models/selected-business-view-model.ts.
+ * Faithful TS port of
  *
- * Import from src/ only — no brittle cross-track imports from js/modules/.
+ * Import from src/ only — no brittle cross-track imports from
  */
 
 import type { BusinessNamePresentation } from '../utils/dom-formatters';

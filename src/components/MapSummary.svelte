@@ -2,8 +2,8 @@
   @components/MapSummary.svelte — Mini-map trail overlay
 
   Ported from:
-    - js/modules/journey-route-trace.js (route trace rendering)
-    - js/modules/journey-neighborhood.js (neighborhood manifest)
+ - (route trace rendering)
+ - (neighborhood manifest)
 
   Renders a mini-map showing the current journey trail as connected nodes.
   Positioned in the bottom-left corner above the legend.

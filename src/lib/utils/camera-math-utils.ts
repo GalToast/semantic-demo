@@ -1,7 +1,7 @@
 /**
  * @lib/utils/camera-math-utils.ts — Pure mathematical and vector functions for 3D camera orchestration.
  *
- * Port of js/modules/camera-math-utils.ts
+ * Port of
  */
 
 import { Vector3 } from 'three';

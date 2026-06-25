@@ -113,13 +113,13 @@ const SVELTE_OWNED_CHILD_IDS = [
 const RETIRED_COMPONENT_PATHS = [
     'src/components/SelectedBusinessDetails.svelte',
     'src/components/InfoPanelSelectionSurface.svelte',
-    'js/modules/components/SelectedBusinessDetails.svelte',
-    'js/modules/components/InfoPanelSelectionSurface.svelte',
-    'js/modules/components/InfoPanelSearchSurface.svelte',
-    'js/modules/selected-details-svelte-island.ts',
-    'js/modules/search-results-svelte-island.ts',
-    'js/modules/info-panel-chrome-island.ts',
-    'js/modules/legend-panel-chrome-island.ts'
+ ''
+ ''
+ ''
+ ''
+ ''
+ ''
+ ''
 ]
 
 // ── Test A: InfoPanel.svelte owns all surface IDs ────────────────────────────

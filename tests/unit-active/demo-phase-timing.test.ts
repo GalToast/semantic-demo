@@ -39,7 +39,7 @@ const TOTAL_DURATION_MS =
 
 // ── Expected engine bridge setTimeout offsets ─────────────────────────────────
 // These must match the offsets in src/lib/engine/demo-choreography.ts
-// and js/modules/micro-demo-choreography.ts.
+// and
 
 const EXPECTED_OFFSETS = {
   glow: 50,

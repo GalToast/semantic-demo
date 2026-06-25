@@ -1,7 +1,7 @@
 /**
  * @lib/ui/weather-ui.ts
  *
- * Ported from: js/modules/weather-ui.ts
+ * Ported from:
  * Weather widget DOM rendering and effects.
  */
 

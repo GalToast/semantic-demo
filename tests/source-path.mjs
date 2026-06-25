@@ -9,7 +9,7 @@
  *
  * Usage in contracts:
  *   import { resolveSource } from './source-path.mjs';
- *   const src = fs.readFileSync(resolveSource('js/modules/weather.ts'), 'utf8');
+ * const src = fs.readFileSync(resolveSource(''), 'utf8');
  */
 
 import fs from 'node:fs'
@@ -26,7 +26,7 @@ export function resolveSource(legacyPath, root) {
     const base = root ?? process.cwd()
     const absolute = path.resolve(base, legacyPath)
 
-    // Remap deleted js/modules/*.ts to current canonical src/lib locations.
+ // Remap deleted js/modules/*.ts to current canonical src/lib locations.
     const mm = legacyPath.match(/^(?:\.\.?\/)*js\/modules\/([\w-]+)(?:\.ts|\.js)?$/)
     if (mm) {
         const stem = mm[1]

@@ -5,7 +5,7 @@
  *   1. No file outside src/lib/engine/* should import directly from js/ — they
  *      must go through the engine bridge.
  *   2. Every src/lib/engine/*-bridge.ts that exists must have ≥1 consumer.
- *   3. Bridges that point at legacy (js/modules/*) are the work-to-do for
+ * 3. Bridges that point at legacy (js/modules/*) are the work-to-do for
  *      W11-T9/T10 (kernel port + render loop). They are NOT anti-patterns —
  *      they're the migration seam.
  *
@@ -188,7 +188,7 @@ describe('Bridge health (W11 retirement progress)', () => {
         'src/lib/engine/event-bus-bridge.ts', // W11-T5 Wave 2 — T9 retires when journey files land
         'src/lib/engine/micro-demo-choreography-bridge.ts', // W11-T5 Wave 2 — sanctioned passthrough (micro-demo legacy)
         // ── W15-T-SEARCH-STATE (partial port, 2026-06-15) ────────
-        'src/lib/engine/search-state-bridge.ts', // W15-T-SEARCH-STATE — bridge created with clearSearch(options) signature fix; consumers in js/modules/* still use the old path; rewiring is a follow-up ticket
+ 'src/lib/engine/search-state-bridge.ts', // W15-T-SEARCH-STATE — bridge created with clearSearch(options) signature fix; consumers in js/modules/* still use the old path; rewiring is a follow-up ticket
         'src/lib/engine/legend-ui-bridge.ts' // Retired legend-ui-bridge — logic relocated to @lib/journey/legend-ui + @lib/stores/legend-panel.svelte.ts; zero consumers remain
     ])
 

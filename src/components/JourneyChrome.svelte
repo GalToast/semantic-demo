@@ -2,9 +2,9 @@
   @components/JourneyChrome.svelte — Journey UI overlay (trail controls, breadcrumb, neighbor rail)
 
   Ported from:
-    - js/modules/journey-focus-ui.js (updateTraversalUi, updateWalkBreadcrumb, updateFocusNeighborRail)
-    - js/modules/journey-compass-state.js (compass status header)
-    - js/modules/journey-compass-controller.js (compass step state integration)
+ - (updateTraversalUi, updateWalkBreadcrumb, updateFocusNeighborRail)
+ - (compass status header)
+ - (compass step state integration)
 
   Features:
     - Compass status header (kicker + note)

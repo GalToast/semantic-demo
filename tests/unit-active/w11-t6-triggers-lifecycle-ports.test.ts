@@ -5,7 +5,7 @@
  * Wave 1: event-bus subscriptions).
  *
  * The four subscriptions below are Svelte-native mirrors of the legacy
- * `initEventBusSubscriptions()` calls in `js/modules/app.ts`. They live in
+ * `initEventBusSubscriptions` calls in ``. They live in
  * `src/lib/orchestration/triggers.ts` and run as side-effect imports from
  * `src/App.svelte`. This test locks in the port so a future accidental
  * removal is caught.

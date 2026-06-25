@@ -2,7 +2,7 @@
  * @lib/orchestration/compass-controller.ts
  *
  * Execute compass actions based on state.
- * Replaces js/modules/journey-compass-controller.js.
+ *
  *
  * Reads compass state, syncs DOM elements, and dispatches
  * journey actions (search focus, anchor center, map switch, etc.).

@@ -1,6 +1,6 @@
 /**
  * view-bindings.ts
- * Canonical location (ported from js/modules/bindings/view-bindings.ts — W15).
+ * Canonical location (ported from — W15).
  * Core click helper, zoom, and view controls.
  */
 

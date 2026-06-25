@@ -1,5 +1,5 @@
 /**
- * @lib/engine/thread-manager.ts — TypeScript port of js/modules/three-thread-manager.ts
+ * @lib/engine/thread-manager.ts — TypeScript port of
  *
  * Creates the mycelium thread line geometry (core, wispy, bridge layers).
  * Preserves the exact same public API as the legacy module.

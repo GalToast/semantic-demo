@@ -1,7 +1,7 @@
 /**
  * @lib/semantic-threads.ts — Semantic thread artifact loading (typed port)
  *
- * Port of: js/modules/semantic-threads.js
+ * Port of:
  *
  * Loads semantic thread neighbor data (from semantic_threads.dat / semantic_threads_ui.dat),
  * populating state.semanticNeighborMapByLeadId.  Uses a Web Worker for parsing when

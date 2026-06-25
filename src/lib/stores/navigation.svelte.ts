@@ -2,9 +2,9 @@
  * @lib/stores/navigation.svelte.ts — Navigation state store (Svelte 5 runes)
  *
  * Replaces:
- *   - js/modules/lifecycle.js (view handoff, composition state)
+ * - (view handoff, composition state)
  *   - Navigation slices from js/state.js
- *   - js/modules/navigation-state.js (trail/thread state)
+ * - (trail/thread state)
  *
  * The navigation store owns the current view mode, surface, focus index,
  * and all view-handoff state. It is the single source of truth for
@@ -199,7 +199,7 @@ export const currentMode = (): string => {
     const local = get(_navWritable).mode
     if (local) return local
     // Fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH/ENTER_INSIDE/EXIT_INSIDE
-    // paths in js/modules/navigation-state.ts mutate legacy state.navState.mode
+ // paths in mutate legacy state.navState.mode
     // without writing to navStore. Remove once those reducers are store-native.
     const legacy = readLegacyNavField<string>('mode')
     if (legacy) return legacy
@@ -458,7 +458,7 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
 
 /**
  * Dispatch a navigation transition (the core orchestrator).
- * Replaces the heavy logic in js/modules/lifecycle.js.
+ * Replaces the heavy logic in
  */
 export function dispatchNavTransition(
     action: NavTransitionAction,

@@ -231,7 +231,7 @@
       getActiveCanvas: () => (activeCanvas ? 'captured' : 'idle'),
     };
 
-    (window as unknown as { __spector: typeof bridge }).__spector = bridge;
+    window.__spector = bridge;
     phase = 'ready';
     publishStatus();
     if (import.meta.env.DEV) console.log('[spector-inspector] ready; call window.__spector.capture() to begin');
@@ -264,8 +264,8 @@
 
   onDestroy(() => {
     if (typeof window !== 'undefined') {
-      delete (window as unknown as { __spector?: unknown }).__spector;
-      delete (window as unknown as { __spectorStatus?: unknown }).__spectorStatus;
+      delete window.__spector;
+      delete window.__spectorStatus;
     }
   });
 </script>

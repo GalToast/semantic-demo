@@ -1,7 +1,7 @@
 /**
  * @lib/engine/demo-choreography.ts — Demo choreography state machine, focus setup, reset, and timed phase chain
  *
- * Port of js/modules/micro-demo-choreography.js
+ * Port of
  *
  * This module is a **pure side-effecting helper** — it drives DOM, camera, and
  * animation via the legacy engine. It does NOT own the demo phase state; it

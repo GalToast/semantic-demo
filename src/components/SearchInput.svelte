@@ -2,8 +2,8 @@
   @components/SearchInput.svelte — Search input box
 
   Ported from:
-    - js/modules/search-state.js (query tokenization, debounce)
-    - js/modules/bindings/search.js (input event wiring)
+ - (query tokenization, debounce)
+ - (input event wiring)
 
   Extracted from SearchBar.svelte as the input-only component.
   Drives the search store with debounced queries.

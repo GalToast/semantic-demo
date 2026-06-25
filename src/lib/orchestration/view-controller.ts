@@ -1,7 +1,7 @@
 /**
  * @lib/orchestration/view-controller.ts — Galaxy ↔ Map view switching
  *
- * Port of: js/modules/view-controller.js
+ * Port of:
  *
  * Handles view transitions between galaxy (3D mycelium) and map (Leaflet terrain),
  * including terrain preludes, handoff overlays, button state sync, and camera choreography.

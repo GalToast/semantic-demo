@@ -1,7 +1,7 @@
 /**
  * @lib/journey/semantic-overlay.ts — Focus-stage semantic thread overlay rendering
  *
- * Ported from: js/modules/journey-semantic-overlay.ts
+ * Ported from:
  * GLSL-enhanced Line2 material for semantic thread visualization.
  */
 

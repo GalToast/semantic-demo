@@ -411,7 +411,7 @@ async function main() {
         assert(idle.canvas?.width > 300 && idle.canvas?.height > 500, 'idle canvas should fill the mobile scene area', failures);
         assert(idle.pointCount > 100, 'idle scene should render a meaningful node set', failures);
         assert(idle.coreOpacity >= 0.04, `overview core thread opacity too low: ${idle.coreOpacity}`, failures);
-        // Keep this ceiling paired with the overview mycelium presentation profile in js/modules/three-engine.ts.
+ // Keep this ceiling paired with the overview mycelium presentation profile in
         assert(idleResult.luminance.p95 <= 220, `idle scene p95 luminance is over-threaded: ${idleResult.luminance.p95}`, failures);
         assert(idleResult.luminance.whiteRatio <= 0.08, `idle scene white pixel ratio is too high: ${idleResult.luminance.whiteRatio}`, failures);
         assert(idle.coreContinuity.checked > 0 && idle.coreContinuity.matched === idle.coreContinuity.checked, 'mycelium core thread segments should be continuous paired vertices', failures);

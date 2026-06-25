@@ -1,7 +1,7 @@
 /**
  * @lib/focus/stage-renderer.ts — Focus stage canvas rendering
  *
- * Port of js/modules/focus-stage-renderer.ts
+ * Port of
  *
  * Provides type-checked rendering logic for the "Focus Stage" business detail
  * card and selected-card container management.

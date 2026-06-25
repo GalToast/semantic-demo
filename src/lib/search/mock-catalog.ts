@@ -2,7 +2,7 @@
  * @lib/search/mock-catalog.ts — Mock catalog for development/fallback semantic search.
  *
  * Canonical home for the mock catalog previously exposed through
- * `js/modules/semantic-search-mock-catalog.ts` and its bridge.
+ * `` and its bridge.
  */
 
 import { buildDatasetBackedMockResults } from './scoring'

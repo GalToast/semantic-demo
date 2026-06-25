@@ -1,7 +1,7 @@
 /**
  * @lib/journey/route-trace.ts
  *
- * Ported from: js/modules/journey-route-trace.ts
+ * Ported from:
  * Route trace overlay rendering, subscriptions, and frame updates.
  */
 import { appState as state } from '@lib/state/app.svelte'

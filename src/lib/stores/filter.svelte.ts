@@ -1,7 +1,7 @@
 /**
  * @lib/stores/filter.svelte.ts — Filter state store
  *
- * Replaces js/modules/filter-state.js and the filter slice from state.js.
+ * Replaces and the filter slice from state.js.
  * Manages status, city, and contact-feature filters for the business network.
  * Canonical owner for filter ↔ state sync.
  */

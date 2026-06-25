@@ -1,7 +1,7 @@
 /**
  * mycelium-logic-contract.mjs
  *
- * Fast Node contract test for js/modules/mycelium-engine.js
+ * Fast Node contract test for
  *
  * Coverage:
  *   1. Intra-cluster neighbors with semanticScore >= 0.62       → corePairs

@@ -1,7 +1,7 @@
 /**
  * @lib/utils/diagnostic-adapter.ts — Centralized gating for DevTools and testing probes
  *
- * Port of js/modules/diagnostic-adapter.js
+ * Port of
  * Governs the window.__DEBUG_PROBES__ gate.
  */
 

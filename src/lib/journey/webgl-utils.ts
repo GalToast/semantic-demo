@@ -1,7 +1,7 @@
 /**
  * @lib/journey/webgl-utils.ts — Shared WebGL utilities for journey overlays.
  *
- * Ported from: js/modules/journey-webgl-utils.ts
+ * Ported from:
  * Pure utility functions. No side effects.
  */
 import { Vec3, Color } from '@lib/utils/math-vec3'

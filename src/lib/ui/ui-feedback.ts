@@ -1,7 +1,7 @@
 /**
  * @lib/ui/ui-feedback.ts — DOM status/toast feedback operations
  *
- * Port of js/modules/ui-feedback.ts.
+ * Port of
  * Provides `showExperienceToast` (transient toast) and `syncSearchStatusForFocus`
  * (announces the focused point's relationship to the active search stack).
  */

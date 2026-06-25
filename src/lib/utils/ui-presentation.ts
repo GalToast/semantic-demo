@@ -2,7 +2,7 @@
  * @lib/utils/ui-presentation.ts — Presentation logic, environment checks,
  * and scene display profiles
  *
- * Port of js/modules/utils/ui-presentation.js
+ * Port of
  */
 
 import { FOCUS_PANEL_MODE, getFocusPanelMode } from './focus-panel-mode';

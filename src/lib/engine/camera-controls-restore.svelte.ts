@@ -1,7 +1,7 @@
 /**
  * @lib/engine/camera-controls-restore.svelte.ts — Svelte 5 rune-class for auto-rotate state machine and camera restore
  *
- * Ticket W11-T6: Parallel artifact to js/modules/camera-controls-restore.ts.
+ * Ticket W11-T6: Parallel artifact to
  * The Svelte 5 class owns the reactive state via $state fields. Legacy state
  * writes are kept for backward compatibility with choreography files that
  * still import from the legacy path directly.
@@ -246,7 +246,7 @@ class CameraControlsRestore {
 export const cameraControlsRestore = new CameraControlsRestore()
 
 // ── Legacy-compatible function exports ───────────────────────────────────────
-// These maintain the same API surface as js/modules/camera-controls-restore.ts
+// These maintain the same API surface as
 // so existing consumers (choreography, bridge) don't need import changes.
 
 export function settleCameraToOverviewPose(): boolean {

@@ -2,7 +2,7 @@
 // Fast Node tests that verify loading phase behavior, overlay dispatch contract,
 // and deferred hydration scheduling.
 //
-// LEGACY PATH: tests js/modules/loading-ui.js patterns
+// LEGACY PATH: tests patterns
 // SVELTE PATH: tests src/components/LoadingOverlay.svelte patterns
 // Auto-detects which path is active.
 

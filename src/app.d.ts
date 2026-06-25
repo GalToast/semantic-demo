@@ -26,7 +26,7 @@ interface Window {
     withStateMutation?: <T>(fn: () => T) => T
     /**
      * Leaflet global injected at runtime by the asset loader
-     * (js/modules/map-state.ts:loadLeafletAssets). The local LeafletApi
+ * (:loadLeafletAssets). The local LeafletApi
      * interface narrows the cast site; declaring it as `unknown` here
      * keeps the global permissive without pulling the upstream @types/leaflet.
      */

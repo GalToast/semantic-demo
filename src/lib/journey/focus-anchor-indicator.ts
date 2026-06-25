@@ -1,5 +1,5 @@
 // focus-anchor-indicator.ts
-// Canonical port of js/modules/focus-anchor-indicator.ts
+//
 // Focus anchor visual treatment: ring + pulse + size cues.
 
 import {

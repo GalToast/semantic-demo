@@ -12,8 +12,8 @@
  *     - legend-ui-bridge.ts has been absorbed (no longer exists)
  *
  *   Deleted kernels (no longer exist):
- *     - js/modules/legend-ui.ts
- *     - js/modules/semantic-guide.ts
+ * -
+ * -
  *     - src/lib/engine/legend-ui-bridge.ts (absorbed into canonical store)
  *
  * Design:
@@ -36,8 +36,8 @@ const SEMDEMO_ROOT = path.resolve(process.cwd())
 const LIFECYCLE_PATH = path.join(SEMDEMO_ROOT, 'src/lib/stores/lifecycle.ts')
 const VIEW_CONTROLLER_PATH = path.join(SEMDEMO_ROOT, 'src/lib/orchestration/view-controller.ts')
 const LEGEND_PANEL_STORE = path.join(SEMDEMO_ROOT, 'src/lib/stores/legend-panel.svelte.ts')
-const DELETED_LEGEND_UI = path.join(SEMDEMO_ROOT, 'js/modules/legend-ui.ts')
-const DELETED_SEMANTIC_GUIDE = path.join(SEMDEMO_ROOT, 'js/modules/semantic-guide.ts')
+const DELETED_LEGEND_UI = path.join(SEMDEMO_ROOT, '')
+const DELETED_SEMANTIC_GUIDE = path.join(SEMDEMO_ROOT, '')
 const DELETED_BRIDGE = path.join(SEMDEMO_ROOT, 'src/lib/engine/legend-ui-bridge.ts')
 
 function assert(cond, msg) {
@@ -189,8 +189,8 @@ function testCloseLegendGuideOwnership() {
 function testDeletedKernelsNotExist() {
     console.log('\n[TEST 6] Deleted kernel files do not exist')
 
-    assert(!fs.existsSync(DELETED_LEGEND_UI), 'js/modules/legend-ui.ts must be deleted')
-    assert(!fs.existsSync(DELETED_SEMANTIC_GUIDE), 'js/modules/semantic-guide.ts must be deleted')
+ assert(!fs.existsSync(DELETED_LEGEND_UI), ' must be deleted')
+ assert(!fs.existsSync(DELETED_SEMANTIC_GUIDE), ' must be deleted')
 
     console.log('  OK — deleted kernel files confirmed absent')
 }

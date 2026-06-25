@@ -1,5 +1,5 @@
 /**
- * @lib/stores/lifecycle — Lifecycle helpers ported from js/modules/lifecycle-*.js
+ * @lib/stores/lifecycle — Lifecycle helpers ported from *.js
  *
  * Functions here read from and write to the Svelte stores (navStore,
  * focusStore, searchStore, journeyStore) and derive body data attributes
@@ -56,7 +56,7 @@ export function setTrailDepth(depth: number, _options?: unknown): void {
 export const setSemanticDiveMode = _setSemanticDiveMode
 export const setMyceliumMode = _setMyceliumMode
 
-// ── Composition State (ported from js/modules/lifecycle.js) ──────────────────
+// ── Composition State (ported from ) ──────────────────
 
 /**
  * Derive the graph-context from the current nav/search state.
@@ -233,7 +233,7 @@ export function getBridgeIndices(): number[] {
     return Array.from(s.bridgeIndices)
 }
 
-// ── Focus Reset (ported from js/modules/lifecycle-reset.js) ─────────────────
+// ── Focus Reset (ported from ) ─────────────────
 
 /**
  * Reset exploration focus: clears navState focus fields, trail depth,
@@ -321,7 +321,7 @@ export function resetNodePositions(_options?: object): void {
     resetExplorationFocus(_options as Parameters<typeof resetExplorationFocus>[0])
 }
 
-// ── Experience Reset (ported from js/modules/lifecycle-reset.js) ─────────────
+// ── Experience Reset (ported from ) ─────────────
 
 /**
  * Full experience reset: clears everything — focus, search, empty query,
@@ -374,7 +374,7 @@ export function returnToOverview(): void {
     refreshCompositionState()
 }
 
-// ── Search Glow (ported from js/modules/lifecycle-search-sync.js) ────────────
+// ── Search Glow (ported from ) ────────────
 
 /**
  * Activate search glow on the field: sets the search summary and glow
@@ -401,7 +401,7 @@ export function activateSearchGlow(summary?: unknown): void {
     refreshCompositionState()
 }
 
-// ── Empty Query Tracking (ported from js/modules/lifecycle-search-sync.js) ───
+// ── Empty Query Tracking (ported from ) ───
 
 /**
  * Get the last recorded empty query (for no-results fallback suggestions).
@@ -430,7 +430,7 @@ export function recordEmptySearch(query?: string): void {
     }))
 }
 
-// ── Trail Review Overlay (ported from js/modules/lifecycle-search-sync.js) ───
+// ── Trail Review Overlay (ported from ) ───
 
 let _trailReviewPreviouslyFocused: HTMLElement | null = null
 

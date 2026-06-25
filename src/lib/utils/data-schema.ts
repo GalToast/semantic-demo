@@ -6,7 +6,7 @@
  *
  * SYNC_REQUIRED: Keep in sync with src/lib/workers/data-worker.ts
  *
- * Port of js/modules/utils/data-schema.ts
+ * Port of
  */
 
 /** Column index map for raw positional records in data.dat */

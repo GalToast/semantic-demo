@@ -1,7 +1,7 @@
 /**
  * semantic-guide-payload-adapter.ts
  *
- * Canonical port of js/modules/semantic-guide-payload-adapter.ts
+ *
  * Thin adapter seam: decouples semantic-guide payload builders from raw state shape.
  */
 

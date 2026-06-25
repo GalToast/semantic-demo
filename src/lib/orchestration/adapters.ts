@@ -19,7 +19,7 @@ import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-
 
 /**
  * Loose 3D point — matches the structural shape of the legacy
- * `Point3D` in `js/modules/thread-inspector-adapter.ts` (optional x/y/z).
+ * `Point3D` in `` (optional x/y/z).
  * The strict `Point3D` in `@lib/types/webgl` is required x/y/z, which is
  * narrower than the bridge contract. Use this loose form for adapter
  * bridges until the consumer is tightened.
@@ -28,7 +28,7 @@ type LoosePoint3D = { x?: number; y?: number; z?: number }
 
 /**
  * Loose neighbor candidate — matches the structural shape of the legacy
- * `NeighborCandidate` in `js/modules/thread-inspector-adapter.ts`. The
+ * `NeighborCandidate` in ``. The
  * legacy type allows `reason?: string` and arbitrary extra fields.
  */
 type LooseNeighborCandidate = { reason?: string; [key: string]: unknown }

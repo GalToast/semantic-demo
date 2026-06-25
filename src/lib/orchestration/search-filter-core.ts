@@ -1,8 +1,8 @@
 /**
  * @lib/orchestration/search-filter-core.ts — Core filter logic
  *
- * Port of js/modules/search-filter-core.js + clearShortSemanticSearchState
- * from js/modules/search-results-ui.js.
+ * Port of + clearShortSemanticSearchState
+ * from
  *
  * Core logic for point visibility and dataset filtering, used by
  * cluster-filter-controller and the filter subsystem.
@@ -123,7 +123,7 @@ export function applyFilters(): void {
 
 /**
  * Clear the short-lived semantic search state from results and status elements.
- * Ported from js/modules/search-results-ui.js -> clearShortSemanticSearchState.
+ * Ported from -> clearShortSemanticSearchState.
  */
 export function clearShortSemanticSearchState(
   resultsEl?: HTMLElement | null,

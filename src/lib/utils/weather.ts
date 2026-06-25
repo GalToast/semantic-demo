@@ -1,7 +1,7 @@
 /**
  * weather.ts — Canonical home for weather data fetching, normalization, and state management.
  *
- * Ported from js/modules/weather.ts (W15 Wave D).
+ * Ported from (W15 Wave D).
  * Zero logic changes — only import paths adapted for src/lib/utils/ location.
  */
 

@@ -1,7 +1,7 @@
 /**
  * @lib/engine/camera-controls-core.svelte.ts — Svelte 5 rune-class for camera focus transition, assist, and route exploration
  *
- * Ticket W11-T6: Parallel artifact to js/modules/camera-controls-core.ts.
+ * Ticket W11-T6: Parallel artifact to
  * The Svelte 5 class owns the reactive state via $state fields. Legacy state
  * writes are kept for backward compatibility with choreography files that
  * still import from the legacy path directly.
@@ -221,7 +221,7 @@ class CameraControlsCore {
 export const cameraControlsCore = new CameraControlsCore()
 
 // ── Legacy-compatible function exports ───────────────────────────────────────
-// These maintain the same API surface as js/modules/camera-controls-core.ts
+// These maintain the same API surface as
 // so existing consumers (choreography, bridge) don't need import changes.
 
 export function setFocusTransitionMode(mode: string, options: TransitionOptions = {}): void {

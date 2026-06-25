@@ -1,7 +1,7 @@
 /**
  * @lib/engine/camera-choreography/cursor.ts — Focus node orchestrator (focusOnNode)
  *
- * Ported from: js/modules/camera-controls-choreography-cursor.ts
+ * Ported from:
  *
  * Orchestrates the full focus-on-node flow: dispatches navigation transitions,
  * syncs DOM attributes, publishes events, updates journey/compass state, and

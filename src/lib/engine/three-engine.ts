@@ -2,7 +2,7 @@
  * @lib/engine/three-engine.ts — Canonical Three.js engine orchestration
  *
  * Single source of truth for the WebGL render loop, scene lifecycle, and
- * renderer management.  Legacy `js/modules/three-engine.ts` was deleted in
+ * renderer management. Legacy `` was deleted in
  * W13-T5b Wave 7 (commit 00eb691).
  *
  * Public API:
@@ -166,7 +166,7 @@ interface WithStateMutationFn {
 }
 
 interface WindowWithDevGlobals extends Window {
-    __LEGACY_APP_STATE__?: unknown
+    __LEGACY_APP_STATE__?: Record<string, unknown> | undefined
     __refreshTestCompatState__?: () => void
     __semanticEngine?: {
         readonly renderer: WebGLRenderer | null

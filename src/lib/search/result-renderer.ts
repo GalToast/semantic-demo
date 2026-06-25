@@ -2,7 +2,7 @@
  * @lib/search/result-renderer.ts — Dedicated module for rendering search result
  * HTML and managing the result list DOM.
  *
- * Port of js/modules/search-result-renderer.ts
+ * Port of
  */
 
 import { appState } from '@lib/state/app.svelte';
@@ -288,8 +288,8 @@ export function setActiveSearchResultRow(
         }
     });
 
-    if (typeof (window as unknown as Record<string, unknown>).refreshSearchResultHierarchy === 'function') {
-        ((window as unknown as Record<string, unknown>).refreshSearchResultHierarchy as (el: HTMLElement) => void)(resultsEl);
+    if (typeof window.refreshSearchResultHierarchy === 'function') {
+        window.refreshSearchResultHierarchy(resultsEl);
     }
 
     if (reveal && activeRow) {

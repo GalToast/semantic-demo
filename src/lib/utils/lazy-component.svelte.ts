@@ -82,7 +82,7 @@ export interface LazyComponentHandle<T> {
 export function scheduleIdleImport<T>(load: () => Promise<T>): Promise<T> {
     const run = (): Promise<T> => load()
 
-    if (typeof window !== 'undefined' && (window as unknown as { __PLAYWRIGHT__?: unknown }).__PLAYWRIGHT__) {
+    if (typeof window !== 'undefined' && window.__PLAYWRIGHT__) {
         return run()
     }
 

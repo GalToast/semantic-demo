@@ -1,7 +1,7 @@
 /**
  * @lib/journey/canvas-hover.ts — Canvas field hover state management
  *
- * Port of js/modules/journey-canvas-hover.js
+ * Port of
  *
  * Manages canvas hover highlight index, stable hover tracking,
  * cursor state, and lastCanvasNodeHover for canvas pointer events.

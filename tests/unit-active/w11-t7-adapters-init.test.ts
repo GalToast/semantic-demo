@@ -13,7 +13,7 @@
  *
  * Strangler-fig invariant: the Svelte orchestration path must call the same
  * engine-kernel adapter init functions as the legacy initAdapters() in
- * js/modules/app.ts:141-186.
+ * :141-186.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { readFileSync } from 'node:fs'

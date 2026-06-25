@@ -1,7 +1,7 @@
 /**
  * @lib/journey/route-arrival-overlay-adapter.ts
  *
- * Ported from: js/modules/route-arrival-overlay-adapter.ts
+ * Ported from:
  * Manages the route-trace and arrival-handoff overlay update callbacks.
  */
 

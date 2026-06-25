@@ -1,5 +1,5 @@
 /**
- * js/modules/journey-webgl.ts
+ *
  *
  * Re-exports from journey-route-trace, journey-arrival-handoff, and journey-semantic-overlay.
  * Canonical TS module — preserves export/import parity with the prior

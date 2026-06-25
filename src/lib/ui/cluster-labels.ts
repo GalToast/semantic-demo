@@ -1,7 +1,7 @@
 /**
  * @lib/ui/cluster-labels.ts — Per-cluster text labels in the 3D galaxy view
  *
- * Port of js/modules/cluster-labels.ts.
+ * Port of
  * Renders and animates per-cluster text labels in the 3D galaxy view.
  */
 import { Vector3 } from 'three'

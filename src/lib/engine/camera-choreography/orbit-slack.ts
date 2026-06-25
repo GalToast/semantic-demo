@@ -1,7 +1,7 @@
 /**
  * @lib/engine/camera-choreography/orbit-slack.ts — Focus orbit slack: pivot adjustment and distance/speed configuration.
  *
- * Ported from: js/modules/camera-orbit-slack.ts
+ * Ported from:
  *
  * The orbit slack system adjusts the camera pivot point and orbit controls
  * when a focused node is being explored via search route. It shifts the

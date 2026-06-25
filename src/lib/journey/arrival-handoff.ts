@@ -1,7 +1,7 @@
 /**
  * @lib/journey/arrival-handoff.ts
  *
- * Ported from: js/modules/journey-arrival-handoff.ts
+ * Ported from:
  * Canonical TS module — preserves export/import parity with the prior
  * journey-arrival-handoff.js twin.
  */

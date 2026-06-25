@@ -1,7 +1,7 @@
 /**
  * @lib/journey/semantic-guide.ts — Semantic guide summary card and request lifecycle
  *
- * Ported from: js/modules/semantic-guide.ts (302 lines, 6 exports)
+ * Ported from: (302 lines, 6 exports)
  *
  * Exports:
  *   - semanticGuideIcon(id, label?)          — SVG icon helper
@@ -13,10 +13,10 @@
  *
  * Dependencies still in legacy path (will migrate later):
  *   - @lib/state/app.svelte (canonical AppState)
- *   - ../../../js/modules/semantic-guide-payload.ts (buildSemanticGuideRequestPayload)
- *   - ../../../js/modules/legend-ui.ts (updateLegendGuideState)
- *   - ../../../js/modules/connection-analysis.ts (showSemanticThreadsDetail)
- *   - ../../../js/modules/stores.ts (semanticGuideStateStore)
+ * - ../../../ (buildSemanticGuideRequestPayload)
+ * - ../../../ (updateLegendGuideState)
+ * - ../../../ (showSemanticThreadsDetail)
+ * - ../../../ (semanticGuideStateStore)
  */
 
 import { appState } from '@lib/state/app.svelte'

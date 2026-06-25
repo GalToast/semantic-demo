@@ -1,7 +1,7 @@
 /**
  * @lib/ui/loading.ts — Loading overlay phases
  *
- * Port of: js/modules/loading-ui.js
+ * Port of:
  *
  * Manages the loading overlay lifecycle: phase transitions, progress updates,
  * deferred hydration, weather init, and error state display.

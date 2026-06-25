@@ -3,7 +3,7 @@
  *
  * Centralized timing constants for the filter + search chrome.
  *
- * Port of js/modules/chrome-timing.ts
+ * Port of
  */
 
 export const SEARCH_INPUT_DEBOUNCE_MS: number = 300;

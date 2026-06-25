@@ -6,7 +6,7 @@ import type { Point, SemanticState } from '@lib/state/state-types'
  *
  * Pure function: determines the display role label for a business point in the
  * current application context (search anchor, trail step, or generic record).
- * Ported from js/modules/role-label.ts — no side-effects.
+ * Ported from — no side-effects.
  */
 export function _getSelectedBusinessRoleLabel(point: Point): string {
     const _s = appState as unknown as SemanticState

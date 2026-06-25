@@ -1,7 +1,7 @@
 /**
  * search-panel-adapter.ts
  *
- * Canonical port of js/modules/search-panel-adapter.ts.
+ *
  * Owns search panel container/body visual state so search-state.js can keep
  * search decisions separate from cross-surface DOM flags.
  */

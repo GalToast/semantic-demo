@@ -2,7 +2,7 @@
  * src/lib/journey-point-color.ts
  *
  * Thread lens description for selected business cards.
- * Shadow of js/modules/journey-point-color.js
+ * Shadow of
  */
 
 import { describeCluster } from './utils'

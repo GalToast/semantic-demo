@@ -2,7 +2,7 @@
  * src/lib/ui/tooltip.ts
  *
  * Tooltip display, positioning, and event-bus integration.
- * Ported from js/modules/tooltip.ts
+ * Ported from
  */
 
 import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from '@lib/utils/dom-formatters'

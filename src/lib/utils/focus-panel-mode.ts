@@ -1,7 +1,7 @@
 /**
  * @lib/utils/focus-panel-mode.ts — Focus panel mode enum and body data-attribute helpers
  *
- * Port of js/modules/focus-panel-mode.js
+ * Port of
  * Note: In a later phase, this will be replaced by a Svelte store.
  * For now, it mirrors the legacy DOM-centric pattern.
  */

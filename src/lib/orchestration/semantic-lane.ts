@@ -6,7 +6,7 @@
  *
  * All window/document accesses are guarded with typeof checks.
  *
- * Ported from js/modules/semantic-lane.ts (Wave H, W15).
+ * Ported from (Wave H, W15).
  */
 import { appState as _state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'

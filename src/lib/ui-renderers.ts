@@ -2,7 +2,7 @@
  * src/lib/ui-renderers.ts
  *
  * UI rendering utilities for selected business card.
- * Shadow of js/modules/ui-renderers.js + focus-stage-renderer.js
+ * Shadow of + focus-stage-renderer.js
  */
 
 import type { BusinessRecord } from './types/business';

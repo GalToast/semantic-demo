@@ -1,7 +1,7 @@
 /**
  * @lib/journey/thread-inspector.ts — Thread inspection overlay management
  *
- * Ported from: js/modules/thread-inspector.ts
+ * Ported from:
  */
 
 import { appState } from '@lib/state/app.svelte.ts'
@@ -749,7 +749,7 @@ export function exploreThreadNeighbor(
 
 // ── Re-exports (TS split consolidation) ────────────────────────────────────────
 // These names are imported from thread-settler / thread-model so callers that
-// historically resolved them through thread-inspector (legacy js/modules/thread-inspector.ts)
+// historically resolved them through thread-inspector (legacy )
 // still see them via substring references in source-only contracts.
 export { getStrandArrivalNote } from '@lib/journey/thread-settler'
 export {

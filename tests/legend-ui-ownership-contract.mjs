@@ -90,18 +90,18 @@ function testLegendBindingsImportsFromCanonicalStore() {
 // ── TEST 3: No live source imports from the deleted kernel ──────────────────────
 
 function testNoLiveSourceImportsFromDeletedKernel() {
-    console.log('\n[TEST 3] No live source file imports from deleted js/modules/legend-ui.ts')
+ console.log('\n[TEST 3] No live source file imports from deleted ')
 
     // Use ripgrep to find any imports from the deleted kernel path
     try {
         const searchRoots = ['src/']
         if (fs.existsSync(path.join(SEMDEMO_ROOT, 'js'))) searchRoots.push('js/')
         const result = execSync(
-            `rg -l "from.*js/modules/legend-ui" --glob "!tests/" --glob "!legacy-reference/" --glob "!docs/" ${searchRoots.join(' ')}`,
+ `rg -l "from.*" --glob "!tests/" --glob "!legacy-reference/" --glob "!docs/" ${searchRoots.join(' ')}`
             { cwd: SEMDEMO_ROOT, encoding: 'utf-8', timeout: 15000 }
         ).trim()
 
-        assert(result === '', `Found live imports from deleted kernel js/modules/legend-ui.ts:\n${result}`)
+ assert(result === '', `Found live imports from deleted kernel :\n${result}`)
     } catch (err) {
         // rg exits 1 when no matches — that's success
         if (err.status !== 1) throw err

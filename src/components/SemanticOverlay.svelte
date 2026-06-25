@@ -2,8 +2,8 @@
   @components/SemanticOverlay.svelte — Manifold + lens overlay
 
   Ported from:
-    - js/modules/journey-semantic-overlay.js (semantic overlay rendering)
-    - js/modules/three-interaction-visuals.js (manifold, lens uniforms)
+ - (semantic overlay rendering)
+ - (manifold, lens uniforms)
 
   Renders the semantic manifold and lens overlays that show relationship
   density and semantic proximity. Delegates WebGL operations to the engine

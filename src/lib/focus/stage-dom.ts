@@ -1,7 +1,7 @@
 /**
  * @lib/focus/stage-dom.ts — Focus stage auxiliary DOM surfaces
  *
- * Port of js/modules/focus-stage-dom.ts
+ * Port of
  *
  * Lazily constructs the auxiliary DOM surfaces for the focus-stage pocket:
  * neighbor rail, inside controls, thread inspector, and trail controls.

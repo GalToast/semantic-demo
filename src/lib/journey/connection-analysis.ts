@@ -1,5 +1,5 @@
 /**
- * js/modules/connection-analysis.ts
+ *
  *
  * Connection Report / Semantic Threads Detail
  * Fetches and renders the full Semantic Connection Path report for a trail

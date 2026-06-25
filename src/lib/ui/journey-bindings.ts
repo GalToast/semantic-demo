@@ -1,6 +1,6 @@
 /**
  * journey-bindings.ts
- * Canonical location (ported from js/modules/bindings/journey-bindings.ts — W15).
+ * Canonical location (ported from — W15).
  * Journey navigation, focus controls, thread inspector, and compass delegation.
  */
 

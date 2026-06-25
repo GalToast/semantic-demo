@@ -1,7 +1,7 @@
 <!--
   @components/SearchResults.svelte — Search results list
 
-  Ported from legacy SearchResultsList.svelte (js/modules/components/SearchResultsList.svelte)
+ Ported from legacy SearchResultsList.svelte
   Full DOM contract parity for contract tests.
 
   DOM ids/classes expected by contract tests:

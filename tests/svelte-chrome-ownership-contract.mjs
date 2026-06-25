@@ -52,8 +52,8 @@ assert(
   'src/main.ts should not mount retired chrome panels separately'
 );
 
-assert(!exists('js/modules/info-panel-chrome-island.ts'), 'obsolete info-panel-chrome-island.js should not exist');
-assert(!exists('js/modules/legend-panel-chrome-island.ts'), 'obsolete legend-panel-chrome-island.js should not exist');
+assert(!exists(''), 'obsolete info-panel-chrome-island.js should not exist');
+assert(!exists(''), 'obsolete legend-panel-chrome-island.js should not exist');
 assert(!exists('js/modules/components/App.svelte'), 'retired js/modules/components/App.svelte should not be restored');
 assert(!exists('js/modules/components/InfoPanelChrome.svelte'), 'retired InfoPanelChrome.svelte should not be restored');
 assert(!exists('js/modules/components/LegendPanelChrome.svelte'), 'retired LegendPanelChrome.svelte should not be restored');

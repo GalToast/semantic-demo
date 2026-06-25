@@ -1,7 +1,7 @@
 /**
  * @lib/search/tokenizer.ts — Search query tokenization and intent expansion
  *
- * Port of js/modules/search-tokenizer.js
+ * Port of
  *
  * Unicode fix: the legacy regex /[a-z0-9]+/g only matched ASCII letters,
  * silently dropping accented characters in business names like "Fiancée".

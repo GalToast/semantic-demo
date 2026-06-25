@@ -1,12 +1,12 @@
 /**
  * @lib/search/api-cache.ts — Semantic search API call with retry, timeout,
  * and static-dev fallback. Replaces the deprecated
- * `js/modules/semantic-search-api-cache.ts` shim.
+ * `` shim.
  *
  * The single-track search engine (`src/lib/search-engine.ts` →
  * `performSearch`) is the canonical entry point; this module is retained
  * as the lower-level API+cache path. The legacy kernel retirement arc
- * keeps the bridge available for `js/modules/app.ts` until T9 retires
+ * keeps the bridge available for `` until T9 retires
  * that entrypoint.
  */
 

@@ -1,7 +1,7 @@
 /**
  * @lib/utils/timer-utils.ts — Central registry for application-wide timeouts and intervals
  *
- * Port of js/modules/utils/timer-utils.js
+ * Port of
  * Keeps background tasks flushable during state transitions.
  */
 

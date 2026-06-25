@@ -1,7 +1,7 @@
 /**
  * @lib/journey/focus-pocket.ts — Focus pocket node layout, animation, and owner API
  *
- * Port of js/modules/focus-pocket.ts.
+ * Port of
  * Focus pocket is the constellation of nearby businesses that appears when
  * a single point is focused. This module owns its indices, motion state,
  * role map, and breathing animation.

@@ -2,7 +2,7 @@
  * @lib/search/mapper.ts — Pure functions for transforming API search results
  * into hydrated application models.
  *
- * Port of js/modules/search-mapper.ts
+ * Port of
  */
 
 import { appState as state } from '@lib/state/app.svelte'

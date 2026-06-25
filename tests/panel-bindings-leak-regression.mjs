@@ -3,7 +3,7 @@
  *
  * Regression test for the panel-bindings resize-listener leak.
  *
- * Bug: js/modules/bindings/panel-bindings.ts (commit 1682f31 prior) only added
+ * Bug: (commit 1682f31 prior) only added
  *      window.addEventListener('resize', ...) without a teardown path.
  *      Repeated bindPanelControls() calls stacked duplicate listeners and
  *      pending rAFs, causing the resize handler to fire N times after N binds.

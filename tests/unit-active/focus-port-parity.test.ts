@@ -5,7 +5,7 @@
  *
  * The 3 newly ported focus subsystem files in src/lib/focus/ (anchor-indicator,
  * stage-dom, stage-renderer) must behave functionally identically to their
- * legacy siblings in js/modules/. The implementations may differ in plumbing
+ * legacy siblings in The implementations may differ in plumbing
  * (e.g., the new port pulls state from the Svelte 5 state class instead of
  * the legacy Proxy), but the public behavior must match so the W11 bridge
  * migration stays safe.

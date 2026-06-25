@@ -1,7 +1,7 @@
 /**
  * @lib/utils/data-mapper.ts — Map raw positional records to structured point objects
  *
- * Port of js/modules/utils/data-mapper.ts
+ * Port of
  */
 
 import { DATA_COLUMNS, type RawDatum } from './data-schema';

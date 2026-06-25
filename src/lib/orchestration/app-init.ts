@@ -1,7 +1,7 @@
 /**
  * @lib/orchestration/app-init.ts — Svelte-first app initialization orchestration
  *
- * Replaces the init() from js/modules/app.ts for the Svelte shell.
+ * Replaces the init from for the Svelte shell.
  *
  * Coordinates the startup sequence:
  *   1. Safety valve timers (detect stuck loading overlay)
@@ -327,7 +327,7 @@ async function applyUrlStateAfterData(): Promise<void> {
  * On restore, re-run the Svelte-first init to re-create the Three.js scene.
  *
  * This mirrors the legacy setWebGLContextRestoreHandler(init) call at the
- * bottom of js/modules/app.ts.
+ * bottom of
  *
  * @returns A cleanup function that removes the event listeners.
  */

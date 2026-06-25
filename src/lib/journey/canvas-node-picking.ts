@@ -1,7 +1,7 @@
 /**
  * @lib/journey/canvas-node-picking.ts — Raycaster-based canvas field node picking
  *
- * Port of js/modules/journey-canvas-node-picking.js
+ * Port of
  *
  * Provides nearest-node finding for canvas pointer events using raycaster
  * (instanced mesh first, then Points threshold) with a screen-space nearest fallback.

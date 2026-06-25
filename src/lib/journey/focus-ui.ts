@@ -1,7 +1,7 @@
 /**
  * @lib/journey/focus-ui.ts — Focus stage UI update utilities
  *
- * Ported from: js/modules/journey-focus-ui.ts
+ * Ported from:
  */
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'

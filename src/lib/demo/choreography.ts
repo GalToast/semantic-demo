@@ -1,7 +1,7 @@
 /**
  * @lib/demo/choreography.ts — Micro-demo orchestration facade
  *
- * Port of js/modules/micro-demo.js
+ * Port of
  *
  * Thin facade: eligibility guards, showcase pool selection, retry loop,
  * and choreography delegation. The actual camera/UI choreography lives

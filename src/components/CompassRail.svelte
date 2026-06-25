@@ -2,9 +2,9 @@
   @components/CompassRail.svelte — Journey compass rail
 
   Ported from:
-    - js/modules/journey-compass-state.js (compass state synthesis)
-    - js/modules/journey-compass-controller.js (step rendering, updateJourneyCompass)
-    - js/modules/CompassRail.svelte (skeleton → wired)
+ - (compass state synthesis)
+ - (step rendering, updateJourneyCompass)
+ - (skeleton → wired)
 
   Compass steps follow the ordered milestones:
     overview → search → focus → inside → map

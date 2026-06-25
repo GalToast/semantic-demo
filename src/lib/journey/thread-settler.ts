@@ -1,7 +1,7 @@
 /**
  * @lib/journey/thread-settler.ts — Thread walk traversal, neighbor timers, inspection settle flow
  *
- * Ported from: js/modules/journey-thread-settler.js
+ * Ported from:
  *
  * Uses StrandContinuityManager for all timer management.
  * Fixes Bug #6: Race between walkThreadNeighbor and stale arrival callbacks.

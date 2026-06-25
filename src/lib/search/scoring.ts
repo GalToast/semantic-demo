@@ -1,7 +1,7 @@
 /**
  * @lib/search/scoring.ts — Field-weighted scoring for mock/dev semantic search results.
  *
- * Port of js/modules/semantic-search-scoring.ts
+ * Port of
  */
 
 import { appState } from '../state/app.svelte'

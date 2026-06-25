@@ -2,7 +2,7 @@
  * search/state.ts — Search state facade.
  *
  * Re-exports the canonical search API from already-ported modules.
- * Consumers import from here instead of the legacy js/modules/search-state.ts.
+ * Consumers import from here instead of the legacy
  */
 
 import { publish, EVENTS } from '@lib/orchestration/event-bus'

@@ -1,7 +1,7 @@
 /**
  * src/lib/utils/debug.ts
  *
- * Debug utilities shadow of js/modules/diagnostic-adapter.js
+ * Debug utilities shadow of
  */
 
 /// <reference types="vite/client" />

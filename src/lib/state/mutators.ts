@@ -1,7 +1,7 @@
 /**
  * @lib/state/mutators.ts
  *
- * Ported from: js/modules/state-mutators.ts
+ * Ported from:
  * State mutator functions. Each updates the corresponding state field
  * through withStateMutation().
  */

@@ -1,7 +1,7 @@
 /**
  * @lib/utils/strand-continuity.ts — Bug-fixed strand continuity state management
  *
- * Port of js/modules/strand-continuity.js with fixes:
+ * Port of with fixes:
  * - Timer IDs tracked in a Map keyed by purpose (prevents timer-ID drop bug)
  * - Never replaces the whole state object — only mutates individual fields
  * - Provides cancelAll() that clears every tracked timer
@@ -297,7 +297,7 @@ export function clearStrandContinuityState(reason: string = 'clear'): StrandCont
 
 // ── Standalone timer wrappers (legacy kernel import-API) ───────────────────
 //
-// The legacy kernel (`js/modules/strand-continuity.ts`) exported top-level
+// The legacy kernel (``) exported top-level
 // `setTimer`, `clearTimer`, and `disposeTimers` consumed by thread-inspector
 // and journey-thread-settler. These thin wrappers delegate to the wrapper
 // manager so consumers can switch import paths without touching call sites.

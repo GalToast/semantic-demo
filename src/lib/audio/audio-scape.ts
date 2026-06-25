@@ -1,7 +1,7 @@
 /**
  * audio-scape.ts
  *
- * Canonical port of js/modules/audio-scape.ts.
+ *
  * Phase 3: Generative Audio Scape (Reactive)
  * Uses Web Audio API to create a low-amplitude 'data hum'
  * that reacts to camera velocity and local mycelium density.

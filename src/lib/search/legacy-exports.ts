@@ -1,7 +1,7 @@
 /**
  * @lib/search/legacy-exports.ts — Legacy public API of the search kernel.
  *
- * Owns the exports that the deprecated `js/modules/search-state.ts` shim
+ * Owns the exports that the deprecated `` shim
  * previously surfaced. The bridge (`src/lib/engine/search-state-bridge.ts`)
  * re-exports from here, and the canonical orchestration module also
  * re-exports the public name so direct consumers can use either path.
@@ -139,7 +139,7 @@ export function updateTooltipContent(): void {
 
 export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics }
 
-// Filter-state legacy exports. These live in `js/modules/filter-state.ts`
+// Filter-state legacy exports. These live in ``
 // and are not yet ported to a Svelte store. The bridge re-exports them
 // so the W14-T8 search port can retire the search-state kernel without
 // forcing a parallel filter-state port. The bridge remains the single

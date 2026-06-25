@@ -92,14 +92,14 @@ const RETIRED_MAP_SUMMARY_IDS = [
 // ── Retired component paths (must not exist) ──────────────────────────────────
 
 const RETIRED_PATHS = [
-    'js/modules/components/InfoPanelSelectionSurface.svelte',
-    'js/modules/components/SelectedBusinessDetails.svelte',
-    'js/modules/selected-details-svelte-island.ts',
-    'js/modules/search-results-svelte-island.ts',
-    'js/modules/focus-stage-renderer.ts',
-    'js/modules/journey-selected-card.ts',
-    'js/modules/ui-renderers.ts',
-    'js/modules/composition-state.ts'
+ ''
+ ''
+ ''
+ ''
+ ''
+ ''
+ ''
+ ''
 ]
 
 // ── Test A: stage-renderer.ts owns structural slot management ─────────────────

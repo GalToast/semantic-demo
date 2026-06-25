@@ -2,7 +2,7 @@
  * @lib/utils/geo-data.ts — Geolocation validation, point visibility filtering,
  * signal scoring, and 3D scatter offset computation
  *
- * Port of js/modules/utils/geo-data.js
+ * Port of
  *
  * Note: computeOverviewScatterOffsets takes a rawPositionsBuffer parameter
  * instead of importing state.js directly, keeping this module decoupled

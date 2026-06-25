@@ -1,7 +1,7 @@
 /**
  * @lib/orchestration/url-state.ts — URL state sync (read from URL params, pushState on changes)
  *
- * Port of: js/modules/url-state.js
+ * Port of:
  *
  * Reads application state from URL search params on load, and pushes state changes
  * back to the URL via pushState/replaceState. Handles browser history navigation,

@@ -1,6 +1,6 @@
 /**
  * semantic-lane-bindings.ts
- * Canonical location (ported from js/modules/bindings/semantic-lane-bindings.ts — W15).
+ * Canonical location (ported from — W15).
  * Semantic lane retry, focus, and visibility controls.
  */
 

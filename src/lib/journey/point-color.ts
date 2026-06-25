@@ -1,7 +1,7 @@
 /**
  * @lib/journey/point-color.ts — Point color management: filter colors, thread lens description.
  *
- * Native port of js/modules/journey-point-color.ts.
+ * Native port of
  * Re-exports exactly the API surface consumed by the bridge and journey.ts.
  */
 import { Color } from 'three'

@@ -4,7 +4,7 @@
  * Svelte islands mount into slot <div>s that may be conditionally rendered
  * by their parent Svelte component.
  *
- * Port of js/modules/island-mount-helper.ts
+ * Port of
  */
 
 export const MOUNT_FLAG: string = 'svelteMounted';

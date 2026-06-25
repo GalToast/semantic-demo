@@ -1,7 +1,7 @@
 /**
  * @lib/keyboard/keyboard-help.ts — Native keyboard shortcut utilities
  *
- * Ported from js/modules/keyboard-help.ts.
+ * Ported from
  *
  * Pure utility functions for keyboard target detection.
  * DOM-heavy hint-panel functions remain delegated to the legacy module

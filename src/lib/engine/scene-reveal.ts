@@ -1,7 +1,7 @@
 /**
  * @lib/engine/scene-reveal.ts — Scene reveal animation and window resize handler
  *
- * Port of js/modules/scene-reveal.ts.
+ * Port of
  * Manages the camera pull-in animation that runs when the 3D scene first
  * becomes visible, and resizes the renderer + camera when the window changes.
  */

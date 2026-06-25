@@ -1,7 +1,7 @@
 /**
  * view-controller-ownership-contract.mjs
  *
- * Source-only Node contract test proving that js/modules/view-controller.js
+ * Source-only Node contract test proving that
  * is the canonical owner of switchView, showViewHandoff, and hideViewHandoff.
  *
  * Ownership rules:

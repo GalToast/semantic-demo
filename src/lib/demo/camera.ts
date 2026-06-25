@@ -1,7 +1,7 @@
 /**
  * @lib/demo/camera.ts — Camera snapshot and animation helpers for the micro-demo
  *
- * Port of js/modules/micro-demo-camera.js
+ * Port of
  *
  * Captures overview camera position, provides fallback defaults,
  * animates camera back to overview with easing, and cancels in-progress animations.

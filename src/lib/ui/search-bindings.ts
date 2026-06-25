@@ -1,6 +1,6 @@
 /**
  * search-bindings.ts
- * Canonical location (ported from js/modules/bindings/search-bindings.ts — W15).
+ * Canonical location (ported from — W15).
  * Search controls delegation to Svelte island.
  */
 

@@ -1,7 +1,7 @@
 /**
  * @lib/stores/viewport.svelte.ts — Viewport dimensions, DPR, reduced-motion, and breakpoints
  *
- * Replaces js/modules/environment.js viewport helpers.
+ * Replaces viewport helpers.
  * Single source of truth for viewport state. Syncs body data-* attributes
  * via $effect for CSS coexistence during migration.
  */

@@ -1,7 +1,7 @@
 /**
  * @lib/utils/seeded-random.ts — Deterministic pseudo-random hash
  *
- * Port of js/modules/utils/seeded-random.js
+ * Port of
  * Returns a value in [0, 1). The hash is GLSL-portable so the same
  * expression can be reused in vertex/fragment shaders when an
  * off-CPU source of randomness is needed.

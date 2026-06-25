@@ -18,7 +18,7 @@
     <button type="button" id="btn-focus-dive" hidden>...</button>
 
   This is the Svelte-side replacement for the DOM that
-  js/modules/journey-compass-controller.js + semantic-dive-ui.js
+ + semantic-dive-ui.js
   build imperatively. The component:
 
     1. Renders the same DOM IDs the legacy CSS / hit-test
@@ -506,8 +506,8 @@
 
 <!--
   Step Inside / focus-dive button.
-  Mirrors js/modules/focus-stage-dom.js ensureDiveButton() and
-  js/modules/semantic-dive-ui.js syncSemanticDiveUi().
+ Mirrors ensureDiveButton and
+ syncSemanticDiveUi.
 
   Legacy hit-test contract (tests/canvas-hit-test-interaction.spec.js):
     - The button must be the topmost element at its center

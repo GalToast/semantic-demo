@@ -43,7 +43,7 @@ let app: ReturnType<typeof mount> | undefined
 // so that semantic-threads.ts (which may fall back to window.__APP_STATE__)
 // writes to the real state object instead of an empty placeholder.
 if (typeof window !== 'undefined') {
-    ;(window as unknown as Record<string, unknown>).__LEGACY_APP_STATE__ = legacyState
+    window.__LEGACY_APP_STATE__ = legacyState
 }
 
 if (mountTarget) {
@@ -239,7 +239,7 @@ function publishTestCompatState(): void {
     w.__APP_STATE__ = testCompatProxy
 }
 
-;(window as unknown as TestCompatWindow).__refreshTestCompatState__ = publishTestCompatState
+window.__refreshTestCompatState__ = publishTestCompatState
 const unsubTestState = testState.subscribe((value) => {
     latestTestState = value
     publishTestCompatState()

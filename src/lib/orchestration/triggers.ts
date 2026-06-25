@@ -20,7 +20,7 @@
  * at the bottom (EXPLORATION_FOCUS_SYNC, SEARCH_STATE_RESET_REQUESTED,
  * SUMMARY_CARD_HIDE_REQUESTED, SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED)
  * are Svelte-native mirrors of the legacy
- * `initEventBusSubscriptions()` calls in js/modules/app.ts. The legacy
+ * `initEventBusSubscriptions` calls in The legacy
  * subscribers stay in place during the transition; the Svelte subscribers
  * are the new canonical handlers. Once all callers publish to the
  * Svelte bus, the legacy `subscribeKeyed` calls can be retired.
@@ -183,7 +183,7 @@ subscribeKeyed('triggers.ts:STATE_RESET', EVENTS.STATE_RESET, updateJourneyCompa
 
 // ── Search Focus → Nav Subscriptions ─────────────────────────────────────────
 //
-// Ported from js/modules/app.ts subscribeKeyed('app:search-focus-requested', ...).
+// Ported from subscribeKeyed('app:search-focus-requested', ...).
 // The Svelte migration owns focus/nav state in navState; we set the focused
 // index + mode here so FocusPocket, ThreadInspector, and the focus stage
 // reactively render. The legacy engine reads the same focus state via its
@@ -268,7 +268,7 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
 
 // ── Engine → Nav Sync Subscriptions ──────────────────────────────────────────
 //
-// Ported from js/modules/app.ts::initEventBusSubscriptions().
+// Ported from ::initEventBusSubscriptions.
 // The engine kernel publishes these events from the legacy track; the
 // Svelte track needs to mirror the side effects so the Svelte navStore
 // and the Svelte focus card stay in lockstep with the engine's
@@ -340,7 +340,7 @@ subscribeKeyed(
 
 // ── W11-T6 Wave 2: Remaining event-bus subscriptions ────────────────────────
 //
-// Ported from js/modules/app.ts::initEventBusSubscriptions() lines 289-339.
+// Ported from ::initEventBusSubscriptions lines 289-339.
 // These five subscriptions complete the Svelte-native mirror of the legacy
 // event-bus wiring. The legacy subscribeKeyed calls stay in place until all
 // callers publish to the Svelte bus.

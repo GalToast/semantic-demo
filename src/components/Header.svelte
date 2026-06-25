@@ -2,8 +2,8 @@
   @components/Header.svelte — App header bar with mode chips
 
   Ported from:
-    - js/modules/bindings/mode.js (mode chip click handling)
-    - js/modules/ui-renderers.js (mode label rendering)
+ - (mode chip click handling)
+ - (mode label rendering)
 
   Contains the mode chip rail and the app title.
   Sits above the canvas at the top of the viewport.

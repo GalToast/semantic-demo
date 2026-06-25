@@ -1,7 +1,7 @@
 /**
  * @lib/focus/anchor-indicator.ts — Focus anchor visual indicator
  *
- * Port of js/modules/focus-anchor-indicator.ts
+ * Port of
  *
  * Focus anchor visual treatment: ring + pulse + size cues.
  */

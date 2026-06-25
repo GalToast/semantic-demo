@@ -2,7 +2,7 @@
  * @lib/engine/camera-choreography/framing-utils.ts
  * Focus pocket safe-area camera framing utilities
  *
- * Port of js/modules/camera-framing-utils.ts
+ * Port of
  */
 import { Vector3, PerspectiveCamera, WebGLRenderer, Points } from 'three'
 import type { Vector3Like } from '@lib/state/state-types'

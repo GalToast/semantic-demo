@@ -3,7 +3,7 @@
  *
  * Dedicated module for updating the search-trail-cue DOM overlay with narrative framing.
  *
- * Ported from js/modules/search-trail-cue-renderer.ts (W15 Wave E).
+ * Ported from (W15 Wave E).
  */
 
 import { appState as _state } from '@lib/state/app.svelte'

@@ -1,6 +1,6 @@
 /**
  * panel-bindings.ts
- * Canonical location (ported from js/modules/bindings/panel-bindings.ts — W15).
+ * Canonical location (ported from — W15).
  * Info panel toggle, resize, and state management.
  */
 

@@ -1,7 +1,7 @@
 /**
  * @lib/demo/guards.ts — Eligibility guards for the micro-demo
  *
- * Port of js/modules/micro-demo-guards.js
+ * Port of
  *
  * Checks: app readiness, lifetime guard, reduced motion, WebGL/software renderer, URL param.
  */

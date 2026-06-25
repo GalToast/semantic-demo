@@ -1,7 +1,7 @@
 /**
  * @lib/journey/thread-model.ts — Thread candidate derivation
  *
- * Ported from: js/modules/journey-thread-model.ts
+ * Ported from:
  *
  * Dual API surface:
  *   - Pure derivation functions (explicit params) — used by focus personality,

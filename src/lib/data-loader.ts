@@ -1,7 +1,7 @@
 /**
  * @lib/data-loader.ts — Async data fetching and parsing
  *
- * Ported from js/modules/data-loader.js and js/modules/semantic-threads.js.
+ * Ported from and
  * Pure async functions — no global state mutation. Returns typed results
  * that the data-store populates into Svelte stores.
  */

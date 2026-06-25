@@ -3,7 +3,7 @@
  *
  * Provides `clearTrailThreadState`, `clearNavigationFocusState`, and
  * `setTrailNavState` so non-bridge src/ files don't import from deleted
- * js/modules/navigation-state. These were originally state-mutation helpers
+ * These were originally state-mutation helpers
  * in the legacy kernel; they are now thin wrappers over appState.
  */
 
@@ -20,7 +20,7 @@ export interface SetTrailNavStateOpts {
     cursor?: number;
 }
 
-// ── Navigation state clearers (replaces deleted js/modules/navigation-state) ─
+// ── Navigation state clearers (replaces deleted ) ─
 
 export function clearNavigationFocusState(): void {
     appState.withMutation(() => {

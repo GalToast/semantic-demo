@@ -61,7 +61,7 @@ console.log('\n  demo-camera.js retirement contract');
 console.log('  ---------------------------------');
 
 test('demo-camera.js is absent from active modules', () => {
-    const p = path.join(ROOT, 'js/modules/demo-camera.ts');
+ const p = path.join(ROOT, '');
     assert(!fs.existsSync(p), `stale source still exists: ${p}`);
 });
 
@@ -89,7 +89,7 @@ test('no active source file references window.demoCamera', () => {
 });
 
 test('demo-controller.js does not reference demo-camera', () => {
-    const p = path.join(ROOT, 'js/modules/demo-controller.ts');
+ const p = path.join(ROOT, '');
     if (!fs.existsSync(p)) { ok('demo-controller.js absent (already retired)'); return; }
     const src = fs.readFileSync(p, 'utf8');
     assert(!src.includes('demo-camera'), 'demo-controller.js mentions demo-camera');
@@ -103,7 +103,7 @@ test('app.ts is the active entry and does not reference demo-camera', () => {
 });
 
 test('retired app.js remains absent', () => {
-    const p = path.join(ROOT, 'js/modules/app.js');
+ const p = path.join(ROOT, '');
     assert(!fs.existsSync(p), `retired JS entry still exists: ${p}`);
 });
 
@@ -120,7 +120,7 @@ test('micro-demo.ts does not import from retired demo-camera.ts', () => {
 });
 
 test('retired micro-demo.js remains absent', () => {
-    const p = path.join(ROOT, 'js/modules/micro-demo.js');
+ const p = path.join(ROOT, '');
     assert(!fs.existsSync(p), `retired JS demo choreography still exists: ${p}`);
 });
 

@@ -1,5 +1,5 @@
 /**
- * @lib/engine/mycelium-engine.ts — Canonical port of js/modules/mycelium-engine.ts
+ * @lib/engine/mycelium-engine.ts —
  *
  * Mathematical line generation and thread updates for the mycelium visualization.
  * Extracted from three-setup.js (Seam #4).

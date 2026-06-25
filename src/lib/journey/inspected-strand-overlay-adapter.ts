@@ -1,7 +1,7 @@
 /**
  * @lib/journey/inspected-strand-overlay-adapter.ts
  *
- * Ported from: js/modules/inspected-strand-overlay-adapter.ts
+ * Ported from:
  * Manages the inspected-strand overlay update callback.
  */
 

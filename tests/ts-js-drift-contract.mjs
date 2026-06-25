@@ -1,7 +1,7 @@
 /**
  * ts-js-drift-contract.mjs
  *
- * Enforces the native TypeScript runtime boundary in js/modules/. Older
+ * Enforces the native TypeScript runtime boundary in Older
  * checkpoints used a dual-source pattern where .ts shadows and .js runtime
  * files coexisted. The runtime build now enters through app.ts; any remaining
  * TS/JS siblings are treated as drift until the JS shadow is retired.
@@ -334,7 +334,7 @@ if (progressMode) {
   } else if (appJsExists && entryBlocked.length > 0) {
     console.log(`    1. Convert ${entryBlocked.length} blocked modules to .ts:`);
     for (const name of entryBlocked.sort()) {
-       console.log(`       - js/modules/${name}.js → .ts`);
+ console.log(` - js/modules/${name}.js → .ts`);
     }
   } else {
     console.log('    ✓ src/index.html loads src/main.ts');

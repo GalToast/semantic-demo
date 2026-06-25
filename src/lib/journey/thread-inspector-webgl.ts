@@ -1,7 +1,7 @@
 /**
  * @lib/journey/thread-inspector-webgl.ts
  *
- * Ported from: js/modules/thread-inspector-webgl.ts
+ * Ported from:
  * WebGL line geometry and shader setup for the thread inspector.
  *
  * Type-safety notes (W46-era tightening):

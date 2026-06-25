@@ -1,7 +1,7 @@
 /**
  * @lib/stores/legend-panel.svelte.ts — Legend panel UI (build + open/close/keyboard)
  *
- * Replaces js/modules/legend-ui.ts kernel (308 LOC).
+ * Replaces kernel (308 LOC).
  * Panel state lives in the existing `legendOpen` store (legend.svelte.ts).
  * This module provides the imperative action surface that legacy importers
  * need: open/close transitions, guide management, canvas color key, and

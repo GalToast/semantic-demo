@@ -4,7 +4,7 @@
  * Watches data-panel-surface attribute on document.body and activates
  * or releases the focus trap based on the current UI surface.
  *
- * Port of js/modules/bindings/focus-trap-bindings.ts
+ * Port of
  */
 
 import { setupFocusTrap, releaseFocusTrap } from './focus-trap';

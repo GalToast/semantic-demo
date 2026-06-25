@@ -6,7 +6,7 @@
  * CSS root tokens remain owned by css/base.css. This module only centralizes
  * values needed by JavaScript/WebGL so refactors do not silently change color.
  *
- * Port of js/modules/design-tokens.ts
+ * Port of
  */
 
 export const SCENE_PALETTE = Object.freeze({

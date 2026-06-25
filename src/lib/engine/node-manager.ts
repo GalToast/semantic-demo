@@ -1,5 +1,5 @@
 /**
- * @lib/engine/node-manager.ts — TypeScript port of js/modules/three-node-manager.ts
+ * @lib/engine/node-manager.ts — TypeScript port of
  *
  * Creates the instanced point-cloud and spore field for the 3D semantic mycelium.
  * Preserves the exact same public API as the legacy module.

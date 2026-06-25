@@ -1,7 +1,7 @@
 /**
  * @lib/utils/environment.ts — Shared viewport, pointer, DPR, and reduced-motion helpers
  *
- * Port of js/modules/environment.js
+ * Port of
  * Note: The viewport store in @lib/stores/viewport.ts is the canonical reactive
  * source for viewport state. These functions provide the same logic as imperative
  * helpers for use outside Svelte's reactive context (e.g. in engine bridge code).

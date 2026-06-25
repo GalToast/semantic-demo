@@ -1,7 +1,7 @@
 /**
  * @lib/orchestration/cluster-filter-controller.ts — Cluster/Filter subsystem controller
  *
- * Replaces js/modules/cluster-filter.js.
+ *
  *
  * Owns cluster filtering, city filter population, filter control sync,
  * story prompt application, and filter-driven mycelium mode switching.
@@ -36,7 +36,7 @@ import { legacyState } from '@lib/state/legacy-state-adapter'
 import type { BusinessRecord } from '@lib/types/business'
 import type { ActiveFilters } from '@lib/types/state'
 
-// ── Configuration (ported from js/modules/config.js) ───────────────────────────
+// ── Configuration (ported from ) ───────────────────────────
 
 // Canonical cluster taxonomy is now sourced from cluster-metadata.ts.
 // Imported here for use by internal functions in this file, and
@@ -347,7 +347,7 @@ export function applyStoryPrompt(story: string | null, _options: Record<string, 
 
 // ── Legacy Adapter Re-exports ──────────────────────────────────────────────────
 // These re-exports satisfy importers that previously depended on
-// js/modules/cluster-filter-adapter.ts. The adapter was an injection
+// The adapter was an injection
 // boundary for circular-dependency avoidance; the controller already
 // imports the real implementations directly.
 

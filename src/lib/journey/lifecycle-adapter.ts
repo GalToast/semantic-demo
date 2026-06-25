@@ -1,7 +1,7 @@
 /**
  * @lib/journey/lifecycle-adapter.ts
  *
- * Ported from: js/modules/journey-lifecycle-adapter.ts
+ * Ported from:
  *
  * Adapter layer that decouples journey.js from globals. Retained wrappers
  * (matching the JS shadow surface exactly):

@@ -1,7 +1,7 @@
 /**
  * src/lib/journey/journey.ts
  *
- * TypeScript port of js/modules/journey.ts.
+ * TypeScript port of
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
 

@@ -1,7 +1,7 @@
 /**
  * @lib/utils/relationship-roles.ts — Relationship role normalization
  *
- * Ported from: js/modules/relationship-roles.js
+ * Ported from:
  *
  * Shared relationship role normalization used by journey, thread inspector,
  * and semantic threads.
