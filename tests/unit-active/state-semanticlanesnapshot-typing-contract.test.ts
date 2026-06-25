@@ -30,13 +30,18 @@ describe('engine-boundary refactor / Phase 2-3 / semanticLaneSnapshot field typi
         expect(declMatch, 'appState.semanticLaneSnapshot declaration not found').not.toBeNull()
         const declaredType = declMatch![1]
         const normalized = declaredType.replace(/\s+/g, ' ').trim()
-        expect(normalized, `appState.semanticLaneSnapshot declared as "${declaredType}" — must be LaneHealthPayload | null`).toBe('LaneHealthPayload | null')
+        expect(
+            normalized,
+            `appState.semanticLaneSnapshot declared as "${declaredType}" — must be LaneHealthPayload | null`
+        ).toBe('LaneHealthPayload | null')
         expect(declaredType).not.toMatch(/^unknown$/)
     })
 
     it('state-types.ts re-exports LaneHealthPayload from semantic-lane', () => {
         const stateTypes = readSource('src/lib/state/state-types.ts')
-        expect(stateTypes).toMatch(/export\s+type\s*\{[^}]*\bLaneHealthPayload\b[^}]*\}\s+from\s+['"][^'"]*semantic-lane['"]/)
+        expect(stateTypes).toMatch(
+            /export\s+type\s*\{[^}]*\bLaneHealthPayload\b[^}]*\}\s+from\s+['"][^'"]*semantic-lane['"]/
+        )
     })
 
     it('LaneHealthPayload interface has expected fields + index signature', () => {
@@ -52,8 +57,14 @@ describe('engine-boundary refactor / Phase 2-3 / semanticLaneSnapshot field typi
         const compassState = readSource('src/lib/journey/compass-state.ts')
         // The escape hatch pattern must be gone
         expect(compassState).not.toMatch(/\(appState\.semanticLaneSnapshot\s+as\s+any\)/)
-        // The semantic check must use the typed access
-        expect(compassState).toMatch(/appState\.semanticLaneSnapshot\?\.state\s*===\s*['"]degraded['"]/)
+        // W47-B discovery feature was removed (the dead feature never shipped).
+        // compass-state.ts no longer references semanticLaneSnapshot at all —
+        // the idle-note cache block that used it is gone. The typed-access
+        // assertion is no longer needed: there's nothing left to type-check.
+        expect(
+            compassState,
+            'compass-state.ts should no longer reference semanticLaneSnapshot after discovery removal'
+        ).not.toMatch(/semanticLaneSnapshot/)
     })
 
     it('focus-ui.ts drops (appState.semanticLaneSnapshot as any) escape hatch', () => {

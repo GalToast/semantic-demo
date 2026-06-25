@@ -38,7 +38,7 @@
   import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey.svelte.ts';
   import { focusStore } from '@lib/stores/focus.svelte.ts';
-  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
   import {
     getJourneyCompassState,
     type CompassStateContext
@@ -422,7 +422,6 @@
   <div
     id="journey-compass-note"
     class="journey-compass-note"
-    class:discovery-active={compass.discovery}
   >
     {compass.note || 'Search to open one semantic trail.'}
   </div>

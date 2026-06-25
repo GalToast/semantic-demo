@@ -1,77 +1,67 @@
 /**
  * @lib/orchestration/compass-controller.ts
- * 
+ *
  * Execute compass actions based on state.
  * Replaces js/modules/journey-compass-controller.js.
  *
  * Reads compass state, syncs DOM elements, and dispatches
  * journey actions (search focus, anchor center, map switch, etc.).
  */
-import { get } from 'svelte/store';
-import { navStore, switchView as navSwitchView } from '@lib/stores/navigation.svelte.ts';
-import { searchStore } from '@lib/stores/search.svelte';
+import { get } from 'svelte/store'
+import { navStore, switchView as navSwitchView } from '@lib/stores/navigation.svelte.ts'
+import { searchStore } from '@lib/stores/search.svelte'
 import {
-  JOURNEY_COMPASS_PHASE_ORDER,
-  JOURNEY_CONFIG,
-  setTrailDepth as journeySetTrailDepth
-} from '@lib/stores/journey.svelte.ts';
-import {
-  focusStore,
-  setSemanticDiveMode
-} from '@lib/stores/focus.svelte.ts';
-import {
-  isMapSummarySurface,
-  isSemanticDiveSurface
-} from '@lib/stores/viewport.svelte.ts';
-import { appState } from '@lib/state/app.svelte';
-import { resetExplorationFocus } from '@lib/orchestration/lifecycle';
-import {
-  getJourneyCompassState,
-  getFocusedJourneyPoint,
-  type CompassStateContext
-} from '@lib/journey/compass-state';
-import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
-import type { PanelSurface } from '@lib/types/state';
+    JOURNEY_COMPASS_PHASE_ORDER,
+    JOURNEY_CONFIG,
+    setTrailDepth as journeySetTrailDepth
+} from '@lib/stores/journey.svelte.ts'
+import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte.ts'
+import { isMapSummarySurface, isSemanticDiveSurface } from '@lib/stores/viewport.svelte.ts'
+import { appState } from '@lib/state/app.svelte'
+import { resetExplorationFocus } from '@lib/orchestration/lifecycle'
+import { getJourneyCompassState, getFocusedJourneyPoint, type CompassStateContext } from '@lib/journey/compass-state'
+import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts'
+import type { PanelSurface } from '@lib/types/state'
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
 export interface CompassPresentationState {
-  density: 'hidden' | 'compact' | 'expanded';
-  copy: 'quiet' | 'full';
-  actions: 'minimal' | 'primary-secondary' | 'route' | 'standard';
-  navigationOwner: string;
+    density: 'hidden' | 'compact' | 'expanded'
+    copy: 'quiet' | 'full'
+    actions: 'minimal' | 'primary-secondary' | 'route' | 'standard'
+    navigationOwner: string
 }
 
 export interface ViewHandoffModel {
-  icon: string;
-  kicker: string;
-  title: string;
-  note: string;
+    icon: string
+    kicker: string
+    title: string
+    note: string
 }
 
 // ── Internal State ────────────────────────────────────────────────────────
 
-let _switchView: (view: string) => void = (view) => navSwitchView(view as 'galaxy' | 'map');
+let _switchView: (view: string) => void = (view) => navSwitchView(view as 'galaxy' | 'map')
 
 function deriveOpenMapSurface(): PanelSurface {
-  const $nav = get(navStore);
-  const $search = get(searchStore);
-  const hasFocusContext =
-    Number.isFinite($nav.focusedIndex) ||
-    $nav.surface === 'focus' ||
-    $nav.surface === 'focus-search' ||
-    $nav.surface === 'map-focus' ||
-    $nav.surface === 'map-focus-search';
-  const hasSearchContext =
-    !!$search.summary ||
-    (typeof $search.query === 'string' && $search.query.trim().length >= 2) ||
-    $nav.surface === 'search' ||
-    $nav.surface === 'focus-search' ||
-    $nav.surface === 'map-focus-search';
+    const $nav = get(navStore)
+    const $search = get(searchStore)
+    const hasFocusContext =
+        Number.isFinite($nav.focusedIndex) ||
+        $nav.surface === 'focus' ||
+        $nav.surface === 'focus-search' ||
+        $nav.surface === 'map-focus' ||
+        $nav.surface === 'map-focus-search'
+    const hasSearchContext =
+        !!$search.summary ||
+        (typeof $search.query === 'string' && $search.query.trim().length >= 2) ||
+        $nav.surface === 'search' ||
+        $nav.surface === 'focus-search' ||
+        $nav.surface === 'map-focus-search'
 
-  if (hasFocusContext && hasSearchContext) return 'map-focus-search';
-  if (hasFocusContext) return 'map-focus';
-  return 'map-trail';
+    if (hasFocusContext && hasSearchContext) return 'map-focus-search'
+    if (hasFocusContext) return 'map-focus'
+    return 'map-trail'
 }
 
 // ── Initialization ────────────────────────────────────────────────────────
@@ -80,14 +70,16 @@ function deriveOpenMapSurface(): PanelSurface {
  * Initialize the journey compass adapter with a view-switch function.
  * Subscribes to relevant events so the compass stays in sync.
  */
-export function initJourneyCompassAdapter(opts: {
-  switchView?: (view: string) => void;
-} = {}): void {
-  if (typeof opts.switchView === 'function') {
-    _switchView = opts.switchView;
-  }
-  // Event subscriptions are wired in App.svelte via onMount;
-  // this function is the legacy init entry point kept for API compat.
+export function initJourneyCompassAdapter(
+    opts: {
+        switchView?: (view: string) => void
+    } = {}
+): void {
+    if (typeof opts.switchView === 'function') {
+        _switchView = opts.switchView
+    }
+    // Event subscriptions are wired in App.svelte via onMount;
+    // this function is the legacy init entry point kept for API compat.
 }
 
 // ── Presentation State ────────────────────────────────────────────────────
@@ -96,73 +88,70 @@ export function initJourneyCompassAdapter(opts: {
  * Derive the compass presentation layout from the current compass state.
  */
 export function getJourneyCompassPresentationState(
-  compassState: Partial<CompassStateContext> = {}
+    compassState: Partial<CompassStateContext> = {}
 ): CompassPresentationState {
-  const phase = compassState.phase || 'overview';
-  const $nav = get(navStore);
-  const $search = get(searchStore);
-  const hasActiveRouteContext =
-    $nav.trailDepth > 0 ||
-    Number.isFinite($nav.focusedIndex) ||
-    $nav.surface === 'focus-search' ||
-    $nav.surface === 'map-focus-search' ||
-    $nav.surface === 'map-trail' ||
-    !!$search.summary;
+    const phase = compassState.phase || 'overview'
+    const $nav = get(navStore)
+    const $search = get(searchStore)
+    const hasActiveRouteContext =
+        $nav.trailDepth > 0 ||
+        Number.isFinite($nav.focusedIndex) ||
+        $nav.surface === 'focus-search' ||
+        $nav.surface === 'map-focus-search' ||
+        $nav.surface === 'map-trail' ||
+        !!$search.summary
 
-  if (phase === 'map') {
+    if (phase === 'map') {
+        return {
+            density: hasActiveRouteContext ? 'compact' : 'hidden',
+            copy: 'quiet',
+            actions: hasActiveRouteContext ? 'primary-secondary' : 'minimal',
+            navigationOwner: hasActiveRouteContext ? 'map-trail-strip' : 'map-controls'
+        }
+    }
+
+    if (phase === 'search' || phase === 'focus') {
+        return {
+            density: 'compact',
+            copy: 'quiet',
+            actions: 'primary-secondary',
+            navigationOwner: 'scene'
+        }
+    }
+
+    if (phase === 'inside') {
+        return {
+            density: 'compact',
+            copy: 'quiet',
+            actions: 'route',
+            navigationOwner: 'inside-walk'
+        }
+    }
+
     return {
-      density: hasActiveRouteContext ? 'compact' : 'hidden',
-      copy: 'quiet',
-      actions: hasActiveRouteContext ? 'primary-secondary' : 'minimal',
-      navigationOwner: hasActiveRouteContext ? 'map-trail-strip' : 'map-controls'
-    };
-  }
-
-  if (phase === 'search' || phase === 'focus') {
-    return {
-      density: 'compact',
-      copy: 'quiet',
-      actions: 'primary-secondary',
-      navigationOwner: 'scene'
-    };
-  }
-
-  if (phase === 'inside') {
-    return {
-      density: 'compact',
-      copy: 'quiet',
-      actions: 'route',
-      navigationOwner: 'inside-walk'
-    };
-  }
-
-  return {
-    density: 'expanded',
-    copy: 'full',
-    actions: 'standard',
-    navigationOwner: 'journey-compass'
-  };
+        density: 'expanded',
+        copy: 'full',
+        actions: 'standard',
+        navigationOwner: 'journey-compass'
+    }
 }
 
 // ── Mobile Action Labels ──────────────────────────────────────────────────
 
 const MOBILE_JOURNEY_ACTION_LABELS: Record<string, string> = {
-  [JOURNEY_ACTIONS.FOCUS_SEARCH]: 'Search',
-  [JOURNEY_ACTIONS.CENTER_ANCHOR]: 'Center',
-  [JOURNEY_ACTIONS.ENTER_INSIDE]: 'Inside',
-  [JOURNEY_ACTIONS.SHOW_TRAIL_PANEL]: 'Trail',
-  [JOURNEY_ACTIONS.NEXT_STOP]: 'Follow',
-  [JOURNEY_ACTIONS.OPEN_MAP]: 'Map',
-  [JOURNEY_ACTIONS.OPEN_MYCELIUM]: 'Field',
-  [JOURNEY_ACTIONS.COUNTY_OVERVIEW]: 'County'
-};
+    [JOURNEY_ACTIONS.FOCUS_SEARCH]: 'Search',
+    [JOURNEY_ACTIONS.CENTER_ANCHOR]: 'Center',
+    [JOURNEY_ACTIONS.ENTER_INSIDE]: 'Inside',
+    [JOURNEY_ACTIONS.SHOW_TRAIL_PANEL]: 'Trail',
+    [JOURNEY_ACTIONS.NEXT_STOP]: 'Follow',
+    [JOURNEY_ACTIONS.OPEN_MAP]: 'Map',
+    [JOURNEY_ACTIONS.OPEN_MYCELIUM]: 'Field',
+    [JOURNEY_ACTIONS.COUNTY_OVERVIEW]: 'County'
+}
 
-function getMobileJourneyActionLabel(
-  action: CompassAction | null | undefined,
-  fallback: string = ''
-): string {
-  if (!action?.action) return fallback;
-  return MOBILE_JOURNEY_ACTION_LABELS[action.action] || fallback || action.label || 'Go';
+function getMobileJourneyActionLabel(action: CompassAction | null | undefined, fallback: string = ''): string {
+    if (!action?.action) return fallback
+    return MOBILE_JOURNEY_ACTION_LABELS[action.action] || fallback || action.label || 'Go'
 }
 
 // ── Sync Actions to DOM ───────────────────────────────────────────────────
@@ -171,79 +160,85 @@ function getMobileJourneyActionLabel(
  * Sync the compass action buttons to the DOM.
  * Sets text, aria, hidden, and disabled state for each button.
  */
-export function syncJourneyCompassActions(
-  compassState: Partial<CompassStateContext> = {}
-): void {
-  const suppressInsideDiveActions =
-    compassState.phase === 'inside' && isSemanticDiveSurface();
-  const $focus = focusStore();
+export function syncJourneyCompassActions(compassState: Partial<CompassStateContext> = {}): void {
+    const suppressInsideDiveActions = compassState.phase === 'inside' && isSemanticDiveSurface()
+    const $focus = focusStore()
 
-  const panelSurface =
-    typeof document !== 'undefined' && document.body
-      ? document.body.dataset.panelSurface || ''
-      : '';
-  const focusedSurfaceCanStepInside =
-    (panelSurface === 'focus' || panelSurface === 'focus-search') &&
-    !isSemanticDiveSurface();
+    const panelSurface =
+        typeof document !== 'undefined' && document.body ? document.body.dataset.panelSurface || '' : ''
+    const focusedSurfaceCanStepInside =
+        (panelSurface === 'focus' || panelSurface === 'focus-search') && !isSemanticDiveSurface()
 
-  const buttons: Array<[HTMLButtonElement | null, CompassAction | null | undefined, string]> = [
-    [document.getElementById('btn-journey-primary') as HTMLButtonElement | null, compassState.primaryAction, 'primary'],
-    [document.getElementById('btn-journey-secondary') as HTMLButtonElement | null, compassState.secondaryAction, 'secondary'],
-    [document.getElementById('btn-journey-tertiary') as HTMLButtonElement | null, compassState.tertiaryAction, 'tertiary']
-  ];
+    const buttons: Array<[HTMLButtonElement | null, CompassAction | null | undefined, string]> = [
+        [
+            document.getElementById('btn-journey-primary') as HTMLButtonElement | null,
+            compassState.primaryAction,
+            'primary'
+        ],
+        [
+            document.getElementById('btn-journey-secondary') as HTMLButtonElement | null,
+            compassState.secondaryAction,
+            'secondary'
+        ],
+        [
+            document.getElementById('btn-journey-tertiary') as HTMLButtonElement | null,
+            compassState.tertiaryAction,
+            'tertiary'
+        ]
+    ]
 
-  buttons.forEach(([button, action, role]) => {
-    if (!button) return;
+    buttons.forEach(([button, action, role]) => {
+        if (!button) return
 
-    const effectiveAction =
-      role === 'primary' && focusedSurfaceCanStepInside
-        ? { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
-        : action;
+        const effectiveAction =
+            role === 'primary' && focusedSurfaceCanStepInside
+                ? { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
+                : action
 
-    const fullLabel = effectiveAction?.label || (role === 'primary' ? 'Search' : role === 'secondary' ? 'Map' : 'Navigate');
-    const mobileLabel = effectiveAction?.action ? getMobileJourneyActionLabel(effectiveAction, fullLabel) : '';
+        const fullLabel =
+            effectiveAction?.label || (role === 'primary' ? 'Search' : role === 'secondary' ? 'Map' : 'Navigate')
+        const mobileLabel = effectiveAction?.action ? getMobileJourneyActionLabel(effectiveAction, fullLabel) : ''
 
-    button.textContent = fullLabel;
+        button.textContent = fullLabel
 
-    if (mobileLabel) {
-      button.dataset.mobileLabel = mobileLabel;
-      button.dataset.fullLabel = fullLabel;
-    } else {
-      delete button.dataset.mobileLabel;
-      delete button.dataset.fullLabel;
-    }
+        if (mobileLabel) {
+            button.dataset.mobileLabel = mobileLabel
+            button.dataset.fullLabel = fullLabel
+        } else {
+            delete button.dataset.mobileLabel
+            delete button.dataset.fullLabel
+        }
 
-    button.dataset.journeyAction = effectiveAction?.action || '';
+        button.dataset.journeyAction = effectiveAction?.action || ''
 
-    const disabled =
-      !effectiveAction?.action ||
-      (effectiveAction.action === JOURNEY_ACTIONS.NEXT_STOP &&
-        $focus.strandContinuityPhase === 'exploring');
+        const disabled =
+            !effectiveAction?.action ||
+            (effectiveAction.action === JOURNEY_ACTIONS.NEXT_STOP && $focus.strandContinuityPhase === 'exploring')
 
-    button.disabled = disabled || suppressInsideDiveActions;
-    button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions));
-    button.hidden = suppressInsideDiveActions || !effectiveAction?.action;
+        button.disabled = disabled || suppressInsideDiveActions
+        button.setAttribute('aria-disabled', String(disabled || suppressInsideDiveActions))
+        button.hidden = suppressInsideDiveActions || !effectiveAction?.action
 
-    if (button.hidden) {
-      button.setAttribute('tabindex', '-1');
-      button.setAttribute('aria-hidden', 'true');
-    } else {
-      button.removeAttribute('tabindex');
-      button.removeAttribute('aria-hidden');
-    }
+        if (button.hidden) {
+            button.setAttribute('tabindex', '-1')
+            button.setAttribute('aria-hidden', 'true')
+        } else {
+            button.removeAttribute('tabindex')
+            button.removeAttribute('aria-hidden')
+        }
 
-    if (effectiveAction?.hint) {
-      button.setAttribute('aria-label', `${fullLabel} - ${effectiveAction.hint}`);
-      button.setAttribute('title', effectiveAction.hint);
-    } else {
-      button.setAttribute('aria-label', fullLabel);
-      button.removeAttribute('title');
-    }
+        if (effectiveAction?.hint) {
+            button.setAttribute('aria-label', `${fullLabel} - ${effectiveAction.hint}`)
+            button.setAttribute('title', effectiveAction.hint)
+        } else {
+            button.setAttribute('aria-label', fullLabel)
+            button.removeAttribute('title')
+        }
 
-    if (role === 'tertiary') {
-      button.setAttribute('aria-expanded', button.hidden ? 'false' : 'true');
-    }
-  });
+        if (role === 'tertiary') {
+            button.setAttribute('aria-expanded', button.hidden ? 'false' : 'true')
+        }
+    })
 }
 
 // ── Map Trail Strip ───────────────────────────────────────────────────────
@@ -252,33 +247,31 @@ export function syncJourneyCompassActions(
  * Sync the map trail strip visibility and title.
  */
 export function syncMapTrailStrip(
-  compassState: Partial<CompassStateContext> = {},
-  presentationState: CompassPresentationState = getJourneyCompassPresentationState(compassState)
+    compassState: Partial<CompassStateContext> = {},
+    presentationState: CompassPresentationState = getJourneyCompassPresentationState(compassState)
 ): void {
-  const strip = document.getElementById('map-trail-strip');
-  if (!strip) return;
+    const strip = document.getElementById('map-trail-strip')
+    if (!strip) return
 
-  const $nav = get(navStore);
-  const shouldShow =
-    $nav.currentView === 'map' &&
-    presentationState.navigationOwner === 'map-trail-strip';
+    const $nav = get(navStore)
+    const shouldShow = $nav.currentView === 'map' && presentationState.navigationOwner === 'map-trail-strip'
 
-  strip.hidden = !shouldShow;
-  strip.setAttribute('aria-hidden', String(!shouldShow));
+    strip.hidden = !shouldShow
+    strip.setAttribute('aria-hidden', String(!shouldShow))
 
-  if (!shouldShow) return;
+    if (!shouldShow) return
 
-  const stripTitle = compassState.title || 'Map trail';
-  const compactStripTitle = stripTitle.replace(/\s+pinned to map$/i, '');
-  const accessibleTitle = compactStripTitle || stripTitle;
+    const stripTitle = compassState.title || 'Map trail'
+    const compactStripTitle = stripTitle.replace(/\s+pinned to map$/i, '')
+    const accessibleTitle = compactStripTitle || stripTitle
 
-  strip.replaceChildren();
-  const title = document.createElement('div');
-  title.className = 'map-strip-title';
-  title.textContent = accessibleTitle;
-  title.setAttribute('title', accessibleTitle);
-  title.setAttribute('aria-label', accessibleTitle);
-  strip.appendChild(title);
+    strip.replaceChildren()
+    const title = document.createElement('div')
+    title.className = 'map-strip-title'
+    title.textContent = accessibleTitle
+    title.setAttribute('title', accessibleTitle)
+    title.setAttribute('aria-label', accessibleTitle)
+    strip.appendChild(title)
 }
 
 // ── Execute Action ────────────────────────────────────────────────────────
@@ -288,133 +281,134 @@ export function syncMapTrailStrip(
  * This is the central dispatch for compass button presses.
  */
 export function executeJourneyCompassAction(action: string): void {
-  switch (action) {
-    case JOURNEY_ACTIONS.FOCUS_SEARCH: {
-      const focusSearchInput = () =>
-        window.requestAnimationFrame(() => {
-          document.getElementById('search-input')?.focus();
-        });
+    switch (action) {
+        case JOURNEY_ACTIONS.FOCUS_SEARCH: {
+            const focusSearchInput = () =>
+                window.requestAnimationFrame(() => {
+                    document.getElementById('search-input')?.focus()
+                })
 
-      const $nav = get(navStore);
-      const isMapFocusSearch = $nav.currentView === 'map' && isMapSummarySurface();
+            const $nav = get(navStore)
+            const isMapFocusSearch = $nav.currentView === 'map' && isMapSummarySurface()
 
-      if (isMapFocusSearch) {
-        // Reset exploration but keep search
-        focusSearchInput();
-        return;
-      }
+            if (isMapFocusSearch) {
+                // Reset exploration but keep search
+                focusSearchInput()
+                return
+            }
 
-      focusSearchInput();
-      return;
-    }
-
-    case JOURNEY_ACTIONS.CENTER_ANCHOR: {
-      const $search = get(searchStore);
-      const $nav2 = get(navStore);
-      const anchorIndex = Number.isFinite($search.summary?.anchorIndex)
-        ? $search.summary!.anchorIndex
-        : Number.isFinite($nav2.focusedIndex)
-          ? $nav2.focusedIndex
-          : null;
-
-      if (Number.isFinite(anchorIndex)) {
-        journeySetTrailDepth(1);
-        // The engine bridge handles camera focus; we just update stores
-        navSwitchView($nav2.currentView);
-      }
-      return;
-    }
-
-    case JOURNEY_ACTIONS.ENTER_INSIDE:
-      journeySetTrailDepth(2);
-      setSemanticDiveMode(true);
-      navStore.update((state) => ({
-        ...state,
-        trailDepth: 2
-      }));
-      if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.semanticDive = 'active';
-        document.body.dataset.panelSurface = 'semantic-dive';
-        document.body.dataset.trailDepth = '2';
-      }
-      if (typeof window !== 'undefined') {
-        const stateWindow = window as Window & {
-          __APP_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number };
-          __TEST_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number };
-        };
-        if (stateWindow.__APP_STATE__) {
-          stateWindow.__APP_STATE__.semanticDiveMode = true;
-          stateWindow.__APP_STATE__.trailDepth = 2;
+            focusSearchInput()
+            return
         }
-        if (stateWindow.__TEST_STATE__) {
-          stateWindow.__TEST_STATE__.semanticDiveMode = true;
-          stateWindow.__TEST_STATE__.trailDepth = 2;
+
+        case JOURNEY_ACTIONS.CENTER_ANCHOR: {
+            const $search = get(searchStore)
+            const $nav2 = get(navStore)
+            const anchorIndex = Number.isFinite($search.summary?.anchorIndex)
+                ? $search.summary!.anchorIndex
+                : Number.isFinite($nav2.focusedIndex)
+                  ? $nav2.focusedIndex
+                  : null
+
+            if (Number.isFinite(anchorIndex)) {
+                journeySetTrailDepth(1)
+                // The engine bridge handles camera focus; we just update stores
+                navSwitchView($nav2.currentView)
+            }
+            return
         }
-      }
-      return;
 
-    case JOURNEY_ACTIONS.SHOW_TRAIL_PANEL:
-      setSemanticDiveMode(false);
-      return;
+        case JOURNEY_ACTIONS.ENTER_INSIDE:
+            journeySetTrailDepth(2)
+            setSemanticDiveMode(true)
+            navStore.update((state) => ({
+                ...state,
+                trailDepth: 2
+            }))
+            if (typeof document !== 'undefined' && document.body) {
+                document.body.dataset.semanticDive = 'active'
+                document.body.dataset.panelSurface = 'semantic-dive'
+                document.body.dataset.trailDepth = '2'
+            }
+            if (typeof window !== 'undefined') {
+                const stateWindow = window as Window & {
+                    __APP_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number }
+                    __TEST_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number }
+                }
+                if (stateWindow.__APP_STATE__) {
+                    stateWindow.__APP_STATE__.semanticDiveMode = true
+                    stateWindow.__APP_STATE__.trailDepth = 2
+                }
+                if (stateWindow.__TEST_STATE__) {
+                    stateWindow.__TEST_STATE__.semanticDiveMode = true
+                    stateWindow.__TEST_STATE__.trailDepth = 2
+                }
+            }
+            return
 
-    case JOURNEY_ACTIONS.NEXT_STOP: {
-      const $focus = focusStore();
-      if ($focus.strandContinuityPhase === 'exploring') return;
-      // The engine bridge handles the actual traversal
-      return;
+        case JOURNEY_ACTIONS.SHOW_TRAIL_PANEL:
+            setSemanticDiveMode(false)
+            return
+
+        case JOURNEY_ACTIONS.NEXT_STOP: {
+            const $focus = focusStore()
+            if ($focus.strandContinuityPhase === 'exploring') return
+            // The engine bridge handles the actual traversal
+            return
+        }
+
+        case JOURNEY_ACTIONS.OPEN_MAP: {
+            const targetSurface = deriveOpenMapSurface()
+            _switchView('map')
+            setSemanticDiveMode(false)
+            journeySetTrailDepth(1)
+            appState.currentView = 'map'
+            appState.trailDepth = 1
+            appState.navState = {
+                ...appState.navState,
+                currentView: 'map',
+                mode: 'trail',
+                surface: targetSurface,
+                trailDepth: 1
+            }
+            navStore.update((state) => ({
+                ...state,
+                currentView: 'map',
+                mode: 'trail',
+                surface: targetSurface,
+                trailDepth: 1
+            }))
+            if (typeof document !== 'undefined' && document.body) {
+                document.body.dataset.semanticDive = 'inactive'
+                document.body.dataset.activeView = 'map'
+                document.body.dataset.viewMode = 'map'
+                document.body.dataset.panelSurface = targetSurface
+                document.body.dataset.panelSurfaceMode = targetSurface
+                document.body.dataset.graphContext = 'map'
+                document.body.dataset.mapContext =
+                    targetSurface === 'map-focus-search'
+                        ? 'focus-search'
+                        : targetSurface === 'map-focus'
+                          ? 'focus'
+                          : 'trail'
+                document.body.dataset.trailDepth = '1'
+            }
+            return
+        }
+
+        case JOURNEY_ACTIONS.OPEN_MYCELIUM:
+            _switchView('galaxy')
+            return
+
+        case JOURNEY_ACTIONS.COUNTY_OVERVIEW:
+            // County overview is a calm reset surface; do not preserve the
+            // search corridor or the map keeps competing search chrome alive.
+            resetExplorationFocus({ preserveSearch: false })
+            return
+
+        default:
+            return
     }
-
-    case JOURNEY_ACTIONS.OPEN_MAP: {
-      const targetSurface = deriveOpenMapSurface();
-      _switchView('map');
-      setSemanticDiveMode(false);
-      journeySetTrailDepth(1);
-      appState.currentView = 'map';
-      appState.trailDepth = 1;
-      appState.navState = {
-        ...appState.navState,
-        currentView: 'map',
-        mode: 'trail',
-        surface: targetSurface,
-        trailDepth: 1
-      };
-      navStore.update((state) => ({
-        ...state,
-        currentView: 'map',
-        mode: 'trail',
-        surface: targetSurface,
-        trailDepth: 1
-      }));
-      if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.semanticDive = 'inactive';
-        document.body.dataset.activeView = 'map';
-        document.body.dataset.viewMode = 'map';
-        document.body.dataset.panelSurface = targetSurface;
-        document.body.dataset.panelSurfaceMode = targetSurface;
-        document.body.dataset.graphContext = 'map';
-        document.body.dataset.mapContext = targetSurface === 'map-focus-search'
-          ? 'focus-search'
-          : targetSurface === 'map-focus'
-            ? 'focus'
-            : 'trail';
-        document.body.dataset.trailDepth = '1';
-      }
-      return;
-    }
-
-    case JOURNEY_ACTIONS.OPEN_MYCELIUM:
-      _switchView('galaxy');
-      return;
-
-    case JOURNEY_ACTIONS.COUNTY_OVERVIEW:
-      // County overview is a calm reset surface; do not preserve the
-      // search corridor or the map keeps competing search chrome alive.
-      resetExplorationFocus({ preserveSearch: false });
-      return;
-
-    default:
-      return;
-  }
 }
 
 // ── Update Compass ────────────────────────────────────────────────────────
@@ -424,85 +418,80 @@ export function executeJourneyCompassAction(action: string): void {
  * updates compass header elements, and syncs action buttons.
  */
 export function updateJourneyCompass(): void {
-  const capitalize = (s: string) => s && s.charAt(0).toUpperCase() + s.slice(1);
+    const capitalize = (s: string) => s && s.charAt(0).toUpperCase() + s.slice(1)
 
-  const compass = document.getElementById('journey-compass');
-  if (!compass) return;
+    const compass = document.getElementById('journey-compass')
+    if (!compass) return
 
-  const compassState = getJourneyCompassState();
-  const phase = compassState.phase || 'overview';
-  const presentationState = getJourneyCompassPresentationState(compassState);
+    const compassState = getJourneyCompassState()
+    const phase = compassState.phase || 'overview'
+    const presentationState = getJourneyCompassPresentationState(compassState)
 
-  // body data-* attribute writes are owned by parity-attrs.svelte.ts.
-  // parity-attrs.svelte.ts subscribes to navStore/journeyStore/compass-controller
-  // outputs and mirrors journeyPhase / journeyCompass* / journeyNavigationOwner
-  // to <body>. Do not write them here.
+    // body data-* attribute writes are owned by parity-attrs.svelte.ts.
+    // parity-attrs.svelte.ts subscribes to navStore/journeyStore/compass-controller
+    // outputs and mirrors journeyPhase / journeyCompass* / journeyNavigationOwner
+    // to <body>. Do not write them here.
 
-  compass.dataset.phase = phase;
-  compass.dataset.density = presentationState.density;
-  compass.dataset.copy = presentationState.copy;
-  compass.dataset.actions = presentationState.actions;
-  compass.dataset.navigationOwner = presentationState.navigationOwner;
-  compass.setAttribute('aria-live', presentationState.copy === 'full' ? 'polite' : 'off');
+    compass.dataset.phase = phase
+    compass.dataset.density = presentationState.density
+    compass.dataset.copy = presentationState.copy
+    compass.dataset.actions = presentationState.actions
+    compass.dataset.navigationOwner = presentationState.navigationOwner
+    compass.setAttribute('aria-live', presentationState.copy === 'full' ? 'polite' : 'off')
 
-  // Update compass text elements
-  const kicker = document.getElementById('journey-compass-kicker');
-  const title = document.getElementById('journey-compass-title');
-  const note = document.getElementById('journey-compass-note');
+    // Update compass text elements
+    const kicker = document.getElementById('journey-compass-kicker')
+    const title = document.getElementById('journey-compass-title')
+    const note = document.getElementById('journey-compass-note')
 
-  if (kicker) kicker.textContent = compassState.kicker || 'Journey';
+    if (kicker) kicker.textContent = compassState.kicker || 'Journey'
 
-  if (title) {
-    const visibleTitle =
-      compassState.title || (phase === 'focus' || phase === 'inside' ? '' : 'County overview');
-    if (visibleTitle) {
-      title.textContent = visibleTitle;
-      title.classList.remove('sr-only');
-    } else {
-      const focusedPoint = getFocusedJourneyPoint();
-      const focusedName = focusedPoint
-        ? formatBusinessName((focusedPoint.name as string) || 'this business')
-        : 'Focused business';
-      title.textContent = `Focused on ${focusedName}`;
-      title.classList.add('sr-only');
+    if (title) {
+        const visibleTitle = compassState.title || (phase === 'focus' || phase === 'inside' ? '' : 'County overview')
+        if (visibleTitle) {
+            title.textContent = visibleTitle
+            title.classList.remove('sr-only')
+        } else {
+            const focusedPoint = getFocusedJourneyPoint()
+            const focusedName = focusedPoint
+                ? formatBusinessName((focusedPoint.name as string) || 'this business')
+                : 'Focused business'
+            title.textContent = `Focused on ${focusedName}`
+            title.classList.add('sr-only')
+        }
     }
-  }
 
-  if (note) {
-    note.textContent = compassState.note || 'Search to open one semantic trail.';
-    note.classList.toggle('discovery-active', !!compassState.discovery);
-  }
+    if (note) {
+        note.textContent = compassState.note || 'Search to open one semantic trail.'
+    }
 
-  // Sync action buttons and map trail strip
-  syncJourneyCompassActions(compassState);
-  syncMapTrailStrip(compassState, presentationState);
+    // Sync action buttons and map trail strip
+    syncJourneyCompassActions(compassState)
+    syncMapTrailStrip(compassState, presentationState)
 
-  // Update step indicators
-  const order = JOURNEY_COMPASS_PHASE_ORDER;
-  const activeOrderIndex = order.indexOf(phase);
-  const stepDescriptions: Record<string, string> = {
-    overview: 'See the whole county.',
-    search: 'Find and center on a business.',
-    focus: 'Inspect a centered anchor.',
-    inside: 'Explore the neighborhood.',
-    map: 'View the geographic layer.'
-  };
+    // Update step indicators
+    const order = JOURNEY_COMPASS_PHASE_ORDER
+    const activeOrderIndex = order.indexOf(phase)
+    const stepDescriptions: Record<string, string> = {
+        overview: 'See the whole county.',
+        search: 'Find and center on a business.',
+        focus: 'Inspect a centered anchor.',
+        inside: 'Explore the neighborhood.',
+        map: 'View the geographic layer.'
+    }
 
-  compass.querySelectorAll<HTMLElement>('[data-journey-step]').forEach((step) => {
-    const stepPhase = step.dataset.journeyStep!;
-    const stepIndex = order.indexOf(stepPhase);
-    const isCurrent = stepPhase === phase;
+    compass.querySelectorAll<HTMLElement>('[data-journey-step]').forEach((step) => {
+        const stepPhase = step.dataset.journeyStep!
+        const stepIndex = order.indexOf(stepPhase)
+        const isCurrent = stepPhase === phase
 
-    step.classList.toggle('current', isCurrent);
-    step.classList.toggle(
-      'done',
-      activeOrderIndex >= 0 && stepIndex >= 0 && stepIndex < activeOrderIndex
-    );
+        step.classList.toggle('current', isCurrent)
+        step.classList.toggle('done', activeOrderIndex >= 0 && stepIndex >= 0 && stepIndex < activeOrderIndex)
 
-    const description = stepDescriptions[stepPhase] || stepPhase;
-    step.setAttribute('aria-label', `${stepIndex + 1}. ${capitalize(stepPhase)}: ${description}`);
-    step.setAttribute('title', description);
-  });
+        const description = stepDescriptions[stepPhase] || stepPhase
+        step.setAttribute('aria-label', `${stepIndex + 1}. ${capitalize(stepPhase)}: ${description}`)
+        step.setAttribute('title', description)
+    })
 }
 
 // ── View Handoff Model ────────────────────────────────────────────────────
@@ -511,62 +500,58 @@ export function updateJourneyCompass(): void {
  * Build the view handoff model for a view transition.
  */
 export function getViewHandoffModel(view: string): ViewHandoffModel {
-  const focusPoint = getFocusedJourneyPoint();
-  const focusName = focusPoint
-    ? formatBusinessName((focusPoint.name as string) || 'this business')
-    : '';
-  const hasSearch = !!get(searchStore).summary;
-  const searchLabel = hasSearch
-    ? (get(searchStore).summary!.query || 'current trail')
-    : '';
+    const focusPoint = getFocusedJourneyPoint()
+    const focusName = focusPoint ? formatBusinessName((focusPoint.name as string) || 'this business') : ''
+    const hasSearch = !!get(searchStore).summary
+    const searchLabel = hasSearch ? get(searchStore).summary!.query || 'current trail' : ''
 
-  if (view === 'map') {
+    if (view === 'map') {
+        if (focusName && hasSearch) {
+            return {
+                icon: 'map',
+                kicker: 'Route layer: map',
+                title: 'The semantic trail lands on terrain',
+                note: `${focusName} stays anchored while "${searchLabel}" becomes physical distance.`
+            }
+        }
+        if (focusName) {
+            return {
+                icon: 'map',
+                kicker: 'Route layer: map',
+                title: 'The focused record lands on terrain',
+                note: `${focusName} keeps its semantic context while county distance becomes visible.`
+            }
+        }
+        return {
+            icon: 'map',
+            kicker: 'Route layer: map',
+            title: 'Geography carries the last layer',
+            note: 'Semantic colors remain, but physical distance is now the thing to read.'
+        }
+    }
+
     if (focusName && hasSearch) {
-      return {
-        icon: 'map',
-        kicker: 'Route layer: map',
-        title: 'The semantic trail lands on terrain',
-        note: `${focusName} stays anchored while "${searchLabel}" becomes physical distance.`
-      };
+        return {
+            icon: 'mycelium',
+            kicker: 'Route layer: mycelium',
+            title: 'The trail returns to the living field',
+            note: `${focusName} remains the anchor for "${searchLabel}" inside the semantic cloud.`
+        }
     }
     if (focusName) {
-      return {
-        icon: 'map',
-        kicker: 'Route layer: map',
-        title: 'The focused record lands on terrain',
-        note: `${focusName} keeps its semantic context while county distance becomes visible.`
-      };
+        return {
+            icon: 'mycelium',
+            kicker: 'Route layer: mycelium',
+            title: 'The record returns to its pocket',
+            note: `${focusName} is back inside its semantic neighborhood.`
+        }
     }
     return {
-      icon: 'map',
-      kicker: 'Route layer: map',
-      title: 'Geography carries the last layer',
-      note: 'Semantic colors remain, but physical distance is now the thing to read.'
-    };
-  }
-
-  if (focusName && hasSearch) {
-    return {
-      icon: 'mycelium',
-      kicker: 'Route layer: mycelium',
-      title: 'The trail returns to the living field',
-      note: `${focusName} remains the anchor for "${searchLabel}" inside the semantic cloud.`
-    };
-  }
-  if (focusName) {
-    return {
-      icon: 'mycelium',
-      kicker: 'Route layer: mycelium',
-      title: 'The record returns to its pocket',
-      note: `${focusName} is back inside its semantic neighborhood.`
-    };
-  }
-  return {
-    icon: 'mycelium',
-    kicker: 'Route layer: mycelium',
-    title: 'Mycelium view restored',
-    note: 'Semantic neighborhoods breathe as one living field.'
-  };
+        icon: 'mycelium',
+        kicker: 'Route layer: mycelium',
+        title: 'Mycelium view restored',
+        note: 'Semantic neighborhoods breathe as one living field.'
+    }
 }
 
 // ── Semantic Lane Probe ───────────────────────────────────────────────────
@@ -575,43 +560,43 @@ export function getViewHandoffModel(view: string): ViewHandoffModel {
  * Install a semantic journey probe (returns presentation state for diagnostics).
  */
 export function installSemanticJourneyProbe(): CompassPresentationState {
-  return getJourneyCompassPresentationState();
+    return getJourneyCompassPresentationState()
 }
 
 /**
  * Clear the mobile route field peek state.
  */
 export function invokeClearMobileRouteFieldPeek(): void {
-  // The actual implementation lives in the engine bridge;
-  // this is the store-side no-op kept for API compat.
+    // The actual implementation lives in the engine bridge;
+    // this is the store-side no-op kept for API compat.
 }
 
 /**
  * Schedule a map route refresh (debounced via RAF + timeouts).
  */
 export function scheduleMapRouteRefresh(): void {
-  const refresh = () => {
-    const $navRefresh = get(navStore);
-    if ($navRefresh.currentView !== 'map') return;
-    // The actual route refresh is handled by the engine bridge
-  };
+    const refresh = () => {
+        const $navRefresh = get(navStore)
+        if ($navRefresh.currentView !== 'map') return
+        // The actual route refresh is handled by the engine bridge
+    }
 
-  refresh();
-  window.requestAnimationFrame(() => window.requestAnimationFrame(refresh));
+    refresh()
+    window.requestAnimationFrame(() => window.requestAnimationFrame(refresh))
 
-  const delays = [120, 450, JOURNEY_CONFIG.MAP_HANDOFF_PRELUDE_MS + JOURNEY_CONFIG.MAP_TRAIL_REFRESH_LATE_DELAY_MS];
-  delays.forEach((delay) => {
-    window.setTimeout(refresh, delay);
-  });
+    const delays = [120, 450, JOURNEY_CONFIG.MAP_HANDOFF_PRELUDE_MS + JOURNEY_CONFIG.MAP_TRAIL_REFRESH_LATE_DELAY_MS]
+    delays.forEach((delay) => {
+        window.setTimeout(refresh, delay)
+    })
 }
 
 // ── Helpers ───────────────────────────────────────────────────────────────
 
 /** Format a business name for display. */
 function formatBusinessName(name: string): string {
-  if (!name) return '';
-  return name
-    .split(' ')
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(' ');
+    if (!name) return ''
+    return name
+        .split(' ')
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(' ')
 }

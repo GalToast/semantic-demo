@@ -5,30 +5,14 @@
  * Journey compass state machine and action synthesis.
  */
 
-import { getInterestingBusinessNote } from './lifecycle-adapter'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { getNextExploreCandidateForIndex } from './thread-model'
 import { getNextWalkCandidateForIndex } from './lifecycle-adapter'
-import { seededUnit } from '@lib/utils/seeded-random'
 import type { Point } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
-import { sessionSeed } from '@lib/state/session.svelte'
 
 let routeEmbodimentReader: () => any[] = () => []
-
-// Idle-note cache: prevents non-deterministic flicker when getJourneyCompassState()
-// is called repeatedly in the overview phase. The index is re-seeded when:
-//   - the cache is cold (`_cachedIdleIndex < 0`)
-//   - the points array length changes (data mutation)
-//   - the session seed changes (new browser session, or after a reset)
-//
-// W47-B: the seed is no longer the constant 42 — it's per-session via
-// `sessionSeed.value`, persisted in localStorage so the user's discovery
-// stays stable across reloads but varies across sessions.
-let _cachedIdleIndex = -1
-let _cachedIdlePointsLength = 0
-let _cachedIdleSeed = -1
 
 export function registerRouteEmbodimentReader(fn: () => any[]): void {
     routeEmbodimentReader = fn
@@ -67,7 +51,6 @@ export interface CompassState {
     primaryAction: CompassAction
     secondaryAction: CompassAction | null
     tertiaryAction: CompassAction | null
-    discovery?: boolean
 }
 
 // ── Back-compat aliases ────────────────────────────────────────────────────────
@@ -226,35 +209,13 @@ export function getJourneyCompassState(): CompassState {
         }
     }
 
-    let idleNote = 'Start wide, then search by need or clue to open one trail through the network.'
-    let isDiscovery = false
-    const isSemanticDegraded: boolean = appState.semanticLaneSnapshot?.state === 'degraded'
-    if (!isSemanticDegraded && (appState.points?.length ?? 0) > 0) {
-        // Deterministic idle pick: re-seed only when the points array length
-        // changes (data mutation) or the cache is cold.  This prevents the
-        // note from flickering on every recomputation while still giving a
-        // fresh discovery on data reload.
-        const pointsLength = appState.points!.length
-        const seed = sessionSeed.value
-        if (_cachedIdleIndex < 0 || _cachedIdlePointsLength !== pointsLength || _cachedIdleSeed !== seed) {
-            _cachedIdleIndex = Math.floor(seededUnit(pointsLength, seed) * pointsLength)
-            _cachedIdlePointsLength = pointsLength
-            _cachedIdleSeed = seed
-        }
-        const randomPoint = appState.points![_cachedIdleIndex]
-        const snippet: string | null = randomPoint ? getInterestingBusinessNote(randomPoint) : null
-        if (snippet) {
-            idleNote = `Discover: ${snippet}`
-            isDiscovery = true
-        }
-    }
+    const idleNote = 'Start wide, then search by need or clue to open one trail through the network.'
 
     return {
         phase: 'overview',
         kicker: 'Overview | Montgomery County',
         title: 'The MoCo Mycelium',
         note: idleNote,
-        discovery: isDiscovery,
         primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
         secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
         tertiaryAction: null

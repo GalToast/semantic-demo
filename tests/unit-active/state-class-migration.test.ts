@@ -405,7 +405,6 @@ describe('compass store — state-class appState regression', () => {
             routeCount: 0,
             nextPointName: null,
             idleNote: 'Explore the network',
-            isDiscovery: false,
             isSemanticDegraded: false
         })
         expect(status.phase).toBe('overview')
@@ -432,7 +431,6 @@ describe('compass store — state-class appState regression', () => {
             routeCount: 0,
             nextPointName: null,
             idleNote: '',
-            isDiscovery: false,
             isSemanticDegraded: false
         })
         expect(status.phase).toBe('search')
@@ -459,7 +457,6 @@ describe('compass store — state-class appState regression', () => {
             routeCount: 0,
             nextPointName: null,
             idleNote: '',
-            isDiscovery: false,
             isSemanticDegraded: false
         })
         expect(status.phase).toBe('focus')
@@ -486,7 +483,6 @@ describe('compass store — state-class appState regression', () => {
             routeCount: 0,
             nextPointName: 'XYZ Cafe',
             idleNote: '',
-            isDiscovery: false,
             isSemanticDegraded: false
         })
         expect(status.phase).toBe('inside')
@@ -513,7 +509,6 @@ describe('compass store — state-class appState regression', () => {
             routeCount: 2,
             nextPointName: null,
             idleNote: '',
-            isDiscovery: false,
             isSemanticDegraded: false
         })
         expect(status.phase).toBe('map')

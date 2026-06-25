@@ -333,7 +333,6 @@
       routeCount: currentWalkHistory.length,
       nextPointName: nextStopName,
       idleNote: 'Start wide, then search by need or clue to open one trail through the network.',
-      isDiscovery: false,
       isSemanticDegraded: false
     });
   });

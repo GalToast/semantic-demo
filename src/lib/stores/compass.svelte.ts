@@ -8,7 +8,6 @@
  * Compass steps are the 5 journey milestones in the rail:
  *   overview → search → focus → inside → map
  */
-import { journeyPhase } from './journey.svelte'
 import { appState } from '@lib/state/app.svelte.ts'
 import type { CompassPhase as CompassPhaseType } from '@lib/types/state'
 
@@ -53,7 +52,6 @@ export interface CompassStatus {
     readonly kicker: string
     readonly title: string
     readonly note: string
-    readonly discovery?: boolean
     readonly primaryAction: CompassAction
     readonly secondaryAction: CompassAction | null
     readonly tertiaryAction: CompassAction | null
@@ -108,7 +106,6 @@ export function buildCompassStatus(params: {
     routeCount: number
     nextPointName: string | null
     idleNote: string
-    isDiscovery: boolean
     isSemanticDegraded: boolean
 }): CompassStatus {
     const {
@@ -128,8 +125,7 @@ export function buildCompassStatus(params: {
         clusterName,
         routeCount,
         nextPointName,
-        idleNote,
-        isDiscovery
+        idleNote
     } = params
 
     if (currentView === 'map') {
@@ -228,7 +224,6 @@ export function buildCompassStatus(params: {
         kicker: 'Overview | Montgomery County',
         title: 'The MoCo Mycelium',
         note: idleNote,
-        discovery: isDiscovery,
         primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
         secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
         tertiaryAction: null
