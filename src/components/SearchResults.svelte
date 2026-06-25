@@ -487,6 +487,35 @@
     margin-top: 0.5rem;
   }
 
+  .search-show-more-btn {
+    display: block;
+    width: 100%;
+    min-height: 44px;
+    margin-top: 0.5rem;
+    padding: 0 1rem;
+    background: rgba(78, 205, 196, 0.08);
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: 0.4rem;
+    color: rgba(224, 240, 240, 0.9);
+    font-family: inherit;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition:
+        background 0.18s ease,
+        border-color 0.18s ease,
+        color 0.18s ease;
+  }
+  .search-show-more-btn:hover {
+    background: rgba(78, 205, 196, 0.16);
+    border-color: rgba(78, 205, 196, 0.34);
+    color: #e0f0f0;
+  }
+  .search-show-more-btn:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+  }
+
   /* Mobile: constrain results to prevent overlapping with mode chips */
   @media (max-width: 768px) {
     .search-results-wrapper {

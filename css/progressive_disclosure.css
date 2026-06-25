@@ -689,6 +689,10 @@ body[data-panel-surface='semantic-dive']::after {
         color 0.2s ease,
         transform 0.2s ease;
 }
+.search-suggestion-chip:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+}
 
 .search-suggestion-chip:hover {
     background: rgba(var(--color-primary-alt-rgb), 0.15);

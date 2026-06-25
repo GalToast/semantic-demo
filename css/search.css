@@ -1620,6 +1620,11 @@ body[data-panel-surface='map-focus-search'] .semantic-lane-assist-meta {
         color 0.18s ease,
         transform 0.18s ease;
 }
+.search-error-retry-btn:focus-visible,
+.search-error-dismiss-btn:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
+}
 
 .search-error-retry-btn {
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.34);
