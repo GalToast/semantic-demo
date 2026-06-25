@@ -2,6 +2,9 @@ import {
     Material,
     Vector3,
     CircleGeometry,
+    PlaneGeometry,
+    LineBasicMaterial,
+    MeshBasicMaterial,
     ShaderMaterial,
     DoubleSide,
     NormalBlending,
@@ -104,7 +107,8 @@ function updateSelectedNodeMotes(worldPos: Vector3 | null, time: number, isInsid
     if (!state.focusMoteGroup || !Array.isArray(state.focusMotes)) return
     const hasFocus = worldPos !== null
     const targetOpacity = hasFocus ? (isInside ? 0.4 : 0.82) : 0
-    state.focusMoteGroup.visible = hasFocus || state.focusMotes.some((mote: SpriteLike) => mote.material.opacity > 0.01)
+    state.focusMoteGroup.visible =
+        hasFocus || state.focusMotes.some((mote: Mesh) => asSingleMaterial(mote.material).opacity > 0.01)
     if (hasFocus) {
         state.focusMoteGroup.position.copy(worldPos)
         state.focusMoteGroup.rotation.set(
@@ -114,10 +118,11 @@ function updateSelectedNodeMotes(worldPos: Vector3 | null, time: number, isInsid
         )
     }
 
-    state.focusMotes.forEach((mote: SpriteLike, index: number) => {
+    state.focusMotes.forEach((mote: Mesh, index: number) => {
         const data = mote.userData || {}
-        mote.material.opacity += (targetOpacity - mote.material.opacity) * 0.08
-        mote.visible = mote.material.opacity > 0.01
+        const moteMat = asSingleMaterial(mote.material)
+        moteMat.opacity += (targetOpacity - moteMat.opacity) * 0.08
+        mote.visible = moteMat.opacity > 0.01
         if (!hasFocus) return
 
         const phase = (data.phase || 0) + time * (data.speed || 0.45)
@@ -285,6 +290,36 @@ export function disposeSemanticLens() {
     if (state.semanticLensSpokes) {
         disposeObject3D(state.semanticLensSpokes)
         state.semanticLensSpokes = null
+    }
+    if (state.focusHalo) {
+        state.scene?.remove(state.focusHalo)
+        disposeObject3D(state.focusHalo)
+        state.focusHalo = null
+    }
+    if (state.focusCore) {
+        state.scene?.remove(state.focusCore)
+        disposeObject3D(state.focusCore)
+        state.focusCore = null
+    }
+    if (state.hoverHalo) {
+        state.scene?.remove(state.hoverHalo)
+        disposeObject3D(state.hoverHalo)
+        state.hoverHalo = null
+    }
+    if (state.focusMoteGroup) {
+        disposeObject3D(state.focusMoteGroup)
+        state.focusMoteGroup = null
+        state.focusMotes = []
+    }
+    if (state.focusPetalGroup) {
+        disposeObject3D(state.focusPetalGroup)
+        state.focusPetalGroup = null
+        state.focusPetals = []
+    }
+    if (state.focusFilaments) {
+        state.scene?.remove(state.focusFilaments)
+        disposeObject3D(state.focusFilaments)
+        state.focusFilaments = null
     }
 }
 
@@ -494,6 +529,118 @@ export function initSemanticLens() {
     // for the cues chosen and the rationale).  Lives in the 3D scene — CSS
     // class treatment would not reach a Three.js mesh.
     createFocusAnchorIndicator()
+
+    // === FOCUS HALO + CORE (soft glow + bright dot at focused node) ===
+    const haloGeo = new CircleGeometry(1, 64)
+    const haloMat = new MeshBasicMaterial({
+        color: 0x7ce7dd,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: AdditiveBlending
+    })
+    state.focusHalo = new Mesh(haloGeo, haloMat)
+    state.focusHalo.visible = false
+    state.scene.add(state.focusHalo)
+
+    const coreGeo = new CircleGeometry(1, 32)
+    const coreMat = new MeshBasicMaterial({
+        color: 0xcffcf4,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: AdditiveBlending
+    })
+    state.focusCore = new Mesh(coreGeo, coreMat)
+    state.focusCore.visible = false
+    state.scene.add(state.focusCore)
+
+    // Hover halo: follows mouse hover, distinct from focus halo
+    const hoverHaloGeo = new CircleGeometry(1, 32)
+    const hoverHaloMat = new MeshBasicMaterial({
+        color: 0x8ff8ed,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: AdditiveBlending
+    })
+    state.hoverHalo = new Mesh(hoverHaloGeo, hoverHaloMat)
+    state.hoverHalo.visible = false
+    state.scene.add(state.hoverHalo)
+
+    // === FOCUS MOTES (orbital sprites around focused node) ===
+    state.focusMoteGroup = new Group()
+    state.focusMoteGroup.visible = false
+    state.scene.add(state.focusMoteGroup)
+    state.focusMotes = []
+    const moteGeo = new CircleGeometry(1, 16)
+    const MOTE_COUNT = 12
+    for (let i = 0; i < MOTE_COUNT; i += 1) {
+        const moteMat = new MeshBasicMaterial({
+            color: 0x4ecdc4,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: AdditiveBlending
+        })
+        const mote = new Mesh(moteGeo, moteMat)
+        mote.userData = {
+            phase: (i / MOTE_COUNT) * Math.PI * 2,
+            speed: 0.35 + (i % 4) * 0.06,
+            radius: 0.024 + (i % 4) * 0.006,
+            scale: 0.006 + (i % 3) * 0.002,
+            lift: 0.008 + (i % 3) * 0.004,
+            drift: 0.5 + (i % 3) * 0.1,
+            tilt: 0.72
+        }
+        state.focusMotes.push(mote)
+        state.focusMoteGroup.add(mote)
+    }
+
+    // === FOCUS PETALS (radial mesh petals around focused node) ===
+    state.focusPetalGroup = new Group()
+    state.focusPetalGroup.visible = false
+    state.scene.add(state.focusPetalGroup)
+    state.focusPetals = []
+    const petalGeo = new PlaneGeometry(1, 1)
+    const PETAL_COUNT = 8
+    for (let i = 0; i < PETAL_COUNT; i += 1) {
+        const petalMat = new MeshBasicMaterial({
+            color: 0x7ce7dd,
+            transparent: true,
+            opacity: 0,
+            depthWrite: false,
+            blending: AdditiveBlending,
+            side: DoubleSide
+        })
+        const petal = new Mesh(petalGeo, petalMat)
+        petal.userData = {
+            phase: (i / PETAL_COUNT) * Math.PI * 2,
+            speed: 0.18 + (i % 3) * 0.05,
+            radius: 0.020 + (i % 3) * 0.008,
+            length: 0.030 + (i % 3) * 0.012,
+            thickness: 0.005 + (i % 2) * 0.002,
+            lift: 0.004 + (i % 3) * 0.003,
+            tilt: 0.72
+        }
+        state.focusPetals.push(petal)
+        state.focusPetalGroup.add(petal)
+    }
+
+    // === FOCUS FILAMENTS (wispy line segments around focused node) ===
+    const filamentPosArray = new Float32Array(FOCUS_WISP_COUNT * (FOCUS_WISP_SEGMENTS + 1) * 2 * 3)
+    const filamentGeo = new BufferGeometry()
+    filamentGeo.setAttribute('position', new BufferAttribute(filamentPosArray, 3))
+    const filamentMat = new LineBasicMaterial({
+        color: 0x4ecdc4,
+        transparent: true,
+        opacity: 0,
+        depthWrite: false,
+        blending: AdditiveBlending
+    })
+    state.focusFilaments = new LineSegments(filamentGeo, filamentMat)
+    state.focusFilaments.visible = false
+    state.scene.add(state.focusFilaments)
 }
 
 export function updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void {
@@ -526,9 +673,11 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
         const baseScale = isActive ? (isInside ? 0.021 : 0.036) : isInside ? 0.021 : 0.032
 
         if (state.focusHalo) {
-            state.focusHalo.material.color.setHex(isActive ? 0x8ff8ed : 0x7ce7dd)
-            state.focusHalo.material.opacity += (auraTargetOpacity - state.focusHalo.material.opacity) * 0.1
-            state.focusHalo.visible = state.focusHalo.material.opacity > 0.01
+            const haloMat = asColorMaterial(state.focusHalo.material)
+            haloMat?.color.setHex(isActive ? 0x8ff8ed : 0x7ce7dd)
+            const haloOpacityMat = asSingleMaterial(state.focusHalo.material)
+            haloOpacityMat.opacity += (auraTargetOpacity - haloOpacityMat.opacity) * 0.1
+            state.focusHalo.visible = haloOpacityMat.opacity > 0.01
         }
 
         const coreColorMat = asColorMaterial(state.focusCore.material)
