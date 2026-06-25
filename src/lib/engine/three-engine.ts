@@ -259,52 +259,99 @@ function _ensureModules(): void {
 
 // ── Re-exported legacy helpers (delegation wrappers) ─────────────────────────
 
+/**
+ * Null-safe delegation surface for the engine modules. Each property is a
+ * forwarder to the underlying module's exported function, with `?.` short-circuit
+ * so callers don't have to null-check before initThreeJS() runs.
+ *
+ * The 14 wrapper exports below this object are kept for backward compatibility
+ * with existing imports (`updateMyceliumThreads()`, etc.) but new code should
+ * prefer calling `engineDelegates.foo()` directly so the indirection is visible
+ * at the call site.
+ */
+export const engineDelegates = {
+    updateMyceliumThreads: (): void => _myceliumEngine?.updateMyceliumThreads(),
+    applyMapFlatteningLayout: (enabled: boolean): void => _mapFlattening?.applyMapFlatteningLayout(enabled),
+    triggerSearchHeroMoment: (anchorIndex: number): void => _threeSearchAnimations?.triggerSearchHeroMoment(anchorIndex),
+    triggerCorridorNodeGlow: (now: number): void => _threeSearchAnimations?.triggerCorridorNodeGlow(now),
+    updateCorridorNodeGlow: (now: number): void => _threeSearchAnimations?.updateCorridorNodeGlow(now),
+    triggerSearchCorridorAnimation: (now: number): void => _threeSearchAnimations?.triggerSearchCorridorAnimation(now),
+    updateSearchCorridorAnimation: (now: number): void => _threeSearchAnimations?.updateSearchCorridorAnimation(now),
+    disposeSearchCorridorAnimation: (): void => _threeSearchAnimations?.disposeSearchCorridorAnimation(),
+    updateInteractionVisuals: (now: number, hoveredNode: number, focusedNode: number | null): void =>
+        _threeInteractionVisuals?.updateInteractionVisuals(now, hoveredNode, focusedNode),
+    disposeInteractionVisuals: (): void => _threeInteractionVisuals?.disposeInteractionVisuals(),
+    initSemanticLens: (): void => _threeInteractionVisuals?.initSemanticLens(),
+    initSemanticManifold: (): void => _threeInteractionVisuals?.initSemanticManifold(),
+    createPoints: (): void => {
+        createPointsPort()
+        appState.pointsMesh = webglContext.pointsMesh
+        appState.pointsMaterial = webglContext.pointsMaterial
+        appState.nodeSporeMesh = webglContext.nodeSporeMesh
+        appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
+        appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
+        if (_state) {
+            _state.pointsMesh = webglContext.pointsMesh
+            _state.pointsMaterial = webglContext.pointsMaterial
+            _state.nodeSporeMesh = webglContext.nodeSporeMesh
+            _state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
+            _state.nodeSporeMaterial = webglContext.nodeSporeMaterial
+        }
+    },
+    createMycelium: (): void => createMyceliumPort()
+}
+
+// ── Backward-compatible wrapper exports ────────────────────────────────────────
+//
+// Each is a single-line delegation to engineDelegates. New callers should
+// use engineDelegates directly; these exist so legacy imports keep working.
+
 export function updateMyceliumThreads(): void {
-    _myceliumEngine?.updateMyceliumThreads()
+    engineDelegates.updateMyceliumThreads()
 }
 
 export function applyMapFlatteningLayout(enabled: boolean): void {
-    _mapFlattening?.applyMapFlatteningLayout(enabled)
+    engineDelegates.applyMapFlatteningLayout(enabled)
 }
 
 export function triggerSearchHeroMoment(anchorIndex: number): void {
-    _threeSearchAnimations?.triggerSearchHeroMoment(anchorIndex)
+    engineDelegates.triggerSearchHeroMoment(anchorIndex)
 }
 
 export function triggerCorridorNodeGlow(now: number): void {
-    _threeSearchAnimations?.triggerCorridorNodeGlow(now)
+    engineDelegates.triggerCorridorNodeGlow(now)
 }
 
 export function updateCorridorNodeGlow(now: number): void {
-    _threeSearchAnimations?.updateCorridorNodeGlow(now)
+    engineDelegates.updateCorridorNodeGlow(now)
 }
 
 export function triggerSearchCorridorAnimation(now: number): void {
-    _threeSearchAnimations?.triggerSearchCorridorAnimation(now)
+    engineDelegates.triggerSearchCorridorAnimation(now)
 }
 
 export function updateSearchCorridorAnimation(now: number): void {
-    _threeSearchAnimations?.updateSearchCorridorAnimation(now)
+    engineDelegates.updateSearchCorridorAnimation(now)
 }
 
 export function disposeSearchCorridorAnimation(): void {
-    _threeSearchAnimations?.disposeSearchCorridorAnimation()
+    engineDelegates.disposeSearchCorridorAnimation()
 }
 
 export function updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void {
-    _threeInteractionVisuals?.updateInteractionVisuals(now, hoveredNode, focusedNode)
+    engineDelegates.updateInteractionVisuals(now, hoveredNode, focusedNode)
 }
 
 export function disposeInteractionVisuals(): void {
-    _threeInteractionVisuals?.disposeInteractionVisuals()
+    engineDelegates.disposeInteractionVisuals()
 }
 
 export function initSemanticLens(): void {
-    _threeInteractionVisuals?.initSemanticLens()
+    engineDelegates.initSemanticLens()
 }
 
 export function initSemanticManifold(): void {
-    _threeInteractionVisuals?.initSemanticManifold()
+    engineDelegates.initSemanticManifold()
 }
 
 export function shouldRenderThreads(): boolean {
@@ -316,23 +363,11 @@ export function shouldRenderBridgeThreads(): boolean {
 }
 
 export function createPoints(): void {
-    createPointsPort()
-    appState.pointsMesh = webglContext.pointsMesh
-    appState.pointsMaterial = webglContext.pointsMaterial
-    appState.nodeSporeMesh = webglContext.nodeSporeMesh
-    appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
-    appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    if (_state) {
-        _state.pointsMesh = webglContext.pointsMesh
-        _state.pointsMaterial = webglContext.pointsMaterial
-        _state.nodeSporeMesh = webglContext.nodeSporeMesh
-        _state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
-        _state.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    }
+    engineDelegates.createPoints()
 }
 
 export function createMycelium(): void {
-    createMyceliumPort()
+    engineDelegates.createMycelium()
 }
 
 export const SCENE_ATMOSPHERE: typeof import('@lib/engine/node-manager').SCENE_ATMOSPHERE = {
