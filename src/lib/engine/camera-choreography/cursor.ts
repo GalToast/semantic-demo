@@ -26,7 +26,7 @@ import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
-import { syncFocusStage } from '@lib/journey/selected-card'
+import { syncFocusStage, updateSelectedBusiness } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../camera-controls-core'
@@ -75,10 +75,10 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     }
 
     appState.withMutation(() => {
-        appState.selectedPoint = point
         appState.hoverHighlightIndex = -1
         appState.pinnedThreadIndex = null
     })
+    updateSelectedBusiness(point, { revealCard: true })
 
     // Preserve the 'focus-search' surface that the SEARCH_FOCUS_REQUESTED
     // subscriber (triggers.ts:176-203) sets just before this orchestrator
