@@ -101,8 +101,10 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
         const source = readSource('src/lib/journey/selected-card.ts')
         // W48-Phase-3: the parameter type is BusinessRecord | null
         // (was `Point | null`; tightened to the actual data type).
-        expect(source).toMatch(/export\s+function\s+updateSelectedBusiness\(point:\s*BusinessRecord\s*\|\s*null,/)
-        expect(source).not.toMatch(/export\s+function\s+updateSelectedBusiness\(point:\s*any,/)
+        // The signature is multi-line; use a more permissive regex
+        // that allows whitespace between `(` and the first parameter.
+        expect(source).toMatch(/export\s+function\s+updateSelectedBusiness\(\s*point:\s*BusinessRecord\s*\|\s*null/)
+        expect(source).not.toMatch(/export\s+function\s+updateSelectedBusiness\(\s*point:\s*any/)
     })
 
     it('presentation locals use BusinessNamePresentation (not any)', () => {
