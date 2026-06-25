@@ -259,7 +259,11 @@ function createPointShaderUniforms() {
 function installPointMaterialShader(material: Material) {
     const uniforms = createPointShaderUniforms()
     material.userData.shader = { uniforms }
-    material.onBeforeCompile = (shader: { uniforms: Record<string, unknown>; vertexShader: string; fragmentShader: string }) => {
+    material.onBeforeCompile = (shader: {
+        uniforms: Record<string, unknown>
+        vertexShader: string
+        fragmentShader: string
+    }) => {
         Object.assign(shader.uniforms, uniforms)
         shader.vertexShader = shader.vertexShader
             .replace(
@@ -475,7 +479,15 @@ export function createPoints() {
 /**
  * Draws a 4-segment line at the X-Y plane of the point cloud's bounding box.
  */
-function createCountyOutline({ min, max, center }: { min: Vector3 | null | undefined; max: Vector3 | null | undefined; center: Vector3 | null | undefined }) {
+function createCountyOutline({
+    min,
+    max,
+    center
+}: {
+    min: Vector3 | null | undefined
+    max: Vector3 | null | undefined
+    center: Vector3 | null | undefined
+}) {
     if (!webglContext.scene) return
     const existing = webglContext.scene.getObjectByName('county-outline')
     if (existing) {

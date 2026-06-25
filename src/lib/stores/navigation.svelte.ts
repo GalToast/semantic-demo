@@ -130,13 +130,13 @@ const INITIAL_NAV_STATE: NavState = {
 // Use a global window key so all chunks share the same _navWritable instance.
 function getOrCreateNavWritable(): ReturnType<typeof writable<NavState>> {
     const key = '__SEMANTIC_EXPLORER_NAV_WRITABLE__'
-    const existing = typeof window !== 'undefined' ? (window as Record<string, unknown>)[key] : undefined
+    const existing = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>)[key] : undefined
     if (existing && typeof existing.subscribe === 'function') {
         return existing
     }
     const store = writable<NavState>({ ...INITIAL_NAV_STATE })
     if (typeof window !== 'undefined') {
-        ;(window as Record<string, unknown>)[key] = store
+        ;(window as unknown as Record<string, unknown>)[key] = store
     }
     return store
 }

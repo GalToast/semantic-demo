@@ -34,21 +34,20 @@ function readSource(): string {
     return readFileSync(SRC_PATH, 'utf-8')
 }
 
+function stripComments(source: string): string {
+    return source.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+}
+
 describe('three-search-animations — typing contract (W47 tightening)', () => {
     const src = readSource()
+    const stripped = stripComments(src)
 
-    it('has exactly 1 `any` occurrence (the engine-boundary escape hatch)', () => {
-        const matches = src.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
-        // The 1 expected match: `const state = _state as any` on line ~14.
-        // If a future contributor re-adds a cast, this fails.
-        expect(matches.length).toBe(1)
-    })
-
-    it('the single `any` is the documented engine-boundary escape hatch', () => {
-        // Pin the location: must be on the line that aliases appState.
-        const lines = src.split('\n')
-        const line = lines.find((l) => /as any/.test(l)) ?? ''
-        expect(line).toMatch(/const\s+state\s*=\s*_state\s+as\s+any/)
+    it('has zero `any` occurrences (W48-Phase-3 tightened)', () => {
+        // Strip comments so prose like "as any" in docstrings doesn't count.
+        const matches = stripped.match(/: any\b| as any\b|<any>| any\[\]/g) ?? []
+        // 0 = post-W48-Phase-3 (was 16 → 1). The remaining `_state as any`
+        // engine-boundary escape hatch was tightened to typed appState access.
+        expect(matches.length).toBe(0)
     })
 
     it('triggerSearchHeroMoment uses `number` for anchorIndex (not any)', () => {

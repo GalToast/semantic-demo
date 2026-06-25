@@ -195,7 +195,7 @@ function syncSvelteNavFromLegacy(): void {
         walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices) ?? state.walkHistoryIndices,
         lastTraversalReason:
             typeof navState.lastTraversalReason === 'string' ? navState.lastTraversalReason : state.lastTraversalReason,
-        threadCandidates: (valueArray(navState.threadCandidates) as any[]) ?? state.threadCandidates,
+        threadCandidates: (valueArray(navState.threadCandidates) as ThreadCandidateLike[]) ?? state.threadCandidates,
         threadReasonByIndex:
             navState.threadReasonByIndex instanceof Map
                 ? (navState.threadReasonByIndex as Map<number, string>)
@@ -220,7 +220,7 @@ function syncSvelteNavFromLegacy(): void {
         trail: finiteIndexList(navState.walkHistoryIndices).map((index) => ({ index })),
         cursor: asFiniteNumber(navState.trailCursor) ?? state.cursor,
         walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices),
-        threadCandidates: valueArray(navState.threadCandidates) as any[],
+        threadCandidates: valueArray(navState.threadCandidates) as ThreadCandidateLike[],
         threadReasonByIndex:
             navState.threadReasonByIndex instanceof Map
                 ? (navState.threadReasonByIndex as Map<number, string>)

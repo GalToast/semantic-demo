@@ -61,7 +61,7 @@ const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
 declare global {
     interface Window {
         __APP_STATE__?: unknown
-        __APP_ACTIONS__?: Record<string, (...args: any[]) => unknown>
+        __APP_ACTIONS__?: Record<string, (...args: unknown[]) => unknown>
     }
 }
 
@@ -229,7 +229,7 @@ function installWindowGlobals(): () => void {
     // promises, so these wrappers must not use lazy dynamic imports.
     window.__APP_ACTIONS__ = {
         switchView: (view: string) => {
-            switchViewAction(view as any)
+            switchViewAction(view)
         },
         focusOnNode: (index: number, options?: Record<string, unknown>) => {
             const result = focusOnNodeAction(index, options)

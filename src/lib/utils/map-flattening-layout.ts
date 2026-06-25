@@ -17,7 +17,7 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
         const centerX = bounds?.sourceCenter?.x ?? 0
         const centerY = bounds?.sourceCenter?.y ?? 0
 
-        state.points.forEach((_point: any, i: number) => {
+        state.points.forEach((_point, i: number) => {
             let rawX: number, rawY: number
             if (hasRawBuffer && state.rawPositionsBuffer) {
                 rawX = state.rawPositionsBuffer[i * 3]!
@@ -35,7 +35,7 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
             }
         })
     } else {
-        state.points.forEach((_point: any, i: number) => {
+        state.points.forEach((_point, i: number) => {
             const orig = state.originalPositions[i]
             if (orig) {
                 state.targetPositions[i] = { x: orig.x, y: orig.y, z: orig.z }

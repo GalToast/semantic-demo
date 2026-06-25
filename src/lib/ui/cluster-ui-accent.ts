@@ -24,7 +24,7 @@ function parseHexColor(hexColor: string | null | undefined): RgbColor | null {
     }
 }
 
-function getPointClusterIndex(point: any): number | null {
+function getPointClusterIndex(point: BusinessRecord): number | null {
     const cluster = Number(point?.cluster)
     return Number.isFinite(cluster) ? Math.abs(Math.trunc(cluster)) : null
 }
@@ -33,7 +33,7 @@ function getPointClusterIndex(point: any): number | null {
  * Apply cluster-based accent color to a DOM element via CSS custom properties.
  * Returns the RGB value string used, or null if no color was applied.
  */
-export function applyClusterUiAccent(element: HTMLElement | null, point: any = null): string | null {
+export function applyClusterUiAccent(element: HTMLElement | null, point: BusinessRecord = null): string | null {
     if (!element) return null
 
     const clusterIndex = getPointClusterIndex(point)

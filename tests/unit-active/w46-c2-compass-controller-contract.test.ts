@@ -99,7 +99,7 @@ describe('W46-C2: interface shape', () => {
         const block = src.match(/export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/)
         expect(block).not.toBeNull()
         // density: 'hidden' | 'compact' | 'expanded';
-        const densityLine = block![0].match(/density:\s*([^;]+);/)
+        const densityLine = block![0].match(/density:\s*([^;\n]+);?/)
         expect(densityLine).not.toBeNull()
         expect(densityLine![1]).toContain("'hidden'")
         expect(densityLine![1]).toContain("'compact'")
@@ -109,7 +109,7 @@ describe('W46-C2: interface shape', () => {
     it('CompassPresentationState.copy has 2 allowed values', () => {
         const block = src.match(/export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/)
         expect(block).not.toBeNull()
-        const copyLine = block![0].match(/copy:\s*([^;]+);/)
+        const copyLine = block![0].match(/copy:\s*([^;\n]+);?/)
         expect(copyLine).not.toBeNull()
         expect(copyLine![1]).toContain("'quiet'")
         expect(copyLine![1]).toContain("'full'")

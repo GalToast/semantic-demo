@@ -74,9 +74,9 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
         expect(source).toMatch(/EXPLORATION_FOCUS_SYNC,\s*\(payload:\s*\{[^}]*point[^}]*\}/)
     })
 
-    it('syncFocusStage function signature uses Point | null', () => {
+    it('syncFocusStage function signature uses Point | BusinessRecord | null (not any)', () => {
         const source = readSource('src/lib/journey/selected-card.ts')
-        expect(source).toMatch(/export\s+function\s+syncFocusStage\(point:\s*Point\s*\|\s*null\)/)
+        expect(source).toMatch(/export\s+function\s+syncFocusStage\(point:\s*Point\s*\|\s*BusinessRecord\s*\|\s*null\)/)
         expect(source).not.toMatch(/export\s+function\s+syncFocusStage\(point:\s*any\)/)
     })
 
@@ -118,11 +118,17 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
         expect(source).toMatch(/focusOnPoint\(point\s+as\s+unknown\s+as\s+Parameters<typeof\s+focusOnPoint>\[0]/)
     })
 
-    it('preserved: DOM property storage (stage/onboardingHint) — needs Map refactor', () => {
-        // These can't be tightened without converting to module-level Maps
+    it('DOM property storage uses intersection types (not as any)', () => {
+        // W48-Phase-3 tightened these from `as any` to intersection types
         const source = readSource('src/lib/journey/selected-card.ts')
-        expect(source).toMatch(/\(stage\s+as\s+any\)\._focusStageKeydownListener/)
-        expect(source).toMatch(/\(onboardingHint\s+as\s+any\)\._dismissedThisSession/)
-        expect(source).toMatch(/\(onboardingHint\s+as\s+any\)\._autoHideTimer/)
+        // stage._focusStageKeydownListener — typed via HTMLElement & { ... }
+        expect(source).toMatch(/stage\s+as\s+HTMLElement\s*&\s*\{[^}]*_focusStageKeydownListener/)
+        // onboardingHint._dismissedThisSession — typed via HTMLElement & { ... }
+        expect(source).toMatch(/onboardingHint\s+as\s+HTMLElement\s*&\s*\{[^}]*_dismissedThisSession/)
+        expect(source).toMatch(/onboardingHint\s+as\s+HTMLElement\s*&\s*\{[^}]*_autoHideTimer/)
+        // Ensure no `as any` remains for these patterns
+        expect(source).not.toMatch(/\(stage\s+as\s+any\)\._focusStageKeydownListener/)
+        expect(source).not.toMatch(/\(onboardingHint\s+as\s+any\)\._dismissedThisSession/)
+        expect(source).not.toMatch(/\(onboardingHint\s+as\s+any\)\._autoHideTimer/)
     })
 })

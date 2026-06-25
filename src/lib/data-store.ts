@@ -29,13 +29,14 @@ import { appState } from '@lib/state/app.svelte'
 // in different chunks would see different (empty) stores.  We use a plain
 // *window* data property to share the canonical store instances.
 function getOrCreateWritable<T>(windowKey: string, initial: T) {
-    const existing = typeof window !== 'undefined' ? (window as Record<string, unknown>)[windowKey] : undefined
-    if (existing && typeof existing.subscribe === 'function') {
-        return existing as ReturnType<typeof writable<T>>
+    const existing =
+        typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>)[windowKey] : undefined
+    if (existing && typeof (existing as { subscribe?: unknown }).subscribe === 'function') {
+        return existing as unknown as ReturnType<typeof writable<T>>
     }
     const store = writable<T>(initial)
     if (typeof window !== 'undefined') {
-        ;(window as Record<string, unknown>)[windowKey] = store
+        ;(window as unknown as Record<string, unknown>)[windowKey] = store
     }
     return store
 }

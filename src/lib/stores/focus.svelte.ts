@@ -116,9 +116,7 @@ function _readFocusSnapshot(): FocusStoreState {
     const nodePositions = source.nodePositions
     const originalPositions = source.originalPositions
     const records = getBusinessRecords()
-    const anchorIndex = Number.isFinite(navState.focusedIndex as number)
-        ? (navState.focusedIndex as number)
-        : null
+    const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null
     const diagnostics = source.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
     const orbitSlack = source.focusOrbitSlackState ?? INITIAL_FOCUS.orbitSlack
 
@@ -337,8 +335,7 @@ export function clearThreadInspector(): void {
 export function updateThreadInspector(patch: Partial<ThreadInspectorState>): void {
     withFocusNotify((s) => ({
         ...s,
-        inspectedStrandIndex:
-            patch.inspectedIndex === undefined ? s.inspectedStrandIndex : patch.inspectedIndex,
+        inspectedStrandIndex: patch.inspectedIndex === undefined ? s.inspectedStrandIndex : patch.inspectedIndex,
         threadInspector: { ...s.threadInspector, ...patch }
     }))
 }

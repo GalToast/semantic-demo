@@ -1,5 +1,5 @@
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 
 let _onboardingIdleTimer: ReturnType<typeof setTimeout> | null = null
 let _onboardingAbortController: AbortController | null = null

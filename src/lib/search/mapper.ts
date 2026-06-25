@@ -116,7 +116,7 @@ function scoreMockPointForRow(point: Point, terms: string[]): number {
 }
 
 function getMockFallbackPointIndex(row: ServiceResultRow, order: number = 0): number | null {
-    const s = state as any
+    const s = state as unknown
     if (!Array.isArray(s.points) || s.points.length === 0) return null
     const points: Point[] = s.points
     const terms = getMockRowTerms(row)
@@ -154,7 +154,7 @@ function getMockFallbackPointIndex(row: ServiceResultRow, order: number = 0): nu
 export function mapSemanticSearchServiceResult(row: ServiceResultRow, order: number = 0): SearchResult | null {
     // For mock-fallback rows, use the supplied metadata directly so the demo reads believably
     // even when data.dat has slug-style names. For real rows, look up the hydrated point.
-    const s = state as any
+    const s = state as unknown
     const points: Point[] = s.points
     const isMockRow = String(row.lead_id || '').startsWith('mock-')
     let point: Point

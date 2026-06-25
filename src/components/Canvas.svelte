@@ -147,7 +147,7 @@
         if (engineHasInit || componentDestroyed) return;
         // W6-T4: in Playwright tests, skip requestIdleCallback so surfaces
         // that assert on #canvas-container don't race the idle timeout.
-        if (typeof window !== 'undefined' && (window as Record<string, unknown>).__PLAYWRIGHT__) {
+        if (typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__PLAYWRIGHT__) {
           void initLifecycle();
           return;
         }

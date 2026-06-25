@@ -63,7 +63,7 @@ export const lazy = {
 
 // ── Playwright eager preload ───────────────────────────────────────────────
 
-const IS_PLAYWRIGHT = typeof window !== 'undefined' && (window as any).__PLAYWRIGHT__
+const IS_PLAYWRIGHT = typeof window !== 'undefined' && (window as unknown as Record<string, unknown>).__PLAYWRIGHT__
 
 if (IS_PLAYWRIGHT) {
     // Eagerly preload components required by contract tests

@@ -1,5 +1,5 @@
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { applyStoryPrompt } from '@lib/orchestration/cluster-filter-controller'
 import { focusSearchInputForReplacement, search } from '@lib/search/state'
 import { showExperienceToast } from '@lib/ui/ui-feedback'

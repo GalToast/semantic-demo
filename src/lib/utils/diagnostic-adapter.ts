@@ -24,8 +24,7 @@ export function isDebugProbesEnabled(): boolean {
 export function registerDiagnosticProbe(key: string, probe: object | (() => void)): void {
     if (!isDebugProbesEnabled()) return
     if (typeof window === 'undefined') return
-
-    ;(window as any)[key] = probe
+    ;(window as unknown as Record<string, unknown>)[key] = probe
 }
 
 export function debugWarn(...args: unknown[]): void {

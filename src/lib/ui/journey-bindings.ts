@@ -5,7 +5,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { bindClick } from '@lib/ui/view-bindings'
 import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller'
 import { setSemanticDiveMode, resetExplorationFocus, exploreInsideToNextStop } from '@lib/orchestration/lifecycle'

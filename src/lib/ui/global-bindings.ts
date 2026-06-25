@@ -5,7 +5,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { handleGalaxyKeydown, initKeyboardResetOwnership, initKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help'
 import { returnToOverview, resetExplorationFocus } from '@lib/orchestration/lifecycle'
 import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } from '@lib/ui/semantic-lane-bindings'

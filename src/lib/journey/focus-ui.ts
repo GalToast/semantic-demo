@@ -17,7 +17,7 @@ import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/jo
 import { ensureCanvasNodeInteractionBindings } from '@lib/journey/canvas-interaction'
 import { focusOnNode } from '@lib/engine/camera-controls'
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts'
-import type { ThreadCandidateLike } from '@lib/state/state-types'
+// ThreadCandidateLike removed (unused)
 import {
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
@@ -138,7 +138,9 @@ export function updateFocusNeighborRail(): void {
     const nav = appState.navState!
     const candidates = (nav.threadCandidates || [])
         .filter((candidate: ThreadCandidateRef) => candidate && candidate.index !== nav.focusedIndex)
-        .filter((candidate: ThreadCandidateRef) => isPointVisible(candidate.index, appState.points!, null, appState.activeFilters))
+        .filter((candidate: ThreadCandidateRef) =>
+            isPointVisible(candidate.index, appState.points!, null, appState.activeFilters)
+        )
         .slice(0, candidateLimit)
 
     if (!candidates.length) {

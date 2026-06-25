@@ -93,10 +93,15 @@ describe('engine-boundary refactor / Tier D first bite / Three.js handle typing'
         expect(source).not.toMatch(/nodeSporeMaterial\s*=\s*\$state<SemanticState\['nodeSporeMaterial']>/)
     })
 
-    it('camera/renderer/controls still use the *Like interfaces (not regressed)', () => {
+    it('camera uses direct Three.js type (not CameraLike)', () => {
+        // Camera was changed from CameraLike to PerspectiveCamera | null
+        const source = readSource('src/lib/state/app.svelte.ts')
+        expect(source).toMatch(/camera\s*=\s*\$state<PerspectiveCamera\s*\|\s*null>/)
+    })
+
+    it('renderer/controls still use the *Like interfaces (not regressed)', () => {
         // These were already typed in a prior session and should remain
         const source = readSource('src/lib/state/app.svelte.ts')
-        expect(source).toMatch(/camera\s*=\s*\$state<CameraLike>/)
         expect(source).toMatch(/renderer\s*=\s*\$state<RendererLike>/)
         expect(source).toMatch(/controls\s*=\s*\$state<ControlsLike>/)
     })

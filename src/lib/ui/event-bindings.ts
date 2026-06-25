@@ -7,7 +7,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { bindViewControls, zoomCamera } from '@lib/ui/view-bindings'
 import {
     bindFocusControls,
@@ -57,7 +57,7 @@ interface InitEventListenersOptions {
     recordSemanticLaneSnapshot?: (snapshot: { state: string; attempted_warm: boolean }) => void
     setMyceliumMode?: (mode: string) => void
     setSemanticLaneUiState?: (state: string, options: { label: string; title: string }) => void
-    updateUrlState?: (...args: any[]) => void
+    updateUrlState?: (...args: unknown[]) => void
 }
 
 export async function initEventListeners({

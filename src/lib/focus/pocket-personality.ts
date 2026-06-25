@@ -65,7 +65,7 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
     const avgScore = Number.isFinite(rawAvgScore) ? rawAvgScore : 0
 
     const cities = new Set(
-        primaryCandidates.map((c: SemanticCandidate) => normalizeCityForFilter((appState.points as any)[c.index]?.city))
+        primaryCandidates.map((c: SemanticCandidate) => normalizeCityForFilter(appState.points[c.index]?.city))
     )
 
     const personality: NeighborhoodPersonality = {
@@ -151,7 +151,7 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
         personality.staggerMult = cand.staggerMult ?? 1.0
         personality.compressionMult = cand.compressionMult !== undefined ? cand.compressionMult : 1.0
         personality.easing = cand.easing || 'easeInOutCubic'
-        personality.motifOverride = (cand as any).motifOverride || null
+        personality.motifOverride = cand.motifOverride || null
         break
     }
 

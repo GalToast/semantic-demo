@@ -93,7 +93,9 @@ export function bindSuggestionControls(): void {
             if (Number.isFinite(cluster)) {
                 const sameCluster = state.points
                     .map((p: BusinessRecord, i: number) => ({ p, i }))
-                    .filter(({ p, i }: { p: BusinessRecord; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
+                    .filter(
+                        ({ p, i }: { p: BusinessRecord; i: number }) => p && p.cluster === cluster && i !== focusedIdx
+                    )
                 if (sameCluster.length) {
                     const { i } = sameCluster[Math.floor(Math.random() * sameCluster.length)]
                     focusOnNode(i, { fromCanvasNode: true })

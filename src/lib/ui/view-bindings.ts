@@ -5,7 +5,7 @@
  */
 
 import { appState as _state } from '@lib/state/app.svelte'
-const state = _state as any
+const state = _state
 import { switchView } from '@lib/orchestration/view-controller'
 import { toggleAutoRotate } from '@lib/engine/camera-controls-restore.svelte'
 import { debugWarn } from '@lib/utils/diagnostic-adapter'

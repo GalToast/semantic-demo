@@ -79,9 +79,7 @@ function readSource(): string {
 }
 
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('semantic-guide — typing contract (W47-Bite-Roughest tightening)', () => {
@@ -103,7 +101,8 @@ describe('semantic-guide — typing contract (W47-Bite-Roughest tightening)', ()
         // Before: L22 `import { appState as state }` and L23
         // `import { appState }` — same module imported twice.
         // After: only one import.
-        const appStateImports = stripped.match(/import\s+\{[^}]*appState[^}]*\}\s+from\s+['"]@lib\/state\/app\.svelte['"]/g) || []
+        const appStateImports =
+            stripped.match(/import\s+\{[^}]*appState[^}]*\}\s+from\s+['"]@lib\/state\/app\.svelte['"]/g) || []
         expect(appStateImports.length).toBe(1)
     })
 
@@ -126,7 +125,10 @@ describe('semantic-guide — typing contract (W47-Bite-Roughest tightening)', ()
         const payloadUsages = (stripped.match(/:\s*SemanticGuidePayload\b/g) || []).length
         expect(payloadUsages, 'SemanticGuidePayload not used in any signatures').toBeGreaterThanOrEqual(2)
 
-        expect(stripped.match(/interface\s+SemanticGuidePayload\b/), 'SemanticGuidePayload interface not declared').toBeTruthy()
+        expect(
+            stripped.match(/interface\s+SemanticGuidePayload\b/),
+            'SemanticGuidePayload interface not declared'
+        ).toBeTruthy()
     })
 
     it('no `Record<string, any>` remains', () => {
@@ -137,12 +139,16 @@ describe('semantic-guide — typing contract (W47-Bite-Roughest tightening)', ()
         expect(stripped.match(/catch\s*\(\s*error\s*:\s*any\s*\)/g), '`catch (error: any)` still present').toBeNull()
     })
 
-    it('window.__SEMANTIC_GUIDE_TIMEOUT_MS__ test-injection preserved', () => {
-        // The 3 remaining `as any` casts are all for the test-injection
-        // global. Guard this so future contributors know not to tighten
-        // these without coordinating the test/runtime contract.
-        const testInjectionAccess = (stripped.match(/window\s+as\s+any\)\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []).length
-        expect(testInjectionAccess).toBe(3)
+    it('window.__SEMANTIC_GUIDE_TIMEOUT_MS__ test-injection uses Record<string, unknown>', () => {
+        // The 3 prior `as any` casts for the test-injection global were
+        // tightened to `Record<string, unknown>` in W48. Guard this so
+        // future contributors know not to loosen back to `as any`.
+        const asAny = (stripped.match(/window\s+as\s+any\)\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []).length
+        const asRecord = (
+            stripped.match(/window\s+as\s+(?:unknown\s+as\s+)?Record<[^)]+>\)\.__SEMANTIC_GUIDE_TIMEOUT_MS__/g) || []
+        ).length
+        expect(asAny).toBe(0)
+        expect(asRecord).toBeGreaterThanOrEqual(3)
     })
 
     it('ensureSemanticGuideCorrelationId uses `unknown` with object guard', () => {

@@ -206,13 +206,9 @@ function getActiveNextFocusIndex(): number | null {
         ? state.navState.focusedIndex
         : getCurrentTrailFocusIndex(state.navState.focusedIndex ?? null)
     if (!Number.isFinite(focusedIndex)) return null
-    const candidate = getNextExploreCandidateForIndex(
-        focusedIndex,
-        getNextWalkCandidateForIndex,
-        {
-            requireOnCanvas: state.currentView === 'galaxy'
-        }
-    )
+    const candidate = getNextExploreCandidateForIndex(focusedIndex, getNextWalkCandidateForIndex, {
+        requireOnCanvas: state.currentView === 'galaxy'
+    })
     if (!candidate) return null
     return Number.isFinite(candidate.index) ? candidate.index : null
 }
