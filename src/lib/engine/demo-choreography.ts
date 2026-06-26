@@ -159,20 +159,20 @@ export function resetRetryState(): void {
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
 async function loadCameraControls(): Promise<CameraControlsModule> {
-    return { animateCameraToNode, setAutoRotateSuspended } as unknown as CameraControlsModule
+    return { animateCameraToNode, setAutoRotateSuspended }
 }
 
 async function loadFocusPocket(): Promise<FocusPocketModule> {
     const mod = await import('@lib/journey/focus-pocket')
-    return mod as unknown as FocusPocketModule
+    return mod
 }
 
 async function loadLifecycle(): Promise<LifecycleModule> {
-    return lifecycleStaticModule as unknown as LifecycleModule
+    return lifecycleStaticModule
 }
 
 async function loadJourneyCompass(): Promise<JourneyCompassModule> {
-    return journeyCompassStaticModule as unknown as JourneyCompassModule
+    return journeyCompassStaticModule
 }
 
 async function loadJourney(): Promise<JourneyModule> {
@@ -180,22 +180,22 @@ async function loadJourney(): Promise<JourneyModule> {
 }
 
 async function loadPanelBindings(): Promise<PanelBindingsModule> {
-    return panelBindingsStaticModule as unknown as PanelBindingsModule
+    return panelBindingsStaticModule
 }
 
 async function loadMicroDemoGuards(): Promise<MicroDemoGuardsModule> {
     const mod = await import('@lib/demo/guards')
-    return mod as unknown as MicroDemoGuardsModule
+    return mod
 }
 
 async function loadMicroDemoCamera(): Promise<MicroDemoCameraModule> {
     const mod = await import('@lib/demo/camera')
-    return mod as unknown as MicroDemoCameraModule
+    return mod
 }
 
 async function loadMicroDemoUi(): Promise<MicroDemoUiModule> {
     const mod = await import('@lib/demo/ui')
-    return mod as unknown as MicroDemoUiModule
+    return mod
 }
 
 // ── demoReset ─────────────────────────────────────────────────────────────────
