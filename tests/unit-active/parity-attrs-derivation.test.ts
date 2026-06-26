@@ -822,38 +822,37 @@ describe('computeParityAttributes IIFE derivations', () => {
     })
 
     describe('compass attributes', () => {
+        // Note: bare `journeyCompass` and `journeyCompassDensity` were
+        // retired in commit 501bc59f — they were declared but never read in
+        // src/. journeyCompassPhase and journeyNavigationOwner carry the
+        // same semantics. Tests below verify the surviving attributes.
+
         it('reflects compass phase from journey.compass', () => {
             _journey.compass = { phase: 'active' }
             const result = computeParityAttributes()
-            expect(result.journeyCompass).toBe('active')
             expect(result.journeyCompassPhase).toBe('active')
         })
 
         it('defaults compass phase to "idle" when journey.compass is null', () => {
             _journey.compass = null as any
             const result = computeParityAttributes()
-            expect(result.journeyCompass).toBe('idle')
-        })
-
-        it('reflects compass presentation density', () => {
-            _compassPresentation.density = 'compact'
-            const result = computeParityAttributes()
-            expect(result.journeyCompassDensity).toBe('compact')
+            expect(result.journeyCompassPhase).toBe('idle')
         })
     })
 
-    describe('threadInspect', () => {
+    describe('threadInspectSurface', () => {
+        // Note: bare `threadInspect` attr was retired in commit 501bc59f —
+        // threadInspectSurface carries the active state.
+
         it('returns "active" when threadInspector is active', () => {
             _focus.threadInspector = { active: true, source: 'canvas', inspectedIndex: 42 }
             const result = computeParityAttributes()
-            expect(result.threadInspect).toBe('active')
             expect(result.threadInspectSurface).toBe('canvas')
             expect(result.inspectedThreadIndex).toBe('42')
         })
 
-        it('returns null for threadInspect when inactive', () => {
+        it('returns "idle" for threadInspectSurface when inactive', () => {
             const result = computeParityAttributes()
-            expect(result.threadInspect).toBeNull()
             expect(result.threadInspectSurface).toBe('idle')
             expect(result.inspectedThreadIndex).toBeNull()
         })

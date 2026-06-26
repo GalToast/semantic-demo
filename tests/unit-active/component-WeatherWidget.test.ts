@@ -42,9 +42,11 @@ describe('WeatherWidget component', () => {
         expect(source).toContain('class="weather-widget"')
     })
 
-    it('toggle button has aria-label="Toggle weather details"', () => {
+    it('toggle button has aria-label that begins with "Toggle weather details"', () => {
+        // Label was extended (2026-06-26) to explain the WHY ("weather affects
+        // which outdoor businesses are active") for screen-reader users.
         expect(source).toContain('class="weather-toggle"')
-        expect(source).toContain('aria-label="Toggle weather details"')
+        expect(source).toMatch(/aria-label="Toggle weather details[^"]+"/)
     })
 
     it('toggle button has type="button" to prevent form submission', () => {

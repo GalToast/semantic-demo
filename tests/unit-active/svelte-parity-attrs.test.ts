@@ -97,13 +97,16 @@ afterEach(() => {
 
 describe('PARITY_ATTRIBUTES manifest', () => {
     it('covers the legacy canvas-hit-test required attrs', () => {
+        // Note: journeyCompassDensity / journeyCompassCopy were retired in
+        // commit 501bc59f ("remove 5 dead body.dataset descriptor keys") —
+        // they were declared but never read in src/. journeyCompassPhase +
+        // journeyNavigationOwner carry the same semantics. journeyCompass
+        // (the bare alias) was retired for the same reason.
         const required = [
             'semanticDive',
             'panelSurface',
             'trailDepth',
             'journeyCompassPhase',
-            'journeyCompassDensity',
-            'journeyCompassCopy',
             'journeyNavigationOwner',
             'focusedNode',
             'navMode',

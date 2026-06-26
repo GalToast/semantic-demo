@@ -90,9 +90,10 @@ describe('A11y W43-A: Escape key closes search panel', () => {
     })
 
     it('Focus returns to search input after Escape', () => {
-        // Phase 3: focus return is now handled via onReturnFocus callback prop
-        // rather than directly querying the DOM by ID.
-        expect(src).toMatch(/Escape[\s\S]*?onReturnFocus/)
+        // Escape calls onClear() then explicitly focuses the search input.
+        // This satisfies WCAG 2.4.3 (focus order) for the Escape-to-clear flow.
+        expect(src).toMatch(/Escape[\s\S]*?onClear\(\)/)
+        expect(src).toMatch(/search-input[^]*?focus\(\)/)
     })
 
     it('preventDefault is called for Escape', () => {

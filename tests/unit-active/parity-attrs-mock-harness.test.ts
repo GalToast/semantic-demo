@@ -437,12 +437,6 @@ describe('parity-attrs.svelte.ts — Svelte 5 mock harness (Phase 6f)', () => {
       expect(map['journeyPhase']).toBe('search')
     })
 
-    it('reads compassState.density into journeyCompassDensity', () => {
-      mockState.compassState.density = 'expanded'
-      const map = computeParityAttributes()
-      expect(map['journeyCompassDensity']).toBe('expanded')
-    })
-
     it('reads compassState.navigationOwner into journeyNavigationOwner', () => {
       mockState.compassState.navigationOwner = 'map-trail-strip'
       const map = computeParityAttributes()
@@ -475,12 +469,6 @@ describe('parity-attrs.svelte.ts — Svelte 5 mock harness (Phase 6f)', () => {
       expect(map['demoPhase']).toBe('narrating')
     })
 
-    it('reads engineReady into engineState attribute', () => {
-      mockState.engineReadyValue = true
-      const map = computeParityAttributes()
-      expect(map['engineState']).toBe('ready')
-    })
-
     it('reads loadingPhase into loadingPhase attribute', () => {
       mockState.loadingPhase = 'scene'
       const map = computeParityAttributes()
@@ -491,12 +479,6 @@ describe('parity-attrs.svelte.ts — Svelte 5 mock harness (Phase 6f)', () => {
       mockState.graphicsMode = 'low'
       const map = computeParityAttributes()
       expect(map['graphicsMode']).toBe('low')
-    })
-
-    it('reads engineReady into engineState attribute (false case)', () => {
-      mockState.engineReadyValue = false
-      const map = computeParityAttributes()
-      expect(map['engineState']).toBe('deferred')
     })
 
     it('produces a stable snapshot — second call returns same values', () => {

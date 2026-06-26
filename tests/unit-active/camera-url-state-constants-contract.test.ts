@@ -187,8 +187,10 @@ describe('camera/url-state/parity-attrs constants — Phase 6c extension', () =>
         it('covers expected journey/compass attribute keys (sanity for CSS hooks)', () => {
             // These keys are read by the legacy CSS in src/css/. If they
             // are renamed, the visual chrome breaks. Document them.
+            // Note: bare `journeyCompass` was retired in commit 501bc59f
+            // ("remove 5 dead body.dataset descriptor keys") — it was a
+            // legacy alias superseded by `journeyCompassPhase`.
             const expectedKeys = [
-                'journeyCompass',
                 'journeyCompassPhase',
                 'navMode',
                 'navSurface'
