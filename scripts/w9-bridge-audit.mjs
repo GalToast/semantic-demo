@@ -31,7 +31,7 @@ const SRC_LIB = join(ROOT, 'src/lib')
 const SRC_COMPONENTS = join(ROOT, 'src/components')
 const DOCS = join(ROOT, 'docs')
 const TESTS = join(ROOT, 'tests')
-const LEGACY = join(ROOT, 'legacy-reference')
+const LEGACY = join(ROOT, 'docs', 'archive', 'legacy-reference')
 
 const SINCE_DAYS = 60
 

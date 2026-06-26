@@ -30,8 +30,6 @@ const state = appState as unknown as SemanticState
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-
-
 interface RenderContext {
     trimmedQuery: string
     topIndex?: number | null
@@ -504,10 +502,6 @@ export function renderSearchResultItems(
         resultsEl.classList.toggle('is-expanded', isExpanded)
         setSearchContainerState({ resultsExpanded: isExpanded })
         resultsEl.classList.add('active')
-        if (!(resultsEl as HTMLElement & { _legacyShowMoreBound?: boolean })._legacyShowMoreBound) {
-            resultsEl.addEventListener('click', handleLegacyShowMoreClick)
-            ;(resultsEl as HTMLElement & { _legacyShowMoreBound?: boolean })._legacyShowMoreBound = true
-        }
     }
 
     // Push to appState
@@ -536,14 +530,13 @@ export function renderSearchResultItems(
 
     // Legacy DOM render so the served shell (which never mounts the Svelte
     // SearchResults root) still shows result rows.
-    renderLegacySearchResultsDom({
-        resultsEl,
-        dedupedResults,
-        total,
-        visibleCount,
-        mode,
-        renderContext
-    })
+    // Legacy imperative DOM render RETIRED — SearchResults.svelte + SearchResultItem.svelte
+    // now own #search-results declaratively (fed via searchState.results ← setSearchSummary/
+    // resultIndices). The former renderLegacySearchResultsDom() call clobbered Svelte's DOM
+    // via clearLegacySearchResultsDom()'s replaceChildren(), wiping the declarative rows,
+    // keyboard nav, and a11y live-region. The served shell DOES mount the Svelte root
+    // (SearchBar.svelte dynamically imports + renders <SearchResultsComponent>), so the
+    // legacy "shell never mounts Svelte" premise is stale.
 
     if (state.currentSearchSummary) {
         ;(state.currentSearchSummary as SearchSummaryState).dedupedResultCount = total

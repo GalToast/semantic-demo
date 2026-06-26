@@ -12,29 +12,29 @@
 | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Svelte UI**     | 26/26 components complete. `svelte-check` 0/0. All stores, types, orchestration files in place.                                                                                                               |
 | **Engine kernel** | Fully migrated to `src/lib/`. Worker runtime lives at `src/lib/workers/data-worker.ts`; the Vite URL boundary lives at `src/lib/workers/data-worker-url.ts`. Legacy `js/modules/*.ts` are gone from disk.     |
-| **Bridge**        | ✅ Retired. Phase 7 deleted the final `src/lib/engine/state-bridge.ts` passthrough and migrated consumers to canonical `appState` / `withStateMutation` imports.                                                |
+| **Bridge**        | ✅ Retired. Phase 7 deleted the final `src/lib/engine/state-bridge.ts` passthrough and migrated consumers to canonical `appState` / `withStateMutation` imports.                                              |
 | **BOTH pattern**  | `.js` shadows retired in W10 W2 (commit `7fc7b9d`). `@legacy/*` alias retired in 9D-Option-B (`cbc6509`). Legacy islands deleted in m3 sweep (`b8a50ba`), reverted 2026-06-12 (`ec520da`) — status ambiguous. |
 | **Contracts**     | 225 contract tests pass. Visual state audit covers 26 surface IDs.                                                                                                                                            |
 | **Bundle**        | ~1,217 KB raw JS / ~338 KB gzip. CSS ~54 KB raw / ~10 KB gzip. Dead CSS modules pruned in W41 (`80e4224`).                                                                                                    |
 | **Deploy**        | ✅ Complete (uncoupled on 2026-06-19). `deploy.sh` + `deploy.ps1` are standalone. Production shell at `dist/svelte/index.html`.                                                                               |
-| **What's left**   | Release hardening: full static/unit/contract gates, product playthrough, visual QA, Lighthouse/performance re-baseline, and deploy shell normalization decision.                                               |
+| **What's left**   | Release hardening: full static/unit/contract gates, product playthrough, visual QA, Lighthouse/performance re-baseline, and deploy shell normalization decision.                                              |
 
 ---
 
 ## Architecture Layers
 
-| Layer                | Path                                                                              | Status            | Notes                                                                            |
-| -------------------- | --------------------------------------------------------------------------------- | ----------------- | -------------------------------------------------------------------------------- |
-| **Svelte UI**        | `src/components/*`, `src/lib/stores/*.svelte.ts`                                  | ✅ Complete       | 26 components, 12 stores, 4 type files                                           |
+| Layer                | Path                                                                              | Status            | Notes                                                                                            |
+| -------------------- | --------------------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------ |
+| **Svelte UI**        | `src/components/*`, `src/lib/stores/*.svelte.ts`                                  | ✅ Complete       | 26 components, 12 stores, 4 type files                                                           |
 | **Bridge**           | `src/lib/engine/*-bridge.ts`                                                      | ✅ Retired        | Phase 7 closed the final engine bridge; see `docs/phase-7-state-bridge-retirement-2026-06-20.md` |
-| **Engine kernel**    | `src/lib/engine/`, `src/lib/focus/`, `src/lib/journey/`                           | ✅ Migrated       | Three.js scene, camera, shaders, focus pocket, journey orchestration             |
-| **Orchestration**    | `src/lib/orchestration/`                                                          | ✅ Complete       | App init, lifecycle, view transitions, URL state, compass, events, parity-attrs  |
-| **State & stores**   | `src/lib/state/`, `src/lib/stores/`                                               | ✅ Complete       | `appState` Svelte 5 class + typed writable stores                                |
-| **Search**           | `src/lib/search/`, `src/lib/search-engine.ts`                                     | ✅ Complete       | API search, local fallback, tokenization, reranking, caching                     |
-| **Data**             | `src/lib/data-store.ts`, `src/lib/data-store.svelte.ts`, `src/lib/data-loader.ts` | ✅ Complete       | Business records, semantic threads                                               |
-| **Utilities**        | `src/lib/utils/`                                                                  | ✅ Complete       | Seeded random, diagnostics, DOM helpers, math, WebGL restore, relationship roles |
-| **Worker**           | `src/lib/workers/data-worker.ts`                                                  | ✅ Active runtime | Vite `?worker&url` import is centralized in `src/lib/workers/data-worker-url.ts` |
-| **Legacy reference** | `legacy-reference/`                                                               | 🟢 Archive        | Frozen BOTH-pattern shadow files; reference only, not built                      |
+| **Engine kernel**    | `src/lib/engine/`, `src/lib/focus/`, `src/lib/journey/`                           | ✅ Migrated       | Three.js scene, camera, shaders, focus pocket, journey orchestration                             |
+| **Orchestration**    | `src/lib/orchestration/`                                                          | ✅ Complete       | App init, lifecycle, view transitions, URL state, compass, events, parity-attrs                  |
+| **State & stores**   | `src/lib/state/`, `src/lib/stores/`                                               | ✅ Complete       | `appState` Svelte 5 class + typed writable stores                                                |
+| **Search**           | `src/lib/search/`, `src/lib/search-engine.ts`                                     | ✅ Complete       | API search, local fallback, tokenization, reranking, caching                                     |
+| **Data**             | `src/lib/data-store.ts`, `src/lib/data-store.svelte.ts`, `src/lib/data-loader.ts` | ✅ Complete       | Business records, semantic threads                                                               |
+| **Utilities**        | `src/lib/utils/`                                                                  | ✅ Complete       | Seeded random, diagnostics, DOM helpers, math, WebGL restore, relationship roles                 |
+| **Worker**           | `src/lib/workers/data-worker.ts`                                                  | ✅ Active runtime | Vite `?worker&url` import is centralized in `src/lib/workers/data-worker-url.ts`                 |
+| **Legacy reference** | `legacy-reference/`                                                               | 🟢 Archive        | Frozen BOTH-pattern shadow files; reference only, not built                                      |
 
 Ref: AGENTS.md § "Engine Kernel Architecture"
 
@@ -68,11 +68,11 @@ These files require explicit ownership, targeted tests, and coordination with pa
 
 ### Formerly load-bearing (retired)
 
-| Artifact                           | Status             | Evidence                                                                                                         |
-| ---------------------------------- | ------------------ | ---------------------------------------------------------------------------------------------------------------- |
+| Artifact                           | Status             | Evidence                                                                                                                  |
+| ---------------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------- |
 | `src/lib/engine/*-bridge.ts` files | ✅ Retired         | Phase 7 migrated final consumers and deleted `state-bridge.ts`; `npm run check:bridges` and `npm run test:contract` pass. |
-| `src/lib/workers/data-worker.ts`   | **Active runtime** | Worker parser runtime. URL creation is centralized in `src/lib/workers/data-worker-url.ts`.                      |
-| `legacy-reference/`                | **Archive-only**   | Frozen reference. Not built. Safe to leave.                                                                      |
+| `src/lib/workers/data-worker.ts`   | **Active runtime** | Worker parser runtime. URL creation is centralized in `src/lib/workers/data-worker-url.ts`.                               |
+| `legacy-reference/`                | **Archive-only**   | Frozen reference. Not built. Safe to leave.                                                                               |
 
 ### Ambiguous — requires 4-signal audit
 
@@ -144,7 +144,7 @@ A file passes the "dead" threshold only when **all five signals are zero**.
 
 ### 6. Svelte 5 Strict-Mode `!==` Cleanup
 
-**Status:** 38 risky usages identified and fixed in W15 (commit wave 2026-06-17). CI guard live: `npm run lint:svelte5-strict-mode`.
+**Status:** 38 risky usages identified and fixed in W15 (commit wave 2026-06-17). **CI guard RETIRED 2026-06-26** — the strict-mode `!==` inversion bug was empirically disproven for Svelte 5.56.2: a compile probe (`tmp/svelte-neq-probe.mjs`) shows `$derived(a !== b)` compiles to `$.derived(() => a !== b)` with no inversion, and `vite.config.ts` runs `svelte()` with zero compiler options. The guard script, its allowlist, and all `// audit-ok` / "compiler bug" comments were removed as stale superstition. The W15 code changes (idiomatic `!= null` / positive equality) are harmless and retained.
 **Remaining:** Ongoing vigilance for new `.svelte` / `.svelte.ts` files. See § "Svelte 5 Strict-Mode Gotcha" below.
 
 ---
@@ -168,6 +168,8 @@ For each high-risk surface, the following must hold before any edit:
 ---
 
 ## Svelte 5 Strict-Mode Gotcha
+
+> **⚠️ RETIRED 2026-06-26 — bug disproven.** A compile probe on Svelte 5.56.2 shows `$derived(a !== b)` compiles to `$.derived(() => a !== b)` (plain, correct, **not** inverted to `$.strict_equals(...)`), and `vite.config.ts` runs `svelte()` with no strict-mode compiler options. The CI guard (`lint:svelte5-strict-mode`), its allowlist, and every `// audit-ok` / "compiler bug" comment have been removed. The three workaround patterns below are no longer required. This section is retained as historical record only.
 
 **The bug:** In rune-mode `.svelte` and `.svelte.ts` files, `!==` is compiled to `$.strict_equals(a, b, false)` (equivalent to `===`), silently inverting the comparison. No warning at compile or runtime.
 
@@ -213,13 +215,13 @@ For each high-risk surface, the following must hold before any edit:
 
 ## Deferral List
 
-| Item                                     | Deferred to                        | Reason                                                                            |
-| ---------------------------------------- | ---------------------------------- | --------------------------------------------------------------------------------- |
-| Bridge retirement (Phase 6 / Phase 7)    | ✅ Complete                        | Final `state-bridge.ts` retired on 2026-06-20                     |
-| `../js/scanner.js` decoupling            | ✅ Complete                        | Successfully uncoupled on 2026-06-19                                              |
-| Legacy islands removal                   | Future wave (after 4-signal audit) | Ambiguous status post-`ec520da` revert; needs fresh import audit                  |
-| Deploy shell normalization               | Future wave                        | Requires product decision on legacy URL path sunset                               |
-| Product/visual release QA                | Next release-hardening wave        | Run product playthrough, UI quality, visual surfaces, and Lighthouse re-baseline  |
+| Item                                  | Deferred to                        | Reason                                                                           |
+| ------------------------------------- | ---------------------------------- | -------------------------------------------------------------------------------- |
+| Bridge retirement (Phase 6 / Phase 7) | ✅ Complete                        | Final `state-bridge.ts` retired on 2026-06-20                                    |
+| `../js/scanner.js` decoupling         | ✅ Complete                        | Successfully uncoupled on 2026-06-19                                             |
+| Legacy islands removal                | Future wave (after 4-signal audit) | Ambiguous status post-`ec520da` revert; needs fresh import audit                 |
+| Deploy shell normalization            | Future wave                        | Requires product decision on legacy URL path sunset                              |
+| Product/visual release QA             | Next release-hardening wave        | Run product playthrough, UI quality, visual surfaces, and Lighthouse re-baseline |
 
 ---
 

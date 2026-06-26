@@ -51,8 +51,8 @@
 {#snippet iconSvg(key: string)}
   {#if key === 'sun'}
     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
-      <circle cx="12" cy="12" r="4" fill="#4ecdc4" />
-      <g stroke="#4ecdc4" stroke-width="2" stroke-linecap="round">
+      <circle cx="12" cy="12" r="4" fill="var(--color-primary-alt)" />
+      <g stroke="var(--color-primary-alt)" stroke-width="2" stroke-linecap="round">
         <line x1="12" y1="2" x2="12" y2="5" />
         <line x1="12" y1="19" x2="12" y2="22" />
         <line x1="2" y1="12" x2="5" y2="12" />
@@ -67,9 +67,9 @@
     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
       <path
         d="M17.5 13a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 13h13.5z"
-        fill="#4ecdc4"
+        fill="var(--color-primary-alt)"
       />
-      <g stroke="#4ecdc4" stroke-width="2" stroke-linecap="round">
+      <g stroke="var(--color-primary-alt)" stroke-width="2" stroke-linecap="round">
         <line x1="8" y1="17" x2="7" y2="20" />
         <line x1="12" y1="17" x2="11" y2="20" />
         <line x1="16" y1="17" x2="15" y2="20" />
@@ -80,7 +80,7 @@
     <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
       <path
         d="M17.5 19a4.5 4.5 0 1 0-1.4-8.78 6.5 6.5 0 0 0-12.6 1.78A4 4 0 0 0 4 19h13.5z"
-        fill="#4ecdc4"
+        fill="var(--color-primary-alt)"
       />
     </svg>
   {/if}
@@ -177,7 +177,7 @@
     );
     backdrop-filter: blur(10px) saturate(140%);
     -webkit-backdrop-filter: blur(10px) saturate(140%);
-    border: 1px solid rgba(78, 205, 196, 0.18);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: 999px;
     color: #cfe4e0;
     cursor: pointer;
@@ -196,7 +196,7 @@
   .weather-toggle:hover,
   .weather-widget.expanded .weather-toggle,
   .weather-toggle:focus-visible {
-    border-color: rgba(78, 205, 196, 0.45);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.45);
     background: linear-gradient(
       180deg,
       rgba(15, 30, 42, 0.85),
@@ -205,11 +205,11 @@
     box-shadow:
       0 1px 0 rgba(255, 255, 255, 0.05) inset,
       0 8px 22px rgba(0, 0, 0, 0.45),
-      0 0 0 1px rgba(78, 205, 196, 0.08),
-      0 0 18px rgba(78, 205, 196, 0.12);
+      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.08),
+      0 0 18px rgba(var(--color-primary-alt-rgb), 0.12);
   }
   .weather-toggle:focus-visible {
-    border-color: rgba(78, 205, 196, 0.6);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.6);
   }
   .weather-toggle:active {
     transform: translateY(0.5px);
@@ -222,7 +222,7 @@
     width: 14px;
     height: 14px;
     line-height: 1;
-    filter: drop-shadow(0 0 4px rgba(78, 205, 196, 0.25));
+    filter: drop-shadow(0 0 4px rgba(var(--color-primary-alt-rgb), 0.25));
   }
   .weather-icon :global(svg) {
     display: block;
@@ -233,7 +233,7 @@
     font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     font-size: 0.75rem;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     white-space: nowrap;
     line-height: 1;
   }
@@ -247,7 +247,7 @@
     );
     backdrop-filter: blur(14px) saturate(140%);
     -webkit-backdrop-filter: blur(14px) saturate(140%);
-    border: 1px solid rgba(78, 205, 196, 0.18);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: 0.55rem;
     padding: 0.55rem 0.7rem;
     min-width: 200px;

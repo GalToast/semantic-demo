@@ -82,7 +82,7 @@ function isInAllowlist(file: string): boolean {
 // Excluded paths: the test infrastructure itself + archived reference
 function isExcluded(file: string): boolean {
     const rel = relative(PROJECT_ROOT, file)
-    return rel.startsWith('tests/') || rel.startsWith('legacy-reference/')
+    return rel.startsWith('tests/') || rel.startsWith('docs/archive/legacy-reference/')
 }
 
 describe('Svelte-bridge import contract (S7)', () => {

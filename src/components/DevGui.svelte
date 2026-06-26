@@ -102,7 +102,7 @@ import { debugLog, debugError } from '@lib/utils/debug'
       pocketFolder.open();
 
       // --- Postprocessing folder ---
-      let ppEnabled = document.body.dataset.premiumMode === 'true';
+      let ppEnabled = window.__semanticPostprocessing?.isPremiumMode?.() ?? false;
       let bloomIntensity = 0.5;
       let bloomThreshold = 0.6;
       let bloomRadius = 0.6;
@@ -120,13 +120,7 @@ import { debugLog, debugError } from '@lib/utils/debug'
             pp.setPremiumMode(v);
             debugLog('[dev-gui] premium mode =', v);
           } else {
-            // Fallback: set body attribute directly
-            if (v) {
-              document.body.dataset.premiumMode = 'true';
-            } else {
-              delete document.body.dataset.premiumMode;
-            }
-            debugLog('[dev-gui] premium mode =', v, '(body attr only)');
+            debugLog('[dev-gui] premium mode =', v, '(postprocessing module not ready)');
           }
         });
 

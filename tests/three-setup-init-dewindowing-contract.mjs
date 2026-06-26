@@ -46,7 +46,7 @@ const combinedAppOrLifecycleSrc = appSrc + '\n' + lifecycleModuleSrc
 try {
     execFileSync(process.execPath, ['--check', threeSetupPath], { stdio: 'pipe' })
 } catch (err) {
- console.error('FAIL: must parse with node --check')
+    console.error('FAIL: must parse with node --check')
     const output = `${err.stdout || ''}${err.stderr || ''}`.trim()
     if (output) console.error(output)
     process.exit(1)
@@ -59,7 +59,9 @@ const checks = [
     },
     {
         name: 'three-engine exports initThreeJS',
-        pass: /export\s+(?:async\s+)?function\s+initThreeJS\s*\(/.test(threeSetupSrc)
+        pass: /export\s+(?:(?:async\s+)?function\s+initThreeJS\s*\(|{\s*[^}]*\binitThreeJS\b[^}]*}\s+from)/.test(
+            threeSetupSrc
+        )
     },
     {
         // Post-W7 canvas-architecture: initThreeJS() lives in @lib/engine/three-engine.

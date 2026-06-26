@@ -34,7 +34,6 @@ function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
             const nav = appState.navState
             const value = (nav as unknown as Record<string, unknown>)[legacyKey] as T | undefined
             if (value !== undefined) {
-                // audit-ok: plain function, not transformed
                 return value
             }
         }
@@ -219,7 +218,6 @@ export const isExploration = () =>
 export const hasFocus = () => {
     const local = get(_navWritable)
     if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
-        // audit-ok: plain function with get() snapshot, not transformed — bundle preserves native !==
         return true
     }
     // Mode fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH paths still mutate
@@ -504,7 +502,6 @@ export function dispatchNavTransition(
 
     switch (action) {
         case NAV_TRANSITION_ACTIONS.FOCUS_NODE: {
-            // Svelte 5 strict-mode compilation inverts `===` and `??` in
             // some files (specifically `navigation.svelte.ts`), silently
             // flipping the ternary. Use direct boolean casts + explicit
             // value unpacking to avoid the bug entirely. See
@@ -595,7 +592,7 @@ export function dispatchNavTransition(
                 mode: 'trail' as NavMode,
                 surface: 'focus' as PanelSurface,
                 // Accumulate walk history when appendHistory is true
-                ...(payload.appendHistory !== false && payload.index != null // audit-ok: plain function, not transformed
+                ...(payload.appendHistory !== false && payload.index != null
                     ? {
                           walkHistoryIndices:
                               s.walkHistoryIndices[s.walkHistoryIndices.length - 1] === payload.index

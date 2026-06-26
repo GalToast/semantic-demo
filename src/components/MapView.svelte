@@ -96,18 +96,18 @@
 
     try {
       await tick();
-      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
+      if (!mounted || token !== activationToken) return;
 
       activateMapShell();
 
-      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
+      if (!mounted || token !== activationToken) return;
 
       setLegacyView('map');
 
       initMapStateSubscriptions();
       await initMap();
 
-      if (!mounted || token !== activationToken) return; // audit-ok: plain async function, not transformed
+      if (!mounted || token !== activationToken) return;
 
       refreshMapMarkers();
       refreshMapRouteEmbodiment();

@@ -41,27 +41,38 @@ describe('W46-C3: toast.ts contract', () => {
         expect(s).toMatch(/export\s+function\s+dismissToast\s*\(/)
     })
 
-    it('uses body data-attributes for cross-component communication', () => {
-        expect(src(file)).toMatch(/body\.dataset\.toastMessage/)
-        expect(src(file)).toMatch(/body\.dataset\.toastState/)
+    it('uses a Svelte store for cross-component communication', () => {
+        expect(src(file)).toMatch(/toastStore\.set/)
+        expect(src(file)).toMatch(/toastStore\.update/)
+        // Body attribute bridge removed in Phase 3 migration
+        expect(src(file)).not.toMatch(/body\.dataset\.toastMessage/)
+        expect(src(file)).not.toMatch(/body\.dataset\.toastState/)
     })
 
-    it('showExperienceToast sets body data attrs and dismissToast clears them', async () => {
+    it('showExperienceToast sets store state and dismissToast clears it', async () => {
         const { showExperienceToast, dismissToast } = await import(`../../src/lib/orchestration/${file}`)
         showExperienceToast('Test title', 'Test copy')
-        expect(document.body.dataset.toastMessage).toBe('Test title\nTest copy')
-        expect(document.body.dataset.toastState).toBe('active')
+        // The store should be updated; we verify via the module's own store import
+        const { toastStore } = await import('../../src/lib/stores/toast.svelte')
+        let state: any
+        const unsub = toastStore.subscribe((s: any) => {
+            state = s
+        })
+        expect(state.message).toBe('Test title\nTest copy')
+        expect(state.active).toBe(true)
+        expect(state.variant).toBe('info')
         dismissToast()
-        expect(document.body.dataset.toastState).toBe('dismissed')
+        expect(state.active).toBe(false)
+        unsub()
     })
 
     it('delegates auto-dismiss to the Toast component via a variant flag', () => {
         // W46-C3: toast.ts no longer owns a dismiss timer. It sets a
-        // `toastVariant` ('info' | 'error') on <body>; Toast.svelte owns the
+        // `variant` ('info' | 'error') on the store; Toast.svelte owns the
         // auto-dismiss (DISMISS_DELAY = 8000 for error, 5000 otherwise) plus a
         // close button. Verify the bridge contract instead of the old 3500ms
         // literal that moved out of this module.
-        expect(src(file)).toMatch(/toastVariant/)
+        expect(src(file)).toMatch(/variant/)
         expect(src(file)).not.toMatch(/setTimeout\([\s\S]*?3500\s*\)/)
     })
 })

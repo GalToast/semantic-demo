@@ -58,9 +58,8 @@ class TelemetryStore {
 
         const seq = ++this.seq
         const timestamp = Date.now()
-        const payloadKeys = payload && typeof payload === 'object'
-            ? summarizePayload(payload as Record<string, unknown>)
-            : []
+        const payloadKeys =
+            payload && typeof payload === 'object' ? summarizePayload(payload as Record<string, unknown>) : []
         const payloadBytes = payload === undefined ? 0 : JSON.stringify(payload).length
 
         const event: TelemetryEvent = {
@@ -108,9 +107,10 @@ class TelemetryStore {
             config: this.getConfig(),
             events: this.buffer.slice(),
             counts: Object.freeze(
-                Object.fromEntries(
-                    [...this.counts.entries()].sort(([a], [b]) => a.localeCompare(b))
-                ) as Record<string, number>
+                Object.fromEntries([...this.counts.entries()].sort(([a], [b]) => a.localeCompare(b))) as Record<
+                    string,
+                    number
+                >
             ) as TelemetryCounts,
             totalRecorded: this.totalRecorded,
             dropped: this.dropped

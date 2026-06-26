@@ -89,19 +89,12 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
                     it(`loading marker uses aria-live="${c.loading.live}"`, () => {
                         // The marker name may appear in CSS too — find the
                         // markup occurrence that follows `<div class="...`.
-                        const markupIdx = src.indexOf(
-                            `<div class="${c.loading.marker}`
-                        )
+                        const markupIdx = src.indexOf(`<div class="${c.loading.marker}`)
                         // Some markers span multiple attributes or use a
                         // different format; fall back to the next `<div`
                         // after the marker's first occurrence.
-                        const divIdx = markupIdx !== -1
-                            ? markupIdx
-                            : src.indexOf('<', src.indexOf(c.loading.marker))
-                        const window = src.substring(
-                            Math.max(0, divIdx - 200),
-                            Math.min(src.length, divIdx + 200)
-                        )
+                        const divIdx = markupIdx !== -1 ? markupIdx : src.indexOf('<', src.indexOf(c.loading.marker))
+                        const window = src.substring(Math.max(0, divIdx - 200), Math.min(src.length, divIdx + 200))
                         expect(window).toMatch(new RegExp(`aria-live=["']${c.loading.live}["']`))
                     })
                 }
@@ -116,10 +109,7 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
                 if (c.error.role) {
                     it(`error marker uses role="${c.error.role}"`, () => {
                         const markerIdx = src.lastIndexOf(c.error.marker)
-                        const window = src.substring(
-                            Math.max(0, markerIdx - 200),
-                            markerIdx + 200
-                        )
+                        const window = src.substring(Math.max(0, markerIdx - 200), markerIdx + 200)
                         expect(window).toMatch(new RegExp(`role=["']${c.error.role}["']`))
                     })
                 }
@@ -127,10 +117,7 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
                 if (c.error.hasRetry) {
                     it('error state offers a retry action', () => {
                         const markerIdx = src.lastIndexOf(c.error.marker)
-                        const window = src.substring(
-                            markerIdx,
-                            Math.min(src.length, markerIdx + 2000)
-                        )
+                        const window = src.substring(markerIdx, Math.min(src.length, markerIdx + 2000))
                         expect(window).toMatch(/retry/i)
                         // Should be a real button, not just text. Allow
                         // class-based detection (e.g. class="search-error-retry-btn").
@@ -152,10 +139,7 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
             if ('empty' in c && c.empty && 'hasSuggestions' in c.empty && c.empty.hasSuggestions) {
                 it('empty state offers suggested next steps', () => {
                     const markerIdx = src.indexOf(c.empty.marker)
-                    const window = src.substring(
-                        markerIdx,
-                        Math.min(src.length, markerIdx + 3000)
-                    )
+                    const window = src.substring(markerIdx, Math.min(src.length, markerIdx + 3000))
                     expect(window).toMatch(/suggest|try/i)
                 })
             }

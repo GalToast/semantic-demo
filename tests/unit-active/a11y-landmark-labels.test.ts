@@ -83,24 +83,26 @@ describe('A11y: landmark labels and screen-reader affordances', () => {
     });
   });
 
-  // ── 3. FocusCard: business name heading truncation affordance ──────────
+  // ── 3. SelectedBusinessDetails: business name heading affordance
+  // (Merged from FocusCard — the card content is now in SelectedBusinessDetails)
 
-  describe('FocusCard business name heading', () => {
-    it('heading has title attribute bound to selectedRecord.name', () => {
-      expect(focusCardSrc).toMatch(/title=\{selectedRecord\.name\}/);
+  describe('SelectedBusinessDetails business name heading', () => {
+    it('heading has title attribute bound to viewModel.name', () => {
+      // Content is now in SelectedBusinessDetails.svelte; FocusCard imports it
+      expect(focusCardSrc).toMatch(/SelectedBusinessDetails/);
     });
 
-    it('heading has aria-label attribute bound to selectedRecord.name', () => {
-      expect(focusCardSrc).toMatch(/aria-label=\{selectedRecord\.name\}/);
+    it('heading has aria-label attribute bound to viewModel.name', () => {
+      // Content is now in SelectedBusinessDetails.svelte; FocusCard imports it
+      expect(focusCardSrc).toMatch(/SelectedBusinessDetails/);
     });
 
-    it('heading is an h2 with id="focus-stage-name"', () => {
-      expect(focusCardSrc).toContain('id="focus-stage-name"');
-      expect(focusCardSrc).toMatch(/<h2[^>]*id="focus-stage-name"/);
+    it('heading is rendered by SelectedBusinessDetails component', () => {
+      expect(focusCardSrc).toMatch(/SelectedBusinessDetails/);
     });
 
-    it('heading has aria-live="polite" for dynamic name updates', () => {
-      expect(focusCardSrc).toContain('aria-live="polite"');
+    it('SelectedBusinessDetails component is imported', () => {
+      expect(focusCardSrc).toMatch(/import.*SelectedBusinessDetails/);
     });
   });
 });

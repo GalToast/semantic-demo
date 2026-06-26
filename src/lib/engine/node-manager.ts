@@ -113,10 +113,7 @@ export function disposeTextures(): void {
  * (sparse) and ~0.78 for count=200 (dense). Plus ±0.05 deterministic jitter
  * via seededUnit so adjacent clusters differ visually.
  */
-export function getClusterSizeFactor(
-    cluster: number | null | undefined,
-    clusterSizes: Map<number, number>
-): number {
+export function getClusterSizeFactor(cluster: number | null | undefined, clusterSizes: Map<number, number>): number {
     if (cluster == null) return 1
     const count = clusterSizes.get(cluster) ?? 100
     const density = 1.4 - Math.log10(count + 1) * 0.32

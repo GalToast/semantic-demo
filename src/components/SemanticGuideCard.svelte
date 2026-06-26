@@ -111,9 +111,9 @@
   }
 
   .btn-synthesize {
-    border: 1px solid rgba(78, 205, 196, 0.28);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.28);
     border-radius: 0.45rem;
-    background: rgba(78, 205, 196, 0.1);
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
     color: rgba(224, 240, 240, 0.9);
     padding: 0.45rem 0.6rem;
     min-height: 44px;
@@ -130,7 +130,7 @@
     overflow-y: auto;
     background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.18);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: 0.5rem;
     padding: 0.75rem;
   }
@@ -153,7 +153,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.75rem;
     font-weight: 600;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     margin-bottom: 0;
     text-transform: uppercase;
   }
@@ -192,9 +192,9 @@
     gap: 0.16rem;
     width: 100%;
     min-width: 0;
-    border: 1px solid rgba(78, 205, 196, 0.16);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.16);
     border-radius: 0.45rem;
-    background: rgba(78, 205, 196, 0.07);
+    background: rgba(var(--color-primary-alt-rgb), 0.07);
     color: rgba(224, 240, 240, 0.84);
     padding: 0.48rem 0.55rem;
     min-height: 44px;
@@ -202,18 +202,18 @@
     cursor: pointer;
   }
   .suggestion-btn:hover {
-    border-color: rgba(78, 205, 196, 0.34);
-    background: rgba(78, 205, 196, 0.12);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.34);
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
   }
   .btn-synthesize:focus-visible,
   .summary-close:focus-visible,
   .suggestion-btn:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: 2px;
   }
 
   .suggestion-label {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     font-size: 0.55rem;
     font-weight: 700;
     text-transform: uppercase;
@@ -243,7 +243,7 @@
   .summary-gemma-story {
     margin-top: 0.65rem;
     padding-top: 0.55rem;
-    border-top: 1px solid rgba(78, 205, 196, 0.12);
+    border-top: 1px solid rgba(var(--color-primary-alt-rgb), 0.12);
   }
 
   .summary-gemma-story.hidden {

@@ -47,9 +47,6 @@ class CameraControlsRestore {
         // _s alias removed: state is now typed as SemanticState at module level
         if (state.camera == null || state.controls == null) return false
         if (state.sceneRevealActive) return false
-        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
-        // compiler bug inverts `!==` to `===`. Use `!= null` (Pattern 3) and
-        // positive equality (Pattern 2) instead.
         if (state.focusedNode != null) return false
         if (state.selectedPoint != null) return false
         const _mode = state.navState?.mode
@@ -138,9 +135,6 @@ class CameraControlsRestore {
         this.clearAutoRotateResumeTimer()
         if (prefersReducedMotion()) return
         // _s alias removed: state is now typed as SemanticState at module level
-        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
-        // compiler bug inverts `!==` to `===`. Use positive equality (Pattern 2)
-        // and `!= null` (Pattern 3) instead.
         const _isGalaxy = state.currentView === 'galaxy'
         const _noFocus = state.focusedNode == null
         const _noSelection = state.selectedPoint == null
@@ -172,7 +166,7 @@ class CameraControlsRestore {
                 state.selectedPoint == null &&
                 state.navState.mode === 'overview' &&
                 !state.sceneRevealActive &&
-                (state.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true && // audit-ok: plain function, not transformed — bundle preserves native !==
+                (state.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true &&
                 state.trailDepth === 0
             ) {
                 this.setAutoRotateSuspended(false)

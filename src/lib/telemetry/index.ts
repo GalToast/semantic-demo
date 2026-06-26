@@ -26,13 +26,7 @@ export {
     type TelemetrySnapshot
 } from './telemetry-types'
 
-export {
-    telemetryStore,
-    getSnapshot,
-    recordTelemetry,
-    configureTelemetry,
-    clearTelemetry
-} from './telemetry-store'
+export { telemetryStore, getSnapshot, recordTelemetry, configureTelemetry, clearTelemetry } from './telemetry-store'
 
 export {
     installTelemetry,

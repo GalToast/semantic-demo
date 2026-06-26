@@ -164,7 +164,7 @@ function _createSearchStore(): SearchStoreApi {
         query: appState.currentSearchSummary?.query ?? '',
         results:
             buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
-        activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null, // audit-ok: plain function init, not transformed — bundle preserves native !==
+        activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
         summary: appState.currentSearchSummary ? { ...$state.snapshot(appState.currentSearchSummary) } : null,
         status: appState.searchStatus,
         hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
@@ -207,7 +207,7 @@ export const hasResults = () => (appState.currentSearchSummary?.resultIndices?.l
 export const isSearching = () => appState.searchStatus === 'searching'
 export const searchSummary = () => appState.currentSearchSummary
 export const activeResult = () =>
-    appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null // audit-ok: plain function getter, not transformed — bundle preserves native !==
+    appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null
 
 /** Returns the current search summary, or null. */
 export function getSearchSummary(): SearchSummary | null {
@@ -243,7 +243,7 @@ export function withSearchNotify<T>(fn: () => T): T {
         query: appState.currentSearchSummary?.query ?? '',
         results:
             buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
-        activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null, // audit-ok: plain function withSearchNotify, not transformed — bundle preserves native !==
+        activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
         summary: appState.currentSearchSummary ? { ...appState.currentSearchSummary } : null,
         status: appState.searchStatus,
         hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,

@@ -64,7 +64,7 @@
             y1={prev.y}
             x2={curr.x}
             y2={curr.y}
-            stroke="rgba(78, 205, 196, 0.3)"
+            stroke="rgba(var(--color-primary-alt-rgb), 0.3)"
             stroke-width="1.5"
             stroke-linecap="round"
           />
@@ -79,7 +79,7 @@
           cx={pos.x}
           cy={pos.y}
           r={isCurrent ? 4 : 3}
-          fill={isCurrent ? '#4ecdc4' : 'rgba(78, 205, 196, 0.5)'}
+          fill={isCurrent ? 'var(--color-primary-alt)' : 'rgba(var(--color-primary-alt-rgb), 0.5)'}
           stroke={isCurrent ? '#fff' : 'none'}
           stroke-width={isCurrent ? 1 : 0}
         />
@@ -105,7 +105,7 @@
     z-index: var(--z-legend, 50);
     background: rgba(7, 16, 24, 0.88);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(78, 205, 196, 0.12);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.12);
     border-radius: 0.5rem;
     padding: 0.5rem;
     width: 180px;
@@ -117,7 +117,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.6rem;
     font-weight: 600;
-    color: rgba(78, 205, 196, 0.6);
+    color: rgba(var(--color-primary-alt-rgb), 0.6);
     text-transform: uppercase;
     letter-spacing: 0.05em;
     margin-bottom: 0.3rem;
@@ -144,7 +144,7 @@
     line-height: 1.3;
   }
   .map-stop.current {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     font-weight: 600;
   }
 

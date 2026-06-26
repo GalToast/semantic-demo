@@ -108,8 +108,6 @@
   });
   const currentThreadSource = $derived(journeySnapshot.threadSource || navSnapshot.threadSource);
   const isLoading = $derived(false); // Extensible: set true when trail data is loading
-  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   const chromeHasFocus = $derived(
     navSnapshot.mode === 'focus' ||
     navSnapshot.mode === 'inside' ||
@@ -142,7 +140,7 @@
       }
       if (seen.has(idx)) {
         const prevPos = result.lastIndexOf(idx);
-        if (prevPos >= 0 && prevPos !== result.length - 1) { // audit-ok: plain function, not transformed
+        if (prevPos >= 0 && prevPos !== result.length - 1) {
           result.splice(prevPos, 1);
         }
       }
@@ -239,8 +237,6 @@
     const candidates = currentThreadCandidates;
     const focusIdx = currentFocusedIndex;
     return candidates
-      // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-      // inverts `!==` to `===`. Use positive equality + negation instead.
       .filter((c) => Number.isFinite(c.index) && !(c.index === focusIdx))
       .slice(0, candidateLimit);
   });

@@ -7,7 +7,9 @@ const repoRoot = path.resolve(__dirname, '..')
 const appPath = path.join(repoRoot, 'src', 'lib', 'orchestration', 'app-init.ts')
 const app = fs.readFileSync(appPath, 'utf8')
 const threeSetupPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine.ts')
-const threeSetup = fs.readFileSync(threeSetupPath, 'utf8')
+const threeEngineCorePath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine-core.ts')
+const threeEngineCoreSrc = fs.existsSync(threeEngineCorePath) ? fs.readFileSync(threeEngineCorePath, 'utf8') : ''
+const threeSetup = fs.readFileSync(threeSetupPath, 'utf8') + '\n' + threeEngineCoreSrc
 // Post-W46-P2: scene graph construction (camera pose, clear alpha, tone mapping)
 // was extracted into renderer/scene-init.ts. Visual-polish assertions check both.
 const sceneInitPath = path.join(repoRoot, 'src', 'lib', 'engine', 'renderer', 'scene-init.ts')
@@ -40,7 +42,12 @@ function includesAll(source, snippets, label) {
 }
 
 function sectionBetween(source, startAnchor, endAnchor) {
-    const start = source.indexOf(startAnchor)
+    // Accept either literal strings or regexes (delimited by /.../).
+    const isRe = startAnchor.startsWith('/') && startAnchor.endsWith('/')
+    const startRe = isRe ? new RegExp(startAnchor.slice(1, -1)) : null
+    const start = isRe
+        ? source.search(startRe)
+        : source.indexOf(startAnchor)
     const end = source.indexOf(endAnchor, Math.max(start, 0))
     assert(start >= 0 && end > start, `${startAnchor} section should exist`)
     return start >= 0 && end > start ? source.slice(start, end) : ''
@@ -87,9 +94,7 @@ includesAll(
     'mycelium presentation opacity profile'
 )
 
-const initThreeSource = sectionBetween(
-    threeSetup,
-    'export async function initThreeJS()',
+const initThreeSource = sectionBetween(threeSetup, '/export (?:async )?function initThreeJS\(|{[^}]*\\binitThreeJS\\b[^}]*}\\s+from)/',
     'export function onWindowResize()'
 )
 includesAll(

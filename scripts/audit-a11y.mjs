@@ -122,7 +122,10 @@ function auditFile(filePath) {
     // `.foo:hover` or `.foo:focus` correctly find `.foo:focus-visible`.
     // Comma-separated fallback: at least one missing fallback means flag.
     function hasFocusVisibleOutline(selector) {
-        const parts = selector.split(',').map((s) => s.trim()).filter(Boolean)
+        const parts = selector
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
         return parts.every((part) => {
             const basePart = part.replace(/:[a-z-]+(\([^)]*\))?$/i, '')
             const focusSel = `${basePart}:focus-visible`
@@ -240,17 +243,17 @@ function auditFile(filePath) {
         }
 
         // rule_6: rgba with low alpha in a TRUE FOREGROUND color slot.
-// Text foreground (`color:`) and CSS variables that look like foreground
-// (`--text-*`, `--fg-*`, `--*-foreground`, `--*-text`) are flagged.
-// Decorative slots (border-color, outline-color, shadow, background,
-// fill/stroke on pure decoration) are excluded — they are by-design
-// low-alpha for visual subtlety, and the WCAG contrast minimum only
-// applies to text that conveys information. Placeholder pseudo-elements
-// (::placeholder, ::-webkit-input-placeholder) are skipped — WCAG 1.4.3
-// allows reduced contrast for placeholders that disappear on input.
-// An `/* a11y-ok: <reason> */` comment marker on the same line opts out
-// of the finding when the design is intentionally muted (caption labels,
-// icon colors, hint chips, etc.).
+        // Text foreground (`color:`) and CSS variables that look like foreground
+        // (`--text-*`, `--fg-*`, `--*-foreground`, `--*-text`) are flagged.
+        // Decorative slots (border-color, outline-color, shadow, background,
+        // fill/stroke on pure decoration) are excluded — they are by-design
+        // low-alpha for visual subtlety, and the WCAG contrast minimum only
+        // applies to text that conveys information. Placeholder pseudo-elements
+        // (::placeholder, ::-webkit-input-placeholder) are skipped — WCAG 1.4.3
+        // allows reduced contrast for placeholders that disappear on input.
+        // An `/* a11y-ok: <reason> */` comment marker on the same line opts out
+        // of the finding when the design is intentionally muted (caption labels,
+        // icon colors, hint chips, etc.).
         const rgbaMatch = line.match(/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(0?\.\d+|\d+)\s*\)/i)
         if (rgbaMatch) {
             const alpha = parseFloat(rgbaMatch[1])
@@ -263,7 +266,8 @@ function auditFile(filePath) {
                 // selector lives on the previous line).
                 if (/(?::placeholder|::-webkit-input-placeholder|::placeholder-shown)\b/.test(line)) return
                 const selector = blockByLine.get(lineNum)
-                if (selector && /(?::placeholder|::-webkit-input-placeholder|::placeholder-shown)\b/.test(selector)) return
+                if (selector && /(?::placeholder|::-webkit-input-placeholder|::placeholder-shown)\b/.test(selector))
+                    return
                 // Extract the CSS property name (before the colon, trimmed).
                 const propMatch = line.match(/^\s*([a-zA-Z][\w-]*)\s*:/)
                 const prop = propMatch ? propMatch[1].toLowerCase() : ''

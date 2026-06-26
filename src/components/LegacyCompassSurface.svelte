@@ -102,7 +102,7 @@
     getJourneyCompassPresentationState(compass)
   );
 
-  // ── Reactive data-attr strings ────────────────────────────────────────────
+  // ── Reactive data-attr strings (from stores, not body) ──────────────────
 
   let phase = $derived(compass.phase || 'overview');
   let density = $derived(presentation.density);
@@ -110,87 +110,18 @@
   let actionsProfile = $derived(presentation.actions);
   let navigationOwner = $derived(presentation.navigationOwner);
   let navSurface = $derived(navState.surface);
-  let bodyPanelSurface = $state('');
-  let bodyFocusedNode = $state('');
-  let bodyTrailDepth = $state('');
-  let bodyAppTrailDepth = $state('');
-  let bodySemanticDive = $state('');
-  let bodyCanStepInside = $state(false);
 
-  function readBodyPanelSurface(): void {
-    if (typeof document !== 'undefined' && document.body) {
-      const stateWindow = window as Window & {
-        __APP_STATE__?: { focusedIndex?: number | null; focusedNode?: number | null; semanticDiveMode?: boolean; trailDepth?: number };
-        __TEST_STATE__?: { focusedIndex?: number | null; focusedNode?: number | null; semanticDiveMode?: boolean; trailDepth?: number };
-      };
-      bodyPanelSurface = document.body.dataset.panelSurface || '';
-      bodyFocusedNode = document.body.dataset.focusedNode || '';
-      bodyTrailDepth = document.body.dataset.trailDepth || '';
-      bodyAppTrailDepth = String(stateWindow.__APP_STATE__?.trailDepth ?? stateWindow.__TEST_STATE__?.trailDepth ?? '');
-      bodySemanticDive = document.body.dataset.semanticDive || '';
-      const publicTrailDepth = Math.max(
-        finiteDepth(document.body.dataset.trailDepth),
-        finiteDepth(stateWindow.__APP_STATE__?.trailDepth),
-        finiteDepth(stateWindow.__TEST_STATE__?.trailDepth)
-      );
-      const publicFocusedIndex = Number(
-        document.body.dataset.focusedNode
-          ?? stateWindow.__APP_STATE__?.focusedIndex
-          ?? stateWindow.__APP_STATE__?.focusedNode
-          ?? stateWindow.__TEST_STATE__?.focusedIndex
-          ?? stateWindow.__TEST_STATE__?.focusedNode
-      );
-      const publicSemanticDiveActive =
-        document.body.dataset.semanticDive === 'active'
-        || stateWindow.__APP_STATE__?.semanticDiveMode === true
-        || stateWindow.__TEST_STATE__?.semanticDiveMode === true;
-      bodyCanStepInside = publicTrailDepth >= 1
-        && Number.isFinite(publicFocusedIndex)
-        && !publicSemanticDiveActive;
-    }
-  }
-
-  onMount(() => {
-    readBodyPanelSurface();
-    const routeInsideMapHit = (event: MouseEvent) => {
-      const target = event.target as Element | null;
-      if (target?.closest?.('#btn-inside-map')) return;
-      const publicSemanticDiveActive =
-        semanticDiveActive ||
-        document.body.dataset.semanticDive === 'active' ||
-        document.body.dataset.panelSurface === 'semantic-dive';
-      const publicGalaxyView =
-        navState.currentView === 'galaxy' ||
-        document.body.dataset.activeView === 'galaxy';
-      if (!publicSemanticDiveActive || !publicGalaxyView) return;
-      const button = document.getElementById('btn-inside-map') as HTMLButtonElement | null;
-      if (!button || button.hidden || button.disabled || button.getAttribute('aria-hidden') === 'true') return;
-      const rect = button.getBoundingClientRect();
-      const inside =
-        event.clientX >= rect.left &&
-        event.clientX <= rect.right &&
-        event.clientY >= rect.top &&
-        event.clientY <= rect.bottom;
-      if (!inside) return;
-      event.preventDefault();
-      event.stopPropagation();
-      handleInsideMap();
-    };
-    document.addEventListener('click', routeInsideMapHit, true);
-    const observer = new MutationObserver(readBodyPanelSurface);
-    observer.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-panel-surface', 'data-focused-node', 'data-trail-depth', 'data-semantic-dive']
-    });
-    const poll = window.setInterval(() => {
-      readBodyPanelSurface();
-    }, 250);
-    return () => {
-      document.removeEventListener('click', routeInsideMapHit, true);
-      window.clearInterval(poll);
-      observer.disconnect();
-    };
-  });
+  // Body attribute mirrors — now derived directly from stores
+  let bodyPanelSurface = $derived(navState.surface);
+  let bodyFocusedNode = $derived(navState.focusedIndex != null ? String(navState.focusedIndex) : '');
+  let bodyTrailDepth = $derived(String(journeyState.depth ?? ''));
+  let bodyAppTrailDepth = $derived(String(navState.trailDepth ?? ''));
+  let bodySemanticDive = $derived(focusState.semanticDiveMode ? 'active' : '');
+  let bodyCanStepInside = $derived(
+    (journeyState.depth >= 1 || navState.trailDepth >= 1)
+      && navState.focusedIndex != null
+      && !focusState.semanticDiveMode
+  );
 
   // Step indicators: 5 milestones mapped to data-journey-step elements
   const STEP_DESCRIPTIONS: Record<string, string> = {
@@ -246,8 +177,6 @@
     bodyPanelSurface === 'semantic-dive' ||
     (navState.currentView === 'galaxy' && activeTrailDepth >= 2)
   );
-  // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-  // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex != null || Number.isFinite(bodyFocusedIndex));
   let canDive = $derived(
     navState.currentView === 'galaxy'
@@ -363,8 +292,6 @@
 
   // Hide compass when search results are active to avoid overlap.
   let hideCompassForSearch = $derived(
-    // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
-    // inverts `!==` to `===`. Use positive equality + negation instead.
     searchSurface && !(navState.currentView === 'map')
   );
   let visibleTitle = $derived(
@@ -385,6 +312,7 @@
 <section
   id="journey-compass"
   class="journey-compass glass-heavy"
+  class:focus-search-active={bodyPanelSurface === 'focus-search'}
   class:hidden-by-nodemo={hideCompassForNoDemo}
   class:hidden-by-search={hideCompassForSearch}
   data-phase={phase}

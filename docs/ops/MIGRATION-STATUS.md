@@ -66,14 +66,14 @@ Single-page tracker for the Svelte 5 + TypeScript migration. Updated after each 
 
 ## Architecture Decision Records
 
-| Decision                          | Status       | Doc                                           |
-| --------------------------------- | ------------ | --------------------------------------------- |
-| Bridge files as canonical seam    | ✅ Retired   | `docs/archive/w8-charter-2026-06-20.md`       |
-| Body data-attr as JS↔CSS contract | ✅ Active    | `AGENTS.md`                                   |
-| 8,406-point mycelium invariant    | ✅ Preserved | `state.rawPositionsBuffer` in `app.svelte.ts` |
-| Nav-mirror CI guard               | ✅ Active    | `npm run lint:nav-mirror`                     |
-| Svelte 5 `!==` strict-mode lint   | ✅ Active    | `npm run lint:svelte5-strict-mode`            |
-| W8 charter drafted                | ✅ Done      | `docs/archive/w8-charter-2026-06-20.md`       |
+| Decision                          | Status       | Doc                                                                                     |
+| --------------------------------- | ------------ | --------------------------------------------------------------------------------------- |
+| Bridge files as canonical seam    | ✅ Retired   | `docs/archive/w8-charter-2026-06-20.md`                                                 |
+| Body data-attr as JS↔CSS contract | ✅ Active    | `AGENTS.md`                                                                             |
+| 8,406-point mycelium invariant    | ✅ Preserved | `state.rawPositionsBuffer` in `app.svelte.ts`                                           |
+| Nav-mirror CI guard               | ✅ Active    | `npm run lint:nav-mirror`                                                               |
+| Svelte 5 `!==` strict-mode lint   | ☠ Retired    | Bug disproven in 5.56.2 (compile probe); guard + cargo-cult comments removed 2026-06-26 |
+| W8 charter drafted                | ✅ Done      | `docs/archive/w8-charter-2026-06-20.md`                                                 |
 
 ## Known Blockers
 

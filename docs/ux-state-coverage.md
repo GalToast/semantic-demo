@@ -11,37 +11,37 @@ ensures these states don't silently regress.
 
 Each user-facing async data component should provide **four states**:
 
-| State | Trigger | Visual | A11y |
-|-------|---------|--------|------|
-| **Idle** | No query yet, no data | (none — component hidden) | N/A |
-| **Loading** | Async data in flight | Spinner + brief text | `aria-live="polite"` |
-| **Empty** | Query done, no results | Icon + headline + suggested next step | `aria-live="polite"` |
-| **Error** | Async failed | Icon + headline + retry/dismiss actions | `role="alert"` or `aria-live="assertive"` |
-| **Populated** | Has data | Normal content | (normal markup) |
+| State         | Trigger                | Visual                                  | A11y                                      |
+| ------------- | ---------------------- | --------------------------------------- | ----------------------------------------- |
+| **Idle**      | No query yet, no data  | (none — component hidden)               | N/A                                       |
+| **Loading**   | Async data in flight   | Spinner + brief text                    | `aria-live="polite"`                      |
+| **Empty**     | Query done, no results | Icon + headline + suggested next step   | `aria-live="polite"`                      |
+| **Error**     | Async failed           | Icon + headline + retry/dismiss actions | `role="alert"` or `aria-live="assertive"` |
+| **Populated** | Has data               | Normal content                          | (normal markup)                           |
 
 ## Component Inventory
 
 ### Tier 1 — Full state coverage (loading + error + empty + populated)
 
-| Component | Loading | Error | Empty | Populated |
-|-----------|---------|-------|-------|-----------|
-| `Canvas` | ✓ `canvas-loading-overlay` (aria-live polite) | ✓ `canvas-error-overlay` (role=alert, aria-live assertive) | (n/a — no data) | ✓ |
-| `InfoPanel` | ✓ `.info-panel-loading` (role=status) | ✓ `.info-panel-error` (role=alert) | ✓ `#selected-empty` | ✓ |
-| `SearchInput` | ✓ "Searching..." via `.search-status` | ✓ "Search is unavailable" | ✓ "No matching businesses found" | ✓ |
-| `SearchResults` | ✓ `.search-loading` + spinner | ✓ `.search-error-state` + retry/dismiss | ✓ `.search-empty-state` + suggestions | ✓ |
-| `MapView` | ✓ `status='loading'` via `.map-status` | ✓ `status='error'` via `.map-status.is-error` | (n/a — map shows tiles or doesn't) | ✓ |
-| `FocusPocket` | ✓ `.focus-pocket-loading` (role=status, aria-label) | (parent handles) | (parent handles) | ✓ |
-| `JourneyChrome` | ✓ `aria-busy` + isLoading derived | (parent handles) | ✓ "No neighboring stops found" | ✓ |
+| Component       | Loading                                             | Error                                                      | Empty                                 | Populated |
+| --------------- | --------------------------------------------------- | ---------------------------------------------------------- | ------------------------------------- | --------- |
+| `Canvas`        | ✓ `canvas-loading-overlay` (aria-live polite)       | ✓ `canvas-error-overlay` (role=alert, aria-live assertive) | (n/a — no data)                       | ✓         |
+| `InfoPanel`     | ✓ `.info-panel-loading` (role=status)               | ✓ `.info-panel-error` (role=alert)                         | ✓ `#selected-empty`                   | ✓         |
+| `SearchInput`   | ✓ "Searching..." via `.search-status`               | ✓ "Search is unavailable"                                  | ✓ "No matching businesses found"      | ✓         |
+| `SearchResults` | ✓ `.search-loading` + spinner                       | ✓ `.search-error-state` + retry/dismiss                    | ✓ `.search-empty-state` + suggestions | ✓         |
+| `MapView`       | ✓ `status='loading'` via `.map-status`              | ✓ `status='error'` via `.map-status.is-error`              | (n/a — map shows tiles or doesn't)    | ✓         |
+| `FocusPocket`   | ✓ `.focus-pocket-loading` (role=status, aria-label) | (parent handles)                                           | (parent handles)                      | ✓         |
+| `JourneyChrome` | ✓ `aria-busy` + isLoading derived                   | (parent handles)                                           | ✓ "No neighboring stops found"        | ✓         |
 
 ### Tier 2 — Partial coverage (loading or empty, not both)
 
-| Component | Loading | Error | Empty | Notes |
-|-----------|---------|-------|-------|-------|
-| `MapSummary` | (n/a) | (n/a) | (hidden when no stops) | Conditional render — empty = not shown |
-| `SearchTrailCue` | (n/a) | (n/a) | (n/a) | Static informational overlay, hidden by default |
-| `WalkBreadcrumb` | (n/a) | (n/a) | (hidden when no trail) | Conditional render |
-| `NeighborRail` | (parent) | (parent) | (n/a) | Renders candidate count, always populated when shown |
-| `LoadingOverlay` | ✓ (its purpose) | (parent) | (parent) | App-level overlay with phase progression |
+| Component        | Loading         | Error    | Empty                  | Notes                                                |
+| ---------------- | --------------- | -------- | ---------------------- | ---------------------------------------------------- |
+| `MapSummary`     | (n/a)           | (n/a)    | (hidden when no stops) | Conditional render — empty = not shown               |
+| `SearchTrailCue` | (n/a)           | (n/a)    | (n/a)                  | Static informational overlay, hidden by default      |
+| `WalkBreadcrumb` | (n/a)           | (n/a)    | (hidden when no trail) | Conditional render                                   |
+| `NeighborRail`   | (parent)        | (parent) | (n/a)                  | Renders candidate count, always populated when shown |
+| `LoadingOverlay` | ✓ (its purpose) | (parent) | (parent)               | App-level overlay with phase progression             |
 
 ### Tier 3 — Static / no async data
 
@@ -106,13 +106,13 @@ These components don't load data; they're presentation-only:
 
 ## What's NOT here (acknowledged gaps)
 
-| Gap | Reason | Future work |
-|-----|--------|-------------|
-| Global error boundary | Svelte 5 doesn't have built-in error boundaries; would need wrapper pattern | Phase 9a |
-| Telemetry / analytics | No instrumentation to measure which states users actually see | Phase 9b |
-| Performance monitoring | Budgets exist but not measured in CI | Phase 10a |
-| Cancel UX on long-running search | No abort button on `SearchInput` | Phase 9c |
-| Loading skeletons (vs spinners) | Current pattern uses spinners, not skeleton screens | (style decision) |
+| Gap                              | Reason                                                                      | Future work      |
+| -------------------------------- | --------------------------------------------------------------------------- | ---------------- |
+| Global error boundary            | Svelte 5 doesn't have built-in error boundaries; would need wrapper pattern | Phase 9a         |
+| Telemetry / analytics            | No instrumentation to measure which states users actually see               | Phase 9b         |
+| Performance monitoring           | Budgets exist but not measured in CI                                        | Phase 10a        |
+| Cancel UX on long-running search | No abort button on `SearchInput`                                            | Phase 9c         |
+| Loading skeletons (vs spinners)  | Current pattern uses spinners, not skeleton screens                         | (style decision) |
 
 ## Test Coverage
 

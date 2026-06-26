@@ -77,14 +77,14 @@ https://mccullough.cloud/semantic-demo/vector-explorer-polished.html
 
 ## Documentation
 
-- `docs/w38-charter-2026-06-17.md` — current charter
-- `docs/w40-bundle-audit-2026-06-18.md` — bundle analysis
+- `docs/archive/w38-charter-2026-06-17.md` — current charter
+- `docs/archive/w40-bundle-audit-2026-06-18.md` — bundle analysis
 - `docs/performance-budget.md` — performance ceilings
 - `docs/semantic-demo-design-tokens.md` — design token reference
 - `docs/semantic-demo-state-transition-table.md` — state machine truth table
 - `docs/semantic-demo-surface-style-matrix.md` — surface ↔ style mapping
-- `docs/bug-thread-inspector-baseline-and-activation-2026-06-18.md` — active bug
-- `docs/a11y-baseline-2026-06-18.md` — accessibility baseline
+- `docs/archive/bug-thread-inspector-baseline-and-activation-2026-06-18.md` — bug archive
+- `docs/archive/a11y-baseline-2026-06-18.md` — accessibility baseline
 - `docs/window-global-allowlist.md` — window/global policy
 - `docs/archive/` — historical migration docs, charters, and audit reports
 - `AGENTS.md` — local agent guidance

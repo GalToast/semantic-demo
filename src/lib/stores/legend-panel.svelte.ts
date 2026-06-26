@@ -236,7 +236,6 @@ export function closeLegendGuide(options: CloseLegendGuideOptions = {}): void {
     closeLegendPanel()
 
     if (options.restoreFocusPanel !== false) {
-        // audit-ok: plain function, not transformed
         const infoPanel = document.querySelector('.info-panel') as HTMLElement | null
         const panelBtn = document.getElementById('btn-panel')
         restoreLegendCollapsedPanel(infoPanel, panelBtn)

@@ -209,7 +209,6 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
         appState.focusTransitionStartedAt = next.transitionStartedAt
         // Reverse-map semanticDiveMode → navState.trailDepth
         if (next.semanticDiveMode !== current.semanticDiveMode) {
-            // audit-ok: plain function withFocusNotify, not transformed — bundle preserves native !==
             if (next.semanticDiveMode) appState.navState.trailDepth = 2
             else if (appState.navState.trailDepth === 2) appState.navState.trailDepth = 1
         }

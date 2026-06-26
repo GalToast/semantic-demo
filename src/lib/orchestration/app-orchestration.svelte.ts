@@ -189,7 +189,6 @@ export function setupBodySync(): BodySyncState {
                 nextPanelSurface !== 'inside' &&
                 nextPanelSurface !== 'trail'
             ) {
-                // audit-ok: plain Ln() callback, not transformed
                 delete document.body.dataset.focusSearchForced
             }
         }
@@ -337,7 +336,6 @@ export function setupKeyboardShortcuts(opts: { getNavMirror: () => NavMirror; we
             }
             const mirror = opts.getNavMirror()
             if (mirror.mode !== 'overview' || mirror.surface !== 'idle') {
-                // audit-ok: plain Ln() callback, not transformed
                 dispatchNavTransitionAction(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)
                 updateUrlState({}, { reason: 'return-overview' })
             }
@@ -378,8 +376,8 @@ export function createVisibility(navMirror: NavMirror, bodySync: BodySyncState):
         mapModeActive &&
             bodySync.journeyNavigationOwner === 'map-trail-strip' &&
             bodySync.panelSurface.startsWith('map-') &&
-            bodySync.panelSurface !== 'map-idle' && // audit-ok: literal state check
-            bodySync.panelSurface !== 'map' // audit-ok: literal state check
+            bodySync.panelSurface !== 'map-idle' &&
+            bodySync.panelSurface !== 'map'
     )
     const idleSurfaceActive = $derived(navMirror.surface === 'idle' && !searchSurfaceActive)
     const idleSearchVisible = $derived(idleSurfaceActive)

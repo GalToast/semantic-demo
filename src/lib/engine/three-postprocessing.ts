@@ -246,6 +246,16 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
         debugError('[postprocessing] init failed, falling back to vanilla renderer:', err)
         disposePostProcessing()
     }
+
+    // W48-T1A follow-up: premium visual effects (bloom + vignette + CA + dither)
+    // are now the default on desktop. They were previously opt-in via a flag
+    // that was never surfaced in the UI, leaving the mycelium visually flat.
+    // Bloom gives the bioluminescent特殊津贴 nodes their glow; vignette adds
+    // depth-of-field framing.  Performance is conservative (intensity 0.5) and
+    // the reduced-motion media query still disables animation-based passes.
+    if (typeof window !== 'undefined' && !window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+        setPremiumMode(true)
+    }
 }
 
 /**

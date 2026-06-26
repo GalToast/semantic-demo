@@ -42,7 +42,7 @@ export const filterColorVersion = writable(appState.filterColorVersion)
 
 /** Active cluster filter (null = show all clusters). */
 const _activeClusterFilterWritable = writable<string | null>(
-    appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null // audit-ok: module-level init, evaluated once, not transformed — bundle preserves native !==
+    appState.activeClusterFilter !== null ? String(appState.activeClusterFilter) : null
 )
 
 /** Active cluster filter exposed as a Readable + set action. */
@@ -97,8 +97,6 @@ export const hasActiveFilters: Readable<boolean> = derived(
     filterState,
     ($filterState) =>
         // Note: we use positive form (`=== 'all'` etc.) + negation instead of
-        // `!== 'all'` to avoid the Svelte 5 strict-mode bug where `!==`
-        // is incorrectly compiled to `===` (see docs/svelte-5-strict-mode-cookbook.md).
         !($filterState.status === 'all') ||
         !($filterState.city === '') ||
         $filterState.website ||
@@ -109,7 +107,6 @@ export const hasActiveFilters: Readable<boolean> = derived(
 /** Number of individually active filters. */
 export const activeFilterCount: Readable<number> = derived(filterState, ($filterState) => {
     // Note: using `!==` inside `derived` is affected by the Svelte 5
-    // strict-mode bug where `!==` compiles to `===`. We use positive
     // form + negation as the workaround (see cookbook Pattern 2).
     let count = 0
     const isAll = $filterState.status === 'all'
@@ -210,7 +207,7 @@ export function overwriteActiveFilters(filters: ActiveFilters): void {
 
     if (typeof document !== 'undefined' && document.body) {
         const f = filters
-        const active = f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded // audit-ok: plain function, not transformed
+        const active = f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded
         document.body.dataset.filtersActive = String(active)
     }
 }
@@ -288,8 +285,8 @@ export function pointMatchesActiveFilters(
     if (!point) return false
     const f = filters ?? getFilterState()
 
-    if (f.status !== 'all' && point.status !== f.status) return false // audit-ok: plain function pointMatchesActiveFilters, not transformed
-    if (f.city !== '' && normalizeCityForFilter(point.city) !== normalizeCityForFilter(f.city)) return false // audit-ok: plain function, not transformed
+    if (f.status !== 'all' && point.status !== f.status) return false
+    if (f.city !== '' && normalizeCityForFilter(point.city) !== normalizeCityForFilter(f.city)) return false
     if (f.website && !point.website) return false
     if (f.email && !point.email) return false
     if (f.geocoded && !point.geocoded) return false
@@ -353,11 +350,11 @@ export function restoreActiveFiltersFromUrl(params: URLSearchParams): void {
     if (city !== null) setActiveFilter('city', city === 'all' ? '' : city)
     if (website !== null) setActiveFilter('website', website === '1' || website === 'true')
     if (email !== null) setActiveFilter('email', email === '1' || email === 'true')
-    if (geocoded !== null) setActiveFilter('geocoded', geocoded === '1' || geocoded === 'true') // audit-ok: plain function, not transformed
+    if (geocoded !== null) setActiveFilter('geocoded', geocoded === '1' || geocoded === 'true')
 
     const cityFilter =
         typeof document !== 'undefined' ? (document.getElementById('city-filter') as HTMLSelectElement | null) : null
-    if (cityFilter && city !== null) cityFilter.value = city // audit-ok: plain function, not transformed
+    if (cityFilter && city !== null) cityFilter.value = city
 }
 
 /** Restore cluster filter from URL params using the canonical filter store owner. */

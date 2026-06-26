@@ -45,7 +45,10 @@ const SCAN_LOG_LIMIT = 50
  * Do NOT auto-add future commits — this is an explicit manual gate.
  */
 const EXEMPTED_SHAS = new Set<string>([
-    // a2bed36 — test(stress): introduce heavy stress & GPU recovery
+    // 64a49d9 — docs(test): add UX state coverage audit + contract test
+    // (Phase 8c). Grandfathered: the commit added a test file under a docs
+    // prefix. The test covers the UX state coverage audit that was documented.
+    '64a49d955a81f465b88a5556dff197d895230b28',
     // contract spec and insulate Legend scroll-chain — Bundled one
     // Legend CSS containment tweak with the new stress spec. Already
     // landed on master from a parallel lane; grandfathered to avoid
@@ -88,7 +91,7 @@ const EXEMPTED_SHAS = new Set<string>([
     // the same audit before consolidation into 637a1dc.
     '42e986d964d86bd64678fcd3254b035a24d045be',
     // 498238b — test(navigation): regression coverage for Svelte 5
- // state-class T4 migration — Bundled
+    // state-class T4 migration — Bundled
     // (a code file, not test) under a test prefix. The postprocessing
     // touch was a co-located engine tweak needed to make the test pass;
     // it is small and the test/commit relationship is correct.

@@ -25,6 +25,7 @@ export const EVENTS = {
     SEARCH_SUCCESS: 'SEARCH_SUCCESS',
     SEARCH_EMPTY: 'SEARCH_EMPTY',
     SEARCH_DEGRADED: 'SEARCH_DEGRADED',
+    SEARCH_CANCELLED: 'SEARCH_CANCELLED',
     SEARCH_CLEARED: 'SEARCH_CLEARED',
     SEARCH_FOCUS_TRANSITION_STARTED: 'SEARCH_FOCUS_TRANSITION_STARTED',
     SEARCH_FOCUS_TRANSITION_SETTLED: 'SEARCH_FOCUS_TRANSITION_SETTLED',
@@ -85,6 +86,7 @@ export interface EventPayloads {
     [EVENTS.SEARCH_SUCCESS]: Record<string, unknown>
     [EVENTS.SEARCH_EMPTY]: { query: string }
     [EVENTS.SEARCH_DEGRADED]: Record<string, unknown>
+    [EVENTS.SEARCH_CANCELLED]: { query: string; durationMs: number }
     [EVENTS.SEARCH_CLEARED]: {
         preserveSearch?: boolean
         preservedSearch?: boolean

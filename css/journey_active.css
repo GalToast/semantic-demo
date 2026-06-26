@@ -446,7 +446,7 @@ body[data-panel-surface='focus'] .journey-compass-note {
 
     body[data-panel-surface='focus-search'] #synthesize-trigger .btn-synthesize {
         justify-content: flex-start;
-        min-height: 36px;
+        min-height: 44px;
         padding: 7px 9px;
         border-radius: 12px;
         font-size: 11px;
@@ -565,4 +565,3 @@ body[data-panel-surface='focus-search'] .focus-stage-journey-meta {
     gap: 7px;
     margin-top: 10px;
 }
-

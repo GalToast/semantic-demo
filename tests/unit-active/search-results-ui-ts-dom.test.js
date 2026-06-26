@@ -46,7 +46,11 @@ describe('search-results-ui.ts legacy DOM rendering', () => {
         sessionStorage.clear();
     });
 
-    it('renders deduped legacy rows and expands via the show-more control', () => {
+    it('legacy DOM render retired — SearchResults.svelte owns declarative rendering', () => {
+        // Legacy imperative DOM render was retired (see results-ui.ts:531-539).
+        // SearchResults.svelte + SearchResultItem.svelte now own #search-results
+        // declaratively via searchState.results. The legacy function still publishes
+        // events and updates state, but does not write to the DOM.
         const resultsEl = document.getElementById('search-results');
         const statusEl = document.getElementById('search-status');
         const results = [
@@ -59,25 +63,13 @@ describe('search-results-ui.ts legacy DOM rendering', () => {
 
         renderSearchResultItems(resultsEl, results, renderContext(), statusEl);
 
-        expect(resultsEl.dataset.legacyResultsSource).toBe('legacy');
-        expect(resultsEl.dataset.legacyResultsCount).toBe('11');
-        expect(resultsEl.dataset.legacyResultsAnchor).toBe('2');
-        expect(resultsEl.querySelector('#search-result-1')).toBeNull();
-        expect(resultsEl.querySelector('#search-result-2')).not.toBeNull();
-        expect(resultsEl.querySelectorAll('.search-result-item')).toHaveLength(10);
-        expect(resultsEl.querySelector('#search-results-count')?.textContent).toBe('10 of 11\u00B71 behind');
-
-        const showMore = resultsEl.querySelector('[data-legacy-show-more="1"]');
-        expect(showMore).not.toBeNull();
-        showMore.click();
-
-        expect(sessionStorage.getItem('searchVisibleCount')).toBe('11');
-        expect(resultsEl.querySelectorAll('.search-result-item')).toHaveLength(11);
-        expect(resultsEl.querySelector('#search-results-count')?.textContent).toBe('All 11 matches');
-        expect(resultsEl.getAttribute('aria-hidden')).toBe('false');
+        // Legacy DOM attributes are no longer set — Svelte owns the DOM
+        expect(resultsEl.dataset.legacyResultsSource).toBeUndefined();
+        // But the function still updates appState
+        expect(resultsEl.classList.contains('active')).toBe(true);
     });
 
-    it('clears stale legacy rows when the search result state becomes empty', () => {
+    it('legacy clear retired — Svelte declarative rows replace imperative DOM', () => {
         const resultsEl = document.getElementById('search-results');
         const statusEl = document.getElementById('search-status');
 
@@ -87,12 +79,12 @@ describe('search-results-ui.ts legacy DOM rendering', () => {
             renderContext(),
             statusEl
         );
-        expect(resultsEl.querySelector('.search-result-item')).not.toBeNull();
+        // Legacy DOM items are no longer rendered — Svelte owns the DOM
+        expect(resultsEl.querySelector('.search-result-item')).toBeNull();
 
         applyEmptySemanticSearchState(resultsEl, statusEl, 'zzzz');
 
-        expect(resultsEl.querySelector('.search-result-item')).toBeNull();
-        expect(resultsEl.querySelector('[data-legacy-search-results="1"]')).toBeNull();
+        // Legacy clear still sets dataset and status text
         expect(resultsEl.dataset.legacyResultsSource).toBe('');
         expect(resultsEl.getAttribute('aria-hidden')).toBe('true');
         expect(statusEl.textContent).toBe('No matches found for "zzzz".');

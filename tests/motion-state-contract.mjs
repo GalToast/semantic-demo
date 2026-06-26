@@ -14,7 +14,7 @@ const source = {
     search: readFileSync(resolveSource('src/lib/search/state.ts', root), 'utf8'),
     searchAdapter: readFileSync(resolveSource('src/lib/search/search-panel-adapter.ts', root), 'utf8'),
     sceneReveal: readFileSync(resolveSource('src/lib/engine/scene-reveal.ts', root), 'utf8'),
-    threeSetup: readFileSync(resolveSource('src/lib/engine/three-engine.ts', root), 'utf8'),
+    threeSetup: readFileSync(resolveSource('src/lib/engine/three-engine-core.ts', root), 'utf8'),
     journey: readFileSync(resolveSource('src/lib/journey/journey.ts', root), 'utf8'),
     journeyWebgl: readFileSync(resolveSource('src/lib/journey/route-trace.ts', root), 'utf8'),
     lifecycle: readFileSync(resolveSource('src/lib/stores/lifecycle.ts', root), 'utf8'),
@@ -69,9 +69,10 @@ const checks = [
     {
         name: 'focus plus search intent owns focus-search panel surface',
         pass:
-            /if\s*\(\s*hasFocus\s*&&\s*hasSearchIntent\s*\)\s*return\s+['"]focus-search['"]/.test(
+            /if\s*\(\s*hasFocus\s*&&\s*hasSearchIntent\s*\)\s*return\s+['"]focus-search['"]/.test(source.lifecycle) &&
+            /if\s*\(\s*graphContext\s*===\s*['"]focus-search['"]\s*\)\s*return\s+['"]focus-search['"]/.test(
                 source.lifecycle
-            ) && /if\s*\(\s*graphContext\s*===\s*['"]focus-search['"]\s*\)\s*return\s+['"]focus-search['"]/.test(source.lifecycle)
+            )
     }
 ]
 

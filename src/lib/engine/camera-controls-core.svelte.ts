@@ -56,8 +56,6 @@ class CameraControlsCore {
     focusCameraOffset = $state<{ x: number; y: number; z: number } | null>(null)
 
     // ── Derived helpers ───────────────────────────────────────────────────
-    // Note: avoid `!==` on $state properties — Svelte 5 strict-mode compiler
-    // bug inverts `!==` to `===`. Use positive equality + negation instead.
     isTransitioning = $derived(!(this.focusTransitionMode === 'idle'))
     isCameraAssistActive = $derived(this.focusCameraAssistActive && this.focusCameraAssistUntil > performance.now())
 
@@ -89,8 +87,6 @@ class CameraControlsCore {
         const duration = Math.max(0, Number.isFinite(options.duration) ? options.duration! : 720)
         if (canonicalMode === 'idle') return
         this.focusTransitionSettleTimer = window.setTimeout(() => {
-            // Note: avoid `!==` on $state properties — Svelte 5 strict-mode compiler
-            // bug inverts `!==` to `===`. Use positive equality + negation instead.
             if (this.focusTransitionMode === canonicalMode) {
                 /* still current */
             } else return
@@ -191,8 +187,6 @@ class CameraControlsCore {
 
     markRouteExploration(reason: string = 'user-control'): boolean {
         if (!isSearchRouteFocusActive()) return false
-        // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
-        // compiler bug inverts `!==` to `===`. Use positive equality + negation.
         const _phaseIsFree = state.routeExplorationState.phase === 'free'
         const _reasonMatches = state.routeExplorationState.reason === reason
         if (!_phaseIsFree || !_reasonMatches) {

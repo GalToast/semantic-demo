@@ -134,7 +134,7 @@ export const isDemoRunning = () => isDemoActive()
 export const demoNodeIndex = () => null
 export const isDemoActive = () => {
     const phase = appState.demoPhase
-    return phase !== 'IDLE' && phase !== 'COMPLETE' && phase !== 'CANCELLED' // audit-ok: plain function, not transformed — bundle preserves native !==
+    return phase !== 'IDLE' && phase !== 'COMPLETE' && phase !== 'CANCELLED'
 }
 
 // ── Helper Actions ───────────────────────────────────────────────────────────
@@ -174,7 +174,7 @@ export function transitionDemo(nextPhase: DemoPhase): void {
 }
 
 export function setDemoTimer(id: ReturnType<typeof setTimeout>): void {
-    if (id !== null && id !== undefined) timers.set(id, Date.now()) // audit-ok: plain function, not transformed — bundle preserves native !==
+    if (id !== null && id !== undefined) timers.set(id, Date.now())
 }
 
 export function trackDemoTimer(id: ReturnType<typeof setTimeout>): ReturnType<typeof setTimeout> {
@@ -193,7 +193,6 @@ export function scheduleDemoTimer(callback: () => void, delay: number): ReturnTy
 
 export function clearDemoTimer(id: ReturnType<typeof setTimeout>): void {
     if (id !== null && id !== undefined) {
-        // audit-ok: plain function, not transformed — bundle preserves native !==
         clearTimeout(id)
         timers.delete(id)
     }
@@ -252,7 +251,7 @@ export function hasDemoBeenSeen(): boolean {
     try {
         const parsed = JSON.parse(raw) as { seen?: boolean } | number | string | boolean
         if (parsed === true || parsed === 1) return true
-        if (typeof parsed === 'object' && parsed !== null) return parsed.seen === true // audit-ok: plain JSON object null check
+        if (typeof parsed === 'object' && parsed !== null) return parsed.seen === true
         return raw === '1' || raw === 'true'
     } catch {
         return raw === '1' || raw === 'true'

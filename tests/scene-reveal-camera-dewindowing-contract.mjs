@@ -123,7 +123,7 @@ checks.push({
 
 checks.push({
     name: 'three-setup:exports updateCameraViewportOffset',
-    pass: threeSetupSrc.includes('export function updateCameraViewportOffset')
+    pass: /export\s+(?:function\s+updateCameraViewportOffset\s*\(|{\s*[^}]*\bupdateCameraViewportOffset\b[^}]*}\s+from)/.test(threeSetupSrc)
 })
 
 checks.push({

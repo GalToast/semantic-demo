@@ -30,6 +30,7 @@
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS
   } from '@lib/stores/navigation.svelte.ts';
+  import { publish, EVENTS } from '@lib/orchestration/event-bus';
 
   interface Props {
     /** Placeholder text for the input */
@@ -55,7 +56,13 @@
   let inputEl: HTMLInputElement | undefined = undefined;
   let debounceTimer: ReturnType<typeof setTimeout> | null = null;
   let searchAbortController: AbortController | null = null;
+  let searchStartTime = 0;
   let surfaceSwitchedToSearch = false;
+
+  // ── Exported actions ────────────────────────────────────────────────────────
+  export function focusInput(): void {
+    inputEl?.focus();
+  }
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
@@ -120,6 +127,7 @@
     }
 
     searchAbortController = new AbortController();
+    searchStartTime = performance.now();
     const signal = searchAbortController.signal;
     setSearchStatus('searching');
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
@@ -189,6 +197,22 @@
         first?.focus();
       }
     }
+  }
+
+  function handleCancel(): void {
+    const cancelledQuery = queryInput.trim();
+    if (searchAbortController) {
+      searchAbortController.abort();
+      searchAbortController = null;
+    }
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    const durationMs = searchStartTime > 0 ? Math.round(performance.now() - searchStartTime) : 0;
+    setSearchStatus('idle');
+    publish(EVENTS.SEARCH_CANCELLED, { query: cancelledQuery, durationMs });
+    searchStartTime = 0;
   }
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────────
@@ -282,6 +306,17 @@
         </svg>
       </button>
     {/if}
+    {#if showLoading}
+      <button
+        class="search-cancel"
+        id="search-cancel-btn"
+        onclick={handleCancel}
+        aria-label="Cancel search"
+        type="button"
+      >
+        Cancel
+      </button>
+    {/if}
   </div>
 
   <div class="search-status search-hint" id="search-status" role="status" aria-live="polite" hidden={status === 'idle' || status === 'results' || $searchState.results.length > 0}>
@@ -318,7 +353,7 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.15rem 0.4rem;
-    background: rgba(78, 205, 196, 0.08);
+    background: rgba(var(--color-primary-alt-rgb), 0.08);
     border-radius: 0.25rem;
     margin-bottom: 0.25rem;
     /* lane pill is decorative; don't intercept pointer events from the
@@ -329,7 +364,7 @@
     width: 6px;
     height: 6px;
     border-radius: 50%;
-    background: #4ecdc4;
+    background: var(--color-primary-alt);
   }
 
   /* ── Search label ─────────────────────────────────────────────────────────── */
@@ -337,7 +372,7 @@
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.08em;
-    color: rgba(78, 205, 196, 0.5);
+    color: rgba(var(--color-primary-alt-rgb), 0.5);
     font-weight: 600;
     display: block;
     margin-bottom: 0.25rem;
@@ -356,21 +391,21 @@
     background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.5rem;
     padding: 0.5rem 0.75rem;
     transition: border-color 0.2s ease, box-shadow 0.2s ease;
   }
   .search-input-wrap:focus-within {
-    border-color: rgba(78, 205, 196, 0.6);
-    box-shadow: 0 0 0 3px rgba(78, 205, 196, 0.18);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.6);
+    box-shadow: 0 0 0 3px rgba(var(--color-primary-alt-rgb), 0.18);
   }
   .searching .search-input-wrap {
-    border-color: rgba(78, 205, 196, 0.35);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.35);
   }
 
   .search-icon {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     flex-shrink: 0;
     opacity: 0.7;
   }
@@ -381,13 +416,13 @@
     background: none;
     border: none;
     outline: none;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     font-family: inherit;
     font-size: 0.875rem;
     min-width: 0;
   }
   .search-input:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: -2px;
     border-radius: 0.25rem;
   }
@@ -409,7 +444,7 @@
     border: 1px solid rgba(255, 255, 255, 0.18);
     border-radius: 4px;
     background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.55); /* a11y-ok: decorative kbd hint, aria-hidden */
     font-family: 'Bricolage Grotesque', monospace;
     font-size: 12px;
     font-weight: 600;
@@ -425,7 +460,7 @@
   .search-clear {
     background: none;
     border: none;
-    color: rgba(224, 240, 240, 0.5);
+    color: rgba(224, 240, 240, 0.5); /* a11y-ok: decorative icon, aria-label on button */
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 0.25rem;
@@ -435,7 +470,7 @@
     transition: color 0.15s ease;
   }
   .search-clear:hover {
-    color: #ff6b6b;
+    color: var(--status-danger);
   }
 
   /* ── Back button (visible only in search state) ──────────────────────────── */
@@ -446,20 +481,20 @@
     width: 28px;
     height: 28px;
     padding: 0;
-    background: rgba(78, 205, 196, 0.1);
-    border: 1px solid rgba(78, 205, 196, 0.25);
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
     border-radius: 0.375rem;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     cursor: pointer;
     flex-shrink: 0;
     transition: background 0.15s ease, border-color 0.15s ease;
   }
   .search-back-btn:hover {
-    background: rgba(78, 205, 196, 0.2);
-    border-color: rgba(78, 205, 196, 0.5);
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
   }
   .search-back-btn:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: 2px;
   }
   .search-back-btn svg {
@@ -471,6 +506,28 @@
     display: inline-flex;
   }
 
+  /* ── Cancel button (visible only when searching) ────────────────────────── */
+  .search-cancel {
+    background: none;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.4);
+    color: var(--color-primary-alt);
+    cursor: pointer;
+    padding: 0.25rem 0.6rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+    font-family: inherit;
+    flex-shrink: 0;
+    transition: background 0.15s ease, border-color 0.15s ease;
+  }
+  .search-cancel:hover {
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.7);
+  }
+  .search-cancel:focus-visible {
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
+    outline-offset: 2px;
+  }
+
   /* ── Status messages ──────────────────────────────────────────────────────── */
   .search-status {
     display: flex;
@@ -480,7 +537,7 @@
     text-align: center;
     padding: 0.5rem;
     font-size: 0.75rem;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     margin-top: 0.35rem;
     /* status is a11y-only (aria-live); clicks should fall through to the
      * result list which sits in the same visual region once the user has
@@ -492,8 +549,8 @@
   .search-spinner {
     width: 12px;
     height: 12px;
-    border: 2px solid rgba(78, 205, 196, 0.2);
-    border-top-color: #4ecdc4;
+    border: 2px solid rgba(var(--color-primary-alt-rgb), 0.2);
+    border-top-color: var(--color-primary-alt);
     border-radius: 50%;
     animation: spin 0.6s linear infinite;
   }

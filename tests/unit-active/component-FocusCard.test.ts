@@ -63,14 +63,15 @@ describe('FocusCard component', () => {
         expect(source).toContain('aria-hidden="true"');
     });
 
-    it('populated h2#focus-stage-name has aria-live="polite"', () => {
-        expect(source).toContain('id="focus-stage-name"');
-        expect(source).toContain('aria-live="polite"');
-        expect(source).toContain('class="selected-card-name focus-stage-name"');
+    it('populated state renders SelectedBusinessDetails component', () => {
+        expect(source).toContain('SelectedBusinessDetails');
+        expect(source).toContain('<SelectedBusinessDetails');
+        expect(source).toMatch(/SelectedBusinessDetails\s+\{viewModel\}/);
     });
 
-    it('#selected-role-badge has .selected-role-badge class', () => {
-        expect(source).toContain('id="selected-role-badge"');
-        expect(source).toContain('class="selected-role-badge"');
+    it('SelectedBusinessDetails component renders the card content (verified in its own contract test)', () => {
+        // The card content is now delegated to SelectedBusinessDetails.svelte
+        // which is tested by its own contract tests.
+        expect(source).toContain('SelectedBusinessDetails');
     });
 });

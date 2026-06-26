@@ -53,7 +53,7 @@ const SCAN_DIRS = [
 
 // Skip these — tests can have TODO references in test bodies;
 // docs/ can have TODOs for future plans; build outputs are not source.
-const SKIP_PATTERNS = [/node_modules/, /dist\//, /tests\//, /docs\//, /tmp\//, /legacy-reference\//, /\.d\.ts$/]
+const SKIP_PATTERNS = [/node_modules/, /dist\//, /tests\//, /docs\//, /tmp\//, /\\.d\\.ts$/]
 
 // Ticket reference patterns. A TODO with any of these within 2 lines
 // (same line or next 2 lines) is considered "tracked".

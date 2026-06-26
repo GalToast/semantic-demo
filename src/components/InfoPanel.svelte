@@ -45,34 +45,9 @@
 
   let { open = false, content }: Props = $props();
 
-  // ── Test Compatibility: Read from test-compat store ───────────────────────────
-  // Contract tests set up DOM via body data-attrs, synced via syncTestStateFromBody()
-
   let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
   let testFocusedNode = $derived(testCompatStore().focusedNode);
-  let bodyPanelSurface = $state('');
-
-  function readBodyPanelSurface(): void {
-    if (typeof document !== 'undefined' && document.body) {
-      bodyPanelSurface = document.body.dataset.panelSurface || '';
-    }
-  }
-
-  onMount(() => {
-    let reads = 0;
-    readBodyPanelSurface();
-    const observer = new MutationObserver(readBodyPanelSurface);
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface'] });
-    const poll = window.setInterval(() => {
-      readBodyPanelSurface();
-      reads += 1;
-      if (reads >= 20) window.clearInterval(poll);
-    }, 50);
-    return () => {
-      window.clearInterval(poll);
-      observer.disconnect();
-    };
-  });
+  let surface = $derived(currentSurface());
 
   // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -119,7 +94,6 @@
   let currentFocusedIdx = $derived($navStore.focusedIndex);
   let currentActiveResult = $derived(activeResult());
   let isFocused = $derived($navStore.mode === 'focus' || $navStore.mode === 'inside' || !($navStore.focusedIndex === null));
-  let surface = $derived(currentSurface());
 
   function bodySurfaceOwnsInfoPanel(surfaceValue: string): boolean {
     return surfaceValue === 'focus' ||
@@ -136,8 +110,8 @@
 
   // Test-compat: derive effective surface/focus from test store if stores not initialized.
   let effectiveSurface = $derived.by(() => {
-    if (bodySurfaceOwnsInfoPanel(bodyPanelSurface)) return bodyPanelSurface;
-    if (surface !== 'idle' && surface !== undefined) return surface; // audit-ok: plain function, not transformed — bundle preserves native ==
+    if (bodySurfaceOwnsInfoPanel(surface)) return surface;
+    if (surface !== 'idle' && surface !== undefined) return surface;
     return testPanelSurface || 'idle';
   });
 
@@ -260,29 +234,9 @@
   let isEmpty = $derived(!selectedRecord);
   let hasError = $derived(false); // Extensible: set when record fetch fails
 
-  // Sync test state on mount and watch for body attribute changes
+  // Sync test state on mount (no polling — stores are the source of truth)
   onMount(() => {
-    let reads = 0;
     syncTestStateFromBody();
-    readBodyPanelSurface();
-
-    const observer = new MutationObserver(() => {
-      syncTestStateFromBody();
-      readBodyPanelSurface();
-    });
-    observer.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-panel-surface-mode', 'data-focused-node', 'data-active-view', 'data-view-mode', 'data-nav-surface', 'data-nav-mode', 'data-graph-context', 'data-map-context', 'data-route-exploration', 'data-journey-compass-phase', 'data-demo-phase', 'data-journey-phase', 'data-reduced-motion', 'data-mode', 'data-compact', 'data-filters-active', 'data-semantic-trail-cue', 'data-loading-phase', 'data-loading-overlay', 'data-scene-ready', 'data-view-handoff-active', 'data-camera-assist', 'data-graphics-mode'] });
-
-    const poll = window.setInterval(() => {
-      syncTestStateFromBody();
-      readBodyPanelSurface();
-      reads += 1;
-      if (reads >= 20) window.clearInterval(poll);
-    }, 50);
-
-    return () => {
-      window.clearInterval(poll);
-      observer.disconnect();
-    };
   });
   // ── View Model (ports legacy buildSelectedBusinessProps) ──────────────────────
 
@@ -426,19 +380,13 @@
     {/if}
 
     <!-- Selected card container -->
+    {#if !selectionSuppressed}
     <div
       id="selected-card"
       class="selected-card"
       class:selected-card-empty={isEmpty}
-      hidden={selectionSuppressed}
-      aria-hidden={selectionSuppressed ? 'true' : undefined}
       data-content-owner={effectiveSurface === 'focus' ? 'focus-stage' : 'info-panel'}
       data-content-variant={effectiveSurface === 'focus' ? 'focus-stage' : 'info-panel'}
-      data-debug-focused-index={effectiveFocusedIdx ?? ''}
-      data-debug-record-count={getBusinessRecords().length}
-      data-debug-data-ready={String(getIsDataReady())}
-      data-debug-effective-surface={effectiveSurface}
-      data-debug-selected-record={selectedRecord?.name ?? ''}
     >
 
       <!-- Loading spinner -->
@@ -484,6 +432,7 @@
       </div>
       {/if}
     </div>
+    {/if}
   </div>
 </aside>
 

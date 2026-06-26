@@ -22,7 +22,10 @@ function read(path, label) {
 }
 
 const appSrc = read(appPath, 'src/lib/orchestration/app-init.ts')
-const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts')
+const threeSetupSrc =
+    read(threeSetupPath, 'src/lib/engine/three-engine.ts') +
+    '\n' +
+    read(resolve(CWD, 'src/lib/engine/three-engine-core.ts'), 'src/lib/engine/three-engine-core.ts')
 // TS split: app-init.ts delegates bootstrap to engine/lifecycle.ts.
 // Cancel-animate call now lives in the engine lifecycle. Check there too.
 const engineLifecycleSrc = (() => {
@@ -37,7 +40,7 @@ const combinedAppOrLifecycleSrc = appSrc + '\n' + engineLifecycleSrc
 const checks = [
     {
         name: 'three-engine exports cancelAnimate',
-        pass: /export\s+function\s+cancelAnimate\s*\(/.test(threeSetupSrc)
+        pass: /export\s+(?:function\s+cancelAnimate\s*\(|{\s*[^}]*\bcancelAnimate\b[^}]*}\s+from)/.test(threeSetupSrc)
     },
     {
         // TS split: cancelAnimate now imported from @lib/engine/three-engine

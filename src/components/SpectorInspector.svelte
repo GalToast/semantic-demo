@@ -331,7 +331,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
     animation: spector-pulse 1.2s ease-in-out infinite;
   }
   .spector-status[data-phase="ready"] .spector-status__dot {
-    background: #4ecdc4;
+    background: var(--color-primary-alt);
   }
   .spector-status[data-phase="error"] .spector-status__dot,
   .spector-status[data-phase="unsupported"] .spector-status__dot {

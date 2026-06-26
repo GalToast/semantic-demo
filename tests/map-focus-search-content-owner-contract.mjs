@@ -91,16 +91,7 @@ const RETIRED_MAP_SUMMARY_IDS = [
 
 // ── Retired component paths (must not exist) ──────────────────────────────────
 
-const RETIRED_PATHS = [
- ''
- ''
- ''
- ''
- ''
- ''
- ''
- ''
-]
+const RETIRED_PATHS = []
 
 // ── Test A: stage-renderer.ts owns structural slot management ─────────────────
 
@@ -228,7 +219,7 @@ function testRetiredMapSummaryElementsRemoved() {
 
     // The retired IDs must NOT exist in any Svelte component source.
     // Verify the HTML shell doesn't have them either:
-    const html = read('vector-explorer-polished.html')
+    const html = read('src/index.html')
     for (const id of RETIRED_MAP_SUMMARY_IDS) {
         assert(
             !html.includes(`id="${id}"`) && !html.includes(`id='${id}'`),
