@@ -632,25 +632,6 @@ export function resetOrbitSlack(): void {
     }
 }
 
-// ── Actions: Focus Transition Mode ───────────────────────────────────────────
-
-export type FocusTransitionCameraMode = 'idle' | 'entering' | 'settling' | 'inside' | 'exiting'
-
-/** Set the focus transition mode on the camera store. */
-export function setFocusTransitionMode(mode: FocusTransitionCameraMode): void {
-    cameraStoreImpl.update((s) => ({
-        ...s,
-        transition: {
-            ...s.transition,
-            phase: mode === 'idle' ? 'idle' : s.transition.phase
-        }
-    }))
-
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.focusTransition = mode
-    }
-}
-
 // ── Helper: Is search route focus active? ────────────────────────────────────
 
 /**

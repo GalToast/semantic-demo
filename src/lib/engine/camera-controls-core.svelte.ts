@@ -19,6 +19,7 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 import type { SemanticState } from '@lib/state/state-types'
 const state = _state as unknown as SemanticState
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
+import { setRouteExplorationPhase } from '@lib/stores/journey.svelte'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -174,6 +175,12 @@ class CameraControlsCore {
                 startedAt: performance.now()
             }
         })
+        // Wires routeExplorationPhase into the journey store so parity-attrs
+        // (which reads journey.routeExplorationPhase) produces the right
+        // data-route-exploration value. Before this wiring, parity's source
+        // was dead (no caller of setRouteExplorationPhase in journey.svelte),
+        // so body[data-route-exploration] was set only by this bypass write.
+        setRouteExplorationPhase(normalizedPhase as 'idle' | 'free' | 'searching' | 'focusing')
         if (document.body) {
             document.body.dataset.routeExploration = normalizedPhase
             document.body.dataset.routeExplorationReason = normalizedReason
