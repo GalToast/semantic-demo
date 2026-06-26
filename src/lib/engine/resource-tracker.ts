@@ -32,14 +32,18 @@ export class ResourceTracker {
             this.resources.add(resource as Disposable)
         }
 
-        const holder = resource as unknown as GPUResourceHolder
+        // After the dispose-branch check, narrow the union to GPUResourceHolder.
+        // The Disposable path doesn't carry geometry/material/children so we
+        // skip those fields; casting here keeps tsc happy and documents intent.
+        const holder = resource as GPUResourceHolder
 
         if (holder.geometry) {
             this.track(holder.geometry)
         }
 
         if (holder.material) {
-            const mat = Array.isArray(holder.material) ? holder.material[0] : holder.material
+            const mat: Material | undefined = Array.isArray(holder.material) ? holder.material[0] : holder.material
+            if (!mat) return resource
             this.track(mat as unknown as Disposable)
 
             if (mat && 'map' in mat && mat.map) this.track(mat.map as unknown as Disposable)
