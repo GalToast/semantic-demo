@@ -919,12 +919,14 @@ describe('computeParityAttributes IIFE derivations', () => {
         })
     })
 
-    describe('activeView and viewMode', () => {
-        it('mirrors nav.currentView to both activeView and viewMode', () => {
+    describe('activeView (viewMode was retired)', () => {
+        it('mirrors nav.currentView to activeView only (viewMode was a pure alias)', () => {
             _nav.currentView = 'map'
             const result = computeParityAttributes()
             expect(result.activeView).toBe('map')
-            expect(result.viewMode).toBe('map')
+            // viewMode retired in 3f388412 — pure alias of activeView, only read by
+            // one legacy contract test. The mirror now writes only activeView.
+            expect(result.viewMode).toBeUndefined()
         })
     })
 

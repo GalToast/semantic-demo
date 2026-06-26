@@ -79,7 +79,7 @@ function syncSearchResultsA11y(resultsEl: HTMLElement | null): void {
 
 // ── Legacy DOM rendering ───────────────────────────────────────────────────
 
-let _lastLegacyRender: LegacyRenderCache | null = null
+const _lastLegacyRender: LegacyRenderCache | null = null
 
 function clearLegacySearchResultsDom(resultsEl: HTMLElement): void {
     if (!resultsEl) return
@@ -94,7 +94,6 @@ function clearLegacySearchResultsDom(resultsEl: HTMLElement): void {
     resultsEl.removeAttribute('data-legacy-results-anchor')
     resultsEl.removeAttribute('data-legacy-results-mode')
 }
-
 
 interface SearchStateNamespace {
     search?: (query: string, options?: { preferCachedResults?: boolean }) => void
@@ -206,9 +205,6 @@ function renderLegacySearchErrorStateDom(resultsEl: HTMLElement | null, errorDat
     resultsEl.setAttribute('aria-describedby', errorData.type === 'inline' ? 'search-status' : 'search-error-state')
     syncSearchResultsA11y(resultsEl)
 }
-
-
-
 
 // ── EXPORTS ────────────────────────────────────────────────────────────────
 
