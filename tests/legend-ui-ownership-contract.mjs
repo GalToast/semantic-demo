@@ -95,10 +95,11 @@ function testNoLiveSourceImportsFromDeletedKernel() {
     try {
         const searchRoots = ['src/']
         if (fs.existsSync(path.join(SEMDEMO_ROOT, 'js'))) searchRoots.push('js/')
-        const result = execSync(
-            `rg -l "from\\.\\*" --glob "\\!tests/" --glob "\\!docs/" ${searchRoots.join(' ')}`,
-            { cwd: SEMDEMO_ROOT, encoding: 'utf-8', timeout: 15000 }
-        ).trim()
+        const result = execSync(`rg -l "from\\.\\*" --glob "\\!tests/" --glob "\\!docs/" ${searchRoots.join(' ')}`, {
+            cwd: SEMDEMO_ROOT,
+            encoding: 'utf-8',
+            timeout: 15000
+        }).trim()
 
         assert(result === '', `Found live imports from deleted kernel :\n${result}`)
     } catch (err) {

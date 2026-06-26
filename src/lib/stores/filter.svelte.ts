@@ -176,9 +176,7 @@ export function toggleFilter(type: keyof ActiveFilters, value: string | boolean)
     // Bump versions
     filterVersion.update((v) => v + 1)
     filterColorVersion.update((v) => v + 1)
-
 }
-
 
 /**
  * Overwrite all filters at once (from legacy filter-state.js).
@@ -195,9 +193,7 @@ export function overwriteActiveFilters(filters: ActiveFilters): void {
     })
     filterVersion.update((v) => v + 1)
     filterColorVersion.update((v) => v + 1)
-
 }
-
 
 /** Set a single filter field without toggle semantics. */
 export function setFilter<K extends keyof ActiveFilters>(type: K, value: ActiveFilters[K]): void {

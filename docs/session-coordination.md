@@ -256,3 +256,20 @@ list via `-like` globs.
 - AGENTS.md → "Session Lock Protocol" — quick reference
 - `docs/parallel-sessions-incident-2026-06-24.md` (TODO) — postmortem
   of the incident that motivated this
+
+---
+
+## Parallel Sessions (moved from AGENTS.md 2026-06-26)
+
+Multiple Pi/Codex/subagent sessions may share this repo.
+
+Before any non-trivial commit or push:
+
+```bash
+git log --since="3 hours ago" --oneline
+git status --short
+```
+
+- If 5+ unseen commits landed since last verified `HEAD`, queue work but do not commit until the stream quiesces.
+- If tracked files you did not touch are modified, evaluate the diff on merit. Good changes stay; bad ones get fixed or reverted with an explanation. Pause and coordinate when the change is unclear-to-you-but-claimed-by-someone-else.
+- For dirty worktrees, inspect before removal. Do not force-remove a worktree that may contain another session's WIP.

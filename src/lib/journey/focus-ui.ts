@@ -529,9 +529,7 @@ export function updateTraversalUi(): void {
     const nextWalkCandidate = getNextWalkCandidateForIndex(currentIndexForWalk ?? 0)
     const nextWalkPoint = nextWalkCandidate ? points[nextWalkCandidate.index] : null
     const nextWalkName = nextWalkPoint ? formatBusinessName(nextWalkPoint.name || 'next business') : null
-    const nextWalkReason = nextWalkCandidate
-        ? summarizeNeighborReason(nextWalkCandidate)
-        : ''
+    const nextWalkReason = nextWalkCandidate ? summarizeNeighborReason(nextWalkCandidate) : ''
     if (focusRouteEl)
         focusRouteEl.dataset.state = neighborCount ? (nav.mode === 'trail' ? 'walking' : 'ready') : 'empty'
 

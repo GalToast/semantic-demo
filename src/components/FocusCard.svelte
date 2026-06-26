@@ -19,6 +19,9 @@
   import { activeResult } from '@lib/stores/search.svelte';
   import { businessRecords } from '@lib/data-store';
   import type { BusinessRecord } from '@lib/types/business';
+  import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
+  import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
+  import { selectedPointStore } from '@lib/stores/index.svelte.ts';
 
   // ── Business records (reactive store subscription) ─────────────────────
   // Subscribe to the businessRecords writable store directly. The store is
@@ -46,6 +49,11 @@
   $effect(() => {
     const unsub = navStore.subscribe(($s) => (nav = $s));
     return unsub;
+  });
+
+  let selectedPoint = $state<Record<string, unknown> | null>(null);
+  $effect(() => {
+    selectedPoint = selectedPointStore() as Record<string, unknown> | null;
   });
 
   // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
@@ -159,17 +167,85 @@
     return null;
   });
 
+  // ── View Model (mirrors InfoPanel fallback path) ──────────────────────────────
+  let viewModel = $derived.by((): Record<string, unknown> => {
+    if (!selectedRecord) return {
+      name: 'Select a node',
+      filedAs: '',
+      showFiledAs: false,
+      what: 'Click a business in the field to explore.',
+      role: 'Record',
+      theme: 'Theme',
+      status: 'Record status',
+      trivia: '',
+      showTrivia: false,
+      matchNarrative: '',
+      showMatchPanel: false,
+      facts: [],
+      sensitivityBadges: [],
+      mapText: 'No geocoded point yet',
+      threadText: 'Waiting for a related path.',
+      isPopulated: false
+    };
+
+    const rawName = selectedRecord.name ?? '';
+    const namePresentation = getBusinessNamePresentation(rawName);
+    const name = namePresentation.display || 'Business Name';
+    const filedAs = '';
+    const showFiledAs = false;
+    const what = sanitizePublicFacingNote(selectedRecord.what ?? '');
+    const theme = describeCluster(selectedRecord.cluster);
+    const status = formatStatus(selectedRecord.status ?? 'active');
+    const role = selectionSource === 'search' ? 'Search Match' : 'Field Node';
+    const trivia = '';
+    const showTrivia = false;
+    const matchNarrative = '';
+    const showMatchPanel = false;
+    const facts: Record<string, unknown>[] = [];
+    if (selectedRecord.website) {
+      facts.push({ type: 'link', label: 'Website', href: selectedRecord.website, isExternal: true });
+    }
+    if (selectedRecord.email) {
+      facts.push({ type: 'link', label: 'Email', href: `mailto:${selectedRecord.email}`, isExternal: false });
+    }
+    if (selectedRecord.phone) {
+      facts.push({ value: `Phone: ${selectedRecord.phone}` });
+    }
+    const sensitivityBadges: Record<string, unknown>[] = [];
+    const mapText = (selectedRecord.lat != null && selectedRecord.lng != null)
+      ? `${selectedRecord.lat.toFixed(4)}, ${selectedRecord.lng.toFixed(4)}`
+      : 'No geocoded point yet';
+    const threadText = '';
+
+    return {
+      name,
+      filedAs,
+      showFiledAs,
+      what,
+      role,
+      theme,
+      status,
+      trivia,
+      showTrivia,
+      matchNarrative,
+      showMatchPanel,
+      facts,
+      sensitivityBadges,
+      mapText,
+      threadText,
+      isPopulated: true
+    };
+  });
+
+  let selectedCity = $derived.by(() => {
+    if (!selectedRecord) return 'Montgomery County';
+    return String(selectedRecord.city || 'Montgomery County');
+  });
+
   let isEmpty = $derived(!selectedRecord);
   // When a business is focused, always show the card regardless of search surface.
   // The focused business should never be hidden behind the search chrome.
-  let cardVisible = $derived(
-    visible && (
-      isFocusedReactive ||
-      semanticDiveActive ||
-      bodyPanelSurface === 'focus' ||
-      (!(String(surface) === 'search') && !(bodyPanelSurface === 'search') && !(bodyPanelSurface === 'focus-search'))
-    )
-  );
+  let cardVisible = $derived(visible && isFocusedReactive);
 
   // ── Display helpers ───────────────────────────────────────────────────────────
 
@@ -216,86 +292,9 @@
 
     <!-- Populated state -->
     {#if !isEmpty}
-    <div id="selected-details" class="selected-details">
-      {#if selectedRecord}
-        <div class="selected-hero">
-          <span class="selected-role-badge" id="selected-role-badge">
-            {selectionSource === 'search' ? 'Search Match' : 'Field Node'}
-          </span>
-        </div>
-
-        <h2 class="selected-card-name focus-stage-name" id="focus-stage-name" aria-live="polite" title={selectedRecord.name} aria-label={selectedRecord.name}>{selectedRecord.name}</h2>
-
-        {#if selectedRecord.what}
-          <p class="selected-card-what focus-stage-what" id="focus-stage-what">{selectedRecord.what}</p>
-        {/if}
-
-        <p class="selected-card-category" id="selected-theme">{buildTheme(selectedRecord)}</p>
-
-        <div class="selected-card-status-row">
-          <span
-            class="selected-card-status"
-            id="selected-status"
-            class:active={selectedRecord.status === 'active'}
-            class:inactive={selectedRecord.status === 'inactive'}
-          >
-            {formatStatus(selectedRecord.status)}
-          </span>
-        </div>
-
-        {#if selectedRecord.city}
-          <div class="selected-card-location">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/>
-              <circle cx="12" cy="9" r="2.5"/>
-            </svg>
-            <span>{selectedRecord.city}{selectedRecord.zip ? `, ${selectedRecord.zip}` : ''}</span>
-          </div>
-        {/if}
-
-        {#if selectedRecord.phone}
-          <div class="selected-card-contact">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/>
-            </svg>
-            <span>{selectedRecord.phone}</span>
-          </div>
-        {/if}
-
-        {#if selectedRecord.email}
-          <div class="selected-card-contact">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <rect x="2" y="4" width="20" height="16" rx="2"/>
-              <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/>
-            </svg>
-            <span>{selectedRecord.email}</span>
-          </div>
-        {/if}
-
-        {#if selectedRecord.website}
-          <div class="selected-card-contact">
-            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-              <circle cx="12" cy="12" r="10"/>
-              <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/>
-            </svg>
-            <a href={selectedRecord.website} target="_blank" rel="noopener noreferrer" class="selected-card-link">
-              {selectedRecord.website.replace(/^https?:\/\//, '')}
-            </a>
-          </div>
-        {/if}
-
-        {#if selectedRecord}
-          <div class="selected-card-footer">
-            <span class="footer-cluster">{formatClusterName(selectedRecord.cluster)}{selectedRecord.category ? ` · ${selectedRecord.category}` : ''}</span>
-            {#if selectionSource === 'field'}
-              <span class="footer-source">Field focus</span>
-            {:else if selectionSource === 'search'}
-              <span class="footer-source">Search result</span>
-            {/if}
-          </div>
-        {/if}
-      {/if}
-    </div>
+      <div id="selected-details" class="selected-details">
+        <SelectedBusinessDetails {viewModel} {selectedCity} />
+      </div>
     {/if}
   </div>
 {/if}
