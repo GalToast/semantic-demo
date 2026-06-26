@@ -22,7 +22,6 @@ import {
 import { ROUTE_TRACE_COLORS } from '@lib/utils/design-tokens'
 import {
     ARRIVAL_HANDOFF_SEGMENT_STEPS,
-    _disposeLineObject,
     getNodeVector,
     getArcPoint,
     pushArcSegments,

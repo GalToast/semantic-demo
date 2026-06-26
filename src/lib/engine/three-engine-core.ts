@@ -18,19 +18,15 @@ import {
     Scene,
     PerspectiveCamera,
     WebGLRenderer,
-    Vector3,
     FogExp2,
     Material,
-    MeshPhongMaterial,
-    Points,
-    Group,
-    LineSegments,
-    HemisphereLight,
-    DirectionalLight,
-    InstancedMesh
+    MeshPhongMaterial
 } from 'three'
-import type { NodePosition, NavState, ScenePerformanceDiagnostics, Point } from '@lib/state/state-types'
-import type { BusinessRecord } from '@lib/types/business'
+import type { NodePosition } from '@lib/state/state-types'
+// LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
+// so it can be shared with legacy-state-adapter.ts without a circular import.
+import type { LegacyState } from '@lib/state/legacy-state'
+export type { LegacyState }
 import { webglContext } from '@lib/engine/webgl-context'
 import { showWebGLFallback } from './renderer/webgl-fallback'
 import { sampleScenePerformance } from './renderer/renderer-diagnostics'
@@ -107,52 +103,6 @@ import * as threeInteractionVisualsMod from './three-interaction-visuals'
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 
-export interface LegacyState {
-    scene: Scene | null
-    camera: PerspectiveCamera | null
-    renderer: WebGLRenderer | null
-    controls: { update(): void; enabled: boolean; target: Vector3; dispose(): void } | null
-    pointsMesh: Points | null
-    pointsMaterial: Material | null
-    nodeSporeMesh: InstancedMesh | null
-    nodeSporeHitMesh: InstancedMesh | null
-    nodeSporeMaterial: Material | null
-    myceliumGroup: Group | null
-    myceliumCoreLines: LineSegments | null
-    myceliumWispyLines: LineSegments | null
-    myceliumBridgeLines: LineSegments | null
-    myceliumConnectionPairs: Array<{ a: number; b: number; layer?: number }>
-    hemiLight: HemisphereLight | null
-    dirLight: DirectionalLight | null
-    autoRotate: boolean
-    autoRotateSuspended: boolean
-    autoRotateResumeDueAt?: number
-    currentView: string
-    forceAnimate: boolean
-    focusedNode: number | null
-    trailDepth: number
-    nodePositions: NodePosition[]
-    targetPositions: NodePosition[]
-    nodesAreSettling: boolean
-    focusPocketMotionByIndex: number[]
-    hoverHighlightIndex: number
-    pulsePhase: number
-    weather: { wind_speed_10m?: number }
-    myceliumDirty: boolean
-    selectedPoint: BusinessRecord | null
-    sceneRevealActive: boolean
-    searchGlowActive?: boolean
-    inspectedThreadIndex?: number | null
-    pinnedThreadIndex?: number | null
-    sceneRevealCameraStart: Vector3 | null
-    sceneRevealCameraEnd: Vector3 | null
-    inspectedStrandGroup: Group | null
-    scenePerformanceDiagnostics: ScenePerformanceDiagnostics | null
-    navState: NavState | null
-    points: Point[]
-    [key: string]: unknown
-}
-
 interface WithStateMutationFn {
     (fn: () => void): void
 }
@@ -219,7 +169,8 @@ let _loaded = false
 function _ensureModules(): void {
     if (_loaded) return
     try {
-        _state = legacyState as unknown as LegacyState
+        // legacyState is already typed as LegacyState via the adapter (Phase 4).
+        _state = legacyState
         if (typeof window !== 'undefined') {
             ;(window as WindowWithDevGlobals).__LEGACY_APP_STATE__ = legacyState
             ;(window as WindowWithDevGlobals).__refreshTestCompatState__?.()

@@ -393,7 +393,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
                 suggestions
             }
             // Compute the actual node indices that handleSuggestionClick will use
-            const nodeIndices = candidates.map(c => state.pointIndexByLeadId.get(c.lead_id))
+            const nodeIndices = candidates.map((c) => state.pointIndexByLeadId.get(c.lead_id))
             return { ok: true, candidates, nodeIndices, focusBefore: state.navState?.focusedIndex ?? null }
         })
         console.log('[TEST 12 DEBUG setup]', JSON.stringify(setup).slice(0, 200))

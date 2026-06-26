@@ -4,8 +4,10 @@
  * The legacy app state is dynamically shaped: pre-Svelte-5 JS modules wrote
  * arbitrary fields onto the global state object at runtime, and the test-
  * compat proxy in main.ts still exposes that surface for backwards
- * compatibility with Playwright surface tests. Because the shape isn't
- * statically known, we cannot fully type it.
+ * compatibility with Playwright surface tests. The statically-known subset
+ * is captured in `LegacyState` (see `./legacy-state.ts`); the index
+ * signature `[key: string]: unknown` preserves dynamic access while forcing
+ * narrowing at use sites for the typed subset.
  *
  * This module is the single, documented escape hatch for that surface.
  * Import `legacyState` from here rather than casting `appState as any` at
@@ -13,13 +15,9 @@
  *
  * The double-cast through `unknown` (vs a bare `as any`) is intentional:
  * it makes the type boundary explicit and matches the established codebase
- * idiom (255 existing uses across DevGui, InfoPanel, JourneyChrome,
- * SearchResults, etc.).
- *
- * The cast to `Record<string, unknown>` gives consumers a more honest
- * surface than `any`: dynamic property reads return `unknown` (forcing
- * narrowing at use sites) rather than untyped values.
+ * idiom.
  */
 import { appState } from './app.svelte'
+import type { LegacyState } from './legacy-state'
 
-export const legacyState = appState as unknown as Record<string, unknown>
+export const legacyState = appState as unknown as LegacyState
