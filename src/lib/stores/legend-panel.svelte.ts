@@ -310,10 +310,10 @@ export function buildCanvasColorLegend(): void {
 
 // ── Keyboard shortcut ───────────────────────────────────────────────────────
 
-export function initLegendKeyboardShortcut(): void {
-    if (typeof document === 'undefined') return
+export function initLegendKeyboardShortcut(): () => void {
+    if (typeof document === 'undefined') return () => {}
 
-    document.addEventListener('keydown', (e: KeyboardEvent) => {
+    const handler = (e: KeyboardEvent) => {
         if (e.key === 'l' && !e.metaKey && !e.ctrlKey && !e.altKey) {
             const target = e.target as HTMLElement | null
             if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
@@ -322,7 +322,10 @@ export function initLegendKeyboardShortcut(): void {
             e.preventDefault()
             toggleLegendPanel()
         }
-    })
+    }
+
+    document.addEventListener('keydown', handler)
+    return () => document.removeEventListener('keydown', handler)
 }
 
 /** Subscribe to nav/reset events that should close the legend. */

@@ -173,9 +173,7 @@ globalThis.queueMicrotask(() => {
         applyLocalNeighborhoodFocus
     })
     initJourneyCanvasInteractionAdapter({
-        summarizeNeighborReason: summarizeNeighborReason as unknown as (
-            candidate: Record<string, unknown> | null
-        ) => string,
+        summarizeNeighborReason: summarizeNeighborReason as unknown as (candidate: unknown) => string,
         walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => !!walkThreadNeighbor(index, options),
         inspectThreadNeighbor,
         scheduleCanvasThreadInspectionClear

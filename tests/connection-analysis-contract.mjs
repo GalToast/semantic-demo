@@ -17,29 +17,29 @@
  *   node tests/connection-analysis-contract.mjs
  */
 
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 
-const __dirname = fileURLToPath(new URL('.', import.meta.url));
-const SEMDEMO_ROOT = path.resolve(process.cwd());
-const CA_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/connection-analysis.ts');
+const __dirname = fileURLToPath(new URL('.', import.meta.url))
+const SEMDEMO_ROOT = path.resolve(process.cwd())
+const CA_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/connection-analysis.ts')
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
 function assert(cond, msg) {
-  if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+    if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
 }
 
 function assertContains(haystack, needle, label) {
-  const found = haystack.includes(needle);
-  assert(found, `${label}: expected source to contain "${needle}", but it was not found`);
+    const found = haystack.includes(needle)
+    assert(found, `${label}: expected source to contain "${needle}", but it was not found`)
 }
 
 function assertNotContains(haystack, needle, label) {
-  const found = haystack.includes(needle);
-  assert(!found, `${label}: source should NOT contain "${needle}", but it was found`);
+    const found = haystack.includes(needle)
+    assert(!found, `${label}: source should NOT contain "${needle}", but it was found`)
 }
 
 // ---------------------------------------------------------------------------
@@ -47,97 +47,119 @@ function assertNotContains(haystack, needle, label) {
 // ---------------------------------------------------------------------------
 
 class FakeClassList {
-  constructor() { this._items = new Set(); }
-  add(k)           { this._items.add(String(k)); }
-  remove(k)        { this._items.delete(String(k)); }
-  contains(k)      { return this._items.has(String(k)); }
-  toggle(k, force) {
-    const on = force !== undefined ? force : !this._items.has(String(k));
-    on ? this._items.add(String(k)) : this._items.delete(String(k));
-    return on;
-  }
+    constructor() {
+        this._items = new Set()
+    }
+    add(k) {
+        this._items.add(String(k))
+    }
+    remove(k) {
+        this._items.delete(String(k))
+    }
+    contains(k) {
+        return this._items.has(String(k))
+    }
+    toggle(k, force) {
+        const on = force !== undefined ? force : !this._items.has(String(k))
+        on ? this._items.add(String(k)) : this._items.delete(String(k))
+        return on
+    }
 }
 
 class FakeAttrMap extends Map {
-  get(k)      { return super.get(String(k)) ?? null; }
-  set(k, v)   { super.set(String(k), String(v)); }
+    get(k) {
+        return super.get(String(k)) ?? null
+    }
+    set(k, v) {
+        super.set(String(k), String(v))
+    }
 }
 
 class FakeElement {
-  constructor(tag = 'div') {
-    this.tagName   = tag.toUpperCase();
-    this.classList = new FakeClassList();
-    this.dataset   = {};
-    this._attr     = new FakeAttrMap();
-    this._text     = '';
-    this._handlers = {};
-  }
-  get textContent()    { return this._text; }
-  set textContent(v)   { this._text = String(v); }
-  setAttribute(k, v)  { this._attr.set(String(k), String(v)); }
-  getAttribute(k)     { return this._attr.get(String(k)) ?? null; }
-  removeAttribute(k)  { this._attr.delete(String(k)); }
-  addEventListener(event, handler) {
-    if (!this._handlers[event]) this._handlers[event] = [];
-    this._handlers[event].push(handler);
-  }
-  removeEventListener(event, handler) {
-    if (this._handlers[event]) {
-      this._handlers[event] = this._handlers[event].filter(h => h !== handler);
+    constructor(tag = 'div') {
+        this.tagName = tag.toUpperCase()
+        this.classList = new FakeClassList()
+        this.dataset = {}
+        this._attr = new FakeAttrMap()
+        this._text = ''
+        this._handlers = {}
     }
-  }
+    get textContent() {
+        return this._text
+    }
+    set textContent(v) {
+        this._text = String(v)
+    }
+    setAttribute(k, v) {
+        this._attr.set(String(k), String(v))
+    }
+    getAttribute(k) {
+        return this._attr.get(String(k)) ?? null
+    }
+    removeAttribute(k) {
+        this._attr.delete(String(k))
+    }
+    addEventListener(event, handler) {
+        if (!this._handlers[event]) this._handlers[event] = []
+        this._handlers[event].push(handler)
+    }
+    removeEventListener(event, handler) {
+        if (this._handlers[event]) {
+            this._handlers[event] = this._handlers[event].filter((h) => h !== handler)
+        }
+    }
 }
 
-const elementsById = new Map();
+const elementsById = new Map()
 
 const fakeDoc = {
-  body: new FakeElement('body'),
-  getElementById: (id) => elementsById.get(id) || null,
-  querySelectorAll: () => [],
-};
+    body: new FakeElement('body'),
+    getElementById: (id) => elementsById.get(id) || null,
+    querySelectorAll: () => []
+}
 
-globalThis.document = fakeDoc;
+globalThis.document = fakeDoc
 
-let _uuid = 0;
+let _uuid = 0
 Object.defineProperty(globalThis, 'crypto', {
-  value: { randomUUID: () => `fake-uuid-${++_uuid}` },
-  configurable: true,
-  writable: true,
-});
+    value: { randomUUID: () => `fake-uuid-${++_uuid}` },
+    configurable: true,
+    writable: true
+})
 
-let pendingFetch = null;
+let pendingFetch = null
 
 globalThis.fetch = function fakeFetch(url, options) {
-  return new Promise((resolve) => {
-    pendingFetch = { url, options, resolve, reject: () => {} };
-  });
-};
+    return new Promise((resolve) => {
+        pendingFetch = { url, options, resolve, reject: () => {} }
+    })
+}
 
 // Expose pending fetch so tests can control resolution
 function resolveFetch(response) {
-  if (!pendingFetch) throw new Error('No pending fetch to resolve');
-  const { resolve } = pendingFetch;
-  pendingFetch = null;
-  resolve(response);
+    if (!pendingFetch) throw new Error('No pending fetch to resolve')
+    const { resolve } = pendingFetch
+    pendingFetch = null
+    resolve(response)
 }
 
 function rejectFetch(reason) {
-  if (!pendingFetch) throw new Error('No pending fetch to reject');
-  const { reject } = pendingFetch;
-  pendingFetch = null;
-  reject(reason);
+    if (!pendingFetch) throw new Error('No pending fetch to reject')
+    const { reject } = pendingFetch
+    pendingFetch = null
+    reject(reason)
 }
 
 // ---------------------------------------------------------------------------
 // State helper
 // ---------------------------------------------------------------------------
 
-const { state } = await import('./helpers/canonical-state.mjs');
+const { state } = await import('./helpers/canonical-state.mjs')
 
 function resetState() {
-  state.currentSearchSummary = null;
-  state.focusedNode = null;
-  state.points = [];
+    state.currentSearchSummary = null
+    state.focusedNode = null
+    state.points = []
 }
 
 // ---------------------------------------------------------------------------
@@ -145,28 +167,28 @@ function resetState() {
 // ---------------------------------------------------------------------------
 
 async function testSourceStaticAbortableController() {
-  console.log('\n[TEST] Static source: abortable controller lifecycle');
+    console.log('\n[TEST] Static source: abortable controller lifecycle')
 
-  const fs = await import('node:fs');
-  const srcCode = fs.readFileSync(CA_PATH, 'utf-8');
+    const fs = await import('node:fs')
+    const srcCode = fs.readFileSync(CA_PATH, 'utf-8')
 
-  // Must store controller in module-level variable
-  assertContains(srcCode, 'semanticThreadsDetailController', 'module has semanticThreadsDetailController variable');
+    // Must store controller in module-level variable
+    assertContains(srcCode, 'semanticThreadsDetailController', 'module has semanticThreadsDetailController variable')
 
-  // Must assign new AbortController before fetch
-  assertContains(srcCode, 'new AbortController()', 'creates AbortController');
+    // Must assign new AbortController before fetch
+    assertContains(srcCode, 'new AbortController()', 'creates AbortController')
 
-  // Must pass controller.signal to fetch
-  assertContains(srcCode, 'signal: controller.signal', 'signal passed to fetch');
+    // Must pass controller.signal to fetch
+    assertContains(srcCode, 'signal: controller.signal', 'signal passed to fetch')
 
-  // Must abort previous controller before creating a new one
-  assertContains(srcCode, 'semanticThreadsDetailController.abort()', 'previous controller aborted');
+    // Must abort previous controller before creating a new one
+    assertContains(srcCode, 'semanticThreadsDetailController.abort()', 'previous controller aborted')
 
-  // AbortError must be caught and return early
-  assertContains(srcCode, "err.name === 'AbortError'", 'AbortError handled');
-  assertContains(srcCode, 'return;', 'AbortError returns early');
+    // AbortError must be caught and return early
+    assertContains(srcCode, "err.name === 'AbortError'", 'AbortError handled')
+    assertContains(srcCode, 'return;', 'AbortError returns early')
 
-  console.log('  OK abortable controller lifecycle verified in source');
+    console.log('  OK abortable controller lifecycle verified in source')
 }
 
 // ---------------------------------------------------------------------------
@@ -174,19 +196,19 @@ async function testSourceStaticAbortableController() {
 // ---------------------------------------------------------------------------
 
 async function testSourceCorrelationId() {
-  console.log('\n[TEST] Static source: correlationId attached to errors');
+    console.log('\n[TEST] Static source: correlationId attached to errors')
 
-  const fs = await import('node:fs');
-  const srcCode = fs.readFileSync(CA_PATH, 'utf-8');
+    const fs = await import('node:fs')
+    const srcCode = fs.readFileSync(CA_PATH, 'utf-8')
 
-  // correlationId added to JSON parse errors
-  assertContains(srcCode, "Object.defineProperty(jsonErr, 'correlationId'", 'correlationId on JSON error');
-  assertContains(srcCode, 'crypto.randomUUID()', 'crypto.randomUUID used for correlationId');
+    // correlationId added to JSON parse errors
+    assertContains(srcCode, "Object.defineProperty(jsonErr, 'correlationId'", 'correlationId on JSON error')
+    assertContains(srcCode, 'crypto.randomUUID()', 'crypto.randomUUID used for correlationId')
 
-  // correlationId added to API error responses
-  assertContains(srcCode, "Object.defineProperty(err, 'correlationId'", 'correlationId on API error');
+    // correlationId added to API error responses
+    assertContains(srcCode, "Object.defineProperty(err, 'correlationId'", 'correlationId on API error')
 
-  console.log('  OK correlationId attachment verified in source');
+    console.log('  OK correlationId attachment verified in source')
 }
 
 // ---------------------------------------------------------------------------
@@ -194,19 +216,19 @@ async function testSourceCorrelationId() {
 // ---------------------------------------------------------------------------
 
 async function testSourceCachedStoryMode() {
-  console.log('\n[TEST] Static source: cached story mode detection');
+    console.log('\n[TEST] Static source: cached story mode detection')
 
-  const fs = await import('node:fs');
-  const srcCode = fs.readFileSync(CA_PATH, 'utf-8');
+    const fs = await import('node:fs')
+    const srcCode = fs.readFileSync(CA_PATH, 'utf-8')
 
-  // Must check result.mode for cached_trail_story or cached_gemma_story
-  assertContains(srcCode, "result?.mode === 'cached_trail_story'", 'checks cached_trail_story mode');
-  assertContains(srcCode, "result?.mode === 'cached_gemma_story'", 'checks cached_gemma_story mode');
+    // Must check result.mode for cached_trail_story or cached_gemma_story
+    assertContains(srcCode, "result?.mode === 'cached_trail_story'", 'checks cached_trail_story mode')
+    assertContains(srcCode, "result?.mode === 'cached_gemma_story'", 'checks cached_gemma_story mode')
 
-  // Must handle cache_age_seconds for display
-  assertContains(srcCode, 'result.cache_age_seconds', 'cache_age_seconds read');
+    // Must handle cache_age_seconds for display
+    assertContains(srcCode, 'result.cache_age_seconds', 'cache_age_seconds read')
 
-  console.log('  OK cached story mode detection verified in source');
+    console.log('  OK cached story mode detection verified in source')
 }
 
 // ---------------------------------------------------------------------------
@@ -214,28 +236,28 @@ async function testSourceCachedStoryMode() {
 // ---------------------------------------------------------------------------
 
 async function testSourceUiWiring() {
-  console.log('\n[TEST] Static source: UI element wiring');
+    console.log('\n[TEST] Static source: UI element wiring')
 
-  const fs = await import('node:fs');
-  const srcCode = fs.readFileSync(CA_PATH, 'utf-8');
+    const fs = await import('node:fs')
+    const srcCode = fs.readFileSync(CA_PATH, 'utf-8')
 
-  // summary-text updated on early-return
-  assertContains(srcCode, "document.getElementById('summary-text')", 'summary-text looked up');
-  assertContains(srcCode, "textEl.textContent = 'Select a business", 'early return sets summary-text');
+    // summary-text updated on early-return
+    assertContains(srcCode, "document.getElementById('summary-text')", 'summary-text looked up')
+    assertContains(srcCode, "textEl.textContent = 'Select a business", 'early return sets summary-text')
 
-  // summary-gemma-story elements shown during load
-  assertContains(srcCode, "document.getElementById('summary-gemma-story')", 'story note element');
-  assertContains(srcCode, "document.getElementById('summary-gemma-story-text')", 'story text element');
-  assertContains(srcCode, "document.getElementById('summary-gemma-story-source')", 'story source element');
+    // summary-gemma-story elements shown during load
+    assertContains(srcCode, "document.getElementById('summary-gemma-story')", 'story note element')
+    assertContains(srcCode, "document.getElementById('summary-gemma-story-text')", 'story text element')
+    assertContains(srcCode, "document.getElementById('summary-gemma-story-source')", 'story source element')
 
-  // Loading state: "Loading the full connection report..."
-  assertContains(srcCode, "textContent = 'Loading the full connection report", 'loading text set');
+    // Loading state: "Loading the full connection report..."
+    assertContains(srcCode, "textContent = 'Loading the full connection report", 'loading text set')
 
-  // semantic-summary-card gets is-synthesizing class
-  assertContains(srcCode, "card.classList.add('is-synthesizing')", 'is-synthesizing class added');
-  assertContains(srcCode, "card.classList.remove('is-synthesizing')", 'is-synthesizing class removed in finally');
+    // semantic-summary-card gets is-synthesizing class
+    assertContains(srcCode, "card.classList.add('is-synthesizing')", 'is-synthesizing class added')
+    assertContains(srcCode, "card.classList.remove('is-synthesizing')", 'is-synthesizing class removed in finally')
 
-  console.log('  OK UI element wiring verified in source');
+    console.log('  OK UI element wiring verified in source')
 }
 
 // ---------------------------------------------------------------------------
@@ -243,16 +265,16 @@ async function testSourceUiWiring() {
 // ---------------------------------------------------------------------------
 
 async function testSourceEmptyStory() {
-  console.log('\n[TEST] Static source: empty story handling');
+    console.log('\n[TEST] Static source: empty story handling')
 
-  const fs = await import('node:fs');
-  const srcCode = fs.readFileSync(CA_PATH, 'utf-8');
+    const fs = await import('node:fs')
+    const srcCode = fs.readFileSync(CA_PATH, 'utf-8')
 
-  // When story is falsy, must show "still being prepared" message
-  assertContains(srcCode, "textContent = 'The connection report is still being prepared.", 'empty story message');
-  assertContains(srcCode, "storySourceEl.textContent = ''", 'source cleared for empty story');
+    // When story is falsy, must show "still being prepared" message
+    assertContains(srcCode, "textContent = 'The connection report is still being prepared.", 'empty story message')
+    assertContains(srcCode, "storySourceEl.textContent = ''", 'source cleared for empty story')
 
-  console.log('  OK empty story handling verified in source');
+    console.log('  OK empty story handling verified in source')
 }
 
 // ---------------------------------------------------------------------------
@@ -260,66 +282,73 @@ async function testSourceEmptyStory() {
 // ---------------------------------------------------------------------------
 
 async function testRuntimeCachedStory() {
-  console.log('\n[RUNTIME] Successful cached story');
+    console.log('\n[RUNTIME] Successful cached story')
 
-  resetState();
-  elementsById.clear();
+    resetState()
+    elementsById.clear()
 
-  const card = new FakeElement('div');
-  card.id = 'semantic-summary-card';
-  elementsById.set('semantic-summary-card', card);
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
 
-  const storyNote = new FakeElement('div');
-  storyNote.id = 'summary-gemma-story';
-  elementsById.set('summary-gemma-story', storyNote);
+    const storyNote = new FakeElement('div')
+    storyNote.id = 'summary-gemma-story'
+    elementsById.set('summary-gemma-story', storyNote)
 
-  const storyText = new FakeElement('div');
-  storyText.id = 'summary-gemma-story-text';
-  elementsById.set('summary-gemma-story-text', storyText);
+    const storyText = new FakeElement('div')
+    storyText.id = 'summary-gemma-story-text'
+    elementsById.set('summary-gemma-story-text', storyText)
 
-  const storySource = new FakeElement('div');
-  storySource.id = 'summary-gemma-story-source';
-  elementsById.set('summary-gemma-story-source', storySource);
+    const storySource = new FakeElement('div')
+    storySource.id = 'summary-gemma-story-source'
+    elementsById.set('summary-gemma-story-source', storySource)
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  // Kick off — don't await yet
-  const promise = showSemanticThreadsDetail();
+    // Kick off — don't await yet
+    const promise = showSemanticThreadsDetail()
 
-  // Resolve fetch with cached story
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({
-      ok: true,
-      mode: 'cached_trail_story',
-      story: 'This business is highly connected via legal and insurance clusters.',
-      source: 'semantic-guide-engine',
-      cache_age_seconds: 300
+    // Resolve fetch with cached story
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_trail_story',
+                story: 'This business is highly connected via legal and insurance clusters.',
+                source: 'semantic-guide-engine',
+                cache_age_seconds: 300
+            })
     })
-  });
 
-  await promise;
+    await promise
 
-  // Svelte 5 state-driven DOM: connection-analysis.ts writes to
-  // appState.semanticGuideState.* — assert state directly since FakeElement
-  // has no Svelte reactivity to bind the state to the DOM nodes.
-  assert(state.semanticGuideState.storyText === 'This business is highly connected via legal and insurance clusters.',
-    `story text rendered, got: "${state.semanticGuideState.storyText}"`);
-  assert(state.semanticGuideState.storySource.includes('semantic-guide-engine cached'),
-    `source text includes engine name, got: "${state.semanticGuideState.storySource}"`);
-  assert(state.semanticGuideState.storySource.includes('5m ago'),
-    `cache age shown as minutes, got: "${state.semanticGuideState.storySource}"`);
-  assert(!state.semanticGuideState.isSynthesizing,
-    'is-synthesizing removed after success');
-  assert(state.semanticGuideState.showStory,
-    'story note shown (showStory=true)');
+    // Svelte 5 state-driven DOM: connection-analysis.ts writes to
+    // appState.semanticGuideState.* — assert state directly since FakeElement
+    // has no Svelte reactivity to bind the state to the DOM nodes.
+    assert(
+        state.semanticGuideState.storyText === 'This business is highly connected via legal and insurance clusters.',
+        `story text rendered, got: "${state.semanticGuideState.storyText}"`
+    )
+    assert(
+        state.semanticGuideState.storySource.includes('semantic-guide-engine cached'),
+        `source text includes engine name, got: "${state.semanticGuideState.storySource}"`
+    )
+    assert(
+        state.semanticGuideState.storySource.includes('5m ago'),
+        `cache age shown as minutes, got: "${state.semanticGuideState.storySource}"`
+    )
+    assert(!state.semanticGuideState.isSynthesizing, 'is-synthesizing removed after success')
+    assert(state.semanticGuideState.showStory, 'story note shown (showStory=true)')
 
-  console.log('  OK successful cached story rendered correctly');
+    console.log('  OK successful cached story rendered correctly')
 }
 
 // ---------------------------------------------------------------------------
@@ -327,54 +356,58 @@ async function testRuntimeCachedStory() {
 // ---------------------------------------------------------------------------
 
 async function testRuntimeEmptyStory() {
-  console.log('\n[RUNTIME] Empty story');
+    console.log('\n[RUNTIME] Empty story')
 
-  resetState();
-  elementsById.clear();
+    resetState()
+    elementsById.clear()
 
-  const card = new FakeElement('div');
-  card.id = 'semantic-summary-card';
-  elementsById.set('semantic-summary-card', card);
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
 
-  const storyNote = new FakeElement('div');
-  storyNote.id = 'summary-gemma-story';
-  elementsById.set('summary-gemma-story', storyNote);
+    const storyNote = new FakeElement('div')
+    storyNote.id = 'summary-gemma-story'
+    elementsById.set('summary-gemma-story', storyNote)
 
-  const storyText = new FakeElement('div');
-  storyText.id = 'summary-gemma-story-text';
-  elementsById.set('summary-gemma-story-text', storyText);
+    const storyText = new FakeElement('div')
+    storyText.id = 'summary-gemma-story-text'
+    elementsById.set('summary-gemma-story-text', storyText)
 
-  const storySource = new FakeElement('div');
-  storySource.id = 'summary-gemma-story-source';
-  elementsById.set('summary-gemma-story-source', storySource);
+    const storySource = new FakeElement('div')
+    storySource.id = 'summary-gemma-story-source'
+    elementsById.set('summary-gemma-story-source', storySource)
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({
-      ok: true,
-      mode: 'cached_trail_story',
-      story: '',
-      source: 'semantic-guide-engine'
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_trail_story',
+                story: '',
+                source: 'semantic-guide-engine'
+            })
     })
-  });
 
-  await promise;
+    await promise
 
-  assert(state.semanticGuideState.storyText === 'The connection report is still being prepared. Try again in a moment.',
-    `empty story message shown, got: "${state.semanticGuideState.storyText}"`);
-  assert(state.semanticGuideState.storySource === '',
-    'source cleared for empty story');
+    assert(
+        state.semanticGuideState.storyText === 'The connection report is still being prepared. Try again in a moment.',
+        `empty story message shown, got: "${state.semanticGuideState.storyText}"`
+    )
+    assert(state.semanticGuideState.storySource === '', 'source cleared for empty story')
 
-  console.log('  OK empty story handled correctly');
+    console.log('  OK empty story handled correctly')
 }
 
 // ---------------------------------------------------------------------------
@@ -382,46 +415,52 @@ async function testRuntimeEmptyStory() {
 // ---------------------------------------------------------------------------
 
 async function testRuntimeInvalidJson() {
-  console.log('\n[RUNTIME] Invalid JSON response');
+    console.log('\n[RUNTIME] Invalid JSON response')
 
-  resetState();
-  elementsById.clear();
+    resetState()
+    elementsById.clear()
 
-  const card = new FakeElement('div');
-  card.id = 'semantic-summary-card';
-  elementsById.set('semantic-summary-card', card);
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
 
-  const storyText = new FakeElement('div');
-  storyText.id = 'summary-gemma-story-text';
-  elementsById.set('summary-gemma-story-text', storyText);
+    const storyText = new FakeElement('div')
+    storyText.id = 'summary-gemma-story-text'
+    elementsById.set('summary-gemma-story-text', storyText)
 
-  const storySource = new FakeElement('div');
-  storySource.id = 'summary-gemma-story-source';
-  elementsById.set('summary-gemma-story-source', storySource);
+    const storySource = new FakeElement('div')
+    storySource.id = 'summary-gemma-story-source'
+    elementsById.set('summary-gemma-story-source', storySource)
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  // Resolve with text that is not valid JSON
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.reject(new SyntaxError('Unexpected token <'))
-  });
+    // Resolve with text that is not valid JSON
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () => Promise.reject(new SyntaxError('Unexpected token <'))
+    })
 
-  await promise;
+    await promise
 
-  assert(state.semanticGuideState.storyText.startsWith('Connection report unavailable'),
-    `error message shown, got: "${state.semanticGuideState.storyText}"`);
-  assert(state.semanticGuideState.storySource === 'Connection report unavailable',
-    `error source shown, got: "${state.semanticGuideState.storySource}"`);
+    assert(
+        state.semanticGuideState.storyText.startsWith('Connection report unavailable'),
+        `error message shown, got: "${state.semanticGuideState.storyText}"`
+    )
+    assert(
+        state.semanticGuideState.storySource === 'Connection report unavailable',
+        `error source shown, got: "${state.semanticGuideState.storySource}"`
+    )
 
-  console.log('  OK invalid JSON handled correctly');
+    console.log('  OK invalid JSON handled correctly')
 }
 
 // ---------------------------------------------------------------------------
@@ -429,45 +468,51 @@ async function testRuntimeInvalidJson() {
 // ---------------------------------------------------------------------------
 
 async function testRuntimeApiError() {
-  console.log('\n[RUNTIME] 500 / API error');
+    console.log('\n[RUNTIME] 500 / API error')
 
-  resetState();
-  elementsById.clear();
+    resetState()
+    elementsById.clear()
 
-  const card = new FakeElement('div');
-  card.id = 'semantic-summary-card';
-  elementsById.set('semantic-summary-card', card);
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
 
-  const storyText = new FakeElement('div');
-  storyText.id = 'summary-gemma-story-text';
-  elementsById.set('summary-gemma-story-text', storyText);
+    const storyText = new FakeElement('div')
+    storyText.id = 'summary-gemma-story-text'
+    elementsById.set('summary-gemma-story-text', storyText)
 
-  const storySource = new FakeElement('div');
-  storySource.id = 'summary-gemma-story-source';
-  elementsById.set('summary-gemma-story-source', storySource);
+    const storySource = new FakeElement('div')
+    storySource.id = 'summary-gemma-story-source'
+    elementsById.set('summary-gemma-story-source', storySource)
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  const promise = showSemanticThreadsDetail();
+    const promise = showSemanticThreadsDetail()
 
-  resolveFetch({
-    ok: false,
-    status: 500,
-    json: () => Promise.resolve({ ok: false, error: 'Server error from API' })
-  });
+    resolveFetch({
+        ok: false,
+        status: 500,
+        json: () => Promise.resolve({ ok: false, error: 'Server error from API' })
+    })
 
-  await promise;
+    await promise
 
-  assert(state.semanticGuideState.storyText.startsWith('Connection report unavailable'),
-    `error message shown, got: "${state.semanticGuideState.storyText}"`);
-  assert(state.semanticGuideState.storySource === 'Connection report unavailable',
-    `error source shown, got: "${state.semanticGuideState.storySource}"`);
+    assert(
+        state.semanticGuideState.storyText.startsWith('Connection report unavailable'),
+        `error message shown, got: "${state.semanticGuideState.storyText}"`
+    )
+    assert(
+        state.semanticGuideState.storySource === 'Connection report unavailable',
+        `error source shown, got: "${state.semanticGuideState.storySource}"`
+    )
 
-  console.log('  OK API error handled correctly');
+    console.log('  OK API error handled correctly')
 }
 
 // ---------------------------------------------------------------------------
@@ -475,58 +520,63 @@ async function testRuntimeApiError() {
 // ---------------------------------------------------------------------------
 
 async function testRuntimeAbortLifecycle() {
-  console.log('\n[RUNTIME] Abort / controller lifecycle');
+    console.log('\n[RUNTIME] Abort / controller lifecycle')
 
-  resetState();
-  elementsById.clear();
+    resetState()
+    elementsById.clear()
 
-  const card = new FakeElement('div');
-  card.id = 'semantic-summary-card';
-  elementsById.set('semantic-summary-card', card);
+    const card = new FakeElement('div')
+    card.id = 'semantic-summary-card'
+    elementsById.set('semantic-summary-card', card)
 
-  const storyNote = new FakeElement('div');
-  storyNote.id = 'summary-gemma-story';
-  elementsById.set('summary-gemma-story', storyNote);
+    const storyNote = new FakeElement('div')
+    storyNote.id = 'summary-gemma-story'
+    elementsById.set('summary-gemma-story', storyNote)
 
-  const storyText = new FakeElement('div');
-  storyText.id = 'summary-gemma-story-text';
-  elementsById.set('summary-gemma-story-text', storyText);
+    const storyText = new FakeElement('div')
+    storyText.id = 'summary-gemma-story-text'
+    elementsById.set('summary-gemma-story-text', storyText)
 
-  const storySource = new FakeElement('div');
-  storySource.id = 'summary-gemma-story-source';
-  elementsById.set('summary-gemma-story-source', storySource);
+    const storySource = new FakeElement('div')
+    storySource.id = 'summary-gemma-story-source'
+    elementsById.set('summary-gemma-story-source', storySource)
 
-  state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 };
-  state.focusedNode = 0;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }];
+    state.currentSearchSummary = { resultIndices: [0], anchorIndex: 0 }
+    state.focusedNode = 0
+    state.points = [
+        { lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active', what: 'A note' }
+    ]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  // First call
-  const promise1 = showSemanticThreadsDetail();
+    // First call
+    const promise1 = showSemanticThreadsDetail()
 
-  // Second call should abort the first
-  const promise2 = showSemanticThreadsDetail();
+    // Second call should abort the first
+    const promise2 = showSemanticThreadsDetail()
 
-  // Resolve second fetch
-  resolveFetch({
-    ok: true,
-    status: 200,
-    json: () => Promise.resolve({
-      ok: true,
-      mode: 'cached_trail_story',
-      story: 'Second call wins.',
-      source: 'semantic-guide-engine'
+    // Resolve second fetch
+    resolveFetch({
+        ok: true,
+        status: 200,
+        json: () =>
+            Promise.resolve({
+                ok: true,
+                mode: 'cached_trail_story',
+                story: 'Second call wins.',
+                source: 'semantic-guide-engine'
+            })
     })
-  });
 
-  await promise2;
+    await promise2
 
-  // storyText should have second call's story
-  assert(state.semanticGuideState.storyText === 'Second call wins.',
-    `second call wins, got: "${state.semanticGuideState.storyText}"`);
+    // storyText should have second call's story
+    assert(
+        state.semanticGuideState.storyText === 'Second call wins.',
+        `second call wins, got: "${state.semanticGuideState.storyText}"`
+    )
 
-  console.log('  OK abort lifecycle verified');
+    console.log('  OK abort lifecycle verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -534,36 +584,38 @@ async function testRuntimeAbortLifecycle() {
 // ---------------------------------------------------------------------------
 
 async function testRuntimeEarlyReturnNoFocusedPoint() {
-  console.log('\n[RUNTIME] Early return: no focused point');
+    console.log('\n[RUNTIME] Early return: no focused point')
 
-  resetState();
-  elementsById.clear();
+    resetState()
+    elementsById.clear()
 
-  const summaryText = new FakeElement('div');
-  summaryText.id = 'summary-text';
-  elementsById.set('summary-text', summaryText);
+    const summaryText = new FakeElement('div')
+    summaryText.id = 'summary-text'
+    elementsById.set('summary-text', summaryText)
 
-  const storyText = new FakeElement('div');
-  storyText.id = 'summary-gemma-story-text';
-  elementsById.set('summary-gemma-story-text', storyText);
+    const storyText = new FakeElement('div')
+    storyText.id = 'summary-gemma-story-text'
+    elementsById.set('summary-gemma-story-text', storyText)
 
-  const storySource = new FakeElement('div');
-  storySource.id = 'summary-gemma-story-source';
-  elementsById.set('summary-gemma-story-source', storySource);
+    const storySource = new FakeElement('div')
+    storySource.id = 'summary-gemma-story-source'
+    elementsById.set('summary-gemma-story-source', storySource)
 
-  // No search, no focused point
-  state.currentSearchSummary = null;
-  state.focusedNode = null;
-  state.points = [];
+    // No search, no focused point
+    state.currentSearchSummary = null
+    state.focusedNode = null
+    state.points = []
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  await showSemanticThreadsDetail();
+    await showSemanticThreadsDetail()
 
-  assert(state.semanticGuideState.config.text === 'Select a business first to load its full connection report.',
-    `early return message shown, got: "${state.semanticGuideState.config.text}"`);
+    assert(
+        state.semanticGuideState.config.text === 'Select a business first to load its full connection report.',
+        `early return message shown, got: "${state.semanticGuideState.config.text}"`
+    )
 
-  console.log('  OK early return / no focused point verified');
+    console.log('  OK early return / no focused point verified')
 }
 
 // ---------------------------------------------------------------------------
@@ -571,26 +623,28 @@ async function testRuntimeEarlyReturnNoFocusedPoint() {
 // ---------------------------------------------------------------------------
 
 async function testRuntimeFocusedIdxButNoPoint() {
-  console.log('\n[RUNTIME] focusedIdx set but no points[idx]');
+    console.log('\n[RUNTIME] focusedIdx set but no points[idx]')
 
-  resetState();
-  elementsById.clear();
+    resetState()
+    elementsById.clear()
 
-  const summaryText = new FakeElement('div');
-  summaryText.id = 'summary-text';
-  elementsById.set('summary-text', summaryText);
+    const summaryText = new FakeElement('div')
+    summaryText.id = 'summary-text'
+    elementsById.set('summary-text', summaryText)
 
-  state.focusedNode = 5;
-  state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active' }];
+    state.focusedNode = 5
+    state.points = [{ lead_id: 'LI_001', name: 'Test Biz', city: 'Austin', cluster: 1, status: 'active' }]
 
-  const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts');
+    const { showSemanticThreadsDetail } = await import('../src/lib/journey/connection-analysis.ts')
 
-  await showSemanticThreadsDetail();
+    await showSemanticThreadsDetail()
 
-  assert(state.semanticGuideState.config.text === 'Select a business first to load its full connection report.',
-    `early return for out-of-range idx, got: "${state.semanticGuideState.config.text}"`);
+    assert(
+        state.semanticGuideState.config.text === 'Select a business first to load its full connection report.',
+        `early return for out-of-range idx, got: "${state.semanticGuideState.config.text}"`
+    )
 
-  console.log('  OK out-of-range focusedIdx handled correctly');
+    console.log('  OK out-of-range focusedIdx handled correctly')
 }
 
 // ---------------------------------------------------------------------------
@@ -598,34 +652,34 @@ async function testRuntimeFocusedIdxButNoPoint() {
 // ---------------------------------------------------------------------------
 
 async function main() {
-  console.log('================================================================');
-  console.log('connection-analysis-contract.mjs');
-  console.log('Fast contract test: connection analysis / semantic threads detail');
-  console.log('================================================================');
+    console.log('================================================================')
+    console.log('connection-analysis-contract.mjs')
+    console.log('Fast contract test: connection analysis / semantic threads detail')
+    console.log('================================================================')
 
-  try {
-    testSourceStaticAbortableController();
-    testSourceCorrelationId();
-    testSourceCachedStoryMode();
-    testSourceUiWiring();
-    testSourceEmptyStory();
-    await testRuntimeCachedStory();
-    await testRuntimeEmptyStory();
-    await testRuntimeInvalidJson();
-    await testRuntimeApiError();
-    await testRuntimeAbortLifecycle();
-    await testRuntimeEarlyReturnNoFocusedPoint();
-    await testRuntimeFocusedIdxButNoPoint();
+    try {
+        testSourceStaticAbortableController()
+        testSourceCorrelationId()
+        testSourceCachedStoryMode()
+        testSourceUiWiring()
+        testSourceEmptyStory()
+        await testRuntimeCachedStory()
+        await testRuntimeEmptyStory()
+        await testRuntimeInvalidJson()
+        await testRuntimeApiError()
+        await testRuntimeAbortLifecycle()
+        await testRuntimeEarlyReturnNoFocusedPoint()
+        await testRuntimeFocusedIdxButNoPoint()
 
-    console.log('\n================================================================');
-    console.log('ALL TESTS PASSED');
-    console.log('================================================================');
-    process.exit(0);
-  } catch (err) {
-    console.error('\nTEST FAILED:', err.message);
-    console.error(err.stack);
-    process.exit(1);
-  }
+        console.log('\n================================================================')
+        console.log('ALL TESTS PASSED')
+        console.log('================================================================')
+        process.exit(0)
+    } catch (err) {
+        console.error('\nTEST FAILED:', err.message)
+        console.error(err.stack)
+        process.exit(1)
+    }
 }
 
-main();
+main()

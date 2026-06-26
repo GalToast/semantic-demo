@@ -5,7 +5,7 @@
  * Replaces the fragile 'adapter_' pattern with typed, event-driven intent.
  */
 
-import { debugError } from '@lib/utils/debug'
+import { debugError, debugWarn } from '@lib/utils/debug'
 
 // ── Event Manifest ─────────────────────────────────────────────────────────
 
@@ -122,6 +122,7 @@ type Callback<T = unknown> = (payload: T) => void
 
 const _subscribers = new Map<string, Set<Callback>>()
 const _keyedSubscribers = new Map<string, { eventName: string; unsubscribe: () => void }>()
+const _publishing = new Set<string>()
 
 // ── Subscribe ─────────────────────────────────────────────────────────────
 
@@ -187,13 +188,25 @@ export function publish<K extends EventName>(eventName: K, payload: EventPayload
     const callbacks = _subscribers.get(eventName)
     if (!callbacks || callbacks.size === 0) return
 
-    callbacks.forEach((callback) => {
-        try {
-            callback(payload)
-        } catch (error) {
-            debugError(`[EventBus] Error in subscriber for ${eventName}:`, error)
-        }
-    })
+    if (_publishing.has(eventName)) {
+        debugWarn(
+            `[EventBus] Re-entrant publish('${eventName}') blocked — this usually indicates a circular event loop. Add skipUrlSync: true or break the chain.`
+        )
+        return
+    }
+
+    _publishing.add(eventName)
+    try {
+        callbacks.forEach((callback) => {
+            try {
+                callback(payload)
+            } catch (error) {
+                debugError(`[EventBus] Error in subscriber for ${eventName}:`, error)
+            }
+        })
+    } finally {
+        _publishing.delete(eventName)
+    }
 }
 
 // ── Debug ─────────────────────────────────────────────────────────────────

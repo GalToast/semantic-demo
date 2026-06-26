@@ -26,9 +26,7 @@ const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
 // ── Canvas Interaction Adapter ──────────────────────────────────────────────
 
 export interface CanvasInteractionAdapter {
-    summarizeNeighborReason: (
-        candidate: unknown
-    ) => string
+    summarizeNeighborReason: (candidate: unknown) => string
     walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => boolean
     inspectThreadNeighbor: (index: number, options?: Record<string, unknown>) => void
     scheduleCanvasThreadInspectionClear: (delay: number) => void
@@ -36,17 +34,32 @@ export interface CanvasInteractionAdapter {
     clearTimer: (id: number | undefined) => void
 }
 
-export const canvasInteractionAdapter: CanvasInteractionAdapter = {
-    summarizeNeighborReason: () => '',
-    walkThreadNeighbor: () => false,
-    inspectThreadNeighbor: () => {},
-    scheduleCanvasThreadInspectionClear: () => {},
-    setTimer: (fn: () => void, delay: number): number | undefined =>
-        typeof setTimeout !== 'undefined' ? window.setTimeout(fn, delay) : undefined,
-    clearTimer: (id: number | undefined): void => {
-        if (typeof clearTimeout !== 'undefined' && id !== undefined) window.clearTimeout(id)
+// Cross-chunk singleton: when Vite code-splits, this module may be duplicated.
+// Use a global window key so all chunks share the same adapter instance.
+const CANVAS_ADAPTER_KEY = '__SEMANTIC_EXPLORER_CANVAS_ADAPTER__'
+
+function getOrCreateCanvasAdapter(): CanvasInteractionAdapter {
+    const w = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>) : undefined
+    const existing = w?.[CANVAS_ADAPTER_KEY] as CanvasInteractionAdapter | undefined
+    if (existing) return existing
+
+    const adapter: CanvasInteractionAdapter = {
+        summarizeNeighborReason: () => '',
+        walkThreadNeighbor: () => false,
+        inspectThreadNeighbor: () => {},
+        scheduleCanvasThreadInspectionClear: () => {},
+        setTimer: (fn: () => void, delay: number): number | undefined =>
+            typeof setTimeout !== 'undefined' ? window.setTimeout(fn, delay) : undefined,
+        clearTimer: (id: number | undefined): void => {
+            if (typeof clearTimeout !== 'undefined' && id !== undefined) window.clearTimeout(id)
+        }
     }
+
+    if (w) w[CANVAS_ADAPTER_KEY] = adapter
+    return adapter
 }
+
+export const canvasInteractionAdapter: CanvasInteractionAdapter = getOrCreateCanvasAdapter()
 
 export function initJourneyCanvasInteractionAdapter(deps: Partial<CanvasInteractionAdapter> = {}): void {
     if (typeof deps.summarizeNeighborReason === 'function') {
@@ -134,12 +147,8 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
     const activeFilters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS
 
     return threadCandidates
-        .filter(
-            (candidate: ThreadCandidateRef) => candidate.source === 'semantic' && candidate.index !== focusIndex
-        )
-        .filter((candidate: ThreadCandidateRef) =>
-            isPointVisible(candidate.index, points, null, activeFilters)
-        )
+        .filter((candidate: ThreadCandidateRef) => candidate.source === 'semantic' && candidate.index !== focusIndex)
+        .filter((candidate: ThreadCandidateRef) => isPointVisible(candidate.index, points, null, activeFilters))
         .slice(0, getSemanticThreadDisplayLimit())
         .map((candidate: ThreadCandidateRef): ScreenCandidate | null => {
             const ci = candidate.index

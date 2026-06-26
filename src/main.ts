@@ -5,6 +5,8 @@
  * Initializes stores from URL params (?demo=force, ?nodemo=1).
  */
 import { mount, unmount } from 'svelte'
+import { get } from 'svelte/store'
+import { navStore } from '@lib/stores/navigation.svelte'
 import App from './App.svelte'
 // W5-T3: LegacyCompassSurface is now lazy-loaded by App.svelte via
 // requestIdleCallback (scheduleIdleComponentImport). Removed static
@@ -156,9 +158,17 @@ function getCompatSources(): {
 
 function getCompatNavState(): Record<string, unknown> {
     const { legacyState, svelteState } = getCompatSources()
+    const liveNav = (() => {
+        try {
+            return { ...get(navStore) }
+        } catch (_e) {
+            return {}
+        }
+    })()
     return {
         ...asRecord(legacyState.navState),
-        ...asRecord(svelteState.navState)
+        ...asRecord(svelteState.navState),
+        ...liveNav
     }
 }
 
@@ -212,7 +222,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                 } else if (prop === 'points' && appState) {
                     appState.points = value as Point[]
                 } else if (prop === 'focusedNode' && appState) {
-                    appState.focusedNode = value as number
+                    appState.focusedNode = value === null ? null : (value as number)
                 }
                 return true
             },

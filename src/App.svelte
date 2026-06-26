@@ -24,6 +24,7 @@
 
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
+  import '@lib/css/canvas-hover-preview.css';
 
   // W46-B2b: Lazy components consolidated via createLazyComponent() helper.
   // See src/lib/utils/lazy-component.svelte.ts. Each handle exposes a reactive

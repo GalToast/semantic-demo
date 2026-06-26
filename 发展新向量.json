@@ -131,9 +131,8 @@
         "author": "",
         "license": "ISC",
         "sideEffects": [
-            "src/lib/state/session.svelte.ts",
-            "src/lib/journey/journey.ts"
-        ],
+        "src/lib/state/session.svelte.ts"
+    ],
         "devDependencies": {
                 "@ast-grep/cli": "^0.43.0",
                 "@axe-core/playwright": "^4.11.3",

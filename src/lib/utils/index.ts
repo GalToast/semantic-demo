@@ -78,7 +78,6 @@ export {
     detectStaticDevPHP,
     allowsStaticDevFallback,
     shouldLogStaticDevFallback,
-    updateTime,
     getThreadPulseOpacity,
     getFieldStepSyncLift,
     getGraphPresentationState,

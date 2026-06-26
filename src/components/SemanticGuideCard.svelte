@@ -38,9 +38,9 @@
    * clicks (Trail anchor → Next stop → Side trail). The `fromCanvasNode: true`
    * flag tells focusOnNode to use the field-node focus panel mode.
    */
-  function handleSuggestionClick(suggestion: Suggestion): void {
-    if (suggestion?.lead_id == null) return
-    const leadKey = String(suggestion.lead_id)
+  function handleSuggestionClick(event: MouseEvent): void {
+    const leadKey = (event.currentTarget as HTMLButtonElement).dataset.leadId
+    if (leadKey == null) return
     const idx = appState.pointIndexByLeadId?.get?.(leadKey)
     if (!Number.isFinite(idx)) return
     focusOnNode(idx as number, { fromCanvasNode: true })
@@ -80,7 +80,7 @@
           class="suggestion-btn"
           type="button"
           data-lead-id={String(suggestion.lead_id ?? '')}
-          onclick={() => handleSuggestionClick(suggestion)}
+          onclick={handleSuggestionClick}
         >
           <span class="suggestion-label">{suggestion.label || 'Suggestion'}</span>
           <span class="suggestion-name">{suggestion.name || 'Related business'}</span>

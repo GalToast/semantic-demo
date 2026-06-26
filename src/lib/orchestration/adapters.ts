@@ -15,6 +15,7 @@ import { initThreadInspectorAdapter } from '@lib/journey/thread-inspector-adapte
 import { initMapStateSubscriptions } from '@lib/engine/map-state'
 import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
 import { setupMobileSearchSheetToggle } from '@lib/search/search-panel-adapter'
+import { handleError } from '@lib/utils/error-handler'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
 
 /**
@@ -168,7 +169,14 @@ export function initAdapters(deps: AdapterDeps): void {
     // the demo arrival phase (post-gesture) needs them.
     import('@lib/journey/route-trace')
         .then(({ initRouteTraceSubscriptions }) => initRouteTraceSubscriptions())
-        .catch(() => {})
+        .catch(
+            handleError({
+                context: 'route-trace-import',
+                userFacing: true,
+                toastTitle: 'Feature unavailable',
+                toastMessage: 'Route tracing could not load. Try refreshing the page.'
+            })
+        )
 
     // 8. Thread inspector adapter (4 deps).
     // Adapter was tightened to `Point3D` during W12-T8 but the dependency

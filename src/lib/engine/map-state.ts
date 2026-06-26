@@ -270,7 +270,7 @@ export async function initMap(): Promise<void> {
         }
     } catch (error) {
         debugWarn('initMap failed:', error)
-        const ms = mapState as unknown as MapStateShape
+        const ms = mapState
         ms.mapInitialized = false
         ms.map = null
         ms.markersLayer = null

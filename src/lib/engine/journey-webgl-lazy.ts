@@ -10,6 +10,7 @@
  */
 
 import { setInspectedStrandOverlayUpdater as setAdapterInspectedStrandOverlayUpdater } from '@lib/journey/inspected-strand-overlay-adapter'
+import { silenceError } from '@lib/utils/error-handler'
 
 // ── Lazy module cache ────────────────────────────────────────────────────────
 
@@ -209,6 +210,6 @@ export function setInspectedStrandOverlayUpdater(updater: unknown): void {
 // ── Preload helpers (call after initial render) ───────────────────────────────
 
 export function preloadJourneyWebgl(): void {
-    ensureWebglModule().catch(() => {})
-    ensureInspectorWebglModule().catch(() => {})
+    ensureWebglModule().catch(silenceError('webgl-preload'))
+    ensureInspectorWebglModule().catch(silenceError('inspector-webgl-preload'))
 }

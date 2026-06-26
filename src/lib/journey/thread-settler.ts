@@ -236,9 +236,7 @@ export class ThreadSettler {
             index >= 0 && index < records.length ? (records[index] ?? null) : null
         const reason =
             options.reason ||
-            summarizeNeighborReason(
-                candidate && typeof candidate === 'object' ? candidate : {}
-            ) ||
+            summarizeNeighborReason(candidate && typeof candidate === 'object' ? candidate : {}) ||
             (candidate && typeof candidate === 'object' ? candidate.reason : null) ||
             'nearby business relationship'
 

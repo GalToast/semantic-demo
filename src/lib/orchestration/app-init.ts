@@ -27,6 +27,11 @@ import { installWindowTestBridge } from '@lib/orchestration/window-test-bridge'
 import { debugError } from '@lib/utils/debug'
 import { applyUrlState } from '@lib/orchestration/url-state'
 
+// Side-effect: initializes journey state, canvas interaction adapter,
+// and thread-settler bindings. Must load before engine init so that
+// canvas hit-test and thread walking work on first user interaction.
+import '@lib/journey/journey'
+
 // ── Debug Window Extensions (Playwright test compat) ────────────────────────
 // `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims. Their types are
 // declared in src/window.d.ts (the canonical location for window globals).

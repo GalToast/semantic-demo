@@ -64,9 +64,7 @@ function readSource(path: string): string {
 }
 
 function stripComments(src: string): string {
-    return src
-        .replace(/\/\*[\s\S]*?\*\//g, '')
-        .replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 describe('thread-inspector — typing contract (W47-Bite-D tightening)', () => {

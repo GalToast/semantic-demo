@@ -7,7 +7,7 @@
  * Port of
  */
 
-export const MOUNT_FLAG: string = 'svelteMounted';
+export const MOUNT_FLAG: string = 'svelteMounted'
 
 /**
  * Idempotent polling + MutationObserver to mount a Svelte island once its slot appears.
@@ -15,28 +15,32 @@ export const MOUNT_FLAG: string = 'svelteMounted';
  * @param mountFn - Returns true once mounted successfully
  */
 export function awaitSlot(slotId: string, mountFn: () => boolean): void {
-    if (typeof document === 'undefined') return;
+    if (typeof document === 'undefined') return
 
     const tryMount = (): boolean => {
-        if (mountFn()) return true;
-        return false;
-    };
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', () => {
-            if (tryMount()) return;
-            observeUntilMounted();
-        }, { once: true });
-        return;
+        if (mountFn()) return true
+        return false
     }
 
-    if (tryMount()) return;
-    observeUntilMounted();
+    if (document.readyState === 'loading') {
+        document.addEventListener(
+            'DOMContentLoaded',
+            () => {
+                if (tryMount()) return
+                observeUntilMounted()
+            },
+            { once: true }
+        )
+        return
+    }
+
+    if (tryMount()) return
+    observeUntilMounted()
 
     function observeUntilMounted(): void {
         const observer = new MutationObserver(() => {
-            if (tryMount()) observer.disconnect();
-        });
-        observer.observe(document.body, { childList: true, subtree: true });
+            if (tryMount()) observer.disconnect()
+        })
+        observer.observe(document.body, { childList: true, subtree: true })
     }
 }

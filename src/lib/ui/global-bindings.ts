@@ -10,6 +10,7 @@ import { handleGalaxyKeydown, initKeyboardResetOwnership, initKeyboardShortcutsH
 import { returnToOverview, resetExplorationFocus } from '@lib/orchestration/lifecycle'
 import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } from '@lib/ui/semantic-lane-bindings'
 import { applyUrlState } from '@lib/orchestration/url-state'
+import { handleError } from '@lib/utils/error-handler'
 
 export let _globalEventController: AbortController = new AbortController()
 
@@ -54,7 +55,14 @@ export function bindGlobalEvents(): void {
             'popstate',
             (e: PopStateEvent) => {
                 if (typeof applyUrlState === 'function')
-                    applyUrlState({ fromHistory: true, historyState: e.state }).catch(() => {})
+                    applyUrlState({ fromHistory: true, historyState: e.state }).catch(
+                        handleError({
+                            context: 'url-state-popstate',
+                            userFacing: true,
+                            toastTitle: 'Navigation error',
+                            toastMessage: 'Could not restore this view. Try using the mode chips instead.'
+                        })
+                    )
             },
             opts
         )

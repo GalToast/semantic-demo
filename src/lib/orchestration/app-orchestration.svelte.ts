@@ -18,6 +18,7 @@ import { teardownAppShell } from '@lib/orchestration/app-init'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help'
 import { resetSemanticThreadWorker } from '@lib/semantic-threads'
+import { silenceError } from '@lib/utils/error-handler'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -530,7 +531,9 @@ export function createAppOrchestration(): AppOrchestration {
         teardownContractSurface()
         teardownAppShell()
         resetSemanticThreadWorker()
-        import('@lib/ui/weather-ui').then(({ disposeWeatherUi }) => disposeWeatherUi()).catch(() => {})
+        import('@lib/ui/weather-ui')
+            .then(({ disposeWeatherUi }) => disposeWeatherUi())
+            .catch(silenceError('weather-dispose'))
         cleanupKeyboard?.()
         cleanupKeyboard = null
     }

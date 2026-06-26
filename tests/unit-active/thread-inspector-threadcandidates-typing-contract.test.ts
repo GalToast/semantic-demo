@@ -57,7 +57,10 @@ describe('W47-Bite-Continued / thread-inspector.ts / threadCandidates typing', (
         // Tightened to 12 in W48-Phase-3 (was 23 → 17 in W47-Bite-Continued,
         // a 48% total reduction). Lock-in: must not regress past the W47 baseline
         // of 17 OR the W48 baseline of 12.
-        expect(count, `thread-inspector-state.ts has ${count} any occurrences (lock-in target ≤12)`).toBeLessThanOrEqual(12)
+        expect(
+            count,
+            `thread-inspector-state.ts has ${count} any occurrences (lock-in target ≤12)`
+        ).toBeLessThanOrEqual(12)
     })
 
     it('all 3 reader sites use ThreadCandidateRef[] (no longer `as any[]`)', () => {
@@ -77,7 +80,10 @@ describe('W47-Bite-Continued / thread-inspector.ts / threadCandidates typing', (
         // The .find((item) ...) callback may span multiple lines, so use the
         // 's' (dotAll) flag and a multi-line tolerant pattern.
         const inferredItem = source.match(/\.find\([^)]*?\(item\)/gs) || []
-        expect(inferredItem.length, `expected 2 typed find callbacks, got ${inferredItem.length}`).toBeGreaterThanOrEqual(2)
+        expect(
+            inferredItem.length,
+            `expected 2 typed find callbacks, got ${inferredItem.length}`
+        ).toBeGreaterThanOrEqual(2)
     })
 
     it('ThreadCandidateRef type is imported from @lib/types/state', () => {
@@ -92,7 +98,9 @@ describe('W47-Bite-Continued / thread-inspector.ts / threadCandidates typing', (
         // No `as any` cast on the timer assignment
         expect(source).not.toMatch(/appState\.canvasThreadInspectionClearTimer\s*=\s*id\s+as\s+any\b/)
         // Plain or typed double-cast (`as unknown as ReturnType<...>`) assignment is acceptable
-        expect(source).toMatch(/appState\.canvasThreadInspectionClearTimer\s*=\s*id\s+as\s+unknown\s+as\s+ReturnType<typeof\s+setTimeout>/)
+        expect(source).toMatch(
+            /appState\.canvasThreadInspectionClearTimer\s*=\s*id\s+as\s+unknown\s+as\s+ReturnType<typeof\s+setTimeout>/
+        )
     })
 
     it('preserved: typeof item === "number" defensive check (legacy numeric entries)', () => {

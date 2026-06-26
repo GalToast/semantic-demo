@@ -95,6 +95,7 @@
 
   let bodyFocusedNode = $state('');
   let bodyNavMode = $state('');
+  let _bodySceneReady = $state('');
 
   $effect(() => {
     if (typeof document === 'undefined') return;
@@ -103,7 +104,7 @@
       bodyPanelSurfaceDetail = document.body.dataset.panelSurfaceDetail ?? '';
       bodyFocusedNode = document.body.dataset.focusedNode ?? '';
       bodyNavMode = document.body.dataset.navMode ?? '';
-      bodySceneReady = document.body.dataset.sceneReady ?? '';
+      _bodySceneReady = document.body.dataset.sceneReady ?? '';
     };
     const observer = new MutationObserver(syncBodyPanelSurface);
     observer.observe(document.body, {

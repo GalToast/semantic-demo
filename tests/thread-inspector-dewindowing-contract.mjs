@@ -21,24 +21,24 @@
  *   node tests/thread-inspector-dewindowing-contract.mjs
  */
 
-import fs from 'node:fs';
-import path from 'node:path';
+import fs from 'node:fs'
+import path from 'node:path'
 
-const SEMDEMO_ROOT = path.resolve(process.cwd());
-const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector.ts');
+const SEMDEMO_ROOT = path.resolve(process.cwd())
+const THREAD_INSPECTOR_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector.ts')
 
 function assert(cond, msg) {
-  if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`);
+    if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
 }
 
 function assertContains(haystack, needle, label) {
-  const found = haystack.includes(needle);
-  assert(found, `${label}: expected source to contain "${needle}", but it was not found`);
+    const found = haystack.includes(needle)
+    assert(found, `${label}: expected source to contain "${needle}", but it was not found`)
 }
 
 function assertNotContains(haystack, needle, label) {
-  const found = haystack.includes(needle);
-  assert(!found, `${label}: source should NOT contain "${needle}", but it was found`);
+    const found = haystack.includes(needle)
+    assert(!found, `${label}: source should NOT contain "${needle}", but it was found`)
 }
 
 // Returns the _ti diagnostic registration content for direct inspection.
@@ -47,203 +47,217 @@ function assertNotContains(haystack, needle, label) {
 //   if (window.__DEBUG_PROBES__) { window._ti = { ... }; }  (legacy gated)
 //   window._ti = { ... };                                  (legacy unconditional)
 function getWindowTiBlock(src) {
-  const probeStart = src.indexOf("registerDiagnosticProbe('_ti', {");
-  if (probeStart !== -1) {
-    const openIdx = src.indexOf('{', probeStart);
-    let depth = 0;
-    for (let i = openIdx; i < src.length; i++) {
-      const ch = src[i];
-      if (ch === '{') depth++;
-      else if (ch === '}') {
-        depth--;
-        if (depth === 0) return src.slice(probeStart, i + 1);
-      }
+    const probeStart = src.indexOf("registerDiagnosticProbe('_ti', {")
+    if (probeStart !== -1) {
+        const openIdx = src.indexOf('{', probeStart)
+        let depth = 0
+        for (let i = openIdx; i < src.length; i++) {
+            const ch = src[i]
+            if (ch === '{') depth++
+            else if (ch === '}') {
+                depth--
+                if (depth === 0) return src.slice(probeStart, i + 1)
+            }
+        }
     }
-  }
-  // Try gated pattern first (new)
-  const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)');
-  if (gatedStart !== -1) {
-    const tiStart = src.indexOf('window._ti = {', gatedStart);
-    if (tiStart !== -1) {
-      const braceDepth = { depth: 0, started: false };
-      for (let i = tiStart + 'window._ti = {'.length; i < src.length; i++) {
-        const ch = src[i];
-        if (ch === '{') { braceDepth.depth++; braceDepth.started = true; }
-        else if (ch === '}') { braceDepth.depth--; if (braceDepth.started && braceDepth.depth === 0) return src.slice(tiStart, i + 1); }
-      }
+    // Try gated pattern first (new)
+    const gatedStart = src.indexOf('if (window.__DEBUG_PROBES__)')
+    if (gatedStart !== -1) {
+        const tiStart = src.indexOf('window._ti = {', gatedStart)
+        if (tiStart !== -1) {
+            const braceDepth = { depth: 0, started: false }
+            for (let i = tiStart + 'window._ti = {'.length; i < src.length; i++) {
+                const ch = src[i]
+                if (ch === '{') {
+                    braceDepth.depth++
+                    braceDepth.started = true
+                } else if (ch === '}') {
+                    braceDepth.depth--
+                    if (braceDepth.started && braceDepth.depth === 0) return src.slice(tiStart, i + 1)
+                }
+            }
+        }
     }
-  }
-  // Fallback: unconditional pattern (legacy)
-  const tiStart = src.indexOf('window._ti = {');
-  assert(tiStart !== -1, 'window._ti = { block found (gated or unconditional)');
-  const tiEnd = src.indexOf('};', tiStart);
-  return src.slice(tiStart, tiEnd + 2);
+    // Fallback: unconditional pattern (legacy)
+    const tiStart = src.indexOf('window._ti = {')
+    assert(tiStart !== -1, 'window._ti = { block found (gated or unconditional)')
+    const tiEnd = src.indexOf('};', tiStart)
+    return src.slice(tiStart, tiEnd + 2)
 }
 
 // TEST 1: window.exploreThreadNeighbor direct assignment removed (Wave70)
 // ---------------------------------------------------------------------------
 
 function testExploreThreadNeighborDirectAssignmentRemoved() {
-  console.log('\n[TEST] window.exploreThreadNeighbor direct assignment removed (Wave70)');
+    console.log('\n[TEST] window.exploreThreadNeighbor direct assignment removed (Wave70)')
 
-  const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+    const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
-  // The direct window.exploreThreadNeighbor = ... assignment must NOT exist
-  assertNotContains(src, 'window.exploreThreadNeighbor = exploreThreadNeighbor',
-    'window.exploreThreadNeighbor direct assignment removed');
+    // The direct window.exploreThreadNeighbor = ... assignment must NOT exist
+    assertNotContains(
+        src,
+        'window.exploreThreadNeighbor = exploreThreadNeighbor',
+        'window.exploreThreadNeighbor direct assignment removed'
+    )
 
-  // window._ti was retired during TS migration; functions exported directly
-  assert(src.includes('export function exploreThreadNeighbor'),
-    'exploreThreadNeighbor exported directly from thread-inspector');
+    // window._ti was retired during TS migration; functions exported directly
+    assert(
+        src.includes('export function exploreThreadNeighbor'),
+        'exploreThreadNeighbor exported directly from thread-inspector'
+    )
 
-  console.log('  OK window.exploreThreadNeighbor removed; function exported directly');
+    console.log('  OK window.exploreThreadNeighbor removed; function exported directly')
 }
 
 // TEST 2: window._ti is the debug namespace and contains all internal functions
 // ---------------------------------------------------------------------------
 
 function testWindowTiDebugNamespace() {
-  console.log('\n[TEST] thread-inspector functions exported directly (window._ti retired)');
+    console.log('\n[TEST] thread-inspector functions exported directly (window._ti retired)')
 
-  const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+    const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
-  // window._ti was retired during TS migration; functions exported directly
-  assert(!src.includes('window._ti'), 'window._ti debug namespace remains retired');
+    // window._ti was retired during TS migration; functions exported directly
+    assert(!src.includes('window._ti'), 'window._ti debug namespace remains retired')
 
-  const expectedExports = [
-    'getSemanticThreadCandidates',
-    'getGeometricThreadCandidates',
-    'getThreadCandidatesForIndex',
-    'setStrandContinuityState',
-    'clearStrandContinuityState',
-    'getStrandArrivalNote',
-    'getThreadInspectionState',
-    'renderThreadInspection',
-    'inspectThreadNeighbor',
-    'pinThreadNeighbor',
-    'unpinThreadInspection',
-    'clearThreadInspection',
-    'exploreThreadNeighbor',
-    'syncInspectedStrandOverlay',
-    'updateInspectedStrandOverlay',
-    'disposeInspectedStrandOverlay'
-  ];
+    const expectedExports = [
+        'getSemanticThreadCandidates',
+        'getGeometricThreadCandidates',
+        'getThreadCandidatesForIndex',
+        'setStrandContinuityState',
+        'clearStrandContinuityState',
+        'getStrandArrivalNote',
+        'getThreadInspectionState',
+        'renderThreadInspection',
+        'inspectThreadNeighbor',
+        'pinThreadNeighbor',
+        'unpinThreadInspection',
+        'clearThreadInspection',
+        'exploreThreadNeighbor',
+        'syncInspectedStrandOverlay',
+        'updateInspectedStrandOverlay',
+        'disposeInspectedStrandOverlay'
+    ]
 
-  for (const fn of expectedExports) {
-    assert(src.includes(fn), fn + ' found in thread-inspector');
-  }
+    for (const fn of expectedExports) {
+        assert(src.includes(fn), fn + ' found in thread-inspector')
+    }
 
-  console.log('  OK thread-inspector functions exported (window._ti retired)');
+    console.log('  OK thread-inspector functions exported (window._ti retired)')
 }
 
 // TEST 3: No other window.* direct assignments — all retired
 // window._ti and window.exploreThreadNeighbor both retired during TS migration.
 
 function testNoOtherWindowAssignments() {
-  console.log('\n[TEST] No other window.* direct assignments in thread-inspector.ts');
+    console.log('\n[TEST] No other window.* direct assignments in thread-inspector.ts')
 
-  const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+    const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
-  const windowAssignments = [];
-  const re = /window\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?!function|const|let|var|import)/g;
-  let match;
-  while ((match = re.exec(src)) !== null) {
-    windowAssignments.push(match[0]);
-  }
+    const windowAssignments = []
+    const re = /window\.([a-zA-Z_$][a-zA-Z0-9_$]*)\s*=\s*(?!function|const|let|var|import)/g
+    let match
+    while ((match = re.exec(src)) !== null) {
+        windowAssignments.push(match[0])
+    }
 
-  const directExposes = windowAssignments.filter(line => {
-    return line.includes('= ') && !line.includes('= function') && !line.includes('= () =>');
-  });
+    const directExposes = windowAssignments.filter((line) => {
+        return line.includes('= ') && !line.includes('= function') && !line.includes('= () =>')
+    })
 
-  // All window.* direct assignments retired (window._ti and window.exploreThreadNeighbor)
-  assert(directExposes.length === 0, `thread-inspector.js: unexpected window.* assignments: ${directExposes.join(', ')}`);
+    // All window.* direct assignments retired (window._ti and window.exploreThreadNeighbor)
+    assert(
+        directExposes.length === 0,
+        `thread-inspector.js: unexpected window.* assignments: ${directExposes.join(', ')}`
+    )
 
-  console.log('  OK no window.* direct assignments (all retired)');
+    console.log('  OK no window.* direct assignments (all retired)')
 }
 
 // TEST 4: window.exploreThreadNeighbor direct assignment is absent
 // (Wave70 removal — window._ti also retired)
 
 function testExploreThreadNeighborDirectAssignmentAbsent() {
-  console.log('\n[TEST] window.exploreThreadNeighbor direct assignment is absent');
+    console.log('\n[TEST] window.exploreThreadNeighbor direct assignment is absent')
 
-  const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+    const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
-  const lastExploreOccurrence = src.lastIndexOf('window.exploreThreadNeighbor = exploreThreadNeighbor');
-  assert(lastExploreOccurrence === -1,
-    'window.exploreThreadNeighbor direct assignment removed (not found)');
+    const lastExploreOccurrence = src.lastIndexOf('window.exploreThreadNeighbor = exploreThreadNeighbor')
+    assert(lastExploreOccurrence === -1, 'window.exploreThreadNeighbor direct assignment removed (not found)')
 
-  // Verify exploreThreadNeighbor is exported directly (no window._ti)
-  assert(src.includes('export function exploreThreadNeighbor'),
-    'exploreThreadNeighbor exported directly from thread-inspector');
+    // Verify exploreThreadNeighbor is exported directly (no window._ti)
+    assert(
+        src.includes('export function exploreThreadNeighbor'),
+        'exploreThreadNeighbor exported directly from thread-inspector'
+    )
 
-  console.log('  OK window.exploreThreadNeighbor direct assignment absent; function exported directly');
+    console.log('  OK window.exploreThreadNeighbor direct assignment absent; function exported directly')
 }
 
 // TEST 5: Wave70 removal comment is specific and accurate
 // The comment at end of file must document the Wave70 removal state accurately.
 
 function testWave70RemovalComment() {
-  console.log('\n[TEST] Wave70 removal comment documents current state');
+    console.log('\n[TEST] Wave70 removal comment documents current state')
 
-  const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+    const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
-  const last300 = src.slice(Math.max(0, src.length - 400));
+    const last300 = src.slice(Math.max(0, src.length - 400))
 
-  // Must reference Wave70 and explain removal
-  assert(/Wave70/.test(last300), 'Wave70 reference in removal comment');
-  // Must acknowledge diagnostic path via _ti
-  assert(/_ti/.test(last300), 'Diagnostic namespace _ti mentioned in removal comment');
-  // Must reference walkThreadNeighbor as the active seam
-  assert(/walkThreadNeighbor/.test(last300), 'walkThreadNeighbor active seam acknowledged');
+    // Must reference Wave70 and explain removal
+    assert(/Wave70/.test(last300), 'Wave70 reference in removal comment')
+    // Must acknowledge diagnostic path via _ti
+    assert(/_ti/.test(last300), 'Diagnostic namespace _ti mentioned in removal comment')
+    // Must reference walkThreadNeighbor as the active seam
+    assert(/walkThreadNeighbor/.test(last300), 'walkThreadNeighbor active seam acknowledged')
 
-  console.log('  OK Wave70 removal comment is accurate and specific');
+    console.log('  OK Wave70 removal comment is accurate and specific')
 }
 
 // TEST 6: No wildcard or dynamic window[key] assignments in thread-inspector.js
 // ---------------------------------------------------------------------------
 
 function testNoWildcardWindowAssignments() {
-  console.log('\n[TEST] No wildcard or dynamic window[key] assignments');
+    console.log('\n[TEST] No wildcard or dynamic window[key] assignments')
 
-  const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8');
+    const src = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
-  const dynamicWindowRe = /window\[.*\]\s*=/;
-  assert(!dynamicWindowRe.test(src), 'No dynamic window[key] assignment pattern found');
+    const dynamicWindowRe = /window\[.*\]\s*=/
+    assert(!dynamicWindowRe.test(src), 'No dynamic window[key] assignment pattern found')
 
-  assert(!src.includes('for (const k in window)'), 'No for-in over window pattern');
-  assert(!src.includes('for (const key in window)'), 'No for-in over window pattern');
+    assert(!src.includes('for (const k in window)'), 'No for-in over window pattern')
+    assert(!src.includes('for (const key in window)'), 'No for-in over window pattern')
 
-  assert(!src.includes('Object.assign(window'), 'No Object.assign(window, ...) pattern');
+    assert(!src.includes('Object.assign(window'), 'No Object.assign(window, ...) pattern')
 
-  console.log('  OK no wildcard or dynamic window assignments');
+    console.log('  OK no wildcard or dynamic window assignments')
 }
 
 // MAIN
 // ---------------------------------------------------------------------------
 
 function main() {
-  console.log('============================================================');
-  console.log('thread-inspector-dewindowing-contract.mjs');
-  console.log('Contract test: thread-inspector backward-compatible window surface');
-  console.log('============================================================');
+    console.log('============================================================')
+    console.log('thread-inspector-dewindowing-contract.mjs')
+    console.log('Contract test: thread-inspector backward-compatible window surface')
+    console.log('============================================================')
 
-  try {
-    testExploreThreadNeighborDirectAssignmentRemoved();
-    testWindowTiDebugNamespace();
-    testNoOtherWindowAssignments();
-    testExploreThreadNeighborDirectAssignmentAbsent();
-    testWave70RemovalComment();
-    testNoWildcardWindowAssignments();
+    try {
+        testExploreThreadNeighborDirectAssignmentRemoved()
+        testWindowTiDebugNamespace()
+        testNoOtherWindowAssignments()
+        testExploreThreadNeighborDirectAssignmentAbsent()
+        testWave70RemovalComment()
+        testNoWildcardWindowAssignments()
 
-    console.log('\n============================================================');
-    console.log('ALL TESTS PASSED');
-    console.log('============================================================');
-    process.exit(0);
-  } catch (err) {
-    console.error('\nTEST FAILED:', err.message);
-    process.exit(1);
-  }
+        console.log('\n============================================================')
+        console.log('ALL TESTS PASSED')
+        console.log('============================================================')
+        process.exit(0)
+    } catch (err) {
+        console.error('\nTEST FAILED:', err.message)
+        process.exit(1)
+    }
 }
 
-main();
+main()

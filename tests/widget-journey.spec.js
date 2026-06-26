@@ -19,7 +19,7 @@
 
 import { test, expect } from '@playwright/test'
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8797'
 
 test.describe('Widget Journey Tests — what the user actually sees', () => {
     /**
@@ -39,7 +39,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
             /* exposed for diagnostics */
         })
 
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate. The button might be labelled "Explore" or
         // "Enter 3D Scene" depending on which branch renders. We match both.
@@ -392,7 +392,9 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
                 laneStatus: 'Ready',
                 suggestions
             }
-            return { ok: true, candidates, focusBefore: state.navState?.focusedIndex ?? null }
+            // Compute the actual node indices that handleSuggestionClick will use
+            const nodeIndices = candidates.map(c => state.pointIndexByLeadId.get(c.lead_id))
+            return { ok: true, candidates, nodeIndices, focusBefore: state.navState?.focusedIndex ?? null }
         })
         console.log('[TEST 12 DEBUG setup]', JSON.stringify(setup).slice(0, 200))
 
@@ -414,16 +416,28 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         // For a fresh page, focusBefore is null/0/undefined — click the first
         // suggestion; its lead_id maps to a different index than focusBefore.
         const targetIdx = candidates.length > 1 ? 1 : 0 // skip first if there's a second
-        const expectedIdx = candidates[targetIdx].index
+        const expectedIdx = setup.nodeIndices[targetIdx]
 
         // Capture focus immediately before click
         const focusImmediatelyBefore = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex ?? null)
 
         // Click the suggestion
+        const clickedLeadId = await suggestionBtns.nth(targetIdx).getAttribute('data-lead-id')
+        const clickedOnclick = await suggestionBtns.nth(targetIdx).evaluate((b) => b.onclick?.toString?.() ?? 'none')
+        console.log(
+            '[DIAG] targetIdx:',
+            targetIdx,
+            'leadId:',
+            clickedLeadId,
+            'onclick:',
+            clickedOnclick.substring(0, 200)
+        )
+        console.log('[DIAG] focusBefore:', focusImmediatelyBefore)
         await suggestionBtns.nth(targetIdx).click()
         await page.waitForTimeout(800)
 
         const focusAfter = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex ?? null)
+        console.log('[DIAG] focusAfter:', focusAfter)
 
         expect(
             focusAfter,
@@ -878,5 +892,90 @@ test.describe('Widget Journey Tests — legend keyboard shortcut', () => {
 
         const hasOpenClassAfterSecondL = await legend.evaluate((el) => el.classList.contains('open'))
         expect(hasOpenClassAfterSecondL).toBe(false)
+    })
+})
+
+// W48-T5: canvas hover preview. Moving the mouse over a 3D node shows a
+// floating preview card with business name, category, city, and signal.
+test.describe('Widget Journey Tests — canvas hover preview', () => {
+    test('20. hovering a canvas node shows a business preview card', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the splash screen
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.waitForTimeout(3000)
+
+        // Move mouse to center of canvas (likely over a node)
+        const canvas = page.locator('canvas').first()
+        const box = await canvas.boundingBox()
+        expect(box).not.toBeNull()
+
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+        await page.waitForTimeout(600)
+
+        // Preview should exist and be visible
+        const preview = page.locator('#canvas-hover-preview').first()
+        await preview.waitFor({ state: 'visible', timeout: 3000 })
+
+        // Should contain business name
+        const previewText = await preview.textContent()
+        expect(previewText).toBeTruthy()
+        expect(previewText.length).toBeGreaterThan(5)
+
+        // Move mouse away — preview should hide
+        await page.mouse.move(0, 0)
+        await page.waitForTimeout(300)
+
+        const isVisible = await preview.evaluate((el) => el.style.opacity === '1')
+        expect(isVisible).toBe(false)
+    })
+})
+
+// W48-T6: canvas click focus. Clicking on a 3D node focuses it, transitions
+// the camera, updates the URL with the record ID, and puts the app in trail mode.
+test.describe('Widget Journey Tests — canvas click focus', () => {
+    test('21. clicking a canvas node focuses the business and enters trail mode', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the splash screen
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.waitForTimeout(5000)
+
+        // Move mouse to center of canvas to find a node
+        const canvas = page.locator('canvas').first()
+        const box = await canvas.boundingBox()
+        expect(box).not.toBeNull()
+
+        // Hover to find a node, then click
+        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
+        await page.waitForTimeout(1000)
+        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+        await page.waitForTimeout(2000)
+
+        // After settling, the app should be in focus/trail mode
+        await page.waitForTimeout(3000)
+        const navState = await page.evaluate(() => {
+            const app = window.__APP_STATE__
+            return {
+                focusedIndex: app?.navState?.focusedIndex,
+                mode: app?.navState?.mode,
+                surface: app?.navState?.surface,
+                hasHover: app?.hoverHighlightIndex != null,
+                hoverIndex: app?.hoverHighlightIndex
+            }
+        })
+
+        expect(navState.focusedIndex).not.toBeNull()
+        expect(Number.isFinite(navState.focusedIndex)).toBe(true)
+        expect(navState.mode).toBe('trail')
+        expect(navState.surface).toBe('focus')
+
+        // URL should contain the record ID
+        const url = page.url()
+        expect(url).toContain('record=')
     })
 })
