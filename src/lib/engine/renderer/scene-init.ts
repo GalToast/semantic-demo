@@ -15,6 +15,7 @@ import {
     SRGBColorSpace,
     HemisphereLight,
     DirectionalLight,
+    AmbientLight,
     SphereGeometry,
     MeshBasicMaterial,
     Mesh,
@@ -112,20 +113,33 @@ export async function buildThreeScene(
     controls.panSpeed = CONFIG.ORBIT_PAN_SPEED_DEFAULT
 
     // ── Lights ──────────────────────────────────────────────────────────────
-    const hemiLight = new HemisphereLight(0xe8f4ff, 0x080820, 0)
+    // W48-T1A: Re-enable the bioluminescent lighting the 2026-06-07 visual
+    // critique recommended. The lights were constructed but never lit
+    // (intensity 0). Now: hemisphere (cool sky, warm ground) + directional
+    // (warm rim) + ambient (warm base fill) = visible, atmospheric scene.
+    const hemiLight = new HemisphereLight(0xe8f4ff, 0x080820, 0.35)
     hemiLight.position.set(0, 20, 0)
     scene.add(hemiLight)
 
-    const dirLight = new DirectionalLight(0xffffff, 0)
-    dirLight.position.set(5, 5, 5)
+    const dirLight = new DirectionalLight(0xffffff, 0.6)
+    dirLight.position.set(-2, 3, 5)
     scene.add(dirLight)
 
+    // Warm base fill — sits between direct lighting and shadow so spores
+    // never disappear in unlit regions. Color matches the amber haze.
+    const ambient = new AmbientLight(0x1a1510, 0.4)
+    scene.add(ambient)
+
     // ── Atmosphere Spheres ────────────────────────────────────────────────
+    // W48-T1A: Atmosphere sphere upgraded from invisible (0x0d2024@0.026) to
+    // visible warm haze (0x2a1f0a@0.10). 0.026 was below perceptual threshold
+    // on most office displays. Reference sphere bumped from 0.0045 to 0.03
+    // (was in no-man's-land — invisible but rendering).
     const glowGeo = new SphereGeometry(3.15, 32, 16)
     const glowMat = new MeshBasicMaterial({
-        color: 0x0d2024,
+        color: 0x2a1f0a,
         transparent: true,
-        opacity: 0.026,
+        opacity: 0.1,
         side: BackSide
     })
     const glowSphere = new Mesh(glowGeo, glowMat)
@@ -138,7 +152,7 @@ export async function buildThreeScene(
         color: SCENE_PALETTE.threadTint,
         wireframe: true,
         transparent: true,
-        opacity: 0.0045,
+        opacity: 0.03,
         depthWrite: false,
         blending: AdditiveBlending
     })

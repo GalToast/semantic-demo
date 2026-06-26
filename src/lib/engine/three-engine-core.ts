@@ -876,7 +876,11 @@ export function animate() {
         }
         _lastHoveredNode = hoveredNode
         if (_hoverEmissiveFlash > 0.001 && webglContext.nodeSporeMaterial) {
-            const baseIntensity = 0.34
+            // W48-T1A: base intensity bumped from 0.34 → 0.55 to match the
+            // new spore material baseline (was 0.34, raised for bioluminescent
+            // identity). Without this sync, the post-flash settle would set
+            // emissive back to 0.34 — dimmer than the resting state.
+            const baseIntensity = 0.55
             const flashPeak = 1.8
             const targetIntensity = baseIntensity + (flashPeak - baseIntensity) * _hoverEmissiveFlash
             ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = targetIntensity

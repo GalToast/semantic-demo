@@ -50,13 +50,19 @@ export const MYCELIUM_FIELD_SCALE = Object.freeze({
     z: 3.7
 })
 
+// W48-T1A: Tone exposure 0.78 → 0.95, spore opacity 0.05 → 0.65 per the
+// 2026-06-07 visual critique. Both values were originally tuned for a
+// "subtle, dark" look; the critique identified them as too dim and the
+// bioluminescent identity never landed. Bumping exposure makes the whole
+// scene read brighter without per-material changes; spore opacity lifts
+// the spores from "barely visible specks" to "self-illuminating nodes".
 export const SCENE_ATMOSPHERE = Object.freeze({
     fogColor: SCENE_PALETTE.fog,
     fogDensity: 0.0028,
     clearAlpha: 0.96,
-    toneExposure: 0.78,
+    toneExposure: 0.95,
     pointOpacityScale: 1.0,
-    sporeOpacity: 0.05
+    sporeOpacity: 0.65
 })
 
 const NODE_SPORE_BASE_RADIUS = 0.0019
@@ -336,10 +342,14 @@ export function disposeNodeVisuals() {
 export function createNodeSporeLayer() {
     if (!webglContext.scene || !state.points?.length || !state.nodePositions?.length) return
     const sporeGeo = new SphereGeometry(1, SPORE_SEGMENTS_VISIBLE, SPORE_SEGMENTS_VISIBLE - 1)
+    // W48-T1A: Spore material upgraded for bioluminescent identity.
+    // Emissive 0x16453f (dark teal, ~10% perceived) → 0x2a8a7a (brighter teal).
+    // Emissive intensity 0.34 → 0.55. Per-instance color factor 0.85 → 1.62×
+    // (boosts vertex colors 62% above base so cluster palette reads clearly).
     const sporeMat = new MeshPhongMaterial({
         color: 0xc8d4d0,
-        emissive: 0x16453f,
-        emissiveIntensity: 0.34,
+        emissive: 0x2a8a7a,
+        emissiveIntensity: 0.55,
         shininess: 58,
         transparent: true,
         opacity: SCENE_ATMOSPHERE.sporeOpacity,
@@ -353,7 +363,7 @@ export function createNodeSporeLayer() {
     sporeMesh.instanceMatrix.setUsage(DynamicDrawUsage)
     webglContext.nodeSporeMesh = sporeMesh
     webglContext.nodeSporeMaterial = sporeMat
-    const SPORE_INSTANCE_COLOR_FACTOR = 0.85
+    const SPORE_INSTANCE_COLOR_FACTOR = 1.62
     for (let i = 0; i < state.points.length; i += 1) {
         setNodeSporeInstanceMatrix(i, sporeMesh)
         sporeMesh.setColorAt(i, getNodeSporeColor(i, SPORE_INSTANCE_COLOR_FACTOR))
