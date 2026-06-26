@@ -18,7 +18,6 @@ import type {
     PositionBufferDescriptor
 } from '@lib/types/business'
 import type { LoadingPhase } from '@lib/types/state'
-import type { Point } from '@lib/state/state-types'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { appState } from '@lib/state/app.svelte'
@@ -29,16 +28,61 @@ import { debugError } from '@lib/utils/debug'
 // Each duplicate would create its own writable-store instances, so consumers
 // in different chunks would see different (empty) stores.  We use a plain
 // *window* data property to share the canonical store instances.
-function getOrCreateWritable<T>(windowKey: string, initial: T) {
-    const existing =
-        typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>)[windowKey] : undefined
+
+/**
+ * Typed view of the window object carrying semantic-explorer cross-chunk
+ * singletons and legacy __APP_STATE__. The properties here are injected at
+ * runtime by this module and by the pre-TS legacy bootstrap, so they are
+ * not declared on the DOM Window type — but they ARE statically known to
+ * this codebase.
+ */
+interface SemanticExplorerWindow {
+    /**
+     * Cross-chunk singleton slots. Each key holds a Svelte writable store;
+     * Vite code-splitting may duplicate this module, so we read/write the
+     * canonical instance via window rather than module scope.
+     */
+    [key: `__SEMANTIC_EXPLORER_${string}`]: unknown
+    /** Legacy bootstrap state injected by the pre-TS js/state.js. */
+    __APP_STATE__?: SemanticExplorerAppState
+}
+
+/** Shape of the legacy __APP_STATE__ global (subset this module reads). */
+interface SemanticExplorerAppState {
+    points?: readonly BusinessRecord[]
+    semanticNeighborMapByLeadId?: Map<string, SemanticNeighborEntry>
+    semanticThreadBundle?: SemanticThreadBundle | null
+    semanticThreadArtifactName?: string | null
+    semanticThreadsStatus?: string
+    semanticSpaceLayoutManifest?: LayoutManifest | null
+    threadCandidates?: readonly number[]
+    threadSource?: string
+}
+
+/**
+ * Read a cross-chunk singleton slot from the window namespace.
+ * Returns undefined when SSR (no window) or when the slot is unset.
+ * The cast to `SemanticExplorerWindow` is honest: the keys are injected
+ * by this module's own getOrCreateWritable and by the legacy bootstrap,
+ * not by the DOM library.
+ */
+function getWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`): unknown {
+    if (typeof window === 'undefined') return undefined
+    return (window as unknown as SemanticExplorerWindow)[key]
+}
+
+function setWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`, value: unknown): void {
+    if (typeof window === 'undefined') return
+    ;(window as unknown as SemanticExplorerWindow)[key] = value
+}
+
+function getOrCreateWritable<T>(windowKey: `__SEMANTIC_EXPLORER_${string}`, initial: T) {
+    const existing = getWindowSlot(windowKey)
     if (existing && typeof (existing as { subscribe?: unknown }).subscribe === 'function') {
-        return existing as unknown as ReturnType<typeof writable<T>>
+        return existing as ReturnType<typeof writable<T>>
     }
     const store = writable<T>(initial)
-    if (typeof window !== 'undefined') {
-        ;(window as unknown as Record<string, unknown>)[windowKey] = store
-    }
+    setWindowSlot(windowKey, store)
     return store
 }
 
@@ -74,40 +118,28 @@ export const businessRecords = getOrCreateWritable<readonly BusinessRecord[]>(
  */
 export function hydrateFromLegacyState(): boolean {
     if (typeof window === 'undefined') return false
-    const w = window as unknown as {
-        __APP_STATE__?: {
-            points?: readonly BusinessRecord[]
-            semanticNeighborMapByLeadId?: Map<string, unknown>
-            semanticThreadBundle?: unknown
-            semanticThreadArtifactName?: unknown
-            semanticThreadsStatus?: string
-            semanticSpaceLayoutManifest?: unknown
-            threadCandidates?: readonly number[]
-            threadSource?: string
-        }
-    }
+    const w = window as unknown as SemanticExplorerWindow
     const windowAppState = w.__APP_STATE__
     if (!windowAppState) return false
-    const legacy = windowAppState as Record<string, unknown>
     let didHydrate = false
     if (Array.isArray(windowAppState.points) && windowAppState.points.length > 0) {
-        businessRecords.set(windowAppState.points as BusinessRecord[])
+        businessRecords.set(windowAppState.points)
         didHydrate = true
     }
-    if (legacy.semanticNeighborMapByLeadId instanceof Map) {
-        semanticNeighborMap.set(legacy.semanticNeighborMapByLeadId as Map<string, SemanticNeighborEntry>)
+    if (windowAppState.semanticNeighborMapByLeadId instanceof Map) {
+        semanticNeighborMap.set(windowAppState.semanticNeighborMapByLeadId)
         didHydrate = true
     }
-    if (legacy.semanticThreadBundle !== undefined) {
-        semanticThreadBundle.set(legacy.semanticThreadBundle as SemanticThreadBundle | null)
+    if (windowAppState.semanticThreadBundle !== undefined) {
+        semanticThreadBundle.set(windowAppState.semanticThreadBundle)
         didHydrate = true
     }
-    if (legacy.semanticThreadArtifactName !== undefined) {
-        semanticThreadArtifactName.set(legacy.semanticThreadArtifactName as string | null)
+    if (windowAppState.semanticThreadArtifactName !== undefined) {
+        semanticThreadArtifactName.set(windowAppState.semanticThreadArtifactName)
         didHydrate = true
     }
-    if (legacy.semanticSpaceLayoutManifest !== undefined) {
-        layoutManifest.set(legacy.semanticSpaceLayoutManifest as LayoutManifest | null)
+    if (windowAppState.semanticSpaceLayoutManifest !== undefined) {
+        layoutManifest.set(windowAppState.semanticSpaceLayoutManifest)
         didHydrate = true
     }
     return didHydrate
@@ -125,7 +157,7 @@ export function getBusinessRecords(): readonly BusinessRecord[] {
     // (Hydration may not have run yet for components created before main.ts calls
     // hydrateFromLegacyState.)
     if (typeof window !== 'undefined') {
-        const w = window as unknown as { __APP_STATE__?: { points?: readonly BusinessRecord[] } }
+        const w = window as unknown as SemanticExplorerWindow
         const points = w.__APP_STATE__?.points
         if (Array.isArray(points) && points.length > 0) {
             return points
@@ -249,7 +281,7 @@ export function getIsDataReady(): boolean {
     // Fallback: if the Svelte dataLoadState hasn't been initialized but the
     // legacy state has the data loaded, treat the data as ready.
     if (typeof window !== 'undefined') {
-        const w = window as unknown as { __APP_STATE__?: { points?: readonly unknown[] } }
+        const w = window as unknown as SemanticExplorerWindow
         if (Array.isArray(w.__APP_STATE__?.points) && (w.__APP_STATE__?.points?.length ?? 0) > 0) {
             return true
         }
@@ -291,7 +323,7 @@ export function setBusinessData(result: BusinessDataResult): void {
     // Sync back to legacy state so legacy engine selectors (getPoints())
     // and focus flows (focusOnNode) see the data.
     try {
-        appState.points = result.records as unknown as Point[]
+        appState.points = result.records
         appState.rawPositionsBuffer = result.positionsBuffer
         appState.rawClustersBuffer = result.clustersBuffer
         appState.leadEnrichment = result.enrichment
