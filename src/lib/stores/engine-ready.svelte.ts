@@ -25,6 +25,11 @@ function signalReady(): void {
   // the 3D scene.
   if (typeof document !== 'undefined' && document.body) {
     document.body.dataset.renderKind = 'webgl';
+    // Mirror to CSS class for class-based selectors
+    for (const cls of Array.from(document.body.classList)) {
+      if (cls.startsWith('render-kind-')) document.body.classList.remove(cls);
+    }
+    document.body.classList.add('render-kind-webgl');
   }
   for (const fn of _subscribers) {
     fn(_value);

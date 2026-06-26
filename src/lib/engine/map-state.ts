@@ -567,10 +567,8 @@ export function getRouteDirectorState(): string {
 
 export function syncRouteDirectorState(reason = 'state'): string {
     const directorState = getRouteDirectorState()
-    if (document.body) {
-        document.body.dataset.routeDirector = directorState
-        document.body.dataset.routeDirectorReason = String(reason || 'state').replace(/[^a-z0-9-]/gi, '') || 'state'
-    }
+    // NOTE: body.dataset writes removed. routeDirector is not used by CSS or JS readers.
+    // If needed, add to parity-attrs.svelte.ts with journeyStore as source.
     return directorState
 }
 
@@ -588,10 +586,8 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
         }
     })
 
-    document.body.dataset.terrainHandoff = state.terrainHandoffState.phase
-    document.body.dataset.terrainHandoffFrom = state.terrainHandoffState.from
-    document.body.dataset.terrainHandoffTo = state.terrainHandoffState.to
-    document.body.dataset.terrainRouteCount = String(routeCount)
+    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles terrainHandoff sync.
+    // The additional terrainHandoffFrom/To/RouteCount attrs are not used by CSS or JS readers.
 
     if (['idle', 'settled'].includes(normalizedPhase) && typeof hideViewHandoff === 'function') {
         hideViewHandoff()

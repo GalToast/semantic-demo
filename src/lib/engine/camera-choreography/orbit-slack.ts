@@ -155,8 +155,8 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
             panSpeed: Number((controls.panSpeed || CONFIG.ORBIT_PAN_SPEED_FREE).toFixed(2))
         }
     })
-    document.body.dataset.cameraSlack = 'free-pivot'
-    document.body.dataset.cameraSlackReason = reason
+    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync
+    // from cameraStore.orbitSlack (which mirrors _s.focusOrbitSlackState).
     return true
 }
 
@@ -182,10 +182,7 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
                 panSpeed: CONFIG.ORBIT_PAN_SPEED_DEFAULT
             }
         })
-        if (document.body) {
-            document.body.dataset.cameraSlack = 'idle'
-            document.body.dataset.cameraSlackReason = reason
-        }
+        // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
         return
     }
     const dist = camera.position.distanceTo(safeTarget)
@@ -203,8 +200,7 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
             panSpeed: CONFIG.ORBIT_PAN_SPEED_DEFAULT
         }
     })
-    document.body.dataset.cameraSlack = 'idle'
-    document.body.dataset.cameraSlackReason = reason
+    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
     if (controls && !appState.semanticDiveMode) {
         controls.maxDistance = CONFIG.ORBIT_MAX_DISTANCE_DEFAULT
         controls.rotateSpeed = CONFIG.ORBIT_ROTATE_SPEED_DEFAULT

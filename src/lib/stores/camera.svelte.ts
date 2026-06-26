@@ -497,20 +497,14 @@ export function completeCameraTransition(): void {
         target: s.transition.to.target,
         transition: { ...s.transition, phase: 'arrived' }
     }))
-
-    // Sync body data attribute
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.cameraTransition = 'arrived'
-    }
+    // NOTE: body.dataset.cameraTransition is no longer written here.
+    // parity-attrs.svelte.ts handles body.dataset sync from camera store state.
 }
 
 /** Reset camera to initial state. */
 export function resetCamera(): void {
     cameraStoreImpl.set({ ...INITIAL_STORE })
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.cameraTransition = 'idle'
-        document.body.dataset.cameraSlack = 'idle'
-    }
+    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
 // ── Actions: Auto-Rotate Resume ──────────────────────────────────────────────
@@ -546,11 +540,7 @@ export function startFocusCameraAssist(durationMs: number = 900, reason: string 
         cameraAssistUntil: performance.now() + durationMs,
         cameraAssistReason: reason
     }))
-
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.cameraAssist = 'active'
-        document.body.dataset.cameraAssistReason = reason
-    }
+    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
 /** Release camera assist. */
@@ -561,11 +551,7 @@ export function releaseFocusCameraAssist(reason: string = 'manual'): void {
         cameraAssistUntil: 0,
         cameraAssistReason: reason
     }))
-
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.cameraAssist = ''
-        document.body.dataset.cameraAssistReason = reason
-    }
+    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
 /** Check if camera assist is currently active. */
@@ -582,10 +568,7 @@ export function setRouteExplorationState(phase: 'idle' | 'exploring' | 'user-con
         routeExplorationPhase: phase,
         routeExplorationReason: reason
     }))
-
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.routeExploration = phase
-    }
+    // NOTE: body.dataset.routeExploration removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
 /** Clear route exploration state. */
@@ -611,13 +594,7 @@ export function updateOrbitSlack(patch: Partial<FocusOrbitSlackState>): void {
         ...s,
         orbitSlack: { ...s.orbitSlack, ...patch }
     }))
-
-    if (typeof document !== 'undefined' && document.body && patch.phase) {
-        document.body.dataset.cameraSlack = patch.phase
-        if (patch.reason) {
-            document.body.dataset.cameraSlackReason = patch.reason
-        }
-    }
+    // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
 /** Reset orbit slack to defaults. */
@@ -626,10 +603,7 @@ export function resetOrbitSlack(): void {
         ...s,
         orbitSlack: { ...INITIAL_ORBIT_SLACK }
     }))
-
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.cameraSlack = 'idle'
-    }
+    // NOTE: body.dataset.cameraSlack removed. parity-attrs.svelte.ts handles body.dataset sync.
 }
 
 // ── Helper: Is search route focus active? ────────────────────────────────────

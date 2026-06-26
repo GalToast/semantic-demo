@@ -65,6 +65,11 @@ const EXEMPTED_SHAS = new Set<string>([
     // prefix. The non-doc changes were trivial style normalizations. Already
     // landed on master; grandfathered to avoid rewriting shared history.
     'd3b7f4f81fa6538b54096efbd1c84eae615226c3',
+    // af18236 — test(parity-attrs): retire viewMode assertion; fix _lastLegacyRender lint
+    // Bundled the _lastLegacyRender cleanup in src/lib/search/results-ui.ts together
+    // with the parity-attrs-derivation test retirement. Both files are parity-hygiene
+    // related. Landed on master; grandfathered to avoid rewriting shared history.
+    'af18236b0e3ac99ff193c365af73dc42bff5fc15',
     // b185ad7 — chore(docs+css): ... — compound prefix, legitimately
     // touches both docs and css files. The compound scope `docs+css`
     // accurately describes the contents.

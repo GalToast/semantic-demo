@@ -231,15 +231,10 @@ function getWrapperManager(): StrandContinuityManager {
             })
         },
         onBodySync: (managerState) => {
-            if (typeof document === 'undefined' || !document.body) return
-            document.body.dataset.strandJourney = managerState.phase
-            document.body.dataset.strandJourneyTarget = Number.isFinite(managerState.targetIndex)
-                ? String(managerState.targetIndex)
-                : ''
-            document.body.dataset.strandJourneyFrom = Number.isFinite(managerState.fromIndex)
-                ? String(managerState.fromIndex)
-                : ''
-            document.body.dataset.strandJourneyReason = managerState.reason ?? ''
+            // NOTE: body.dataset writes removed.
+            // strandJourney is managed by parity-attrs.svelte.ts from focusStore.strandContinuityPhase.
+            // strandJourneyTarget/From/Reason were not used by CSS or JS readers.
+            // The state is already mirrored to state.strandContinuityState in onPhaseChange.
         },
         onArrivalSync: () => {
             try {

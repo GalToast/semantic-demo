@@ -47,7 +47,16 @@
 
   let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
   let testFocusedNode = $derived(testCompatStore().focusedNode);
+  let testCompact = $derived(testCompatStore().compact === 'true');
   let surface = $derived(currentSurface());
+
+  // ── CSS class derivation for body[data-...] selectors ─────────────────────
+  // Derive classes from body state so CSS can target .info-panel.surface-focus etc.
+  let infoPanelSurfaceClass = $derived(testPanelSurface ? `surface-${testPanelSurface}` : '');
+  let infoPanelCompactClass = $derived(testCompact ? 'is-compact-body' : '');
+  let infoPanelHasFocusedNode = $derived(
+    testFocusedNode != null && testFocusedNode !== ''
+  );
 
   // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -355,6 +364,11 @@
   class="info-panel"
   class:open={panelOpen}
   class:active={panelOpen}
+  class:surface-focus={testPanelSurface === 'focus'}
+  class:surface-semantic-dive={testPanelSurface === 'semantic-dive'}
+  class:surface-idle={testPanelSurface === 'idle'}
+  class:is-compact-body={testCompact}
+  class:has-focused-node={infoPanelHasFocusedNode}
   aria-hidden={!panelOpen}
   aria-label={panelAriaLabel}
   aria-live="polite"

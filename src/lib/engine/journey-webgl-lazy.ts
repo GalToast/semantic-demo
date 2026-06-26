@@ -25,16 +25,18 @@ let inspectorWebglPromise: Promise<typeof import('@lib/journey/thread-inspector-
 function ensureWebglModule(): Promise<typeof import('@lib/journey/webgl')> {
     if (webglModule) return Promise.resolve(webglModule)
     if (!webglPromise) {
-        webglPromise = import('@lib/journey/webgl').then((mod) => {
-            webglModule = mod
-            return mod
-        }).catch(() => {
-            // Suppress unhandled rejections during test teardown or when
-            // the environment is unavailable. The next call to ensureWebglModule
-            // will retry the import.
-            webglPromise = null
-            return null as any
-        })
+        webglPromise = import('@lib/journey/webgl')
+            .then((mod) => {
+                webglModule = mod
+                return mod
+            })
+            .catch(() => {
+                // Suppress unhandled rejections during test teardown or when
+                // the environment is unavailable. The next call to ensureWebglModule
+                // will retry the import.
+                webglPromise = null
+                return null as any
+            })
     }
     return webglPromise
 }
@@ -149,13 +151,15 @@ let routeArrivalPromise: Promise<RouteArrivalModule> | null = null
 function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
     if (routeArrivalModule) return Promise.resolve(routeArrivalModule)
     if (!routeArrivalPromise) {
-        routeArrivalPromise = import('@lib/journey/route-arrival-overlay-adapter').then((mod) => {
-            routeArrivalModule = mod
-            return mod
-        }).catch(() => {
-            routeArrivalPromise = null
-            return null as any
-        })
+        routeArrivalPromise = import('@lib/journey/route-arrival-overlay-adapter')
+            .then((mod) => {
+                routeArrivalModule = mod
+                return mod
+            })
+            .catch(() => {
+                routeArrivalPromise = null
+                return null as any
+            })
     }
     return routeArrivalPromise
 }
@@ -181,13 +185,15 @@ export function updateArrivalHandoffOverlayFrame(now: number = performance.now()
 function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/thread-inspector-webgl')> {
     if (inspectorWebglModule) return Promise.resolve(inspectorWebglModule)
     if (!inspectorWebglPromise) {
-        inspectorWebglPromise = import('@lib/journey/thread-inspector-webgl').then((mod) => {
-            inspectorWebglModule = mod
-            return mod
-        }).catch(() => {
-            inspectorWebglPromise = null
-            return null as any
-        })
+        inspectorWebglPromise = import('@lib/journey/thread-inspector-webgl')
+            .then((mod) => {
+                inspectorWebglModule = mod
+                return mod
+            })
+            .catch(() => {
+                inspectorWebglPromise = null
+                return null as any
+            })
     }
     return inspectorWebglPromise
 }

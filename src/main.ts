@@ -108,7 +108,10 @@ engineReady.subscribe((ready) => {
 // W45-A: Set the render kind on body BEFORE installing the gesture monitor so
 // the monitor can skip auto-fire when the 2D placeholder is shown on mobile.
 if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.renderKind = getInitialRenderKind()
+    const rk = getInitialRenderKind()
+    document.body.dataset.renderKind = rk
+    // Mirror to CSS class for class-based selectors
+    document.body.classList.add(`render-kind-${rk}`)
 }
 const teardownGestureMonitor = installGestureMonitor({
     onReady: () => engineReady.signalReady()

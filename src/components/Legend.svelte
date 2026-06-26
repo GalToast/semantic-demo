@@ -4,6 +4,7 @@
   import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter.svelte';
   import { initLegendEventBusSubscriptions } from '@lib/journey/legend-ui';
   import { initLegendKeyboardShortcut } from '@lib/stores/legend-panel.svelte';
+  import { navStore } from '@lib/stores/navigation.svelte';
   // The full filter pipeline lives in cluster-filter-controller; the
   // stub in @lib/stores/filter only writes the writable without clearing
   // search glow, applying the filter to the mycelium, or updating the URL.
@@ -21,6 +22,21 @@
   let { open = false, mapView = false, concealedByFocus = false }: Props = $props();
   let activeLegendButtonIndex = $state(0);
   let legendButtons: HTMLButtonElement[] = $state([]);
+
+  // ── Body state for CSS class derivation ────────────────────────────────────
+  let bodyPanelSurface = $state('');
+  let bodyRenderKind = $state('');
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => {
+      bodyPanelSurface = document.body?.dataset?.panelSurface ?? '';
+      bodyRenderKind = document.body?.dataset?.renderKind ?? '';
+    };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-render-kind'] });
+    sync();
+    return () => obs.disconnect();
+  });
 
   /** 15-entry cluster names matching CLUSTER_NAMES from state.js / InfoPanel.svelte */
   const CLUSTER_NAMES: string[] = [
@@ -148,6 +164,9 @@
   class:open
   class:map-view={mapView}
   class:concealed-by-focus={concealedByFocus}
+  class:surface-search={bodyPanelSurface === 'search'}
+  class:surface-focus-search={bodyPanelSurface === 'focus-search'}
+  class:render-placeholder2d={bodyRenderKind === 'placeholder2d'}
   aria-hidden={!open || concealedByFocus}
   aria-label="Business category legend"
   id="legend-panel"
@@ -215,14 +234,14 @@
   .legend.concealed-by-focus {
     display: none;
   }
-  :global(body[data-panel-surface='search']) .legend,
-  :global(body[data-panel-surface='focus-search']) .legend {
+  .legend.surface-search,
+  .legend.surface-focus-search {
     display: none;
   }
   /* W46-F1: hide the legend while the mobile 2D placeholder is showing
      so it doesn't cover the "Enter 3D Scene" CTA. The legend reappears
      once the user enters the 3D scene and renderKind flips to 'webgl'. */
-  :global(body[data-render-kind='placeholder2d']) .legend {
+  .legend.render-placeholder2d {
     display: none;
   }
   .legend-title {

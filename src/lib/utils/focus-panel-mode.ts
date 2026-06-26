@@ -23,5 +23,11 @@ export function getFocusPanelMode(): FocusPanelMode {
 
 export function setFocusPanelMode(mode: FocusPanelMode | string | null | undefined): void {
   if (typeof document === 'undefined' || !document.body) return;
-  document.body.dataset.focusPanelMode = mode || FOCUS_PANEL_MODE.OVERVIEW;
+  const resolved = mode || FOCUS_PANEL_MODE.OVERVIEW;
+  document.body.dataset.focusPanelMode = resolved;
+  // Mirror to CSS class for class-based selectors (e.g., .fpm-field-node)
+  for (const cls of Array.from(document.body.classList)) {
+    if (cls.startsWith('fpm-')) document.body.classList.remove(cls);
+  }
+  document.body.classList.add(`fpm-${resolved}`);
 }

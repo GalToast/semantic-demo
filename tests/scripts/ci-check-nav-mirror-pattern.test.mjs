@@ -78,7 +78,8 @@ function isInsideAllowedContext(absPath, line) {
 
     if (/writeNavStateMirror\s*\(/.test(context)) return true
     if (/writeFocusPocketMirror\s*\(/.test(context)) return true
-    if (/appState\.withMutation\s*\(/.test(context)) return true
+    // The withMutation no-op has been removed — direct property writes are
+    // validated by the appState proxy (state-validation.validation.ts).
     if (/_navWritable\.update\s*\(/.test(context)) return true
     if (/_journeyWritable\.update\s*\(/.test(context)) return true
     if (/withJourneyNotify\s*\(/.test(context)) return true
@@ -163,7 +164,7 @@ export function doBadThing() {
 
         // ── 2. Exit 0 when all mutations are inside withMutation ────────────
 
-        it('exits 0 when all mutations are inside appState.withMutation()', () => {
+        it('exits 0 when all mutations are inside _navWritable.update()', () => {
             const dir = createFixtureDir()
             dirsToClean.push(dir)
 
@@ -176,8 +177,8 @@ export function doBadThing() {
                 `
 import { appState } from './state.svelte.ts';
 
-export function doAllowedThing() {
-  appState.withMutation(() => {
+export function doAllowedThing(store) {
+  store._navWritable.update(() => {
     appState.navState.mode = 'focus';
   });
 }
@@ -271,25 +272,25 @@ export function doLegacyBad() {
     // ═══════════════════════════════════════════════════════════════════════
 
     describe('unit: isInsideAllowedContext', () => {
-        it('returns true for mutations inside appState.withMutation()', () => {
+        it('returns true for mutations inside _focusWritable.update()', () => {
             const dir = createFixtureDir()
             dirsToClean.push(dir)
 
             writeFixture(
                 dir,
-                'with-mutation.svelte.ts',
+                'focus-writable.svelte.ts',
                 `
 import { appState } from './state.svelte.ts';
 
-export function doAllowedThing() {
-  appState.withMutation(() => {
+export function doAllowedThing(store) {
+  store._focusWritable.update(() => {
     appState.navState.mode = 'focus';
     appState.navState.surface = 'focus-search';
   });
 }
 `
             )
-            const absPath = join(dir, 'with-mutation.svelte.ts')
+            const absPath = join(dir, 'focus-writable.svelte.ts')
             expect(isInsideAllowedContext(absPath, 6)).toBe(true) // mode =
             expect(isInsideAllowedContext(absPath, 7)).toBe(true) // surface =
         })
@@ -401,9 +402,9 @@ export function doBadThing() {
             const dir = createFixtureDir()
             dirsToClean.push(dir)
 
-            // Create a file where withMutation is 31 lines before the mutation
-            const lines = ['import { appState } from "./state.svelte.ts";', '', 'export function farAway() {']
-            lines.push('  appState.withMutation(() => {')
+            // Create a file where _searchWritable.update is 31 lines before the mutation
+            const lines = ['import { appState } from "./state.svelte.ts";', '', 'export function farAway(store) {']
+            lines.push('  store._searchWritable.update(() => {')
             // Pad with 28 empty lines so the mutation is at line 35
             for (let i = 0; i < 28; i++) lines.push('  // padding')
             lines.push('    appState.navState.mode = "focus";')
@@ -412,9 +413,9 @@ export function doBadThing() {
 
             writeFixture(dir, 'far-context.svelte.ts', lines.join('\n'))
             const absPath = join(dir, 'far-context.svelte.ts')
-            // The mutation is at line 34 (1-indexed), withMutation at line 4.
+            // The mutation is at line 34 (1-indexed), _searchWritable.update at line 4.
             // The isInsideAllowedContext function uses a 30-line context window,
-            // so it does NOT see the withMutation and returns false. This is a
+            // so it does NOT see the _searchWritable.update and returns false. This is a
             // known minor limitation — direct mutations >30 lines after the
             // allowed context header will be flagged as violations. In practice,
             // no real source file has an allowed context >30 lines before a

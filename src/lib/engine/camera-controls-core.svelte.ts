@@ -81,14 +81,10 @@ class CameraControlsCore {
         state.focusTransitionMode = canonicalMode
         state.focusTransitionStartedAt = this.focusTransitionStartedAt
 
-        // Tier-2 parity cleanup: drop the raw-mode body write. No production
-        // CSS or JS consumer reads data-focus-transition (only test contracts
-        // do, and they test the wrong thing). Parity-attrs writes the
-        // canonical mode to data-focus-transition from focusStore.transitionMode
-        // (microtask after this write), so the racy "raw then canonical
-        // override" race is gone.
+        // Tier-2 parity cleanup: drop the body.dataset write. CSS uses class
+        // selectors (body.focus-transition-phase-arriving), not data attributes.
+        // Parity-attrs writes focusTransition from focusStore.transitionMode.
         if (document.body) {
-            document.body.dataset.focusTransitionPhase = canonicalMode === 'idle' ? 'idle' : 'arriving'
             // Mirror to CSS class for class-based selectors
             for (const cls of Array.from(document.body.classList)) {
                 if (cls.startsWith('focus-transition-phase-')) document.body.classList.remove(cls)
@@ -102,7 +98,7 @@ class CameraControlsCore {
                 /* still current */
             } else return
             if (document.body) {
-                document.body.dataset.focusTransitionPhase = 'settled'
+                // NOTE: body.dataset.focusTransitionPhase removed — CSS uses class selectors
                 for (const cls of Array.from(document.body.classList)) {
                     if (cls.startsWith('focus-transition-phase-')) document.body.classList.remove(cls)
                 }
@@ -159,18 +155,13 @@ class CameraControlsCore {
     }
 
     syncCameraAssistDataset(): void {
-        if (document.body) {
-            document.body.dataset.cameraAssist = this.focusCameraAssistActive ? 'arriving' : 'free'
-            document.body.dataset.cameraAssistReason = this.focusCameraAssistReason || 'idle'
-        }
+        // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync
+        // from appState.focusCameraAssistActive (set by this class's legacy mirror).
     }
 
     setCameraAssistChoreography(phase: string = 'free', reason: string = 'view-handoff'): void {
-        if (!document.body) return
-        const normalizedPhase = String(phase || 'free').replace(/[^a-z0-9-]/gi, '') || 'free'
-        const normalizedReason = String(reason || 'view-handoff').replace(/[^a-z0-9-]/gi, '') || 'view-handoff'
-        document.body.dataset.cameraAssist = normalizedPhase
-        document.body.dataset.cameraAssistReason = normalizedReason
+        // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
+        // This method is a no-op since the source of truth is the store state.
     }
 
     // ── Route exploration ─────────────────────────────────────────────────
@@ -193,14 +184,9 @@ class CameraControlsCore {
         })
         // Wires routeExplorationPhase into the journey store so parity-attrs
         // (which reads journey.routeExplorationPhase) produces the right
-        // data-route-exploration value. Before this wiring, parity's source
-        // was dead (no caller of setRouteExplorationPhase in journey.svelte),
-        // so body[data-route-exploration] was set only by this bypass write.
+        // data-route-exploration value.
         setRouteExplorationPhase(normalizedPhase as 'idle' | 'free' | 'searching' | 'focusing')
-        if (document.body) {
-            document.body.dataset.routeExploration = normalizedPhase
-            document.body.dataset.routeExplorationReason = normalizedReason
-        }
+        // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
     }
 
     clearRouteExploration(reason: string = 'clear'): void {

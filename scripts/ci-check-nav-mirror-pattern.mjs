@@ -12,12 +12,11 @@
  * Allowed patterns (not flagged):
  *   1. writeNavStateMirror(...)              — the canonical batch helper
  *   2. writeFocusPocketMirror(...)           — focus-pocket mirror helper
- *   3. appState.withMutation(() => { ... })  — legacy-compatible mutation block
- *   4. _navWritable.update(...)              — Svelte store update callback
- *   5. _journeyWritable.update(...) / withJourneyNotify — journey store bridge
- *   6. _focusWritable.update(...) / withFocusNotify     — focus store bridge
- *   7. _searchWritable.update(...) / withSearchNotify   — search store bridge
- *   8. Entries in the allowlist file (known-good line ranges)
+ *   3. _navWritable.update(...)              — Svelte store update callback
+ *   4. _journeyWritable.update(...) / withJourneyNotify — journey store bridge
+ *   5. _focusWritable.update(...) / withFocusNotify     — focus store bridge
+ *   6. _searchWritable.update(...) / withSearchNotify   — search store bridge
+ *   7. Entries in the allowlist file (known-good line ranges)
  *
  * Usage:
  *   node scripts/ci-check-nav-mirror-pattern.mjs
@@ -146,8 +145,8 @@ function isInsideAllowedContext(absPath, line) {
     // Check for writeFocusPocketMirror call (focus-pocket mirror helper)
     if (/writeFocusPocketMirror\s*\(/.test(context)) return true
 
-    // Check for appState.withMutation(() => { ... })
-    if (/appState\.withMutation\s*\(/.test(context)) return true
+    // The withMutation no-op has been removed — direct property writes are
+    // validated by the appState proxy (state-validation.validation.ts).
 
     // Check for _navWritable.update(...)
     if (/_navWritable\.update\s*\(/.test(context)) return true
@@ -197,7 +196,7 @@ for (const v of violations) {
     console.log()
 }
 console.log(
-    '[nav-mirror-check] These mutations should be moved inside writeNavStateMirror() or appState.withMutation().'
+    '[nav-mirror-check] These mutations should be moved inside writeNavStateMirror().'
 )
 
 process.exit(1)

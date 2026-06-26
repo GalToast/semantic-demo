@@ -19,6 +19,7 @@
     fetchWeather
   } from '@lib/stores/weather.svelte';
   import { viewport } from '@lib/stores/viewport.svelte';
+  import { navStore } from '@lib/stores/navigation.svelte';
 
   interface Props {
     /** Whether the widget is visible */
@@ -28,6 +29,21 @@
   let { visible = false }: Props = $props();
 
   let expanded = $state(false);
+
+  // ── Body state for CSS class derivation ────────────────────────────────────
+  let bodyPanelSurface = $state('');
+  let bodyFocusPanelMode = $state('');
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => {
+      bodyPanelSurface = document.body?.dataset?.panelSurface ?? '';
+      bodyFocusPanelMode = document.body?.dataset?.focusPanelMode ?? '';
+    };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-focus-panel-mode'] });
+    sync();
+    return () => obs.disconnect();
+  });
 
   let temperature = $derived(weatherTemperature());
   let label = $derived(weatherLabel());
@@ -91,6 +107,8 @@
     class="weather-widget"
     class:expanded
     class:compact={$viewport.isCompact}
+    class:surface-focus-search={bodyPanelSurface === 'focus-search'}
+    class:mode-field-node={bodyFocusPanelMode === 'field-node'}
     id="weather-widget"
     aria-label="Weather conditions"
   >
@@ -309,8 +327,7 @@
   }
 
   @media (max-width: 768px) {
-    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .weather-widget,
-    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .weather-widget {
+    .weather-widget.surface-focus-search.mode-field-node {
       display: none;
       visibility: hidden;
       pointer-events: none;

@@ -67,8 +67,8 @@ export function setSearchContainerState({
 }
 
 export function setSearchGlowState(active: boolean): void {
-    if (!document.body?.dataset) return;
-    document.body.dataset.searchGlow = active ? 'active' : 'inactive';
+    // NOTE: body.dataset.searchGlow removed — not used by CSS or JS readers.
+    // The state is managed in appState.searchGlowActive.
 }
 
 export function getPanelSurfaceDetailFromMobileSheet(
@@ -86,7 +86,7 @@ export function syncPanelSurfaceDetailFromMobileSheet(
 ): PanelSurfaceDetail {
     if (!document.body?.dataset) return 'none';
     const detail = getPanelSurfaceDetailFromMobileSheet(context);
-    document.body.dataset.panelSurfaceDetail = detail;
+    // NOTE: body.dataset.panelSurfaceDetail write removed — parity-attrs.svelte.ts handles this.
     return detail;
 }
 
