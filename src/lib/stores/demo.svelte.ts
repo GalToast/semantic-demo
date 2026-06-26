@@ -89,9 +89,6 @@ function withDemoNotify(updater: (_s: DemoStoreState) => DemoStoreState): void {
     appState.withMutation(() => {
         appState.demoPhase = to.phase
     })
-    if (typeof document !== 'undefined') {
-        document.body.dataset.demoPhase = to.phase
-    }
 }
 
 /**
@@ -114,9 +111,6 @@ function _createDemoStore(): DemoStoreApi {
         appState.withMutation(() => {
             appState.demoPhase = value.phase
         })
-        if (typeof document !== 'undefined') {
-            document.body.dataset.demoPhase = value.phase
-        }
     }
 
     return fn
@@ -291,7 +285,4 @@ export function resetDemo(): void {
     appState.withMutation(() => {
         appState.demoPhase = INITIAL_DEMO.phase
     })
-    if (typeof document !== 'undefined') {
-        document.body.dataset.demoPhase = INITIAL_DEMO.phase
-    }
 }
