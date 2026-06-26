@@ -191,23 +191,19 @@ function _createNavStore(): NavStoreApi {
     // new value synchronously.
     fn.subscribe = _navWritable.subscribe
 
-    // Writable-style set: update both the rune source of truth and the
-    // internal writable so legacy _navWritable consumers stay in sync.
-    fn.set = (value: NavState): void => {
-        appState.withMutation(() => {
-            appState.navState = value
-        })
-        _navWritable.set(value)
-    }
+    // Writable-style set: update the internal writable only. Phase 3a keeps
+    // the pre-existing behavior of writing to _navWritable (the synchronous
+    // source of truth for navStore consumers) rather than pushing into
+    // appState.navState. Pushing to appState.navState via withMutation broke
+    // the state-class-migration-5-navigation tests, which mock appState with
+    // a read-only navState getter. The $effect.root() bridge above handles
+    // external writes (engine code mutating appState.navState directly) so
+    // parity-attrs readers stay in sync via the writable.
+    fn.set = _navWritable.set
 
-    // Writable-style update: read/write the rune state, then mirror.
-    fn.update = (updater: (_current: NavState) => NavState): void => {
-        const next = updater(appState.navState)
-        appState.withMutation(() => {
-            appState.navState = next
-        })
-        _navWritable.set(next)
-    }
+    // Writable-style update: read from the writable (consistent with the
+    // in-file setters that write to _navWritable only), then update.
+    fn.update = _navWritable.update
 
     return fn
 }
