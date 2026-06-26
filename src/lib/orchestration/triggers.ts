@@ -192,7 +192,7 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
     const resultIndices = (searchSummary?.resultIndices as number[] | undefined) || []
     const manifest = buildNeighborhoodManifest(focusIndex, resultIndices, {
         displayLimit: getSemanticThreadDisplayLimit()
-    }) as any
+    })
     const candidateIndices: number[] = [...(manifest?.candidateIndices ?? [])]
     const threadSource = manifest && manifest.anchorEdgeCount > 0 ? 'semantic' : 'geometric-fallback'
     const threadReasonByIndex = new Map<number, string>(

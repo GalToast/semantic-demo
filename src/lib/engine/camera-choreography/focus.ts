@@ -239,7 +239,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
 
     if (stageArcActive) {
         const pocketProfile: PocketProfile =
-            appState.navState.focusPocketMeta?.viewportProfile || ({} as any)
+            appState.navState.focusPocketMeta?.viewportProfile || {} as PocketProfile
         const res = computeCameraArcControlPoints(
             startPos,
             startTarget,
