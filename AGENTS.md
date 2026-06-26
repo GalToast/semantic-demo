@@ -111,6 +111,27 @@ Examples:
 
 CONSTRAINT: independent scopes only. If two tasks touch the same files, serialize or merge into one worker.
 
+**Visual verification (set 2026-06-26, persistent):**
+
+We ALWAYS visually verify anything that has a visually verifiable output. This agent is multimodal and can see images via the `read` tool.
+
+When UI work lands (Svelte components, CSS, animations, Three.js scenes, error overlays, dialogs, toasts, etc.):
+
+1. Capture screenshot via headless browser or Playwright (`playwright_*` MCP tools, or `npm run qa:visual`, or `tests/visual-state-audit.mjs`)
+2. Use the `read` tool on the screenshot path to actually view it
+3. Confirm the work renders as designed: no broken layout, no z-index eats, no missing affordances, no overflow, no contrast issues
+4. If broken → fix on main lane before commit
+
+Required for:
+
+- New buttons / overlays / affordances in existing components (Phase 9c cancel button — MUST see it in `searching` state)
+- New error fallback components (Phase 9a ErrorFallback)
+- Animation / transition changes
+- Z-index / positioning changes
+- Any component a user can see
+
+Worker contract: workers doing UI work should capture a screenshot and include the path in `tmp/<topic>/report.md`. Main lane verifies by reading the image. If the screenshot is missing, the work is incomplete.
+
 ## Key Product Invariants
 
 - The 8,406-point mycelium data lives in `state.rawPositionsBuffer` as `[0,1]^3` positions. W7-B Pair 2 prep preserved the unit-cube invariant via the canonical `seededUnit` re-export from `@lib/utils/seeded-random`.
