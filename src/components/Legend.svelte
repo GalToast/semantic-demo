@@ -177,6 +177,7 @@
         <span
           class="legend-swatch"
           style="background-color: {entry.color}"
+          title="A group of businesses with a similar category or industry. The 12 clusters are color-coded in the legend."
         ></span>
         <span class="legend-label">{entry.name}</span>
         <span class="legend-count">{entry.count}</span>

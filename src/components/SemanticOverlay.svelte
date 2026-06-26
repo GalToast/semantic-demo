@@ -48,7 +48,7 @@
     role="presentation"
   >
     <!-- Overlay indicator badge -->
-    <div class="overlay-badge" class:thread={overlayMode === 'thread'}>
+    <div class="overlay-badge" class:thread={overlayMode === 'thread'} title={overlayMode === 'thread' ? 'A path of connected businesses following the strongest signal chain.' : overlayMode === 'lens' ? 'Deep exploration lens focused on a single neighborhood.' : 'Semantic proximity is highlighted across the scene.'}>
       {#if overlayMode === 'manifold'}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>

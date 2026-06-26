@@ -360,7 +360,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         if (appState.controls) appState.controls.enabled = false
 
         ui.showVeil(true)
-        ui.showPill('Demo -- watch it works', (reason: string) => cancelMicroDemo(reason))
+        ui.showPill('Sample tour — click to exit.', (reason: string) => cancelMicroDemo(reason))
         ui.bindInputInterceptor((reason: string) => cancelMicroDemo(reason))
 
         // Guard against missing node index. The previous `as number` cast
