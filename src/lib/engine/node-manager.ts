@@ -100,6 +100,41 @@ export function disposeTextures(): void {
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
+/**
+ * W48-T1C: Per-cluster size factor — density-based with deterministic jitter.
+ *
+ * Maps each cluster ID to a scale multiplier in [0.78, 1.22]. Dense clusters
+ * (high node count) get smaller nodes; sparse clusters get larger ones. This
+ * matches the 2026-06-07 visual critique's intent: "dense clusters smaller
+ * nodes and sparse clusters larger ones" (item #10, claimed FIXED but never
+ * actually committed — see docs/archive/visual-critique-2026-06-07.md).
+ *
+ * Density factor: 1.4 - log10(count + 1) * 0.32 gives ~1.18 for count=1
+ * (sparse) and ~0.78 for count=200 (dense). Plus ±0.05 deterministic jitter
+ * via seededUnit so adjacent clusters differ visually.
+ */
+export function getClusterSizeFactor(
+    cluster: number | null | undefined,
+    clusterSizes: Map<number, number>
+): number {
+    if (cluster == null) return 1
+    const count = clusterSizes.get(cluster) ?? 100
+    const density = 1.4 - Math.log10(count + 1) * 0.32
+    const jitter = (seededUnit(cluster, 9.7) - 0.5) * 0.1
+    return Math.max(0.78, Math.min(1.22, density + jitter))
+}
+
+/** Build a map of cluster ID → node count, in one pass over state.points. */
+export function computeClusterSizes(points: Point[] = state.points): Map<number, number> {
+    const sizes = new Map<number, number>()
+    for (const p of points) {
+        if (p.cluster != null) {
+            sizes.set(p.cluster, (sizes.get(p.cluster) ?? 0) + 1)
+        }
+    }
+    return sizes
+}
+
 export function getNodeSporeScale(index: number) {
     let emphasis = 1
     if (Number.isFinite(state.focusedNode)) {
@@ -293,7 +328,7 @@ varying float vSemanticPointBoost;`
 float semanticHoverDistance = distance(position, uHoverNodePos);
 float semanticHoverMask = 1.0 - smoothstep(0.0, uHoverRadius, semanticHoverDistance);
 float semanticRippleMask = max(0.0, 1.0 - abs((uRippleTime - distance(position, uRippleCenter) * 2.0)) * 2.5);
-float semanticBreath = 1.0 + 0.10 * sin(uTime * 1.5 + position.x * 2.5 + position.y * 1.8);
+float semanticBreath = 1.0 + 1.0 * sin(uTime * 1.5 + position.x * 2.5 + position.y * 1.8);
 vSemanticPointBoost = max(0.08, uRevealProgress) * max(0.55, mix(1.0, uHoverBoost, semanticHoverMask) + semanticRippleMask * 0.38) * semanticBreath;`
             )
             .replace(
@@ -314,7 +349,7 @@ varying float vSemanticPointBoost;`
 float _ptDist = length(gl_PointCoord - vec2(0.5));
 float _ptAlpha = 1.0 - smoothstep(0.28, 0.5, _ptDist);
 diffuseColor.a *= _ptAlpha;
-diffuseColor.a *= clamp(uRevealProgress * clamp(vSemanticPointBoost, 0.55, 1.85), 0.0, 1.0);
+diffuseColor.a *= clamp(uRevealProgress * clamp(vSemanticPointBoost, 0.10, 1.85), 0.0, 1.0);
 outgoingLight = diffuseColor.rgb + vec3(0.18, 0.62, 0.56) * uGlowIntensity * 0.12;`
             )
         material.userData.shader = shader
@@ -364,8 +399,14 @@ export function createNodeSporeLayer() {
     webglContext.nodeSporeMesh = sporeMesh
     webglContext.nodeSporeMaterial = sporeMat
     const SPORE_INSTANCE_COLOR_FACTOR = 1.62
+    // W48-T1C: pre-compute cluster sizes once so each instance gets a density-
+    // based scale multiplier. Dense clusters get smaller nodes; sparse ones
+    // get larger ones (per visual critique 2026-06-07 item #10).
+    const clusterSizes = computeClusterSizes()
     for (let i = 0; i < state.points.length; i += 1) {
-        setNodeSporeInstanceMatrix(i, sporeMesh)
+        const cluster = state.points[i]?.cluster
+        const sizeFactor = getClusterSizeFactor(cluster, clusterSizes)
+        setNodeSporeInstanceMatrix(i, sporeMesh, sizeFactor)
         sporeMesh.setColorAt(i, getNodeSporeColor(i, SPORE_INSTANCE_COLOR_FACTOR))
     }
     if (sporeMesh.instanceColor) sporeMesh.instanceColor.needsUpdate = true
