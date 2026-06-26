@@ -220,7 +220,7 @@
   }
 
   .splash-search-icon {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     opacity: 0.8;
     flex-shrink: 0;
   }

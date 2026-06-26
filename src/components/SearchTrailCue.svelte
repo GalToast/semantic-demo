@@ -44,13 +44,13 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
   }
   .search-trail-cue-title {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.8rem;
     font-weight: 700;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
   }
   .search-trail-cue-stage {
     display: flex;
@@ -61,7 +61,7 @@
     padding: 0.15rem 0.4rem;
     border-radius: 0.2rem;
     background: rgba(78, 205, 196, 0.1);
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
   }
   .search-trail-cue-note {
     font-size: 0.65rem;

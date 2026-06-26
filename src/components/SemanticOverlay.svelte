@@ -113,7 +113,7 @@
     backdrop-filter: blur(8px);
     border: 1px solid rgba(78, 205, 196, 0.2);
     border-radius: 0.3rem;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     font-size: 0.6rem;
     font-family: 'Nunito Sans', sans-serif;
     font-weight: 600;
@@ -121,7 +121,7 @@
   }
   .overlay-badge.thread {
     border-color: rgba(255, 107, 107, 0.25);
-    color: #ff6b6b;
+    color: var(--status-danger);
   }
 
   @keyframes overlay-in {

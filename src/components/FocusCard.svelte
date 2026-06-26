@@ -352,7 +352,7 @@
   }
   .selected-empty-headline {
     font-size: 0.8rem;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     opacity: 0.5;
     font-style: italic;
     margin: 0;
@@ -382,14 +382,14 @@
     padding: 0.15rem 0.4rem;
     border-radius: 0.2rem;
     background: rgba(78, 205, 196, 0.15);
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
   }
 
   .selected-card-name {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 1rem;
     font-weight: 700;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     margin: 0;
     line-height: 1.25;
     overflow-wrap: anywhere;
@@ -399,7 +399,7 @@
   .selected-card-category {
     font-size: 0.75rem;
     font-weight: 600;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     margin: 0;
   }
 
@@ -430,7 +430,7 @@
   }
   .selected-card-status.inactive {
     background: rgba(255, 107, 107, 0.12);
-    color: #ff6b6b;
+    color: var(--status-danger);
   }
 
   /* ── Location / contact ────────────────────────────────────────────────────── */
@@ -449,7 +449,7 @@
     color: rgba(78, 205, 196, 0.45); /* a11y-ok: icon-color — contact-method SVG fill */
   }
   .selected-card-link {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     text-decoration: none;
     transition: color 0.15s ease;
   }

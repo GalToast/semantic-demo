@@ -144,16 +144,16 @@
     background: none;
     border: none;
     border-radius: 0.3rem;
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
     cursor: pointer;
     transition: all 0.15s;
   }
   .control-btn:hover {
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     background: rgba(78, 205, 196, 0.1);
   }
   .control-btn.active {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     background: rgba(78, 205, 196, 0.15);
   }
   .control-btn:focus-visible {

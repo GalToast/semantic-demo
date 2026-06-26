@@ -23,7 +23,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.8rem;
     font-weight: 700;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;

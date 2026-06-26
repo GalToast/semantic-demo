@@ -342,7 +342,7 @@
     font-family: system-ui, -apple-system, sans-serif;
     font-size: 1rem;
     font-weight: 700;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     margin-bottom: 0.5rem;
   }
   .error-message {
@@ -354,7 +354,7 @@
     border: 1px solid rgba(78, 205, 196, 0.3);
     border-radius: 0.45rem;
     background: rgba(78, 205, 196, 0.1);
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     padding: 0.45rem 0.8rem;
     font-size: 0.8rem;
     cursor: pointer;

@@ -87,6 +87,13 @@
     --color-text-secondary: rgba(255, 255, 255, 0.78);
     --color-text-muted: rgba(255, 255, 255, 0.58);
 
+    /* Teal-family text hierarchy — the dominant text colors across components.
+       Solid counterparts to the rgba text vars above; needed because components
+       use these literal teal hues (not alpha-channeled) for labels, hints, etc. */
+    --color-text-teal-light: #e0f0f0;
+    --color-text-teal-muted: #b0d0d0;
+    --color-text-teal-dark: #6a8a8a;
+
     /* Status colors — used by semantic lane, error states, info chips */
     --status-success: #8ff7d0;
     --status-warning: #ffd66b;
@@ -104,46 +111,46 @@
     --radius-large: 20px;
     --radius-pill: 999px;
 
- /* Layering Manifest (Z-Index) */
- /* Canonical CSS z-index tokens — keep in sync with src/lib/z-index.ts */
- /* This is the authoritative CSS source; z-layers.css mirrors these values. */
- --z-canvas: 0;
- --z-underlay: -1;
- --z-base: 1;
- --z-base-raised: 2;
- --z-content: 5;
- --z-chrome: 10;
- --z-chrome-raised: 11;
- --z-chrome-overlay: 12;
- --z-chrome-elevated: 14;
- --z-chrome-popover: 20;
- --z-field-nodes: 10;
- --z-threads: 20;
- --z-overlays: 30;
- --z-legend: 50;
- --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
- --z-panels-elevated: 90;
- --z-search: 100;
- --z-overlay: 100;
- --z-overlay-raised: 101;
- --z-overlay-floating: 102;
- --z-overlay-elevated: 150;
- --z-tooltips: 200;
- --z-journey-chrome: 200;
- --z-modal: 400;
- --z-journey-active: 500;
- --z-focus-card: 600;
- --z-compass: 700;
- --z-controls: 800;
- --z-journey-block: 900;
- --z-blocker-backdrop: 900;
- --z-blocker: 1000;
- --z-toast: 1200;
- --z-toast-plus: 1201;
- --z-toast-above: 1300;
- --z-journey-modal: 2000;
- --z-loading: 3000;
- --z-max: 9999;
+    /* Layering Manifest (Z-Index) */
+    /* Canonical CSS z-index tokens — keep in sync with src/lib/z-index.ts */
+    /* This is the authoritative CSS source; z-layers.css mirrors these values. */
+    --z-canvas: 0;
+    --z-underlay: -1;
+    --z-base: 1;
+    --z-base-raised: 2;
+    --z-content: 5;
+    --z-chrome: 10;
+    --z-chrome-raised: 11;
+    --z-chrome-overlay: 12;
+    --z-chrome-elevated: 14;
+    --z-chrome-popover: 20;
+    --z-field-nodes: 10;
+    --z-threads: 20;
+    --z-overlays: 30;
+    --z-legend: 50;
+    --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
+    --z-panels-elevated: 90;
+    --z-search: 100;
+    --z-overlay: 100;
+    --z-overlay-raised: 101;
+    --z-overlay-floating: 102;
+    --z-overlay-elevated: 150;
+    --z-tooltips: 200;
+    --z-journey-chrome: 200;
+    --z-modal: 400;
+    --z-journey-active: 500;
+    --z-focus-card: 600;
+    --z-compass: 700;
+    --z-controls: 800;
+    --z-journey-block: 900;
+    --z-blocker-backdrop: 900;
+    --z-blocker: 1000;
+    --z-toast: 1200;
+    --z-toast-plus: 1201;
+    --z-toast-above: 1300;
+    --z-journey-modal: 2000;
+    --z-loading: 3000;
+    --z-max: 9999;
 
     /* Shared panel elevation and glass treatment */
     --shadow-card: 0 12px 40px var(--shadow-penumbra);
@@ -185,10 +192,11 @@
        values via inline comments. When updating a breakpoint, update
        BOTH this definition and all referencing @media rules.
        See: notes/w21-css-ownership-investigation-2026-06-17.md Smell 4 */
-    --bp-landscape:           (max-width: 900px) and (max-height: 430px) and (orientation: landscape);
-    --bp-landscape-tall:      (max-width: 900px) and (max-height: 480px) and (orientation: landscape);
-    --bp-landscape-compact:   (max-width: 900px) and (max-height: 420px) and (orientation: landscape);
-    --bp-landscape-tablet:    (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape);
+    --bp-landscape: (max-width: 900px) and (max-height: 430px) and (orientation: landscape);
+    --bp-landscape-tall: (max-width: 900px) and (max-height: 480px) and (orientation: landscape);
+    --bp-landscape-compact: (max-width: 900px) and (max-height: 420px) and (orientation: landscape);
+    --bp-landscape-tablet: (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and
+        (orientation: landscape);
 
     /* UI Positioning Tokens */
     --top-chrome-mobile: 82px;

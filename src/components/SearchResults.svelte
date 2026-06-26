@@ -509,7 +509,7 @@
   .search-show-more-btn:hover {
     background: rgba(78, 205, 196, 0.16);
     border-color: rgba(78, 205, 196, 0.34);
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
   }
   .search-show-more-btn:focus-visible {
     outline: 2px solid rgba(78, 205, 196, 0.6);

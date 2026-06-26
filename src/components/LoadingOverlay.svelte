@@ -89,13 +89,13 @@
       <!-- SVG logo -->
       <div class="loading-logo">
         <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="2.2" fill="#4ecdc4"/>
-          <circle cx="5" cy="6" r="1.6" fill="#4ecdc4" opacity="0.6"/>
-          <circle cx="19" cy="7" r="1.6" fill="#4ecdc4" opacity="0.6"/>
-          <circle cx="6" cy="18" r="1.6" fill="#4ecdc4" opacity="0.6"/>
-          <circle cx="18" cy="18" r="1.6" fill="#4ecdc4" opacity="0.6"/>
+          <circle cx="12" cy="12" r="2.2" fill="var(--color-primary-alt)"/>
+          <circle cx="5" cy="6" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
+          <circle cx="19" cy="7" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
+          <circle cx="6" cy="18" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
+          <circle cx="18" cy="18" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
           <path d="M10.3 10.5 6.3 7.2M13.8 10.7l3.9-2.8M10.2 13.4 7.1 17M13.7 13.5l3 3.2"
-            fill="none" stroke="#4ecdc4" stroke-width="1" opacity="0.5"/>
+            fill="none" stroke="var(--color-primary-alt)" stroke-width="1" opacity="0.5"/>
         </svg>
       </div>
 
@@ -159,7 +159,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 1.5rem;
     font-weight: 700;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
   }
   .loading-logo {
     opacity: 0.8;
@@ -169,7 +169,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 1rem;
     font-weight: 600;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     margin: 0;
   }
   .loading-bar-track {
@@ -181,7 +181,7 @@
   }
   .loading-bar-fill {
     height: 100%;
-    background: #4ecdc4;
+    background: var(--color-primary-alt);
     border-radius: 1px;
     transition: width 0.4s ease;
   }
@@ -207,7 +207,7 @@
   }
   .loading-phase-chip.is-active {
     background: rgba(78, 205, 196, 0.2);
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     border-color: rgba(78, 205, 196, 0.5);
   }
   .loading-phase-chip.is-complete {
@@ -217,7 +217,7 @@
   }
   .loading-foot {
     font-size: 0.75rem;
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     margin: 0;
   }
   @keyframes pulse {

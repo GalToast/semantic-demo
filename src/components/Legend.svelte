@@ -228,7 +228,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     margin-bottom: 0.5rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -244,7 +244,7 @@
     padding: 0.15rem 0;
     min-height: 44px;
     font-size: 0.7rem;
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
   }
   .legend-swatch {
     width: 8px;

@@ -148,7 +148,7 @@
   .focus-pocket-a11y li:hover,
   .focus-pocket-a11y li:focus-visible {
     background: rgba(78, 205, 196, 0.08);
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     outline: none;
   }
 
@@ -163,9 +163,9 @@
     border-radius: 50%;
     background: rgba(78, 205, 196, 0.4);
   }
-  .role-dot[data-role='direct'] { background: #4ecdc4; }
+  .role-dot[data-role='direct'] { background: var(--color-primary-alt); }
   .role-dot[data-role='support'] { background: #ffd93d; }
-  .role-dot[data-role='civic'] { background: #ff6b6b; }
+  .role-dot[data-role='civic'] { background: var(--status-danger); }
 
   .label {
     overflow: hidden;
@@ -183,7 +183,7 @@
     -webkit-backdrop-filter: blur(12px);
     border: 1px solid rgba(78, 205, 196, 0.28);
     border-radius: 0.4rem;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.7rem;
     font-weight: 600;

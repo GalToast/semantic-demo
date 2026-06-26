@@ -155,7 +155,7 @@
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.75rem;
     font-weight: 700;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     margin-bottom: 0.15rem;
   }
 
@@ -187,7 +187,7 @@
   .experience-toast-close:hover {
     background: rgba(78, 205, 196, 0.2);
     border-color: rgba(78, 205, 196, 0.4);
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
   }
 
   .experience-toast-close:focus-visible {
@@ -201,7 +201,7 @@
     background: rgba(30, 12, 12, 0.94);
   }
   .experience-reset-toast.error .experience-toast-title {
-    color: #ff6b6b;
+    color: var(--status-danger);
   }
   .experience-reset-toast.error .experience-toast-copy {
     color: rgba(255, 200, 200, 0.7);

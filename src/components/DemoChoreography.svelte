@@ -142,7 +142,7 @@
   .demo-dismiss {
     background: rgba(7, 16, 24, 0.8);
     border: 1px solid rgba(78, 205, 196, 0.2);
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     font-size: 1rem;
     width: 44px;
     height: 44px;
@@ -156,7 +156,7 @@
     line-height: 1;
   }
   .demo-dismiss:hover {
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     border-color: rgba(78, 205, 196, 0.5);
   }
   .demo-dismiss:focus-visible {

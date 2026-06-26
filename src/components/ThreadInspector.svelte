@@ -270,7 +270,7 @@
     font-size: 0.62rem;
     font-weight: 600;
     letter-spacing: 0;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     text-transform: uppercase;
   }
   .focus-thread-inspector-title {
@@ -279,13 +279,13 @@
     font-size: 0.84rem;
     font-weight: 700;
     line-height: 1.15;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
   }
   .focus-thread-inspector-copy {
     margin: 0;
     font-size: 0.68rem;
     line-height: 1.35;
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
   }
   .inspector-close {
     display: inline-grid;
@@ -295,7 +295,7 @@
     height: 44px;
     background: none;
     border: none;
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     font-size: 1rem;
     cursor: pointer;
     padding: 0;
@@ -303,7 +303,7 @@
     transition: color 0.15s;
   }
   .inspector-close:hover {
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
   }
   .focus-thread-inspector-meta {
     display: flex;
@@ -311,7 +311,7 @@
     gap: 0.35rem 0.55rem;
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.6rem;
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
   }
   .focus-thread-inspector-actions {
     display: grid;
@@ -325,13 +325,13 @@
     border: 1px solid rgba(78, 205, 196, 0.22);
     border-radius: 0.35rem;
     background: rgba(78, 205, 196, 0.08);
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     font: 600 0.64rem/1 'Bricolage Grotesque', sans-serif;
     cursor: pointer;
   }
   .thread-action:disabled {
     cursor: default;
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     background: rgba(255, 255, 255, 0.04);
   }
   .thread-action.primary {
@@ -345,7 +345,7 @@
     box-shadow: 0 0 12px rgba(78, 205, 196, 0.35);
   }
   .thread-action.primary:disabled {
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     background: rgba(255, 255, 255, 0.04);
     border-color: rgba(78, 205, 196, 0.22);
     box-shadow: none;

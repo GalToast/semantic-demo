@@ -161,16 +161,16 @@
     border-radius: 0.3rem;
     cursor: pointer;
     transition: all 0.15s;
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.65rem;
   }
   .compass-step:hover {
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
     background: rgba(78, 205, 196, 0.08);
   }
   .compass-step.current {
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
   }
   .compass-step.done {
     opacity: 0.5;

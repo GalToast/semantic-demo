@@ -171,7 +171,7 @@
         -webkit-backdrop-filter: blur(8px);
         border: 1px solid rgba(78, 205, 196, 0.3);
         border-radius: 0.5rem;
-        color: #e0f0f0;
+        color: var(--color-text-teal-light);
         font-family: 'JetBrains Mono', monospace;
         font-size: 0.7rem;
         z-index: calc(var(--z-devtools, 9000));
@@ -191,7 +191,7 @@
         font-family: 'Bricolage Grotesque', sans-serif;
         font-size: 0.85rem;
         margin: 0;
-        color: #4ecdc4;
+        color: var(--color-primary-alt);
     }
 
     .dev-telemetry-meta {
@@ -215,7 +215,7 @@
         background: rgba(78, 205, 196, 0.12);
         border: 1px solid rgba(78, 205, 196, 0.25);
         border-radius: 0.25rem;
-        color: #e0f0f0;
+        color: var(--color-text-teal-light);
         padding: 0.15rem 0.4rem;
         font-size: 0.6rem;
         font-family: inherit;
@@ -227,7 +227,7 @@
     }
 
     .dev-telemetry-btn:focus-visible {
-        outline: 2px solid #4ecdc4;
+        outline: 2px solid var(--color-primary-alt);
         outline-offset: 1px;
     }
 
@@ -273,7 +273,7 @@
 
     .dev-telemetry-table code {
         font-size: 0.65rem;
-        color: #b0d0d0;
+        color: var(--color-text-teal-muted);
     }
 
     .dev-telemetry-list {
@@ -301,7 +301,7 @@
     }
 
     .dev-telemetry-list .event-name {
-        color: #4ecdc4;
+        color: var(--color-primary-alt);
         font-size: 0.7rem;
     }
 
@@ -310,7 +310,7 @@
         flex-wrap: wrap;
         gap: 0.2rem;
         font-size: 0.6rem;
-        color: #6a8a8a;
+        color: var(--color-text-teal-dark);
     }
 
     .dev-telemetry-list .key {

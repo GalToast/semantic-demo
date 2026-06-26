@@ -344,7 +344,7 @@ import { debugWarn } from '@lib/utils/debug'
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.8rem;
     font-weight: 600;
-    color: #e0f0f0;
+    color: var(--color-text-teal-light);
     white-space: nowrap;
   }
 
@@ -360,14 +360,14 @@ import { debugWarn } from '@lib/utils/debug'
     background: none;
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     border-radius: 0.25rem;
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     cursor: pointer;
     transition: all 0.15s;
     flex-shrink: 0;
   }
   .legend-toggle:hover,
   .help-toggle:hover {
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
     border-color: rgba(var(--color-primary-alt-rgb), 0.3);
     background: rgba(var(--color-primary-alt-rgb), 0.06);
   }
@@ -394,7 +394,7 @@ import { debugWarn } from '@lib/utils/debug'
     background: none;
     border: 1px solid transparent;
     border-radius: 0.3rem;
-    color: #6a8a8a;
+    color: var(--color-text-teal-dark);
     cursor: pointer;
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.7rem;
@@ -402,7 +402,7 @@ import { debugWarn } from '@lib/utils/debug'
     white-space: nowrap;
   }
   .mode-chip:hover {
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
     border-color: rgba(var(--color-primary-alt-rgb), 0.15);
   }
   .mode-chip.active {

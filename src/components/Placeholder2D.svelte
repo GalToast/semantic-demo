@@ -112,13 +112,13 @@
          on the inner <g>. -->
     <g class="orb-cluster" filter="url(#soft-glow)">
       <g class="orb-anim orb-1">
-        <g style="color:#4ecdc4" transform="translate(95,250) scale(115)">
+        <g style="color:var(--color-primary-alt)" transform="translate(95,250) scale(115)">
           <use href="#orb" fill="currentColor" opacity="0.88" />
           <use href="#orb" fill="url(#orb-shade)" />
         </g>
       </g>
       <g class="orb-anim orb-2">
-        <g style="color:#ff6b6b" transform="translate(270,195) scale(88)">
+        <g style="color:var(--status-danger)" transform="translate(270,195) scale(88)">
           <use href="#orb" fill="currentColor" opacity="0.85" />
           <use href="#orb" fill="url(#orb-shade)" />
         </g>
@@ -148,7 +148,7 @@
     </g>
 
     <!-- Thread lines between orbs (subtle) -->
-    <g stroke="#4ecdc4" stroke-width="0.5" opacity="0.08" fill="none">
+    <g stroke="var(--color-primary-alt)" stroke-width="0.5" opacity="0.08" fill="none">
       <path d="M95,250 Q187,210 270,195" />
       <path d="M130,410 Q187,420 260,430" />
       <path d="M95,250 Q90,330 130,410" />

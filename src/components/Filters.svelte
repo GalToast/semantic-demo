@@ -213,7 +213,7 @@
     font-size: 0.6rem;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
     margin-right: 0.3rem;
     font-family: 'Bricolage Grotesque', sans-serif;
     margin: 0;
@@ -223,7 +223,7 @@
     background: rgba(78, 205, 196, 0.08);
     border: 1px solid rgba(78, 205, 196, 0.15);
     border-radius: 0.3rem;
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
     font-size: 0.65rem;
     font-family: 'Nunito Sans', sans-serif;
     cursor: pointer;
@@ -242,15 +242,15 @@
   }
   .filter-chip.active {
     background: rgba(78, 205, 196, 0.2);
-    border-color: #4ecdc4;
-    color: #4ecdc4;
+    border-color: var(--color-primary-alt);
+    color: var(--color-primary-alt);
   }
   .city-filter {
     padding: 0.3rem 0.5rem;
     background: rgba(78, 205, 196, 0.08);
     border: 1px solid rgba(78, 205, 196, 0.15);
     border-radius: 0.3rem;
-    color: #b0d0d0;
+    color: var(--color-text-teal-muted);
     font-size: 0.65rem;
     font-family: 'Nunito Sans', sans-serif;
     height: 44px;
@@ -270,7 +270,7 @@
     background: rgba(255, 107, 107, 0.12);
     border: 1px solid rgba(255, 107, 107, 0.3);
     border-radius: 0.3rem;
-    color: #ff6b6b;
+    color: var(--status-danger);
     font-size: 0.6rem;
     font-family: 'Nunito Sans', sans-serif;
     cursor: pointer;
@@ -288,7 +288,7 @@
   }
   .filter-reset:hover:not(:disabled) {
     background: rgba(255, 107, 107, 0.22);
-    border-color: #ff6b6b;
+    border-color: var(--status-danger);
   }
 
   @media (max-width: 768px) {
