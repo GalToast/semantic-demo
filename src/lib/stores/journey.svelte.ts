@@ -1,5 +1,41 @@
 /**
  * @lib/stores/journey.svelte.ts — Journey orchestration, trail, and thread walker store
+ *
+ * Architecture (Phase 3c, 2026-06-25):
+ *
+ * The journeyStore is a deliberate dual-state mirror between a Svelte
+ * `writable` (the runtime/source-of-truth for component subscribers) and
+ * `appState.navState` (the global Svelte 5 rune state consumed by the
+ * kernel, the URL state mirror, and the window.__APP_STATE__ legacy
+ * compatibility layer).
+ *
+ *   ┌──────────────────────┐                ┌────────────────────────┐
+ *   │ journeyStore (writable) ──── subscribers ──── Svelte components   │
+ *   └────────┬─────────────┘                └────────────────────────┘
+ *            │
+ *            │ withJourneyNotify() pushes 6 fields:
+ *            │   mode, trailCursor, trailDepth,
+ *            │   walkHistoryIndices, threadSource, lastTraversalReason
+ *            │
+ *   ┌────────▼────────────┐                ┌────────────────────────┐
+ *   │ appState.navState (rune state) ─────── kernel, URL state, wndow │
+ *   └─────────────────────┘                └────────────────────────┘
+ *
+ * Unlike `navStore` (which has a W11-T4 readLegacyNavField fallback chain),
+ * the journeyStore is a forward-only mirror — there is no legacy reader.
+ * Mutations go writable → appState; the writable is read by components
+ * that subscribe, and by the callable getter `journeyStore()`.
+ *
+ * Direct appState-only mutations (no journeyStore mirror) exist for fields
+ * that the kernel owns outright: focusedIndex, trailSeedIndex,
+ * trailNeighborIndices, threadCandidates. These are written via
+ * `appState.withMutation()` directly.
+ *
+ * Invariant tests:
+ *   - tests/unit-active/state-class-migration-6-journey.test.ts — broad
+ *     migration contract (17 tests).
+ *   - tests/unit-active/journey-store-mirror-contract.test.ts — focused
+ *     mirror invariant (13 tests).
  */
 import type {
     JourneyState,
@@ -143,8 +179,14 @@ const _journeyWritable = writable<JourneyStoreState>(_readJourneyFromAppState())
 /**
  * Push journey mutations to both `_journeyWritable` and `appState`.
  * The writable notifies subscribers; the appState mutation keeps the kernel
- * in sync. The 5 bridged properties are: mode, trailCursor, trailDepth,
- * threadSource, lastTraversalReason.
+ * in sync. The 6 bridged properties are: mode, trailCursor, trailDepth,
+ * walkHistoryIndices, threadSource, lastTraversalReason.
+ *
+ * Contract: every field that `journeyStore()` exposes must round-trip
+ * through `appState.navState` so the dual-state-mirror invariant holds.
+ * See `tests/unit-active/journey-store-mirror-contract.test.ts` for the
+ * invariant tests, and `tests/unit-active/state-class-migration-6-journey.test.ts`
+ * for the broader migration contract.
  */
 function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState): void {
     const current = get(_journeyWritable)
@@ -167,6 +209,7 @@ function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState
         appState.navState.mode = normalized.phase
         appState.navState.trailCursor = normalized.cursor
         appState.navState.trailDepth = normalized.trailDepth
+        appState.navState.walkHistoryIndices = [...normalized.walkHistoryIndices]
         appState.navState.threadSource = normalized.threadSource
         appState.navState.lastTraversalReason = normalized.lastTraversalReason
     })
