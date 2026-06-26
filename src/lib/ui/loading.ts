@@ -68,7 +68,6 @@ export function setLoadingPhase(phaseKey: string, overrides: LoadingOverrides = 
 
     // Update body data attributes
     if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.loadingPhase = phaseKey
         document.body.dataset.loadingOverlay = 'active'
         delete document.body.dataset.sceneReady
     }

@@ -6,6 +6,7 @@
  * (Svelte 5 runes)
  */
 import { get, type Readable, type Subscriber, type Unsubscriber, writable } from 'svelte/store'
+import { computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
 
 export interface TestCompatState {
     panelSurface: string | null
@@ -84,36 +85,47 @@ function _createTestCompatStore(): TestCompatStoreApi {
 /** Single reactive instance of the test compat state. */
 export const testCompatStore: TestCompatStoreApi = _createTestCompatStore()
 
-/** Update test state from body dataset (called by test setup) */
+/** Update test state from parity attribute computation (called by test setup)
+ *
+ * Most fields read from computeParityAttributes() which derives values
+ * directly from source-of-truth stores (navStore, journeyStore, focusStore,
+ * filterState, viewport, etc.). The only exception is semanticTrailCue,
+ * which is bypass-owned and still reads from body.dataset.
+ */
 export function syncTestStateFromBody(): void {
     if (typeof document === 'undefined' || !document.body) return
 
-    const body = document.body
+    // Compute parity-owned attributes from source-of-truth stores.
+    const parity = computeParityAttributes()
+
     _testCompatWritable.set({
-        panelSurface: body.dataset.panelSurface || null,
-        focusedNode: body.dataset.focusedNode ? Number(body.dataset.focusedNode) : null,
-        activeView: body.dataset.activeView || body.dataset.viewMode || null,
-        graphContext: body.dataset.graphContext || null,
-        panelSurfaceMode: body.dataset.panelSurface || body.dataset.navSurface || null,
-        mapContext: body.dataset.mapContext || null,
-        routeExploration: body.dataset.routeExploration || null,
-        journeyCompassPhase: body.dataset.journeyCompassPhase || null,
-        navMode: body.dataset.navMode || null,
-        focusedNodeId: body.dataset.focusedNode || null,
-        navSurface: body.dataset.navSurface || null,
-        demoPhase: body.dataset.demoPhase || null,
-        journeyPhase: body.dataset.journeyPhase || null,
-        reducedMotion: body.dataset.reducedMotion || null,
-        mode: body.dataset.mode || null,
-        compact: body.dataset.compact || null,
-        filtersActive: body.dataset.filtersActive || null,
-        semanticTrailCue: body.dataset.semanticTrailCue || null,
-        loadingPhase: body.dataset.loadingPhase || null,
-        loadingOverlay: body.dataset.loadingOverlay || null,
-        sceneReady: body.dataset.sceneReady || null,
-        viewHandoffActive: body.dataset.viewHandoffActive || null,
-        cameraAssist: body.dataset.cameraAssist || null,
-        graphicsMode: body.dataset.graphicsMode || null
+        // --- Parity-owned attrs (direct store reads via computeParityAttributes) ---
+        panelSurface: parity.panelSurface ?? null,
+        focusedNode: parity.focusedNode ? Number(parity.focusedNode) : null,
+        activeView: parity.activeView ?? null,
+        graphContext: parity.graphContext ?? null,
+        panelSurfaceMode: parity.panelSurfaceMode ?? null,
+        mapContext: parity.mapContext ?? null,
+        routeExploration: parity.routeExploration ?? null,
+        journeyCompassPhase: parity.journeyCompassPhase ?? null,
+        navMode: parity.navMode ?? null,
+        focusedNodeId: parity.focusedNode ?? null,
+        navSurface: parity.navSurface ?? null,
+        demoPhase: parity.demoPhase ?? null,
+        journeyPhase: parity.journeyPhase ?? null,
+        reducedMotion: parity.reducedMotion ?? null,
+        mode: parity.mode ?? null,
+        compact: parity.compact ?? null,
+        filtersActive: parity.filtersActive ?? null,
+        loadingPhase: parity.loadingPhase ?? null,
+        loadingOverlay: parity.loadingOverlay ?? null,
+        sceneReady: parity.sceneReady ?? null,
+        viewHandoffActive: parity.viewHandoffActive ?? null,
+        cameraAssist: parity.cameraAssist ?? null,
+        graphicsMode: parity.graphicsMode ?? null,
+
+        // --- Bypass-owned attr (not in parity; no source store identified) ---
+        semanticTrailCue: document.body.dataset.semanticTrailCue || null
     })
 }
 

@@ -32,6 +32,13 @@ export function updateTooltipContent(point: Point): void {
     if (nameEl) nameEl.textContent = formatBusinessName(point.name)
     if (whatEl) whatEl.textContent = cleanPublicNoteText(point.what || '')
 
+    // W6 UX audit: explain why this node appears near others in the 3D space
+    const proximityEl = document.getElementById('tooltip-proximity')
+    if (proximityEl) {
+        const clusterName = describeCluster(point.cluster ?? 0)
+        proximityEl.textContent = `Grouped with other ${clusterName.toLowerCase()} businesses by what they do, not just where they are.`
+    }
+
     if (triviaEl) {
         triviaEl.textContent =
             sanitizePublicFacingNote(point.trivia || point.public_note || point.public_detail || '') ||

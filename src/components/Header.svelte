@@ -210,6 +210,17 @@ import { debugWarn } from '@lib/utils/debug'
       debugWarn('Header.openKeyboardHelp: keyboard help unavailable', error);
     }
   }
+
+  /** Show / hide the "What is this?" help dialog. */
+  let helpDialog: HTMLDialogElement | undefined = $state();
+  function toggleHelpDialog(): void {
+    if (!helpDialog) return;
+    if (helpDialog.open) {
+      helpDialog.close();
+    } else {
+      helpDialog.showModal();
+    }
+  }
 </script>
 
 {#if visible}
@@ -256,6 +267,20 @@ import { debugWarn } from '@lib/utils/debug'
           <circle cx="7" cy="10.55" r="0.55" fill="currentColor"/>
         </svg>
       </button>
+      <button
+        id="btn-app-help"
+        class="help-toggle"
+        onclick={toggleHelpDialog}
+        type="button"
+        aria-label="What is Semantic Explorer?"
+        title="What is this?"
+      >
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+          <circle cx="7" cy="7" r="5.75" stroke="currentColor" stroke-width="1.25"/>
+          <circle cx="7" cy="4.8" r="0.7" fill="currentColor"/>
+          <path d="M7 7v3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
+        </svg>
+      </button>
     </div>
 
     <!-- A2-4: Mode chips are always rendered for accessibility. CSS controls visibility per state. -->
@@ -296,6 +321,31 @@ import { debugWarn } from '@lib/utils/debug'
       <span class="header-description">{activeDescription}</span>
     {/if}
   </header>
+
+  <dialog
+    bind:this={helpDialog}
+    class="help-dialog"
+    aria-labelledby="help-title"
+    aria-describedby="help-desc"
+    onclick={(e) => { if (e.target === helpDialog) toggleHelpDialog(); }}
+  >
+    <div class="help-dialog-inner">
+      <h3 id="help-title">What is Semantic Explorer?</h3>
+      <p id="help-desc">
+        A 3D network of <strong>8,406 Montgomery County businesses</strong>.
+        Dots close together do similar things — not just those nearby.
+        Search, click, and discover connections by what a business does,
+        not just where it is.
+      </p>
+      <button
+        class="help-dialog-close"
+        type="button"
+        onclick={() => toggleHelpDialog()}
+      >
+        Got it
+      </button>
+    </div>
+  </dialog>
 {/if}
 
 <style>
@@ -456,6 +506,56 @@ import { debugWarn } from '@lib/utils/debug'
     overflow: hidden;
     text-overflow: ellipsis;
     margin-left: auto;
+  }
+
+  /* ── Help dialog ───────────────────────────────────────────────────────── */
+  .help-dialog {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(7, 16, 24, 0.95);
+    border: 1px solid rgba(78, 205, 196, 0.25);
+    border-radius: 0.5rem;
+    padding: 0;
+    max-width: 28rem;
+    width: 90vw;
+    color: rgba(224, 240, 240, 0.9);
+    box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.1), 0 20px 60px rgba(0, 0, 0, 0.5);
+  }
+  .help-dialog::backdrop {
+    background: rgba(0, 0, 0, 0.4);
+    backdrop-filter: blur(4px);
+  }
+  .help-dialog-inner {
+    padding: 1.5rem;
+  }
+  .help-dialog-inner h3 {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--color-text-teal-light);
+    margin: 0 0 0.5rem;
+  }
+  .help-dialog-inner p {
+    font-size: 0.8rem;
+    line-height: 1.5;
+    color: rgba(224, 240, 240, 0.75);
+    margin: 0 0 1rem;
+  }
+  .help-dialog-close {
+    padding: 0.4rem 1rem;
+    background: rgba(78, 205, 196, 0.12);
+    border: 1px solid rgba(78, 205, 196, 0.3);
+    border-radius: 0.3rem;
+    color: var(--color-text-teal-light);
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .help-dialog-close:hover {
+    background: rgba(78, 205, 196, 0.2);
+    border-color: rgba(78, 205, 196, 0.5);
   }
 
   @media (max-width: 768px) {
