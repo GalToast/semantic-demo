@@ -573,8 +573,8 @@ export function updateTraversalUi(): void {
     } else {
         const fallbackLeadIn =
             appState.semanticThreadsStatus === 'loading'
-                ? 'Semantic connections are still loading, so this is a temporary cloud fallback.'
-                : 'Semantic relationship data is missing here, so this trail is using the current cloud as an approximate fallback.'
+                ? 'Semantic connections are still loading. Showing approximate neighbors from the current cluster until they finish.'
+                : 'No record-backed connections found for this trail. Showing approximate neighbors based on shared cluster membership.'
         const focusPocketMeta = nav.focusPocketMeta
         const pocketNote =
             nav.threadSource === 'semantic' && focusPocketMeta?.active

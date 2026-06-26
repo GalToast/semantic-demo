@@ -94,7 +94,7 @@
 <!-- Grid -->
 <div class="selected-grid">
   <div class="selected-item">
-    <div class="selected-item-label">Semantic Neighborhood</div>
+    <div class="selected-item-label" title="Other businesses connected to this one through recorded relationships.">Semantic Neighborhood</div>
     <div class="selected-item-value" id="selected-theme">{viewModel.theme}</div>
   </div>
   <div class="selected-item">
@@ -106,7 +106,7 @@
     <div class="selected-item-value" id="selected-map">{viewModel.mapText}</div>
   </div>
   <div class="selected-item">
-    <div class="selected-item-label">Related Thread</div>
+    <div class="selected-item-label" title="A path of connected businesses following the strongest signal chain from this one.">Related Thread</div>
     <div class="selected-item-value" id="selected-thread">{viewModel.threadText}</div>
   </div>
 </div>
