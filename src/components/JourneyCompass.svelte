@@ -113,6 +113,13 @@
 
   // Body attribute mirrors — now derived directly from stores
   let bodyPanelSurface = $derived(navState.surface);
+  let bodyPanelSurfaceDetail = $derived.by(() => {
+    const isSearchContext = navState.surface === 'search' || navState.surface === 'focus-search'
+    if (!isSearchContext) return 'none'
+    const mobileSearchSheet = document.body.dataset.mobileSearchSheet
+    if (!mobileSearchSheet) return 'none'
+    return mobileSearchSheet === 'expanded' ? 'expanded' : 'peek'
+  });
   let bodyFocusedNode = $derived(navState.focusedIndex != null ? String(navState.focusedIndex) : '');
   let bodyTrailDepth = $derived(String(journeyState.depth ?? ''));
   let bodyAppTrailDepth = $derived(String(navState.trailDepth ?? ''));
@@ -174,7 +181,6 @@
   let semanticDiveActive = $derived(
     focusState.semanticDiveMode ||
     bodySemanticDive === 'active' ||
-    bodyPanelSurface === 'semantic-dive' ||
     (navState.currentView === 'galaxy' && activeTrailDepth >= 2)
   );
   let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex != null || Number.isFinite(bodyFocusedIndex));
@@ -320,6 +326,9 @@
   data-copy={copy}
   data-actions={actionsProfile}
   data-navigation-owner={navigationOwner}
+  data-active-view={navState.currentView}
+  data-panel-surface={bodyPanelSurface}
+  data-panel-surface-detail={bodyPanelSurfaceDetail}
   aria-live="polite"
 >
   <!-- Step indicators (legacy [data-journey-step] hook) -->

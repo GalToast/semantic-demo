@@ -483,7 +483,7 @@
         border-radius: 0;
     }
 
-    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .journey-compass,
+    .journey-compass[data-panel-surface='search'][data-panel-surface-detail='expanded'],
     body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-panel,
     body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-toggle,
     body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .legend-panel,
@@ -555,9 +555,9 @@
     }
 
     body[data-panel-surface='map-trail'] .view-toggle,
-    body[data-panel-surface='map-trail'] .journey-compass,
+    .journey-compass[data-panel-surface='map-trail'],
     body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
-    body[data-journey-navigation-owner='map-trail-strip'] .journey-compass {
+    .journey-compass[data-navigation-owner='map-trail-strip'] {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -664,7 +664,7 @@
     /* ----------------------------------------------------------------
        7. Map IDLE
        ---------------------------------------------------------------- */
-    body[data-panel-surface='map-idle'] .journey-compass {
+    .journey-compass[data-panel-surface='map-idle'] {
         top: calc(76px + env(safe-area-inset-top, 0px));
         left: 12px;
         right: 12px;
@@ -687,17 +687,17 @@
         border-radius: 18px;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-copy {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-copy {
         grid-area: copy;
         min-width: 0;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-kicker {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-kicker {
         font-size: 8px;
         line-height: 1;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-title {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-title {
         max-width: 100%;
         font-size: 13px;
         line-height: 1.1;
@@ -706,7 +706,7 @@
         text-overflow: ellipsis;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-note {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-note {
         display: none;
     }
 
@@ -718,7 +718,7 @@
         min-width: 44px;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-action {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-action {
         min-width: 44px;
         min-height: 44px;
         height: 44px;
@@ -727,7 +727,7 @@
         letter-spacing: 0;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-action::before {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-action::before {
         font-size: 10px;
         line-height: 1;
         letter-spacing: 0;
@@ -735,7 +735,7 @@
         white-space: nowrap;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-rail {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-rail {
         grid-area: rail;
         display: grid;
         grid-template-columns: repeat(5, minmax(0, 1fr));
@@ -747,7 +747,7 @@
         pointer-events: auto;
     }
 
-    body[data-panel-surface='map-idle'] .journey-compass-step {
+    .journey-compass[data-panel-surface='map-idle'] .journey-compass-step {
         min-width: 0;
         min-height: 44px;
         padding: 0 3px;
@@ -838,9 +838,9 @@
     }
 
     body[data-panel-surface='map-trail'] .view-toggle,
-    body[data-panel-surface='map-trail'] .journey-compass,
+    .journey-compass[data-panel-surface='map-trail'],
     body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
-    body[data-journey-navigation-owner='map-trail-strip'] .journey-compass {
+    .journey-compass[data-navigation-owner='map-trail-strip'] {
         display: none;
         visibility: hidden;
         pointer-events: none;

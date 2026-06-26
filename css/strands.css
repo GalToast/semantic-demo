@@ -77,7 +77,7 @@
 /* Mobile surface coverage pass: explicit touch floors, motion safety, and
    forced-colors affordances for the remaining high-value mobile atoms. */
 @media (max-width: 768px) {
-    body[data-panel-surface='focus-search'] .journey-compass-action {
+    .journey-compass[data-panel-surface='focus-search'] .journey-compass-action {
         min-height: 45px;
         font-size: 10px;
     }
@@ -252,7 +252,7 @@
         height: 44px;
     }
 
-    body[data-active-view='map'] .journey-compass-action {
+    .journey-compass[data-active-view='map'] .journey-compass-action {
         min-height: 44px;
         display: inline-flex;
         align-items: center;
@@ -367,16 +367,16 @@
         pointer-events: none;
     }
 
-    body[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-actions,
-    body[data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-actions,
-    body[data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-actions {
+    .journey-compass[data-panel-surface='focus'][data-density='compact'] .journey-compass-actions,
+    .journey-compass[data-panel-surface='focus-search'][data-density='compact'] .journey-compass-actions,
+    .journey-compass[data-panel-surface='semantic-dive'][data-density='compact'] .journey-compass-actions {
         flex: 0 0 auto;
         gap: 6px;
     }
 
-    body[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-action,
-    body[data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-action,
-    body[data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-action {
+    .journey-compass[data-panel-surface='focus'][data-density='compact'] .journey-compass-action,
+    .journey-compass[data-panel-surface='focus-search'][data-density='compact'] .journey-compass-action,
+    .journey-compass[data-panel-surface='semantic-dive'][data-density='compact'] .journey-compass-action {
         max-width: 92px;
         padding: 0 9px;
     }
@@ -425,9 +425,9 @@
         display: none;
     }
 
-    body[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-action.primary,
-    body[data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-action.primary,
-    body[data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-action.primary {
+    .journey-compass[data-panel-surface='focus'][data-density='compact'] .journey-compass-action.primary,
+    .journey-compass[data-panel-surface='focus-search'][data-density='compact'] .journey-compass-action.primary,
+    .journey-compass[data-panel-surface='semantic-dive'][data-density='compact'] .journey-compass-action.primary {
         max-width: 128px;
     }
 }
@@ -435,7 +435,7 @@
 /* Mobile chrome legibility floor: keep compact journey actions readable even
    when earlier state-specific blocks try to squeeze the cockpit. */
 @media (max-width: 768px) {
-    body[data-active-view='galaxy'] .journey-compass .journey-compass-action {
+    .journey-compass[data-active-view='galaxy'] .journey-compass-action {
         min-height: 44px;
         font-size: 10px;
         line-height: 1.08;
@@ -447,20 +447,20 @@
     /* Action visibility handled by global mobile actions */
     /* Action visibility handled by global mobile actions */
 
-    body[data-active-view='galaxy'] .journey-compass .journey-compass-actions {
+    .journey-compass[data-active-view='galaxy'] .journey-compass-actions {
         max-width: min(220px, 44vw);
         flex: 0 1 auto;
     }
 
-    body[data-active-view='galaxy'] .journey-compass .journey-compass-action {
+    .journey-compass[data-active-view='galaxy'] .journey-compass-action {
         max-width: 104px;
     }
 
-    body[data-active-view='galaxy'] .journey-compass .journey-compass-action:not(.primary) {
+    .journey-compass[data-active-view='galaxy'] .journey-compass-action:not(.primary) {
         display: none;
     }
 
-    body[data-active-view='galaxy'] .journey-compass .journey-compass-action.primary {
+    .journey-compass[data-active-view='galaxy'] .journey-compass-action.primary {
         flex: 0 0 124px;
         width: 124px;
         max-width: 124px;
@@ -721,7 +721,7 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         max-height: calc(100dvh - 238px);
     }
 
-    body[data-active-view='galaxy'] .journey-compass-step,
+    .journey-compass[data-active-view='galaxy'] .journey-compass-step,
     body[data-active-view='galaxy'] .focus-stage-action-btn,
     body[data-active-view='galaxy'] .focus-stage-neighbor-action,
     body[data-active-view='galaxy'] .focus-stage-inside-btn,
@@ -825,13 +825,13 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         letter-spacing: 0.09em;
     }
 
-    body[data-active-view='galaxy'] .journey-compass[data-phase='overview'] .journey-compass-kicker {
+    .journey-compass[data-active-view='galaxy'][data-phase='overview'] .journey-compass-kicker {
         color: rgba(var(--color-primary-tint-rgb), 0.7);
         font-size: 10px;
         letter-spacing: 0.2em;
     }
 
-    body[data-panel-surface='idle'] .journey-compass[data-phase='overview'] {
+    .journey-compass[data-panel-surface='idle'][data-phase='overview'] {
         width: min(472px, calc(100vw - 620px));
         min-width: 430px;
         top: 98px;
@@ -848,42 +848,41 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
             0 18px 44px var(--shadow-antumbra);
     }
 
-    body[data-panel-surface='idle'] .journey-compass[data-phase='overview'] .journey-compass-copy {
+    .journey-compass[data-panel-surface='idle'][data-phase='overview'] .journey-compass-copy {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 2px;
     }
 
-    body[data-active-view='galaxy'] .journey-compass[data-phase='overview'] .journey-compass-title {
+    .journey-compass[data-active-view='galaxy'][data-phase='overview'] .journey-compass-title {
         max-width: none;
         font-size: 22px;
         line-height: 0.96;
     }
 
-    body[data-panel-surface='idle'] .journey-compass-note {
+    .journey-compass[data-panel-surface='idle'] .journey-compass-note {
         display: none;
     }
 
-    body[data-active-view='galaxy'] .journey-compass[data-phase='overview'] .journey-compass-rail {
+    .journey-compass[data-active-view='galaxy'][data-phase='overview'] .journey-compass-rail {
         padding: 4px;
         border: 1px solid var(--glass-reflection-muted);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.028);
     }
 
-    body[data-panel-surface='idle'] .journey-compass[data-phase='overview'] .journey-compass-step {
+    .journey-compass[data-panel-surface='idle'][data-phase='overview'] .journey-compass-step {
         min-height: 32px;
         padding: 0 8px;
         font-size: 9px;
     }
 
-    body[data-active-view='galaxy'][data-panel-surface='idle']
-        .journey-compass[data-phase='overview'][data-density='expanded']
+    .journey-compass[data-active-view='galaxy'][data-panel-surface='idle'][data-phase='overview'][data-density='expanded']
         > [aria-label='Journey route controls'] {
         display: none;
     }
 
-    body[data-panel-surface='search'] .journey-compass {
+    .journey-compass[data-panel-surface='search'] {
         width: min(472px, calc(100vw - 620px));
         min-width: 430px;
         top: 98px;
@@ -894,29 +893,29 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         opacity: 0.9;
     }
 
-    body[data-panel-surface='search'] .journey-compass-copy {
+    .journey-compass[data-panel-surface='search'] .journey-compass-copy {
         display: grid;
         grid-template-columns: minmax(0, 1fr);
         gap: 2px;
     }
 
-    body[data-panel-surface='search'] .journey-compass-title {
+    .journey-compass[data-panel-surface='search'] .journey-compass-title {
         max-width: none;
         font-size: 22px;
         line-height: 0.96;
     }
 
-    body[data-panel-surface='search'] .journey-compass-note {
+    .journey-compass[data-panel-surface='search'] .journey-compass-note {
         display: none;
     }
 
-    body[data-panel-surface='search'] .journey-compass-step {
+    .journey-compass[data-panel-surface='search'] .journey-compass-step {
         min-height: 32px;
         padding: 0 8px;
         font-size: 9px;
     }
 
-    body[data-panel-surface='search'] .journey-compass-actions {
+    .journey-compass[data-panel-surface='search'] .journey-compass-actions {
         gap: 8px;
         justify-content: flex-start;
     }
@@ -1018,7 +1017,7 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         font-size: 12px;
     }
 
-    body[data-active-view='galaxy'] .journey-compass-action.primary {
+    .journey-compass[data-active-view='galaxy'] .journey-compass-action.primary {
         border-color: rgba(var(--color-primary-alt-rgb), 0.46);
         background:
             radial-gradient(circle at 18% 0%, rgba(var(--color-primary-tint-rgb), 0.2), transparent 58%),
@@ -1224,7 +1223,7 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         font-size: 8.5px;
     }
 
-    body[data-panel-surface='idle'] .journey-compass {
+    .journey-compass[data-panel-surface='idle'] {
         top: calc(66px + env(safe-area-inset-top, 0px));
         left: 12px;
         right: 12px;
@@ -1236,7 +1235,7 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         border-radius: 18px;
     }
 
-    body[data-panel-surface='idle'] .journey-compass-rail {
+    .journey-compass-rail {
         display: none;
     }
 
@@ -1246,7 +1245,7 @@ body[data-panel-surface='focus-search'] .controls .control-btn {
         display: none;
     }
 
-    body[data-active-view='galaxy'] .journey-compass-action {
+    .journey-compass[data-active-view='galaxy'] .journey-compass-action {
         min-height: 44px;
     }
 

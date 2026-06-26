@@ -806,7 +806,7 @@ body:has(.info-panel.active) .panel-toggle {
         display: none;
     }
 
-    body[data-panel-surface='search'] .journey-compass {
+    .journey-compass[data-panel-surface='search'] {
         top: calc(12px + env(safe-area-inset-top, 0px));
         gap: 6px;
         padding: 7px 9px;
@@ -815,12 +815,12 @@ body:has(.info-panel.active) .panel-toggle {
         grid-template-columns: minmax(0, 1fr);
     }
 
-    body[data-panel-surface='search'] .journey-compass-note,
-    body[data-panel-surface='search'] .journey-compass-rail {
+    .journey-compass[data-panel-surface='search'] .journey-compass-note,
+    .journey-compass[data-panel-surface='search'] .journey-compass-rail {
         display: none;
     }
 
-    body[data-panel-surface='search'] .journey-compass-title {
+    .journey-compass[data-panel-surface='search'] .journey-compass-title {
         font-size: 12px;
     }
 
@@ -1084,7 +1084,7 @@ body:has(.info-panel.active) .panel-toggle {
         z-index: var(--z-overlay);
     }
 
-    body[data-panel-surface^='map-'] .journey-compass {
+    .journey-compass[data-panel-surface^='map-'] {
         top: auto;
         bottom: calc(38vh + 10px);
         left: 10px;
@@ -1094,9 +1094,9 @@ body:has(.info-panel.active) .panel-toggle {
     }
 
     /* #925: Hide journey compass in map mode when map-specific navigation is active */
-    body[data-panel-surface='map-search'] .journey-compass,
-    body[data-panel-surface='map-focus'] .journey-compass,
-    body[data-panel-surface='map-focus-search'] .journey-compass {
+    .journey-compass[data-panel-surface='map-search'],
+    .journey-compass[data-panel-surface='map-focus'],
+    .journey-compass[data-panel-surface='map-focus-search'] {
         display: none;
     }
 
