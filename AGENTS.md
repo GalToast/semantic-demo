@@ -132,6 +132,40 @@ Required for:
 
 Worker contract: workers doing UI work should capture a screenshot and include the path in `tmp/<topic>/report.md`. Main lane verifies by reading the image. If the screenshot is missing, the work is incomplete.
 
+**Vision capability matrix (set 2026-06-26, after kimi-k2.7-code 400 failure):**
+
+`kimi-k2.7-code` does NOT support image input (returns 400). Treat all `kimi-*` models as TEXT-ONLY.
+
+Subagent workers do NOT need vision (text/code is their job). Visual verification happens on **main lane** — main lane has vision and reads screenshots via the `read` tool.
+
+Subagent lane inventory (from `model-providers.json` → `allowed_models`):
+
+**Primary for text/code work (no vision, fine for workers):**
+
+- `kilo/openrouter/owl-alpha`
+- `agnes-2.0-flash`
+- `mimo-v2.5-free`, `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free`, `north-mini-code-free`
+
+**Vision-capable (use these for visual work / image input):**
+
+- `google/gemini-3-flash` (free, best default)
+- `google/gemini-3.5-flash`, `gemini-2.5-flash`, `gemini-2.5-pro`
+- `google/models/gemini-2.5-flash`, `gemini-3-flash-preview`, `gemini-3-pro-preview` (direct Google API)
+- `google/models/aqa` (visual QA tuned)
+- `anthropic/claude-3-7-ch-exp`, `claude-opus-4-7`
+- `openai/gpt-5.5`, `gpt-5.5-pro`, `gpt-5.4`, `gpt-5.3-codex`
+- `google/gemma-3-4b-it`, `gemma-3-12b-it`, `gemma-3-27b-it`
+- `meta/llama-3.2-90b-vision-instruct`, `llama-3.2-11b-vision-instruct`
+
+**Text-only (DO NOT use for images — kimi family proved it):**
+
+- All `kimi-*` ❌
+- `deepseek-v4-*` ❌
+- `qwen3-*` (code-tuned) ❌
+- `mixtral`, `mistral-code-*` ❌
+
+**Worker contract for visual work:** if a worker task explicitly requires vision (e.g. "look at this screenshot and identify X"), dispatch with `google/gemini-3-flash` explicitly. Otherwise default to owl-alpha for text/code work.
+
 ## Key Product Invariants
 
 - The 8,406-point mycelium data lives in `state.rawPositionsBuffer` as `[0,1]^3` positions. W7-B Pair 2 prep preserved the unit-cube invariant via the canonical `seededUnit` re-export from `@lib/utils/seeded-random`.
