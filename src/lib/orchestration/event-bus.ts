@@ -46,6 +46,9 @@ export const EVENTS = {
     SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED: 'SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED',
     VIEW_CHANGE_REQUESTED: 'VIEW_CHANGE_REQUESTED',
 
+    // Global Error Boundary
+    APP_ERROR_CAUGHT: 'APP_ERROR_CAUGHT',
+
     // UI Interactions
     TOOLTIP_HIDE_REQUESTED: 'TOOLTIP_HIDE_REQUESTED',
     TOOLTIP_POSITION_REQUESTED: 'TOOLTIP_POSITION_REQUESTED',
@@ -116,6 +119,7 @@ export interface EventPayloads {
     [EVENTS.TOOLTIP_HIDE_REQUESTED]: Record<string, never>
     [EVENTS.TOOLTIP_POSITION_REQUESTED]: { x: number; y: number }
     [EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED]: { content?: string; point?: unknown }
+    [EVENTS.APP_ERROR_CAUGHT]: { source: string; message: string; kind: 'error' | 'rejection' }
 }
 
 // ── Internal Storage ──────────────────────────────────────────────────────

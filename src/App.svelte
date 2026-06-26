@@ -51,6 +51,7 @@
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
+  import { installErrorHandlers, ErrorFallback } from '@lib/error-boundary';
   import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
 
   // Lazy component handles -- driven by $effects further down. Each handle's
@@ -238,7 +239,9 @@
       // Fallback: setTimeout 0 (still async, still off critical path).
       setTimeout(() => import('@lib/orchestration/triggers'), 0);
     }
+    const errorHandlerHandle = installErrorHandlers();
     return () => {
+      errorHandlerHandle.uninstall();
       delete contractWindow.__forceSemanticDiveContractSurface;
       teardownAppShell();
       resetSemanticThreadWorker();
@@ -640,6 +643,9 @@
   <!-- Toast is rendered at layer 1200 (see <Toast /> above the hover tooltip) -->
 </div>
 </main>
+
+<!-- Global Error Boundary fallback (layer 1200, sibling to Toast) -->
+<ErrorFallback />
 
 <!-- Layer 3000: Loading overlay (highest z-index) -->
 <LoadingOverlay visible={true} />
