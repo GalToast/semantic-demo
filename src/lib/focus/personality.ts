@@ -1,3 +1,28 @@
+/**
+ * @lib/focus/personality.ts — Focus personality system
+ *
+ * Each focus mode entry picks a "personality" that controls:
+ *   - **Camera arc** (`standard` | `wide` | `side` | `tight`) — the path the
+ *     camera takes when entering the focus pocket
+ *   - **Easing** (`easeInOutCubic` | `easeOutQuint` | `easeOutBack`) — how the
+ *     camera and node motion animate in
+ *   - **Stagger / compression multipliers** — how quickly neighboring nodes
+ *     settle into the pocket
+ *   - **Micro-variation** — small per-node rotation/scale jitter for visual
+ *     variety (deterministic via seededUnitMulti)
+ *
+ * Personality types:
+ *   - STANDARD       — default for most focus entries
+ *   - DEEP_DIVE      — strong compression, tight camera, deep pocket
+ *   - DENSE_HUB      — slower stagger to handle many neighbors
+ *   - BRIDGE_NODE    — emphasizes connections to siblings
+ *   - EDGE_NODE      — wider camera arc, fewer neighbors
+ *   - TIGHT_CLUSTER  — minimal camera motion, fast settle
+ *
+ * Selection (`getNeighborhoodPersonality`) reads the candidate slice and the
+ * recent arrangement history from appState to pick the best personality for
+ * the current focus context.
+ */
 import { normalizeCityForFilter } from '@lib/utils/geo-data';
 import {
   getBusinessRecords,

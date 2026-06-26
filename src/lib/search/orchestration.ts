@@ -1,3 +1,25 @@
+/**
+ * @lib/search/orchestration.ts — High-level search orchestration
+ *
+ * Coordinates the search lifecycle across the store, event bus, and UI:
+ *
+ *   1. `search(query, options)` — runs `performSearch` (the actual index lookup),
+ *      validates against in-flight requests via the sequence counter, and writes
+ *      the result summary back to `searchStore`. Handles degraded/empty states
+ *      and pushes events to the journey UI (semantic-guide state, trail cue,
+ *      glow activation).
+ *   2. `bindSearchResultInteractions()` — wires up DOM event handlers for the
+ *      result list (hover, click, focus transitions).
+ *   3. `beginSearchFocusTransition()` — kicks off the animated transition from
+ *      the search panel into the 3D focus pocket.
+ *
+ * Re-exports panel-state helpers from `./search-panel-adapter` and
+ * `./results-ui` so consumers can import everything from one place.
+ *
+ * The search lifecycle is intentionally orchestrated here (rather than in the
+ * store directly) so the UI concerns (DOM bindings, glow activation, degraded
+ * states) are testable without a full Svelte runtime.
+ */
 import type { SearchResult } from '@lib/types/state'
 import {
     searchStore,

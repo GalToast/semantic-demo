@@ -1,3 +1,29 @@
+/**
+ * @lib/engine/three-search-animations.ts — Search-results Three.js animations
+ *
+ * Three coordinated animations that fire during/after a search:
+ *
+ *   1. Hero moment (`triggerSearchHeroMoment`) — a brief bloom at the
+ *      anchor node when search results land; synchronized with audio via
+ *      `audio-scape.triggerCorridorBloom`.
+ *   2. Per-node corridor glow (`triggerCorridorNodeGlow` + update) — each
+ *      discovered candidate node receives a soft persistent glow as the
+ *      corridor animates. Uses seeded-random for deterministic per-node
+ *      stagger.
+ *   3. Path corridor animation (`triggerSearchCorridorAnimation` + update) —
+ *      a 2.8s soft-draw of the connecting lines between anchor and route.
+ *
+ * The anchor retains a residual glow for `ANCHOR_GLOW_PERSIST_MS` (4.2s)
+ * after the hero bloom peaks — visual continuity between the search
+ * landing and the user exploring results.
+ *
+ * Per-frame updates are driven by `updateCorridorNodeGlow` /
+ * `updateSearchCorridorAnimation` (called from three-engine-core's animate()).
+ *
+ * Constants are tuned for the W46 visual identity; do not adjust without
+ * re-running `npm run qa:surface:mobile-idle` and the focus-pocket-state
+ * contract tests.
+ */
 import { webglContext } from '@lib/engine/webgl-context'
 import {
     Vector3,

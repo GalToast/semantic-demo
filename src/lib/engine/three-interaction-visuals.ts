@@ -1,3 +1,31 @@
+/**
+ * @lib/engine/three-interaction-visuals.ts — Three.js visuals that respond to user interaction
+ *
+ * Manages the dynamic Three.js objects that animate based on hover, focus,
+ * and search state: focus anchor indicator, semantic lens (the ambient
+ * particle field around focused nodes), and the search manifold (the
+ * glowing corridor between the anchor and discovered candidates).
+ *
+ * Architecture (W12, refactored 2026-06):
+ *   - Per-frame update driven by `updateInteractionVisuals(now, hoveredNode, focusedNode)`
+ *     from the main render loop (see three-engine-core.ts animate()).
+ *   - Initialization is split per-visual (`initSemanticManifold`, `initSemanticLens`)
+ *     because they have different lifecycle windows (some tied to scene init,
+ *     others to specific mode entries).
+ *   - Disposal is split per-visual to match (`disposeInteractionVisuals`,
+ *     `disposeSemanticLens`); called from three-engine-core's dispose path
+ *     and on mode transitions that hide the visual.
+ *
+ * Public API:
+ *   - initSemanticManifold()    — wire up the search corridor mesh; called once at scene init
+ *   - initSemanticLens()        — wire up the focus-mode ambient lens; called once at scene init
+ *   - updateInteractionVisuals() — per-frame driver; reads hovered/focused, updates transforms/colors
+ *   - disposeInteractionVisuals() — tear down all visuals; called at full scene disposal
+ *   - disposeSemanticLens()      — tear down only the lens; called on focus-mode exit
+ *
+ * Internal helpers narrow Three.js's `Material | Material[]` union at the
+ * interop boundary (`asSingleMaterial`, `asShaderMaterial`, `asColorMaterial`).
+ */
 import {
     Material,
     Vector3,

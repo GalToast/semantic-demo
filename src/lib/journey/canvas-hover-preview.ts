@@ -1,3 +1,26 @@
+/**
+ * @lib/journey/canvas-hover-preview.ts — DOM tooltip overlay for canvas node hovers
+ *
+ * The 3D canvas itself can't show HTML tooltips (no DOM rendering inside WebGL).
+ * When the user hovers over a node on the canvas, this module creates and
+ * positions a positioned `<div role="tooltip">` near the cursor showing:
+ *   - Business name
+ *   - Cluster color (matches the legend palette)
+ *   - Signal score
+ *   - Short cluster description
+ *
+ * Singleton lifecycle: one tooltip element per page. Created lazily on first
+ * hover, reused across hovers, destroyed when no longer needed (e.g. on route
+ * change or scene disposal).
+ *
+ * Accessibility:
+ *   - `role="tooltip"` + `aria-hidden="true"` (the tooltip is decorative; the
+ *     underlying semantic content is in the InfoPanel)
+ *   - The tooltip is positioned via `position: fixed` with z-index 9999
+ *   - Transitions are CSS-only (no JS animation frames)
+ *
+ * Cluster colors match `src/lib/utils/design-tokens.ts` SCENE_PALETTE.
+ */
 import { businessRecords } from '@lib/data-store'
 import { get } from 'svelte/store'
 import { describeCluster } from '@lib/utils/ui-presentation'
