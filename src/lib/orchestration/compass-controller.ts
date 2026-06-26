@@ -164,8 +164,7 @@ export function syncJourneyCompassActions(compassState: Partial<CompassStateCont
     const suppressInsideDiveActions = compassState.phase === 'inside' && isSemanticDiveSurface()
     const $focus = focusStore()
 
-    const panelSurface =
-        typeof document !== 'undefined' && document.body ? document.body.dataset.panelSurface || '' : ''
+    const panelSurface = navStore().surface || ''
     const focusedSurfaceCanStepInside =
         (panelSurface === 'focus' || panelSurface === 'focus-search') && !isSemanticDiveSurface()
 
@@ -325,11 +324,7 @@ export function executeJourneyCompassAction(action: string): void {
                 ...state,
                 trailDepth: 2
             }))
-            if (typeof document !== 'undefined' && document.body) {
-                document.body.dataset.semanticDive = 'active'
-                document.body.dataset.panelSurface = 'semantic-dive'
-                document.body.dataset.trailDepth = '2'
-            }
+            // Parity-attrs owns semanticDive, panelSurface, trailDepth
             if (typeof window !== 'undefined') {
                 const stateWindow = window as Window & {
                     __APP_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number }
@@ -378,21 +373,8 @@ export function executeJourneyCompassAction(action: string): void {
                 surface: targetSurface,
                 trailDepth: 1
             }))
-            if (typeof document !== 'undefined' && document.body) {
-                document.body.dataset.semanticDive = 'inactive'
-                document.body.dataset.activeView = 'map'
-                document.body.dataset.viewMode = 'map'
-                document.body.dataset.panelSurface = targetSurface
-                document.body.dataset.panelSurfaceMode = targetSurface
-                document.body.dataset.graphContext = 'map'
-                document.body.dataset.mapContext =
-                    targetSurface === 'map-focus-search'
-                        ? 'focus-search'
-                        : targetSurface === 'map-focus'
-                          ? 'focus'
-                          : 'trail'
-                document.body.dataset.trailDepth = '1'
-            }
+            // Parity-attrs owns semanticDive, activeView, viewMode, panelSurface,
+            // panelSurfaceMode, graphContext, mapContext, trailDepth
             return
         }
 

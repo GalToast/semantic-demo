@@ -125,7 +125,7 @@
   <div class="splash-frame">
     <h2 class="splash-title" id="splash-title">Semantic Explorer</h2>
     <p class="splash-tag">
-      A 3D mycelium visualization of Montgomery County business relationships.
+      Explore Montgomery County businesses through an interactive 3D network. Search, click, and discover connections.
     </p>
 
     <form class="splash-search" onsubmit={handleSubmit} role="search">

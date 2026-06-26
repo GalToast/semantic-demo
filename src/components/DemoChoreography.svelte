@@ -20,6 +20,7 @@
     MAX_START_RETRIES
   } from '@lib/stores/demo.svelte.ts';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
+  import { showToast } from '@lib/stores/toast.svelte';
   import type { DemoPhase } from '@lib/types/state';
 
   interface Props {
@@ -33,6 +34,8 @@
 
   const FORCED_START_DELAY_MS = 800;
   const RETRY_START_DELAY_MS = 250;
+  /** Delay before the fallback onboarding toast appears after splash dismissal. */
+  const FALLBACK_HINT_DELAY_MS = 2500;
 
   const phaseLabels: Record<DemoPhase, string> = {
     IDLE: '',
@@ -45,6 +48,14 @@
     COMPLETE: '',
     CANCELLED: ''
   };
+
+  /** Show a brief onboarding hint when the auto-demo can't run. */
+  function showFallbackHint(): void {
+    showToast(
+      'Getting started',
+      'Search for a business type above, or click any dot to explore connections.'
+    );
+  }
 
   function completeDemo() {
     markDemoCompleted();
@@ -82,6 +93,8 @@
     if (nodeIndex === null) {
       if (remainingAttempts <= 0) {
         eligible = false;
+        // W6 audit: Demo couldn't find a valid node — show fallback hint.
+        scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
         return;
       }
       scheduleDemoTimer(() => attemptStart(remainingAttempts - 1), RETRY_START_DELAY_MS);
@@ -98,6 +111,10 @@
   onMount(() => {
     if (suppress || (!force && !shouldRunDemo())) {
       eligible = false;
+      // W6 audit: Show a fallback onboarding hint when the demo is suppressed.
+      // This catches returning users, reduced-motion users, and software-renderer
+      // users who would otherwise land in the 3D scene with zero guidance.
+      scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
       return;
     }
 
