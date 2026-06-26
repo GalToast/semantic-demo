@@ -80,8 +80,10 @@ function getLocationPathname(): string {
 
 /**
  * Parse a depth value from URL params, clamped to [0, 2].
+ * Exported (Phase 6c, 2026-06-26) to enable direct contract testing without
+ * Svelte runtime / appState mocking.
  */
-function getRequestedUrlDepth(params: URLSearchParams): number {
+export function getRequestedUrlDepth(params: URLSearchParams): number {
     const rawDepth = Number(params.get('depth') || 0)
     return Number.isFinite(rawDepth) ? Math.max(0, Math.min(2, rawDepth)) : 0
 }

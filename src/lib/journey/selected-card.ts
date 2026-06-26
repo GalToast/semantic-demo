@@ -274,7 +274,7 @@ export function updateSelectedBusiness(
 ): void {
     // Push to Svelte store via canonical focusOnPoint (selectedPointStore is now a getter, not a writable)
     if (point) {
-        focusOnPoint(point as unknown as Parameters<typeof focusOnPoint>[0], { revealCard: true })
+        focusOnPoint(point as unknown as Parameters<typeof focusOnPoint>[0], { revealCard: true, skipUrlSync: true })
     }
 
     if (!point) {

@@ -14,14 +14,7 @@
 
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
-import {
-    Scene,
-    PerspectiveCamera,
-    WebGLRenderer,
-    FogExp2,
-    Material,
-    MeshPhongMaterial
-} from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, FogExp2, Material, MeshPhongMaterial } from 'three'
 import type { NodePosition } from '@lib/state/state-types'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
 // so it can be shared with legacy-state-adapter.ts without a circular import.
@@ -817,9 +810,7 @@ export function animate() {
             | undefined
         if (refSphere?.material) {
             const baseRefOpacity = 0.03
-            const revealBoost = _state?.sceneRevealActive
-                ? Math.sin(revealProgress * Math.PI) * 0.05
-                : 0
+            const revealBoost = _state?.sceneRevealActive ? Math.sin(revealProgress * Math.PI) * 0.05 : 0
             refSphere.material.opacity = baseRefOpacity + revealBoost
         }
 

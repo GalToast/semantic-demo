@@ -424,6 +424,15 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         // Click the suggestion
         const clickedLeadId = await suggestionBtns.nth(targetIdx).getAttribute('data-lead-id')
         const clickedOnclick = await suggestionBtns.nth(targetIdx).evaluate((b) => b.onclick?.toString?.() ?? 'none')
+        // W48-DEBUG: read the actual pointIndexByLeadId mapping in the browser
+        // to diagnose the mismatch between expected (1) and received (0).
+        const diagMapping = await page.evaluate((leadId) => {
+            const state = window.__APP_STATE__
+            const idx = state?.pointIndexByLeadId?.get?.(leadId)
+            const allKeys = state?.pointIndexByLeadId ? Array.from(state.pointIndexByLeadId.keys()).slice(0, 10) : []
+            return { leadId, idx, allKeys, hasGet: typeof state?.pointIndexByLeadId?.get === 'function' }
+        }, clickedLeadId)
+        console.log('[DIAG] mapping:', diagMapping)
         console.log(
             '[DIAG] targetIdx:',
             targetIdx,
@@ -905,7 +914,18 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
-        await page.waitForTimeout(3000)
+        // Wait for the data worker to load the 8,406-point dataset.
+        // Test 20 was failing because hover preview checks ran before data
+        // loaded in the production build (3s was not enough).
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForFunction(() => (window.__APP_STATE__?.nodePositions?.length ?? 0) > 100, null, {
+            timeout: 15000
+        })
+        // Wait for the 3D scene to fully initialize — the weather widget is
+        // the canonical proxy signal that onSceneReady fired and the camera/
+        // raycaster are ready for interaction (matches beforeEach boot).
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(2000)
 
         // Move mouse to center of canvas (likely over a node)
         const canvas = page.locator('canvas').first()
@@ -943,17 +963,16 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
-        await page.waitForTimeout(5000)
+        // Wait for the 3D scene to fully initialize — the weather widget is
+        // the canonical proxy signal that onSceneReady fired and the camera/
+        // raycaster are ready for interaction (matches test 20 boot sequence).
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(2000)
 
-        // Move mouse to center of canvas to find a node
+        // Click the center of the canvas — Playwright's element click handles
+        // scroll, overlay, and coordinate dispatch more reliably than mouse.click().
         const canvas = page.locator('canvas').first()
-        const box = await canvas.boundingBox()
-        expect(box).not.toBeNull()
-
-        // Hover to find a node, then click
-        await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2)
-        await page.waitForTimeout(1000)
-        await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2)
+        await canvas.click()
         await page.waitForTimeout(2000)
 
         // After settling, the app should be in focus/trail mode
