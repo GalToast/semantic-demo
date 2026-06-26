@@ -1,16 +1,25 @@
 /**
- * @lib/journey/neighborhood.ts — Bounded neighborhood manifest and walk candidates
+ * @lib/journey/neighborhood.ts — Bounded neighborhood walk candidates
  *
- * Ported from:
+ * The pure manifest-building concern (types, resolvers, builder) was
+ * extracted to `./neighborhood-manifest.ts` (Phase 5c, 2026-06-25). This
+ * module now owns:
+ *   - Bounded-neighborhood adapter state (the 3 module-level vars below)
+ *   - Walk-candidate selection (`getBoundedNeighborhoodWalkCandidate`)
+ *   - Bounded-neighborhood lifecycle (`init`, `reset`, `prime`,
+ *     `ensureBoundedNeighborhoodFromActivePocket`)
+ *   - Public API for callers: `getNeighborhoodCandidateForIndex`,
+ *     `getNeighborhoodRouteIndices`, `getCurrentTrailFocusIndex`,
+ *     `setTrailFromSeed`, `updateTrailIndices`, `primeBounded...`, etc.
  *
- * Provides neighborhood computation utilities backed by the semantic
- * neighbor map and spatial proximity. Functions read from Svelte stores
- * (semanticNeighborMap, businessRecords, pointIndexByLeadId) to derive
- * real candidate indices, manifest metadata, and walk progression.
+ * For backwards compatibility, `buildNeighborhoodManifest` and
+ * `getSemanticThreadDisplayLimit` are RE-EXPORTED from neighborhood-manifest
+ * — existing consumers (`canvas-hit-test.ts`, `journey.ts`, `triggers.ts`)
+ * continue to import them from `@lib/journey/neighborhood`.
  */
 
 import { get } from 'svelte/store'
-import { semanticNeighborMap, businessRecords, pointIndexByLeadId, positionBuffer } from '@lib/data-store'
+import { semanticNeighborMap, businessRecords, pointIndexByLeadId } from '@lib/data-store'
 import { navStore } from '@lib/stores/navigation.svelte.ts'
 import { journeyStore, setTrailSeedIndex, setTrailNeighborIndices } from '@lib/stores/journey.svelte.ts'
 import { appState } from '@lib/state/app.svelte.ts'
@@ -23,14 +32,32 @@ import {
     getThreadCandidatesForIndex,
     normalizeLeadId
 } from './thread-model'
+import { valueArray, candidateIndex, normalizeThreadCandidates, finiteIndexList } from './neighborhood-helpers'
+import type { ThreadCandidateLike } from './neighborhood-helpers'
+// Re-export manifest types and builder for backward-compatible imports.
+export {
+    buildNeighborhoodManifest,
+    getSemanticThreadDisplayLimit,
+    getSemanticPeerThreadDisplayLimit,
+    MAX_MANIFEST_CANDIDATES,
+    resolveSemanticNeighbors,
+    resolveGeometricNeighbors,
+    type NeighborhoodManifest,
+    type NeighborhoodCandidate,
+    type NeighborhoodPeerThread,
+    type CandidateLookup
+} from './neighborhood-manifest'
+import {
+    buildNeighborhoodManifest,
+    getSemanticThreadDisplayLimit,
+    resolveSemanticNeighbors,
+    resolveGeometricNeighbors,
+    MAX_MANIFEST_CANDIDATES
+} from './neighborhood-manifest'
 
-// ── Configuration ────────────────────────────────────────────────────────────
-
-/** Max candidates returned by buildNeighborhoodManifest. */
-const MAX_MANIFEST_CANDIDATES = 18
-
-/** Max candidates for peer thread display. */
-const MAX_PEER_THREAD_DISPLAY = 14
+/** Local alias for the candidate lookup used by buildNeighborhoodManifest
+ *  in this module's bounded-state-aware call sites. */
+const getCandidateForIndex = getNeighborhoodCandidateForIndex
 
 // ── Module-level adapter state ───────────────────────────────────────────────
 
@@ -38,183 +65,7 @@ let boundedNeighborhoodActive = false
 let boundedNeighborhoodAnchorIndex: number | null = null
 let boundedNeighborhoodCandidates: number[] = []
 
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-type ThreadCandidateLike = number | { index?: number }
-
-interface NeighborhoodPeerThread {
-    peerIndex: number
-    score: number
-    reason: string
-}
-
-interface NeighborhoodCandidate {
-    index: number
-    role: 'anchor' | 'peer'
-    slotNumber: number
-    leadId: string | null
-    anchorThread: { path: number[]; type: string; reason: string }
-    peerThreads: NeighborhoodPeerThread[]
-    score: number
-    semanticScore: number
-    reason: string
-    source: string
-    sameCity?: boolean
-    sameStatus?: boolean
-    threadType?: string
-}
-
-interface NeighborhoodManifest {
-    anchorIndex: number
-    displayLimit: number
-    candidates: Map<number, NeighborhoodCandidate>
-    edges: Array<{ a: number; b: number; score: number; role: string; reason: string }>
-    candidateIndices: number[]
-    anchorEdgeCount: number
-    peerEdgeCount: number
-    totalPeerEdgeCandidates: number
-    peerEdgesCulled: number
-    hairballRisk: boolean
-}
-
-function valueArray(value: unknown): unknown[] {
-    if (Array.isArray(value)) return value
-    if (value instanceof Map) return [...value.values()]
-    if (value && typeof (value as Iterable<unknown>)[Symbol.iterator] === 'function') {
-        return [...(value as Iterable<unknown>)]
-    }
-    if (value && typeof value === 'object') return Object.values(value)
-    return []
-}
-
-function candidateIndex(candidate: (ThreadCandidateLike & { source?: string }) | unknown): number | null {
-    if (typeof candidate === 'number' && Number.isFinite(candidate)) return candidate
-    if (!candidate || typeof candidate !== 'object') return null
-    const index = Number((candidate as { index?: unknown }).index)
-    return Number.isFinite(index) ? index : null
-}
-
-function normalizeThreadCandidates(value: unknown): number[] {
-    return valueArray(value)
-        .map(candidateIndex)
-        .filter((index): index is number => index !== null)
-}
-
-function finiteIndexList(value: unknown): number[] {
-    return valueArray(value)
-        .map((index) => Number(index))
-        .filter((index) => Number.isFinite(index))
-}
-
-/**
- * Resolve neighbor indices from the semantic neighbor map for a given anchor.
- * Returns up to `limit` candidate indices sorted by semantic score descending.
- */
-function resolveSemanticNeighbors(
-    anchorIndex: number,
-    limit: number = MAX_MANIFEST_CANDIDATES
-): Array<{ index: number; score: number; reason: string; source: string }> {
-    const records = get(businessRecords)
-    const nMap = get(semanticNeighborMap)
-    const idxMap = get(pointIndexByLeadId)
-
-    if (!records.length || nMap.size === 0 || idxMap.size === 0) return []
-
-    const anchorRecord = records[anchorIndex]
-    if (!anchorRecord?.lead_id) return []
-
-    const entry = nMap.get(anchorRecord.lead_id)
-    if (!entry?.neighbors?.length) return []
-
-    const results: Array<{ index: number; score: number; reason: string; source: string }> = []
-    const seen = new Set<number>([anchorIndex])
-
-    for (const n of entry.neighbors) {
-        const nIdx = idxMap.get(n.leadId)
-        if (nIdx === undefined || seen.has(nIdx)) continue
-        seen.add(nIdx)
-
-        const score = Number.isFinite(n.semanticScore) ? n.semanticScore : Number.isFinite(n.score) ? n.score : 0
-
-        results.push({
-            index: nIdx,
-            score,
-            reason: n.reason || 'semantic neighbor',
-            source: 'semantic'
-        })
-
-        if (results.length >= limit) break
-    }
-
-    // Sort by score descending
-    results.sort((a, b) => b.score - a.score)
-    return results
-}
-
-/**
- * Resolve geometric neighbors using the position buffer (spatial proximity fallback).
- */
-function resolveGeometricNeighbors(
-    anchorIndex: number,
-    limit: number
-): Array<{ index: number; score: number; reason: string; source: string }> {
-    const positions = get(positionBuffer)
-    const records = get(businessRecords)
-    if (!positions || !records.length) return []
-
-    const count = Math.min(records.length, positions.length / 3)
-    const anchorOffset = anchorIndex * 3
-    if (anchorOffset + 2 >= positions.length) return []
-
-    const ax = positions[anchorOffset] as number
-    const ay = positions[anchorOffset + 1] as number
-    const az = positions[anchorOffset + 2] as number
-    if (!Number.isFinite(ax) || !Number.isFinite(ay) || !Number.isFinite(az)) return []
-
-    const candidates: Array<{ index: number; score: number; reason: string; source: string }> = []
-    const stride = Math.max(1, Math.floor(count / 500))
-
-    for (let i = 0; i < count; i += stride) {
-        if (i === anchorIndex) continue
-        const offset = i * 3
-        const px = positions[offset] as number
-        const py = positions[offset + 1] as number
-        const pz = positions[offset + 2] as number
-        if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) continue
-
-        const dist = Math.hypot(px - ax, py - ay, pz - az)
-        if (!Number.isFinite(dist) || dist < 0.0001) continue
-
-        candidates.push({
-            index: i,
-            score: 1 / Math.max(dist, 0.0001),
-            reason: 'geometric proximity',
-            source: 'geometric-fallback'
-        })
-    }
-
-    candidates.sort((a, b) => b.score - a.score)
-    return candidates.slice(0, limit)
-}
-
 // ── Public API ───────────────────────────────────────────────────────────────
-
-/**
- * Get the semantic thread display limit based on viewport.
- * Ported from journey-neighborhood.js getSemanticThreadDisplayLimit().
- */
-export function getSemanticThreadDisplayLimit(): number {
-    return MAX_MANIFEST_CANDIDATES
-}
-
-/**
- * Get the semantic peer thread display limit.
- * Ported from journey-neighborhood.js getSemanticPeerThreadDisplayLimit().
- */
-export function getSemanticPeerThreadDisplayLimit(candidateCount: number): number {
-    const peerCount = Math.max(0, (candidateCount || 1) - 1)
-    return Math.min(MAX_PEER_THREAD_DISPLAY, peerCount)
-}
 
 /**
  * Get neighborhood route indices from the nav state.
@@ -398,240 +249,6 @@ export function getNextWalkCandidateForIndex(
 }
 
 /**
- * Build a neighborhood manifest from anchor index and route indices.
- * Ported from journey-neighborhood.js buildNeighborhoodManifest().
- *
- * Resolves all semantic neighbors for the anchor, returning a manifest
- * with candidate indices, display limit, and edge counts.
- */
-export function buildNeighborhoodManifest(
-    anchorIndex: number,
-    routeIndices: readonly number[],
-    options: { displayLimit?: number } = {}
-): NeighborhoodManifest | null {
-    const records = get(businessRecords)
-    if (!Number.isFinite(anchorIndex) || anchorIndex < 0 || anchorIndex >= records.length) return null
-
-    const displayLimit = options.displayLimit ?? getSemanticThreadDisplayLimit()
-    const uniqueRoute: number[] = []
-    const fallbackCandidateByIndex = new Map<number, { index: number; score: number; reason: string; source: string }>()
-    const seen = new Set<number>([anchorIndex])
-    const filters = appState.activeFilters
-
-    const appendRouteCandidate = (
-        candidateIndex: number,
-        fallbackCandidate?: { index: number; score: number; reason: string; source: string }
-    ): void => {
-        if (
-            !Number.isFinite(candidateIndex) ||
-            seen.has(candidateIndex) ||
-            candidateIndex === anchorIndex ||
-            !isPointVisible(candidateIndex, records, null, filters) ||
-            !appState.nodePositions[candidateIndex]
-        ) {
-            return
-        }
-        seen.add(candidateIndex)
-        uniqueRoute.push(candidateIndex)
-        if (fallbackCandidate) fallbackCandidateByIndex.set(candidateIndex, fallbackCandidate)
-    }
-
-    ;(routeIndices || []).forEach((candidateIndex: number) => {
-        appendRouteCandidate(candidateIndex)
-    })
-
-    const candidates = new Map<number, NeighborhoodCandidate>()
-    const edges: Array<{ a: number; b: number; score: number; role: string; reason: string }> = []
-    const anchorLeadId = normalizeLeadId(records[anchorIndex]?.lead_id)
-    candidates.set(anchorIndex, {
-        index: anchorIndex,
-        role: 'anchor',
-        slotNumber: 0,
-        leadId: anchorLeadId,
-        anchorThread: { path: [anchorIndex], type: 'anchor', reason: 'neighborhood anchor' },
-        peerThreads: [],
-        score: 1,
-        semanticScore: 1,
-        reason: 'neighborhood anchor',
-        source: 'semantic'
-    })
-
-    let scoredRoute = uniqueRoute
-        .map((candidateIndex: number) => {
-            const candidate =
-                getNeighborhoodCandidateForIndex(candidateIndex) ||
-                ({} as Partial<SemanticNeighborDetail & { source: string }>)
-            const fallbackCandidate = fallbackCandidateByIndex.get(candidateIndex)
-            const anchorRecord = getSemanticNeighborRecordBetween(anchorIndex, candidateIndex)
-            const score = Number(
-                candidate.semanticScore ||
-                    candidate.score ||
-                    fallbackCandidate?.score ||
-                    anchorRecord?.semanticScore ||
-                    anchorRecord?.score ||
-                    0
-            )
-            return {
-                candidateIndex,
-                candidate: { ...fallbackCandidate, ...candidate },
-                anchorRecord,
-                score
-            }
-        })
-        .filter((entry) => entry.anchorRecord || fallbackCandidateByIndex.has(entry.candidateIndex))
-        .sort((a, b) => b.score - a.score || a.candidateIndex - b.candidateIndex)
-        .slice(0, displayLimit)
-
-    if (scoredRoute.length === 0) {
-        const semanticFallbacks = resolveSemanticNeighbors(anchorIndex, displayLimit)
-        const fallbackCandidates = [...semanticFallbacks]
-        if (fallbackCandidates.length < Math.min(6, displayLimit)) {
-            const existing = new Set(fallbackCandidates.map((candidate) => candidate.index))
-            existing.add(anchorIndex)
-            for (const candidate of resolveGeometricNeighbors(anchorIndex, displayLimit)) {
-                if (existing.has(candidate.index)) continue
-                fallbackCandidates.push(candidate)
-                existing.add(candidate.index)
-                if (fallbackCandidates.length >= displayLimit) break
-            }
-        }
-
-        for (const candidate of fallbackCandidates) {
-            appendRouteCandidate(candidate.index, candidate)
-        }
-
-        scoredRoute = uniqueRoute
-            .map((candidateIndex: number) => {
-                const candidate = getNeighborhoodCandidateForIndex(candidateIndex) || ({} as Record<string, unknown>)
-                const fallbackCandidate = fallbackCandidateByIndex.get(candidateIndex)
-                const anchorRecord = getSemanticNeighborRecordBetween(anchorIndex, candidateIndex)
-                const score = Number(
-                    candidate.semanticScore ||
-                        candidate.score ||
-                        fallbackCandidate?.score ||
-                        anchorRecord?.semanticScore ||
-                        anchorRecord?.score ||
-                        0
-                )
-                return {
-                    candidateIndex,
-                    candidate: { ...fallbackCandidate, ...candidate },
-                    anchorRecord,
-                    score
-                }
-            })
-            .filter((entry) => entry.anchorRecord || fallbackCandidateByIndex.has(entry.candidateIndex))
-            .sort((a, b) => b.score - a.score || a.candidateIndex - b.candidateIndex)
-            .slice(0, displayLimit)
-    }
-
-    scoredRoute.forEach((entry, order) => {
-        const { candidateIndex, candidate, anchorRecord, score } = entry
-        if (!Number.isFinite(candidateIndex) || candidateIndex < 0 || candidateIndex >= records.length) return
-        const leadId = normalizeLeadId(records[candidateIndex]?.lead_id)
-        const reason =
-            candidate.reason ||
-            anchorRecord?.reason ||
-            appState.navState.neighborhoodReasonByIndex?.get(candidateIndex) ||
-            'semantic neighbor'
-        candidates.set(candidateIndex, {
-            index: candidateIndex,
-            role: 'peer',
-            slotNumber: order + 1,
-            leadId,
-            anchorThread: {
-                path: [anchorIndex, candidateIndex],
-                type: 'direct',
-                reason
-            },
-            peerThreads: [],
-            score,
-            semanticScore: Number(candidate.semanticScore || anchorRecord?.semanticScore || score || 0),
-            sameCity: Boolean(candidate.sameCity || anchorRecord?.sameCity),
-            sameStatus: Boolean(candidate.sameStatus || anchorRecord?.sameStatus),
-            threadType: candidate.threadType || anchorRecord?.threadType || 'local_semantic_neighbor',
-            reason,
-            source: 'semantic'
-        })
-        edges.push({
-            a: anchorIndex,
-            b: candidateIndex,
-            score,
-            role: 'anchor-peer',
-            reason
-        })
-    })
-
-    const peerEdges: Array<{ a: number; b: number; score: number; role: string; reason: string }> = []
-    const nMap = get(semanticNeighborMap)
-    const idxMap = get(pointIndexByLeadId)
-
-    for (const [candidateIndex, candidate] of candidates) {
-        if (candidate.role !== 'peer') continue
-        const candidateNode = nMap.get(candidate.leadId!)
-        if (!candidateNode?.neighbors?.length) continue
-        candidateNode.neighbors.forEach((neighbor: SemanticNeighborDetail) => {
-            const peerIndex = idxMap.get(neighbor.leadId)
-            if (
-                !Number.isFinite(peerIndex) ||
-                peerIndex === anchorIndex ||
-                peerIndex === candidateIndex ||
-                !candidates.has(peerIndex!)
-            ) {
-                return
-            }
-            const a = Math.min(candidateIndex, peerIndex!)
-            const b = Math.max(candidateIndex, peerIndex!)
-            if (peerEdges.some((edge) => edge.a === a && edge.b === b)) return
-            const score = Number(neighbor.semanticScore || neighbor.score || 0)
-            peerEdges.push({
-                a,
-                b,
-                score,
-                role: 'peer-peer',
-                reason: neighbor.reason || 'shared semantic thread'
-            })
-        })
-    }
-
-    const maxPeerEdges = getSemanticPeerThreadDisplayLimit(candidates.size)
-    peerEdges.sort((a, b) => b.score - a.score || a.a - b.a || a.b - b.b)
-    const displayedPeerEdges = peerEdges.slice(0, maxPeerEdges)
-    displayedPeerEdges.forEach((edge) => {
-        edges.push(edge)
-        const aCandidate = candidates.get(edge.a)
-        const bCandidate = candidates.get(edge.b)
-        if (aCandidate) {
-            aCandidate.peerThreads.push({
-                peerIndex: edge.b,
-                score: edge.score,
-                reason: edge.reason
-            })
-        }
-        if (bCandidate) {
-            bCandidate.peerThreads.push({
-                peerIndex: edge.a,
-                score: edge.score,
-                reason: edge.reason
-            })
-        }
-    })
-
-    return {
-        anchorIndex,
-        displayLimit,
-        candidates,
-        edges,
-        candidateIndices: [...candidates.keys()].filter((candidateIndex) => candidateIndex !== anchorIndex),
-        anchorEdgeCount: edges.filter((edge) => edge.role === 'anchor-peer').length,
-        peerEdgeCount: displayedPeerEdges.length,
-        totalPeerEdgeCandidates: peerEdges.length,
-        peerEdgesCulled: Math.max(0, peerEdges.length - displayedPeerEdges.length),
-        hairballRisk: displayedPeerEdges.length > candidates.size * 2
-    }
-}
-
-/**
  * Get the bounded neighborhood walk candidate.
  * Ported from journey-neighborhood.js getBoundedNeighborhoodWalkCandidate().
  *
@@ -812,7 +429,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
                 nav.neighborhoodManifest = buildNeighborhoodManifest(
                     seedIndex,
                     finiteIndexList(nav.neighborhoodIndices),
-                    { displayLimit: getSemanticThreadDisplayLimit() }
+                    { displayLimit: getSemanticThreadDisplayLimit(), getCandidateForIndex }
                 )
             })
         }
@@ -842,7 +459,7 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
         .filter((candidateIndex: number, order: number, list: number[]) => list.indexOf(candidateIndex) === order)
         .slice(0, limit)
     if (!pocketRoute.length) return
-    const manifest = buildNeighborhoodManifest(seedIndex, pocketRoute, { displayLimit: limit })
+    const manifest = buildNeighborhoodManifest(seedIndex, pocketRoute, { displayLimit: limit, getCandidateForIndex })
     if (!manifest?.candidateIndices?.length) return
     appState.withMutation(() => {
         nav.neighborhoodAnchorIndex = seedIndex
