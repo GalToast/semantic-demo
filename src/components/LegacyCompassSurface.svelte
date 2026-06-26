@@ -320,7 +320,7 @@
   data-copy={copy}
   data-actions={actionsProfile}
   data-navigation-owner={navigationOwner}
-  aria-live={copy === 'full' ? 'polite' : 'off'}
+  aria-live="polite"
 >
   <!-- Step indicators (legacy [data-journey-step] hook) -->
   {#each JOURNEY_COMPASS_PHASE_ORDER as stepPhase, stepIndex (stepPhase)}

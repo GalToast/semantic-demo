@@ -173,6 +173,7 @@
       onclick={enter3d}
       data-testid="placeholder-cta"
       aria-label="Enter 3D scene"
+      aria-describedby="placeholder-hint"
     >
       <span class="cta-icon" aria-hidden="true">◆</span>
       Enter 3D Scene
@@ -187,7 +188,7 @@
       {/each}
     </ul>
 
-    <p class="placeholder-hint">
+    <p class="placeholder-hint" id="placeholder-hint">
       Tap to load the full scene, or open on desktop for the full 3D experience.
     </p>
   </div>

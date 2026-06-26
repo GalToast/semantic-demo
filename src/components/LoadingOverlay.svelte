@@ -84,7 +84,7 @@
       <div class="loading-kicker">Semantic Explorer</div>
 
       <!-- Title -->
-      <div class="loading-title">Loading the field</div>
+      <div class="loading-title">Loading business records…</div>
 
       <!-- SVG logo -->
       <div class="loading-logo">

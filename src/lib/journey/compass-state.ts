@@ -214,7 +214,7 @@ export function getJourneyCompassState(): CompassState {
         }
     }
 
-    const idleNote = 'Start wide, then search by need or clue to open one trail through the network.'
+    const idleNote = '8,406 Montgomery County businesses — search by what they do, not just where they are.'
 
     return {
         phase: 'overview',

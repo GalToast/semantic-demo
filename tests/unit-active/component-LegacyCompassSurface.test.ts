@@ -9,7 +9,7 @@
  *
  * Verifies:
  *  1. Root section#journey-compass has class journey-compass and data-phase attribute
- *  2. Root element has aria-live attribute tied to copy state
+ *  2. Root element has aria-live="polite" for screen reader announcements
  *  3. Journey step spans have data-journey-step attribute with aria-label
  *  4. #journey-compass-kicker, #journey-compass-title, #journey-compass-note divs exist
  *  5. Action buttons #btn-journey-primary, #btn-journey-secondary, #btn-journey-tertiary
@@ -46,8 +46,8 @@ describe('LegacyCompassSurface component', () => {
         expect(source).toContain('data-navigation-owner={navigationOwner}');
     });
 
-    it('root element has aria-live tied to copy state', () => {
-        expect(source).toContain("aria-live={copy === 'full' ? 'polite' : 'off'}");
+    it('root element has aria-live="polite" for screen reader announcements', () => {
+        expect(source).toContain('aria-live="polite"');
     });
 
     it('journey step spans have data-journey-step and aria-label with phase description', () => {
