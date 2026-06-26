@@ -189,9 +189,6 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         const view = params.get('view')
         const targetView: ViewName = view === 'map' ? 'map' : 'galaxy'
         navStore.update((s) => ({ ...s, currentView: targetView }))
-        if (typeof document !== 'undefined' && document.body) {
-            document.body.dataset.viewMode = targetView
-        }
 
         // Filter restoration (status, city, website, email, geocoded)
         _restoreFiltersFromParams(params)
@@ -469,18 +466,15 @@ function _restoreClusterFilter(clusterStr: string): void {
 
 function isDomForcedFocusSearchSurface(): boolean {
     if (typeof document === 'undefined' || !document.body) return false
+    const nav = get(navStore)
     return (
         document.body.dataset.focusSearchForced === 'true' ||
-        (document.body.dataset.panelSurface === 'focus-search' && document.body.dataset.journeyPhase === 'search')
+        (nav.surface === 'focus-search' && document.body.dataset.journeyPhase === 'search')
     )
 }
 
 function preserveDomForcedFocusSearchSurface(): void {
     if (!isDomForcedFocusSearchSurface()) return
-
-    document.body.dataset.graphContext = 'focus-search'
-    document.body.dataset.panelSurface = 'focus-search'
-    document.body.dataset.journeyPhase = 'search'
 
     navStore.update((s) => ({
         ...s,

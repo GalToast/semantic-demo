@@ -13,6 +13,7 @@ import {
 } from '@lib/stores/navigation.svelte'
 import { setSemanticDiveMode } from '@lib/stores/focus.svelte'
 import { appState } from '@lib/state/app.svelte.ts'
+import { viewport } from '@lib/stores/viewport.svelte'
 import { createLazyComponent } from '@lib/utils/lazy-component.svelte'
 import { teardownAppShell } from '@lib/orchestration/app-init'
 import { updateUrlState } from '@lib/orchestration/url-state'
@@ -176,7 +177,7 @@ export function setupBodySync(): BodySyncState {
             focusPanelMode = document.body.dataset.focusPanelMode || ''
             panelSurface = nextPanelSurface
             graphContext = nextGraphContext
-            compact = document.body.dataset.compact === 'true'
+            compact = viewport().isCompact
             journeyNavigationOwner = document.body.dataset.journeyNavigationOwner || ''
             if (
                 (nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') &&
