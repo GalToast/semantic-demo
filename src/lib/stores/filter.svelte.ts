@@ -177,17 +177,8 @@ export function toggleFilter(type: keyof ActiveFilters, value: string | boolean)
     filterVersion.update((v) => v + 1)
     filterColorVersion.update((v) => v + 1)
 
-    // Sync body data attribute for CSS
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.filtersActive = 'false'
-        // Note: hasActiveFilters requires subscription, so we set a reactive value instead
-        // by re-reading after update.
-        filterState.subscribe((f) => {
-            const active = f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded
-            document.body.dataset.filtersActive = String(active)
-        })()
-    }
 }
+
 
 /**
  * Overwrite all filters at once (from legacy filter-state.js).
@@ -205,12 +196,8 @@ export function overwriteActiveFilters(filters: ActiveFilters): void {
     filterVersion.update((v) => v + 1)
     filterColorVersion.update((v) => v + 1)
 
-    if (typeof document !== 'undefined' && document.body) {
-        const f = filters
-        const active = f.status !== 'all' || f.city !== '' || f.website || f.email || f.geocoded
-        document.body.dataset.filtersActive = String(active)
-    }
 }
+
 
 /** Set a single filter field without toggle semantics. */
 export function setFilter<K extends keyof ActiveFilters>(type: K, value: ActiveFilters[K]): void {
@@ -255,10 +242,6 @@ export function resetFilters(): void {
     activeClusterFilter.set(null)
     filterVersion.update((v) => v + 1)
     filterColorVersion.update((v) => v + 1)
-
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.filtersActive = 'false'
-    }
 }
 
 /** Synchronous snapshot of the current filter state. */
