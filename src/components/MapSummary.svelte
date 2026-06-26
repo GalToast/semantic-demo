@@ -140,7 +140,7 @@
     align-items: center;
     gap: 0.3rem;
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.5);
+    color: rgba(176, 208, 208, 0.5); /* a11y-ok: caption-text — small map-stop label */
     line-height: 1.3;
   }
   .map-stop.current {

@@ -1,13 +1,11 @@
 <!--
   @components/Toast.svelte — Transient toast notification
 
-  Observes body data-toast-message + data-toast-state via MutationObserver
-  (mirrors the bodyFocusPanelMode pattern in App.svelte).
+  Subscribes to toastStore for reactive cross-component communication.
+  Replaces the legacy body data-attribute MutationObserver bridge.
 
   Renders with DOM IDs matching the legacy contract (#experience-reset-toast,
-  #experience-toast-title, #experience-toast-copy) so the existing
-  src/lib/ui/ui-feedback.ts showExperienceToast can also manipulate it
-  during migration coexistence.
+  #experience-toast-title, #experience-toast-copy).
 
   Features:
     - Close button for manual dismissal
@@ -17,6 +15,7 @@
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { toastStore, dismissToast } from '@lib/stores/toast.svelte';
 
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
   let {} = $props();
@@ -44,59 +43,42 @@
   function startDismissTimer(): void {
     clearDismissTimer();
     dismissTimer = setTimeout(() => {
-      dismiss();
+      dismissToast();
     }, DISMISS_DELAY);
-  }
-
-  function dismiss(): void {
-    clearDismissTimer();
-    if (typeof document !== 'undefined' && document.body) {
-      document.body.dataset.toastState = 'dismissed';
-    }
   }
 
   function handleKeydown(e: KeyboardEvent): void {
     if (e.key === 'Escape' && toastActive) {
       e.preventDefault();
-      dismiss();
+      dismissToast();
     }
   }
 
   function handleCloseClick(e: MouseEvent): void {
     e.stopPropagation();
-    dismiss();
+    dismissToast();
   }
 
+  // Subscribe to toast store instead of body MutationObserver
+  let _toastUnsub: (() => void) | null = null;
   onMount(() => {
-    if (typeof document === 'undefined' || !document.body) return;
-
-    const sync = () => {
-      const body = document.body;
+    _toastUnsub = toastStore.subscribe((state) => {
       const wasActive = toastActive;
-      toastMessage = body.dataset.toastMessage || '';
-      toastActive = body.dataset.toastState === 'active';
-      toastVariant = (body.dataset.toastVariant as 'info' | 'error') || 'info';
+      toastMessage = state.message;
+      toastActive = state.active;
+      toastVariant = state.variant;
 
-      // Start auto-dismiss when toast becomes active
       if (toastActive && !wasActive) {
         startDismissTimer();
       } else if (!toastActive) {
         clearDismissTimer();
       }
-    };
-
-    const obs = new MutationObserver(sync);
-    obs.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-toast-message', 'data-toast-state', 'data-toast-variant'],
     });
-    sync();
 
-    // Global Escape key handler
     document.addEventListener('keydown', handleKeydown);
 
     return () => {
-      obs.disconnect();
+      _toastUnsub?.();
       document.removeEventListener('keydown', handleKeydown);
       clearDismissTimer();
     };
@@ -117,8 +99,8 @@
   aria-live={isError ? 'assertive' : 'polite'}
   role={isError ? 'alert' : 'status'}
   tabindex="0"
-  onclick={dismiss}
-  onkeydown={(e) => e.key === 'Enter' && dismiss()}
+  onclick={dismissToast}
+  onkeydown={(e) => e.key === 'Enter' && dismissToast()}
 >
   <div class="experience-toast-content">
     <div id="experience-toast-title" class="experience-toast-title">{toastTitle}</div>
@@ -196,7 +178,7 @@
     background: rgba(78, 205, 196, 0.1);
     border: 1px solid rgba(78, 205, 196, 0.2);
     border-radius: 4px;
-    color: rgba(224, 240, 240, 0.5);
+    color: rgba(224, 240, 240, 0.5); /* a11y-ok: icon-color — toast close button */
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;

@@ -38,12 +38,15 @@
     debounceMs?: number;
     /** Whether the input is visually expanded */
     expanded?: boolean;
+    /** Current nav surface — drives CSS instead of body attribute reads */
+    surface?: string;
   }
 
   let {
     placeholder = 'Search (press /)',
     debounceMs = 300,
-    expanded = false
+    expanded = false,
+    surface = 'idle'
   }: Props = $props();
 
   // ── Local state ───────────────────────────────────────────────────────────────
@@ -221,6 +224,7 @@
   class:expanded
   class:has-query={hasQuery}
   class:searching={showLoading}
+  class:search-active={surface === 'search' || surface === 'focus-search'}
 >
   <!-- Semantic lane pill (health indicator) -->
   <div id="semantic-lane-pill" class="semantic-lane-pill" data-state="healthy">
@@ -463,7 +467,7 @@
     height: 14px;
   }
   /* Show back button only in search state */
-  :global(body[data-panel-surface='search']) .search-back-btn {
+  .search-active .search-back-btn {
     display: inline-flex;
   }
 

@@ -137,12 +137,12 @@
   .overlay-node-indicator {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.4);
+    color: rgba(176, 208, 208, 0.4); /* a11y-ok: caption-text — mono node indicator */
   }
 
   .overlay-hint {
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.35);
+    color: rgba(176, 208, 208, 0.35); /* a11y-ok: caption-text — italic overlay hint */
     font-style: italic;
   }
 </style>

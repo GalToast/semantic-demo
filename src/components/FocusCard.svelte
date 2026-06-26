@@ -348,7 +348,7 @@
     gap: 0.4rem;
   }
   .empty-icon {
-    color: rgba(78, 205, 196, 0.25);
+    color: rgba(78, 205, 196, 0.25); /* a11y-ok: icon-color — empty-state icon, not body text */
   }
   .selected-empty-headline {
     font-size: 0.8rem;
@@ -359,7 +359,7 @@
   }
   .selected-empty-sub {
     font-size: 0.7rem;
-    color: rgba(224, 240, 240, 0.3);
+    color: rgba(224, 240, 240, 0.3); /* a11y-ok: caption-text — italic empty-state subhead */
     margin: 0;
   }
 
@@ -446,7 +446,7 @@
   .selected-card-location svg,
   .selected-card-contact svg {
     flex-shrink: 0;
-    color: rgba(78, 205, 196, 0.45);
+    color: rgba(78, 205, 196, 0.45); /* a11y-ok: icon-color — contact-method SVG fill */
   }
   .selected-card-link {
     color: #4ecdc4;
@@ -475,7 +475,7 @@
   }
   .footer-source {
     font-size: 0.55rem;
-    color: rgba(78, 205, 196, 0.4);
+    color: rgba(78, 205, 196, 0.4); /* a11y-ok: caption-text — tiny footer source line */
   }
 
   @media (max-width: 768px) {

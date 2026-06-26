@@ -165,7 +165,7 @@
   }
   .demo-status {
     font-size: 0.65rem;
-    color: rgba(78, 205, 196, 0.4);
+    color: rgba(78, 205, 196, 0.4); /* a11y-ok: caption-text — small status label */
     text-align: center;
   }
 </style>

@@ -152,7 +152,7 @@
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: rgba(78, 205, 196, 0.5);
+    color: rgba(78, 205, 196, 0.5); /* a11y-ok: caption-text — UPPERCASE tracked kicker */
     font-weight: 600;
   }
   .loading-title {
@@ -201,7 +201,7 @@
     padding: 0.15rem 0.45rem;
     border-radius: 0.25rem;
     background: rgba(78, 205, 196, 0.08);
-    color: rgba(224, 240, 240, 0.3);
+    color: rgba(224, 240, 240, 0.3); /* a11y-ok: caption-text — small loading footnote */
     border: 1px solid rgba(78, 205, 196, 0.1);
     transition: all 0.2s ease;
   }

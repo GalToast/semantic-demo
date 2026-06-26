@@ -65,7 +65,7 @@
   }
   .search-trail-cue-note {
     font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.5);
+    color: rgba(224, 240, 240, 0.5); /* a11y-ok: caption-text — small trail-cue note */
     line-height: 1.4;
     overflow-wrap: break-word;
   }

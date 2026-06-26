@@ -311,7 +311,7 @@ import { debugWarn } from '@lib/utils/debug'
     padding: 0.5rem 1rem;
     background: rgba(7, 16, 24, 0.75);
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(78, 205, 196, 0.08);
+    border-bottom: 1px solid rgba(var(--color-primary-alt-rgb), 0.08);
   }
   .app-header.compact {
     padding: 0.4rem 0.5rem;
@@ -333,9 +333,9 @@ import { debugWarn } from '@lib/utils/debug'
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.7rem;
     font-weight: 700;
-    color: #4ecdc4;
-    background: rgba(78, 205, 196, 0.12);
-    border: 1px solid rgba(78, 205, 196, 0.25);
+    color: var(--color-primary-alt);
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
     border-radius: 0.25rem;
     padding: 0.15rem 0.35rem;
     letter-spacing: 0.05em;
@@ -358,7 +358,7 @@ import { debugWarn } from '@lib/utils/debug'
     height: 44px;
     padding: 0;
     background: none;
-    border: 1px solid rgba(78, 205, 196, 0.15);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     border-radius: 0.25rem;
     color: #6a8a8a;
     cursor: pointer;
@@ -368,13 +368,13 @@ import { debugWarn } from '@lib/utils/debug'
   .legend-toggle:hover,
   .help-toggle:hover {
     color: #b0d0d0;
-    border-color: rgba(78, 205, 196, 0.3);
-    background: rgba(78, 205, 196, 0.06);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.3);
+    background: rgba(var(--color-primary-alt-rgb), 0.06);
   }
   .legend-toggle.active {
-    color: #4ecdc4;
-    border-color: rgba(78, 205, 196, 0.4);
-    background: rgba(78, 205, 196, 0.1);
+    color: var(--color-primary-alt);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
   }
 
   /* ── Mode chips ────────────────────────────────────────────────────────── */
@@ -403,12 +403,12 @@ import { debugWarn } from '@lib/utils/debug'
   }
   .mode-chip:hover {
     color: #b0d0d0;
-    border-color: rgba(78, 205, 196, 0.15);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.15);
   }
   .mode-chip.active {
-    background: rgba(78, 205, 196, 0.12);
-    border-color: rgba(78, 205, 196, 0.4);
-    color: #4ecdc4;
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
+    color: var(--color-primary-alt);
     font-weight: 600;
   }
   :global(#mode-chips .mode-chip.is-waiting) {
@@ -420,12 +420,12 @@ import { debugWarn } from '@lib/utils/debug'
     box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
   }
   :global(#mode-chips .mode-chip.is-locked) {
-    background: rgba(78, 205, 196, 0.18);
-    border-color: rgba(78, 205, 196, 0.55);
+    background: rgba(var(--color-primary-alt-rgb), 0.18);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.55);
     color: rgba(201, 255, 248, 0.98);
     box-shadow:
-      0 0 0 1px rgba(78, 205, 196, 0.25),
-      0 0 12px rgba(78, 205, 196, 0.15);
+      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.25),
+      0 0 12px rgba(var(--color-primary-alt-rgb), 0.15);
   }
   :global(#mode-chips .mode-chip.is-locked .chip-label) {
     color: rgba(201, 255, 248, 1);
@@ -449,7 +449,7 @@ import { debugWarn } from '@lib/utils/debug'
   .header-description {
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.6rem;
-    color: rgba(176, 208, 208, 0.45);
+    color: rgba(176, 208, 208, 0.45); /* a11y-ok: caption-text — header description */
     line-height: 1.3;
     max-width: 16rem;
     white-space: nowrap;

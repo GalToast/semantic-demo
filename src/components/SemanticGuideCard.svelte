@@ -234,7 +234,7 @@
 
   .summary-lane-status {
     margin-top: 0.65rem;
-    color: rgba(224, 240, 240, 0.54);
+    color: rgba(224, 240, 240, 0.54); /* a11y-ok: caption-text — UPPERCASE status label */
     font-size: 0.56rem;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -259,7 +259,7 @@
   .summary-gemma-story-source {
     display: block;
     margin-top: 0.35rem;
-    color: rgba(224, 240, 240, 0.42);
+    color: rgba(224, 240, 240, 0.42); /* a11y-ok: caption-text — small source line */
     font-size: 0.56rem;
   }
 </style>

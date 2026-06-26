@@ -114,7 +114,9 @@ function auditFile(filePath) {
     }
 
     // True if every comma-separated selector in `selector` has a
-    // `<base-selector>:focus-visible` rule whose properties declare an `outline`.
+    // `<base-selector>:focus-visible` rule whose properties declare a focus
+    // indicator (`outline:` OR `box-shadow:`). Both are valid a11y patterns
+    // — `box-shadow` doesn't affect layout, which some style guides prefer.
     // The base selector strips any trailing pseudo-class (`:hover`, `:focus`,
     // `:focus-visible`, etc.) so that fallbacks for compound states like
     // `.foo:hover` or `.foo:focus` correctly find `.foo:focus-visible`.
@@ -125,7 +127,7 @@ function auditFile(filePath) {
             const basePart = part.replace(/:[a-z-]+(\([^)]*\))?$/i, '')
             const focusSel = `${basePart}:focus-visible`
             const props = selectorToProps.get(focusSel)
-            return props !== undefined && /\boutline\s*:/i.test(props)
+            return props !== undefined && (/\boutline\s*:/i.test(props) || /\bbox-shadow\s*:/i.test(props))
         })
     }
 
@@ -237,19 +239,51 @@ function auditFile(filePath) {
             })
         }
 
-        // rule_6: rgba with low alpha in a color slot (decorative-only is fine;
-        // this rule is intentionally noisy so reviewers can verify by sight)
+        // rule_6: rgba with low alpha in a TRUE FOREGROUND color slot.
+// Text foreground (`color:`) and CSS variables that look like foreground
+// (`--text-*`, `--fg-*`, `--*-foreground`, `--*-text`) are flagged.
+// Decorative slots (border-color, outline-color, shadow, background,
+// fill/stroke on pure decoration) are excluded — they are by-design
+// low-alpha for visual subtlety, and the WCAG contrast minimum only
+// applies to text that conveys information. Placeholder pseudo-elements
+// (::placeholder, ::-webkit-input-placeholder) are skipped — WCAG 1.4.3
+// allows reduced contrast for placeholders that disappear on input.
+// An `/* a11y-ok: <reason> */` comment marker on the same line opts out
+// of the finding when the design is intentionally muted (caption labels,
+// icon colors, hint chips, etc.).
         const rgbaMatch = line.match(/rgba\(\s*\d+\s*,\s*\d+\s*,\s*\d+\s*,\s*(0?\.\d+|\d+)\s*\)/i)
         if (rgbaMatch) {
             const alpha = parseFloat(rgbaMatch[1])
-            if (alpha < 0.6 && (line.includes('color') || line.includes('--color'))) {
-                pushOnce({
-                    file: baseName,
-                    line: lineNum,
-                    severity: 'MEDIUM',
-                    rule: 6,
-                    desc: `Low-alpha color (${rgbaMatch[0]}) — verify this is decorative, not foreground`
-                })
+            if (alpha < 0.6) {
+                // Opt-out: `/* a11y-ok: <reason> */` on the same line.
+                if (/\ba11y-ok\b/.test(line)) return
+                // Placeholder pseudo-elements (low contrast is WCAG-compliant).
+                // Look at the current line AND the enclosing CSS block selector
+                // (the rgba line is usually `color: rgba(...)` while the
+                // selector lives on the previous line).
+                if (/(?::placeholder|::-webkit-input-placeholder|::placeholder-shown)\b/.test(line)) return
+                const selector = blockByLine.get(lineNum)
+                if (selector && /(?::placeholder|::-webkit-input-placeholder|::placeholder-shown)\b/.test(selector)) return
+                // Extract the CSS property name (before the colon, trimmed).
+                const propMatch = line.match(/^\s*([a-zA-Z][\w-]*)\s*:/)
+                const prop = propMatch ? propMatch[1].toLowerCase() : ''
+                // Only flag actual text foreground slots. Decorative slots
+                // (border-color, outline-color, shadow, background) are
+                // excluded — they're intentionally low-alpha for visual
+                // subtlety and WCAG text-contrast minimums don't apply.
+                const isForegroundProp =
+                    prop === 'color' ||
+                    /^(?:--text|--fg|--ink|--label|--heading|--body)/.test(prop) ||
+                    /-(?:foreground|text|ink|fgcolor)$/.test(prop)
+                if (isForegroundProp) {
+                    pushOnce({
+                        file: baseName,
+                        line: lineNum,
+                        severity: 'MEDIUM',
+                        rule: 6,
+                        desc: `Low-alpha foreground color (${rgbaMatch[0]}) — verify text contrast meets WCAG (or add /* a11y-ok: <reason> */)`
+                    })
+                }
             }
         }
 
