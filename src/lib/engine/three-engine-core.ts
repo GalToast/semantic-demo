@@ -849,11 +849,13 @@ export function animate() {
                 CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale
             if (webglContext.pointsMaterial.userData.shader) {
                 webglContext.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress
+                webglContext.pointsMaterial.userData.shader.uniforms.uTime.value = performance.now() * 0.001
             }
         }
 
         if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
-            ;(webglContext.scene.fog as FogExp2).density = (PORT_SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
+            ;(webglContext.scene.fog as FogExp2).density =
+                (PORT_SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
         }
         if (webglContext.nodeSporeMaterial) {
             const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
