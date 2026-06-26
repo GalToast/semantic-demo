@@ -89,7 +89,6 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
         source: 'derived from panelSurfaceMode + mobileSearchSheet'
     },
     { key: 'activeView', description: 'Current view (galaxy|map)', source: 'navStore.currentView' },
-    { key: 'viewMode', description: 'Mirrors activeView for legacy code', source: 'navStore.currentView' },
     {
         key: 'focusedNode',
         description: 'Currently focused node index, or removed when null',
@@ -117,11 +116,7 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
         description: 'Semantic dive state (inactive|transitioning|active)',
         source: 'focusStore.semanticDiveMode'
     },
-    {
-        key: 'insideWalkState',
-        description: 'Inside walk state (idle|walking|exploring|...)',
-        source: 'focusStore.strandContinuityPhase'
-    },
+
 
     // Focus transition (legacy camera-controls.js / focus.ts)
     {
@@ -396,7 +391,6 @@ export function computeParityAttributes(): ParityAttributeMap {
         panelSurfaceMode,
         panelSurfaceDetail,
         activeView: nav.currentView,
-        viewMode: nav.currentView,
         focusedNode: focusedNodeForAttrs,
         graphContext,
         mapContext,
@@ -406,7 +400,6 @@ export function computeParityAttributes(): ParityAttributeMap {
         trailState,
 
         semanticDive,
-        insideWalkState: focus.strandContinuityPhase || 'idle',
 
         focusTransition: focus.transitionMode || 'idle',
         searchStatus: search.status || 'idle',

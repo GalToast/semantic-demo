@@ -232,12 +232,6 @@ function syncSvelteNavFromLegacy(): void {
             typeof navState.lastTraversalReason === 'string' ? navState.lastTraversalReason : state.lastTraversalReason
     }))
 
-    if (typeof document !== 'undefined' && document.body) {
-        const depth = asFiniteNumber(navState.trailDepth) ?? 0
-        document.body.dataset.trailDepth = String(depth)
-        document.body.dataset.trailState = depth > 0 ? 'active' : 'inactive'
-    }
-
     ;(window as Window & { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.()
 }
 

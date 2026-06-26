@@ -95,11 +95,6 @@ export function setupContractSurface(): { readonly forced: boolean } {
         forced = true
         setSemanticDiveMode(true)
         document.body.classList.add('is-active')
-        document.body.dataset.activeView = 'galaxy'
-        document.body.dataset.graphContext = 'focus'
-        document.body.dataset.semanticDive = 'active'
-        document.body.dataset.panelSurface = 'semantic-dive'
-        document.body.dataset.panelSurfaceDetail = 'none'
 
         const focusStage = document.querySelector<HTMLElement>('#focus-stage')
         if (focusStage) {

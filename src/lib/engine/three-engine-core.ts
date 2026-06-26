@@ -456,7 +456,6 @@ export async function initThreeJS() {
     compilePointMaterialForReadinessPort()
     _threeInteractionVisuals?.initSemanticLens()
     _threeInteractionVisuals?.initSemanticManifold()
-    document.body.dataset.graphicsMode = 'webgl'
     updateCameraViewportOffset()
 
     // W8: yield before starting the render loop. The first frame() call

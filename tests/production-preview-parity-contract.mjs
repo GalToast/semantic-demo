@@ -53,8 +53,7 @@ const bodyAttrsToCheck = [
     'semanticDive',
     'loadingOverlay',
     'sceneReady',
-    'activeView',
-    'viewMode'
+    'activeView'
 ]
 
 const flows = [

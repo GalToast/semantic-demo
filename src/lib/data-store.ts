@@ -226,9 +226,6 @@ export const graphicsModeStore = getOrCreateWritable<'webgl' | 'fallback'>(
  */
 export function setLoadingPhase(phase: LoadingPhase): void {
     loadingPhaseStore.set(phase)
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.loadingPhase = phase
-    }
 }
 
 /**
@@ -236,9 +233,6 @@ export function setLoadingPhase(phase: LoadingPhase): void {
  */
 export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
     graphicsModeStore.set(mode)
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.graphicsMode = mode
-    }
 }
 
 // ── Derived Stores ────────────────────────────────────────────────────────────

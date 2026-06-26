@@ -191,11 +191,6 @@
       semanticDiveContractForced = true;
       setSemanticDiveMode(true);
       document.body.classList.add('is-active');
-      document.body.dataset.activeView = 'galaxy';
-      document.body.dataset.graphContext = 'focus';
-      document.body.dataset.semanticDive = 'active';
-      document.body.dataset.panelSurface = 'semantic-dive';
-      document.body.dataset.panelSurfaceDetail = 'none';
 
       const focusStage = document.querySelector<HTMLElement>('#focus-stage');
       if (focusStage) {
@@ -446,10 +441,11 @@
   <Header visible={true} utilityOnly={false} />
 {/if}
 
-<main id="main-content" class="semantic-main" tabindex="-1" aria-label="Semantic explorer application">
+<main id="main-content" class="semantic-main" class:surface-semantic-dive={bodyPanelSurface === 'semantic-dive'} tabindex="-1" aria-label="Semantic explorer application">
 <div
   id="semantic-explorer"
   class="semantic-explorer"
+  class:surface-semantic-dive={bodyPanelSurface === 'semantic-dive'}
   class:is-compact={$viewport.isCompact}
   class:reduced-motion={$viewport.reducedMotion}
   class:is-overview={$navStore.mode === 'overview'}
@@ -682,10 +678,10 @@
     overflow: hidden;
     background: #071018;
   }
-  :global(body[data-panel-surface='semantic-dive']) .semantic-explorer {
+  .semantic-explorer.surface-semantic-dive {
     pointer-events: none;
   }
-  :global(body[data-panel-surface='semantic-dive']) .semantic-explorer button {
+  .semantic-explorer.surface-semantic-dive button {
     pointer-events: auto;
   }
 
@@ -696,7 +692,7 @@
     overflow: hidden;
     outline: none;
   }
-  :global(body[data-panel-surface='semantic-dive']) .semantic-main {
+  .semantic-main.surface-semantic-dive {
     pointer-events: none;
   }
 
@@ -764,7 +760,7 @@
     pointer-events: auto;
   }
 
-  :global(body[data-panel-surface='idle'] #filters-section[open]),
+  :global(body.surface-idle #filters-section[open]),
   :global(#filters-section[open]) {
     display: block;
   }

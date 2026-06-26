@@ -61,8 +61,6 @@ export function showWebGLFallback(
 ): ((event: MouseEvent) => void) | null {
     if (!container) return null
 
-    document.body.dataset.graphicsMode = 'fallback'
-
     // Update diagnostics via modern appState first, then legacy state
     appState.withMutation(() => {
         const diagnostics = appState.scenePerformanceDiagnostics

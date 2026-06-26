@@ -66,12 +66,6 @@ export function setLoadingPhase(phaseKey: string, overrides: LoadingOverrides = 
     setNavLoadingPhase(phaseKey)
     setDataLoadingPhase((PHASE_ORDER.includes(phaseKey) ? phaseKey : 'records') as LoadingPhase)
 
-    // Update body data attributes
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.loadingOverlay = 'active'
-        delete document.body.dataset.sceneReady
-    }
-
     // Get phase metadata
     const phase: LoadingPhaseMeta = LOADING_PHASE_META[phaseKey] ?? LOADING_PHASE_META.records!
 
@@ -126,12 +120,6 @@ export async function hideLoadingOverlay(): Promise<void> {
     overlay.setAttribute('aria-hidden', 'true')
     overlay.inert = true
     overlay.hidden = true
-
-    // Update body data attributes
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.loadingOverlay = 'hidden'
-        document.body.dataset.sceneReady = 'true'
-    }
 
     // Dispatch scene ready event
     if (typeof window !== 'undefined') {
