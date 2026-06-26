@@ -808,6 +808,21 @@ export function animate() {
             ;(webglContext.scene.fog as FogExp2).density =
                 (PORT_SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
         }
+
+        // W48-T2: Entry moment — peak the reference sphere wireframe mid-reveal
+        // so the first 2s of entry gives users a clear "structured network" cue,
+        // then settle back to the steady-state 0.03 opacity. Sin curve: 0 → 0.05 → 0.
+        const refSphere = webglContext.scene.getObjectByName('county-depth-reference') as
+            | (import('three').Mesh & { material: import('three').MeshBasicMaterial })
+            | undefined
+        if (refSphere?.material) {
+            const baseRefOpacity = 0.03
+            const revealBoost = _state?.sceneRevealActive
+                ? Math.sin(revealProgress * Math.PI) * 0.05
+                : 0
+            refSphere.material.opacity = baseRefOpacity + revealBoost
+        }
+
         if (webglContext.nodeSporeMaterial) {
             const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
             const focusBoost = isSemanticDive ? 0.22 : 1.0
