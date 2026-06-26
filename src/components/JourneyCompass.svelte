@@ -130,6 +130,17 @@
       && !focusState.semanticDiveMode
   );
 
+  // Read body data-focus-panel-mode reactively (set by setFocusPanelMode)
+  let bodyFocusPanelMode = $state('');
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => { bodyFocusPanelMode = document.body?.dataset?.focusPanelMode ?? '' };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode'] });
+    sync();
+    return () => obs.disconnect();
+  });
+
   // Step indicators: 5 milestones mapped to data-journey-step elements
   const STEP_DESCRIPTIONS: Record<string, string> = {
     overview: 'See the whole county.',
@@ -329,6 +340,7 @@
   data-active-view={navState.currentView}
   data-panel-surface={bodyPanelSurface}
   data-panel-surface-detail={bodyPanelSurfaceDetail}
+  data-focus-panel-mode={bodyFocusPanelMode}
   aria-live="polite"
 >
   <!-- Step indicators (legacy [data-journey-step] hook) -->

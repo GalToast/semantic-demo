@@ -20,11 +20,7 @@
         display: none;
     }
 
-    body.is-active:is(
-            [data-panel-surface='focus-search'],
-            [data-panel-surface='map-focus-search']
-        )
-        #canvas-container {
+    body.is-active:is([data-panel-surface='focus-search'], [data-panel-surface='map-focus-search']) #canvas-container {
         pointer-events: none;
     }
 
@@ -785,7 +781,7 @@
        9. Map Navigation Priority
        ---------------------------------------------------------------- */
     body.is-active[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
-    body.is-active[data-journey-navigation-owner='map-trail-strip'] .journey-compass {
+    .journey-compass[data-navigation-owner='map-trail-strip'] {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -849,7 +845,7 @@
 
 /* canonical: --bp-landscape */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    body.is-active[data-panel-surface='map-trail'] .journey-compass {
+    .journey-compass[data-panel-surface='map-trail'] {
         display: none;
         visibility: hidden;
         pointer-events: none;
