@@ -58,7 +58,7 @@
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
     body[data-active-view='galaxy'] .info-panel,
-    body[data-active-view='galaxy'] .journey-compass {
+    .journey-compass[data-active-view='galaxy'] {
         transition: none;
         transition-duration: 0.01ms;
     }
@@ -91,8 +91,8 @@
 }
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
-    body[data-active-view='galaxy'] .journey-compass[data-phase='overview'],
-    body[data-active-view='galaxy'] .journey-compass[data-density='compact'] {
+    .journey-compass[data-active-view='galaxy'][data-phase='overview'],
+    .journey-compass[data-active-view='galaxy'][data-density='compact'] {
         transition: none;
         transition-duration: 0.01ms;
         backdrop-filter: none;
