@@ -52,18 +52,11 @@ export interface ParityAttributeDescriptor {
 
 export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
     // Journey compass (legacy #journey-compass + .journey-compass CSS hooks)
-    { key: 'journeyCompass', description: 'Legacy alias for journey compass lifecycle phase', source: 'compass.phase' },
     {
         key: 'journeyCompassPhase',
         description: 'Journey compass lifecycle phase (idle|checking|synthesizing|active|interrupted)',
         source: 'compass.phase'
     },
-    {
-        key: 'journeyCompassDensity',
-        description: 'Compass density (hidden|compact|expanded)',
-        source: 'compass.presentationState'
-    },
-    { key: 'journeyCompassCopy', description: 'Compass copy mode (quiet|full)', source: 'compass.presentationState' },
     {
         key: 'journeyNavigationOwner',
         description: 'Who owns navigation chrome (journey-compass|map-trail-strip|map-controls|scene|inside-walk)',
@@ -150,11 +143,6 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
         source: 'focusStore.strandContinuityPhase'
     },
     {
-        key: 'threadInspect',
-        description: 'Whether the thread inspector is active',
-        source: 'focusStore.threadInspector'
-    },
-    {
         key: 'threadInspectSurface',
         description: 'Thread inspector surface owner (idle|rail|canvas|pinned|inside-cue)',
         source: 'focusStore.threadInspector'
@@ -204,12 +192,6 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
     { key: 'cameraAssist', description: 'Camera assistance state (free|suspended)', source: 'loadingPhaseStore' },
     { key: 'graphicsMode', description: 'Graphics mode (webgl|fallback)', source: 'graphicsModeStore' },
     { key: 'testReady', description: 'Test readiness flag (true once parity is installed)', source: 'derived' },
-    {
-        key: 'engineState',
-        description: 'Engine init state (deferred|ready) — mirrors engineReady.value for CSS/contract tests',
-        source: 'engineReady.value'
-    },
-
     // Camera orbit slack (legacy camera-orbit-slack.js / camera.ts)
     {
         key: 'cameraSlack',
@@ -400,10 +382,7 @@ export function computeParityAttributes(): ParityAttributeMap {
     const cameraAssist = launchReady ? 'free' : 'loading'
 
     return {
-        journeyCompass: journey.compass?.phase ?? 'idle',
         journeyCompassPhase: journey.compass?.phase ?? 'idle',
-        journeyCompassDensity: presentation.density,
-        journeyCompassCopy: presentation.copy,
         journeyNavigationOwner: presentation.navigationOwner,
 
         navMode: nav.mode,
@@ -428,7 +407,6 @@ export function computeParityAttributes(): ParityAttributeMap {
         searchStatus: search.status || 'idle',
 
         strandJourney: focus.strandContinuityPhase || 'idle',
-        threadInspect: threadInspectionActive ? 'active' : null,
         threadInspectSurface: threadInspectionActive ? focus.threadInspector.source || 'rail' : 'idle',
         inspectedThreadIndex:
             threadInspectionActive && inspectedThreadIndex !== null ? String(inspectedThreadIndex) : null,
@@ -479,7 +457,6 @@ export function computeParityAttributes(): ParityAttributeMap {
         cameraAssist,
         graphicsMode: graphicsModeValue,
         testReady: 'true',
-        engineState: engineReady.value ? 'ready' : 'deferred',
 
         cameraSlack: camera.orbitSlack.phase || 'idle',
         cameraSlackReason: camera.orbitSlack.reason || null
