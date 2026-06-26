@@ -13,6 +13,7 @@ import { isPointVisible } from '@lib/utils/geo-data'
 import { getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
 import { hasCoarsePointer } from '@lib/utils/environment'
 import type { ActiveFilters, GeoPoint } from '@lib/utils/geo-data'
+import type { ThreadCandidateRef } from '@lib/types/state'
 
 const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
     status: 'all',
@@ -26,7 +27,7 @@ const DEFAULT_ACTIVE_FILTERS: ActiveFilters = {
 
 export interface CanvasInteractionAdapter {
     summarizeNeighborReason: (
-        candidate: Record<string, unknown> | null
+        candidate: unknown
     ) => string
     walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => boolean
     inspectThreadNeighbor: (index: number, options?: Record<string, unknown>) => void
@@ -77,12 +78,12 @@ export function isThreadCandidateVisibleOnCanvas(index: number, margin = 18): bo
     const position =
         appState.nodePositions[index] ?? appState.targetPositions[index] ?? appState.originalPositions[index]
     const canvas = appState.renderer?.domElement
-    const camera = appState.camera as unknown as Camera | undefined
+    const camera = (appState.camera ?? undefined) as Camera | undefined
     if (!position || !camera || !canvas?.getBoundingClientRect) return true
 
     const rect = canvas.getBoundingClientRect()
     const worldPosition = new Vector3(position.x, position.y, position.z)
-    const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined
+    const pointsMesh = (appState.pointsMesh ?? undefined) as Object3D | undefined
     if (pointsMesh?.localToWorld) pointsMesh.localToWorld(worldPosition)
     const projection = worldPosition.project(camera)
     if (projection.z < -1 || projection.z > 1) return false
@@ -117,16 +118,16 @@ interface ScreenCandidate {
 }
 
 function getFocusThreadScreenCandidates(): ScreenCandidate[] {
-    const camera = appState.camera as unknown as Camera | undefined
+    const camera = (appState.camera ?? undefined) as Camera | undefined
     const canvas = appState.renderer?.domElement as HTMLCanvasElement | undefined
     if (!canvas || !camera) return []
     const rect = canvas.getBoundingClientRect()
     const navState = appState.navState
     const focusIndex =
         navState?.focusedIndex != null && Number.isFinite(navState.focusedIndex) ? navState.focusedIndex : null
-    const points = appState.points as unknown as GeoPoint[]
-    const threadCandidates = (navState?.threadCandidates as unknown as Array<Record<string, unknown>>) ?? []
-    const pointsMesh = appState.pointsMesh as unknown as Object3D | undefined
+    const points = appState.points as GeoPoint[]
+    const threadCandidates = navState?.threadCandidates ?? []
+    const pointsMesh = (appState.pointsMesh ?? undefined) as Object3D | undefined
     const nodePositions = appState.nodePositions
     const targetPositions = appState.targetPositions
     const originalPositions = appState.originalPositions
@@ -134,14 +135,14 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
 
     return threadCandidates
         .filter(
-            (candidate: Record<string, unknown>) => candidate?.source === 'semantic' && candidate?.index !== focusIndex
+            (candidate: ThreadCandidateRef) => candidate.source === 'semantic' && candidate.index !== focusIndex
         )
-        .filter((candidate: Record<string, unknown>) =>
-            isPointVisible(candidate.index as number, points, null, activeFilters)
+        .filter((candidate: ThreadCandidateRef) =>
+            isPointVisible(candidate.index, points, null, activeFilters)
         )
         .slice(0, getSemanticThreadDisplayLimit())
-        .map((candidate: Record<string, unknown>): ScreenCandidate | null => {
-            const ci = candidate.index as number
+        .map((candidate: ThreadCandidateRef): ScreenCandidate | null => {
+            const ci = candidate.index
             const pos = nodePositions[ci] ?? targetPositions[ci] ?? originalPositions[ci]
             if (!pos) return null
             const px = Number.isFinite(pos.x) ? pos.x : 0
@@ -175,9 +176,9 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
             return {
                 index: ci,
                 reason: canvasInteractionAdapter.summarizeNeighborReason(
-                    candidate
+                    candidate as unknown as Record<string, unknown>
                 ),
-                source: candidate.source as string,
+                source: candidate.source,
                 screenX,
                 screenY,
                 inViewport,
