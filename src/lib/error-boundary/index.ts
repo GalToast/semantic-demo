@@ -1,0 +1,5 @@
+export { errorStore } from './error-store.svelte'
+export { installErrorHandlers } from './error-handlers'
+export type { AppError } from './error-store.svelte'
+export type { ErrorHandlerHandle, ErrorHandlerOptions } from './error-handlers'
+export { default as ErrorFallback } from './ErrorFallback.svelte'
