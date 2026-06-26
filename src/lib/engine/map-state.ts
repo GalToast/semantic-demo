@@ -38,6 +38,42 @@ interface TerrainHandoffOptions {
     settlePhase?: string
 }
 
+/**
+ * Shape of the map subsystem's view of appState. Extracted from AppState via
+ * `state as unknown as MapStateShape` in initMap / refreshMapMarkers / destroyMap.
+ * Kept as an explicit shape (rather than accessing `state` directly) because
+ * it documents which fields the map subsystem depends on, and because some
+ * fields use intentionally-loose types (e.g. `map: Record<string, unknown>`
+ * for Leaflet-mutated DOM data).
+ */
+interface MapStateShape {
+    mapInitialized?: boolean
+    map: Record<string, unknown> | null
+    markersLayer: Record<string, unknown> | null
+    mapRouteLayer: Record<string, unknown> | null
+    pointMarkers: Array<{ marker: LeafletMarker; index: number }> | unknown[]
+    COLORS: readonly string[]
+    points: Point[] | undefined
+    currentView?: string
+    focusedNode: number | null
+    currentSearchSummary: {
+        resultIndices?: number[]
+        anchorIndex?: number
+        topIndex?: number
+    } | null
+    activeClusterFilter: number | null
+    activeFilters: Record<string, unknown> | null
+    selectedPoint: Point | null
+    navState: {
+        focusedIndex: number | null
+        walkHistoryIndices: number[]
+        trailNeighborIndices: number[]
+        mode: string
+    }
+    semanticDiveMode?: boolean
+    routeTraceDiagnostics: { mapPointCount: number; mapPathActive: boolean }
+}
+
 let leafletAssetsPromise: Promise<unknown> | null = null
 
 export async function loadLeafletAssets(): Promise<unknown> {
@@ -107,29 +143,7 @@ export function initMapStateSubscriptions(): void {
 }
 
 export async function initMap(): Promise<void> {
-    const mapState = state as unknown as {
-        mapInitialized?: boolean
-        map: Record<string, unknown> | null
-        markersLayer: Record<string, unknown> | null
-        mapRouteLayer: Record<string, unknown> | null
-        pointMarkers: Array<{ marker: LeafletMarker; index: number }>
-        COLORS: readonly string[]
-        points: Point[] | undefined
-        currentView?: string
-        focusedNode: number | null
-        currentSearchSummary: { resultIndices?: number[]; anchorIndex?: number; topIndex?: number } | null
-        activeClusterFilter: number | null
-        activeFilters: Record<string, unknown> | null
-        selectedPoint: Point | null
-        navState: {
-            focusedIndex: number | null
-            walkHistoryIndices: number[]
-            trailNeighborIndices: number[]
-            mode: string
-        }
-        semanticDiveMode?: boolean
-        routeTraceDiagnostics: { mapPointCount: number; mapPathActive: boolean }
-    }
+    const mapState = state as unknown as MapStateShape
 
     if (mapState.mapInitialized && mapState.map) return
     if (mapState.mapInitialized && !mapState.map) mapState.mapInitialized = false
@@ -153,6 +167,8 @@ export async function initMap(): Promise<void> {
         }
         const container = document.getElementById('map-container')
         if (!container) throw new Error('Map container is missing')
+        // Leaflet mutates the DOM container at runtime to attach _leaflet_id.
+        // The HTMLElement type doesn't include this property; structural cast is required.
         if ((container as unknown as { _leaflet_id?: number })._leaflet_id) {
             delete (container as unknown as { _leaflet_id?: number })._leaflet_id
             container.replaceChildren()
@@ -231,6 +247,11 @@ export async function initMap(): Promise<void> {
                     )
                     return
                 }
+                // focusOnPoint expects BusinessRecord | null; point is a Point (which has
+                // [key: string]: unknown index sig). The double-hop through unknown is required
+                // because Point has an index signature that conflicts with BusinessRecord's
+                // explicit fields. Could be fixed by widening focusOnPoint's signature in
+                // orchestration/lifecycle.ts, but that's out of scope for the type-laundering sweep.
                 focusOnPoint(point as unknown as Parameters<typeof focusOnPoint>[0], { revealCard: true })
             })
 
@@ -249,13 +270,7 @@ export async function initMap(): Promise<void> {
         }
     } catch (error) {
         debugWarn('initMap failed:', error)
-        const ms = mapState as unknown as {
-            mapInitialized: boolean
-            map: unknown
-            markersLayer: unknown
-            mapRouteLayer: unknown
-            pointMarkers: unknown[]
-        }
+        const ms = mapState as unknown as MapStateShape
         ms.mapInitialized = false
         ms.map = null
         ms.markersLayer = null
@@ -423,6 +438,9 @@ export function centerMapOnRouteAnchor(): boolean {
     if (routeLatLngs.length >= 2) {
         const bounds = L.latLngBounds(routeLatLngs)
         ;(state.map as { fitBounds: (b: unknown, opts: Record<string, unknown>) => void }).fitBounds(
+            // L.latLngBounds returns unknown; the Parameters conditional type extracts
+            // the first parameter of fitBounds. The cast is required because TS cannot
+            // verify `unknown` matches the structural type at the call site.
             bounds as unknown as Parameters<
                 typeof state.map extends infer T
                     ? T extends { fitBounds: (...a: unknown[]) => unknown }
@@ -585,6 +603,8 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
     }
 
     if (Number.isFinite(options.settleAfterMs) && options.settleAfterMs! > 0) {
+        // Cast bridges DOM setTimeout (number return) vs NodeJS setTimeout (Timeout return).
+        // The state stores `ReturnType<typeof setTimeout>` which TS treats as the union.
         state.terrainHandoffTimer = window.setTimeout(() => {
             const settlePhase = options.settlePhase || (state.currentView === 'map' ? 'settled' : 'idle')
             setTerrainHandoffState(settlePhase, {
@@ -663,13 +683,7 @@ export function zoomMap(multiplier: number): void {
 }
 
 export function destroyMap(): void {
-    const mapState = state as unknown as {
-        mapInitialized?: boolean
-        map: Record<string, unknown> | null
-        markersLayer: Record<string, unknown> | null
-        mapRouteLayer: Record<string, unknown> | null
-        pointMarkers: Array<{ marker: LeafletMarker; index: number }>
-    }
+    const mapState = state as unknown as MapStateShape
 
     if (mapState.map) {
         try {
