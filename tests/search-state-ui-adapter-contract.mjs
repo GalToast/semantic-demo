@@ -11,7 +11,6 @@ import { resolve } from 'node:path'
 
 const CWD = process.cwd()
 const SEARCH_STATE_PATH = resolve(CWD, 'src/lib/search/state.ts')
-const SEARCH_LEGACY_EXPORTS_PATH = resolve(CWD, 'src/lib/search/legacy-exports.ts')
 const SEARCH_RESULTS_UI_PATH = resolve(CWD, 'src/lib/search/results-ui.ts')
 const TRIGGERS_PATH = resolve(CWD, 'src/lib/orchestration/triggers.ts')
 const TOOLTIP_PATH = resolve(CWD, 'src/lib/ui/tooltip.ts')
@@ -33,7 +32,6 @@ function assertMatches(src, pattern, label) {
 }
 
 const searchSrc = readFileSync(SEARCH_STATE_PATH, 'utf8')
-const legacyExportsSrc = readFileSync(SEARCH_LEGACY_EXPORTS_PATH, 'utf8')
 const resultsSrc = readFileSync(SEARCH_RESULTS_UI_PATH, 'utf8')
 const triggersSrc = readFileSync(TRIGGERS_PATH, 'utf8')
 const tooltipSrc = readFileSync(TOOLTIP_PATH, 'utf8')
@@ -51,11 +49,6 @@ console.log('\n[TEST 2] search-state has no bare window tooltip calls')
 console.log('  PASS')
 
 console.log('\n[TEST 3] tooltip hide requests use the event bus')
-assertContains(
-    legacyExportsSrc,
-    'publish(EVENTS.TOOLTIP_HIDE_REQUESTED)',
-    'legacy search hideTooltip wrapper must publish tooltip hide'
-)
 assertContains(resultsSrc, 'publish(EVENTS.TOOLTIP_HIDE_REQUESTED)', 'search-results-ui must publish tooltip hide')
 assertContains(
     tooltipSrc,

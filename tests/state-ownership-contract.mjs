@@ -418,18 +418,12 @@ console.log(
 // ─── CONTRACT 6: search-state clears focusedNode/selectedPoint on filter evict ─
 
 const urlStateSource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'url-state.ts'), 'utf8')
-const searchLegacySource = readFileSync(join(PROJECT_ROOT, 'src', 'lib', 'search', 'legacy-exports.ts'), 'utf8')
 assert(
     /export function clearExplorationFocusSelection/.test(urlStateSource) &&
         /appState\.focusedNode\s*=\s*null/.test(urlStateSource) &&
         (/updateSelectedBusiness\s*\(\s*null\s*\)/.test(urlStateSource) ||
             /appState\.selectedPoint\s*=\s*null/.test(urlStateSource)),
     'clearExplorationFocusSelection must clear focusedNode and selectedPoint through the current focus-clear owner'
-)
-assert(
-    /updateSelectedBusiness\s*\(\s*null\s*\)/.test(searchLegacySource) ||
-        /appState\.selectedPoint\s*=\s*null/.test(searchLegacySource),
-    'search legacy exports must clear selectedPoint when filter/search invalidates current focus'
 )
 
 console.log('PASS CONTRACT 6: search-state.js clears focusedNode/selectedPoint on filter eviction')

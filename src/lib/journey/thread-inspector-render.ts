@@ -43,11 +43,9 @@ export function renderThreadInspection(
         surface: options.surface ?? undefined
     })
 
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.threadInspectSurface = inspectionState?.active
-            ? inspectionState.surface || options.surface || 'rail'
-            : 'idle'
-    }
+    // NOTE: body.dataset.threadInspectSurface write removed — parity-attrs.svelte.ts
+    // derives it from focus.threadInspector.active + source. updateThreadInspector()
+    // below sets focus.threadInspector.source, so the mirror produces the same value.
 
     // Notify Svelte focus store reactively
     updateThreadInspector({

@@ -295,26 +295,20 @@ export function getMapRoutePoints(): Array<{ index: number; point: Point }> {
 
 export function refreshMapRouteEmbodiment(): void {
     if (!state.map || !state.mapRouteLayer) {
-        state.withMutation(() => {
-            state.routeTraceDiagnostics.mapPointCount = 0
-            state.routeTraceDiagnostics.mapPathActive = false
-        })
+        state.routeTraceDiagnostics.mapPointCount = 0
+        state.routeTraceDiagnostics.mapPathActive = false
         return
     }
     ;(state.mapRouteLayer as { clearLayers(): void }).clearLayers()
     if (state.currentView !== 'map') {
-        state.withMutation(() => {
-            state.routeTraceDiagnostics.mapPointCount = 0
-            state.routeTraceDiagnostics.mapPathActive = false
-        })
+        state.routeTraceDiagnostics.mapPointCount = 0
+        state.routeTraceDiagnostics.mapPathActive = false
         return
     }
 
     const routePoints = getMapRoutePoints()
-    state.withMutation(() => {
-        state.routeTraceDiagnostics.mapPointCount = routePoints.length
-        state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2
-    })
+    state.routeTraceDiagnostics.mapPointCount = routePoints.length
+    state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2
     if (!routePoints.length) {
         const trailStateActive = document.body?.dataset?.trailState === 'active'
         if (state.currentView === 'map' && !trailStateActive) {
@@ -576,15 +570,13 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
     const normalizedPhase = String(phase || 'idle').replace(/[^a-z0-9-]/gi, '') || 'idle'
     const routeCount = Number.isFinite(options.routeCount) ? options.routeCount : getRouteEmbodimentIndices().length
 
-    state.withMutation(() => {
-        state.terrainHandoffState = {
-            phase: normalizedPhase,
-            from: options.from || state.terrainHandoffState?.from || 'overview',
-            to: options.to || state.terrainHandoffState?.to || state.currentView || 'galaxy',
-            routeCount: routeCount!,
-            startedAt: performance.now()
-        }
-    })
+    state.terrainHandoffState = {
+        phase: normalizedPhase,
+        from: options.from || state.terrainHandoffState?.from || 'overview',
+        to: options.to || state.terrainHandoffState?.to || state.currentView || 'galaxy',
+        routeCount: routeCount!,
+        startedAt: performance.now()
+    }
 
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles terrainHandoff sync.
     // The additional terrainHandoffFrom/To/RouteCount attrs are not used by CSS or JS readers.

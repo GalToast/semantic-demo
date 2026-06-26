@@ -300,9 +300,11 @@ export function resetExplorationFocus(options?: {
         }
     }
 
+    // NOTE: body.dataset.threadInspectSurface + mapContext writes removed —
+    // parity-attrs.svelte.ts derives both from store state. After the
+    // appState.navState reset above (surface='idle', mode='overview'), the
+    // mirror produces threadInspectSurface='idle' and mapContext='idle'.
     if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.threadInspectSurface = 'idle'
-        document.body.dataset.mapContext = 'idle'
         document.body.removeAttribute('data-focused-node')
     }
 

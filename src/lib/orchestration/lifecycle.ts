@@ -129,7 +129,9 @@ export function setSemanticDiveModeProxy(enabled: boolean): void {
     setFocusDiveMode(nextActive)
 
     if (nextActive) {
-        if (document.body) document.body.dataset.semanticDive = 'transitioning'
+        // NOTE: semanticDive='transitioning' body write removed — parity-attrs.svelte.ts
+        // derives it from journey.depth >= 2 && hasFocusContext. setTrailDepth(2) below
+        // sets journey.depth=2, so the mirror produces 'transitioning' correctly.
         setTrailDepth(2)
         updateNavState({ mode: 'inside', surface: 'inside', trailDepth: 2 })
     } else {

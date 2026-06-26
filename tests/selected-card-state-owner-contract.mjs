@@ -22,7 +22,7 @@
 // T-1 commits (e3d6a78e, 0fa33ef5, bbce2c7b, 2e36bee3) refactored
 // 5 rogue writers to use the owner API:
 //   - cursor.ts:78 (canvas click) → updateSelectedBusiness(point, { revealCard: true })
-//   - legacy-exports.ts:118 (filter evict) → updateSelectedBusiness(null)
+//   - url-state.ts:108 (filter evict) → updateSelectedBusiness(null)
 //   - url-state.ts:104 (URL restore) → updateSelectedBusiness(null)
 //   - demo-choreography.ts:213 (demo teardown) → drop redundant direct write
 //   - demo-choreography.ts:265 (demo focus) → drop redundant direct write

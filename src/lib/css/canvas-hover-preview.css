@@ -171,7 +171,7 @@
    the user feedback that their click registered and something is happening.
    ----------------------------------------------------------------------- */
 
-body.focus-transition-phase-arriving::before {
+body.focus-transition-arriving::before {
     content: 'Focusing…';
     position: fixed;
     top: 1rem;
@@ -207,7 +207,7 @@ body.focus-transition-phase-arriving::before {
 
 /* Reduced motion: show instantly */
 @media (prefers-reduced-motion: reduce) {
-    body.focus-transition-phase-arriving::before {
+    body.focus-transition-arriving::before {
         animation: none;
         opacity: 1;
         transform: translateX(-50%);
