@@ -30,6 +30,7 @@ import {
     Material
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
+import type { Point } from '@lib/state/state-types'
 const state = _state
 import { webglContext } from './webgl-context'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
@@ -253,7 +254,8 @@ function createPointShaderUniforms() {
         uHoverNodePos: { value: new Vector3(0, 0, 0) },
         uHoverBoost: { value: 1.0 },
         uHoverRadius: { value: 0.12 },
-        uRevealProgress: { value: 1.0 }
+        uRevealProgress: { value: 1.0 },
+        uTime: { value: 0.0 }
     }
 }
 
@@ -276,6 +278,7 @@ uniform vec3 uHoverNodePos;
 uniform float uHoverBoost;
 uniform float uHoverRadius;
 uniform float uRevealProgress;
+uniform float uTime;
 varying float vSemanticPointBoost;`
             )
             .replace(
@@ -284,7 +287,8 @@ varying float vSemanticPointBoost;`
 float semanticHoverDistance = distance(position, uHoverNodePos);
 float semanticHoverMask = 1.0 - smoothstep(0.0, uHoverRadius, semanticHoverDistance);
 float semanticRippleMask = max(0.0, 1.0 - abs((uRippleTime - distance(position, uRippleCenter) * 2.0)) * 2.5);
-vSemanticPointBoost = max(0.08, uRevealProgress) * max(0.55, mix(1.0, uHoverBoost, semanticHoverMask) + semanticRippleMask * 0.38);`
+float semanticBreath = 1.0 + 0.10 * sin(uTime * 1.5 + position.x * 2.5 + position.y * 1.8);
+vSemanticPointBoost = max(0.08, uRevealProgress) * max(0.55, mix(1.0, uHoverBoost, semanticHoverMask) + semanticRippleMask * 0.38) * semanticBreath;`
             )
             .replace(
                 'gl_PointSize = clamp(size, 1.0, 128.0);',
@@ -412,7 +416,7 @@ export function createPoints() {
 
     const hasRawBuffers = rawPositionsBuffer && rawClustersBuffer && rawClustersBuffer.length === state.points.length
 
-    state.points.forEach((point: any, i: number) => {
+    state.points.forEach((point: Point, i: number) => {
         const scatter = scatterOffsets[i] || { x: 0, y: 0, z: 0 }
         let px, py, pz, cluster
 
