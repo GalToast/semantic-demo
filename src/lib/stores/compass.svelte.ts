@@ -159,8 +159,7 @@ export function buildCompassStatus(params: {
     if (hasFocus) {
         let primaryAction: CompassAction
         let secondaryAction: CompassAction | null
-        // eslint-disable-next-line no-useless-assignment -- branches below overwrite in every reachable case; null is just a TS strict-mode placeholder.
-        let tertiaryAction: CompassAction | null = null
+        let tertiaryAction: CompassAction | null
 
         if (isSearchAnchor) {
             primaryAction = { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE }
