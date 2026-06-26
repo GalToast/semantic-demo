@@ -452,14 +452,8 @@ function handleLegacyShowMoreClick(event: Event): void {
         /* noop */
     }
     appState.searchVisibleCount = total
-    renderLegacySearchResultsDom({
-        resultsEl,
-        dedupedResults,
-        total,
-        visibleCount: total,
-        mode: 'expanded',
-        renderContext
-    })
+    // Legacy imperative DOM render retired — Svelte's SearchResults.svelte owns #search-results.
+    // See tmp/phase2-deadcode-deletion-plan-2026-06-26.md for full Phase-2 dead-code plan.
 }
 
 // ── EXPORTS ────────────────────────────────────────────────────────────────
