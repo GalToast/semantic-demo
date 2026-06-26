@@ -48,6 +48,7 @@ const mockState = vi.hoisted(() => ({
 vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
     get navState() { return mockState.navState; },
+    set navState(value: Record<string, unknown>) { mockState.navState = value; },
     withMutation: (fn: () => unknown) => fn(),
     selectedPoint: null,
     inspectedThreadIndex: null,
