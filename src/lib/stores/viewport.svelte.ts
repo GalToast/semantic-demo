@@ -171,11 +171,9 @@ export function syncViewport(): void {
         appState.viewportIsCompact = isCompact
     })
 
-    if (typeof document !== 'undefined' && document.body) {
-        document.body.dataset.compact = String(isCompact)
-        document.body.dataset.mobile = String(isCompact)
-        document.body.dataset.reducedMotion = String(reducedMotion)
-    }
+    // body[data-compact/mobile/reducedMotion] now owned by parity-attrs.svelte.ts.
+    // Removed bypass writers; parity's computeParityAttributes() writes the
+    // same String(boolean) values from the same viewport store.
 }
 
 /**
@@ -196,9 +194,8 @@ export function initViewportListeners(): () => void {
         appState.withMutation(() => {
             appState.viewportReducedMotion = e.matches
         })
-        if (typeof document !== 'undefined' && document.body) {
-            document.body.dataset.reducedMotion = String(e.matches)
-        }
+        // body[data-reducedMotion] is owned by parity-attrs.svelte.ts; the
+        // viewport store subscription there will sync the new value.
     }
 
     window.addEventListener('resize', onResize, { passive: true })
