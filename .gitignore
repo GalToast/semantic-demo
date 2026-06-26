@@ -83,8 +83,11 @@ vector-explorer-polished.html.restored
 semantic-sweep-*
 
 # Qwen worker runtime logs and caches (deeply nested bun cache exceeds Windows MAX_PATH)
-.qwen/worker-logs/
-.qwen/skills/
+.qwen/
+
+# AI tool runtime state (should never be committed)
+.pi-memory.md
+.commandcode/
 
 # Subagent scratch (switchboard / external-subagents / qwen / minimax runtimes drop
 # runtime artifacts here: metadata.json, prompt.txt, stderr/stdout.log, vendor bins).
@@ -106,3 +109,7 @@ bun.lock
 
 # Temporary directories at root
 None/
+
+# Root data duplication — canonical copies live in src/
+data.dat
+data.dat.gz

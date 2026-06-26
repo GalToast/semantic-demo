@@ -1,4 +1,4 @@
-# McCullough Cloud: Semantic Demo Architecture
+# Semantic Explorer - Architecture
 
 The Semantic Explorer is a highly polished, browser-based WebGL/DOM application that visualizes 8,406 local business records in a semantic space. It relies on a carefully orchestrated architecture separating the data layer, WebGL visualization, and DOM-based UI state.
 
