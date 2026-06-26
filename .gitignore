@@ -113,3 +113,9 @@ None/
 # Root data duplication — canonical copies live in src/
 data.dat
 data.dat.gz
+
+# Runtime logs
+*.log
+
+# Decomposed subagent artifacts (generated, not source)
+decompose-and-delegate*
