@@ -772,7 +772,7 @@
   }
 
   @media (max-width: 768px) {
-    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass) {
+    :global(body.is-active.surface-focus-search .journey-compass) {
       display: grid;
       grid-template-columns: minmax(0, 1fr) auto;
       align-items: center;
@@ -780,14 +780,14 @@
       max-width: calc(100vw - 32px);
     }
 
-    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-actions) {
+    :global(body.is-active.surface-focus-search .journey-compass .journey-compass-actions) {
       display: grid;
       justify-content: end;
       gap: 6px;
       padding-left: 8px;
     }
 
-    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-action.primary[data-journey-action='open-map']) {
+    :global(body.is-active.surface-focus-search .journey-compass .journey-compass-action.primary[data-journey-action='open-map']) {
       width: 48px;
       min-width: 48px;
       max-width: 48px;
@@ -797,7 +797,7 @@
       padding: 0 8px;
     }
 
-    :global(body.is-active[data-panel-surface='focus-search'] .journey-compass .journey-compass-step:not(.primary)) {
+    :global(body.is-active.surface-focus-search .journey-compass .journey-compass-step:not(.primary)) {
       display: none;
       visibility: hidden;
       pointer-events: none;
