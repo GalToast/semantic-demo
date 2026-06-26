@@ -18,7 +18,12 @@
 <script lang="ts">
   import { compassSteps } from '@lib/stores/compass.svelte';
   import { compassPhase, transitionCompass } from '@lib/stores/journey.svelte';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
+  import { cameraStore } from '@lib/stores/camera.svelte.ts';
+  import { focusStore } from '@lib/stores/focus.svelte';
+  import { searchStore } from '@lib/stores/search.svelte';
+  import { get } from 'svelte/store';
 
   interface Props {
     /** Whether the compass rail is visible */
@@ -27,18 +32,40 @@
 
   let { visible = false }: Props = $props();
 
-  let bodyPanelSurface = $state('');
-  let bodyGraphContext = $state('');
+  // ── Store subscriptions (replaces body.dataset MutationObserver reads) ────
+  let nav = $state(navStore());
   $effect(() => {
-    if (typeof document === 'undefined') return;
-    const sync = () => {
-      bodyPanelSurface = document.body.dataset.panelSurface || '';
-      bodyGraphContext = document.body.dataset.graphContext || '';
-    };
-    const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-graph-context'] });
-    sync();
-    return () => obs.disconnect();
+    const unsub = navStore.subscribe(($s) => { nav = $s; });
+    return unsub;
+  });
+
+  let bodyPanelSurface = $derived(nav.surface ?? '');
+
+  // Derive graphContext from stores (mirrors parity-attrs computeParityAttributes)
+  let bodyGraphContext = $derived.by(() => {
+    const vp = viewport();
+    const cam = get(cameraStore);
+    const focus = focusStore();
+    const search = get(searchStore);
+
+    const hasFocusContext =
+      (typeof nav.focusedIndex === 'number' && Number.isFinite(nav.focusedIndex)) ||
+      (typeof focus.selectedBusiness === 'object' && focus.selectedBusiness !== null);
+    const hasSearchContext =
+      !!search.summary ||
+      (typeof search.query === 'string' && search.query.trim().length >= 2) ||
+      nav.surface === 'focus-search' ||
+      nav.surface === 'search';
+
+    if (vp.isCompact && cam.routeExplorationPhase === 'exploring') return 'corridor';
+    if (nav.currentView === 'map') return 'map';
+    if (nav.mode === 'inside') return 'inside';
+    if (hasFocusContext && hasSearchContext) return 'focus-search';
+    if (hasFocusContext) return 'focus';
+    if (hasSearchContext) return 'corridor';
+    if (nav.mode === 'search' || search.summary) return 'corridor';
+    if (nav.mode === 'overview') return 'idle';
+    return 'idle';
   });
 
   // Track pending timeouts so they can be cleared on unmount.

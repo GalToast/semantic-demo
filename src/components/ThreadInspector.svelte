@@ -42,10 +42,11 @@
     return unsubscribe;
   });
 
+  /** Fallback: read inspectedThreadIndex from focusStore (body.dataset was a legacy mirror). */
   function bodyInspectedIndex(): number | null {
-    if (typeof document === 'undefined') return null;
-    const value = Number(document.body.dataset.inspectedThreadIndex);
-    return Number.isFinite(value) ? value : null;
+    const snap = focusStore();
+    const idx = snap.threadInspector.inspectedIndex ?? snap.inspectedStrandIndex;
+    return idx != null && Number.isFinite(idx) ? idx : null;
   }
 
   function localizeSource(source: string | undefined): string {

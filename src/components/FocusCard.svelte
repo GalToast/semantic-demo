@@ -17,7 +17,7 @@
 <script lang="ts">
   import { navStore } from '@lib/stores/navigation.svelte';
   import { activeResult } from '@lib/stores/search.svelte';
-  import { businessRecords } from '@lib/data-store';
+  import { businessRecords, loadingPhaseStore } from '@lib/data-store';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
@@ -51,6 +51,14 @@
     return unsub;
   });
 
+  // ── Scene readiness (from loading phase store) ──────────────────────────
+  let _loadingPhase = $state<string>('records');
+  $effect(() => {
+    const unsub = loadingPhaseStore.subscribe(($s) => { _loadingPhase = $s; });
+    return unsub;
+  });
+  let _sceneReady = $derived(_loadingPhase === 'launch');
+
   // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
 
   const CLUSTER_NAMES: readonly string[] = [
@@ -72,15 +80,11 @@
   ];
 
   // ── Derived state ─────────────────────────────────────────────────────────────
-  // Primary source: body data attribute (parity attrs write this from the
-  //   legacy code path; reading it registers a dep on bodyFocusedNode so the
-  //   $derived re-evaluates when the body attribute changes).
-  // Secondary: navStore rune (5c51450 pattern, mirrors FocusPocket.svelte).
+  // Source: navStore rune (5c51450 pattern, mirrors FocusPocket.svelte).
+  // The body data-focused-node attr is written by parity-attrs from the same
+  // store; we read from the store directly to avoid a body.dataset round-trip.
 
   let currentFocusedIdx = $derived.by(() => {
-    void bodyFocusedNode;
-    const fromBody = !(bodyFocusedNode === '') ? Number(bodyFocusedNode) : null;
-    if (fromBody != null && Number.isFinite(fromBody)) return fromBody;
     const fromNav = nav.focusedIndex;
     if (typeof fromNav === 'number' && Number.isFinite(fromNav)) return fromNav;
     return null;
@@ -93,37 +97,42 @@
   );
   let surface = $derived(nav.surface ?? 'idle');
 
-  let bodyPanelSurface = $state('');
-  let bodyPanelSurfaceDetail = $state('');
-
-  let bodyFocusedNode = $state('');
-  let bodyNavMode = $state('');
-  let _bodySceneReady = $state('');
-
-  $effect(() => {
-    if (typeof document === 'undefined') return;
-    const syncBodyPanelSurface = () => {
-      bodyPanelSurface = document.body.dataset.panelSurface ?? '';
-      bodyPanelSurfaceDetail = document.body.dataset.panelSurfaceDetail ?? '';
-      bodyFocusedNode = document.body.dataset.focusedNode ?? '';
-      bodyNavMode = document.body.dataset.navMode ?? '';
-      _bodySceneReady = document.body.dataset.sceneReady ?? '';
-    };
-    const observer = new MutationObserver(syncBodyPanelSurface);
-    observer.observe(document.body, {
-      attributes: true,
-      attributeFilter: ['data-panel-surface', 'data-panel-surface-detail', 'data-focused-node', 'data-nav-mode', 'data-scene-ready']
-    });
-    syncBodyPanelSurface();
-    return () => observer.disconnect();
+  // ── Derived state from navStore (replaces body.dataset reads) ──────────────
+  // The parity layer writes body.dataset.panelSurface, .navMode, .focusedNode,
+  // .sceneReady from these same stores. We read from the stores directly to
+  // avoid the body.dataset → MutationObserver → $state round-trip.
+  let bodyPanelSurface = $derived(nav.surface ?? '');
+  let bodyNavMode = $derived(nav.mode ?? '');
+  let bodyPanelSurfaceDetail = $derived.by(() => {
+    // Derive panelSurfaceMode equivalent from nav surface (mirrors parity-attrs)
+    const s = nav.surface;
+    if (s === 'thread-inspect') return 'thread-inspect';
+    if (s === 'inside') return 'inside';
+    if (s === 'semantic-dive') return 'semantic-dive';
+    return s ?? '';
   });
 
-  // Reactive focus detection: read from body data-attrs so Svelte re-evaluates
-  // when the legacy code updates the DOM.
+  // Read body data-focus-panel-mode reactively (set by setFocusPanelMode)
+  let bodyFocusPanelMode = $state('');
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => { bodyFocusPanelMode = document.body?.dataset?.focusPanelMode ?? '' };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode'] });
+    sync();
+    return () => obs.disconnect();
+  });
+
+  // ── CSS class derivation for surface/mode selectors ───────────────────────
+  let focusCardSurfaceClass = $derived(bodyPanelSurface ? `surface-${bodyPanelSurface}` : '');
+  let focusCardModeClass = $derived(bodyFocusPanelMode ? `mode-${bodyFocusPanelMode}` : '');
+
+  // Reactive focus detection: read from navStore rune so Svelte re-evaluates
+  // when nav state changes (same semantics as the former body.dataset reads).
   let isFocusedReactive = $derived(
-    bodyFocusedNode !== '' || // audit-ok: inside $derived — previously audited as SAFE (RISKY items already fixed)
-    bodyNavMode === 'focus' ||
-    bodyNavMode === 'inside' ||
+    currentFocusedIdx != null ||
+    nav.mode === 'focus' ||
+    nav.mode === 'inside' ||
     isFocused
   );
 
@@ -267,6 +276,10 @@
   <!-- svelte-ignore a11y_no_noninteractive_tabindex: focusable scroll region for keyboard users -->
   <div
     class="focus-card selected-card focus-stage-card"
+    class:surface-focus={bodyPanelSurface === 'focus'}
+    class:surface-focus-search={bodyPanelSurface === 'focus-search'}
+    class:surface-semantic-dive={bodyPanelSurface === 'semantic-dive'}
+    class:mode-field-node={bodyFocusPanelMode === 'field-node'}
     id="selected-card"
     class:selected-card-empty={isEmpty}
     role="region"
@@ -313,14 +326,13 @@
   }
   /* Offset focus card above journey chrome when both are active
      to avoid vertical collision on narrow viewports. */
-  :global(body.is-active[data-panel-surface='focus']) .focus-card,
-  :global(body.is-active[data-panel-surface='focus-search']) .focus-card {
+  .focus-card.surface-focus,
+  .focus-card.surface-focus-search {
     bottom: 7rem;
   }
 
   @media (max-width: 768px) {
-    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-card.selected-card-empty,
-    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) .focus-card.selected-card-empty {
+    .focus-card.surface-focus-search.mode-field-node.selected-card-empty {
       display: none;
       visibility: hidden;
       pointer-events: none;
@@ -473,10 +485,8 @@
   }
 
   @media (max-width: 768px) {
-    :global(body.is-active[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
-    :global(body[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
-    :global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card),
-    :global(body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']) :is(.focus-card, .focus-stage-card) {
+    .focus-card.surface-semantic-dive,
+    .focus-card.surface-focus-search.mode-field-node {
       position: fixed;
       left: 0;
       right: 0;
@@ -491,17 +501,14 @@
       z-index: var(--z-focus-card, 600);
     }
 
-    :global(body.is-active[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card),
-    :global(body[data-panel-surface='semantic-dive']) :is(.focus-card, .focus-stage-card) {
+    .focus-card.surface-semantic-dive {
       border-radius: 22px 22px 0 0;
       padding: 18px 14px 10px;
     }
 
     /* Bottom-sheet radius for all mobile focus states */
-    :global(body.is-active[data-panel-surface='focus-search']) :is(.focus-card, .focus-stage-card),
-    :global(body[data-panel-surface='focus-search']) :is(.focus-card, .focus-stage-card),
-    :global(body.is-active[data-panel-surface='focus']) :is(.focus-card, .focus-stage-card),
-    :global(body[data-panel-surface='focus']) :is(.focus-card, .focus-stage-card) {
+    .focus-card.surface-focus-search,
+    .focus-card.surface-focus {
       border-radius: 22px 22px 0 0;
     }
   }
