@@ -111,7 +111,11 @@ export function syncTestStateFromBody(): void {
 
     _testCompatWritable.set({
         panelSurface: body.dataset.panelSurface || parity.panelSurface || null,
-        focusedNode: body.dataset.focusedNode ? Number(body.dataset.focusedNode) : (parity.focusedNode ? Number(parity.focusedNode) : null),
+        focusedNode: body.dataset.focusedNode
+            ? Number(body.dataset.focusedNode)
+            : parity.focusedNode
+              ? Number(parity.focusedNode)
+              : null,
         activeView: body.dataset.activeView || body.dataset.viewMode || parity.activeView || null,
         graphContext: body.dataset.graphContext || parity.graphContext || null,
         panelSurfaceMode: body.dataset.panelSurface || body.dataset.navSurface || parity.panelSurfaceMode || null,
