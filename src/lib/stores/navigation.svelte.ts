@@ -9,6 +9,11 @@
  * The navigation store owns the current view mode, surface, focus index,
  * and all view-handoff state. It is the single source of truth for
  * "where the user is" in the application.
+ *
+ * Phase 3a: navStore is now a thin mirror of appState.navState (Svelte 5
+ * rune state). Reads go directly to appState.navState; writes update both
+ * appState.navState and the internal writable so legacy _navWritable
+ * consumers (derived getters, dispatchNavTransition) stay in sync.
  */
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state'
 import { writable, get, type Readable } from 'svelte/store'
@@ -143,6 +148,19 @@ function getOrCreateNavWritable(): ReturnType<typeof writable<NavState>> {
 
 const _navWritable = getOrCreateNavWritable()
 
+// Phase 3a: keep the internal _navWritable mirrored from appState.navState.
+// External writers (engine/choreography paths like focus-pocket.ts) mutate
+// appState.navState directly without going through navStore.set/update, so
+// this $effect bridges those writes into the writable that legacy consumers
+// (derived getters, dispatchNavTransition) read from.
+void $effect.root(() => {
+    $effect(() => {
+        const _tracked = appState.navState
+        void _tracked
+        _navWritable.set(appState.navState)
+    })
+})
+
 // ── NavStore API ─────────────────────────────────────────────────────────────
 // navStore is a hybrid: callable as navStore() for Svelte 5 rune consumers,
 // and satisfies Readable<NavState> + .update()/.set() for .ts orchestration consumers.
@@ -158,16 +176,38 @@ export type NavStoreApi = (() => NavState) &
 export type NavStoreState = NavStoreApi
 
 function _createNavStore(): NavStoreApi {
+    // Phase 3a: navStore is now a thin mirror of appState.navState. The
+    // callable returns the internal writable's value (the same place the
+    // in-file setters write). External writers (engine code that mutates
+    // appState.navState directly) bridge to _navWritable via the
+    // $effect.root() block above with a one-tick delay — acceptable
+    // trade-off for keeping the synchronous writer semantics that the
+    // parity-attrs + dispatchNavTransition test suite relies on.
     const fn = (() => get(_navWritable)) as NavStoreApi
 
-    // Satisfy Readable<NavState> so get(navStore) from svelte/store works.
+    // Subscribe: delegate to _navWritable.subscribe. The writable is updated
+    // synchronously by every writer in this file (navStore.set, dispatchNavTransition,
+    // returnToOverviewState, writeNavStateMirror, etc.), so subscribers see the
+    // new value synchronously.
     fn.subscribe = _navWritable.subscribe
 
-    // Writable-style update for navStore.update(s => ({...s, ...}))
-    fn.update = _navWritable.update
+    // Writable-style set: update both the rune source of truth and the
+    // internal writable so legacy _navWritable consumers stay in sync.
+    fn.set = (value: NavState): void => {
+        appState.withMutation(() => {
+            appState.navState = value
+        })
+        _navWritable.set(value)
+    }
 
-    // Writable-style set for navStore.set(state)
-    fn.set = _navWritable.set
+    // Writable-style update: read/write the rune state, then mirror.
+    fn.update = (updater: (_current: NavState) => NavState): void => {
+        const next = updater(appState.navState)
+        appState.withMutation(() => {
+            appState.navState = next
+        })
+        _navWritable.set(next)
+    }
 
     return fn
 }

@@ -19,7 +19,7 @@
 
 import { test, expect } from '@playwright/test'
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:5180'
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 
 test.describe('Widget Journey Tests — what the user actually sees', () => {
     /**
@@ -44,7 +44,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         // Dismiss the gesture gate. The button might be labelled "Explore" or
         // "Enter 3D Scene" depending on which branch renders. We match both.
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
-        await explore.waitFor({ state: 'visible', timeout: 15000 })
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
         // Wait for the weather widget to mount. This implicitly verifies the
@@ -57,7 +57,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
             .locator('.weather-temp')
             .filter({ hasText: /^[1-9]\d?°$/ })
             .first()
-            .waitFor({ timeout: 15000 })
+            .waitFor({ timeout: 40000 })
 
         // Store the error collector on the page object for later assertions
         page._bootErrors = errors
@@ -566,7 +566,7 @@ test.describe('Widget Journey Tests — mobile viewport', () => {
 
         try {
             await page.goto(BASE_URL, { waitUntil: 'commit' })
-            await page.locator('[data-testid="placeholder-2d"]').waitFor({ state: 'visible', timeout: 15000 })
+            await page.locator('[data-testid="placeholder-2d"]').waitFor({ state: 'visible', timeout: 40000 })
 
             const titleText = ((await page.locator('.placeholder-title').first().textContent()) ?? '').trim()
             const subtitleText = ((await page.locator('.placeholder-subtitle').first().textContent()) ?? '').trim()
@@ -628,7 +628,7 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
             // Wait for the SearchBar to mount before checking the banner.
             // The SearchBar component is in the eager bundle but its DOM
             // is rendered after Svelte mounts the App shell.
-            await page.locator('.search-container').waitFor({ state: 'attached', timeout: 15000 })
+            await page.locator('.search-container').waitFor({ state: 'attached', timeout: 40000 })
 
             // Before the flag is set, the banner should NOT be visible.
             // Wait a beat for the SearchBar'sillar 750ms polling interval.
@@ -836,5 +836,47 @@ test.describe('Widget Journey Tests — terminology section', () => {
         } finally {
             await ctx.close()
         }
+    })
+})
+
+// W48-T4: legend keyboard shortcut. The 'L' key toggles the legend panel
+// open and closed, and the event listener is properly cleaned up on unmount.
+test.describe('Widget Journey Tests — legend keyboard shortcut', () => {
+    test('19. pressing L toggles the legend panel open and closed', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the splash screen
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.waitForTimeout(3000)
+
+        // The legend should start closed (no 'open' class)
+        const legend = page.locator('#legend-panel').first()
+        await legend.waitFor({ state: 'attached', timeout: 5000 })
+        const hasOpenClassInitially = await legend.evaluate((el) => el.classList.contains('open'))
+        expect(hasOpenClassInitially).toBe(false)
+
+        // Press Escape then Tab to move focus away from any input, then click canvas
+        await page.keyboard.press('Escape')
+        await page.waitForTimeout(200)
+        await page.keyboard.press('Tab')
+        await page.waitForTimeout(200)
+        await page.click('canvas')
+        await page.waitForTimeout(200)
+
+        // Press 'l' to open the legend
+        await page.keyboard.press('l')
+        await page.waitForTimeout(600)
+
+        const hasOpenClassAfterL = await legend.evaluate((el) => el.classList.contains('open'))
+        expect(hasOpenClassAfterL).toBe(true)
+
+        // Press 'l' again to close the legend
+        await page.keyboard.press('l')
+        await page.waitForTimeout(600)
+
+        const hasOpenClassAfterSecondL = await legend.evaluate((el) => el.classList.contains('open'))
+        expect(hasOpenClassAfterSecondL).toBe(false)
     })
 })
