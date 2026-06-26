@@ -16,8 +16,8 @@
 
 import { appState as _state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const state = _state
 import type { SemanticState } from '@lib/state/state-types'
+const state = _state as unknown as SemanticState
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -79,9 +79,8 @@ class CameraControlsCore {
             this.focusTransitionSettleTimer = null
         }
         // Legacy mirror for choreography files that still read from state.focusTransitionMode
-        const _s = state as unknown as SemanticState
-        _s.focusTransitionMode = canonicalMode
-        _s.focusTransitionStartedAt = this.focusTransitionStartedAt
+        state.focusTransitionMode = canonicalMode
+        state.focusTransitionStartedAt = this.focusTransitionStartedAt
 
         if (document.body) {
             document.body.dataset.focusTransition = normalizedMode
@@ -111,10 +110,9 @@ class CameraControlsCore {
         this.focusCameraAssistUntil = performance.now() + Math.max(180, duration)
         this.focusCameraAssistReason = reason
         // Legacy mirror
-        const _s = state as unknown as SemanticState
-        _s.focusCameraAssistActive = true
-        _s.focusCameraAssistUntil = this.focusCameraAssistUntil
-        _s.focusCameraAssistReason = reason
+        state.focusCameraAssistActive = true
+        state.focusCameraAssistUntil = this.focusCameraAssistUntil
+        state.focusCameraAssistReason = reason
         this.syncCameraAssistDataset()
     }
 
@@ -122,10 +120,9 @@ class CameraControlsCore {
         if (this.shouldMarkRouteExploration(reason)) {
             this.markRouteExploration(reason)
         }
-        const _s = state as unknown as SemanticState
-        if (!this.focusCameraAssistActive && !_s.focusCameraOffset) {
+        if (!this.focusCameraAssistActive && !state.focusCameraOffset) {
             this.focusCameraAssistReason = reason
-            _s.focusCameraAssistReason = reason
+            state.focusCameraAssistReason = reason
             this.syncCameraAssistDataset()
             return
         }
@@ -134,10 +131,10 @@ class CameraControlsCore {
         this.focusCameraAssistReason = reason
         this.focusCameraOffset = null
         // Legacy mirror
-        _s.focusCameraAssistActive = false
-        _s.focusCameraAssistUntil = 0
-        _s.focusCameraAssistReason = reason
-        _s.focusCameraOffset = null
+        state.focusCameraAssistActive = false
+        state.focusCameraAssistUntil = 0
+        state.focusCameraAssistReason = reason
+        state.focusCameraOffset = null
         this.syncCameraAssistDataset()
     }
 
@@ -175,8 +172,7 @@ class CameraControlsCore {
         }
         // Legacy mirror — routeExplorationState is a tracked sub-object
         withStateMutation(() => {
-            const _s = state as unknown as SemanticState
-            _s.routeExplorationState = {
+            state.routeExplorationState = {
                 phase: normalizedPhase,
                 reason: normalizedReason,
                 startedAt: performance.now()
@@ -195,11 +191,10 @@ class CameraControlsCore {
 
     markRouteExploration(reason: string = 'user-control'): boolean {
         if (!isSearchRouteFocusActive()) return false
-        const _s = state as unknown as SemanticState
         // Note: avoid `!==` on Svelte-5-rune state properties — the strict-mode
         // compiler bug inverts `!==` to `===`. Use positive equality + negation.
-        const _phaseIsFree = _s.routeExplorationState.phase === 'free'
-        const _reasonMatches = _s.routeExplorationState.reason === reason
+        const _phaseIsFree = state.routeExplorationState.phase === 'free'
+        const _reasonMatches = state.routeExplorationState.reason === reason
         if (!_phaseIsFree || !_reasonMatches) {
             this.setRouteExplorationState('free', reason)
             applyFocusOrbitSlack(reason)
