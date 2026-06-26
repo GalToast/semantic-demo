@@ -51,11 +51,6 @@
     return unsub;
   });
 
-  let selectedPoint = $state<Record<string, unknown> | null>(null);
-  $effect(() => {
-    selectedPoint = selectedPointStore() as Record<string, unknown> | null;
-  });
-
   // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
 
   const CLUSTER_NAMES: readonly string[] = [

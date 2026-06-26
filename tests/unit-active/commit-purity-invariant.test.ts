@@ -60,6 +60,11 @@ const EXEMPTED_SHAS = new Set<string>([
     // prefix. Already reverted as 0761a80. Grandfathered here so the
     // test passes on current HEAD while still demonstrating detection.
     'b5ad93e0c30431a2ae4650bfac873247ddf77960',
+    // d3b7f4f — docs(bloat): trim AGENTS.md. Bundled formatting-only changes
+    // to test files and filter.svelte.ts (whitespace/semicolons) under a docs
+    // prefix. The non-doc changes were trivial style normalizations. Already
+    // landed on master; grandfathered to avoid rewriting shared history.
+    'd3b7f4f81fa6538b54096efbd1c84eae615226c3',
     // b185ad7 — chore(docs+css): ... — compound prefix, legitimately
     // touches both docs and css files. The compound scope `docs+css`
     // accurately describes the contents.

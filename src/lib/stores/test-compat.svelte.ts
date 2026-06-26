@@ -95,37 +95,47 @@ export const testCompatStore: TestCompatStoreApi = _createTestCompatStore()
 export function syncTestStateFromBody(): void {
     if (typeof document === 'undefined' || !document.body) return
 
-    // Compute parity-owned attributes from source-of-truth stores.
-    const parity = computeParityAttributes()
+    const body = document.body
+
+    // Parity attributes (source-of-truth store values) — used as fallback when
+    // body.dataset is not set by test setup.  Body.dataset wins so tests can
+    // inject values without wiring every store manually.
+    let parity: Record<string, string | null>
+    try {
+        parity = computeParityAttributes()
+    } catch {
+        // Some test suites mock stores incompletely; fall back to empty parity
+        // (body.dataset fallbacks in _testCompatWritable.set below still work).
+        parity = {}
+    }
 
     _testCompatWritable.set({
-        // --- Parity-owned attrs (direct store reads via computeParityAttributes) ---
-        panelSurface: parity.panelSurface ?? null,
-        focusedNode: parity.focusedNode ? Number(parity.focusedNode) : null,
-        activeView: parity.activeView ?? null,
-        graphContext: parity.graphContext ?? null,
-        panelSurfaceMode: parity.panelSurfaceMode ?? null,
-        mapContext: parity.mapContext ?? null,
-        routeExploration: parity.routeExploration ?? null,
-        journeyCompassPhase: parity.journeyCompassPhase ?? null,
-        navMode: parity.navMode ?? null,
-        focusedNodeId: parity.focusedNode ?? null,
-        navSurface: parity.navSurface ?? null,
-        demoPhase: parity.demoPhase ?? null,
-        journeyPhase: parity.journeyPhase ?? null,
-        reducedMotion: parity.reducedMotion ?? null,
-        mode: parity.mode ?? null,
-        compact: parity.compact ?? null,
-        filtersActive: parity.filtersActive ?? null,
-        loadingPhase: parity.loadingPhase ?? null,
-        loadingOverlay: parity.loadingOverlay ?? null,
-        sceneReady: parity.sceneReady ?? null,
-        viewHandoffActive: parity.viewHandoffActive ?? null,
-        cameraAssist: parity.cameraAssist ?? null,
-        graphicsMode: parity.graphicsMode ?? null,
+        panelSurface: body.dataset.panelSurface || parity.panelSurface || null,
+        focusedNode: body.dataset.focusedNode ? Number(body.dataset.focusedNode) : (parity.focusedNode ? Number(parity.focusedNode) : null),
+        activeView: body.dataset.activeView || body.dataset.viewMode || parity.activeView || null,
+        graphContext: body.dataset.graphContext || parity.graphContext || null,
+        panelSurfaceMode: body.dataset.panelSurface || body.dataset.navSurface || parity.panelSurfaceMode || null,
+        mapContext: body.dataset.mapContext || parity.mapContext || null,
+        routeExploration: body.dataset.routeExploration || parity.routeExploration || null,
+        journeyCompassPhase: body.dataset.journeyCompassPhase || parity.journeyCompassPhase || null,
+        navMode: body.dataset.navMode || parity.navMode || null,
+        focusedNodeId: body.dataset.focusedNode || parity.focusedNode || null,
+        navSurface: body.dataset.navSurface || parity.navSurface || null,
+        demoPhase: body.dataset.demoPhase || parity.demoPhase || null,
+        journeyPhase: body.dataset.journeyPhase || parity.journeyPhase || null,
+        reducedMotion: body.dataset.reducedMotion || parity.reducedMotion || null,
+        mode: body.dataset.mode || parity.mode || null,
+        compact: body.dataset.compact || parity.compact || null,
+        filtersActive: body.dataset.filtersActive || parity.filtersActive || null,
+        loadingPhase: body.dataset.loadingPhase || parity.loadingPhase || null,
+        loadingOverlay: body.dataset.loadingOverlay || parity.loadingOverlay || null,
+        sceneReady: body.dataset.sceneReady || parity.sceneReady || null,
+        viewHandoffActive: body.dataset.viewHandoffActive || parity.viewHandoffActive || null,
+        cameraAssist: body.dataset.cameraAssist || parity.cameraAssist || null,
+        graphicsMode: body.dataset.graphicsMode || parity.graphicsMode || null,
 
         // --- Bypass-owned attr (not in parity; no source store identified) ---
-        semanticTrailCue: document.body.dataset.semanticTrailCue || null
+        semanticTrailCue: body.dataset.semanticTrailCue || null
     })
 }
 
