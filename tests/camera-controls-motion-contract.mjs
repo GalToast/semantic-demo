@@ -392,22 +392,26 @@ assert(state.autoRotateResumeDueAt === 0, 'clearAutoRotateResumeTimer: dueAt zer
 // ---------------------------------------------------------------------------
 resetState()
 
-// idle mode: phase should be 'idle'
+// idle mode: canonical mode should be 'idle' and phase should be 'idle'
 setFocusTransitionMode('idle')
 assert(
-    document.body.dataset.focusTransition === 'idle',
-    'setFocusTransitionMode(idle): body.dataset.focusTransition is idle'
+    state.focusTransitionMode === 'idle',
+    'setFocusTransitionMode(idle): state.focusTransitionMode is idle'
 )
 assert(
     document.body.dataset.focusTransitionPhase === 'idle',
     'setFocusTransitionMode(idle): body.dataset.focusTransitionPhase is idle'
 )
 
-// non-idle mode: phase should be 'arriving' immediately
+// non-idle mode: canonical mode should be 'entering' and phase should be 'arriving'.
+// Note: body.dataset.focusTransition is no longer written by this method — parity-attrs
+// owns that attr (writes canonical mode from focusStore.transitionMode). This Node test
+// does not install parity, so body.dataset.focusTransition is undefined; we verify the
+// canonical state field instead.
 setFocusTransitionMode('focus')
 assert(
-    document.body.dataset.focusTransition === 'focus',
-    'setFocusTransitionMode(focus): body.dataset.focusTransition is set'
+    state.focusTransitionMode === 'entering',
+    'setFocusTransitionMode(focus): state.focusTransitionMode is entering'
 )
 assert(
     document.body.dataset.focusTransitionPhase === 'arriving',
@@ -427,22 +431,23 @@ globalThis._now = 1100
 const p1 = getFocusTransitionProgress(720)
 assert(p1 === 1, 'getFocusTransitionProgress: at elapsed>duration returns 1')
 
-// setFocusTransitionMode normalizes input via regex strip
+// setFocusTransitionMode normalizes input via regex strip and applies
+// canonical-mode derivation. Non-idle inputs collapse to 'entering'.
 setFocusTransitionMode('walk-with-extra')
 assert(
-    document.body.dataset.focusTransition === 'walk-with-extra',
-    'setFocusTransitionMode: passes valid hyphenated mode'
+    state.focusTransitionMode === 'entering',
+    'setFocusTransitionMode: non-idle input maps to entering'
 )
 
 // Strictly invalid input (only non-alphanumeric) collapses to idle
 setFocusTransitionMode('!@#')
-assert(document.body.dataset.focusTransition === 'idle', 'setFocusTransitionMode: only-invalid-chars collapse to idle')
+assert(state.focusTransitionMode === 'idle', 'setFocusTransitionMode: only-invalid-chars collapse to idle')
 
-// Alphanumeric with embedded invalid chars: regex strips invalid chars, keeps rest
+// Alphanumeric with embedded invalid chars: regex strips invalid chars, but canonical is still entering
 setFocusTransitionMode('Dive!@#')
 assert(
-    document.body.dataset.focusTransition === 'Dive',
-    'setFocusTransitionMode: embedded invalid chars are stripped, rest is kept'
+    state.focusTransitionMode === 'entering',
+    'setFocusTransitionMode: embedded invalid chars stripped, canonical is entering'
 )
 
 // ---------------------------------------------------------------------------

@@ -30,6 +30,7 @@ import { cameraStore } from '@lib/stores/camera.svelte'
 import { demoStore, demoPhase as demoPhaseGetter } from '@lib/stores/demo.svelte'
 import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
+import { appState } from '@lib/state/app.svelte'
 import { getJourneyCompassState } from '@lib/journey/compass-state'
 import { getJourneyCompassPresentationState, type CompassPresentationState } from './compass-controller'
 import type { LoadingPhase } from '@lib/types/state'
@@ -379,7 +380,11 @@ export function computeParityAttributes(): ParityAttributeMap {
     const loadingOverlay = launchReady ? 'hidden' : 'visible'
     const sceneReady = launchReady ? 'true' : 'false'
     const viewHandoffActive = launchReady ? 'false' : 'true'
-    const cameraAssist = launchReady ? 'free' : 'loading'
+    // Tier-2 camera conflict fix: cameraAssist is the camera-in-flight state,
+    // not launch-readiness. Source from appState.focusCameraAssistActive
+    // (mirrored from camera-controls-core.svelte.ts:110), matching the bypass
+    // value domain ('arriving' | 'free'). launchReady is irrelevant to this attr.
+    const cameraAssist = appState.focusCameraAssistActive ? 'arriving' : 'free'
 
     return {
         journeyCompassPhase: journey.compass?.phase ?? 'idle',
@@ -507,6 +512,42 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
     const isActive = Boolean(map.panelSurface) && !(map.panelSurface === 'idle')
     if (document.body.classList.contains('is-active') !== isActive) {
         document.body.classList.toggle('is-active', isActive)
+    }
+
+    // ── CSS class mirrors for body[data-...] selectors ──────────────────────
+    // Each class enables CSS selectors to target body state via class-based
+    // selectors instead of attribute selectors. The classes are kept in sync
+    // with the data-* attributes above.
+    //
+    // Map of attribute key → class prefix. For a key like 'panelSurface' with
+    // value 'focus', this adds class 'surface-focus' and removes stale
+    // 'surface-*' siblings.
+    const BODY_CLASS_MAP: Record<string, string> = {
+        panelSurface: 'surface',
+        focusTransition: 'focus-transition'
+    }
+
+    for (const [attrKey, prefix] of Object.entries(BODY_CLASS_MAP)) {
+        const value = map[attrKey]
+        if (value === null || value === undefined || value === '') {
+            // Remove any existing class with this prefix
+            for (const cls of Array.from(document.body.classList)) {
+                if (cls.startsWith(prefix + '-')) {
+                    document.body.classList.remove(cls)
+                }
+            }
+            continue
+        }
+        const desiredClass = `${prefix}-${String(value)}`
+        // Remove stale siblings, add desired
+        for (const cls of Array.from(document.body.classList)) {
+            if (cls.startsWith(prefix + '-') && cls !== desiredClass) {
+                document.body.classList.remove(cls)
+            }
+        }
+        if (!document.body.classList.contains(desiredClass)) {
+            document.body.classList.add(desiredClass)
+        }
     }
 }
 

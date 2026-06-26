@@ -81,9 +81,19 @@ class CameraControlsCore {
         state.focusTransitionMode = canonicalMode
         state.focusTransitionStartedAt = this.focusTransitionStartedAt
 
+        // Tier-2 parity cleanup: drop the raw-mode body write. No production
+        // CSS or JS consumer reads data-focus-transition (only test contracts
+        // do, and they test the wrong thing). Parity-attrs writes the
+        // canonical mode to data-focus-transition from focusStore.transitionMode
+        // (microtask after this write), so the racy "raw then canonical
+        // override" race is gone.
         if (document.body) {
-            document.body.dataset.focusTransition = normalizedMode
             document.body.dataset.focusTransitionPhase = canonicalMode === 'idle' ? 'idle' : 'arriving'
+            // Mirror to CSS class for class-based selectors
+            for (const cls of Array.from(document.body.classList)) {
+                if (cls.startsWith('focus-transition-phase-')) document.body.classList.remove(cls)
+            }
+            document.body.classList.add(`focus-transition-phase-${canonicalMode === 'idle' ? 'idle' : 'arriving'}`)
         }
         const duration = Math.max(0, Number.isFinite(options.duration) ? options.duration! : 720)
         if (canonicalMode === 'idle') return
@@ -91,7 +101,13 @@ class CameraControlsCore {
             if (this.focusTransitionMode === canonicalMode) {
                 /* still current */
             } else return
-            if (document.body) document.body.dataset.focusTransitionPhase = 'settled'
+            if (document.body) {
+                document.body.dataset.focusTransitionPhase = 'settled'
+                for (const cls of Array.from(document.body.classList)) {
+                    if (cls.startsWith('focus-transition-phase-')) document.body.classList.remove(cls)
+                }
+                document.body.classList.add('focus-transition-phase-settled')
+            }
         }, duration + 180) as unknown as number
     }
 

@@ -81,6 +81,10 @@ const _camera = vi.hoisted(() => ({
 }))
 
 const _loadingPhase = vi.hoisted(() => ({ value: 'launch' as string }))
+const _appState = vi.hoisted(() => ({
+    focusCameraAssistActive: false as boolean,
+    focusCameraAssistUntil: 0 as number
+}))
 const _graphicsMode = vi.hoisted(() => ({ value: 'webgl' as string }))
 const _demoPhase = vi.hoisted(() => ({ value: 'IDLE' as string }))
 
@@ -148,6 +152,17 @@ vi.mock('@lib/stores/camera.svelte', () => ({
 vi.mock('@lib/stores/demo.svelte', () => ({
     demoStore: () => ({ phase: _demoPhase.value }),
     demoPhase: () => _demoPhase.value
+}))
+
+vi.mock('@lib/state/app.svelte', () => ({
+    appState: {
+        get focusCameraAssistActive() {
+            return _appState.focusCameraAssistActive
+        },
+        get focusCameraAssistUntil() {
+            return _appState.focusCameraAssistUntil
+        }
+    }
 }))
 
 vi.mock('@lib/data-store', () => ({
@@ -776,7 +791,36 @@ describe('computeParityAttributes IIFE derivations', () => {
             expect(result.loadingOverlay).toBe('visible')
             expect(result.sceneReady).toBe('false')
             expect(result.viewHandoffActive).toBe('true')
-            expect(result.cameraAssist).toBe('loading')
+            // cameraAssist is decoupled from loadingPhase in W47+ tier-2 fix.
+            // It's tied to appState.focusCameraAssistActive, not launchReady.
+            expect(result.cameraAssist).toBe('free')
+        })
+    })
+
+    describe('cameraAssist (camera-in-flight state, tier-2 fix)', () => {
+        it('returns "free" when appState.focusCameraAssistActive is false', () => {
+            _loadingPhase.value = 'records' // loading state, but camera not in flight
+            _appState.focusCameraAssistActive = false
+            const result = computeParityAttributes()
+            expect(result.cameraAssist).toBe('free')
+        })
+
+        it('returns "arriving" when appState.focusCameraAssistActive is true', () => {
+            _loadingPhase.value = 'launch' // launch state, AND camera in flight
+            _appState.focusCameraAssistActive = true
+            const result = computeParityAttributes()
+            expect(result.cameraAssist).toBe('arriving')
+        })
+
+        it('returns "arriving" regardless of loadingPhase when camera is in flight', () => {
+            // Verify decoupling: loading phase should not affect cameraAssist.
+            _loadingPhase.value = 'records'
+            _appState.focusCameraAssistActive = true
+            const result = computeParityAttributes()
+            expect(result.cameraAssist).toBe('arriving')
+            // Other attrs still reflect loadingPhase
+            expect(result.loadingOverlay).toBe('visible')
+            expect(result.sceneReady).toBe('false')
         })
     })
 
