@@ -6,9 +6,33 @@
  */
 import { Vec3, Color } from '@lib/utils/math-vec3'
 import { appState as state } from '@lib/state/app.svelte'
+import type { Object3D } from 'three'
 
 export const ROUTE_TRACE_SEGMENT_STEPS: number = 7
 export const ARRIVAL_HANDOFF_SEGMENT_STEPS: number = 9
+
+// Three.js-typed helpers for callers whose traverse()/cast types are Object3D.
+// The internal structural helpers below remain available for callers that
+// model line-object shapes without holding a real Object3D. Both code paths
+// converge on the same dispose + segment-count logic.
+
+/** Anything in a Three.js scene graph that exposes geometry + material seams. */
+type ThreeLineObject = Object3D & {
+    geometry?: { dispose?(): void; attributes?: { position?: { count: number } } }
+    material?: { dispose?(): void } | { dispose?(): void }[]
+}
+
+export function disposeThreeLineObject(obj: Object3D | undefined | null): void {
+    if (!obj) return
+    const line = obj as unknown as ThreeLineObject
+    disposeLineObject(line)
+}
+
+export function getThreeLineSegmentCount(obj: Object3D | undefined | null): number {
+    if (!obj) return 0
+    const line = obj as unknown as ThreeLineObject
+    return getLineSegmentCount(line)
+}
 
 export function getLineSegmentCount(lineObject: {
     geometry?: { attributes?: { position?: { count: number } } }
