@@ -86,7 +86,7 @@
     { idle: false, logOnError: true }
   )
   const legacyCompassSurfaceLazy = createLazyComponent(
-    () => import('@components/LegacyCompassSurface.svelte')
+    () => import('@components/JourneyCompass.svelte')
   )
   const journeyChromeLazy = createLazyComponent(() => import('@components/JourneyChrome.svelte'))
 
@@ -378,7 +378,7 @@
   // swallowing every keystroke after the first.
   $effect(() => infoPanelLazy.ensure(infoPanelOpen || focusActive || idleSearchVisible || mapTrailSearchLaneActive));
 
-  // W5-T3: idle-load LegacyCompassSurface (legacy-compass parity surface)
+  // W5-T3: idle-load JourneyCompass (legacy-compass parity surface)
   let legacyCompassSurfaceActive = $derived(
     searchFamilySurfaceActive ||
     focusActive ||

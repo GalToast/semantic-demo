@@ -59,7 +59,7 @@ export const lazy = {
     weatherWidget: makeLazy(() => import('@components/WeatherWidget.svelte')),
     devGui: makeLazy(() => import('@components/DevGui.svelte'), { idle: false, logOnError: true }),
     spectorInspector: makeLazy(() => import('@components/SpectorInspector.svelte'), { idle: false, logOnError: true }),
-    legacyCompassSurface: makeLazy(() => import('@components/LegacyCompassSurface.svelte')),
+    legacyCompassSurface: makeLazy(() => import('@components/JourneyCompass.svelte')),
     journeyChrome: makeLazy(() => import('@components/JourneyChrome.svelte'))
 }
 

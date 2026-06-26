@@ -1,5 +1,5 @@
 <!--
-  @components/LegacyCompassSurface.svelte
+  @components/JourneyCompass.svelte
 
   Renders the legacy-compatible DOM structure that
   vector-explorer-polished.html places inside <body>:

@@ -1,5 +1,5 @@
 /**
- * component-LegacyCompassSurface.test.ts — Component test for LegacyCompassSurface.svelte
+ * component-JourneyCompass.test.ts — Component test for JourneyCompass.svelte
  *
  * Uses source-inspection (readFileSync + string assertions) to verify the
  * a11y/structure contract. The component imports multiple stores (navStore,
@@ -21,13 +21,13 @@ import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const SOURCE_PATH = resolve(__dirname, '../../src/components/LegacyCompassSurface.svelte');
+const SOURCE_PATH = resolve(__dirname, '../../src/components/JourneyCompass.svelte');
 
 function readSource(): string {
     return readFileSync(SOURCE_PATH, 'utf-8');
 }
 
-describe('LegacyCompassSurface component', () => {
+describe('JourneyCompass component', () => {
     let source: string;
 
     beforeAll(() => {

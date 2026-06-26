@@ -8,7 +8,7 @@ import { mount, unmount } from 'svelte'
 import { get } from 'svelte/store'
 import { navStore } from '@lib/stores/navigation.svelte'
 import App from './App.svelte'
-// W5-T3: LegacyCompassSurface is now lazy-loaded by App.svelte via
+// W5-T3: JourneyCompass is now lazy-loaded by App.svelte via
 // requestIdleCallback (scheduleIdleComponentImport). Removed static
 // import here to keep it off the cold-load main-thread critical path.
 import { testState } from '@lib/stores/index.svelte.ts'
