@@ -122,9 +122,9 @@ describe('Global as-unknown-as budget', () => {
      * Plus 50 other files with 1–3 casts each. See per-file sweep
      * candidates in the W48 budget work notes.
      */
-    const BASELINE = 92
+    const BASELINE = 91
 
-    it('does not exceed the 2026-06-25 baseline of 92 casts', () => {
+    it('does not exceed the 2026-06-25 baseline of 91 casts', () => {
         expect(
             audit.totalCount,
             `Global as-unknown-as count increased to ${audit.totalCount}. ` +
