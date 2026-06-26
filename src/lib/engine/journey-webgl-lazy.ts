@@ -28,6 +28,12 @@ function ensureWebglModule(): Promise<typeof import('@lib/journey/webgl')> {
         webglPromise = import('@lib/journey/webgl').then((mod) => {
             webglModule = mod
             return mod
+        }).catch(() => {
+            // Suppress unhandled rejections during test teardown or when
+            // the environment is unavailable. The next call to ensureWebglModule
+            // will retry the import.
+            webglPromise = null
+            return null as any
         })
     }
     return webglPromise
@@ -146,6 +152,9 @@ function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
         routeArrivalPromise = import('@lib/journey/route-arrival-overlay-adapter').then((mod) => {
             routeArrivalModule = mod
             return mod
+        }).catch(() => {
+            routeArrivalPromise = null
+            return null as any
         })
     }
     return routeArrivalPromise
@@ -175,6 +184,9 @@ function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/threa
         inspectorWebglPromise = import('@lib/journey/thread-inspector-webgl').then((mod) => {
             inspectorWebglModule = mod
             return mod
+        }).catch(() => {
+            inspectorWebglPromise = null
+            return null as any
         })
     }
     return inspectorWebglPromise
