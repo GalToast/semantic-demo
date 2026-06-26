@@ -96,9 +96,35 @@ describe('Global as-unknown-as budget', () => {
      *                                   structural-incompatibility cause
      *   - object-shape          (~12)  → object literals, window/legacy braces
      */
-    const BASELINE = 141
+    /**
+     * Budget history (lowered as tightening commits ship):
+     *   2026-06-25 baseline  92  (commit 6f01fa3d — pre-parallel-sweep actual)
+     *
+     * The pre-parallel count of 141 was measured against an uncommented-
+     * stripped sum that double-counted docstring references; the real
+     * post-strip number was 92. After five parallel `as unknown as`
+     * tightening commits (canvas-hit-test, demo-choreography,
+     * data-store, camera-controls-restore, map-state documented), the
+     * count remains 92 because most of those commits either replaced
+     * inline literals with a shared typed interface (no count change)
+     * or only documented the structural reason a cast must remain.
+     *
+     * The budget must be lowered by the next tightening commits. Any
+     * increase must be justified in docs/typing-contract.md and committed
+     * alongside the relaxation.
+     *
+     * Next targets by file (top 5 by count, 2026-06-25):
+     *   - engine/map-state.ts                                       (8 — all structural)
+     *   - engine/camera-controls-core.svelte.ts                     (5)
+     *   - engine/resource-tracker.ts                                (4)
+     *   - search/result-renderer.ts                                 (4)
+     *   - data-store.ts                                             (3)
+     * Plus 50 other files with 1–3 casts each. See per-file sweep
+     * candidates in the W48 budget work notes.
+     */
+    const BASELINE = 92
 
-    it('does not exceed the 2026-06-25 baseline of 141 casts', () => {
+    it('does not exceed the 2026-06-25 baseline of 92 casts', () => {
         expect(
             audit.totalCount,
             `Global as-unknown-as count increased to ${audit.totalCount}. ` +
