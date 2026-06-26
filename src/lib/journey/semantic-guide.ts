@@ -204,11 +204,18 @@ export function hideSummaryCard(): void {
     appState.semanticGuideState.isSynthesizing = false
 }
 
+/**
+ * Read the semantic-guide request timeout (ms) from the developer override
+ * \`window.__SEMANTIC_GUIDE_TIMEOUT_MS__\` (typed in window.d.ts), falling back
+ * to a 30s default. The override is intentionally NOT exposed via the test
+ * bridge (window-test-bridge.ts) — it's a local dev hook for tightening
+ * the timeout during manual API testing.
+ */
 function getSemanticGuideTimeoutMs(): number {
     if (
         typeof window !== 'undefined' &&
         typeof window.__SEMANTIC_GUIDE_TIMEOUT_MS__ === 'number' &&
-        (window.__SEMANTIC_GUIDE_TIMEOUT_MS__ ?? 0) > 0
+        window.__SEMANTIC_GUIDE_TIMEOUT_MS__ > 0
     ) {
         return window.__SEMANTIC_GUIDE_TIMEOUT_MS__
     }
