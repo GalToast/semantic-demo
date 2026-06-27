@@ -21,6 +21,15 @@ import { seededUnit } from '@lib/utils/seeded-random'
 let _suggestionPickSeed = 0
 const _nextSeededRandom = (): number => seededUnit(_suggestionPickSeed++, 0)
 
+let _suggestionTimer: ReturnType<typeof setTimeout> | null = null
+
+export function disposeSuggestionBindings(): void {
+    if (_suggestionTimer !== null) {
+        clearTimeout(_suggestionTimer)
+        _suggestionTimer = null
+    }
+}
+
 interface SuggestionEvent extends MouseEvent {
     target: HTMLElement
 }
@@ -39,7 +48,9 @@ export function bindSuggestionControls(): void {
             btn.textContent = 'Finding...'
         }
 
-        setTimeout(() => {
+        if (_suggestionTimer !== null) clearTimeout(_suggestionTimer)
+        _suggestionTimer = setTimeout(() => {
+            _suggestionTimer = null
             const eligible = state.points.filter((p) => p && p.status !== 'disqualified')
             if (!eligible.length) {
                 const summaryEl = document.getElementById('summary-text')

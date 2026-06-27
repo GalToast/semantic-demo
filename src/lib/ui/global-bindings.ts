@@ -12,6 +12,8 @@ import { handleSemanticLaneWindowFocus, handleSemanticLaneVisibilityChange } fro
 import { applyUrlState } from '@lib/orchestration/url-state'
 import { handleError } from '@lib/utils/error-handler'
 
+import { disposeSuggestionBindings } from '@lib/ui/suggestion-bindings'
+
 export let _globalEventController: AbortController = new AbortController()
 
 export function disposeEventListeners(): void {
@@ -19,6 +21,7 @@ export function disposeEventListeners(): void {
     _globalEventController = new AbortController()
     state.registeredEvents.clear()
     state.eventListenersInitialized = false
+    disposeSuggestionBindings()
 }
 
 export function bindGlobalEvents(): void {
