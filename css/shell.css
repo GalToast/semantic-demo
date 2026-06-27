@@ -24,7 +24,7 @@
 }
 
 /* Prevent browser page-bounce during Three.js touch interactions. */
-body.is-active {
+body:not(.surface-idle) {
     overscroll-behavior: contain;
 }
 

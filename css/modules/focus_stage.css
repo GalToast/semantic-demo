@@ -1126,7 +1126,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         opacity: 1;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -1147,7 +1147,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
 }
 
 @media (max-width: 768px) {
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
@@ -1158,7 +1158,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         min-height: 100dvh;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
@@ -1167,7 +1167,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         z-index: var(--z-compass);
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
@@ -1184,7 +1184,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         pointer-events: auto;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
@@ -1195,7 +1195,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
@@ -1208,14 +1208,14 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     }
 
     html
-        body.is-active:is(
+        body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
         #focus-stage
         #trail-controls.focus-stage-actions,
     html
-        body.is-active:is(
+        body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
@@ -1229,7 +1229,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     }
 
     html
-        body.is-active:is(
+        body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-focus-panel-mode='field-node']
@@ -1240,7 +1240,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-thread-inspect-surface='idle']
@@ -1257,7 +1257,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         pointer-events: auto;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-thread-inspect-surface='idle']
@@ -1269,7 +1269,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )[data-thread-inspect-surface='idle']

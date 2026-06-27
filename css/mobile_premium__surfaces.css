@@ -1,7 +1,7 @@
 /* Part of the mobile_premium cascade — see mobile_premium__focus-dive.css for the cascade header. */
 
 /* ─── SURFACES (panel-specific) ───────────────────── */
-body.is-active #selected-details.active:not([hidden]) {
+body:not(.surface-idle) #selected-details.active:not([hidden]) {
     display: block;
     opacity: 1;
 }
@@ -28,7 +28,7 @@ body.is-active #selected-details.active:not([hidden]) {
         transform: none;
     }
 
-    :is(body[data-panel-surface], body.is-active[data-panel-surface]):not([data-panel-surface^='map-'])
+    :is(body[data-panel-surface], body:not(.surface-idle)[data-panel-surface]):not([data-panel-surface^='map-'])
         .journey-compass-title {
         display: none;
     }
@@ -304,7 +304,7 @@ body.is-active #selected-details.active:not([hidden]) {
         padding-left: 8px;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus-search'],
             [data-panel-surface='focus'][data-focus-panel-mode='field-node']
         )
@@ -320,7 +320,7 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: auto;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus-search'],
             [data-panel-surface='focus'][data-focus-panel-mode='field-node']
         )
@@ -330,7 +330,7 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus-search'],
             [data-panel-surface='focus'][data-focus-panel-mode='field-node']
         )
@@ -380,10 +380,10 @@ body.is-active #selected-details.active:not([hidden]) {
         visibility: hidden;
     }
 
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-error-retry-btn,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-error-dismiss-btn {
         min-height: 44px;
@@ -410,7 +410,7 @@ body.is-active #selected-details.active:not([hidden]) {
        (max-width:640px) both leave the info-panel without an explicit position.
        The Svelte base uses position:absolute; without this override the panel
        scrolls with its container instead of anchoring to the viewport. */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
         position: fixed;
         left: 0;
         right: 0;
@@ -448,13 +448,13 @@ body.is-active #selected-details.active:not([hidden]) {
     }
 
     /* Standardized Typography Reset */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel * {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel * {
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         box-sizing: border-box;
     }
 
     /* Override desktop sticky top: 52px positioning on mobile */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .search-container {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .search-container {
         position: relative;
         top: auto;
         left: 0;
@@ -479,7 +479,7 @@ body.is-active #selected-details.active:not([hidden]) {
     }
 
     /* Sheet Handle */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel::before {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel::before {
         content: '';
         position: absolute;
         top: 8px;
@@ -524,7 +524,7 @@ body.is-active #selected-details.active:not([hidden]) {
     /* 2. FOCUS STATE REFINEMENTS */
 
     /* Premium Action Buttons */
-    body.is-active:is(
+    body:not(.surface-idle):is(
             :not([data-panel-surface='focus']):not([data-panel-surface='focus-search']),
             [data-focus-panel-mode='field-node']
         )[data-panel-surface]:not([data-panel-surface='semantic-dive']):not([data-panel-surface^='map-'])
@@ -536,7 +536,7 @@ body.is-active #selected-details.active:not([hidden]) {
         margin-bottom: 12px;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-focus-panel-mode='field-node']
         )
         #focus-stage
@@ -545,11 +545,11 @@ body.is-active #selected-details.active:not([hidden]) {
     }
 
     /* Trail/Journey Navigation (The 'Rough' one) */
-    body.is-active[data-panel-surface]:not([data-panel-surface='focus-search']):not(
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface='focus-search']):not(
             [data-panel-surface='semantic-dive']
         ):not([data-panel-surface^='map-'])
         #trail-controls,
-    body.is-active[data-panel-surface]:not([data-panel-surface='focus-search']):not(
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface='focus-search']):not(
             [data-panel-surface='semantic-dive']
         ):not([data-panel-surface^='map-'])
         .focus-stage-journey.active {
@@ -681,12 +681,12 @@ body.is-active #selected-details.active:not([hidden]) {
         white-space: nowrap;
     }
 
-    body.is-active #btn-journey-primary[hidden],
-    body.is-active #btn-journey-secondary[hidden],
-    body.is-active #btn-journey-tertiary[hidden],
-    body.is-active #btn-journey-primary[aria-hidden='true'],
-    body.is-active #btn-journey-secondary[aria-hidden='true'],
-    body.is-active #btn-journey-tertiary[aria-hidden='true'] {
+    body:not(.surface-idle) #btn-journey-primary[hidden],
+    body:not(.surface-idle) #btn-journey-secondary[hidden],
+    body:not(.surface-idle) #btn-journey-tertiary[hidden],
+    body:not(.surface-idle) #btn-journey-primary[aria-hidden='true'],
+    body:not(.surface-idle) #btn-journey-secondary[aria-hidden='true'],
+    body:not(.surface-idle) #btn-journey-tertiary[aria-hidden='true'] {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -862,7 +862,7 @@ body.is-active #selected-details.active:not([hidden]) {
     }
 
     /* Legacy focus fragments stay hidden by default; premium focus owns state-specific suppression. */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) #trail-controls:not(.active),
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) #trail-controls:not(.active),
     #trail-controls:not(.active) {
         display: none;
     }
@@ -925,41 +925,41 @@ body.is-active #selected-details.active:not([hidden]) {
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #info-panel.info-panel {
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .search-container {
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .search-container {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='semantic-dive']) #focus-stage-inside-controls,
-    body.is-active:is([data-panel-surface='semantic-dive']) .focus-stage-inside-controls {
+    body:not(.surface-idle):is([data-panel-surface='semantic-dive']) #focus-stage-inside-controls,
+    body:not(.surface-idle):is([data-panel-surface='semantic-dive']) .focus-stage-inside-controls {
         display: grid;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
         .focus-stage-dive-btn,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
         .focus-stage-neighbors.active,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
         .focus-stage-neighbors,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         .focus-stage-neighbors {
@@ -1009,7 +1009,7 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage.focus-stage {
@@ -1019,7 +1019,7 @@ body.is-active #selected-details.active:not([hidden]) {
         min-width: 1px;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
@@ -1030,7 +1030,7 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: auto;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
@@ -1045,12 +1045,12 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow-y: auto;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
         .focus-thread-inspector-copy,
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
@@ -1061,7 +1061,7 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow: visible;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
@@ -1071,7 +1071,7 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
@@ -1083,7 +1083,7 @@ body.is-active #selected-details.active:not([hidden]) {
         text-overflow: ellipsis;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
@@ -1094,7 +1094,7 @@ body.is-active #selected-details.active:not([hidden]) {
         margin-top: 2px;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
             [data-thread-inspect-surface='idle']
         )
         #focus-stage
@@ -1244,7 +1244,7 @@ body.is-active #selected-details.active:not([hidden]) {
 
     /* Map trail can be declared either as the panel surface or by the real
        strip-owner tuple while the panel reducer is still on map-search. */
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
@@ -1267,7 +1267,7 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow: visible;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
@@ -1282,61 +1282,61 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .info-header,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #info-panel-title,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .stats-row,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #filters-section,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #cluster-section,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #mode-grid,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .mode-grid,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         #selected-card,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .selected-card,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
@@ -1347,7 +1347,7 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
@@ -1365,19 +1365,19 @@ body.is-active #selected-details.active:not([hidden]) {
         z-index: var(--z-overlay-elevated);
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .search-results-count,
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
         )
         .search-result-listitem:not(:first-child),
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='map-trail'],
             [data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip'],
             [data-panel-surface='map-search'][data-trail-state='active'][data-journey-navigation-owner='map-trail-strip']
@@ -1442,7 +1442,7 @@ body.is-active #selected-details.active:not([hidden]) {
 
     @media (prefers-reduced-motion: reduce) {
         body .info-panel,
-        body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
+        body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
         body[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
         .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']),
         .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action,

@@ -94,7 +94,7 @@
        ---------------------------------------------------------------- */
     body.surface-search .search-results.active,
     body.surface-focus-search .search-results.active,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-results.active {
         border-radius: 8px;
@@ -113,7 +113,7 @@
 
     body.surface-search .search-results.active:empty,
     body.surface-focus-search .search-results.active:empty,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-results.active:empty {
         display: none;
@@ -124,7 +124,7 @@
 
     body.surface-search .search-results.active::after,
     body.surface-focus-search .search-results.active::after,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-results.active::after {
         content: '';
@@ -149,7 +149,7 @@
 
     body.surface-search .search-result-item,
     body.surface-focus-search .search-result-item,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-result-item {
         border-radius: 8px;
@@ -157,7 +157,7 @@
 
     body.surface-search .search-result-item.top-result,
     body.surface-focus-search .search-result-item.top-result,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-result-item.top-result {
         padding: 8px 10px;
@@ -165,7 +165,7 @@
 
     body.surface-search .search-result-item.top-result .search-result-name,
     body.surface-focus-search .search-result-item.top-result .search-result-name,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-result-item.top-result
         .search-result-name {
@@ -175,7 +175,7 @@
 
     body.surface-search .search-result-item:not(.top-result) .search-result-name,
     body.surface-focus-search .search-result-item:not(.top-result) .search-result-name,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-result-item:not(.top-result)
         .search-result-name {
@@ -184,7 +184,7 @@
 
     body.surface-search .search-result-item.top-result .search-result-what,
     body.surface-focus-search .search-result-item.top-result .search-result-what,
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .search-container.has-query
         .search-result-item.top-result
         .search-result-what {
@@ -425,7 +425,7 @@
     /* ----------------------------------------------------------------
        E. Global mobile actions (Share, Legend, Help, Controls)
        ---------------------------------------------------------------- */
-    body.is-active[data-panel-surface] :is(.share-toggle, .help-toggle, .legend-toggle) {
+    body:not(.surface-idle)[data-panel-surface] :is(.share-toggle, .help-toggle, .legend-toggle) {
         position: fixed;
         right: 14px;
         width: 44px;
@@ -444,28 +444,28 @@
         -webkit-backdrop-filter: blur(var(--glass-blur));
     }
 
-    body.is-active[data-panel-surface] .share-toggle {
+    body:not(.surface-idle)[data-panel-surface] .share-toggle {
         top: 60px;
     }
-    body.is-active[data-panel-surface] .legend-toggle {
+    body:not(.surface-idle)[data-panel-surface] .legend-toggle {
         top: 112px;
     }
-    body.is-active[data-panel-surface] .help-toggle {
+    body:not(.surface-idle)[data-panel-surface] .help-toggle {
         top: 164px;
     }
 
-    body.is-active[data-panel-surface] #btn-share-view [class~='share-toggle-label'] {
+    body:not(.surface-idle)[data-panel-surface] #btn-share-view [class~='share-toggle-label'] {
         display: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         :is(.share-toggle, .legend-toggle) {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #canvas-color-legend {
         display: none;
         visibility: hidden;
@@ -505,7 +505,7 @@
         pointer-events: none;
     }
 
-    body.is-active[data-panel-surface] .controls {
+    body:not(.surface-idle)[data-panel-surface] .controls {
         position: fixed;
         bottom: auto;
         top: calc(216px + env(safe-area-inset-top, 0px));
@@ -525,7 +525,7 @@
         z-index: var(--z-blocker);
     }
 
-    body.is-active[data-panel-surface] .controls .control-btn {
+    body:not(.surface-idle)[data-panel-surface] .controls .control-btn {
         width: var(--mobile-touch-min, 44px);
         height: var(--mobile-touch-min, 44px);
         min-width: var(--mobile-touch-min, 44px);
@@ -538,7 +538,7 @@
         color: var(--color-primary);
     }
 
-    body.is-active:is([data-panel-surface='search'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .controls {
+    body:not(.surface-idle):is([data-panel-surface='search'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .controls {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -679,7 +679,7 @@
         box-shadow: 0 0 0 2px rgba(126, 242, 226, 0.2);
     }
 
-    body.is-active[data-panel-surface] .panel-toggle {
+    body:not(.surface-idle)[data-panel-surface] .panel-toggle {
         display: none;
     }
 
@@ -724,7 +724,7 @@
    ---------------------------------------------------------------- */
 /* canonical: --bp-landscape */
 @media (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    body.is-active .journey-compass {
+    body:not(.surface-idle) .journey-compass {
         left: 376px;
         right: 16px;
         width: auto;
@@ -733,7 +733,7 @@
         transform: none;
     }
 
-    body.is-active .view-toggle {
+    body:not(.surface-idle) .view-toggle {
         left: 16px;
         right: auto;
         top: 12px;
@@ -743,7 +743,7 @@
         z-index: var(--z-overlay);
     }
 
-    body.is-active .info-panel {
+    body:not(.surface-idle) .info-panel {
         width: 344px;
         max-width: 40vw;
         pointer-events: auto;
@@ -779,7 +779,7 @@
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -791,7 +791,7 @@
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -802,7 +802,7 @@
         visibility: hidden;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -818,7 +818,7 @@
         pointer-events: none;
     }
 
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -829,7 +829,7 @@
         pointer-events: none;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         :is(#btn-legend, #btn-keyboard-help) {
         position: fixed;
         top: calc(18px + env(safe-area-inset-top, 0px));
@@ -846,12 +846,12 @@
         opacity: 1;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #btn-keyboard-help {
         top: calc(70px + env(safe-area-inset-top, 0px));
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         .controls.controls-rail {
         display: contents;
         visibility: visible;
@@ -859,12 +859,12 @@
         opacity: 1;
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #btn-legend {
         top: calc(112px + env(safe-area-inset-top, 0px));
     }
 
-    body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
         #btn-keyboard-help {
         top: calc(164px + env(safe-area-inset-top, 0px));
     }

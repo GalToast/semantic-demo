@@ -2,7 +2,7 @@
 
 /* ─── STATE-MACHINE STYLES ─────────────────────────── */
 @media (max-width: 640px) {
-    body.is-active #canvas-container {
+    body:not(.surface-idle) #canvas-container {
         position: fixed;
         top: 0;
         left: 0;
@@ -14,18 +14,18 @@
         scrollbar-width: none;
     }
 
-    body.is-active #canvas-container::-webkit-scrollbar {
+    body:not(.surface-idle) #canvas-container::-webkit-scrollbar {
         width: 0;
         height: 0;
         display: none;
     }
 
-    body.is-active:is([data-panel-surface='focus-search'], [data-panel-surface='map-focus-search']) #canvas-container {
+    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='map-focus-search']) #canvas-container {
         pointer-events: none;
     }
 
     /* Primary sheet base styling */
-    body.is-active .info-panel {
+    body:not(.surface-idle) .info-panel {
         position: fixed;
         bottom: 0;
         left: 0;
@@ -767,7 +767,7 @@
     /* ----------------------------------------------------------------
        8. FAB / Launch Button behavior
        ---------------------------------------------------------------- */
-    body.is-active:is(
+    body:not(.surface-idle):is(
             [data-panel-surface='search'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='map-search'],
@@ -796,7 +796,7 @@
    so the 768px↔769px crossing interpolates smoothly via the transition
    added in mobile_premium__surfaces.css root-sheet-style. */
 @media (min-width: 641px) and (max-width: 768px) {
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
         position: fixed;
         left: 0;
         right: 0;

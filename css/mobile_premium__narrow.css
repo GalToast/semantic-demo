@@ -22,14 +22,14 @@
     }
 
     /* info-panel-surface is the panel container; gate on any active surface. */
-    body.is-active[data-panel-surface] .info-panel-surface {
+    body:not(.surface-idle)[data-panel-surface] .info-panel-surface {
         padding-left: 10px;
         padding-right: 10px;
     }
 
     /* Provide a little more horizontal space for the compass on 320px screens.
-       Gate on body.is-active to avoid leaking into transition states. */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
+       Gate on body:not(.surface-idle) to avoid leaking into transition states. */
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
         left: 10px;
         right: 10px;
         padding-left: 16px;
@@ -41,13 +41,13 @@
        compass pill is only 288px wide. The `[data-density='compact']`
        attribute selector outranks the 374-block in source order so the
        narrow overrides win at this width. */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
         min-height: 78px;
         padding: 8px 10px 9px 12px;
         gap: 8px;
     }
 
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .journey-compass[data-density='compact']
         .journey-compass-copy {
         min-width: 0;
@@ -55,7 +55,7 @@
         padding-right: 4px;
     }
 
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
         .journey-compass[data-density='compact']
         .journey-compass-actions {
         flex: 0 0 auto;
@@ -68,10 +68,10 @@
        compact form so the user always has a path back to overview.
        Selector mirrors the surfaces rule's specificity (4,1) so the
        narrow override wins on source order. */
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass:not([data-density='compact']) {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass:not([data-density='compact']) {
         display: none;
     }
-    body.is-active[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
+    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
         min-height: 44px;
         padding: 4px 8px;
         gap: 4px;
