@@ -218,6 +218,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             )
             appState.nodesAreSettling = true
             appState.autoRotate = false
+            return true
         }
     }
 

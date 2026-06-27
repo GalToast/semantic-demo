@@ -115,8 +115,8 @@ async function getWorker(): Promise<Worker | null> {
                 `Retrying in 30s...`
         )
         // Reset after cooldown so next caller can try again
+        // eslint-disable-next-line no-restricted-syntax -- fire-and-forget circuit-breaker reset
         setTimeout(() => {
-            // eslint-disable-line no-restricted-syntax -- fire-and-forget circuit-breaker reset
             _workerFailureCount = 0
         }, 30_000)
         return null
@@ -173,8 +173,8 @@ async function _pingWorker(worker: Worker, timeoutMs: number): Promise<boolean> 
             }
         }
 
+        // eslint-disable-next-line no-restricted-syntax -- local Promise resolution
         const timer = setTimeout(() => {
-            // eslint-disable-line no-restricted-syntax -- local Promise resolution
             cleanup()
             resolve(false)
         }, timeoutMs)

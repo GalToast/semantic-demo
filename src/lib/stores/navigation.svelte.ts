@@ -384,7 +384,19 @@ export function setNavMode(mode: NavMode): void {
 
 /** Set the active panel surface. */
 export function setSurface(surface: PanelSurface): void {
-    _navWritable.update((s) => ({ ...s, previousSurface: s.surface, surface }))
+    const mode: NavMode =
+        surface === 'search'
+            ? 'search'
+            : surface === 'focus'
+              ? 'focus'
+              : surface === 'inside'
+                ? 'inside'
+                : (surface as string) === 'trail'
+                  ? 'trail'
+                  : surface === 'idle'
+                    ? 'overview'
+                    : (get(_navWritable).mode as NavMode)
+    _navWritable.update((s) => ({ ...s, previousSurface: s.surface, surface, mode }))
 }
 
 /** Backward-compatible alias for migrated orchestration imports. */

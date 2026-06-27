@@ -7,40 +7,40 @@
 
 Models from the project's Pi harness lane inventory, mapped to their official names on the artificialanalysis.ai leaderboard.
 
-| Project ID | Leaderboard Name | Intelligence Index | Notes |
-|---|---|---|---|
-| `mimo-v2.5-free` | **MiMo-V2.5-Pro** | **42** | Reasoning model variant |
-| `deepseek-v4-flash-free` | **DeepSeek V4 Flash (Max)** | **40** | Max effort reasoning |
-| `qwen3.6-plus-free` | **Qwen3.6 Plus** | **40** | — |
-| `nemotron-3-ultra-free` | **Nemotron 3 Ultra** | **38** | — |
-| `grok 4.3` | **Grok 4.3 (high)** | **38** | High reasoning tier |
-| `north-mini-code-free` | **North Mini Code** | **21*** | Asterisk = reasoning variant |
-| `kilo/openrouter/owl-alpha` | — | **N/A** | Not listed on artificialanalysis.ai |
-| `agnes-2.0-flash` | — | **N/A** | Not listed on artificialanalysis.ai |
+| Project ID                  | Leaderboard Name            | Intelligence Index | Notes                               |
+| --------------------------- | --------------------------- | ------------------ | ----------------------------------- |
+| `mimo-v2.5-free`            | **MiMo-V2.5-Pro**           | **42**             | Reasoning model variant             |
+| `deepseek-v4-flash-free`    | **DeepSeek V4 Flash (Max)** | **40**             | Max effort reasoning                |
+| `qwen3.6-plus-free`         | **Qwen3.6 Plus**            | **40**             | —                                   |
+| `nemotron-3-ultra-free`     | **Nemotron 3 Ultra**        | **38**             | —                                   |
+| `grok 4.3`                  | **Grok 4.3 (high)**         | **38**             | High reasoning tier                 |
+| `north-mini-code-free`      | **North Mini Code**         | **21\***           | Asterisk = reasoning variant        |
+| `kilo/openrouter/owl-alpha` | —                           | **N/A**            | Not listed on artificialanalysis.ai |
+| `agnes-2.0-flash`           | —                           | **N/A**            | Not listed on artificialanalysis.ai |
 
 ### Key
 
 - **Intelligence Index** (range ~10–60): composite benchmark from artificialanalysis.ai v4.1 (GDPval-AA, Terminal-Bench, SciCode, HLE, GPQA, etc.)
-- **Asterisk (*)** on the leaderboard indicates a reasoning/thought variant.
+- **Asterisk (\*)** on the leaderboard indicates a reasoning/thought variant.
 
 ## Coding Scores
 
-| Project ID | Coding Index | Status |
-|---|---|---|
-| `mimo-v2.5-free` | — | **Not currently available** |
-| `deepseek-v4-flash-free` | — | **Not currently available** |
-| `qwen3.6-plus-free` | — | **Not currently available** |
-| `nemotron-3-ultra-free` | — | **Not currently available** |
-| `grok 4.3` | — | **Not currently available** |
-| `north-mini-code-free` | — | **Not currently available** |
-| `kilo/openrouter/owl-alpha` | — | Not listed |
-| `agnes-2.0-flash` | — | Not listed |
+| Project ID                  | Coding Index | Status                      |
+| --------------------------- | ------------ | --------------------------- |
+| `mimo-v2.5-free`            | —            | **Not currently available** |
+| `deepseek-v4-flash-free`    | —            | **Not currently available** |
+| `qwen3.6-plus-free`         | —            | **Not currently available** |
+| `nemotron-3-ultra-free`     | —            | **Not currently available** |
+| `grok 4.3`                  | —            | **Not currently available** |
+| `north-mini-code-free`      | —            | **Not currently available** |
+| `kilo/openrouter/owl-alpha` | —            | Not listed                  |
+| `agnes-2.0-flash`           | —            | Not listed                  |
 
 **Note:** artificialanalysis.ai shows per-model "Coding Index" tabs, but all tested models display "Not currently available" at this time. This appears to be a platform-wide data unavailability rather than model-specific.
 
 ## Individual Coding Benchmarks (Intelligence Breakdown)
 
-For models that *are* on the leaderboard, the Intelligence Breakdown section includes the following coding-related sub-scores (as percentages):
+For models that _are_ on the leaderboard, the Intelligence Breakdown section includes the following coding-related sub-scores (as percentages):
 
 ### DeepSeek V4 Flash (Max)
 
@@ -56,4 +56,4 @@ For models that *are* on the leaderboard, the Intelligence Breakdown section inc
 
 ---
 
-*For internal use — cross-reference with `docs/subagent-models.md` and the harness `model-providers.json` before routing subagents.*
+_For internal use — cross-reference with `docs/subagent-models.md` and the harness `model-providers.json` before routing subagents._
