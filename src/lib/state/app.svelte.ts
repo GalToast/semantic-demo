@@ -599,14 +599,6 @@ class AppState {
     applyingUrlState = $state<boolean>(false)
     restoringBrowserHistory = $state<boolean>(false)
 
-    // ==== MUTATION GUARD (deprecated — now no-op) ====
-
-    /** @deprecated — withStateMutation is inert; property writes are
-     *  validated by the appState proxy (state-validation.ts). Kept for
-     *  backwards compat during removal wave. */
-    withMutation<T>(fn: () => T): T {
-        return fn()
-    }
 }
 
 // Singleton opt-in instance — consumers can import and use this instead of the legacy state.

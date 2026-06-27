@@ -44,15 +44,15 @@ export function getSceneRenderableDiagnostics() {
 export function sampleScenePerformance(
     frameMs: number,
     timings: ScenePerformanceTimings = {},
-    legacyState?: { scene?: unknown; camera?: unknown; renderer?: unknown; scenePerformanceDiagnostics?: ScenePerformanceDiagnostics | null }
+    legacyState?: {
+        scene?: unknown
+        camera?: unknown
+        renderer?: unknown
+        scenePerformanceDiagnostics?: ScenePerformanceDiagnostics | null
+    }
 ): void {
     const diagnostics = appState.scenePerformanceDiagnostics
-    diagnostics.active = !!(
-        appState.renderer &&
-        appState.scene &&
-        appState.camera &&
-        appState.currentView === 'galaxy'
-    )
+    diagnostics.active = !!(appState.renderer && appState.scene && appState.camera && appState.currentView === 'galaxy')
     diagnostics.reason = diagnostics.active ? 'sampling' : 'inactive-view'
     diagnostics.sampleCount = Math.min(600, (diagnostics.sampleCount || 0) + 1)
     diagnostics.avgFrameMs = smoothDiagnosticValue(diagnostics.avgFrameMs || 0, frameMs, diagnostics.sampleCount)

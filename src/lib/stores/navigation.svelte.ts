@@ -467,7 +467,7 @@ export function clearFocusPocketMeta(): void {
 /**
  * Write a partial NavState patch to BOTH legacy appState.navState AND the
  * Svelte 5 navStore in a single call.  Use this instead of direct
- * `appState.withMutation(() => { appState.navState.X = ... })` writes so that
+ * Use this instead of direct `appState.navState.X = ...` writes so that
  * the Svelte 5 store — and therefore body data-attrs — stay in sync.
  *
  * Pattern reference: the SEARCH_FOCUS_REQUESTED subscriber in triggers.ts
@@ -477,15 +477,13 @@ export function clearFocusPocketMeta(): void {
  */
 export function writeNavStateMirror(patch: Partial<NavState>): void {
     // Update legacy state (mirrors what withMutation/Object.assign does)
-    appState.withMutation(() => {
-        Object.assign(appState.navState, patch)
-        if (typeof patch.trailDepth === 'number') {
-            appState.trailDepth = patch.trailDepth
-        }
-        if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
-            appState.currentView = patch.currentView
-        }
-    })
+    Object.assign(appState.navState, patch)
+    if (typeof patch.trailDepth === 'number') {
+        appState.trailDepth = patch.trailDepth
+    }
+    if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
+        appState.currentView = patch.currentView
+    }
     // Update Svelte 5 store so parity-attrs and derived getters reflect immediately
     _navWritable.update((s) => ({ ...s, ...patch }))
 }
@@ -534,16 +532,14 @@ export function dispatchNavTransition(
             // values. Without this mirror, appState.navState.mode stays at
             // its initial 'overview' even after a focus click, breaking
             // compass presentation + the data-journey-phase parity attr.
-            appState.withMutation(() => {
-                const _legacyMode: NavMode = _finalMode
-                const _legacySurface: PanelSurface = _finalSurface
-                if (_indexDefined) appState.navState.focusedIndex = payload.index as number
-                if (_legacyMode) appState.navState.mode = _legacyMode
-                if (_legacySurface) appState.navState.surface = _legacySurface
-                if (_fromTraversal === true || _fromCanvasNode === true) {
-                    appState.navState.activeStoryPrompt = null
-                }
-            })
+            const _legacyMode: NavMode = _finalMode
+            const _legacySurface: PanelSurface = _finalSurface
+            if (_indexDefined) appState.navState.focusedIndex = payload.index as number
+            if (_legacyMode) appState.navState.mode = _legacyMode
+            if (_legacySurface) appState.navState.surface = _legacySurface
+            if (_fromTraversal === true || _fromCanvasNode === true) {
+                appState.navState.activeStoryPrompt = null
+            }
             break
         }
         case NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW:

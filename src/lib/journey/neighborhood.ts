@@ -416,22 +416,18 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     const nav = appState.navState
     if (isBoundedNeighborhoodActive()) {
         if (nav.focusPocketMeta && !nav.focusPocketMeta.boundedLoop) {
-            appState.withMutation(() => {
-                nav.focusPocketMeta = {
-                    ...nav.focusPocketMeta,
-                    boundedLoop: true,
-                    motifLabel: String(nav.focusPocketMeta?.motifLabel ?? '') || 'selected neighborhood loop'
-                } as NonNullable<typeof nav.focusPocketMeta>
-            })
+            nav.focusPocketMeta = {
+                ...nav.focusPocketMeta,
+                boundedLoop: true,
+                motifLabel: String(nav.focusPocketMeta?.motifLabel ?? '') || 'selected neighborhood loop'
+            } as NonNullable<typeof nav.focusPocketMeta>
         }
         if (!nav.neighborhoodManifest) {
-            appState.withMutation(() => {
-                nav.neighborhoodManifest = buildNeighborhoodManifest(
-                    seedIndex,
-                    finiteIndexList(nav.neighborhoodIndices),
-                    { displayLimit: getSemanticThreadDisplayLimit(), getCandidateForIndex }
-                )
-            })
+            nav.neighborhoodManifest = buildNeighborhoodManifest(
+                seedIndex,
+                finiteIndexList(nav.neighborhoodIndices),
+                { displayLimit: getSemanticThreadDisplayLimit(), getCandidateForIndex }
+            )
         }
         return
     }
@@ -461,26 +457,24 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
     if (!pocketRoute.length) return
     const manifest = buildNeighborhoodManifest(seedIndex, pocketRoute, { displayLimit: limit, getCandidateForIndex })
     if (!manifest?.candidateIndices?.length) return
-    appState.withMutation(() => {
-        nav.neighborhoodAnchorIndex = seedIndex
-        nav.neighborhoodIndices = manifest.candidateIndices
-        nav.neighborhoodReasonByIndex = new Map(
-            manifest.candidateIndices.map((candidateIndex) => [
-                candidateIndex,
-                manifest.candidates?.get(candidateIndex)?.reason ||
-                    nav.threadReasonByIndex?.get(candidateIndex) ||
-                    getNeighborhoodCandidateForIndex(candidateIndex)?.reason ||
-                    'tied stop in this selected neighborhood'
-            ])
-        )
-        nav.neighborhoodSource = 'semantic'
-        nav.neighborhoodManifest = manifest
-        nav.focusPocketMeta = {
-            ...(nav.focusPocketMeta || ({} as NonNullable<typeof nav.focusPocketMeta>)),
-            boundedLoop: true,
-            motifLabel: 'selected neighborhood loop'
-        } as NonNullable<typeof nav.focusPocketMeta>
-    })
+    nav.neighborhoodAnchorIndex = seedIndex
+    nav.neighborhoodIndices = manifest.candidateIndices
+    nav.neighborhoodReasonByIndex = new Map(
+        manifest.candidateIndices.map((candidateIndex) => [
+            candidateIndex,
+            manifest.candidates?.get(candidateIndex)?.reason ||
+                nav.threadReasonByIndex?.get(candidateIndex) ||
+                getNeighborhoodCandidateForIndex(candidateIndex)?.reason ||
+                'tied stop in this selected neighborhood'
+        ])
+    )
+    nav.neighborhoodSource = 'semantic'
+    nav.neighborhoodManifest = manifest
+    nav.focusPocketMeta = {
+        ...(nav.focusPocketMeta || ({} as NonNullable<typeof nav.focusPocketMeta>)),
+        boundedLoop: true,
+        motifLabel: 'selected neighborhood loop'
+    } as NonNullable<typeof nav.focusPocketMeta>
 }
 
 /**
@@ -517,15 +511,13 @@ export function setTrailFromSeed(seedIndex: number): void {
         return tc >= 0 ? tc : 0
     })()
 
-    appState.withMutation(() => {
-        const n = appState.navState
-        n.trailSeedIndex = seedIndex
-        n.threadCandidates = candidates
-        n.threadSource = source
-        n.threadReasonByIndex = reasonByIndex
-        n.trailNeighborIndices = neighborIndices
-        n.trailCursor = cursor
-    })
+    const n = appState.navState
+    n.trailSeedIndex = seedIndex
+    n.threadCandidates = candidates
+    n.threadSource = source
+    n.threadReasonByIndex = reasonByIndex
+    n.trailNeighborIndices = neighborIndices
+    n.trailCursor = cursor
 }
 
 /**
@@ -535,21 +527,19 @@ export function setTrailFromSeed(seedIndex: number): void {
 export function updateTrailIndices(
     seedIndex: number | null = getCurrentTrailFocusIndex(appState.navState.focusedIndex)
 ): void {
-    appState.withMutation(() => {
-        appState.trailIndices.clear()
-        const records = get(businessRecords)
-        if (seedIndex === null || seedIndex === undefined || seedIndex < 0 || seedIndex >= records.length) return
-        const nav = appState.navState
-        const filters = appState.activeFilters
-        if (!isPointVisible(seedIndex, records, null, filters)) return
-        appState.trailIndices.add(seedIndex)
-        const limit = getSemanticThreadDisplayLimit()
-        const candidates = valueArray(nav.threadCandidates).length
-            ? valueArray(nav.threadCandidates)
-            : getThreadCandidatesForIndex(seedIndex).slice(0, limit)
-        candidates
-            .map((candidate: unknown) => candidateIndex(candidate))
-            .filter((index): index is number => index !== null && isPointVisible(index, records, null, filters))
-            .forEach((index: number) => appState.trailIndices.add(index))
-    })
+    appState.trailIndices.clear()
+    const records = get(businessRecords)
+    if (seedIndex === null || seedIndex === undefined || seedIndex < 0 || seedIndex >= records.length) return
+    const nav = appState.navState
+    const filters = appState.activeFilters
+    if (!isPointVisible(seedIndex, records, null, filters)) return
+    appState.trailIndices.add(seedIndex)
+    const limit = getSemanticThreadDisplayLimit()
+    const candidates = valueArray(nav.threadCandidates).length
+        ? valueArray(nav.threadCandidates)
+        : getThreadCandidatesForIndex(seedIndex).slice(0, limit)
+    candidates
+        .map((candidate: unknown) => candidateIndex(candidate))
+        .filter((index): index is number => index !== null && isPointVisible(index, records, null, filters))
+        .forEach((index: number) => appState.trailIndices.add(index))
 }

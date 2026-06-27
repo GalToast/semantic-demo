@@ -190,36 +190,34 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
     const next = updater(current)
     _focusWritable.set(next)
     // Sync all bridged properties back to appState
-    appState.withMutation(() => {
-        const inspectedThreadIndex = next.threadInspector.active
-            ? next.threadInspector.inspectedIndex
-            : next.inspectedStrandIndex
-        appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
-        appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
-        appState.navState.focusPocketMeta = next.pocketMeta
-        appState.selectedPoint = next.selectedBusiness as unknown as Point | null
-        appState.inspectedThreadIndex = inspectedThreadIndex
-        appState.pinnedThreadIndex = next.pinnedThreadIndex
-        appState.nodesAreSettling = next.nodesAreSettling
-        appState.pocketMotionByIndex = next.pocketMotionByIndex
-        appState.pocketTransitionStartedAt = next.pocketTransitionStartedAt
-        appState.infoPanelOpen = next.infoPanelOpen
-        appState.pocketListVisible = next.pocketListVisible
-        appState.focusTransitionMode = next.transitionMode
-        appState.focusTransitionStartedAt = next.transitionStartedAt
-        // Reverse-map semanticDiveMode → navState.trailDepth
-        if (next.semanticDiveMode !== current.semanticDiveMode) {
-            if (next.semanticDiveMode) appState.navState.trailDepth = 2
-            else if (appState.navState.trailDepth === 2) appState.navState.trailDepth = 1
-        }
-        // Sync thread inspector diagnostics
-        appState.inspectedStrandDiagnostics.active = next.threadInspector.active
-        appState.inspectedStrandDiagnostics.source = next.threadInspector.source
-        appState.inspectedStrandDiagnostics.segmentCount = next.threadInspector.segmentCount
-        appState.inspectedStrandDiagnostics.braidCount = next.threadInspector.braidCount
-        appState.inspectedStrandDiagnostics.endpointCount = next.threadInspector.endpointCount
-        appState.threadInspectorPointerInside = next.threadInspector.pointerInside
-    })
+    const inspectedThreadIndex = next.threadInspector.active
+        ? next.threadInspector.inspectedIndex
+        : next.inspectedStrandIndex
+    appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
+    appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
+    appState.navState.focusPocketMeta = next.pocketMeta
+    appState.selectedPoint = next.selectedBusiness as unknown as Point | null
+    appState.inspectedThreadIndex = inspectedThreadIndex
+    appState.pinnedThreadIndex = next.pinnedThreadIndex
+    appState.nodesAreSettling = next.nodesAreSettling
+    appState.pocketMotionByIndex = next.pocketMotionByIndex
+    appState.pocketTransitionStartedAt = next.pocketTransitionStartedAt
+    appState.infoPanelOpen = next.infoPanelOpen
+    appState.pocketListVisible = next.pocketListVisible
+    appState.focusTransitionMode = next.transitionMode
+    appState.focusTransitionStartedAt = next.transitionStartedAt
+    // Reverse-map semanticDiveMode → navState.trailDepth
+    if (next.semanticDiveMode !== current.semanticDiveMode) {
+        if (next.semanticDiveMode) appState.navState.trailDepth = 2
+        else if (appState.navState.trailDepth === 2) appState.navState.trailDepth = 1
+    }
+    // Sync thread inspector diagnostics
+    appState.inspectedStrandDiagnostics.active = next.threadInspector.active
+    appState.inspectedStrandDiagnostics.source = next.threadInspector.source
+    appState.inspectedStrandDiagnostics.segmentCount = next.threadInspector.segmentCount
+    appState.inspectedStrandDiagnostics.braidCount = next.threadInspector.braidCount
+    appState.inspectedStrandDiagnostics.endpointCount = next.threadInspector.endpointCount
+    appState.threadInspectorPointerInside = next.threadInspector.pointerInside
 }
 
 /**
@@ -256,30 +254,28 @@ function _createFocusStore(): FocusStoreApi {
     fn.set = (value: FocusStoreState) => {
         _focusWritable.set(value)
         // Sync all bridged properties back to appState (same as withFocusNotify)
-        appState.withMutation(() => {
-            const inspectedThreadIndex = value.threadInspector.active
-                ? value.threadInspector.inspectedIndex
-                : value.inspectedStrandIndex
-            appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
-            appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
-            appState.navState.focusPocketMeta = value.pocketMeta
-            appState.selectedPoint = value.selectedBusiness as unknown as Point | null
-            appState.inspectedThreadIndex = inspectedThreadIndex
-            appState.pinnedThreadIndex = value.pinnedThreadIndex
-            appState.nodesAreSettling = value.nodesAreSettling
-            appState.pocketMotionByIndex = value.pocketMotionByIndex
-            appState.pocketTransitionStartedAt = value.pocketTransitionStartedAt
-            appState.infoPanelOpen = value.infoPanelOpen
-            appState.pocketListVisible = value.pocketListVisible
-            appState.focusTransitionMode = value.transitionMode
-            appState.focusTransitionStartedAt = value.transitionStartedAt
-            appState.inspectedStrandDiagnostics.active = value.threadInspector.active
-            appState.inspectedStrandDiagnostics.source = value.threadInspector.source
-            appState.inspectedStrandDiagnostics.segmentCount = value.threadInspector.segmentCount
-            appState.inspectedStrandDiagnostics.braidCount = value.threadInspector.braidCount
-            appState.inspectedStrandDiagnostics.endpointCount = value.threadInspector.endpointCount
-            appState.threadInspectorPointerInside = value.threadInspector.pointerInside
-        })
+        const inspectedThreadIndex = value.threadInspector.active
+            ? value.threadInspector.inspectedIndex
+            : value.inspectedStrandIndex
+        appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
+        appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
+        appState.navState.focusPocketMeta = value.pocketMeta
+        appState.selectedPoint = value.selectedBusiness as unknown as Point | null
+        appState.inspectedThreadIndex = inspectedThreadIndex
+        appState.pinnedThreadIndex = value.pinnedThreadIndex
+        appState.nodesAreSettling = value.nodesAreSettling
+        appState.pocketMotionByIndex = value.pocketMotionByIndex
+        appState.pocketTransitionStartedAt = value.pocketTransitionStartedAt
+        appState.infoPanelOpen = value.infoPanelOpen
+        appState.pocketListVisible = value.pocketListVisible
+        appState.focusTransitionMode = value.transitionMode
+        appState.focusTransitionStartedAt = value.transitionStartedAt
+        appState.inspectedStrandDiagnostics.active = value.threadInspector.active
+        appState.inspectedStrandDiagnostics.source = value.threadInspector.source
+        appState.inspectedStrandDiagnostics.segmentCount = value.threadInspector.segmentCount
+        appState.inspectedStrandDiagnostics.braidCount = value.threadInspector.braidCount
+        appState.inspectedStrandDiagnostics.endpointCount = value.threadInspector.endpointCount
+        appState.threadInspectorPointerInside = value.threadInspector.pointerInside
     }
 
     return fn

@@ -23,9 +23,7 @@ class LegendStore {
     }
 
     set open(value: boolean) {
-        appState.withMutation(() => {
-            appState.legendOpen = value
-        })
+        appState.legendOpen = value
         this.notify()
     }
 

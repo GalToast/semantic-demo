@@ -28,8 +28,7 @@
  *
  * Direct appState-only mutations (no journeyStore mirror) exist for fields
  * that the kernel owns outright: focusedIndex, trailSeedIndex,
- * trailNeighborIndices, threadCandidates. These are written via
- * `appState.withMutation()` directly.
+ * trailNeighborIndices, threadCandidates. These are written directly.
  *
  * Invariant tests:
  *   - tests/unit-active/state-class-migration-6-journey.test.ts — broad
@@ -205,14 +204,12 @@ function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState
         trailDepth: next.trailDepth
     }
     _journeyWritable.set(normalized)
-    appState.withMutation(() => {
-        appState.navState.mode = normalized.phase
-        appState.navState.trailCursor = normalized.cursor
-        appState.navState.trailDepth = normalized.trailDepth
-        appState.navState.walkHistoryIndices = [...normalized.walkHistoryIndices]
-        appState.navState.threadSource = normalized.threadSource
-        appState.navState.lastTraversalReason = normalized.lastTraversalReason
-    })
+    appState.navState.mode = normalized.phase
+    appState.navState.trailCursor = normalized.cursor
+    appState.navState.trailDepth = normalized.trailDepth
+    appState.navState.walkHistoryIndices = [...normalized.walkHistoryIndices]
+    appState.navState.threadSource = normalized.threadSource
+    appState.navState.lastTraversalReason = normalized.lastTraversalReason
 }
 
 /** JourneyStore type: callable function + Readable + actions. */
@@ -347,21 +344,15 @@ export function clearTrail(): void {
 }
 
 export function setSelectedStop(index: number | null): void {
-    appState.withMutation(() => {
-        appState.navState.focusedIndex = index
-    })
+    appState.navState.focusedIndex = index
 }
 
 export function setTrailSeedIndex(index: number | null): void {
-    appState.withMutation(() => {
-        appState.navState.trailSeedIndex = index
-    })
+    appState.navState.trailSeedIndex = index
 }
 
 export function setTrailNeighborIndices(indices: readonly number[]): void {
-    appState.withMutation(() => {
-        appState.navState.trailNeighborIndices = [...indices]
-    })
+    appState.navState.trailNeighborIndices = [...indices]
 }
 
 export function advanceTrailCursor(delta = 1): void {
@@ -386,16 +377,12 @@ export function clearWalkHistory(): void {
 export function setThreadCandidates(candidates: readonly number[]): void {
     const refs = candidates.map((idx) => ({ index: idx, source: '', reason: '' }))
     _journeyWritable.update((s) => ({ ...s, threadCandidates: [...refs] }))
-    appState.withMutation(() => {
-        appState.navState.threadCandidates = [...refs]
-    })
+    appState.navState.threadCandidates = [...refs]
 }
 
 export function clearThreadCandidates(): void {
     _journeyWritable.update((s) => ({ ...s, threadCandidates: [] }))
-    appState.withMutation(() => {
-        appState.navState.threadCandidates = []
-    })
+    appState.navState.threadCandidates = []
 }
 
 export function setTerrainHandoffPhase(phase: JourneyStoreState['terrainHandoffPhase']): void {
@@ -413,10 +400,8 @@ export function setSelectedId(id: string | null): void {
 
 export function resetJourney(): void {
     _journeyWritable.set({ ...INITIAL_JOURNEY })
-    appState.withMutation(() => {
-        appState.navState.mode = 'overview'
-        appState.navState.walkHistoryIndices = []
-        appState.navState.trailCursor = -1
-        appState.navState.trailDepth = 0
-    })
+    appState.navState.mode = 'overview'
+    appState.navState.walkHistoryIndices = []
+    appState.navState.trailCursor = -1
+    appState.navState.trailDepth = 0
 }

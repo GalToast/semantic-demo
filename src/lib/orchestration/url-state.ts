@@ -102,10 +102,8 @@ export function clearExplorationFocusSelection(): void {
         trailNeighborIndices: [],
         trailCursor: -1
     })
-    appState.withMutation(() => {
-        appState.focusedNode = null
-        appState.trailIndices?.clear?.()
-    })
+    appState.focusedNode = null
+    appState.trailIndices?.clear?.()
     updateSelectedBusiness(null)
 }
 
@@ -123,13 +121,11 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
         trailDepthFromExploration: 0,
         trailDepth: 0
     }))
-    appState.withMutation(() => {
-        appState.currentView = 'galaxy'
-        appState.trailDepth = 0
-        appState.semanticDiveMode = false
-        appState.myceliumMode = 'default'
-        appState.navState.trailDepth = 0
-    })
+    appState.currentView = 'galaxy'
+    appState.trailDepth = 0
+    appState.semanticDiveMode = false
+    appState.myceliumMode = 'default'
+    appState.navState.trailDepth = 0
     clearSearch()
     focusStore.update((s) => {
         const next = { ...s }

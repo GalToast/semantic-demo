@@ -132,10 +132,8 @@ export function animateCameraToSearchCorridor(
     const duration = options.duration || (compact ? 1180 : 1320)
     const startTime = performance.now()
     let animationToken = 0
-    appState.withMutation(() => {
-        appState.routeCameraAnimationToken = (appState.routeCameraAnimationToken || 0) + 1
-        animationToken = appState.routeCameraAnimationToken
-    })
+    appState.routeCameraAnimationToken = (appState.routeCameraAnimationToken || 0) + 1
+    animationToken = appState.routeCameraAnimationToken
 
     publish(EVENTS.TRANSITION_PHASE_CHANGED, {
         phase: 'search-corridor',

@@ -237,9 +237,7 @@ class CameraStoreControl {
         return appState.autoRotate
     }
     set autoRotate(v) {
-        appState.withMutation(() => {
-            appState.autoRotate = v
-        })
+        appState.autoRotate = v
         this.notify()
     }
 
@@ -247,9 +245,7 @@ class CameraStoreControl {
         return appState.autoRotateSuspended
     }
     set autoRotateSuspended(v) {
-        appState.withMutation(() => {
-            appState.autoRotateSuspended = v
-        })
+        appState.autoRotateSuspended = v
         this.notify()
     }
 
@@ -257,9 +253,7 @@ class CameraStoreControl {
         return appState.autoRotateResumeDueAt
     }
     set autoResumeDueAt(v) {
-        appState.withMutation(() => {
-            appState.autoRotateResumeDueAt = v
-        })
+        appState.autoRotateResumeDueAt = v
         this.notify()
     }
 
@@ -267,9 +261,7 @@ class CameraStoreControl {
         return appState.autoRotateSoftResumeStartedAt
     }
     set softResumeStartedAt(v) {
-        appState.withMutation(() => {
-            appState.autoRotateSoftResumeStartedAt = v
-        })
+        appState.autoRotateSoftResumeStartedAt = v
         this.notify()
     }
 
@@ -335,12 +327,10 @@ class CameraStoreControl {
         this._routeChoreographyPhase = next.routeChoreographyPhase
         this._cameraIdleOrbitAllowed = next.cameraIdleOrbitAllowed
 
-        appState.withMutation(() => {
-            appState.autoRotate = next.autoRotate
-            appState.autoRotateSuspended = next.autoRotateSuspended
-            appState.autoRotateResumeDueAt = next.autoResumeDueAt
-            appState.autoRotateSoftResumeStartedAt = next.softResumeStartedAt
-        })
+        appState.autoRotate = next.autoRotate
+        appState.autoRotateSuspended = next.autoRotateSuspended
+        appState.autoRotateResumeDueAt = next.autoResumeDueAt
+        appState.autoRotateSoftResumeStartedAt = next.softResumeStartedAt
 
         this.notify()
     }
@@ -460,10 +450,8 @@ export function resumeAutoRotate(): void {
 
 export function toggleAutoRotate(): void {
     const currentAuto = cameraStoreImpl.autoRotate
-    appState.withMutation(() => {
-        appState.autoRotate = !currentAuto
-        appState.autoRotateSuspended = false
-    })
+    appState.autoRotate = !currentAuto
+    appState.autoRotateSuspended = false
     cameraStoreImpl.notify()
 }
 

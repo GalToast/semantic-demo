@@ -57,13 +57,11 @@ function withViewportNotify(updater: (_s: ViewportState) => ViewportState): void
     const current = get(_viewportWritable)
     const next = updater(current)
     _viewportWritable.set(next)
-    appState.withMutation(() => {
-        appState.viewportWidth = next.width
-        appState.viewportHeight = next.height
-        appState.viewportDpr = next.dpr
-        appState.viewportReducedMotion = next.reducedMotion
-        appState.viewportIsCompact = next.isCompact
-    })
+    appState.viewportWidth = next.width
+    appState.viewportHeight = next.height
+    appState.viewportDpr = next.dpr
+    appState.viewportReducedMotion = next.reducedMotion
+    appState.viewportIsCompact = next.isCompact
 }
 
 /**
@@ -96,13 +94,11 @@ function _createViewportStore(): ViewportStoreApi {
     fn.update = (updater: (_s: ViewportState) => ViewportState) => withViewportNotify(updater)
     fn.set = (value: ViewportState) => {
         _viewportWritable.set(value)
-        appState.withMutation(() => {
-            appState.viewportWidth = value.width
-            appState.viewportHeight = value.height
-            appState.viewportDpr = value.dpr
-            appState.viewportReducedMotion = value.reducedMotion
-            appState.viewportIsCompact = value.isCompact
-        })
+        appState.viewportWidth = value.width
+        appState.viewportHeight = value.height
+        appState.viewportDpr = value.dpr
+        appState.viewportReducedMotion = value.reducedMotion
+        appState.viewportIsCompact = value.isCompact
     }
 
     return fn
@@ -163,13 +159,11 @@ export function syncViewport(): void {
             width <= ULTRA_COMPACT_MAX_WIDTH && height >= ULTRA_COMPACT_MIN_HEIGHT && height <= ULTRA_COMPACT_MAX_HEIGHT
     })
 
-    appState.withMutation(() => {
-        appState.viewportWidth = width
-        appState.viewportHeight = height
-        appState.viewportDpr = dpr
-        appState.viewportReducedMotion = reducedMotion
-        appState.viewportIsCompact = isCompact
-    })
+    appState.viewportWidth = width
+    appState.viewportHeight = height
+    appState.viewportDpr = dpr
+    appState.viewportReducedMotion = reducedMotion
+    appState.viewportIsCompact = isCompact
 
     // body[data-compact/mobile/reducedMotion] now owned by parity-attrs.svelte.ts.
     // Removed bypass writers; parity's computeParityAttributes() writes the
@@ -191,9 +185,7 @@ export function initViewportListeners(): () => void {
         })
     }
     const onMotionChange = (e: MediaQueryListEvent) => {
-        appState.withMutation(() => {
-            appState.viewportReducedMotion = e.matches
-        })
+        appState.viewportReducedMotion = e.matches
         // body[data-reducedMotion] is owned by parity-attrs.svelte.ts; the
         // viewport store subscription there will sync the new value.
     }

@@ -62,11 +62,9 @@ export function showWebGLFallback(
     if (!container) return null
 
     // Update diagnostics via modern appState first, then legacy state
-    appState.withMutation(() => {
-        const diagnostics = appState.scenePerformanceDiagnostics
-        diagnostics.active = false
-        diagnostics.reason = detail.reason || 'webgl-unavailable'
-    })
+    const diagnostics = appState.scenePerformanceDiagnostics
+    diagnostics.active = false
+    diagnostics.reason = detail.reason || 'webgl-unavailable'
 
     if (deps.state) {
         const diagnostics = deps.state.scenePerformanceDiagnostics as { active: boolean; reason: string }

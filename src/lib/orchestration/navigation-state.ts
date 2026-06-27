@@ -24,14 +24,12 @@ export interface SetTrailNavStateOpts {
 // ── Navigation state clearers (replaces deleted ) ─
 
 export function clearNavigationFocusState(): void {
-    appState.withMutation(() => {
-        appState.navState.focusedIndex = null
-        appState.navState.trailSeedIndex = null
-        appState.navState.trailNeighborIndices = []
-        appState.navState.trailCursor = -1
-        appState.navState.explorationHistoryIndices = []
-        appState.navState.lastTraversalReason = null
-    })
+    appState.navState.focusedIndex = null
+    appState.navState.trailSeedIndex = null
+    appState.navState.trailNeighborIndices = []
+    appState.navState.trailCursor = -1
+    appState.navState.explorationHistoryIndices = []
+    appState.navState.lastTraversalReason = null
     navStore.update((s) => ({
         ...s,
         focusedIndex: null,
@@ -44,14 +42,12 @@ export function clearNavigationFocusState(): void {
 }
 
 export function clearTrailThreadState(): void {
-    appState.withMutation(() => {
-        appState.navState.threadCandidates = []
-        appState.navState.threadReasonByIndex = new Map()
-        appState.navState.threadSource = ''
-        appState.navState.trailNeighborIndices = []
-        appState.navState.trailCursor = -1
-        appState.navState.trailSeedIndex = null
-    })
+    appState.navState.threadCandidates = []
+    appState.navState.threadReasonByIndex = new Map()
+    appState.navState.threadSource = ''
+    appState.navState.trailNeighborIndices = []
+    appState.navState.trailCursor = -1
+    appState.navState.trailSeedIndex = null
     navStore.update((s) => ({
         ...s,
         threadCandidates: [],
@@ -65,14 +61,12 @@ export function clearTrailThreadState(): void {
 
 export function setTrailNavState(seedIndex: number | null, opts: SetTrailNavStateOpts = {}): void {
     const { candidates = [], source = '', reasonByIndex = new Map(), neighborIndices = [], cursor = 0 } = opts
-    appState.withMutation(() => {
-        appState.navState.trailSeedIndex = seedIndex
-        appState.navState.threadCandidates = candidates
-        appState.navState.threadReasonByIndex = reasonByIndex
-        appState.navState.threadSource = source
-        appState.navState.trailNeighborIndices = neighborIndices
-        appState.navState.trailCursor = cursor
-    })
+    appState.navState.trailSeedIndex = seedIndex
+    appState.navState.threadCandidates = candidates
+    appState.navState.threadReasonByIndex = reasonByIndex
+    appState.navState.threadSource = source
+    appState.navState.trailNeighborIndices = neighborIndices
+    appState.navState.trailCursor = cursor
     navStore.update((s) => ({
         ...s,
         trailSeedIndex: seedIndex,

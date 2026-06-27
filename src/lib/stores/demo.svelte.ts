@@ -4,6 +4,7 @@
 import { get, writable, type Readable } from 'svelte/store'
 import type { BusinessRecord } from '@lib/types/business'
 import { appState } from '@lib/state/app.svelte.ts'
+import { guardReducedMotion } from '@lib/demo/guards'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -86,9 +87,7 @@ function withDemoNotify(updater: (_s: DemoStoreState) => DemoStoreState): void {
     const current = get(_demoWritable)
     const to = updater(current)
     _demoWritable.set(to)
-    appState.withMutation(() => {
-        appState.demoPhase = to.phase
-    })
+    appState.demoPhase = to.phase
 }
 
 /**
@@ -108,9 +107,7 @@ function _createDemoStore(): DemoStoreApi {
     fn.update = (updater: (_s: DemoStoreState) => DemoStoreState) => withDemoNotify(updater)
     fn.set = (value: DemoStoreState) => {
         _demoWritable.set(value)
-        appState.withMutation(() => {
-            appState.demoPhase = value.phase
-        })
+        appState.demoPhase = value.phase
     }
 
     return fn
@@ -235,6 +232,12 @@ export function shouldRunDemo(force = false): boolean {
     if (params.get('nodemo') === '1') return false
     if (hasDemoBeenSeen()) return false
     if (isDemoSuppressedThisSession()) return false
+    // Restore legacy guard (dropped during the choreography.ts → demo.svelte.ts migration):
+    // reduced-motion users must not receive the animation-driven tour. The camera glide is
+    // suppressed under prefers-reduced-motion, which produces a frozen, confusing sequence
+    // of phase labels with no visible movement. These users instead get the fallback
+    // onboarding hint scheduled in DemoChoreography.svelte onMount. See audit 2026-06-26.
+    if (!guardReducedMotion()) return false
     return true
 }
 
@@ -282,7 +285,5 @@ export function markDemoSessionSkipped(_reason = 'user-input'): void {
 export function resetDemo(): void {
     _startGuardClaimed = false
     _demoWritable.set({ ...INITIAL_DEMO })
-    appState.withMutation(() => {
-        appState.demoPhase = INITIAL_DEMO.phase
-    })
+    appState.demoPhase = INITIAL_DEMO.phase
 }

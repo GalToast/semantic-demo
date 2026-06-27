@@ -234,7 +234,7 @@ export function getSearchSummary(): SearchSummary | null {
  * the action functions below.
  */
 export function withSearchNotify<T>(fn: () => T): T {
-    const result = appState.withMutation(fn)
+    const result = fn()
     // Re-read the latest snapshot through the store getter so the toStore
     // setter is bypassed (calling _searchWritable.set() recursively would
     // re-enter the toStore setter and infinite-loop).

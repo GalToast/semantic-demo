@@ -50,9 +50,7 @@ export const activeClusterFilter: Readable<string | null> & { set(_value: string
     subscribe: _activeClusterFilterWritable.subscribe,
     set: (value: string | null) => {
         _activeClusterFilterWritable.set(value)
-        appState.withMutation(() => {
-            appState.activeClusterFilter = value !== null ? Number(value) : null
-        })
+        appState.activeClusterFilter = value !== null ? Number(value) : null
     }
 }
 
@@ -69,9 +67,7 @@ function withFilterStateNotify(updater: (_s: ActiveFilters) => ActiveFilters): v
     const next = updater(get(_filterStateWritable))
     const cloned = { ...next }
     _filterStateWritable.set(cloned)
-    appState.withMutation(() => {
-        appState.activeFilters = { ...cloned }
-    })
+    appState.activeFilters = { ...cloned }
 }
 
 /** Active filters exposed as a Readable + update/set actions. */
@@ -84,9 +80,7 @@ export const filterState: Readable<ActiveFilters> & {
     set: (value: ActiveFilters) => {
         const cloned = { ...value }
         _filterStateWritable.set(cloned)
-        appState.withMutation(() => {
-            appState.activeFilters = { ...cloned }
-        })
+        appState.activeFilters = { ...cloned }
     }
 }
 

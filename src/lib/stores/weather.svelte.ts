@@ -119,9 +119,7 @@ export const weatherInitialized = isWeatherInitialized
 
 /** Mark weather as initialized. */
 export function setWeatherInitialized(value: boolean): void {
-    appState.withMutation(() => {
-        appState.weatherInitialized = value
-    })
+    appState.weatherInitialized = value
 }
 
 // ── Derived (UI-facing) ───────────────────────────────────────────────────────

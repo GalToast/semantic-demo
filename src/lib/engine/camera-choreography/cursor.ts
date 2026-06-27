@@ -75,9 +75,7 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
         return false
     }
 
-    appState.withMutation(() => {
-        appState.hoverHighlightIndex = -1
-    })
+    appState.hoverHighlightIndex = -1
     unpinThreadInspection()
     updateSelectedBusiness(point, { revealCard: true })
 
