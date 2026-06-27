@@ -14,10 +14,8 @@
  * Body dataset writes are side effects, not $effect — they stay in method bodies.
  */
 
-import { appState as _state } from '@lib/state/app.svelte'
+import { appState } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-import type { SemanticState } from '@lib/state/state-types'
-const state = _state as unknown as SemanticState
 import { isSearchRouteFocusActive, applyFocusOrbitSlack, clearFocusOrbitSlack } from './camera-choreography/orbit-slack'
 import { setRouteExplorationPhase } from '@lib/stores/journey.svelte'
 
@@ -78,8 +76,8 @@ class CameraControlsCore {
             this.focusTransitionSettleTimer = null
         }
         // Legacy mirror for choreography files that still read from state.focusTransitionMode
-        state.focusTransitionMode = canonicalMode
-        state.focusTransitionStartedAt = this.focusTransitionStartedAt
+        appState.focusTransitionMode = canonicalMode
+        appState.focusTransitionStartedAt = this.focusTransitionStartedAt
 
         // Tier-2 parity cleanup: drop the body.dataset write. CSS uses class
         // selectors (body.focus-transition-phase-arriving), not data attributes.
@@ -119,9 +117,9 @@ class CameraControlsCore {
         this.focusCameraAssistUntil = performance.now() + Math.max(180, duration)
         this.focusCameraAssistReason = reason
         // Legacy mirror
-        state.focusCameraAssistActive = true
-        state.focusCameraAssistUntil = this.focusCameraAssistUntil
-        state.focusCameraAssistReason = reason
+        appState.focusCameraAssistActive = true
+        appState.focusCameraAssistUntil = this.focusCameraAssistUntil
+        appState.focusCameraAssistReason = reason
         this.syncCameraAssistDataset()
     }
 
@@ -129,9 +127,9 @@ class CameraControlsCore {
         if (this.shouldMarkRouteExploration(reason)) {
             this.markRouteExploration(reason)
         }
-        if (!this.focusCameraAssistActive && !state.focusCameraOffset) {
+        if (!this.focusCameraAssistActive && !appState.focusCameraOffset) {
             this.focusCameraAssistReason = reason
-            state.focusCameraAssistReason = reason
+            appState.focusCameraAssistReason = reason
             this.syncCameraAssistDataset()
             return
         }
@@ -140,10 +138,10 @@ class CameraControlsCore {
         this.focusCameraAssistReason = reason
         this.focusCameraOffset = null
         // Legacy mirror
-        state.focusCameraAssistActive = false
-        state.focusCameraAssistUntil = 0
-        state.focusCameraAssistReason = reason
-        state.focusCameraOffset = null
+        appState.focusCameraAssistActive = false
+        appState.focusCameraAssistUntil = 0
+        appState.focusCameraAssistReason = reason
+        appState.focusCameraOffset = null
         this.syncCameraAssistDataset()
     }
 
@@ -176,7 +174,7 @@ class CameraControlsCore {
         }
         // Legacy mirror — routeExplorationState is a tracked sub-object
         withStateMutation(() => {
-            state.routeExplorationState = {
+            appState.routeExplorationState = {
                 phase: normalizedPhase,
                 reason: normalizedReason,
                 startedAt: performance.now()
@@ -196,8 +194,8 @@ class CameraControlsCore {
 
     markRouteExploration(reason: string = 'user-control'): boolean {
         if (!isSearchRouteFocusActive()) return false
-        const _phaseIsFree = state.routeExplorationState.phase === 'free'
-        const _reasonMatches = state.routeExplorationState.reason === reason
+        const _phaseIsFree = appState.routeExplorationState.phase === 'free'
+        const _reasonMatches = appState.routeExplorationState.reason === reason
         if (!_phaseIsFree || !_reasonMatches) {
             this.setRouteExplorationState('free', reason)
             applyFocusOrbitSlack(reason)
