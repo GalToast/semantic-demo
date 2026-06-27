@@ -1129,16 +1129,21 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * and the neighbor list only shows pills with data-relationship-role='direct'.
      */
     test('23. focus-role-filters render and filter neighbors by relationship', async ({ page }) => {
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        // Wait for the 3D scene to fully initialize
+        // Wait for the 3D scene to fully initialize — the weather widget + real temperature
+        // are the canonical proxy signals that the data worker has loaded the dataset.
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page
+            .locator('.weather-temp')
+            .filter({ hasText: /^[1-9]\d?°$/ })
+            .first()
+            .waitFor({ timeout: 40000 })
         await page.waitForTimeout(2000)
 
         // Click the canvas to focus a business and enter focus mode
@@ -1220,16 +1225,21 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * view and open the help panel.
      */
     test('24. focus-keyboard-hint is visible in focus mode and shows Esc and ? shortcuts', async ({ page }) => {
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        // Wait for the 3D scene to fully initialize
+        // Wait for the 3D scene to fully initialize — the weather widget + real temperature
+        // are the canonical proxy signals that the data worker has loaded the dataset.
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page
+            .locator('.weather-temp')
+            .filter({ hasText: /^[1-9]\d?°$/ })
+            .first()
+            .waitFor({ timeout: 40000 })
         await page.waitForTimeout(2000)
 
         // Click the canvas to focus a business and enter focus mode

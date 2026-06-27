@@ -16,12 +16,12 @@
 <script lang="ts">
 
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
-  import { journeyStore, journeyPhase } from '@lib/stores/journey.svelte.ts';
+  import { journeyStore } from '@lib/stores/journey.svelte.ts';
   import { getJourneyCompassState } from '@lib/journey/compass-state';
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector, focusStore, setPocketRoleFilter } from '@lib/stores/focus.svelte.ts';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { searchSummary, isSearching } from '@lib/stores/search.svelte';
+
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
   import { normalizeRelationshipRole, getRelationshipRoleLabel } from '@lib/utils/relationship-roles';
   import type { BusinessRecord } from '@lib/types/business';

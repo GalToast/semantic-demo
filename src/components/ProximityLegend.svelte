@@ -8,7 +8,7 @@
   import { onMount } from 'svelte';
   import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
-  import { CONFIG } from '@lib/engine/config';
+
 
   const STORAGE_KEY = 'moco_onboarding_seen_v1';
 

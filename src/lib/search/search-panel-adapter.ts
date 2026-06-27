@@ -66,7 +66,7 @@ export function setSearchContainerState({
     }
 }
 
-export function setSearchGlowState(active: boolean): void {
+export function setSearchGlowState(_active: boolean): void {
     // NOTE: body.dataset.searchGlow removed — not used by CSS or JS readers.
     // The state is managed in appState.searchGlowActive.
 }

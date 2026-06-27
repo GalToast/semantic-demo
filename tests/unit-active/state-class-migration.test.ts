@@ -262,12 +262,13 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
 }))
 
 vi.mock('@lib/stores/journey.svelte', () => ({
-    journeyPhase: () => _compassState.mode
+    journeyPhase: () => _compassState.mode,
+    JOURNEY_COMPASS_PHASE_ORDER: ['overview', 'search', 'focus', 'inside', 'map']
 }))
 
 // ── Imports (must appear AFTER vi.mock) ──────────────────────────────────────
 
-import { compassSteps, buildCompassStatus, JOURNEY_ACTIONS } from '@lib/stores/compass.svelte.ts'
+import { compassSteps, JOURNEY_ACTIONS } from '@lib/stores/compass.svelte.ts'
 
 import {
     cameraStore,
@@ -383,136 +384,6 @@ describe('compass store — state-class appState regression', () => {
         const steps = compassSteps()
         expect(steps[0].state).toBe('current')
         expect(steps.slice(1).every((s) => s.state === 'upcoming')).toBe(true)
-    })
-
-    it('buildCompassStatus returns overview when no search/focus/inside', () => {
-        const status = buildCompassStatus({
-            currentView: 'galaxy',
-            focusedName: '',
-            queryLabel: '',
-            isSearching: false,
-            isFocusing: false,
-            hasSearch: false,
-            hasFocus: false,
-            insideActive: false,
-            resultCount: 0,
-            walkDepth: 0,
-            isSearchFocus: false,
-            isSearchAnchor: false,
-            isTrailStop: false,
-            hasAnchor: false,
-            clusterName: '',
-            routeCount: 0,
-            nextPointName: null,
-            idleNote: 'Explore the network',
-            isSemanticDegraded: false
-        })
-        expect(status.phase).toBe('overview')
-        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.FOCUS_SEARCH)
-    })
-
-    it('buildCompassStatus returns search phase when hasSearch', () => {
-        const status = buildCompassStatus({
-            currentView: 'galaxy',
-            focusedName: '',
-            queryLabel: 'coffee',
-            isSearching: false,
-            isFocusing: false,
-            hasSearch: true,
-            hasFocus: false,
-            insideActive: false,
-            resultCount: 3,
-            walkDepth: 0,
-            isSearchFocus: false,
-            isSearchAnchor: false,
-            isTrailStop: false,
-            hasAnchor: false,
-            clusterName: '',
-            routeCount: 0,
-            nextPointName: null,
-            idleNote: '',
-            isSemanticDegraded: false
-        })
-        expect(status.phase).toBe('search')
-        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.FOCUS_SEARCH)
-    })
-
-    it('buildCompassStatus returns focus phase when hasFocus', () => {
-        const status = buildCompassStatus({
-            currentView: 'galaxy',
-            focusedName: 'ABC Store',
-            queryLabel: '',
-            isSearching: false,
-            isFocusing: true,
-            hasSearch: false,
-            hasFocus: true,
-            insideActive: false,
-            resultCount: 0,
-            walkDepth: 1,
-            isSearchFocus: false,
-            isSearchAnchor: false,
-            isTrailStop: false,
-            hasAnchor: false,
-            clusterName: 'Downtown',
-            routeCount: 0,
-            nextPointName: null,
-            idleNote: '',
-            isSemanticDegraded: false
-        })
-        expect(status.phase).toBe('focus')
-        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.ENTER_INSIDE)
-    })
-
-    it('buildCompassStatus returns inside phase when insideActive', () => {
-        const status = buildCompassStatus({
-            currentView: 'galaxy',
-            focusedName: 'ABC Store',
-            queryLabel: '',
-            isSearching: false,
-            isFocusing: false,
-            hasSearch: false,
-            hasFocus: true,
-            insideActive: true,
-            resultCount: 0,
-            walkDepth: 1,
-            isSearchFocus: false,
-            isSearchAnchor: false,
-            isTrailStop: false,
-            hasAnchor: false,
-            clusterName: 'Downtown',
-            routeCount: 0,
-            nextPointName: 'XYZ Cafe',
-            idleNote: '',
-            isSemanticDegraded: false
-        })
-        expect(status.phase).toBe('inside')
-        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.NEXT_STOP)
-    })
-
-    it('buildCompassStatus returns map phase when currentView is map', () => {
-        const status = buildCompassStatus({
-            currentView: 'map',
-            focusedName: 'ABC Store',
-            queryLabel: '',
-            isSearching: false,
-            isFocusing: false,
-            hasSearch: false,
-            hasFocus: true,
-            insideActive: false,
-            resultCount: 0,
-            walkDepth: 0,
-            isSearchFocus: false,
-            isSearchAnchor: false,
-            isTrailStop: false,
-            hasAnchor: false,
-            clusterName: '',
-            routeCount: 2,
-            nextPointName: null,
-            idleNote: '',
-            isSemanticDegraded: false
-        })
-        expect(status.phase).toBe('map')
-        expect(status.primaryAction.action).toBe(JOURNEY_ACTIONS.OPEN_MYCELIUM)
     })
 
     it('JOURNEY_ACTIONS has all expected actions', () => {

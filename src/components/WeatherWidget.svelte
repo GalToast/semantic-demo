@@ -19,7 +19,7 @@
     fetchWeather
   } from '@lib/stores/weather.svelte';
   import { viewport } from '@lib/stores/viewport.svelte';
-  import { navStore } from '@lib/stores/navigation.svelte';
+
 
   interface Props {
     /** Whether the widget is visible */

@@ -16,14 +16,6 @@ import { setSearchGlow as storeSetSearchGlow } from '@lib/stores/search.svelte'
 import { recordSemanticLaneSnapshot } from '../orchestration/semantic-lane'
 import { appState } from '@lib/state/app.svelte'
 import type { SemanticState, SearchErrorData, SearchResult, SearchResultPoint } from '@lib/state/state-types'
-import { formatBusinessName } from '../utils/dom-formatters'
-import {
-    getSearchResultStrength,
-    getSearchResultStrengthLabel,
-    getSearchResultCardClasses,
-    buildSearchResultSnippet,
-    buildSearchRankLabel
-} from './result-renderer'
 import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 
 const state = appState as unknown as SemanticState
@@ -61,12 +53,6 @@ interface LegacyRenderCache {
     dedupedResults: SearchResult[]
     total: number
     renderContext: RenderContext
-}
-
-interface LegacyRenderParams extends LegacyRenderCache {
-    resultsEl: HTMLElement | null
-    visibleCount: number
-    mode: string
 }
 
 // ── HELPERS ────────────────────────────────────────────────────────────────

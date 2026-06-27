@@ -4,7 +4,6 @@
   import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter.svelte';
   import { initLegendEventBusSubscriptions } from '@lib/journey/legend-ui';
   import { initLegendKeyboardShortcut } from '@lib/stores/legend-panel.svelte';
-  import { navStore } from '@lib/stores/navigation.svelte';
   // The full filter pipeline lives in cluster-filter-controller; the
   // stub in @lib/stores/filter only writes the writable without clearing
   // search glow, applying the filter to the mycelium, or updating the URL.

@@ -159,7 +159,7 @@ class CameraControlsCore {
         // from appState.focusCameraAssistActive (set by this class's legacy mirror).
     }
 
-    setCameraAssistChoreography(phase: string = 'free', reason: string = 'view-handoff'): void {
+    setCameraAssistChoreography(_phase: string = 'free', _reason: string = 'view-handoff'): void {
         // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync.
         // This method is a no-op since the source of truth is the store state.
     }

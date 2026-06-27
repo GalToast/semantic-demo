@@ -62,11 +62,15 @@ function assertCollapsedMobileOwner(relativePath) {
 }
 
 const requiredFragments = [
-    'data-panel-surface="idle"',
-    'data-panel-surface="search"',
+    // Remaining body[data-*] selectors (not yet migrated or intentionally kept)
     "data-panel-surface='focus-search'",
     'data-panel-surface="semantic-dive"',
-    'data-panel-surface^="map-"',
+    // Phase B3 class-based equivalents
+    'body.surface-idle',
+    'body.surface-search',
+    'body.surface-focus-search',
+    'body.surface-semantic-dive',
+    'body[class*="surface-map-"]',
     '.map-trail-strip',
     '.focus-stage-card'
 ]

@@ -54,6 +54,8 @@
   // Derive classes from body state so CSS can target .info-panel.surface-focus etc.
   let infoPanelSurfaceClass = $derived(testPanelSurface ? `surface-${testPanelSurface}` : '');
   let infoPanelCompactClass = $derived(testCompact ? 'is-compact-body' : '');
+  void infoPanelSurfaceClass;
+  void infoPanelCompactClass;
   let infoPanelHasFocusedNode = $derived(
     testFocusedNode != null && testFocusedNode !== ''
   );

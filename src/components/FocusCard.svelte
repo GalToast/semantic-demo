@@ -21,7 +21,7 @@
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
-  import { selectedPointStore } from '@lib/stores/index.svelte.ts';
+
 
   // ── Business records (reactive store subscription) ─────────────────────
   // Subscribe to the businessRecords writable store directly. The store is
@@ -103,6 +103,7 @@
   // avoid the body.dataset → MutationObserver → $state round-trip.
   let bodyPanelSurface = $derived(nav.surface ?? '');
   let bodyNavMode = $derived(nav.mode ?? '');
+  void bodyNavMode;
   let bodyPanelSurfaceDetail = $derived.by(() => {
     // Derive panelSurfaceMode equivalent from nav surface (mirrors parity-attrs)
     const s = nav.surface;
@@ -126,6 +127,8 @@
   // ── CSS class derivation for surface/mode selectors ───────────────────────
   let focusCardSurfaceClass = $derived(bodyPanelSurface ? `surface-${bodyPanelSurface}` : '');
   let focusCardModeClass = $derived(bodyFocusPanelMode ? `mode-${bodyFocusPanelMode}` : '');
+  void focusCardSurfaceClass;
+  void focusCardModeClass;
 
   // Reactive focus detection: read from navStore rune so Svelte re-evaluates
   // when nav state changes (same semantics as the former body.dataset reads).
@@ -142,6 +145,7 @@
       bodyPanelSurfaceDetail === 'semantic-dive' ||
       String(surface) === 'semantic-dive'
   );
+  void semanticDiveActive;
 
   let selectedRecord = $derived.by((): BusinessRecord | null => {
     // Read _records (a $state rune) so this $derived is registered as a
@@ -270,6 +274,7 @@
     const cluster = formatClusterName(record.cluster);
     return record.category ? `${cluster} \u00B7 ${record.category}` : cluster;
   }
+  void buildTheme;
 </script>
 
 {#if cardVisible}

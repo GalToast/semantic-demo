@@ -230,7 +230,7 @@ function getWrapperManager(): StrandContinuityManager {
                 }
             })
         },
-        onBodySync: (managerState) => {
+        onBodySync: (_managerState) => {
             // NOTE: body.dataset writes removed.
             // strandJourney is managed by parity-attrs.svelte.ts from focusStore.strandContinuityPhase.
             // strandJourneyTarget/From/Reason were not used by CSS or JS readers.

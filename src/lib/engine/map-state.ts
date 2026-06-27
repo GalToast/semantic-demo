@@ -559,7 +559,7 @@ export function getRouteDirectorState(): string {
     return 'overview'
 }
 
-export function syncRouteDirectorState(reason = 'state'): string {
+export function syncRouteDirectorState(_reason = 'state'): string {
     const directorState = getRouteDirectorState()
     // NOTE: body.dataset writes removed. routeDirector is not used by CSS or JS readers.
     // If needed, add to parity-attrs.svelte.ts with journeyStore as source.
