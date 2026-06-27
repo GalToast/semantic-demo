@@ -52,6 +52,7 @@ import { traverseNeighbor, walkThreadNeighbor } from '@lib/journey/thread-settle
 import { updateTraversalUi } from '@lib/journey/focus-ui'
 import { requestSemanticGuide } from '@lib/journey/semantic-guide'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 /**
  * Key used to look up the live AppState instance via window[APP_STATE_DIRECT_KEY].
@@ -119,6 +120,18 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
         ) => unknown,
         requestSemanticGuide: ((_point?: unknown) => requestSemanticGuide()) as (...args: unknown[]) => unknown,
         showSemanticThreadsDetail: (() => showSemanticThreadsDetail()) as (...args: unknown[]) => unknown,
+        // W49-B: bridge action that publishes SEARCH_FOCUS_REQUESTED so tests can
+        // exercise the semantic-thread lookup that runs in triggers.ts. The
+        // canvas-click path only dispatches FOCUS_NODE (focusedIndex + mode),
+        // which leaves threadSource = 'geometric-fallback' and focusPocketIndices
+        // empty. This action lets the journey tests verify the focus-pocket
+        // chrome (filter chips, keyboard hint) that depends on
+        // threadSource === 'semantic' without changing the user-facing
+        // canvas-click behaviour.
+        requestSemanticFocus: ((...args: unknown[]) => {
+            const index = typeof args[0] === 'number' ? args[0] : 0
+            publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index })
+        }) as (...args: unknown[]) => unknown,
         setSurface: ((surface: string) => setSurfaceAction(surface as any)) as (...args: unknown[]) => unknown
     }
 
