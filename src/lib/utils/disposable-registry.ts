@@ -75,6 +75,28 @@ export class DisposableRegistry {
         this.items.push(fn)
     }
 
+    /**
+     * Convenience: create and register a `setTimeout`.
+     * Use this instead of `reg.timer(setTimeout(...))` at call sites
+     * so the `no-restricted-syntax` rule never fires.
+     */
+    schedule(ms: number, callback: () => void): ReturnType<typeof setTimeout> {
+        // eslint-disable-next-line no-restricted-syntax -- convenience wrapper inside DisposableRegistry
+        const id = setTimeout(callback, ms)
+        this.timer(id)
+        return id
+    }
+
+    /**
+     * Convenience: create and register a `setInterval`.
+     */
+    scheduleInterval(ms: number, callback: () => void): ReturnType<typeof setTimeout> {
+        // eslint-disable-next-line no-restricted-syntax -- convenience wrapper inside DisposableRegistry
+        const id = setInterval(callback, ms)
+        this.timer(id)
+        return id
+    }
+
     /** Track a setTimeout / setInterval id.  Clears it on disposeAll().
      *  Accepts `ReturnType<typeof setTimeout>` so it works in both browser
      *  (returns `number`) and Node test environments (returns `Timeout`). */

@@ -110,12 +110,11 @@ export function showViewHandoff(view: ViewName): void {
   handoff.classList.add('active');
   // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
 
-  // eslint-disable-next-line no-restricted-syntax -- nested in _registry.timer()
-  _registry.timer(setTimeout(() => {
+  _registry.schedule(CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS, () => {
     handoff.classList.remove('active');
     handoff.setAttribute('aria-hidden', 'true');
     // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
-  }, CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS));
+  });
 }
 
 /**
@@ -160,12 +159,11 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
   document.body.classList.add('view-transitioning');
 
   // Auto-remove transitioning class after animation
-  // eslint-disable-next-line no-restricted-syntax -- nested in _registry.timer()
-  _registry.timer(setTimeout(() => {
+  _registry.schedule(CONFIG.VIEW_HANDOFF_OUT_MS, () => {
     const current = get(navStore).currentView;
     if (current !== view) return; // Guard against rapid switching
     document.body.classList.remove('view-transitioning');
-  }, CONFIG.VIEW_HANDOFF_OUT_MS));
+  });
 
   // Map-specific setup
   if (view === 'map') {
@@ -211,8 +209,7 @@ function _startTerrainPrelude(
   showViewHandoff('map');
   animateCameraToTerrainPrelude({ duration: CONFIG.MAP_HANDOFF_PRELUDE_MS });
 
-  // eslint-disable-next-line no-restricted-syntax -- nested in _registry.timer()
-  _registry.timer(setTimeout(() => {
+  _registry.schedule(CONFIG.MAP_HANDOFF_PRELUDE_MS, () => {
     const current = get(navStore).currentView;
     if (current !== 'galaxy') return;
     switchView('map', {
@@ -220,7 +217,7 @@ function _startTerrainPrelude(
       skipTerrainPrelude: true,
       handoffFrom: options.handoffFrom,
     });
-  }, CONFIG.MAP_HANDOFF_PRELUDE_MS));
+  });
 }
 
 function _clearGalaxyTimers(): void {
