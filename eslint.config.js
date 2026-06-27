@@ -129,15 +129,18 @@ export default [
                 'warn',
                 {
                     selector: "CallExpression[callee.name='setTimeout']",
-                    message: 'Avoid raw setTimeout() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
+                    message:
+                        'Avoid raw setTimeout() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
                 },
                 {
                     selector: "CallExpression[callee.name='setInterval']",
-                    message: 'Avoid raw setInterval() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
+                    message:
+                        'Avoid raw setInterval() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
                 },
                 {
                     selector: "CallExpression[callee.name='requestAnimationFrame']",
-                    message: 'Avoid raw requestAnimationFrame() in src/lib/. Wrap with DisposableRegistry.raf() — see src/lib/utils/disposable-registry.ts.'
+                    message:
+                        'Avoid raw requestAnimationFrame() in src/lib/. Wrap with DisposableRegistry.raf() — see src/lib/utils/disposable-registry.ts.'
                 }
             ]
         }
