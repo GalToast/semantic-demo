@@ -40,13 +40,13 @@ function getLabelMode(): string {
 
 function getActiveCluster(): number | null {
     const focusedNode = appState.focusedNode
-    const searchSummary = appState.currentSearchSummary as unknown as { anchorIndex?: number } | null
+    const searchSummary = appState.currentSearchSummary
     const focusIndex = Number.isFinite(focusedNode)
         ? focusedNode
         : Number.isFinite(searchSummary?.anchorIndex)
           ? searchSummary!.anchorIndex
           : null
-    const points = appState.points as Array<{ cluster?: number }> | undefined
+    const points = appState.points
     const point = Number.isFinite(focusIndex) && points ? points[focusIndex as number] : null
     return Number.isFinite(point?.cluster) ? point!.cluster! : null
 }
@@ -85,7 +85,7 @@ function formatLabelText(text: string): string {
 }
 
 export function initClusterLabels(): void {
-    const points = appState.points as Array<{ cluster: number }> | undefined
+    const points = appState.points
     if (!points || !points.length) return
 
     const container = document.getElementById('scene-container')
@@ -95,18 +95,23 @@ export function initClusterLabels(): void {
     _clusterCentroids.clear()
     _clusterStats.clear()
     _clusterIndices.clear()
-    const positions = appState.nodePositions as Array<{ x: number; y: number; z: number }> | undefined
+    const positions = appState.nodePositions
     points.forEach((point, i) => {
         const pos = positions?.[i]
         if (!pos) return
-        if (!sums.has(point.cluster)) {
-            sums.set(point.cluster, { x: 0, y: 0, z: 0, count: 0 })
+        // Skip points without a valid cluster — they don't contribute to a
+        // cluster label group. Previously masked by the structural cast
+        // `Array<{ cluster: number }>` which lied about nullability.
+        const cluster = point.cluster
+        if (typeof cluster !== 'number') return
+        if (!sums.has(cluster)) {
+            sums.set(cluster, { x: 0, y: 0, z: 0, count: 0 })
         }
-        if (!_clusterIndices.has(point.cluster)) {
-            _clusterIndices.set(point.cluster, [])
+        if (!_clusterIndices.has(cluster)) {
+            _clusterIndices.set(cluster, [])
         }
-        _clusterIndices.get(point.cluster)!.push(i)
-        const s = sums.get(point.cluster)!
+        _clusterIndices.get(cluster)!.push(i)
+        const s = sums.get(cluster)!
         s.x += pos.x
         s.y += pos.y
         s.z += pos.z
@@ -126,8 +131,8 @@ export function initClusterLabels(): void {
     _labelElements.clear()
 
     _clusterCentroids.forEach((_pos, cluster) => {
-        const clusterNames = CONFIG.CLUSTER_NAMES as unknown as string[]
-        const colors = CONFIG.COLORS as string[]
+        const clusterNames = CONFIG.CLUSTER_NAMES
+        const colors = CONFIG.COLORS
         const labelText = clusterNames[cluster] || `Cluster ${cluster}`
         const color = colors?.[cluster % colors.length] || '#ffffff'
 
