@@ -169,19 +169,37 @@ describe('store parity mirror (GAP-4 + GAP-5 from store-parity-audit-2026-06-17.
     // writeNavStateMirror which writes to both legacy and Svelte 5.
     // We verify the LEGACY write (the side effect) and that withMutation
     // was called (proving the mirror path ran).
+    //
+    // Note: withMutation was deprecated and removed in 85cdd1ab. The
+    // canonical mirror path is now writeNavStateMirror in navigation.svelte.ts.
+    // We spy on its navState mutation as the proof.
 
-    it('GAP-5: clearExplorationFocusSelection calls appState.withMutation (mirror path)', () => {
+    it('GAP-5: clearExplorationFocusSelection calls writeNavStateMirror (mirror path)', () => {
         let mutationRan = false
-        const originalWithMutation = _appState.withMutation
-        _appState.withMutation = (fn: () => unknown) => {
-            mutationRan = true
-            return fn()
+        // Capture navState writes by spying on _appState.navState (the
+        // legacy mirror target) — any property assignment is the signal.
+        const navStateProxy = _appState.navState as Record<string, unknown>
+        const originalDescriptors = Object.getOwnPropertyDescriptors(navStateProxy)
+        for (const key of Object.keys(originalDescriptors)) {
+            let value = navStateProxy[key]
+            Object.defineProperty(navStateProxy, key, {
+                get: () => value,
+                set: (newValue) => {
+                    mutationRan = true
+                    value = newValue
+                },
+                configurable: true,
+                enumerable: true
+            })
         }
         try {
             clearExplorationFocusSelection()
-            expect(mutationRan, 'writeNavStateMirror must call appState.withMutation').toBe(true)
+            expect(mutationRan, 'writeNavStateMirror must mutate appState.navState').toBe(true)
         } finally {
-            _appState.withMutation = originalWithMutation
+            // Restore original descriptors
+            for (const [key, descriptor] of Object.entries(originalDescriptors)) {
+                Object.defineProperty(navStateProxy, key, descriptor)
+            }
         }
     })
 

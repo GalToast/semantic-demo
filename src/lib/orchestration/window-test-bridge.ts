@@ -63,43 +63,46 @@ const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
  * Build the canonical action bag. Pure function — no side effects until
  * install() assigns the result to window.__APP_ACTIONS__.
  */
-function buildActionsBag(): Record<string, (...args: any[]) => any> {
+function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
+    // NOTE: The action bag is exposed via window.__APP_ACTIONS__ as a debugging
+    // bridge. Per-action signatures (e.g. inspectThreadNeighbor(index, options?))
+    // are more specific than the bag's uniform (...args: unknown[]) shape.
+    // We accept the looser type for the bag and cast at the assignment site.
     const refreshTraversalUiForCompatAction = (_action: string): void => {
         updateTraversalUi()
     }
 
-    const actions: Record<string, (...args: any[]) => any> = {
-        switchView: (view: string) => (switchViewAction as (v: string) => void)(view),
-        focusOnNode: (index: number, options?: Record<string, unknown>) => {
+    const actions: Record<string, (...args: unknown[]) => unknown> = {
+        switchView: ((view: string) => (switchViewAction as (v: string) => void)(view)) as (...args: unknown[]) => unknown,
+        focusOnNode: ((index: number, options?: Record<string, unknown>) => {
             const result = focusOnNodeAction(index, options)
             refreshTraversalUiForCompatAction('focusOnNode')
-            return result
-        },
-        setTrailDepth: (depth: number, _options?: Record<string, unknown>) => {
+            return result as unknown
+        }) as (...args: unknown[]) => unknown,
+        setTrailDepth: ((depth: number, _options?: Record<string, unknown>) => {
             setTrailDepthAction(depth)
             refreshTraversalUiForCompatAction('setTrailDepth')
-        },
-        setSemanticDiveMode: (enabled: boolean) => setSemanticDiveModeAction(enabled),
-        refreshCompositionState: () => {
+        }) as (...args: unknown[]) => unknown,
+        setSemanticDiveMode: ((enabled: boolean) => setSemanticDiveModeAction(enabled)) as (...args: unknown[]) => unknown,
+        refreshCompositionState: (() => {
             refreshCompositionStateAction()
             refreshTraversalUiForCompatAction('refreshCompositionState')
-        },
-        resetExplorationFocus: (options?: Record<string, unknown>) => resetExplorationFocusAction(options),
+        }) as (...args: unknown[]) => unknown,
+        resetExplorationFocus: ((options?: Record<string, unknown>) => resetExplorationFocusAction(options)) as (...args: unknown[]) => unknown,
         resetExperienceState: () => resetExperienceStateAction(),
         clearSearch: () => returnToOverviewAction(),
         returnToOverview: () => returnToOverviewAction(),
-        search: (query: string, options?: Record<string, unknown>) => search(query, options),
-        setTrailFromSeed: (index: number) => setTrailFromSeed(index),
-        traverseNeighbor: (step: number) => traverseNeighbor(step),
-        walkThreadNeighbor: (index: number, options?: Record<string, unknown>) => walkThreadNeighbor(index, options),
-        inspectThreadNeighbor: (index: number, options?: Record<string, unknown>) =>
-            inspectThreadNeighbor(index, options),
-        pinThreadNeighbor: (index: number, options?: Record<string, unknown>) => pinThreadNeighbor(index, options),
-        pinFirstAvailableNeighbor: (options?: Record<string, unknown>) => pinFirstAvailableNeighbor(options),
-        unpinThreadInspection: () => unpinThreadInspection(),
-        clearThreadInspection: (options?: Record<string, unknown>) => clearThreadInspection(options),
-        requestSemanticGuide: (_point?: unknown) => requestSemanticGuide(),
-        showSemanticThreadsDetail: () => showSemanticThreadsDetail()
+        search: ((query: string, options?: Record<string, unknown>) => search(query, options)) as (...args: unknown[]) => unknown,
+        setTrailFromSeed: ((index: number) => setTrailFromSeed(index)) as (...args: unknown[]) => unknown,
+        traverseNeighbor: ((step: number) => traverseNeighbor(step)) as (...args: unknown[]) => unknown,
+        walkThreadNeighbor: ((index: number, options?: Record<string, unknown>) => walkThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
+        inspectThreadNeighbor: ((index: number, options?: Record<string, unknown>) => inspectThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
+        pinThreadNeighbor: ((index: number, options?: Record<string, unknown>) => pinThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
+        pinFirstAvailableNeighbor: ((options?: Record<string, unknown>) => pinFirstAvailableNeighbor(options)) as (...args: unknown[]) => unknown,
+        unpinThreadInspection: (() => unpinThreadInspection()) as (...args: unknown[]) => unknown,
+        clearThreadInspection: ((options?: Record<string, unknown>) => clearThreadInspection(options)) as (...args: unknown[]) => unknown,
+        requestSemanticGuide: ((_point?: unknown) => requestSemanticGuide()) as (...args: unknown[]) => unknown,
+        showSemanticThreadsDetail: (() => showSemanticThreadsDetail()) as (...args: unknown[]) => unknown
     }
 
     return actions
