@@ -3,44 +3,41 @@
  * Pure state mutation for flattening map layout.
  */
 import { appState } from '@lib/state/app.svelte'
-import type { SemanticState } from '@lib/state/state-types'
-
-const state = appState as unknown as SemanticState
 
 export function applyMapFlatteningLayout(enabled: boolean): void {
-    if (!state.points || !state.originalPositions) return
+    if (!appState.points || !appState.originalPositions) return
 
-    const hasRawBuffer = state.rawPositionsBuffer && state.rawPositionsBuffer.length >= state.points.length * 3
+    const hasRawBuffer = appState.rawPositionsBuffer && appState.rawPositionsBuffer.length >= appState.points.length * 3
 
     if (enabled) {
-        const bounds = state.overviewBounds as { sourceCenter: { x: number; y: number } } | undefined
+        const bounds = appState.overviewBounds as { sourceCenter: { x: number; y: number } } | undefined
         const centerX = bounds?.sourceCenter?.x ?? 0
         const centerY = bounds?.sourceCenter?.y ?? 0
 
-        state.points.forEach((_point, i: number) => {
+        appState.points.forEach((_point, i: number) => {
             let rawX: number, rawY: number
-            if (hasRawBuffer && state.rawPositionsBuffer) {
-                rawX = state.rawPositionsBuffer[i * 3]!
-                rawY = state.rawPositionsBuffer[i * 3 + 1]!
+            if (hasRawBuffer && appState.rawPositionsBuffer) {
+                rawX = appState.rawPositionsBuffer[i * 3]!
+                rawY = appState.rawPositionsBuffer[i * 3 + 1]!
             } else {
-                const orig = state.originalPositions[i]
+                const orig = appState.originalPositions[i]
                 rawX = Number.isFinite(orig?.x) ? orig!.x : 0
                 rawY = Number.isFinite(orig?.y) ? orig!.y : 0
             }
 
-            state.targetPositions[i] = {
+            appState.targetPositions[i] = {
                 x: rawX - centerX,
                 y: rawY - centerY,
                 z: -0.15
             }
         })
     } else {
-        state.points.forEach((_point, i: number) => {
-            const orig = state.originalPositions[i]
+        appState.points.forEach((_point, i: number) => {
+            const orig = appState.originalPositions[i]
             if (orig) {
-                state.targetPositions[i] = { x: orig.x, y: orig.y, z: orig.z }
+                appState.targetPositions[i] = { x: orig.x, y: orig.y, z: orig.z }
             }
         })
     }
-    state.nodesAreSettling = true
+    appState.nodesAreSettling = true
 }
