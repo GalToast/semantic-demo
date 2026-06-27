@@ -50,6 +50,8 @@ const CSS_FILES = [
     'css/shell.css',
     'css/mobile_base.css',
     'css/animations.css',
+    'css/controls.css',
+    'css/time_weather.css',
 ];
 
 const __dirname = dirname(fileURLToPath(import.meta.url));

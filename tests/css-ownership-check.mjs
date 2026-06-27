@@ -149,31 +149,31 @@ const bannedSelectorImportantRules = [
 const forbiddenSelectorFragments = [
     {
         file: 'strands.css',
-        fragment: "body[data-panel-surface='search'] .info-panel {\n        max-height: min(23vh, 178px);",
+        fragment: "body.surface-search .info-panel {\n        max-height: min(23vh, 178px);",
         label: 'mobile search info-panel geometry belongs to mobile_premium__state.css, not strands.css'
     },
     {
         file: 'strands.css',
         fragment:
-            "body[data-panel-surface='search'] .info-content {\n        max-height: calc(min(23vh, 178px) - 10px);",
+            "body.surface-search .info-content {\n        max-height: calc(min(23vh, 178px) - 10px);",
         label: 'mobile search info-content geometry belongs to mobile_premium__state.css, not strands.css'
     },
     {
         file: 'strands.css',
         fragment:
-            "body[data-panel-surface='search'] .info-panel,\n    body[data-panel-surface='focus-search'] .info-panel {\n        opacity: 0.97;",
+            "body.surface-search .info-panel,\n    body.surface-focus-search .info-panel {\n        opacity: 0.97;",
         label: 'mobile search/focus-search info-panel opacity belongs to mobile_premium__state.css, not strands.css'
     },
     {
         file: 'strands.css',
         fragment:
-            "body[data-panel-surface='search'] .info-content,\n    body[data-panel-surface='focus-search'] .info-content {\n        max-height: calc(min(54vh, 456px) - 42px);",
+            "body.surface-search .info-content,\n    body.surface-focus-search .info-content {\n        max-height: calc(min(54vh, 456px) - 42px);",
         label: 'mobile search/focus-search info-content sizing belongs to mobile_premium__state.css, not strands.css'
     },
     {
         file: 'strands.css',
         fragment:
-            "body[data-panel-surface='focus'] .info-content,\n    body[data-panel-surface='semantic-dive'] .info-content {\n        max-height: min(15vh, 116px);",
+            "body.surface-focus .info-content,\n    body.surface-semantic-dive .info-content {\n        max-height: min(15vh, 116px);",
         label: 'dead early focus/semantic info-content block is overridden later in strands.css'
     },
     {
