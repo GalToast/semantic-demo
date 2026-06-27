@@ -6,14 +6,20 @@
  *  2. Panel has aria-hidden="true" when open=false (default)
  *  3. Renders h3.legend-title with text "Categories"
  *  4. Renders .legend-list with role="group" and descriptive aria-label
- *  5. Renders 15 legend-item buttons (one per cluster)
+ *  5. Renders one legend-item button per canonical CLUSTER_NAMES entry
  *  6. Each button has type="button" and aria-pressed attribute
  *  7. Each button contains .legend-swatch, .legend-label, and .legend-count spans
  *  8. Button with open=true and concealedByFocus=false gets aria-hidden="false"
+ *
+ * The "one per cluster" count in (5) is asserted against the canonical
+ * CLUSTER_NAMES length from @lib/utils/ui-presentation rather than a hardcoded
+ * number, so adding a new category to the canonical list automatically keeps
+ * this test in sync.
  */
 import { describe, it, expect } from 'vitest';
 import { render } from '@testing-library/svelte';
 import Legend from '../../src/components/Legend.svelte';
+import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
 
 describe('Legend component', () => {
     it('renders aside#legend-panel with aria-label="Business category legend"', () => {
@@ -51,10 +57,10 @@ describe('Legend component', () => {
         expect(list!.getAttribute('aria-label')).toContain('Business categories');
     });
 
-    it('renders 15 legend-item buttons (one per cluster)', () => {
+    it('renders one legend-item button per canonical cluster', () => {
         const { container } = render(Legend);
         const items = container.querySelectorAll('button.legend-item');
-        expect(items.length).toBe(15);
+        expect(items.length).toBe(CLUSTER_NAMES.length);
     });
 
     it('each button has type="button" and aria-pressed attribute', () => {

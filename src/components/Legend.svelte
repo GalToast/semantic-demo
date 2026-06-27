@@ -10,6 +10,8 @@
   // Calling that stub leaves the canvas unchanged — this is what made
   // P0-5 "category toggle doesn't filter" reproduce.
   import { setClusterFilter as applyClusterFilter } from '@lib/orchestration/cluster-filter-controller';
+  import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
+  import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
 
   interface Props {
     open?: boolean;
@@ -37,30 +39,20 @@
     return () => obs.disconnect();
   });
 
-  /** 15-entry cluster names matching CLUSTER_NAMES from state.js / InfoPanel.svelte */
-  const CLUSTER_NAMES: string[] = [
-    'Food & Dining',
-    'Professional Services',
-    'Retail & Shopping',
-    'Health & Medical',
-    'Home & Garden',
-    'Automotive',
-    'Education & Childcare',
-    'Entertainment & Events',
-    'Construction & Trades',
-    'Real Estate',
-    'Nonprofit & Civic',
-    'Technology',
-    'Manufacturing & Industrial',
-    'Financial Services',
-    'Agriculture & Land',
-  ];
-
-  const CLUSTER_COLORS: string[] = [
-    '#4ecdc4', '#ff6b6b', '#ffd93d', '#6bcb77', '#4d96ff',
-    '#ff8c42', '#a66cff', '#ff6b9d', '#45b7d1', '#96ceb4',
-    '#ffeaa7', '#74b9ff', '#fd79a8', '#00b894', '#e17055',
-  ];
+  /** 21-entry cluster names + 30-entry colors, both imported from the canonical
+   * sources (ui-presentation for names, design-tokens for colors). The previous
+   * hardcoded 15-entry list was a stale snapshot of an older taxonomy:
+   *  - Showed wrong names (e.g. index 0 was "Food & Dining" but the data is
+   *    actually "General Business").
+   *  - Silently dropped 6+ categories: Churches, Faith Ministries, Community
+   *    Nonprofits, Foundations, Arts & Culture, Economic Development, Public
+   *    Agencies, Enterprise Brands. Businesses in those clusters had no
+   *    legend swatch at all.
+   *  - The clusterEntries loop `for (let i = 0; i < CLUSTER_NAMES.length; i++)`
+   *    only iterated over the hardcoded 15, so any business with cluster > 14
+   *    was invisible in the legend.
+   * Now using the same canonical lists that Placeholder2D and ProximityLegend
+   * already use. */
 
   interface ClusterEntry {
     index: number;

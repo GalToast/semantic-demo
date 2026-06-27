@@ -20,6 +20,7 @@
   import { businessRecords, loadingPhaseStore } from '@lib/data-store';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
+  import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
 
 
@@ -59,25 +60,14 @@
   });
   let _sceneReady = $derived(_loadingPhase === 'launch');
 
-  // ── Cluster names (mirrors CLUSTER_NAMES from state.js) ───────────────────────
-
-  const CLUSTER_NAMES: readonly string[] = [
-    'Food & Dining',
-    'Professional Services',
-    'Retail & Shopping',
-    'Health & Medical',
-    'Home & Garden',
-    'Automotive',
-    'Education & Childcare',
-    'Entertainment & Events',
-    'Construction & Trades',
-    'Real Estate',
-    'Nonprofit & Civic',
-    'Technology',
-    'Manufacturing & Industrial',
-    'Financial Services',
-    'Agriculture & Land'
-  ];
+  // ── Cluster names (canonical, imported from @lib/utils/ui-presentation) ──
+  // Previously this component had its own hardcoded 15-entry list that was
+  // stale and showed wrong category names. The hardcoded list was a 15-entry
+  // subset of an older taxonomy (e.g. "Food & Dining") while the data layer
+  // was migrated to a 21-entry taxonomy (e.g. "Food & Hospitality"). The
+  // result was every focus card showing the wrong category for the actual
+  // cluster index. Now uses the shared canonical list, the same source
+  // ProximityLegend and Placeholder2D already use.
 
   // ── Derived state ─────────────────────────────────────────────────────────────
   // Source: navStore rune (5c51450 pattern, mirrors FocusPocket.svelte).
