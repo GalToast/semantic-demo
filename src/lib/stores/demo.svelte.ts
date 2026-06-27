@@ -199,8 +199,14 @@ export function getActiveDemoTimerCount(): number {
     return timers.size
 }
 
+/**
+ * Generic point shape — accepts both BusinessRecord (canonical) and Point
+ * (appState cache). The only fields the function reads are `name` and `status`.
+ */
+type DemoNodeCandidate = { name?: string | null; status?: string | null }
+
 export function findDemoNode(records?: readonly BusinessRecord[]): number | null {
-    const points = records ?? getBusinessRecords()
+    const points: readonly DemoNodeCandidate[] = records ?? appState.points ?? getBusinessRecords()
     if (!points) return null
 
     const showcasePool = SHOWCASE_POOL

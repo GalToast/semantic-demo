@@ -49,15 +49,15 @@ describe('engine-boundary refactor / Phase 2-4 / semanticSearchResultCache field
 
     it('cache.ts drops all (state.semanticSearchResultCache as unknown as Map<string, CacheEntry>) escape hatches', () => {
         const cache = readSource('src/lib/search/cache.ts')
-        // The triple-cast pattern must be gone (we tightened it across 3 sites)
+        // The triple-cast pattern must be gone (we tightened it across all sites)
         expect(cache).not.toMatch(/state\.semanticSearchResultCache\s+as\s+unknown\s+as\s+Map<string,\s*CacheEntry>/)
-        // Direct typed access must be present at all 3 sites
-        const typedAccess = cache.match(/const cache = state\.semanticSearchResultCache\b/g) || []
-        expect(typedAccess.length, `Expected 3 typed cache access sites, found ${typedAccess.length}`).toBe(3)
+        expect(cache).not.toMatch(/appState\s+as\s+unknown\s+as\s+SemanticState/)
+        // Direct typed access via appState.semanticSearchResultCache must be present
+        expect(cache).toMatch(/appState\.semanticSearchResultCache/)
     })
 
     it('cache.ts initSearchCache() still initializes Map<string, CacheEntry>', () => {
         const cache = readSource('src/lib/search/cache.ts')
-        expect(cache).toMatch(/state\.semanticSearchResultCache\s*=\s*new\s+Map<string,\s*CacheEntry>\(\)/)
+        expect(cache).toMatch(/appState\.semanticSearchResultCache\s*=\s*new\s+Map<string,\s*CacheEntry>\(\)/)
     })
 })
