@@ -118,9 +118,7 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
             ...args: unknown[]
         ) => unknown,
         requestSemanticGuide: ((_point?: unknown) => requestSemanticGuide()) as (...args: unknown[]) => unknown,
-        showSemanticThreadsDetail: ((detail?: unknown) => showSemanticThreadsDetail(detail as never)) as (
-            ...args: unknown[]
-        ) => unknown,
+        showSemanticThreadsDetail: (() => showSemanticThreadsDetail()) as (...args: unknown[]) => unknown,
         setSurface: ((surface: string) => setSurfaceAction(surface as any)) as (...args: unknown[]) => unknown
     }
 
