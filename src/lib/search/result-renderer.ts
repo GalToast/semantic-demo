@@ -215,14 +215,14 @@ export function buildSearchStageLabel(
             : 'Closest match'
     }
     if (!appState.points) return 'Related match'
-    const inBounds = Number.isFinite(index) && Number(index) >= 0 && Number(index) < (appState.points as unknown[]).length
-    const point = inBounds ? (appState.points as SearchResultPoint[])[Number(index)] : null
+    const inBounds = Number.isFinite(index) && Number(index) >= 0 && Number(index) < appState.points.length
+    const point = inBounds ? appState.points[Number(index)] : null
     if (!point) return 'Related match'
     if (
         Number.isFinite(topIndex) &&
         topIndex! >= 0 &&
-        topIndex! < (appState.points as SearchResultPoint[]).length &&
-        (appState.points as SearchResultPoint[])[topIndex!]?.cluster === point.cluster
+        topIndex! < appState.points.length &&
+        appState.points[topIndex!]?.cluster === point.cluster
     )
         return 'Same theme'
     return 'Related match'

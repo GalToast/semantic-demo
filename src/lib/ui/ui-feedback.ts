@@ -22,13 +22,12 @@ import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
  * dance lives in one helper.
  */
 interface CurrentSearchSummarySnapshot {
-    resultIndices?: number[]
+    resultIndices?: readonly number[]
     query?: string
-    [key: string]: unknown
 }
 
 function getCurrentSearchSummarySnapshot(): CurrentSearchSummarySnapshot | null {
-    return appState.currentSearchSummary as unknown as CurrentSearchSummarySnapshot | null
+    return appState.currentSearchSummary
 }
 
 export function showExperienceToast(title: string, copy: string): void {
