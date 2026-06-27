@@ -16,13 +16,15 @@ agnes-2.0-flash          ← bare ref, NO provider prefix
 
 ## Free Fallbacks
 
-```
-deepseek-v4-flash-free
-mimo-v2.5-free
-nemotron-3-ultra-free
-north-mini-code-free
-qwen3.6-plus-free
-```
+| Model ID | Intelligence Score (AA) |
+|---|---|
+| `mimo-v2.5-free` | **42** |
+| `deepseek-v4-flash-free` | **40** |
+| `qwen3.6-plus-free` | **40** |
+| `nemotron-3-ultra-free` | **38** |
+| `north-mini-code-free` | **21*** |
+
+> **Note:** Coding Index scores are **not currently available** on artificialanalysis.ai (per-model Coding Index tabs shows "Not currently available" across all tested models). See [`docs/ai-model-leaderboard-scores.md`](ai-model-leaderboard-scores.md) for full details.
 
 ## Vision-Capable (for visual QA work)
 
