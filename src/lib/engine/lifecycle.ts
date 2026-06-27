@@ -64,6 +64,20 @@ import { isDataReady } from '@lib/data-store'
 import { debugWarn } from '@lib/utils/debug'
 import { debugLog, debugError } from '@lib/utils/debug'
 
+// ── Legacy-access helpers ────────────────────────────────────────────────────
+// Consolidate `window as unknown as Record<string, unknown>` and
+// `appState as unknown as Record<string, unknown>` casts that appear
+// at multiple sites for __THREE_APP__ exposure and semantic-thread
+// attachLegacyState() calls.
+
+function getLegacyWindow(): Record<string, unknown> {
+    return window as unknown as Record<string, unknown>
+}
+
+function getLegacyAppState(): Record<string, unknown> {
+    return appState as unknown as Record<string, unknown>
+}
+
 // ── Module-scoped State ──────────────────────────────────────────────────────
 
 let _eventUnsubs: Array<() => void> = []
@@ -330,11 +344,11 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
 
         // 7. Expose engine handle for tests and visual audit tools
         if (typeof window !== 'undefined') {
-            const w = window as unknown as Record<string, unknown>
+            const w = getLegacyWindow()
             w.__THREE_APP__ = {
                 renderer: appState.renderer,
                 scene: appState.scene,
-                camera: (appState as unknown as Record<string, unknown>).camera,
+                camera: getLegacyAppState().camera,
                 simulateWebGLContextLoss: () => {
                     const canvas = document.querySelector('canvas')
                     if (!canvas) {
@@ -375,7 +389,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // 8. Attach legacy state to semantic threads (thread loading is deferred to
         // the deferred-hydration phase in ui/loading.ts to avoid blocking startup).
         const semanticThreads = await import('@lib/semantic-threads')
-        semanticThreads.attachLegacyState(appState as unknown as Record<string, unknown>)
+        semanticThreads.attachLegacyState(getLegacyAppState())
         semanticThreads.loadSemanticThreads({ reason: 'lifecycle-init' }).catch((err: unknown) => {
             debugWarn('[engine/lifecycle] semantic-thread load failed:', err)
         })
@@ -493,7 +507,7 @@ export function destroyEngine(): void {
 
     // 4. Clear engine handle from window
     if (typeof window !== 'undefined') {
-        const w = window as unknown as Record<string, unknown>
+        const w = getLegacyWindow()
         w.__THREE_APP__ = null
     }
 
