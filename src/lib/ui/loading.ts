@@ -110,6 +110,7 @@ export async function hideLoadingOverlay(): Promise<void> {
     const remaining = Math.max(0, LOADING_MIN_VISIBLE_MS - elapsed)
     if (remaining > 0) {
         await new Promise<void>((resolve) => {
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
             _registry.timer(setTimeout(resolve, remaining))
         })
     }
@@ -118,6 +119,7 @@ export async function hideLoadingOverlay(): Promise<void> {
     overlay.dataset.loadingState = 'launching'
     overlay.classList.add('launching')
     await new Promise<void>((resolve) => {
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
         _registry.timer(setTimeout(resolve, 180))
     })
 
@@ -175,6 +177,7 @@ export function startDeferredHydration(): void {
             { timeout: 250 }
         )
     } else {
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
         _registry.timer(setTimeout(() => void run(), 80))
     }
 }
@@ -201,6 +204,7 @@ export function scheduleWeatherHydration(): void {
             { timeout: 500 }
         )
     } else {
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
         _registry.timer(setTimeout(() => void start(), 300))
     }
 }

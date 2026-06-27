@@ -84,6 +84,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
         opts.onReady()
         // Safety: dispose all listeners and timers after the cooldown even if
         // teardown wasn't called.
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in registry.timer()
         registry.timer(setTimeout(() => registry.disposeAll(), cooldown))
     }
 
@@ -112,6 +113,7 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     // Playwright test auto-fire: skip gesture wait in automated tests so
     // canvas mounts without requiring every test to simulate a gesture.
     if (isAutomatedBrowserSession()) {
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in registry.timer()
         registry.timer(setTimeout(() => handleReady(), 0))
     }
 

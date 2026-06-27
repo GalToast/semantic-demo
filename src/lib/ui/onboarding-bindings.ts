@@ -33,21 +33,19 @@ export function shouldShowOnboardingHint(): boolean {
 export function resetOnboardingIdleTimer(): void {
     _registry.disposeAll()
     _registry.timer(
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
         setTimeout(() => {
-            const onboarding = document.getElementById('onboarding-hint') as
-                | (HTMLElement & {
-                      _autoHideTimer?: ReturnType<typeof setTimeout> | null
-                  })
-                | null
+            const onboarding = document.getElementById('onboarding-hint')
             if (onboarding && shouldShowOnboardingHint()) {
                 onboarding.classList.add('visible')
                 onboarding.setAttribute('aria-hidden', 'false')
-                if (onboarding._autoHideTimer) clearTimeout(onboarding._autoHideTimer)
-                onboarding._autoHideTimer = setTimeout(() => {
-                    onboarding.classList.remove('visible')
-                    onboarding.setAttribute('aria-hidden', 'true')
-                    onboarding._autoHideTimer = null
-                }, 6000)
+                _registry.timer(
+                    // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
+                    setTimeout(() => {
+                        onboarding.classList.remove('visible')
+                        onboarding.setAttribute('aria-hidden', 'true')
+                    }, 6000)
+                )
             }
             resetOnboardingIdleTimer()
         }, 120000)
@@ -58,6 +56,7 @@ export function scheduleOnboardingHint(): void {
     const onboarding = document.getElementById('onboarding-hint')
     _registry.disposeAll()
     _registry.timer(
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
         setTimeout(() => {
             if (onboarding && shouldShowOnboardingHint()) {
                 onboarding.classList.add('visible')
@@ -66,6 +65,7 @@ export function scheduleOnboardingHint(): void {
         }, 1500)
     )
     _registry.timer(
+        // eslint-disable-next-line no-restricted-syntax -- wrapped in _registry.timer()
         setTimeout(() => {
             if (onboarding) {
                 onboarding.classList.remove('visible')
