@@ -17,13 +17,13 @@
 
   import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { journeyStore, journeyPhase } from '@lib/stores/journey.svelte.ts';
-  import { buildCompassStatus } from '@lib/stores/compass.svelte.ts';
-  import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector } from '@lib/stores/focus.svelte.ts';
+  import { getJourneyCompassState } from '@lib/journey/compass-state';
+  import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector, focusStore, setPocketRoleFilter } from '@lib/stores/focus.svelte.ts';
   import { getBusinessRecords, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { searchSummary, isSearching } from '@lib/stores/search.svelte';
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
-  import { normalizeRelationshipRole } from '@lib/utils/relationship-roles';
+  import { normalizeRelationshipRole, getRelationshipRoleLabel } from '@lib/utils/relationship-roles';
   import type { BusinessRecord } from '@lib/types/business';
   import type { RelationshipRole } from '@lib/utils/relationship-roles';
   import WalkBreadcrumb from '@components/WalkBreadcrumb.svelte';
@@ -297,40 +297,7 @@
   // ── Compass status header ─────────────────────────────────────────────────
 
   const compassStatus = $derived.by(() => {
-    const summary = searchSummary() as ({ query?: string; anchorIndex?: number | null; resultCount?: number } | null);
-    const summaryRec = summary as Record<string, unknown> | null;
-    const queryLabel = summaryRec?.query ? `"${String(summaryRec.query)}"` : 'semantic search';
-    const isFocus = chromeHasFocus;
-    const journeyPh = journeyPhase();
-    const insideActive = journeyPh === 'inside' && isFocus;
-    const walkLen = currentWalkHistory.length;
-
-    const currentPtName = currentPoint?.name || 'this business';
-    const clusterNames = ['Food & Dining', 'Professional Services', 'Retail & Shopping', 'Health & Medical', 'Other'];
-    const clusterIdx = currentPoint?.cluster ?? -1;
-    const clusterName = clusterIdx >= 0 && clusterIdx < clusterNames.length ? (clusterNames[clusterIdx] ?? 'County') : 'County';
-
-    return buildCompassStatus({
-      currentView: 'galaxy',
-      focusedName: currentPtName,
-      queryLabel,
-      isSearching: isSearching(),
-      isFocusing: false,
-      hasSearch: !!summary,
-      hasFocus: isFocus,
-      insideActive,
-      resultCount: summary?.resultCount ?? 0,
-      walkDepth: walkLen,
-      isSearchFocus: !!summary && walkLen === 0,
-      isSearchAnchor: summary?.anchorIndex != null && currentFocusedIndex === summary.anchorIndex,
-      isTrailStop: walkLen > 1,
-      hasAnchor: !!summary,
-      clusterName,
-      routeCount: currentWalkHistory.length,
-      nextPointName: nextStopName,
-      idleNote: 'Start wide, then search by need or clue to open one trail through the network.',
-      isSemanticDegraded: false
-    });
+    return getJourneyCompassState();
   });
 </script>
 
