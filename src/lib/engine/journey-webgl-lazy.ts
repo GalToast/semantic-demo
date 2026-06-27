@@ -12,6 +12,16 @@
 import { setInspectedStrandOverlayUpdater as setAdapterInspectedStrandOverlayUpdater } from '@lib/journey/inspected-strand-overlay-adapter'
 import { silenceError } from '@lib/utils/error-handler'
 
+/**
+ * Returns null cast to T. Used by dynamic-import catch blocks to satisfy the
+ * `Promise<T>` chain after suppressing unhandled rejections during test
+ * teardown or when the underlying module is unavailable (W44 Phase 4
+ * lazy-bridge pattern).
+ */
+function silentNull<T>(): T {
+    return null as unknown as T
+}
+
 // ── Lazy module cache ────────────────────────────────────────────────────────
 
 let webglModule: typeof import('@lib/journey/webgl') | null = null
@@ -35,7 +45,7 @@ function ensureWebglModule(): Promise<typeof import('@lib/journey/webgl')> {
                 // the environment is unavailable. The next call to ensureWebglModule
                 // will retry the import.
                 webglPromise = null
-                return null as unknown as typeof import('@lib/journey/webgl')
+                return silentNull<typeof import('@lib/journey/webgl')>()
             })
     }
     return webglPromise
@@ -158,7 +168,7 @@ function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
             })
             .catch(() => {
                 routeArrivalPromise = null
-                return null as unknown as RouteArrivalModule
+                return silentNull<RouteArrivalModule>()
             })
     }
     return routeArrivalPromise
@@ -192,7 +202,7 @@ function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/threa
             })
             .catch(() => {
                 inspectorWebglPromise = null
-                return null as unknown as typeof import('@lib/journey/thread-inspector-webgl')
+                return silentNull<typeof import('@lib/journey/thread-inspector-webgl')>()
             })
     }
     return inspectorWebglPromise
