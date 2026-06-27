@@ -9,6 +9,7 @@
  */
 
 import { startMicroDemo } from '@lib/demo/choreography'
+import { showToast } from '@lib/stores/toast.svelte'
 
 // ── Pure utilities (native, no legacy deps) ─────────────────────────────────
 
@@ -154,6 +155,20 @@ export function initKeyboardShortcutsHint(): void {
             // work but the click handler still closes the panel and tries.
         }
         closePanel()
+        // Listen for 'demo-cancelled' (fires when _startMicroDemo() exhausts
+        // its retry loop or _getDemoNode() returns null). Without this
+        // listener the replay button silently fails and the user has no idea
+        // why nothing happened. The listener auto-removes on fire ({once});
+        // a 10s cleanup setTimeout also removes it if the demo succeeds (so
+        // we don't leak a handler that fires later on an unrelated event).
+        const onCancelled = (): void => {
+            showToast(
+                'Replay unavailable',
+                'Search for a business type above, or click any dot to explore connections.'
+            )
+        }
+        document.addEventListener('demo-cancelled', onCancelled, { once: true })
+        setTimeout(() => document.removeEventListener('demo-cancelled', onCancelled), 10000)
         // Fire the choreography demo. startMicroDemo() owns the re-entry
         // guard (W47 fix) and clears the session gate via shouldRunMicroDemo().
         // It returns silently if guards fail (reduced-motion, no WebGL, etc.).

@@ -209,3 +209,89 @@ describe('choreography.ts — start-race re-entrancy contract (W47)', () => {
         expect(inline, 'inline guard release in _startMicroDemo').toBeNull()
     })
 })
+
+/**
+ * keyboard-help.ts — 'demo-cancelled' event consumer contract (W48)
+ *
+ * Lock-in: prevents the W48 silent-replay-tour bug from returning.
+ * `notifyDemoUnableToStart()` in src/lib/demo/guards.ts dispatches a
+ * `demo-cancelled` CustomEvent on the document. The only reachable
+ * caller of the path that fires it is the "Replay tour" button in
+ * src/lib/keyboard/keyboard-help.ts (which calls startMicroDemo() →
+ * _startMicroDemo() → notifyDemoUnableToStart()).
+ *
+ * Without a listener for `demo-cancelled`, a replay that fails after
+ * 100 retries leaves the user with zero feedback. This contract locks
+ * in the structural invariant: the replay button's click handler must
+ *   1. import a toast helper
+ *   2. register a one-shot 'demo-cancelled' listener
+ *   3. call showToast (or showErrorToast / showExperienceToast) so the
+ *      user sees feedback when the replay silently fails.
+ */
+describe('keyboard-help.ts — demo-cancelled replay-tour listener (W48)', () => {
+    // @ts-ignore
+    const HELP_SRC_PATH = resolve(__dirname, '../../src/lib/keyboard/keyboard-help.ts')
+
+    function readHelpSource(): string {
+        return readFileSync(HELP_SRC_PATH, 'utf-8')
+    }
+
+    it('imports showToast from @lib/stores/toast.svelte (or equivalent)', () => {
+        const src = readHelpSource()
+        // Accept any of the toast helpers used across the codebase. The
+        // intent is: a feedback surface is imported, not silently absent.
+        expect(
+            src,
+            'keyboard-help.ts must import a toast helper for replay feedback'
+        ).toMatch(/import\s+\{[^}]*(?:showToast|showErrorToast|showExperienceToast)[^}]*\}\s+from\s+['"]@lib\/(?:stores\/toast\.svelte|orchestration\/toast)['"]/)
+    })
+
+    it('the Replay tour button click handler registers a demo-cancelled listener', () => {
+        const src = readHelpSource()
+        // Slice from the replay button click handler to the end of the
+        // handler (find the matching close-paren of addEventListener('click', ...)).
+        const replayIdx = src.indexOf("id = 'btn-replay-tour'")
+        expect(replayIdx, 'replay button marker not found').toBeGreaterThan(-1)
+        const clickIdx = src.indexOf(".addEventListener('click'", replayIdx)
+        expect(clickIdx, 'replay button click handler not found').toBeGreaterThan(-1)
+        // Walk to the matching closing paren of the addEventListener call.
+        let depth = 1
+        let i = src.indexOf('(', clickIdx) + 1
+        while (i < src.length && depth > 0) {
+            const c = src[i]
+            if (c === '(') depth++
+            else if (c === ')') depth--
+            i++
+        }
+        const handler = src.slice(clickIdx, i)
+        expect(
+            handler,
+            'replay click handler must register a demo-cancelled listener'
+        ).toMatch(/addEventListener\(\s*['"]demo-cancelled['"]/)
+        expect(
+            handler,
+            'listener should use { once: true } so it auto-removes on fire'
+        ).toMatch(/\{\s*once:\s*true\s*\}/)
+    })
+
+    it('the demo-cancelled listener calls a toast helper to surface feedback', () => {
+        const src = readHelpSource()
+        const replayIdx = src.indexOf("id = 'btn-replay-tour'")
+        const clickIdx = src.indexOf(".addEventListener('click'", replayIdx)
+        let depth = 1
+        let i = src.indexOf('(', clickIdx) + 1
+        while (i < src.length && depth > 0) {
+            const c = src[i]
+            if (c === '(') depth++
+            else if (c === ')') depth--
+            i++
+        }
+        const handler = src.slice(clickIdx, i)
+        // The listener body must invoke one of the toast helpers so the
+        // user sees feedback. Without this, the replay silently fails.
+        expect(
+            handler,
+            'demo-cancelled listener must call a toast helper'
+        ).toMatch(/showToast\s*\(|showErrorToast\s*\(|showExperienceToast\s*\(/)
+    })
+})
