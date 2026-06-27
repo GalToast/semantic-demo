@@ -190,11 +190,11 @@ body.surface-search #canvas-container::after {
         );
 }
 
-body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::before {
+body.route-peek[data-route-motion='search-corridor'] #canvas-container::before {
     opacity: 0.14;
 }
 
-body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canvas-container::after {
+body.route-peek[data-route-motion='search-corridor'] #canvas-container::after {
     opacity: 0.22;
 }
 

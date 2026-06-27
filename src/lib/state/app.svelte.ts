@@ -108,6 +108,8 @@ class AppState {
     searchVisibleCount = $state<number>(5)
     searchTrailCueLastRenderedAt = $state<number>(0)
     mobileRouteFieldPeekToken = $state<number>(0)
+    mobileRoutePeekActive = $state<boolean>(false)
+    mobileRoutePeekReason = $state<string>('')
     semanticLaneMonitorTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     semanticLaneProbePromise = $state<Promise<unknown> | null>(null)
     semanticLaneOpsMode = $state<boolean>(false)

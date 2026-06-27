@@ -465,20 +465,27 @@ export function clearShortSemanticSearchState(resultsEl: HTMLElement | null, sta
     clearSearchState(resultsEl, statusEl)
 }
 
-export function startMobileRouteFieldPeek(): void {
+export function startMobileRouteFieldPeek(reason: string = 'hover'): void {
     state.mobileRouteFieldPeekToken = (state.mobileRouteFieldPeekToken || 0) + 1
-    document.body.dataset.mobileRoutePeek = 'active'
+    // W47+ parity migration: parity-attrs.svelte.ts owns the body[data-mobile-route-peek]
+    // mirror (and the route-peek static class) — toggle the source-of-truth rune
+    // fields and let the effect chain write the DOM.
+    state.mobileRoutePeekActive = true
+    state.mobileRoutePeekReason = reason
 }
 
 export function clearMobileRouteFieldPeek(): void {
     if (state.mobileRouteFieldPeekTimer) clearTimeout(state.mobileRouteFieldPeekTimer)
     state.mobileRouteFieldPeekTimer = null
-    delete document.body.dataset.mobileRoutePeek
-    delete document.body.dataset.mobileRoutePeekReason
+    // W47+ parity migration: clear the rune fields; parity-attrs will
+    // delete body.dataset.mobileRoutePeek / .mobileRoutePeekReason and
+    // remove the route-peek class on its next snapshot.
+    state.mobileRoutePeekActive = false
+    state.mobileRoutePeekReason = ''
 }
 
 export function isMobileRouteFieldPeekActive(): boolean {
-    return document.body?.dataset?.mobileRoutePeek === 'active'
+    return state.mobileRoutePeekActive === true
 }
 
 export function clearSearchPreviewHoverTimer(): void {

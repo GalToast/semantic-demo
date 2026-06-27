@@ -60,23 +60,6 @@ export const setMyceliumMode = _setMyceliumMode
 // ── Composition State (ported from ) ──────────────────
 
 /**
- * Derive the graph-context from the current nav/search state.
- * Matches the legacy `deriveGraphContext` in lifecycle.js.
- */
-function deriveGraphContext(
-    _view: string,
-    hasFocus: boolean,
-    hasSearchIntent: boolean,
-    mapContextOverride?: string
-): string {
-    if (mapContextOverride !== undefined) return mapContextOverride
-    if (hasFocus && hasSearchIntent) return 'focus-search'
-    if (hasFocus) return 'focus'
-    if (hasSearchIntent) return 'search'
-    return 'idle'
-}
-
-/**
  * Derive the panel surface label from view, graph context, semantic dive,
  * search intent, and focus state.
  * Matches the legacy `derivePanelSurface` in lifecycle.js.
@@ -116,8 +99,15 @@ export function derivePanelSurface(opts: {
  *
  * What lifecycle.ts still owns:
  *   - searchGlow — not in PARITY_ATTRIBUTES, no parity mirror
- *   - mobileRoutePeek + mobileRoutePeekReason — not in PARITY_ATTRIBUTES,
- *     managed here because we need the clear-on-graphContext !== 'idle' rule
+ *
+ * W47+ parity migration: mobileRoutePeek + mobileRoutePeekReason moved
+ * from bypass writes here to PARITY_ATTRIBUTES parity-attrs.svelte.ts
+ * (sources: appState.mobileRoutePeekActive / .mobileRoutePeekReason).
+ * The clear-on-graphContext !== 'idle' rule is now enforced by
+ * callers of clearMobileRouteFieldPeek in results-ui.ts (see
+ * orchestration.ts), which clear the appState runes; parity-attrs
+ * deletes the body data attrs and the route-peek class on the
+ * next snapshot.
  *
  * `derivePanelSurface` is still exported (line 83) for callers that need
  * the computed surface value without a DOM side effect (e.g., tests,
@@ -128,23 +118,16 @@ export function applyCompositionState(): void {
     const $focus = get(focusStore)
     const $search = get(searchStore)
 
-    const activeView = $nav.currentView || 'galaxy'
     const hasFocus = !!($nav.focusedIndex != null || $focus.selectedBusiness)
-    const hasSearchIntent = !!($search.summary || $search.query.trim().length >= 2)
-
-    const graphContext = deriveGraphContext(activeView, hasFocus, hasSearchIntent)
+    // graphContext, activeView, hasSearchIntent are no longer needed in this
+    // function (W47+ parity migration moved mobileRoutePeek clear-on-non-idle
+    // logic to parity-attrs). The deriveGraphContext helper was deleted
+    // entirely; derivePanelSurface is kept for callers/tests.
 
     const root = document.body
     if (root?.dataset) {
         // searchGlow is non-mirrored; parity-attrs does not own it.
         root.dataset.searchGlow = $search.glowActive ? 'active' : 'inactive'
-        // mobileRoutePeek + reason are non-mirrored; clear them when
-        // the user enters a non-idle surface so the peek affordance
-        // doesn't stick around stale.
-        if (graphContext !== 'idle') {
-            delete root.dataset.mobileRoutePeek
-            delete root.dataset.mobileRoutePeekReason
-        }
     }
 
     // Setup global state mirrors for tests

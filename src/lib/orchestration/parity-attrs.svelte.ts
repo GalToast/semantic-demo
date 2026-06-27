@@ -135,6 +135,18 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
         source: 'searchStore.status'
     },
 
+    // Mobile route peek (W47 migration: replaces bypass writes in results-ui.ts)
+    {
+        key: 'mobileRoutePeek',
+        description: 'Mobile route field peek-in active state (active when truthy, absent otherwise)',
+        source: 'appState.mobileRoutePeekActive'
+    },
+    {
+        key: 'mobileRoutePeekReason',
+        description: 'Optional reason string for the active mobile route peek (cleared when inactive)',
+        source: 'appState.mobileRoutePeekReason'
+    },
+
     // Strand journey (legacy strand-continuity.js — CSS journey_steps.css reads data-strand-journey)
     {
         key: 'strandJourney',
@@ -407,6 +419,9 @@ export function computeParityAttributes(): ParityAttributeMap {
         focusTransition: focus.transitionMode || 'idle',
         searchStatus: search.status || 'idle',
 
+        mobileRoutePeek: appState.mobileRoutePeekActive ? 'active' : null,
+        mobileRoutePeekReason: appState.mobileRoutePeekActive ? appState.mobileRoutePeekReason || null : null,
+
         strandJourney: focus.strandContinuityPhase || 'idle',
         threadInspectSurface: threadInspectionActive ? focus.threadInspector.source || 'rail' : 'idle',
         inspectedThreadIndex:
@@ -553,14 +568,30 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
     // when someone adds a new map variant — codemod requires another
     // pass. The static class surface-map-any is added whenever
     // panelSurface starts with 'map-', giving CSS a stable hook.
-    const isMapSurface = typeof map.panelSurface === 'string' &&
-        (map.panelSurface as string).startsWith('map-')
+    const isMapSurface = typeof map.panelSurface === 'string' && (map.panelSurface as string).startsWith('map-')
     if (isMapSurface) {
         if (!document.body.classList.contains('surface-map-any')) {
             document.body.classList.add('surface-map-any')
         }
     } else if (document.body.classList.contains('surface-map-any')) {
         document.body.classList.remove('surface-map-any')
+    }
+
+    // ── Route peek class mirror ──────────────────────────────────────
+    // mobileRoutePeek is a transient choreography state set during
+    // search-result hover/focus on mobile (results-ui.ts → appState).
+    // CSS rules in layout_base.css, search.css, and shell.css gate on
+    // the body[data-mobile-route-peek='active'] attribute. The static
+    // class `route-peek` mirrors the active state for class-based
+    // selectors, enabling migration from body[data-mobile-route-peek=...]
+    // to body.route-peek without losing the reactive sync.
+    const isRoutePeekActive = map.mobileRoutePeek === 'active'
+    if (isRoutePeekActive) {
+        if (!document.body.classList.contains('route-peek')) {
+            document.body.classList.add('route-peek')
+        }
+    } else if (document.body.classList.contains('route-peek')) {
+        document.body.classList.remove('route-peek')
     }
 }
 

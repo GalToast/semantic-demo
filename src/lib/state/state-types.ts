@@ -689,6 +689,8 @@ export interface SemanticState extends StateConfig {
     compactSearchRevealTimers: Array<ReturnType<typeof setTimeout>>
     mobileRouteFieldPeekTimer: ReturnType<typeof setTimeout> | null
     mobileRouteFieldPeekToken: number
+    mobileRoutePeekActive: boolean
+    mobileRoutePeekReason: string
     semanticLaneMonitorTimer: ReturnType<typeof setTimeout> | null
     semanticLaneProbePromise: Promise<unknown> | null
     semanticLaneOpsMode: boolean
