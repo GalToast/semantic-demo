@@ -56,10 +56,7 @@ function getStepInsideConnectionCopy(candidate: ThreadCandidateLike, _focusIndex
     const point = appState.points?.[candidate.index] || null
     if (!point) return null
     const targetName = truncateDiveStatusCopy(formatBusinessName(point.name || 'next stop'), 42)
-    const reason =
-        typeof summarizeNeighborReason === 'function'
-            ? summarizeNeighborReason(candidate)
-            : candidate.reason
+    const reason = typeof summarizeNeighborReason === 'function' ? summarizeNeighborReason(candidate) : candidate.reason
     const cue = getShortConnectionCue(reason)
     if (!cue) return `Next: ${targetName}`
     return `Next: ${targetName} (${cue})`
@@ -95,6 +92,15 @@ export function syncSemanticDiveUi(): void {
     const active = publicSemanticDiveActive || (appState.semanticDiveMode && canDive)
     const deadline = state._semanticDiveTransitionDeadline || 0
     const isTransitioning = active && deadline > 0 && Date.now() < deadline
+    // journeyPhase='inside' body write is LOAD-BEARING, not drift: parity-attrs'
+    // derivation checks _hasFocus before nav.mode==='inside', so during an active
+    // dive (which always holds focus) parity returns 'focus', never 'inside'.
+    // syncSemanticDiveUi is the sole authority for body data-journey-phase='inside'
+    // in the dive-active state — enforced by semantic-dive-ui-surface-contract.mjs.
+    //
+    // (The former companion write `semanticDive='inactive'` IS safe to omit:
+    // parity derives semanticDive from focusStore.semanticDiveMode, which
+    // round-trips trailDepth===2. Only this journeyPhase write must stay.)
     if (active && !isTransitioning && document.body) {
         document.body.dataset.journeyPhase = 'inside'
     }
@@ -110,11 +116,11 @@ export function syncSemanticDiveUi(): void {
     const journeyCompass = document.getElementById('journey-compass')
     const journeyPhase = appState.strandContinuityState?.phase
     const isExploring = journeyPhase === 'walking' || journeyPhase === 'exploring'
+    // KEEP: insideWalkState is a standalone non-mirrored attr with CSS+JS
+    // consumers (focus_stage.css:349, App.svelte:287,549,296 MutationObserver).
+    // Parity-attrs does NOT write it — this is the canonical writer.
     if (document.body) {
         document.body.dataset.insideWalkState = active ? journeyPhase || 'idle' : 'idle'
-    }
-    if (document.body && !active) {
-        document.body.dataset.semanticDive = 'inactive'
     }
     const currentFocusIndex = Number.isFinite(appState.navState?.focusedIndex)
         ? appState.navState.focusedIndex
