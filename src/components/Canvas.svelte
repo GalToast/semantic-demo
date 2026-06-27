@@ -63,17 +63,6 @@
     onCameraArrived: () => {
       completeCameraTransition();
     },
-    onNodeHovered: (index) => {
-      // Sync hover index to body dataset for parity; the legacy RAF loop
-      // reads state.hoverHighlightIndex directly from the engine side.
-      if (typeof document !== 'undefined' && document.body) {
-        if (index !== null && index >= 0) {
-          document.body.dataset.hoveredNode = String(index);
-        } else {
-          delete document.body.dataset.hoveredNode;
-        }
-      }
-    },
     onViewChanged: (view) => {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, {
         view: view as 'galaxy' | 'map',
