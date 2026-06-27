@@ -117,7 +117,6 @@ export const PARITY_ATTRIBUTES: readonly ParityAttributeDescriptor[] = [
         source: 'focusStore.semanticDiveMode'
     },
 
-
     // Focus transition (legacy camera-controls.js / focus.ts)
     {
         key: 'focusTransition',
@@ -518,6 +517,7 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
     const BODY_CLASS_MAP: Record<string, string> = {
         panelSurface: 'surface',
         activeView: 'view',
+        journeyNavigationOwner: 'navigation',
         focusTransition: 'focus-transition'
     }
 

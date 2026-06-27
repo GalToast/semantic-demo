@@ -12,12 +12,12 @@
 
     /* map-trail-strip / map-strip-title are map-only elements
        (see chrome.css:337,359 for the same gate pattern). */
-    body.is-active[data-panel-surface^='map-'] .map-trail-strip {
+    body[class*='surface-map-'] .map-trail-strip {
         padding: 8px 10px;
         gap: 8px;
     }
 
-    body.is-active[data-panel-surface^='map-'] .map-strip-title {
+    body[class*='surface-map-'] .map-strip-title {
         max-width: 38vw;
     }
 
@@ -100,46 +100,46 @@
    controls.css / time_weather.css / layout_base.css so the natural
    layout is preserved. */
 @media (min-width: 361px) and (max-width: 768px) {
-    body.is-active[data-panel-surface='focus'] .view-toggle,
-    body.is-active[data-panel-surface='focus-search'] .view-toggle,
-    body.is-active[data-panel-surface='semantic-dive'] .view-toggle {
+    body.surface-focus .view-toggle,
+    body.surface-focus-search .view-toggle,
+    body.surface-semantic-dive .view-toggle {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'] .journey-compass.glass-heavy .journey-compass-rail,
-    body.is-active[data-panel-surface='focus-search'] .journey-compass.glass-heavy .journey-compass-rail,
-    body.is-active[data-panel-surface='semantic-dive'] .journey-compass.glass-heavy .journey-compass-rail {
+    body.surface-focus .journey-compass.glass-heavy .journey-compass-rail,
+    body.surface-focus-search .journey-compass.glass-heavy .journey-compass-rail,
+    body.surface-semantic-dive .journey-compass.glass-heavy .journey-compass-rail {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-rail,
-    body.is-active[data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-rail,
-    body.is-active[data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-rail {
+    body.surface-focus .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.surface-focus-search .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.surface-semantic-dive .journey-compass[data-density='compact'] .journey-compass-rail {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'] .controls,
-    body.is-active[data-panel-surface='focus-search'] .controls,
-    body.is-active[data-panel-surface='semantic-dive'] .controls {
+    body.surface-focus .controls,
+    body.surface-focus-search .controls,
+    body.surface-semantic-dive .controls {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
 
-    body.is-active[data-panel-surface='focus'] #info-panel.info-panel {
+    body.surface-focus #info-panel.info-panel {
         display: none;
         visibility: hidden;
         pointer-events: none;
         opacity: 0;
     }
-    body.is-active[data-panel-surface='focus'] #info-panel.info-panel .info-header {
+    body.surface-focus #info-panel.info-panel .info-header {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -153,9 +153,9 @@
        the panel and its contents. This block restores pointer-events
        for active panel surfaces that show the info-panel.
        See also the short-landscape fix in mobile_premium__chrome.css. */
-    body.is-active[data-panel-surface='idle'] .info-panel,
-    body.is-active[data-panel-surface='search'] .info-panel,
-    body.is-active[data-panel-surface='focus-search'] .info-panel {
+    body.surface-idle .info-panel,
+    body.surface-search .info-panel,
+    body.surface-focus-search .info-panel {
         pointer-events: auto;
     }
 }
@@ -175,9 +175,9 @@
    is added to match the hide rule at line 76 (specificity 0,3,1)
    so source order wins the tie. */
 @media (max-width: 360px) {
-    body.is-active[data-panel-surface='focus'] .view-toggle,
-    body.is-active[data-panel-surface='focus-search'] .view-toggle,
-    body.is-active[data-panel-surface='semantic-dive'] .view-toggle {
+    body.surface-focus .view-toggle,
+    body.surface-focus-search .view-toggle,
+    body.surface-semantic-dive .view-toggle {
         display: flex;
         visibility: visible;
         pointer-events: auto;
@@ -186,9 +186,9 @@
     /* Undo the narrow compass hide (line 76) for focus states.
        The :not([data-panel-surface^='map-']) matches the hide rule's
        specificity so source order wins. */
-    body.is-active[data-panel-surface='focus']:not([data-panel-surface^='map-']) .journey-compass,
-    body.is-active[data-panel-surface='focus-search']:not([data-panel-surface^='map-']) .journey-compass,
-    body.is-active[data-panel-surface='semantic-dive']:not([data-panel-surface^='map-']) .journey-compass {
+    body.surface-focus:not([data-panel-surface^='map-']) .journey-compass,
+    body.surface-focus-search:not([data-panel-surface^='map-']) .journey-compass,
+    body.surface-semantic-dive:not([data-panel-surface^='map-']) .journey-compass {
         display: grid;
         visibility: visible;
         pointer-events: auto;
@@ -200,38 +200,38 @@
         box-sizing: border-box;
         transform: none;
     }
-    body.is-active[data-panel-surface='focus'] .journey-compass.glass-heavy .journey-compass-rail,
-    body.is-active[data-panel-surface='focus-search'] .journey-compass.glass-heavy .journey-compass-rail,
-    body.is-active[data-panel-surface='semantic-dive'] .journey-compass.glass-heavy .journey-compass-rail {
+    body.surface-focus .journey-compass.glass-heavy .journey-compass-rail,
+    body.surface-focus-search .journey-compass.glass-heavy .journey-compass-rail,
+    body.surface-semantic-dive .journey-compass.glass-heavy .journey-compass-rail {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'] .journey-compass[data-density='compact'] .journey-compass-rail,
-    body.is-active[data-panel-surface='focus-search'] .journey-compass[data-density='compact'] .journey-compass-rail,
-    body.is-active[data-panel-surface='semantic-dive'] .journey-compass[data-density='compact'] .journey-compass-rail {
+    body.surface-focus .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.surface-focus-search .journey-compass[data-density='compact'] .journey-compass-rail,
+    body.surface-semantic-dive .journey-compass[data-density='compact'] .journey-compass-rail {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
-    body.is-active[data-panel-surface='focus'] .controls,
-    body.is-active[data-panel-surface='focus-search'] .controls,
-    body.is-active[data-panel-surface='semantic-dive'] .controls {
+    body.surface-focus .controls,
+    body.surface-focus-search .controls,
+    body.surface-semantic-dive .controls {
         display: flex;
         visibility: visible;
         pointer-events: auto;
         opacity: 1;
     }
 
-    body.is-active[data-panel-surface='focus'] #info-panel.info-panel {
+    body.surface-focus #info-panel.info-panel {
         display: none;
         visibility: hidden;
         pointer-events: none;
         opacity: 0;
     }
-    body.is-active[data-panel-surface='focus'] #info-panel.info-panel .info-header {
+    body.surface-focus #info-panel.info-panel .info-header {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -244,10 +244,10 @@
        the entire element to collapse (0-size bounding rect).
        Reducing column 2 min to 160px and giving inside-controls
        sub-columns a 44px min-width floor keeps controls visible. */
-    body.is-active[data-panel-surface='semantic-dive'] #focus-stage-auxiliary-surfaces {
+    body.surface-semantic-dive #focus-stage-auxiliary-surfaces {
         grid-template-columns: minmax(0, 0.9fr) minmax(160px, 1.1fr);
     }
-    body.is-active[data-panel-surface='semantic-dive'] .focus-stage-inside-controls {
+    body.surface-semantic-dive .focus-stage-inside-controls {
         grid-template-columns: repeat(3, minmax(44px, 1fr));
     }
 }

@@ -1477,7 +1477,7 @@ body.surface-map-focus-search .search-container {
         linear-gradient(180deg, rgba(12, 18, 26, 0.98), rgba(11, 14, 23, 0.9));
 }
 
-body.is-active[data-panel-surface='map-focus-search'][data-journey-navigation-owner='map-trail-strip']
+body.surface-map-focus-search[data-journey-navigation-owner='map-trail-strip']
     .search-container {
     position: fixed;
     display: block !important;

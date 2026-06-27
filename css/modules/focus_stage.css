@@ -1034,7 +1034,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     }
 
     html
-        body.is-active[data-active-view='galaxy']:is(
+        body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         ):not([data-thread-inspect-surface='idle'])
@@ -1042,7 +1042,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         .focus-stage-card
         #focus-stage-neighbors.focus-stage-neighbors.active,
     html
-        body.is-active[data-active-view='galaxy']:is(
+        body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         ):not([data-thread-inspect-surface='idle'])
@@ -1062,19 +1062,19 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
 }
 
 @media (min-width: 769px) and (max-width: 900px) and (max-height: 430px) and (orientation: landscape) {
-    body.is-active[data-active-view='galaxy'] .journey-compass {
+    body.view-galaxy .journey-compass {
         top: calc(10px + env(safe-area-inset-top, 0px));
         max-height: 72px;
         padding-block: 10px;
         overflow: hidden;
     }
 
-    body.is-active[data-panel-surface='idle'] #info-panel.info-panel {
+    body.surface-idle #info-panel.info-panel {
         top: 96px;
     }
 
-    body.is-active[data-panel-surface='focus'] #info-panel.info-panel,
-    body.is-active[data-panel-surface='focus-search'] #info-panel.info-panel {
+    body.surface-focus #info-panel.info-panel,
+    body.surface-focus-search #info-panel.info-panel {
         top: 104px;
         max-height: calc(100dvh - 112px - env(safe-area-inset-bottom, 0px));
     }
@@ -1112,13 +1112,13 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         pointer-events: none;
     }
 
-    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-rail.controls,
-    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus'] .controls.controls-info.controls,
-    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus-search'] .controls.controls-rail.controls,
-    html body.is-active[data-active-view='galaxy'][data-panel-surface='focus-search'] .controls.controls-info.controls,
-    html body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive'] .controls.controls-rail.controls,
+    html body.view-galaxy[data-panel-surface='focus'] .controls.controls-rail.controls,
+    html body.view-galaxy[data-panel-surface='focus'] .controls.controls-info.controls,
+    html body.view-galaxy[data-panel-surface='focus-search'] .controls.controls-rail.controls,
+    html body.view-galaxy[data-panel-surface='focus-search'] .controls.controls-info.controls,
+    html body.view-galaxy[data-panel-surface='semantic-dive'] .controls.controls-rail.controls,
     html
-        body.is-active[data-active-view='galaxy'][data-panel-surface='semantic-dive']
+        body.view-galaxy[data-panel-surface='semantic-dive']
         .controls.controls-info.controls {
         display: contents;
         visibility: visible;
