@@ -21,7 +21,35 @@ import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
+/**
+ * PositionPoint is the structural shape of items in appState.nodePositions
+ * and appState.originalPositions, which are typed `unknown[]` globally.
+ * Introduced to consolidate 4 inline structural casts (Phase 16 pattern).
+ */
+interface PositionPoint {
+    x: number
+    y: number
+    z: number
+}
+
 // ── Helpers ──────────────────────────────────────────────────────────────────
+
+/**
+ * Typed accessor for appState.nodePositions. Internalizes the cast so call
+ * sites can index the result directly without re-asserting the structural
+ * shape (Phase 16 typed-helper pattern).
+ */
+function getNodePositions(): PositionPoint[] {
+    return appState.nodePositions as unknown as PositionPoint[]
+}
+
+/**
+ * Typed accessor for appState.originalPositions. Same pattern as
+ * getNodePositions above.
+ */
+function getOriginalPositions(): PositionPoint[] {
+    return appState.originalPositions as unknown as PositionPoint[]
+}
 
 const _s = state as unknown as SemanticState
 
@@ -43,8 +71,8 @@ function getRouteEmbodimentIndices(): number[] {
 function getRoutePositionBounds(
     routeIndices: number[] = []
 ): { center: Vector3; size: Vector3; radius: number } | null {
-    const nodePositions = appState.nodePositions as unknown as { x: number; y: number; z: number }[]
-    const originalPositions = appState.originalPositions as unknown as { x: number; y: number; z: number }[]
+    const nodePositions = getNodePositions()
+    const originalPositions = getOriginalPositions()
     const vectors = routeIndices
         .map((index) => {
             const pos = nodePositions[index] || originalPositions[index]
@@ -91,8 +119,8 @@ export function getFocusOrbitSlackPivot(): Vector3 | null {
     const focusedNode = appState.focusedNode
     if (!camera || !controls || focusedNode === null || focusedNode === undefined) return null
     const focusPosition =
-        (appState.nodePositions as unknown as { x: number; y: number; z: number }[])[focusedNode] ||
-        (appState.originalPositions as unknown as { x: number; y: number; z: number }[])[focusedNode]
+        getNodePositions()[focusedNode] ||
+        getOriginalPositions()[focusedNode]
     if (!focusPosition) return null
 
     const focusVector = new Vector3(focusPosition.x, focusPosition.y, focusPosition.z)
