@@ -503,8 +503,8 @@ export function updateSearchStatusMessage(matchCount: number | null = null): voi
     if (!statusEl) return
     if (Number.isFinite(matchCount)) {
         statusEl.textContent = matchCount === 1 ? '1 match visible.' : `${matchCount} matches visible.`
-    } else if ((state.currentSearchSummary as unknown as SearchSummaryState | null)?.visibleMatches) {
-        statusEl.textContent = `${(state.currentSearchSummary as unknown as SearchSummaryState).visibleMatches} matches visible.`
+    } else if ((state.currentSearchSummary as SearchSummaryState | null)?.visibleMatches) {
+        statusEl.textContent = `${state.currentSearchSummary?.visibleMatches} matches visible.`
     }
 }
 
