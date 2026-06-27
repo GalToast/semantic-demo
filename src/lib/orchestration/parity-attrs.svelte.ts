@@ -684,6 +684,29 @@ export function getBypassAttr(key: BypassAttrKey): string | null {
 }
 
 /**
+ * Single-source writer for the `renderKind` bypass attr.
+ *
+ * Main.ts and engine-ready.svelte.ts both need to flip `data-render-kind`
+ * (and its `render-kind-*` CSS class twin). Writing directly to
+ * `body.dataset` triggers the parity MutationObserver async, so when both
+ * writers race the observer may set `_bypassSnapshot.renderKind` to a stale
+ * value — visible flicker or wrong initial CSS state.
+ *
+ * This helper writes to `body.dataset`, syncs the body CSS class, AND
+ * updates `_bypassSnapshot` in the same synchronous tick so callers never
+ * observe the racer's intermediate state.
+ */
+export function setRenderKind(value: string): void {
+    if (typeof document === 'undefined' || !document.body) return
+    document.body.dataset.renderKind = value
+    _bypassSnapshot.renderKind = value
+    for (const cls of Array.from(document.body.classList)) {
+        if (cls.startsWith('render-kind-')) document.body.classList.remove(cls)
+    }
+    document.body.classList.add(`render-kind-${value}`)
+}
+
+/**
  * Install the parity attribute sync layer.
  *
  * Subscribes to every Svelte store that feeds computeParityAttributes().
@@ -733,7 +756,12 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
     _bypassObserver = new MutationObserver(syncBypassSnapshot)
     _bypassObserver.observe(document.body, {
         attributes: true,
-        attributeFilter: ['data-focus-panel-mode', 'data-inside-walk-state', 'data-render-kind', 'data-mobile-search-sheet']
+        attributeFilter: [
+            'data-focus-panel-mode',
+            'data-inside-walk-state',
+            'data-render-kind',
+            'data-mobile-search-sheet'
+        ]
     })
 
     _effectRoot = $effect.root(() => {

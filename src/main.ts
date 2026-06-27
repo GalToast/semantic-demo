@@ -25,6 +25,7 @@ import { appInit } from '@lib/orchestration/app-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
+import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
 import { debugError } from '@lib/utils/debug'
 
@@ -108,10 +109,7 @@ engineReady.subscribe((ready) => {
 // W45-A: Set the render kind on body BEFORE installing the gesture monitor so
 // the monitor can skip auto-fire when the 2D placeholder is shown on mobile.
 if (typeof document !== 'undefined' && document.body) {
-    const rk = getInitialRenderKind()
-    document.body.dataset.renderKind = rk
-    // Mirror to CSS class for class-based selectors
-    document.body.classList.add(`render-kind-${rk}`)
+    setRenderKind(getInitialRenderKind())
 }
 const teardownGestureMonitor = installGestureMonitor({
     onReady: () => engineReady.signalReady()

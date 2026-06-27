@@ -11,6 +11,8 @@
  *   engineReady.signalReady();
  */
 
+import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
+
 // ── State ────────────────────────────────────────────────────────────────────
 
 let _value = $state(false);
@@ -23,14 +25,7 @@ function signalReady(): void {
   // shown, so flip the body data attribute to 'webgl'. This unblocks the
   // legend (and any other CSS gated on render-kind) after the user enters
   // the 3D scene.
-  if (typeof document !== 'undefined' && document.body) {
-    document.body.dataset.renderKind = 'webgl';
-    // Mirror to CSS class for class-based selectors
-    for (const cls of Array.from(document.body.classList)) {
-      if (cls.startsWith('render-kind-')) document.body.classList.remove(cls);
-    }
-    document.body.classList.add('render-kind-webgl');
-  }
+  setRenderKind('webgl')
   for (const fn of _subscribers) {
     fn(_value);
   }
