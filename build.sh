@@ -1,1 +1,0 @@
-npm run build:svelte 2>&1 | tail -20
