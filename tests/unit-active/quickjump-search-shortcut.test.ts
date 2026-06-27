@@ -15,40 +15,42 @@ import { readFileSync } from 'fs'
 import { join } from 'path'
 
 const repoRoot = process.cwd()
-const orchSource = readFileSync(join(repoRoot, 'src', 'lib', 'orchestration', 'app-orchestration.svelte.ts'), 'utf-8')
+// W46-B3: keyboard handler extracted to src/lib/keyboard/global-shortcuts.ts
+// (the orchestrator that originally held this was deleted in W47 cleanup).
+const keyboardSource = readFileSync(join(repoRoot, 'src', 'lib', 'keyboard', 'global-shortcuts.ts'), 'utf-8')
 const searchInputSvelte = readFileSync(join(repoRoot, 'src', 'components', 'SearchInput.svelte'), 'utf-8')
 
 describe('P1 quick-jump search shortcut', () => {
-    it('app-orchestration.svelte.ts registers a global keydown listener for / to focus search', () => {
+    it('global-shortcuts.ts registers a global keydown listener for / to focus search', () => {
         // The listener must add a keydown listener on window
-        expect(orchSource).toContain("window.addEventListener('keydown'")
+        expect(keyboardSource).toContain("window.addEventListener('keydown'")
         // Must handle '/' key
-        expect(orchSource).toContain("e.key === '/'")
+        expect(keyboardSource).toContain("e.key === '/'")
         // Must focus the search input by id
-        expect(orchSource).toContain("getElementById('search-input')")
+        expect(keyboardSource).toContain("getElementById('search-input')")
         // Must call preventDefault to avoid literal '/' in the input
-        expect(orchSource).toContain('e.preventDefault()')
+        expect(keyboardSource).toContain('e.preventDefault()')
     })
 
-    it('app-orchestration.svelte.ts handles Esc to clear the search input', () => {
+    it('global-shortcuts.ts handles Esc to clear the search input', () => {
         // Must handle 'Escape' key
-        expect(orchSource).toContain("e.key === 'Escape'")
+        expect(keyboardSource).toContain("e.key === 'Escape'")
         // Must set the value to empty
-        expect(orchSource).toContain("searchInput.value = ''")
+        expect(keyboardSource).toContain("searchInput.value = ''")
         // Must dispatch an input event so the store updates
-        expect(orchSource).toContain("new Event('input'")
+        expect(keyboardSource).toContain("new Event('input'")
     })
 
-    it('app-orchestration.svelte.ts skips the / shortcut when a form field is focused', () => {
+    it('global-shortcuts.ts skips the / shortcut when a form field is focused', () => {
         // Must check for input/textarea/select/contentEditable to skip shortcut
-        expect(orchSource).toContain("tag === 'input'")
-        expect(orchSource).toContain("tag === 'textarea'")
-        expect(orchSource).toContain("tag === 'select'")
-        expect(orchSource).toContain('isContentEditable')
+        expect(keyboardSource).toContain("tag === 'input'")
+        expect(keyboardSource).toContain("tag === 'textarea'")
+        expect(keyboardSource).toContain("tag === 'select'")
+        expect(keyboardSource).toContain('isContentEditable')
         // Must check for modifier keys
-        expect(orchSource).toContain('e.metaKey')
-        expect(orchSource).toContain('e.ctrlKey')
-        expect(orchSource).toContain('e.altKey')
+        expect(keyboardSource).toContain('e.metaKey')
+        expect(keyboardSource).toContain('e.ctrlKey')
+        expect(keyboardSource).toContain('e.altKey')
     })
 
     it('SearchInput.svelte placeholder mentions the / shortcut', () => {

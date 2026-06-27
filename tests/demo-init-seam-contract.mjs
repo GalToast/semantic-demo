@@ -68,16 +68,13 @@ if (hasSvelte) {
 
     test('App.svelte imports DemoChoreography component', () => {
         const appSource = fs.readFileSync(path.join(ROOT, 'src/App.svelte'), 'utf8')
-        // Post-W46: DemoChoreography is loaded via a lazy component map in
-        // app-orchestration.svelte.ts (makeLazy(() => import(...))). App.svelte
-        // references it through the lazy map (l.demoChoreography), and the
-        // orchestration module holds the dynamic import of DemoChoreography.svelte.
-        const orchSource = fs.readFileSync(path.join(ROOT, 'src/lib/orchestration/app-orchestration.svelte.ts'), 'utf8')
+        // Post-W46-B2b: DemoChoreography is loaded via createLazyComponent
+        // helper (W46-B2b). App.svelte holds the dynamic import directly;
+        // the orchestrator module that originally factored this is gone.
         assert(
             /import\s+DemoChoreography\s+from\s+['"]@components\/DemoChoreography\.svelte['"]/.test(appSource) ||
-                /import\(['"]@components\/DemoChoreography\.svelte['"]\)/.test(appSource) ||
-                /import\(['"]@components\/DemoChoreography\.svelte['"]\)/.test(orchSource),
-            'App.svelte or its lazy-component map must import DemoChoreography'
+                /import\(['"]@components\/DemoChoreography\.svelte['"]\)/.test(appSource),
+            'App.svelte must import DemoChoreography (directly or via createLazyComponent)'
         )
     })
 

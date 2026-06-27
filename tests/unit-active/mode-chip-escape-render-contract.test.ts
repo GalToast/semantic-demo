@@ -4,13 +4,16 @@
  * A2-4: Escape key must return the user to Overview mode from search, focus,
  * or inside states so keyboard users are never trapped without a mode-switch
  * affordance.
+ *
+ * W46-B3: keyboard handler lives in src/lib/keyboard/global-shortcuts.ts
+ * (the orchestrator that originally held this was deleted in W47 cleanup).
  */
 
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const APP = resolve(import.meta.dirname, '../../src/lib/orchestration/app-orchestration.svelte.ts')
+const APP = resolve(import.meta.dirname, '../../src/lib/keyboard/global-shortcuts.ts')
 
 function readApp(): string {
     return readFileSync(APP, 'utf-8')

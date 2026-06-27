@@ -3,13 +3,16 @@
  *
  * A2-4: Ctrl/Cmd+1 through Ctrl/Cmd+6 keyboard shortcuts enable mode switching
  * from anywhere in the app without trapping keyboard users in a single mode.
+ *
+ * W46-B3: keyboard handler lives in src/lib/keyboard/global-shortcuts.ts
+ * (the orchestrator that originally held this was deleted in W47 cleanup).
  */
 
 import { describe, expect, it } from 'vitest'
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
-const APP = resolve(import.meta.dirname, '../../src/lib/orchestration/app-orchestration.svelte.ts')
+const APP = resolve(import.meta.dirname, '../../src/lib/keyboard/global-shortcuts.ts')
 const HEADER = resolve(import.meta.dirname, '../../src/components/Header.svelte')
 
 function readApp(): string {
@@ -84,13 +87,16 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
 
     it('maps Ctrl+6 to SET_VIEW map + SET_SURFACE map (matching Header.selectMode)', () => {
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
-        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1200)
+        // Wider slice: case '6' dispatches BOTH SET_VIEW and SET_SURFACE
+        // (two lines), and global-shortcuts.ts has more leading comments
+        // than the original orchestrator did.
+        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1800)
         expect(block).toContain("case '6'")
         expect(block).toContain("view: 'map'")
         expect(block).toContain("surface: 'map'")
         // Must dispatch both SET_VIEW and SET_SURFACE for Map mode
         const case6Idx = block.indexOf("case '6'")
-        const case6Block = block.slice(case6Idx, case6Idx + 200)
+        const case6Block = block.slice(case6Idx, case6Idx + 400)
         expect(case6Block).toContain('NAV_TRANSITION_ACTIONS.SET_VIEW')
         expect(case6Block).toContain('NAV_TRANSITION_ACTIONS.SET_SURFACE')
     })

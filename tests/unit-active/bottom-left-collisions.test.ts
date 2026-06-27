@@ -78,10 +78,10 @@ describe('UI-2: bottom-left triple collision in focus state', () => {
     // ── App.svelte: focusActive derivation includes focus-search ──
 
     it('App.svelte derives focusActive covering focus-search surface', () => {
-        // focusActive is derived in app-orchestration.svelte.ts; App.svelte reads v.focusActive
-        const orchPath = resolve(__dirname, '../../src/lib/orchestration/app-orchestration.svelte.ts')
-        const orchSrc = readFileSync(orchPath, 'utf-8')
-        expect(orchSrc).toMatch(/focusSearchForced/)
+        // focusActive is derived inline in App.svelte; the orchestrator
+        // that originally held this was deleted in W47 cleanup. Verify
+        // focusSearchForced is in App.svelte's $derived block instead.
+        expect(appSrc).toMatch(/focusSearchForced/)
     })
 
     // ── JourneyChrome: no changes needed (self-gating) ──

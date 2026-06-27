@@ -130,7 +130,8 @@ Commit `phaseB(css): eliminate is-active toggle + migrate body.is-active src/ CS
     - Comment added explaining the removal + backward-compat note
 - **Updated parity-attrs file header docstring** to remove is-active reference
 - **Removed dead `body.classList.add('is-active')` would not be safe to remove**:
-    - `src/App.svelte:194` and `src/lib/orchestration/app-orchestration.svelte.ts:97` — `__forceSemanticDiveContractSurface` test hooks. These are test infrastructure that directly sets is-active for contract testing. Kept as backward compat.
+    - `src/App.svelte:194` — `__forceSemanticDiveContractSurface` test hook. Test infrastructure that directly sets is-active for contract testing. Kept as backward compat.
+    - Note: `src/lib/orchestration/app-orchestration.svelte.ts` was deleted in a later wave (W47 cleanup) — its equivalent `setupContractSurface` carried the same dead is-active write.
 
 ## Test compatibility note
 
