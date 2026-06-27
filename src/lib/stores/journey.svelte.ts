@@ -39,7 +39,6 @@
 import type {
     JourneyState,
     NavMode,
-    CompassState,
     CompassPhase,
     CompassAction,
     TrailStop,
@@ -250,7 +249,6 @@ export const journeyState: JourneyStoreApi = journeyStore
 export const journeyPhase = () => appState.navState.mode
 export const journeyTrail = () =>
     finiteIndexList(appState.navState.walkHistoryIndices).map((index) => ({ index }) as TrailStop)
-export const compassState = () => ({ phase: appState.navState.mode, action: null }) as unknown as CompassState
 export const compassPhase = () => 'idle'
 export const journeyNeighbors = () => finiteIndexList(appState.navState.trailNeighborIndices)
 export const journeySelectedId = () => {
