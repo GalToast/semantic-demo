@@ -238,7 +238,6 @@
     id="canvas-container"
     class="semantic-canvas-container"
     class:canvas-ready={canvasReady}
-    style="z-index: var(--z-canvas)"
   >
     <canvas
       bind:this={canvasEl}
@@ -280,6 +279,7 @@
     width: 100%;
     height: 100%;
     touch-action: none;
+    z-index: var(--z-canvas);
   }
 
   .semantic-canvas-container:not(.canvas-ready) {

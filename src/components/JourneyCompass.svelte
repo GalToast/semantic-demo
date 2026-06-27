@@ -363,7 +363,6 @@
     id="journey-compass-title"
     class="journey-compass-title"
     class:sr-only={!visibleTitle}
-    style="overflow: visible; text-overflow: clip; white-space: normal;"
   >
     {visibleTitle || titleSrOnlyText}
   </div>
