@@ -112,6 +112,7 @@ function _readFocusSnapshot(): FocusStoreState {
         focusOrbitSlackState?: FocusOrbitSlackState
         inspectedStrandDiagnostics?: ThreadInspectorState
         threadInspectorPointerInside?: boolean
+        pocketRoleFilter?: PocketRoleFilter
     }
     const navState = source.navState ?? {}
     const indices = navState.focusPocketIndices || []
