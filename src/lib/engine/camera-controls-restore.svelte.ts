@@ -14,9 +14,7 @@
  * stay imperative — they're not Svelte state.
  */
 
-import { appState as _state } from '@lib/state/app.svelte'
-import type { SemanticState } from '@lib/state/state-types'
-const state = _state as unknown as SemanticState
+import { appState } from '@lib/state/app.svelte'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import { easeInOutCubic } from '@lib/utils/math-easing'
 
@@ -44,21 +42,20 @@ class CameraControlsRestore {
     // ── Camera overview pose ──────────────────────────────────────────────
 
     settleCameraToOverviewPose(): boolean {
-        // _s alias removed: state is now typed as SemanticState at module level
-        if (state.camera == null || state.controls == null) return false
-        if (state.sceneRevealActive) return false
-        if (state.focusedNode != null) return false
-        if (state.selectedPoint != null) return false
-        const _mode = state.navState?.mode
+        if (appState.camera == null || appState.controls == null) return false
+        if (appState.sceneRevealActive) return false
+        if (appState.focusedNode != null) return false
+        if (appState.selectedPoint != null) return false
+        const _mode = appState.navState?.mode
         if (_mode === 'overview') {
             /* ok — fall through */
         } else return false
-        if (state.trailDepth === 0) {
+        if (appState.trailDepth === 0) {
             /* ok — fall through */
         } else return false
 
-        const cam = state.camera
-        const ctrl = state.controls
+        const cam = appState.camera
+        const ctrl = appState.controls
         const [px, py, pz] = OVERVIEW_CAMERA_POSE.position
         const [tx, ty, tz] = OVERVIEW_CAMERA_POSE.target
         cam.position.set?.(px, py, pz)
@@ -71,33 +68,31 @@ class CameraControlsRestore {
     // ── Auto-rotate allowed check ─────────────────────────────────────────
 
     isCameraIdleOrbitAllowed(): boolean {
-        // _s alias removed: state is now typed as SemanticState at module level
         const prefersReduced = prefersReducedMotion()
         return (
             this.autoRotate &&
             !prefersReduced &&
-            state.currentView === 'galaxy' &&
-            state.focusedNode === null &&
-            state.selectedPoint === null &&
-            state.navState.mode === 'overview' &&
+            appState.currentView === 'galaxy' &&
+            appState.focusedNode === null &&
+            appState.selectedPoint === null &&
+            appState.navState.mode === 'overview' &&
             !this.autoRotateSuspended &&
-            !state.sceneRevealActive &&
-            !state.searchGlowActive
+            !appState.sceneRevealActive &&
+            !appState.searchGlowActive
         )
     }
 
     // ── Orbit sync ────────────────────────────────────────────────────────
 
     syncOrbitAutoRotate(): void {
-        // _s alias removed: state is now typed as SemanticState at module level
-        if (state.controls != null) {
+        if (appState.controls != null) {
             const allowed = this.isCameraIdleOrbitAllowed()
-            state.controls.autoRotate = allowed
+            appState.controls.autoRotate = allowed
             if (!allowed) {
-                state.controls.autoRotateSpeed = 0
+                appState.controls.autoRotateSpeed = 0
                 if (this.autoRotateSoftResumeStartedAt) this.autoRotateSoftResumeStartedAt = 0
-            } else if (!this.autoRotateSoftResumeStartedAt && (state.controls.autoRotateSpeed ?? 0) <= 0) {
-                state.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
+            } else if (!this.autoRotateSoftResumeStartedAt && (appState.controls.autoRotateSpeed ?? 0) <= 0) {
+                appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
             }
         }
     }
@@ -108,14 +103,13 @@ class CameraControlsRestore {
         if (this.autoRotateSuspended === suspended) return
         this.autoRotateSuspended = suspended
         // Legacy mirror
-        // _s alias removed: state is now typed as SemanticState at module level
-        state.autoRotateSuspended = suspended
+        appState.autoRotateSuspended = suspended
         if (suspended) {
             this.autoRotateSoftResumeStartedAt = 0
-            state.autoRotateSoftResumeStartedAt = 0
+            appState.autoRotateSoftResumeStartedAt = 0
         } else {
             this.autoRotateSoftResumeStartedAt = performance.now()
-            state.autoRotateSoftResumeStartedAt = this.autoRotateSoftResumeStartedAt
+            appState.autoRotateSoftResumeStartedAt = this.autoRotateSoftResumeStartedAt
         }
         this.syncOrbitAutoRotate()
     }
@@ -126,48 +120,46 @@ class CameraControlsRestore {
         this.autoRotateResumeTimer = null
         this.autoRotateResumeDueAt = 0
         // Legacy mirror
-        // _s alias removed: state is now typed as SemanticState at module level
-        state.autoRotateResumeTimer = null
-        state.autoRotateResumeDueAt = 0
+        appState.autoRotateResumeTimer = null
+        appState.autoRotateResumeDueAt = 0
     }
 
     scheduleAutoRotateResume(delay: number = AUTO_ROTATE_IDLE_MS): void {
         this.clearAutoRotateResumeTimer()
         if (prefersReducedMotion()) return
-        // _s alias removed: state is now typed as SemanticState at module level
-        const _isGalaxy = state.currentView === 'galaxy'
-        const _noFocus = state.focusedNode == null
-        const _noSelection = state.selectedPoint == null
-        const _isOverview = state.navState.mode === 'overview'
-        const _pocketActive = (state.navState.focusPocketMeta as { active?: boolean } | null)?.active === true
-        const _trailZero = state.trailDepth === 0
+        const _isGalaxy = appState.currentView === 'galaxy'
+        const _noFocus = appState.focusedNode == null
+        const _noSelection = appState.selectedPoint == null
+        const _isOverview = appState.navState.mode === 'overview'
+        const _pocketActive = (appState.navState.focusPocketMeta as { active?: boolean } | null)?.active === true
+        const _trailZero = appState.trailDepth === 0
         if (
             !this.autoRotate ||
             !_isGalaxy ||
             !_noFocus ||
             !_noSelection ||
-            state.sceneRevealActive ||
+            !appState.sceneRevealActive ||
             !_isOverview ||
             _pocketActive ||
             !_trailZero
         )
             return
         this.autoRotateResumeDueAt = performance.now() + delay
-        state.autoRotateResumeDueAt = this.autoRotateResumeDueAt
+        appState.autoRotateResumeDueAt = this.autoRotateResumeDueAt
         this.autoRotateResumeTimer = setTimeout(() => {
             this.autoRotateResumeTimer = null
             this.autoRotateResumeDueAt = 0
-            state.autoRotateResumeTimer = null
-            state.autoRotateResumeDueAt = 0
+            appState.autoRotateResumeTimer = null
+            appState.autoRotateResumeDueAt = 0
             if (
                 this.autoRotate &&
-                state.currentView === 'galaxy' &&
-                state.focusedNode == null &&
-                state.selectedPoint == null &&
-                state.navState.mode === 'overview' &&
-                !state.sceneRevealActive &&
-                (state.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true &&
-                state.trailDepth === 0
+                appState.currentView === 'galaxy' &&
+                appState.focusedNode == null &&
+                appState.selectedPoint == null &&
+                appState.navState.mode === 'overview' &&
+                !appState.sceneRevealActive &&
+                (appState.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true &&
+                appState.trailDepth === 0
             ) {
                 this.setAutoRotateSuspended(false)
             }
@@ -182,12 +174,11 @@ class CameraControlsRestore {
     // ── Soft resume progress ──────────────────────────────────────────────
 
     updateAutoRotateSoftResume(now: number = performance.now()): void {
-        // _s alias removed: state is now typed as SemanticState at module level
-        if (state.controls == null) return
+        if (appState.controls == null) return
         this.syncOrbitAutoRotate()
-        if (!state.controls.autoRotate) return
+        if (!appState.controls.autoRotate) return
         if (!this.autoRotateSoftResumeStartedAt) {
-            state.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
+            appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
             return
         }
 
@@ -196,24 +187,23 @@ class CameraControlsRestore {
             Math.max(0, (now - this.autoRotateSoftResumeStartedAt) / AUTO_ROTATE_SOFT_RESUME_MS)
         )
         const eased = easeInOutCubic(progress)
-        state.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED * eased
+        appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED * eased
         if (progress >= 1) {
             this.autoRotateSoftResumeStartedAt = 0
-            state.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
+            appState.controls.autoRotateSpeed = AUTO_ROTATE_BASE_SPEED
         }
     }
 
     // ── Toggle ────────────────────────────────────────────────────────────
 
     toggleAutoRotate(): void {
-        // _s alias removed: state is now typed as SemanticState at module level
         const prefersReduced = prefersReducedMotion()
         if (prefersReduced) {
             this.autoRotate = false
-            state.autoRotate = false
-            if (state.controls != null) {
-                state.controls.autoRotate = false
-                state.controls.autoRotateSpeed = 0
+            appState.autoRotate = false
+            if (appState.controls != null) {
+                appState.controls.autoRotate = false
+                appState.controls.autoRotateSpeed = 0
             }
             const rotateBtn = document.getElementById('btn-rotate')
             if (rotateBtn) {
@@ -223,9 +213,9 @@ class CameraControlsRestore {
             return
         }
         this.autoRotate = !this.autoRotate
-        state.autoRotate = this.autoRotate
-        if (state.controls != null) {
-            state.controls.autoRotate = this.autoRotate && !this.autoRotateSuspended
+        appState.autoRotate = this.autoRotate
+        if (appState.controls != null) {
+            appState.controls.autoRotate = this.autoRotate && !this.autoRotateSuspended
         }
         const rotateBtn = document.getElementById('btn-rotate')
         if (rotateBtn) {
