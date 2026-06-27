@@ -424,7 +424,7 @@
 }
 
 body.view-map #focus-stage #focus-stage-neighbors.focus-stage-neighbors,
-body[class*='surface-map-'] #focus-stage #focus-stage-neighbors.focus-stage-neighbors {
+body.surface-map-any #focus-stage #focus-stage-neighbors.focus-stage-neighbors {
     display: none;
     visibility: hidden;
     max-height: 0;
@@ -1034,18 +1034,16 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     }
 
     html
-        body.view-galaxy:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search']
-        ):not([data-thread-inspect-surface='idle'])
+        body.view-galaxy:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
         #focus-stage.focus-stage
         .focus-stage-card
         #focus-stage-neighbors.focus-stage-neighbors.active,
     html
-        body.view-galaxy:is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search']
-        ):not([data-thread-inspect-surface='idle'])
+        body.view-galaxy:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            [data-thread-inspect-surface='idle']
+        )
         #focus-stage.focus-stage
         .focus-stage-card
         .focus-stage-dive-btn {
@@ -1117,9 +1115,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     html body.view-galaxy[data-panel-surface='focus-search'] .controls.controls-rail.controls,
     html body.view-galaxy[data-panel-surface='focus-search'] .controls.controls-info.controls,
     html body.view-galaxy[data-panel-surface='semantic-dive'] .controls.controls-rail.controls,
-    html
-        body.view-galaxy[data-panel-surface='semantic-dive']
-        .controls.controls-info.controls {
+    html body.view-galaxy[data-panel-surface='semantic-dive'] .controls.controls-info.controls {
         display: contents;
         visibility: visible;
         pointer-events: auto;

@@ -19,8 +19,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    :is(body.surface-idle, body.surface-idle):not([data-panel-surface^='map-'])
-        .view-toggle {
+    :is(body.surface-idle, body.surface-idle):not([data-panel-surface^='map-']) .view-toggle {
         left: 12px;
         right: 12px;
         top: calc(18px + env(safe-area-inset-top, 0px));
@@ -273,7 +272,9 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         display: none;
     }
 
-    body.surface-search:not([data-panel-surface^='map-']) .journey-compass[data-panel-surface='search'] .journey-compass-title {
+    body.surface-search:not([data-panel-surface^='map-'])
+        .journey-compass[data-panel-surface='search']
+        .journey-compass-title {
         min-width: 0;
         font-size: 11.5px;
         line-height: 1.3;
@@ -355,8 +356,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         border-radius: 999px;
     }
 
-    body.surface-search:not([data-panel-surface^='map-'])
-        .journey-compass-action[data-journey-action='center-anchor'] {
+    body.surface-search:not([data-panel-surface^='map-']) .journey-compass-action[data-journey-action='center-anchor'] {
         min-width: 86px;
         padding-inline: 12px;
         line-height: 1;
@@ -622,19 +622,23 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         white-space: nowrap;
     }
 
-    .journey-compass[data-focus-panel-mode='field-node'] .journey-compass-action[data-journey-action='center-anchor']::before {
+    .journey-compass[data-focus-panel-mode='field-node']
+        .journey-compass-action[data-journey-action='center-anchor']::before {
         content: 'Center';
     }
 
-    .journey-compass[data-focus-panel-mode='field-node'] .journey-compass-action[data-journey-action='next-stop']::before {
+    .journey-compass[data-focus-panel-mode='field-node']
+        .journey-compass-action[data-journey-action='next-stop']::before {
         content: 'Next';
     }
 
-    .journey-compass[data-focus-panel-mode='field-node'] .journey-compass-action[data-journey-action='open-map']::before {
+    .journey-compass[data-focus-panel-mode='field-node']
+        .journey-compass-action[data-journey-action='open-map']::before {
         content: 'Map';
     }
 
-    .journey-compass[data-focus-panel-mode='field-node'] .journey-compass-action[data-journey-action='search-field']::before {
+    .journey-compass[data-focus-panel-mode='field-node']
+        .journey-compass-action[data-journey-action='search-field']::before {
         content: 'Search';
     }
 
@@ -673,8 +677,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-action::before,
-    body.surface-idle:not([data-panel-surface^='map-'])
-        .journey-compass-action.action-btn::before {
+    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-action.action-btn::before {
         font-size: 10.5px;
         line-height: 1;
         letter-spacing: 0.02em;
@@ -878,14 +881,14 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     /* Map-search final geometry guard: keep map chrome out of the content lane. */
-    body[class*='surface-map-'] .info-panel {
+    body.surface-map-any .info-panel {
         left: 8px;
         right: 8px;
         width: auto;
         max-width: none;
     }
 
-    body[class*='surface-map-'] .search-container {
+    body.surface-map-any .search-container {
         left: 0;
         right: 0;
         top: clamp(336px, 41dvh, 360px);
@@ -895,7 +898,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         box-sizing: border-box;
     }
 
-    body[class*='surface-map-'] .search-container .search-results.active {
+    body.surface-map-any .search-container .search-results.active {
         box-sizing: border-box;
         max-height: min(22dvh, 180px);
     }
@@ -924,15 +927,26 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         overflow: hidden;
     }
 
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #info-panel.info-panel,
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) #info-panel.info-panel {
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+        #info-panel.info-panel,
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
+        #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .search-container {
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
+        .search-container {
         display: none;
         visibility: hidden;
         opacity: 0;
@@ -1000,10 +1014,8 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     body.surface-focus:not([data-panel-surface^='map-']) #journey-chrome,
-    body.surface-focus-search:not([data-panel-surface^='map-']):not([data-trail-state='active'])
-        #journey-chrome,
-    body.surface-focus-search[data-focus-panel-mode='field-node']:not([data-panel-surface^='map-'])
-        #journey-chrome {
+    body.surface-focus-search:not([data-panel-surface^='map-']):not([data-trail-state='active']) #journey-chrome,
+    body.surface-focus-search[data-focus-panel-mode='field-node']:not([data-panel-surface^='map-']) #journey-chrome {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -1428,15 +1440,15 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body[class*='surface-map-'] #btn-launch,
-    body[class*='surface-map-'] .launch-btn,
-    body[class*='surface-map-'] #synthesize-trigger {
+    body.surface-map-any #btn-launch,
+    body.surface-map-any .launch-btn,
+    body.surface-map-any #synthesize-trigger {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body[class*='surface-map-'] #map-container .leaflet-control-attribution {
+    body.surface-map-any #map-container .leaflet-control-attribution {
         display: none;
     }
 
@@ -1455,30 +1467,30 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     /* Map marker â search result visual link.
        Subtle left accent bars echo the marker's glow color in map view,
        making the correspondence legible without extra icons or badges. */
-    body[class*='surface-map-'] .search-result-item.is-anchor {
+    body.surface-map-any .search-result-item.is-anchor {
         border-left: 3px solid rgba(255, 226, 122, 0.72);
         box-shadow:
             inset 3px 0 0 rgba(255, 226, 122, 0.72),
             inset 0 1px 0 var(--glass-reflection-soft),
             0 12px 30px rgba(20, 24, 12, 0.18);
     }
-    body[class*='surface-map-'] .search-result-item.is-anchor .search-result-rank {
+    body.surface-map-any .search-result-item.is-anchor .search-result-rank {
         color: rgba(255, 233, 161, 0.94);
     }
-    body[class*='surface-map-'] .search-result-item.is-anchor .search-result-rank::before {
+    body.surface-map-any .search-result-item.is-anchor .search-result-rank::before {
         background: rgba(255, 226, 122, 0.92);
         box-shadow: 0 0 0 5px rgba(255, 226, 122, 0.12);
     }
-    body[class*='surface-map-'] .search-result-item.top-result {
+    body.surface-map-any .search-result-item.top-result {
         border-left: 3px solid rgba(var(--color-primary-alt-rgb), 0.6);
     }
-    body[class*='surface-map-'] .search-result-item.top-result .search-result-rank {
+    body.surface-map-any .search-result-item.top-result .search-result-rank {
         color: rgba(150, 223, 216, 0.88);
     }
-    body[class*='surface-map-'] .search-result-item.top-result .search-result-rank::before {
+    body.surface-map-any .search-result-item.top-result .search-result-rank::before {
         background: currentColor;
     }
-    body[class*='surface-map-'] .search-result-item.active-focus {
+    body.surface-map-any .search-result-item.active-focus {
         border-left: 3px solid rgba(var(--color-primary-alt-rgb), 0.8);
         box-shadow:
             inset 3px 0 0 rgba(var(--color-primary-alt-rgb), 0.8),

@@ -544,6 +544,24 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
             document.body.classList.add(desiredClass)
         }
     }
+
+    // ── Static class mirrors for compound selectors ─────────────────────
+    // Some CSS rules target "any surface that's a map variant" (e.g.,
+    // map-trail, map-focus, map-search, map-focus-search). The
+    // value-based class mirror above emits surface-{value} for each, but
+    // CSS substring matching (body[class*='surface-map-']) is fragile
+    // when someone adds a new map variant — codemod requires another
+    // pass. The static class surface-map-any is added whenever
+    // panelSurface starts with 'map-', giving CSS a stable hook.
+    const isMapSurface = typeof map.panelSurface === 'string' &&
+        (map.panelSurface as string).startsWith('map-')
+    if (isMapSurface) {
+        if (!document.body.classList.contains('surface-map-any')) {
+            document.body.classList.add('surface-map-any')
+        }
+    } else if (document.body.classList.contains('surface-map-any')) {
+        document.body.classList.remove('surface-map-any')
+    }
 }
 
 // ── Installer (rune-based) ─────────────────────────────────────────────────

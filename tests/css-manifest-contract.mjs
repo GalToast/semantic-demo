@@ -70,7 +70,7 @@ const requiredFragments = [
     'body.surface-search',
     'body.surface-focus-search',
     'body.surface-semantic-dive',
-    'body[class*="surface-map-"]',
+    'body.surface-map-any',
     '.map-trail-strip',
     '.focus-stage-card'
 ]

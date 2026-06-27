@@ -349,7 +349,7 @@ body.surface-focus-search .info-panel {
     box-shadow: 0 26px 64px var(--shadow-penumbra);
 }
 
-body[class*='surface-map-'] .info-panel {
+body.surface-map-any .info-panel {
     border-color: rgba(124, 228, 219, 0.14);
     box-shadow: 0 28px 68px var(--shadow-penumbra);
 }
@@ -981,7 +981,7 @@ body:has(.info-panel.active) .panel-toggle {
         font-weight: 400;
     }
 
-    body[class*='surface-map-'] {
+    body.surface-map-any {
         --map-panel-top: calc(clamp(232px, 34vh, 258px) + env(safe-area-inset-top, 0px));
         --map-panel-bottom: calc(clamp(86px, 14vh, var(--view-toggle-right-mobile)) + env(safe-area-inset-bottom, 0px));
         --map-panel-content-reserve: calc(clamp(330px, 48vh, 350px) + env(safe-area-inset-top, 0px));
@@ -1007,7 +1007,7 @@ body:has(.info-panel.active) .panel-toggle {
     }
 
     /* trail-context is hidden in ALL map view states, so it belongs here with proper specificity. */
-    body[class*='surface-map-'] .trail-context {
+    body.surface-map-any .trail-context {
         display: none;
         max-height: 0;
         margin: 0;
@@ -1019,23 +1019,23 @@ body:has(.info-panel.active) .panel-toggle {
         pointer-events: none;
     }
 
-    body[class*='surface-map-'] .info-panel {
+    body.surface-map-any .info-panel {
         top: var(--map-panel-top);
     }
 
-    body[class*='surface-map-'] .info-header {
+    body.surface-map-any .info-header {
         gap: 10px;
         padding: 12px 14px;
         font-size: 13px;
     }
 
-    body[class*='surface-map-'] .info-toggle-icon {
+    body.surface-map-any .info-toggle-icon {
         width: 24px;
         height: 24px;
         font-size: 12px;
     }
 
-    body[class*='surface-map-'] .legend-toggle {
+    body.surface-map-any .legend-toggle {
         top: auto;
         right: 10px;
         bottom: calc(76px + env(safe-area-inset-bottom, 0px));
@@ -1048,7 +1048,7 @@ body:has(.info-panel.active) .panel-toggle {
         box-shadow: 0 14px 28px var(--shadow-penumbra);
     }
 
-    body[class*='surface-map-'] .legend-panel {
+    body.surface-map-any .legend-panel {
         top: auto;
         right: 10px;
         bottom: calc(122px + env(safe-area-inset-bottom, 0px));
@@ -1063,14 +1063,14 @@ body:has(.info-panel.active) .panel-toggle {
 }
 
 @media (max-width: 430px) and (max-height: 740px) {
-    body[class*='surface-map-'] {
+    body.surface-map-any {
         --map-panel-top: calc(244px + env(safe-area-inset-top, 0px));
         --map-panel-bottom: calc(92px + env(safe-area-inset-bottom, 0px));
         --map-panel-content-reserve: calc(382px + env(safe-area-inset-top, 0px));
         --map-panel-content-pad: calc(168px + env(safe-area-inset-bottom, 0px));
     }
 
-    body[class*='surface-map-'] .info-panel {
+    body.surface-map-any .info-panel {
         top: auto;
         bottom: 0;
         left: 0;
@@ -1100,23 +1100,23 @@ body:has(.info-panel.active) .panel-toggle {
         display: none;
     }
 
-    body[class*='surface-map-'] #btn-rotate {
+    body.surface-map-any #btn-rotate {
         display: none;
     }
 
-    body[class*='surface-map-'] .legend-toggle {
+    body.surface-map-any .legend-toggle {
         top: calc(10px + env(safe-area-inset-top, 0px));
         right: 12px;
         bottom: auto;
     }
 
-    body[class*='surface-map-'] .view-toggle {
+    body.surface-map-any .view-toggle {
         top: calc(10px + env(safe-area-inset-top, 0px));
         left: 12px;
         right: 60px; /* Make room for legend-toggle */
     }
 
-    body[class*='surface-map-'] .legend-panel {
+    body.surface-map-any .legend-panel {
         bottom: calc(96px + env(safe-area-inset-bottom, 0px));
         width: min(196px, calc(100vw - 20px));
         max-height: 34vh;

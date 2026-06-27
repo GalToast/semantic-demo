@@ -546,7 +546,7 @@
     /* ----------------------------------------------------------------
        6. Map view - hide non-map chrome + compass
        ---------------------------------------------------------------- */
-    body[class*='surface-map-'] .time-display {
+    body.surface-map-any .time-display {
         display: none;
     }
 
@@ -561,7 +561,7 @@
 
     /* SD-143: Restore mobile search in Map mode. layout_base sets top/bottom/left/right
        positioning for map panels; this block handles visibility/display overrides. */
-    body[class*='surface-map-'] .info-panel {
+    body.surface-map-any .info-panel {
         display: block; /* selector specificity already exceeds layout_base:761 */
         visibility: visible; /* no competing visibility rule in layout/strands */
         pointer-events: none;
@@ -572,7 +572,7 @@
         opacity: 1; /* overrides layout_base collapsed state through normal cascade */
     }
 
-    body[class*='surface-map-'] .search-container {
+    body.surface-map-any .search-container {
         position: absolute;
         display: block; /* selector specificity already exceeds layout_base:455-485 */
         visibility: visible; /* no competing visibility rule in layout/strands */
@@ -592,7 +592,7 @@
         border: var(--glass-border-glow);
     }
 
-    body[class*='surface-map-'] .search-container .search-results.active {
+    body.surface-map-any .search-container .search-results.active {
         max-height: min(24dvh, 220px);
         overflow-y: auto;
     }

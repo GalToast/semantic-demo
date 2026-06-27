@@ -213,7 +213,7 @@ body.surface-focus-search .trail-context {
     display: block;
 }
 
-body[class*='surface-map-'] .selected-card {
+body.surface-map-any .selected-card {
     position: fixed;
     bottom: 24px;
     left: 24px;
@@ -274,7 +274,7 @@ body.surface-map-focus-search .selected-role-badge {
     }
 }
 
-body[class*='surface-map-'] .selected-card .panel-section-title {
+body.surface-map-any .selected-card .panel-section-title {
     font-size: 11px;
 }
 

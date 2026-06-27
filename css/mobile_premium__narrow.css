@@ -12,12 +12,12 @@
 
     /* map-trail-strip / map-strip-title are map-only elements
        (see chrome.css:337,359 for the same gate pattern). */
-    body[class*='surface-map-'] .map-trail-strip {
+    body.surface-map-any .map-trail-strip {
         padding: 8px 10px;
         gap: 8px;
     }
 
-    body[class*='surface-map-'] .map-strip-title {
+    body.surface-map-any .map-strip-title {
         max-width: 38vw;
     }
 

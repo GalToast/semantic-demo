@@ -141,7 +141,7 @@
     }
 
     /* Map mode search results: tighter fade for compact drawer feel */
-    body[class*='surface-map-'] .search-container .search-results.active::after {
+    body.surface-map-any .search-container .search-results.active::after {
         height: 16px;
         margin-top: -16px;
         background: linear-gradient(180deg, rgba(7, 22, 27, 0), rgba(7, 22, 27, 0.96));
@@ -194,18 +194,18 @@
     /* ----------------------------------------------------------------
        C. Map controls
        ---------------------------------------------------------------- */
-    body[class*='surface-map-'] #map-container .leaflet-control-zoom.leaflet-bar {
+    body.surface-map-any #map-container .leaflet-control-zoom.leaflet-bar {
         border-radius: 8px;
         overflow: hidden;
     }
 
-    body[class*='surface-map-'] #map-container .leaflet-control-zoom.leaflet-bar a {
+    body.surface-map-any #map-container .leaflet-control-zoom.leaflet-bar a {
         width: 44px;
         height: 44px;
         line-height: 42px;
     }
 
-    body[class*='surface-map-'] #map-container .leaflet-control-attribution {
+    body.surface-map-any #map-container .leaflet-control-attribution {
         right: 10px;
         bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         max-width: min(220px, calc(100vw - 80px));
@@ -214,7 +214,7 @@
         white-space: normal;
     }
 
-    body[class*='surface-map-'] .journey-compass[data-density='hidden'] {
+    body.surface-map-any .journey-compass[data-density='hidden'] {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -345,7 +345,7 @@
           The strip is now a single-column title-only surface (D36 fix),
           so grid-template-columns uses minmax(0, 1fr) for the title.
        ---------------------------------------------------------------- */
-    body[class*='surface-map-'] .map-trail-strip {
+    body.surface-map-any .map-trail-strip {
         left: 10px;
         right: 10px;
         top: calc(78px + env(safe-area-inset-top, 0px));
@@ -367,7 +367,7 @@
             0 10px 28px var(--shadow-antumbra);
     }
 
-    body[class*='surface-map-'] .map-strip-title {
+    body.surface-map-any .map-strip-title {
         position: static;
         inset: auto;
         z-index: auto;
@@ -399,7 +399,7 @@
         pointer-events: none;
     }
 
-    body[class*='surface-map-'] .map-county-reset-btn {
+    body.surface-map-any .map-county-reset-btn {
         position: fixed;
         top: calc(142px + env(safe-area-inset-top, 0px));
         right: 10px;
