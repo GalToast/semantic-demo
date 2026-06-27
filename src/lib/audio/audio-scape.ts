@@ -58,6 +58,10 @@ function getNavStateWithRoute(): NavStateWithRoute {
     return state.navState as unknown as NavStateWithRoute
 }
 
+function getAudioPoints(): AudioPoint[] {
+    return state.points as AudioPoint[]
+}
+
 // ── Module-scoped mutable state ─────────────────────────────────────────────
 
 /** Lightweight point shape for audio density lookups. */
@@ -171,8 +175,7 @@ function updateAudio(): void {
         if (state.semanticDiveMode) density = 0.9
 
         // Audio Symphony: Cluster-based frequency shift (Phase 3 refinement)
-        const points = state.points as AudioPoint[]
-        const point = points[state.navState.focusedIndex!]
+        const point = getAudioPoints()[state.navState.focusedIndex!]
         if (point && typeof point.cluster === 'number') {
             clusterFreqOffset = (point.cluster % 12) * 12
         }
@@ -181,7 +184,7 @@ function updateAudio(): void {
     // Path Proximity (Phase 3)
     const navWithRoute = getNavStateWithRoute()
     if (navWithRoute.activeRoutePath && navWithRoute.activeRoutePath.length > 0 && state.pointIndexByLeadId) {
-        const audioPoints = state.points as AudioPoint[]
+        const audioPoints = getAudioPoints()
         let minDist = Infinity
         navWithRoute.activeRoutePath.forEach((id: string | number) => {
             const idx = state.pointIndexByLeadId.get(String(id))
