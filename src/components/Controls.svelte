@@ -2,7 +2,7 @@
   @components/Controls.svelte — Camera/interaction controls
 -->
 <script lang="ts">
-  import { cameraState, setAutoRotate, startCameraTransition, resetCamera } from '@lib/stores/camera.svelte.ts';
+  import { cameraState, setAutoRotate, startCameraTransition, resetCamera, CAMERA_CONFIG } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
 
@@ -16,18 +16,41 @@
     setAutoRotate(!cameraState.autoRotate);
   }
 
-  function zoomIn(): void {
+  /**
+   * Step the camera distance from the target by `factor`. factor < 1 zooms in,
+   * factor > 1 zooms out. Clamped to the orbit distance limits so the camera
+   * never crosses through the target or escapes the scene bounds.
+   */
+  function zoomBy(factor: number): void {
+    const [px, py, pz] = cameraState.position;
+    const [tx, ty, tz] = cameraState.target;
+    const dx = px - tx;
+    const dy = py - ty;
+    const dz = pz - tz;
+    const currentDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    if (currentDistance < 1e-6) return; // camera coincides with target, nothing to dolly
+    const min = CAMERA_CONFIG.ORBIT_MIN_DISTANCE_DEFAULT;
+    const max = CAMERA_CONFIG.ORBIT_MAX_DISTANCE_DEFAULT;
+    const nextDistance = Math.min(max, Math.max(min, currentDistance * factor));
+    if (nextDistance === currentDistance) return; // already at the clamp
+    const scale = nextDistance / currentDistance;
+    const nextPosition: [number, number, number] = [
+      tx + dx * scale,
+      ty + dy * scale,
+      tz + dz * scale
+    ];
     startCameraTransition(
-      { position: cameraState.position, target: cameraState.target },
+      { position: nextPosition, target: cameraState.target },
       300
     );
   }
 
+  function zoomIn(): void {
+    zoomBy(1 / 1.2);
+  }
+
   function zoomOut(): void {
-    startCameraTransition(
-      { position: cameraState.position, target: cameraState.target },
-      300
-    );
+    zoomBy(1.2);
   }
 
   function resetView(): void {

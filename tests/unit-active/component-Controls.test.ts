@@ -1,7 +1,7 @@
 /**
  * component-Controls.test.ts — Component test for Controls.svelte
  *
- * Verifies:
+ * Structural tests (8):
  *  1. Renders div.controls with role="toolbar" and id="camera-controls"
  *  2. Toolbar has aria-label="Camera controls"
  *  3. Renders zoom-in button with aria-label="Zoom in" and title="Zoom in"
@@ -10,10 +10,23 @@
  *  6. Renders auto-rotate toggle button with aria-pressed attribute
  *  7. Renders share-link button with aria-label="Share link"
  *  8. All SVG icons are aria-hidden="true"
+ *
+ * Behavioral tests (3) — regression coverage for the non-functional zoom bug:
+ *  9. Clicking zoom-in moves the camera closer to the target (distance shrinks)
+ * 10. Clicking zoom-out moves the camera farther from the target (distance grows)
+ * 11. Zoom respects orbit distance clamps (does not cross target or escape bounds)
  */
-import { describe, it, expect } from 'vitest'
-import { render } from '@testing-library/svelte'
+import { describe, it, expect, beforeEach } from 'vitest'
+import { render, fireEvent } from '@testing-library/svelte'
 import Controls from '../../src/components/Controls.svelte'
+import { cameraState } from '../../src/lib/stores/camera.svelte.ts'
+
+function distance(a: readonly number[], b: readonly number[]): number {
+    const dx = a[0] - b[0]
+    const dy = a[1] - b[1]
+    const dz = a[2] - b[2]
+    return Math.sqrt(dx * dx + dy * dy + dz * dz)
+}
 
 describe('Controls component', () => {
     it('renders div.controls with role="toolbar" and id="camera-controls"', () => {
@@ -73,5 +86,65 @@ describe('Controls component', () => {
         svgs.forEach((svg) => {
             expect(svg.getAttribute('aria-hidden')).toBe('true')
         })
+    })
+})
+
+describe('Controls component — zoom behavior', () => {
+    // Reset camera state between tests so each one starts at the known
+    // OVERVIEW pose. The store has a setter via the underlying API.
+    beforeEach(() => {
+        // Force the transition to idle so subsequent reads see the live position.
+        cameraState.transition = {
+            phase: 'idle',
+            token: 0,
+            startedAt: 0,
+            durationMs: 0,
+            from: { position: [...cameraState.position], target: [...cameraState.target] },
+            to: { position: [...cameraState.position], target: [...cameraState.target] }
+        }
+    })
+
+    it('zoom-in moves the camera closer to the target (regression: was a no-op)', async () => {
+        const { container } = render(Controls)
+        const before = distance(cameraState.position, cameraState.target)
+        const btn = container.querySelector('button[aria-label="Zoom in"]') as HTMLButtonElement
+        expect(btn).toBeTruthy()
+        await fireEvent.click(btn)
+        // After click, the transition's `to.position` holds the new destination.
+        const after = distance(cameraState.transition.to.position, cameraState.transition.to.target)
+        expect(after).toBeLessThan(before)
+        expect(after).toBeCloseTo(before / 1.2, 5)
+    })
+
+    it('zoom-out moves the camera farther from the target (regression: was a no-op)', async () => {
+        const { container } = render(Controls)
+        const before = distance(cameraState.position, cameraState.target)
+        const btn = container.querySelector('button[aria-label="Zoom out"]') as HTMLButtonElement
+        expect(btn).toBeTruthy()
+        await fireEvent.click(btn)
+        const after = distance(cameraState.transition.to.position, cameraState.transition.to.target)
+        expect(after).toBeGreaterThan(before)
+        expect(after).toBeCloseTo(before * 1.2, 5)
+    })
+
+    it('zoom-in is a no-op when already at the min-distance clamp', async () => {
+        // Park the camera at exactly the min distance from the target.
+        const target: [number, number, number] = [0, 0, 0]
+        const position: [number, number, number] = [0, 0, 0.5] // ORBIT_MIN_DISTANCE_DEFAULT
+        cameraState.target = target
+        cameraState.position = position
+        cameraState.transition = {
+            phase: 'idle',
+            token: 0,
+            startedAt: 0,
+            durationMs: 0,
+            from: { position: [...position], target: [...target] },
+            to: { position: [...position], target: [...target] }
+        }
+        const { container } = render(Controls)
+        const btn = container.querySelector('button[aria-label="Zoom in"]') as HTMLButtonElement
+        await fireEvent.click(btn)
+        // No transition should have been scheduled: token stays at 0 (idle).
+        expect(cameraState.transition.token).toBe(0)
     })
 })
