@@ -45,8 +45,8 @@ const COMPRESSION_MIN_BYTES = 100
 const ROOT_ASSETS = new Map<string, string>([
     ['/semantic-demo.css', 'semantic-demo.css'],
     ['/vector-explorer-pandora.css', 'vector-explorer-pandora.css'],
-    ['/data.dat', 'data.dat'],
-    ['/data.dat.gz', 'data.dat.gz'],
+    ['/data.dat', 'src/data.dat'],
+    ['/data.dat.gz', 'src/data.dat.gz'],
     ['/semantic_threads_ui.dat', 'public/data/semantic_threads_ui.dat'],
     ['/semantic_threads.dat', 'public/data/semantic_threads.dat'],
     ['/semantic_space_layout_manifest.json', 'public/data/semantic_space_layout_manifest.json'],
@@ -104,7 +104,7 @@ function copyRuntimeAssetsPlugin(): Plugin {
             await Promise.all([
                 ...Array.from(ROOT_ASSETS.values()).map(async (relativePath) => {
                     const sourcePath = normalize(resolve(PROJECT_ROOT, relativePath))
-                    const distRelativePath = relativePath.replace(/^public\//, '')
+                    const distRelativePath = relativePath.replace(/^public\//, '').replace(/^src\//, '')
                     const targetPath = normalize(resolve(SVELTE_OUT_DIR, distRelativePath))
                     try {
                         const fileStat = await stat(sourcePath)
@@ -488,8 +488,8 @@ export default defineConfig({
             allow: [
                 SRC_DIR,
                 resolve(__dirname, 'node_modules'),
-                resolve(__dirname, 'data.dat'),
-                resolve(__dirname, 'data.dat.gz'),
+                resolve(__dirname, 'src/data.dat'),
+                resolve(__dirname, 'src/data.dat.gz'),
                 resolve(__dirname, 'js'),
                 resolve(__dirname, 'css'),
                 resolve(__dirname, 'semantic-demo.css'),
