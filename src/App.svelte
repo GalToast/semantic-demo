@@ -72,20 +72,11 @@
   const demoChoreographyLazy = createLazyComponent(() => import('@components/DemoChoreography.svelte'))
   const focusCardLazy = createLazyComponent(() => import('@components/FocusCard.svelte'))
   const weatherWidgetLazy = createLazyComponent(() => import('@components/WeatherWidget.svelte'))
-  const devGuiLazy = createLazyComponent(
-    () => import('@components/DevGui.svelte'),
-    { idle: false, logOnError: true }
-  )
-  const spectorInspectorLazy = createLazyComponent(
-    () => import('@components/SpectorInspector.svelte'),
-    { idle: false, logOnError: true }
-  )
-  // Phase 9b: dev-only telemetry overlay. Loaded lazily with the other dev
-  // tooling so it stays out of the prod bundle.
-  const devTelemetryLazy = createLazyComponent(
-    () => import('@components/DevTelemetry.svelte'),
-    { idle: false, logOnError: true }
-  )
+  // Dev-only runtime tooling (lil-gui + Spector + telemetry). Extracted to
+  // DevToolsMount.svelte so App.svelte doesn't have to own 3 lazy handles +
+  // the DEV-gated telemetry install. App.svelte wraps the mount in
+  // {#if import.meta.env.DEV} so the chunks stay out of prod builds.
+  import DevToolsMount from '@components/DevToolsMount.svelte';
   const legacyCompassSurfaceLazy = createLazyComponent(
     () => import('@components/JourneyCompass.svelte')
   )
@@ -129,26 +120,8 @@
 
   $effect(() => weatherWidgetLazy.ensure(weatherVisible));
 
-  $effect(() => {
-    devGuiLazy.ensure(devToolsVisible)
-    spectorInspectorLazy.ensure(devToolsVisible)
-    devTelemetryLazy.ensure(devToolsVisible)
-
-    // Phase 9b: install telemetry subscriber only in dev mode. The
-    // store stays disabled unless the DevTelemetry overlay enables it,
-    // so even with the subscriber attached, no events are recorded in
-    // production-like builds (Vite's DEV flag is false there).
-    if (import.meta.env.DEV) {
-      void import('@lib/telemetry').then((mod) => {
-        const handle = mod.installTelemetry()
-        // Expose for ad-hoc inspection in DevTools.
-        ;(window as unknown as { __telemetry__?: unknown }).__telemetry__ = {
-          store: mod.telemetryStore,
-          handle
-        }
-      })
-    }
-  });
+  // Dev-only runtime tooling mount is delegated to DevToolsMount.svelte.
+  // The component handles its own lazy loading and telemetry install.
 
   interface Props {
     /** Force demo to run regardless of eligibility */
@@ -615,24 +588,12 @@
   <ProximityLegend />
 
   <!--
-    Dev-only runtime tooling (lil-gui + Spector). The component chunks
-    are dynamic-imported only when the devtools URL gate is active; the
-    nested `import('lil-gui')` and `import('spectorjs')` calls stay out
-    of normal app startup.
+    Dev-only runtime tooling (lil-gui + Spector + telemetry). Extracted to
+    DevToolsMount.svelte (W48-T1). The DEV gate stays in App.svelte so the
+    component itself can stay tiny and the chunks only ship in dev builds.
   -->
   {#if import.meta.env.DEV}
-    {#if devGuiLazy.current}
-      {@const Cmp = devGuiLazy.current}
-      <Cmp visible={devToolsVisible} />
-    {/if}
-    {#if spectorInspectorLazy.current}
-      {@const Cmp = spectorInspectorLazy.current}
-      <Cmp visible={devToolsVisible} />
-    {/if}
-    {#if devTelemetryLazy.current}
-      {@const Cmp = devTelemetryLazy.current}
-      <Cmp visible={devToolsVisible} />
-    {/if}
+    <DevToolsMount visible={devToolsVisible} />
   {/if}
 
   <div class="trail-review-overlay" id="trail-review-overlay" role="dialog" aria-modal="false" aria-hidden="true" hidden></div>
