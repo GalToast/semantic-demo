@@ -72,11 +72,11 @@ export async function fetchWeather(): Promise<void> {
         const normalized = normalizeWeatherPayload(payload)
         state.weather = normalized
         if (!normalized) throw new Error('weather payload incomplete')
-        ;(state as Record<string, unknown>).lastSuccessfulFetch = Date.now()
+        const lastSuccessfulFetch = Date.now()
 
         appState.weatherState = {
             weather: appState.weather,
-            lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number,
+            lastFetch: lastSuccessfulFetch,
             fallback: false,
             stalenessMsg: ''
         }
@@ -85,7 +85,7 @@ export async function fetchWeather(): Promise<void> {
 
         appState.weatherState = {
             weather: null,
-            lastFetch: ((state as Record<string, unknown>).lastSuccessfulFetch as number | null) || null,
+            lastFetch: appState.weatherState.lastFetch,
             fallback: true,
             stalenessMsg: ''
         }
@@ -99,7 +99,7 @@ export function updateWeatherUi(): void {
     }
     updateWeatherUiState({
         weather: appState.weather,
-        lastFetch: (state as Record<string, unknown>).lastSuccessfulFetch as number,
+        lastFetch: appState.weatherState.lastFetch ?? 0,
         fallback: false,
         stalenessMsg: ''
     })
@@ -108,20 +108,21 @@ export function updateWeatherUi(): void {
 export function renderWeatherFallback(): void {
     renderWeatherFallbackState({
         weather: null,
-        lastFetch: ((state as Record<string, unknown>).lastSuccessfulFetch as number | null) || null,
+        lastFetch: appState.weatherState.lastFetch,
         fallback: true,
         stalenessMsg: ''
     })
 }
 
 export function updateWeatherStaleness(): void {
-    updateWeatherStalenessForTimestamp(
-        ((state as Record<string, unknown>).lastSuccessfulFetch as number | null) || null
-    )
+    updateWeatherStalenessForTimestamp(appState.weatherState.lastFetch)
 }
 
 export function applyWeatherEffects(): void {
     if (appState.currentView !== 'map' || !appState.weather) return
+    // Narrow cast: weather-ui.applyWeatherEffects only reads `weather.condition`,
+    // so the structural Record contract is satisfied without lying about the
+    // full WeatherData shape.
     applyWeatherEffectsForWeather(appState.weather as unknown as Record<string, unknown>)
 }
 
