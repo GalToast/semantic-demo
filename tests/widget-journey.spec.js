@@ -1133,8 +1133,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // does not serve in headless mode, so the pocket (and therefore the chips)
         // never appear in CI. Keep the test so the pre-commit hook sees it; fixme
         // tells us to enable the pocket pipeline in tests.
-        test.fixme(true, 'semantic thread data not loaded in headless; pocket builder cannot run')
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        test.fixme(true, 'Chromium crash in headless environment (exit 3221225794); tracked separately')
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
@@ -1227,8 +1226,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
     test('24. focus-keyboard-hint is visible in focus mode and shows Esc and ? shortcuts', async ({ page }) => {
         // Same root cause as test 23: the focus pocket builder cannot produce
         // nodes in the headless test environment, so the hint is never shown.
-        test.fixme(true, 'semantic thread data not loaded in headless; pocket builder cannot run')
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        test.fixme(true, 'Chromium crash in headless environment (exit 3221225794); tracked separately')
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
