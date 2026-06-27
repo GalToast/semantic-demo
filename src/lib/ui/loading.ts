@@ -46,6 +46,10 @@ let _loadingOverlayStartedAt = 0
 
 let _loadingHideTimer: ReturnType<typeof setTimeout> | null = null
 let _deferredHydrationStarted = false
+let _loadingMinVisibleTimer: ReturnType<typeof setTimeout> | null = null
+let _loadingLaunchTransitionTimer: ReturnType<typeof setTimeout> | null = null
+let _deferredHydrationTimer: ReturnType<typeof setTimeout> | null = null
+let _weatherHydrationTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -107,13 +111,23 @@ export async function hideLoadingOverlay(): Promise<void> {
     const elapsed = performance.now() - _loadingOverlayStartedAt
     const remaining = Math.max(0, LOADING_MIN_VISIBLE_MS - elapsed)
     if (remaining > 0) {
-        await new Promise<void>((resolve) => setTimeout(resolve, remaining))
+        await new Promise<void>((resolve) => {
+            _loadingMinVisibleTimer = setTimeout(() => {
+                _loadingMinVisibleTimer = null
+                resolve()
+            }, remaining)
+        })
     }
 
     // Transition: launching → hidden
     overlay.dataset.loadingState = 'launching'
     overlay.classList.add('launching')
-    await new Promise<void>((resolve) => setTimeout(resolve, 180))
+    await new Promise<void>((resolve) => {
+        _loadingLaunchTransitionTimer = setTimeout(() => {
+            _loadingLaunchTransitionTimer = null
+            resolve()
+        }, 180)
+    })
 
     overlay.classList.add('hidden')
     overlay.dataset.loadingState = 'hidden'
@@ -169,7 +183,10 @@ export function startDeferredHydration(): void {
             { timeout: 250 }
         )
     } else {
-        setTimeout(run, 80)
+        _deferredHydrationTimer = setTimeout(() => {
+            _deferredHydrationTimer = null
+            void run()
+        }, 80)
     }
 }
 
@@ -195,7 +212,10 @@ export function scheduleWeatherHydration(): void {
             { timeout: 500 }
         )
     } else {
-        setTimeout(start, 300)
+        _weatherHydrationTimer = setTimeout(() => {
+            _weatherHydrationTimer = null
+            void start()
+        }, 300)
     }
 }
 
@@ -281,6 +301,22 @@ export function cancelLoadingHide(): void {
     if (_loadingHideTimer !== null) {
         clearTimeout(_loadingHideTimer)
         _loadingHideTimer = null
+    }
+    if (_loadingMinVisibleTimer !== null) {
+        clearTimeout(_loadingMinVisibleTimer)
+        _loadingMinVisibleTimer = null
+    }
+    if (_loadingLaunchTransitionTimer !== null) {
+        clearTimeout(_loadingLaunchTransitionTimer)
+        _loadingLaunchTransitionTimer = null
+    }
+    if (_deferredHydrationTimer !== null) {
+        clearTimeout(_deferredHydrationTimer)
+        _deferredHydrationTimer = null
+    }
+    if (_weatherHydrationTimer !== null) {
+        clearTimeout(_weatherHydrationTimer)
+        _weatherHydrationTimer = null
     }
     _hideToken += 1
 }
