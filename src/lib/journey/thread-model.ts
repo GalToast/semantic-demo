@@ -20,6 +20,23 @@ import {
     UNCLASSIFIED_RELATIONSHIP_ROLE
 } from '@lib/utils/relationship-roles'
 
+/**
+ * Returns the typed originalPositions array (initial 3D positions before any
+ * choreography mutation). Used at multiple helper-level reads; the `as unknown
+ * as` cast is a Phase 1 type-laundering pass-through.
+ */
+function getOriginalPositions(): readonly Point3D[] {
+    return state.originalPositions as unknown as readonly Point3D[]
+}
+
+/**
+ * Returns the typed points array as BusinessRecord views for thread-model
+ * consumers. Same helper-internal pattern as getAudioPoints().
+ */
+function getPoints(): readonly BusinessRecord[] {
+    return state.points as unknown as readonly BusinessRecord[]
+}
+
 function getNumericAt(values: readonly number[], index: number): number {
     const value = values[index]
     return typeof value === 'number' && Number.isFinite(value) ? value : 0
@@ -113,7 +130,7 @@ export function buildSpatialGrid(arg1?: number | readonly Point3D[], arg2?: numb
 
     const originalPositions = Array.isArray(arg1)
         ? arg1
-        : ((state.originalPositions as unknown as readonly Point3D[]) ?? [])
+        : getOriginalPositions()
 
     const grid = new Map<string, number[]>()
     for (let i = 0; i < originalPositions.length; i++) {
@@ -224,7 +241,7 @@ export function getProjectedNeighborCandidates(index: number, ...args: unknown[]
     }
 
     const { grid, cellSize } = buildProjectedNeighborGrid()
-    const originalPositions = (state.originalPositions as unknown as readonly Point3D[]) ?? []
+    const originalPositions = getOriginalPositions()
     const origin = originalPositions[index]
     if (!origin) return []
     if (!Number.isFinite(origin.x) || !Number.isFinite(origin.y) || !Number.isFinite(origin.z)) return []
@@ -234,7 +251,7 @@ export function getProjectedNeighborCandidates(index: number, ...args: unknown[]
     const gz = Math.floor(origin.z / cellSize)
     const candidates: Array<{ index: number; score: number; dist: number }> = []
     const seen = new Set<number>()
-    const points = (state.points as unknown as readonly BusinessRecord[]) ?? []
+    const points = getPoints()
 
     for (let dx = -2; dx <= 2; dx++) {
         for (let dy = -2; dy <= 2; dy++) {
@@ -354,7 +371,7 @@ export function getSemanticThreadCandidates(index: number, ...args: unknown[]): 
 
     // Legacy path — read from state
     if (!Number.isFinite(index) || index < 0 || index >= state.points.length) return []
-    const point = state.points[index] as unknown as BusinessRecord
+    const point = getPoints()[index]
     const leadId = normalizeLeadId(point?.lead_id)
     if (!leadId) return []
 
