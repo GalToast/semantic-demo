@@ -238,6 +238,43 @@ export default [
         }
     },
 
+    // ── Animation-loop files exempt from requestAnimationFrame lint ──────────
+    // These files use `requestAnimationFrame` as a render-loop / pointer-move /
+    // scroll-animation primitive. Wrapping RAF in DisposableRegistry adds no
+    // value: the RAF self-cancels via state flags or runs until the component
+    // unmounts via Svelte's `$effect` cleanup. The lint rule still fires for
+    // any `setTimeout`/`setInterval` inside these files — those would be real
+    // leaks.
+    {
+        files: [
+            'src/lib/audio/audio-scape.ts',
+            'src/lib/engine/camera-choreography/cursor.ts',
+            'src/lib/engine/camera-choreography/focus.ts',
+            'src/lib/engine/camera-choreography/routes.ts',
+            'src/lib/engine/lifecycle.ts',
+            'src/lib/engine/three-engine-core.ts',
+            'src/lib/engine/three-interaction-visuals.ts',
+            'src/lib/engine/three-search-animations.ts',
+            'src/lib/demo/camera.ts',
+            'src/lib/focus/stage-renderer.ts',
+            'src/lib/journey/canvas-interaction.ts',
+            'src/lib/search/result-renderer.ts'
+        ],
+        rules: {
+            'no-restricted-syntax': [
+                'warn',
+                {
+                    selector: "CallExpression[callee.name='setTimeout']",
+                    message: 'Avoid raw setTimeout() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
+                },
+                {
+                    selector: "CallExpression[callee.name='setInterval']",
+                    message: 'Avoid raw setInterval() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
+                }
+            ]
+        }
+    },
+
     {
         files: ['scripts/**/*.mjs', 'scripts/**/*.js'],
         languageOptions: {
