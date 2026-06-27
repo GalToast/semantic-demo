@@ -374,6 +374,7 @@ export function triggerCorridorNodeGlow(anchorIndex: number, routeIndices: numbe
 
     allIndices.forEach((idx: number, order: number) => {
         const delay = idx === anchorIndex ? 0 : 80 + order * 40
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         const outerId = setTimeout(() => {
             _corridorGlowTimers.delete(outerId)
             if (token !== _corridorGlowToken) return
@@ -390,6 +391,7 @@ export function triggerCorridorNodeGlow(anchorIndex: number, routeIndices: numbe
             }
             shader.uniforms.uHoverBoost.value = targetBoost
 
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             const innerId = setTimeout(() => {
                 _corridorGlowTimers.delete(innerId)
                 if (token !== _corridorGlowToken) return

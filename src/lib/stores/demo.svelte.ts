@@ -175,6 +175,7 @@ export function trackDemoTimer(id: ReturnType<typeof setTimeout>): ReturnType<ty
 }
 
 export function scheduleDemoTimer(callback: () => void, delay: number): ReturnType<typeof setTimeout> {
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     const id = setTimeout(() => {
         timers.delete(id)
         callback()

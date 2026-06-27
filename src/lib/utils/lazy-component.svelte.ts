@@ -93,6 +93,7 @@ export function scheduleIdleImport<T>(load: () => Promise<T>): Promise<T> {
     }
 
     return new Promise((resolve, reject) => {
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         setTimeout(() => run().then(resolve, reject), 0)
     })
 }

@@ -146,6 +146,7 @@ class CameraControlsRestore {
             return
         this.autoRotateResumeDueAt = performance.now() + delay
         appState.autoRotateResumeDueAt = this.autoRotateResumeDueAt
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         this.autoRotateResumeTimer = setTimeout(() => {
             this.autoRotateResumeTimer = null
             this.autoRotateResumeDueAt = 0

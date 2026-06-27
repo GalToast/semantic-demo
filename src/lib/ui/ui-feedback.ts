@@ -44,6 +44,7 @@ export function showExperienceToast(title: string, copy: string): void {
     if (copyEl) copyEl.textContent = copy
     toast.classList.add('active')
     _registry.timer(
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         setTimeout(() => {
             toast.classList.remove('active')
             toast.setAttribute('aria-hidden', 'true')

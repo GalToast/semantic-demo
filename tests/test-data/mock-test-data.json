@@ -1,0 +1,114 @@
+{
+    "points": [
+        [
+            0.1,
+            0.2,
+            0.3,
+            1,
+            "Bob's Car Wash",
+            "Car Wash",
+            "Houston",
+            "lead_001",
+            29.76,
+            -95.37,
+            null,
+            null,
+            null,
+            null,
+            "active",
+            null
+        ],
+        [
+            0.4,
+            0.5,
+            0.6,
+            2,
+            "Spring Donuts",
+            "Bakery",
+            "Spring",
+            "lead_002",
+            30.08,
+            -95.42,
+            null,
+            null,
+            null,
+            null,
+            "active",
+            null
+        ],
+        [
+            0.7,
+            0.8,
+            0.9,
+            3,
+            "Conroe Plumbing",
+            "Plumber",
+            "Conroe",
+            "lead_003",
+            30.31,
+            -95.46,
+            null,
+            null,
+            null,
+            null,
+            "active",
+            null
+        ]
+    ],
+    "threads": {
+        "lead_001": {
+            "lead_id": "lead_001",
+            "name": "Bob's Car Wash",
+            "city": "Houston",
+            "status": "active",
+            "signal_score": 1.0,
+            "neighbors": [
+                {
+                    "lead_id": "lead_002",
+                    "score": 1.5,
+                    "semantic_score": 0.9,
+                    "same_city": false,
+                    "same_status": true,
+                    "bridge_score": 0.8,
+                    "signal_score": 1.2,
+                    "thread_type": "semantic",
+                    "relationship_role": "peer",
+                    "relationship_axis": "same_market",
+                    "role_reason": "similar business type",
+                    "reason": "both are service businesses"
+                }
+            ]
+        },
+        "lead_002": {
+            "lead_id": "lead_002",
+            "name": "Spring Donuts",
+            "city": "Spring",
+            "status": "active",
+            "signal_score": 0.8,
+            "neighbors": [
+                {
+                    "lead_id": "lead_001",
+                    "score": 1.5,
+                    "semantic_score": 0.9,
+                    "same_city": false,
+                    "same_status": true,
+                    "bridge_score": 0.8,
+                    "signal_score": 1.2,
+                    "thread_type": "semantic",
+                    "relationship_role": "peer",
+                    "relationship_axis": "same_market",
+                    "role_reason": "similar business type",
+                    "reason": "both are service businesses"
+                }
+            ]
+        },
+        "lead_003": {
+            "lead_id": "lead_003",
+            "name": "Conroe Plumbing",
+            "city": "Conroe",
+            "status": "active",
+            "signal_score": 0.5,
+            "neighbors": []
+        }
+    }
+}

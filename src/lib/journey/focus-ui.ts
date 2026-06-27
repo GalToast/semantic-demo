@@ -273,6 +273,7 @@ export function updateFocusNeighborRail(): void {
         }
         const scheduleInspect = () => {
             cancelHoverIntent()
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             hoverIntentTimer = setTimeout(() => {
                 const nextIndex = Number(btn.dataset.index)
                 if (!Number.isFinite(nextIndex)) return

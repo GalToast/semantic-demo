@@ -168,6 +168,7 @@ export function initKeyboardShortcutsHint(): void {
             )
         }
         document.addEventListener('demo-cancelled', onCancelled, { once: true })
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         setTimeout(() => document.removeEventListener('demo-cancelled', onCancelled), 10000)
         // Fire the choreography demo. startMicroDemo() owns the re-entry
         // guard (W47 fix) and clears the session gate via shouldRunMicroDemo().
@@ -337,6 +338,7 @@ export function showKeyboardShortcutsHint(): void {
         ;(panel.querySelector('.kh-close') as HTMLElement)?.focus({ preventScroll: true })
     }
     if (panel._autoDismissTimer) clearTimeout(panel._autoDismissTimer)
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     panel._autoDismissTimer = setTimeout(() => {
         if (typeof panel._closeKeyboardHintPanel === 'function') {
             panel._closeKeyboardHintPanel()

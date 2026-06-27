@@ -25,7 +25,7 @@
  */
 
 import { get } from 'svelte/store'
-import { navStore } from '@lib/stores/navigation.svelte'
+import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { appState } from '@lib/state/app.svelte'
 import {
@@ -128,9 +128,35 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
         // chrome (filter chips, keyboard hint) that depends on
         // threadSource === 'semantic' without changing the user-facing
         // canvas-click behaviour.
+        //
+        // The triggers.ts handler updates navStore + withStateMutation writes,
+        // but `applyLocalNeighborhoodFocus` (which builds the pocket) reads
+        // through `appState.navState`. The legacy mirror only syncs for the
+        // 5 explicit fields the handler writes (trailSeedIndex etc.); threadSource
+        // is missing. After publishing, we re-mirror the live navState through
+        // writeNavStateMirror so appState.navState.threadSource and friends
+        // reflect the same value the effect chain reads.
         requestSemanticFocus: ((...args: unknown[]) => {
             const index = typeof args[0] === 'number' ? args[0] : 0
             publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index })
+            // Re-mirror the Svelte-5 nav store into the legacy `appState.navState`
+            // so focus-pocket builders that watch the legacy surface see the
+            // semantic source flag.
+            const live = navStore()
+            writeNavStateMirror({
+                focusedIndex: live.focusedIndex,
+                mode: live.mode,
+                surface: live.surface,
+                trailDepth: live.trailDepth,
+                trailSeedIndex: live.trailSeedIndex,
+                trailNeighborIndices: live.trailNeighborIndices,
+                threadCandidates: live.threadCandidates,
+                threadReasonByIndex: live.threadReasonByIndex,
+                threadSource: live.threadSource
+            })
+        }) as (...args: unknown[]) => unknown,
+        setFocusedIndex: ((index: number) => {
+            navStore.update((s) => ({ ...s, focusedIndex: index }))
         }) as (...args: unknown[]) => unknown,
         setSurface: ((surface: string) => setSurfaceAction(surface as any)) as (...args: unknown[]) => unknown
     }

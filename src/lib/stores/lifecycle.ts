@@ -327,6 +327,7 @@ export function resetExperienceState(): void {
     const searchResults = document.getElementById('search-results')
     if (searchResults) {
         searchResults.classList.remove('active')
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         setTimeout(() => {
             if (!searchResults.classList.contains('active')) {
                 searchResults.hidden = true

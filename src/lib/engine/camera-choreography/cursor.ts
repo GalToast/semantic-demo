@@ -189,7 +189,9 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     // no longer overwrites the parity attrs.
     queueMicrotask(() => applyParityAttributes(computeParityAttributes()))
     clearParityTimeouts()
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     parityTimeoutHandles.push(setTimeout(() => applyParityAttributes(computeParityAttributes()), 50))
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     parityTimeoutHandles.push(setTimeout(() => applyParityAttributes(computeParityAttributes()), 250))
     return true
 }

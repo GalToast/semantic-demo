@@ -265,6 +265,7 @@ function yieldToBrowser(): Promise<void> {
             window.requestIdleCallback(() => resolve(), { timeout: 50 })
         })
     }
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     return new Promise<void>((resolve) => setTimeout(resolve, 0))
 }
 
@@ -367,6 +368,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                     }
                     debugLog('[simulateWebGLContextLoss] Triggering artificial context loss')
                     ext.loseContext()
+                    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
                     setTimeout(() => {
                         debugLog('[simulateWebGLContextLoss] Triggering artificial context restoration')
                         ext.restoreContext()

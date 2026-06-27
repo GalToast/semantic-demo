@@ -101,6 +101,7 @@ export async function rerankResults(
 
     // Fetch with timeout via AbortController.
     const controller = new AbortController()
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     const timeoutId = setTimeout(() => controller.abort(), timeoutMs)
 
     try {

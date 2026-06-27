@@ -222,6 +222,7 @@ export async function acquireSearchLock(
           fs.rm(lockFile, { recursive: true }).catch(() => {});
         };
       } catch {
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         await new Promise((r) => setTimeout(r, 50));
       }
     }

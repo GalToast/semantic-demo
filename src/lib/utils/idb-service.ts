@@ -50,6 +50,7 @@ function withTxTimeout<T>(
     return new Promise<T>((resolve, reject) => {
         let settled = false
 
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         const timer = setTimeout(() => {
             if (settled) return
             settled = true
@@ -115,6 +116,7 @@ export function initDB(): Promise<IDBDatabase> {
 
             // Safety timeout for the open request itself (which can hang on
             // version upgrade conflicts in some browsers).
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             const timer = setTimeout(() => {
                 if (settled) return
                 settled = true

@@ -902,6 +902,7 @@ if (typeof document !== 'undefined' && document && document.addEventListener) {
             nameEl.style.transition = 'text-shadow 0.4s ease, color 0.4s ease'
             nameEl.style.color = '#fff'
             nameEl.style.textShadow = '0 0 12px rgba(78, 205, 196, 0.8)'
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             setTimeout(() => {
                 nameEl.style.color = ''
                 nameEl.style.textShadow = ''

@@ -1130,11 +1130,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * and the neighbor list only shows pills with data-relationship-role='direct'.
      */
     test('23. focus-role-filters render and filter neighbors by relationship', async ({ page }) => {
-        // Focus-pocket builder requires semantic-thread data that the QA server
-        // does not serve in headless mode, so the pocket (and therefore the chips)
-        // never appear in CI. Keep the test so the pre-commit hook sees it; fixme
-        // tells us to enable the pocket pipeline in tests.
-        test.fixme(true, 'semantic thread data not loaded in headless; pocket builder cannot run')
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
@@ -1146,15 +1142,40 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await canvas.waitFor({ state: 'attached', timeout: 40000 })
         await page.waitForTimeout(5000)
 
-        // Focus a business by clicking a canvas node (same pattern as test 21).
-        await canvas.click()
-        await page.waitForTimeout(2500)
+        // Wait for the live semantic-thread data to finish loading (~9 s on a
+        // cold cache). buildNeighborhoodManifest runs in triggers.ts only after
+        // this Map is populated, so without this wait every focused node falls
+        // back to threadSource === 'geometric-fallback' (no focusPocketIndices,
+        // no filter chips).
+        await page.waitForFunction(
+            () => {
+                const live = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
+                return (live?.semanticNeighborMapByLeadId?.size ?? 0) > 0
+            },
+            null,
+            { timeout: 30000 }
+        )
 
-        // Verify a business is focused
+        // Focus a node via SEARCH_FOCUS_REQUESTED so buildNeighborhoodManifest
+        // runs and threadSource flips to 'semantic'. The canvas-click path only
+        // dispatches FOCUS_NODE (focusedIndex + mode), which leaves threadSource
+        // at 'geometric-fallback' regardless of how much data is loaded. The
+        // bridge action triggers the same event the search panel uses, so the
+        // focus-pocket builder runs with semantic-thread candidates and the
+        // filter chips render. We do this AFTER data loads so the handler has
+        // the neighbour map when it builds the manifest.
+        //
+        // Note: FocusPocket.svelte caches `lastFocusIndex` inside a $effect and
+        // skips redundant rebuilds when focusedIndex doesn't change, so the
+        // bridge index must differ from any prior focus. We always use a fixed
+        // index (100) since the test sequence above doesn't focus anything
+        // before this call.
+        await page.evaluate(() => window.__APP_ACTIONS__?.requestSemanticFocus(100))
+
         const focusedIndex = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
-        expect(focusedIndex).not.toBeNull()
+        expect(focusedIndex).toBe(100)
 
-        // Wait for the focus pocket to build
+        // Wait for the focus pocket to build (now that thread source is 'semantic')
         await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {
             timeout: 10000
         })
@@ -1225,9 +1246,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * view and open the help panel.
      */
     test('24. focus-keyboard-hint is visible in focus mode and shows Esc and ? shortcuts', async ({ page }) => {
-        // Same root cause as test 23: the focus pocket builder cannot produce
-        // nodes in the headless test environment, so the hint is never shown.
-        test.fixme(true, 'semantic thread data not loaded in headless; pocket builder cannot run')
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
@@ -1239,13 +1258,27 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await canvas.waitFor({ state: 'attached', timeout: 40000 })
         await page.waitForTimeout(5000)
 
-        // Focus a business by clicking a canvas node (same pattern as test 21).
-        await canvas.click()
-        await page.waitForTimeout(2500)
+        // Wait for live semantic-thread data (FocusPocketA11y mounts the
+        // keyboard hint only when focusPocketIndices is non-empty, which
+        // requires buildNeighborhoodManifest to find semantic candidates).
+        await page.waitForFunction(
+            () => {
+                const live = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
+                return (live?.semanticNeighborMapByLeadId?.size ?? 0) > 0
+            },
+            null,
+            { timeout: 30000 }
+        )
 
-        // Verify a business is focused
+        // Use SEARCH_FOCUS_REQUESTED to set focus + threadSource + thread
+        // candidates in one shot — canvas-click only sets focusedIndex, which
+        // leaves the pocket builder with threadSource='geometric-fallback'
+        // (no candidates, no keyboard hint). See test 23 for the same pattern.
+        // Apply with index 200 to avoid colliding with test 23's index 100.
+        await page.evaluate(() => window.__APP_ACTIONS__?.requestSemanticFocus(200))
+
         const focusedIdx = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
-        expect(focusedIdx).not.toBeNull()
+        expect(focusedIdx).toBe(200)
 
         // Wait for the focus pocket to build
         await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {

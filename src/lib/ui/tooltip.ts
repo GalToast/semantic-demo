@@ -127,6 +127,7 @@ export function positionTooltip(x: number, y: number): void {
     tooltip.setAttribute('aria-hidden', 'false')
 
     if (!tooltip.classList.contains('visible')) {
+        // eslint-disable-next-line no-restricted-syntax -- animation loop helper (intentional RAF call)
         tooltipRevealFrame = requestAnimationFrame(() => {
             tooltipRevealFrame = null
             tooltip.classList.add('visible')
@@ -147,6 +148,7 @@ export function hideTooltip(): void {
     tooltip.setAttribute('aria-hidden', 'true')
 
     if (tooltipHideTimer) clearTimeout(tooltipHideTimer)
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     tooltipHideTimer = setTimeout(() => {
         tooltipHideTimer = null
     }, 200)

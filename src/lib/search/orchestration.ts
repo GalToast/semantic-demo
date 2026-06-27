@@ -116,6 +116,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
         stopSearchVectorScramble()
         if (trimmedQuery && trimmedQuery.length > 0 && trimmedQuery.length < 2) {
             statusEl.textContent = 'Type at least 2 characters to search'
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             setTimeout(() => {
                 if (statusEl && !searchStore().summary) {
                     statusEl.textContent = 'Type to find businesses by need, place, or trade.'

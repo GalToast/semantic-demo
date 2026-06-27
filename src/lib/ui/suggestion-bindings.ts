@@ -46,6 +46,7 @@ export function bindSuggestionControls(): void {
             btn.textContent = 'Finding...'
         }
 
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         _registry.timer(setTimeout(() => {
             const eligible = state.points.filter((p) => p && p.status !== 'disqualified')
             if (!eligible.length) {
@@ -102,6 +103,7 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
+                    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
                     _registry.timer(setTimeout(() => btn.classList.remove('shake'), 400))
                 }
                 return
@@ -126,6 +128,7 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
+                    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
                     _registry.timer(setTimeout(() => btn.classList.remove('shake'), 400))
                 }
                 return

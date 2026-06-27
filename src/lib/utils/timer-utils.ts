@@ -61,6 +61,7 @@ export function debounceRAF<T extends (...args: unknown[]) => void>(fn: T): T {
   let rafId: number | null = null;
   const debounced = (...args: unknown[]) => {
     if (rafId !== null) cancelAnimationFrame(rafId);
+    // eslint-disable-next-line no-restricted-syntax -- animation loop helper (intentional RAF call)
     rafId = requestAnimationFrame(() => {
       rafId = null;
       fn(...args);

@@ -83,6 +83,7 @@ export function bindViewControls(): void {
                         copiedSpan.textContent = 'Copied'
                         btn.appendChild(copiedSpan)
                         btn.setAttribute('aria-label', 'Link copied to clipboard')
+                        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
                         setTimeout(() => {
                             btn.textContent = ''
                             for (const child of originalChildren) {

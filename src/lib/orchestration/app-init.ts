@@ -79,6 +79,7 @@ let _unsubParity: (() => void) | null = null
 // ── Safety Valves ────────────────────────────────────────────────────────────
 
 function setupSafetyValves(): SafetyTimers {
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     const slowProgress = setTimeout(() => {
         if (typeof document === 'undefined') return
         const overlay = document.getElementById('loading-overlay')
@@ -95,6 +96,7 @@ function setupSafetyValves(): SafetyTimers {
         if (footEl) footEl.textContent = 'Taking longer than usual. Hold on a moment longer.'
     }, SLOW_PROGRESS_MS)
 
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     const safetyValve = setTimeout(() => {
         if (typeof document === 'undefined') return
         const overlay = document.getElementById('loading-overlay')

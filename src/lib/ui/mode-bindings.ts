@@ -52,6 +52,7 @@ export function bindModeAndPromptControls(setMyceliumMode: SetMyceliumMode): voi
                 })
             }
 
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             const restoreTimer: ReturnType<typeof setTimeout> = setTimeout(() => {
                 button.classList.remove('is-loading')
                 button.removeAttribute('aria-disabled')

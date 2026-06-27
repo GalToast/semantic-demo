@@ -115,7 +115,8 @@ async function getWorker(): Promise<Worker | null> {
                 `Retrying in 30s...`
         )
         // Reset after cooldown so next caller can try again
-        setTimeout(() => { // eslint-disable-line no-restricted-syntax -- fire-and-forget circuit-breaker reset
+        setTimeout(() => {
+            // eslint-disable-line no-restricted-syntax -- fire-and-forget circuit-breaker reset
             _workerFailureCount = 0
         }, 30_000)
         return null
@@ -172,7 +173,8 @@ async function _pingWorker(worker: Worker, timeoutMs: number): Promise<boolean> 
             }
         }
 
-        const timer = setTimeout(() => { // eslint-disable-line no-restricted-syntax -- local Promise resolution
+        const timer = setTimeout(() => {
+            // eslint-disable-line no-restricted-syntax -- local Promise resolution
             cleanup()
             resolve(false)
         }, timeoutMs)
@@ -366,7 +368,7 @@ async function callWorker(type: string, payload: unknown): Promise<WorkerThreadR
             settleReject(new Error('Semantic thread worker crashed'))
         }
 
-        timeoutId = globalThis.setTimeout(() => { // eslint-disable-line no-restricted-syntax -- local Promise rejection, cleared in cleanup()
+        timeoutId = globalThis.setTimeout(() => {
             settleReject(new Error(`Semantic thread worker timed out after ${SEMANTIC_THREAD_WORKER_TIMEOUT_MS}ms`))
         }, SEMANTIC_THREAD_WORKER_TIMEOUT_MS)
 
@@ -499,7 +501,7 @@ function _scheduleSemanticThreadsRetry(reason = 'artifact-retry'): void {
 
     withStateMutation(() => {
         state.semanticThreadsRetryAttempt += 1
-        state.semanticThreadsRetryTimer = globalThis.setTimeout(() => { // eslint-disable-line no-restricted-syntax -- state-tracked retry timer, cleared on next call
+        state.semanticThreadsRetryTimer = globalThis.setTimeout(() => {
             withStateMutation(() => {
                 state.semanticThreadsRetryTimer = null
             })

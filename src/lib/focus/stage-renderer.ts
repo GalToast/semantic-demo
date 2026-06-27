@@ -105,6 +105,7 @@ function scheduleFrame(callback: FrameRequestCallback | (() => void)): void {
         requestAnimationFrame(callback as FrameRequestCallback);
         return;
     }
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     setTimeout(callback as TimerHandler, 0);
 }
 

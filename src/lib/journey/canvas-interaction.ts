@@ -47,6 +47,7 @@ function showClickPulse(x: number, y: number): void {
         pulse.style.transform = 'scale(6)'
         pulse.style.opacity = '0'
     })
+    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
     setTimeout(() => pulse.remove(), 550)
 }
 

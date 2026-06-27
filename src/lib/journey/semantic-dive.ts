@@ -142,6 +142,7 @@ export function syncSemanticDiveUi(): void {
             insideControls.setAttribute('aria-hidden', 'true')
             insideControls.inert = true
             insideControls.dataset.nextState = 'inactive'
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             setTimeout(() => {
                 if (insideControls.getAttribute('aria-hidden') === 'false') return
                 insideControls.hidden = true
@@ -154,6 +155,7 @@ export function syncSemanticDiveUi(): void {
             insideStatus.setAttribute('aria-hidden', 'false')
         } else {
             insideStatus.setAttribute('aria-hidden', 'true')
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
             setTimeout(() => {
                 if (insideStatus.getAttribute('aria-hidden') === 'false') return
                 insideStatus.hidden = true

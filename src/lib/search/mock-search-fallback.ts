@@ -197,6 +197,7 @@ export function sleep(ms: number, signal: AbortSignal): Promise<void> {
             reject(new DOMException('Aborted', 'AbortError'))
             return
         }
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         const timer = setTimeout(resolve, ms)
         const onAbort = (): void => {
             clearTimeout(timer)

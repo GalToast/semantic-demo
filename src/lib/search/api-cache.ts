@@ -120,6 +120,7 @@ export async function fetchSemanticSearchResults(
         if (signal?.aborted) throw new DOMException('Aborted', 'AbortError')
         const attemptController = new AbortController()
         let attemptTimedOut = false
+        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         const timeoutId = setTimeout(() => {
             attemptTimedOut = true
             attemptController.abort()
