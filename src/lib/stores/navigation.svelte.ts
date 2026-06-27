@@ -23,6 +23,44 @@ import { clearSearch } from './search.svelte.ts'
 import { resetFocus } from './focus.svelte.ts'
 import { resetJourney } from './journey.svelte.ts'
 
+interface LegacyNavState {
+    focusedIndex?: number | null
+    surface?: string
+    mode?: string
+    currentView?: string
+    panelSurface?: string
+    panelSurfaceDetail?: string
+    focusPanelMode?: string
+}
+
+/**
+ * Window globals used during the legacy-state migration bridge.
+ * Consolidates the window-type assertion for both readLegacyNavField
+ * and getOrCreateNavWritable into a single cast site.
+ */
+interface WindowWithGlobals {
+    __semanticState?: { navState?: LegacyNavState }
+    state?: { navState?: LegacyNavState }
+    __APP_STATE__?: { navState?: LegacyNavState }
+    __TEST_STATE__?: { navState?: LegacyNavState }
+    [key: string]: unknown
+}
+
+/** Single typed window reference for legacy-state cross-chunk access. */
+function getGlobalWindow(): WindowWithGlobals {
+    return window as unknown as WindowWithGlobals
+}
+
+/**
+ * Structural read of a LegacyNavState field from a NavState object.
+ * Some LegacyNavState keys (panelSurface, panelSurfaceDetail,
+ * focusPanelMode) don't exist on NavState — use this for the
+ * migration bridge.
+ */
+function readNavField<T>(nav: NavState, key: keyof LegacyNavState): T | undefined {
+    return (nav as unknown as Record<string, unknown>)[key] as T | undefined
+}
+
 // Legacy state fallback (transitional). The legacy js/state.js is the
 // single source of truth during the migration. When the Svelte navigation
 // store hasn't been populated by an init handler, fall back to it so the
@@ -31,8 +69,7 @@ function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
     try {
         // First, try to read from the new Svelte 5 state class singleton.
         if (appState && appState.navState) {
-            const nav = appState.navState
-            const value = (nav as unknown as Record<string, unknown>)[legacyKey] as T | undefined
+            const value = readNavField<T>(appState.navState, legacyKey)
             if (value !== undefined) {
                 return value
             }
@@ -47,27 +84,13 @@ function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
     // focused card / compass / surface attrs reflect real data.
     try {
         if (typeof window === 'undefined') return undefined
-        const w = window as unknown as {
-            __semanticState?: { navState?: LegacyNavState }
-            state?: { navState?: LegacyNavState }
-            __APP_STATE__?: { navState?: LegacyNavState }
-            __TEST_STATE__?: { navState?: LegacyNavState }
-        }
+        const w = getGlobalWindow()
         const nav =
             w.__APP_STATE__?.navState ?? w.__TEST_STATE__?.navState ?? w.__semanticState?.navState ?? w.state?.navState
         return nav?.[legacyKey] as T | undefined
     } catch {
         return undefined
     }
-}
-interface LegacyNavState {
-    focusedIndex?: number | null
-    surface?: string
-    mode?: string
-    currentView?: string
-    panelSurface?: string
-    panelSurfaceDetail?: string
-    focusPanelMode?: string
 }
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
@@ -134,13 +157,14 @@ const INITIAL_NAV_STATE: NavState = {
 // Use a global window key so all chunks share the same _navWritable instance.
 function getOrCreateNavWritable(): ReturnType<typeof writable<NavState>> {
     const key = '__SEMANTIC_EXPLORER_NAV_WRITABLE__'
-    const existing = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>)[key] : undefined
+    const w = typeof window !== 'undefined' ? getGlobalWindow() : null
+    const existing = w?.[key]
     if (existing && typeof (existing as Record<string, unknown>).subscribe === 'function') {
         return existing as ReturnType<typeof writable<NavState>>
     }
     const store = writable<NavState>({ ...INITIAL_NAV_STATE })
-    if (typeof window !== 'undefined') {
-        ;(window as unknown as Record<string, unknown>)[key] = store
+    if (w) {
+        w[key] = store
     }
     return store
 }
