@@ -58,7 +58,7 @@ function getGlobalWindow(): WindowWithGlobals {
  * migration bridge.
  */
 function readNavField<T>(nav: NavState, key: keyof LegacyNavState): T | undefined {
-    return (nav as unknown as Record<string, unknown>)[key] as T | undefined
+    return Reflect.get(nav, key) as T | undefined
 }
 
 // Legacy state fallback (transitional). The legacy js/state.js is the
