@@ -26,6 +26,38 @@ interface Vector3Like {
     distanceTo?(v: Vector3Like): number
 }
 
+/**
+ * Window shape that exposes the Web Audio constructors (standard + legacy
+ * webkit fallback). Captured once at the startAudioContext scope, replaced
+ * the duplicated `window as unknown as { AudioContext ... }` casts (Phase 16
+ * typed-interface pattern).
+ */
+interface WindowWithAudioContext {
+    AudioContext: typeof AudioContext
+    webkitAudioContext?: typeof AudioContext
+}
+
+/**
+ * Runtime-extended navState shape. `activeRoutePath` is dynamically added
+ * by route-choreography modules at runtime — not present on the ambient
+ * NavState type. Featured as a typed-accessor consolidation (Phase 16).
+ */
+interface NavStateWithRoute {
+    activeRoutePath?: Array<string | number> | null
+}
+
+function getAudioWindow(): WindowWithAudioContext {
+    return window as unknown as WindowWithAudioContext
+}
+
+function getCameraLike(): CameraLike {
+    return state.camera as unknown as CameraLike
+}
+
+function getNavStateWithRoute(): NavStateWithRoute {
+    return state.navState as unknown as NavStateWithRoute
+}
+
 // ── Module-scoped mutable state ─────────────────────────────────────────────
 
 /** Lightweight point shape for audio density lookups. */
@@ -81,10 +113,7 @@ function startAudioContext(): void {
     if (audioState.audioCtx) return
 
     try {
-        audioState.audioCtx = new (
-            (window as unknown as { AudioContext: typeof AudioContext }).AudioContext ||
-            (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext
-        )()
+        audioState.audioCtx = new (getAudioWindow().AudioContext || getAudioWindow().webkitAudioContext)()
 
         audioState.mainOsc = audioState.audioCtx.createOscillator()
         audioState.mainOsc.type = 'sine'
@@ -118,7 +147,7 @@ function updateAudio(): void {
     }
 
     // 1. Calculate Camera Velocity
-    const camera = state.camera as unknown as CameraLike
+    const camera = getCameraLike()
     const currentPos: Vector3Like = camera.position.clone()
     if (audioState.lastCameraPos) {
         const dist = camera.position.distanceTo(audioState.lastCameraPos)
@@ -150,9 +179,7 @@ function updateAudio(): void {
     }
 
     // Path Proximity (Phase 3)
-    // Boundary cast: activeRoutePath is dynamically added to navState at runtime
-    // by route-choreography modules — not declared in the ambient NavState type.
-    const navWithRoute = state.navState as unknown as { activeRoutePath?: Array<string | number> | null }
+    const navWithRoute = getNavStateWithRoute()
     if (navWithRoute.activeRoutePath && navWithRoute.activeRoutePath.length > 0 && state.pointIndexByLeadId) {
         const audioPoints = state.points as AudioPoint[]
         let minDist = Infinity
