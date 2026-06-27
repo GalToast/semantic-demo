@@ -346,7 +346,7 @@
     text-transform: uppercase;
 }
 
-body[data-inside-walk-state='walking'] .focus-stage-inside-pulse {
+#focus-stage[data-inside-walk-state='walking'] .focus-stage-inside-pulse {
     animation: insidePocketPulse 1.05s ease-in-out infinite;
 }
 
@@ -633,7 +633,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
 
 /* ── 3. State Modifiers ──────────────────────────────────────────────────── */
 
-body[data-trail-state='active'] .focus-stage-journey.active {
+#focus-stage[data-trail-state='active'] .focus-stage-journey.active {
     border: var(--glass-border);
     background: var(--glass-reflection-muted);
     border-radius: var(--glass-radius-panel);
@@ -641,39 +641,39 @@ body[data-trail-state='active'] .focus-stage-journey.active {
     box-shadow: inset 0 1px 0 var(--glass-reflection-fade);
 }
 
-body[data-trail-state='active'] .focus-stage-journey-meta {
+#focus-stage[data-trail-state='active'] .focus-stage-journey-meta {
     padding: 8px 12px;
     border-radius: var(--glass-radius-card);
     background: rgba(4, 18, 22, 0.32);
     box-shadow: inset 0 1px 0 var(--glass-reflection-fade);
 }
 
-body[data-trail-state='active'] .focus-stage-journey-kicker,
-body[data-trail-state='active'] .focus-stage-neighbor-kicker {
+#focus-stage[data-trail-state='active'] .focus-stage-journey-kicker,
+#focus-stage[data-trail-state='active'] .focus-stage-neighbor-kicker {
     color: rgba(177, 248, 240, 0.84);
 }
 
-body[data-trail-state='active'] .focus-stage-journey-progress {
+#focus-stage[data-trail-state='active'] .focus-stage-journey-progress {
     color: rgba(243, 251, 255, 0.92);
     font-weight: 700;
     letter-spacing: 0.01em;
 }
 
-body[data-trail-state='active'] .focus-stage-journey-btn:not(:disabled) {
+#focus-stage[data-trail-state='active'] .focus-stage-journey-btn:not(:disabled) {
     border-color: rgba(var(--color-primary-tint-rgb), 0.22);
     background: rgba(var(--color-primary-alt-rgb), 0.12);
     box-shadow: 0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.05);
 }
 
-body[data-trail-state='active'] #btn-focus-prev:not(:disabled),
-body[data-trail-state='active'] #btn-prev-node:not(:disabled) {
+#focus-stage[data-trail-state='active'] #btn-focus-prev:not(:disabled),
+#focus-stage[data-trail-state='active'] #btn-prev-node:not(:disabled) {
     border-color: rgba(var(--color-primary-tint-rgb), 0.16);
     background: rgba(var(--color-primary-alt-rgb), 0.08);
     color: rgba(235, 251, 248, 0.92);
 }
 
-body[data-trail-state='active'] #btn-focus-next:not(:disabled),
-body[data-trail-state='active'] #btn-next-node:not(:disabled) {
+#focus-stage[data-trail-state='active'] #btn-focus-next:not(:disabled),
+#focus-stage[data-trail-state='active'] #btn-next-node:not(:disabled) {
     border-color: rgba(var(--color-primary-tint-rgb), 0.32);
     background: linear-gradient(
         180deg,
@@ -686,7 +686,7 @@ body[data-trail-state='active'] #btn-next-node:not(:disabled) {
         0 0 0 1px rgba(var(--color-primary-tint-rgb), 0.1);
 }
 
-body[data-trail-state='active'] .trail-controls {
+#focus-stage[data-trail-state='active'] .trail-controls {
     padding: 8px;
     border-radius: 12px;
     background: linear-gradient(
@@ -698,12 +698,12 @@ body[data-trail-state='active'] .trail-controls {
     box-shadow: inset 0 1px 0 var(--glass-reflection-fade);
 }
 
-body[data-trail-state='active'] .trail-context {
+#focus-stage[data-trail-state='active'] .trail-context {
     color: rgba(235, 248, 250, 0.9);
     border-top-color: rgba(var(--color-primary-tint-rgb), 0.14);
 }
 
-body[data-trail-state='active'] .focus-stage-neighbor-pill {
+#focus-stage[data-trail-state='active'] .focus-stage-neighbor-pill {
     border-color: rgba(var(--color-primary-tint-rgb), 0.18);
     background: rgba(var(--color-primary-alt-rgb), 0.08);
 }

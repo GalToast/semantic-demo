@@ -1,9 +1,10 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
+  import { get } from 'svelte/store';
   import { viewport, viewportWidth, viewportHeight } from '@lib/stores/viewport.svelte.ts';
   import { completeCameraTransition } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts';
-  import { setGraphicsMode, setLoadingPhase } from '@lib/data-store';
+  import { setGraphicsMode, setLoadingPhase, graphicsModeStore } from '@lib/data-store';
   import { engineReady as engineReadyStore } from '@lib/stores/engine-ready.svelte';
   import { debugLog, debugWarn, debugError } from '@lib/utils/debug';
   import type { EngineCallbacks } from '@lib/engine/lifecycle';
@@ -28,6 +29,7 @@
 
   let containerEl: HTMLDivElement | undefined = $state(undefined);
   let canvasEl: HTMLCanvasElement | undefined = $state(undefined);
+  let graphicsMode = $state(get(graphicsModeStore));
   let overlayVisible = $state(true);
   let canvasReady = $state(false);
   let engineHasInit = $state(false);
@@ -202,6 +204,13 @@
     }
   });
 
+  $effect(() => {
+    const unsub = graphicsModeStore.subscribe((v) => {
+      graphicsMode = v;
+    });
+    return () => unsub();
+  });
+
   onDestroy(() => {
     componentDestroyed = true;
     engineLifecycleDestroyed = true;
@@ -238,6 +247,7 @@
     id="canvas-container"
     class="semantic-canvas-container"
     class:canvas-ready={canvasReady}
+    data-graphics-mode={graphicsMode}
   >
     <canvas
       bind:this={canvasEl}

@@ -50,6 +50,7 @@
   import HoverTooltip from '@components/HoverTooltip.svelte';
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
+  import ProximityLegend from '@components/ProximityLegend.svelte';
   import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
   import { installErrorHandlers, ErrorFallback } from '@lib/error-boundary';
   import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
@@ -268,6 +269,9 @@
   let bodyGraphContext = $state('');
   let bodyCompact = $state(false);
   let bodyJourneyNavigationOwner = $state('');
+  let bodyTrailState = $state('inactive');
+  let bodyInsideWalkState = $state('idle');
+  let bodyStrandJourney = $state('idle');
   let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
   $effect(() => {
     if (typeof document === 'undefined') return;
@@ -279,6 +283,9 @@
       bodyGraphContext = nextGraphContext;
       bodyCompact = document.body.dataset.compact === 'true';
       bodyJourneyNavigationOwner = document.body.dataset.journeyNavigationOwner || '';
+      bodyTrailState = document.body.dataset.trailState || 'inactive';
+      bodyInsideWalkState = document.body.dataset.insideWalkState || 'idle';
+      bodyStrandJourney = document.body.dataset.strandJourney || 'idle';
       if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
         document.body.dataset.focusSearchForced = 'true';
       } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') { // audit-ok: plain Ln() callback, not transformed
@@ -286,7 +293,7 @@
       }
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-compact', 'data-focus-panel-mode', 'data-panel-surface', 'data-graph-context', 'data-journey-navigation-owner'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-compact', 'data-focus-panel-mode', 'data-panel-surface', 'data-graph-context', 'data-journey-navigation-owner', 'data-trail-state', 'data-inside-walk-state', 'data-strand-journey'] });
     sync();
     return () => obs.disconnect();
   });
@@ -538,6 +545,9 @@
     class:active={focusStageActive}
     aria-hidden={!focusStageActive ? 'true' : undefined}
     style:pointer-events={focusStageActive ? 'none' : undefined}
+    data-trail-state={bodyTrailState}
+    data-inside-walk-state={bodyInsideWalkState}
+    data-strand-journey={bodyStrandJourney}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
     {#if focusCardLazy.current}
@@ -603,6 +613,9 @@
     {@const Cmp = demoChoreographyLazy.current}
     <Cmp force={forceDemo} suppress={noDemo} />
   {/if}
+
+  <!-- Proximity legend: first-visit concept card -->
+  <ProximityLegend />
 
   <!--
     Dev-only runtime tooling (lil-gui + Spector). The component chunks

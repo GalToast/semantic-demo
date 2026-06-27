@@ -145,6 +145,11 @@ export function setRouteChoreographyPhase(phase: string = 'overview', details: R
     if (document.body?.dataset) {
         document.body.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive'
     }
+    const canvasContainer = document.getElementById('canvas-container')
+    if (canvasContainer) {
+        canvasContainer.dataset.routeMotion =
+            state.currentView === 'galaxy' ? phase : 'inactive'
+    }
     refreshRouteTraceOverlay({ reason: details.reason || phase })
 }
 
@@ -238,6 +243,11 @@ function _refreshRouteTraceOverlayRaw(options: RouteChoreographyDetails = {}): v
     })
     if (document.body?.dataset) {
         document.body.dataset.routeMotion = state.currentView === 'galaxy' ? 'focus' : 'inactive'
+    }
+    const canvasContainer = document.getElementById('canvas-container')
+    if (canvasContainer) {
+        canvasContainer.dataset.routeMotion =
+            state.currentView === 'galaxy' ? 'focus' : 'inactive'
     }
 }
 

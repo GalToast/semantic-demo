@@ -433,7 +433,7 @@
   aria-hidden={!showMapTrailStrip ? 'true' : 'false'}
 >
   {#if showMapTrailStrip}
-    <div class="map-strip-title" title={stripAccessibleTitle} aria-label={stripAccessibleTitle}>
+    <div class="map-strip-title" data-route-director={showMapTrailStrip ? 'map-trail' : undefined} title={stripAccessibleTitle} aria-label={stripAccessibleTitle}>
       {stripAccessibleTitle}
     </div>
   {/if}

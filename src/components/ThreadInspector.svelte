@@ -20,6 +20,8 @@
 
   let { visible = false }: Props = $props();
   let focusSnapshot = $state<FocusStoreState>(focusStore());
+  let bodyThreadInspectSurface = $state('idle');
+  let bodyStrandJourney = $state('idle');
 
   function removeLegacyInspectorDuplicates(): void {
     if (typeof document === 'undefined') return;
@@ -40,6 +42,18 @@
       focusSnapshot = next;
     });
     return unsubscribe;
+  });
+
+  $effect(() => {
+    if (typeof document === 'undefined') return;
+    const sync = () => {
+      bodyThreadInspectSurface = document.body?.dataset.threadInspectSurface || 'idle';
+      bodyStrandJourney = document.body?.dataset.strandJourney || 'idle';
+    };
+    const obs = new MutationObserver(sync);
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-thread-inspect-surface', 'data-strand-journey'] });
+    sync();
+    return () => obs.disconnect();
   });
 
   /** Fallback: read inspectedThreadIndex from focusStore (body.dataset was a legacy mirror). */
@@ -128,6 +142,8 @@
       class="focus-thread-inspector active"
       id="focus-thread-inspector"
       aria-labelledby="focus-thread-inspector-title"
+      data-thread-inspect-surface={bodyThreadInspectSurface}
+      data-strand-journey={bodyStrandJourney}
     >
       <div class="inspector-header">
         <span class="focus-thread-inspector-kicker">Connection Preview</span>
@@ -194,6 +210,8 @@
       class="focus-thread-inspector"
       id="focus-thread-inspector"
       aria-labelledby="focus-thread-inspector-title"
+      data-thread-inspect-surface={bodyThreadInspectSurface}
+      data-strand-journey={bodyStrandJourney}
     >
       <div class="inspector-header">
         <span class="focus-thread-inspector-kicker">Connection Preview</span>
