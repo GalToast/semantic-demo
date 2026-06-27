@@ -127,7 +127,7 @@
     right: 0.5rem;
   }
   @media (max-width: 768px) {
-    :global(body.is-active[data-panel-surface='idle']) .controls {
+    :global(body.surface-idle) .controls {
       display: none !important;
       visibility: hidden !important;
       pointer-events: none !important;

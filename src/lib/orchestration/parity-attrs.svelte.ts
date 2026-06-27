@@ -5,8 +5,12 @@
  * production shell (archived at docs/archive/vector-explorer-polished-legacy.html) requires: body
  * data-* attributes (focus-search, journey-compass, semantic-dive,
  * navigation, viewport, filter, etc.) AND the body classes that
- * gate mobile CSS rules (`is-active` is the main one — see
- * `applyParityAttributes` for context).
+ * gate mobile CSS rules (surface-{value}, view-{value},
+ * navigation-{value}, focus-transition). See `applyParityAttributes`
+ * for context.
+ *
+ * Phase B3d removed the `is-active` body class (redundant with
+ * surface-{value}: is-active ≡ panelSurface !== 'idle').
  *
  * Migrated to Svelte 5 runes: uses $effect.root() for reactive DOM sync
  * instead of manual .subscribe() calls. The $effect auto-tracks all rune
@@ -493,18 +497,15 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
         }
     }
 
-    // Body class management. `is-active` is the meta-gate the legacy
-    // composition-state.ts wrote on the body whenever the user was on
-    // a non-idle surface. Many mobile CSS rules (including the
-    // journey-compass hide rule) are gated on it.
+    // Note: The `is-active` body class was removed in Phase B3d.3.
+    // It was redundant with the surface-{value} classes (is-active
+    // ≡ panelSurface !== 'idle' ≡ :not(.surface-idle)). All CSS
+    // rules that previously used `body.is-active` have been migrated
+    // to use surface-{value} classes directly.
     //
-    // Note: we use `===` + `!` (positive form) instead of `!==` because
-    // `===`), silently inverting the check. See
-    // qa-screenshots/PARITY_GAP_AUDIT.md for context.
-    const isActive = Boolean(map.panelSurface) && !(map.panelSurface === 'idle')
-    if (document.body.classList.contains('is-active') !== isActive) {
-        document.body.classList.toggle('is-active', isActive)
-    }
+    // Test contract hooks (e.g., __forceSemanticDiveContractSurface)
+    // may still add `is-active` directly to body for backward compat,
+    // but parity-attrs no longer manages it.
 
     // ── CSS class mirrors for body[data-...] selectors ──────────────────────
     // Each class enables CSS selectors to target body state via class-based

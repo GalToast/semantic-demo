@@ -123,10 +123,10 @@
 }
 /* Override legacy CSS that hides #trail-controls in focus-search/field-node mode.
      Higher specificity than the legacy rule to ensure grid display wins. */
-:global(body.is-active[data-panel-surface='focus-search'] #trail-controls.focus-stage-actions) {
+:global(body.surface-focus-search #trail-controls.focus-stage-actions) {
     display: grid;
 }
-:global(body.is-active[data-panel-surface='focus-search'][data-focus-panel-mode='field-node'] .focus-stage-actions) {
+:global(body.surface-focus-search[data-focus-panel-mode='field-node'] .focus-stage-actions) {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: 10px;
