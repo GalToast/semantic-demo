@@ -48,7 +48,7 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 **Lane inventory (from `model-providers.json`):**
 
 - Primary: `kilo/openrouter/owl-alpha`
-- Registered alt: `agnes-2.0-flash`
+- Registered alt: `agnes-2.0-flash` (bare ref for subagent — no provider prefix)
 - Free fallbacks: `mimo-v2.5-free`, `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free`, `north-mini-code-free`
 
 ## Key Product Invariants
