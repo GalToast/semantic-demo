@@ -222,14 +222,16 @@ export const graphicsModeStore = getOrCreateWritable<'webgl' | 'fallback'>(
 )
 
 /**
- * Set the loading phase and sync body.dataset for legacy test compat.
+ * Set the loading phase. parity-attrs.svelte.ts mirrors this to
+ * body.dataset.{loadingOverlay,loadingPhase,sceneReady,cameraAssist}.
  */
 export function setLoadingPhase(phase: LoadingPhase): void {
     loadingPhaseStore.set(phase)
 }
 
 /**
- * Set the graphics mode and sync body.dataset.
+ * Set the graphics mode. parity-attrs.svelte.ts mirrors this to
+ * body.dataset.graphicsMode.
  */
 export function setGraphicsMode(mode: 'webgl' | 'fallback'): void {
     graphicsModeStore.set(mode)
