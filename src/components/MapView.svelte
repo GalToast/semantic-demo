@@ -14,6 +14,7 @@
   import { appState } from '@lib/state/app.svelte';
   import { withStateMutation } from '@lib/state/with-state-mutation';
   import { debugWarn } from '@lib/utils/debug'
+  import { DisposableRegistry } from '@lib/utils/disposable-registry'
   import {
     centerMapOnRouteAnchor,
     initMap,
@@ -26,6 +27,8 @@
 
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
   let {} = $props();
+
+  const _registry = new DisposableRegistry({ label: 'MapView', warnAfterDispose: false });
 
   let status = $state<MapStatus>('loading');
   let statusDetail = $state('Loading county terrain');
@@ -120,7 +123,7 @@
       requestAnimationFrame(() => {
         const map = appState.map;
         map?.invalidateSize?.();
-        setTimeout(() => map?.invalidateSize?.(), 120);
+        _registry.schedule(120, () => map?.invalidateSize?.());
       });
 
       status = 'ready';
@@ -150,6 +153,7 @@
       mounted = false;
       activationToken += 1;
       deactivateMapShell();
+      _registry.disposeAll();
     };
   });
 </script>

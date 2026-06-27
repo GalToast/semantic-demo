@@ -8,6 +8,7 @@
   import { onMount } from 'svelte';
   import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
+  import { DisposableRegistry } from '@lib/utils/disposable-registry';
 
 
   const STORAGE_KEY = 'moco_onboarding_seen_v1';
@@ -28,6 +29,8 @@
     name,
     color: CLUSTER_COLORS[i] ?? '#888'
   }));
+
+  const _registry = new DisposableRegistry({ label: 'ProximityLegend', warnAfterDispose: false });
 
   let dismissed = $state(false);
   let visible = $state(false);
@@ -58,8 +61,12 @@
       visible = true;
     } else {
       // Small delay so the CSS animation plays
-      setTimeout(() => { visible = true; }, 100);
+      _registry.schedule(100, () => { visible = true; });
     }
+
+    return () => {
+      _registry.disposeAll();
+    };
   });
 
   function handleDismiss(): void {

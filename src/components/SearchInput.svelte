@@ -219,8 +219,11 @@
 
   $effect(() => {
     return () => {
-      // Preserve a pending debounce across the intentional idle -> search
-      // remount; the search store is global and should still settle.
+      // Cleanup runs on both remix-mount AND full unmount. The author-intent
+      // note about preserving debounce across view swaps conflicts with the
+      // reality of component destruction — be conservative here and clear.
+      if (debounceTimer !== null) clearTimeout(debounceTimer);
+      searchAbortController?.abort();
     };
   });
 
