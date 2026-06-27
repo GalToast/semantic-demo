@@ -1,38 +1,12 @@
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 
-let _onboardingIdleTimer: ReturnType<typeof setTimeout> | null = null
+const _registry = new DisposableRegistry({ label: 'onboarding' })
 let _onboardingAbortController: AbortController | null = null
-let _onboardingHintShowTimer: ReturnType<typeof setTimeout> | null = null
-let _onboardingHintHideTimer: ReturnType<typeof setTimeout> | null = null
-
-function clearOnboardingTimers(): void {
-    if (_onboardingIdleTimer) {
-        clearTimeout(_onboardingIdleTimer)
-        _onboardingIdleTimer = null
-    }
-    if (_onboardingHintShowTimer) {
-        clearTimeout(_onboardingHintShowTimer)
-        _onboardingHintShowTimer = null
-    }
-    if (_onboardingHintHideTimer) {
-        clearTimeout(_onboardingHintHideTimer)
-        _onboardingHintHideTimer = null
-    }
-
-    const onboarding = document.getElementById('onboarding-hint') as
-        | (HTMLElement & {
-              _autoHideTimer?: ReturnType<typeof setTimeout> | null
-          })
-        | null
-    if (onboarding?._autoHideTimer) {
-        clearTimeout(onboarding._autoHideTimer)
-        onboarding._autoHideTimer = null
-    }
-}
 
 export function disposeOnboardingBindings(): void {
-    clearOnboardingTimers()
+    _registry.disposeAll()
     _onboardingAbortController?.abort()
     _onboardingAbortController = null
 }
@@ -57,45 +31,48 @@ export function shouldShowOnboardingHint(): boolean {
 }
 
 export function resetOnboardingIdleTimer(): void {
-    if (_onboardingIdleTimer) clearTimeout(_onboardingIdleTimer)
-    _onboardingIdleTimer = setTimeout(() => {
-        const onboarding = document.getElementById('onboarding-hint') as
-            | (HTMLElement & {
-                  _autoHideTimer?: ReturnType<typeof setTimeout> | null
-              })
-            | null
-        if (onboarding && shouldShowOnboardingHint()) {
-            onboarding.classList.add('visible')
-            onboarding.setAttribute('aria-hidden', 'false')
-            if (onboarding._autoHideTimer) clearTimeout(onboarding._autoHideTimer)
-            onboarding._autoHideTimer = setTimeout(() => {
-                onboarding.classList.remove('visible')
-                onboarding.setAttribute('aria-hidden', 'true')
-                onboarding._autoHideTimer = null
-            }, 6000)
-        }
-        resetOnboardingIdleTimer()
-    }, 120000)
+    _registry.disposeAll()
+    _registry.timer(
+        setTimeout(() => {
+            const onboarding = document.getElementById('onboarding-hint') as
+                | (HTMLElement & {
+                      _autoHideTimer?: ReturnType<typeof setTimeout> | null
+                  })
+                | null
+            if (onboarding && shouldShowOnboardingHint()) {
+                onboarding.classList.add('visible')
+                onboarding.setAttribute('aria-hidden', 'false')
+                if (onboarding._autoHideTimer) clearTimeout(onboarding._autoHideTimer)
+                onboarding._autoHideTimer = setTimeout(() => {
+                    onboarding.classList.remove('visible')
+                    onboarding.setAttribute('aria-hidden', 'true')
+                    onboarding._autoHideTimer = null
+                }, 6000)
+            }
+            resetOnboardingIdleTimer()
+        }, 120000)
+    )
 }
 
 export function scheduleOnboardingHint(): void {
     const onboarding = document.getElementById('onboarding-hint')
-    if (_onboardingHintShowTimer) clearTimeout(_onboardingHintShowTimer)
-    if (_onboardingHintHideTimer) clearTimeout(_onboardingHintHideTimer)
-    _onboardingHintShowTimer = setTimeout(() => {
-        _onboardingHintShowTimer = null
-        if (onboarding && shouldShowOnboardingHint()) {
-            onboarding.classList.add('visible')
-            onboarding.setAttribute('aria-hidden', 'false')
-        }
-    }, 1500)
-    _onboardingHintHideTimer = setTimeout(() => {
-        _onboardingHintHideTimer = null
-        if (onboarding) {
-            onboarding.classList.remove('visible')
-            onboarding.setAttribute('aria-hidden', 'true')
-        }
-    }, 7500)
+    _registry.disposeAll()
+    _registry.timer(
+        setTimeout(() => {
+            if (onboarding && shouldShowOnboardingHint()) {
+                onboarding.classList.add('visible')
+                onboarding.setAttribute('aria-hidden', 'false')
+            }
+        }, 1500)
+    )
+    _registry.timer(
+        setTimeout(() => {
+            if (onboarding) {
+                onboarding.classList.remove('visible')
+                onboarding.setAttribute('aria-hidden', 'true')
+            }
+        }, 7500)
+    )
     resetOnboardingIdleTimer()
 
     if (!state.registeredEvents.has('onboarding-interaction')) {

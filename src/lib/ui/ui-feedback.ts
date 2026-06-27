@@ -8,6 +8,7 @@
 import { appState } from '@lib/state/app.svelte'
 import type { Point } from '@lib/state/state-types'
 
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { setActiveSearchResultRow } from '@lib/search/result-renderer'
@@ -30,6 +31,8 @@ function getCurrentSearchSummarySnapshot(): CurrentSearchSummarySnapshot | null 
     return appState.currentSearchSummary
 }
 
+const _registry = new DisposableRegistry({ label: 'ui-feedback' })
+
 export function showExperienceToast(title: string, copy: string): void {
     const toast = document.getElementById('experience-reset-toast')
     if (!toast) return
@@ -40,17 +43,15 @@ export function showExperienceToast(title: string, copy: string): void {
     if (titleEl) titleEl.textContent = title
     if (copyEl) copyEl.textContent = copy
     toast.classList.add('active')
-    if (appState.experienceResetToastTimer) {
-        clearTimeout(appState.experienceResetToastTimer)
-    }
-    appState.experienceResetToastTimer = setTimeout(() => {
-        toast.classList.remove('active')
-        toast.setAttribute('aria-hidden', 'true')
-        toast.setAttribute('aria-live', 'polite')
-        if (titleEl) titleEl.textContent = ''
-        if (copyEl) copyEl.textContent = ''
-        appState.experienceResetToastTimer = null
-    }, 2100)
+    _registry.timer(
+        setTimeout(() => {
+            toast.classList.remove('active')
+            toast.setAttribute('aria-hidden', 'true')
+            toast.setAttribute('aria-live', 'polite')
+            if (titleEl) titleEl.textContent = ''
+            if (copyEl) copyEl.textContent = ''
+        }, 2100)
+    )
 }
 
 export interface SyncSearchStatusOptions {

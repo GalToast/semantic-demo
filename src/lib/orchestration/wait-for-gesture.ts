@@ -18,6 +18,8 @@
  * @module
  */
 
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
+
 export interface GestureMonitorOpts {
     /** Called exactly once when a qualifying gesture or visibility event fires. */
     onReady: () => void
@@ -58,9 +60,9 @@ function isAutomatedBrowserSession(): boolean {
  */
 export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
     const cooldown = opts.cooldownMs ?? DEFAULT_COOLDOWN
+    const registry = new DisposableRegistry({ label: 'wait-for-gesture' })
     let fired = false
     let wasHidden = false
-    let timer: ReturnType<typeof setTimeout> | undefined
 
     function handleReady(event?: Event): void {
         if (fired) return
@@ -80,32 +82,17 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
         }
         fired = true
         opts.onReady()
-        // Safety: remove all listeners after the cooldown even if teardown wasn't called.
-        if (timer !== undefined) clearTimeout(timer)
-        timer = setTimeout(cleanup, cooldown)
-    }
-
-    const listeners: Array<{
-        target: EventTarget
-        type: string
-        handler: EventListener
-    }> = []
-
-    function listen<K extends keyof WindowEventMap>(
-        target: Window,
-        type: K,
-        handler: (ev: WindowEventMap[K]) => void,
-        opts?: AddEventListenerOptions
-    ): void {
-        const wrapped = handler as unknown as EventListener
-        target.addEventListener(type, wrapped, opts)
-        listeners.push({ target, type, handler: wrapped })
+        // Safety: dispose all listeners and timers after the cooldown even if
+        // teardown wasn't called.
+        registry.timer(setTimeout(() => registry.disposeAll(), cooldown))
     }
 
     // ── Gesture listeners ────────────────────────────────────────────────────
 
     for (const evt of GESTURE_EVENTS) {
-        listen(window, evt, (e: Event) => handleReady(e), { passive: true })
+        const handler = (e: Event) => handleReady(e)
+        window.addEventListener(evt, handler, { passive: true })
+        registry.listener(window, evt, handler, { passive: true } as EventListenerOptions)
     }
 
     // ── Visibility fallback (kiosk / no-gesture scenario) ───────────────────
@@ -119,26 +106,16 @@ export function installGestureMonitor(opts: GestureMonitorOpts): () => void {
             handleReady()
         }
     }
-    listen(document as unknown as Window, 'visibilitychange' as keyof WindowEventMap, onVisibilityChange)
+    document.addEventListener('visibilitychange', onVisibilityChange)
+    registry.listener(document, 'visibilitychange', onVisibilityChange as EventListener)
 
     // Playwright test auto-fire: skip gesture wait in automated tests so
     // canvas mounts without requiring every test to simulate a gesture.
     if (isAutomatedBrowserSession()) {
-        setTimeout(() => handleReady(), 0)
+        registry.timer(setTimeout(() => handleReady(), 0))
     }
 
     // ── Cleanup ──────────────────────────────────────────────────────────────
-
-    function cleanup(): void {
-        for (const l of listeners) {
-            l.target.removeEventListener(l.type, l.handler)
-        }
-        listeners.length = 0
-        if (timer !== undefined) {
-            clearTimeout(timer)
-            timer = undefined
-        }
-    }
-
-    return cleanup
+    // DisposableRegistry handles all timer/listener cleanup in reverse order.
+    return () => registry.disposeAll()
 }

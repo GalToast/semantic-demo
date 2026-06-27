@@ -15,6 +15,7 @@ import { isWeatherInitialized, setWeatherInitialized } from '@lib/stores/weather
 
 import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state'
 import { debugWarn, debugError } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -41,15 +42,12 @@ const SCENE_READY_EVENT = 'semantic:scene-ready'
 
 // ── Internal State ────────────────────────────────────────────────────────────
 
+const _registry = new DisposableRegistry({ label: 'loading' })
+
 let _hideToken = 0
 let _loadingOverlayStartedAt = 0
 
-let _loadingHideTimer: ReturnType<typeof setTimeout> | null = null
 let _deferredHydrationStarted = false
-let _loadingMinVisibleTimer: ReturnType<typeof setTimeout> | null = null
-let _loadingLaunchTransitionTimer: ReturnType<typeof setTimeout> | null = null
-let _deferredHydrationTimer: ReturnType<typeof setTimeout> | null = null
-let _weatherHydrationTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Public API ────────────────────────────────────────────────────────────────
 
@@ -112,10 +110,7 @@ export async function hideLoadingOverlay(): Promise<void> {
     const remaining = Math.max(0, LOADING_MIN_VISIBLE_MS - elapsed)
     if (remaining > 0) {
         await new Promise<void>((resolve) => {
-            _loadingMinVisibleTimer = setTimeout(() => {
-                _loadingMinVisibleTimer = null
-                resolve()
-            }, remaining)
+            _registry.timer(setTimeout(resolve, remaining))
         })
     }
 
@@ -123,10 +118,7 @@ export async function hideLoadingOverlay(): Promise<void> {
     overlay.dataset.loadingState = 'launching'
     overlay.classList.add('launching')
     await new Promise<void>((resolve) => {
-        _loadingLaunchTransitionTimer = setTimeout(() => {
-            _loadingLaunchTransitionTimer = null
-            resolve()
-        }, 180)
+        _registry.timer(setTimeout(resolve, 180))
     })
 
     overlay.classList.add('hidden')
@@ -183,10 +175,7 @@ export function startDeferredHydration(): void {
             { timeout: 250 }
         )
     } else {
-        _deferredHydrationTimer = setTimeout(() => {
-            _deferredHydrationTimer = null
-            void run()
-        }, 80)
+        _registry.timer(setTimeout(() => void run(), 80))
     }
 }
 
@@ -212,10 +201,7 @@ export function scheduleWeatherHydration(): void {
             { timeout: 500 }
         )
     } else {
-        _weatherHydrationTimer = setTimeout(() => {
-            _weatherHydrationTimer = null
-            void start()
-        }, 300)
+        _registry.timer(setTimeout(() => void start(), 300))
     }
 }
 
@@ -276,6 +262,15 @@ export function hideTerrainPreludeOverlay(): void {
     hideLoadingOverlay()
 }
 
+/**
+ * Cancel any pending loading-overlay hide. Disposes the registry so all
+ * pending timers are cleared.
+ */
+export function cancelLoadingHide(): void {
+    _registry.disposeAll()
+    _hideToken += 1
+}
+
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
 function _updatePhaseChips(activePhase: string): void {
@@ -293,30 +288,4 @@ function _updatePhaseChips(activePhase: string): void {
     })
 }
 
-/**
- * Cancel any pending loading-overlay hide. Used by the engine teardown path
- * when `deinit()` runs while the launch transition is queued.
- */
-export function cancelLoadingHide(): void {
-    if (_loadingHideTimer !== null) {
-        clearTimeout(_loadingHideTimer)
-        _loadingHideTimer = null
-    }
-    if (_loadingMinVisibleTimer !== null) {
-        clearTimeout(_loadingMinVisibleTimer)
-        _loadingMinVisibleTimer = null
-    }
-    if (_loadingLaunchTransitionTimer !== null) {
-        clearTimeout(_loadingLaunchTransitionTimer)
-        _loadingLaunchTransitionTimer = null
-    }
-    if (_deferredHydrationTimer !== null) {
-        clearTimeout(_deferredHydrationTimer)
-        _deferredHydrationTimer = null
-    }
-    if (_weatherHydrationTimer !== null) {
-        clearTimeout(_weatherHydrationTimer)
-        _weatherHydrationTimer = null
-    }
-    _hideToken += 1
-}
+

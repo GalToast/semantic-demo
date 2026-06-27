@@ -75,8 +75,10 @@ export class DisposableRegistry {
         this.items.push(fn)
     }
 
-    /** Track a setTimeout / setInterval id.  Clears it on disposeAll() */
-    timer(id: number): void {
+    /** Track a setTimeout / setInterval id.  Clears it on disposeAll().
+     *  Accepts `ReturnType<typeof setTimeout>` so it works in both browser
+     *  (returns `number`) and Node test environments (returns `Timeout`). */
+    timer(id: ReturnType<typeof setTimeout>): void {
         this.add(() => {
             clearTimeout(id)
             clearInterval(id)

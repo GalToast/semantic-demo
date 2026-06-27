@@ -5,6 +5,7 @@
 
 import { appState as _state } from '@lib/state/app.svelte'
 import type { Point } from '@lib/state/state-types'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 const state = _state
 import { bindClick } from '@lib/ui/view-bindings'
 import { focusOnNode } from '@lib/engine/camera-choreography'
@@ -21,13 +22,10 @@ import { seededUnit } from '@lib/utils/seeded-random'
 let _suggestionPickSeed = 0
 const _nextSeededRandom = (): number => seededUnit(_suggestionPickSeed++, 0)
 
-let _suggestionTimer: ReturnType<typeof setTimeout> | null = null
+const _registry = new DisposableRegistry({ label: 'suggestion' })
 
 export function disposeSuggestionBindings(): void {
-    if (_suggestionTimer !== null) {
-        clearTimeout(_suggestionTimer)
-        _suggestionTimer = null
-    }
+    _registry.disposeAll()
 }
 
 interface SuggestionEvent extends MouseEvent {
@@ -48,9 +46,7 @@ export function bindSuggestionControls(): void {
             btn.textContent = 'Finding...'
         }
 
-        if (_suggestionTimer !== null) clearTimeout(_suggestionTimer)
-        _suggestionTimer = setTimeout(() => {
-            _suggestionTimer = null
+        _registry.timer(setTimeout(() => {
             const eligible = state.points.filter((p) => p && p.status !== 'disqualified')
             if (!eligible.length) {
                 const summaryEl = document.getElementById('summary-text')
@@ -82,7 +78,7 @@ export function bindSuggestionControls(): void {
 
                 focusOnNode(idx, { fromCanvasNode: true })
             }
-        }, 800)
+        }))
     }
 
     bindClick('btn-launch', focusRandomBusiness, { optional: true })
@@ -106,7 +102,7 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
-                    setTimeout(() => btn.classList.remove('shake'), 400)
+                    _registry.timer(setTimeout(() => btn.classList.remove('shake'), 400))
                 }
                 return
             }
@@ -130,7 +126,7 @@ export function bindSuggestionControls(): void {
                 if (btn) {
                     btn.classList.add('shake')
                     btn.title = 'Select a business first'
-                    setTimeout(() => btn.classList.remove('shake'), 400)
+                    _registry.timer(setTimeout(() => btn.classList.remove('shake'), 400))
                 }
                 return
             }
