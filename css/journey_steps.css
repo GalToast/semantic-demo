@@ -238,22 +238,22 @@ html[data-legend-active='true'] .focus-lens-truth {
 
 /* polish201: legible arrival choreography. Keep the final UI unchanged, but let
    the lower cockpit settle after the camera starts moving so focus feels causal. */
-body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving'] .focus-stage-card {
+body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving .focus-stage-card {
     animation: focusPanelArrival 0.68s cubic-bezier(0.2, 0.72, 0.22, 1) both;
 }
 
-body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving']
+body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
     .focus-stage-journey.active {
     border-color: rgba(var(--color-primary-tint-rgb), 0.15);
     animation: focusJourneyArrival 0.62s cubic-bezier(0.2, 0.72, 0.22, 1) 0.06s both;
 }
 
-body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving']
+body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
     .focus-stage-neighbors.active {
     animation: focusNeighborsArrival 0.58s cubic-bezier(0.2, 0.72, 0.22, 1) 0.12s both;
 }
 
-body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving']
+body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
     .focus-stage-route-line {
     transform-origin: left center;
     animation: focusRouteArrival 0.82s ease-out both;
@@ -309,18 +309,18 @@ body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arri
     }
 
     /* Broaden coverage per #950: major state animations */
-    body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving']
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
         .focus-stage-card,
-    body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving']
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
         .focus-stage-journey.active,
-    body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving']
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
         .focus-stage-neighbors.active {
         transform: none;
         opacity: 1;
         animation: none;
     }
 
-    body[data-panel-surface]:not(.surface-map-any)[data-focus-transition-phase='arriving']
+    body[data-panel-surface]:not(.surface-map-any).focus-transition-phase-arriving
         .focus-stage-route-line,
     .focus-stage-route[data-state='walking'] .focus-stage-route-line {
         animation: none;

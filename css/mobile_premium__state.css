@@ -552,7 +552,7 @@
 
     body.surface-map-trail .view-toggle,
     .journey-compass[data-panel-surface='map-trail'],
-    body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
+    body.navigation-map-trail-strip .view-toggle,
     .journey-compass[data-navigation-owner='map-trail-strip'] {
         display: none;
         visibility: hidden;
@@ -835,7 +835,7 @@
 
     body.surface-map-trail .view-toggle,
     .journey-compass[data-panel-surface='map-trail'],
-    body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
+    body.navigation-map-trail-strip .view-toggle,
     .journey-compass[data-navigation-owner='map-trail-strip'] {
         display: none;
         visibility: hidden;
