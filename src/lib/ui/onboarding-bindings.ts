@@ -3,11 +3,21 @@ const state = _state
 
 let _onboardingIdleTimer: ReturnType<typeof setTimeout> | null = null
 let _onboardingAbortController: AbortController | null = null
+let _onboardingHintShowTimer: ReturnType<typeof setTimeout> | null = null
+let _onboardingHintHideTimer: ReturnType<typeof setTimeout> | null = null
 
 function clearOnboardingTimers(): void {
     if (_onboardingIdleTimer) {
         clearTimeout(_onboardingIdleTimer)
         _onboardingIdleTimer = null
+    }
+    if (_onboardingHintShowTimer) {
+        clearTimeout(_onboardingHintShowTimer)
+        _onboardingHintShowTimer = null
+    }
+    if (_onboardingHintHideTimer) {
+        clearTimeout(_onboardingHintHideTimer)
+        _onboardingHintHideTimer = null
     }
 
     const onboarding = document.getElementById('onboarding-hint') as
@@ -70,13 +80,17 @@ export function resetOnboardingIdleTimer(): void {
 
 export function scheduleOnboardingHint(): void {
     const onboarding = document.getElementById('onboarding-hint')
-    setTimeout(() => {
+    if (_onboardingHintShowTimer) clearTimeout(_onboardingHintShowTimer)
+    if (_onboardingHintHideTimer) clearTimeout(_onboardingHintHideTimer)
+    _onboardingHintShowTimer = setTimeout(() => {
+        _onboardingHintShowTimer = null
         if (onboarding && shouldShowOnboardingHint()) {
             onboarding.classList.add('visible')
             onboarding.setAttribute('aria-hidden', 'false')
         }
     }, 1500)
-    setTimeout(() => {
+    _onboardingHintHideTimer = setTimeout(() => {
+        _onboardingHintHideTimer = null
         if (onboarding) {
             onboarding.classList.remove('visible')
             onboarding.setAttribute('aria-hidden', 'true')
