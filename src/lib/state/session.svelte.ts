@@ -30,7 +30,7 @@ function getOrCreateSessionSeed(): number {
             const parsed = Number(stored)
             if (Number.isFinite(parsed) && parsed > 0) return parsed
         }
-        const fresh = Math.floor(Math.random() * 0x7fffffff) || 1
+        const fresh = Math.floor(Math.random() * 0x80000000) + 1
         window.localStorage?.setItem(SESSION_SEED_KEY, String(fresh))
         return fresh
     } catch {
