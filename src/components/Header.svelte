@@ -403,6 +403,11 @@ import { debugWarn } from '@lib/utils/debug'
     cursor: pointer;
     transition: all 0.15s;
     flex-shrink: 0;
+    /* Stable stacking so the icon-only #btn-keyboard-help does not get
+       visually swallowed by the wider #btn-app-help "Help" label when
+       both share the header flex row (journey test 7 regression). */
+    position: relative;
+    z-index: 1;
   }
   .legend-toggle:hover,
   .help-toggle:hover {

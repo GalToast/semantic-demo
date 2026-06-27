@@ -722,6 +722,18 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
         const page = await ctx.newPage()
 
         try {
+            // Set sessionStorage BEFORE first navigation via addInitScript
+            // so the SearchBar picks it up on mount (post-W47 refactor:
+            // SearchBar uses events instead of polling — reads sessionStorage
+            // once at mount, then reacts to SEARCH_DEGRADED/SEARCH_SUCCESS).
+            await ctx.addInitScript(() => {
+                try {
+                    window.sessionStorage.setItem('api_unreachable', '1')
+                } catch {
+                    /* ignore */
+                }
+            })
+
             await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
             // Wait for the SearchBar to mount before checking the banner.
@@ -729,19 +741,8 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
             // is rendered after Svelte mounts the App shell.
             await page.locator('.search-container').waitFor({ state: 'attached', timeout: 40000 })
 
-            // Before the flag is set, the banner should NOT be visible.
-            // Wait a beat for the SearchBar'sillar 750ms polling interval.
-            await page.waitForTimeout(1500)
-            // banner count was captured here in previous iterations but is now tracked by the test harness
-            // Set the flag — simulates the search engine's fallback path.
-            await page.evaluate(() => {
-                window.sessionStorage.setItem('api_unreachable', '1')
-
-                console.log('[TEST 15 DEBUG] set api_unreachable=1')
-            })
-
-            // Wait for the next 750ms polling tick.
-            await page.waitForTimeout(1500)
+            // Give SearchBar a beat to initialize the banner state on mount.
+            await page.waitForTimeout(800)
 
             const bannerAfter = page.locator('[data-testid="mock-banner"]')
             await bannerAfter.waitFor({ state: 'visible', timeout: 5000 })
@@ -1133,7 +1134,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // does not serve in headless mode, so the pocket (and therefore the chips)
         // never appear in CI. Keep the test so the pre-commit hook sees it; fixme
         // tells us to enable the pocket pipeline in tests.
-        test.fixme(true, 'Chromium crash in headless environment (exit 3221225794); tracked separately')
+        // test.fixme(true, 'Chromium crash in headless environment (exit 3221225794); tracked separately')
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
@@ -1226,7 +1227,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
     test('24. focus-keyboard-hint is visible in focus mode and shows Esc and ? shortcuts', async ({ page }) => {
         // Same root cause as test 23: the focus pocket builder cannot produce
         // nodes in the headless test environment, so the hint is never shown.
-        test.fixme(true, 'Chromium crash in headless environment (exit 3221225794); tracked separately')
+        // test.fixme(true, 'Chromium crash in headless environment (exit 3221225794); tracked separately')
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
@@ -1263,12 +1264,16 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
     })
 
     test('proximity legend renders on first visit and is dismissible', async ({ page }) => {
+        // Navigate first so localStorage is accessible (about:blank blocks it).
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
         // Clear localStorage so the legend appears (first-visit simulation)
         await page.evaluate(() => {
             localStorage.removeItem('moco_onboarding_seen_v1')
         })
 
-        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        // Reload to pick up the cleared flag
+        await page.reload({ waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
