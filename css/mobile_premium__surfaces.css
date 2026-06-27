@@ -12,14 +12,14 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
    cascade so legacy strand compass geometry cannot recenter the idle
    compass offscreen. */
 @media (max-width: 768px) {
-    :is(body.surface-idle, body.surface-idle):not([data-panel-surface^='map-'])
+    :is(body.surface-idle, body.surface-idle):not(.surface-map-any)
         .journey-compass[data-phase='overview'] {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    :is(body.surface-idle, body.surface-idle):not([data-panel-surface^='map-']) .view-toggle {
+    :is(body.surface-idle, body.surface-idle):not(.surface-map-any) .view-toggle {
         left: 12px;
         right: 12px;
         top: calc(18px + env(safe-area-inset-top, 0px));
@@ -27,14 +27,14 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         transform: none;
     }
 
-    :is(body[data-panel-surface], body:not(.surface-idle)[data-panel-surface]):not([data-panel-surface^='map-'])
+    :is(body[data-panel-surface], body:not(.surface-idle)[data-panel-surface]):not(.surface-map-any)
         .journey-compass-title {
         display: none;
     }
 }
 
 @media (max-width: 768px) {
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) {
         left: 16px;
         right: 16px;
         top: calc(18px + env(safe-area-inset-top, 0px));
@@ -95,7 +95,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         overflow: hidden;
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-copy {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-copy {
         display: flex;
         flex-direction: column;
         justify-content: center;
@@ -106,11 +106,11 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     /* Technical Separator (Removed for cleaner typography hierarchy) */
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-copy::after {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-copy::after {
         display: none;
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-kicker {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-kicker {
         display: flex;
         align-items: flex-start;
         margin: 0 0 2px 0;
@@ -123,7 +123,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     /* Live signal pulse indicator */
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-kicker::before {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-kicker::before {
         content: '';
         display: inline-block;
         flex-shrink: 0;
@@ -163,7 +163,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         }
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-title {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-title {
         margin: 0;
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 13.5px;
@@ -177,7 +177,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         padding-bottom: 2px;
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-actions {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-actions {
         display: flex;
         flex-direction: row;
         gap: 8px;
@@ -187,7 +187,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         padding-left: 14px;
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action {
         min-width: 60px;
         height: 34px;
         padding: 0 14px;
@@ -209,7 +209,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         box-shadow: 0 2px 6px var(--shadow-antumbra);
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action.primary {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action.primary {
         background: var(--color-primary-alt);
         color: #0d1b2a;
         box-shadow:
@@ -217,13 +217,13 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
             0 2px 6px var(--shadow-antumbra);
     }
 
-    body[data-journey-compass-density='compact']:not([data-panel-surface^='map-'])
+    body[data-journey-compass-density='compact']:not(.surface-map-any)
         .journey-compass-action[data-mobile-label] {
         font-size: 0;
         letter-spacing: 0;
     }
 
-    body[data-journey-compass-density='compact']:not([data-panel-surface^='map-'])
+    body[data-journey-compass-density='compact']:not(.surface-map-any)
         .journey-compass-action[data-mobile-label]::before {
         content: attr(data-mobile-label);
         font-size: 10.75px;
@@ -235,20 +235,20 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     @media (max-width: 374px) {
-        .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) {
+        .journey-compass[data-panel-surface]:not(.surface-map-any) {
             padding: 0 12px 0 16px;
         }
 
-        .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-copy {
+        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-copy {
             padding-right: 8px;
         }
 
-        .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-actions {
+        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-actions {
             padding-left: 8px;
             gap: 4px;
         }
 
-        .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action {
+        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action {
             min-width: 48px;
             padding: 0 10px;
         }
@@ -258,21 +258,21 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         }
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action:active {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action:active {
         transform: scale(0.9);
         background: var(--glass-reflection-glow);
         border-color: var(--glass-reflection-glow);
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-note {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-note {
         display: none;
     }
 
-    .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-rail {
+    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-rail {
         display: none;
     }
 
-    body.surface-search:not([data-panel-surface^='map-'])
+    body.surface-search:not(.surface-map-any)
         .journey-compass[data-panel-surface='search']
         .journey-compass-title {
         min-width: 0;
@@ -284,7 +284,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         padding-bottom: 2px;
     }
 
-    body.surface-search:not([data-panel-surface^='map-']) .journey-compass {
+    body.surface-search:not(.surface-map-any) .journey-compass {
         display: grid;
         grid-template-columns: minmax(0, 1fr) auto;
         align-items: center;
@@ -296,11 +296,11 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         padding: 7px 8px 7px 18px;
     }
 
-    body.surface-search:not([data-panel-surface^='map-']) .journey-compass-copy {
+    body.surface-search:not(.surface-map-any) .journey-compass-copy {
         padding-right: 10px;
     }
 
-    body.surface-search:not([data-panel-surface^='map-']) .journey-compass-actions {
+    body.surface-search:not(.surface-map-any) .journey-compass-actions {
         gap: 6px;
         padding-left: 8px;
     }
@@ -346,7 +346,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         padding: 0 8px;
     }
 
-    body.surface-search:not([data-panel-surface^='map-']) .journey-compass-action {
+    body.surface-search:not(.surface-map-any) .journey-compass-action {
         display: inline-flex;
         align-items: center;
         justify-content: center;
@@ -356,13 +356,13 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         border-radius: 999px;
     }
 
-    body.surface-search:not([data-panel-surface^='map-']) .journey-compass-action[data-journey-action='center-anchor'] {
+    body.surface-search:not(.surface-map-any) .journey-compass-action[data-journey-action='center-anchor'] {
         min-width: 86px;
         padding-inline: 12px;
         line-height: 1;
     }
 
-    body.surface-search:not([data-panel-surface^='map-'])
+    body.surface-search:not(.surface-map-any)
         .journey-compass-action.primary[data-journey-action='center-anchor']::after {
         content: none;
         inset: 0;
@@ -380,10 +380,10 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         visibility: hidden;
     }
 
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-error-retry-btn,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-error-dismiss-btn {
         min-height: 44px;
@@ -410,7 +410,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
        (max-width:640px) both leave the info-panel without an explicit position.
        The Svelte base uses position:absolute; without this override the panel
        scrolls with its container instead of anchoring to the viewport. */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel {
         position: fixed;
         left: 0;
         right: 0;
@@ -448,13 +448,13 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     /* Standardized Typography Reset */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel * {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel * {
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         box-sizing: border-box;
     }
 
     /* Override desktop sticky top: 52px positioning on mobile */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .search-container {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .search-container {
         position: relative;
         top: auto;
         left: 0;
@@ -479,7 +479,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     /* Sheet Handle */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel::before {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel::before {
         content: '';
         position: absolute;
         top: 8px;
@@ -527,7 +527,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     body:not(.surface-idle):is(
             :not([data-panel-surface='focus']):not([data-panel-surface='focus-search']),
             [data-focus-panel-mode='field-node']
-        )[data-panel-surface]:not([data-panel-surface='semantic-dive']):not([data-panel-surface^='map-'])
+        )[data-panel-surface]:not([data-panel-surface='semantic-dive']):not(.surface-map-any)
         .focus-stage-actions {
         display: grid;
         grid-template-columns: repeat(2, 1fr);
@@ -547,11 +547,11 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     /* Trail/Journey Navigation (The 'Rough' one) */
     body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface='focus-search']):not(
             [data-panel-surface='semantic-dive']
-        ):not([data-panel-surface^='map-'])
+        ):not(.surface-map-any)
         #trail-controls,
     body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface='focus-search']):not(
             [data-panel-surface='semantic-dive']
-        ):not([data-panel-surface^='map-'])
+        ):not(.surface-map-any)
         .focus-stage-journey.active {
         display: flex;
         align-items: center;
@@ -642,18 +642,18 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         content: 'Search';
     }
 
-    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass {
+    body.surface-idle:not(.surface-map-any) .journey-compass {
         display: grid;
         grid-template-columns: minmax(140px, 1fr) minmax(142px, 42vw);
         align-items: center;
         gap: 7px;
     }
 
-    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-copy {
+    body.surface-idle:not(.surface-map-any) .journey-compass-copy {
         min-width: 0;
     }
 
-    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-actions {
+    body.surface-idle:not(.surface-map-any) .journey-compass-actions {
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 6px;
@@ -661,8 +661,8 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         padding-left: 0;
     }
 
-    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-action,
-    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-action.action-btn {
+    body.surface-idle:not(.surface-map-any) .journey-compass-action,
+    body.surface-idle:not(.surface-map-any) .journey-compass-action.action-btn {
         width: auto;
         min-width: 0;
         height: 44px;
@@ -676,8 +676,8 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         text-overflow: clip;
     }
 
-    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-action::before,
-    body.surface-idle:not([data-panel-surface^='map-']) .journey-compass-action.action-btn::before {
+    body.surface-idle:not(.surface-map-any) .journey-compass-action::before,
+    body.surface-idle:not(.surface-map-any) .journey-compass-action.action-btn::before {
         font-size: 10.5px;
         line-height: 1;
         letter-spacing: 0.02em;
@@ -865,13 +865,13 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     /* Legacy focus fragments stay hidden by default; premium focus owns state-specific suppression. */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) #trail-controls:not(.active),
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) #trail-controls:not(.active),
     #trail-controls:not(.active) {
         display: none;
     }
 
-    body.surface-semantic-dive:not([data-panel-surface^='map-']) #trail-controls,
-    body.surface-semantic-dive:not([data-panel-surface^='map-']) .trail-controls {
+    body.surface-semantic-dive:not(.surface-map-any) #trail-controls,
+    body.surface-semantic-dive:not(.surface-map-any) .trail-controls {
         display: none;
         pointer-events: none;
     }
@@ -986,18 +986,18 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
        visible journey navigation; legacy focus-stage journey fragments must
        not draw inside or over the selected-business card. This belongs in
        surfaces.css because it loads after the focus-dive owner rules. */
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         .focus-stage-journey,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         .focus-stage-neighbors,
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         .focus-stage-actions {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         #journey-chrome
         .focus-stage-journey {
         display: contents;
@@ -1005,7 +1005,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         pointer-events: auto;
     }
 
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not([data-panel-surface^='map-'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         #journey-chrome
         .focus-stage-neighbors {
         display: flex;
@@ -1013,9 +1013,9 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         pointer-events: auto;
     }
 
-    body.surface-focus:not([data-panel-surface^='map-']) #journey-chrome,
-    body.surface-focus-search:not([data-panel-surface^='map-']):not([data-trail-state='active']) #journey-chrome,
-    body.surface-focus-search[data-focus-panel-mode='field-node']:not([data-panel-surface^='map-']) #journey-chrome {
+    body.surface-focus:not(.surface-map-any) #journey-chrome,
+    body.surface-focus-search:not(.surface-map-any):not([data-trail-state='active']) #journey-chrome,
+    body.surface-focus-search[data-focus-panel-mode='field-node']:not(.surface-map-any) #journey-chrome {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -1454,11 +1454,11 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
 
     @media (prefers-reduced-motion: reduce) {
         body .info-panel,
-        body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
-        body[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel,
-        .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']),
-        .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-action,
-        body[data-panel-surface]:not([data-panel-surface^='map-']) .search-container {
+        body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel,
+        body[data-panel-surface]:not(.surface-map-any) .info-panel,
+        .journey-compass[data-panel-surface]:not(.surface-map-any),
+        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-action,
+        body[data-panel-surface]:not(.surface-map-any) .search-container {
             transition: none;
             animation-name: none;
         }
@@ -1499,7 +1499,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     @media (max-width: 480px) {
-        .journey-compass[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass-kicker {
+        .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-kicker {
             display: none;
         }
     }

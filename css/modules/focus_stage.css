@@ -492,7 +492,7 @@ body.surface-map-any #focus-stage #focus-stage-neighbors.focus-stage-neighbors {
    action. Promote it to a primary CTA so the eye lands there first.
    Matches (0,0,4,2) specificity from journey_steps.css role-color rules
    so the teal CTA wins over the per-role border tint. */
-body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor-pill.is-next-stop {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-next-stop {
     background: linear-gradient(
         180deg,
         rgba(var(--color-primary-tint-rgb), 0.2),
@@ -506,7 +506,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
     padding: 12px 14px;
 }
 
-body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor-pill.is-next-stop:hover {
+body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-next-stop:hover {
     background: linear-gradient(
         180deg,
         rgba(var(--color-primary-tint-rgb), 0.28),
@@ -915,7 +915,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         margin-top: 7px;
     }
 
-    body[data-panel-surface]:not([data-panel-surface^='map-']):is(
+    body[data-panel-surface]:not(.surface-map-any):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search']
         )

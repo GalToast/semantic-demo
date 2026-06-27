@@ -94,7 +94,7 @@
        ---------------------------------------------------------------- */
     body.surface-search .search-results.active,
     body.surface-focus-search .search-results.active,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-results.active {
         border-radius: 8px;
@@ -113,7 +113,7 @@
 
     body.surface-search .search-results.active:empty,
     body.surface-focus-search .search-results.active:empty,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-results.active:empty {
         display: none;
@@ -124,7 +124,7 @@
 
     body.surface-search .search-results.active::after,
     body.surface-focus-search .search-results.active::after,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-results.active::after {
         content: '';
@@ -149,7 +149,7 @@
 
     body.surface-search .search-result-item,
     body.surface-focus-search .search-result-item,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-result-item {
         border-radius: 8px;
@@ -157,7 +157,7 @@
 
     body.surface-search .search-result-item.top-result,
     body.surface-focus-search .search-result-item.top-result,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-result-item.top-result {
         padding: 8px 10px;
@@ -165,7 +165,7 @@
 
     body.surface-search .search-result-item.top-result .search-result-name,
     body.surface-focus-search .search-result-item.top-result .search-result-name,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-result-item.top-result
         .search-result-name {
@@ -175,7 +175,7 @@
 
     body.surface-search .search-result-item:not(.top-result) .search-result-name,
     body.surface-focus-search .search-result-item:not(.top-result) .search-result-name,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-result-item:not(.top-result)
         .search-result-name {
@@ -184,7 +184,7 @@
 
     body.surface-search .search-result-item.top-result .search-result-what,
     body.surface-focus-search .search-result-item.top-result .search-result-what,
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .search-container.has-query
         .search-result-item.top-result
         .search-result-what {

@@ -29,7 +29,7 @@
 
     /* Provide a little more horizontal space for the compass on 320px screens.
        Gate on body:not(.surface-idle) to avoid leaking into transition states. */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .journey-compass {
         left: 10px;
         right: 10px;
         padding-left: 16px;
@@ -41,13 +41,13 @@
        compass pill is only 288px wide. The `[data-density='compact']`
        attribute selector outranks the 374-block in source order so the
        narrow overrides win at this width. */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .journey-compass[data-density='compact'] {
         min-height: 78px;
         padding: 8px 10px 9px 12px;
         gap: 8px;
     }
 
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .journey-compass[data-density='compact']
         .journey-compass-copy {
         min-width: 0;
@@ -55,7 +55,7 @@
         padding-right: 4px;
     }
 
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-'])
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
         .journey-compass[data-density='compact']
         .journey-compass-actions {
         flex: 0 0 auto;
@@ -68,10 +68,10 @@
        compact form so the user always has a path back to overview.
        Selector mirrors the surfaces rule's specificity (4,1) so the
        narrow override wins on source order. */
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass:not([data-density='compact']) {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .journey-compass:not([data-density='compact']) {
         display: none;
     }
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .journey-compass[data-density='compact'] {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .journey-compass[data-density='compact'] {
         min-height: 44px;
         padding: 4px 8px;
         gap: 4px;
@@ -171,7 +171,7 @@
    and wide logic live in separate @media blocks already; merging
    them into a single query would conflate the tightening rules
    (narrow) with the re-show rules (escape hatch).
-   Specificity: the :not([data-panel-surface^='map-']) pseudo-class
+   Specificity: the :not(.surface-map-any) pseudo-class
    is added to match the hide rule at line 76 (specificity 0,3,1)
    so source order wins the tie. */
 @media (max-width: 360px) {
@@ -184,11 +184,11 @@
         opacity: 1;
     }
     /* Undo the narrow compass hide (line 76) for focus states.
-       The :not([data-panel-surface^='map-']) matches the hide rule's
+       The :not(.surface-map-any) matches the hide rule's
        specificity so source order wins. */
-    body.surface-focus:not([data-panel-surface^='map-']) .journey-compass,
-    body.surface-focus-search:not([data-panel-surface^='map-']) .journey-compass,
-    body.surface-semantic-dive:not([data-panel-surface^='map-']) .journey-compass {
+    body.surface-focus:not(.surface-map-any) .journey-compass,
+    body.surface-focus-search:not(.surface-map-any) .journey-compass,
+    body.surface-semantic-dive:not(.surface-map-any) .journey-compass {
         display: grid;
         visibility: visible;
         pointer-events: auto;

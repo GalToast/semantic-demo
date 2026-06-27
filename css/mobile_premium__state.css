@@ -796,7 +796,7 @@
    so the 768px↔769px crossing interpolates smoothly via the transition
    added in mobile_premium__surfaces.css root-sheet-style. */
 @media (min-width: 641px) and (max-width: 768px) {
-    body:not(.surface-idle)[data-panel-surface]:not([data-panel-surface^='map-']) .info-panel {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .info-panel {
         position: fixed;
         left: 0;
         right: 0;
