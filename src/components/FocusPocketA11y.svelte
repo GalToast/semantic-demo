@@ -83,6 +83,9 @@
   camera controls (right rail), and the trail (bottom-left).
 -->
 {#if hasNodes}
+  <div class="focus-keyboard-hint" id="focus-keyboard-hint" aria-label="Keyboard shortcuts for focus mode">
+    <kbd>Esc</kbd><span>overview</span><span class="hint-sep">·</span><kbd>?</kbd><span>shortcuts</span>
+  </div>
   <button
     id="focus-pocket-list-toggle"
     class="focus-pocket-list-toggle"
@@ -208,5 +211,37 @@
     bottom: auto;
     top: 0.75rem;
     right: 0.75rem;
+  }
+
+  .focus-keyboard-hint {
+    position: fixed;
+    right: 0.75rem;
+    bottom: 2.7rem;
+    display: flex;
+    align-items: center;
+    gap: 0.3rem;
+    padding: 0.35rem 0.65rem;
+    background: rgba(7, 16, 24, 0.88);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    border-radius: 0.35rem;
+    color: #8aaeae;
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.6rem;
+    z-index: var(--z-panels);
+    pointer-events: none;
+  }
+  .focus-keyboard-hint kbd {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.55rem;
+    color: #e0f0f0;
+    background: rgba(78, 205, 196, 0.12);
+    border: 1px solid rgba(78, 205, 196, 0.25);
+    border-radius: 0.2rem;
+    padding: 0.05rem 0.25rem;
+  }
+  .focus-keyboard-hint .hint-sep {
+    opacity: 0.5;
   }
 </style>
