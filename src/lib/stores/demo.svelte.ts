@@ -4,6 +4,7 @@
 import { get, writable, type Readable } from 'svelte/store'
 import type { BusinessRecord } from '@lib/types/business'
 import { appState } from '@lib/state/app.svelte.ts'
+import { getBusinessRecords } from '@lib/data-store'
 import { guardReducedMotion } from '@lib/demo/guards'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -199,7 +200,7 @@ export function getActiveDemoTimerCount(): number {
 }
 
 export function findDemoNode(records?: readonly BusinessRecord[]): number | null {
-    const points = records ?? (appState.points as unknown as readonly BusinessRecord[] | undefined)
+    const points = records ?? getBusinessRecords()
     if (!points) return null
 
     const showcasePool = SHOWCASE_POOL
