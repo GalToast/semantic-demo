@@ -339,7 +339,7 @@ export async function probeSemanticLane({
 
     state.semanticLaneProbePromise = (async () => {
         const controller = new AbortController()
-        const timeoutId = setTimeout(() => controller.abort(), 5000)
+        const timeoutId = setTimeout(() => controller.abort(), 5000) // eslint-disable-line no-restricted-syntax -- local Promise timeout, cleared in finally
         try {
             const payload = await fetchSemanticLaneHealth({ warm: effectiveWarm, signal: controller.signal })
             applySemanticLaneHealthPayload(payload)
@@ -401,7 +401,7 @@ export function scheduleSemanticLaneMonitor(): void {
 
     state.semanticLaneMonitorTimer =
         typeof win?.setInterval === 'function'
-            ? setInterval(() => {
+            ? setInterval(() => { // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneMonitorTimer
                   if (isStaticDevLaneFallbackActive()) return
                   probeSemanticLane({
                       warm: shouldWarmSemanticLane('interval'),
@@ -534,7 +534,7 @@ export function setSemanticLaneOpsMode(enabled: boolean): void {
         return
     }
     if (!state.semanticLaneOpsRefreshTimer && typeof win?.setInterval === 'function') {
-        state.semanticLaneOpsRefreshTimer = setInterval(() => {
+        state.semanticLaneOpsRefreshTimer = setInterval(() => { // eslint-disable-line no-restricted-syntax -- periodic refresh; lifecycle owned by state.semanticLaneOpsRefreshTimer
             refreshSemanticLaneOpsSummary()
         }, 60000)
     }
