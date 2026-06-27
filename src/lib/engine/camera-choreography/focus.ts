@@ -6,7 +6,7 @@
  */
 import { Vector3 } from 'three'
 import { appState } from '@lib/state/app.svelte'
-import type { NodePosition, NavFocusPocketMeta } from '@lib/state/state-types'
+import type { NodePosition } from '@lib/state/state-types'
 import { prefersReducedMotion } from '@lib/utils/environment'
 import {
     type AppStateLike,

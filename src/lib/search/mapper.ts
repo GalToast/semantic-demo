@@ -6,19 +6,11 @@
  */
 
 import { appState as state } from '@lib/state/app.svelte'
-import type { ActiveFilters } from '@lib/state/state-types'
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
 import { isPointVisible } from '../utils/geo-data'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
-interface MapperAppState {
-    points: Point[]
-    pointIndexByLeadId: Map<string, number>
-    activeClusterFilter: number | null
-    activeFilters: ActiveFilters
-    semanticResultContextByLeadId: Map<string, unknown>
-}
 
 export interface ServiceResultRow {
     lead_id?: string | number

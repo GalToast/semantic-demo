@@ -45,7 +45,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
     onError?: SpectorEventHandler;
   }
   interface SpectorEventHandler {
-    add(handler: (...args: unknown[]) => void): void;
+    add(_handler: (..._args: unknown[]) => void): void;
   }
 
   // Single typed accessor for window — replaces both `window as

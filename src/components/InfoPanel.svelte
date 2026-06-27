@@ -19,10 +19,9 @@
     #selected-map, #selected-thread, #selected-trivia
 -->
 <script lang="ts">
-  import { currentSurface, navStore } from '@lib/stores/navigation.svelte.ts';
+  import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { activeResult, searchSummary } from '@lib/stores/search.svelte';
   import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores/index.svelte.ts';
-  import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';
   import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui-renderers';
@@ -48,7 +47,7 @@
   let testPanelSurface = $derived($testCompatStore.panelSurface || $testCompatStore.navSurface);
   let testFocusedNode = $derived($testCompatStore.focusedNode);
   let testCompact = $derived($testCompatStore.compact === 'true');
-  let surface = $derived(currentSurface());
+  let surface = $derived($navStore.surface ?? 'idle');
 
   // ── CSS class derivation for body[data-...] selectors ─────────────────────
   // Derive classes from body state so CSS can target .info-panel.surface-focus etc.

@@ -52,7 +52,7 @@
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import ProximityLegend from '@components/ProximityLegend.svelte';
   import { createLazyComponent } from '@lib/utils/lazy-component.svelte';
-  import { installErrorHandlers, ErrorFallback } from '@lib/error-boundary';
+  import { ErrorFallback } from '@lib/error-boundary';
   import { legendOpen, setLegendOpen } from '@lib/stores/legend.svelte';
 
   // Lazy component handles -- driven by $effects further down. Each handle's
