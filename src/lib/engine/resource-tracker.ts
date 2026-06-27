@@ -17,6 +17,18 @@ interface GPUResourceHolder {
 
 type Trackable = Disposable | GPUResourceHolder | Trackable[] | null | undefined
 
+/**
+ * Narrowing helpers — each owns a single `as unknown as` cast so that
+ * call sites in `track()` stay type-clean.
+ */
+function asDisposable(value: unknown): Disposable {
+    return value as unknown as Disposable
+}
+
+function asTrackableArray(value: unknown): Trackable[] {
+    return value as unknown as Trackable[]
+}
+
 export class ResourceTracker {
     private resources = new Set<Disposable>()
 
@@ -44,9 +56,9 @@ export class ResourceTracker {
         if (holder.material) {
             const mat: Material | undefined = Array.isArray(holder.material) ? holder.material[0] : holder.material
             if (!mat) return resource
-            this.track(mat as unknown as Disposable)
+            this.track(asDisposable(mat))
 
-            if (mat && 'map' in mat && mat.map) this.track(mat.map as unknown as Disposable)
+            if (mat && 'map' in mat && mat.map) this.track(asDisposable(mat.map))
             if (mat && 'alphaMap' in mat && (mat as Record<string, unknown>).alphaMap)
                 this.track((mat as Record<string, unknown>).alphaMap as Disposable)
             if (mat && 'envMap' in mat && (mat as Record<string, unknown>).envMap)
@@ -56,7 +68,7 @@ export class ResourceTracker {
         }
 
         if (holder.children && Array.isArray(holder.children)) {
-            this.track(holder.children as unknown as Trackable[])
+            this.track(asTrackableArray(holder.children))
         }
 
         return resource
