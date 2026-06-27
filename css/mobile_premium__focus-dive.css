@@ -7,11 +7,11 @@
    overlapping concerns, making it unclear where a new rule belonged.
 
    State taxonomy (each section has a single, named concern):
-     1. IDLE          body[data-panel-surface="idle"]
-     2. SEARCH        body[data-panel-surface="search"]
-     3. FOCUS         body[data-panel-surface="focus"] and "focus-search"
-     4. DIVE          body[data-panel-surface="semantic-dive"]
-     5. MAP           body[data-panel-surface^="map-"]
+     1. IDLE          body.surface-idle
+     2. SEARCH        body.surface-search
+     3. FOCUS         body.surface-focus and "focus-search"
+     4. DIVE          body.surface-semantic-dive
+     5. MAP           body[class*="surface-map-"]
      6. CROSS-CUTTING chrome / state / surfaces (touch multiple states)
 
    Sections are kept in their original import order to preserve the
@@ -710,7 +710,7 @@
         pointer-events: auto;
     }
 
-    body[data-panel-surface='focus-search'] #btn-focus-dive.focus-stage-dive-btn:not([hidden]) {
+    body.surface-focus-search #btn-focus-dive.focus-stage-dive-btn:not([hidden]) {
         position: fixed;
         z-index: var(--z-compass);
         left: max(12px, env(safe-area-inset-left, 0px));
@@ -1414,7 +1414,7 @@
        chrome starts below it. Without this explicit contract the fixed
        focus card can be clipped above the viewport while journey chrome
        cuts across the card footer/contact rows. */
-    body[data-panel-surface='focus-search'][data-trail-state='active']:not([data-focus-panel-mode='field-node'])
+    body.surface-focus-search[data-trail-state='active']:not([data-focus-panel-mode='field-node'])
         .focus-card.focus-stage-card {
         top: max(10px, env(safe-area-inset-top, 0px));
         bottom: auto;
@@ -1423,7 +1423,7 @@
         overscroll-behavior: contain;
     }
 
-    body[data-panel-surface='focus-search'][data-trail-state='active'] #journey-chrome.journey-chrome {
+    body.surface-focus-search[data-trail-state='active'] #journey-chrome.journey-chrome {
         position: fixed;
         top: clamp(214px, 27dvh, 240px);
         bottom: auto;
@@ -1644,8 +1644,8 @@
 
     body.is-active[data-panel-surface='focus'][data-thread-inspect-surface='idle'] .focus-thread-inspector,
     body.is-active[data-panel-surface='focus-search'][data-thread-inspect-surface='idle'] .focus-thread-inspector,
-    body[data-panel-surface='focus'][data-thread-inspect-surface='idle'] .focus-thread-inspector,
-    body[data-panel-surface='focus-search'][data-thread-inspect-surface='idle'] .focus-thread-inspector,
+    body.surface-focus[data-thread-inspect-surface='idle'] .focus-thread-inspector,
+    body.surface-focus-search[data-thread-inspect-surface='idle'] .focus-thread-inspector,
     body.is-active:is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
         .focus-thread-inspector[aria-hidden='true']:not(.active) {
         display: none;
@@ -1834,12 +1834,12 @@
 
 /* Relocated Semantic Dive mobile rules (Slice 4) */
 @media (max-width: 768px) {
-    body[data-panel-surface='semantic-dive'] .info-panel {
+    body.surface-semantic-dive .info-panel {
         transform: translateX(calc(-100% + 24px));
         opacity: 0.12;
     }
 
-    body[data-panel-surface='semantic-dive'] .focus-stage {
+    body.surface-semantic-dive .focus-stage {
         left: 0;
         right: 0;
         bottom: 0;
@@ -1848,7 +1848,7 @@
         pointer-events: none;
     }
 
-    body[data-panel-surface='semantic-dive'] .focus-stage-card {
+    body.surface-semantic-dive .focus-stage-card {
         position: relative;
         box-sizing: border-box;
         padding: 18px 14px 10px;
@@ -1869,7 +1869,7 @@
         overflow-x: hidden;
     }
 
-    body[data-panel-surface='semantic-dive'] .focus-stage-card::after {
+    body.surface-semantic-dive .focus-stage-card::after {
         content: '';
         position: absolute;
         top: 8px;
@@ -1995,7 +1995,7 @@
         pointer-events: auto;
     }
 
-    body[data-panel-surface='focus-search'] .focus-stage-dive-btn:not([hidden]) {
+    body.surface-focus-search .focus-stage-dive-btn:not([hidden]) {
         position: fixed;
         z-index: var(--z-compass);
         left: max(12px, env(safe-area-inset-left, 0px));
@@ -2036,11 +2036,11 @@
         opacity: 0.42;
     }
 
-    body[data-panel-surface='focus'] #info-panel.info-panel {
+    body.surface-focus #info-panel.info-panel {
         pointer-events: none;
     }
 
-    body[data-panel-surface='focus'] #focus-stage.focus-stage {
+    body.surface-focus #focus-stage.focus-stage {
         position: fixed;
         inset: 0;
         z-index: var(--z-compass);
@@ -2049,8 +2049,8 @@
         pointer-events: none;
     }
 
-    body[data-panel-surface='focus'] #canvas-container,
-    body[data-panel-surface='focus'] #canvas-container canvas {
+    body.surface-focus #canvas-container,
+    body.surface-focus #canvas-container canvas {
         pointer-events: none;
     }
 

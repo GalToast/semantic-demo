@@ -16,11 +16,11 @@
         display: none;
     }
 
-    body[data-active-view='galaxy'] .cluster-section summary {
+    body.view-galaxy .cluster-section summary {
         align-items: flex-start;
     }
 
-    body[data-active-view='galaxy'] .cluster-section summary .summary-note {
+    body.view-galaxy .cluster-section summary .summary-note {
         font-size: 9px;
         line-height: 1.32;
         max-width: 94%;
@@ -32,8 +32,8 @@
         grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    body[data-panel-surface='focus'] .info-panel,
-    body[data-panel-surface='focus-search'] .info-panel {
+    body.surface-focus .info-panel,
+    body.surface-focus-search .info-panel {
         background:
             radial-gradient(circle at top left, rgba(var(--color-primary-alt-rgb), 0.04), transparent 24%),
             linear-gradient(180deg, rgba(11, 13, 20, 0.78), rgba(7, 9, 15, 0.72));
@@ -41,14 +41,14 @@
         box-shadow: 0 18px 44px var(--shadow-penumbra);
     }
 
-    body[data-panel-surface='focus'] .info-header,
-    body[data-panel-surface='focus-search'] .info-header {
+    body.surface-focus .info-header,
+    body.surface-focus-search .info-header {
         background: rgba(255, 255, 255, 0.018);
         border-bottom-color: var(--glass-reflection-fade);
     }
 
-    body[data-panel-surface='focus'] .selected-card,
-    body[data-panel-surface='focus-search'] .selected-card {
+    body.surface-focus .selected-card,
+    body.surface-focus-search .selected-card {
         background:
             radial-gradient(circle at top right, rgb(var(--cluster-rgb) / 0.12), transparent 38%),
             linear-gradient(180deg, rgba(12, 15, 22, 0.72), rgba(7, 9, 14, 0.64));
@@ -58,67 +58,67 @@
             0 0 0 1px rgb(var(--cluster-rgb) / 0.06);
     }
 
-    body[data-panel-surface='focus'] .selected-card .panel-section-title,
-    body[data-panel-surface='focus-search'] .selected-card .panel-section-title,
-    body[data-panel-surface='focus'] .selected-card .selected-subtitle,
-    body[data-panel-surface='focus-search'] .selected-card .selected-subtitle,
-    body[data-panel-surface='focus'] .trail-context,
-    body[data-panel-surface='focus-search'] .trail-context {
+    body.surface-focus .selected-card .panel-section-title,
+    body.surface-focus-search .selected-card .panel-section-title,
+    body.surface-focus .selected-card .selected-subtitle,
+    body.surface-focus-search .selected-card .selected-subtitle,
+    body.surface-focus .trail-context,
+    body.surface-focus-search .trail-context {
         color: var(--color-text-secondary);
     }
 
-    body[data-panel-surface='focus'] .selected-card,
-    body[data-panel-surface='focus-search'] .selected-card {
+    body.surface-focus .selected-card,
+    body.surface-focus-search .selected-card {
         padding: 10px 11px;
         border-radius: 14px;
     }
 
-    body[data-panel-surface='focus'] .selected-card h3,
-    body[data-panel-surface='focus-search'] .selected-card h3 {
+    body.surface-focus .selected-card h3,
+    body.surface-focus-search .selected-card h3 {
         font-size: 17px;
         line-height: 1.04;
     }
 
-    body[data-panel-surface='focus'] .selected-role-badge,
-    body[data-panel-surface='focus-search'] .selected-role-badge {
+    body.surface-focus .selected-role-badge,
+    body.surface-focus-search .selected-role-badge {
         max-width: 86px;
         padding: 5px 6px;
         font-size: 8px;
         letter-spacing: 0.08em;
     }
 
-    body[data-panel-surface='focus'] .selected-meta-strip,
-    body[data-panel-surface='focus-search'] .selected-meta-strip,
-    body[data-panel-surface='focus'] .selected-action-row,
-    body[data-panel-surface='focus-search'] .selected-action-row {
+    body.surface-focus .selected-meta-strip,
+    body.surface-focus-search .selected-meta-strip,
+    body.surface-focus .selected-action-row,
+    body.surface-focus-search .selected-action-row {
         gap: 4px;
         margin-top: 7px;
     }
 
-    body[data-panel-surface='focus'] .selected-meta-chip,
-    body[data-panel-surface='focus-search'] .selected-meta-chip,
-    body[data-panel-surface='focus'] .selected-action,
-    body[data-panel-surface='focus-search'] .selected-action {
+    body.surface-focus .selected-meta-chip,
+    body.surface-focus-search .selected-meta-chip,
+    body.surface-focus .selected-action,
+    body.surface-focus-search .selected-action {
         font-size: 9px;
         border-radius: 9px;
     }
 
-    body[data-panel-surface='focus'] .selected-match-panel,
-    body[data-panel-surface='focus-search'] .selected-match-panel {
+    body.surface-focus .selected-match-panel,
+    body.surface-focus-search .selected-match-panel {
         margin-top: 8px;
         padding: 8px 9px;
         border-radius: 10px;
     }
 
-    body[data-panel-surface='focus'] .selected-match-copy,
-    body[data-panel-surface='focus-search'] .selected-match-copy {
+    body.surface-focus .selected-match-copy,
+    body.surface-focus-search .selected-match-copy {
         font-size: 10px;
         line-height: 1.34;
         max-height: 4.05em;
         -webkit-line-clamp: 3;
     }
 
-    body[data-active-view='galaxy'][data-focus-panel-mode='field-node'] .info-panel {
+    body.view-galaxy[data-focus-panel-mode='field-node'] .info-panel {
         visibility: hidden;
         opacity: 0;
         pointer-events: none;
@@ -163,37 +163,37 @@
         box-shadow: 0 18px 40px var(--shadow-penumbra);
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-card {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-card {
         margin-bottom: 10px;
         padding: 10px 11px 11px;
         border-radius: 13px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-card .panel-section-title {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-card .panel-section-title {
         gap: 5px;
         margin-bottom: 6px;
         font-size: 9px;
         letter-spacing: 0.42px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-card h3 {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-card h3 {
         font-size: 15px;
         line-height: 1.08;
         margin-bottom: 3px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-hero {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-hero {
         gap: 7px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-role-badge {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-role-badge {
         max-width: 82px;
         padding: 5px 6px;
         font-size: 8px;
         letter-spacing: 0.08em;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-filed-as {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-filed-as {
         margin-top: 4px;
         font-size: 9px;
         line-height: 1.28;
@@ -204,7 +204,7 @@
         overflow-x: hidden;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-subtitle {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-subtitle {
         font-size: 10px;
         line-height: 1.28;
         display: -webkit-box;
@@ -214,30 +214,30 @@
         overflow-x: hidden;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-meta-strip,
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-action-row {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-meta-strip,
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-action-row {
         gap: 4px;
         margin-top: 7px;
         flex-wrap: wrap;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-meta-chip {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-meta-chip {
         padding: 4px 6px;
         font-size: 8px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-match-panel {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-match-panel {
         margin-top: 8px;
         padding: 8px 9px;
         border-radius: 10px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-match-label {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-match-label {
         font-size: 8px;
         margin-bottom: 3px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-match-copy {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-match-copy {
         font-size: 10px;
         line-height: 1.32;
         display: -webkit-box;
@@ -247,25 +247,25 @@
         overflow-x: hidden;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-action {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-action {
         flex-basis: calc(50% - 4px);
         padding: 7px 8px;
         font-size: 10px;
         border-radius: 9px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .badge-row {
+    body.view-map:not([data-panel-surface='map-focus-search']) .badge-row {
         gap: 4px;
         margin-top: 6px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .signal-badge {
+    body.view-map:not([data-panel-surface='map-focus-search']) .signal-badge {
         padding: 3px 7px;
         font-size: 8px;
         letter-spacing: 0.14px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-trivia {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-trivia {
         margin-top: 7px;
         font-size: 10px;
         line-height: 1.32;
@@ -276,12 +276,12 @@
         overflow-x: hidden;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-grid {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-grid {
         gap: 6px;
         margin-top: 8px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-item {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-item {
         padding-top: 6px;
         display: grid;
         grid-template-columns: minmax(74px, 86px) minmax(0, 1fr);
@@ -290,38 +290,38 @@
         padding: 7px 8px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-item-label {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-item-label {
         margin-bottom: 0;
         font-size: 9px;
         line-height: 1.14;
         letter-spacing: 0.4px;
     }
 
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-item-value,
-    body[data-active-view='map']:not([data-panel-surface='map-focus-search']) .selected-item-value a {
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-item-value,
+    body.view-map:not([data-panel-surface='map-focus-search']) .selected-item-value a {
         font-size: 10px;
         line-height: 1.28;
     }
 
-    body[data-active-view='map'] .trail-controls {
+    body.view-map .trail-controls {
         gap: 6px;
         margin-top: 8px;
     }
 
-    body[data-active-view='map'] .trail-btn {
+    body.view-map .trail-btn {
         padding: 7px 8px;
         font-size: 10px;
         border-radius: 9px;
     }
 
-    body[data-active-view='map'] .trail-context {
+    body.view-map .trail-context {
         margin-top: 8px;
         padding-top: 8px;
         font-size: 10px;
         line-height: 1.34;
     }
 
-    body[data-active-view='map'] .search-label {
+    body.view-map .search-label {
         flex-direction: row;
         align-items: center;
         gap: 7px;
@@ -330,7 +330,7 @@
         letter-spacing: 0.42px;
     }
 
-    body[data-active-view='map'] .controls {
+    body.view-map .controls {
         right: 10px;
         bottom: calc(18px + env(safe-area-inset-bottom, 0px));
         grid-template-columns: repeat(4, 38px);
@@ -342,18 +342,18 @@
         box-shadow: 0 18px 34px var(--shadow-penumbra);
     }
 
-    body[data-active-view='map'] .control-btn {
+    body.view-map .control-btn {
         width: 44px;
         height: 44px;
         border-radius: 10px;
         font-size: 14px;
     }
 
-    body[data-active-view='map'] .experience-reset-toast {
+    body.view-map .experience-reset-toast {
         bottom: calc(76px + env(safe-area-inset-bottom, 0px));
     }
 
-    body[data-active-view='map'] .panel-toggle {
+    body.view-map .panel-toggle {
         left: -4px;
         bottom: calc(18px + env(safe-area-inset-bottom, 0px));
         z-index: var(--z-overlay-floating);
@@ -367,7 +367,7 @@
 }
 
 @media (max-width: 768px) and (max-height: 740px) {
-    body[data-active-view='galaxy'] .controls {
+    body.view-galaxy .controls {
         bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         grid-template-columns: repeat(2, 40px);
         gap: 6px;
@@ -375,24 +375,24 @@
         border-radius: 16px;
     }
 
-    body[data-active-view='galaxy'] .control-btn {
+    body.view-galaxy .control-btn {
         width: 40px;
         height: 40px;
         border-radius: 11px;
     }
 
-    body[data-active-view='galaxy'] .panel-toggle {
+    body.view-galaxy .panel-toggle {
         bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         width: 40px;
         height: 40px;
         border-radius: 13px;
     }
 
-    body[data-active-view='map'] .search-hint {
+    body.view-map .search-hint {
         -webkit-line-clamp: 1;
     }
 
-    body[data-active-view='map'] .controls {
+    body.view-map .controls {
         bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         grid-template-columns: repeat(4, 34px);
         gap: 4px;
@@ -400,14 +400,14 @@
         border-radius: 15px;
     }
 
-    body[data-active-view='map'] .control-btn {
+    body.view-map .control-btn {
         width: 34px;
         height: 34px;
         font-size: 13px;
         border-radius: 9px;
     }
 
-    body[data-active-view='map'] .panel-toggle {
+    body.view-map .panel-toggle {
         bottom: calc(10px + env(safe-area-inset-bottom, 0px));
         z-index: var(--z-overlay-floating);
         width: 40px;
@@ -416,10 +416,10 @@
     }
 }
 
-body[data-panel-surface='semantic-dive'] #search-results.active,
-body[data-panel-surface='semantic-dive'] .info-panel,
-body[data-panel-surface='semantic-dive'] .semantic-lane-rail,
-body[data-panel-surface='semantic-dive'] .selected-card {
+body.surface-semantic-dive #search-results.active,
+body.surface-semantic-dive .info-panel,
+body.surface-semantic-dive .semantic-lane-rail,
+body.surface-semantic-dive .selected-card {
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
@@ -469,7 +469,7 @@ body.view-transitioning .journey-compass {
 }
 
 /* 10/10 Polish: Atmospheric Mycelium Vignette */
-body[data-active-view='galaxy']::after {
+body.view-galaxy::after {
     content: '';
     position: fixed;
     top: 0;
@@ -483,7 +483,7 @@ body[data-active-view='galaxy']::after {
     transition: opacity 1.2s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
-body[data-active-view='map']::after {
+body.view-map::after {
     opacity: 0;
 }
 
@@ -583,7 +583,7 @@ body[data-camera-assist='arriving'] #map-container::before {
 }
 
 /* 10/10 Polish: Enhanced Depth Cues */
-body[data-panel-surface='semantic-dive']::after {
+body.surface-semantic-dive::after {
     background: radial-gradient(circle at center, transparent 15%, rgba(9, 12, 20, 0.82) 100%);
 }
 
@@ -845,7 +845,7 @@ body[data-panel-surface='semantic-dive']::after {
  *   focus       → Focus: a business is selected, no search running
  *   focus-search → Focus+Search: both active simultaneously
  *
- * body[data-panel-surface="semantic-dive"] → Inside: Step Inside mode, focus-stage is primary HUD
+ * body.surface-semantic-dive → Inside: Step Inside mode, focus-stage is primary HUD
  *
  * Approach: show only the sections relevant to each stage; hide everything else.
  * The search input, weather widget, and county stats remain visible throughout.
@@ -853,71 +853,71 @@ body[data-panel-surface='semantic-dive']::after {
 
 /* ── Overview (idle): full sidebar including first-time discovery scaffolding ─── */
 
-body[data-panel-surface='idle'] .search-trail-cue,
-body[data-panel-surface='idle'] .synthesize-trigger,
-body[data-panel-surface='idle'] .search-results.active,
-body[data-panel-surface='semantic-dive'] .search-results.active,
-body[data-panel-surface='idle'] #filters-section,
-body[data-panel-surface='idle'] #cluster-section {
+body.surface-idle .search-trail-cue,
+body.surface-idle .synthesize-trigger,
+body.surface-idle .search-results.active,
+body.surface-semantic-dive .search-results.active,
+body.surface-idle #filters-section,
+body.surface-idle #cluster-section {
     display: none;
 }
 
 /* ── Search: results dominate; collapse first-time and focus scaffolding ─────── */
 
-body[data-panel-surface='search'] .focus-stage,
-body[data-panel-surface='search'] .focus-thread-inspector {
+body.surface-search .focus-stage,
+body.surface-search .focus-thread-inspector {
     display: none;
 }
 
 /* Desktop-specific cleanups for idle/search */
 @media (min-width: 769px) {
-    body[data-panel-surface='idle'] .selected-card,
-    body[data-panel-surface='idle'] .selected-empty,
-    body[data-panel-surface='search'] .selected-card,
-    body[data-panel-surface='search'] .selected-empty {
+    body.surface-idle .selected-card,
+    body.surface-idle .selected-empty,
+    body.surface-search .selected-card,
+    body.surface-search .selected-empty {
         display: none;
     }
 }
 
 /* ── Map+Search: results and map mode controls own the rail; no empty card overlay ── */
 
-body[data-panel-surface='map-search'] .selected-card,
-body[data-panel-surface='map-search'] .selected-empty {
+body.surface-map-search .selected-card,
+body.surface-map-search .selected-empty {
     display: none;
 }
 
 /* ── Focus: focused business card and trail controls dominate ─────────────────── */
 
-body[data-panel-surface='focus'] .search-container:not(.has-query) .search-results.active,
-body[data-panel-surface='focus'] .synthesize-trigger,
-body[data-panel-surface='focus'] .search-trail-cue,
-body[data-panel-surface='focus'] .mode-grid,
-body[data-panel-surface='focus'] .stats-row,
-body[data-panel-surface='focus'] .launch-btn,
-body[data-panel-surface='focus'] .rail-section#cluster-section,
-body[data-panel-surface='focus'] .rail-section#filters-section {
+body.surface-focus .search-container:not(.has-query) .search-results.active,
+body.surface-focus .synthesize-trigger,
+body.surface-focus .search-trail-cue,
+body.surface-focus .mode-grid,
+body.surface-focus .stats-row,
+body.surface-focus .launch-btn,
+body.surface-focus .rail-section#cluster-section,
+body.surface-focus .rail-section#filters-section {
     display: none;
 }
 
 /* ── Focus+Search: focused business + search results share the panel ──────────── */
 
-body[data-panel-surface='focus-search'] .stats-row,
-body[data-panel-surface='focus-search'] .launch-btn,
-body[data-panel-surface='focus-search'] .rail-section#cluster-section,
-body[data-panel-surface='focus-search'] .rail-section#filters-section,
-body[data-panel-surface='focus'] .semantic-lane-ops,
-body[data-panel-surface='focus-search'] .semantic-lane-ops {
+body.surface-focus-search .stats-row,
+body.surface-focus-search .launch-btn,
+body.surface-focus-search .rail-section#cluster-section,
+body.surface-focus-search .rail-section#filters-section,
+body.surface-focus .semantic-lane-ops,
+body.surface-focus-search .semantic-lane-ops {
     display: none;
 }
 
 /* ── Inside (Step Inside / semantic dive): focus-stage is primary HUD ─────────── */
-body[data-panel-surface='semantic-dive'] .synthesize-trigger,
-body[data-panel-surface='semantic-dive'] .search-trail-cue,
-body[data-panel-surface='semantic-dive'] .stats-row,
-body[data-panel-surface='semantic-dive'] .rail-section#cluster-section,
-body[data-panel-surface='semantic-dive'] .rail-section#filters-section,
-body[data-panel-surface='semantic-dive'] .surprise-btn,
-body[data-panel-surface='semantic-dive'] .launch-btn {
+body.surface-semantic-dive .synthesize-trigger,
+body.surface-semantic-dive .search-trail-cue,
+body.surface-semantic-dive .stats-row,
+body.surface-semantic-dive .rail-section#cluster-section,
+body.surface-semantic-dive .rail-section#filters-section,
+body.surface-semantic-dive .surprise-btn,
+body.surface-semantic-dive .launch-btn {
     display: none;
 }
 

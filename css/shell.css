@@ -151,11 +151,11 @@ body[data-semantic-dive='transitioning'] #canvas-container {
     transform: scale(1.02);
 }
 
-body[data-panel-surface='search'] #canvas-container::before {
+body.surface-search #canvas-container::before {
     opacity: 0.24;
 }
 
-body[data-panel-surface='search'] #canvas-container::after {
+body.surface-search #canvas-container::after {
     opacity: 0.42;
 }
 
@@ -198,15 +198,15 @@ body[data-mobile-route-peek='active'][data-route-motion='search-corridor'] #canv
     opacity: 0.22;
 }
 
-body[data-panel-surface='focus'] #canvas-container::before {
+body.surface-focus #canvas-container::before {
     opacity: 0.24;
 }
 
-body[data-panel-surface='focus'] #canvas-container::after {
+body.surface-focus #canvas-container::after {
     opacity: 0.38;
 }
 
-body[data-panel-surface='focus-search'] #canvas-container::before {
+body.surface-focus-search #canvas-container::before {
     opacity: 0.34;
     background: radial-gradient(
         circle at 51% 50%,
@@ -217,7 +217,7 @@ body[data-panel-surface='focus-search'] #canvas-container::before {
     );
 }
 
-body[data-panel-surface='focus-search'] #canvas-container::after {
+body.surface-focus-search #canvas-container::after {
     opacity: 0.46;
     background:
         linear-gradient(
@@ -238,22 +238,22 @@ body[data-panel-surface='focus-search'] #canvas-container::after {
         );
 }
 
-body[data-active-view='map'] #canvas-container::before,
-body[data-active-view='map'] #canvas-container::after {
+body.view-map #canvas-container::before,
+body.view-map #canvas-container::after {
     opacity: 0;
 }
 
-body[data-active-view='map'] #canvas-container {
+body.view-map #canvas-container {
     opacity: 0.15;
 }
 
 /* polish206: bridge mycelium to terrain before the layer swap. */
-body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container {
+body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container {
     opacity: 0.82;
     transform: translateZ(0) scale(0.965);
 }
 
-body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::before {
+body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container::before {
     opacity: 0.76;
     transform: scale(0.99);
     background:
@@ -267,7 +267,7 @@ body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-conta
         linear-gradient(180deg, rgba(var(--color-primary-tint-rgb), 0.06), rgba(255, 226, 132, 0.08));
 }
 
-body[data-active-view='galaxy'][data-terrain-handoff='flattening'] #canvas-container::after {
+body.view-galaxy[data-terrain-handoff='flattening'] #canvas-container::after {
     opacity: 0.84;
     transform: scale(1);
     background:
@@ -406,7 +406,7 @@ body[data-trail-depth='2'] #canvas-container::after {
     transition: opacity 0.3s ease;
 }
 
-body[data-active-view='map'] .canvas-color-legend {
+body.view-map .canvas-color-legend {
     display: none;
 }
 
@@ -472,47 +472,47 @@ body[data-active-view='map'] .canvas-color-legend {
     transform: scale(1.02);
 }
 
-body[data-active-view='map'] #map-container::before {
+body.view-map #map-container::before {
     opacity: 0.46;
 }
 
-body[data-active-view='map'] #map-container::after {
+body.view-map #map-container::after {
     opacity: 0.42;
 }
 
-body[data-active-view='map'][data-trail-state='active'] #map-container::before {
+body.view-map[data-trail-state='active'] #map-container::before {
     opacity: 0.58;
 }
 
-body[data-active-view='map'][data-trail-state='active'] #map-container::after {
+body.view-map[data-trail-state='active'] #map-container::after {
     opacity: 0.54;
 }
 
-body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::before {
+body.view-map[data-terrain-handoff='landing'] #map-container::before {
     opacity: 0.76;
     animation: terrainBridgeVeil 1.8s ease-out both;
 }
 
-body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::after {
+body.view-map[data-terrain-handoff='landing'] #map-container::after {
     opacity: 0.72;
     transform: scale(1);
     animation: terrainBridgeHalo 1.8s ease-out both;
 }
 
-body[data-active-view='map'][data-terrain-handoff='settled'][data-trail-state='active'] #map-container::after {
+body.view-map[data-terrain-handoff='settled'][data-trail-state='active'] #map-container::after {
     opacity: 0.6;
 }
 
-body[data-active-view='map'] #map-container .leaflet-tile-pane {
+body.view-map #map-container .leaflet-tile-pane {
     filter: saturate(0.74) brightness(0.82) contrast(1.05);
     transition: filter 0.35s ease;
 }
 
-body[data-active-view='map'][data-trail-state='active'] #map-container .leaflet-tile-pane {
+body.view-map[data-trail-state='active'] #map-container .leaflet-tile-pane {
     filter: saturate(0.78) brightness(0.88) contrast(1.16);
 }
 
-body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .leaflet-tile-pane {
+body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane {
     filter: saturate(0.86) brightness(0.68) contrast(1.12);
 }
 
@@ -653,7 +653,7 @@ body[data-active-view='map'][data-terrain-handoff='landing'] #map-container .lea
     animation-duration: 2.4s;
 }
 
-body[data-active-view='map'][data-terrain-handoff='landing']
+body.view-map[data-terrain-handoff='landing']
     #map-container
     .leaflet-interactive.semantic-map-route-line {
     filter: drop-shadow(0 0 16px rgba(255, 226, 132, 0.38))
@@ -661,13 +661,13 @@ body[data-active-view='map'][data-terrain-handoff='landing']
     animation-duration: 1.55s;
 }
 
-body[data-active-view='map'][data-terrain-handoff='landing']
+body.view-map[data-terrain-handoff='landing']
     #map-container
     .leaflet-interactive.semantic-map-route-line-aura {
     filter: blur(1.4px) drop-shadow(0 0 26px rgba(var(--color-primary-tint-rgb), 0.28));
 }
 
-body[data-active-view='map'][data-terrain-handoff='landing']
+body.view-map[data-terrain-handoff='landing']
     #map-container
     .leaflet-interactive.semantic-map-route-pulse {
     animation-duration: 1.65s;

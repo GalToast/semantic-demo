@@ -44,8 +44,8 @@
 
 /* M9: shell keyframes — pseudo-elements need matching specificity */
 @media (prefers-reduced-motion: reduce) {
-    body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::before,
-    body[data-active-view='map'][data-terrain-handoff='landing'] #map-container::after,
+    body.view-map[data-terrain-handoff='landing'] #map-container::before,
+    body.view-map[data-terrain-handoff='landing'] #map-container::after,
     body #map-container .leaflet-interactive.semantic-map-route-line,
     body #map-container .leaflet-interactive.semantic-map-route-line-aura,
     body #map-container .leaflet-interactive.semantic-map-route-pulse {
@@ -57,7 +57,7 @@
 /* Relocated prefers-reduced-motion rules (Slice 6) */
 
 @media (max-width: 768px) and (prefers-reduced-motion: reduce) {
-    body[data-active-view='galaxy'] .info-panel,
+    body.view-galaxy .info-panel,
     .journey-compass[data-active-view='galaxy'] {
         transition: none;
         transition-duration: 0.01ms;
@@ -106,19 +106,19 @@
     body .focus-stage-action-btn,
     body .focus-stage-dive-btn,
     body .focus-stage-inside-btn,
-    body[data-panel-surface='semantic-dive'] #btn-inside-next.focus-stage-inside-btn[aria-busy='true'],
+    body.surface-semantic-dive #btn-inside-next.focus-stage-inside-btn[aria-busy='true'],
     body .focus-stage-neighbor-pill {
         animation: none;
         transition: none;
     }
 
-    body[data-active-view='galaxy'] .focus-stage,
-    body[data-active-view='galaxy'] .focus-stage-card {
+    body.view-galaxy .focus-stage,
+    body.view-galaxy .focus-stage-card {
         transition: none;
         transition-duration: 0.01ms;
     }
 
-    body[data-active-view='galaxy'][data-semantic-dive='transitioning'] .focus-stage-card {
+    body.view-galaxy[data-semantic-dive='transitioning'] .focus-stage-card {
         opacity: 1;
         pointer-events: auto;
         transform: none;

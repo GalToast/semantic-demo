@@ -31,7 +31,7 @@
         max-width: calc(100vw - 392px);
     }
 
-    body[data-active-view='galaxy']:is(
+    body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -56,7 +56,7 @@
         transform: none;
     }
 
-    body[data-active-view='galaxy']:is(
+    body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -66,7 +66,7 @@
         min-width: 0;
     }
 
-    body[data-active-view='galaxy']:is(
+    body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -75,7 +75,7 @@
         white-space: nowrap;
     }
 
-    body[data-active-view='galaxy']:is(
+    body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -84,7 +84,7 @@
         max-width: none;
     }
 
-    body[data-active-view='galaxy']:is(
+    body.view-galaxy:is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
@@ -425,7 +425,7 @@
 
 /* polish184: mobile focus cockpit hierarchy after the field-first search beat. */
 @media (max-width: 768px) {
-    body[data-panel-surface='focus-search'] #synthesize-trigger {
+    body.surface-focus-search #synthesize-trigger {
         margin: 7px 0 8px;
         padding: 7px 8px;
         border-radius: 14px;
@@ -438,13 +438,13 @@
             0 10px 26px var(--shadow-antumbra);
     }
 
-    body[data-panel-surface='focus-search'] #synthesize-trigger::before,
-    body[data-panel-surface='focus-search'] #synthesize-trigger .guide-cta-kicker,
-    body[data-panel-surface='focus-search'] #synthesize-trigger .guide-cta-note {
+    body.surface-focus-search #synthesize-trigger::before,
+    body.surface-focus-search #synthesize-trigger .guide-cta-kicker,
+    body.surface-focus-search #synthesize-trigger .guide-cta-note {
         display: none;
     }
 
-    body[data-panel-surface='focus-search'] #synthesize-trigger .btn-synthesize {
+    body.surface-focus-search #synthesize-trigger .btn-synthesize {
         justify-content: flex-start;
         min-height: 44px;
         padding: 7px 9px;
@@ -458,7 +458,7 @@
         box-shadow: inset 0 1px 0 var(--glass-reflection-soft);
     }
 
-    body[data-panel-surface='focus-search'] #synthesize-trigger .btn-synthesize::after {
+    body.surface-focus-search #synthesize-trigger .btn-synthesize::after {
         content: 'optional read';
         margin-left: auto;
         color: rgba(255, 226, 132, 0.66);
@@ -469,23 +469,23 @@
         text-transform: uppercase;
     }
 
-    body[data-panel-surface='focus-search'] #synthesize-trigger .sparkle {
+    body.surface-focus-search #synthesize-trigger .sparkle {
         width: 18px;
         height: 18px;
         flex-basis: 18px;
         animation: none;
     }
 
-    body[data-panel-surface='focus-search'] #synthesize-trigger .sparkle .ui-icon {
+    body.surface-focus-search #synthesize-trigger .sparkle .ui-icon {
         width: 12px;
         height: 12px;
     }
 
-    body[data-panel-surface='focus-search'] .selected-card {
+    body.surface-focus-search .selected-card {
         display: none;
     }
 
-    body[data-panel-surface='focus-search'] .search-results.active {
+    body.surface-focus-search .search-results.active {
         max-height: min(24vh, 180px);
         margin: 8px 0 0;
         padding: 6px;
@@ -495,12 +495,12 @@
         pointer-events: auto;
     }
 
-    body[data-panel-surface='focus-search'] .focus-lens-truth {
+    body.surface-focus-search .focus-lens-truth {
         padding: 6px 8px;
         border-radius: 12px;
     }
 
-    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) {
+    body.surface-focus-search .focus-thread-inspector:not(.active) {
         grid-template-columns: auto minmax(0, 1fr);
         align-items: center;
         gap: 5px 7px;
@@ -511,25 +511,25 @@
         background: rgba(5, 12, 17, 0.38);
     }
 
-    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-copy,
-    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-meta,
-    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-actions {
+    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-copy,
+    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-meta,
+    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-actions {
         display: none;
     }
 
-    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-kicker {
+    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-kicker {
         color: rgba(255, 226, 132, 0.6);
     }
 
-    body[data-panel-surface='focus-search'] .focus-thread-inspector:not(.active) .focus-thread-inspector-title {
+    body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-title {
         color: rgba(220, 241, 238, 0.72);
         font-size: 9.5px;
         font-weight: 700;
     }
 }
 
-body[data-panel-surface='focus'] .focus-stage-journey.active,
-body[data-panel-surface='focus-search'] .focus-stage-journey.active {
+body.surface-focus .focus-stage-journey.active,
+body.surface-focus-search .focus-stage-journey.active {
     display: grid;
     grid-template-columns: 54px minmax(0, 1fr) 64px;
     align-items: stretch;
@@ -550,8 +550,8 @@ body[data-panel-surface='focus-search'] .focus-stage-journey.active {
         border-color 0.34s ease;
 }
 
-body[data-panel-surface='focus'] .focus-stage-journey-meta,
-body[data-panel-surface='focus-search'] .focus-stage-journey-meta {
+body.surface-focus .focus-stage-journey-meta,
+body.surface-focus-search .focus-stage-journey-meta {
     padding: 7px 10px 8px;
     border-radius: 15px;
     text-align: left;

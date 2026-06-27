@@ -12,14 +12,14 @@ body.is-active #selected-details.active:not([hidden]) {
    cascade so legacy strand compass geometry cannot recenter the idle
    compass offscreen. */
 @media (max-width: 768px) {
-    :is(body[data-panel-surface='idle'], body.is-active[data-panel-surface='idle']):not([data-panel-surface^='map-'])
+    :is(body.surface-idle, body.is-active[data-panel-surface='idle']):not([data-panel-surface^='map-'])
         .journey-compass[data-phase='overview'] {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    :is(body[data-panel-surface='idle'], body.is-active[data-panel-surface='idle']):not([data-panel-surface^='map-'])
+    :is(body.surface-idle, body.is-active[data-panel-surface='idle']):not([data-panel-surface^='map-'])
         .view-toggle {
         left: 12px;
         right: 12px;
@@ -82,7 +82,7 @@ body.is-active #selected-details.active:not([hidden]) {
         overflow: hidden;
     }
 
-    body[data-active-view='galaxy'][data-panel-surface='idle'][data-compact='true'] #info-panel.info-panel {
+    body.view-galaxy[data-panel-surface='idle'][data-compact='true'] #info-panel.info-panel {
         position: fixed;
         left: 10px;
         right: 10px;
@@ -389,7 +389,7 @@ body.is-active #selected-details.active:not([hidden]) {
         min-height: 44px;
     }
 
-    body[data-panel-surface='search'] .focus-stage-dive-btn,
+    body.surface-search .focus-stage-dive-btn,
     body.is-active[data-panel-surface='search'] .focus-stage-dive-btn {
         display: none;
     }
@@ -765,12 +765,12 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: none;
     }
 
-    body[data-panel-surface='search'] #btn-panel,
-    body[data-panel-surface='search'] #btn-share-view,
-    body[data-panel-surface='search'] #btn-legend,
-    body[data-panel-surface='search'] #mode-chips,
-    body[data-panel-surface='search'] #mode-grid,
-    body[data-panel-surface='search'] .controls {
+    body.surface-search #btn-panel,
+    body.surface-search #btn-share-view,
+    body.surface-search #btn-legend,
+    body.surface-search #mode-chips,
+    body.surface-search #mode-grid,
+    body.surface-search .controls {
         opacity: 0;
         visibility: hidden;
         pointer-events: none;
@@ -999,10 +999,10 @@ body.is-active #selected-details.active:not([hidden]) {
         pointer-events: auto;
     }
 
-    body[data-panel-surface='focus']:not([data-panel-surface^='map-']) #journey-chrome,
-    body[data-panel-surface='focus-search']:not([data-panel-surface^='map-']):not([data-trail-state='active'])
+    body.surface-focus:not([data-panel-surface^='map-']) #journey-chrome,
+    body.surface-focus-search:not([data-panel-surface^='map-']):not([data-trail-state='active'])
         #journey-chrome,
-    body[data-panel-surface='focus-search'][data-focus-panel-mode='field-node']:not([data-panel-surface^='map-'])
+    body.surface-focus-search[data-focus-panel-mode='field-node']:not([data-panel-surface^='map-'])
         #journey-chrome {
         display: none;
         visibility: hidden;
@@ -1495,9 +1495,9 @@ body.is-active #selected-details.active:not([hidden]) {
     /* In focus-search peek mode the search container is intentionally
        suppressed so the focus stage owns the lower chrome. */
     body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container,
-    body[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] .search-container,
+    body.surface-focus-search[data-panel-surface-detail='peek'] .search-container,
     body.is-active[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] #info-panel.info-panel,
-    body[data-panel-surface='focus-search'][data-panel-surface-detail='peek'] #info-panel.info-panel {
+    body.surface-focus-search[data-panel-surface-detail='peek'] #info-panel.info-panel {
         display: none;
         visibility: hidden;
         opacity: 0;
@@ -1507,7 +1507,7 @@ body.is-active #selected-details.active:not([hidden]) {
     /* In focus-search the legacy selected-business drawer is intentionally
        suppressed so the search/focus surfaces do not duplicate ownership. */
     body.is-active[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) #selected-card,
-    body[data-panel-surface='focus-search']:not([data-focus-panel-mode='field-node']) #selected-card {
+    body.surface-focus-search:not([data-focus-panel-mode='field-node']) #selected-card {
         display: none;
         visibility: hidden;
         opacity: 0;

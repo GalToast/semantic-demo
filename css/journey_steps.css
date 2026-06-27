@@ -23,10 +23,10 @@
 }
 
 @media (min-width: 769px) {
-    body[data-panel-surface='focus'] .focus-stage-card,
-    body[data-panel-surface='focus-search'] .focus-stage-card,
-    body[data-panel-surface='map-focus'] .focus-stage-card,
-    body[data-panel-surface='map-focus-search'] .focus-stage-card {
+    body.surface-focus .focus-stage-card,
+    body.surface-focus-search .focus-stage-card,
+    body.surface-map-focus .focus-stage-card,
+    body.surface-map-focus-search .focus-stage-card {
         border-color: rgba(var(--color-primary-tint-rgb), 0.42);
         background:
             linear-gradient(135deg, rgba(255, 217, 122, 0.12), transparent 25%),
@@ -39,10 +39,10 @@
             0 0 42px rgba(var(--color-primary-alt-rgb), 0.08);
     }
 
-    body[data-panel-surface='focus'] .focus-stage-card::before,
-    body[data-panel-surface='focus-search'] .focus-stage-card::before,
-    body[data-panel-surface='map-focus'] .focus-stage-card::before,
-    body[data-panel-surface='map-focus-search'] .focus-stage-card::before {
+    body.surface-focus .focus-stage-card::before,
+    body.surface-focus-search .focus-stage-card::before,
+    body.surface-map-focus .focus-stage-card::before,
+    body.surface-map-focus-search .focus-stage-card::before {
         background:
             linear-gradient(
                 120deg,
@@ -116,14 +116,14 @@ html[data-legend-active='true'] .focus-lens-truth {
 
 /* polish152: active journey command-center layer. */
 @media (min-width: 769px) {
-    body[data-panel-surface='focus'] .focus-stage,
-    body[data-panel-surface='focus-search'] .focus-stage {
+    body.surface-focus .focus-stage,
+    body.surface-focus-search .focus-stage {
         width: min(392px, calc(100vw - 32px));
         z-index: var(--z-overlay);
     }
 
-    body[data-panel-surface='focus'] .focus-stage-card,
-    body[data-panel-surface='focus-search'] .focus-stage-card {
+    body.surface-focus .focus-stage-card,
+    body.surface-focus-search .focus-stage-card {
         padding: 18px 20px 18px;
         border-radius: 28px;
         background:
@@ -146,8 +146,8 @@ html[data-legend-active='true'] .focus-lens-truth {
             box-shadow 0.4s ease;
     }
 
-    body[data-panel-surface='focus'] .focus-stage-card::before,
-    body[data-panel-surface='focus-search'] .focus-stage-card::before {
+    body.surface-focus .focus-stage-card::before,
+    body.surface-focus-search .focus-stage-card::before {
         background:
             linear-gradient(
                 120deg,
@@ -327,13 +327,13 @@ body[data-panel-surface]:not([data-panel-surface^='map-'])[data-focus-transition
     }
 
     /* Additional major state transitions */
-    body[data-panel-surface='focus'] .focus-stage-card,
-    body[data-panel-surface='focus-search'] .focus-stage-card {
+    body.surface-focus .focus-stage-card,
+    body.surface-focus-search .focus-stage-card {
         transition: none;
     }
 
     /* Disable semantic dive emphasis effects */
-    body[data-panel-surface='semantic-dive'] #canvas-container::after,
+    body.surface-semantic-dive #canvas-container::after,
     body[data-semantic-dive='transitioning'] #canvas-container {
         animation: none;
         transition: none;
@@ -360,23 +360,23 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-next {
     color: rgba(var(--color-primary-tint-rgb), 0.6);
 }
 
-body[data-panel-surface='focus'] .focus-stage-journey-btn,
-body[data-panel-surface='focus-search'] .focus-stage-journey-btn {
+body.surface-focus .focus-stage-journey-btn,
+body.surface-focus-search .focus-stage-journey-btn {
     min-width: 0;
     min-height: 58px;
     justify-content: center;
     border-radius: 15px;
 }
 
-body[data-panel-surface='focus'] #btn-focus-next:not(:disabled),
-body[data-panel-surface='focus-search'] #btn-focus-next:not(:disabled) {
+body.surface-focus #btn-focus-next:not(:disabled),
+body.surface-focus-search #btn-focus-next:not(:disabled) {
     background:
         radial-gradient(circle at 50% 0%, rgba(255, 226, 132, 0.24), transparent 54%),
         linear-gradient(180deg, rgba(var(--color-primary-tint-rgb), 0.32), rgba(var(--color-primary-alt-rgb), 0.16));
 }
 
-body[data-panel-surface='focus'] .focus-stage-neighbors.active,
-body[data-panel-surface='focus-search'] .focus-stage-neighbors.active {
+body.surface-focus .focus-stage-neighbors.active,
+body.surface-focus-search .focus-stage-neighbors.active {
     display: block;
     margin-top: 12px;
     padding-top: 12px;
@@ -574,13 +574,16 @@ body[data-panel-surface]:not([data-panel-surface^='map-'])[data-strand-journey='
 
 .focus-stage-neighbor-role {
     margin-left: 6px;
-    font-size: 8px;
+    font-size: 10px;
     font-family: 'JetBrains Mono', monospace;
     font-weight: 500;
     letter-spacing: 0.05em;
     color: rgba(var(--color-primary-tint-rgb), 0.7);
     text-transform: uppercase;
     vertical-align: middle;
+    background: rgba(78,205,196,0.12);
+    border-radius: 2px;
+    padding: 1px 4px;
 }
 
 .focus-stage-neighbor-next-stop-badge {
@@ -755,21 +758,21 @@ body[data-panel-surface]:not([data-panel-surface^='map-'])[data-strand-journey='
 }
 
 @media (min-width: 769px) {
-    body[data-panel-surface='semantic-dive'][data-thread-inspect-surface='inside-cue'] .focus-thread-inspector.active {
+    body.surface-semantic-dive[data-thread-inspect-surface='inside-cue'] .focus-thread-inspector.active {
         gap: 3px;
         margin-top: 8px;
         padding: 8px 10px;
         border-radius: 8px;
     }
 
-    body[data-panel-surface='semantic-dive'][data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-title {
+    body.surface-semantic-dive[data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-title {
         font-size: 10px;
         line-height: 1.2;
     }
 
-    body[data-panel-surface='semantic-dive'][data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-copy,
-    body[data-panel-surface='semantic-dive'][data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-meta,
-    body[data-panel-surface='semantic-dive'][data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-actions {
+    body.surface-semantic-dive[data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-copy,
+    body.surface-semantic-dive[data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-meta,
+    body.surface-semantic-dive[data-thread-inspect-surface='inside-cue'] .focus-thread-inspector-actions {
         display: none;
     }
 }

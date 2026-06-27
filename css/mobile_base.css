@@ -275,11 +275,11 @@ body:has(.info-panel.active) .panel-toggle,
     opacity: 1;
 }
 
-body[data-panel-surface='search'] .onboarding-hint,
-body[data-panel-surface='focus'] .onboarding-hint,
-body[data-panel-surface='focus-search'] .onboarding-hint,
-body[data-panel-surface='semantic-dive'] .onboarding-hint,
-body[data-active-view='map'] .onboarding-hint {
+body.surface-search .onboarding-hint,
+body.surface-focus .onboarding-hint,
+body.surface-focus-search .onboarding-hint,
+body.surface-semantic-dive .onboarding-hint,
+body.view-map .onboarding-hint {
     opacity: 0;
 }
 

@@ -517,6 +517,7 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
     // 'surface-*' siblings.
     const BODY_CLASS_MAP: Record<string, string> = {
         panelSurface: 'surface',
+        activeView: 'view',
         focusTransition: 'focus-transition'
     }
 

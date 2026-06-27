@@ -108,31 +108,31 @@
         height: 100%;
     }
 
-    body[data-panel-surface='search'] .info-content,
-    body[data-panel-surface='focus-search'] .info-content {
+    body.surface-search .info-content,
+    body.surface-focus-search .info-content {
         max-height: calc(min(54vh, 456px) - 42px);
         padding: 9px 10px 10px;
         margin-bottom: calc(env(safe-area-inset-bottom, 0px));
     }
 
-    body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel.info-panel,
-    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel.info-panel,
-    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] #info-panel.info-panel {
+    body.surface-search:not([data-panel-surface-detail]) #info-panel.info-panel,
+    body.surface-search[data-panel-surface-detail='none'] #info-panel.info-panel,
+    body.surface-search[data-panel-surface-detail='focus-search'] #info-panel.info-panel {
         height: min(57dvh, 480px);
         max-height: min(57dvh, 480px);
     }
 
-    body[data-panel-surface='search']:not([data-panel-surface-detail]) #info-panel .info-content,
-    body[data-panel-surface='search'][data-panel-surface-detail='none'] #info-panel .info-content,
-    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] #info-panel .info-content {
+    body.surface-search:not([data-panel-surface-detail]) #info-panel .info-content,
+    body.surface-search[data-panel-surface-detail='none'] #info-panel .info-content,
+    body.surface-search[data-panel-surface-detail='focus-search'] #info-panel .info-content {
         height: 100%;
         min-height: 0;
         overflow: hidden;
     }
 
-    body[data-panel-surface='search']:not([data-panel-surface-detail]) .search-container.has-query,
-    body[data-panel-surface='search'][data-panel-surface-detail='none'] .search-container.has-query,
-    body[data-panel-surface='search'][data-panel-surface-detail='focus-search'] .search-container.has-query {
+    body.surface-search:not([data-panel-surface-detail]) .search-container.has-query,
+    body.surface-search[data-panel-surface-detail='none'] .search-container.has-query,
+    body.surface-search[data-panel-surface-detail='focus-search'] .search-container.has-query {
         display: flex;
         flex-direction: column;
         height: 100%;
@@ -140,10 +140,10 @@
         overflow: hidden;
     }
 
-    body[data-panel-surface='search']:not([data-panel-surface-detail])
+    body.surface-search:not([data-panel-surface-detail])
         .search-container.has-query
         #search-results.active,
-    body[data-panel-surface='search'][data-panel-surface-detail='none']
+    body.surface-search[data-panel-surface-detail='none']
         .search-container.has-query
         #search-results.active {
         flex: 1 1 auto;
@@ -178,12 +178,12 @@
         overflow: hidden;
     }
 
-    body[data-panel-surface='search'] #cluster-section,
-    body[data-panel-surface='search'] #filters-section,
-    body[data-panel-surface='search'] .rail-section,
-    body[data-panel-surface='focus-search'] #cluster-section,
-    body[data-panel-surface='focus-search'] #filters-section,
-    body[data-panel-surface='focus-search'] .rail-section {
+    body.surface-search #cluster-section,
+    body.surface-search #filters-section,
+    body.surface-search .rail-section,
+    body.surface-focus-search #cluster-section,
+    body.surface-focus-search #filters-section,
+    body.surface-focus-search .rail-section {
         display: none;
         visibility: hidden;
         height: 0;
@@ -299,9 +299,9 @@
         display: none;
     }
 
-    body[data-panel-surface='focus'] .search-results.active,
-    body[data-panel-surface='focus-search'] .search-results.active,
-    body[data-panel-surface='semantic-dive'] .search-results.active {
+    body.surface-focus .search-results.active,
+    body.surface-focus-search .search-results.active,
+    body.surface-semantic-dive .search-results.active {
         max-height: min(28vh, 180px);
         padding: 6px 8px;
         opacity: 0.94;
@@ -309,9 +309,9 @@
         pointer-events: auto;
     }
 
-    body[data-panel-surface='semantic-dive'] .search-container,
-    body[data-panel-surface='semantic-dive'] .search-results.active,
-    body[data-panel-surface='semantic-dive'] #search-results {
+    body.surface-semantic-dive .search-container,
+    body.surface-semantic-dive .search-results.active,
+    body.surface-semantic-dive #search-results {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -472,18 +472,18 @@
         justify-content: center;
     }
 
-    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-panel,
-    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-panel {
+    body.surface-search[data-panel-surface-detail='expanded'] .info-panel,
+    body.surface-focus-search[data-panel-surface-detail='expanded'] .info-panel {
         height: 100dvh;
         max-height: 100dvh;
         border-radius: 0;
     }
 
     .journey-compass[data-panel-surface='search'][data-panel-surface-detail='expanded'],
-    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-panel,
-    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .legend-toggle,
-    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .legend-panel,
-    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .legend-toggle {
+    body.surface-search[data-panel-surface-detail='expanded'] .legend-panel,
+    body.surface-search[data-panel-surface-detail='expanded'] .legend-toggle,
+    body.surface-focus-search[data-panel-surface-detail='expanded'] .legend-panel,
+    body.surface-focus-search[data-panel-surface-detail='expanded'] .legend-toggle {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -497,8 +497,8 @@
         display: none;
     }
 
-    body[data-panel-surface='search'][data-panel-surface-detail='expanded'] .info-content,
-    body[data-panel-surface='focus-search'][data-panel-surface-detail='expanded'] .info-content {
+    body.surface-search[data-panel-surface-detail='expanded'] .info-content,
+    body.surface-focus-search[data-panel-surface-detail='expanded'] .info-content {
         height: calc(100dvh - 20px);
         max-height: none;
         padding-top: 20px;
@@ -550,7 +550,7 @@
         display: none;
     }
 
-    body[data-panel-surface='map-trail'] .view-toggle,
+    body.surface-map-trail .view-toggle,
     .journey-compass[data-panel-surface='map-trail'],
     body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
     .journey-compass[data-navigation-owner='map-trail-strip'] {
@@ -706,7 +706,7 @@
         display: none;
     }
 
-    body[data-panel-surface='map-idle'] [aria-label='Journey route controls'] {
+    body.surface-map-idle [aria-label='Journey route controls'] {
         grid-area: actions;
         display: flex;
         justify-content: flex-end;
@@ -817,23 +817,23 @@
 /* Map-trail state owns the full compass suppression outside the narrow
    baseline media gate; the compact map strip owns navigation instead. */
 @media (min-width: 641px) and (max-width: 768px) {
-    body[data-panel-surface='search'] .info-panel {
+    body.surface-search .info-panel {
         max-height: min(23vh, 178px);
         opacity: 0.97;
     }
 
-    body[data-panel-surface='focus-search'] .info-panel {
+    body.surface-focus-search .info-panel {
         opacity: 0.97;
     }
 
-    body[data-panel-surface='search'] .info-content,
-    body[data-panel-surface='focus-search'] .info-content {
+    body.surface-search .info-content,
+    body.surface-focus-search .info-content {
         max-height: calc(min(54vh, 456px) - 42px);
         padding: 9px 10px 10px;
         margin-bottom: calc(env(safe-area-inset-bottom, 0px));
     }
 
-    body[data-panel-surface='map-trail'] .view-toggle,
+    body.surface-map-trail .view-toggle,
     .journey-compass[data-panel-surface='map-trail'],
     body[data-journey-navigation-owner='map-trail-strip'] .view-toggle,
     .journey-compass[data-navigation-owner='map-trail-strip'] {
