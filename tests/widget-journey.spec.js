@@ -1117,6 +1117,146 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * ProximityLegend: renders on first visit (fresh localStorage),
      * is dismissible, and disappears after dismissal.
      */
+    // ── Phase 3 focus-mode polish ────────────────────────────────────────────
+
+    /**
+     * 23. focus-role-filters render and filter neighbors.
+     *
+     * Phase 3 (JourneyChrome.svelte): a chip container #focus-role-filters
+     * with role=group and aria-label='Filter neighbors by relationship'.
+     * Four chips: all / direct / support / civic. The 'all' chip is active
+     * by default. Clicking 'direct' deactivates 'all' and activates 'direct',
+     * and the neighbor list only shows pills with data-relationship-role='direct'.
+     */
+    test('23. focus-role-filters render and filter neighbors by relationship', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the gesture gate
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for the 3D scene to fully initialize
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(2000)
+
+        // Click the canvas to focus a business and enter focus mode
+        const canvas = page.locator('canvas').first()
+        await canvas.click()
+        await page.waitForTimeout(3000)
+
+        // Verify we are in focus mode (surface = 'focus')
+        const surface = await page.evaluate(() => window.__APP_STATE__?.navState?.surface)
+        expect(surface, 'expected to be in focus mode after canvas click').toBe('focus')
+
+        // Wait for the filter chip container to render
+        const filterGroup = page.locator('#focus-role-filters')
+        await filterGroup.waitFor({ state: 'visible', timeout: 10000 })
+
+        // Verify it's a group with the correct aria-label
+        const ariaLabel = await filterGroup.getAttribute('aria-label')
+        expect(ariaLabel).toBe('Filter neighbors by relationship')
+        const role = await filterGroup.getAttribute('role')
+        expect(role).toBe('group')
+
+        // Verify all 4 chips are present
+        const chips = page.locator('#focus-role-filters .focus-role-filter-chip')
+        await expect(chips).toHaveCount(4)
+
+        // Verify chip labels
+        const chipTexts = await chips.allTextContents()
+        expect(chipTexts.map((t) => t.trim()).sort()).toEqual([
+            'All',
+            'Civic anchor',
+            'Direct link',
+            'Supporting link'
+        ])
+
+        // Verify 'all' chip is active by default
+        const allChip = page.locator('#focus-role-filters .focus-role-filter-chip[data-role-filter="all"]')
+        await expect(allChip).toBeVisible()
+        await expect(allChip).toHaveClass(/active/)
+        await expect(allChip).toHaveAttribute('aria-pressed', 'true')
+
+        // Click the 'direct' chip
+        const directChip = page.locator('#focus-role-filters .focus-role-filter-chip[data-role-filter="direct"]')
+        await expect(directChip).toBeVisible()
+        await directChip.click()
+        await page.waitForTimeout(500)
+
+        // After clicking 'direct':
+        // 1. 'direct' chip becomes active
+        await expect(directChip).toHaveClass(/active/)
+        await expect(directChip).toHaveAttribute('aria-pressed', 'true')
+
+        // 2. 'all' chip is no longer active
+        await expect(allChip).not.toHaveClass(/active/)
+        await expect(allChip).toHaveAttribute('aria-pressed', 'false')
+
+        // 3. The neighbor list only shows pills with data-relationship-role='direct'
+        const neighborPills = page.locator('#focus-stage-neighbor-list [data-relationship-role]')
+        const pillCount = await neighborPills.count()
+        if (pillCount > 0) {
+            // Every visible pill must have data-relationship-role='direct'
+            for (let i = 0; i < pillCount; i++) {
+                const roleValue = await neighborPills.nth(i).getAttribute('data-relationship-role')
+                expect(
+                    roleValue,
+                    `neighbor pill ${i} should have data-relationship-role='direct' after filtering, got '${roleValue}'`
+                ).toBe('direct')
+            }
+        }
+        // If pillCount === 0, the filter worked but there are no direct neighbors
+        // for this business — that's a valid state, not a test failure.
+    })
+
+    /**
+     * 24. focus-keyboard-hint renders in focus mode.
+     *
+     * Phase 3 (FocusPocketA11y.svelte): a badge #focus-keyboard-hint that is
+     * visible when the focus pocket has nodes. It shows shortcut text
+     * including 'Esc' and '?' so the user knows how to dismiss the focus
+     * view and open the help panel.
+     */
+    test('24. focus-keyboard-hint is visible in focus mode and shows Esc and ? shortcuts', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the gesture gate
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for the 3D scene to fully initialize
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(2000)
+
+        // Click the canvas to focus a business and enter focus mode
+        const canvas = page.locator('canvas').first()
+        await canvas.click()
+        await page.waitForTimeout(3000)
+
+        // Verify we are in focus mode
+        const surface = await page.evaluate(() => window.__APP_STATE__?.navState?.surface)
+        expect(surface, 'expected to be in focus mode after canvas click').toBe('focus')
+
+        // Wait for the keyboard hint badge to render
+        const hint = page.locator('#focus-keyboard-hint')
+        await hint.waitFor({ state: 'visible', timeout: 10000 })
+
+        // Verify the hint text includes 'Esc' and '?'
+        const hintText = (await hint.textContent()) ?? ''
+        expect(
+            hintText.includes('Esc'),
+            `keyboard hint should include 'Esc' but got: "${hintText}"`
+        ).toBe(true)
+        expect(
+            hintText.includes('?'),
+            `keyboard hint should include '?' but got: "${hintText}"`
+        ).toBe(true)
+    })
+
     test('proximity legend renders on first visit and is dismissible', async ({ page }) => {
         // Clear localStorage so the legend appears (first-visit simulation)
         await page.evaluate(() => {
