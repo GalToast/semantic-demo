@@ -10,6 +10,7 @@
  */
 import { appState } from '@lib/state/app.svelte.ts'
 import type { CompassPhase as CompassPhaseType } from '@lib/types/state'
+import { JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey.svelte.ts'
 
 // ── Re-export type ───────────────────────────────────────────────────────────
 
@@ -24,23 +25,14 @@ export interface CompassStep {
     state: 'done' | 'current' | 'upcoming'
 }
 
-// ── Journey Compass Action Types (from journey-compass-state.js) ─────────────
+// ── Journey Compass Action Types ───────────────────────────────────────────
+// Canonical source: @lib/journey/compass-state.ts
 
-export const JOURNEY_ACTIONS = Object.freeze({
-    FOCUS_SEARCH: 'focus-search',
-    CENTER_ANCHOR: 'center-anchor',
-    ENTER_INSIDE: 'enter-inside',
-    SHOW_TRAIL_PANEL: 'show-trail-panel',
-    NEXT_STOP: 'next-stop',
-    OPEN_MAP: 'open-map',
-    OPEN_MYCELIUM: 'open-mycelium',
-    COUNTY_OVERVIEW: 'county-overview'
-} as const)
-
-export type JourneyAction = (typeof JOURNEY_ACTIONS)[keyof typeof JOURNEY_ACTIONS]
-
+import { JOURNEY_ACTIONS } from '@lib/journey/compass-state'
+export { JOURNEY_ACTIONS }
 import type { CompassAction } from '@lib/journey/compass-state'
 export type { CompassAction }
+export type JourneyAction = (typeof JOURNEY_ACTIONS)[keyof typeof JOURNEY_ACTIONS]
 
 /** The full compass status output for a given state. */
 export interface CompassStatus {
@@ -53,19 +45,15 @@ export interface CompassStatus {
     readonly tertiaryAction: CompassAction | null
 }
 
-// ── Compass Step Order (5 milestones) ────────────────────────────────────────
-
-const STEP_ORDER: readonly string[] = ['overview', 'search', 'focus', 'inside', 'map']
-
 /**
  * Derived rune computing the 5 compass step states.
  */
 export function compassSteps(): CompassStep[] {
     const activePhase = appState.navState.mode
-    const activeIndex = STEP_ORDER.indexOf(activePhase)
+    const activeIndex = JOURNEY_COMPASS_PHASE_ORDER.indexOf(activePhase)
 
-    return STEP_ORDER.map((phase) => {
-        const idx = STEP_ORDER.indexOf(phase)
+    return JOURNEY_COMPASS_PHASE_ORDER.map((phase) => {
+        const idx = JOURNEY_COMPASS_PHASE_ORDER.indexOf(phase)
         let state: 'done' | 'current' | 'upcoming'
 
         if (phase === activePhase) {
