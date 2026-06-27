@@ -10,6 +10,16 @@ import { bindClick } from '@lib/ui/view-bindings'
 import { focusOnNode } from '@lib/engine/camera-choreography'
 import { clearShortSemanticSearchState } from '@lib/search/state'
 import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
+import { seededUnit } from '@lib/utils/seeded-random'
+
+/**
+ * Monotonic counter that feeds seededUnit() to give suggestion picks a
+ * deterministic uniform distribution in [0, 1). Replaces the previous
+ * Math.random() calls so suggestion ordering is reproducible across runs
+ * and predictable in tests.
+ */
+let _suggestionPickSeed = 0
+const _nextSeededRandom = (): number => seededUnit(_suggestionPickSeed++, 0)
 
 interface SuggestionEvent extends MouseEvent {
     target: HTMLElement
@@ -51,7 +61,7 @@ export function bindSuggestionControls(): void {
                 btn.textContent = originalText
             }
 
-            const rand = eligible[Math.floor(Math.random() * eligible.length)]
+            const rand = eligible[Math.floor(_nextSeededRandom() * eligible.length)]
             const idx = state.points.indexOf(rand as Point)
 
             if (idx >= 0) {
@@ -95,7 +105,7 @@ export function bindSuggestionControls(): void {
                     .map((p, i) => ({ p, i }))
                     .filter(({ p, i }: { p: Point; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
                 if (sameCluster.length) {
-                    const _randPick = sameCluster[Math.floor(Math.random() * sameCluster.length)] as
+                    const _randPick = sameCluster[Math.floor(_nextSeededRandom() * sameCluster.length)] as
                         | { p: Point; i: number }
                         | undefined
                     const i = _randPick ? _randPick.i : -1
