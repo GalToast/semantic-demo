@@ -7,14 +7,13 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
-import type { SemanticSearchCacheDiagnostics, SemanticState } from '@lib/state/state-types'
+import type { SemanticSearchCacheDiagnostics } from '@lib/state/state-types'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import { debugWarn } from '@lib/utils/debug'
 import * as idb from '../utils/idb-service'
 
 export const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES: number = 8
 export const SEMANTIC_SEARCH_CACHE_TTL_MS: number = 10 * 60 * 1000
-const state = appState as unknown as SemanticState
 
 export interface CacheEntry {
     storedAt: number
@@ -37,14 +36,14 @@ export interface CacheDiagnosticsSnapshot extends SemanticSearchCacheDiagnostics
     maxEntries: number
 }
 
-if (!state.semanticSearchResultCache) {
+if (!appState.semanticSearchResultCache) {
     withStateMutation(() => {
-        state.semanticSearchResultCache = new Map<string, CacheEntry>()
+        appState.semanticSearchResultCache = new Map<string, CacheEntry>()
     })
 }
-if (!state.semanticSearchCacheDiagnostics) {
+if (!appState.semanticSearchCacheDiagnostics) {
     withStateMutation(() => {
-        state.semanticSearchCacheDiagnostics = {
+        appState.semanticSearchCacheDiagnostics = {
             hits: 0,
             misses: 0,
             stores: 0,
@@ -67,7 +66,7 @@ export async function initSearchCache(): Promise<void> {
             if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
                 idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] cleanup failed:', err))
             } else {
-                state.semanticSearchResultCache.set(key as string, cacheEntry)
+                appState.semanticSearchResultCache.set(key as string, cacheEntry)
             }
         }
     } catch (err) {
@@ -106,9 +105,9 @@ function validatePayloadSchema(payload: SearchPayload): boolean {
 
 function markSemanticSearchCache(source: string, key: string, entry: CacheEntry | null = null): void {
     withStateMutation(() => {
-        state.semanticSearchCacheDiagnostics.lastSource = source
-        state.semanticSearchCacheDiagnostics.lastKey = key || null
-        state.semanticSearchCacheDiagnostics.lastAgeMs = entry
+        appState.semanticSearchCacheDiagnostics.lastSource = source
+        appState.semanticSearchCacheDiagnostics.lastKey = key || null
+        appState.semanticSearchCacheDiagnostics.lastAgeMs = entry
             ? Math.max(0, Math.round(Date.now() - entry.storedAt))
             : null
     })
@@ -118,10 +117,10 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
     const key = getSemanticSearchCacheKey(query, offset)
     if (!key) return null
 
-    const cache = state.semanticSearchResultCache
+    const cache = appState.semanticSearchResultCache
     const entry = cache.get(key)
     if (!entry) {
-        state.semanticSearchCacheDiagnostics.misses += 1
+        appState.semanticSearchCacheDiagnostics.misses += 1
         markSemanticSearchCache('miss', key)
         return null
     }
@@ -132,8 +131,8 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
         cache.delete(key)
         idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err))
 
-        state.semanticSearchCacheDiagnostics.evictions += 1
-        state.semanticSearchCacheDiagnostics.misses += 1
+        appState.semanticSearchCacheDiagnostics.evictions += 1
+        appState.semanticSearchCacheDiagnostics.misses += 1
         markSemanticSearchCache('expired', key, entry as CacheEntry)
         return null
     }
@@ -144,7 +143,7 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
         debugWarn('[idb-service] access update failed:', err)
     )
 
-    state.semanticSearchCacheDiagnostics.hits += 1
+    appState.semanticSearchCacheDiagnostics.hits += 1
     markSemanticSearchCache('hit', key, entry as CacheEntry)
 
     const payload = cloneSemanticSearchPayload((entry as CacheEntry).payload)
@@ -170,20 +169,20 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
         payload: cloneSemanticSearchPayload(payload)
     }
 
-    state.semanticSearchResultCache.set(key, entry)
+    appState.semanticSearchResultCache.set(key, entry)
     idb.set(key, entry).catch((err: unknown) => debugWarn('[idb-service] store failed:', err))
 
-    state.semanticSearchCacheDiagnostics.stores += 1
+    appState.semanticSearchCacheDiagnostics.stores += 1
     markSemanticSearchCache('store', key)
 
-    const cache = state.semanticSearchResultCache
+    const cache = appState.semanticSearchResultCache
     while (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
         for (const [k, e] of cache.entries()) {
             const ce = e as CacheEntry
             if (e && now - ce.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS) {
                 cache.delete(k)
                 idb.remove(k as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err))
-                state.semanticSearchCacheDiagnostics.evictions += 1
+                appState.semanticSearchCacheDiagnostics.evictions += 1
             }
         }
         if (cache.size > SEMANTIC_SEARCH_CACHE_MAX_ENTRIES) {
@@ -199,15 +198,15 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
             if (!oldestKey) break
             cache.delete(oldestKey)
             idb.remove(oldestKey as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err))
-            state.semanticSearchCacheDiagnostics.evictions += 1
+            appState.semanticSearchCacheDiagnostics.evictions += 1
         }
     }
 }
 
 export function getSemanticSearchCacheDiagnostics(): CacheDiagnosticsSnapshot {
-    const cache = state.semanticSearchResultCache
+    const cache = appState.semanticSearchResultCache
     return {
-        ...state.semanticSearchCacheDiagnostics,
+        ...appState.semanticSearchCacheDiagnostics,
         size: cache?.size || 0,
         keys: cache ? Array.from(cache.keys()) : [],
         ttlMs: SEMANTIC_SEARCH_CACHE_TTL_MS,
