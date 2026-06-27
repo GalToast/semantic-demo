@@ -38,15 +38,15 @@ function getRaycastCamera(): PerspectiveCamera | null {
 }
 
 function getRaycastPointsMesh(): Object3D | null {
-    return appState.pointsMesh as unknown as Object3D | null
+    return appState.pointsMesh as Object3D | null
 }
 
 function getRaycastPoints(): GeoPoint[] {
-    return appState.points as unknown as GeoPoint[]
+    return appState.points as GeoPoint[]
 }
 
 function getRaycastSporeMesh(): InstancedMesh | null {
-    return (appState.nodeSporeHitMesh ?? appState.nodeSporeMesh) as unknown as InstancedMesh | null
+    return (appState.nodeSporeHitMesh ?? appState.nodeSporeMesh) as InstancedMesh | null
 }
 
 // ── Candidate Types ─────────────────────────────────────────────────────────
