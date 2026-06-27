@@ -11,10 +11,8 @@
 
 import { Vector3, Box3, PerspectiveCamera } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { appState as _state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-const state = _state
-import type { NodePosition, SemanticState } from '@lib/state/state-types'
+import type { NodePosition } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
@@ -37,8 +35,6 @@ function getNodePositions(): NodePosition[] {
 function getOriginalPositions(): NodePosition[] {
     return appState.originalPositions
 }
-
-const _s = state as unknown as SemanticState
 
 function getTypedCamera(): PerspectiveCamera | null {
     return appState.camera
@@ -157,7 +153,7 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
     controls.update()
 
     withStateMutation(() => {
-        _s.focusOrbitSlackState = {
+        appState.focusOrbitSlackState = {
             phase: 'free-pivot',
             reason,
             startedAt: performance.now(),
@@ -171,7 +167,7 @@ export function applyFocusOrbitSlack(reason: string = 'user-control'): boolean {
         }
     })
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync
-    // from cameraStore.orbitSlack (which mirrors _s.focusOrbitSlackState).
+    // from cameraStore.orbitSlack (which mirrors appState.focusOrbitSlackState).
     return true
 }
 
@@ -184,7 +180,7 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
     const safeTarget = controls?.target ?? camera?.position ?? null
     if (safeTarget === null || !camera) {
         withStateMutation(() => {
-            _s.focusOrbitSlackState = {
+            appState.focusOrbitSlackState = {
                 phase: 'idle',
                 reason,
                 startedAt: performance.now(),
@@ -202,7 +198,7 @@ export function clearFocusOrbitSlack(reason: string = 'clear'): void {
     }
     const dist = camera.position.distanceTo(safeTarget)
     withStateMutation(() => {
-        _s.focusOrbitSlackState = {
+        appState.focusOrbitSlackState = {
             phase: 'idle',
             reason,
             startedAt: performance.now(),
