@@ -286,8 +286,8 @@
     letter-spacing: 0.05em;
 }
 .focus-stage-neighbor-reason {
-    font-size: 0.55rem;
-    color: #8aaeae;
+    font-size: 0.72rem;
+    color: #b0c8c8;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -372,7 +372,7 @@
         font-size: 0.6rem;
     }
     .focus-stage-neighbor-reason {
-        max-width: 140px;
+        max-width: 180px;
     }
     .focus-stage-neighbor-actions {
         flex-direction: column;

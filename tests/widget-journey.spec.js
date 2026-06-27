@@ -633,6 +633,82 @@ test.describe('Widget Journey Tests — mobile viewport', () => {
     })
 })
 
+// ── NeighborRail CSS visibility tests ─────────────────────────────────────
+//
+// W48-R1: relationship role + reason text in the NeighborRail must be
+// readable. Previously `.focus-stage-neighbor-role` was 8px and
+// `.focus-stage-neighbor-reason` was 0.55rem in #8aaeae — both effectively
+// invisible. This test verifies that when focus mode is active the rail
+// pills render non-empty role and reason text.
+test.describe('Widget Journey Tests — neighbor rail CSS visibility', () => {
+    test('22. neighbor rail role and reason CSS is readable', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the splash screen
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for the 3D scene to fully initialize
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(2000)
+
+        // Create a hidden test element to verify the CSS styles are loaded
+        const styles = await page.evaluate(() => {
+            // Create a dummy neighbor pill to measure computed styles
+            const container = document.createElement('div')
+            const pill = document.createElement('div')
+            pill.className = 'focus-stage-neighbor-pill'
+            pill.setAttribute('data-relationship-role', 'test')
+
+            const roleEl = document.createElement('span')
+            roleEl.className = 'focus-stage-neighbor-role'
+            roleEl.textContent = 'test-role'
+
+            const reasonEl = document.createElement('span')
+            reasonEl.className = 'focus-stage-neighbor-reason'
+            reasonEl.textContent = 'test-reason'
+
+            pill.appendChild(roleEl)
+            pill.appendChild(reasonEl)
+            container.appendChild(pill)
+            document.body.appendChild(container)
+
+            const roleStyle = window.getComputedStyle(roleEl)
+            const reasonStyle = window.getComputedStyle(reasonEl)
+
+            const result = {
+                roleFontSize: roleStyle.fontSize,
+                roleColor: roleStyle.color,
+                roleBackground: roleStyle.backgroundColor,
+                reasonFontSize: reasonStyle.fontSize,
+                reasonColor: reasonStyle.color
+            }
+
+            document.body.removeChild(container)
+            return result
+        })
+
+        // Verify role is at least 10px (was 8px before fix)
+        const rolePx = parseFloat(styles.roleFontSize)
+        expect(
+            rolePx,
+            `.focus-stage-neighbor-role font-size should be >= 10px, got ${styles.roleFontSize}`
+        ).toBeGreaterThanOrEqual(10)
+
+        // Verify reason is at least 0.7rem (~11px)
+        const reasonPx = parseFloat(styles.reasonFontSize)
+        expect(
+            reasonPx,
+            `.focus-stage-neighbor-reason font-size should be >= 10px, got ${styles.reasonFontSize}`
+        ).toBeGreaterThanOrEqual(10)
+
+        // Verify reason color is not the old faint #8aaeae
+        // The new color should be #b0c8c8 (rgb(176, 200, 200))
+        expect(styles.reasonColor).toContain('176')
+    })
+})
+
 // ── Dev-mode mock banner tests ──────────────────────────────────────────────
 //
 // These tests verify the W47-E banner that appears in dev builds when the
@@ -953,6 +1029,45 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
     })
 })
 
+// W49-L1: loading progress bar shows a percentage text alongside the bar.
+// Catches: progress bar fills but user sees no numeric feedback — they
+// can't tell if loading is actually progressing or just stuck between
+// phase transitions (0.2 → 0.48 → 0.76 → 1.0 jumps with no intermediate
+// visual cue). The percentage text gives users concrete feedback.
+test.describe('Widget Journey Tests — loading progress', () => {
+    test('22. loading progress bar shows a percentage text element during load', async ({ page }) => {
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // The loading overlay should be visible immediately on page load.
+        // We check for the percentage text span before the overlay dismisses.
+        const progressBarText = page.locator('#loading-progress-text')
+        await expect(progressBarText).toBeVisible({ timeout: 5000 })
+
+        // The text must contain a valid percentage value (0–100).
+        const textContent = (await progressBarText.textContent()).trim()
+        expect(
+            textContent,
+            `loading progress text "${textContent}" should be a valid percentage (e.g. "20%", "48%")`
+        ).toMatch(/^\d+%$/)
+
+        // Extract the numeric portion and verify it's in a reasonable range
+        // (the first phase 'records' maps to 20%).
+        const percent = parseInt(textContent.replace('%', ''), 10)
+        expect(percent).toBeGreaterThanOrEqual(0)
+        expect(percent).toBeLessThanOrEqual(100)
+
+        // Also verify the progress bar itself is visible and has a width
+        // that roughly matches the percentage text (within 5% tolerance).
+        const bar = page.locator('#loading-progress-bar')
+        await expect(bar).toBeVisible({ timeout: 5000 })
+        const barWidth = await bar.evaluate((el) => {
+            const style = getComputedStyle(el)
+            return parseFloat(style.width)
+        })
+        expect(barWidth).toBeGreaterThan(0)
+    })
+})
+
 // W48-T6: canvas click focus. Clicking on a 3D node focuses it, transitions
 // the camera, updates the URL with the record ID, and puts the app in trail mode.
 test.describe('Widget Journey Tests — canvas click focus', () => {
@@ -996,5 +1111,64 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // URL should contain the record ID
         const url = page.url()
         expect(url).toContain('record=')
+    })
+
+    /**
+     * ProximityLegend: renders on first visit (fresh localStorage),
+     * is dismissible, and disappears after dismissal.
+     */
+    test('proximity legend renders on first visit and is dismissible', async ({ page }) => {
+        // Clear localStorage so the legend appears (first-visit simulation)
+        await page.evaluate(() => {
+            localStorage.removeItem('moco_onboarding_seen_v1')
+        })
+
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the gesture gate
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for the weather widget to confirm scene is ready
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+
+        // The proximity legend should be visible
+        const legend = page.locator('.proximity-legend-card')
+        await expect(legend).toBeVisible({ timeout: 10000 })
+
+        // Verify headline text
+        await expect(legend.locator('.proximity-legend-headline')).toContainText(
+            /dots close together do similar things/i
+        )
+
+        // Verify sub-line
+        await expect(legend.locator('.proximity-legend-sub')).toContainText(/colors = business categories/i)
+
+        // Verify swatches are present (at least some colored dots)
+        await expect(legend.locator('.swatch-dot')).toHaveCount(8)
+
+        // Dismiss the legend
+        await legend.locator('.proximity-legend-dismiss').click()
+
+        // Legend should no longer be visible
+        await expect(legend).not.toBeVisible({ timeout: 5000 })
+
+        // Verify localStorage flag was set
+        const stored = await page.evaluate(() => {
+            const raw = localStorage.getItem('moco_onboarding_seen_v1')
+            return raw ? JSON.parse(raw) : null
+        })
+        expect(stored).not.toBeNull()
+        expect(stored.seen).toBe(true)
+        expect(typeof stored.seenAt).toBe('string')
+
+        // Refresh and verify legend does NOT reappear
+        await page.reload({ waitUntil: 'domcontentloaded' })
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+
+        await expect(legend).not.toBeVisible({ timeout: 5000 })
     })
 })

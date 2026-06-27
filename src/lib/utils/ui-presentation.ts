@@ -32,7 +32,7 @@ export interface GraphPresentationProfile {
     pointSizeScale: number
 }
 
-const CLUSTER_NAMES: readonly string[] = [
+export const CLUSTER_NAMES: readonly string[] = [
     'General Business',
     'Professional Services',
     'Food & Hospitality',

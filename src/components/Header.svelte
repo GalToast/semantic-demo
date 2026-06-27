@@ -269,17 +269,20 @@ import { debugWarn } from '@lib/utils/debug'
       </button>
       <button
         id="btn-app-help"
-        class="help-toggle"
+        class="help-toggle app-help-toggle"
         onclick={toggleHelpDialog}
         type="button"
-        aria-label="What is Semantic Explorer?"
-        title="What is this?"
+        aria-label="Help — What is Semantic Explorer?"
+        title="Help — What is this?"
       >
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="5.75" stroke="currentColor" stroke-width="1.25"/>
           <circle cx="7" cy="4.8" r="0.7" fill="currentColor"/>
           <path d="M7 7v3.5" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
         </svg>
+        {#if !$viewport.isCompact}
+          <span class="app-help-label">Help</span>
+        {/if}
       </button>
     </div>
 
@@ -420,6 +423,21 @@ import { debugWarn } from '@lib/utils/debug'
     color: var(--color-text-teal-muted);
     border-color: rgba(var(--color-primary-alt-rgb), 0.3);
     background: rgba(var(--color-primary-alt-rgb), 0.06);
+  }
+  /* The "Help" affordance carries a visible text label on desktop so a
+     stranded user can find the explainer without hunting for an icon-only
+     button (audit 2026-06-26: the `?` was too peripheral to discover). */
+  .app-help-toggle {
+    gap: 0.3rem;
+    width: auto;
+    padding: 0 0.55rem;
+  }
+  .app-help-label {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.68rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--color-text-teal-dark);
   }
   .legend-toggle.active {
     color: var(--color-primary-alt);

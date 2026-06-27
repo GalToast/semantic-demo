@@ -581,7 +581,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-'])[data-strand-journey='
     color: rgba(var(--color-primary-tint-rgb), 0.7);
     text-transform: uppercase;
     vertical-align: middle;
-    background: rgba(78,205,196,0.12);
+    background: rgba(78, 205, 196, 0.12);
     border-radius: 2px;
     padding: 1px 4px;
 }
@@ -604,8 +604,8 @@ body[data-panel-surface]:not([data-panel-surface^='map-'])[data-strand-journey='
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    color: rgba(202, 228, 226, 0.6);
-    font-size: 9px;
+    color: #b0c8c8;
+    font-size: 0.72rem;
 }
 
 .focus-stage-neighbor-actions {

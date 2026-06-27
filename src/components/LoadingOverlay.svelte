@@ -105,6 +105,7 @@
       <div class="loading-bar-track">
         <div class="loading-bar-fill" id="loading-progress-bar" style="width: {Math.round(progress * 100)}%"></div>
       </div>
+      <span class="loading-progress-text" id="loading-progress-text">{Math.round(progress * 100)}%</span>
 
       <!-- Phase row with chips -->
       <div id="loading-phase-row" class="loading-phase-row">
@@ -174,9 +175,9 @@
   }
   .loading-bar-track {
     width: 200px;
-    height: 2px;
+    height: 4px;
     background: rgba(78, 205, 196, 0.15);
-    border-radius: 1px;
+    border-radius: 2px;
     overflow: hidden;
   }
   .loading-bar-fill {
@@ -219,6 +220,11 @@
     font-size: 0.75rem;
     color: var(--color-text-teal-dark);
     margin: 0;
+  }
+  .loading-progress-text {
+    font-size: 0.7rem;
+    color: var(--color-primary-alt);
+    margin-top: 0.25rem;
   }
   @keyframes pulse {
     0%, 100% { opacity: 0.8; }
