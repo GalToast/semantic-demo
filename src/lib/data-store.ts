@@ -47,6 +47,11 @@ interface SemanticExplorerWindow {
     __APP_STATE__?: SemanticExplorerAppState
 }
 
+/** Narrow `window` to the typed namespace we inject safely at runtime. */
+function asSemanticExplorerWindow(): SemanticExplorerWindow {
+    return window as unknown as SemanticExplorerWindow
+}
+
 /** Shape of the legacy __APP_STATE__ global (subset this module reads). */
 interface SemanticExplorerAppState {
     points?: readonly BusinessRecord[]
@@ -68,12 +73,12 @@ interface SemanticExplorerAppState {
  */
 function getWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`): unknown {
     if (typeof window === 'undefined') return undefined
-    return (window as unknown as SemanticExplorerWindow)[key]
+    return asSemanticExplorerWindow()[key]
 }
 
 function setWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`, value: unknown): void {
     if (typeof window === 'undefined') return
-    ;(window as unknown as SemanticExplorerWindow)[key] = value
+    ;asSemanticExplorerWindow()[key] = value
 }
 
 function getOrCreateWritable<T>(windowKey: `__SEMANTIC_EXPLORER_${string}`, initial: T) {
@@ -118,7 +123,7 @@ export const businessRecords = getOrCreateWritable<readonly BusinessRecord[]>(
  */
 export function hydrateFromLegacyState(): boolean {
     if (typeof window === 'undefined') return false
-    const w = window as unknown as SemanticExplorerWindow
+    const w = asSemanticExplorerWindow()
     const windowAppState = w.__APP_STATE__
     if (!windowAppState) return false
     let didHydrate = false
@@ -157,7 +162,7 @@ export function getBusinessRecords(): readonly BusinessRecord[] {
     // (Hydration may not have run yet for components created before main.ts calls
     // hydrateFromLegacyState.)
     if (typeof window !== 'undefined') {
-        const w = window as unknown as SemanticExplorerWindow
+        const w = asSemanticExplorerWindow()
         const points = w.__APP_STATE__?.points
         if (Array.isArray(points) && points.length > 0) {
             return points
@@ -277,7 +282,7 @@ export function getIsDataReady(): boolean {
     // Fallback: if the Svelte dataLoadState hasn't been initialized but the
     // legacy state has the data loaded, treat the data as ready.
     if (typeof window !== 'undefined') {
-        const w = window as unknown as SemanticExplorerWindow
+        const w = asSemanticExplorerWindow()
         if (Array.isArray(w.__APP_STATE__?.points) && (w.__APP_STATE__?.points?.length ?? 0) > 0) {
             return true
         }
