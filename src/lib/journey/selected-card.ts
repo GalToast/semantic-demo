@@ -55,6 +55,7 @@ import { isMapSummarySurface } from '@lib/utils/environment'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
 import { debugWarn } from '@lib/utils/debug'
 import { seededUnit } from '@lib/utils/seeded-random'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { appState } from '@lib/state/app.svelte'
 
 // ── Types ──────────────────────────────────────────────────────────────────
@@ -72,6 +73,8 @@ interface UpdateSelectedBusinessOptions {
 }
 
 // ── Internal state ─────────────────────────────────────────────────────────
+
+const _registry = new DisposableRegistry({ label: 'selected-card' })
 
 let _cascadeTimers: ReturnType<typeof setTimeout>[] = []
 
@@ -321,20 +324,16 @@ export function updateSelectedBusiness(
             ).join('  ')
         for (let i = 0; i < 8; i++) {
             _cascadeTimers.push(
-                setTimeout(() => {
+                _registry.schedule(i * 150, () => {
                     const line = document.createElement('div')
                     line.className = 'vector-cascade-line'
                     line.textContent = generateVectorLine(i)
                     cascadeBg.appendChild(line)
-                    _cascadeTimers.push(
-                        setTimeout(() => line.remove(), 3000)
-                    )
-                }, i * 150)
+                    _cascadeTimers.push(_registry.schedule(3000, () => line.remove()))
+                })
             )
         }
-        _cascadeTimers.push(
-            setTimeout(() => cascadeBg.classList.remove('active'), 2000)
-        )
+        _cascadeTimers.push(_registry.schedule(2000, () => cascadeBg.classList.remove('active')))
     }
 
     const namePresentation: BusinessNamePresentation = getBusinessNamePresentation(point.name)
