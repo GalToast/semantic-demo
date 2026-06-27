@@ -1,11 +1,11 @@
 /**
- * @lib/engine/map-state.ts — Leaflet map state, route embodiment, terrain handoff
+ * @lib/engine/map-appState.ts — Leaflet map state, route embodiment, terrain handoff
  *
  * Port of
  * Manages Leaflet map initialization, marker refresh, route embodiment,
  * terrain handoff, and route director state synchronization.
  */
-import { appState as state } from '@lib/state/app.svelte.ts'
+import { appState } from '@lib/state/app.svelte.ts'
 import type { Point } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
@@ -30,7 +30,7 @@ interface LeafletContainer extends HTMLElement {
 
 /**
  * Leaflet's fitBounds signature isn't exposed in a way TS can infer from
- * the loose Record<string, unknown> type on state.map. This interface
+ * the loose Record<string, unknown> type on appState.map. This interface
  * lets us call fitBounds without a complex conditional-parameter cast.
  */
 interface LeafletMapWithFitBounds {
@@ -96,7 +96,7 @@ interface MapStateShape {
  * initMap / refreshMapMarkers / destroyMap call sites.
  */
 function getMapState(): MapStateShape {
-    return state as unknown as MapStateShape
+    return appState as unknown as MapStateShape
 }
 
 let leafletAssetsPromise: Promise<unknown> | null = null
@@ -312,30 +312,30 @@ export function showMapTooltip(point: Point, marker: { bindTooltip: Function; op
 
 export function getMapRoutePoints(): Array<{ index: number; point: Point }> {
     return getRouteEmbodimentIndices()
-        .map((index: number) => ({ index, point: (state.points as Point[])?.[index] }))
+        .map((index: number) => ({ index, point: (appState.points as Point[])?.[index] }))
         .filter((entry): entry is { index: number; point: Point } => !!entry.point && pointHasGeocode(entry.point))
         .slice(0, isMobileViewport() ? 7 : 10)
 }
 
 export function refreshMapRouteEmbodiment(): void {
-    if (!state.map || !state.mapRouteLayer) {
-        state.routeTraceDiagnostics.mapPointCount = 0
-        state.routeTraceDiagnostics.mapPathActive = false
+    if (!appState.map || !appState.mapRouteLayer) {
+        appState.routeTraceDiagnostics.mapPointCount = 0
+        appState.routeTraceDiagnostics.mapPathActive = false
         return
     }
-    ;(state.mapRouteLayer as { clearLayers(): void }).clearLayers()
-    if (state.currentView !== 'map') {
-        state.routeTraceDiagnostics.mapPointCount = 0
-        state.routeTraceDiagnostics.mapPathActive = false
+    ;(appState.mapRouteLayer as { clearLayers(): void }).clearLayers()
+    if (appState.currentView !== 'map') {
+        appState.routeTraceDiagnostics.mapPointCount = 0
+        appState.routeTraceDiagnostics.mapPathActive = false
         return
     }
 
     const routePoints = getMapRoutePoints()
-    state.routeTraceDiagnostics.mapPointCount = routePoints.length
-    state.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2
+    appState.routeTraceDiagnostics.mapPointCount = routePoints.length
+    appState.routeTraceDiagnostics.mapPathActive = routePoints.length >= 2
     if (!routePoints.length) {
         const trailStateActive = document.body?.dataset?.trailState === 'active'
-        if (state.currentView === 'map' && !trailStateActive) {
+        if (appState.currentView === 'map' && !trailStateActive) {
             const container = document.getElementById('map-container')
             if (container && !container.querySelector('.map-empty-state')) {
                 const emptyEl = document.createElement('div')
@@ -402,7 +402,7 @@ export function refreshMapRouteEmbodiment(): void {
             weight: 12,
             opacity: 0.1,
             interactive: false
-        }).addTo(state.mapRouteLayer)
+        }).addTo(appState.mapRouteLayer)
         L.polyline(latLngs, {
             className: 'semantic-map-route-line',
             color: '#ffe58f',
@@ -411,7 +411,7 @@ export function refreshMapRouteEmbodiment(): void {
             dashArray: '1 14',
             lineCap: 'round',
             interactive: false
-        }).addTo(state.mapRouteLayer)
+        }).addTo(appState.mapRouteLayer)
     }
 
     const anchorIndex = getRouteAnchorIndex(routePoints.map(({ index }: { index: number }) => index))
@@ -426,21 +426,21 @@ export function refreshMapRouteEmbodiment(): void {
             fillColor: isAnchor ? '#ffe58f' : '#79ebde',
             fillOpacity: isAnchor ? 0.08 : 0.035,
             interactive: false
-        }).addTo(state.mapRouteLayer)
+        }).addTo(appState.mapRouteLayer)
     })
 }
 
 export function centerMapOnRouteAnchor(): boolean {
-    if (!state.points) return false
-    if (!state.map) return false
-    const focusIndex = state.navState.focusedIndex
-    const focusIdxValid = Number.isFinite(focusIndex) && focusIndex! >= 0 && focusIndex! < state.points.length
-    const anchorIdx = state.currentSearchSummary?.anchorIndex ?? undefined
-    const anchorIdxValid = Number.isFinite(anchorIdx) && anchorIdx! >= 0 && anchorIdx! < state.points.length
+    if (!appState.points) return false
+    if (!appState.map) return false
+    const focusIndex = appState.navState.focusedIndex
+    const focusIdxValid = Number.isFinite(focusIndex) && focusIndex! >= 0 && focusIndex! < appState.points.length
+    const anchorIdx = appState.currentSearchSummary?.anchorIndex ?? undefined
+    const anchorIdxValid = Number.isFinite(anchorIdx) && anchorIdx! >= 0 && anchorIdx! < appState.points.length
     const focusPoint =
-        state.selectedPoint ||
-        (focusIdxValid ? (state.points as Point[])[focusIndex!] : null) ||
-        (anchorIdxValid ? (state.points as Point[])[anchorIdx!] : null) ||
+        appState.selectedPoint ||
+        (focusIdxValid ? (appState.points as Point[])[focusIndex!] : null) ||
+        (anchorIdxValid ? (appState.points as Point[])[anchorIdx!] : null) ||
         getMapRoutePoints()[0]?.point ||
         null
 
@@ -455,7 +455,7 @@ export function centerMapOnRouteAnchor(): boolean {
     }
     if (routeLatLngs.length >= 2) {
         const bounds = L.latLngBounds(routeLatLngs)
-        ;(state.map as unknown as LeafletMapWithFitBounds).fitBounds(bounds, {
+        ;(appState.map as unknown as LeafletMapWithFitBounds).fitBounds(bounds, {
             animate: true,
             maxZoom: 15,
             paddingTopLeft: [22, isMobileViewport() ? 250 : 96],
@@ -463,41 +463,41 @@ export function centerMapOnRouteAnchor(): boolean {
         })
     } else {
         ;(
-            state.map as { setView: (latLng: [number, number], zoom: number, opts: Record<string, unknown>) => void }
+            appState.map as { setView: (latLng: [number, number], zoom: number, opts: Record<string, unknown>) => void }
         ).setView([focusPoint!.lat!, focusPoint!.lng!], 15, { animate: true })
     }
     return true
 }
 
 export function refreshMapMarkers(): void {
-    if (!state.points) return
-    if (!state.markersLayer) return
-    ;(state.markersLayer as { clearLayers(): void }).clearLayers()
-    const searchResultSet = new Set(state.currentSearchSummary?.resultIndices ?? [])
+    if (!appState.points) return
+    if (!appState.markersLayer) return
+    ;(appState.markersLayer as { clearLayers(): void }).clearLayers()
+    const searchResultSet = new Set(appState.currentSearchSummary?.resultIndices ?? [])
     const selectedLeadId =
-        state.selectedPoint?.lead_id !== undefined && state.selectedPoint?.lead_id !== null
-            ? String(state.selectedPoint.lead_id)
+        appState.selectedPoint?.lead_id !== undefined && appState.selectedPoint?.lead_id !== null
+            ? String(appState.selectedPoint.lead_id)
             : null
 
-    if (state.pointMarkers && Array.isArray(state.pointMarkers)) {
+    if (appState.pointMarkers && Array.isArray(appState.pointMarkers)) {
         const dimmedMarkers: LeafletMarker[] = []
         const trailMarkers: LeafletMarker[] = []
         const priorityMarkers: LeafletMarker[] = []
 
-        ;(state.pointMarkers as Array<{ marker: LeafletMarker; index: number }>).forEach(({ marker, index }) => {
-            if (!isPointVisible(index, state.points as Point[], state.activeClusterFilter, state.activeFilters)) return
-            const point = (state.points as Point[])[index]
+        ;(appState.pointMarkers as Array<{ marker: LeafletMarker; index: number }>).forEach(({ marker, index }) => {
+            if (!isPointVisible(index, appState.points as Point[], appState.activeClusterFilter, appState.activeFilters)) return
+            const point = (appState.points as Point[])[index]
             if (!point) return
             if (point.cluster === null || point.cluster === undefined || !Number.isFinite(point.cluster))
                 point.cluster = 0
-            const baseColor = (state.COLORS as readonly string[])[
-                point.cluster! % (state.COLORS as readonly string[]).length
+            const baseColor = (appState.COLORS as readonly string[])[
+                point.cluster! % (appState.COLORS as readonly string[]).length
             ]
-            const isFocused = state.focusedNode === index
+            const isFocused = appState.focusedNode === index
             const isSelected = selectedLeadId !== null && String(point.lead_id) === selectedLeadId
-            const isAnchor = state.currentSearchSummary?.anchorIndex === index
+            const isAnchor = appState.currentSearchSummary?.anchorIndex === index
             const isSearchMatch = searchResultSet.has(index)
-            const isTrail = state.trailIndices.has(index) || isSearchMatch
+            const isTrail = appState.trailIndices.has(index) || isSearchMatch
 
             let radius = 4
             let weight = 1
@@ -506,7 +506,7 @@ export function refreshMapMarkers(): void {
             let opacity = 0.8
             let fillOpacity = 0.6
 
-            if (state.currentSearchSummary) {
+            if (appState.currentSearchSummary) {
                 if (isAnchor) {
                     radius = isFocused || isSelected ? 10 : 8.6
                     weight = 2.4
@@ -546,7 +546,7 @@ export function refreshMapMarkers(): void {
             }
 
             marker.setStyle({ radius, weight, color, fillColor, opacity, fillOpacity })
-            marker.addTo(state.markersLayer)
+            marker.addTo(appState.markersLayer)
         })
 
         dimmedMarkers.forEach((marker: LeafletMarker) => marker.bringToBack?.())
@@ -556,18 +556,18 @@ export function refreshMapMarkers(): void {
 }
 
 export function getRouteDirectorState(): string {
-    if (state.currentView === 'map') {
-        return state.selectedPoint || (state.focusedNode !== null && state.focusedNode !== undefined)
+    if (appState.currentView === 'map') {
+        return appState.selectedPoint || (appState.focusedNode !== null && appState.focusedNode !== undefined)
             ? 'map-trail'
             : 'map-overview'
     }
-    if (state.semanticDiveMode && state.focusedNode !== null && state.focusedNode !== undefined) return 'inside-pocket'
-    if (state.focusedNode !== null && state.focusedNode !== undefined) {
-        if ((state.navState.walkHistoryIndices || []).length > 1 || state.navState.mode === 'trail')
+    if (appState.semanticDiveMode && appState.focusedNode !== null && appState.focusedNode !== undefined) return 'inside-pocket'
+    if (appState.focusedNode !== null && appState.focusedNode !== undefined) {
+        if ((appState.navState.walkHistoryIndices || []).length > 1 || appState.navState.mode === 'trail')
             return 'thread-walk'
-        return state.currentSearchSummary ? 'search-focus' : 'node-focus'
+        return appState.currentSearchSummary ? 'search-focus' : 'node-focus'
     }
-    if (state.currentSearchSummary) return 'search-corridor'
+    if (appState.currentSearchSummary) return 'search-corridor'
     return 'overview'
 }
 
@@ -582,10 +582,10 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
     const normalizedPhase = String(phase || 'idle').replace(/[^a-z0-9-]/gi, '') || 'idle'
     const routeCount = Number.isFinite(options.routeCount) ? options.routeCount : getRouteEmbodimentIndices().length
 
-    state.terrainHandoffState = {
+    appState.terrainHandoffState = {
         phase: normalizedPhase,
-        from: options.from || state.terrainHandoffState?.from || 'overview',
-        to: options.to || state.terrainHandoffState?.to || state.currentView || 'galaxy',
+        from: options.from || appState.terrainHandoffState?.from || 'overview',
+        to: options.to || appState.terrainHandoffState?.to || appState.currentView || 'galaxy',
         routeCount: routeCount!,
         startedAt: performance.now()
     }
@@ -597,25 +597,25 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
         hideViewHandoff()
     }
 
-    if (state.terrainHandoffTimer) {
-        window.clearTimeout(state.terrainHandoffTimer)
-        state.terrainHandoffTimer = null
+    if (appState.terrainHandoffTimer) {
+        window.clearTimeout(appState.terrainHandoffTimer)
+        appState.terrainHandoffTimer = null
     }
 
     if (Number.isFinite(options.settleAfterMs) && options.settleAfterMs! > 0) {
-        state.terrainHandoffTimer = window.setTimeout(() => {
-            const settlePhase = options.settlePhase || (state.currentView === 'map' ? 'settled' : 'idle')
+        appState.terrainHandoffTimer = window.setTimeout(() => {
+            const settlePhase = options.settlePhase || (appState.currentView === 'map' ? 'settled' : 'idle')
             setTerrainHandoffState(settlePhase, {
                 routeCount,
-                from: state.terrainHandoffState.from,
-                to: state.terrainHandoffState.to
+                from: appState.terrainHandoffState.from,
+                to: appState.terrainHandoffState.to
             })
         }, options.settleAfterMs) as unknown as ReturnType<typeof setTimeout>
     }
 }
 
 export function getRouteEmbodimentIndices(): number[] {
-    if (!state.points || !Array.isArray(state.points)) return []
+    if (!appState.points || !Array.isArray(appState.points)) return []
     const ordered: number[] = []
     const pushIndex = (index: number | null | undefined): void => {
         if (
@@ -623,11 +623,11 @@ export function getRouteEmbodimentIndices(): number[] {
             index === null ||
             index === undefined ||
             index < 0 ||
-            index >= state.points.length
+            index >= appState.points.length
         )
             return
-        if (!isPointVisible(index, state.points as Point[], null, state.activeFilters)) return
-        if (!(state.nodePositions as unknown[])[index] && !(state.originalPositions as unknown[])[index]) return
+        if (!isPointVisible(index, appState.points as Point[], null, appState.activeFilters)) return
+        if (!(appState.nodePositions as unknown[])[index] && !(appState.originalPositions as unknown[])[index]) return
         if (!ordered.includes(index)) ordered.push(index)
     }
 
@@ -637,21 +637,21 @@ export function getRouteEmbodimentIndices(): number[] {
     )
 
     if (focusOwnsRoute) {
-        pushIndex(state.navState.focusedIndex)
-        pushIndex(state.focusedNode)
-        ;(state.navState.walkHistoryIndices || []).forEach(pushIndex)
-        ;(state.navState.trailNeighborIndices || []).slice(0, 6).forEach(pushIndex)
-        pushIndex(state.currentSearchSummary?.anchorIndex as number)
-        pushIndex(state.currentSearchSummary?.topIndex as number)
-        ;(state.currentSearchSummary?.resultIndices ?? []).slice(0, 6).forEach(pushIndex)
+        pushIndex(appState.navState.focusedIndex)
+        pushIndex(appState.focusedNode)
+        ;(appState.navState.walkHistoryIndices || []).forEach(pushIndex)
+        ;(appState.navState.trailNeighborIndices || []).slice(0, 6).forEach(pushIndex)
+        pushIndex(appState.currentSearchSummary?.anchorIndex as number)
+        pushIndex(appState.currentSearchSummary?.topIndex as number)
+        ;(appState.currentSearchSummary?.resultIndices ?? []).slice(0, 6).forEach(pushIndex)
     } else {
-        pushIndex(state.currentSearchSummary?.anchorIndex as number)
-        pushIndex(state.currentSearchSummary?.topIndex as number)
-        ;(state.currentSearchSummary?.resultIndices ?? []).slice(0, 10).forEach(pushIndex)
-        ;(state.navState.walkHistoryIndices || []).forEach(pushIndex)
-        pushIndex(state.navState.focusedIndex)
-        pushIndex(state.focusedNode)
-        ;(state.navState.trailNeighborIndices || []).slice(0, 4).forEach(pushIndex)
+        pushIndex(appState.currentSearchSummary?.anchorIndex as number)
+        pushIndex(appState.currentSearchSummary?.topIndex as number)
+        ;(appState.currentSearchSummary?.resultIndices ?? []).slice(0, 10).forEach(pushIndex)
+        ;(appState.navState.walkHistoryIndices || []).forEach(pushIndex)
+        pushIndex(appState.navState.focusedIndex)
+        pushIndex(appState.focusedNode)
+        ;(appState.navState.trailNeighborIndices || []).slice(0, 4).forEach(pushIndex)
     }
     return ordered.slice(0, isMobileViewport() ? 8 : 12)
 }
@@ -659,10 +659,10 @@ export function getRouteEmbodimentIndices(): number[] {
 export function getRouteAnchorIndex(routeIndices: number[]): number | null {
     const routeOwner = getRouteDirectorState()
     const focusOwnsRoute = ['search-focus', 'thread-walk', 'node-focus', 'inside-pocket'].includes(routeOwner)
-    const focusCandidates = [state.navState.focusedIndex, state.focusedNode]
+    const focusCandidates = [appState.navState.focusedIndex, appState.focusedNode]
     const searchCandidates = [
-        state.currentSearchSummary?.anchorIndex ?? undefined,
-        state.currentSearchSummary?.topIndex ?? undefined,
+        appState.currentSearchSummary?.anchorIndex ?? undefined,
+        appState.currentSearchSummary?.topIndex ?? undefined,
         routeIndices?.[0]
     ]
     const candidates = focusOwnsRoute
@@ -672,11 +672,11 @@ export function getRouteAnchorIndex(routeIndices: number[]): number | null {
 }
 
 export function zoomMap(multiplier: number): void {
-    if (!state.map) return
+    if (!appState.map) return
     if (multiplier < 1) {
-        ;(state.map as { zoomIn(): void }).zoomIn()
+        ;(appState.map as { zoomIn(): void }).zoomIn()
     } else {
-        ;(state.map as { zoomOut(): void }).zoomOut()
+        ;(appState.map as { zoomOut(): void }).zoomOut()
     }
 }
 
