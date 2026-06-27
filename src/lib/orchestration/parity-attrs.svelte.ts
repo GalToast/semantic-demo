@@ -608,6 +608,35 @@ let _lastSnapshot: string | null = null
 let _effectRoot: (() => void) | null = null
 
 /**
+ * Reactive rune-backed parity attribute map.
+ *
+ * Svelte 5 `$state` proxy that mirrors the current `ParityAttributeMap`
+ * computed by `computeParityAttributes()`. Updated inside
+ * `installParityAttributeSync()`'s `$effect.root()` block via
+ * `Object.assign(parityMap, map)` so that any consumer reading
+ * `parityMap.panelSurface` (etc.) inside a reactive context (template,
+ * `$derived`, `$effect`) gets automatic re-runs when the underlying
+ * rune stores change.
+ *
+ * Replaces the body-attr MutationObserver mirror pattern previously
+ * duplicated in App.svelte, CompassRail, FocusCard, Legend, JourneyCompass,
+ * and WeatherWidget. Those components now read `parityMap.x` directly
+ * instead of mirroring body dataset attrs into local `$state`.
+ *
+ * Consumers MUST treat this as read-only. The write side is owned by
+ * `installParityAttributeSync()`; mutating from outside will cause parity
+ * to diverge from body. TypeScript does not enforce this — it's a
+ * convention enforced by code review and the parity-attrs contract tests.
+ *
+ * The object is empty until `installParityAttributeSync()` runs
+ * (i.e., after `app-init.ts:251` in the production app boot sequence).
+ * Tests that read it before install must either call
+ * `installParityAttributeSync({ initialSync: true })` first or read
+ * `body.dataset` directly.
+ */
+export const parityMap: ParityAttributeMap = $state<ParityAttributeMap>({} as ParityAttributeMap)
+
+/**
  * Install the parity attribute sync layer.
  *
  * Subscribes to every Svelte store that feeds computeParityAttributes().
@@ -642,6 +671,17 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
         const syncNow = (): void => {
             scheduled = false
             const map = computeParityAttributes()
+
+            // Mirror the computed map into the rune-backed `parityMap` so
+            // Svelte 5 components that read `parityMap.x` inside a
+            // reactive context (template, $derived, $effect) get auto-
+            // re-runs. Object.assign triggers per-key reactivity so
+            // components only re-run when their specific key changes.
+            //
+            // Done BEFORE the snapshot short-circuit so consumers see
+            // parityMap updates even when the DOM write is skipped (e.g.,
+            // when two consecutive snapshots are JSON-equal).
+            Object.assign(parityMap, map)
 
             // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
             const snapshot = JSON.stringify(map)

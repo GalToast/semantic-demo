@@ -18,12 +18,9 @@
 <script lang="ts">
   import { compassSteps } from '@lib/stores/compass.svelte';
   import { compassPhase, transitionCompass } from '@lib/stores/journey.svelte';
-  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte';
-  import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { cameraStore } from '@lib/stores/camera.svelte.ts';
-  import { focusStore } from '@lib/stores/focus.svelte';
-  import { searchStore } from '@lib/stores/search.svelte';
-  import { get } from 'svelte/store';
+  import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
+
+  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
 
   interface Props {
     /** Whether the compass rail is visible */
@@ -32,41 +29,9 @@
 
   let { visible = false }: Props = $props();
 
-  // ── Store subscriptions (replaces body.dataset MutationObserver reads) ────
-  let nav = $state(navStore());
-  $effect(() => {
-    const unsub = navStore.subscribe(($s) => { nav = $s; });
-    return unsub;
-  });
-
-  let bodyPanelSurface = $derived(nav.surface ?? '');
-
-  // Derive graphContext from stores (mirrors parity-attrs computeParityAttributes)
-  let bodyGraphContext = $derived.by(() => {
-    const vp = viewport();
-    const cam = get(cameraStore);
-    const focus = focusStore();
-    const search = get(searchStore);
-
-    const hasFocusContext =
-      (typeof nav.focusedIndex === 'number' && Number.isFinite(nav.focusedIndex)) ||
-      (typeof focus.selectedBusiness === 'object' && focus.selectedBusiness !== null);
-    const hasSearchContext =
-      !!search.summary ||
-      (typeof search.query === 'string' && search.query.trim().length >= 2) ||
-      nav.surface === 'focus-search' ||
-      nav.surface === 'search';
-
-    if (vp.isCompact && cam.routeExplorationPhase === 'exploring') return 'corridor';
-    if (nav.currentView === 'map') return 'map';
-    if (nav.mode === 'inside') return 'inside';
-    if (hasFocusContext && hasSearchContext) return 'focus-search';
-    if (hasFocusContext) return 'focus';
-    if (hasSearchContext) return 'corridor';
-    if (nav.mode === 'search' || search.summary) return 'corridor';
-    if (nav.mode === 'overview') return 'idle';
-    return 'idle';
-  });
+  // ── Parity-attrs reactive reads (replaces inline parity computation) ────
+  let panelSurface = $derived(parityMap.panelSurface || '');
+  let graphContext = $derived(parityMap.graphContext || '');
 
   // Track pending timeouts so they can be cleared on unmount.
   const pendingTimers: ReturnType<typeof setTimeout>[] = [];
@@ -142,7 +107,7 @@
     {#each compassSteps() as step (step.phase)}
       <button
         class="compass-step"
-        class:primary={step.phase === 'search' && (bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search') || step.state === 'current' || step.state === 'done'}
+        class:primary={step.phase === 'search' && (panelSurface === 'focus-search' || graphContext === 'focus-search') || step.state === 'current' || step.state === 'done'}
         class:current={step.state === 'current'}
         class:done={step.state === 'done'}
         onclick={() => handleAction(step.phase)}

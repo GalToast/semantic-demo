@@ -16,15 +16,14 @@
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { setSemanticDiveMode, threadInspectorActive } from '@lib/stores/focus.svelte';
+  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
+  import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
-  import { resetSemanticThreadWorker } from '@lib/semantic-threads';
-  import { teardownAppShell } from '@lib/orchestration/app-init';
-  import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
 
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
   import '@lib/css/canvas-hover-preview.css';
+  import AppBoot from '@components/AppBoot.svelte';
 
   // W46-B2b: Lazy components consolidated via createLazyComponent() helper.
   // See src/lib/utils/lazy-component.svelte.ts. Each handle exposes a reactive
@@ -130,10 +129,6 @@
     noDemo?: boolean;
   }
 
-  type ContractWindow = Window & {
-    __forceSemanticDiveContractSurface?: () => void;
-  };
-
   let { forceDemo = false, noDemo = false }: Props = $props();
   let semanticDiveContractForced = $state(false);
 
@@ -152,118 +147,53 @@
     })();
 
   onMount(() => {
-    // parity-attrs.svelte.ts (installed via main.ts:67 → app-init.ts:251)
-    // writes testReady to body.dataset on its first sync, before App.svelte's
-    // onMount fires. Tests polling for testReady see it set by parity-attrs.
-    // Previously App.svelte also wrote testReady here as a redundant fallback;
-    // that drift write was removed in the W47 retirement.
-    const contractWindow = window as ContractWindow;
-    contractWindow.__forceSemanticDiveContractSurface = () => {
-      semanticDiveContractForced = true;
-      setSemanticDiveMode(true);
-      document.body.classList.add('is-active');
-
-      const focusStage = document.querySelector<HTMLElement>('#focus-stage');
-      if (focusStage) {
-        focusStage.hidden = false;
-        focusStage.setAttribute('aria-hidden', 'false');
-        focusStage.style.removeProperty('display');
-        focusStage.style.removeProperty('visibility');
-        focusStage.style.removeProperty('opacity');
-      }
-
-      for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
-        const el = document.querySelector<HTMLElement>(selector);
-        if (el) {
-          el.hidden = false;
-          el.setAttribute('aria-hidden', 'false');
-          el.style.removeProperty('display');
-          el.style.removeProperty('visibility');
-          el.style.removeProperty('opacity');
-        }
-      }
-
-      const insideControls = document.querySelector<HTMLElement>('#focus-stage-inside-controls');
-      if (insideControls) {
-        for (const btn of insideControls.querySelectorAll<HTMLButtonElement>('button[hidden]')) {
-          btn.hidden = false;
-        }
-      }
-    };
-
-    // W5-T1: Defer triggers.ts subscribe() registration until after FCP.
-    // The 15+ subscribe() calls in triggers.ts register handlers that synchronously
-    // call refreshCompositionState(), updateJourneyCompass(), navStore.update(), etc.
-    // At module load time this blocks the main thread for ~7s. Deferring via
-    // requestIdleCallback moves it off the cold-load critical path.
-    if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
-      window.requestIdleCallback(
-        () => import('@lib/orchestration/triggers'),
-        { timeout: 3000 }
-      );
-    } else {
-      // Fallback: setTimeout 0 (still async, still off critical path).
-      setTimeout(() => import('@lib/orchestration/triggers'), 0);
-    }
-    const errorHandlerHandle = installErrorHandlers();
-    return () => {
-      errorHandlerHandle.uninstall();
-      delete contractWindow.__forceSemanticDiveContractSurface;
-      teardownAppShell();
-      resetSemanticThreadWorker();
-      import('@lib/ui/weather-ui').then(({ disposeWeatherUi }) => disposeWeatherUi()).catch(() => {});
-    };
+    // App lifecycle moved to AppBoot.svelte (W48-T2). Kept here as a
+    // no-op placeholder so the visual layers below don't change shape.
   });
-
-  // ── Global keyboard shortcuts ──────────────────────────────────────────────
-  // W46-B3: handler extracted to src/lib/keyboard/global-shortcuts.ts so the
-  // keyboard concern has a single source of truth. App.svelte wires the
-  // callbacks that toggle weather visibility and audio mute.
-  $effect(() => setupGlobalShortcuts({
-    toggleWeather: () => { weatherVisible = !weatherVisible },
-    toggleAudioMute: () => {
-      import('@lib/audio/audio-scape')
-        .then(({ setAudioMuted, isAudioMuted }) => setAudioMuted(!isAudioMuted()))
-        .catch(() => {})
-    }
-  }));
 
   // The parity-attrs installer is the single source of truth for all body
   // data-* attributes.  All pre-parity $effect blocks that previously lived
   // here (data-navSurface, data-journeyPhase, data-demoPhase, data-reducedMotion,
   // data-mode, data-compact) are now subsumed by computeParityAttributes()
   // inside parity-attrs.svelte.ts — including navSurface and demoPhase.
-  // Read body data attributes reactively for contract test compatibility
+  // Read body data attributes reactively. Most parity-mirrored attrs come
+  // from `parityMap` (reactive rune-backed proxy kept in sync by
+  // parity-attrs.svelte.ts:installParityAttributeSync()). The two bypass
+  // attrs (focusPanelMode, insideWalkState) are not yet in PARITY_ATTRIBUTES
+  // so we still mirror them via a small MutationObserver.
   let bodyFocusPanelMode = $state('');
-  let bodyPanelSurface = $state('');
-  let bodyGraphContext = $state('');
-  let bodyCompact = $state(false);
-  let bodyJourneyNavigationOwner = $state('');
-  let bodyTrailState = $state('inactive');
   let bodyInsideWalkState = $state('idle');
-  let bodyStrandJourney = $state('idle');
+  // Reactive reads from parityMap (replaces 6 $state mirrors + most of the
+  // MutationObserver). Svelte 5 tracks reads inside `$derived` so template
+  // bindings re-run on parity change.
+  let bodyPanelSurface = $derived(parityMap.panelSurface || '');
+  let bodyGraphContext = $derived(parityMap.graphContext || '');
+  let bodyCompact = $derived(parityMap.compact === 'true');
+  let bodyJourneyNavigationOwner = $derived(parityMap.journeyNavigationOwner || '');
+  let bodyTrailState = $derived(parityMap.trailState || 'inactive');
+  let bodyStrandJourney = $derived(parityMap.strandJourney || 'idle');
   let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
   $effect(() => {
     if (typeof document === 'undefined') return;
     const sync = () => {
-      const nextPanelSurface = document.body.dataset.panelSurface || '';
-      const nextGraphContext = document.body.dataset.graphContext || '';
       bodyFocusPanelMode = document.body.dataset.focusPanelMode || '';
-      bodyPanelSurface = nextPanelSurface;
-      bodyGraphContext = nextGraphContext;
-      bodyCompact = document.body.dataset.compact === 'true';
-      bodyJourneyNavigationOwner = document.body.dataset.journeyNavigationOwner || '';
-      bodyTrailState = document.body.dataset.trailState || 'inactive';
       bodyInsideWalkState = document.body.dataset.insideWalkState || 'idle';
-      bodyStrandJourney = document.body.dataset.strandJourney || 'idle';
+      // Legacy: focusSearchForced is derived in parity-attrs from
+      // focusSearchForced=… but also mirrored here for the bidirectional
+      // contract test (the contract test sets body.dataset.focusSearchForced
+      // and expects the surface state to react). Keep this 1-attr sync
+      // until parity-attrs owns focusSearchForced too.
+      const nextPanelSurface = bodyPanelSurface;
+      const nextGraphContext = bodyGraphContext;
       if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
         document.body.dataset.focusSearchForced = 'true';
-      } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') { // audit-ok: plain Ln() callback, not transformed
+      } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') {
         delete document.body.dataset.focusSearchForced;
       }
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-compact', 'data-focus-panel-mode', 'data-panel-surface', 'data-graph-context', 'data-journey-navigation-owner', 'data-trail-state', 'data-inside-walk-state', 'data-strand-journey'] });
+    // Reduced from 8 attrs to 2 (only bypass attrs not in parityMap yet).
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-inside-walk-state'] });
     sync();
     return () => obs.disconnect();
   });
@@ -408,6 +338,21 @@
 
 <!-- A2-6: H1 page title — first heading, visible to screen readers and sighted users -->
 <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
+
+<!-- App lifecycle bootstrap (side-effect component, no DOM output) -->
+<AppBoot
+  toggleWeather={() => {
+    weatherVisible = !weatherVisible
+  }}
+  toggleAudioMute={() => {
+    import('@lib/audio/audio-scape')
+      .then(({ setAudioMuted, isAudioMuted }) => setAudioMuted(!isAudioMuted()))
+      .catch(() => {})
+  }}
+  onContractSurfaceForced={() => {
+    semanticDiveContractForced = true
+  }}
+/>
 
 <!-- Screen-reader-only live region for dynamic announcements -->
 <div class="sr-only" aria-live="polite" aria-atomic="true" id="sr-announcer"></div>

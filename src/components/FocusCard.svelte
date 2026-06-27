@@ -17,7 +17,8 @@
 <script lang="ts">
   import { navStore } from '@lib/stores/navigation.svelte';
   import { activeResult } from '@lib/stores/search.svelte';
-  import { businessRecords, loadingPhaseStore } from '@lib/data-store';
+  import { businessRecords } from '@lib/data-store';
+  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
@@ -52,14 +53,6 @@
     return unsub;
   });
 
-  // ── Scene readiness (from loading phase store) ──────────────────────────
-  let _loadingPhase = $state<string>('records');
-  $effect(() => {
-    const unsub = loadingPhaseStore.subscribe(($s) => { _loadingPhase = $s; });
-    return unsub;
-  });
-  let _sceneReady = $derived(_loadingPhase === 'launch');
-
   // ── Cluster names (canonical, imported from @lib/utils/ui-presentation) ──
   // Previously this component had its own hardcoded 15-entry list that was
   // stale and showed wrong category names. The hardcoded list was a 15-entry
@@ -91,17 +84,10 @@
   // The parity layer writes body.dataset.panelSurface, .navMode, .focusedNode,
   // .sceneReady from these same stores. We read from the stores directly to
   // avoid the body.dataset → MutationObserver → $state round-trip.
-  let bodyPanelSurface = $derived(nav.surface ?? '');
+  let panelSurface = $derived(parityMap.panelSurface ?? '');
   let bodyNavMode = $derived(nav.mode ?? '');
   void bodyNavMode;
-  let bodyPanelSurfaceDetail = $derived.by(() => {
-    // Derive panelSurfaceMode equivalent from nav surface (mirrors parity-attrs)
-    const s = nav.surface;
-    if (s === 'thread-inspect') return 'thread-inspect';
-    if (s === 'inside') return 'inside';
-    if (s === 'semantic-dive') return 'semantic-dive';
-    return s ?? '';
-  });
+  let panelSurfaceDetail = $derived(parityMap.panelSurfaceDetail ?? '');
 
   // Read body data-focus-panel-mode reactively (set by setFocusPanelMode)
   let bodyFocusPanelMode = $state('');
@@ -115,7 +101,7 @@
   });
 
   // ── CSS class derivation for surface/mode selectors ───────────────────────
-  let focusCardSurfaceClass = $derived(bodyPanelSurface ? `surface-${bodyPanelSurface}` : '');
+  let focusCardSurfaceClass = $derived(panelSurface ? `surface-${panelSurface}` : '');
   let focusCardModeClass = $derived(bodyFocusPanelMode ? `mode-${bodyFocusPanelMode}` : '');
   void focusCardSurfaceClass;
   void focusCardModeClass;
@@ -131,8 +117,8 @@
 
   let semanticDiveActive = $derived(
     forceSemanticDiveVisible ||
-      bodyPanelSurface === 'semantic-dive' ||
-      bodyPanelSurfaceDetail === 'semantic-dive' ||
+      panelSurface === 'semantic-dive' ||
+      panelSurfaceDetail === 'semantic-dive' ||
       String(surface) === 'semantic-dive'
   );
   void semanticDiveActive;
@@ -271,9 +257,9 @@
   <!-- svelte-ignore a11y_no_noninteractive_tabindex: focusable scroll region for keyboard users -->
   <div
     class="focus-card selected-card focus-stage-card"
-    class:surface-focus={bodyPanelSurface === 'focus'}
-    class:surface-focus-search={bodyPanelSurface === 'focus-search'}
-    class:surface-semantic-dive={bodyPanelSurface === 'semantic-dive'}
+    class:surface-focus={panelSurface === 'focus'}
+    class:surface-focus-search={panelSurface === 'focus-search'}
+    class:surface-semantic-dive={panelSurface === 'semantic-dive'}
     class:mode-field-node={bodyFocusPanelMode === 'field-node'}
     id="selected-card"
     class:selected-card-empty={isEmpty}

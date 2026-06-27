@@ -48,6 +48,7 @@
     type CompassPresentationState
   } from '@lib/orchestration/compass-controller';
   import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
+  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
 
   interface Props {
     /** Suppress the compass in overview mode when URL has ?nodemo=1 */
@@ -110,19 +111,14 @@
   let navigationOwner = $derived(presentation.navigationOwner);
   let navSurface = $derived(navState.surface);
 
-  // Body attribute mirrors — now derived directly from stores
-  let bodyPanelSurface = $derived(navState.surface);
-  let bodyPanelSurfaceDetail = $derived.by(() => {
-    const isSearchContext = navState.surface === 'search' || navState.surface === 'focus-search'
-    if (!isSearchContext) return 'none'
-    const mobileSearchSheet = document.body.dataset.mobileSearchSheet
-    if (!mobileSearchSheet) return 'none'
-    return mobileSearchSheet === 'expanded' ? 'expanded' : 'peek'
-  });
-  let bodyFocusedNode = $derived(navState.focusedIndex != null ? String(navState.focusedIndex) : '');
-  let bodyTrailDepth = $derived(String(journeyState.depth ?? ''));
-  let bodyAppTrailDepth = $derived(String(navState.trailDepth ?? ''));
-  let bodySemanticDive = $derived(focusState.semanticDiveMode ? 'active' : '');
+  // Body attribute mirrors — derived from parityMap (single source of truth
+  // kept in sync by installParityAttributeSync() in parity-attrs.svelte.ts).
+  let bodyPanelSurface = $derived(parityMap.panelSurface || '');
+  let bodyPanelSurfaceDetail = $derived(parityMap.panelSurfaceDetail || 'none');
+  let bodyFocusedNode = $derived(parityMap.focusedNode || '');
+  let bodyTrailDepth = $derived(parityMap.trailDepth || '');
+  let bodyAppTrailDepth = $derived(parityMap.trailDepth || '');
+  let bodySemanticDive = $derived(parityMap.semanticDive || '');
   let bodyCanStepInside = $derived(
     (journeyState.depth >= 1 || navState.trailDepth >= 1)
       && navState.focusedIndex != null
@@ -135,6 +131,8 @@
     if (typeof document === 'undefined') return;
     const sync = () => { bodyFocusPanelMode = document.body?.dataset?.focusPanelMode ?? '' };
     const obs = new MutationObserver(sync);
+    // Only bypass attr not yet in parityMap — parity-attrs.svelte.ts owns
+    // the rest (panelSurface, trailDepth, semanticDive, focusedNode, etc.).
     obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode'] });
     sync();
     return () => obs.disconnect();

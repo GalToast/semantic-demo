@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
   import { businessRecords } from '@lib/data-store';
   import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter.svelte';
   import { initLegendEventBusSubscriptions } from '@lib/journey/legend-ui';
@@ -25,16 +26,19 @@
   let legendButtons: HTMLButtonElement[] = $state([]);
 
   // ── Body state for CSS class derivation ────────────────────────────────────
-  let bodyPanelSurface = $state('');
+  // panelSurface is mirrored by parity-attrs.svelte.ts:installParityAttributeSync()
+  // and read reactively via parityMap (Svelte 5 tracks reads inside $derived).
+  let bodyPanelSurface = $derived(parityMap.panelSurface || '');
+  // renderKind is a bypass attr not yet in PARITY_ATTRIBUTES, so it still
+  // requires a small MutationObserver mirror.
   let bodyRenderKind = $state('');
   $effect(() => {
     if (typeof document === 'undefined') return;
     const sync = () => {
-      bodyPanelSurface = document.body?.dataset?.panelSurface ?? '';
       bodyRenderKind = document.body?.dataset?.renderKind ?? '';
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-render-kind'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-render-kind'] });
     sync();
     return () => obs.disconnect();
   });

@@ -19,6 +19,7 @@
     fetchWeather
   } from '@lib/stores/weather.svelte';
   import { viewport } from '@lib/stores/viewport.svelte';
+  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
 
 
   interface Props {
@@ -31,16 +32,19 @@
   let expanded = $state(false);
 
   // ── Body state for CSS class derivation ────────────────────────────────────
-  let bodyPanelSurface = $state('');
+  // bodyPanelSurface is kept in sync by parity-attrs.svelte.ts:installParityAttributeSync()
+  // via the reactive parityMap proxy — no $state mirror or MutationObserver needed.
+  let bodyPanelSurface = $derived(parityMap.panelSurface || '');
+  // bodyFocusPanelMode is a bypass attr (not yet in PARITY_ATTRIBUTES) — keep
+  // a small MutationObserver solely for this one attr.
   let bodyFocusPanelMode = $state('');
   $effect(() => {
     if (typeof document === 'undefined') return;
     const sync = () => {
-      bodyPanelSurface = document.body?.dataset?.panelSurface ?? '';
       bodyFocusPanelMode = document.body?.dataset?.focusPanelMode ?? '';
     };
     const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-panel-surface', 'data-focus-panel-mode'] });
+    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode'] });
     sync();
     return () => obs.disconnect();
   });
