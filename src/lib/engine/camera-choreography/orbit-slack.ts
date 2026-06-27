@@ -14,23 +14,10 @@ import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js
 import { appState as _state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 const state = _state
-import type { SemanticState } from '@lib/state/state-types'
+import type { NodePosition, SemanticState } from '@lib/state/state-types'
 import { appState } from '@lib/state/app.svelte'
 import { CONFIG } from '@lib/engine/config'
 import { isMobile, prefersReducedMotion } from '@lib/utils/environment'
-
-// ── Types ────────────────────────────────────────────────────────────────────
-
-/**
- * PositionPoint is the structural shape of items in appState.nodePositions
- * and appState.originalPositions, which are typed `unknown[]` globally.
- * Introduced to consolidate 4 inline structural casts (Phase 16 pattern).
- */
-interface PositionPoint {
-    x: number
-    y: number
-    z: number
-}
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -39,16 +26,16 @@ interface PositionPoint {
  * sites can index the result directly without re-asserting the structural
  * shape (Phase 16 typed-helper pattern).
  */
-function getNodePositions(): PositionPoint[] {
-    return appState.nodePositions as unknown as PositionPoint[]
+function getNodePositions(): NodePosition[] {
+    return appState.nodePositions
 }
 
 /**
  * Typed accessor for appState.originalPositions. Same pattern as
  * getNodePositions above.
  */
-function getOriginalPositions(): PositionPoint[] {
-    return appState.originalPositions as unknown as PositionPoint[]
+function getOriginalPositions(): NodePosition[] {
+    return appState.originalPositions
 }
 
 const _s = state as unknown as SemanticState
