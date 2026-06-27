@@ -200,7 +200,7 @@
     publish(EVENTS.URL_SYNC_REQUESTED, { params: { offset: null }, reason: 'search-more' });
 
     requestAnimationFrame(() => {
-      const firstNewItem = document.querySelector(`[data-index="${(results as unknown as SearchResult[])[firstNewIndex]?.index}"]`);
+      const firstNewItem = document.querySelector(`[data-index="${results[firstNewIndex]?.index}"]`);
       if (firstNewItem) firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     });
   }
@@ -264,16 +264,10 @@
   }
 
   function handleResultClick(index: number | string): void {
-    const result = (results as unknown as SearchResult[]).find((item) => Number(item.index) === Number(index));
+    const result = results.find((item) => Number(item.index) === Number(index));
     const point = result ? getResultPoint(result) : null;
     if (point) {
-      const actions = typeof window !== 'undefined'
-        ? (window as unknown as {
-            __APP_ACTIONS__?: {
-              focusOnNode?: (_nodeIndex: number, _options?: Record<string, unknown>) => unknown;
-            };
-          }).__APP_ACTIONS__
-        : undefined;
+      const actions = typeof window !== 'undefined' ? window.__APP_ACTIONS__ : undefined;
       // Publish focus-request event BEFORE calling the legacy focusOnNode so
       // triggers.ts can populate legacy navState (threadCandidates, etc.) before
       // the route-trace overlay refreshes in response to CAMERA_NODE_FOCUSED.
