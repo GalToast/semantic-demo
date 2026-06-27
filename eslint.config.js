@@ -108,7 +108,38 @@ export default [
             ],
             '@typescript-eslint/no-empty-object-type': 'off',
             '@typescript-eslint/no-unsafe-function-type': 'off',
-            'no-unused-vars': 'off'
+            'no-unused-vars': 'off',
+
+            // ── Timer/interval lifecycle enforcement ──────────────────────────────
+            // Every timer/interval in src/lib/{ui,orchestration,stores,journey,engine,search}
+            // must be tracked via DisposableRegistry. The previous manual pattern
+            // (if (timer) clearTimeout(timer); timer = setTimeout(...)) caused
+            // 5+ production timer-leak fixes in the last 60 days (search git log:
+            // 45ed12d0, 444c9479, 89081451, 04cb7d8e, c2d7cfe7).
+            //
+            // Exceptions are files that are themselves part of the registry
+            // implementation OR files whose setTimeout calls are intentional
+            // bootstrap-polling we don't want to track (e.g. requestIdleCallback
+            // shims, intentionally fire-and-forget microtasks).
+            //
+            // Enforce the registry pattern going forward; existing un-migrated
+            // sites will surface as warnings (not errors) so this doesn't
+            // break the build while the migration is in progress.
+            'no-restricted-syntax': [
+                'warn',
+                {
+                    selector: "CallExpression[callee.name='setTimeout']",
+                    message: 'Avoid raw setTimeout() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
+                },
+                {
+                    selector: "CallExpression[callee.name='setInterval']",
+                    message: 'Avoid raw setInterval() in src/lib/. Wrap with DisposableRegistry.timer() — see src/lib/utils/disposable-registry.ts.'
+                },
+                {
+                    selector: "CallExpression[callee.name='requestAnimationFrame']",
+                    message: 'Avoid raw requestAnimationFrame() in src/lib/. Wrap with DisposableRegistry.raf() — see src/lib/utils/disposable-registry.ts.'
+                }
+            ]
         }
     },
 
