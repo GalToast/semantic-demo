@@ -17,6 +17,7 @@
   import SearchInput from './SearchInput.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { performSearch } from '@lib/search-engine';
+  import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -77,30 +78,33 @@
 
   // W47-E: dev-only mock-data banner. When the search API fails the engine
   // falls back to a local mock catalog (`@lib/search/mock-catalog.ts`) and
-  // sets `sessionStorage['api_unreachable'] = '1'`. Without this banner
-  // a developer searching in localhost sees the mock results and assumes
-  // they're real data — easy to mistake a 20-business fake catalog for the
-  // full 8,406-point Montgomery County dataset. The banner makes the
-  // fallback explicit.
+  // fires SEARCH_DEGRADED via the event bus. Without this banner a developer
+  // searching in localhost sees the mock results and assumes they're real
+  // data — easy to mistake a 20-business fake catalog for the full 8,406-
+  // point Montgomery County dataset. The banner makes the fallback explicit.
   //
-  // Poll sessionStorage every 750ms rather than wiring the search engine
-  // to a Svelte store — this keeps the banner a pure-presentation concern
-  // with no coupling to the search-engine event flow. 750ms is fast
-  // enough for human perception and slow enough to be a non-issue.
+  // Previously this polled sessionStorage every 750ms. That was timer
+  // sprawl: a single setInterval running forever just to flip one boolean.
+  // Now we react to SEARCH_DEGRADED (show) / SEARCH_SUCCESS (hide) and
+  // initialize from sessionStorage on mount for the page-reload case.
   let mockBannerVisible = $state(false)
-  $effect(() => {
-    if (typeof window === 'undefined') return
-    const check = () => {
-      try {
-        mockBannerVisible =
-          window.sessionStorage?.getItem('api_unreachable') === '1'
-      } catch {
-        mockBannerVisible = false
-      }
+  onMount(() => {
+    try {
+      mockBannerVisible =
+        window.sessionStorage?.getItem('api_unreachable') === '1'
+    } catch {
+      mockBannerVisible = false
     }
-    check()
-    const id = setInterval(check, 750)
-    return () => clearInterval(id)
+    const unsubDegraded = subscribe(EVENTS.SEARCH_DEGRADED, () => {
+      mockBannerVisible = true
+    })
+    const unsubSuccess = subscribe(EVENTS.SEARCH_SUCCESS, () => {
+      mockBannerVisible = false
+    })
+    return () => {
+      unsubDegraded()
+      unsubSuccess()
+    }
   })
 </script>
 
