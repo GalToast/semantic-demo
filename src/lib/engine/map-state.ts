@@ -37,15 +37,6 @@ interface LeafletMapWithFitBounds {
     fitBounds(bounds: unknown, options?: Record<string, unknown>): void
 }
 
-/**
- * Typed view of appState restricted to the map subsystem's fields.
- * Replaces inline `state as unknown as MapStateShape` casts at the
- * initMap / refreshMapMarkers / destroyMap call sites.
- */
-function getMapState(): MapStateShape {
-    return state as unknown as MapStateShape
-}
-
 interface LeafletMarker {
     setStyle(style: Record<string, unknown>): void
     addTo(layer: unknown): LeafletMarker
@@ -97,6 +88,15 @@ interface MapStateShape {
     }
     semanticDiveMode?: boolean
     routeTraceDiagnostics: { mapPointCount: number; mapPathActive: boolean }
+}
+
+/**
+ * Typed view of appState restricted to the map subsystem's fields.
+ * Replaces inline `state as unknown as MapStateShape` casts at the
+ * initMap / refreshMapMarkers / destroyMap call sites.
+ */
+function getMapState(): MapStateShape {
+    return state as unknown as MapStateShape
 }
 
 let leafletAssetsPromise: Promise<unknown> | null = null
