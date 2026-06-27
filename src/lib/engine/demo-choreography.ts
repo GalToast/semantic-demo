@@ -8,7 +8,7 @@
  * reads/writes module-level scratch for its own bookkeeping (node index,
  * cancellation flag, timer handles) and delegates authoritative phase state
  * to the Svelte demo store (`src/lib/stores/demo.ts`) where appropriate by the
- * caller. The JS-side `_demoPhase`, `_demoNodeIndex`, `_demoTimers`,
+ * caller. The JS-side `_demoPhase`, `_demoNodeIndex`, `_demoRegistry`,
  * `_demoCancelled` module variables are preserved here as private scratch so
  * that the external contract (exports) stays identical.
  *
@@ -38,6 +38,7 @@ import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import * as panelBindingsStaticModule from '@lib/ui/panel-bindings'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'
 import { debugWarn } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Legacy Module Type Contracts ──────────────────────────────────────────────
 //
@@ -122,7 +123,7 @@ export const PHASE: Record<DemoPhase, DemoPhase> = {
 
 let _demoPhase: DemoPhase = PHASE.IDLE
 let _demoNodeIndex: number | null = null
-let _demoTimers: number[] = []
+let _demoRegistry: DisposableRegistry = new DisposableRegistry({ label: 'demo-choreography' })
 let _demoCancelled = false
 
 // ── Exported Accessors ────────────────────────────────────────────────────────
@@ -144,10 +145,8 @@ export function setDemoNodeIndex(idx: number | null): void {
 }
 
 export function clearDemoTimers(): void {
-    for (const t of _demoTimers) {
-        window.clearTimeout(t)
-    }
-    _demoTimers = []
+    _demoRegistry.disposeAll()
+    _demoRegistry = new DisposableRegistry({ label: 'demo-choreography' })
 }
 
 export function resetRetryState(): void {
@@ -386,8 +385,9 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         }
 
         // 50ms — glow highlight
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 document.dispatchEvent(
                     new CustomEvent('micro-demo-node-highlight', {
@@ -398,8 +398,9 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         )
 
         // 100ms — start camera glide (1200ms animation, arrives at ~1400ms)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 camera.animateCameraToNode(demoNode, {
                     transitionStyle: 'focus',
@@ -416,8 +417,9 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         )
 
         // 1400ms — arrived, setup focus (GLIDING_MS)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 _demoPhase = PHASE.ARRIVED
                 // Fire-and-forget: demoFocusSetup is async but caller does not need to await.
@@ -432,8 +434,9 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         )
 
         // 1520ms — card visible (GLIDING_MS + ARRIVED_HOLD_MS)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 _demoPhase = PHASE.CARD_VISIBLE
                 document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
@@ -441,16 +444,18 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         )
 
         // 2520ms — second name pulse (midway through CARD_VISIBLE)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
             }, 2520)
         )
 
         // 3320ms — pullback (GLIDING_MS + ARRIVED_HOLD_MS + CARD_VISIBLE_MS)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 _demoPhase = PHASE.PULLBACK
                 camera.animateCameraToNode(demoNode, {
@@ -463,8 +468,9 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         )
 
         // 4520ms — wide view (above + PULLBACK_MS)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 _demoPhase = PHASE.WIDE_VIEW
                 document.dispatchEvent(
@@ -477,8 +483,9 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         )
 
         // 4870ms — returning to overview (above + WIDE_VIEW_HOLD_MS)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 _demoPhase = PHASE.RETURNING
                 // Fire-and-forget: demoReset is async but caller does not need to await.
@@ -493,8 +500,9 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         )
 
         // 5870ms — complete (above + RETURNING_MS)
-        _demoTimers.push(
-            window.setTimeout(() => {
+        _demoRegistry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
+            setTimeout(() => {
                 if (_demoCancelled) return
                 _demoPhase = PHASE.COMPLETE
                 ui.showEndToast()

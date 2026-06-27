@@ -11,16 +11,7 @@
 
 import { setInspectedStrandOverlayUpdater as setAdapterInspectedStrandOverlayUpdater } from '@lib/journey/inspected-strand-overlay-adapter'
 import { silenceError } from '@lib/utils/error-handler'
-
-/**
- * Returns null cast to T. Used by dynamic-import catch blocks to satisfy the
- * `Promise<T>` chain after suppressing unhandled rejections during test
- * teardown or when the underlying module is unavailable (W44 Phase 4
- * lazy-bridge pattern).
- */
-function silentNull<T>(): T {
-    return null as unknown as T
-}
+import { silentNull } from '@lib/utils/silent-null'
 
 // ── Lazy module cache ────────────────────────────────────────────────────────
 

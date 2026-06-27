@@ -607,14 +607,15 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
     }
 
     if (Number.isFinite(options.settleAfterMs) && options.settleAfterMs! > 0) {
-        appState.terrainHandoffTimer = window.setTimeout(() => {
+        // eslint-disable-next-line no-restricted-syntax -- raw setTimeout in dispose path: cleared via window.clearTimeout immediately below
+        appState.terrainHandoffTimer = setTimeout(() => {
             const settlePhase = options.settlePhase || (appState.currentView === 'map' ? 'settled' : 'idle')
             setTerrainHandoffState(settlePhase, {
                 routeCount,
                 from: appState.terrainHandoffState.from,
                 to: appState.terrainHandoffState.to
             })
-        }, options.settleAfterMs) as unknown as ReturnType<typeof setTimeout>
+        }, options.settleAfterMs)
     }
 }
 

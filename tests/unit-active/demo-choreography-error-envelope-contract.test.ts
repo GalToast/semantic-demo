@@ -131,7 +131,11 @@ describe('demo-choreography — error-envelope contract (W47)', () => {
         const body = extractFunctionBody(src, 'runDemo')
 
         const callbacks: string[] = []
-        const re = /window\.setTimeout\(\s*\(\)\s*=>\s*\{/g
+        // Match either `window.setTimeout(...)` or bare `setTimeout(...)` —
+        // the migration to DisposableRegistry.timer() drops the `window.`
+        // prefix to align with loading.ts and avoid DOM-vs-Node setTimeout
+        // type-resolution drift.
+        const re = /(?:window\.)?setTimeout\(\s*\(\)\s*=>\s*\{/g
         let m: RegExpExecArray | null
         while ((m = re.exec(body)) !== null) {
             const start = m.index + m[0].length
