@@ -51,7 +51,7 @@ export function onCompositionChange(): void {
     if (!canUseWeatherDom()) return
     const state = appState.weatherState
     if (appState.composition.activeView === 'map' && state.weather) {
-        applyWeatherEffects(state.weather as unknown as Record<string, unknown>)
+        applyWeatherEffects(state.weather)
     } else {
         clearWeatherEffects()
     }
@@ -101,7 +101,7 @@ export function updateWeatherUi(state: WeatherStateValue): void {
     updateWeatherStaleness(state.lastFetch)
 
     if (appState.composition.activeView === 'map') {
-        applyWeatherEffects(weather as unknown as Record<string, unknown>)
+        applyWeatherEffects(weather)
     }
 
     if (!stalenessIntervalId && typeof window !== 'undefined') {
@@ -125,11 +125,11 @@ export function renderWeatherFallback(state: WeatherStateValue): void {
     if (conditionUseEl) conditionUseEl.setAttribute('xlink:href', '#weather-icon-unknown')
 }
 
-export function applyWeatherEffects(weather: Record<string, unknown>): void {
+export function applyWeatherEffects(weather: WeatherData): void {
     if (!canUseWeatherDom()) return
     clearWeatherEffects()
 
-    const condition = String(weather.condition || '').toLowerCase()
+    const condition = (weather.condition || '').toLowerCase()
     const container = document.getElementById('map-weather-overlay')
     if (!container) return
 

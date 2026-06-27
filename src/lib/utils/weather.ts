@@ -41,6 +41,13 @@ export interface WeatherData {
     windDirection: number
     windGust: number | null
     source: string
+    /**
+     * Optional UI hint consumed by `weather-ui.applyWeatherEffects` to dim
+     * the map overlay during low-visibility conditions (defaults to 1 when
+     * absent). Distinct from intrinsic weather properties — providers
+     * populate this only when the visual effect matters.
+     */
+    brightness?: number
 }
 
 export interface WeatherCondition {
@@ -120,10 +127,7 @@ export function updateWeatherStaleness(): void {
 
 export function applyWeatherEffects(): void {
     if (appState.currentView !== 'map' || !appState.weather) return
-    // Narrow cast: weather-ui.applyWeatherEffects only reads `weather.condition`,
-    // so the structural Record contract is satisfied without lying about the
-    // full WeatherData shape.
-    applyWeatherEffectsForWeather(appState.weather as unknown as Record<string, unknown>)
+    applyWeatherEffectsForWeather(appState.weather)
 }
 
 export { clearWeatherEffects }
