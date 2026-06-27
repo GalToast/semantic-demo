@@ -73,6 +73,13 @@ interface UpdateSelectedBusinessOptions {
 
 // ── Internal state ─────────────────────────────────────────────────────────
 
+let _cascadeTimers: ReturnType<typeof setTimeout>[] = []
+
+function clearCascadeTimers(): void {
+    for (const t of _cascadeTimers) clearTimeout(t)
+    _cascadeTimers = []
+}
+
 const selectedCardAdapter: SelectedCardAdapter = {
     getStrandArrivalNote: () => '',
     updateTraversalUi: () => {},
@@ -302,6 +309,9 @@ export function updateSelectedBusiness(
 
     const cascadeBg = document.getElementById('vector-cascade-bg')
     if (cascadeBg && detailsEl && !detailsEl.hidden) {
+        // Clear any in-flight cascade from a previous selection so rapid
+        // selection changes don't orphan timers that mutate stale DOM.
+        clearCascadeTimers()
         cascadeBg.textContent = ''
         cascadeBg.classList.remove('active')
         cascadeBg.classList.add('active')
@@ -310,15 +320,21 @@ export function updateSelectedBusiness(
                 (seededUnit(lineIdx * 6 + j, CASCADE_VECTOR_LINE_SALT) * 2 - 1).toFixed(3)
             ).join('  ')
         for (let i = 0; i < 8; i++) {
-            setTimeout(() => {
-                const line = document.createElement('div')
-                line.className = 'vector-cascade-line'
-                line.textContent = generateVectorLine(i)
-                cascadeBg.appendChild(line)
-                setTimeout(() => line.remove(), 3000)
-            }, i * 150)
+            _cascadeTimers.push(
+                setTimeout(() => {
+                    const line = document.createElement('div')
+                    line.className = 'vector-cascade-line'
+                    line.textContent = generateVectorLine(i)
+                    cascadeBg.appendChild(line)
+                    _cascadeTimers.push(
+                        setTimeout(() => line.remove(), 3000)
+                    )
+                }, i * 150)
+            )
         }
-        setTimeout(() => cascadeBg.classList.remove('active'), 2000)
+        _cascadeTimers.push(
+            setTimeout(() => cascadeBg.classList.remove('active'), 2000)
+        )
     }
 
     const namePresentation: BusinessNamePresentation = getBusinessNamePresentation(point.name)
