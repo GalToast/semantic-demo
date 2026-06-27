@@ -6,21 +6,11 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
-import type { SemanticState } from '@lib/state/state-types'
 import { getViewportSize } from '../utils/environment'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
 
 // ── PRIVATE HELPERS — typed accessors (Phase 17 cast consolidation) ───────
-
-/**
- * `state` is localized to this module — every consumer reads it as
- * SemanticState, so we route through a single helper that owns the
- * `unknown`-shape bridge from the global appState.
- */
-function getRenderState(): SemanticState {
-    return appState as unknown as SemanticState
-}
 
 /**
  * Some host elements carry a `_searchStateNamespace` data slot populated by
@@ -34,8 +24,6 @@ interface SearchStateNamespacedElement {
 function getSearchStateNamespace(el: HTMLElement): SearchStateNamespacedElement {
     return el as unknown as SearchStateNamespacedElement
 }
-
-const state = getRenderState()
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -226,15 +214,15 @@ export function buildSearchStageLabel(
             ? 'Original closest'
             : 'Closest match'
     }
-    if (!state.points) return 'Related match'
-    const inBounds = Number.isFinite(index) && Number(index) >= 0 && Number(index) < (state.points as unknown[]).length
-    const point = inBounds ? (state.points as SearchResultPoint[])[Number(index)] : null
+    if (!appState.points) return 'Related match'
+    const inBounds = Number.isFinite(index) && Number(index) >= 0 && Number(index) < (appState.points as unknown[]).length
+    const point = inBounds ? (appState.points as SearchResultPoint[])[Number(index)] : null
     if (!point) return 'Related match'
     if (
         Number.isFinite(topIndex) &&
         topIndex! >= 0 &&
-        topIndex! < (state.points as SearchResultPoint[]).length &&
-        (state.points as SearchResultPoint[])[topIndex!]?.cluster === point.cluster
+        topIndex! < (appState.points as SearchResultPoint[]).length &&
+        (appState.points as SearchResultPoint[])[topIndex!]?.cluster === point.cluster
     )
         return 'Same theme'
     return 'Related match'
@@ -267,10 +255,10 @@ export function revealActiveSearchResultOnCompact(
 }
 
 export function clearCompactSearchResultRevealTimers(): void {
-    state.compactSearchRevealToken = (state.compactSearchRevealToken || 0) + 1
-    if (state.compactSearchRevealTimers) {
-        state.compactSearchRevealTimers.forEach((timerId) => window.clearTimeout(timerId))
-        state.compactSearchRevealTimers = []
+    appState.compactSearchRevealToken = (appState.compactSearchRevealToken || 0) + 1
+    if (appState.compactSearchRevealTimers) {
+        appState.compactSearchRevealTimers.forEach((timerId) => window.clearTimeout(timerId))
+        appState.compactSearchRevealTimers = []
     }
 }
 
@@ -278,9 +266,9 @@ export function scheduleCompactSearchResultReveal(resultsEl: HTMLElement, active
     if (!resultsEl || !isCompactSearchViewport()) return
 
     clearCompactSearchResultRevealTimers()
-    const token = state.compactSearchRevealToken
+    const token = appState.compactSearchRevealToken
     const reveal = (): void => {
-        if (token !== state.compactSearchRevealToken || !isCompactSearchViewport()) return
+        if (token !== appState.compactSearchRevealToken || !isCompactSearchViewport()) return
         const row =
             activeIndex !== null && activeIndex !== undefined
                 ? (resultsEl.querySelector(
@@ -293,9 +281,9 @@ export function scheduleCompactSearchResultReveal(resultsEl: HTMLElement, active
     }
 
     requestAnimationFrame(() => requestAnimationFrame(reveal))
-    if (!state.compactSearchRevealTimers) state.compactSearchRevealTimers = []
+    if (!appState.compactSearchRevealTimers) appState.compactSearchRevealTimers = []
     ;[80, 240, 520].forEach((delay: number) => {
-        state.compactSearchRevealTimers.push(
+        appState.compactSearchRevealTimers.push(
             window.setTimeout(reveal, delay) as unknown as ReturnType<typeof setTimeout>
         )
     })
@@ -307,15 +295,15 @@ export function setActiveSearchResultRow(
     { reveal = true }: { reveal?: boolean } = {}
 ): void {
     if (!resultsEl) return
-    const navState = state.navState
+    const navState = appState.navState
     const isCommittedExplore = navState?.mode === 'trail' && (navState.explorationHistoryIndices || []).length > 1
     const summaryResultIndices: number[] = Array.isArray(
-        (state.currentSearchSummary as SearchSummary | null)?.resultIndices
+        (appState.currentSearchSummary as SearchSummary | null)?.resultIndices
     )
-        ? ((state.currentSearchSummary as SearchSummary).resultIndices as number[])
+        ? ((appState.currentSearchSummary as SearchSummary).resultIndices as number[])
         : []
-    const focusedIndex = Number.isFinite(state.focusedNode)
-        ? (state.focusedNode as number)
+    const focusedIndex = Number.isFinite(appState.focusedNode)
+        ? (appState.focusedNode as number)
         : Number.isFinite(navState?.focusedIndex)
           ? (navState!.focusedIndex as number)
           : null
@@ -366,11 +354,11 @@ export function setActiveSearchResultRow(
 }
 
 export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void {
-    if (!resultsEl || !state.currentSearchSummary) return
-    const summary: SearchSummary = state.currentSearchSummary
+    if (!resultsEl || !appState.currentSearchSummary) return
+    const summary: SearchSummary = appState.currentSearchSummary
     const anchorIndex = summary.anchorIndex
     const topIndex = summary.topIndex ?? null
-    const navState = state.navState
+    const navState = appState.navState
     const isCommittedExplore = navState?.mode === 'trail' && (navState.explorationHistoryIndices || []).length > 1
     const exploreIndex =
         isCommittedExplore && Number.isFinite(navState?.focusedIndex) ? (navState!.focusedIndex as number) : null
