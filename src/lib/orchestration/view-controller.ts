@@ -46,6 +46,7 @@ const CONFIG = {
 
 let _viewSwitchPreludeTimer: ReturnType<typeof setTimeout> | null = null;
 let _viewHandoffTimer: ReturnType<typeof setTimeout> | null = null;
+let _viewTransitioningCleanupTimer: ReturnType<typeof setTimeout> | null = null;
 let _refreshCompositionState: () => void = () => {};
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -67,6 +68,10 @@ export function hideViewHandoff(): void {
   if (_viewHandoffTimer !== null) {
     clearTimeout(_viewHandoffTimer);
     _viewHandoffTimer = null;
+  }
+  if (_viewTransitioningCleanupTimer !== null) {
+    clearTimeout(_viewTransitioningCleanupTimer);
+    _viewTransitioningCleanupTimer = null;
   }
   // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
   if (!handoff) return;
@@ -172,7 +177,12 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
   document.body.classList.add('view-transitioning');
 
   // Auto-remove transitioning class after animation
-  setTimeout(() => {
+  if (_viewTransitioningCleanupTimer !== null) {
+    clearTimeout(_viewTransitioningCleanupTimer)
+    _viewTransitioningCleanupTimer = null
+  }
+  _viewTransitioningCleanupTimer = setTimeout(() => {
+    _viewTransitioningCleanupTimer = null
     const current = get(navStore).currentView;
     if (current !== view) return; // Guard against rapid switching
     document.body.classList.remove('view-transitioning');
