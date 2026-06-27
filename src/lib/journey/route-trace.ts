@@ -142,9 +142,6 @@ export function setRouteChoreographyPhase(phase: string = 'overview', details: R
             startedAt: performance.now()
         }
     })
-    if (document.body?.dataset) {
-        document.body.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive'
-    }
     const canvasContainer = document.getElementById('canvas-container')
     if (canvasContainer) {
         canvasContainer.dataset.routeMotion = state.currentView === 'galaxy' ? phase : 'inactive'
@@ -240,9 +237,6 @@ function _refreshRouteTraceOverlayRaw(options: RouteChoreographyDetails = {}): v
             mapPathActive: !!state.routeTraceDiagnostics?.mapPathActive
         }
     })
-    if (document.body?.dataset) {
-        document.body.dataset.routeMotion = state.currentView === 'galaxy' ? 'focus' : 'inactive'
-    }
     const canvasContainer = document.getElementById('canvas-container')
     if (canvasContainer) {
         canvasContainer.dataset.routeMotion = state.currentView === 'galaxy' ? 'focus' : 'inactive'

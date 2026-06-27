@@ -67,13 +67,6 @@
     engineReady.signalReady();
   }
 
-  // Reflect readiness onto body dataset (parity signal consumed by parity-attrs + tests).
-  $effect(() => {
-    if (typeof document !== 'undefined') {
-      document.body.dataset.appState = engineReady.value ? 'ready' : 'splash';
-    }
-  });
-
   // Modal focus management: auto-focus the search input on mount and cycle
   // Tab within the gate so keyboard + screen-reader users aren't dumped into
   // the 3D app chrome (legend, view modes) before opting in. Focus is

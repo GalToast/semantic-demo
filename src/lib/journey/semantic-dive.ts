@@ -101,9 +101,7 @@ export function syncSemanticDiveUi(): void {
     // (The former companion write `semanticDive='inactive'` IS safe to omit:
     // parity derives semanticDive from focusStore.semanticDiveMode, which
     // round-trips trailDepth===2. Only this journeyPhase write must stay.)
-    if (active && !isTransitioning && document.body) {
-        document.body.dataset.journeyPhase = 'inside'
-    }
+
 
     const diveButton = document.getElementById('btn-focus-dive') as HTMLButtonElement | null
     const insideControls = document.getElementById('focus-stage-inside-controls')

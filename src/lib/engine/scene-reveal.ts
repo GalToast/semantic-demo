@@ -22,12 +22,6 @@ import { getViewportSize, prefersReducedMotion, isMobileViewport } from '@lib/ut
 // interface from the legacy state). The structural cast is no longer
 // needed — the Svelte 5 class is properly typed.
 
-export function setSceneRevealDataset(active: boolean): void {
-    if (typeof document !== 'undefined' && document.body?.dataset) {
-        document.body.dataset.sceneReveal = active ? 'active' : 'inactive'
-    }
-}
-
 export function startSceneReveal(): void {
     const camera = state.camera as { position: Vector3 } | null
     if (!camera || state.currentView !== 'galaxy') return

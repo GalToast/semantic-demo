@@ -138,13 +138,7 @@ export function setPremiumMode(enabled: boolean): void {
         initPostProcessing(_rendererRef, _sceneRef, _cameraRef)
     }
 
-    if (typeof document !== 'undefined' && document.body) {
-        if (enabled) {
-            document.body.dataset.premiumMode = 'true'
-        } else {
-            delete document.body.dataset.premiumMode
-        }
-    }
+
 
     // Enable/disable all passes in the composer
     if (_composer) {
@@ -254,11 +248,6 @@ export function initPostProcessing(renderer: WebGLRenderer, scene: Scene, camera
                 setDofEnabled,
                 isPremiumMode
             }
-        }
-
-        // Sync body attribute if premium mode was set before init
-        if (_premiumMode && typeof document !== 'undefined' && document.body) {
-            document.body.dataset.premiumMode = 'true'
         }
 
         debugInfo('[postprocessing] initialized — vignette + CA + bloom + DOF ready')

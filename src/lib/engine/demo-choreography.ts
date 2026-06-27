@@ -350,7 +350,6 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         ])
 
         ui.injectMicroDemoStyles()
-        document.body.dataset.demoActive = 'true'
         _demoPhase = PHASE.GLIDING
         _demoCancelled = false
 
@@ -424,7 +423,6 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
                 _demoPhase = PHASE.ARRIVED
                 // Fire-and-forget: demoFocusSetup is async but caller does not need to await.
                 void demoFocusSetup(demoNode)
-                document.body.dataset.focusOrigin = 'micro-demo'
                 document.dispatchEvent(
                     new CustomEvent('micro-demo-node-highlight', {
                         detail: { index: demoNode, phase: 'arrived' }
