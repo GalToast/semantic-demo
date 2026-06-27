@@ -11,7 +11,31 @@ import { getViewportSize } from '../utils/environment'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
 
-const state = appState as unknown as SemanticState
+// ── PRIVATE HELPERS — typed accessors (Phase 17 cast consolidation) ───────
+
+/**
+ * `state` is localized to this module — every consumer reads it as
+ * SemanticState, so we route through a single helper that owns the
+ * `unknown`-shape bridge from the global appState.
+ */
+function getRenderState(): SemanticState {
+    return appState as unknown as SemanticState
+}
+
+/**
+ * Some host elements carry a `_searchStateNamespace` data slot populated by
+ * the search-result DOM lifecycle. The slot is optional and unstructured at
+ * the DOM type level; this interface narrows what we actually read.
+ */
+interface SearchStateNamespacedElement {
+    _searchStateNamespace?: Record<string, unknown>
+}
+
+function getSearchStateNamespace(el: HTMLElement): SearchStateNamespacedElement {
+    return el as unknown as SearchStateNamespacedElement
+}
+
+const state = getRenderState()
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -325,9 +349,7 @@ export function setActiveSearchResultRow(
     }
 
     if (reveal && activeRow) {
-        const searchState = (resultsEl as unknown as Record<string, unknown>)._searchStateNamespace as
-            | Record<string, unknown>
-            | undefined
+        const searchState = getSearchStateNamespace(resultsEl)._searchStateNamespace
         if (
             searchState &&
             typeof searchState.isMobileRouteFieldPeekActive === 'function' &&
@@ -345,7 +367,7 @@ export function setActiveSearchResultRow(
 
 export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void {
     if (!resultsEl || !state.currentSearchSummary) return
-    const summary = state.currentSearchSummary as unknown as SearchSummary
+    const summary: SearchSummary = state.currentSearchSummary
     const anchorIndex = summary.anchorIndex
     const topIndex = summary.topIndex ?? null
     const navState = state.navState
