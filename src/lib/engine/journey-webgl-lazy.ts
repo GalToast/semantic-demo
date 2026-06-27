@@ -35,7 +35,7 @@ function ensureWebglModule(): Promise<typeof import('@lib/journey/webgl')> {
                 // the environment is unavailable. The next call to ensureWebglModule
                 // will retry the import.
                 webglPromise = null
-                return null as any
+                return null as unknown as typeof import('@lib/journey/webgl')
             })
     }
     return webglPromise
@@ -158,7 +158,7 @@ function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
             })
             .catch(() => {
                 routeArrivalPromise = null
-                return null as any
+                return null as unknown as RouteArrivalModule
             })
     }
     return routeArrivalPromise
@@ -192,7 +192,7 @@ function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/threa
             })
             .catch(() => {
                 inspectorWebglPromise = null
-                return null as any
+                return null as unknown as typeof import('@lib/journey/thread-inspector-webgl')
             })
     }
     return inspectorWebglPromise
