@@ -151,7 +151,8 @@ vi.mock('@lib/stores/camera.svelte', () => ({
 
 vi.mock('@lib/stores/demo.svelte', () => ({
     demoStore: () => ({ phase: _demoPhase.value }),
-    demoPhase: () => _demoPhase.value
+    demoPhase: () => _demoPhase.value,
+    isDemoActive: () => _demoPhase.value !== 'IDLE'
 }))
 
 vi.mock('@lib/state/app.svelte', () => ({

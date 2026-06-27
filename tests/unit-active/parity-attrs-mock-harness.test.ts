@@ -227,7 +227,8 @@ vi.mock('@lib/stores/demo.svelte', () => ({
             return () => {}
         }
     }),
-    demoPhase: () => mockState.demoPhase
+    demoPhase: () => mockState.demoPhase,
+    isDemoActive: () => mockState.demoPhase !== 'idle'
 }))
 
 vi.mock('@lib/stores/engine-ready.svelte', () => ({

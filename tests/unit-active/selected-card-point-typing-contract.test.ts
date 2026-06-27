@@ -140,16 +140,18 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
     })
 
     it('DOM property storage uses intersection types (not as any)', () => {
-        // W48-Phase-3 tightened these from `as any` to intersection types
+        // W48-Phase-3 tightened these from `as any` to intersection types.
+        // W48-Timer-Phase removed the `_autoHideTimer` antipattern — that timer
+        // is now tracked via DisposableRegistry (not stored on the DOM).
         const source = readSource('src/lib/journey/selected-card.ts')
         // stage._focusStageKeydownListener — typed via HTMLElement & { ... }
         expect(source).toMatch(/stage\s+as\s+HTMLElement\s*&\s*\{[^}]*_focusStageKeydownListener/)
         // onboardingHint._dismissedThisSession — typed via HTMLElement & { ... }
         expect(source).toMatch(/onboardingHint\s+as\s+HTMLElement\s*&\s*\{[^}]*_dismissedThisSession/)
-        expect(source).toMatch(/onboardingHint\s+as\s+HTMLElement\s*&\s*\{[^}]*_autoHideTimer/)
+        // DisposableRegistry is now used (timer leak fix)
+        expect(source).toMatch(/new DisposableRegistry/)
         // Ensure no `as any` remains for these patterns
         expect(source).not.toMatch(/\(stage\s+as\s+any\)\._focusStageKeydownListener/)
         expect(source).not.toMatch(/\(onboardingHint\s+as\s+any\)\._dismissedThisSession/)
-        expect(source).not.toMatch(/\(onboardingHint\s+as\s+any\)\._autoHideTimer/)
     })
 })

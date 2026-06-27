@@ -35,9 +35,10 @@ import {
     refreshCompositionState as refreshCompositionStateAction,
     setSemanticDiveMode as setSemanticDiveModeAction,
     resetExplorationFocus as resetExplorationFocusAction,
-    resetExperienceState as resetExperienceStateAction
+    resetExperienceState as resetExperienceStateAction,
+    switchView as switchViewAction
 } from '@lib/orchestration/lifecycle'
-import { switchView as switchViewAction } from '@lib/orchestration/view-controller'
+import { setSurface as setSurfaceAction } from '@lib/stores/navigation.svelte'
 import { search } from '@lib/search/state'
 import { setTrailFromSeed } from '@lib/journey/neighborhood'
 import {
@@ -117,7 +118,10 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
             ...args: unknown[]
         ) => unknown,
         requestSemanticGuide: ((_point?: unknown) => requestSemanticGuide()) as (...args: unknown[]) => unknown,
-        showSemanticThreadsDetail: (() => showSemanticThreadsDetail()) as (...args: unknown[]) => unknown
+        showSemanticThreadsDetail: ((detail?: unknown) => showSemanticThreadsDetail(detail as never)) as (
+            ...args: unknown[]
+        ) => unknown,
+        setSurface: ((surface: string) => setSurfaceAction(surface as any)) as (...args: unknown[]) => unknown
     }
 
     return actions

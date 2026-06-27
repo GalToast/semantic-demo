@@ -14,6 +14,7 @@ import type { BusinessRecord, SemanticNeighborDetail } from '@lib/types/business
 import type { Point3D } from '@lib/types/webgl'
 import { appState as state } from '@lib/state/app.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
+import { debugWarn } from '@lib/utils/debug'
 import {
     normalizeRelationshipRole,
     type RelationshipRole,
@@ -353,8 +354,18 @@ export function getSemanticThreadCandidates(index: number, ...args: unknown[]): 
     }
 
     // Legacy path — read from state
+    debugWarn(
+        '[thread-model] legacy path: index=',
+        index,
+        'state.points?.length=',
+        state.points?.length,
+        'state.semanticNeighborMapByLeadId?.size=',
+        state.semanticNeighborMapByLeadId?.size,
+        'state.pointIndexByLeadId?.size=',
+        state.pointIndexByLeadId?.size
+    )
     if (!Number.isFinite(index) || index < 0 || index >= state.points.length) return []
-    const point = state.points[index]
+    const point = state.points[index] as unknown as BusinessRecord
     const leadId = normalizeLeadId(point?.lead_id)
     if (!leadId) return []
 
