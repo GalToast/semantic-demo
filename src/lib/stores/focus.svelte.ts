@@ -38,6 +38,8 @@ export interface FocusStoreState extends FocusState {
     strandContinuityPhase: 'idle' | 'exploring' | 'arrived' | 'departing'
 }
 
+export type PocketRoleFilter = 'all' | 'direct' | 'support' | 'civic'
+
 const INITIAL_FOCUS: FocusStoreState = {
     pocketNodes: [],
     pocketMeta: null,
@@ -54,6 +56,7 @@ const INITIAL_FOCUS: FocusStoreState = {
     selectedBusiness: null,
     infoPanelOpen: true,
     pocketListVisible: false,
+    pocketRoleFilter: 'all' as PocketRoleFilter,
     settling: false,
     transitionMode: 'idle',
     transitionStartedAt: 0,
@@ -161,6 +164,7 @@ function _readFocusSnapshot(): FocusStoreState {
         pocketTransitionStartedAt: source.pocketTransitionStartedAt ?? 0,
         infoPanelOpen: source.infoPanelOpen ?? true,
         pocketListVisible: source.pocketListVisible ?? false,
+        pocketRoleFilter: (source.pocketRoleFilter as PocketRoleFilter) ?? 'all',
         transitionMode: source.focusTransitionMode ?? 'idle',
         transitionStartedAt: source.focusTransitionStartedAt ?? 0,
         orbitSlack: { ...orbitSlack } as FocusOrbitSlackState,
@@ -204,6 +208,7 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
     appState.pocketTransitionStartedAt = next.pocketTransitionStartedAt
     appState.infoPanelOpen = next.infoPanelOpen
     appState.pocketListVisible = next.pocketListVisible
+    appState.pocketRoleFilter = next.pocketRoleFilter
     appState.focusTransitionMode = next.transitionMode
     appState.focusTransitionStartedAt = next.transitionStartedAt
     // Reverse-map semanticDiveMode → navState.trailDepth
@@ -268,6 +273,7 @@ function _createFocusStore(): FocusStoreApi {
         appState.pocketTransitionStartedAt = value.pocketTransitionStartedAt
         appState.infoPanelOpen = value.infoPanelOpen
         appState.pocketListVisible = value.pocketListVisible
+        appState.pocketRoleFilter = value.pocketRoleFilter
         appState.focusTransitionMode = value.transitionMode
         appState.focusTransitionStartedAt = value.transitionStartedAt
         appState.inspectedStrandDiagnostics.active = value.threadInspector.active
@@ -310,6 +316,10 @@ export function clearPocketNodes(): void {
 
 export function setPocketListVisible(visible: boolean): void {
     withFocusNotify((s) => ({ ...s, pocketListVisible: visible }))
+}
+
+export function setPocketRoleFilter(filter: PocketRoleFilter): void {
+    withFocusNotify((s) => ({ ...s, pocketRoleFilter: filter }))
 }
 
 export function pinThread(index: number): void {

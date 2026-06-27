@@ -277,6 +277,7 @@ export interface FocusState {
     selectedBusiness: BusinessRecord | null
     infoPanelOpen: boolean
     pocketListVisible: boolean
+    pocketRoleFilter: 'all' | 'direct' | 'support' | 'civic'
     settling: boolean
     transitionMode: FocusTransitionMode
     transitionStartedAt: number

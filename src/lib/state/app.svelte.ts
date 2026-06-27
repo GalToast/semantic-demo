@@ -534,6 +534,7 @@ class AppState {
     pocketTransitionStartedAt = $state<number>(0)
     infoPanelOpen = $state<boolean>(true)
     pocketListVisible = $state<boolean>(false)
+    pocketRoleFilter = $state<'all' | 'direct' | 'support' | 'civic'>('all')
     semanticNeighborMapByLeadId = $state<Map<string, SemanticNeighborEntry>>(new Map())
     semanticThreadBundle = $state<SemanticThreadBundle | null>(null)
     semanticThreadArtifactName = $state<string | null>(null)
@@ -598,7 +599,6 @@ class AppState {
     // ==== URL STATE TRACKING ====
     applyingUrlState = $state<boolean>(false)
     restoringBrowserHistory = $state<boolean>(false)
-
 }
 
 // Singleton opt-in instance — consumers can import and use this instead of the legacy state.

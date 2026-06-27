@@ -73,7 +73,9 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
     }
 
     const actions: Record<string, (...args: unknown[]) => unknown> = {
-        switchView: ((view: string) => (switchViewAction as (v: string) => void)(view)) as (...args: unknown[]) => unknown,
+        switchView: ((view: string) => (switchViewAction as (v: string) => void)(view)) as (
+            ...args: unknown[]
+        ) => unknown,
         focusOnNode: ((index: number, options?: Record<string, unknown>) => {
             const result = focusOnNodeAction(index, options)
             refreshTraversalUiForCompatAction('focusOnNode')
@@ -83,24 +85,37 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
             setTrailDepthAction(depth)
             refreshTraversalUiForCompatAction('setTrailDepth')
         }) as (...args: unknown[]) => unknown,
-        setSemanticDiveMode: ((enabled: boolean) => setSemanticDiveModeAction(enabled)) as (...args: unknown[]) => unknown,
+        setSemanticDiveMode: ((enabled: boolean) => setSemanticDiveModeAction(enabled)) as (
+            ...args: unknown[]
+        ) => unknown,
         refreshCompositionState: (() => {
             refreshCompositionStateAction()
             refreshTraversalUiForCompatAction('refreshCompositionState')
         }) as (...args: unknown[]) => unknown,
-        resetExplorationFocus: ((options?: Record<string, unknown>) => resetExplorationFocusAction(options)) as (...args: unknown[]) => unknown,
+        resetExplorationFocus: ((options?: Record<string, unknown>) => resetExplorationFocusAction(options)) as (
+            ...args: unknown[]
+        ) => unknown,
         resetExperienceState: () => resetExperienceStateAction(),
         clearSearch: () => returnToOverviewAction(),
         returnToOverview: () => returnToOverviewAction(),
-        search: ((query: string, options?: Record<string, unknown>) => search(query, options)) as (...args: unknown[]) => unknown,
+        search: ((query: string, options?: Record<string, unknown>) => search(query, options)) as (
+            ...args: unknown[]
+        ) => unknown,
         setTrailFromSeed: ((index: number) => setTrailFromSeed(index)) as (...args: unknown[]) => unknown,
         traverseNeighbor: ((step: number) => traverseNeighbor(step)) as (...args: unknown[]) => unknown,
-        walkThreadNeighbor: ((index: number, options?: Record<string, unknown>) => walkThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
-        inspectThreadNeighbor: ((index: number, options?: Record<string, unknown>) => inspectThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
-        pinThreadNeighbor: ((index: number, options?: Record<string, unknown>) => pinThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
-        pinFirstAvailableNeighbor: ((options?: Record<string, unknown>) => pinFirstAvailableNeighbor(options)) as (...args: unknown[]) => unknown,
+        walkThreadNeighbor: ((index: number, options?: Record<string, unknown>) =>
+            walkThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
+        inspectThreadNeighbor: ((index: number, options?: Record<string, unknown>) =>
+            inspectThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
+        pinThreadNeighbor: ((index: number, options?: Record<string, unknown>) =>
+            pinThreadNeighbor(index, options)) as (...args: unknown[]) => unknown,
+        pinFirstAvailableNeighbor: ((options?: Record<string, unknown>) => pinFirstAvailableNeighbor(options)) as (
+            ...args: unknown[]
+        ) => unknown,
         unpinThreadInspection: (() => unpinThreadInspection()) as (...args: unknown[]) => unknown,
-        clearThreadInspection: ((options?: Record<string, unknown>) => clearThreadInspection(options)) as (...args: unknown[]) => unknown,
+        clearThreadInspection: ((options?: Record<string, unknown>) => clearThreadInspection(options)) as (
+            ...args: unknown[]
+        ) => unknown,
         requestSemanticGuide: ((_point?: unknown) => requestSemanticGuide()) as (...args: unknown[]) => unknown,
         showSemanticThreadsDetail: (() => showSemanticThreadsDetail()) as (...args: unknown[]) => unknown
     }

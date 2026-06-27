@@ -233,19 +233,38 @@
     return 5;
   });
 
+  // ── Relationship role filter ────────────────────────────────────────────
+
+  const ROLE_FILTER_OPTIONS: Array<'all' | 'direct' | 'support' | 'civic'> = ['all', 'direct', 'support', 'civic'];
+  const currentRoleFilter = $derived(focusStore().pocketRoleFilter ?? 'all');
+
+  function applyRoleFilter(candidates: NormalizedCandidate[]): NormalizedCandidate[] {
+    if (currentRoleFilter === 'all') return candidates;
+    return candidates.filter((c) => c.relationshipRole === currentRoleFilter);
+  }
+
   const filteredCandidates = $derived.by(() => {
     const candidates = currentThreadCandidates;
     const focusIdx = currentFocusedIndex;
-    return candidates
-      .filter((c) => Number.isFinite(c.index) && !(c.index === focusIdx))
-      .slice(0, candidateLimit);
+    return applyRoleFilter(
+      candidates.filter((c) => Number.isFinite(c.index) && !(c.index === focusIdx))
+    ).slice(0, candidateLimit);
   });
+
+  const showRoleFilters = $derived(
+    chromeHasFocus &&
+    currentThreadCandidates.some((c) => c.relationshipRole !== 'unclassified')
+  );
 
   const showNeighborRail = $derived(
     chromeHasFocus &&
     filteredCandidates.length > 0 &&
     (!threadInspectorActive() || threadInspector().source === 'rail-hover')
   );
+
+  function selectRoleFilter(filter: 'all' | 'direct' | 'support' | 'civic'): void {
+    setPocketRoleFilter(filter);
+  }
 
   function getPointForIndex(idx: number): BusinessRecord | null {
     if (idx < 0 || idx >= getBusinessRecords().length) return null;
@@ -347,6 +366,26 @@
       onPrev={goPrev}
       onNext={goNext}
     />
+
+    <!-- ├─ Role Filter Chips ──────────────────────────────────────────────── -->
+    {#if showRoleFilters}
+      <div class="focus-role-filters" id="focus-role-filters" role="group" aria-label="Filter neighbors by relationship">
+        {#each ROLE_FILTER_OPTIONS as filter}
+          {@const label = filter === 'all' ? 'All' : getRelationshipRoleLabel(filter, 'rail')}
+          {@const active = currentRoleFilter === filter}
+          <button
+            class="focus-role-filter-chip"
+            class:active
+            type="button"
+            data-role-filter={filter}
+            aria-pressed={active}
+            onclick={() => selectRoleFilter(filter)}
+          >
+            {label}
+          </button>
+        {/each}
+      </div>
+    {/if}
 
     <!-- ├─ Neighbor Rail ───────────────────────────────────────────────────── -->
     {#if showNeighborRail}

@@ -67,4 +67,3 @@ export function compassSteps(): CompassStep[] {
         return { phase, state }
     })
 }
-
