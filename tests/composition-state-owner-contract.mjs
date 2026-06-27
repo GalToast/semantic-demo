@@ -55,21 +55,40 @@ assert(
   'src/lib/stores/lifecycle.ts must export refreshCompositionState()'
 );
 
+// W47 drift retirement: parity-attrs.svelte.ts owns the 7 mirrored attrs
+// (activeView, graphContext, semanticDive, panelSurface, panelSurfaceDetail,
+// trailState, trailDepth). lifecycle.ts used to write them too; that was a
+// race because refreshCompositionState calls applyParityAttributes AFTER
+// applyCompositionState. The redundant writes were removed.
 for (const field of [
   'activeView',
   'graphContext',
   'semanticDive',
   'panelSurface',
   'panelSurfaceDetail',
-  'searchGlow',
   'trailState',
   'trailDepth',
 ]) {
   assert(
-    new RegExp(`root\\.dataset\\.${field}\\s*=`).test(lifecycleSrc),
-    `lifecycle.ts must write body dataset ${field} through applyCompositionState()`
+    new RegExp(`key:\\s*'${field}'`).test(parityAttrsSrc),
+    `parity-attrs.svelte.ts must own body dataset ${field} (PARITY_ATTRIBUTES descriptor)`
+  );
+  assert(
+    !new RegExp(`root\\.dataset\\.${field}\\s*=`).test(lifecycleSrc),
+    `lifecycle.ts must NOT write body dataset ${field} — parity-attrs owns it`
   );
 }
+
+// searchGlow is non-mirrored (not in PARITY_ATTRIBUTES) so lifecycle.ts
+// still owns it.
+assert(
+  /root\.dataset\.searchGlow\s*=/.test(lifecycleSrc),
+  'lifecycle.ts must keep writing body.dataset.searchGlow (non-mirrored attr)'
+);
+assert(
+  !new RegExp(`key:\\s*'searchGlow'`).test(parityAttrsSrc),
+  'parity-attrs.svelte.ts must NOT own searchGlow (lifecycle retains it)'
+);
 
 assert(
   /export function installParityAttributeSync\s*\(/.test(parityAttrsSrc),

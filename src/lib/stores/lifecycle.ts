@@ -106,7 +106,21 @@ export function derivePanelSurface(opts: {
 
 /**
  * Apply current state to body data-attributes for CSS composition.
- * Matches the legacy `applyCompositionState` in lifecycle.js.
+ *
+ * Mirrored attrs (activeView, trailState, trailDepth, graphContext,
+ * mapContext, semanticDive, panelSurface, panelSurfaceDetail) are
+ * written by parity-attrs.svelte.ts via refreshCompositionState →
+ * applyParityAttributes(computeParityAttributes()). We do not write them
+ * here to avoid races.
+ *
+ * What lifecycle.ts still owns:
+ *   - searchGlow — not in PARITY_ATTRIBUTES, no parity mirror
+ *   - mobileRoutePeek + mobileRoutePeekReason — not in PARITY_ATTRIBUTES,
+ *     managed here because we need the clear-on-graphContext !== 'idle' rule
+ *
+ * The derived locals (activeView, hasFocus, panelSurface, …) are still
+ * computed because `derivePanelSurface` is exported and used by callers
+ * that need the value without a DOM side effect.
  */
 export function applyCompositionState(): void {
     const $nav = get(navStore)
@@ -137,15 +151,11 @@ export function applyCompositionState(): void {
 
     const root = document.body
     if (root?.dataset) {
-        root.dataset.activeView = activeView
+        // searchGlow is non-mirrored; parity-attrs does not own it.
         root.dataset.searchGlow = $search.glowActive ? 'active' : 'inactive'
-        root.dataset.trailState = hasActiveTrailState ? 'active' : 'inactive'
-        root.dataset.trailDepth = String($nav.trailDepth ?? 0)
-        root.dataset.graphContext = activeView === 'galaxy' ? graphContext : 'idle'
-        root.dataset.mapContext = mapContext
-        root.dataset.semanticDive = activeView === 'galaxy' ? semanticDive : 'inactive'
-        root.dataset.panelSurface = panelSurface
-        root.dataset.panelSurfaceDetail = panelSurface
+        // mobileRoutePeek + reason are non-mirrored; clear them when
+        // the user enters a non-idle surface so the peek affordance
+        // doesn't stick around stale.
         if (graphContext !== 'idle') {
             delete root.dataset.mobileRoutePeek
             delete root.dataset.mobileRoutePeekReason

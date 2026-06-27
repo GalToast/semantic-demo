@@ -74,6 +74,14 @@ const EXEMPTED_SHAS = new Set<string>([
     // touches both docs and css files. The compound scope `docs+css`
     // accurately describes the contents.
     'b185ad78962333f549013df8656587e12b8c5528',
+    // 6db98959 — docs(data-store): ... — the original pre-amend commit
+    // had a docs(...) prefix but touched src/lib/data-store.ts (a code
+    // file). Amended to a9e4af8c with the correct refactor(data-store)
+    // prefix; the original SHA is still reachable from the parallel
+    // session's 49b30c0b (which landed between original-commit and
+    // amend). Grandfathered to avoid rewriting shared history; the
+    // live commit on master (a9e4af8c) has the correct prefix.
+    '6db9895945b820d37f5541ccc2e070a80c363f30',
     // 2612ba3 — test(search-rerank): ... — includes a verification
     // report .md alongside test files. Borderline but legitimate for
     // a test-and-verify commit.
