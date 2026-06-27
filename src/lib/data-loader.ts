@@ -137,9 +137,10 @@ function callDataWorker<T>(type: string, payload: unknown): Promise<T> {
             worker.terminate()
             fn()
         }
+        // eslint-disable-next-line no-restricted-syntax -- local-scoped promise timeout, cleared in finally
         const timeoutId = setTimeout(() => {
             settle(() => reject(new Error('Worker timeout')))
-        }, 30_000) // eslint-disable-line no-restricted-syntax -- local-scoped, cleared on settle()
+        }, 30_000)
         const handler = (event: MessageEvent<WorkerResponse>): void => {
             const res = event.data
             if (res.type === `${type}_SUCCESS`) {
@@ -636,5 +637,6 @@ function normalizeLeadId(id: unknown): string | null {
 }
 
 function delay(ms: number): Promise<void> {
-    return new Promise((resolve) => setTimeout(resolve, ms)) // eslint-disable-line no-restricted-syntax -- fire-and-forget Promise resolution
+    // eslint-disable-next-line no-restricted-syntax -- fire-and-forget Promise resolution
+    return new Promise((resolve) => setTimeout(resolve, ms))
 }
