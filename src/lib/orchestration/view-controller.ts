@@ -12,6 +12,7 @@ import { get } from 'svelte/store';
 import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts';
 import { animateCameraToTerrainPrelude } from '@lib/engine/camera-controls';
 import { applyMapFlatteningLayout } from '@lib/utils/map-flattening-layout';
+import { DisposableRegistry } from '@lib/utils/disposable-registry';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -44,9 +45,7 @@ const CONFIG = {
 
 // ── Internal State ────────────────────────────────────────────────────────────
 
-let _viewSwitchPreludeTimer: ReturnType<typeof setTimeout> | null = null;
-let _viewHandoffTimer: ReturnType<typeof setTimeout> | null = null;
-let _viewTransitioningCleanupTimer: ReturnType<typeof setTimeout> | null = null;
+const _registry = new DisposableRegistry({ label: 'view-controller' });
 let _refreshCompositionState: () => void = () => {};
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -65,14 +64,7 @@ export function initViewControllerAdapter(opts: { refreshCompositionState?: () =
  */
 export function hideViewHandoff(): void {
   const handoff = document.getElementById('view-handoff');
-  if (_viewHandoffTimer !== null) {
-    clearTimeout(_viewHandoffTimer);
-    _viewHandoffTimer = null;
-  }
-  if (_viewTransitioningCleanupTimer !== null) {
-    clearTimeout(_viewTransitioningCleanupTimer);
-    _viewTransitioningCleanupTimer = null;
-  }
+  _registry.disposeAll();
   // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
   if (!handoff) return;
   handoff.classList.remove('active');
@@ -114,21 +106,16 @@ export function showViewHandoff(view: ViewName): void {
   if (titleEl) titleEl.textContent = model.title;
   if (noteEl) noteEl.textContent = model.note;
 
-  if (_viewHandoffTimer !== null) {
-    clearTimeout(_viewHandoffTimer);
-    _viewHandoffTimer = null;
-  }
-
   handoff.setAttribute('aria-hidden', 'false');
   handoff.classList.add('active');
   // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
 
-  _viewHandoffTimer = setTimeout(() => {
+  // eslint-disable-next-line no-restricted-syntax -- nested in _registry.timer()
+  _registry.timer(setTimeout(() => {
     handoff.classList.remove('active');
     handoff.setAttribute('aria-hidden', 'true');
     // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
-    _viewHandoffTimer = null;
-  }, CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS);
+  }, CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS));
 }
 
 /**
@@ -146,15 +133,11 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
   const $nav = get(navStore);
   const previousView = $nav.currentView;
 
-  if (_viewSwitchPreludeTimer !== null) {
-    clearTimeout(_viewSwitchPreludeTimer);
-    _viewSwitchPreludeTimer = null;
-    // Counter-switch detected: the in-flight handoff overlay from the
-    // previous prelude is now stale — cancel it immediately so the
-    // wrong "switching to map" overlay doesn't linger during a
-    // galaxy→galaxy or map→galaxy reverse switch.
-    hideViewHandoff();
-  }
+  // Counter-switch detected: the in-flight handoff overlay from the
+  // previous prelude is now stale — cancel it immediately so the
+  // wrong "switching to map" overlay doesn't linger during a
+  // galaxy→galaxy or map→galaxy reverse switch.
+  hideViewHandoff();
 
   // Terrain prelude: galaxy → map with animated flattening
   const shouldPreludeToMap =
@@ -177,16 +160,12 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
   document.body.classList.add('view-transitioning');
 
   // Auto-remove transitioning class after animation
-  if (_viewTransitioningCleanupTimer !== null) {
-    clearTimeout(_viewTransitioningCleanupTimer)
-    _viewTransitioningCleanupTimer = null
-  }
-  _viewTransitioningCleanupTimer = setTimeout(() => {
-    _viewTransitioningCleanupTimer = null
+  // eslint-disable-next-line no-restricted-syntax -- nested in _registry.timer()
+  _registry.timer(setTimeout(() => {
     const current = get(navStore).currentView;
     if (current !== view) return; // Guard against rapid switching
     document.body.classList.remove('view-transitioning');
-  }, CONFIG.VIEW_HANDOFF_OUT_MS);
+  }, CONFIG.VIEW_HANDOFF_OUT_MS));
 
   // Map-specific setup
   if (view === 'map') {
@@ -232,8 +211,8 @@ function _startTerrainPrelude(
   showViewHandoff('map');
   animateCameraToTerrainPrelude({ duration: CONFIG.MAP_HANDOFF_PRELUDE_MS });
 
-  _viewSwitchPreludeTimer = setTimeout(() => {
-    _viewSwitchPreludeTimer = null;
+  // eslint-disable-next-line no-restricted-syntax -- nested in _registry.timer()
+  _registry.timer(setTimeout(() => {
     const current = get(navStore).currentView;
     if (current !== 'galaxy') return;
     switchView('map', {
@@ -241,7 +220,7 @@ function _startTerrainPrelude(
       skipTerrainPrelude: true,
       handoffFrom: options.handoffFrom,
     });
-  }, CONFIG.MAP_HANDOFF_PRELUDE_MS);
+  }, CONFIG.MAP_HANDOFF_PRELUDE_MS));
 }
 
 function _clearGalaxyTimers(): void {
