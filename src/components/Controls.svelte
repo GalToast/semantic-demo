@@ -5,6 +5,7 @@
   import { cameraState, setAutoRotate, startCameraTransition, resetCamera, CAMERA_CONFIG } from '@lib/stores/camera.svelte.ts';
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
+  import { showToast, showErrorToast } from '@lib/stores/toast.svelte';
 
   interface Props {
     visible?: boolean;
@@ -58,9 +59,59 @@
     resetCamera();
   }
 
-  function shareLink(): void {
-    const url = window.location.href;
-    navigator.clipboard.writeText(url).catch(() => {});
+  /**
+   * Legacy fallback for browsers (or insecure contexts) where the async
+   * Clipboard API is unavailable. Uses a hidden textarea + execCommand('copy'),
+   * which still works in non-secure contexts and old Safari.
+   * Returns true on success, false on failure.
+   */
+  function legacyCopyToClipboard(text: string): boolean {
+    try {
+      const ta = document.createElement('textarea')
+      ta.value = text
+      ta.setAttribute('readonly', '')
+      ta.style.position = 'fixed'
+      ta.style.top = '0'
+      ta.style.left = '0'
+      ta.style.opacity = '0'
+      ta.style.pointerEvents = 'none'
+      document.body.appendChild(ta)
+      ta.focus()
+      ta.select()
+      const ok = document.execCommand('copy')
+      document.body.removeChild(ta)
+      return ok
+    } catch {
+      return false
+    }
+  }
+
+  /**
+   * Copy the current page URL to the clipboard and ALWAYS give the user
+   * feedback (a toast on success or an error toast on failure). The previous
+   * implementation silently swallowed the clipboard failure with .catch(() => {})
+   * and gave no success indication, so users had no way to know whether the
+   * "Share link" button had done anything.
+   */
+  async function shareLink(): Promise<void> {
+    const url = window.location.href
+    let copied = false
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      try {
+        await navigator.clipboard.writeText(url)
+        copied = true
+      } catch {
+        // Fall through to the legacy fallback below.
+      }
+    }
+    if (!copied) {
+      copied = legacyCopyToClipboard(url)
+    }
+    if (copied) {
+      showToast('Link copied', 'Share this URL to send someone the same view.')
+    } else {
+      showErrorToast('Copy failed', 'Clipboard access was blocked. Long-press the address bar to copy the URL instead.')
+    }
   }
 </script>
 

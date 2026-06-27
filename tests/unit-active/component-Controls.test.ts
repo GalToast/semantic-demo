@@ -16,10 +16,14 @@
  * 10. Clicking zoom-out moves the camera farther from the target (distance grows)
  * 11. Zoom respects orbit distance clamps (does not cross target or escape bounds)
  */
-import { describe, it, expect, beforeEach } from 'vitest'
+import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest'
 import { render, fireEvent } from '@testing-library/svelte'
 import Controls from '../../src/components/Controls.svelte'
 import { cameraState } from '../../src/lib/stores/camera.svelte.ts'
+import { toastStore } from '../../src/lib/stores/toast.svelte'
+
+// Mock navigator.clipboard before each test; reset to original after.
+const originalClipboard = (navigator as { clipboard?: unknown }).clipboard
 
 function distance(a: readonly number[], b: readonly number[]): number {
     const dx = a[0] - b[0]
@@ -146,5 +150,110 @@ describe('Controls component — zoom behavior', () => {
         await fireEvent.click(btn)
         // No transition should have been scheduled: token stays at 0 (idle).
         expect(cameraState.transition.token).toBe(0)
+    })
+})
+
+describe('Controls component — shareLink feedback (regression: silent no-op)', () => {
+    beforeEach(() => {
+        // Reset toast state before each test.
+        toastStore.set({ message: '', variant: 'info', active: false })
+    })
+
+    afterEach(() => {
+        // Restore the real clipboard API between tests.
+        if (originalClipboard !== undefined) {
+            ;(navigator as { clipboard: unknown }).clipboard = originalClipboard
+        } else {
+            delete (navigator as { clipboard?: unknown }).clipboard
+        }
+    })
+
+    it('share-link success path surfaces an info toast with the URL', async () => {
+        const writeText = vi.fn().mockResolvedValue(undefined)
+        Object.defineProperty(navigator, 'clipboard', {
+            value: { writeText },
+            configurable: true
+        })
+        const { container } = render(Controls)
+        const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
+        expect(btn).toBeTruthy()
+        // fireEvent.click awaits the click handler; our handler awaits the
+        // mocked clipboard promise, so the toast is set by the time this returns.
+        await fireEvent.click(btn)
+        expect(writeText).toHaveBeenCalledTimes(1)
+        expect(writeText).toHaveBeenCalledWith(window.location.href)
+        let captured: { message: string; variant: 'info' | 'error'; active: boolean } | null = null
+        toastStore.subscribe((s) => (captured = s))()
+        expect(captured?.active).toBe(true)
+        expect(captured?.variant).toBe('info')
+        expect(captured?.message).toContain('Link copied')
+    })
+
+    it('share-link failure path surfaces an error toast (no silent catch)', async () => {
+        const writeText = vi.fn().mockRejectedValue(new Error('Permission denied'))
+        Object.defineProperty(navigator, 'clipboard', {
+            value: { writeText },
+            configurable: true
+        })
+        // Force the legacy fallback to also fail by stubbing document.execCommand
+        // (jsdom doesn't expose it as a defined property, so install it).
+        const originalExec = (document as { execCommand?: unknown }).execCommand
+        Object.defineProperty(document, 'execCommand', {
+            value: () => false,
+            configurable: true,
+            writable: true
+        })
+        try {
+            const { container } = render(Controls)
+            const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
+            await fireEvent.click(btn)
+            let captured: { message: string; variant: 'info' | 'error'; active: boolean } | null = null
+            toastStore.subscribe((s) => (captured = s))()
+            expect(captured?.active).toBe(true)
+            expect(captured?.variant).toBe('error')
+            expect(captured?.message).toContain('Copy failed')
+        } finally {
+            if (originalExec === undefined) {
+                delete (document as { execCommand?: unknown }).execCommand
+            } else {
+                Object.defineProperty(document, 'execCommand', {
+                    value: originalExec,
+                    configurable: true,
+                    writable: true
+                })
+            }
+        }
+    })
+
+    it('share-link falls back to execCommand when clipboard API is missing', async () => {
+        // Some browsers expose no clipboard at all (e.g. insecure http context).
+        Object.defineProperty(navigator, 'clipboard', { value: undefined, configurable: true })
+        const originalExec = (document as { execCommand?: unknown }).execCommand
+        const execMock = vi.fn(() => true)
+        Object.defineProperty(document, 'execCommand', {
+            value: execMock,
+            configurable: true,
+            writable: true
+        })
+        try {
+            const { container } = render(Controls)
+            const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
+            await fireEvent.click(btn)
+            expect(execMock).toHaveBeenCalledWith('copy')
+            let captured: { message: string; variant: 'info' | 'error'; active: boolean } | null = null
+            toastStore.subscribe((s) => (captured = s))()
+            expect(captured?.variant).toBe('info')
+            expect(captured?.message).toContain('Link copied')
+        } finally {
+            if (originalExec === undefined) {
+                delete (document as { execCommand?: unknown }).execCommand
+            } else {
+                Object.defineProperty(document, 'execCommand', {
+                    value: originalExec,
+                    configurable: true,
+                    writable: true
+                })
+            }
+        }
     })
 })
