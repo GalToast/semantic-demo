@@ -18,6 +18,7 @@ import {
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '../orchestration/parity-attrs.svelte'
+import { appState } from '@lib/state/app.svelte'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
@@ -169,7 +170,7 @@ export function applyCompositionState(): void {
                   null)
                 : null
             appSt.selectedPoint = $focus.selectedBusiness
-            appSt.semanticDiveMode = semanticDive === 'active'
+            appSt.semanticDiveMode = appState.composition.semanticDive === 'active'
             if (appSt.navState) {
                 appSt.navState.focusedIndex = appSt.focusedNode
                 appSt.navState.mode = $nav.mode
