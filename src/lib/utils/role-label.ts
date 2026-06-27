@@ -29,7 +29,11 @@ export function _getSelectedBusinessRoleLabel(point: Point): string {
         }
     }
 
-    if (index >= 0 && appState.navState?.mode === 'trail' && (appState.navState.walkHistoryIndices || []).includes(index)) {
+    if (
+        index >= 0 &&
+        appState.navState?.mode === 'trail' &&
+        (appState.navState.walkHistoryIndices || []).includes(index)
+    ) {
         return 'Trail Step'
     }
 

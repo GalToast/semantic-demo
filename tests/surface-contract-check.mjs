@@ -1363,7 +1363,8 @@ async function assert_field_node(page, ctx) {
 
     // Simulate field-node state
     await page.evaluate(() => {
-        document.body.classList.add('is-active')
+        document.body.classList.add('is-active', 'surface-focus-search')
+        document.body.classList.remove('surface-idle')
         document.body.dataset.activeView = 'galaxy'
         document.body.dataset.graphContext = 'focus-search'
         document.body.dataset.panelSurface = 'focus-search'
@@ -4950,7 +4951,8 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     await waitForFocusStageLayoutStable(page)
     const info = await page.evaluate(() => {
         function forceSemanticDiveContractSurface() {
-            document.body.classList.add('is-active')
+            document.body.classList.add('is-active', 'surface-semantic-dive')
+            document.body.classList.remove('surface-idle')
             document.body.dataset.activeView = 'galaxy'
             document.body.dataset.graphContext = 'focus'
             document.body.dataset.semanticDive = 'active'
