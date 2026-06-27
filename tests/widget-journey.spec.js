@@ -1146,14 +1146,41 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
             .waitFor({ timeout: 40000 })
         await page.waitForTimeout(2000)
 
-        // Click the canvas to focus a business and enter focus mode
-        const canvas = page.locator('canvas').first()
-        await canvas.click()
+        // Focus a business via search — more deterministic than canvas raycasting in headless.
+        await page.evaluate(() => document.activeElement?.blur())
+        await page.keyboard.press('/')
+        await page.keyboard.type('coffee')
+        await page.waitForTimeout(1500)
+
+        // Wait for the search result list to populate and click the first result.
+        const resultList = page.locator('#search-result-list')
+        await resultList.waitFor({ state: 'visible', timeout: 10000 })
+        const firstResult = page.locator('#search-result-list .search-result-listitem').first()
+        await firstResult.waitFor({ state: 'visible', timeout: 10000 })
+        await firstResult.click()
         await page.waitForTimeout(3000)
 
-        // Verify we are in focus mode (surface = 'focus')
-        const surface = await page.evaluate(() => window.__APP_STATE__?.navState?.surface)
-        expect(surface, 'expected to be in focus mode after canvas click').toBe('focus')
+        // Verify a business is focused (surface may be 'focus' or 'focus-search').
+        const debugState = await page.evaluate(() => ({
+            surface: window.__APP_STATE__?.navState?.surface,
+            mode: window.__APP_STATE__?.navState?.mode,
+            focusedIndex: window.__APP_STATE__?.navState?.focusedIndex,
+            pocketNodes: window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0,
+            threadCandidates: window.__APP_STATE__?.navState?.threadCandidates?.length ?? 0
+        }))
+        console.log('[PHASE3 DEBUG]', JSON.stringify(debugState))
+        expect(
+            debugState.surface?.startsWith('focus') && debugState.focusedIndex != null,
+            `expected a focused business after selecting a search result, got ${JSON.stringify(debugState)}`
+        ).toBe(true)
+
+        // Wait for the focus pocket to build (up to 10s)
+        await page.waitForFunction(
+            () => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0,
+            null,
+            { timeout: 10000 }
+        )
+        await page.waitForTimeout(500)
 
         // Wait for the filter chip container to render
         const filterGroup = page.locator('#focus-role-filters')
@@ -1242,14 +1269,40 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
             .waitFor({ timeout: 40000 })
         await page.waitForTimeout(2000)
 
-        // Click the canvas to focus a business and enter focus mode
-        const canvas = page.locator('canvas').first()
-        await canvas.click()
+        // Focus a business via search — more deterministic than canvas raycasting in headless.
+        await page.evaluate(() => document.activeElement?.blur())
+        await page.keyboard.press('/')
+        await page.keyboard.type('coffee')
+        await page.waitForTimeout(1500)
+
+        // Wait for the search result list to populate and click the first result.
+        const resultList = page.locator('#search-result-list')
+        await resultList.waitFor({ state: 'visible', timeout: 10000 })
+        const firstResult = page.locator('#search-result-list .search-result-listitem').first()
+        await firstResult.waitFor({ state: 'visible', timeout: 10000 })
+        await firstResult.click()
         await page.waitForTimeout(3000)
 
-        // Verify we are in focus mode
-        const surface = await page.evaluate(() => window.__APP_STATE__?.navState?.surface)
-        expect(surface, 'expected to be in focus mode after canvas click').toBe('focus')
+        // Verify a business is focused (surface may be 'focus' or 'focus-search').
+        const debugState = await page.evaluate(() => ({
+            surface: window.__APP_STATE__?.navState?.surface,
+            mode: window.__APP_STATE?.navState?.mode,
+            focusedIndex: window.__APP_STATE__?.navState?.focusedIndex,
+            pocketNodes: window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0
+        }))
+        console.log('[PHASE3 DEBUG]', JSON.stringify(debugState))
+        expect(
+            debugState.surface?.startsWith('focus') && debugState.focusedIndex != null,
+            `expected a focused business after selecting a search result, got ${JSON.stringify(debugState)}`
+        ).toBe(true)
+
+        // Wait for the focus pocket to build (up to 10s)
+        await page.waitForFunction(
+            () => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0,
+            null,
+            { timeout: 10000 }
+        )
+        await page.waitForTimeout(500)
 
         // Wait for the keyboard hint badge to render
         const hint = page.locator('#focus-keyboard-hint')

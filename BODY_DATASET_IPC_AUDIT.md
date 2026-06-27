@@ -6,12 +6,12 @@
 > They massively overstate current drift. A full re-scan on 2026-06-27 (commit
 > `c8ecdf6b`) shows the multi-writer drift problem is **~98% resolved**:
 >
-> | Metric | Doc's snapshot (2026-06-26) | Verified current (2026-06-27) |
-> | --- | --- | --- |
-> | Total writer sites | 120 | **24** |
-> | `semanticDive` bypass writers | 6 ("most heavily contested") | **0** — resolved |
-> | camera / loading / viewport / filter bypass writers | dozens | **0** — resolved |
-> | **Remaining DRIFT sites** (mirrored attr, races parity) | many | **2** (see below) |
+> | Metric                                                  | Doc's snapshot (2026-06-26)  | Verified current (2026-06-27) |
+> | ------------------------------------------------------- | ---------------------------- | ----------------------------- |
+> | Total writer sites                                      | 120                          | **24**                        |
+> | `semanticDive` bypass writers                           | 6 ("most heavily contested") | **0** — resolved              |
+> | camera / loading / viewport / filter bypass writers     | dozens                       | **0** — resolved              |
+> | **Remaining DRIFT sites** (mirrored attr, races parity) | many                         | **2** (see below)             |
 >
 > ### The only 2 remaining drift sites
 >
@@ -45,7 +45,7 @@
 - Parity-attrs descriptor keys: **44**
 - Parity-owned attrs actually referenced in src/: **38**
 - Unused parity descriptor keys (no body.dataset.X access): **6**
-  - engineState, journeyCompass, journeyCompassCopy, journeyCompassDensity, searchStatus, threadInspect
+    - engineState, journeyCompass, journeyCompassCopy, journeyCompassDensity, searchStatus, threadInspect
 
 ## Phase 2 — Classification
 
@@ -514,46 +514,46 @@ NOT in the PARITY_ATTRIBUTES descriptor. Written exclusively by legacy/bypass co
 
 ### Bypass writer files (34 files, excluding parity-attrs.svelte.ts)
 
-| File | Attrs Written | Priority |
-|------|--------------|----------|
-| `src/App.svelte` | testReady, activeView, graphContext, semanticDive, panelSurface, panelSurfaceDetail, compact, focusSearchForced | HIGH — top-level legacy sync |
-| `src/main.ts` | renderKind | LOW — init only |
-| `src/lib/data-store.ts` | loadingPhase, graphicsMode | MEDIUM — should be parity-owned |
-| `src/lib/ui/loading.ts` | loadingPhase, loadingOverlay, sceneReady | MEDIUM — conflicts with parity |
-| `src/lib/stores/viewport.svelte.ts` | compact, mobile, reducedMotion | MEDIUM — parity already owns these |
-| `src/lib/stores/camera.svelte.ts` | cameraTransition, cameraSlack, cameraAssist, cameraSlackReason, cameraAssistReason, routeExploration, focusTransition | HIGH — major conflict zone |
-| `src/lib/stores/filter.svelte.ts` | filtersActive | MEDIUM — parity already owns |
-| `src/lib/stores/demo.svelte.ts` | demoPhase | MEDIUM — parity already owns |
-| `src/lib/stores/engine-ready.svelte.ts` | renderKind | LOW |
-| `src/lib/stores/lifecycle.ts` | threadInspectSurface, mapContext | MEDIUM |
-| `src/lib/stores/test-compat.svelte.ts` | (reads only, no writes) | N/A |
-| `src/lib/engine/camera-controls-core.svelte.ts` | focusTransition, focusTransitionPhase, cameraAssist, cameraAssistReason, routeExploration, routeExplorationReason | HIGH — conflicts with parity |
-| `src/lib/engine/three-engine-core.ts` | graphicsMode, postprocessing | LOW-MEDIUM |
-| `src/lib/engine/three-postprocessing.ts` | premiumMode | LOW — feature flag |
-| `src/lib/engine/renderer/webgl-fallback.ts` | graphicsMode | LOW-MEDIUM |
-| `src/lib/engine/scene-reveal.ts` | sceneReveal | LOW |
-| `src/lib/engine/map-state.ts` | routeDirector, routeDirectorReason, terrainHandoff, terrainHandoffFrom, terrainHandoffTo, terrainRouteCount | MEDIUM — domain-specific |
-| `src/lib/engine/demo-choreography.ts` | demoActive, focusOrigin | LOW-MEDIUM |
-| `src/lib/engine/camera-choreography/cursor.ts` | focusOrigin | LOW |
-| `src/lib/engine/camera-choreography/orbit-slack.ts` | cameraSlack, cameraSlackReason | MEDIUM — conflicts with parity |
-| `src/lib/orchestration/app-orchestration.svelte.ts` | activeView, graphContext, semanticDive, panelSurface, panelSurfaceDetail, compact, focusSearchForced, journeyNavigationOwner, focusPanelMode | HIGH — duplicate parity writes |
-| `src/lib/orchestration/compass-controller.ts` | semanticDive, panelSurface, trailDepth, viewMode, panelSurfaceMode, graphContext, mapContext | HIGH — conflicts with parity |
-| `src/lib/orchestration/lifecycle.ts` | semanticDive | MEDIUM |
-| `src/lib/orchestration/url-state.ts` | focusSearchForced, panelSurface, journeyPhase, graphContext, viewMode | HIGH — URL sync conflicts |
-| `src/lib/orchestration/window-actions.ts` | trailDepth, trailState | MEDIUM — parity already owns trailDepth |
-| `src/lib/orchestration/view-controller.ts` | viewHandoffActive | LOW — reads only |
-| `src/lib/search/results-ui.ts` | mobileRoutePeek | LOW |
-| `src/lib/search/search-panel-adapter.ts` | searchGlow, mobileSearchSheet, mobileSearchSheetUser, panelSurfaceDetail | MEDIUM — mobile sheet state |
-| `src/lib/journey/semantic-dive.ts` | journeyPhase, insideWalkState, semanticDive | MEDIUM |
-| `src/lib/journey/route-trace.ts` | routeMotion | LOW |
-| `src/lib/journey/thread-inspector-state.ts` | threadInspectSurface | MEDIUM |
-| `src/lib/journey/thread-inspector-render.ts` | threadInspectSurface | MEDIUM |
-| `src/lib/utils/strand-continuity.ts` | strandJourney, strandJourneyTarget, strandJourneyFrom, strandJourneyReason | MEDIUM — parity owns strandJourney |
-| `src/lib/utils/focus-panel-mode.ts` | focusPanelMode | LOW |
-| `src/components/Canvas.svelte` | hoveredNode | LOW — component-scoped |
-| `src/components/Splash.svelte` | appState | LOW — splash screen only |
-| `src/components/FocusCard.svelte` | (reads only) | N/A |
-| `src/components/CompassRail.svelte` | (reads only) | N/A |
+| File                                                | Attrs Written                                                                                                                                | Priority                                |
+| --------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------- |
+| `src/App.svelte`                                    | testReady, activeView, graphContext, semanticDive, panelSurface, panelSurfaceDetail, compact, focusSearchForced                              | HIGH — top-level legacy sync            |
+| `src/main.ts`                                       | renderKind                                                                                                                                   | LOW — init only                         |
+| `src/lib/data-store.ts`                             | loadingPhase, graphicsMode                                                                                                                   | MEDIUM — should be parity-owned         |
+| `src/lib/ui/loading.ts`                             | loadingPhase, loadingOverlay, sceneReady                                                                                                     | MEDIUM — conflicts with parity          |
+| `src/lib/stores/viewport.svelte.ts`                 | compact, mobile, reducedMotion                                                                                                               | MEDIUM — parity already owns these      |
+| `src/lib/stores/camera.svelte.ts`                   | cameraTransition, cameraSlack, cameraAssist, cameraSlackReason, cameraAssistReason, routeExploration, focusTransition                        | HIGH — major conflict zone              |
+| `src/lib/stores/filter.svelte.ts`                   | filtersActive                                                                                                                                | MEDIUM — parity already owns            |
+| `src/lib/stores/demo.svelte.ts`                     | demoPhase                                                                                                                                    | MEDIUM — parity already owns            |
+| `src/lib/stores/engine-ready.svelte.ts`             | renderKind                                                                                                                                   | LOW                                     |
+| `src/lib/stores/lifecycle.ts`                       | threadInspectSurface, mapContext                                                                                                             | MEDIUM                                  |
+| `src/lib/stores/test-compat.svelte.ts`              | (reads only, no writes)                                                                                                                      | N/A                                     |
+| `src/lib/engine/camera-controls-core.svelte.ts`     | focusTransition, focusTransitionPhase, cameraAssist, cameraAssistReason, routeExploration, routeExplorationReason                            | HIGH — conflicts with parity            |
+| `src/lib/engine/three-engine-core.ts`               | graphicsMode, postprocessing                                                                                                                 | LOW-MEDIUM                              |
+| `src/lib/engine/three-postprocessing.ts`            | premiumMode                                                                                                                                  | LOW — feature flag                      |
+| `src/lib/engine/renderer/webgl-fallback.ts`         | graphicsMode                                                                                                                                 | LOW-MEDIUM                              |
+| `src/lib/engine/scene-reveal.ts`                    | sceneReveal                                                                                                                                  | LOW                                     |
+| `src/lib/engine/map-state.ts`                       | routeDirector, routeDirectorReason, terrainHandoff, terrainHandoffFrom, terrainHandoffTo, terrainRouteCount                                  | MEDIUM — domain-specific                |
+| `src/lib/engine/demo-choreography.ts`               | demoActive, focusOrigin                                                                                                                      | LOW-MEDIUM                              |
+| `src/lib/engine/camera-choreography/cursor.ts`      | focusOrigin                                                                                                                                  | LOW                                     |
+| `src/lib/engine/camera-choreography/orbit-slack.ts` | cameraSlack, cameraSlackReason                                                                                                               | MEDIUM — conflicts with parity          |
+| `src/lib/orchestration/app-orchestration.svelte.ts` | activeView, graphContext, semanticDive, panelSurface, panelSurfaceDetail, compact, focusSearchForced, journeyNavigationOwner, focusPanelMode | HIGH — duplicate parity writes          |
+| `src/lib/orchestration/compass-controller.ts`       | semanticDive, panelSurface, trailDepth, viewMode, panelSurfaceMode, graphContext, mapContext                                                 | HIGH — conflicts with parity            |
+| `src/lib/orchestration/lifecycle.ts`                | semanticDive                                                                                                                                 | MEDIUM                                  |
+| `src/lib/orchestration/url-state.ts`                | focusSearchForced, panelSurface, journeyPhase, graphContext, viewMode                                                                        | HIGH — URL sync conflicts               |
+| `src/lib/orchestration/window-actions.ts`           | trailDepth, trailState                                                                                                                       | MEDIUM — parity already owns trailDepth |
+| `src/lib/orchestration/view-controller.ts`          | viewHandoffActive                                                                                                                            | LOW — reads only                        |
+| `src/lib/search/results-ui.ts`                      | mobileRoutePeek                                                                                                                              | LOW                                     |
+| `src/lib/search/search-panel-adapter.ts`            | searchGlow, mobileSearchSheet, mobileSearchSheetUser, panelSurfaceDetail                                                                     | MEDIUM — mobile sheet state             |
+| `src/lib/journey/semantic-dive.ts`                  | journeyPhase, insideWalkState, semanticDive                                                                                                  | MEDIUM                                  |
+| `src/lib/journey/route-trace.ts`                    | routeMotion                                                                                                                                  | LOW                                     |
+| `src/lib/journey/thread-inspector-state.ts`         | threadInspectSurface                                                                                                                         | MEDIUM                                  |
+| `src/lib/journey/thread-inspector-render.ts`        | threadInspectSurface                                                                                                                         | MEDIUM                                  |
+| `src/lib/utils/strand-continuity.ts`                | strandJourney, strandJourneyTarget, strandJourneyFrom, strandJourneyReason                                                                   | MEDIUM — parity owns strandJourney      |
+| `src/lib/utils/focus-panel-mode.ts`                 | focusPanelMode                                                                                                                               | LOW                                     |
+| `src/components/Canvas.svelte`                      | hoveredNode                                                                                                                                  | LOW — component-scoped                  |
+| `src/components/Splash.svelte`                      | appState                                                                                                                                     | LOW — splash screen only                |
+| `src/components/FocusCard.svelte`                   | (reads only)                                                                                                                                 | N/A                                     |
+| `src/components/CompassRail.svelte`                 | (reads only)                                                                                                                                 | N/A                                     |
 
 ### Migration priority assessment
 
@@ -587,7 +587,7 @@ NOT in the PARITY_ATTRIBUTES descriptor. Written exclusively by legacy/bypass co
 - **Attributes owned by parity-attrs** (in descriptor AND referenced in src/): 38
 - **Attributes with bypass writers only** (not in parity descriptor): 29
 - **Parity descriptor keys with ZERO src/ references** (dead/unused): 6
-  - engineState, journeyCompass, journeyCompassCopy, journeyCompassDensity, searchStatus, threadInspect
+    - engineState, journeyCompass, journeyCompassCopy, journeyCompassDensity, searchStatus, threadInspect
 - **Total writer sites** (document.body.dataset.X =): 120
 - **Total reader sites** (body.dataset.X read): 186
 - **Bypass writer files**: 34 (excluding parity-attrs.svelte.ts)
@@ -598,6 +598,6 @@ NOT in the PARITY_ATTRIBUTES descriptor. Written exclusively by legacy/bypass co
 1. **Scale**: 120 writer sites across 34 files need consolidation into parity-attrs.svelte.ts
 2. **Conflict density**: Multiple files write the same attributes (e.g., `semanticDive` has 6 bypass writers + parity; `cameraAssist` has 4 bypass writers + parity)
 3. **Architectural change required**: Bypass writers are deeply integrated into component logic (camera controls, loading states, viewport management). Removing them requires ensuring parity-attrs writes happen at the right time in the lifecycle
-4. **CSS dependency**: Many CSS rules (mobile_premium__*.css) depend on specific attribute values. Migration must preserve value semantics
+4. **CSS dependency**: Many CSS rules (mobile_premium\_\_\*.css) depend on specific attribute values. Migration must preserve value semantics
 5. **Testing surface**: 38 parity-owned attrs + 29 bypass-only attrs = 67 total. Tests (test-compat.svelte.ts) read all of these
 6. **Recommended approach**: Incremental migration — group by subsystem (camera, loading, navigation, search, journey) and migrate one subsystem at a time, verifying CSS behavior after each batch

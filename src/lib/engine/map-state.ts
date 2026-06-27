@@ -20,6 +20,32 @@ import { debugWarn } from '@lib/utils/debug'
 export const LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
 export const LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
 
+/**
+ * Leaflet mutates the DOM container at runtime to attach _leaflet_id.
+ * The HTMLElement type doesn't include this property; structural cast is required.
+ */
+interface LeafletContainer extends HTMLElement {
+    _leaflet_id?: number
+}
+
+/**
+ * Leaflet's fitBounds signature isn't exposed in a way TS can infer from
+ * the loose Record<string, unknown> type on state.map. This interface
+ * lets us call fitBounds without a complex conditional-parameter cast.
+ */
+interface LeafletMapWithFitBounds {
+    fitBounds(bounds: unknown, options?: Record<string, unknown>): void
+}
+
+/**
+ * Typed view of appState restricted to the map subsystem's fields.
+ * Replaces inline `state as unknown as MapStateShape` casts at the
+ * initMap / refreshMapMarkers / destroyMap call sites.
+ */
+function getMapState(): MapStateShape {
+    return state as unknown as MapStateShape
+}
+
 interface LeafletMarker {
     setStyle(style: Record<string, unknown>): void
     addTo(layer: unknown): LeafletMarker
@@ -39,12 +65,11 @@ interface TerrainHandoffOptions {
 }
 
 /**
- * Shape of the map subsystem's view of appState. Extracted from AppState via
- * `state as unknown as MapStateShape` in initMap / refreshMapMarkers / destroyMap.
- * Kept as an explicit shape (rather than accessing `state` directly) because
- * it documents which fields the map subsystem depends on, and because some
- * fields use intentionally-loose types (e.g. `map: Record<string, unknown>`
- * for Leaflet-mutated DOM data).
+ * Shape of the map subsystem's view of appState. Accessed via getMapState()
+ * which consolidates the typed cast in one place. Kept as an explicit shape
+ * (rather than accessing `state` directly) because it documents which fields
+ * the map subsystem depends on, and because some fields use intentionally-loose
+ * types (e.g. `map: Record<string, unknown>` for Leaflet-mutated DOM data).
  */
 interface MapStateShape {
     mapInitialized?: boolean
@@ -143,7 +168,7 @@ export function initMapStateSubscriptions(): void {
 }
 
 export async function initMap(): Promise<void> {
-    const mapState = state as unknown as MapStateShape
+    const mapState = getMapState()
 
     if (mapState.mapInitialized && mapState.map) return
     if (mapState.mapInitialized && !mapState.map) mapState.mapInitialized = false
@@ -167,11 +192,10 @@ export async function initMap(): Promise<void> {
         }
         const container = document.getElementById('map-container')
         if (!container) throw new Error('Map container is missing')
-        // Leaflet mutates the DOM container at runtime to attach _leaflet_id.
-        // The HTMLElement type doesn't include this property; structural cast is required.
-        if ((container as unknown as { _leaflet_id?: number })._leaflet_id) {
-            delete (container as unknown as { _leaflet_id?: number })._leaflet_id
-            container.replaceChildren()
+        const leafletContainer = container as LeafletContainer
+        if (leafletContainer._leaflet_id) {
+            delete leafletContainer._leaflet_id
+            leafletContainer.replaceChildren()
         }
 
         const L = window.L! as {
@@ -431,24 +455,12 @@ export function centerMapOnRouteAnchor(): boolean {
     }
     if (routeLatLngs.length >= 2) {
         const bounds = L.latLngBounds(routeLatLngs)
-        ;(state.map as { fitBounds: (b: unknown, opts: Record<string, unknown>) => void }).fitBounds(
-            // L.latLngBounds returns unknown; the Parameters conditional type extracts
-            // the first parameter of fitBounds. The cast is required because TS cannot
-            // verify `unknown` matches the structural type at the call site.
-            bounds as unknown as Parameters<
-                typeof state.map extends infer T
-                    ? T extends { fitBounds: (...a: unknown[]) => unknown }
-                        ? T
-                        : never
-                    : never
-            >[0],
-            {
-                animate: true,
-                maxZoom: 15,
-                paddingTopLeft: [22, isMobileViewport() ? 250 : 96],
-                paddingBottomRight: [22, 120]
-            }
-        )
+        ;(state.map as unknown as LeafletMapWithFitBounds).fitBounds(bounds, {
+            animate: true,
+            maxZoom: 15,
+            paddingTopLeft: [22, isMobileViewport() ? 250 : 96],
+            paddingBottomRight: [22, 120]
+        })
     } else {
         ;(
             state.map as { setView: (latLng: [number, number], zoom: number, opts: Record<string, unknown>) => void }
@@ -591,8 +603,6 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
     }
 
     if (Number.isFinite(options.settleAfterMs) && options.settleAfterMs! > 0) {
-        // Cast bridges DOM setTimeout (number return) vs NodeJS setTimeout (Timeout return).
-        // The state stores `ReturnType<typeof setTimeout>` which TS treats as the union.
         state.terrainHandoffTimer = window.setTimeout(() => {
             const settlePhase = options.settlePhase || (state.currentView === 'map' ? 'settled' : 'idle')
             setTerrainHandoffState(settlePhase, {
@@ -671,7 +681,7 @@ export function zoomMap(multiplier: number): void {
 }
 
 export function destroyMap(): void {
-    const mapState = state as unknown as MapStateShape
+    const mapState = getMapState()
 
     if (mapState.map) {
         try {
