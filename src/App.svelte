@@ -179,14 +179,11 @@
     })();
 
   onMount(() => {
-    // testReady is the only body attr that must be set eagerly — tests
-    // wait for it before proceeding. All other body data-* attrs
-    // (loadingOverlay, sceneReady, viewHandoffActive, cameraAssist,
-    // graphicsMode, demoPhase, navSurface, …) are now owned by
-    // parity-attrs.svelte.ts which installs and syncs on the same tick.
-    if (typeof document !== 'undefined' && document.body) {
-      document.body.dataset.testReady = 'true';
-    }
+    // parity-attrs.svelte.ts (installed via main.ts:67 → app-init.ts:251)
+    // writes testReady to body.dataset on its first sync, before App.svelte's
+    // onMount fires. Tests polling for testReady see it set by parity-attrs.
+    // Previously App.svelte also wrote testReady here as a redundant fallback;
+    // that drift write was removed in the W47 retirement.
     const contractWindow = window as ContractWindow;
     contractWindow.__forceSemanticDiveContractSurface = () => {
       semanticDiveContractForced = true;

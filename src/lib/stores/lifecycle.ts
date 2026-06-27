@@ -118,9 +118,9 @@ export function derivePanelSurface(opts: {
  *   - mobileRoutePeek + mobileRoutePeekReason — not in PARITY_ATTRIBUTES,
  *     managed here because we need the clear-on-graphContext !== 'idle' rule
  *
- * The derived locals (activeView, hasFocus, panelSurface, …) are still
- * computed because `derivePanelSurface` is exported and used by callers
- * that need the value without a DOM side effect.
+ * `derivePanelSurface` is still exported (line 83) for callers that need
+ * the computed surface value without a DOM side effect (e.g., tests,
+ * info-panel-state). This function does not call it.
  */
 export function applyCompositionState(): void {
     const $nav = get(navStore)
@@ -130,24 +130,8 @@ export function applyCompositionState(): void {
     const activeView = $nav.currentView || 'galaxy'
     const hasFocus = !!($nav.focusedIndex != null || $focus.selectedBusiness)
     const hasSearchIntent = !!($search.summary || $search.query.trim().length >= 2)
-    const hasActiveTrailState =
-        activeView === 'map' ? hasSearchIntent || hasFocus : hasFocus && ($nav.mode === 'trail' || hasSearchIntent)
-
-    const semanticDive = $focus.semanticDiveMode && hasFocus ? 'active' : 'inactive'
 
     const graphContext = deriveGraphContext(activeView, hasFocus, hasSearchIntent)
-    const mapContext =
-        activeView === 'map' ? deriveGraphContext(activeView, hasFocus, hasSearchIntent, undefined) : 'idle'
-
-    const panelSurface = derivePanelSurface({
-        view: activeView,
-        graphContext: activeView === 'galaxy' ? graphContext : mapContext,
-        mapContext,
-        semanticDive,
-        hasSearchIntent,
-        hasFocus,
-        hasActiveTrailState
-    })
 
     const root = document.body
     if (root?.dataset) {
