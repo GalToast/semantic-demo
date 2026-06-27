@@ -1,5 +1,5 @@
 import { appState } from '@lib/state/app.svelte'
-import type { Point, SemanticState } from '@lib/state/state-types'
+import type { Point } from '@lib/state/state-types'
 
 /**
  * role-label.ts
@@ -9,23 +9,18 @@ import type { Point, SemanticState } from '@lib/state/state-types'
  * Ported from — no side-effects.
  */
 export function _getSelectedBusinessRoleLabel(point: Point): string {
-    const _s = appState as unknown as SemanticState
-    let index = _s.points && Array.isArray(_s.points) ? _s.points.indexOf(point) : -1
+    const points = appState.points
+    let index = Array.isArray(points) ? points.indexOf(point) : -1
 
     if (index < 0 && point?.lead_id !== undefined && point?.lead_id !== null) {
         const leadId = String(point.lead_id)
-        index =
-            _s.points && Array.isArray(_s.points)
-                ? _s.points.findIndex((candidate: Point) => String(candidate.lead_id) === leadId)
-                : -1
+        index = Array.isArray(points)
+            ? points.findIndex((candidate: Point) => String(candidate.lead_id) === leadId)
+            : -1
     }
 
-    if (index >= 0 && _s.currentSearchSummary) {
-        const summary = _s.currentSearchSummary as {
-            anchorIndex?: number
-            topIndex?: number
-            resultIndices?: number[]
-        }
+    if (index >= 0 && appState.currentSearchSummary) {
+        const summary = appState.currentSearchSummary
         if (summary.anchorIndex === index || summary.topIndex === index) {
             return 'Search Anchor'
         }
@@ -34,7 +29,7 @@ export function _getSelectedBusinessRoleLabel(point: Point): string {
         }
     }
 
-    if (index >= 0 && _s.navState?.mode === 'trail' && (_s.navState.walkHistoryIndices || []).includes(index)) {
+    if (index >= 0 && appState.navState?.mode === 'trail' && (appState.navState.walkHistoryIndices || []).includes(index)) {
         return 'Trail Step'
     }
 
