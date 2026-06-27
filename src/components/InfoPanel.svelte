@@ -157,52 +157,14 @@
   let selectedRecord = $derived.by(() => {
     if (effectiveSurface === 'idle') return null;
 
+    // Data not ready OR records empty: render the existing empty-state copy
+    // (see viewModel below: COPY.selectedEmptyName etc.). The previous test
+    // fallback shipped hardcoded fake business data when !getIsDataReady()
+    // — a fake business presented as real if the data load failed AND the
+    // user happened to have a focused index. Returning null here routes
+    // through the empty-state path, which is what users should see when
+    // data isn't ready.
     if (!getIsDataReady() || getBusinessRecords().length === 0) {
-      // Test fallback: create a mock record from body data if available
-      if (effectiveFocusedIdx != null) {
-          return {
-            name: 'Downtown Coffee Collective',
-            what: 'Artisan coffee shop with outdoor seating',
-            cluster: 2,
-            status: 'active',
-            city: 'Conroe',
-            zip: '77301',
-            category: 'Cafes',
-            phone: '(936) 555-0123',
-            email: 'info@downtowncoffee.example',
-            website: 'https://downtowncoffee.example',
-            lat: 30.3119,
-            lng: -95.4561,
-            public_note: 'Popular local coffee shop.',
-            trivia: 'Known for their cold brew and community board.',
-            id: '',
-            lead_id: '',
-            public_detail: '',
-            geocoded: true
-          } as unknown as BusinessRecord;
-        }
-        if (effectiveSurface === 'search' && currentActiveResult != null) {
-          return {
-            name: 'Downtown Coffee Collective',
-            what: 'Artisan coffee shop with outdoor seating',
-            cluster: 2,
-            status: 'active',
-            city: 'Conroe',
-            zip: '77301',
-            category: 'Cafes',
-            phone: '(936) 555-0123',
-            email: 'info@downtowncoffee.example',
-            website: 'https://downtowncoffee.example',
-            lat: 30.3119,
-            lng: -95.4561,
-            public_note: 'Popular local coffee shop.',
-            trivia: 'Known for their cold brew and community board.',
-            id: '',
-            lead_id: '',
-            public_detail: '',
-            geocoded: true
-          } as unknown as BusinessRecord;
-      }
       return null;
     }
 

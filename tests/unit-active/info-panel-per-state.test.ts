@@ -125,4 +125,55 @@ describe('Info Panel per-state content', () => {
         expect(helperSource).toMatch(/\barriving:\s*\{/)
         expect(helperSource).toMatch(/\bsettling:\s*\{/)
     })
+
+    // W48 mock-fallback regression contract.
+    // The previous InfoPanel.svelte had a 'Test fallback' branch that returned
+    // hardcoded 'Downtown Coffee Collective' / '(936) 555-0123' data when
+    // !getIsDataReady() OR records.length === 0. If the data load ever failed
+    // AND the user had a focused index, they would see fake business info
+    // presented as real — a trust-destroying UX bug.
+    //
+    // The fix routes the data-not-ready path through the existing empty-state
+    // copy (COPY.selectedEmptyName etc.) by returning null from selectedRecord.
+    // These tests lock that in: any future contributor who re-introduces a
+    // hardcoded mock in InfoPanel.svelte will fail this contract.
+    describe('W48: no hardcoded mock business in InfoPanel', () => {
+        it('does not contain the placeholder business name "Downtown Coffee Collective"', () => {
+            expect(infoPanelSource, 'hardcoded "Downtown Coffee Collective" mock must not be re-introduced').not.toContain('Downtown Coffee Collective')
+        })
+
+        it('does not contain the placeholder phone "(936) 555-0123"', () => {
+            expect(infoPanelSource, 'hardcoded "(936) 555-0123" mock must not be re-introduced').not.toContain('555-0123')
+        })
+
+        it('does not contain the placeholder domain "downtowncoffee.example"', () => {
+            expect(infoPanelSource, 'hardcoded mock domain must not be re-introduced').not.toContain('downtowncoffee.example')
+        })
+
+        it('does not cast "as unknown as BusinessRecord" (no escape hatch for a fake BusinessRecord)', () => {
+            // The mock required this cast because BusinessRecord has required
+            // fields (id, category, zip, geocoded) that the fake object
+            // didn't provide. With the mock removed, the cast should not
+            // appear in InfoPanel.svelte.
+            expect(
+                infoPanelSource,
+                'InfoPanel must not use "as unknown as BusinessRecord" casts'
+            ).not.toMatch(/as\s+unknown\s+as\s+BusinessRecord/)
+        })
+
+        it('routes data-not-ready state through selectedRecord=null (not a mock object)', () => {
+            // The fix: when data isn't ready, return null so the viewModel
+            // falls through to the empty-state copy path. The previous
+            // version returned a hardcoded object literal here.
+            // We verify the function returns null (not an object literal) by
+            // checking the structure around the !getIsDataReady() guard.
+            const guardIdx = infoPanelSource.indexOf('!getIsDataReady()')
+            expect(guardIdx, '!getIsDataReady() guard must exist').toBeGreaterThan(-1)
+            // Within ~400 chars after the guard, we should see "return null"
+            // (or a path that returns null), not an object literal.
+            const window = infoPanelSource.slice(guardIdx, guardIdx + 600)
+            expect(window, 'data-not-ready path must return null, not a mock object').toMatch(/return\s+null/)
+            expect(window, 'data-not-ready path must not return an object literal').not.toMatch(/return\s*\{[^}]*name:/)
+        })
+    })
 })
