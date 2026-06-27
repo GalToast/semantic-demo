@@ -157,32 +157,40 @@ function buildSearchResultsFromIndices(indices: number[] | undefined): SearchRes
     })
 }
 
-function _createSearchStore(): SearchStoreApi {
-    // Function call: returns fresh sync snapshot from kernel
-    const fn = (() => ({
+/** Build a fresh SearchStoreState snapshot from appState. */
+function buildSearchStoreSnapshot(): SearchStoreState {
+    return {
         ...INITIAL_SEARCH_STATE,
         query: appState.currentSearchSummary?.query ?? '',
         results:
             buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
         activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
-        summary: appState.currentSearchSummary ? { ...$state.snapshot(appState.currentSearchSummary) } : null,
+        summary: appState.currentSearchSummary ? { ...appState.currentSearchSummary } : null,
         status: appState.searchStatus,
         hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
         resultsRendered: (appState.currentSearchSummary?.resultIndices?.length ?? 0) > 0,
         requestSequence: appState.searchRequestSequence,
         anchorIndex: appState.searchAnchorIndex,
         previewIndex: appState.searchPreviewIndex,
-        glowIndices: $state.snapshot(appState.searchGlowIndices),
+        glowIndices:
+            appState.searchGlowIndices instanceof Set
+                ? new Set(appState.searchGlowIndices)
+                : appState.searchGlowIndices,
         glowTopIndex: appState.searchGlowTopIndex,
         glowActive: appState.searchGlowActive,
         currentEmptyQuery: appState.currentEmptyQuery,
         focusTransitionToken: appState.searchFocusTransitionToken,
-        trailCue: appState.semanticTrailCue,
+        trailCue: appState.semanticTrailCue as SearchStoreState['trailCue'],
         isCompactViewport: appState.isCompactViewport,
         semanticGuideRequestSequence: appState.semanticGuideRequestSequence,
         currentSemanticGuide: appState.currentSemanticGuide as string | null,
         summaryCardTypeToken: appState.summaryCardTypeToken
-    })) as unknown as SearchStoreApi
+    }
+}
+
+function _createSearchStore(): SearchStoreApi {
+    // Function call: returns fresh sync snapshot from kernel
+    const fn = (() => buildSearchStoreSnapshot()) as unknown as SearchStoreApi
 
     fn.subscribe = _searchWritable.subscribe
     fn.update = _searchWritable.update
@@ -238,34 +246,8 @@ export function withSearchNotify<T>(fn: () => T): T {
     // Re-read the latest snapshot through the store getter so the toStore
     // setter is bypassed (calling _searchWritable.set() recursively would
     // re-enter the toStore setter and infinite-loop).
-    const fresh = (() => ({
-        ...INITIAL_SEARCH_STATE,
-        query: appState.currentSearchSummary?.query ?? '',
-        results:
-            buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
-        activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
-        summary: appState.currentSearchSummary ? { ...appState.currentSearchSummary } : null,
-        status: appState.searchStatus,
-        hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
-        resultsRendered: (appState.currentSearchSummary?.resultIndices?.length ?? 0) > 0,
-        requestSequence: appState.searchRequestSequence,
-        anchorIndex: appState.searchAnchorIndex,
-        previewIndex: appState.searchPreviewIndex,
-        glowIndices:
-            appState.searchGlowIndices instanceof Set
-                ? new Set(appState.searchGlowIndices)
-                : appState.searchGlowIndices,
-        glowTopIndex: appState.searchGlowTopIndex,
-        glowActive: appState.searchGlowActive,
-        currentEmptyQuery: appState.currentEmptyQuery,
-        focusTransitionToken: appState.searchFocusTransitionToken,
-        trailCue: appState.semanticTrailCue,
-        isCompactViewport: appState.isCompactViewport,
-        semanticGuideRequestSequence: appState.semanticGuideRequestSequence,
-        currentSemanticGuide: appState.currentSemanticGuide as string | null,
-        summaryCardTypeToken: appState.summaryCardTypeToken
-    }))()
-    _searchWritable.set(fresh as unknown as SearchStoreState)
+    const fresh = buildSearchStoreSnapshot()
+    _searchWritable.set(fresh)
     return result
 }
 
