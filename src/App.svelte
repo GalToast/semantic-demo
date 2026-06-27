@@ -16,7 +16,8 @@
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
+  import { appState } from '@lib/state/app.svelte';
+  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
@@ -158,11 +159,16 @@
   // inside parity-attrs.svelte.ts — including navSurface and demoPhase.
   // Read body data attributes reactively. Most parity-mirrored attrs come
   // from `parityMap` (reactive rune-backed proxy kept in sync by
-  // parity-attrs.svelte.ts:installParityAttributeSync()). The two bypass
-  // attrs (focusPanelMode, insideWalkState) are not yet in PARITY_ATTRIBUTES
-  // so we still mirror them via a small MutationObserver.
-  let bodyFocusPanelMode = $state('');
-  let bodyInsideWalkState = $state('idle');
+  // parity-attrs.svelte.ts:installParityAttributeSync()).
+  //
+  // Bypass attrs (focusPanelMode, insideWalkState) are NOT owned by
+  // parity-attrs; they are written by external orchestrators
+  // (focus-panel-mode.ts, semantic-dive.ts). parity-attrs provides a
+  // shared MutationObserver + reactive snapshot via getBypassAttr() so
+  // each component no longer needs its own observer. Reads below are
+  // $derived so they re-fire whenever the shared snapshot mutates.
+  let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
+  let bodyInsideWalkState = $derived(getBypassAttr('insideWalkState') ?? 'idle');
   // Reactive reads from parityMap (replaces 6 $state mirrors + most of the
   // MutationObserver). Svelte 5 tracks reads inside `$derived` so template
   // bindings re-run on parity change.
@@ -173,51 +179,14 @@
   let bodyTrailState = $derived(parityMap.trailState || 'inactive');
   let bodyStrandJourney = $derived(parityMap.strandJourney || 'idle');
   let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
-  $effect(() => {
-    if (typeof document === 'undefined') return;
-    const sync = () => {
-      bodyFocusPanelMode = document.body.dataset.focusPanelMode || '';
-      bodyInsideWalkState = document.body.dataset.insideWalkState || 'idle';
-      // Legacy: focusSearchForced is derived in parity-attrs from
-      // focusSearchForced=… but also mirrored here for the bidirectional
-      // contract test (the contract test sets body.dataset.focusSearchForced
-      // and expects the surface state to react). Keep this 1-attr sync
-      // until parity-attrs owns focusSearchForced too.
-      const nextPanelSurface = bodyPanelSurface;
-      const nextGraphContext = bodyGraphContext;
-      if ((nextPanelSurface === 'focus-search' || nextGraphContext === 'focus-search') && document.body.dataset.focusSearchForced !== 'true') {
-        document.body.dataset.focusSearchForced = 'true';
-      } else if (nextPanelSurface !== 'search' && nextPanelSurface !== 'focus' && nextPanelSurface !== 'inside' && nextPanelSurface !== 'trail') {
-        delete document.body.dataset.focusSearchForced;
-      }
-    };
-    const obs = new MutationObserver(sync);
-    // Reduced from 8 attrs to 2 (only bypass attrs not in parityMap yet).
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode', 'data-inside-walk-state'] });
-    sync();
-    return () => obs.disconnect();
-  });
-  // ── Reactive nav store state (mirror of mapModeActive pattern) ──
-  // `navStore` is a svelte/store writable; $derived(navStore().x) is NOT
-  // reactive because get() reads the current value but does not register as a
-  // Svelte 5 dependency. We subscribe once per mount via $effect.
-  let navSurface = $state('idle');
-  let navMode = $state('overview');
-  let navView = $state('galaxy');
+  // ── Reactive nav store state ──
+  // appState.navState is Svelte 5 rune-backed $state; reads in $derived
+  // register reactive dependencies directly — no subscribe mirror needed.
+  let navSurface = $derived(appState.navState.surface ?? 'idle');
+  let navMode = $derived(appState.navState.mode ?? 'overview');
+  let navView = $derived(appState.navState.currentView ?? 'galaxy');
   let weatherVisible = $state(true);
-  let navFocusedIndex = $state<number | null>(null);
-
-  let _navUnsub: (() => void) | null = null;
-  $effect(() => {
-    _navUnsub?.();
-    _navUnsub = navStore.subscribe((s) => {
-      navSurface = s.surface;
-      navMode = s.mode;
-      navView = s.currentView;
-      navFocusedIndex = s.focusedIndex;
-    });
-    return () => { _navUnsub?.(); _navUnsub = null; };
-  });
+  let navFocusedIndex = $derived(appState.navState.focusedIndex ?? null);
 
   let mapModeActive = $derived(navView === 'map');
   let searchSurfaceActive = $derived((navSurface === 'search' || bodyPanelSurface === 'search') && !focusSearchForced);

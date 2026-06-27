@@ -45,9 +45,9 @@
 
   let { open = false, content }: Props = $props();
 
-  let testPanelSurface = $derived(testCompatStore().panelSurface || testCompatStore().navSurface);
-  let testFocusedNode = $derived(testCompatStore().focusedNode);
-  let testCompact = $derived(testCompatStore().compact === 'true');
+  let testPanelSurface = $derived($testCompatStore.panelSurface || $testCompatStore.navSurface);
+  let testFocusedNode = $derived($testCompatStore.focusedNode);
+  let testCompact = $derived($testCompatStore.compact === 'true');
   let surface = $derived(currentSurface());
 
   // ── CSS class derivation for body[data-...] selectors ─────────────────────

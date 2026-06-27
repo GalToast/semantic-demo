@@ -207,8 +207,7 @@
         pointer-events: none;
     }
 
-    body.surface-focus-search:not(.surface-map-any)[data-focus-panel-mode='field-node']
-        .journey-compass.glass-heavy {
+    body.surface-focus-search:not(.surface-map-any)[data-focus-panel-mode='field-node'] .journey-compass.glass-heavy {
         display: flex;
         flex-direction: row;
         align-items: center;
@@ -237,7 +236,9 @@
         justify-content: stretch;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='search']):not(.surface-map-any)[data-focus-panel-mode='field-node']
+    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='search']):not(
+            .surface-map-any
+        )[data-focus-panel-mode='field-node']
         .journey-compass-action {
         width: auto;
         min-width: 44px;
@@ -250,7 +251,9 @@
         overflow: hidden;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='search']):not(.surface-map-any)[data-focus-panel-mode='field-node']
+    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='search']):not(
+            .surface-map-any
+        )[data-focus-panel-mode='field-node']
         .journey-compass-action::before {
         font-size: 10.5px;
         line-height: 1;
@@ -275,7 +278,9 @@
         padding-right: 50px;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']):not(.surface-map-any)
+    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']):not(
+            .surface-map-any
+        )
         .journey-compass:is(.glass-heavy, [data-density='compact'])
         .journey-compass-title {
         font-size: 12px;
@@ -292,9 +297,7 @@
     }
 
     body.surface-focus-search:not(.surface-map-any) .journey-compass-action.primary,
-    body.surface-focus-search:not(.surface-map-any)
-        .journey-compass.glass-heavy
-        .journey-compass-action.primary {
+    body.surface-focus-search:not(.surface-map-any) .journey-compass.glass-heavy .journey-compass-action.primary {
         flex-basis: 58px;
         min-width: 58px;
         min-height: 44px;
@@ -371,6 +374,10 @@
         max-height: calc(100dvh - 96px);
         transform: none;
         color: rgba(238, 250, 248, 0.9);
+    }
+
+    body.surface-semantic-dive #focus-stage.focus-stage {
+        min-height: 120px;
     }
 
     /* Focus stage card */
@@ -618,8 +625,7 @@
         text-overflow: ellipsis;
     }
 
-    body.surface-focus-search:not(.surface-map-any):not([data-focus-panel-mode='field-node'])
-        .focus-stage-next {
+    body.surface-focus-search:not(.surface-map-any):not([data-focus-panel-mode='field-node']) .focus-stage-next {
         display: block;
         max-width: 100%;
         margin-top: 3px;
@@ -631,10 +637,8 @@
         text-overflow: ellipsis;
     }
 
-    body.surface-focus-search:not(.surface-map-any):not([data-focus-panel-mode='field-node'])
-        #btn-focus-prev,
-    body.surface-focus-search:not(.surface-map-any):not([data-focus-panel-mode='field-node'])
-        #btn-focus-next {
+    body.surface-focus-search:not(.surface-map-any):not([data-focus-panel-mode='field-node']) #btn-focus-prev,
+    body.surface-focus-search:not(.surface-map-any):not([data-focus-panel-mode='field-node']) #btn-focus-next {
         display: none;
     }
 
@@ -799,7 +803,9 @@
     body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
         #focus-stage
         .focus-stage-actions,
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any):not([data-focus-panel-mode='field-node'])
+    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(
+            .surface-map-any
+        ):not([data-focus-panel-mode='field-node'])
         #focus-stage
         .trail-controls,
     body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search']):not(.surface-map-any)
@@ -821,7 +827,9 @@
         display: none;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus-search']):not(.surface-map-any)[data-focus-panel-mode='field-node']
+    body:not(.surface-idle):is([data-panel-surface='focus-search']):not(
+            .surface-map-any
+        )[data-focus-panel-mode='field-node']
         #focus-stage
         .focus-stage-actions {
         display: grid;
@@ -829,7 +837,9 @@
         gap: 10px;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus-search']):not(.surface-map-any)[data-focus-panel-mode='field-node']
+    body:not(.surface-idle):is([data-panel-surface='focus-search']):not(
+            .surface-map-any
+        )[data-focus-panel-mode='field-node']
         #focus-stage
         .focus-stage-card {
         overflow: visible;
@@ -1088,7 +1098,8 @@
     body.surface-semantic-dive .focus-stage-actions,
     body.surface-semantic-dive .focus-stage-dive-btn,
     body.surface-semantic-dive .focus-stage-journey,
-    body.surface-semantic-dive .focus-stage-neighbors {
+    body.surface-semantic-dive .focus-stage-neighbors,
+    body[data-panel-surface='semantic-dive'] .focus-stage-dive-btn {
         display: none;
     }
 

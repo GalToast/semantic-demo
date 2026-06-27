@@ -11,13 +11,10 @@
 <script lang="ts">
   import type { NavMode } from '@lib/types/state';
   import {
-    currentMode,
-    currentView,
     dispatchNavTransition,
     NAV_TRANSITION_ACTIONS,
-    navStore,
-    focusedIndex,
   } from '@lib/stores/navigation.svelte.ts';
+  import { appState } from '@lib/state/app.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
@@ -61,29 +58,18 @@ import { debugWarn } from '@lib/utils/debug'
     { id: 'map', label: 'Map', description: 'Geographic map view of the county.', iconId: 'icon-map' }
   ];
 
-  // Subscribe to navStore for reactive updates in Svelte 5 runes.
-  // Using $derived with get() doesn't work for svelte/store writables.
-  let activeMode = $state(currentMode());
-  let activeView = $state(currentView());
-  let hasSelection = $state(focusedIndex() != null);
-  let activeIndex = $state(Math.max(0, modes.findIndex((m) => {
-    if (m.id === 'map') return currentView() === 'map';
-    return currentMode() === m.id;
-  })));
-
-  $effect(() => {
-    const unsub = navStore.subscribe((s) => {
-      activeMode = s.mode;
-      activeView = s.currentView;
-      hasSelection = s.focusedIndex !== null && Number.isFinite(s.focusedIndex as number);
-      // Keep roving tabindex index in sync with the active mode
-      const idx = modes.findIndex((m) => {
-        if (m.id === 'map') return s.currentView === 'map';
-        return s.mode === m.id;
-      });
-      if (idx >= 0) activeIndex = idx;
+  // Read directly from appState.navState (Svelte 5 rune-backed $state) — no mirror needed.
+  let activeMode = $derived(appState.navState.mode ?? 'overview');
+  let activeView = $derived(appState.navState.currentView ?? 'galaxy');
+  let hasSelection = $derived(
+    appState.navState.focusedIndex != null && Number.isFinite(appState.navState.focusedIndex as number)
+  );
+  let activeIndex = $derived.by(() => {
+    const idx = modes.findIndex((m) => {
+      if (m.id === 'map') return appState.navState.currentView === 'map';
+      return appState.navState.mode === m.id;
     });
-    return () => unsub();
+    return idx >= 0 ? idx : 0;
   });
 
   /** Modes that require a focused business node to be meaningful.
@@ -430,6 +416,8 @@ import { debugWarn } from '@lib/utils/debug'
   .app-help-toggle {
     gap: 0.3rem;
     width: auto;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0 0.55rem;
   }
   .app-help-label {

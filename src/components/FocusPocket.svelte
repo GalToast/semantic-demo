@@ -7,24 +7,19 @@
   applyLocalNeighborhoodFocus / clearPocketNodes. Keyboard/screen-reader surface lives
   in FocusPocketA11y.svelte.
 
-  The navStore → $state mirror is required because navStore is a svelte/store writable;
-  reading it via get() inside $effect does NOT register a tracked dependency under
-  Svelte 5 runes.
+  navState is read directly from appState (a Svelte 5 rune-backed $state) via $derived,
+  so no svelte/store subscribe mirror is needed.
 -->
 <script lang="ts">
   import { onDestroy } from 'svelte';
-  import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
   import { getDataLoadState } from '@lib/data-store';
   import { engineStatusStore, type EngineStatus } from '@lib/stores/engine.svelte.ts';
+  import { appState } from '@lib/state/app.svelte';
 
-  // Reactive navStore mirror — bridge svelte/store writable into Svelte 5 $state.
-  let nav = $state(navStore());
-  $effect(() => {
-    const unsub = navStore.subscribe(($s) => (nav = $s));
-    return unsub;
-  });
+  // navState is a Svelte 5 rune-backed $state on appState — read it directly via $derived.
+  let nav = $derived(appState.navState);
 
   const focusedIndex_ = $derived(
     typeof nav.focusedIndex === 'number' && Number.isFinite(nav.focusedIndex)

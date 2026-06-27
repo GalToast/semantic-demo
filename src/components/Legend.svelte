@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
-  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
+  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
   import { businessRecords } from '@lib/data-store';
   import { hasActiveFilters, activeClusterFilter } from '@lib/stores/filter.svelte';
   import { initLegendEventBusSubscriptions } from '@lib/journey/legend-ui';
@@ -29,19 +29,9 @@
   // panelSurface is mirrored by parity-attrs.svelte.ts:installParityAttributeSync()
   // and read reactively via parityMap (Svelte 5 tracks reads inside $derived).
   let bodyPanelSurface = $derived(parityMap.panelSurface || '');
-  // renderKind is a bypass attr not yet in PARITY_ATTRIBUTES, so it still
-  // requires a small MutationObserver mirror.
-  let bodyRenderKind = $state('');
-  $effect(() => {
-    if (typeof document === 'undefined') return;
-    const sync = () => {
-      bodyRenderKind = document.body?.dataset?.renderKind ?? '';
-    };
-    const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-render-kind'] });
-    sync();
-    return () => obs.disconnect();
-  });
+  // renderKind is a bypass attr owned by parity-attrs.svelte.ts — read reactively
+  // via getBypassAttr() instead of a local MutationObserver mirror.
+  let bodyRenderKind = $derived(getBypassAttr('renderKind') ?? '');
 
   /** 21-entry cluster names + 30-entry colors, both imported from the canonical
    * sources (ui-presentation for names, design-tokens for colors). The previous

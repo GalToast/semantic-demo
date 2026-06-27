@@ -15,10 +15,10 @@
     #selected-role-badge
 -->
 <script lang="ts">
-  import { navStore } from '@lib/stores/navigation.svelte';
   import { activeResult } from '@lib/stores/search.svelte';
   import { businessRecords } from '@lib/data-store';
-  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
+  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
+  import { appState } from '@lib/state/app.svelte';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
@@ -43,15 +43,10 @@
 
   let { visible = false, forceSemanticDiveVisible = false }: Props = $props();
 
-  // ── navStore → $state bridge (5c51450 pattern) ──────────────────────────
-  // navStore is a regular svelte/store writable. Reading it via get() inside
-  // a $derived does NOT register as a tracked dependency under Svelte 5 runes.
-  // Mirror it into a $state rune so $derived/$effect track its changes.
-  let nav = $state(navStore());
-  $effect(() => {
-    const unsub = navStore.subscribe(($s) => (nav = $s));
-    return unsub;
-  });
+  // ── navStore → appState.navState (Phase 6) ──────────────────────────────
+  // appState.navState is a Svelte 5 rune-backed $state (see app.svelte.ts:223).
+  // Reading it inside $derived registers reactivity directly — no mirror needed.
+  let nav = $derived(appState.navState);
 
   // ── Cluster names (canonical, imported from @lib/utils/ui-presentation) ──
   // Previously this component had its own hardcoded 15-entry list that was
@@ -63,7 +58,7 @@
   // ProximityLegend and Placeholder2D already use.
 
   // ── Derived state ─────────────────────────────────────────────────────────────
-  // Source: navStore rune (5c51450 pattern, mirrors FocusPocket.svelte).
+  // Source: appState.navState rune (Phase 6).
   // The body data-focused-node attr is written by parity-attrs from the same
   // store; we read from the store directly to avoid a body.dataset round-trip.
 
@@ -80,7 +75,7 @@
   );
   let surface = $derived(nav.surface ?? 'idle');
 
-  // ── Derived state from navStore (replaces body.dataset reads) ──────────────
+  // ── Derived state from appState.navState (replaces body.dataset reads) ────
   // The parity layer writes body.dataset.panelSurface, .navMode, .focusedNode,
   // .sceneReady from these same stores. We read from the stores directly to
   // avoid the body.dataset → MutationObserver → $state round-trip.
@@ -89,16 +84,8 @@
   void bodyNavMode;
   let panelSurfaceDetail = $derived(parityMap.panelSurfaceDetail ?? '');
 
-  // Read body data-focus-panel-mode reactively (set by setFocusPanelMode)
-  let bodyFocusPanelMode = $state('');
-  $effect(() => {
-    if (typeof document === 'undefined') return;
-    const sync = () => { bodyFocusPanelMode = document.body?.dataset?.focusPanelMode ?? '' };
-    const obs = new MutationObserver(sync);
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode'] });
-    sync();
-    return () => obs.disconnect();
-  });
+  // Read body data-focus-panel-mode reactively via shared parity-attrs observer (set by setFocusPanelMode)
+  let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
 
   // ── CSS class derivation for surface/mode selectors ───────────────────────
   let focusCardSurfaceClass = $derived(panelSurface ? `surface-${panelSurface}` : '');
@@ -106,7 +93,7 @@
   void focusCardSurfaceClass;
   void focusCardModeClass;
 
-  // Reactive focus detection: read from navStore rune so Svelte re-evaluates
+  // Reactive focus detection: read from appState.navState rune so Svelte re-evaluates
   // when nav state changes (same semantics as the former body.dataset reads).
   let isFocusedReactive = $derived(
     currentFocusedIdx != null ||

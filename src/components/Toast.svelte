@@ -171,8 +171,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    width: 20px;
-    height: 20px;
+    min-width: 44px;
+    min-height: 44px;
     padding: 0;
     margin: 0;
     background: rgba(78, 205, 196, 0.1);

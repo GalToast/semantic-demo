@@ -28,7 +28,10 @@ describe('engine-boundary refactor / Phase 2-4 / semanticSearchResultCache field
     it('appState declares semanticSearchResultCache with Map<string, CacheEntry>', () => {
         const appState = readSource('src/lib/state/app.svelte.ts')
         const declMatch = appState.match(/semanticSearchResultCache\s*=\s*\$state<Map<string,\s*CacheEntry>>\(/)
-        expect(declMatch, 'appState.semanticSearchResultCache declaration not found (pattern: $state<Map<string, CacheEntry>>)').not.toBeNull()
+        expect(
+            declMatch,
+            'appState.semanticSearchResultCache declaration not found (pattern: $state<Map<string, CacheEntry>>)'
+        ).not.toBeNull()
         // Verify it doesn't match the loose-type pattern
         const looseMatch = appState.match(/semanticSearchResultCache\s*=\s*\$state<Map<string,\s*unknown>>\(/)
         expect(looseMatch, 'appState.semanticSearchResultCache is still typed Map<string, unknown>').toBeNull()

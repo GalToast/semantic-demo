@@ -96,7 +96,7 @@ interface MapStateShape {
  * initMap / refreshMapMarkers / destroyMap call sites.
  */
 function getMapState(): MapStateShape {
-    return appState
+    return appState as MapStateShape
 }
 
 let leafletAssetsPromise: Promise<unknown> | null = null

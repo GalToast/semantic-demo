@@ -34,7 +34,7 @@
   truth for the parity layer).
 -->
 <script lang="ts">
-  import { navStore } from '@lib/stores/navigation.svelte.ts';
+  import { appState } from '@lib/state/app.svelte';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey.svelte.ts';
   import { focusStore } from '@lib/stores/focus.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
@@ -48,7 +48,7 @@
     type CompassPresentationState
   } from '@lib/orchestration/compass-controller';
   import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
-  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
+  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
 
   interface Props {
     /** Suppress the compass in overview mode when URL has ?nodemo=1 */
@@ -64,7 +64,7 @@
   // the EVENT bus fires on every state change.
   // The reactive $effect below recomputes both on every store change.
   let compass: CompassStateContext = $state(getJourneyCompassState());
-  let navState = $state(navStore());
+  let navState = $derived(appState.navState);
   let journeyState = $state(journeyStore());
   let focusState = $state(focusStore());
 
@@ -75,10 +75,6 @@
     const refreshCompass = () => {
       compass = getJourneyCompassState();
     };
-    const unsubNav = navStore.subscribe((state) => {
-      navState = state;
-      refreshCompass();
-    });
     const unsubJourney = journeyStore.subscribe((state) => {
       journeyState = state;
       refreshCompass();
@@ -87,9 +83,10 @@
       focusState = state;
       refreshCompass();
     });
+    // Track navState dependency, then refresh (replaces navStore.subscribe mirror)
+    void navState;
     refreshCompass();
     return () => {
-      unsubNav();
       unsubJourney();
       unsubFocus();
     };
@@ -125,18 +122,9 @@
       && !focusState.semanticDiveMode
   );
 
-  // Read body data-focus-panel-mode reactively (set by setFocusPanelMode)
-  let bodyFocusPanelMode = $state('');
-  $effect(() => {
-    if (typeof document === 'undefined') return;
-    const sync = () => { bodyFocusPanelMode = document.body?.dataset?.focusPanelMode ?? '' };
-    const obs = new MutationObserver(sync);
-    // Only bypass attr not yet in parityMap — parity-attrs.svelte.ts owns
-    // the rest (panelSurface, trailDepth, semanticDive, focusedNode, etc.).
-    obs.observe(document.body, { attributes: true, attributeFilter: ['data-focus-panel-mode'] });
-    sync();
-    return () => obs.disconnect();
-  });
+  // Read body data-focus-panel-mode reactively via parity-attrs bypass accessor
+  // (shared MutationObserver inside parity-attrs.svelte.ts owns this attr).
+  let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
 
   // Step indicators: 5 milestones mapped to data-journey-step elements
   const STEP_DESCRIPTIONS: Record<string, string> = {

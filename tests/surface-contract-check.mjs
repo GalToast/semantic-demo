@@ -2374,7 +2374,8 @@ async function assert_mode_grid(page, ctx) {
         }
 
         const results = {}
-        document.body.classList.add('is-active')
+        document.body.classList.add('is-active', 'surface-focus-search')
+        document.body.classList.remove('surface-idle')
         document.body.dataset.activeView = 'galaxy'
         document.body.dataset.graphContext = 'focus-search'
         document.body.dataset.panelSurface = 'focus-search'

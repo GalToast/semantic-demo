@@ -915,10 +915,7 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
         margin-top: 7px;
     }
 
-    body[data-panel-surface]:not(.surface-map-any):is(
-            [data-panel-surface='focus'],
-            [data-panel-surface='focus-search']
-        )
+    body[data-panel-surface]:not(.surface-map-any):is([data-panel-surface='focus'], [data-panel-surface='focus-search'])
         .focus-stage-neighbor-pill.is-next-stop {
         padding: 8px 12px;
     }
@@ -1149,9 +1146,9 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
         )[data-focus-panel-mode='field-node']
         #focus-stage.focus-stage {
         bottom: max(0px, env(safe-area-inset-bottom, 0px));
-        max-height: 100dvh;
-        height: 100dvh;
-        min-height: 100dvh;
+        max-height: calc(100dvh - 96px);
+        height: auto;
+        min-height: auto;
     }
 
     body:not(.surface-idle):is(

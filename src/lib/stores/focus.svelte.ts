@@ -24,7 +24,7 @@ import type {
 import type { BusinessRecord } from '@lib/types/business'
 import type { Point } from '@lib/state/state-types'
 
-/** 
+/**
  * Hydration source shape for focus store initialization.
  * Mirrors the structure expected from appState.
  */

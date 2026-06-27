@@ -141,12 +141,14 @@ describe('A2-5b: Header mode-chip roving tabindex radiogroup', () => {
     // ── 7. activeIndex initialization ─────────────────────────────────────
 
     describe('activeIndex initialization', () => {
-        it('initializes from currentMode/currentSurface at mount', () => {
-            expect(src).toMatch(/let activeIndex = \$state\(Math\.max\(0, modes\.findIndex/)
+        it('initializes from appState.navState via $derived (no navStore mirror)', () => {
+            expect(src).toMatch(/let activeIndex = \$derived\.by\(/)
+            expect(src).toMatch(/appState\.navState\.mode/)
         })
 
-        it('updates activeIndex in the navStore subscription', () => {
-            expect(src).toMatch(/if \(idx >= 0\) activeIndex = idx;/)
+        it('reads navState directly (no $effect + navStore.subscribe mirror)', () => {
+            expect(src).not.toMatch(/navStore\.subscribe/)
+            expect(src).not.toMatch(/\$effect\(\(\) => \{/)
         })
     })
 
@@ -164,7 +166,7 @@ describe('A2-5b: Header mode-chip roving tabindex radiogroup', () => {
 
         it('tracks whether a selection exists via focusedIndex', () => {
             expect(src).toMatch(/hasSelection/)
-            expect(src).toMatch(/focusedIndex\(\)/)
+            expect(src).toMatch(/appState\.navState\.focusedIndex/)
         })
 
         it('exposes isModeLocked(modeId) helper', () => {

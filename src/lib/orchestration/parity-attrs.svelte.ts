@@ -636,6 +636,53 @@ let _effectRoot: (() => void) | null = null
  */
 export const parityMap: ParityAttributeMap = $state<ParityAttributeMap>({} as ParityAttributeMap)
 
+// ── Bypass attribute accessors ────────────────────────────────────────
+
+/**
+ * Bypass body data-* attributes that are intentionally written by code
+ * OUTSIDE parity-attrs (engine code, legacy orchestrators, search panel
+ * adapter, bootstrap path). These are NOT owned by parity-attrs and
+ * are NOT in PARITY_ATTRIBUTES — the writes are the canonical source.
+ *
+ * What parity-attrs DOES provide for these attrs:
+ *   - A single shared MutationObserver on document.body that re-fires
+ *     when any of these attrs changes (vs. each component running its
+ *     own observer).
+ *   - A reactive rune-backed snapshot so Svelte 5 components can read
+ *     them via `$derived(getBypassAttr('focusPanelMode'))` without
+ *     mirroring into local `$state`.
+ *
+ * Bypass attrs (and their canonical writers):
+ *   - `focusPanelMode`   setFocusPanelMode()  src/lib/utils/focus-panel-mode.ts:27
+ *   - `insideWalkState`  semantic-dive.ts setJourneyPhase()  src/lib/journey/semantic-dive.ts:123
+ *   - `renderKind`       initial = main.ts:112; engine-ready = stores/engine-ready.svelte.ts:27
+ *   - `mobileSearchSheet` setMobileSearchSheetMode()  src/lib/search/search-panel-adapter.ts:98
+ */
+export type BypassAttrKey = 'focusPanelMode' | 'insideWalkState' | 'renderKind' | 'mobileSearchSheet'
+
+const _bypassSnapshot: Record<BypassAttrKey, string | null> = $state<Record<BypassAttrKey, string | null>>({
+    focusPanelMode: null,
+    insideWalkState: null,
+    renderKind: null,
+    mobileSearchSheet: null
+})
+
+let _bypassObserver: MutationObserver | null = null
+
+/**
+ * Read a bypass attr's current value reactively.
+ *
+ * The returned value updates whenever the shared MutationObserver in
+ * `installParityAttributeSync()` fires (i.e., whenever any of the 4
+ * bypass attrs changes on `body.dataset`). Components use this inside
+ * `$derived` to react to changes without running their own observer.
+ *
+ * Returns null when the attr is unset.
+ */
+export function getBypassAttr(key: BypassAttrKey): string | null {
+    return _bypassSnapshot[key]
+}
+
 /**
  * Install the parity attribute sync layer.
  *
@@ -665,6 +712,29 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
         _effectRoot()
         _effectRoot = null
     }
+    if (_bypassObserver) {
+        _bypassObserver.disconnect()
+        _bypassObserver = null
+    }
+
+    // One shared MutationObserver for the 4 bypass attrs (focusPanelMode,
+    // insideWalkState, renderKind, mobileSearchSheet). Each component used
+    // to run its own observer with its own attributeFilter — consolidating
+    // here means N components → 1 observer + 4 fast property reads on
+    // each fire. _bypassSnapshot is $state so consumers reading
+    // getBypassAttr() inside `$derived` automatically re-run.
+    const syncBypassSnapshot = (): void => {
+        _bypassSnapshot.focusPanelMode = document.body.dataset.focusPanelMode ?? null
+        _bypassSnapshot.insideWalkState = document.body.dataset.insideWalkState ?? null
+        _bypassSnapshot.renderKind = document.body.dataset.renderKind ?? null
+        _bypassSnapshot.mobileSearchSheet = document.body.dataset.mobileSearchSheet ?? null
+    }
+    syncBypassSnapshot()
+    _bypassObserver = new MutationObserver(syncBypassSnapshot)
+    _bypassObserver.observe(document.body, {
+        attributes: true,
+        attributeFilter: ['data-focus-panel-mode', 'data-inside-walk-state', 'data-render-kind', 'data-mobile-search-sheet']
+    })
 
     _effectRoot = $effect.root(() => {
         let scheduled = false
