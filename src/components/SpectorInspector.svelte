@@ -21,6 +21,39 @@
   import { onMount, onDestroy } from 'svelte';
 import { debugWarn, debugLog } from '@lib/utils/debug'
 
+  // Dev-engine handle published on window in DEV builds only by
+  // src/lib/engine/three-engine.ts. Widened to include the status
+  // snapshot bridge so the two `window as unknown as` call sites
+  // below (pre-render probe + status publisher) share one shape.
+  interface SpectorDevWindow {
+    __semanticEngine?: { renderOnce?: () => void };
+    __spectorStatus?: {
+      phase: LoadPhase;
+      loadError: string | null;
+      loadDetail: string | null;
+      lastCommandCount: number;
+      lastCaptureAt: number | null;
+      bridgeReady: boolean;
+    };
+  }
+
+  // Spector.js capture event bus. The npm package ships no public
+  // types for these handlers, so we declare the minimal surface
+  // we use and cast `spector as SpectorCaptureApi` at one call site.
+  interface SpectorCaptureApi {
+    onCapture?: SpectorEventHandler;
+    onError?: SpectorEventHandler;
+  }
+  interface SpectorEventHandler {
+    add(handler: (...args: unknown[]) => void): void;
+  }
+
+  // Single typed accessor for window — replaces both `window as
+  // unknown as { … }` sites in the capture bridge and publisher.
+  function getSpectorDevWindow(): SpectorDevWindow {
+    return window as unknown as SpectorDevWindow;
+  }
+
   interface Props {
     visible?: boolean;
   }
@@ -97,6 +130,10 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       return;
     }
 
+    // Sightly widened handle: the base capture methods plus the
+    // optional onCapture/onError event bus. Declaring the event
+    // bus inline avoids a second `spector as unknown as` cast when
+    // wiring capture/errror callbacks below.
     type SpectorHandle = {
       captureCanvas: (_canvas: HTMLCanvasElement, _maxFrames?: number, _quickCapture?: boolean, _fullCapture?: boolean) => void;
       captureContext: (
@@ -108,6 +145,8 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       pauseCapture: () => void;
       playCapture: () => void;
       getCurrentResult: () => unknown;
+      onCapture?: SpectorEventHandler;
+      onError?: SpectorEventHandler;
     };
     const spector = spectorInstance as SpectorHandle;
 
@@ -152,9 +191,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
         // Force a render right before capture so Spector sees WebGL
         // commands during its capture window. The handle is published by
         // src/lib/engine/three-engine.ts in DEV builds only.
-        const devEngine = (window as unknown as {
-          __semanticEngine?: { renderOnce?: () => void };
-        }).__semanticEngine;
+        const devEngine = getSpectorDevWindow().__semanticEngine;
         try {
           devEngine?.renderOnce?.();
         } catch (renderErr) {
@@ -182,13 +219,9 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
                 capture,
               });
             };
-            type SpectorEventHandle = {
-              add: (_cb: (..._args: unknown[]) => void) => void;
-            };
-            const spectorWithEvents = spector as unknown as {
-              onCapture?: SpectorEventHandle;
-              onError?: SpectorEventHandle;
-            };
+            // spector already carries onCapture/onError on SpectorHandle,
+            // so it narrows to SpectorCaptureApi without a cast.
+            const spectorWithEvents: SpectorCaptureApi = spector;
             // Track capture metadata so the dev-only status panel can
             // show the most recent command count and capture timestamp
             // without needing a Playwright probe.
@@ -199,11 +232,16 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
               publishStatus();
               onCapture(capture);
             };
-            spectorWithEvents.onCapture?.add(onCaptureTracked as unknown as (..._args: unknown[]) => void);
-            spectorWithEvents.onError?.add(((err: unknown) => {
+            // onCaptureTracked / the onError closure both accept a
+            // single `unknown` param, which is structurally a subtype of
+            // the `(...args: unknown[]) => void` signature
+            // SpectorEventHandler.add expects (TS bivariance for
+            // functions with fewer parameters), so no cast is needed.
+            spectorWithEvents.onCapture?.add(onCaptureTracked);
+            spectorWithEvents.onError?.add((err: unknown) => {
               clearTimeout(timeout);
               resolve({ ok: false, reason: 'spector-error', error: String(err) });
-            }) as unknown as (..._args: unknown[]) => void);
+            });
             // maxFrames=0 means "capture the next frame"
             spector.captureContext(existingCtx, maxFrames, false, false);
           } catch (err) {
@@ -244,16 +282,9 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   // minimal — the bridge is the authoritative API.
   function publishStatus() {
     if (typeof window === 'undefined') return;
-    (window as unknown as {
-      __spectorStatus: {
-        phase: LoadPhase;
-        loadError: string | null;
-        loadDetail: string | null;
-        lastCommandCount: number;
-        lastCaptureAt: number | null;
-        bridgeReady: boolean;
-      };
-    }).__spectorStatus = {
+    // Assign through the shared accessor — shape is declared on
+    // SpectorDevWindow, the single typed bridge for window.__*.
+    getSpectorDevWindow().__spectorStatus = {
       phase,
       loadError,
       loadDetail,
