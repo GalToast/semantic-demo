@@ -24,15 +24,6 @@
 
   type MapStatus = 'loading' | 'ready' | 'error';
 
-  interface RuntimeMap {
-    invalidateSize?: () => void;
-  }
-
-  interface RuntimeState {
-    currentView?: string;
-    map?: RuntimeMap | null;
-  }
-
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
   let {} = $props();
 
@@ -67,9 +58,22 @@
     mapContainer.style.removeProperty('pointer-events');
   }
 
+  /**
+   * Set `appState.currentView` directly, bypassing the nav-store/url-sync/
+   * handoff prelude that `switchView()` triggers. Used during initial mount
+   * (where the nav store may not be initialized yet) and on canvas re-show
+   * (where we just want to flip `currentView` without animation/sync overhead).
+   *
+   * Direct assignment is type-safe: `view: 'galaxy' | 'map'` is a subset of
+   * `ViewName` ('galaxy' | 'map' | 'focus' | 'trail' | 'semantic'), so TS
+   * accepts the write without any cast. The previous `as unknown as RuntimeState`
+   * cast was dishonest — it widened `currentView` from a 5-value union to
+   * `string` via a locally-fabricated `RuntimeState` interface, hiding the
+   * type contract and bypassing the `withStateMutation()` guard semantics.
+   */
   function setLegacyView(view: 'galaxy' | 'map'): void {
     withStateMutation(() => {
-      (appState as unknown as RuntimeState).currentView = view;
+      appState.currentView = view;
     });
   }
 

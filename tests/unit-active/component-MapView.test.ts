@@ -12,6 +12,8 @@
  *  8. Renders attribution text in footer
  */
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { render } from '@testing-library/svelte';
 import MapView from '../../src/components/MapView.svelte';
 
@@ -76,5 +78,84 @@ describe('MapView component', () => {
         const attribution = container.querySelector('.map-attribution');
         expect(attribution).toBeTruthy();
         expect(attribution!.textContent).toContain('OpenStreetMap');
+    });
+})
+
+/**
+ * W48 mock-fallback regression contract.
+ *
+ * The previous MapView.svelte had a `setLegacyView()` function that mutated
+ * `appState.currentView` via `(appState as unknown as RuntimeState).currentView = view`,
+ * where `RuntimeState` was a locally-fabricated interface declaring
+ * `currentView?: string` — widening the actual `ViewName` (5-value string
+ * union) to `string` and bypassing the type system entirely. This dishonest
+ * cast let ANY string be assigned to a typed property.
+ *
+ * The fix: drop the cast (direct assignment is type-safe because the parameter
+ * type 'galaxy' | 'map' is a subset of ViewName) and delete the `RuntimeState`
+ * and `RuntimeMap` interfaces that existed only to support the cast.
+ *
+ * These tests lock in the absence of the cast and the dead interfaces so a
+ * future contributor who reaches for a similar escape hatch fails the contract.
+ */
+describe('W48: no dishonest appState.currentView cast in MapView', () => {
+    const MAPVIEW_SRC_PATH = resolve(__dirname, '../../src/components/MapView.svelte');
+
+    function readMapViewSource(): string {
+        return readFileSync(MAPVIEW_SRC_PATH, 'utf-8');
+    }
+
+    it('does not cast "appState as unknown as RuntimeState"', () => {
+        const src = readMapViewSource();
+        expect(
+            src,
+            'MapView must not use "as unknown as RuntimeState" casts to mutate appState.currentView'
+        ).not.toMatch(/appState\s+as\s+unknown\s+as\s+RuntimeState/);
+    });
+
+    it('does not declare a local RuntimeState interface', () => {
+        // The local RuntimeState interface existed only to widen the cast target.
+        // With direct assignment it is dead code.
+        const src = readMapViewSource();
+        expect(
+            src,
+            'MapView must not declare a local interface RuntimeState (it was only used for the dishonest cast)'
+        ).not.toMatch(/interface\s+RuntimeState/);
+    });
+
+    it('does not declare a local RuntimeMap interface', () => {
+        // The local RuntimeMap interface existed only as a member of RuntimeState.
+        // With RuntimeState gone, RuntimeMap is also dead.
+        const src = readMapViewSource();
+        expect(
+            src,
+            'MapView must not declare a local interface RuntimeMap (it was only used inside the deleted RuntimeState)'
+        ).not.toMatch(/interface\s+RuntimeMap/);
+    });
+
+    it('setLegacyView assigns appState.currentView directly (no cast)', () => {
+        // Verify the function body uses direct assignment.
+        const src = readMapViewSource();
+        const fnIdx = src.indexOf('function setLegacyView');
+        expect(fnIdx, 'setLegacyView function must exist').toBeGreaterThan(-1);
+        // Extract body up to the matching closing brace.
+        const bodyStart = src.indexOf('{', fnIdx);
+        let depth = 1;
+        let i = bodyStart + 1;
+        while (i < src.length && depth > 0) {
+            const c = src[i];
+            if (c === '{') depth++;
+            else if (c === '}') depth--;
+            i++;
+        }
+        const body = src.slice(bodyStart, i);
+        expect(
+            body,
+            'setLegacyView must assign appState.currentView directly'
+        ).toMatch(/appState\.currentView\s*=\s*view/);
+        expect(
+            body,
+            'setLegacyView must not contain any "as unknown as" cast'
+        ).not.toMatch(/as\s+unknown\s+as/);
     });
 });
