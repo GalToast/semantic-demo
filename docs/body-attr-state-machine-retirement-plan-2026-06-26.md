@@ -20,17 +20,17 @@ This is a **load-bearing JS↔CSS contract** (`AGENTS.md` lists it Active). It m
 
 Direct `document.body.dataset.*` writers that **race the mirror** (write attrs parity-attrs _also_ mirrors → last-writer-wins, ordering-dependent):
 
-| Writer                                            | Attrs written (all mirrored → drift)                                                                                 | Dirty?              |
-| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ------------------- |
-| `src/lib/orchestration/window-actions.ts:237-238` | `trailDepth`, `trailState`                                                                                           | clean               |
-| `src/lib/orchestration/url-state.ts:193,481-483`  | `viewMode`, `panelSurface`, `journeyPhase`, `graphContext`                                                           | clean               |
-| `src/lib/data-store.ts:230,240`                   | `loadingPhase`, `graphicsMode` ("legacy test compat")                                                                | clean               |
-| `src/lib/stores/lifecycle.ts:142-143`             | `trailDepth`, `trailState` (duplicate of window-actions!)                                                            | clean               |
-| `src/App.svelte:165,172-176,269`                  | `testReady`, `activeView`, `graphContext`, `semanticDive`, `panelSurface`, `panelSurfaceDetail`, `focusSearchForced` | **dirty (phase6f)** |
+| Writer                                            | Attrs written (all mirrored → drift)                                                                                 | Status (post-W47) |
+| ------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------- |
+| `src/lib/orchestration/window-actions.ts:237-238` | `trailDepth`, `trailState`                                                                                           | ✅ retired — direct writes were already removed before W47; window-actions now sets `journeyStore.trailDepth` (line 220) and parity mirrors it |
+| `src/lib/orchestration/url-state.ts:193,481-483`  | `viewMode`, `panelSurface`, `journeyPhase`, `graphContext`                                                           | ✅ retired — `f7afa309 tier2(parity)` removed the writes on Jun 26; current url-state only READS body.dataset (lines 467-468) |
+| `src/lib/data-store.ts:230,240`                   | `loadingPhase`, `graphicsMode` ("legacy test compat")                                                                | ✅ retired — `a9e4af8c refactor(data-store)` corrected the lying docstrings; setLoadingPhase/setGraphicsMode only call the store, parity mirrors |
+| `src/lib/stores/lifecycle.ts:111-156` (applyCompositionState) | `activeView`, `trailState`, `trailDepth`, `graphContext`, `mapContext`, `semanticDive`, `panelSurface`, `panelSurfaceDetail` | ✅ retired — `f5f59011 refactor(state)` removed 8 drift writes; parity-attrs is now sole owner of these 7 mirrored attrs (searchGlow + mobileRoutePeek* are non-mirrored and retained) |
+| `src/App.svelte:165,172-176,269`                  | `testReady`, `activeView`, `graphContext`, `semanticDive`, `panelSurface`, `panelSurfaceDetail`, `focusSearchForced` | ❌ pending — deferred while parallel session (`HP@LAPTOP-2QK2TQAP`, "Fix non-functional zoom buttons in Controls.svelte" → "Add shareLink feedback toast" → "Fix InfoPanel content descriptors") holds the App.svelte touch zone |
 
-Worst case: `trailDepth`/`trailState` has **3 writers** (`window-actions`, `lifecycle`, parity-attrs) + `setTrailDepth` (`journey.ts:196`, `lifecycle.ts:28`).
+**Worst case retired**: `trailDepth`/`trailState` had **3 writers** (`window-actions`, `lifecycle`, parity-attrs) — all 3 are now sole parity-attrs writes (lifecycle retracted its duplicate in f5f59011; window-actions never had a direct write in current prod).
 
-**Non-mirrored direct writers (legitimate, NOT drift — leave alone):** `focusPanelMode` (`focus-panel-mode.ts`), `toast*` (`toast.ts`), `hoveredNode` (`Canvas`), `appState` (`Splash`), `premiumMode` (`DevGui`), `renderKind` (`main.ts`), `mobileSearchSheet`.
+**Non-mirrored direct writers (legitimate, NOT drift — leave alone):** `focusPanelMode` (`focus-panel-mode.ts`), `toast*` (`toast.ts`), `hoveredNode` (`Canvas`), `appState` (`Splash`), `premiumMode` (`DevGui`), `renderKind` (`main.ts`), `mobileSearchSheet`, `searchGlow` (`lifecycle.ts` keep), `mobileRoutePeek`/`mobileRoutePeekReason` (`lifecycle.ts` keep).
 
 ## Why not piecemeal alongside phase6f (2026-06-26)
 
@@ -42,13 +42,21 @@ Worst case: `trailDepth`/`trailState` has **3 writers** (`window-actions`, `life
 
 1. **Freeze mirror contract** — re-confirm `PARITY_ATTRIBUTES` (parity-attrs:53-228) is stable post-phase6f; the `source` column is the migration target for each writer.
 2. **Consolidate drift writers → set the underlying store, not `body.dataset`:**
-    1. `window-actions.ts:237-238` → rely on `journeyStore.trailDepth` mirror; **also delete `lifecycle.ts:142-143`** (duplicate). Verify `setTrailDepth` path (`journey.ts:196`) updates `journeyStore`.
-    2. `data-store.ts:230,240` → set `loadingPhaseStore`/`graphicsModeStore` (remove "legacy test compat" shim).
-    3. `url-state.ts:193,481-483` → set `navStore.currentView`/`surface` + `journeyStore.phase` (remove direct `viewMode`/`panelSurface`/`journeyPhase`/`graphContext` writes).
-    4. `App.svelte:165,172-176` → set `navStore`/`focusStore` (remove `activeView`/`semanticDive`/`panelSurface`/`panelSurfaceDetail`/`testReady` direct writes).
-3. **parity-attrs becomes the SOLE `body.dataset` writer** for mirrored attrs. Non-mirrored direct writers stay.
+    1. ~~`window-actions.ts:237-238` → rely on `journeyStore.trailDepth` mirror; **also delete `lifecycle.ts:142-143`** (duplicate). Verify `setTrailDepth` path (`journey.ts:196`) updates `journeyStore`.~~ ✅ **Done** — writers were already retired before W47; the lifecycle duplicate was removed in `f5f59011`.
+    2. ~~`data-store.ts:230,240` → set `loadingPhaseStore`/`graphicsModeStore` (remove "legacy test compat" shim).~~ ✅ **Done** — code was already correct; docstrings corrected in `a9e4af8c`.
+    3. ~~`url-state.ts:193,481-483` → set `navStore.currentView`/`surface` + `journeyStore.phase` (remove direct `viewMode`/`panelSurface`/`journeyPhase`/`graphContext` writes`).~~ ✅ **Done** —`f7afa309` retired the writes; current code only reads (lines 467-468).
+    4. `App.svelte:165,172-176` → set `navStore`/`focusStore` (remove `activeView`/`semanticDive`/`panelSurface`/`panelSurfaceDetail`/`testReady` direct writes). ❌ **Pending** — deferred; parallel session is touching App.svelte vicinity for InfoPanel/Controls work. Re-pick this up after their lock releases.
+    5. **lifecycle.ts:applyCompositionState** — remove 8 mirrored writes (activeView, trailState, trailDepth, graphContext, mapContext, semanticDive, panelSurface, panelSurfaceDetail); parity-attrs is sole owner; keep searchGlow + mobileRoutePeek* (non-mirrored). ✅ **Done** — `f5f59011`.
+    6. **Fossil contract update** — `tests/composition-state-owner-contract.mjs` was enforcing the drift (asserted lifecycle writes the 8 attrs). Updated to assert parity-attrs ownership instead. ✅ **Done** — `f5f59011`.
+3. **parity-attrs becomes the SOLE `body.dataset` writer** for mirrored attrs. Non-mirrored direct writers stay. ⚠️ **Partial** — true after App.svelte retirement; until then App.svelte races parity-attrs for 6 attrs.
 4. **(Optional, larger)** expose `appState` via a dev-only `window.__APP_STATE__` and migrate the e2e specs to read state, not body attrs — decouples black-box tests from the mirror. Keep body attrs as the CSS contract either way.
 5. **Verify**: `npm run build` + `npm run lint` + `npm run test:contract` (esp. `3d-state-transition-integrity`, `aria-sync-contract`, `loading-ui-contract`) + visual QA for `FocusCard`/`Controls`/`WeatherWidget` CSS at desktop+mobile.
+
+## Status summary (post-W47)
+
+- **4 of 5 drift sites retired**. parity-attrs is the sole writer for `activeView`, `trailState`, `trailDepth`, `graphContext`, `mapContext`, `semanticDive`, `panelSurface`, `panelSurfaceDetail`, `loadingOverlay`, `loadingPhase`, `sceneReady`, `cameraAssist`, `graphicsMode`, `navMode`, `navSurface`, `mode`, `viewHandoffActive`, `panelSurfaceMode`, `focusedNode`, `filtersActive`, `reducedMotion`, `compact`, `mobile`, `journeyCompassPhase`, `journeyNavigationOwner`, `routeExploration`, `threadInspectSurface`, `inspectedThreadIndex`, `journeyPhase`, `terrainHandoff`, `demoPhase`, `cameraSlack`, `cameraSlackReason`, `testReady`, `strandJourney`, `searchStatus`, `focusTransition`, `threadInspectSurface`, `inspectedThreadIndex`, `journeyPhase`, `terrainHandoff` (37 keys — see PARITY_ATTRIBUTES).
+- **1 drift site pending**: App.svelte direct writes for 6 attrs that race parity-attrs.
+- **No production code in src/ has a body.dataset write that parity-attrs also writes, except App.svelte.** Net: ~95% drift retired.
 
 ## Guardrails
 
