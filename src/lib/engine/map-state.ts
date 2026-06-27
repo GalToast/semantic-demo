@@ -6,7 +6,7 @@
  * terrain handoff, and route director state synchronization.
  */
 import { appState } from '@lib/state/app.svelte.ts'
-import type { Point } from '@lib/state/state-types'
+import type { Point, ActiveFilters } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
@@ -74,16 +74,16 @@ interface MapStateShape {
     focusedNode: number | null
     currentSearchSummary: {
         resultIndices?: number[]
-        anchorIndex?: number
-        topIndex?: number
+        anchorIndex?: number | null
+        topIndex?: number | null
     } | null
     activeClusterFilter: number | null
-    activeFilters: Record<string, unknown> | null
+    activeFilters: ActiveFilters | null
     selectedPoint: Point | null
     navState: {
         focusedIndex: number | null
-        walkHistoryIndices: number[]
-        trailNeighborIndices: number[]
+        walkHistoryIndices: readonly number[]
+        trailNeighborIndices: readonly number[]
         mode: string
     }
     semanticDiveMode?: boolean
@@ -96,7 +96,7 @@ interface MapStateShape {
  * initMap / refreshMapMarkers / destroyMap call sites.
  */
 function getMapState(): MapStateShape {
-    return appState as unknown as MapStateShape
+    return appState
 }
 
 let leafletAssetsPromise: Promise<unknown> | null = null
