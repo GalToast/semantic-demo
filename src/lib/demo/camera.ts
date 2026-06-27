@@ -33,7 +33,7 @@ function isThreeVector(value: unknown): value is Vector3 {
 }
 
 function getDemoCameraPosition(): Vector3 | null {
-    const camera = appState.camera as unknown as { position?: unknown } | null
+    const camera = appState.camera
     return isThreeVector(camera?.position) ? camera.position : null
 }
 
