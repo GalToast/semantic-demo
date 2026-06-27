@@ -81,4 +81,14 @@ describe('SearchResults component', () => {
     it('keyboard aria-keyshortcuts on result list container', () => {
         expect(source).toContain('aria-keyshortcuts="ArrowDown ArrowUp ArrowLeft ArrowRight Home End Enter Escape"');
     });
+
+    it('peek label uses canonical panelSurfaceDetail state, not summary.mode', () => {
+        // Regression: previously read summary?.mode which never existed on the
+        // SearchSummary shape (only resultIndices/anchorIndex/topIndex). The
+        // mobile "Top match · X more" label never fired.
+        expect(source).toContain("appState.composition.panelSurfaceDetail === 'peek'");
+        expect(source).not.toContain("summary?.mode === 'peek'");
+        expect(source).toContain('Top match');
+        expect(source).toContain('search-results-count-hidden');
+    });
 });

@@ -371,7 +371,7 @@
       <div id="search-results-count" class="search-results-count" role="status" aria-live="polite" aria-atomic="true">
         {#if total === 1}
           <span class="search-results-count-anchor">Top match</span>
-        {:else if summary?.mode === 'peek'}
+        {:else if appState.composition.panelSurfaceDetail === 'peek' && total > visibleCount}
           <span class="search-results-count-anchor">Top match</span>
           <span class="search-results-count-divider" aria-hidden="true">·</span>
           <span class="search-results-count-hidden">{total - visibleCount} more</span>
