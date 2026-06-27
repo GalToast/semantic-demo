@@ -562,7 +562,7 @@ body[data-semantic-dive='transitioning'] #canvas-container {
     transition: opacity 0.3s ease;
 }
 
-body[data-route-director='map-trail'] .map-strip-title {
+.map-strip-title[data-route-director='map-trail'] {
     opacity: 1;
 }
 

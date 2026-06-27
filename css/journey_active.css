@@ -136,7 +136,7 @@
        on legacy absolute .map-strip-title rules"). The legacy floating-
        pill design positions the title at y=-68 (above the viewport)
        because the 40-71px strip with bottom:120px leaves negative space. */
-    body[data-route-director='map-trail'] .map-strip-title {
+    .map-strip-title[data-route-director='map-trail'] {
         position: static;
         inset: auto;
         transform: none;
