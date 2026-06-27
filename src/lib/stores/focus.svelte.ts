@@ -23,6 +23,37 @@ import type {
 } from '@lib/types/state'
 import type { BusinessRecord } from '@lib/types/business'
 import type { Point } from '@lib/state/state-types'
+
+/** 
+ * Hydration source shape for focus store initialization.
+ * Mirrors the structure expected from appState.
+ */
+interface FocusHydrationSource {
+    navState?: {
+        focusPocketIndices?: number[]
+        focusPocketRoleByIndex?: Map<number, string>
+        focusPocketMeta?: FocusStoreState['pocketMeta']
+        focusedIndex?: number | null
+        trailDepth?: number
+    }
+    targetPositions?: Array<{ x: number; y: number; z: number }>
+    nodePositions?: Array<{ x: number; y: number; z: number }>
+    originalPositions?: Array<{ x: number; y: number; z: number }>
+    selectedPoint?: BusinessRecord | null
+    inspectedThreadIndex?: number | null
+    pinnedThreadIndex?: number | null
+    nodesAreSettling?: boolean
+    pocketMotionByIndex?: Map<number, PocketMotionWithFrame>
+    pocketTransitionStartedAt?: number
+    infoPanelOpen?: boolean
+    pocketListVisible?: boolean
+    focusTransitionMode?: FocusTransitionMode
+    focusTransitionStartedAt?: number
+    focusOrbitSlackState?: FocusOrbitSlackState
+    inspectedStrandDiagnostics?: ThreadInspectorState
+    threadInspectorPointerInside?: boolean
+    pocketRoleFilter?: PocketRoleFilter
+}
 import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'
@@ -86,34 +117,42 @@ const INITIAL_FOCUS: FocusStoreState = {
 
 // ── Store ────────────────────────────────────────────────────────────────────
 
+/** Get typed access to appState for focus store hydration. */
+function getFocusHydrationSource(): FocusHydrationSource {
+    return appState as unknown as FocusHydrationSource
+}
+
+/**
+ * Narrow BusinessRecord | null to Point | null for appState.selectedPoint assignments.
+ * BusinessRecord and Point share a structural subset; this helper documents the
+ * safe narrowing at the two call sites (withFocusNotify and focusStore.set).
+ */
+function narrowToPoint(business: BusinessRecord | null): Point | null {
+    if (!business) return null
+    // BusinessRecord has an index signature and all Point fields are optional,
+    // so this is a safe structural cast
+    const point: Point = {
+        name: business.name ?? null,
+        what: business.what ?? null,
+        trivia: business.trivia ?? null,
+        public_note: business.public_note ?? null,
+        public_detail: business.public_detail ?? null,
+        city: business.city ?? null,
+        cluster: business.cluster ?? null,
+        status: business.status ?? null,
+        phone: business.phone ?? null,
+        email: business.email ?? null,
+        website: business.website ?? null,
+        lat: business.lat ?? null,
+        lng: business.lng ?? null,
+        lead_id: business.lead_id ?? null
+    }
+    return point
+}
+
 /** Read a fresh snapshot from the state kernel (appState). */
 function _readFocusSnapshot(): FocusStoreState {
-    const source = appState as unknown as {
-        navState?: {
-            focusPocketIndices?: number[]
-            focusPocketRoleByIndex?: Map<number, string>
-            focusPocketMeta?: FocusStoreState['pocketMeta']
-            focusedIndex?: number | null
-            trailDepth?: number
-        }
-        targetPositions?: Array<{ x: number; y: number; z: number }>
-        nodePositions?: Array<{ x: number; y: number; z: number }>
-        originalPositions?: Array<{ x: number; y: number; z: number }>
-        selectedPoint?: BusinessRecord | null
-        inspectedThreadIndex?: number | null
-        pinnedThreadIndex?: number | null
-        nodesAreSettling?: boolean
-        pocketMotionByIndex?: Map<number, PocketMotionWithFrame>
-        pocketTransitionStartedAt?: number
-        infoPanelOpen?: boolean
-        pocketListVisible?: boolean
-        focusTransitionMode?: FocusTransitionMode
-        focusTransitionStartedAt?: number
-        focusOrbitSlackState?: FocusOrbitSlackState
-        inspectedStrandDiagnostics?: ThreadInspectorState
-        threadInspectorPointerInside?: boolean
-        pocketRoleFilter?: PocketRoleFilter
-    }
+    const source = getFocusHydrationSource()
     const navState = source.navState ?? {}
     const indices = navState.focusPocketIndices || []
     const roles = navState.focusPocketRoleByIndex || new Map<number, string>()
@@ -201,7 +240,7 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
     appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
     appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
     appState.navState.focusPocketMeta = next.pocketMeta
-    appState.selectedPoint = next.selectedBusiness as unknown as Point | null
+    appState.selectedPoint = narrowToPoint(next.selectedBusiness)
     appState.inspectedThreadIndex = inspectedThreadIndex
     appState.pinnedThreadIndex = next.pinnedThreadIndex
     appState.nodesAreSettling = next.nodesAreSettling
@@ -253,7 +292,8 @@ export type FocusStoreApi = (() => FocusStoreState) &
 function _createFocusStore(): FocusStoreApi {
     // Function call: returns fresh snapshot from the writable (kept in sync
     // by withFocusNotify for every appState bridge mutation).
-    const fn = (() => get(_focusWritable)) as unknown as FocusStoreApi
+    const getCurrent = (): FocusStoreState => get(_focusWritable)
+    const fn = getCurrent as FocusStoreApi
 
     fn.subscribe = _focusWritable.subscribe
     fn.update = (updater: (_s: FocusStoreState) => FocusStoreState) => withFocusNotify(updater)
@@ -266,7 +306,7 @@ function _createFocusStore(): FocusStoreApi {
         appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
         appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
         appState.navState.focusPocketMeta = value.pocketMeta
-        appState.selectedPoint = value.selectedBusiness as unknown as Point | null
+        appState.selectedPoint = narrowToPoint(value.selectedBusiness)
         appState.inspectedThreadIndex = inspectedThreadIndex
         appState.pinnedThreadIndex = value.pinnedThreadIndex
         appState.nodesAreSettling = value.nodesAreSettling
