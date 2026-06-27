@@ -101,4 +101,28 @@ describe('Info Panel per-state content', () => {
     // Should have {#if contentDescriptor.headerVisible} block
     expect(infoPanelSource).toMatch(/\{#if contentDescriptor\.headerVisible\}/);
   });
+
+  // Regression: previously, surfaces like 'inside', 'thread-inspect', and 'trail'
+  // fell through to the FALLBACK_DESCRIPTOR (which is the 'idle' search-first
+  // panel). The InfoPanel silently showed search-first idle content when users
+  // entered deep-dive, thread inspection, or trail modes. Each of these surfaces
+  // must now have its own contextually appropriate descriptor in the helper.
+  it('info-panel-state helper has a content descriptor for the inside surface (regression: was idle fallback)', () => {
+    // Must have a 'inside' key in CONTENT_BY_SURFACE, not just the FALLBACK.
+    expect(helperSource).toMatch(/'inside':\s*\{/);
+  });
+
+  it('info-panel-state helper has a content descriptor for the thread-inspect surface (regression: was idle fallback)', () => {
+    expect(helperSource).toMatch(/'thread-inspect':\s*\{/);
+  });
+
+  it('info-panel-state helper has a content descriptor for the trail surface (regression: was idle fallback)', () => {
+    expect(helperSource).toMatch(/'trail':\s*\{/);
+  });
+
+  it('info-panel-state helper has content descriptors for transition states (walking/arriving/settling)', () => {
+    expect(helperSource).toMatch(/\bwalking:\s*\{/);
+    expect(helperSource).toMatch(/\barriving:\s*\{/);
+    expect(helperSource).toMatch(/\bsettling:\s*\{/);
+  });
 });

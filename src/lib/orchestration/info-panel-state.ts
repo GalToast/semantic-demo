@@ -74,6 +74,64 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         emptySubtext: 'Select a business to dive deeper into its connections.',
         panelVisible: true,
         selectionSuppressed: false
+    },
+    'inside': {
+        // Deep-dive mode: user has entered the focused business's local
+        // neighborhood. The InfoPanel shows the anchor business with
+        // context-appropriate copy.
+        headerText: 'Inside',
+        headerVisible: true,
+        emptyHeadline: 'Exploring the local neighborhood',
+        emptySubtext: 'Walk through the streets and stories of this business and its neighbors.',
+        panelVisible: true,
+        selectionSuppressed: false
+    },
+    'thread-inspect': {
+        // Thread inspection mode: user is inspecting a specific thread
+        // (connection). The InfoPanel shows the inspected thread.
+        headerText: 'Thread',
+        headerVisible: true,
+        emptyHeadline: 'Inspecting a thread',
+        emptySubtext: 'Read the connection between this business and its neighbor.',
+        panelVisible: true,
+        selectionSuppressed: true
+    },
+    'trail': {
+        // Trail mode: user is walking a trail of connected businesses.
+        headerText: 'Trail',
+        headerVisible: true,
+        emptyHeadline: 'Following a trail',
+        emptySubtext: 'Walk from the anchor through its connected businesses.',
+        panelVisible: true,
+        selectionSuppressed: false
+    },
+    // Transition states during the focus animation. The panel keeps showing
+    // the focus content rather than falling back to idle mid-animation.
+    // (Inlined rather than spread from CONTENT_BY_SURFACE.focus because that
+    // variable isn't assigned yet at this point in the object literal.)
+    walking: {
+        headerText: 'Business Details',
+        headerVisible: true,
+        emptyHeadline: 'Select a business to see details',
+        emptySubtext: 'Click a node in the field to explore its connections.',
+        panelVisible: true,
+        selectionSuppressed: false
+    },
+    arriving: {
+        headerText: 'Business Details',
+        headerVisible: true,
+        emptyHeadline: 'Select a business to see details',
+        emptySubtext: 'Click a node in the field to explore its connections.',
+        panelVisible: true,
+        selectionSuppressed: false
+    },
+    settling: {
+        headerText: 'Business Details',
+        headerVisible: true,
+        emptyHeadline: 'Select a business to see details',
+        emptySubtext: 'Click a node in the field to explore its connections.',
+        panelVisible: true,
+        selectionSuppressed: false
     }
 }
 
