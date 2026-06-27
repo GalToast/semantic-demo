@@ -1,5 +1,5 @@
 /**
- * @lib/engine/map-appState.ts — Leaflet map state, route embodiment, terrain handoff
+ * @lib/engine/map-state.ts — Leaflet map state, route embodiment, terrain handoff
  *
  * Port of
  * Manages Leaflet map initialization, marker refresh, route embodiment,
@@ -485,7 +485,10 @@ export function refreshMapMarkers(): void {
         const priorityMarkers: LeafletMarker[] = []
 
         ;(appState.pointMarkers as Array<{ marker: LeafletMarker; index: number }>).forEach(({ marker, index }) => {
-            if (!isPointVisible(index, appState.points as Point[], appState.activeClusterFilter, appState.activeFilters)) return
+            if (
+                !isPointVisible(index, appState.points as Point[], appState.activeClusterFilter, appState.activeFilters)
+            )
+                return
             const point = (appState.points as Point[])[index]
             if (!point) return
             if (point.cluster === null || point.cluster === undefined || !Number.isFinite(point.cluster))
@@ -561,7 +564,8 @@ export function getRouteDirectorState(): string {
             ? 'map-trail'
             : 'map-overview'
     }
-    if (appState.semanticDiveMode && appState.focusedNode !== null && appState.focusedNode !== undefined) return 'inside-pocket'
+    if (appState.semanticDiveMode && appState.focusedNode !== null && appState.focusedNode !== undefined)
+        return 'inside-pocket'
     if (appState.focusedNode !== null && appState.focusedNode !== undefined) {
         if ((appState.navState.walkHistoryIndices || []).length > 1 || appState.navState.mode === 'trail')
             return 'thread-walk'
