@@ -1088,7 +1088,7 @@ body[data-panel-surface]:not([data-panel-surface^='map-']) .focus-stage-neighbor
         transform: translateX(-50%);
     }
 
-    body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:is([data-panel-surface='focus'], [data-panel-surface='semantic-dive'])
         .journey-compass[data-density='compact']
         #journey-compass-title {
         display: block;

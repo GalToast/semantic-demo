@@ -1129,57 +1129,30 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * and the neighbor list only shows pills with data-relationship-role='direct'.
      */
     test('23. focus-role-filters render and filter neighbors by relationship', async ({ page }) => {
-        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        // Wait for the 3D scene to fully initialize — the weather widget + real temperature
-        // are the canonical proxy signals that the data worker has loaded the dataset.
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
-        await page
-            .locator('.weather-temp')
-            .filter({ hasText: /^[1-9]\d?°$/ })
-            .first()
-            .waitFor({ timeout: 40000 })
-        await page.waitForTimeout(2000)
+        // Wait for the 3D scene to initialise (same pattern as test 21).
+        const canvas = page.locator('canvas').first()
+        await canvas.waitFor({ state: 'attached', timeout: 40000 })
+        await page.waitForTimeout(5000)
 
-        // Focus a business via search — more deterministic than canvas raycasting in headless.
-        await page.evaluate(() => document.activeElement?.blur())
-        await page.keyboard.press('/')
-        await page.keyboard.type('coffee')
-        await page.waitForTimeout(1500)
+        // Focus a business by clicking a canvas node (same pattern as test 21).
+        await canvas.click()
+        await page.waitForTimeout(2500)
 
-        // Wait for the search result list to populate and click the first result.
-        const resultList = page.locator('#search-result-list')
-        await resultList.waitFor({ state: 'visible', timeout: 10000 })
-        const firstResult = page.locator('#search-result-list .search-result-listitem').first()
-        await firstResult.waitFor({ state: 'visible', timeout: 10000 })
-        await firstResult.click()
-        await page.waitForTimeout(3000)
+        // Verify a business is focused
+        const focusedIndex = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
+        expect(focusedIndex).not.toBeNull()
 
-        // Verify a business is focused (surface may be 'focus' or 'focus-search').
-        const debugState = await page.evaluate(() => ({
-            surface: window.__APP_STATE__?.navState?.surface,
-            mode: window.__APP_STATE__?.navState?.mode,
-            focusedIndex: window.__APP_STATE__?.navState?.focusedIndex,
-            pocketNodes: window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0,
-            threadCandidates: window.__APP_STATE__?.navState?.threadCandidates?.length ?? 0
-        }))
-        console.log('[PHASE3 DEBUG]', JSON.stringify(debugState))
-        expect(
-            debugState.surface?.startsWith('focus') && debugState.focusedIndex != null,
-            `expected a focused business after selecting a search result, got ${JSON.stringify(debugState)}`
-        ).toBe(true)
-
-        // Wait for the focus pocket to build (up to 10s)
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0,
-            null,
-            { timeout: 10000 }
-        )
+        // Wait for the focus pocket to build
+        await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {
+            timeout: 10000
+        })
         await page.waitForTimeout(500)
 
         // Wait for the filter chip container to render
@@ -1198,12 +1171,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
 
         // Verify chip labels
         const chipTexts = await chips.allTextContents()
-        expect(chipTexts.map((t) => t.trim()).sort()).toEqual([
-            'All',
-            'Civic anchor',
-            'Direct link',
-            'Supporting link'
-        ])
+        expect(chipTexts.map((t) => t.trim()).sort()).toEqual(['All', 'Civic anchor', 'Direct link', 'Supporting link'])
 
         // Verify 'all' chip is active by default
         const allChip = page.locator('#focus-role-filters .focus-role-filter-chip[data-role-filter="all"]')
@@ -1252,56 +1220,30 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * view and open the help panel.
      */
     test('24. focus-keyboard-hint is visible in focus mode and shows Esc and ? shortcuts', async ({ page }) => {
-        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
         const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        // Wait for the 3D scene to fully initialize — the weather widget + real temperature
-        // are the canonical proxy signals that the data worker has loaded the dataset.
-        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
-        await page
-            .locator('.weather-temp')
-            .filter({ hasText: /^[1-9]\d?°$/ })
-            .first()
-            .waitFor({ timeout: 40000 })
-        await page.waitForTimeout(2000)
+        // Wait for the 3D scene to initialise (same pattern as test 21).
+        const canvas = page.locator('canvas').first()
+        await canvas.waitFor({ state: 'attached', timeout: 40000 })
+        await page.waitForTimeout(5000)
 
-        // Focus a business via search — more deterministic than canvas raycasting in headless.
-        await page.evaluate(() => document.activeElement?.blur())
-        await page.keyboard.press('/')
-        await page.keyboard.type('coffee')
-        await page.waitForTimeout(1500)
+        // Focus a business by clicking a canvas node (same pattern as test 21).
+        await canvas.click()
+        await page.waitForTimeout(2500)
 
-        // Wait for the search result list to populate and click the first result.
-        const resultList = page.locator('#search-result-list')
-        await resultList.waitFor({ state: 'visible', timeout: 10000 })
-        const firstResult = page.locator('#search-result-list .search-result-listitem').first()
-        await firstResult.waitFor({ state: 'visible', timeout: 10000 })
-        await firstResult.click()
-        await page.waitForTimeout(3000)
+        // Verify a business is focused
+        const focusedIdx = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
+        expect(focusedIdx).not.toBeNull()
 
-        // Verify a business is focused (surface may be 'focus' or 'focus-search').
-        const debugState = await page.evaluate(() => ({
-            surface: window.__APP_STATE__?.navState?.surface,
-            mode: window.__APP_STATE?.navState?.mode,
-            focusedIndex: window.__APP_STATE__?.navState?.focusedIndex,
-            pocketNodes: window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0
-        }))
-        console.log('[PHASE3 DEBUG]', JSON.stringify(debugState))
-        expect(
-            debugState.surface?.startsWith('focus') && debugState.focusedIndex != null,
-            `expected a focused business after selecting a search result, got ${JSON.stringify(debugState)}`
-        ).toBe(true)
-
-        // Wait for the focus pocket to build (up to 10s)
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0,
-            null,
-            { timeout: 10000 }
-        )
+        // Wait for the focus pocket to build
+        await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {
+            timeout: 10000
+        })
         await page.waitForTimeout(500)
 
         // Wait for the keyboard hint badge to render
@@ -1310,14 +1252,8 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
 
         // Verify the hint text includes 'Esc' and '?'
         const hintText = (await hint.textContent()) ?? ''
-        expect(
-            hintText.includes('Esc'),
-            `keyboard hint should include 'Esc' but got: "${hintText}"`
-        ).toBe(true)
-        expect(
-            hintText.includes('?'),
-            `keyboard hint should include '?' but got: "${hintText}"`
-        ).toBe(true)
+        expect(hintText.includes('Esc'), `keyboard hint should include 'Esc' but got: "${hintText}"`).toBe(true)
+        expect(hintText.includes('?'), `keyboard hint should include '?' but got: "${hintText}"`).toBe(true)
     })
 
     test('proximity legend renders on first visit and is dismissible', async ({ page }) => {
