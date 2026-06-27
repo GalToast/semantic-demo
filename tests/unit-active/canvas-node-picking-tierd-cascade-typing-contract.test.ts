@@ -53,14 +53,19 @@ describe('canvas-node-picking.ts / Tier D cascade', () => {
         expect(source).toMatch(/appState\.lastCanvasNodePick\s*=/)
     })
 
-    it('preserved: getRaycastPointsMesh uses as unknown as Object3D', () => {
+    it('preserved: getRaycastPointsMesh uses single-hop as Object3D', () => {
+        // cc4dcd52 collapsed the double-hop cast ('as unknown as Object3D')
+        // to a direct single-hop cast. The contract intent ("Points is
+        // structurally Object3D-compatible so the cast is safe") is preserved;
+        // only the unnecessary 'unknown' middleman was removed.
         const source = readSource('src/lib/journey/canvas-node-picking.ts')
-        expect(source).toMatch(/pointsMesh\s+as\s+unknown\s+as\s+Object3D/)
+        expect(source).toMatch(/pointsMesh\s+as\s+Object3D(?!\s*[\[\.])/)
     })
 
-    it('preserved: getRaycastPoints uses as unknown as GeoPoint[]', () => {
+    it('preserved: getRaycastPoints uses single-hop as GeoPoint[]', () => {
+        // cc4dcd52 collapsed the double-hop cast to a direct single-hop cast.
         const source = readSource('src/lib/journey/canvas-node-picking.ts')
-        const pointsCasts = source.match(/appState\.points\s+as\s+unknown\s+as\s+GeoPoint\[\]/g) || []
+        const pointsCasts = source.match(/appState\.points\s+as\s+GeoPoint\[\]/g) || []
         expect(
             pointsCasts.length,
             `expected GeoPoint[] cast preserved, got ${pointsCasts.length}`

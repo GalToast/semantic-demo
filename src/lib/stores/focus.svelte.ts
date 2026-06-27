@@ -124,14 +124,21 @@ function getFocusHydrationSource(): FocusHydrationSource {
 
 /**
  * Narrow BusinessRecord | null to Point | null for appState.selectedPoint assignments.
- * BusinessRecord and Point share a structural subset; this helper documents the
- * safe narrowing at the two call sites (withFocusNotify and focusStore.set).
+ *
+ * BusinessRecord has fields beyond Point (id, index, etc.). This helper
+ * spreads the input first (preserves all fields), then overlays Point's
+ * documented shape with explicit defaults. Callers that read
+ * `appState.selectedPoint` get all business fields (Point's index
+ * signature `[key: string]: unknown` accepts the extras) while callers
+ * that read `selectedBusiness()` get the raw input via the writable
+ * (see line 338).
+ *
+ * Two call sites: `withFocusNotify` (line ~243) and `focusStore.set` (line ~309).
  */
 function narrowToPoint(business: BusinessRecord | null): Point | null {
     if (!business) return null
-    // BusinessRecord has an index signature and all Point fields are optional,
-    // so this is a safe structural cast
-    const point: Point = {
+    return {
+        ...business,
         name: business.name ?? null,
         what: business.what ?? null,
         trivia: business.trivia ?? null,
@@ -147,7 +154,6 @@ function narrowToPoint(business: BusinessRecord | null): Point | null {
         lng: business.lng ?? null,
         lead_id: business.lead_id ?? null
     }
-    return point
 }
 
 /** Read a fresh snapshot from the state kernel (appState). */
@@ -335,7 +341,7 @@ export const focusStore: FocusStoreApi = _createFocusStore()
 
 export const pocketNodes = () => appState.navState.focusPocketIndices
 export const pocketMeta = () => appState.navState.focusPocketMeta
-export const selectedBusiness = () => appState.selectedPoint
+export const selectedBusiness = () => get(_focusWritable).selectedBusiness
 export const infoPanelOpen = () => appState.infoPanelOpen
 export const pocketListVisible = () => appState.pocketListVisible
 export const semanticDiveMode = () => appState.navState.trailDepth === 2
