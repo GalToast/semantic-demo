@@ -29,8 +29,6 @@ import {
     easeOutQuint
 } from '@lib/utils/math-easing'
 import { setFocusTransitionMode, startFocusCameraAssist } from '../camera-controls-core'
-import type { ChoreographyPersonality } from './types'
-
 interface FocusFramingOptions extends FramingParams {
     transitionStyle?: string
     distance?: number
@@ -43,30 +41,15 @@ interface FocusFramingOptions extends FramingParams {
 /** Public alias consumed by camera-choreography/index.ts barrel re-export. */
 export type AnimateCameraToNodeOptions = FocusFramingOptions
 
-interface FocusPocketProfile extends PocketProfile {
-    targetOffsetLimit?: number
-}
-
-interface FocusPersonality extends ChoreographyPersonality {
-    [key: string]: unknown
+/** Camera-readable personality shape. Structurally compatible with
+ * `appState.navState.currentPersonality: Record<string, unknown> | null`
+ * via the `[key: string]: unknown` index signature. */
+interface FocusPersonality {
+    type?: string
     cameraDuration?: number
+    cameraArc?: string
     easing?: string
-}
-
-/** Narrowed navState for focus camera animation. Overrides base types with camera-specific shapes. */
-interface FocusNavState {
-    mode: string
-    focusedIndex: number | null
-    threadSource: string
-    focusPocketIndices: number[]
-    focusPocketMeta: (NavFocusPocketMeta & { viewportProfile?: FocusPocketProfile }) | null
-    focusFramingMeta: Partial<FocusFramingOptions> | null
-    currentPersonality: FocusPersonality | null
     [key: string]: unknown
-}
-
-function getTypedNavState(): FocusNavState {
-    return appState.navState as unknown as FocusNavState
 }
 
 // -----------------------------------------------------------------------------
@@ -88,8 +71,12 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     const controls = appState.controls
     const targetPosition: NodePosition | undefined = appState.nodePositions[index] || appState.originalPositions[index]
     if (!targetPosition) return
+    // NavFocusFramingMeta and FocusFramingOptions have similar shape but
+    // NavFocusFramingMeta.targetOffset is `unknown` while FocusFramingOptions
+    // expects `Vector3`. Spread is sound at runtime; the final `as
+    // FocusFramingOptions` documents the intentional narrowing.
     const framing = {
-        ...(getTypedNavState().focusFramingMeta || {}),
+        ...(appState.navState.focusFramingMeta || {}),
         ...options
     } as FocusFramingOptions
     const transitionStyle = framing.transitionStyle || 'focus'
@@ -120,13 +107,15 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     let heading = currentHeading.clone()
     let stageRightVector: Vector3 | null = null
     let safeTargetOffset: Vector3 | null = null
-    const navState = getTypedNavState()
+    const navState = appState.navState
     const isSemanticPocketFocus = navState.threadSource === 'semantic' && navState.focusPocketMeta?.active
 
     if (isSemanticPocketFocus && navState.focusPocketIndices?.length) {
         const pocketBounds = computeFocusPocketScreenBounds(
             navState.focusedIndex,
-            navState.focusPocketIndices,
+            // computeFocusPocketScreenBounds expects mutable number[] but
+            // navState.focusPocketIndices is readonly. Spread to copy.
+            [...navState.focusPocketIndices],
             appState as unknown as AppStateLike
         )
         if (pocketBounds) {
@@ -134,8 +123,11 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
             const camDist = camera.position.distanceTo(controls.target)
             const safeOffset = computeSafeAreaCameraTargetOffset(pocketBounds, region, camDist, camera, controls)
             if (safeOffset) {
-                const pocketProfile = navState.focusPocketMeta?.viewportProfile || ({} as PocketProfile)
-                const rawOffsetLimit = pocketProfile.targetOffsetLimit
+                const pocketProfile = navState.focusPocketMeta?.viewportProfile
+                const rawOffsetLimit: number | undefined =
+                    pocketProfile && typeof pocketProfile === 'object'
+                        ? (pocketProfile as { targetOffsetLimit?: number }).targetOffsetLimit
+                        : undefined
                 const offsetLimit = Number.isFinite(rawOffsetLimit) ? Number(rawOffsetLimit) : 0.12
                 if (safeOffset.length() > offsetLimit) safeOffset.setLength(offsetLimit)
                 const nudgeTarget = focusTarget.clone().add(safeOffset)
@@ -170,8 +162,10 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
             transitionStyle === 'dive-walk') &&
         isSemanticPocketFocus
     ) {
-        const pocketProfile = getTypedNavState().focusPocketMeta?.viewportProfile || ({} as PocketProfile)
-        const res = computeOrbitBiasHeading(currentHeading, transitionStyle, pocketProfile)
+        const pocketProfile = appState.navState.focusPocketMeta?.viewportProfile
+        // computeOrbitBiasHeading expects PocketProfile (key?: string).
+        // viewportProfile has key?: string + extras; structurally compatible.
+        const res = computeOrbitBiasHeading(currentHeading, transitionStyle, (pocketProfile ?? {}) as PocketProfile)
         heading = res.heading
         stageRightVector = res.stageRightVector
     }
@@ -181,7 +175,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
         .add(heading.multiplyScalar(distance))
         .add(new Vector3(0, verticalLift, 0))
 
-    const personality = getTypedNavState().currentPersonality || {
+    const personality = (appState.navState.currentPersonality as FocusPersonality | null) || {
         type: 'STANDARD',
         cameraDuration: 980,
         cameraArc: 'standard',
