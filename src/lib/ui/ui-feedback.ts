@@ -13,6 +13,24 @@ import { formatBusinessName } from '@lib/utils/dom-formatters';
 import { setActiveSearchResultRow } from '@lib/search/result-renderer';
 import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer';
 
+// ── PRIVATE HELPERS — typed accessors (Phase 18 cast consolidation) ───────
+
+/**
+ * `appState.currentSearchSummary` is read in three call sites in this
+ * module, each shape-narrowing the same `unknown`-bridge. Consolidate
+ * behind a typed accessor so the inline `as unknown as Record<...>`
+ * dance lives in one helper.
+ */
+interface CurrentSearchSummarySnapshot {
+    resultIndices?: number[]
+    query?: string
+    [key: string]: unknown
+}
+
+function getCurrentSearchSummarySnapshot(): CurrentSearchSummarySnapshot | null {
+    return appState.currentSearchSummary as unknown as CurrentSearchSummarySnapshot | null
+}
+
 export function showExperienceToast(title: string, copy: string): void {
     const toast = document.getElementById('experience-reset-toast');
     if (!toast) return;
@@ -53,9 +71,8 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
     const pointIndex = Number.isFinite(pointIndexByLeadId)
         ? pointIndexByLeadId
         : (appState.points as Point[] | undefined)?.indexOf?.(point);
-    const resultIndices = Array.isArray((appState.currentSearchSummary as unknown as Record<string, unknown> | null)?.resultIndices)
-        ? (appState.currentSearchSummary as unknown as Record<string, unknown>).resultIndices as number[]
-        : [];
+    const summary = getCurrentSearchSummarySnapshot()
+    const resultIndices = Array.isArray(summary?.resultIndices) ? summary!.resultIndices : [];
     const pointInResults = Number.isFinite(pointIndex) && resultIndices.includes(pointIndex as number);
     const focusedIndex = Number.isFinite(appState.focusedNode)
         ? appState.focusedNode
@@ -76,7 +93,7 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
 
     const displayPoint = focusedPointOutsideResults && appState.selectedPoint ? appState.selectedPoint : point;
     const pointName = formatBusinessName(displayPoint!.name);
-    const searchSummary = appState.currentSearchSummary as unknown as Record<string, unknown> | null;
+    const searchSummary = getCurrentSearchSummarySnapshot();
     const queryLabel = searchSummary?.query
         ? `"${searchSummary.query}"`
         : 'this connection path';
