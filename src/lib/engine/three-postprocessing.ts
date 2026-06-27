@@ -69,6 +69,26 @@ let _rendererRef: WebGLRenderer | null = null
 let _sceneRef: Scene | null = null
 let _cameraRef: PerspectiveCamera | null = null
 
+// ── Effect shape helpers ─────────────────────────────────────────────────
+
+// VignetteEffect and ChromaticAberrationEffect expose typed getters/setters
+// (offset, darkness, offset respectively) in the postprocessing library, so
+// no casts are needed for those effects.
+
+// BloomEffect only exposes `intensity` as a typed property; `luminanceThreshold`
+// and `radius` exist at runtime but are absent from the .d.ts, so we need a
+// single narrow helper-internal cast for those two fields.
+
+/** Narrowed shape for BloomEffect properties absent from postprocessing .d.ts. */
+interface BloomEffectUntypedFields {
+    luminanceThreshold: number
+    radius: number
+}
+
+function getBloomUntyped(bloom: BloomEffect): BloomEffectUntypedFields {
+    return bloom as unknown as BloomEffectUntypedFields
+}
+
 // ── Default effect parameters ────────────────────────────────────────────────
 
 /** Vignette: darken edges subtly, with smooth falloff. Offset 0.5, darkness 0.6. */
@@ -307,13 +327,12 @@ export function disposePostProcessing(): void {
  * Update vignette parameters at runtime (for DevGui sliders).
  */
 export function updateVignetteParams(params: { offset?: number; darkness?: number }): void {
-    const vignette = _vignetteEffect as unknown as { offset: number; darkness: number } | null
-    if (!vignette) return
+    if (!_vignetteEffect) return
     if (params.offset !== undefined) {
-        vignette.offset = params.offset
+        _vignetteEffect.offset = params.offset
     }
     if (params.darkness !== undefined) {
-        vignette.darkness = params.darkness
+        _vignetteEffect.darkness = params.darkness
     }
 }
 
@@ -321,9 +340,8 @@ export function updateVignetteParams(params: { offset?: number; darkness?: numbe
  * Update chromatic aberration offset at runtime (for DevGui sliders).
  */
 export function updateChromaticAberrationParams(params: { offset?: Vector2 }): void {
-    const aberration = _chromaticAberrationEffect as unknown as { offset: Vector2 } | null
-    if (!aberration || !params.offset) return
-    aberration.offset = params.offset
+    if (!_chromaticAberrationEffect || !params.offset) return
+    _chromaticAberrationEffect.offset = params.offset
 }
 
 /**
@@ -331,15 +349,15 @@ export function updateChromaticAberrationParams(params: { offset?: Vector2 }): v
  */
 export function updateBloomParams(params: { luminanceThreshold?: number; intensity?: number; radius?: number }): void {
     if (!_bloomEffect) return
-    const bloom = _bloomEffect as unknown as { intensity: number; luminanceThreshold: number; radius: number }
     if (params.intensity !== undefined) {
-        bloom.intensity = params.intensity
+        _bloomEffect.intensity = params.intensity
     }
+    const untyped = getBloomUntyped(_bloomEffect)
     if (params.luminanceThreshold !== undefined) {
-        bloom.luminanceThreshold = params.luminanceThreshold
+        untyped.luminanceThreshold = params.luminanceThreshold
     }
     if (params.radius !== undefined) {
-        bloom.radius = params.radius
+        untyped.radius = params.radius
     }
 }
 
