@@ -102,7 +102,7 @@ class CameraControlsCore {
                 }
                 document.body.classList.add('focus-transition-phase-settled')
             }
-        }, duration + 180) as unknown as number
+        }, duration + 180)
     }
 
     getFocusTransitionProgress(duration: number = 640): number {

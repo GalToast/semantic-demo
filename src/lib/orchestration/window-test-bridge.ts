@@ -172,9 +172,7 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
                     // so the test assertions for filter chips / keyboard
                     // hint have data to work with.
                     if (!ok || !(appState.navState.focusPocketIndices?.length > 0)) {
-                        const synthetic = (live.threadCandidates ?? [])
-                            .map((c) => c.index)
-                            .filter((i) => i !== index)
+                        const synthetic = (live.threadCandidates ?? []).map((c) => c.index).filter((i) => i !== index)
                         if (synthetic.length) {
                             appState.navState.focusPocketIndices = synthetic
                         } else {
@@ -205,7 +203,7 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
 function buildStateProxy(): Record<string, unknown> {
     return {
         get state() {
-            const liveAppState = ((window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] ||
+            const liveAppState = (window[APP_STATE_DIRECT_KEY] as Record<string, unknown> ||
                 appState) as Record<string, unknown>
             return {
                 currentView: get(navStore).currentView,

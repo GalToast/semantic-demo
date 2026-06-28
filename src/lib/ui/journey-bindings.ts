@@ -42,13 +42,7 @@ export function recenterFocusedNode(): void {
 }
 
 function resetCountyOverview(): void {
-    const actions = (
-        window as unknown as {
-            __APP_ACTIONS__?: {
-                resetExplorationFocus?: (options?: { preserveSearch?: boolean }) => void
-            }
-        }
-    ).__APP_ACTIONS__
+    const actions = window.__APP_ACTIONS__
     if (typeof actions?.resetExplorationFocus === 'function') {
         actions.resetExplorationFocus({ preserveSearch: false })
         return

@@ -85,12 +85,7 @@
     event.stopImmediatePropagation?.();
     const inspectedIndex = threadInspector().inspectedIndex ?? bodyInspectedIndex();
     if (inspectedIndex === null || !Number.isFinite(inspectedIndex)) return;
-    const actions = (window as unknown as {
-      __APP_ACTIONS__?: {
-        walkThreadNeighbor?: (_index: number, _options?: Record<string, unknown>) => unknown;
-        clearThreadInspection?: (_options?: Record<string, unknown>) => unknown;
-      };
-    }).__APP_ACTIONS__;
+    const actions = window.__APP_ACTIONS__;
 
     const currentIndex = focusedIndex();
     const history = walkHistoryIndices();

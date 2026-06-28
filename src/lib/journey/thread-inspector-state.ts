@@ -377,7 +377,7 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
             clearThreadInspection()
         }
     }, delay)
-    appState.canvasThreadInspectionClearTimer = id as unknown as ReturnType<typeof setTimeout>
+    appState.canvasThreadInspectionClearTimer = id
 }
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
