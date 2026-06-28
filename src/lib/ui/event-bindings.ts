@@ -28,7 +28,6 @@ import {
 import { bindLegendControls } from '@lib/ui/legend-bindings'
 import { bindUtilityButtons } from '@lib/ui/utility-bindings'
 import { bindGlobalEvents, disposeEventListeners } from '@lib/ui/global-bindings'
-import { scheduleOnboardingHint } from '@lib/ui/onboarding-bindings'
 import { bindFocusTrapObserver } from '@lib/utils/focus-trap-bindings'
 
 import { buildLegend } from '@lib/stores/legend-panel.svelte.ts'
@@ -89,5 +88,4 @@ export async function initEventListeners({
 
     if (typeof buildLegend === 'function') buildLegend()
     if (typeof syncClusterSectionState === 'function') syncClusterSectionState()
-    scheduleOnboardingHint()
 }
