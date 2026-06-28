@@ -129,16 +129,20 @@ function checkGating(file: string): Finding[] {
 
         const inDevUtil = devUtilEndLines.some((endLine) => i <= endLine)
 
+        // Dev-gate pattern: `import.meta.env.DEV` directly, or a module-level
+        // constant derived from it (e.g. `const IS_DEV = import.meta.env.DEV`).
+        const DEV_GATE = /(?:import\.meta\.env\.DEV|\bIS_DEV\b)/
+
         // 1. Same-line guard
         const sameLineGuard =
-            /if\s*\(\s*import\.meta\.env\.DEV\s*\)/.test(line) && /console\.(log|warn|error)\b/.test(line)
+            /if\s*\(\s*(?:import\.meta\.env\.DEV|IS_DEV)\b/.test(line) && /console\.(log|warn|error)\b/.test(line)
 
         // 2. Multi-line guard
         let multiLineGuard = false
         if (!sameLineGuard) {
             for (let back = 1; back <= 8 && i - back >= 0; back++) {
                 const prev = lines[i - back].trim()
-                if (/if\s*\(/.test(prev) && /import\.meta\.env\.DEV/.test(prev)) {
+                if (/if\s*\(/.test(prev) && DEV_GATE.test(prev)) {
                     multiLineGuard = true
                     break
                 }

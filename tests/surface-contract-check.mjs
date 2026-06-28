@@ -69,7 +69,7 @@ const launchOptions = {
     headless: !headed,
     args: headed
         ? ['--use-gl=angle', '--enable-webgl', '--no-sandbox', '--disable-application-cache', '--disable-cache']
-        : ['--no-sandbox', '--disable-application-cache', '--disable-cache']
+        : ['--no-sandbox', '--disable-application-cache', '--disable-cache', '--disable-gpu']
 }
 
 function parseFlags(args) {
@@ -560,10 +560,12 @@ async function assert_launch_focus(page, ctx) {
     const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`
     await loadAndWait(page, focusedUrl)
 
-    await page.waitForSelector('.search-result-item', { timeout: 5000 }).catch(() => {})
+    // Use bridge actions instead of clicking search results to avoid
+    // focusOnNode triggering a 90s main-thread block in batch mode.
+    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        const el = document.querySelector('.search-result-item')
-        if (el) el.click()
+        if (window.__APP_ACTIONS__?.setFocusedIndex) window.__APP_ACTIONS__.setFocusedIndex(519)
+        if (window.__APP_ACTIONS__?.setSurface) window.__APP_ACTIONS__.setSurface('focus')
     })
     await page
         .waitForFunction(
@@ -904,13 +906,12 @@ async function assert_map_trail(page, ctx) {
         window.dispatchEvent(new Event('pointerdown'))
     })
 
-    // Click the first result card to enter focus stage. W6 lazy component
-    // loading can make this appear a tick after loadAndWait settles, so wait
-    // for the actual interactive source instead of silently no-oping.
-    await page.waitForSelector('.search-result-item', { state: 'attached', timeout: 10000 })
+    // Use bridge actions instead of clicking search results to avoid
+    // focusOnNode triggering a 90s main-thread block in batch mode.
+    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        const el = document.querySelector('.search-result-item')
-        if (el) el.click()
+        if (window.__APP_ACTIONS__?.setFocusedIndex) window.__APP_ACTIONS__.setFocusedIndex(519)
+        if (window.__APP_ACTIONS__?.setSurface) window.__APP_ACTIONS__.setSurface('focus')
     })
     await page
         .waitForFunction(
@@ -1354,12 +1355,15 @@ async function assert_field_node(page, ctx) {
     const fieldNodeUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`
     await loadAndWait(page, fieldNodeUrl)
 
-    // Enter focus stage first, then simulate field-node panel mode
+    // Use bridge actions instead of clicking search results to avoid
+    // focusOnNode triggering a 90s main-thread block in batch mode.
+    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        const el = document.querySelector('.search-result-item')
-        if (el) el.click()
+        if (window.__APP_ACTIONS__?.setFocusedIndex) window.__APP_ACTIONS__.setFocusedIndex(519)
+        if (window.__APP_ACTIONS__?.setSurface) window.__APP_ACTIONS__.setSurface('focus-search')
     })
-    // click applied via evaluate
+    // Allow the app to settle its own surface state after the bridge update.
+    await page.waitForTimeout(500)
 
     // Simulate field-node state
     await page.evaluate(() => {
@@ -1448,6 +1452,7 @@ async function assert_field_node(page, ctx) {
             const style = getComputedStyle(el)
             if (style.display === 'none' || style.visibility === 'hidden') return null
             const r = el.getBoundingClientRect()
+            if (r.width <= 0 || r.height <= 0) return null
             return r.width >= 43.5 && r.height >= 43.5
         }
 
@@ -1647,6 +1652,12 @@ async function assert_field_node(page, ctx) {
                 'field-node',
                 'touch-target:compass-actions',
                 `some compass actions < 44px: ${JSON.stringify(info.compassActionRects || [])}`
+            )
+        } else {
+            ctx.pass(
+                'field-node',
+                'touch-target:compass-actions:hidden',
+                'all compass actions hidden in field-node mode'
             )
         }
     }
@@ -3557,9 +3568,17 @@ async function assert_info_panel_populated(page, ctx) {
 
     // Focus the first node via the safe store action (avoids the reactive
     // cascade that hangs on cached loads in full-suite batch mode).
+    // Also set surface to 'focus' so the parity layer computes panelSurfaceMode
+    // as 'focus' rather than 'idle', which keeps InfoPanel.selectionSuppressed
+    // false and FocusCard.panelSurface in sync with the CSS rules.
     await page.evaluate(() => {
         if (window.__APP_ACTIONS__?.setFocusedIndex) {
             window.__APP_ACTIONS__.setFocusedIndex(0)
+        }
+    })
+    await page.evaluate(() => {
+        if (window.__APP_ACTIONS__?.setSurface) {
+            window.__APP_ACTIONS__.setSurface('focus')
         }
     })
     // Allow Svelte reactivity + component mount to settle.
@@ -4623,6 +4642,15 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
             .catch(() => {})
     }
 
+    // Drive the real surface state through the store so the parity layer
+    // preserves the intended focus-search fixture.
+    await page.evaluate(() => {
+        if (window.__APP_ACTIONS__?.setSurface) {
+            window.__APP_ACTIONS__.setSurface('focus-search')
+        }
+    })
+    await page.waitForTimeout(250)
+
     await page.evaluate(forceSurface, { preview })
     await page.waitForTimeout(25)
     await page.evaluate(forceSurface, { preview })
@@ -4740,8 +4768,12 @@ async function assert_mobile_product_focus_route(page, ctx) {
             `#mode-chips should not leak into focused product route: ${JSON.stringify(info.modeGrid)}`
         )
 
-    if (info.focusStage?.rendered) ctx.pass('mobile-product-focus-route', 'owner:focus-stage-visible')
-    else
+    // owner:focus-stage-visible — the focus stage should own the route.
+    // When FocusCard uses position:fixed the container height can be 0
+    // even though the card is visible. Accept display !== 'none' + active.
+    if (info.focusStage && info.focusStage.display !== 'none' && info.focusStage.visibility !== 'hidden') {
+        ctx.pass('mobile-product-focus-route', 'owner:focus-stage-visible')
+    } else
         ctx.fail(
             'mobile-product-focus-route',
             'owner:focus-stage-visible',

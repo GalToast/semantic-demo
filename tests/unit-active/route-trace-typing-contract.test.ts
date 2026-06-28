@@ -95,16 +95,18 @@ describe('route-trace — typing contract (W47-Bite-H tightening)', () => {
     })
 
     it('dataset.routeMotion uses typed DOMStringMap access (no `as any`)', () => {
-        // L133, L222: both were `(document.body.dataset as any).routeMotion = ...`
-        // Both now use `document.body.dataset.routeMotion = ...`
+        // L147, L242: both were `(document.body.dataset as any).routeMotion = ...`
+        // Then `document.body.dataset.routeMotion = ...` (W47 typing)
+        // Now `canvasContainer.dataset.routeMotion = ...` (W49 refactor — write
+        // to the canvas container, not document.body).
         // Pattern variants — must check both locations
-        const typedAccess = /document\.body\.dataset\.routeMotion\s*=/g
+        const typedAccess = /canvasContainer\.dataset\.routeMotion\s*=/g
         const typedMatches = stripped.match(typedAccess)
         expect(typedMatches, 'typed dataset access not found').toBeTruthy()
         expect(typedMatches!.length).toBeGreaterThanOrEqual(2)
 
         // No `as any` casts on dataset anywhere
-        const badPattern = /document\.body\.dataset\s+as\s+any/g
+        const badPattern = /dataset\s+as\s+any/g
         expect(stripped.match(badPattern), 'old `dataset as any` still present').toBeNull()
     })
 
