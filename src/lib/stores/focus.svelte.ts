@@ -312,9 +312,11 @@ function _createFocusStore(): FocusStoreApi {
         const inspectedThreadIndex = value.threadInspector.active
             ? value.threadInspector.inspectedIndex
             : value.inspectedStrandIndex
-        appState.navState.focusPocketIndices = value.pocketNodes.map((n) => n.index)
-        appState.navState.focusPocketRoleByIndex = value.pocketRoleByIndex
-        appState.navState.focusPocketMeta = value.pocketMeta
+        writeNavStateMirror({
+            focusPocketIndices: value.pocketNodes.map((n) => n.index),
+            focusPocketRoleByIndex: value.pocketRoleByIndex,
+            focusPocketMeta: value.pocketMeta
+        })
         appState.selectedPoint = narrowToPoint(value.selectedBusiness)
         appState.inspectedThreadIndex = inspectedThreadIndex
         appState.pinnedThreadIndex = value.pinnedThreadIndex
