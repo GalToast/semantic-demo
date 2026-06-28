@@ -26,6 +26,7 @@ import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { currentSurface } from '@lib/stores/navigation.svelte'
 import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { syncFocusStage, updateSelectedBusiness } from '@lib/journey/selected-card'
 import { unpinThreadInspection } from '@lib/journey/thread-inspector-state'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
@@ -36,10 +37,10 @@ import { animateCameraToNode } from './focus'
 
 // W6-T5: Track pending parity-attr timeouts so rapid focusOnNode calls
 // don't stack up deferred DOM mutations.
-const parityTimeoutHandles: ReturnType<typeof setTimeout>[] = []
+let _parityRegistry = new DisposableRegistry({ label: 'parity-cursor' })
 function clearParityTimeouts(): void {
-    for (const t of parityTimeoutHandles) clearTimeout(t)
-    parityTimeoutHandles.length = 0
+    _parityRegistry.disposeAll()
+    _parityRegistry = new DisposableRegistry({ label: 'parity-cursor' })
 }
 
 // Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)
@@ -189,9 +190,9 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     // no longer overwrites the parity attrs.
     queueMicrotask(() => applyParityAttributes(computeParityAttributes()))
     clearParityTimeouts()
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    parityTimeoutHandles.push(setTimeout(() => applyParityAttributes(computeParityAttributes()), 50))
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    parityTimeoutHandles.push(setTimeout(() => applyParityAttributes(computeParityAttributes()), 250))
+    // eslint-disable-next-line no-restricted-syntax -- wrapped in _parityRegistry.timer()
+    _parityRegistry.timer(setTimeout(() => applyParityAttributes(computeParityAttributes()), 50))
+    // eslint-disable-next-line no-restricted-syntax -- wrapped in _parityRegistry.timer()
+    _parityRegistry.timer(setTimeout(() => applyParityAttributes(computeParityAttributes()), 250))
     return true
 }
