@@ -1809,13 +1809,26 @@ async function assert_field_node(page, ctx) {
 async function assert_info_panel_empty(page, ctx) {
     await loadAndWait(page, positionalUrl)
 
-    // Trigger the legacy InfoPanelChrome to render the selection surface
-    // (which contains #selected-card, #selected-empty, #selected-details).
-    // The default idle surface renders the overview instead.
+    // In headed mode, loadAndWait can return early (graphicsMode='fallback'
+    // triggers routeSettled) before the Svelte app mounts the InfoPanel.
+    // Wait for the component to exist before setting test state.
+    await page.waitForSelector('#info-panel', { timeout: 10000 }).catch(() => {})
+
+    // Trigger the InfoPanel to render the selection surface (which contains
+    // #selected-card, #selected-empty, #selected-details). The default idle
+    // surface renders the overview instead.
+    // Use bridge actions (setSurface) to update navStore directly — more
+    // reliable than body.dataset + syncTestStateFromBody() which can be
+    // overwritten by the parity layer's MutationObserver in headed/full-suite mode.
+    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setSurface, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        document.body.dataset.activeView = 'galaxy'
-        document.body.dataset.panelSurface = 'focus'
-        if (window.syncTestStateFromBody) window.syncTestStateFromBody()
+        if (window.__APP_ACTIONS__?.setSurface) {
+            window.__APP_ACTIONS__.setSurface('focus')
+        } else {
+            document.body.dataset.activeView = 'galaxy'
+            document.body.dataset.panelSurface = 'focus'
+            if (window.syncTestStateFromBody) window.syncTestStateFromBody()
+        }
     })
     await page
         .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => r(true))), { timeout: 3000 })

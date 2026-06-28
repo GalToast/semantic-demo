@@ -120,6 +120,12 @@
 
   // Test-compat: derive effective surface/focus from test store if stores not initialized.
   let effectiveSurface = $derived.by(() => {
+    // Contract test override: when testPanelSurface is a body-owning surface
+    // (set via body.dataset.panelSurface + syncTestStateFromBody), it must take
+    // priority over the app-initialized navStore surface. Otherwise the
+    // navStore surface (e.g. 'galaxy') preempts the test's explicit override,
+    // causing InfoPanel to render the wrong branch in headed/full-suite mode.
+    if (testPanelSurface && bodySurfaceOwnsInfoPanel(testPanelSurface)) return testPanelSurface;
     if (bodySurfaceOwnsInfoPanel(surface)) return surface;
     if (surface !== 'idle' && surface !== undefined) return surface;
     return testPanelSurface || 'idle';
