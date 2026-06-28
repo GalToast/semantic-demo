@@ -284,9 +284,6 @@ export function initKeyboardShortcutsHint(): void {
         }
         _previouslyFocused =
             returnFocusEl || document.getElementById('btn-keyboard-help') || (document.activeElement as HTMLElement)
-        const onboarding = document.getElementById('onboarding-hint')
-        onboarding?.classList.remove('visible')
-        onboarding?.setAttribute('aria-hidden', 'true')
         panel.classList.add('visible')
         panel.setAttribute('aria-hidden', 'false')
         const helpButton = document.getElementById('btn-keyboard-help')
@@ -330,9 +327,6 @@ export function showKeyboardShortcutsHint(): void {
     if (typeof panel._openKeyboardHintPanel === 'function') {
         panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
     } else {
-        const onboarding = document.getElementById('onboarding-hint')
-        onboarding?.classList.remove('visible')
-        onboarding?.setAttribute('aria-hidden', 'true')
         panel.classList.add('visible')
         panel.setAttribute('aria-hidden', 'false')
         ;(panel.querySelector('.kh-close') as HTMLElement)?.focus({ preventScroll: true })
@@ -377,9 +371,6 @@ export function toggleKeyboardShortcutsHint(): void {
     if (typeof panel._openKeyboardHintPanel === 'function') {
         panel._openKeyboardHintPanel(document.getElementById('btn-keyboard-help'))
     } else {
-        const onboarding = document.getElementById('onboarding-hint')
-        onboarding?.classList.remove('visible')
-        onboarding?.setAttribute('aria-hidden', 'true')
         panel.classList.add('visible')
         panel.setAttribute('aria-hidden', 'false')
     }

@@ -43,12 +43,6 @@ function clearParityTimeouts(): void {
     _parityRegistry = new DisposableRegistry({ label: 'parity-cursor' })
 }
 
-// Narrow local alias for onboarding-hint dynamic properties (matches onboarding-bindings.ts pattern)
-type OnboardingHint = HTMLElement & {
-    _dismissedThisSession?: boolean
-    _autoHideTimer?: ReturnType<typeof setTimeout> | null
-}
-
 // Local options interface matching runtime usage across all callers
 export interface FocusOnNodeOptions {
     preserveMode?: boolean
@@ -128,12 +122,6 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
 
     document.querySelectorAll('.search-result-item.is-processing').forEach((el) => el.classList.remove('is-processing'))
 
-    document.getElementById('onboarding-hint')?.classList.remove('visible')
-    const hint = document.getElementById('onboarding-hint') as OnboardingHint | null
-    if (hint) {
-        hint._dismissedThisSession = true
-        if (hint._autoHideTimer) clearTimeout(hint._autoHideTimer)
-    }
     document.body.dataset.focusOrigin = options.fromCanvasNode
         ? 'field-node'
         : options.fromSearchResult

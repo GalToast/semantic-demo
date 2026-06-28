@@ -259,23 +259,6 @@ export function syncFocusStage(point: BusinessRecord | Point | null): void {
     if (document.title !== pageTitle) {
         updateDocumentMeta(pageTitle, pageDesc)
     }
-
-    const onboardingHint = document.getElementById('onboarding-hint')
-    if (onboardingHint) {
-        onboardingHint.classList.remove('visible')
-        onboardingHint.setAttribute('aria-hidden', 'true')
-        ;(
-            onboardingHint as HTMLElement & {
-                _dismissedThisSession?: boolean
-                _autoHideTimer?: ReturnType<typeof setTimeout>
-            }
-        )._dismissedThisSession = true
-        const hint = onboardingHint as HTMLElement & {
-            _dismissedThisSession?: boolean
-            _autoHideTimer?: ReturnType<typeof setTimeout>
-        }
-        if (hint._autoHideTimer) clearTimeout(hint._autoHideTimer)
-    }
 }
 
 export function updateSelectedBusiness(

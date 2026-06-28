@@ -32,8 +32,7 @@
  *
  * Preserved (require module-level Map refactor to tighten):
  *   - 5x `(stage as any)._focusStageKeydownListener` — DOM property storage
- *   - 1x `(onboardingHint as any)._dismissedThisSession`
- *   - 2x `(onboardingHint as any)._autoHideTimer`
+ *   (onboardingHint patterns removed — #onboarding-hint element was never declared)
  *
  * Run: npx vitest run tests/unit-active/selected-card-point-typing-contract.test.ts
  */
@@ -146,12 +145,10 @@ describe('W47-Bite-Continued / selected-card.ts / point typing', () => {
         const source = readSource('src/lib/journey/selected-card.ts')
         // stage._focusStageKeydownListener — typed via HTMLElement & { ... }
         expect(source).toMatch(/stage\s+as\s+HTMLElement\s*&\s*\{[^}]*_focusStageKeydownListener/)
-        // onboardingHint._dismissedThisSession — typed via HTMLElement & { ... }
-        expect(source).toMatch(/onboardingHint\s+as\s+HTMLElement\s*&\s*\{[^}]*_dismissedThisSession/)
         // DisposableRegistry is now used (timer leak fix)
         expect(source).toMatch(/new DisposableRegistry/)
         // Ensure no `as any` remains for these patterns
         expect(source).not.toMatch(/\(stage\s+as\s+any\)\._focusStageKeydownListener/)
-        expect(source).not.toMatch(/\(onboardingHint\s+as\s+any\)\._dismissedThisSession/)
+        // onboardingHint assertions removed — dead code (#onboarding-hint element never declared)
     })
 })
