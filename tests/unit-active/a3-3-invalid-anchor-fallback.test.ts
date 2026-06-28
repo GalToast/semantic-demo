@@ -45,9 +45,10 @@ describe('A3-3: invalid anchor falls back to overview', () => {
   });
 
   it('invalid anchor resets navStore to overview mode', () => {
-    // The invalid-anchor branch must update navStore with mode: 'overview'
+    // The invalid-anchor branch must write navState with mode: 'overview'
+    // (via writeNavStateMirror — the dual-store consolidation entry point)
     const invalidBranch = source.match(
-      /A3-3:[\s\S]*?navStore\.update\(\(s\)\s*=>\s*\(\{[\s\S]*?mode:\s*'overview'/
+      /A3-3:[\s\S]*?writeNavStateMirror\(\s*\{[\s\S]*?mode:\s*'overview'/
     );
     expect(invalidBranch).toBeTruthy();
   });
