@@ -1,5 +1,5 @@
 <!--
-  @components/DemoChoreography.svelte — Micro-demo orchestrator
+  @components/DemoChoreography.svelte — Full-featured 10-phase auto-demo showcase
 -->
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
@@ -15,13 +15,13 @@
     shouldRunDemo,
     markDemoCompleted,
     markDemoSessionSkipped,
-    DEMO_TIMING,
     DEMO_START_DELAY_MS,
     MAX_START_RETRIES
   } from '@lib/stores/demo.svelte.ts';
+  import { DEMO_SCRIPT } from '@lib/demo/demo-script';
+  import type { DemoPhase } from '@lib/stores/demo.svelte.ts';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import { showToast } from '@lib/stores/toast.svelte';
-  import type { DemoPhase } from '@lib/types/state';
 
   interface Props {
     force?: boolean;
@@ -52,12 +52,16 @@
 
   const phaseLabels: Record<DemoPhase, string> = {
     IDLE: '',
-    GLIDING: 'Gliding to a highlight...',
-    ARRIVED: 'Arrived.',
-    CARD_VISIBLE: 'Exploring connections...',
-    PULLBACK: 'Pulling back...',
-    WIDE_VIEW: 'The county at a glance.',
-    RETURNING: 'Returning...',
+    OVERVIEW: '8,406 businesses across Montgomery County — as a living network.',
+    SEARCH: 'Search for any business type…',
+    FOCUS: '…and focus on one.',
+    THREADS: 'Every connection it has.',
+    NEIGHBORS: 'Businesses that do similar things — by role.',
+    TRAIL: 'Follow a thread to its source…',
+    DIVE: '…or dive inside a whole cluster.',
+    FILTER: 'Filter the county to one kind of business.',
+    MAP: 'See where they actually are.',
+    RETURN: 'Now explore your way.',
     COMPLETE: '',
     CANCELLED: ''
   };
@@ -84,24 +88,23 @@
   }
 
   function runDemoSequence() {
-    transitionDemo('GLIDING');
-
-    scheduleDemoTimer(() => {
-      transitionDemo('ARRIVED');
+    let i = 0;
+    const runNext = () => {
+      if (i >= DEMO_SCRIPT.length) {
+        completeDemo();
+        return;
+      }
+      const step = DEMO_SCRIPT[i];
+      transitionDemo(step.phase);
+      // Fire the action (may be async — e.g. search() returns a Promise)
+      Promise.resolve(step.action()).catch(() => {});
+      // Schedule the next step after this phase's duration
       scheduleDemoTimer(() => {
-        transitionDemo('CARD_VISIBLE');
-        scheduleDemoTimer(() => {
-          transitionDemo('PULLBACK');
-          scheduleDemoTimer(() => {
-            transitionDemo('WIDE_VIEW');
-            scheduleDemoTimer(() => {
-              transitionDemo('RETURNING');
-              scheduleDemoTimer(completeDemo, DEMO_TIMING.RETURN_DURATION_MS);
-            }, DEMO_TIMING.WIDE_VIEW_MS);
-          }, DEMO_TIMING.PULLBACK_DURATION_MS);
-        }, DEMO_TIMING.CARD_VISIBLE_MS);
-      }, DEMO_TIMING.ARRIVED_HOLD_MS);
-    }, DEMO_TIMING.GLIDE_DURATION_MS);
+        i++;
+        runNext();
+      }, step.durationMs);
+    };
+    runNext();
   }
 
   function attemptStart(remainingAttempts = MAX_START_RETRIES) {

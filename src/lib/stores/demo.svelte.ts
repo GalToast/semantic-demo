@@ -11,12 +11,16 @@ import { guardReducedMotion } from '@lib/demo/guards'
 
 export type DemoPhase =
     | 'IDLE'
-    | 'GLIDING'
-    | 'ARRIVED'
-    | 'CARD_VISIBLE'
-    | 'PULLBACK'
-    | 'WIDE_VIEW'
-    | 'RETURNING'
+    | 'OVERVIEW'
+    | 'SEARCH'
+    | 'FOCUS'
+    | 'THREADS'
+    | 'NEIGHBORS'
+    | 'TRAIL'
+    | 'DIVE'
+    | 'FILTER'
+    | 'MAP'
+    | 'RETURN'
     | 'COMPLETE'
     | 'CANCELLED'
 
@@ -29,22 +33,30 @@ export interface DemoStoreState {
 // ── Constants ────────────────────────────────────────────────────────────────
 
 export const DEMO_TIMING = {
-    GLIDE_DURATION_MS: 1400,
-    ARRIVED_HOLD_MS: 120,
-    CARD_VISIBLE_MS: 1800,
-    PULLBACK_DURATION_MS: 1200,
-    WIDE_VIEW_MS: 350,
-    RETURN_DURATION_MS: 1000
+    OVERVIEW_MS: 4000,
+    SEARCH_MS: 5000,
+    FOCUS_MS: 4000,
+    THREADS_MS: 3000,
+    NEIGHBORS_MS: 4000,
+    TRAIL_MS: 5000,
+    DIVE_MS: 4000,
+    FILTER_MS: 4000,
+    MAP_MS: 5000,
+    RETURN_MS: 3000
 } as const
 
 export const DEMO_START_DELAY_MS = 1500
 export const DEMO_TOTAL_DURATION_MS =
-    DEMO_TIMING.GLIDE_DURATION_MS +
-    DEMO_TIMING.ARRIVED_HOLD_MS +
-    DEMO_TIMING.CARD_VISIBLE_MS +
-    DEMO_TIMING.PULLBACK_DURATION_MS +
-    DEMO_TIMING.WIDE_VIEW_MS +
-    DEMO_TIMING.RETURN_DURATION_MS
+    DEMO_TIMING.OVERVIEW_MS +
+    DEMO_TIMING.SEARCH_MS +
+    DEMO_TIMING.FOCUS_MS +
+    DEMO_TIMING.THREADS_MS +
+    DEMO_TIMING.NEIGHBORS_MS +
+    DEMO_TIMING.TRAIL_MS +
+    DEMO_TIMING.DIVE_MS +
+    DEMO_TIMING.FILTER_MS +
+    DEMO_TIMING.MAP_MS +
+    DEMO_TIMING.RETURN_MS
 export const DEMO_LIFETIME_KEY = 'moco_mycelium_demo_v1'
 export const DEMO_SESSION_KEY = 'moco_mycelium_demo_session_v1'
 export const MAX_START_RETRIES = 3
@@ -149,7 +161,7 @@ export function startDemo(): boolean {
         sessionStorage.setItem(DEMO_SESSION_KEY, '1')
     }
 
-    withDemoNotify((s) => ({ ...s, phase: 'GLIDING', startTime: performance.now() }))
+    withDemoNotify((s) => ({ ...s, phase: 'OVERVIEW', startTime: performance.now() }))
     return true
 }
 
