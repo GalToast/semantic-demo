@@ -26,11 +26,17 @@ describe('three-engine animate RAF bookkeeping', () => {
         const src = readFileSync(SRC_PATH, 'utf8')
         const body = animateSource()
 
-        const clearIndex = body.indexOf('_rafId = null')
-        const circuitBreakerIndex = body.indexOf('if (_circuitBreakerTripped)')
+        // W49 refactor: `_rafId`/`_circuitBreakerTripped` module locals were
+        // lifted onto `engineState` (engineState.rafId / engineState.circuitBreakerTripped)
+        // and the rescheduling call moved into scheduleNextAnimationFrame().
+        // The guard intent is unchanged: clear the RAF id at the top of every
+        // callback (before the circuit-breaker early return) so the loop can
+        // be rescheduled, and ensure a reschedule path still exists.
+        const clearIndex = body.indexOf('engineState.rafId = null')
+        const circuitBreakerIndex = body.indexOf('engineState.circuitBreakerTripped')
 
         // The rescheduling call was refactored into scheduleNextAnimationFrame
-        const scheduleIndexInFile = src.indexOf('_rafId = window.requestAnimationFrame(animate)')
+        const scheduleIndexInFile = src.indexOf('scheduleNextAnimationFrame(')
 
         expect(clearIndex).toBeGreaterThanOrEqual(0)
         expect(clearIndex).toBeLessThan(circuitBreakerIndex)
@@ -38,6 +44,9 @@ describe('three-engine animate RAF bookkeeping', () => {
     })
 
     it('does not bail from inside animate just because the current callback had an id', () => {
+        // Guard against reintroducing the old `_rafId !== null` early-bail
+        // (either the pre-W49 module-local form or the lifted engineState form).
         expect(animateSource()).not.toContain('if (_rafId !== null) return')
+        expect(animateSource()).not.toContain('if (engineState.rafId !== null) return')
     })
 })

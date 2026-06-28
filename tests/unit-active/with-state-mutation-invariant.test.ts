@@ -154,7 +154,10 @@ function scanFile(filePath: string): Violation[] {
         //    local alias used in src/lib/engine/demo-choreography.ts
         //    where the file destructures getWithStateMutation() as
         //    `withMutation` for terseness). Both open a wsm block.
-        const wsmOpen = /\b(?:withStateMutation|withMutation)\s*\(/.exec(line);
+        //    Optional chaining (`withStateMutation?.(...)`) is also a
+        //    valid guard — used in three-engine-core where the engine
+        //    state may not have the mutator wired in unit contexts.
+        const wsmOpen = /\b(?:withStateMutation|withMutation)(?:\?\.)?\s*\(/.exec(line);
         if (wsmOpen) {
             const indent = line.search(/\S/);
             wsmStack.push({ indent: indent < 0 ? 0 : indent, depth: 0 });
