@@ -14,6 +14,7 @@
 
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
+import { sceneNeedsContinuousFrame } from './three-engine-helpers'
 import { Scene, PerspectiveCamera, WebGLRenderer, FogExp2, Material, MeshPhongMaterial } from 'three'
 import type { NodePosition } from '@lib/state/state-types'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
@@ -207,37 +208,6 @@ let _mapButtonClickHandler: ((event: MouseEvent) => void) | null = null
 const IDLE_STATIC_FRAME_INTERVAL_MS = 125
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
-
-function hasFiniteNodeIndex(value: unknown): boolean {
-    return typeof value === 'number' && Number.isFinite(value) && value >= 0
-}
-
-function sceneNeedsContinuousFrame(now: number): boolean {
-    if (!_state) return true
-    const focusPocketMotion = _state.focusPocketMotionByIndex as unknown
-    const focusPocketMoving = Array.isArray(focusPocketMotion)
-        ? focusPocketMotion.length > 0
-        : (focusPocketMotion as Map<unknown, unknown>)?.size > 0
-    const autoRotateActive = Boolean(_state.autoRotate && !_state.autoRotateSuspended)
-    const autoRotateResumePending =
-        typeof _state.autoRotateResumeDueAt === 'number' && _state.autoRotateResumeDueAt > now
-    const routeTraceActive = Boolean(_state.routeTraceLines)
-    return Boolean(
-        _state.forceAnimate ||
-        _state.sceneRevealActive ||
-        _state.nodesAreSettling ||
-        _state.myceliumDirty ||
-        routeTraceActive ||
-        focusPocketMoving ||
-        autoRotateActive ||
-        autoRotateResumePending ||
-        _state.searchGlowActive ||
-        hasFiniteNodeIndex(_state.hoverHighlightIndex) ||
-        hasFiniteNodeIndex(_state.focusedNode) ||
-        hasFiniteNodeIndex(_state.inspectedThreadIndex) ||
-        hasFiniteNodeIndex(_state.pinnedThreadIndex)
-    )
-}
 
 function scheduleNextAnimationFrame(continuous: boolean): void {
     if (_rafId !== null || _idleFrameTimerId !== null) return
@@ -700,7 +670,7 @@ export function animate() {
     try {
         const frameStart = performance.now()
         const frameNow = frameStart
-        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow)
+        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow, _state)
         scheduleNextAnimationFrame(sceneNeedsContinuous)
         const sceneFrameMs = _state?.scenePerformanceDiagnostics?.lastFrameAt
             ? Math.min(250, Math.max(0, frameNow - _state.scenePerformanceDiagnostics.lastFrameAt))
