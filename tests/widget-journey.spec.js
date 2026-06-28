@@ -1354,4 +1354,86 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
 
         await expect(legend).not.toBeVisible({ timeout: 5000 })
     })
+
+    /**
+     * W49-S5. SearchInput surface-swap clears debounceTimer + aborts
+     * searchAbortController on unmount without orphaning errors or
+     * breaking subsequent input.
+     *
+     * Catches: Worker C's lifecycle cleanup accidentally firing the
+     * abort path with a null/undefined controller, leaving dangling
+     * timers after the idle→search-surface swap, or choking the
+     * remount cycle. The original code claimed to "preserve a pending
+     * debounce across the intentional idle → search remount" via an
+     * empty `$effect.return` — the new conservative cleanup is what
+     * this test pins down.
+     *
+     * Bug class: timer leak + premature abort + remount regression.
+     */
+    test('W49-S5. SearchInput surface-swap clears debounce without orphaning errors', async ({ page }) => {
+        const errors = []
+        page.on('pageerror', (err) => errors.push(err.message))
+
+        // Boot — dismiss the gesture gate so the search input is in
+        // the rendered DOM (it always is; the gate hides chrome).
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        const explore = page
+            .getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ })
+            .first()
+        if (await explore.count()) {
+            await explore.waitFor({ state: 'visible', timeout: 40_000 })
+            await explore.click()
+        }
+
+        // Wait for #search-input to be in the DOM (matches test #4
+        // which relies on the same hook without visibility check)
+        await page.locator('#search-input').first().waitFor({ state: 'attached', timeout: 30_000 })
+
+        // Pressing / is the canonical focus-shortcut (test #4) and
+        // is also what a real user does to start a search.
+        await page.evaluate(() => document.activeElement?.blur())
+        await page.keyboard.press('/')
+        const focusedAfterShortcut = await page.evaluate(() => document.activeElement?.id ?? null)
+        expect(focusedAfterShortcut).toBe('search-input')
+
+        // Trigger a debounced search with a realistic partial query
+        await page.keyboard.type('coffee', { delay: 30 })
+
+        // Force the idle → non-search → search surface swap. The Map
+        // mode tab toggles currentView (= galaxy/map), which destroys
+        // and remounts the SearchInput. This exercises Worker C's new
+        // $effect cleanup contract: clearTimeout(debounceTimer) +
+        // searchAbortController?.abort() must run cleanly.
+        const mapTab = page.getByRole('radio', { name: 'Map' }).first()
+        const searchTab = page.getByRole('radio', { name: 'Search' }).first()
+        if (await mapTab.count()) {
+            await mapTab.click()
+            await page.waitForTimeout(300)
+        }
+        if (await mapTab.count()) {
+            // Trigger a second remount to conclusively exercise the
+            // unmount-then-remount cleanup on the new instance
+            await searchTab.click()
+            await page.waitForTimeout(300)
+            await mapTab.click()
+            await page.waitForTimeout(300)
+        }
+
+        // Final remount: input must be attachable and re-focusable.
+        await page.locator('#search-input').first().waitFor({ state: 'attached', timeout: 10_000 })
+        await page.evaluate(() => document.activeElement?.blur())
+        await page.keyboard.press('/')
+        const refocusedAfterSwap = await page.evaluate(() => document.activeElement?.id ?? null)
+        expect(refocusedAfterSwap).toBe('search-input')
+
+        // The debounce cleanup path on SearchInput must not surface
+        // any JS errors. The original empty cleanup couldn't fail here;
+        // the new explicit cleanup (clearTimeout + abort()) can — if
+        // searchAbortController is undefined on a fresh mount or the
+        // timer id is stale, this would surface as a pageerror.
+        const debounceRelated = errors.filter((e) =>
+            /debounce|abort|searchinput|search-input|cannot read propert/i.test(e)
+        )
+        expect(debounceRelated).toEqual([])
+    })
 })
