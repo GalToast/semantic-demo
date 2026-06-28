@@ -310,13 +310,3 @@ export function getInterestingBusinessNote(point: Point | null): string | null {
     if (point.website && !point.email && !point.phone) return null;
     return null;
 }
-
-/**
- * Build selected match narrative copy.
- */
-export function buildSelectedMatchNarrative(point: Point | null): string {
-    if (!point) return '';
-    const summary = appState.currentSearchSummary;
-    if (summary?.reason) return summary.reason;
-    return '';
-}

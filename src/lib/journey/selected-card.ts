@@ -341,8 +341,7 @@ export function updateSelectedBusiness(
     const pageDesc = sanitizePublicFacingNote(point.what) || 'Montgomery County business record details.'
     updateDocumentMeta(pageTitle, pageDesc)
 
-    const suppressAutoRevealForFieldNode = options.revealCard !== true && false
-    if (options.revealCard !== false && !suppressAutoRevealForFieldNode) {
+    if (options.revealCard !== false) {
         revealSelectedBusinessCard()
     }
     syncFocusStage(point)

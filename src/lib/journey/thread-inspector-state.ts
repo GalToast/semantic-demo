@@ -490,12 +490,7 @@ export function exploreThreadNeighbor(
         appState.navState.lastTraversalReason = reason
     })
     if (appState.currentView === 'map') {
-        focusOnPoint(targetPoint, {
-            fromTraversal: true,
-            appendHistory: !options.restoreHistory,
-            restoreHistory: !!options.restoreHistory,
-            fromIndex: fromIndex ?? undefined
-        } as unknown as Parameters<typeof focusOnPoint>[1])
+        focusOnPoint(targetPoint)
     } else {
         focusOnNode(index, {
             fromCanvasNode: !!options.fromCanvasNode,
