@@ -42,24 +42,11 @@ import {
 } from '@lib/engine/thread-manager'
 // Postprocessing is dynamically imported to save ~150-200 kB from the main
 // chunk. The module is only needed when premium mode is toggled ON.
-import type { PostProcessingModule } from './three-engine-state'
 import { engineState, ensureModules } from './three-engine-state'
+import { yieldToBrowser, scheduleNextAnimationFrame, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
+import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
+import { ensurePostProcessing } from './three-pp-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'
-
-async function _loadPostProcessing(): Promise<PostProcessingModule> {
-    if (engineState.ppModule) return engineState.ppModule
-    if (engineState.ppLoading) return engineState.ppLoading
-    engineState.ppLoading = import('@lib/engine/three-postprocessing').then((m) => {
-        engineState.ppModule = {
-            initPostProcessing: m.initPostProcessing,
-            renderPostProcessing: m.renderPostProcessing,
-            disposePostProcessing: m.disposePostProcessing,
-            resizePostProcessing: m.resizePostProcessing
-        }
-        return engineState.ppModule
-    })
-    return engineState.ppLoading
-}
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
@@ -78,24 +65,6 @@ interface WindowWithDevGlobals extends Window {
         readonly canvas: HTMLCanvasElement | null
         renderOnce: () => void
     }
-}
-
-// ── Module-level Constants ──────────────────────────────────────────────────
-
-const IDLE_STATIC_FRAME_INTERVAL_MS = 125
-
-// ── Helpers ──────────────────────────────────────────────────────────────────
-
-function scheduleNextAnimationFrame(continuous: boolean): void {
-    if (engineState.rafId !== null || engineState.idleFrameTimerId !== null) return
-    if (continuous) {
-        engineState.rafId = window.requestAnimationFrame(animate)
-        return
-    }
-    engineState.idleFrameTimerId = window.setTimeout(() => {
-        engineState.idleFrameTimerId = null
-        if (engineState.rafId === null) engineState.rafId = window.requestAnimationFrame(animate)
-    }, IDLE_STATIC_FRAME_INTERVAL_MS)
 }
 
 export function updateCameraViewportOffset() {
@@ -126,19 +95,6 @@ export function updateCameraViewportOffset() {
         camera.clearViewOffset?.()
     }
     camera.updateProjectionMatrix?.()
-}
-
-// ── Yield helper for breaking up long tasks (W5-T1b / W8) ──────────────────────
-//
-// Uses setTimeout(0) instead of requestIdleCallback: during engine init the
-// main thread is busy with GPU work, so requestIdleCallback's 50ms timeout
-// adds latency without actually yielding earlier. setTimeout(0) is the
-// fastest path to the event loop.
-
-function _yieldToBrowser(_timeoutMs = 50): Promise<void> {
-    if (typeof window === 'undefined') return Promise.resolve()
-    // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    return new Promise<void>((resolve) => setTimeout(resolve, 0))
 }
 
 export async function initThreeJS() {
@@ -261,7 +217,7 @@ export async function initThreeJS() {
     // createPoints() uploads 8,406 × 3 floats + 8,406 × 16 instance matrices;
     // createMycelium() uploads 100,872 edge line segments. Both are O(n)
     // synchronous work that benefits from interleaved yield.
-    await _yieldToBrowser()
+    await yieldToBrowser()
 
     // Inline createPoints logic (was engineDelegates.createPoints) to avoid
     // circular dependency with three-engine-mycelium.
@@ -281,7 +237,7 @@ export async function initThreeJS() {
 
     // W8: yield between createPoints() and createMycelium() to keep individual
     // tasks under 200ms. createMycelium() uploads 100k+ edge line segments.
-    await _yieldToBrowser()
+    await yieldToBrowser()
 
     createMyceliumPort()
     appState.myceliumGroup = webglContext.myceliumGroup
@@ -299,7 +255,7 @@ export async function initThreeJS() {
 
     // W8: yield after mycelium buffer upload (100k+ edges) before the
     // material compilation and visual setup phases.
-    await _yieldToBrowser()
+    await yieldToBrowser()
 
     compilePointMaterialForReadinessPort()
     engineState.threeInteractionVisuals?.initSemanticLens()
@@ -308,7 +264,7 @@ export async function initThreeJS() {
 
     // W8: yield before starting the render loop. The first frame() call
     // triggers shader compilation and uniform binding which can block.
-    await _yieldToBrowser()
+    await yieldToBrowser()
 
     // Start the render loop explicitly. The new Svelte lifecycle no longer
     // receives the legacy DOM scene-ready path, and without this the renderer
@@ -325,7 +281,7 @@ export async function initThreeJS() {
     // are unnecessary on small viewports. The vanilla renderer.render() path
     // is used instead.
     if (!isMobileViewport()) {
-        _loadPostProcessing().then((pp) => {
+        ensurePostProcessing(engineState).then((pp) => {
             try {
                 pp.initPostProcessing(renderer, scene, camera)
             } catch (ppErr) {
@@ -384,29 +340,6 @@ export function onWindowResize() {
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
     engineState.ppModule?.resizePostProcessing(width, height)
-}
-
-/**
- * Cancel the render loop and tear down scene graph resources.
- * NOTE: This is a LIGHTER teardown. The `deinit()` function additionally calls
- * disposeNodeVisualsPort() and disposeMyceliumPort() to release tracked textures
- * and mycelium GPU resources. Call deinit() after cancelAnimate() for full cleanup.
- * The WebGL context-lost handler (line 701) currently only calls cancelAnimate();
- * tracked textures will leak until context GC — known issue, see smell-accounting W1-M2.
- */
-function pauseRenderLoopTimers(options: { clearRestoreTimer?: boolean } = {}): void {
-    if (engineState.rafId !== null) {
-        window.cancelAnimationFrame(engineState.rafId)
-        engineState.rafId = null
-    }
-    if (options.clearRestoreTimer && engineState.webglRestoreTimer) {
-        window.clearTimeout(engineState.webglRestoreTimer)
-        engineState.webglRestoreTimer = null
-    }
-    if (engineState.idleFrameTimerId !== null) {
-        window.clearTimeout(engineState.idleFrameTimerId)
-        engineState.idleFrameTimerId = null
-    }
 }
 
 export function cancelAnimate() {
@@ -519,6 +452,7 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
 }
 
 export function animate() {
+    setAnimateFn(animate)
     // Clear the RAF id at the start of every callback so book-keeping
     // stays correct across frames. Without this, the first scheduled
     // callback would see engineState.rafId != null and exit, killing the loop.
@@ -816,3 +750,6 @@ export function animate() {
         engineState.circuitBreakerTripped = true
     }
 }
+
+// Wire animate callback into timers module (avoids circular import)
+setAnimateFn(animate)
