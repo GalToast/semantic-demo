@@ -22,7 +22,6 @@
 
 // ── Store Imports (re-exported for consumers) ─────────────────────────────────
 
-import { get } from 'svelte/store'
 import { navStore } from '@lib/stores/navigation.svelte'
 // NavState type removed after direct store reads were inlined
 import { journeyStore } from '@lib/stores/journey.svelte'
@@ -31,13 +30,33 @@ import { searchStore } from '@lib/stores/search.svelte'
 import { filterState } from '@lib/stores/filter.svelte'
 import { viewport } from '@lib/stores/viewport.svelte'
 import { cameraStore } from '@lib/stores/camera.svelte'
-import { demoStore, demoPhase as demoPhaseGetter } from '@lib/stores/demo.svelte'
+import { demoStore } from '@lib/stores/demo.svelte'
 import { graphicsModeStore, loadingPhaseStore } from '@lib/data-store'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { appState } from '@lib/state/app.svelte'
-import { getJourneyCompassState } from '@lib/journey/compass-state'
-import { getJourneyCompassPresentationState, type CompassPresentationState } from './compass-controller'
-import type { LoadingPhase } from '@lib/types/state'
+
+// ── Decomposition: pure resolvers for computeParityAttributes() ───────────
+//
+// The 245-LOC IIFE body was decomposed into 13 pure resolvers (plus the
+// context bundle) on 2026-06-28, following the neighborhood.ts template
+// (commit 300906d9). See parity/parity-context.ts and parity/parity-resolvers.ts.
+
+import { resolveParityContext } from './parity/parity-context'
+import {
+    resolveFocusContext,
+    resolveSearchContext,
+    resolveGraphContext,
+    resolvePanelSurfaceMode,
+    resolveMapContext,
+    resolveMapTrailState,
+    resolveSemanticDive,
+    resolveThreadInspection,
+    resolvePanelSurfaceDetail,
+    resolveLaunchState,
+    resolveCameraAssist,
+    resolveFilterActive,
+    resolveJourneyPhase
+} from './parity/parity-resolvers'
 
 // ── Attribute Manifest ──────────────────────────────────────────────────────
 //
@@ -233,168 +252,44 @@ export interface ParityAttributeMap {
 }
 
 export function computeParityAttributes(): ParityAttributeMap {
-    // Direct reads from rune stores (auto-tracked when called inside $effect)
-    const nav = navStore()
-    const journey = journeyStore()
-    const focus = focusStore()
-    const search = get(searchStore)
-    const filters = get(filterState)
-    const vp = viewport()
-    const demoPhaseValue: string = demoPhaseGetter()
-    const camera = get(cameraStore)
-
-    const compassStateVal = getJourneyCompassState()
-    const presentation: CompassPresentationState = getJourneyCompassPresentationState(compassStateVal)
-
-    // Loading/graphics state comes from the Svelte data-store. Canvas.svelte
-    // advances this store to `launch` when WebGL is ready; nav.loadingPhaseKey
-    // is a legacy mirror and can lag behind.
-    const loadingPhaseValue: LoadingPhase = get(loadingPhaseStore)
-    const graphicsModeValue = get(graphicsModeStore)
-
-    const focusedNodeForAttrs = (() => {
-        // Primary: Svelte navStore rune (set by Svelte-side focus flows).
-        if (nav.focusedIndex !== null && Number.isFinite(nav.focusedIndex)) {
-            return String(nav.focusedIndex)
-        }
-        // Fallback: legacy `__APP_STATE__.navState.focusedIndex`. Legacy
-        // `applyLocalNeighborhoodFocus` writes to the legacy state but the
-        // Svelte navStore is not updated by the legacy code path, so this
-        // fallback is what actually carries the focus index in production.
-        // Mirrors the same pattern in FocusCard.svelte::currentFocusedIdx.
-        try {
-            const w = window as unknown as { __APP_STATE__?: { navState?: { focusedIndex?: unknown } } }
-            const legacy = w.__APP_STATE__?.navState?.focusedIndex
-            if (typeof legacy === 'number' && Number.isFinite(legacy)) return String(legacy)
-        } catch {
-            /* ignore */
-        }
-        return null
-    })()
-    const hasFocusContext =
-        focusedNodeForAttrs !== null || (typeof focus.selectedBusiness === 'object' && focus.selectedBusiness !== null)
-    const hasSearchContext =
-        !!search.summary ||
-        (typeof search.query === 'string' && search.query.trim().length >= 2) ||
-        nav.surface === 'focus-search' ||
-        nav.surface === 'search'
-
-    // graph-context: legacy uses these values across CSS hooks
-    const graphContext = (() => {
-        if (vp.isCompact && camera.routeExplorationPhase === 'exploring') return 'corridor'
-        if (nav.currentView === 'map') return 'map'
-        if (nav.mode === 'inside') return 'inside'
-        if (hasFocusContext && hasSearchContext) return 'focus-search'
-        if (hasFocusContext) return 'focus'
-        if (hasSearchContext) return 'corridor'
-        if (nav.mode === 'search' || search.summary) return 'corridor'
-        if (nav.mode === 'overview') return 'idle'
-        return 'idle'
-    })()
-
-    const panelSurfaceMode = ((): string => {
-        if (nav.currentView === 'map') {
-            if (nav.surface === 'map-focus-search') return 'map-focus-search'
-            if (nav.surface === 'map-trail') return 'map-trail'
-            if (hasFocusContext && hasSearchContext) return 'map-focus-search'
-            if (hasFocusContext) return 'map-focus'
-            if (nav.surface === 'focus-search' || nav.surface === 'search' || search.summary) return 'map-search'
-            if (nav.surface === 'focus') return 'map-focus'
-            if (nav.surface === 'map') return 'map'
-            return 'map-idle'
-        }
-        if (focus.semanticDiveMode) return 'semantic-dive'
-        if (hasFocusContext && hasSearchContext) return 'focus-search'
-        if (hasSearchContext) return 'search'
-        if (nav.surface === 'focus-search') return 'focus-search'
-        if (nav.surface === 'map-focus-search') return 'map-focus-search'
-        if (nav.surface === 'map-trail') return 'map-trail'
-        if (nav.surface === 'thread-inspect') return 'thread-inspect'
-        if (nav.surface === 'search') return 'search'
-        if (nav.surface === 'focus') return 'focus'
-        if (nav.surface === 'inside') return 'inside'
-        if (nav.surface === 'map') return 'map'
-        return 'idle'
-    })()
-
-    const mapContext = ((): string => {
-        if (nav.currentView !== 'map') return 'idle'
-        if (panelSurfaceMode === 'map-focus-search') return 'focus-search'
-        if (panelSurfaceMode === 'map-focus') return 'focus'
-        if (panelSurfaceMode === 'map-search') return 'search'
-        if (panelSurfaceMode === 'map-trail') return 'trail'
-        return 'idle'
-    })()
-
-    const hasMapTrailIntent =
-        nav.currentView === 'map' &&
-        (nav.focusedIndex != null ||
-            Boolean(search.summary) ||
-            nav.surface === 'map-focus-search' ||
-            nav.surface === 'map-trail')
-    const trailState =
-        journey.depth > 0 ||
-        hasMapTrailIntent ||
-        graphContext === 'focus-search' ||
-        graphContext === 'focus' ||
-        nav.mode === 'trail' ||
-        presentation.navigationOwner === 'map-trail-strip'
-            ? 'active'
-            : 'inactive'
-    const semanticDive =
-        nav.currentView === 'galaxy'
-            ? focus.semanticDiveMode && hasFocusContext
-                ? 'active'
-                : journey.depth >= 2 && hasFocusContext
-                  ? 'transitioning'
-                  : 'inactive'
-            : 'inactive'
-    const threadInspectionActive = focus.threadInspector.active
-    const inspectedThreadIndex = focus.threadInspector.inspectedIndex
-
-    const mode = nav.mode
-
-    // panelSurfaceDetail: 'none' | 'expanded' | 'peek'. Mirrors the legacy
-    // composition-state.ts → getPanelSurfaceDetailFromMobileSheet() logic,
-    // which reads the mobileSearchSheet attr (set by setMobileSearchSheetMode
-    // in search-panel-adapter.ts) and decides how the info panel renders
-    // on search/focus-search. The mobile CSS rules at
-    // mobile_premium__state.css:516+ gate on this attr. In the Svelte track
-    // the mobileSearchSheet attr is typically not set (the legacy
-    // setMobileSearchSheetMode() is not called from Svelte), so the
-    // derived value is 'none' in the common case — but writing it
-    // unconditionally keeps the parity contract symmetric with the
-    // legacy code path and unblocks future Svelte-side sheet toggling.
+    // ── Orchestrator: delegates to pure resolvers ─────────────────────────
     //
-    // Note: we use `=== search || === focus-search` (positive form) and
-    // an early return instead of the more natural `!== search && !==
-    // b, false)` (which is `===`), silently inverting the check. See the
-    // audit at qa-screenshots/PARITY_GAP_AUDIT.md for the symptom and
-    // the Svelte compiler gotcha.
-    const panelSurfaceDetail: string = ((): string => {
-        const isSearchContext = panelSurfaceMode === 'search' || panelSurfaceMode === 'focus-search'
-        if (!isSearchContext) return 'none'
-        const mobileSearchSheet = document.body.dataset.mobileSearchSheet
-        if (!mobileSearchSheet) return 'none'
-        return mobileSearchSheet === 'expanded' ? 'expanded' : 'peek'
-    })()
+    // The 245-LOC IIFE body was decomposed into 13 pure resolvers (plus
+    // the context bundle) on 2026-06-28. Each resolver is independently
+    // testable and the orchestrator is now a thin wiring layer.
 
-    const demoPhase = demoPhaseValue
+    const ctx = resolveParityContext()
+    const { focusedNode, hasFocusContext } = resolveFocusContext(ctx)
+    const { hasSearchContext } = resolveSearchContext(ctx)
+    const { graphContext } = resolveGraphContext(ctx, hasFocusContext, hasSearchContext)
+    const { panelSurfaceMode } = resolvePanelSurfaceMode(ctx, hasFocusContext, hasSearchContext)
+    const { mapContext } = resolveMapContext(ctx, panelSurfaceMode)
+    const { trailState } = resolveMapTrailState(
+        ctx,
+        hasFocusContext,
+        hasSearchContext,
+        panelSurfaceMode,
+        graphContext
+    )
+    const { semanticDive } = resolveSemanticDive(ctx, hasFocusContext)
+    const { threadInspectionActive, inspectedThreadIndex } = resolveThreadInspection(ctx)
+    const { panelSurfaceDetail } = resolvePanelSurfaceDetail(panelSurfaceMode)
+    const { loadingOverlay, sceneReady, viewHandoffActive } = resolveLaunchState(ctx)
+    const { cameraAssist } = resolveCameraAssist()
+    const { filtersActive } = resolveFilterActive(ctx)
+    const { journeyPhase } = resolveJourneyPhase(ctx, hasFocusContext, hasSearchContext)
 
-    const filterActive =
-        filters.status !== 'all' || filters.city !== '' || filters.website || filters.email || filters.geocoded
-
-    // Use positive equality here. This file is compiled by Svelte 5, and
-    // can invert under rune compilation.
-    const launchReady = loadingPhaseValue === 'launch'
-    const loadingOverlay = launchReady ? 'hidden' : 'visible'
-    const sceneReady = launchReady ? 'true' : 'false'
-    const viewHandoffActive = launchReady ? 'false' : 'true'
-    // Tier-2 camera conflict fix: cameraAssist is the camera-in-flight state,
-    // not launch-readiness. Source from appState.focusCameraAssistActive
-    // (mirrored from camera-controls-core.svelte.ts:110), matching the bypass
-    // value domain ('arriving' | 'free'). launchReady is irrelevant to this attr.
-    const cameraAssist = appState.focusCameraAssistActive ? 'arriving' : 'free'
+    const nav = ctx.nav
+    const journey = ctx.journey
+    const focus = ctx.focus
+    const search = ctx.search
+    const vp = ctx.viewport
+    const presentation = ctx.presentation
+    const loadingPhaseValue = ctx.loadingPhase
+    const graphicsModeValue = ctx.graphicsMode
+    const demoPhase = ctx.demoPhase
+    const camera = ctx.camera
+    const mode = nav.mode
 
     return {
         journeyCompassPhase: journey.compass?.phase ?? 'idle',
@@ -406,7 +301,7 @@ export function computeParityAttributes(): ParityAttributeMap {
         panelSurfaceMode,
         panelSurfaceDetail,
         activeView: nav.currentView,
-        focusedNode: focusedNodeForAttrs,
+        focusedNode,
         graphContext,
         mapContext,
         routeExploration: journey.routeExplorationPhase || 'idle',
@@ -426,40 +321,11 @@ export function computeParityAttributes(): ParityAttributeMap {
         threadInspectSurface: threadInspectionActive ? focus.threadInspector.source || 'rail' : 'idle',
         inspectedThreadIndex:
             threadInspectionActive && inspectedThreadIndex !== null ? String(inspectedThreadIndex) : null,
-        journeyPhase: ((): string => {
-            // W15+ parity-attrs fix: journey.phase reads appState.navState.mode
-            // (legacy), which the Svelte track never updates. Derive journeyPhase
-            // directly from nav state + search intent so body data-journey-phase
-            // reflects the focus state immediately after a search-result click.
-            const _focusedIdx = nav.focusedIndex
-            const _selBiz = focus.selectedBusiness
-            const _hasFocus =
-                (typeof _focusedIdx === 'number' && Number.isFinite(_focusedIdx)) ||
-                (typeof _selBiz === 'object' && _selBiz !== null)
-            const _q = search.query
-            const _hasSearchIntent = !!search.summary || (typeof _q === 'string' && _q.trim().length >= 2)
-            const explicit = journey.phase as string
-            // W15+ parity-attrs fix: trust derivation over `journey.phase`
-            // (which reads appState.navState.mode). The Svelte track now
-            // mirrors mode/surface to appState.navState (commit 37636fe),
-            // but during the first focus click after navigation, journey.phase
-            // can still race ahead of appState.navState.mode updates. The
-            // derivation below handles every case correctly; we only fall
-            // back to `explicit` for phases the derivation doesn't model
-            // (e.g. 'walking', 'arrived', 'preview', 'pinned', 'settled',
-            // 'returning', 'idle').
-            if (_hasFocus && _hasSearchIntent) return 'focus-search'
-            if (_hasFocus) return 'focus'
-            if (_hasSearchIntent) return 'search'
-            if (nav.mode === 'inside') return 'inside'
-            if (nav.mode === 'trail') return 'walking'
-            if (typeof explicit === 'string' && explicit.length > 0 && explicit !== 'idle') return explicit
-            return 'idle'
-        })(),
+        journeyPhase,
         terrainHandoff: journey.terrainHandoffPhase || 'idle',
         demoPhase,
 
-        filtersActive: String(filterActive),
+        filtersActive: String(filtersActive),
 
         reducedMotion: String(vp.reducedMotion),
         compact: String(vp.isCompact),
