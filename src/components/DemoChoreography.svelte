@@ -37,6 +37,19 @@
   /** Delay before the fallback onboarding toast appears after splash dismissal. */
   const FALLBACK_HINT_DELAY_MS = 2500;
 
+  /**
+   * Track whether the user has interacted since mount. If they have, the
+   * fallback toast is suppressed — showing a "click any dot to explore"
+   * hint on top of someone already exploring is noise, not help.
+   * Closes the Phase 2 welcome-sequence pile-up (Scout B Rec #4).
+   */
+  let userInteractedSinceMount = false;
+  const interactionAbortController = new AbortController();
+  function markInteraction(): void {
+    userInteractedSinceMount = true;
+    interactionAbortController.abort();
+  }
+
   const phaseLabels: Record<DemoPhase, string> = {
     IDLE: '',
     GLIDING: 'Gliding to a highlight...',
@@ -51,6 +64,9 @@
 
   /** Show a brief onboarding hint when the auto-demo can't run. */
   function showFallbackHint(): void {
+    // Phase 2: suppress if the user is already exploring (Scout B Rec #4).
+    // A hint on top of active exploration is noise, not guidance.
+    if (userInteractedSinceMount) return;
     showToast(
       'Getting started',
       'Search for a business type above, or click any dot to explore connections.'
@@ -109,6 +125,13 @@
   }
 
   onMount(() => {
+    // Phase 2: listen for user interaction so the fallback toast can be
+    // suppressed if the user is already exploring (Scout B Rec #4).
+    const interactionSignal = interactionAbortController.signal;
+    ['mousemove', 'keydown', 'click'].forEach((evt) =>
+      document.addEventListener(evt, markInteraction, { passive: true, signal: interactionSignal })
+    );
+
     if (suppress || (!force && !shouldRunDemo())) {
       eligible = false;
       // W6 audit: Show a fallback onboarding hint when the demo is suppressed.
@@ -125,6 +148,7 @@
 
   onDestroy(() => {
     cancelAllDemoTimers();
+    interactionAbortController.abort();
     if (isDemoActive()) {
       cancelDemo();
     }

@@ -168,7 +168,7 @@
       rgba(78, 205, 196, 0.18),
       rgba(0, 0, 0, 0.92) 60%
     );
-    z-index: var(--z-overlay, 40);
+    z-index: var(--z-modal, 400);
     font-family: system-ui, -apple-system, sans-serif;
     color: rgba(231, 240, 240, 0.9);
   }
