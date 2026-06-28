@@ -50,6 +50,15 @@ export interface DisposableRegistryOptions {
     warnAfterDispose?: boolean
 }
 
+// Safe fallback when running outside Vite (Node contract tests, etc.)
+const IS_DEV = (() => {
+    try {
+        return (import.meta as { env?: { DEV?: boolean } }).env?.DEV === true
+    } catch {
+        return false
+    }
+})()
+
 export class DisposableRegistry {
     private items: DisposeLike[] = []
     private disposed = false
@@ -57,7 +66,7 @@ export class DisposableRegistry {
     private warnAfterDispose: boolean
 
     constructor(options: DisposableRegistryOptions = {}) {
-        const { label = 'DisposableRegistry', warnAfterDispose = import.meta.env.DEV } = options
+        const { label = 'DisposableRegistry', warnAfterDispose = IS_DEV } = options
         this.label = label
         this.warnAfterDispose = warnAfterDispose
     }
@@ -68,7 +77,7 @@ export class DisposableRegistry {
     add(disposable: DisposeLike): void
     add(fn: DisposeLike): void {
         if (this.disposed && this.warnAfterDispose) {
-            if (import.meta.env.DEV) {
+            if (IS_DEV) {
                 console.warn(`[${this.label}] Adding disposable after disposeAll() — leak risk`, fn)
             }
         }
@@ -161,7 +170,7 @@ export class DisposableRegistry {
             try {
                 callDispose(item)
             } catch (err) {
-                if (import.meta.env.DEV) {
+                if (IS_DEV) {
                     console.warn(`[${this.label}] Disposable threw during cleanup:`, err)
                 }
             }
