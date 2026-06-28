@@ -1,0 +1,224 @@
+/* ── Canvas Hover Preview ────────────────────────────────────────────────────
+   Rich floating tooltip card shown when hovering over a 3D mycelium node.
+   Injected by @lib/journey/canvas-hover-preview.ts
+   --------------------------------------------------------------------------- */
+
+.canvas-hover-preview {
+    --preview-bg: rgba(7, 16, 24, 0.92);
+    --preview-border: rgba(78, 205, 196, 0.2);
+    --preview-text: #e0f0f0;
+    --preview-muted: #8a9a9a;
+    --preview-accent: #4ecdc4;
+    --preview-radius: 0.5rem;
+    --preview-shadow: 0 8px 32px rgba(0, 0, 0, 0.4), 0 0 0 1px var(--preview-border);
+
+    background: var(--preview-bg);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--preview-border);
+    border-radius: var(--preview-radius);
+    box-shadow: var(--preview-shadow);
+    color: var(--preview-text);
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.75rem;
+    line-height: 1.4;
+    overflow: hidden;
+}
+
+.canvas-hover-preview .preview-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-bottom: 1px solid rgba(78, 205, 196, 0.1);
+}
+
+.canvas-hover-preview .preview-cluster-swatch {
+    width: 8px;
+    height: 8px;
+    border-radius: 2px;
+    flex-shrink: 0;
+}
+
+.canvas-hover-preview .preview-cluster-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--preview-muted);
+    flex: 1;
+}
+
+.canvas-hover-preview .status-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    flex-shrink: 0;
+}
+
+.canvas-hover-preview .status-dot.active {
+    background: #6bcb77;
+    box-shadow: 0 0 4px rgba(107, 203, 119, 0.4);
+}
+
+.canvas-hover-preview .status-dot.inactive {
+    background: #ff6b6b;
+    box-shadow: 0 0 4px rgba(255, 107, 107, 0.4);
+}
+
+.canvas-hover-preview .preview-body {
+    padding: 0.5rem 0.6rem 0.6rem;
+}
+
+.canvas-hover-preview .preview-name {
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: var(--preview-text);
+    margin-bottom: 0.2rem;
+    word-break: break-word;
+}
+
+.canvas-hover-preview .preview-what {
+    font-size: 0.7rem;
+    color: var(--preview-muted);
+    margin-bottom: 0.4rem;
+    line-height: 1.3;
+    word-break: break-word;
+}
+
+.canvas-hover-preview .preview-meta {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 0.3rem;
+}
+
+.canvas-hover-preview .preview-city {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    font-size: 0.7rem;
+    color: var(--preview-muted);
+}
+
+.canvas-hover-preview .preview-city svg {
+    color: var(--preview-accent);
+    opacity: 0.7;
+}
+
+.canvas-hover-preview .preview-contact {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+}
+
+.canvas-hover-preview .contact-icon {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 18px;
+    height: 18px;
+    border-radius: 0.25rem;
+    background: rgba(78, 205, 196, 0.08);
+    color: var(--preview-accent);
+    opacity: 0.8;
+    transition: opacity 0.15s ease;
+}
+
+.canvas-hover-preview .contact-icon:hover {
+    opacity: 1;
+}
+
+.canvas-hover-preview .contact-icon svg {
+    display: block;
+}
+
+.canvas-hover-preview .preview-signal {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.3rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid rgba(78, 205, 196, 0.08);
+}
+
+.canvas-hover-preview .signal-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--preview-muted);
+}
+
+.canvas-hover-preview .signal-bars {
+    font-size: 0.65rem;
+    color: var(--preview-accent);
+    letter-spacing: 0.1em;
+    opacity: 0.9;
+}
+
+/* Reduced motion: instant transitions */
+@media (prefers-reduced-motion: reduce) {
+    .canvas-hover-preview {
+        transition: none !important;
+    }
+    .click-pulse-ring {
+        transition: none !important;
+    }
+}
+
+/* ── Focus Transition Indicator ───────────────────────────────────────────
+   Shows a subtle "Focusing..." indicator during camera animation to give
+   the user feedback that their click registered and something is happening.
+   ----------------------------------------------------------------------- */
+
+body.focus-transition-arriving::before {
+    content: 'Focusing…';
+    position: fixed;
+    top: 1rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10000;
+    padding: 0.4rem 0.9rem;
+    background: rgba(7, 16, 24, 0.88);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(78, 205, 196, 0.25);
+    border-radius: 0.5rem;
+    color: #4ecdc4;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    pointer-events: none;
+    opacity: 0;
+    animation: focus-transition-fade-in 0.3s ease 0.1s forwards;
+}
+
+@keyframes focus-transition-fade-in {
+    from {
+        opacity: 0;
+        transform: translateX(-50%) translateY(-4px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(-50%) translateY(0);
+    }
+}
+
+/* Reduced motion: show instantly */
+@media (prefers-reduced-motion: reduce) {
+    body.focus-transition-arriving::before {
+        animation: none;
+        opacity: 1;
+        transform: translateX(-50%);
+    }
+}
+
+/* ── Click Pulse Ring ───────────────────────────────────────────────────────
+   Brief expanding ring that confirms a node click before the camera moves.
+   --------------------------------------------------------------------------- */
+
+.click-pulse-ring {
+    border-radius: 50%;
+    pointer-events: none;
+}
