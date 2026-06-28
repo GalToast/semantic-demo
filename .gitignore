@@ -115,6 +115,10 @@ None/
 data.dat
 data.dat.gz
 
+# Binary data assets (runtime-fetched, not source-tracked)
+src/data.dat
+src/data.dat.gz
+
 # Runtime logs
 *.log
 
