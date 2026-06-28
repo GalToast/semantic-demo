@@ -11,48 +11,48 @@
  * import this file directly.
  */
 
-import { _threeSearchAnimations, _threeInteractionVisuals } from './three-engine-core'
+import { engineState } from './three-engine-state'
 
 // ── Search animation wrappers ──────────────────────────────────────────────────
 
 export function triggerSearchHeroMoment(anchorIndex: number): void {
-    void _threeSearchAnimations?.triggerSearchHeroMoment(anchorIndex)
+    void engineState.threeSearchAnimations?.triggerSearchHeroMoment(anchorIndex)
 }
 
 export function triggerCorridorNodeGlow(now: number): void {
-    void _threeSearchAnimations?.triggerCorridorNodeGlow(now)
+    void engineState.threeSearchAnimations?.triggerCorridorNodeGlow(now)
 }
 
 export function updateCorridorNodeGlow(now: number): void {
-    void _threeSearchAnimations?.updateCorridorNodeGlow(now)
+    void engineState.threeSearchAnimations?.updateCorridorNodeGlow(now)
 }
 
 export function triggerSearchCorridorAnimation(now: number): void {
-    _threeSearchAnimations?.triggerSearchCorridorAnimation(now)
+    engineState.threeSearchAnimations?.triggerSearchCorridorAnimation(now)
 }
 
 export function updateSearchCorridorAnimation(now: number): void {
-    void _threeSearchAnimations?.updateSearchCorridorAnimation(now)
+    void engineState.threeSearchAnimations?.updateSearchCorridorAnimation(now)
 }
 
 export function disposeSearchCorridorAnimation(): void {
-    _threeSearchAnimations?.disposeSearchCorridorAnimation()
+    engineState.threeSearchAnimations?.disposeSearchCorridorAnimation()
 }
 
 // ── Interaction visual wrappers ────────────────────────────────────────────────
 
 export function updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void {
-    _threeInteractionVisuals?.updateInteractionVisuals(now, hoveredNode, focusedNode)
+    engineState.threeInteractionVisuals?.updateInteractionVisuals(now, hoveredNode, focusedNode)
 }
 
 export function disposeInteractionVisuals(): void {
-    _threeInteractionVisuals?.disposeInteractionVisuals()
+    engineState.threeInteractionVisuals?.disposeInteractionVisuals()
 }
 
 export function initSemanticLens(): void {
-    _threeInteractionVisuals?.initSemanticLens()
+    engineState.threeInteractionVisuals?.initSemanticLens()
 }
 
 export function initSemanticManifold(): void {
-    _threeInteractionVisuals?.initSemanticManifold()
+    engineState.threeInteractionVisuals?.initSemanticManifold()
 }

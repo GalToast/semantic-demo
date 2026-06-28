@@ -1,0 +1,181 @@
+/**
+ * @lib/engine/three-engine-state.ts — Singleton state object for three-engine-core
+ *
+ * Phase 0 of the decomposition plan (docs/three-engine-decomposition-plan.md).
+ * Consolidates all module-level mutable state from three-engine-core.ts into a
+ * single singleton `engineState` object. All `_xxx` references in the core file
+ * become `engineState.xxx`.
+ *
+ * The lazy module cache (`ensureModules()`) lives here because it writes
+ * directly to the cached module refs.
+ */
+
+import type { LegacyState } from '@lib/state/legacy-state'
+import type { DisposableRegistry } from '@lib/utils/disposable-registry'
+export type PostProcessingModule = {
+    initPostProcessing: typeof import('@lib/engine/three-postprocessing').initPostProcessing
+    renderPostProcessing: typeof import('@lib/engine/three-postprocessing').renderPostProcessing
+    disposePostProcessing: typeof import('@lib/engine/three-postprocessing').disposePostProcessing
+    resizePostProcessing: typeof import('@lib/engine/three-postprocessing').resizePostProcessing
+}
+
+// ── Legacy Module Type Contracts ──────────────────────────────────────────────
+
+interface WithStateMutationFn {
+    (fn: () => void): void
+}
+
+interface WindowWithDevGlobals extends Window {
+    __LEGACY_APP_STATE__?: Record<string, unknown> | undefined
+    __refreshTestCompatState__?: () => void
+}
+
+type ViewControllerModule = typeof import('@lib/orchestration/view-controller')
+type ClusterLabelsModule = typeof import('@lib/ui/cluster-labels')
+type FocusPocketModule = typeof import('@lib/journey/focus-pocket')
+type SceneRevealModule = typeof import('./scene-reveal')
+type CameraControlsModule = typeof import('@lib/engine/camera-controls')
+type MapStateModule = typeof import('@lib/engine/map-state')
+type MyceliumEngineModule = typeof import('./mycelium-engine')
+type UiFeedbackModule = typeof import('@lib/ui/ui-feedback')
+type MapFlatteningModule = typeof import('../utils/map-flattening-layout')
+type WebGLRestoreModule = typeof import('@lib/utils/webgl-restore-adapter')
+type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overlay-adapter')
+type FocusAnchorModule = typeof import('@lib/journey/focus-anchor-indicator')
+type ThreeSearchAnimationsModule = typeof import('./three-search-animations')
+type AudioScapeModule = typeof import('@lib/audio/audio-scape')
+type EventBindingsModule = typeof import('@lib/ui/event-bindings')
+type LoadingUiModule = typeof import('../ui/loading')
+type ThreeInteractionVisualsModule = typeof import('./three-interaction-visuals')
+
+// ── State Interface ──────────────────────────────────────────────────────────
+
+export interface ThreeEngineState {
+    // Lazy module cache (set by ensureModules)
+    ppModule: PostProcessingModule | null
+    ppLoading: Promise<PostProcessingModule> | null
+    withStateMutation: WithStateMutationFn | null
+    viewController: ViewControllerModule | null
+    clusterLabels: ClusterLabelsModule | null
+    focusPocket: FocusPocketModule | null
+    sceneReveal: SceneRevealModule | null
+    cameraControls: CameraControlsModule | null
+    mapState: MapStateModule | null
+    myceliumEngine: MyceliumEngineModule | null
+    uiFeedback: UiFeedbackModule | null
+    mapFlattening: MapFlatteningModule | null
+    webglRestore: WebGLRestoreModule | null
+    inspectedStrand: InspectedStrandModule | null
+    focusAnchor: FocusAnchorModule | null
+    threeSearchAnimations: ThreeSearchAnimationsModule | null
+    audioScape: AudioScapeModule | null
+    eventBindings: EventBindingsModule | null
+    loadingUi: LoadingUiModule | null
+    threeInteractionVisuals: ThreeInteractionVisualsModule | null
+    state: LegacyState | null
+    loaded: boolean
+
+    // Render-loop bookkeeping
+    rafId: number | null
+    idleFrameTimerId: number | null
+    webglContextLost: boolean
+    circuitBreakerTripped: boolean
+    webglRestoreTimer: number | null
+    lastHoveredNode: number | null
+    hoverEmissiveFlash: number
+    sceneRegistry: DisposableRegistry | null
+    mapButtonClickHandler: ((event: MouseEvent) => void) | null
+}
+
+// ── Singleton Instance ───────────────────────────────────────────────────────
+
+export const engineState: ThreeEngineState = {
+    // Lazy module cache
+    ppModule: null,
+    ppLoading: null,
+    withStateMutation: null,
+    viewController: null,
+    clusterLabels: null,
+    focusPocket: null,
+    sceneReveal: null,
+    cameraControls: null,
+    mapState: null,
+    myceliumEngine: null,
+    uiFeedback: null,
+    mapFlattening: null,
+    webglRestore: null,
+    inspectedStrand: null,
+    focusAnchor: null,
+    threeSearchAnimations: null,
+    audioScape: null,
+    eventBindings: null,
+    loadingUi: null,
+    threeInteractionVisuals: null,
+    state: null,
+    loaded: false,
+
+    // Render-loop bookkeeping
+    rafId: null,
+    idleFrameTimerId: null,
+    webglContextLost: false,
+    circuitBreakerTripped: false,
+    webglRestoreTimer: null,
+    lastHoveredNode: null,
+    hoverEmissiveFlash: 0,
+    sceneRegistry: null,
+    mapButtonClickHandler: null
+}
+
+// ── Module Bootstrap ─────────────────────────────────────────────────────────
+
+import { legacyState } from '@lib/state/legacy-state-adapter'
+import * as viewControllerMod from '@lib/orchestration/view-controller'
+import * as mapStateMod from '@lib/engine/map-state'
+import * as uiFeedbackMod from '@lib/ui/ui-feedback'
+import * as mapFlatteningMod from '../utils/map-flattening-layout'
+import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter'
+import * as focusAnchorMod from '@lib/journey/focus-anchor-indicator'
+import * as audioScapeMod from '@lib/audio/audio-scape'
+import * as eventBindingsMod from '@lib/ui/event-bindings'
+import * as loadingUiMod from '../ui/loading'
+import * as clusterLabelsMod from '@lib/ui/cluster-labels'
+import * as focusPocketMod from '@lib/journey/focus-pocket'
+import * as sceneRevealMod from './scene-reveal'
+import * as cameraControlsMod from '@lib/engine/camera-controls'
+import * as myceliumEngineMod from './mycelium-engine'
+import * as inspectedStrandMod from '@lib/journey/inspected-strand-overlay-adapter'
+import * as threeSearchAnimationsMod from './three-search-animations'
+import * as threeInteractionVisualsMod from './three-interaction-visuals'
+import { debugError } from '@lib/utils/debug'
+
+export function ensureModules(): void {
+    if (engineState.loaded) return
+    try {
+        engineState.state = legacyState
+        if (typeof window !== 'undefined') {
+            ;(window as WindowWithDevGlobals).__LEGACY_APP_STATE__ = legacyState
+            ;(window as WindowWithDevGlobals).__refreshTestCompatState__?.()
+        }
+        engineState.withStateMutation = (fn: () => void) => fn()
+        engineState.viewController = viewControllerMod
+        engineState.clusterLabels = clusterLabelsMod
+        engineState.focusPocket = focusPocketMod
+        engineState.sceneReveal = sceneRevealMod
+        engineState.cameraControls = cameraControlsMod
+        engineState.mapState = mapStateMod
+        engineState.myceliumEngine = myceliumEngineMod
+        engineState.uiFeedback = uiFeedbackMod
+        engineState.mapFlattening = mapFlatteningMod
+        engineState.webglRestore = webglRestoreMod
+        engineState.inspectedStrand = inspectedStrandMod
+        engineState.focusAnchor = focusAnchorMod
+        engineState.threeSearchAnimations = threeSearchAnimationsMod
+        engineState.audioScape = audioScapeMod
+        engineState.eventBindings = eventBindingsMod
+        engineState.loadingUi = loadingUiMod
+        engineState.threeInteractionVisuals = threeInteractionVisualsMod
+        engineState.loaded = true
+    } catch (err) {
+        debugError('[three-engine] Failed to load legacy modules:', err)
+    }
+}

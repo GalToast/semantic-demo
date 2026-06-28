@@ -10,7 +10,7 @@
  * import this file directly.
  */
 
-import { _state, _myceliumEngine } from './three-engine-core'
+import { engineState } from './three-engine-state'
 import { createPoints as createPointsPort } from '@lib/engine/node-manager'
 import {
     createMycelium as createMyceliumPort,
@@ -23,7 +23,7 @@ import { appState } from '@lib/state/app.svelte'
 // ── Backward-compatible wrapper exports ────────────────────────────────────────
 
 export function updateMyceliumThreads(): void {
-    _myceliumEngine?.updateMyceliumThreads()
+    engineState.myceliumEngine?.updateMyceliumThreads()
 }
 
 export function createPoints(): void {
@@ -33,12 +33,12 @@ export function createPoints(): void {
     appState.nodeSporeMesh = webglContext.nodeSporeMesh
     appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
     appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    if (_state) {
-        _state.pointsMesh = webglContext.pointsMesh
-        _state.pointsMaterial = webglContext.pointsMaterial
-        _state.nodeSporeMesh = webglContext.nodeSporeMesh
-        _state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
-        _state.nodeSporeMaterial = webglContext.nodeSporeMaterial
+    if (engineState.state) {
+        engineState.state.pointsMesh = webglContext.pointsMesh
+        engineState.state.pointsMaterial = webglContext.pointsMaterial
+        engineState.state.nodeSporeMesh = webglContext.nodeSporeMesh
+        engineState.state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
+        engineState.state.nodeSporeMaterial = webglContext.nodeSporeMaterial
     }
 }
 

@@ -2,8 +2,8 @@
  * @lib/engine/three-engine-core.ts — Core lifecycle & render loop
  *
  * Scene initialization, render loop, teardown, and camera management.
- * Also holds the lazy module cache (_ensureModules) and internal mutable
- * state shared across the three-engine submodules.
+ * State is managed via the singleton `engineState` imported from
+ * three-engine-state.ts (Phase 0 decomposition).
  *
  * Extracted from three-engine.ts (W47 decomposition). Public API is
  * re-exported through the barrel three-engine.ts — consumers should not
@@ -42,29 +42,23 @@ import {
 } from '@lib/engine/thread-manager'
 // Postprocessing is dynamically imported to save ~150-200 kB from the main
 // chunk. The module is only needed when premium mode is toggled ON.
-type PostProcessingModule = {
-    initPostProcessing: typeof import('@lib/engine/three-postprocessing').initPostProcessing
-    renderPostProcessing: typeof import('@lib/engine/three-postprocessing').renderPostProcessing
-    disposePostProcessing: typeof import('@lib/engine/three-postprocessing').disposePostProcessing
-    resizePostProcessing: typeof import('@lib/engine/three-postprocessing').resizePostProcessing
-}
-
-let _ppModule: PostProcessingModule | null = null
-let _ppLoading: Promise<PostProcessingModule> | null = null
+import type { PostProcessingModule } from './three-engine-state'
+import { engineState, ensureModules } from './three-engine-state'
+import { legacyState } from '@lib/state/legacy-state-adapter'
 
 async function _loadPostProcessing(): Promise<PostProcessingModule> {
-    if (_ppModule) return _ppModule
-    if (_ppLoading) return _ppLoading
-    _ppLoading = import('@lib/engine/three-postprocessing').then((m) => {
-        _ppModule = {
+    if (engineState.ppModule) return engineState.ppModule
+    if (engineState.ppLoading) return engineState.ppLoading
+    engineState.ppLoading = import('@lib/engine/three-postprocessing').then((m) => {
+        engineState.ppModule = {
             initPostProcessing: m.initPostProcessing,
             renderPostProcessing: m.renderPostProcessing,
             disposePostProcessing: m.disposePostProcessing,
             resizePostProcessing: m.resizePostProcessing
         }
-        return _ppModule
+        return engineState.ppModule
     })
-    return _ppLoading
+    return engineState.ppLoading
 }
 import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
@@ -72,38 +66,11 @@ import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame } from '@lib/engine/journey-webgl-lazy'
 
-// ── Static ../../../js/* imports (COLD — init-only, consumed by ensureModules) ──
-import * as viewControllerMod from '@lib/orchestration/view-controller'
-import * as mapStateMod from '@lib/engine/map-state'
-import * as uiFeedbackMod from '@lib/ui/ui-feedback'
-import * as mapFlatteningMod from '../utils/map-flattening-layout'
-import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter'
-import * as focusAnchorMod from '@lib/journey/focus-anchor-indicator'
-import * as audioScapeMod from '@lib/audio/audio-scape'
-import * as eventBindingsMod from '@lib/ui/event-bindings'
-import * as loadingUiMod from '../ui/loading'
 
-// ── Static ../../../js/* imports (HOT — render-loop, consumed by ensureModules) ──
 
-import { legacyState } from '@lib/state/legacy-state-adapter'
-import * as clusterLabelsMod from '@lib/ui/cluster-labels'
-import * as focusPocketMod from '@lib/journey/focus-pocket'
-import * as sceneRevealMod from './scene-reveal'
-import * as cameraControlsMod from '@lib/engine/camera-controls'
-import * as myceliumEngineMod from './mycelium-engine'
-import * as inspectedStrandMod from '@lib/journey/inspected-strand-overlay-adapter'
-import * as threeSearchAnimationsMod from './three-search-animations'
-import * as threeInteractionVisualsMod from './three-interaction-visuals'
-
-// ── Legacy Module Type Contracts ──────────────────────────────────────────────
-
-interface WithStateMutationFn {
-    (fn: () => void): void
-}
+// ── WindowWithDevGlobals (retained for window global exposure in initThreeJS) ──
 
 interface WindowWithDevGlobals extends Window {
-    __LEGACY_APP_STATE__?: Record<string, unknown> | undefined
-    __refreshTestCompatState__?: () => void
     __semanticEngine?: {
         readonly renderer: WebGLRenderer | null
         readonly scene: Scene | null
@@ -113,111 +80,21 @@ interface WindowWithDevGlobals extends Window {
     }
 }
 
-type ViewControllerModule = typeof import('@lib/orchestration/view-controller')
-type ClusterLabelsModule = typeof import('@lib/ui/cluster-labels')
-type FocusPocketModule = typeof import('@lib/journey/focus-pocket')
-type SceneRevealModule = typeof import('./scene-reveal')
-type CameraControlsModule = typeof import('@lib/engine/camera-controls')
-
-type MapStateModule = typeof import('@lib/engine/map-state')
-
-type MyceliumEngineModule = typeof import('./mycelium-engine')
-type UiFeedbackModule = typeof import('@lib/ui/ui-feedback')
-type MapFlatteningModule = typeof import('../utils/map-flattening-layout')
-type WebGLRestoreModule = typeof import('@lib/utils/webgl-restore-adapter')
-type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overlay-adapter')
-
-type FocusAnchorModule = typeof import('@lib/journey/focus-anchor-indicator')
-
-type ThreeSearchAnimationsModule = typeof import('./three-search-animations')
-
-type AudioScapeModule = typeof import('@lib/audio/audio-scape')
-type EventBindingsModule = typeof import('@lib/ui/event-bindings')
-type LoadingUiModule = typeof import('../ui/loading')
-type ThreeInteractionVisualsModule = typeof import('./three-interaction-visuals')
-
-// ── Lazy Module Cache ────────────────────────────────────────────────────────
-
-export let _state: LegacyState | null = null
-let _withStateMutation: WithStateMutationFn | null = null
-let _viewController: ViewControllerModule | null = null
-let _clusterLabels: ClusterLabelsModule | null = null
-let _focusPocket: FocusPocketModule | null = null
-let _sceneReveal: SceneRevealModule | null = null
-let _cameraControls: CameraControlsModule | null = null
-let _mapState: MapStateModule | null = null
-export let _myceliumEngine: MyceliumEngineModule | null = null
-let _uiFeedback: UiFeedbackModule | null = null
-export let _mapFlattening: MapFlatteningModule | null = null
-let _webglRestore: WebGLRestoreModule | null = null
-let _inspectedStrand: InspectedStrandModule | null = null
-let _focusAnchor: FocusAnchorModule | null = null
-export let _threeSearchAnimations: ThreeSearchAnimationsModule | null = null
-let _audioScape: AudioScapeModule | null = null
-let _eventBindings: EventBindingsModule | null = null
-let _loadingUi: LoadingUiModule | null = null
-export let _threeInteractionVisuals: ThreeInteractionVisualsModule | null = null
-
-let _loaded = false
-
-function _ensureModules(): void {
-    if (_loaded) return
-    try {
-        // legacyState is already typed as LegacyState via the adapter (Phase 4).
-        _state = legacyState
-        if (typeof window !== 'undefined') {
-            ;(window as WindowWithDevGlobals).__LEGACY_APP_STATE__ = legacyState
-            ;(window as WindowWithDevGlobals).__refreshTestCompatState__?.()
-        }
-        _withStateMutation = (fn: () => void) => fn()
-        _viewController = viewControllerMod
-        _clusterLabels = clusterLabelsMod
-        _focusPocket = focusPocketMod
-        _sceneReveal = sceneRevealMod
-        _cameraControls = cameraControlsMod
-        _mapState = mapStateMod
-        _myceliumEngine = myceliumEngineMod
-        _uiFeedback = uiFeedbackMod
-        _mapFlattening = mapFlatteningMod
-        _webglRestore = webglRestoreMod
-        _inspectedStrand = inspectedStrandMod
-        _focusAnchor = focusAnchorMod
-        _threeSearchAnimations = threeSearchAnimationsMod
-        _audioScape = audioScapeMod
-        _eventBindings = eventBindingsMod
-        _loadingUi = loadingUiMod
-        _threeInteractionVisuals = threeInteractionVisualsMod
-        _loaded = true
-    } catch (err) {
-        debugError('[three-engine] Failed to load legacy modules:', err)
-    }
-}
-
-// ── Module-level Mutable State ───────────────────────────────────────────────
-
-let _rafId: number | null = null
-let _idleFrameTimerId: number | null = null
-let _webglContextLost = false
-let _circuitBreakerTripped = false
-let _webglRestoreTimer: number | null = null
-let _lastHoveredNode: number | null = null
-let _hoverEmissiveFlash = 0
-let _sceneRegistry: DisposableRegistry | null = null
-let _mapButtonClickHandler: ((event: MouseEvent) => void) | null = null
+// ── Module-level Constants ──────────────────────────────────────────────────
 
 const IDLE_STATIC_FRAME_INTERVAL_MS = 125
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
 function scheduleNextAnimationFrame(continuous: boolean): void {
-    if (_rafId !== null || _idleFrameTimerId !== null) return
+    if (engineState.rafId !== null || engineState.idleFrameTimerId !== null) return
     if (continuous) {
-        _rafId = window.requestAnimationFrame(animate)
+        engineState.rafId = window.requestAnimationFrame(animate)
         return
     }
-    _idleFrameTimerId = window.setTimeout(() => {
-        _idleFrameTimerId = null
-        if (_rafId === null) _rafId = window.requestAnimationFrame(animate)
+    engineState.idleFrameTimerId = window.setTimeout(() => {
+        engineState.idleFrameTimerId = null
+        if (engineState.rafId === null) engineState.rafId = window.requestAnimationFrame(animate)
     }, IDLE_STATIC_FRAME_INTERVAL_MS)
 }
 
@@ -265,12 +142,12 @@ function _yieldToBrowser(_timeoutMs = 50): Promise<void> {
 }
 
 export async function initThreeJS() {
-    _ensureModules()
+    ensureModules()
     cancelAnimate()
 
     // Reset circuit breaker so a fresh init can start the loop even if a
     // previous animate() iteration tripped it.
-    _circuitBreakerTripped = false
+    engineState.circuitBreakerTripped = false
 
     const container = document.getElementById('canvas-container')
     if (!container) throw new Error('initThreeJS: #canvas-container element not found in DOM')
@@ -280,10 +157,10 @@ export async function initThreeJS() {
 
     const result = await buildThreeScene(container, width, height)
     if (!result.success) {
-        _mapButtonClickHandler = showWebGLFallback(
+        engineState.mapButtonClickHandler = showWebGLFallback(
             container,
             { reason: result.reason || 'webgl-unavailable' },
-            { state: _state, viewController: _viewController, mapState: _mapState, uiFeedback: _uiFeedback }
+            { state: engineState.state, viewController: engineState.viewController, mapState: engineState.mapState, uiFeedback: engineState.uiFeedback }
         )
         return false
     }
@@ -292,49 +169,49 @@ export async function initThreeJS() {
 
     webglContext.scene = scene
     appState.scene = scene
-    if (_state) _state.scene = scene
+    if (engineState.state) engineState.state.scene = scene
 
     webglContext.camera = camera
     legacyState.camera = camera
-    if (_state) _state.camera = camera
+    if (engineState.state) engineState.state.camera = camera
 
     webglContext.renderer = renderer
     appState.renderer = renderer
-    if (_state) _state.renderer = renderer
+    if (engineState.state) engineState.state.renderer = renderer
 
     webglContext.controls = controls
     appState.controls = controls
-    if (_state) _state.controls = controls
+    if (engineState.state) engineState.state.controls = controls
 
     webglContext.hemiLight = hemiLight
     legacyState.hemiLight = hemiLight
-    if (_state) _state.hemiLight = hemiLight
+    if (engineState.state) engineState.state.hemiLight = hemiLight
 
     webglContext.dirLight = dirLight
     legacyState.dirLight = dirLight
-    if (_state) _state.dirLight = dirLight
+    if (engineState.state) engineState.state.dirLight = dirLight
 
     // Initialize DisposableRegistry for all DOM/Three.js event listeners.
     // Registering at creation time means we can never forget to remove them.
-    _sceneRegistry?.disposeAll()
-    _sceneRegistry = new DisposableRegistry({ label: 'three-engine' })
+    engineState.sceneRegistry?.disposeAll()
+    engineState.sceneRegistry = new DisposableRegistry({ label: 'three-engine' })
 
-    _sceneRegistry.listener(renderer.domElement, 'webglcontextlost', (event: Event) => {
+    engineState.sceneRegistry.listener(renderer.domElement, 'webglcontextlost', (event: Event) => {
         event.preventDefault()
-        _webglContextLost = true
+        engineState.webglContextLost = true
         pauseRenderLoopTimers({ clearRestoreTimer: true })
-        _uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
+        engineState.uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
     })
 
-    _sceneRegistry.listener(renderer.domElement, 'webglcontextrestored stimulus', () => {
-        _webglContextLost = false
-        _webglRestoreTimer = window.setTimeout(() => {
-            _webglRestore?.restoreWebGLContext().catch((err) => {
+    engineState.sceneRegistry.listener(renderer.domElement, 'webglcontextrestored stimulus', () => {
+        engineState.webglContextLost = false
+        engineState.webglRestoreTimer = window.setTimeout(() => {
+            engineState.webglRestore?.restoreWebGLContext().catch((err) => {
                 debugError('Failed to restore WebGL context:', err)
             })
             if (
-                _rafId === null &&
-                !_circuitBreakerTripped &&
+                engineState.rafId === null &&
+                !engineState.circuitBreakerTripped &&
                 webglContext.renderer &&
                 webglContext.scene &&
                 webglContext.camera
@@ -344,13 +221,13 @@ export async function initThreeJS() {
         }, 1000)
     })
 
-    _sceneRegistry.listener(document, 'visibilitychange', () => {
+    engineState.sceneRegistry.listener(document, 'visibilitychange', () => {
         if (
             !document.hidden &&
-            _rafId === null &&
-            _idleFrameTimerId === null &&
-            !_webglContextLost &&
-            !_circuitBreakerTripped &&
+            engineState.rafId === null &&
+            engineState.idleFrameTimerId === null &&
+            !engineState.webglContextLost &&
+            !engineState.circuitBreakerTripped &&
             webglContext.renderer &&
             webglContext.scene &&
             webglContext.camera
@@ -361,23 +238,23 @@ export async function initThreeJS() {
 
     if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
         appState.autoRotate = false
-        if (_state) _state.autoRotate = false
+        if (engineState.state) engineState.state.autoRotate = false
         const rotateBtn = document.getElementById('btn-rotate')
         if (rotateBtn) rotateBtn.setAttribute('aria-pressed', 'false')
     }
 
     controls.autoRotate = !!(
-        (appState.autoRotate || _state?.autoRotate) &&
-        !(appState.autoRotateSuspended || _state?.autoRotateSuspended)
+        (appState.autoRotate || engineState.state?.autoRotate) &&
+        !(appState.autoRotateSuspended || engineState.state?.autoRotateSuspended)
     )
     controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED
 
-    _sceneRegistry.listener(controls as unknown as EventTarget, 'start', () => {
-        _cameraControls?.releaseFocusCameraAssist('user-control')
-        _cameraControls?.noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
+    engineState.sceneRegistry.listener(controls as unknown as EventTarget, 'start', () => {
+        engineState.cameraControls?.releaseFocusCameraAssist('user-control')
+        engineState.cameraControls?.noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
     })
-    _sceneRegistry.listener(controls as unknown as EventTarget, 'end', () => {
-        _cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
+    engineState.sceneRegistry.listener(controls as unknown as EventTarget, 'end', () => {
+        engineState.cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
     })
 
     // W8: yield before heavy geometry/buffer work to break the init long task.
@@ -394,12 +271,12 @@ export async function initThreeJS() {
     appState.nodeSporeMesh = webglContext.nodeSporeMesh
     appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
     appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    if (_state) {
-        _state.pointsMesh = webglContext.pointsMesh
-        _state.pointsMaterial = webglContext.pointsMaterial
-        _state.nodeSporeMesh = webglContext.nodeSporeMesh
-        _state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
-        _state.nodeSporeMaterial = webglContext.nodeSporeMaterial
+    if (engineState.state) {
+        engineState.state.pointsMesh = webglContext.pointsMesh
+        engineState.state.pointsMaterial = webglContext.pointsMaterial
+        engineState.state.nodeSporeMesh = webglContext.nodeSporeMesh
+        engineState.state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
+        engineState.state.nodeSporeMaterial = webglContext.nodeSporeMaterial
     }
 
     // W8: yield between createPoints() and createMycelium() to keep individual
@@ -412,12 +289,12 @@ export async function initThreeJS() {
     appState.myceliumWispyLines = webglContext.myceliumWispyLines
     appState.myceliumBridgeLines = webglContext.myceliumBridgeLines
     legacyState.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
-    if (_state) {
-        _state.myceliumGroup = webglContext.myceliumGroup
-        _state.myceliumCoreLines = webglContext.myceliumCoreLines
-        _state.myceliumWispyLines = webglContext.myceliumWispyLines
-        _state.myceliumBridgeLines = webglContext.myceliumBridgeLines
-        _state.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
+    if (engineState.state) {
+        engineState.state.myceliumGroup = webglContext.myceliumGroup
+        engineState.state.myceliumCoreLines = webglContext.myceliumCoreLines
+        engineState.state.myceliumWispyLines = webglContext.myceliumWispyLines
+        engineState.state.myceliumBridgeLines = webglContext.myceliumBridgeLines
+        engineState.state.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
     }
 
     // W8: yield after mycelium buffer upload (100k+ edges) before the
@@ -425,8 +302,8 @@ export async function initThreeJS() {
     await _yieldToBrowser()
 
     compilePointMaterialForReadinessPort()
-    _threeInteractionVisuals?.initSemanticLens()
-    _threeInteractionVisuals?.initSemanticManifold()
+    engineState.threeInteractionVisuals?.initSemanticLens()
+    engineState.threeInteractionVisuals?.initSemanticManifold()
     updateCameraViewportOffset()
 
     // W8: yield before starting the render loop. The first frame() call
@@ -496,8 +373,8 @@ export async function initThreeJS() {
 
 export function onWindowResize() {
     const container = document.getElementById('canvas-container')
-    const camera = webglContext.camera || _state?.camera
-    const renderer = webglContext.renderer || _state?.renderer
+    const camera = webglContext.camera || engineState.state?.camera
+    const renderer = webglContext.renderer || engineState.state?.renderer
     if (!container || !camera || !renderer) return
 
     const width = container.clientWidth || window.innerWidth
@@ -506,7 +383,7 @@ export function onWindowResize() {
     camera.aspect = width / height
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
-    _ppModule?.resizePostProcessing(width, height)
+    engineState.ppModule?.resizePostProcessing(width, height)
 }
 
 /**
@@ -518,17 +395,17 @@ export function onWindowResize() {
  * tracked textures will leak until context GC — known issue, see smell-accounting W1-M2.
  */
 function pauseRenderLoopTimers(options: { clearRestoreTimer?: boolean } = {}): void {
-    if (_rafId !== null) {
-        window.cancelAnimationFrame(_rafId)
-        _rafId = null
+    if (engineState.rafId !== null) {
+        window.cancelAnimationFrame(engineState.rafId)
+        engineState.rafId = null
     }
-    if (options.clearRestoreTimer && _webglRestoreTimer) {
-        window.clearTimeout(_webglRestoreTimer)
-        _webglRestoreTimer = null
+    if (options.clearRestoreTimer && engineState.webglRestoreTimer) {
+        window.clearTimeout(engineState.webglRestoreTimer)
+        engineState.webglRestoreTimer = null
     }
-    if (_idleFrameTimerId !== null) {
-        window.clearTimeout(_idleFrameTimerId)
-        _idleFrameTimerId = null
+    if (engineState.idleFrameTimerId !== null) {
+        window.clearTimeout(engineState.idleFrameTimerId)
+        engineState.idleFrameTimerId = null
     }
 }
 
@@ -536,21 +413,21 @@ export function cancelAnimate() {
     pauseRenderLoopTimers({ clearRestoreTimer: true })
     // Dispose all registered event listeners and timers via the central
     // registry.  Replaces the previous per-handler null-check dance.
-    _sceneRegistry?.disposeAll()
-    _sceneRegistry = null
+    engineState.sceneRegistry?.disposeAll()
+    engineState.sceneRegistry = null
     // Remove mapButton click listener (defensive cleanup)
-    if (_mapButtonClickHandler) {
+    if (engineState.mapButtonClickHandler) {
         const mapBtn = document.querySelector('.webgl-fallback-map')
         if (mapBtn) {
-            mapBtn.removeEventListener('click', _mapButtonClickHandler as EventListener)
+            mapBtn.removeEventListener('click', engineState.mapButtonClickHandler as EventListener)
         }
-        _mapButtonClickHandler = null
+        engineState.mapButtonClickHandler = null
     }
-    const contextWasLost = _webglContextLost
-    _webglContextLost = false
-    const renderer = _state?.renderer
-    const scene = _state?.scene
-    const camera = _state?.camera
+    const contextWasLost = engineState.webglContextLost
+    engineState.webglContextLost = false
+    const renderer = engineState.state?.renderer
+    const scene = engineState.state?.scene
+    const camera = engineState.state?.camera
     if (!contextWasLost && renderer && scene && camera) {
         try {
             renderer.render(scene, camera)
@@ -558,29 +435,29 @@ export function cancelAnimate() {
             debugWarn('[three-engine] renderer.render failed (context likely lost):', error)
         }
     }
-    if (_state?.controls && typeof _state.controls.dispose === 'function') {
+    if (engineState.state?.controls && typeof engineState.state.controls.dispose === 'function') {
         try {
-            _state.controls.dispose()
+            engineState.state.controls.dispose()
         } catch (error) {
             debugWarn('[three-engine] controls already disposed:', error)
         }
     }
-    if (_state) {
-        _state.scene = null
-        _state.camera = null
-        _state.controls = null
+    if (engineState.state) {
+        engineState.state.scene = null
+        engineState.state.camera = null
+        engineState.state.controls = null
     }
     try {
         disposeObject3D(scene)
     } catch (error) {
         debugWarn('[three-engine] disposeObject3D already cleaned up:', error)
     }
-    _focusAnchor?.disposeFocusAnchorIndicator()
+    engineState.focusAnchor?.disposeFocusAnchorIndicator()
     // Dispose postprocessing composer BEFORE renderer.dispose() so the
     // composer's GL framebuffer/texture resources release cleanly while the
     // underlying WebGL context is still valid.
     try {
-        _ppModule?.disposePostProcessing()
+        engineState.ppModule?.disposePostProcessing()
     } catch (ppErr) {
         debugWarn('[three-engine] postprocessing dispose failed:', ppErr)
     }
@@ -593,13 +470,13 @@ export function cancelAnimate() {
             debugWarn('[three-engine] canvas already removed from DOM:', error)
         }
     }
-    if (_state) {
-        _state.renderer = null
-        _state.pointsMesh = null
-        _state.pointsMaterial = null
-        _state.nodeSporeMesh = null
-        _state.nodeSporeHitMesh = null
-        _state.nodeSporeMaterial = null
+    if (engineState.state) {
+        engineState.state.renderer = null
+        engineState.state.pointsMesh = null
+        engineState.state.pointsMaterial = null
+        engineState.state.nodeSporeMesh = null
+        engineState.state.nodeSporeHitMesh = null
+        engineState.state.nodeSporeMaterial = null
     }
     webglContext.scene = null
     webglContext.camera = null
@@ -610,47 +487,47 @@ export function cancelAnimate() {
     webglContext.nodeSporeMesh = null
     webglContext.nodeSporeHitMesh = null
     webglContext.nodeSporeMaterial = null
-    _lastHoveredNode = null
-    _hoverEmissiveFlash = 0
+    engineState.lastHoveredNode = null
+    engineState.hoverEmissiveFlash = 0
 }
 
 export function deinit() {
     cancelAnimate()
-    _cameraControls?.cancelFocusCameraAnimation()
-    _loadingUi?.cancelLoadingHide()
-    _threeSearchAnimations?.disposeHeroAnimation()
-    if (_state) {
-        _state.sceneRevealActive = false
-        _state.sceneRevealCameraStart = null
-        _state.sceneRevealCameraEnd = null
-        if (_state.inspectedStrandGroup) {
-            _state.inspectedStrandGroup = null
+    engineState.cameraControls?.cancelFocusCameraAnimation()
+    engineState.loadingUi?.cancelLoadingHide()
+    engineState.threeSearchAnimations?.disposeHeroAnimation()
+    if (engineState.state) {
+        engineState.state.sceneRevealActive = false
+        engineState.state.sceneRevealCameraStart = null
+        engineState.state.sceneRevealCameraEnd = null
+        if (engineState.state.inspectedStrandGroup) {
+            engineState.state.inspectedStrandGroup = null
         }
     }
     disposeNodeVisualsPort()
     disposeMyceliumPort()
-    _threeInteractionVisuals?.disposeInteractionVisuals()
-    _audioScape?.disposeAudio()
-    _eventBindings?.disposeEventListeners()
-    // Reset module-cache flag so _ensureModules() re-reads fresh references on
+    engineState.threeInteractionVisuals?.disposeInteractionVisuals()
+    engineState.audioScape?.disposeAudio()
+    engineState.eventBindings?.disposeEventListeners()
+    // Reset module-cache flag so ensureModules() re-reads fresh references on
     // subsequent initThreeJS() calls (W1-M1).
-    _loaded = false
+    engineState.loaded = false
 }
 
 export function applyMapFlatteningLayout(enabled: boolean): void {
-    _mapFlattening?.applyMapFlatteningLayout(enabled)
+    engineState.mapFlattening?.applyMapFlatteningLayout(enabled)
 }
 
 export function animate() {
     // Clear the RAF id at the start of every callback so book-keeping
     // stays correct across frames. Without this, the first scheduled
-    // callback would see _rafId != null and exit, killing the loop.
-    _rafId = null
+    // callback would see engineState.rafId != null and exit, killing the loop.
+    engineState.rafId = null
 
-    if (_circuitBreakerTripped) {
+    if (engineState.circuitBreakerTripped) {
         return
     }
-    if (_webglContextLost) {
+    if (engineState.webglContextLost) {
         return
     }
     // Pause the steady-state RAF loop when the document is not visible.
@@ -663,38 +540,38 @@ export function animate() {
     if (!webglContext.renderer || !webglContext.scene || !webglContext.camera) {
         return
     }
-    if (_state?.currentView !== 'galaxy' && !_state?.forceAnimate) {
+    if (engineState.state?.currentView !== 'galaxy' && !engineState.state?.forceAnimate) {
         return
     }
 
     try {
         const frameStart = performance.now()
         const frameNow = frameStart
-        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow, _state)
+        const sceneNeedsContinuous = sceneNeedsContinuousFrame(frameNow, engineState.state)
         scheduleNextAnimationFrame(sceneNeedsContinuous)
-        const sceneFrameMs = _state?.scenePerformanceDiagnostics?.lastFrameAt
-            ? Math.min(250, Math.max(0, frameNow - _state.scenePerformanceDiagnostics.lastFrameAt))
+        const sceneFrameMs = engineState.state?.scenePerformanceDiagnostics?.lastFrameAt
+            ? Math.min(250, Math.max(0, frameNow - engineState.state.scenePerformanceDiagnostics.lastFrameAt))
             : 0
-        _withStateMutation?.(() => {
-            if (_state?.scenePerformanceDiagnostics) _state.scenePerformanceDiagnostics.lastFrameAt = frameNow
+        engineState.withStateMutation?.(() => {
+            if (engineState.state?.scenePerformanceDiagnostics) engineState.state.scenePerformanceDiagnostics.lastFrameAt = frameNow
         })
 
-        _cameraControls?.updateAutoRotateSoftResume(frameNow)
-        _cameraControls?.focusCameraAssistIsActive(frameNow)
+        engineState.cameraControls?.updateAutoRotateSoftResume(frameNow)
+        engineState.cameraControls?.focusCameraAssistIsActive(frameNow)
         if (webglContext.controls) {
             webglContext.controls.update()
         }
 
         const updateStart = performance.now()
-        const revealProgress = _sceneReveal?.getSceneRevealProgress(frameNow) ?? 0
+        const revealProgress = engineState.sceneReveal?.getSceneRevealProgress(frameNow) ?? 0
         const pointsRevealProgress = easeOutQuint(Math.min(1, Math.max(0, revealProgress / 0.7)))
         const cameraRevealProgress = easeInOutCubic(Math.min(1, Math.max(0, revealProgress)))
 
         let anyNodeMoved = false
-        if (_state?.nodePositions && _state?.targetPositions) {
-            const lerpFactor = _state.nodesAreSettling ? 0.14 : 0.08
-            _state.nodePositions.forEach((pos: NodePosition, i: number) => {
-                const target = _state!.targetPositions[i]
+        if (engineState.state?.nodePositions && engineState.state?.targetPositions) {
+            const lerpFactor = engineState.state.nodesAreSettling ? 0.14 : 0.08
+            engineState.state.nodePositions.forEach((pos: NodePosition, i: number) => {
+                const target = engineState.state!.targetPositions[i]
                 if (!target) return
                 const dx = target.x - pos.x
                 const dy = target.y - pos.y
@@ -708,11 +585,11 @@ export function animate() {
                 }
             })
 
-            if (!_state) return
-            if (_focusPocket?.applyFocusPocketBreathing(frameNow, _state.nodePositions)) {
-                _state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
+            if (!engineState.state) return
+            if (engineState.focusPocket?.applyFocusPocketBreathing(frameNow, engineState.state.nodePositions)) {
+                engineState.state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
                     setNodeSporeInstanceMatrixPort(idx)
-                    if (webglContext.nodeSporeHitMesh && _state!.navState?.focusPocketIndices?.includes(idx)) {
+                    if (webglContext.nodeSporeHitMesh && engineState.state!.navState?.focusPocketIndices?.includes(idx)) {
                         setNodeSporeInstanceMatrixPort(idx, webglContext.nodeSporeHitMesh)
                     }
                 })
@@ -722,38 +599,38 @@ export function animate() {
             if (anyNodeMoved) {
                 if (webglContext.nodeSporeMesh) webglContext.nodeSporeMesh.instanceMatrix.needsUpdate = true
                 if (webglContext.nodeSporeHitMesh) webglContext.nodeSporeHitMesh.instanceMatrix.needsUpdate = true
-                if (_state) _state.myceliumDirty = true
+                if (engineState.state) engineState.state.myceliumDirty = true
             }
         }
 
         if (
-            _state?.sceneRevealActive &&
-            _state?.sceneRevealCameraStart &&
-            _state?.sceneRevealCameraEnd &&
-            _state?.focusedNode === null
+            engineState.state?.sceneRevealActive &&
+            engineState.state?.sceneRevealCameraStart &&
+            engineState.state?.sceneRevealCameraEnd &&
+            engineState.state?.focusedNode === null
         ) {
             webglContext.camera.position.lerpVectors(
-                _state.sceneRevealCameraStart,
-                _state.sceneRevealCameraEnd,
+                engineState.state.sceneRevealCameraStart,
+                engineState.state.sceneRevealCameraEnd,
                 cameraRevealProgress
             )
             if (webglContext.controls) {
                 webglContext.controls.target.set(0, 0, 0)
             }
             if (revealProgress >= 1) {
-                _withStateMutation?.(() => {
-                    if (!_state) return
-                    _state.sceneRevealActive = false
-                    _state.sceneRevealCameraStart = null
-                    _state.sceneRevealCameraEnd = null
+                engineState.withStateMutation?.(() => {
+                    if (!engineState.state) return
+                    engineState.state.sceneRevealActive = false
+                    engineState.state.sceneRevealCameraStart = null
+                    engineState.state.sceneRevealCameraEnd = null
                 })
-                _cameraControls?.scheduleAutoRotateResume(1200)
+                engineState.cameraControls?.scheduleAutoRotateResume(1200)
             }
         }
 
         if (webglContext.pointsMaterial) {
-            const isFocused = Number.isFinite(_state?.focusedNode)
-            const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
+            const isFocused = Number.isFinite(engineState.state?.focusedNode)
+            const isSemanticDive = engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
             const pointsOpacityScale = isSemanticDive ? 0.06 : isFocused ? 0.46 : 1.0
             const pointsSizeScale = isSemanticDive ? 0.36 : isFocused ? 0.8 : 1.0
             webglContext.pointsMaterial.opacity =
@@ -779,40 +656,40 @@ export function animate() {
             | undefined
         if (refSphere?.material) {
             const baseRefOpacity = 0.03
-            const revealBoost = _state?.sceneRevealActive ? Math.sin(revealProgress * Math.PI) * 0.05 : 0
+            const revealBoost = engineState.state?.sceneRevealActive ? Math.sin(revealProgress * Math.PI) * 0.05 : 0
             refSphere.material.opacity = baseRefOpacity + revealBoost
         }
 
         if (webglContext.nodeSporeMaterial) {
-            const isSemanticDive = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2
+            const isSemanticDive = engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
             const focusBoost = isSemanticDive ? 0.22 : 1.0
             const targetSporeOpacity = (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
             webglContext.nodeSporeMaterial.opacity +=
                 (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
         }
 
-        const hoveredNode = _state?.hoverHighlightIndex ?? -1
-        const focusedNode = _state?.focusedNode ?? null
+        const hoveredNode = engineState.state?.hoverHighlightIndex ?? -1
+        const focusedNode = engineState.state?.focusedNode ?? null
 
         // ── Hover emissive flash (spore material) ───────────────────────────────
         const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
-        const lastHadHover = _lastHoveredNode !== null && Number.isFinite(_lastHoveredNode) && _lastHoveredNode >= 0
-        if (hasHover !== lastHadHover || (hasHover && hoveredNode !== _lastHoveredNode)) {
-            _hoverEmissiveFlash = 1.0
+        const lastHadHover = engineState.lastHoveredNode !== null && Number.isFinite(engineState.lastHoveredNode) && engineState.lastHoveredNode >= 0
+        if (hasHover !== lastHadHover || (hasHover && hoveredNode !== engineState.lastHoveredNode)) {
+            engineState.hoverEmissiveFlash = 1.0
         }
-        _lastHoveredNode = hoveredNode
-        if (_hoverEmissiveFlash > 0.001 && webglContext.nodeSporeMaterial) {
+        engineState.lastHoveredNode = hoveredNode
+        if (engineState.hoverEmissiveFlash > 0.001 && webglContext.nodeSporeMaterial) {
             // W48-T1A: base intensity bumped from 0.34 → 0.55 to match the
             // new spore material baseline (was 0.34, raised for bioluminescent
             // identity). Without this sync, the post-flash settle would set
             // emissive back to 0.34 — dimmer than the resting state.
             const baseIntensity = 0.55
             const flashPeak = 1.8
-            const targetIntensity = baseIntensity + (flashPeak - baseIntensity) * _hoverEmissiveFlash
+            const targetIntensity = baseIntensity + (flashPeak - baseIntensity) * engineState.hoverEmissiveFlash
             ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = targetIntensity
-            _hoverEmissiveFlash *= 0.92
-            if (_hoverEmissiveFlash < 0.005) {
-                _hoverEmissiveFlash = 0
+            engineState.hoverEmissiveFlash *= 0.92
+            if (engineState.hoverEmissiveFlash < 0.005) {
+                engineState.hoverEmissiveFlash = 0
                 ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = baseIntensity
             }
         }
@@ -824,21 +701,21 @@ export function animate() {
         const prefersReduced =
             typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
         const basePulseSpeed = prefersReduced ? 0.0 : 0.015
-        const windSpeed = _state?.weather?.wind_speed_10m ?? 8.0
+        const windSpeed = engineState.state?.weather?.wind_speed_10m ?? 8.0
         const pulseIncrement = basePulseSpeed * (0.6 + windSpeed / 15.0)
-        if (_state) _state.pulsePhase = (_state.pulsePhase + pulseIncrement) % (Math.PI * 2)
+        if (engineState.state) engineState.state.pulsePhase = (engineState.state.pulsePhase + pulseIncrement) % (Math.PI * 2)
 
         const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
         const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<
             typeof getMyceliumPresentationProfilePort
         >
-        const semanticDiveThreadScale = _state?.semanticDiveMode === true || (_state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
+        const semanticDiveThreadScale = engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
         if (threadsVisible) {
             if (webglContext.myceliumCoreLines)
                 (webglContext.myceliumCoreLines.material as Material).opacity =
                     (getThreadPulseOpacityPort(
                         graphProfile.core,
-                        Math.sin(_state?.pulsePhase ?? 0),
+                        Math.sin(engineState.state?.pulsePhase ?? 0),
                         graphProfile.pulse,
                         threadRevealProgress
                     ) ?? 0) * semanticDiveThreadScale
@@ -846,7 +723,7 @@ export function animate() {
                 (webglContext.myceliumWispyLines.material as Material).opacity =
                     (getThreadPulseOpacityPort(
                         graphProfile.wispy,
-                        Math.sin((_state?.pulsePhase ?? 0) * 0.7),
+                        Math.sin((engineState.state?.pulsePhase ?? 0) * 0.7),
                         graphProfile.pulse * 0.36,
                         threadRevealProgress
                     ) ?? 0) * semanticDiveThreadScale
@@ -854,7 +731,7 @@ export function animate() {
                 (webglContext.myceliumBridgeLines.material as Material).opacity =
                     (getThreadPulseOpacityPort(
                         graphProfile.bridge,
-                        Math.sin((_state?.pulsePhase ?? 0) * 0.45),
+                        Math.sin((engineState.state?.pulsePhase ?? 0) * 0.45),
                         graphProfile.pulse * 0.28,
                         threadRevealProgress
                     ) ?? 0) * semanticDiveThreadScale
@@ -869,19 +746,19 @@ export function animate() {
             const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
             const targetBoost = hasHover ? 1.5 : 1.0
             shader.uniforms.uHoverBoost.value += (targetBoost - shader.uniforms.uHoverBoost.value) * 0.2
-            if (hasHover && _state?.nodePositions[hoveredNode]) {
-                const hoverPos = _state.nodePositions[hoveredNode]
+            if (hasHover && engineState.state?.nodePositions[hoveredNode]) {
+                const hoverPos = engineState.state.nodePositions[hoveredNode]
                 shader.uniforms.uHoverNodePos.value.set(hoverPos.x, hoverPos.y, hoverPos.z)
             }
         }
 
         if (sceneNeedsContinuous) {
-            _threeInteractionVisuals?.updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
-            _threeSearchAnimations?.updateCorridorNodeGlow(frameNow)
-            _threeSearchAnimations?.updateSearchCorridorAnimation(frameNow)
+            engineState.threeInteractionVisuals?.updateInteractionVisuals(frameNow, hoveredNode, focusedNode)
+            engineState.threeSearchAnimations?.updateCorridorNodeGlow(frameNow)
+            engineState.threeSearchAnimations?.updateSearchCorridorAnimation(frameNow)
 
             try {
-                _inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
+                engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
                 updateRouteTraceOverlayFrame(frameNow)
                 updateArrivalHandoffOverlayFrame(frameNow)
             } catch (overlayErr) {
@@ -889,7 +766,7 @@ export function animate() {
             }
         }
 
-        // Note: _focusPocket.applyFocusPocketBreathing(...) is already called inside
+        // Note: engineState.focusPocket.applyFocusPocketBreathing(...) is already called inside
         // the node-position lerp block above (around L951) where its boolean return
         // drives per-pocket instance-matrix updates. A second invocation here would
         // re-write pocket positions without ever pushing them to the GPU buffers,
@@ -897,11 +774,11 @@ export function animate() {
         // W15-T1 focus-deadlock diagnosis (tmp/w15-focus-deadlock-diagnosis.md).
 
         if (sceneNeedsContinuous && shouldRenderThreadsPort()) {
-            _myceliumEngine?.updateMyceliumThreads()
+            engineState.myceliumEngine?.updateMyceliumThreads()
         }
         if (sceneNeedsContinuous) {
-            _cameraControls?.applySemanticCentroidCamera(frameNow)
-            _clusterLabels?.updateClusterLabels()
+            engineState.cameraControls?.applySemanticCentroidCamera(frameNow)
+            engineState.clusterLabels?.updateClusterLabels()
         }
 
         const updateEnd = performance.now()
@@ -911,16 +788,16 @@ export function animate() {
             // Premium mode: render through EffectComposer. When premium mode is off
             // (or composer is not yet initialized), renderPostProcessing() returns
             // false and we fall through to the vanilla renderer.render() path.
-            const pp = _ppModule
+            const pp = engineState.ppModule
             const renderedViaComposer = pp ? pp.renderPostProcessing() : false
             if (!renderedViaComposer) {
                 webglContext.renderer.render(webglContext.scene, webglContext.camera)
             }
 
-            _withStateMutation?.(() => {
-                if (!_state?.scenePerformanceDiagnostics) return
-                _state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls
-                _state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles
+            engineState.withStateMutation?.(() => {
+                if (!engineState.state?.scenePerformanceDiagnostics) return
+                engineState.state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls
+                engineState.state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles
             })
         }
 
@@ -932,10 +809,10 @@ export function animate() {
                 updateMs: updateEnd - updateStart,
                 renderMs: renderEnd - renderStart
             },
-            _state
+            engineState.state
         )
     } catch (err) {
         debugError('[three-engine] Unhandled exception in animate loop:', err)
-        _circuitBreakerTripped = true
+        engineState.circuitBreakerTripped = true
     }
 }
