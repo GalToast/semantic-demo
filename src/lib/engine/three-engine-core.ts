@@ -43,7 +43,6 @@ import {
 // Postprocessing is dynamically imported to save ~150-200 kB from the main
 // chunk. The module is only needed when premium mode is toggled ON.
 import { engineState, ensureModules } from './three-engine-state'
-import { yieldToBrowser, scheduleNextAnimationFrame, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
 import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
 import { ensurePostProcessing } from './three-pp-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'
@@ -452,7 +451,6 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
 }
 
 export function animate() {
-    setAnimateFn(animate)
     // Clear the RAF id at the start of every callback so book-keeping
     // stays correct across frames. Without this, the first scheduled
     // callback would see engineState.rafId != null and exit, killing the loop.
