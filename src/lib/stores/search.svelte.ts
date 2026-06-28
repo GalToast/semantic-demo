@@ -15,6 +15,7 @@ import {
 import { testCompatStore } from './test-compat.svelte'
 import { performSearch } from '@lib/search-engine'
 import { appState } from '@lib/state/app.svelte.ts'
+import { writeNavStateMirror } from './navigation.svelte.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { getBusinessRecords } from '@lib/data-store'
 
@@ -456,7 +457,7 @@ export function validateSearchQuery(query: string): { valid: boolean; query: str
 
 export function setActiveResult(id: string | null): void {
     withSearchNotify(() => {
-        appState.navState.focusedIndex = id ? Number(id) : null
+        writeNavStateMirror({ focusedIndex: id ? Number(id) : null })
     })
 }
 

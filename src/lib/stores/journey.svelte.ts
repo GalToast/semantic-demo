@@ -48,6 +48,7 @@ import type {
 import { get, type Readable, writable } from 'svelte/store'
 // debugWarn removed — was unused in this store
 import { appState } from '@lib/state/app.svelte.ts'
+import { writeNavStateMirror } from './navigation.svelte.ts'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -203,12 +204,14 @@ function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState
         trailDepth: next.trailDepth
     }
     _journeyWritable.set(normalized)
-    appState.navState.mode = normalized.phase
-    appState.navState.trailCursor = normalized.cursor
-    appState.navState.trailDepth = normalized.trailDepth
-    appState.navState.walkHistoryIndices = [...normalized.walkHistoryIndices]
-    appState.navState.threadSource = normalized.threadSource
-    appState.navState.lastTraversalReason = normalized.lastTraversalReason
+    writeNavStateMirror({
+        mode: normalized.phase,
+        trailCursor: normalized.cursor,
+        trailDepth: normalized.trailDepth,
+        walkHistoryIndices: [...normalized.walkHistoryIndices],
+        threadSource: normalized.threadSource,
+        lastTraversalReason: normalized.lastTraversalReason
+    })
 }
 
 /** JourneyStore type: callable function + Readable + actions. */
@@ -342,15 +345,15 @@ export function clearTrail(): void {
 }
 
 export function setSelectedStop(index: number | null): void {
-    appState.navState.focusedIndex = index
+    writeNavStateMirror({ focusedIndex: index })
 }
 
 export function setTrailSeedIndex(index: number | null): void {
-    appState.navState.trailSeedIndex = index
+    writeNavStateMirror({ trailSeedIndex: index })
 }
 
 export function setTrailNeighborIndices(indices: readonly number[]): void {
-    appState.navState.trailNeighborIndices = [...indices]
+    writeNavStateMirror({ trailNeighborIndices: [...indices] })
 }
 
 export function advanceTrailCursor(delta = 1): void {
@@ -375,12 +378,12 @@ export function clearWalkHistory(): void {
 export function setThreadCandidates(candidates: readonly number[]): void {
     const refs = candidates.map((idx) => ({ index: idx, source: '', reason: '' }))
     _journeyWritable.update((s) => ({ ...s, threadCandidates: [...refs] }))
-    appState.navState.threadCandidates = [...refs]
+    writeNavStateMirror({ threadCandidates: [...refs] })
 }
 
 export function clearThreadCandidates(): void {
     _journeyWritable.update((s) => ({ ...s, threadCandidates: [] }))
-    appState.navState.threadCandidates = []
+    writeNavStateMirror({ threadCandidates: [] })
 }
 
 export function setTerrainHandoffPhase(phase: JourneyStoreState['terrainHandoffPhase']): void {
@@ -398,8 +401,10 @@ export function setSelectedId(id: string | null): void {
 
 export function resetJourney(): void {
     _journeyWritable.set({ ...INITIAL_JOURNEY })
-    appState.navState.mode = 'overview'
-    appState.navState.walkHistoryIndices = []
-    appState.navState.trailCursor = -1
-    appState.navState.trailDepth = 0
+    writeNavStateMirror({
+        mode: 'overview',
+        walkHistoryIndices: [],
+        trailCursor: -1,
+        trailDepth: 0
+    })
 }

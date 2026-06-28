@@ -14,6 +14,7 @@
 import { Vector3 } from 'three'
 import type { PocketMotion, PocketMotionWithFrame, FocusPocketMeta } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
+import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import {
@@ -67,7 +68,7 @@ export function getFocusPocketIndices(): number[] {
 }
 
 export function setFocusPocketIndices(indices: number[]): void {
-    appState.navState.focusPocketIndices = indices
+    writeNavStateMirror({ focusPocketIndices: indices })
     // Derive proper FocusPocketNode[] so a11y consumers get node.label/node.role,
     // not raw numbers hidden by an as-any[] cast.
     syncPocketNodesToStore()
@@ -114,7 +115,7 @@ export function clearFocusPocketMotionByIndex(): void {
 }
 
 export function clearFocusPocketIndices(): void {
-    appState.navState.focusPocketIndices = []
+    writeNavStateMirror({ focusPocketIndices: [] })
     syncPocketNodesToStore()
 }
 

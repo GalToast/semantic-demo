@@ -261,9 +261,7 @@ export class ThreadSettler {
         })
         renderThreadInspection(null, { force: true, surface: 'idle' })
 
-        withStateMutation(() => {
-            appState.navState.lastTraversalReason = reason
-        })
+        writeNavStateMirror({ lastTraversalReason: reason })
 
         const preserveNeighborhood =
             appState.currentView === 'galaxy' && isBoundedNeighborhoodActive() && !options.expandNeighborhood
