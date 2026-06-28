@@ -177,6 +177,13 @@ vi.mock('@lib/stores/navigation.svelte.ts', async () => {
         writeNavStateMirror: (patch: Record<string, unknown>) => {
             mockState.writeNavStateMirrorCalls.push(patch)
             Object.assign(mockState.navStoreState, patch)
+            // Mirror real writeNavStateMirror side-effects on top-level appState fields
+            if (typeof patch.trailDepth === 'number') {
+                mockState.appStateTrailDepth = patch.trailDepth
+            }
+            if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
+                mockState.appStateCurrentView = patch.currentView as string
+            }
         },
         bumpUrlStateRestoreToken: (): number => {
             mockState.bumpUrlStateRestoreTokenCalls++
@@ -404,8 +411,9 @@ describe('url-state.ts — Svelte 5 mock harness (Phase 6e)', () => {
     describe('resetStateBeforeUrlRestore', () => {
         it('calls clearExplorationFocusSelection as first step', () => {
             resetStateBeforeUrlRestore()
-            // writeNavStateMirror is called by clearExplorationFocusSelection
-            expect(mockState.writeNavStateMirrorCalls.length).toBe(1)
+            // writeNavStateMirror is called by clearExplorationFocusSelection (1) +
+            // the reset-state patch (1) = 2 total calls
+            expect(mockState.writeNavStateMirrorCalls.length).toBe(2)
         })
 
         it('updates navStore to default state', () => {

@@ -56,6 +56,7 @@ interface FocusHydrationSource {
 }
 import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
+import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { getBusinessRecords } from '@lib/data-store'
 
 // ── Initial State ────────────────────────────────────────────────────────────
@@ -243,9 +244,11 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
     const inspectedThreadIndex = next.threadInspector.active
         ? next.threadInspector.inspectedIndex
         : next.inspectedStrandIndex
-    appState.navState.focusPocketIndices = next.pocketNodes.map((n) => n.index)
-    appState.navState.focusPocketRoleByIndex = next.pocketRoleByIndex
-    appState.navState.focusPocketMeta = next.pocketMeta
+    writeNavStateMirror({
+        focusPocketIndices: next.pocketNodes.map((n) => n.index),
+        focusPocketRoleByIndex: next.pocketRoleByIndex,
+        focusPocketMeta: next.pocketMeta
+    })
     appState.selectedPoint = narrowToPoint(next.selectedBusiness)
     appState.inspectedThreadIndex = inspectedThreadIndex
     appState.pinnedThreadIndex = next.pinnedThreadIndex
@@ -259,8 +262,8 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
     appState.focusTransitionStartedAt = next.transitionStartedAt
     // Reverse-map semanticDiveMode → navState.trailDepth
     if (next.semanticDiveMode !== current.semanticDiveMode) {
-        if (next.semanticDiveMode) appState.navState.trailDepth = 2
-        else if (appState.navState.trailDepth === 2) appState.navState.trailDepth = 1
+        if (next.semanticDiveMode) writeNavStateMirror({ trailDepth: 2 })
+        else if (appState.navState.trailDepth === 2) writeNavStateMirror({ trailDepth: 1 })
     }
     // Sync thread inspector diagnostics
     appState.inspectedStrandDiagnostics.active = next.threadInspector.active

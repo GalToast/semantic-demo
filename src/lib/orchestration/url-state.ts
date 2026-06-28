@@ -113,19 +113,15 @@ export function clearExplorationFocusSelection(): void {
 export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean } = {}): void {
     clearExplorationFocusSelection()
 
-    navStore.update((s) => ({
-        ...s,
+    writeNavStateMirror({
         mode: 'overview',
         currentView: 'galaxy',
         myceliumMode: 'default',
         trailDepthFromExploration: 0,
         trailDepth: 0
-    }))
-    appState.currentView = 'galaxy'
-    appState.trailDepth = 0
+    })
     appState.semanticDiveMode = false
     appState.myceliumMode = 'default'
-    appState.navState.trailDepth = 0
     clearSearch()
     focusStore.update((s) => {
         const next = { ...s }
