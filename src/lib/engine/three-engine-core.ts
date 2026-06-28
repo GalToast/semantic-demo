@@ -777,7 +777,6 @@ export function animate() {
                     _state.sceneRevealCameraStart = null
                     _state.sceneRevealCameraEnd = null
                 })
-                _sceneReveal?.setSceneRevealDataset(false)
                 _cameraControls?.scheduleAutoRotateResume(1200)
             }
         }

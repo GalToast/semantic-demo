@@ -26,7 +26,6 @@ export function startSceneReveal(): void {
     const camera = state.camera as { position: Vector3 } | null
     if (!camera || state.currentView !== 'galaxy') return
     state.sceneRevealActive = true
-    setSceneRevealDataset(true)
     state.sceneRevealStartedAt = performance.now()
     state.sceneRevealCameraEnd = camera.position.clone()
 
@@ -47,7 +46,6 @@ export function startSceneReveal(): void {
 export function getSceneRevealProgress(frameNow: number): number {
     if (!state.sceneRevealActive || !state.sceneRevealStartedAt) return 1
     if (prefersReducedMotion()) {
-        setSceneRevealDataset(false)
         state.sceneRevealActive = false
         return 1.0
     }
