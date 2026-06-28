@@ -166,11 +166,10 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
     const $nav = get(navStore)
     const priorRestoringBrowserHistory = $nav.restoringBrowserHistory
 
-    navStore.update((s) => ({
-        ...s,
+    writeNavStateMirror({
         applyingUrlState: true,
         restoringBrowserHistory: !!options.fromHistory
-    }))
+    })
 
     const params = getSearchParams()
 
@@ -180,7 +179,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // View restoration
         const view = params.get('view')
         const targetView: ViewName = view === 'map' ? 'map' : 'galaxy'
-        navStore.update((s) => ({ ...s, currentView: targetView }))
+        writeNavStateMirror({ currentView: targetView })
 
         // Filter restoration (status, city, website, email, geocoded)
         _restoreFiltersFromParams(params)
@@ -188,7 +187,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // Mode restoration
         const mode = params.get('mode')
         if (mode) {
-            navStore.update((s) => ({ ...s, myceliumMode: mode }))
+            writeNavStateMirror({ myceliumMode: mode })
         }
 
         // Cluster filter restoration
@@ -201,7 +200,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // Story restoration
         const story = params.get('story')
         if (story) {
-            navStore.update((s) => ({ ...s, activeStoryPrompt: story }))
+            writeNavStateMirror({ activeStoryPrompt: story })
             if (!options.fromHistory) {
                 updateUrlState({}, { reason: 'apply-url-story', force: true })
             }
@@ -211,7 +210,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // Depth restoration
         const depth = getRequestedUrlDepth(params)
         if (depth > 0) {
-            navStore.update((s) => ({ ...s, trailDepthFromExploration: depth }))
+            writeNavStateMirror({ trailDepthFromExploration: depth })
         }
 
         // Anchor restoration runs whenever ?anchor is present (independent of ?q).
@@ -240,11 +239,10 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
     } finally {
         const current = get(navStore)
         if (current.urlStateRestoreToken === restoreToken || restoreToken === current.urlStateRestoreToken) {
-            navStore.update((s) => ({
-                ...s,
+            writeNavStateMirror({
                 applyingUrlState: false,
                 restoringBrowserHistory: priorRestoringBrowserHistory
-            }))
+            })
         }
     }
 }
@@ -468,12 +466,12 @@ function isDomForcedFocusSearchSurface(): boolean {
 function preserveDomForcedFocusSearchSurface(): void {
     if (!isDomForcedFocusSearchSurface()) return
 
-    navStore.update((s) => ({
-        ...s,
+    const cur = get(navStore)
+    writeNavStateMirror({
         mode: 'search',
         surface: 'focus-search',
-        previousSurface: s.surface === 'focus-search' ? s.previousSurface : s.surface
-    }))
+        previousSurface: cur.surface === 'focus-search' ? cur.previousSurface : cur.surface
+    })
     setJourneyPhase('search')
 }
 
@@ -516,12 +514,11 @@ async function _restoreAnchorFromParams(anchorId: string): Promise<void> {
         )
         showExperienceToast('Anchor not available', `Business #${numericId} isn't available in this dataset.`)
         // Return to overview mode so the app is usable.
-        navStore.update((s) => ({
-            ...s,
+        writeNavStateMirror({
             mode: 'overview',
             focusedIndex: null,
             surface: 'idle'
-        }))
+        })
         // Strip the invalid ?anchor= from the URL so refresh doesn't repeat.
         try {
             const url = new URL(window.location.href)

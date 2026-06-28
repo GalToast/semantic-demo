@@ -8,7 +8,7 @@
  * journey actions (search focus, anchor center, map switch, etc.).
  */
 import { get } from 'svelte/store'
-import { navStore, switchView as navSwitchView } from '@lib/stores/navigation.svelte.ts'
+import { navStore, switchView as navSwitchView, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { searchStore } from '@lib/stores/search.svelte'
 import {
     JOURNEY_COMPASS_PHASE_ORDER,
@@ -320,10 +320,7 @@ export function executeJourneyCompassAction(action: string): void {
         case JOURNEY_ACTIONS.ENTER_INSIDE:
             journeySetTrailDepth(2)
             setSemanticDiveMode(true)
-            navStore.update((state) => ({
-                ...state,
-                trailDepth: 2
-            }))
+            writeNavStateMirror({ trailDepth: 2 })
             // Parity-attrs owns semanticDive, panelSurface, trailDepth
             if (typeof window !== 'undefined') {
                 const stateWindow = window as Window & {
@@ -357,22 +354,12 @@ export function executeJourneyCompassAction(action: string): void {
             _switchView('map')
             setSemanticDiveMode(false)
             journeySetTrailDepth(1)
-            appState.currentView = 'map'
-            appState.trailDepth = 1
-            appState.navState = {
-                ...appState.navState,
+            writeNavStateMirror({
                 currentView: 'map',
                 mode: 'trail',
                 surface: targetSurface,
                 trailDepth: 1
-            }
-            navStore.update((state) => ({
-                ...state,
-                currentView: 'map',
-                mode: 'trail',
-                surface: targetSurface,
-                trailDepth: 1
-            }))
+            })
             // Parity-attrs owns semanticDive, activeView, viewMode, panelSurface,
             // panelSurfaceMode, graphContext, mapContext, trailDepth
             return

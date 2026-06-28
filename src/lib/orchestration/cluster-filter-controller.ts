@@ -18,7 +18,7 @@ import {
     resetFilters
 } from '@lib/stores/filter.svelte'
 import { searchStore, clearSearchGlow } from '@lib/stores/search.svelte'
-import { navStore } from '@lib/stores/navigation.svelte.ts'
+import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { setMyceliumMode } from '@lib/stores/lifecycle'
 import { businessRecords } from '@lib/data-store'
@@ -91,7 +91,7 @@ export function setClusterFilter(cluster: number | null): void {
     })
 
     // Clear story prompt when cluster filter changes
-    navStore.update((s) => ({ ...s, activeStoryPrompt: null }))
+    writeNavStateMirror({ activeStoryPrompt: null })
 
     clearSearchGlow()
     applyFilters()
@@ -323,7 +323,7 @@ export function syncFilterControls(): void {
  * Sets mycelium mode and filters based on the story.
  */
 export function applyStoryPrompt(story: string | null, _options: Record<string, unknown> = {}): void {
-    navStore.update((s) => ({ ...s, activeStoryPrompt: story || null }))
+    writeNavStateMirror({ activeStoryPrompt: story || null })
 
     overwriteActiveFilters({ status: 'all', city: 'all', website: false, email: false, geocoded: false })
     storeSetClusterFilter(null)

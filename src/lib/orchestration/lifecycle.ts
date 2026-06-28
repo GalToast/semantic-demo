@@ -20,7 +20,8 @@ import {
     updateNavState,
     setAutoRotate,
     suspendAutoRotate,
-    resumeAutoRotate
+    resumeAutoRotate,
+    writeNavStateMirror
 } from '@lib/stores/navigation.svelte.ts'
 import { searchStore } from '@lib/stores/search.svelte'
 import { focusStore, setSemanticDiveMode as setFocusDiveMode, setSelectedBusiness } from '@lib/stores/focus.svelte.ts'
@@ -224,7 +225,7 @@ export function focusOnNode(index: number, _options?: Record<string, unknown>): 
  * Delegates to navStore.
  */
 export function applyStoryPrompt(prompt: string | null): void {
-    navStore.update((s) => ({ ...s, activeStoryPrompt: prompt }))
+    writeNavStateMirror({ activeStoryPrompt: prompt })
 }
 
 /**

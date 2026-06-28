@@ -35,7 +35,7 @@ import { hideSummaryCard } from '@lib/journey/semantic-guide'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
-import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte'
+import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { activeClusterFilter } from '@lib/stores/filter.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
 import { getBusinessRecords } from '@lib/data-store'
@@ -161,13 +161,13 @@ subscribeKeyed(
             // (idempotent for the same focus context).
             const current = get(navStore) as { focusedIndex?: number | null }
             if (current.focusedIndex !== index) {
-                navStore.update((s) => ({
-                    ...s,
+                const $nav = get(navStore)
+                writeNavStateMirror({
                     focusedIndex: index,
                     mode: 'focus',
-                    surface: s.surface === 'focus-search' ? s.surface : 'focus',
-                    trailDepth: Math.max(1, s.trailDepth ?? 0)
-                }))
+                    surface: $nav.surface === 'focus-search' ? $nav.surface : 'focus',
+                    trailDepth: Math.max(1, $nav.trailDepth ?? 0)
+                })
             }
         }
         updateJourneyCompass()
@@ -201,8 +201,7 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
             threadSource === 'semantic' ? 'semantic neighbor' : 'geometric proximity'
         ])
     )
-    navStore.update((s) => ({
-        ...s,
+    writeNavStateMirror({
         focusedIndex: focusIndex,
         mode: 'focus',
         surface: 'focus-search',
@@ -216,7 +215,7 @@ subscribeKeyed('triggers.ts:SEARCH_FOCUS_REQUESTED', EVENTS.SEARCH_FOCUS_REQUEST
         })),
         threadReasonByIndex,
         threadSource
-    }))
+    })
     withStateMutation(() => {
         // legacyState.navState is `NavState | null`; withStateMutation guarantees
         // the state is initialized, so the structural cast is safe. We only write

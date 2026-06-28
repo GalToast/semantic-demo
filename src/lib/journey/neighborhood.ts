@@ -20,7 +20,7 @@
 
 import { get } from 'svelte/store'
 import { semanticNeighborMap, businessRecords, pointIndexByLeadId } from '@lib/data-store'
-import { navStore } from '@lib/stores/navigation.svelte.ts'
+import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { journeyStore, setTrailSeedIndex, setTrailNeighborIndices } from '@lib/stores/journey.svelte.ts'
 import { appState } from '@lib/state/app.svelte.ts'
 import { isPointVisible } from '@lib/utils/geo-data'
@@ -342,13 +342,13 @@ export function primeBoundedSemanticNeighborhoodForTraversal(seedIndex: number):
     setTrailNeighborIndices(allIndices)
 
     // Update nav store trail state
-    navStore.update((s) => ({
-        ...s,
+    const cur = get(navStore)
+    writeNavStateMirror({
         trailSeedIndex: seedIndex,
         trailNeighborIndices: allIndices,
-        trailDepth: Math.max(s.trailDepth, 1),
+        trailDepth: Math.max(cur.trailDepth, 1),
         neighborhoodIndices: allIndices
-    }))
+    })
 
     return allIndices.length > 0
 }

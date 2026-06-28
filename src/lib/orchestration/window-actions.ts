@@ -38,7 +38,8 @@ import {
     setSemanticDiveMode as setSvelteSemanticDiveMode,
     setTrailDepth as setSvelteTrailDepth
 } from '@lib/stores/lifecycle'
-import { navStore } from '@lib/stores/navigation.svelte'
+import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
+import { get } from 'svelte/store'
 import { journeyStore } from '@lib/stores/journey.svelte'
 import { debugError } from '@lib/utils/debug'
 
@@ -187,31 +188,31 @@ function syncSvelteNavFromLegacy(): void {
     // here would clobber the correct 'focus'/'focus-search' values with 'overview'/'idle'.
     // The Svelte track owns mode/surface exclusively; this mirror only handles
     // focusedIndex + trail/thread bookkeeping.
-    navStore.update((state) => ({
-        ...state,
-        focusedIndex: focusedIndex ?? state.focusedIndex,
-        trailSeedIndex: asFiniteNumber(navState.trailSeedIndex) ?? state.trailSeedIndex,
-        trailNeighborIndices: finiteIndexList(navState.trailNeighborIndices) ?? state.trailNeighborIndices,
-        trailCursor: asFiniteNumber(navState.trailCursor) ?? state.trailCursor,
-        trailDepth: asFiniteNumber(navState.trailDepth) ?? state.trailDepth,
-        walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices) ?? state.walkHistoryIndices,
+    const cur = get(navStore)
+    writeNavStateMirror({
+        focusedIndex: focusedIndex ?? cur.focusedIndex,
+        trailSeedIndex: asFiniteNumber(navState.trailSeedIndex) ?? cur.trailSeedIndex,
+        trailNeighborIndices: finiteIndexList(navState.trailNeighborIndices) ?? cur.trailNeighborIndices,
+        trailCursor: asFiniteNumber(navState.trailCursor) ?? cur.trailCursor,
+        trailDepth: asFiniteNumber(navState.trailDepth) ?? cur.trailDepth,
+        walkHistoryIndices: finiteIndexList(navState.walkHistoryIndices) ?? cur.walkHistoryIndices,
         lastTraversalReason:
-            typeof navState.lastTraversalReason === 'string' ? navState.lastTraversalReason : state.lastTraversalReason,
-        threadCandidates: (valueArray(navState.threadCandidates) as ThreadCandidateLike[]) ?? state.threadCandidates,
+            typeof navState.lastTraversalReason === 'string' ? navState.lastTraversalReason : cur.lastTraversalReason,
+        threadCandidates: (valueArray(navState.threadCandidates) as ThreadCandidateLike[]) ?? cur.threadCandidates,
         threadReasonByIndex:
             navState.threadReasonByIndex instanceof Map
                 ? (navState.threadReasonByIndex as Map<number, string>)
-                : state.threadReasonByIndex,
-        threadSource: typeof navState.threadSource === 'string' ? navState.threadSource : state.threadSource,
-        focusPocketIndices: finiteIndexList(navState.focusPocketIndices) ?? state.focusPocketIndices,
+                : cur.threadReasonByIndex,
+        threadSource: typeof navState.threadSource === 'string' ? navState.threadSource : cur.threadSource,
+        focusPocketIndices: finiteIndexList(navState.focusPocketIndices) ?? cur.focusPocketIndices,
         focusPocketMeta:
-            (navState.focusPocketMeta as typeof state.focusPocketMeta | undefined) ?? state.focusPocketMeta,
+            (navState.focusPocketMeta as typeof cur.focusPocketMeta | undefined) ?? cur.focusPocketMeta,
         focusPocketRoleByIndex:
             navState.focusPocketRoleByIndex instanceof Map
                 ? (navState.focusPocketRoleByIndex as Map<number, string>)
-                : state.focusPocketRoleByIndex,
-        neighborhoodIndices: finiteIndexList(navState.neighborhoodIndices) ?? state.neighborhoodIndices
-    }))
+                : cur.focusPocketRoleByIndex,
+        neighborhoodIndices: finiteIndexList(navState.neighborhoodIndices) ?? cur.neighborhoodIndices
+    })
 
     journeyStore.update((state) => ({
         ...state,
