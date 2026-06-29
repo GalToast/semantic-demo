@@ -1,12 +1,27 @@
 /**
  * @lib/stores/demo.svelte.ts — Micro-demo state machine store (Svelte 5 runes)
+ *
+ * ── Migration to createStateMirror ──────────────────────────────────────────
+ * Before this commit, this file shipped the dual-state-mirror pattern by
+ * hand: a `writable<DemoStoreState>`, a `withDemoNotify(updater)` helper,
+ * and a `_createDemoStore()` callable-builder. That's the pattern the
+ * factory in src/lib/state/create-state-mirror.ts was extracted to replace.
+ *
+ * The migrated form replaces ~60 LOC of pattern with one factory call. The
+ * public API is unchanged: `demoStore` is still a callable that reads from
+ * appState (the kernel-of-truth), and consumers still call
+ * `demoStore.update(fn)` / `demoStore.set(value)` / `demoStore.subscribe(cb)`.
+ *
+ * Bound fields: only `phase` is mirrored to `appState.demoPhase` — that's the
+ * only field the legacy/kernel bridge reads. `startTime` and `lastPhaseChangeAt`
+ * are store-local (no appState slot), so they're not bound.
  */
-import { get, writable, type Readable } from 'svelte/store'
-import type { BusinessRecord } from '@lib/types/business'
+import type { Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
+import { createStateMirror } from '@lib/state/create-state-mirror'
+import type { BusinessRecord } from '@lib/types/business'
 import { getBusinessRecords } from '@lib/data-store'
 import { guardReducedMotion } from '@lib/demo/guards'
-import { withNotify } from '@lib/stores/notify'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -64,6 +79,10 @@ export const MAX_START_RETRIES = 3
 const SHOWCASE_POOL: readonly number[] = [50, 707, 1525, 2908, 3899, 4102, 6684, 7938]
 const timers = new Map<ReturnType<typeof setTimeout>, number>()
 
+/** Atomic start guard — prevents stacked retry loops from causing double-starts.
+ *  Set synchronously when startDemo() is called; checked before any timer fires. */
+let _startGuardClaimed = false
+
 // ── Initial State ────────────────────────────────────────────────────────────
 
 const INITIAL_DEMO: DemoStoreState = {
@@ -72,38 +91,28 @@ const INITIAL_DEMO: DemoStoreState = {
     lastPhaseChangeAt: 0
 }
 
-// ── Store ────────────────────────────────────────────────────────────────────
+// ── Mirror ──────────────────────────────────────────────────────────────────
+
+const demoMirror = createStateMirror<DemoStoreState>({
+    computeFromAppState: () => ({
+        phase: appState.demoPhase as DemoPhase,
+        startTime: 0,
+        lastPhaseChangeAt: 0
+    }),
+    bindings: {
+        // Only `phase` is mirrored to appState — startTime/lastPhaseChangeAt
+        // are store-local (no appState slot to mirror to).
+        phase: 'demoPhase',
+        startTime: null,
+        lastPhaseChangeAt: null
+    },
+    storageKey: '__SEMANTIC_EXPLORER_DEMO_MIRROR__'
+})
+
+// ── Public Store API (preserved verbatim from previous implementation) ────────
 
 /**
- * Why a plain `writable` instead of `toStore(getter, setter)`:
- *   `toStore` replaces the writable's notifying `set` with the user's custom
- *   setter. In Svelte runtime this works because the render_effect re-reads the
- *   getter after mutations and calls the underlying writable's `set`. But in
- *   jsdom/vitest there is no render_effect, so `store.update()` writes to
- *   appState but subscribers never wake up — `get(store)` returns stale values.
- *
- *   A plain `writable` + `withDemoNotify()` wrapper fixes both: runtime
- *   subscribers are notified by the writable's own `.set()`, and test
- *   environments get synchronous notification too.
- */
-const _demoWritable = writable<DemoStoreState>({ ...INITIAL_DEMO })
-
-/** Atomic start guard — prevents stacked retry loops from causing double-starts.
- *  Set synchronously when startDemo() is called; checked before any timer fires. */
-let _startGuardClaimed = false
-
-/**
- * Push mutations to both `_demoWritable` and `appState`.
- * The writable notifies subscribers; the appState sync keeps the kernel
- * in sync for legacy readers and the engine bridge.
- */
-function withDemoNotify(updater: (_s: DemoStoreState) => DemoStoreState): void {
-    const to = withNotify(_demoWritable, updater)
-    appState.demoPhase = to.phase
-}
-
-/**
- * Demo store: callable as `demo()` for direct state access,
+ * Demo store: callable as `demoStore()` for direct state access,
  * and satisfies `Readable<DemoStoreState>` + `.update()`/`.set()` for store consumers.
  */
 export type DemoStoreApi = (() => DemoStoreState) &
@@ -112,21 +121,8 @@ export type DemoStoreApi = (() => DemoStoreState) &
         set(_value: DemoStoreState): void
     }
 
-function _createDemoStore(): DemoStoreApi {
-    const fn = (() => get(_demoWritable)) as unknown as DemoStoreApi
-
-    fn.subscribe = _demoWritable.subscribe
-    fn.update = (updater: (_s: DemoStoreState) => DemoStoreState) => withDemoNotify(updater)
-    fn.set = (value: DemoStoreState) => {
-        _demoWritable.set(value)
-        appState.demoPhase = value.phase
-    }
-
-    return fn
-}
-
 /** Single reactive instance of the micro-demo state. */
-export const demoStore: DemoStoreApi = _createDemoStore()
+export const demoStore: DemoStoreApi = demoMirror as unknown as DemoStoreApi
 /** Backwards-compatible alias. */
 export const demoState: DemoStoreApi = demoStore
 
@@ -143,7 +139,7 @@ export const isDemoActive = () => {
 // ── Helper Actions ───────────────────────────────────────────────────────────
 
 export function setDemoPhase(phase: DemoPhase): void {
-    withDemoNotify((s) => ({ ...s, phase }))
+    demoMirror.update((s) => ({ ...s, phase }))
 }
 
 export function startDemo(): boolean {
@@ -160,7 +156,7 @@ export function startDemo(): boolean {
         sessionStorage.setItem(DEMO_SESSION_KEY, '1')
     }
 
-    withDemoNotify((s) => ({ ...s, phase: 'OVERVIEW', startTime: performance.now() }))
+    demoMirror.update((s) => ({ ...s, phase: 'OVERVIEW', startTime: performance.now() }))
     return true
 }
 
@@ -168,7 +164,7 @@ export function cancelDemo(): boolean {
     const phase = appState.demoPhase
     // Mirror the legacy choreography guard: terminal states are already settled.
     if (phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED') return false
-    withDemoNotify((s) => ({ ...s, phase: 'CANCELLED' }))
+    demoMirror.update((s) => ({ ...s, phase: 'CANCELLED' }))
     return true
 }
 
@@ -303,6 +299,13 @@ export function markDemoSessionSkipped(_reason = 'user-input'): void {
 
 export function resetDemo(): void {
     _startGuardClaimed = false
-    _demoWritable.set({ ...INITIAL_DEMO })
-    appState.demoPhase = INITIAL_DEMO.phase
+    demoMirror.set({ ...INITIAL_DEMO })
 }
+
+// ── Test escape hatch ────────────────────────────────────────────────────────
+
+/**
+ * Test-only escape hatch — drops the window-keyed writable so the next
+ * import / read returns the current appState-derived initial value.
+ */
+export const resetDemoForTests = demoMirror.resetForTests
