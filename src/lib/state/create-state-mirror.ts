@@ -66,6 +66,10 @@ import { appState } from '@lib/state/app.svelte'
  *
  * Omit a key entirely if it shouldn't be tracked at all.
  *
+ * For primitive T (number/boolean/string), pass `{ [key: string]: appStateKey }`
+ * with any placeholder key — the factory detects primitive T and mirrors
+ * the state itself rather than `state[key]` (which would always be undefined).
+ *
  * @example
  *   const bindings = {
  *     width: 'viewportWidth',           // writes appState.viewportWidth
@@ -74,8 +78,8 @@ import { appState } from '@lib/state/app.svelte'
  *     // isCompact intentionally NOT bound — derived locally
  *   }
  */
-export type FieldBindings<T> = {
-    [K in keyof T]?: keyof typeof appState | null
+export type FieldBindings<T = Record<string, unknown>> = {
+    [K: string]: keyof typeof appState | null
 } & Record<string, keyof typeof appState | null | undefined>
 
 /**
@@ -152,8 +156,9 @@ export function createStateMirror<T>(config: {
             state === null ||
             state === undefined ||
             typeof state !== 'object'
-        for (const stateKey of Object.keys(config.bindings) as (keyof T)[]) {
-            const appStateKey = config.bindings[stateKey]
+        const bindings = config.bindings as Record<string, keyof typeof appState | null | undefined>
+        for (const stateKey of Object.keys(bindings)) {
+            const appStateKey = bindings[stateKey]
             if (appStateKey == null) continue
             const value = isPrimitive
                 ? (state as unknown)
