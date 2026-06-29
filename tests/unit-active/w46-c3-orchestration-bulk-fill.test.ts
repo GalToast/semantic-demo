@@ -27,7 +27,14 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const ORCH = (file: string) => resolve(import.meta.dirname, `../../src/lib/orchestration/${file}`)
+const JOURNEY = (file: string) => resolve(import.meta.dirname, `../../src/lib/journey/${file}`)
 const src = (file: string) => readFileSync(ORCH(file), 'utf-8')
+
+// Vite requires a file extension in the static part of dynamic imports.
+// These helpers strip the redundant `.ts` from `file` and add it to the
+// template literal so the warning disappears.
+const importOrch = (file: string) => import(`../../src/lib/orchestration/${file.replace(/\.ts$/, '')}.ts`)
+const importJourney = (file: string) => import(`../../src/lib/journey/${file.replace(/\.ts$/, '')}.ts`)
 
 // ════════════════════════════════════════════════════════════════════════════
 // toast.ts — 50 lines, 2 functions
@@ -50,7 +57,7 @@ describe('W46-C3: toast.ts contract', () => {
     })
 
     it('showExperienceToast sets store state and dismissToast clears it', async () => {
-        const { showExperienceToast, dismissToast } = await import(`../../src/lib/orchestration/${file}`)
+        const { showExperienceToast, dismissToast } = await importOrch(file)
         showExperienceToast('Test title', 'Test copy')
         // The store should be updated; we verify via the module's own store import
         const { toastStore } = await import('../../src/lib/stores/toast.svelte')
@@ -138,7 +145,7 @@ describe('W46-C3: navigation-state.ts contract', () => {
     })
 
     it('runtime: setTrailNavState accepts valid seed index and calls store', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         // Smoke test: function is callable and doesn't throw with a valid seed
         expect(() => mod.setTrailNavState(0, {})).not.toThrow()
         // No assertion on side effects (would need store mocking)
@@ -162,7 +169,7 @@ describe('W46-C3: wait-for-gesture.ts contract', () => {
     })
 
     it('installGestureMonitor wires user-gesture detection on document/window', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         let ready = false
         const cleanup = mod.installGestureMonitor({
             onReady: () => {
@@ -235,7 +242,7 @@ describe('W46-C3: info-panel-state.ts contract', () => {
         // W45-B: the idle surface is now search-first — header suppressed,
         // selection suppressed, and copy framed around search rather than
         // business details. See info-panel-state.ts CONTENT_BY_SURFACE.idle.
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const content = mod.getInfoPanelContent('idle')
         expect(content.headerText).toBe('Search Businesses')
         expect(content.headerVisible).toBe(false)
@@ -246,20 +253,20 @@ describe('W46-C3: info-panel-state.ts contract', () => {
     })
 
     it('runtime: header is hidden in search-mode surface', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const content = mod.getInfoPanelContent('search')
         // In search mode, header is hidden by contract
         expect(content.headerVisible).toBe(false)
     })
 
     it('runtime: selection is suppressed in search mode', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const content = mod.getInfoPanelContent('search')
         expect(content.selectionSuppressed).toBe(true)
     })
 
     it('runtime: isInfoHeaderVisible returns boolean for any surface', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         expect(typeof mod.isInfoHeaderVisible('idle')).toBe('boolean')
         expect(typeof mod.isInfoHeaderVisible('search')).toBe('boolean')
         expect(typeof mod.isInfoHeaderVisible('unknown')).toBe('boolean')
@@ -288,26 +295,26 @@ describe('W46-C3: search-filter-core.ts contract', () => {
     })
 
     it('runtime: getVisibleCount returns a number', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const count = mod.getVisibleCount()
         expect(typeof count).toBe('number')
         expect(count).toBeGreaterThanOrEqual(0)
     })
 
     it('runtime: getVisibleIndices returns a Set', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const indices = mod.getVisibleIndices()
         expect(indices).toBeInstanceOf(Set)
     })
 
     it('runtime: getFilteredIndices returns readonly array', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const indices = mod.getFilteredIndices()
         expect(Array.isArray(indices)).toBe(true)
     })
 
     it('runtime: getFilteredClusterCounts returns a Map', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const counts = mod.getFilteredClusterCounts()
         expect(counts).toBeInstanceOf(Map)
     })
@@ -345,9 +352,7 @@ describe('W46-C3: event-bus.ts contract', () => {
     })
 
     it('runtime: subscribe + publish + cleanup works end-to-end', async () => {
-        const { subscribe, publish, getSubscriberCount, clearAllSubscribers } = await import(
-            `../../src/lib/orchestration/${file}`
-        )
+        const { subscribe, publish, getSubscriberCount, clearAllSubscribers } = await importOrch(file)
         clearAllSubscribers() // ensure clean slate
         let received: unknown = null
         const unsub = subscribe('search-summary-changed' as any, (payload: unknown) => {
@@ -362,14 +367,14 @@ describe('W46-C3: event-bus.ts contract', () => {
     })
 
     it('runtime: publish with no subscribers does not throw', async () => {
-        const { publish, clearAllSubscribers } = await import(`../../src/lib/orchestration/${file}`)
+        const { publish, clearAllSubscribers } = await importOrch(file)
         clearAllSubscribers()
         expect(() => publish('search-summary-changed' as any, {})).not.toThrow()
         clearAllSubscribers()
     })
 
     it('runtime: getSubscriberCount returns 0 for an event with no subscribers', async () => {
-        const { getSubscriberCount, clearAllSubscribers } = await import(`../../src/lib/orchestration/${file}`)
+        const { getSubscriberCount, clearAllSubscribers } = await importOrch(file)
         clearAllSubscribers()
         expect(getSubscriberCount('search-summary-changed' as any)).toBe(0)
     })
@@ -414,13 +419,13 @@ describe('W46-C3: compass-state.ts contract (journey/ canonical)', () => {
     })
 
     it('runtime: getFocusedJourneyPoint returns null or object', async () => {
-        const mod = await import(`../../src/lib/journey/${file}`)
+        const mod = await importJourney(file)
         const point = mod.getFocusedJourneyPoint()
         expect(point === null || typeof point === 'object').toBe(true)
     })
 
     it('runtime: getJourneyCompassState returns CompassState shape', async () => {
-        const mod = await import(`../../src/lib/journey/${file}`)
+        const mod = await importJourney(file)
         const state = mod.getJourneyCompassState()
         expect(state).toBeDefined()
         expect(typeof state).toBe('object')
@@ -476,7 +481,7 @@ describe('W46-C3: cluster-filter-controller.ts contract', () => {
         // names get the wrong color (or, worse, undefined falls through to
         // a hardcoded fallback). Asserting length-equality is the actual
         // invariant the runtime code relies on.
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         expect(Array.isArray(mod.CLUSTER_COLORS)).toBe(true)
         expect(Array.isArray(mod.CLUSTER_NAMES)).toBe(true)
         expect(mod.CLUSTER_COLORS.length).toBeGreaterThan(0)
@@ -485,13 +490,13 @@ describe('W46-C3: cluster-filter-controller.ts contract', () => {
     })
 
     it('runtime: findClusterByKeyword returns number or null', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         const result = mod.findClusterByKeyword('nonexistent-keyword-xyz')
         expect(result === null || typeof result === 'number').toBe(true)
     })
 
     it('runtime: clearClusterFilter is idempotent (callable repeatedly)', async () => {
-        const mod = await import(`../../src/lib/orchestration/${file}`)
+        const mod = await importOrch(file)
         expect(() => {
             mod.clearClusterFilter()
             mod.clearClusterFilter()
@@ -517,7 +522,7 @@ describe('W46-C3: window-actions.ts contract', () => {
     })
 
     it('runtime: installWindowActions returns a cleanup function', async () => {
-        const { installWindowActions } = await import(`../../src/lib/orchestration/${file}`)
+        const { installWindowActions } = await importOrch(file)
         const cleanup = installWindowActions()
         expect(typeof cleanup).toBe('function')
         cleanup()
