@@ -45,10 +45,17 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
  * reveal progress and focus/semantic-dive state.
  *
  * @param pointsRevealProgress — eased reveal fraction for points (0–1)
- * @param state — current LegacyState for focus/semantic-dive reads
+ * @param state — subset of LegacyState for focusedNode/semanticDiveMode/trailDepth reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A7)
  */
-export function updatePointsMaterial(pointsRevealProgress: number, state: LegacyState | null | undefined): void {
+export function updatePointsMaterial(
+    pointsRevealProgress: number,
+    state:
+        | Pick<LegacyState, 'focusedNode' | 'trailDepth'> &
+              { semanticDiveMode?: boolean }
+        | null
+        | undefined
+): void {
     if (!webglContext.pointsMaterial) return
     const isFocused = Number.isFinite(state?.focusedNode)
     const isSemanticDive = state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2
@@ -73,10 +80,12 @@ export function updatePointsMaterial(pointsRevealProgress: number, state: Legacy
  * Reads `state.hoverHighlightIndex` to detect hover. Mutates
  * `engineState.lastHoveredNode` and `engineState.hoverEmissiveFlash`.
  *
- * @param state — current LegacyState for hoverHighlightIndex reads
+ * @param state — subset of LegacyState for hoverHighlightIndex reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A11)
  */
-export function updateHoverEmissiveFlash(state: LegacyState | null | undefined): void {
+export function updateHoverEmissiveFlash(
+    state: Partial<Pick<LegacyState, 'hoverHighlightIndex'>> | null | undefined
+): void {
     const hoveredNode = state?.hoverHighlightIndex ?? -1
     const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
     const lastHadHover =
@@ -112,12 +121,17 @@ export function updateHoverEmissiveFlash(state: LegacyState | null | undefined):
  *
  * Reads `state.weather.wind_speed_10m`, mutates `state.pulsePhase`.
  *
- * @param state — current LegacyState for weather + pulsePhase
+ * @param state — subset of LegacyState for weather (wind_speed_10m) + pulsePhase
  * @returns `threadsVisible` — whether mycelium threads should be rendered,
  *   consumed by the thread-opacity block (A13) that remains in animate().
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A12)
  */
-export function updateMyceliumPulse(state: LegacyState | null | undefined): boolean {
+export function updateMyceliumPulse(
+    state:
+        | (Pick<LegacyState, 'pulsePhase'> & { weather?: { wind_speed_10m?: number } | null })
+        | null
+        | undefined
+): boolean {
     const threadsVisible = shouldRenderThreads()
     if (webglContext.myceliumGroup) {
         webglContext.myceliumGroup.visible = threadsVisible
@@ -138,10 +152,13 @@ export function updateMyceliumPulse(state: LegacyState | null | undefined): bool
  * `uHoverNodePos` to the hovered node's world position.
  *
  * @param hoveredNode — index of the currently hovered node (-1 if none)
- * @param state — current LegacyState for nodePositions reads
+ * @param state — subset of LegacyState for nodePositions reads
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A14)
  */
-export function updatePointsShaderHoverBoost(hoveredNode: number, state: LegacyState | null | undefined): void {
+export function updatePointsShaderHoverBoost(
+    hoveredNode: number,
+    state: Pick<LegacyState, 'nodePositions'> | null | undefined
+): void {
     if (!webglContext.pointsMaterial?.userData?.shader) return
     const shader = webglContext.pointsMaterial.userData.shader
     const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
