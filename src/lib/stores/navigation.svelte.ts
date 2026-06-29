@@ -346,18 +346,20 @@ export interface NavTransitionResult {
  * and trigger the flat bindings mirror for trailDepth/currentView.
  */
 export function writeNavStateMirror(patch: Partial<NavState>): void {
-    // Update legacy state in place (mirrors what withMutation/Object.assign does).
-    // This is required because many imperative readers captured a reference to
-    // appState.navState at module-init time; replacing the reference (rather
-    // than mutating in place) would leave those readers stale.
-    Object.assign(appState.navState, patch)
-    // Mirror kernel top-level fields that the flat bindings table doesn't cover.
-    if (typeof patch.trailDepth === 'number') {
-        appState.trailDepth = patch.trailDepth
-    }
-    if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
-        appState.currentView = patch.currentView
-    }
+    withStateMutation(() => {
+        // Update legacy state in place (mirrors what withMutation/Object.assign does).
+        // This is required because many imperative readers captured a reference to
+        // appState.navState at module-init time; replacing the reference (rather
+        // than mutating in place) would leave those readers stale.
+        Object.assign(appState.navState, patch)
+        // Mirror kernel top-level fields that the flat bindings table doesn't cover.
+        if (typeof patch.trailDepth === 'number') {
+            appState.trailDepth = patch.trailDepth
+        }
+        if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
+            appState.currentView = patch.currentView
+        }
+    })
     // Notify Svelte subscribers via the factory. We push the freshly-mirrored
     // appState.navState slice so any .subscribe() listener wakes up with
     // the new value (the writable's value matches appState.navState after the
