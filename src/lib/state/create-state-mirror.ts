@@ -78,7 +78,7 @@ import { appState } from '@lib/state/app.svelte'
  *     // isCompact intentionally NOT bound — derived locally
  *   }
  */
-export type FieldBindings<T = Record<string, unknown>> = {
+export type FieldBindings<_T = Record<string, unknown>> = {
     [K: string]: keyof typeof appState | null
 } & Record<string, keyof typeof appState | null | undefined>
 
