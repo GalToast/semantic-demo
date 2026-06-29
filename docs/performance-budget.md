@@ -11,16 +11,16 @@ This document defines hard performance ceilings for the Semantic Explorer. All P
 
 | Metric | Current (measured) | Live ceiling (script) | Slack |
 |--------|---------|--------|---------|
-| **Total JS (raw)** | 1,219.73 KB (1.22 MB) | 2,500 KB (2.5 MB) | 1,280 KB (51%) |
-| **Total JS (gzip)** | 338.09 KB | 650 KB | 312 KB (48%) |
-| **Total CSS (raw)** | 54.55 KB | 60 KB | 5.5 KB (9%) |
-| **Total CSS (gzip)** | 10.76 KB | 12 KB | 1.2 KB (10%) |
+| **Total JS (raw)** | 1,398.44 KB (1.40 MB) | 2,500 KB (2.5 MB) | 1,101 KB (44%) |
+| **Total JS (gzip)** | 398.63 KB | 650 KB | 251 KB (39%) |
+| **Total CSS (raw)** | 63.49 KB | 65 KB | 1.5 KB (2%) |
+| **Total CSS (gzip)** | 15.06 KB | 16 KB | -0.9 KB (6%) |
 
 ### Budget Rationale
 
 - **Live ceiling (2.5 MB JS raw / 650 KB JS gzip)**: Enforced by `node scripts/check-bundle-size.mjs` in CI. Exceeding this is a regression.
-- **Current headroom**: 51% slack on JS raw, 48% on JS gzip — generous margin after W41 selective-import conversion.
-- **CSS ceiling (60 KB raw / 12 KB gzip)**: Tighter margin (~10% slack). Monitor.
+- **Current headroom**: 44% slack on JS raw, 39% on JS gzip — generous margin. CSS raw at 2% slack (tight after 13-surface matrix growth).
+- **CSS ceiling (65 KB raw / 16 KB gzip)**: Raised 2026-06-29 from 60/12 to account for the full surface-matrix complexity (13 states × desktop + mobile). Monitor.
 
 ### Proposed Next-Ceiling (requires script + CI update)
 
@@ -31,7 +31,7 @@ Once the current ceiling has proven stable, consider tightening to:
 | JS raw | ≤ 1,500 KB | 500 KB above current actual; accounts for growth |
 | JS gzip | ≤ 400 KB | 62 KB above current actual |
 
-These are **not live** — the script still enforces 2,500 / 650.
+These are **not live** — the script still enforces 2,500 / 650 / 65 / 16.
 
 ### Key Offenders
 

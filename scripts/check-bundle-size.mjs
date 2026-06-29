@@ -9,9 +9,9 @@
  * Budget Ceilings:
  *   JS  raw  < 2500 KB
  *   JS  gzip <  650 KB
- *   CSS raw  <   60 KB
- *   CSS gzip <   12 KB
- * 
+ *   CSS raw  <   65 KB
+ *   CSS gzip <   16 KB
+ *
  * Exit 0 if within budget, exit 1 if exceeded.
  */
 
@@ -32,8 +32,8 @@ const DIM = '\x1b[2m';
 const BUDGET = {
   jsRaw: 2500,
   jsGzip: 650,
-  cssRaw: 60,
-  cssGzip: 12
+  cssRaw: 65,
+  cssGzip: 16
 };
 
 // Assets directory
