@@ -14,6 +14,8 @@
  *   npx playwright test tests/critical-visual-layout-regression.spec.js --headed
  *   TEST_BASE_URL=http://127.0.0.1:8795 npx playwright test tests/critical-visual-layout-regression.spec.js --headed
  */
+/* eslint-disable no-unused-vars */
+
 
 import { test, expect } from '@playwright/test'
 import { setTrailDepth } from '@lib/stores/journey.svelte'

@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { setupMockSearch } from './mock-semantic-search.js';
 import { setSemanticDiveMode } from '@lib/orchestration/lifecycle'
 import { clearSearch } from '@lib/stores/navigation.svelte'

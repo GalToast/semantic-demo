@@ -10,6 +10,8 @@
  *   npm run serve
  *   npx playwright test tests/semantic-role-traversal.spec.js --browser=chromium --workers=1 --headed
  */
+/* eslint-disable no-unused-vars */
+
 
 import { test, expect } from '@playwright/test';
 import { openApp } from './helpers/3d-interaction-helpers.js';

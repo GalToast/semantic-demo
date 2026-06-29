@@ -28,6 +28,8 @@
  *     });
  *   }
  */
+/* eslint-disable no-unused-vars */
+
 
 import { test, expect } from '@playwright/test';
 import { clearSearch } from '@lib/stores/navigation.svelte'

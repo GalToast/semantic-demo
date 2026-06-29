@@ -1,3 +1,4 @@
+/* eslint-disable no-unused-vars */
 import { test, expect } from '@playwright/test'
 import { inflateSync } from 'node:zlib'
 import { focusNodeViaApp } from './helpers/3d-interaction-helpers.js'

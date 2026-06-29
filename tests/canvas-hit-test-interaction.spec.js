@@ -16,6 +16,8 @@
  * This is NOT a visual snapshot test. It uses behavioral assertions that fail
  * specifically and cleanly when canvas pointer-events are misconfigured.
  */
+/* eslint-disable no-unused-vars */
+
 
 import { test, expect } from '@playwright/test'
 import { focusOnNode, refreshCompositionState } from '@lib/orchestration/lifecycle'

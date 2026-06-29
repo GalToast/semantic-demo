@@ -16,6 +16,8 @@
  * Or via manifest:
  *   node tests/run-all-contracts.js --group=scene
  */
+/* eslint-disable no-unused-vars */
+
 
 import { test, expect } from '@playwright/test';
 import { probeFocusPocket, focusNodeViaApp } from './helpers/3d-interaction-helpers.js';

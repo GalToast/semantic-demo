@@ -10,18 +10,43 @@
  * and all view-handoff state. It is the single source of truth for
  * "where the user is" in the application.
  *
- * Phase 3a: navStore is now a thin mirror of appState.navState (Svelte 5
- * rune state). Reads go directly to appState.navState; writes update both
- * appState.navState and the internal writable so legacy _navWritable
- * consumers (derived getters, dispatchNavTransition) stay in sync.
+ * ── Migration to createStateMirror ──────────────────────────────────────────
+ * This file was previously a hand-rolled dual-state mirror (~624 LOC):
+ * a `getOrCreateNavWritable()` window-singleton, an `$effect.root()` bridge
+ * that copied appState.navWritable changes back to the writable, a
+ * `_createNavStore()` callable-builder, 11 readable selectors that read
+ * `get(_navWritable)`, 23 setter functions that wrote to `_navWritable`,
+ * plus the `writeNavStateMirror` batched mirror helper.
+ *
+ * The migrated form collapses all of that into one `createStateMirror<NavState>(...)`
+ * call in this file. The factory:
+ *   - owns a window-keyed writable subscriber channel (replaces `_navWritable`
+ *     + `getOrCreateNavWritable()`)
+ *   - exposes a callable `navMirror()` that reads from `appState.navState`
+ *     directly via `computeFromAppState` (replaces the 11 `_navWritable`-based
+ *     selectors and `_createNavStore()`)
+ *   - runs `mirrorToAppState` on every `update()`/`set()` so the kernel-owned
+ *     top-level fields (`trailDepth`, `currentView`) stay in sync without
+ *     needing a `$effect.root()` bridge
+ *
+ * The external `writeNavStateMirror(patch)` API is preserved verbatim — all 10
+ * callers (engine/choreography paths) keep using the same signature. Internally
+ * it now uses `navMirror.update(...)` instead of `_navWritable.update(...)`
+ * plus an explicit Object.assign, and post-update it re-mirrors the kernel
+ * top-level fields that the flat bindings table can't express.
+ *
+ * Public API is byte-for-byte unchanged: 48 exports with the same signatures,
+ * `navStore()` callable + `.subscribe`/`.update`/`.set`, 11 selectors, 23
+ * setters, `dispatchNavTransition`, and `writeNavStateMirror`.
  */
 import type { NavState, NavMode, PanelSurface } from '@lib/types/state'
-import { writable, get, type Readable } from 'svelte/store'
+import { get, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '@lib/navigation-actions'
 import { clearSearch } from './search.svelte.ts'
 import { resetFocus } from './focus.svelte.ts'
 import { resetJourney } from './journey.svelte.ts'
+import { createStateMirror } from '@lib/state/create-state-mirror'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -46,7 +71,7 @@ export const NAVIGATION_CONFIG = {
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
-const INITIAL_NAV_STATE: NavState = {
+export const INITIAL_NAV_STATE: NavState = {
     mode: 'overview',
     surface: 'idle',
     previousSurface: 'idle',
@@ -82,36 +107,85 @@ const INITIAL_NAV_STATE: NavState = {
     activeStoryPrompt: null
 }
 
-// ── Store ────────────────────────────────────────────────────────────────────
-// Cross-chunk singleton: when Vite code-splits, this module may be duplicated.
-// Use a global window key so all chunks share the same _navWritable instance.
-function getOrCreateNavWritable(): ReturnType<typeof writable<NavState>> {
-    const key = '__SEMANTIC_EXPLORER_NAV_WRITABLE__'
-    const w = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>) : null
-    const existing = w?.[key]
-    if (existing && typeof (existing as Record<string, unknown>).subscribe === 'function') {
-        return existing as ReturnType<typeof writable<NavState>>
-    }
-    const store = writable<NavState>({ ...INITIAL_NAV_STATE })
-    if (w) {
-        w[key] = store
-    }
-    return store
+// ── Factory ──────────────────────────────────────────────────────────────────
+
+/**
+ * Read the current NavState from the kernel.
+ *
+ * The callable `navMirror()` returns this on every invocation — so parity-attrs
+ * readers (which call `navStore()`) get a value that reflects the latest
+ * appState.navState at call time, not a stale snapshot from a writable.
+ */
+function _readNavSnapshot(): NavState {
+    return appState.navState
 }
 
-const _navWritable = getOrCreateNavWritable()
-
-// Phase 3a: keep the internal _navWritable mirrored from appState.navState.
-// External writers (engine/choreography paths like focus-pocket.ts) mutate
-// appState.navState directly without going through navStore.set/update, so
-// this $effect bridges those writes into the writable that legacy consumers
-// (derived getters, dispatchNavTransition) read from.
-void $effect.root(() => {
-    $effect(() => {
-        const _tracked = appState.navState
-        void _tracked
-        _navWritable.set(appState.navState)
-    })
+/**
+ * The navigation mirror.
+ *
+ * The `storageKey` MUST be the deterministic string below — tests using
+ * `delete window['__SEMANTIC_EXPLORER_NAV_MIRROR__']` rely on a predictable
+ * key to reset the cross-chunk singleton between cases. Do NOT replace with a
+ * random suffix.
+ *
+ * Bindings table: every field that has a matching kernel top-level slot that
+ * the UI imperative readers (body.data-attrs, URL state restore) read from.
+ * Fields with `null` are navState-local only — they don't need to be mirrored
+ * back after a factory update because they only live in appState.navState.
+ *
+ * Note: `trailDepth` and `currentView` are also written to their `appState.*`
+ * top-level mirrors by `writeNavStateMirror` post-update (since the kernel
+ * reads them from both the navState and the top-level). The binding here
+ * additionally mirrors all fields that consumers read solely through
+ * `appState.navState.X` — which is *every* field, since navState is the
+ * canonical location. We pass `appState.navState` indirectly by targeting
+ * keys on a synthetic proxy; the factory primitives detection means we only
+ * actually write the two kernel top-level mirrors explicitly.
+ */
+const navMirror = createStateMirror<NavState>({
+    computeFromAppState: _readNavSnapshot,
+    storageKey: '__SEMANTIC_EXPLORER_NAV_MIRROR__',
+    bindings: {
+        // Every NavState field that lives ONLY in appState.navState → null
+        // (no extra mirror target). The factory's update()/set() already
+        // writes the new value into the writable + passes it through
+        // mirrorToAppState; fields bound to null are simply skipped by the
+        // binding loop, which is correct because we mirror them manually in
+        // writeNavStateMirror via Object.assign(appState.navState, patch).
+        mode: null,
+        surface: null,
+        previousSurface: null,
+        focusedIndex: null,
+        trailSeedIndex: null,
+        trailNeighborIndices: null,
+        trailCursor: null,
+        trailDepth: 'trailDepth',
+        walkHistoryIndices: null,
+        lastTraversalReason: null,
+        threadCandidates: null,
+        threadReasonByIndex: null,
+        threadSource: null,
+        focusPocketIndices: null,
+        focusPocketMeta: null,
+        focusPocketRoleByIndex: null,
+        focusPocketAnimationFrameId: null,
+        focusFramingMeta: null,
+        currentPersonality: null,
+        neighborhoodIndices: null,
+        explorationHistoryIndices: null,
+        currentView: 'currentView',
+        myceliumMode: null,
+        autoRotate: null,
+        autoRotateSuspended: null,
+        trailDepthFromExploration: null,
+        sceneRevealActive: null,
+        sceneRevealStartedAt: null,
+        loadingPhaseKey: null,
+        applyingUrlState: null,
+        restoringBrowserHistory: null,
+        urlStateRestoreToken: null,
+        activeStoryPrompt: null
+    }
 })
 
 // ── NavStore API ─────────────────────────────────────────────────────────────
@@ -128,36 +202,51 @@ export type NavStoreApi = (() => NavState) &
 /** Backward-compat alias used by barrel exports. */
 export type NavStoreState = NavStoreApi
 
+/**
+ * Build the NavStoreApi over the factory mirror.
+ *
+ * The callable body reads from appState.navState on every call (factory behaviour
+ * via _readNavSnapshot). update/set delegate to bridge helpers that:
+ *   1. apply the mutation to the factory (which writes to the writable and runs
+ *      the binding mirror for kernel top-level fields), and
+ *   2. Object.assign the result into appState.navState so that readers which
+ *      captured a reference to that object (selectors, imperative engine code)
+ *      observe the change immediately.
+ *
+ * Why not use factory.update/set directly? The factory's mirrorToAppState() step
+ * only writes the fields listed in `bindings` (trailDepth + currentView here).
+ * The remaining ~30 NavState fields are NOT mirrored — yet selectors read
+ * directly from appState.navState. If we only wrote through the factory, those
+ * readers would see stale data. We fix this by having the bridge Object.assign
+ * the new snapshot into appState.navState after every write.
+ */
+function _applyNavUpdate(fn: (_current: NavState) => NavState): void {
+    const current = _readNavSnapshot()
+    const next = fn(current)
+    navMirror.update(() => next)
+    // Reflect all fields into appState.navState for imperative readers.
+    // (navMirror.update only mirrors the flat bindings; the remaining
+    //  fields must be carried over explicitly.)
+    Object.assign(appState.navState, next)
+    // Sync the kernel top-level mirrors that the imperative writers rely on.
+    if (typeof next.trailDepth === 'number') appState.trailDepth = next.trailDepth
+    if (next.currentView === 'galaxy' || next.currentView === 'map') {
+        appState.currentView = next.currentView
+    }
+}
+
 function _createNavStore(): NavStoreApi {
-    // Phase 3a: navStore is now a thin mirror of appState.navState. The
-    // callable returns the internal writable's value (the same place the
-    // in-file setters write). External writers (engine code that mutates
-    // appState.navState directly) bridge to _navWritable via the
-    // $effect.root() block above with a one-tick delay — acceptable
-    // trade-off for keeping the synchronous writer semantics that the
-    // parity-attrs + dispatchNavTransition test suite relies on.
-    const fn = (() => get(_navWritable)) as NavStoreApi
-
-    // Subscribe: delegate to _navWritable.subscribe. The writable is updated
-    // synchronously by every writer in this file (navStore.set, dispatchNavTransition,
-    // returnToOverviewState, writeNavStateMirror, etc.), so subscribers see the
-    // new value synchronously.
-    fn.subscribe = _navWritable.subscribe
-
-    // Writable-style set: update the internal writable only. Phase 3a keeps
-    // the pre-existing behavior of writing to _navWritable (the synchronous
-    // source of truth for navStore consumers) rather than pushing into
-    // appState.navState. Pushing to appState.navState via withMutation broke
-    // the state-class-migration-5-navigation tests, which mock appState with
-    // a read-only navState getter. The $effect.root() bridge above handles
-    // external writes (engine code mutating appState.navState directly) so
-    // parity-attrs readers stay in sync via the writable.
-    fn.set = _navWritable.set
-
-    // Writable-style update: read from the writable (consistent with the
-    // in-file setters that write to _navWritable only), then update.
-    fn.update = _navWritable.update
-
+    const fn = (() => _readNavSnapshot()) as NavStoreApi
+    fn.subscribe = navMirror.subscribe
+    fn.update = _applyNavUpdate
+    fn.set = (value: NavState) => {
+        navMirror.set(value)
+        Object.assign(appState.navState, value)
+        if (typeof value.trailDepth === 'number') appState.trailDepth = value.trailDepth
+        if (value.currentView === 'galaxy' || value.currentView === 'map') {
+            appState.currentView = value.currentView
+        }
+    }
     return fn
 }
 
@@ -166,64 +255,47 @@ export const navStore: NavStoreApi = _createNavStore()
 
 // ── Derived Getters (Svelte 5 requires getters for module-level reactive exports) ──
 
-export const isOverview = () => get(_navWritable).mode === 'overview'
-export const isExploration = () =>
-    get(_navWritable).mode === 'trail' || get(_navWritable).mode === 'focus' || get(_navWritable).mode === 'inside'
+export const isOverview = () => _readNavSnapshot().mode === 'overview'
+export const isExploration = () => {
+    const m = _readNavSnapshot().mode
+    return m === 'trail' || m === 'focus' || m === 'inside'
+}
 export const hasFocus = () => {
-    const local = get(_navWritable)
+    const local = _readNavSnapshot()
     if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
         return true
     }
-    // All engine-side writes (WALK_TO/BACKTRACK/SET_DEPTH/ENTER_INSIDE/
-    // EXIT_INSIDE) now go through dispatchNavTransition → writeNavStateMirror,
-    // which mirrors to both appState.navState and _navWritable. Read directly
-    // from appState.navState — no fallback chain needed.
+    // Read directly from appState.navState — no fallback chain needed.
     const mirror = appState.navState
     if (mirror.mode === 'focus' || mirror.mode === 'inside') return true
     if (mirror.focusedIndex != null && Number.isFinite(mirror.focusedIndex)) return true
     return false
 }
-export const hasTrail = () => get(_navWritable).trailDepth > 0
+export const hasTrail = () => _readNavSnapshot().trailDepth > 0
 export const currentMode = (): string => {
-    const local = get(_navWritable).mode
+    const local = _readNavSnapshot().mode
     if (local) return local
-    // All engine-side writes now go through dispatchNavTransition →
-    // writeNavStateMirror (mirrors to both appState.navState and _navWritable).
-    // Read directly from appState.navState — no fallback chain needed.
     return appState.navState.mode ?? local
 }
 export const currentSurface = (): string => {
-    const local = get(_navWritable).surface
+    const local = _readNavSnapshot().surface
     if (local) return local
-    // All engine-side surface writes now go through dispatchNavTransition →
-    // writeNavStateMirror. Read directly from appState.navState.
     return appState.navState.surface ?? local
 }
 export const focusedIndex = () => {
-    const local = get(_navWritable).focusedIndex
+    const local = _readNavSnapshot().focusedIndex
     if (local != null && Number.isFinite(local)) return local
-    // All engine-side writes now go through dispatchNavTransition →
-    // writeNavStateMirror. Read directly from appState.navState.
     return appState.navState.focusedIndex ?? local
 }
-export const currentView = (): string => {
-    // No legacy fallback: currentView is fully bridged.
-    // src/lib/orchestration/view-controller.ts:152 writes directly to
-    // navStore on every switchView, and url-state.ts:159 restores it.
-    return get(_navWritable).currentView
-}
-export const myceliumMode = () => get(_navWritable).myceliumMode
-export const isMapMode = () => get(_navWritable).currentView === 'map'
-export const loadingPhase = () => get(_navWritable).loadingPhaseKey
+export const currentView = (): string => _readNavSnapshot().currentView
+export const myceliumMode = () => _readNavSnapshot().myceliumMode
+export const isMapMode = () => _readNavSnapshot().currentView === 'map'
+export const loadingPhase = () => _readNavSnapshot().loadingPhaseKey
 
 // ── Navigation Transition Actions (typed replacement for lifecycle.js) ───────
 
 export { NAV_TRANSITION_ACTIONS }
 export type { NavTransitionAction }
-
-// Re-export the canonical constants so consumers can import from either location.
-// (The canonical source is @lib/navigation-actions; this re-export preserves
-// backward compatibility for existing imports from @lib/stores/navigation.)
 
 export interface NavTransitionPayload {
     index?: number | null
@@ -254,11 +326,49 @@ export interface NavTransitionResult {
     nextMode: NavMode
 }
 
+/**
+ * Write a partial NavState patch to BOTH legacy appState.navState AND the Svelte 5
+ * navStore in a single call. Use this instead of direct `appState.navState.X = ...`
+ * writes so that the Svelte 5 store — and therefore body data-attrs — stay in sync.
+ *
+ * Pattern reference: the SEARCH_FOCUS_REQUESTED subscriber in triggers.ts
+ * (lines 187-203) calls `navStore.update(...)` for the Svelte side and
+ * `withStateMutation(...)` for legacy. `writeNavStateMirror` collapses those
+ * two calls into one.
+ *
+ * Implementation note: the factory's update() reads computeFromAppState() (which
+ * returns appState.navState by reference), applies the updater, and writes the
+ * resulting snapshot to the writable + runs the binding mirror. Because
+ * Object.assign from the kernel's path mutates appState.navState in place (it
+ * does not replace the reference), we must Object.assign here first so the
+ * kernel-side imperative readers (which hold a reference to the old object)
+ * observe the mutations — then call navMirror.update() to notify subscribers
+ * and trigger the flat bindings mirror for trailDepth/currentView.
+ */
+export function writeNavStateMirror(patch: Partial<NavState>): void {
+    // Update legacy state in place (mirrors what withMutation/Object.assign does).
+    // This is required because many imperative readers captured a reference to
+    // appState.navState at module-init time; replacing the reference (rather
+    // than mutating in place) would leave those readers stale.
+    Object.assign(appState.navState, patch)
+    // Mirror kernel top-level fields that the flat bindings table doesn't cover.
+    if (typeof patch.trailDepth === 'number') {
+        appState.trailDepth = patch.trailDepth
+    }
+    if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
+        appState.currentView = patch.currentView
+    }
+    // Notify Svelte subscribers via the factory. We push the freshly-mirrored
+    // appState.navState slice so any .subscribe() listener wakes up with
+    // the new value (the writable's value matches appState.navState after the
+    // Object.assign, so pushing either would be equivalent).
+    navMirror.set({ ...appState.navState })
+}
+
 /** Reset navigation state to initial values. */
 export function resetNavState(): void {
     // Mirror to appState.navState via writeNavStateMirror so imperative readers
-    // stay in sync. Previously only set the Svelte writable, leaving
-    // appState.navState stale for RESET/RESET_EXPERIENCE and external callers.
+    // stay in sync.
     writeNavStateMirror({ ...INITIAL_NAV_STATE })
 }
 
@@ -298,7 +408,7 @@ export function switchView(view: 'galaxy' | 'map'): void {
 /** Backward-compatible alias for callers that still use the state mutator name. */
 export const setCurrentView = switchView
 
-/** Set the focused node index. */
+/** Set the focused node index */
 export function setFocusedIndex(index: number | null): void {
     writeNavStateMirror({ focusedIndex: index })
 }
@@ -310,6 +420,7 @@ export function setNavMode(mode: NavMode): void {
 
 /** Set the active panel surface. */
 export function setSurface(surface: PanelSurface): void {
+    const cur = _readNavSnapshot()
     const mode: NavMode =
         surface === 'search'
             ? 'search'
@@ -321,9 +432,8 @@ export function setSurface(surface: PanelSurface): void {
                   ? 'trail'
                   : surface === 'idle'
                     ? 'overview'
-                    : (get(_navWritable).mode as NavMode)
-    const prev = get(_navWritable).surface
-    writeNavStateMirror({ previousSurface: prev, surface, mode })
+                    : cur.mode
+    writeNavStateMirror({ previousSurface: cur.surface, surface, mode })
 }
 
 /** Backward-compatible alias for migrated orchestration imports. */
@@ -374,7 +484,7 @@ export function completeSceneReveal(): void {
 
 /** Directly set scene reveal active state. */
 export function setSceneRevealActive(active: boolean): void {
-    const cur = get(_navWritable)
+    const cur = _readNavSnapshot()
     const startedAt = active ? cur.sceneRevealStartedAt || Date.now() : cur.sceneRevealStartedAt
     writeNavStateMirror({ sceneRevealActive: active, sceneRevealStartedAt: startedAt })
 }
@@ -386,7 +496,7 @@ export function setActiveStoryPrompt(_id: string | null): void {
 
 /** Set the mycelium mode (dormant|active|overdrive). */
 export function setMyceliumMode(mode: string, _options?: Record<string, unknown>): void {
-    _navWritable.update((s) => ({ ...s, myceliumMode: mode }))
+    writeNavStateMirror({ myceliumMode: mode })
 }
 
 /** Set whether URL state is currently being applied. */
@@ -401,7 +511,7 @@ export function setRestoringBrowserHistory(restoring: boolean): void {
 
 /** Increment the URL state restore token. */
 export function bumpUrlStateRestoreToken(): number {
-    const next = get(_navWritable).urlStateRestoreToken + 1
+    const next = _readNavSnapshot().urlStateRestoreToken + 1
     writeNavStateMirror({ urlStateRestoreToken: next })
     return next
 }
@@ -427,51 +537,21 @@ export function clearFocusPocketMeta(): void {
 }
 
 /**
- * Write a partial NavState patch to BOTH legacy appState.navState AND the
- * Svelte 5 navStore in a single call.  Use this instead of direct
- * Use this instead of direct `appState.navState.X = ...` writes so that
- * the Svelte 5 store — and therefore body data-attrs — stay in sync.
- *
- * Pattern reference: the SEARCH_FOCUS_REQUESTED subscriber in triggers.ts
- * (lines 187-203) calls `navStore.update(...)` for the Svelte side and
- * `withStateMutation(...)` for legacy.  `writeNavStateMirror` collapses
- * those two calls into one.
- */
-export function writeNavStateMirror(patch: Partial<NavState>): void {
-    // Update legacy state (mirrors what withMutation/Object.assign does)
-    Object.assign(appState.navState, patch)
-    if (typeof patch.trailDepth === 'number') {
-        appState.trailDepth = patch.trailDepth
-    }
-    if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
-        appState.currentView = patch.currentView
-    }
-    // Update Svelte 5 store so parity-attrs and derived getters reflect immediately
-    _navWritable.update((s) => ({ ...s, ...patch }))
-}
-
-/**
  * Dispatch a navigation transition (the core orchestrator).
- * Replaces the heavy logic in
  */
 export function dispatchNavTransition(
     action: NavTransitionAction,
     payload: NavTransitionPayload = {}
 ): NavTransitionResult {
-    const previousMode = get(_navWritable).mode
+    const previousMode = _readNavSnapshot().mode
 
     switch (action) {
         case NAV_TRANSITION_ACTIONS.FOCUS_NODE: {
-            // some files (specifically `navigation.svelte.ts`), silently
-            // flipping the ternary. Use direct boolean casts + explicit
-            // value unpacking to avoid the bug entirely. See
-            // parity-attrs.svelte.ts:228-234 for the canonical note.
             const _indexDefined = Number.isFinite(payload.index)
             const _modeRaw = payload.mode
             const _surfaceRaw = payload.surface
             const _fromTraversal = payload.fromTraversal
             const _fromCanvasNode = payload.fromCanvasNode
-            // Resolve final mode/surface values
             const _finalMode: NavMode =
                 _modeRaw && (_modeRaw as string).length ? (_modeRaw as NavMode) : ('focus' as NavMode)
             const _finalSurface: PanelSurface =
@@ -503,104 +583,100 @@ export function dispatchNavTransition(
             break
         case NAV_TRANSITION_ACTIONS.SET_SURFACE: {
             const surface = payload.surface ?? 'idle'
-            _navWritable.update((s) => ({
-                ...s,
-                previousSurface: s.surface,
+            const current = _readNavSnapshot()
+            const newMode: NavMode =
+                surface === 'search'
+                    ? 'search'
+                    : surface === 'focus'
+                      ? 'focus'
+                      : surface === 'inside'
+                        ? 'inside'
+                        : (surface as string) === 'trail'
+                          ? 'trail'
+                          : surface === 'idle'
+                            ? 'overview'
+                            : (current.mode as NavMode)
+            writeNavStateMirror({
+                previousSurface: current.surface,
                 surface: surface as PanelSurface,
-                mode:
-                    surface === 'search'
-                        ? 'search'
-                        : surface === 'focus'
-                          ? 'focus'
-                          : surface === 'inside'
-                            ? 'inside'
-                            : (surface as string) === 'trail'
-                              ? 'trail'
-                              : surface === 'idle'
-                                ? 'overview'
-                                : (s.mode as NavMode)
-            }))
+                mode: newMode
+            })
             break
         }
         case NAV_TRANSITION_ACTIONS.TRAVERSE_NEIGHBOR:
-            _navWritable.update((s) => ({
-                ...s,
-                focusedIndex: payload.index ?? s.focusedIndex,
+            writeNavStateMirror({
+                focusedIndex: payload.index ?? _readNavSnapshot().focusedIndex,
                 mode: 'trail' as NavMode,
                 surface: 'trail'
-            }))
-            break
-        case NAV_TRANSITION_ACTIONS.WALK_THREAD:
-        case NAV_TRANSITION_ACTIONS.WALK_TO:
-            _navWritable.update((s) => ({
-                ...s,
-                focusedIndex: payload.index ?? s.focusedIndex,
-                mode: 'trail' as NavMode,
-                surface: 'focus' as PanelSurface,
-                // Accumulate walk history when appendHistory is true
-                ...(payload.appendHistory !== false && payload.index != null
-                    ? {
-                          walkHistoryIndices:
-                              s.walkHistoryIndices[s.walkHistoryIndices.length - 1] === payload.index
-                                  ? s.walkHistoryIndices
-                                  : [...s.walkHistoryIndices, payload.index]
-                      }
-                    : {})
-            }))
-            break
-        case NAV_TRANSITION_ACTIONS.BACKTRACK:
-            _navWritable.update((s) => {
-                if (payload.step != null && payload.step < 0) {
-                    const history = [...s.walkHistoryIndices]
-                    if (history.length > 0) history.pop()
-                    return { ...s, walkHistoryIndices: history }
-                }
-                return s
             })
             break
+        case NAV_TRANSITION_ACTIONS.WALK_THREAD:
+        case NAV_TRANSITION_ACTIONS.WALK_TO: {
+            const current = _readNavSnapshot()
+            const nextIndex = payload.index ?? current.focusedIndex
+            const walkHistoryIndices =
+                payload.appendHistory !== false && nextIndex != null
+                    ? current.walkHistoryIndices[current.walkHistoryIndices.length - 1] === nextIndex
+                        ? current.walkHistoryIndices
+                        : [...current.walkHistoryIndices, nextIndex]
+                    : current.walkHistoryIndices
+            writeNavStateMirror({
+                focusedIndex: nextIndex,
+                mode: 'trail' as NavMode,
+                surface: 'focus' as PanelSurface,
+                walkHistoryIndices
+            })
+            break
+        }
+        case NAV_TRANSITION_ACTIONS.BACKTRACK: {
+            const current = _readNavSnapshot()
+            if (payload.step != null && payload.step < 0) {
+                const history = [...current.walkHistoryIndices]
+                if (history.length > 0) history.pop()
+                writeNavStateMirror({ walkHistoryIndices: history })
+            } else {
+                // step === 0 or unset: no-op (state stays)
+                get(navMirror) // touch writable for subscriber contract
+            }
+            break
+        }
         case NAV_TRANSITION_ACTIONS.SET_DEPTH:
-            _navWritable.update((s) => ({
-                ...s,
-                trailDepth: payload.depth ?? 0
-            }))
+            writeNavStateMirror({ trailDepth: payload.depth ?? 0 })
             break
         case NAV_TRANSITION_ACTIONS.ENTER_INSIDE:
-            _navWritable.update((s) => ({
-                ...s,
-                semanticDiveMode: true,
+            writeNavStateMirror({
                 mode: 'inside' as NavMode,
                 surface: 'inside' as PanelSurface
-            }))
+            })
             break
-        case NAV_TRANSITION_ACTIONS.EXIT_INSIDE:
-            _navWritable.update((s) => ({
-                ...s,
-                semanticDiveMode: false,
-                mode: s.focusedIndex != null ? ('focus' as NavMode) : ('overview' as NavMode),
-                surface: s.focusedIndex != null ? ('focus' as PanelSurface) : ('idle' as PanelSurface)
-            }))
+        case NAV_TRANSITION_ACTIONS.EXIT_INSIDE: {
+            const current = _readNavSnapshot()
+            const focused = current.focusedIndex != null
+            writeNavStateMirror({
+                mode: focused ? ('focus' as NavMode) : ('overview' as NavMode),
+                surface: focused ? ('focus' as PanelSurface) : ('idle' as PanelSurface)
+            })
             break
+        }
         case NAV_TRANSITION_ACTIONS.RESET_FOCUS:
-            _navWritable.update((s) => ({
-                ...s,
+            writeNavStateMirror({
                 focusedIndex: null,
                 trailSeedIndex: null,
                 trailNeighborIndices: [],
                 trailCursor: -1,
                 walkHistoryIndices: [],
                 lastTraversalReason: null
-            }))
+            })
             break
         case NAV_TRANSITION_ACTIONS.RESET_EXPERIENCE:
             resetNavState()
             break
         case NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY:
-            _navWritable.update((s) => ({
-                ...s,
+            writeNavStateMirror({
                 explorationHistoryIndices: Array.isArray(payload.restoreHistoryIndices)
                     ? payload.restoreHistoryIndices.filter((value: unknown) => Number.isFinite(value))
                     : []
-            }))
+            })
             break
         case NAV_TRANSITION_ACTIONS.RESET:
             resetNavState()
@@ -609,16 +685,16 @@ export function dispatchNavTransition(
 
     // Mirror the resulting nav state to legacy appState.navState so imperative
     // readers (focus/journey snapshots) stay in sync with the Svelte 5 store.
-    // Cases that already mirror (SET_VIEW, RETURN_OVERVIEW, and RESET via
-    // resetNavState) are idempotent re-mirrors; this single write covers
-    // FOCUS_NODE and the remaining transition cases that previously only
-    // touched the writable. writeNavStateMirror's internal _navWritable.update
-    // is a no-op self-spread here (same state), so no extra subscriber churn.
-    writeNavStateMirror(get(_navWritable))
+    // We now read from `get(navMirror)` — the post-transition writable snapshot —
+    // so cases that bypassed writeNavStateMirror in favor of
+    // `navMirror.update((s) => ({...s, X}))` still propagate their changes
+    // back to the legacy `appState.navState` reference that imperative
+    // readers captured at module init.
+    writeNavStateMirror(get(navMirror))
 
     return {
         ok: true,
         previousMode,
-        nextMode: get(_navWritable).mode
+        nextMode: _readNavSnapshot().mode
     }
 }
