@@ -41,6 +41,7 @@ import type {
     NavMode,
     CompassPhase,
     CompassAction,
+    CompassState,
     TrailStop,
     WalkHistoryEntry,
     ThreadCandidateRef
@@ -138,6 +139,18 @@ const INITIAL_JOURNEY: JourneyStoreState = {
     trailSeedIndex: null
 }
 
+/**
+ * Compass cache.
+ *
+ * The compass (CompassState) sub-record on journey state isn't mirrored
+ * through navState — that field is journey-internal — but the journey
+ * store's `_readJourneyFromAppState` snapshot path needs a value to
+ * return. We cache the most recent `withJourneyNotify` write here so
+ * `journeyStore()` reflects the latest user-set compass even though
+ * navState stays unchanged.
+ */
+let compassCache: CompassState = INITIAL_JOURNEY.compass as CompassState
+
 // ── Store ────────────────────────────────────────────────────────────────────
 
 /**
@@ -168,6 +181,7 @@ function _readJourneyFromAppState(): JourneyStoreState {
         threadReasonByIndex: new Map(navState.threadReasonByIndex),
         threadSource: navState.threadSource,
         lastTraversalReason: navState.lastTraversalReason,
+        compass: compassCache,
         terrainHandoffPhase: 'idle',
         routeExplorationPhase: 'idle',
         routeChoreographyPhase: 'overview'
@@ -254,6 +268,7 @@ function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState
         trailDepth: next.trailDepth
     }
     journeyMirror.set(normalized)
+    compassCache = normalized.compass as CompassState
     writeNavStateMirror({
         mode: normalized.phase,
         trailCursor: normalized.cursor,
@@ -302,7 +317,7 @@ export const resetJourneyForTests = journeyMirror.resetForTests
 export const journeyPhase = () => appState.navState.mode
 export const journeyTrail = () =>
     finiteIndexList(appState.navState.walkHistoryIndices).map((index) => ({ index }) as TrailStop)
-export const compassPhase = () => 'idle'
+export const compassPhase = () => compassCache.phase
 export const journeyNeighbors = () => finiteIndexList(appState.navState.trailNeighborIndices)
 export const journeySelectedId = () => {
     const focused = appState.navState.focusedIndex
