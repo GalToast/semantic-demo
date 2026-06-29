@@ -134,6 +134,17 @@ describe('W11-T7: runtime — initAdapters() invokes all 10 adapters', () => {
             vi.doMock(source, () => ({ [name]: W11_MUTABLE_MOCK_FNS[name] }))
         }
 
+        // Mock handleError — it's used inside the dynamic-import catch path
+        // (adapters.ts:155). Real handleError pulls in @lib/utils/debug +
+        // @lib/orchestration/toast which transitively load @lib/stores/toast.svelte;
+        // the dynamic-import mock we want to short-circuit here doesn't
+        // throw, so the catch handler is never invoked. Mocking handleError
+        // removes ~7s of module loading that was pushing this test near
+        // the 20s vitestTimeout in the full suite.
+        vi.doMock('@lib/utils/error-handler', () => ({
+            handleError: () => () => {}
+        }))
+
         const { initAdapters, areAdaptersInitialized } = await import('../../src/lib/orchestration/adapters')
 
         // Should not be initialized before calling
