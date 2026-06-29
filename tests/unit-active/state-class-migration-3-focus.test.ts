@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 import { get } from 'svelte/store'
+import { DEFAULT_SEARCH_STATE } from '../helpers/app-state-mock'
 
 /**
  * @vitest-environment jsdom
@@ -49,11 +50,7 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
             viewportReducedMotion: false,
             viewportIsCompact: false
         },
-        searchState: {
-            currentSearchSummary: null,
-            searchStatus: 'idle' as string,
-            searchRequestSequence: 0
-        },
+        searchState: DEFAULT_SEARCH_STATE,
         // Phase 6c: focus fields moved into appState.focusState sub-aggregate
         focusState: {
             selectedPoint: null as any,
