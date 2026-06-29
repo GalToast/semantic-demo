@@ -19,8 +19,8 @@ export function _getSelectedBusinessRoleLabel(point: Point): string {
             : -1
     }
 
-    if (index >= 0 && appState.currentSearchSummary) {
-        const summary = appState.currentSearchSummary
+    if (index >= 0 && appState.searchState.currentSearchSummary) {
+        const summary = appState.searchState.currentSearchSummary
         if (summary.anchorIndex === index || summary.topIndex === index) {
             return 'Search Anchor'
         }

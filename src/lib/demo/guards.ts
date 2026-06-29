@@ -17,7 +17,7 @@ export function isAppReadyForDemo(): boolean {
     return (
         appState.currentView === 'galaxy' &&
         appState.focusedNode === null &&
-        !appState.currentSearchSummary &&
+        !appState.searchState.currentSearchSummary &&
         appState.navState.mode === 'overview' &&
         !appState.sceneRevealActive &&
         Array.isArray(appState.points) &&

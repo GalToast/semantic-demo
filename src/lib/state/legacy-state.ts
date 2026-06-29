@@ -51,7 +51,6 @@ export interface LegacyState {
     pointsMesh: Points | null
     pointsMaterial: Material | null
     nodeSporeMesh: InstancedMesh | null
-    nodeSporeHitMesh: InstancedMesh | null
     nodeSporeMaterial: Material | null
     myceliumGroup: Group | null
     myceliumCoreLines: LineSegments | null
@@ -76,7 +75,9 @@ export interface LegacyState {
     focusedNode: number | null
     selectedPoint: BusinessRecord | null
     sceneRevealActive: boolean
-    searchGlowActive?: boolean
+    searchState?: {
+        searchGlowActive?: boolean
+    }
 
     // ── Thread inspection ────────────────────────────────────────────────────
     inspectedThreadIndex?: number | null

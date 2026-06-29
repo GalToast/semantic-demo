@@ -145,6 +145,9 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
             _filterState.activeFilters = v
         },
         // Search mock shape
+        get searchState() {
+            return _searchState
+        },
         get currentSearchSummary() {
             return _searchState.currentSearchSummary
         },

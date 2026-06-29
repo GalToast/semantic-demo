@@ -88,7 +88,7 @@ export function isSearchRouteFocusActive(): boolean {
         appState.currentView === 'galaxy' &&
         !appState.semanticDiveMode &&
         hasFocus &&
-        !!appState.currentSearchSummary &&
+        !!appState.searchState.currentSearchSummary &&
         walkDepth === 0
     )
 }

@@ -338,7 +338,7 @@ export function getMyceliumPresentationProfile() {
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
         return { core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008 }
     }
-    if (state.currentSearchSummary || state.searchGlowActive) {
+    if (state.searchState.currentSearchSummary || state.searchState.searchGlowActive) {
         return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }
     }
     if (state.trailDepth >= 1) {
@@ -352,7 +352,7 @@ export function getMyceliumPresentationProfile() {
 export function shouldRenderThreads() {
     const currentMode = getNavigationMode()
     const { trailDepth } = state.navState || {}
-    const { currentSearchSummary } = state
+    const { currentSearchSummary } = state.searchState ?? {}
     const { focusedNode } = state
 
     if (currentMode === 'overview' || currentMode === undefined) return true

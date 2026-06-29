@@ -37,7 +37,9 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
             currentView: 'galaxy',
             myceliumMode: 'default'
         },
-        searchStatus: 'idle',
+        searchState: {
+            searchStatus: 'idle'
+        },
         loadingPhaseKey: 'records',
         semanticLaneState: 'checking'
     }
@@ -60,15 +62,11 @@ describe('Phase 6a — assertValidEnum helper', () => {
     })
 
     it('throws when value is non-string (number)', () => {
-        expect(() => assertValidEnum('test.view', 42 as unknown as string, VALID_VIEWS)).toThrow(
-            /Invalid test\.view/
-        )
+        expect(() => assertValidEnum('test.view', 42 as unknown as string, VALID_VIEWS)).toThrow(/Invalid test\.view/)
     })
 
     it('throws when value is non-string (null)', () => {
-        expect(() => assertValidEnum('test.view', null as unknown as string, VALID_VIEWS)).toThrow(
-            /Invalid test\.view/
-        )
+        expect(() => assertValidEnum('test.view', null as unknown as string, VALID_VIEWS)).toThrow(/Invalid test\.view/)
     })
 
     it('throws when value is non-string (undefined)', () => {
@@ -106,16 +104,18 @@ describe('Phase 6a — validateAppStateEnumFields aggregator', () => {
                 currentView: 'galaxy',
                 myceliumMode: 'default'
             },
-            searchStatus: 'idle',
+searchState: {
+                searchStatus: 'idle'
+            },
             loadingPhaseKey: 'records',
             semanticLaneState: 'checking'
         }
         const result = validateAppStateEnumFields(state)
         expect(result.checked).toBeGreaterThanOrEqual(6)
         expect(result.errors).toEqual([])
-    })
+})
 
-    it('surfaces errors when an enum field has an invalid value', () => {
+it('surfaces errors when an enum field has an invalid value', () => {
         const state = {
             currentView: 'invalid-view',
             navState: {
@@ -124,7 +124,9 @@ describe('Phase 6a — validateAppStateEnumFields aggregator', () => {
                 currentView: 'galaxy',
                 myceliumMode: 'default'
             },
-            searchStatus: 'idle',
+            searchState: {
+                searchStatus: 'idle'
+            },
             loadingPhaseKey: 'records',
             semanticLaneState: 'checking'
         }
@@ -143,9 +145,11 @@ describe('Phase 6a — validateAppStateEnumFields aggregator', () => {
                 currentView: 'invalid-view',
                 myceliumMode: 'invalid-mode'
             },
-            searchStatus: 'invalid-status',
-            loadingPhaseKey: 'invalid-phase',
-            semanticLaneState: 'invalid-lane'
+searchState: {
+            searchStatus: 'invalid-status'
+        },
+        loadingPhaseKey: 'invalid-phase',
+        semanticLaneState: 'invalid-lane'
         }
         const result = validateAppStateEnumFields(state)
         expect(result.errors.length).toBeGreaterThanOrEqual(6)

@@ -72,11 +72,13 @@ interface MapStateShape {
     points: Point[] | undefined
     currentView?: string
     focusedNode: number | null
-    currentSearchSummary: {
-        resultIndices?: number[]
-        anchorIndex?: number | null
-        topIndex?: number | null
-    } | null
+    searchState?: {
+        currentSearchSummary?: {
+            resultIndices?: number[]
+            anchorIndex?: number | null
+            topIndex?: number | null
+        } | null
+    }
     activeClusterFilter: number | null
     activeFilters: ActiveFilters | null
     selectedPoint: Point | null
@@ -230,7 +232,7 @@ export async function initMap(): Promise<void> {
 
         if (!mapState.points || !Array.isArray(mapState.points)) return
         const focusedNode = mapState.focusedNode
-        const currentSearchSummary = mapState.currentSearchSummary
+        const currentSearchSummary = mapState.searchState?.currentSearchSummary
         mapState.points.forEach((point: Point, index: number) => {
             if (!pointHasGeocode(point)) return
             const color = mapState.COLORS[(point.cluster ?? 0) % mapState.COLORS.length]
@@ -435,7 +437,7 @@ export function centerMapOnRouteAnchor(): boolean {
     if (!appState.map) return false
     const focusIndex = appState.navState.focusedIndex
     const focusIdxValid = Number.isFinite(focusIndex) && focusIndex! >= 0 && focusIndex! < appState.points.length
-    const anchorIdx = appState.currentSearchSummary?.anchorIndex ?? undefined
+    const anchorIdx = appState.searchState.currentSearchSummary?.anchorIndex ?? undefined
     const anchorIdxValid = Number.isFinite(anchorIdx) && anchorIdx! >= 0 && anchorIdx! < appState.points.length
     const focusPoint =
         appState.selectedPoint ||
@@ -473,7 +475,7 @@ export function refreshMapMarkers(): void {
     if (!appState.points) return
     if (!appState.markersLayer) return
     ;(appState.markersLayer as { clearLayers(): void }).clearLayers()
-    const searchResultSet = new Set(appState.currentSearchSummary?.resultIndices ?? [])
+    const searchResultSet = new Set(appState.searchState.currentSearchSummary?.resultIndices ?? [])
     const selectedLeadId =
         appState.selectedPoint?.lead_id !== undefined && appState.selectedPoint?.lead_id !== null
             ? String(appState.selectedPoint.lead_id)
@@ -498,7 +500,7 @@ export function refreshMapMarkers(): void {
             ]
             const isFocused = appState.focusedNode === index
             const isSelected = selectedLeadId !== null && String(point.lead_id) === selectedLeadId
-            const isAnchor = appState.currentSearchSummary?.anchorIndex === index
+            const isAnchor = appState.searchState.currentSearchSummary?.anchorIndex === index
             const isSearchMatch = searchResultSet.has(index)
             const isTrail = appState.trailIndices.has(index) || isSearchMatch
 
@@ -509,7 +511,7 @@ export function refreshMapMarkers(): void {
             let opacity = 0.8
             let fillOpacity = 0.6
 
-            if (appState.currentSearchSummary) {
+            if (appState.searchState.currentSearchSummary) {
                 if (isAnchor) {
                     radius = isFocused || isSelected ? 10 : 8.6
                     weight = 2.4
@@ -569,9 +571,9 @@ export function getRouteDirectorState(): string {
     if (appState.focusedNode !== null && appState.focusedNode !== undefined) {
         if ((appState.navState.walkHistoryIndices || []).length > 1 || appState.navState.mode === 'trail')
             return 'thread-walk'
-        return appState.currentSearchSummary ? 'search-focus' : 'node-focus'
+        return appState.searchState.currentSearchSummary ? 'search-focus' : 'node-focus'
     }
-    if (appState.currentSearchSummary) return 'search-corridor'
+    if (appState.searchState.currentSearchSummary) return 'search-corridor'
     return 'overview'
 }
 
@@ -646,13 +648,13 @@ export function getRouteEmbodimentIndices(): number[] {
         pushIndex(appState.focusedNode)
         ;(appState.navState.walkHistoryIndices || []).forEach(pushIndex)
         ;(appState.navState.trailNeighborIndices || []).slice(0, 6).forEach(pushIndex)
-        pushIndex(appState.currentSearchSummary?.anchorIndex as number)
-        pushIndex(appState.currentSearchSummary?.topIndex as number)
-        ;(appState.currentSearchSummary?.resultIndices ?? []).slice(0, 6).forEach(pushIndex)
+        pushIndex(appState.searchState.currentSearchSummary?.anchorIndex as number)
+        pushIndex(appState.searchState.currentSearchSummary?.topIndex as number)
+        ;(appState.searchState.currentSearchSummary?.resultIndices ?? []).slice(0, 6).forEach(pushIndex)
     } else {
-        pushIndex(appState.currentSearchSummary?.anchorIndex as number)
-        pushIndex(appState.currentSearchSummary?.topIndex as number)
-        ;(appState.currentSearchSummary?.resultIndices ?? []).slice(0, 10).forEach(pushIndex)
+        pushIndex(appState.searchState.currentSearchSummary?.anchorIndex as number)
+        pushIndex(appState.searchState.currentSearchSummary?.topIndex as number)
+        ;(appState.searchState.currentSearchSummary?.resultIndices ?? []).slice(0, 10).forEach(pushIndex)
         ;(appState.navState.walkHistoryIndices || []).forEach(pushIndex)
         pushIndex(appState.navState.focusedIndex)
         pushIndex(appState.focusedNode)
@@ -666,8 +668,8 @@ export function getRouteAnchorIndex(routeIndices: number[]): number | null {
     const focusOwnsRoute = ['search-focus', 'thread-walk', 'node-focus', 'inside-pocket'].includes(routeOwner)
     const focusCandidates = [appState.navState.focusedIndex, appState.focusedNode]
     const searchCandidates = [
-        appState.currentSearchSummary?.anchorIndex ?? undefined,
-        appState.currentSearchSummary?.topIndex ?? undefined,
+        appState.searchState.currentSearchSummary?.anchorIndex ?? undefined,
+        appState.searchState.currentSearchSummary?.topIndex ?? undefined,
         routeIndices?.[0]
     ]
     const candidates = focusOwnsRoute

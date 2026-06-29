@@ -34,7 +34,7 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
         return;
     }
 
-    const query = (state.currentSearchSummary as Record<string, unknown> | null)?.query || 'the network';
+    const query = (state.searchState.currentSearchSummary as Record<string, unknown> | null)?.query || 'the network';
     const kicker = nextCue.kicker || (nextCue.stage === 'query' ? 'Scanning...' : 'Connection cue');
     const title = nextCue.title || (
         nextCue.stage === 'query' ? `Sifting 8,406 records for '${query}' patterns.` :

@@ -42,7 +42,7 @@ export interface PayloadResult {
  */
 export function getSearchContextSnapshot(): SearchContextSnapshot {
     return {
-        currentSearchSummary: state.currentSearchSummary as SearchSummarySnapshot | null,
+        currentSearchSummary: state.searchState.currentSearchSummary as SearchSummarySnapshot | null,
         currentView: state.currentView
     }
 }

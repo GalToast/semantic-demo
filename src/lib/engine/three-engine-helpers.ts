@@ -18,8 +18,7 @@ export function sceneNeedsContinuousFrame(now: number, state: LegacyState | null
         ? focusPocketMotion.length > 0
         : (focusPocketMotion as Map<unknown, unknown>)?.size > 0
     const autoRotateActive = Boolean(state.autoRotate && !state.autoRotateSuspended)
-    const autoRotateResumePending =
-        typeof state.autoRotateResumeDueAt === 'number' && state.autoRotateResumeDueAt > now
+    const autoRotateResumePending = typeof state.autoRotateResumeDueAt === 'number' && state.autoRotateResumeDueAt > now
     const routeTraceActive = Boolean(state.routeTraceLines)
     return Boolean(
         state.forceAnimate ||
@@ -30,7 +29,7 @@ export function sceneNeedsContinuousFrame(now: number, state: LegacyState | null
         focusPocketMoving ||
         autoRotateActive ||
         autoRotateResumePending ||
-        state.searchGlowActive ||
+        state.searchState?.searchGlowActive ||
         hasFiniteNodeIndex(state.hoverHighlightIndex) ||
         hasFiniteNodeIndex(state.focusedNode) ||
         hasFiniteNodeIndex(state.inspectedThreadIndex) ||

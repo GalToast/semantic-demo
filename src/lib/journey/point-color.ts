@@ -146,9 +146,9 @@ export function applyPointFilterColors(): void {
     _state.filterColorVersion = _state.filterVersion
     _state.filterColorStateKey = colorStateKey
     syncNodeSporeColorsFromPointColors()
-    if (_state.searchGlowActive && _state.searchGlowIndices && _state.searchGlowIndices.size > 0) {
+    if (_state.searchState.searchGlowActive && _state.searchState.searchGlowIndices && _state.searchState.searchGlowIndices.size > 0) {
         _state.searchGlowRenderStateKey = ''
-        const topIndex = _state.searchGlowTopIndex ?? _state.searchGlowIndices.values().next().value ?? -1
+        const topIndex = _state.searchState.searchGlowTopIndex ?? _state.searchState.searchGlowIndices.values().next().value ?? -1
         const topPoint = Number.isFinite(topIndex) ? _state.points[topIndex] : null
         publish(EVENTS.SEARCH_STATUS_SYNC_REQUESTED, {
             point: topPoint,

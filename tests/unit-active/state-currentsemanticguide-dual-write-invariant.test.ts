@@ -71,7 +71,8 @@ describe('engine-boundary refactor / Phase 2 latent-bug fix / currentSemanticGui
         const fnMatch = searchStore.match(/export\s+function\s+setSemanticGuide[\s\S]*?\n\}/m)
         expect(fnMatch, 'setSemanticGuide not found').not.toBeNull()
         const body = fnMatch![0]
-        expect(body).toMatch(/appState\.currentSemanticGuide\s*=\s*text/)
+        // Phase 6b: currentSemanticGuide moved into appState.searchState sub-aggregate
+        expect(body).toMatch(/appState\.searchState\.currentSemanticGuide\s*=\s*text/)
     })
 
     it('showSummaryCard() still updates semanticGuideState.config + typeToken', () => {
@@ -80,7 +81,8 @@ describe('engine-boundary refactor / Phase 2 latent-bug fix / currentSemanticGui
         expect(fnMatch, 'showSummaryCard not found').not.toBeNull()
         const body = fnMatch![0]
         expect(body).toMatch(/appState\.semanticGuideState\.config\s*=\s*settings/)
-        expect(body).toMatch(/appState\.semanticGuideState\.typeToken\s*=\s*appState\.summaryCardTypeToken/)
+        // Phase 6b: summaryCardTypeToken moved into appState.searchState sub-aggregate
+        expect(body).toMatch(/appState\.searchState\.summaryCardTypeToken/)
         expect(body).toMatch(/appState\.semanticGuideState\.isVisible\s*=\s*true/)
     })
 })

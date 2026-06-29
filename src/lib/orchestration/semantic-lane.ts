@@ -297,7 +297,7 @@ export function shouldWarmSemanticLane(reason = 'interval'): boolean {
     const doc = getDocument()
     if (doc && doc.visibilityState !== 'visible') return false
     const inputValue = (doc?.getElementById?.('search-input') as HTMLInputElement | null)?.value?.trim() || ''
-    return !!state.currentSearchSummary || inputValue.length >= 2
+    return !!state.searchState.currentSearchSummary || inputValue.length >= 2
 }
 
 // ── Probe ──────────────────────────────────────────────────────────────────
@@ -454,7 +454,7 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
             doc?.body?.dataset?.graphContext === 'focus-search' ||
             doc?.body?.dataset?.graphContext === 'focus' ||
             hasFocusedRecord
-        const hasVisibleResults = Boolean(state.currentSearchSummary)
+        const hasVisibleResults = Boolean(state.searchState.currentSearchSummary)
         // Hide the assist card once results are visible: the pill at the top of
         // the search surface already communicates the degraded lane state, and
         // stacking the inline card above results paints over the first result

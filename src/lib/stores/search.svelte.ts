@@ -123,30 +123,30 @@ function buildSearchResultsFromIndices(indices: number[] | undefined): SearchRes
 function buildSearchStoreSnapshot(): SearchStoreState {
     return {
         ...INITIAL_SEARCH_STATE,
-        query: appState.currentSearchSummary?.query ?? '',
+        query: appState.searchState.currentSearchSummary?.query ?? '',
         results:
-            buildSearchResultsFromIndices(appState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
+            buildSearchResultsFromIndices(appState.searchState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
         activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
-        summary: appState.currentSearchSummary ? { ...appState.currentSearchSummary } : null,
-        status: appState.searchStatus,
-        hasQuery: (appState.currentSearchSummary?.query ?? '').length > 0,
-        resultsRendered: (appState.currentSearchSummary?.resultIndices?.length ?? 0) > 0,
-        requestSequence: appState.searchRequestSequence,
-        anchorIndex: appState.searchAnchorIndex,
-        previewIndex: appState.searchPreviewIndex,
+        summary: appState.searchState.currentSearchSummary ? { ...appState.searchState.currentSearchSummary } : null,
+        status: appState.searchState.searchStatus,
+        hasQuery: (appState.searchState.currentSearchSummary?.query ?? '').length > 0,
+        resultsRendered: (appState.searchState.currentSearchSummary?.resultIndices?.length ?? 0) > 0,
+        requestSequence: appState.searchState.searchRequestSequence,
+        anchorIndex: appState.searchState.searchAnchorIndex,
+        previewIndex: appState.searchState.searchPreviewIndex,
         glowIndices:
-            appState.searchGlowIndices instanceof Set
-                ? new Set(appState.searchGlowIndices)
-                : appState.searchGlowIndices,
-        glowTopIndex: appState.searchGlowTopIndex,
-        glowActive: appState.searchGlowActive,
-        currentEmptyQuery: appState.currentEmptyQuery,
-        focusTransitionToken: appState.searchFocusTransitionToken,
-        trailCue: appState.semanticTrailCue as SearchStoreState['trailCue'],
-        isCompactViewport: appState.isCompactViewport,
-        semanticGuideRequestSequence: appState.semanticGuideRequestSequence,
-        currentSemanticGuide: appState.currentSemanticGuide as string | null,
-        summaryCardTypeToken: appState.summaryCardTypeToken
+            appState.searchState.searchGlowIndices instanceof Set
+                ? new Set(appState.searchState.searchGlowIndices)
+                : appState.searchState.searchGlowIndices,
+        glowTopIndex: appState.searchState.searchGlowTopIndex,
+        glowActive: appState.searchState.searchGlowActive,
+        currentEmptyQuery: appState.searchState.currentEmptyQuery,
+        focusTransitionToken: appState.searchState.searchFocusTransitionToken,
+        trailCue: appState.searchState.semanticTrailCue as SearchStoreState['trailCue'],
+        isCompactViewport: appState.searchState.isCompactViewport,
+        semanticGuideRequestSequence: appState.searchState.semanticGuideRequestSequence,
+        currentSemanticGuide: appState.searchState.currentSemanticGuide as string | null,
+        summaryCardTypeToken: appState.searchState.summaryCardTypeToken
     }
 }
 
@@ -224,19 +224,19 @@ export const resetSearchForTests = searchMirror.resetForTests
 
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
-export const searchQuery = () => appState.currentSearchSummary?.query ?? ''
-export const searchStatus = () => appState.searchStatus
-export const searchResults = () => appState.currentSearchSummary?.resultIndices ?? []
-export const hasSearchQuery = () => (appState.currentSearchSummary?.query ?? '').length > 0
-export const hasResults = () => (appState.currentSearchSummary?.resultIndices?.length ?? 0) > 0
-export const isSearching = () => appState.searchStatus === 'searching'
-export const searchSummary = () => appState.currentSearchSummary
+export const searchQuery = () => appState.searchState.currentSearchSummary?.query ?? ''
+export const searchStatus = () => appState.searchState.searchStatus
+export const searchResults = () => appState.searchState.currentSearchSummary?.resultIndices ?? []
+export const hasSearchQuery = () => (appState.searchState.currentSearchSummary?.query ?? '').length > 0
+export const hasResults = () => (appState.searchState.currentSearchSummary?.resultIndices?.length ?? 0) > 0
+export const isSearching = () => appState.searchState.searchStatus === 'searching'
+export const searchSummary = () => appState.searchState.currentSearchSummary
 export const activeResult = () =>
     appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null
 
 /** Returns the current search summary, or null. */
 export function getSearchSummary(): SearchSummary | null {
-    if (appState.currentSearchSummary) return appState.currentSearchSummary as SearchSummary
+    if (appState.searchState.currentSearchSummary) return appState.searchState.currentSearchSummary as SearchSummary
     const testState = testCompatStore()
     // @ts-expect-error -- testCompatStore returns TestCompatState which lacks searchState; legacy bridge gap (w32-b)
     return (testState?.searchState?.summary as SearchSummary) ?? null
@@ -292,8 +292,8 @@ export function consumeSearchInputFocusIntent(): boolean {
 
 export function setSearchQuery(query: string): void {
     withSearchNotify(() => {
-        if (!appState.currentSearchSummary) {
-            appState.currentSearchSummary = {
+        if (!appState.searchState.currentSearchSummary) {
+            appState.searchState.currentSearchSummary = {
                 query: '',
                 totalMatches: 0,
                 totalSemanticMatches: 0,
@@ -306,13 +306,13 @@ export function setSearchQuery(query: string): void {
                 summaryType: 'text'
             }
         }
-        appState.currentSearchSummary.query = query
+        appState.searchState.currentSearchSummary.query = query
     })
 }
 
 export function setSearchStatus(status: SearchStatus): void {
     withSearchNotify(() => {
-        appState.searchStatus = status
+        appState.searchState.searchStatus = status
     })
 }
 
@@ -320,143 +320,143 @@ type SearchErrorType = 'full' | 'inline'
 
 export function setSearchError(query: string, error: unknown, type: SearchErrorType = 'full'): void {
     withSearchNotify(() => {
-        appState.searchStatus = 'error'
-        appState.searchError = {
+        appState.searchState.searchStatus = 'error'
+        appState.searchState.searchError = {
             query,
             type,
             message: error instanceof Error ? error.message : String(error || 'Search failed')
         }
-        appState.isSearching = false
+        appState.searchState.isSearching = false
     })
 }
 
 export function setSearchSummary(summary: SearchSummary | null): void {
     withSearchNotify(() => {
-        appState.currentSearchSummary = summary
-        if (summary) appState.searchStatus = 'results'
+        appState.searchState.currentSearchSummary = summary
+        if (summary) appState.searchState.searchStatus = 'results'
     })
 }
 
 export function setAnchorIndex(index: number | null): void {
     withSearchNotify(() => {
-        appState.searchAnchorIndex = index
+        appState.searchState.searchAnchorIndex = index
     })
 }
 
 export function setPreviewIndex(index: number | null): void {
     withSearchNotify(() => {
-        appState.searchPreviewIndex = index
+        appState.searchState.searchPreviewIndex = index
     })
 }
 
 export function setGlowIndices(indices: Set<number>): void {
     withSearchNotify(() => {
-        appState.searchGlowIndices = indices
+        appState.searchState.searchGlowIndices = indices
     })
 }
 
 export function setGlowActive(active: boolean): void {
     withSearchNotify(() => {
-        appState.searchGlowActive = active
+        appState.searchState.searchGlowActive = active
     })
 }
 
 export function setSearchGlow(indices: readonly number[], topIndex: number | null = indices[0] ?? null): void {
     withSearchNotify(() => {
-        appState.searchGlowIndices = new Set(indices)
-        appState.searchGlowTopIndex = topIndex
-        appState.searchGlowActive = indices.length > 0
+        appState.searchState.searchGlowIndices = new Set(indices)
+        appState.searchState.searchGlowTopIndex = topIndex
+        appState.searchState.searchGlowActive = indices.length > 0
     })
 }
 
 export function clearSearchGlow(): void {
     withSearchNotify(() => {
-        appState.searchGlowIndices = new Set()
-        appState.searchGlowTopIndex = null
-        appState.searchGlowActive = false
+        appState.searchState.searchGlowIndices = new Set()
+        appState.searchState.searchGlowTopIndex = null
+        appState.searchState.searchGlowActive = false
     })
 }
 
 export function setTrailCue(cue: SearchStoreState['trailCue']): void {
     withSearchNotify(() => {
-        appState.semanticTrailCue = cue
+        appState.searchState.semanticTrailCue = cue
     })
 }
 
 export function incrementRequestSequence(): number {
     let next = 0
     withSearchNotify(() => {
-        appState.searchRequestSequence += 1
-        next = appState.searchRequestSequence
+        appState.searchState.searchRequestSequence += 1
+        next = appState.searchState.searchRequestSequence
     })
     return next
 }
 
 export function isRequestCurrent(sequence: number): boolean {
-    return appState.searchRequestSequence === sequence
+    return appState.searchState.searchRequestSequence === sequence
 }
 
 export function incrementFocusTransitionToken(): number {
     let next = 0
     withSearchNotify(() => {
-        appState.searchFocusTransitionToken += 1
-        next = appState.searchFocusTransitionToken
+        appState.searchState.searchFocusTransitionToken += 1
+        next = appState.searchState.searchFocusTransitionToken
     })
     return next
 }
 
 export function setSemanticGuide(text: string | null): void {
     withSearchNotify(() => {
-        appState.currentSemanticGuide = text
+        appState.searchState.currentSemanticGuide = text
     })
 }
 
 export function setCompactViewport(value: boolean): void {
     withSearchNotify(() => {
-        appState.isCompactViewport = value
+        appState.searchState.isCompactViewport = value
     })
 }
 
 export function bumpSummaryCardTypeToken(): number {
     let next = 0
     withSearchNotify(() => {
-        appState.summaryCardTypeToken += 1
-        next = appState.summaryCardTypeToken
+        appState.searchState.summaryCardTypeToken += 1
+        next = appState.searchState.summaryCardTypeToken
     })
     return next
 }
 
 export function clearSearch(): void {
     withSearchNotify(() => {
-        appState.currentSearchSummary = null
-        appState.searchStatus = 'idle'
-        appState.searchError = null
-        appState.isSearching = false
-        appState.searchAnchorIndex = null
-        appState.searchPreviewIndex = null
-        appState.searchGlowIndices = new Set()
-        appState.searchGlowActive = false
+        appState.searchState.currentSearchSummary = null
+        appState.searchState.searchStatus = 'idle'
+        appState.searchState.searchError = null
+        appState.searchState.isSearching = false
+        appState.searchState.searchAnchorIndex = null
+        appState.searchState.searchPreviewIndex = null
+        appState.searchState.searchGlowIndices = new Set()
+        appState.searchState.searchGlowActive = false
     })
 }
 
 /** Clear result payloads while preserving the current query text. */
 export function clearSearchResults(): void {
     withSearchNotify(() => {
-        if (appState.currentSearchSummary) {
-            appState.currentSearchSummary.resultIndices = []
-            appState.currentSearchSummary.resultCount = 0
-            appState.currentSearchSummary.totalMatches = 0
-            appState.currentSearchSummary.totalSemanticMatches = 0
-            appState.currentSearchSummary.visibleMatches = 0
-            appState.currentSearchSummary.topScore = 0
-            appState.currentSearchSummary.anchorIndex = null
-            appState.currentSearchSummary.topIndex = null
+        if (appState.searchState.currentSearchSummary) {
+            appState.searchState.currentSearchSummary.resultIndices = []
+            appState.searchState.currentSearchSummary.resultCount = 0
+            appState.searchState.currentSearchSummary.totalMatches = 0
+            appState.searchState.currentSearchSummary.totalSemanticMatches = 0
+            appState.searchState.currentSearchSummary.visibleMatches = 0
+            appState.searchState.currentSearchSummary.topScore = 0
+            appState.searchState.currentSearchSummary.anchorIndex = null
+            appState.searchState.currentSearchSummary.topIndex = null
         }
-        appState.searchStatus = (appState.currentSearchSummary?.query ?? '').trim() ? 'idle' : 'idle'
-        appState.searchError = null
-        appState.isSearching = false
-        appState.searchAnchorIndex = null
-        appState.searchPreviewIndex = null
+        appState.searchState.searchStatus = (appState.searchState.currentSearchSummary?.query ?? '').trim() ? 'idle' : 'idle'
+        appState.searchState.searchError = null
+        appState.searchState.isSearching = false
+        appState.searchState.searchAnchorIndex = null
+        appState.searchState.searchPreviewIndex = null
     })
 }
 
@@ -496,8 +496,8 @@ export function setSearchVisibleCount(n: number): void {
 
 export function setSearchResults(results: SearchResult[]): void {
     withSearchNotify(() => {
-        if (!appState.currentSearchSummary) {
-            appState.currentSearchSummary = {
+        if (!appState.searchState.currentSearchSummary) {
+            appState.searchState.currentSearchSummary = {
                 query: '',
                 totalMatches: 0,
                 totalSemanticMatches: 0,
@@ -510,11 +510,11 @@ export function setSearchResults(results: SearchResult[]): void {
                 summaryType: 'text'
             }
         }
-        appState.currentSearchSummary.resultIndices = results.map((r) => r.index)
-        appState.currentSearchSummary.resultCount = results.length
-        appState.searchStatus = 'results'
-        appState.searchError = null
-        appState.isSearching = false
+        appState.searchState.currentSearchSummary.resultIndices = results.map((r) => r.index)
+        appState.searchState.currentSearchSummary.resultCount = results.length
+        appState.searchState.searchStatus = 'results'
+        appState.searchState.searchError = null
+        appState.searchState.isSearching = false
     })
 }
 

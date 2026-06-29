@@ -236,7 +236,7 @@ export function renderSearchResultItems(
 
     // Push to appState
     appState.searchResults = dedupedResults
-    appState.searchVisibleCount = visibleCount
+    appState.searchState.searchVisibleCount = visibleCount
     appState.searchSummary = {
         query: renderContext.trimmedQuery,
         renderContext,
@@ -251,8 +251,8 @@ export function renderSearchResultItems(
         button: document.getElementById('btn-synthesize'),
         mode: 'idle'
     })
-    appState.isSearching = false
-    appState.searchError = null
+    appState.searchState.isSearching = false
+    appState.searchState.searchError = null
 
     if (resultsEl) {
         resultsEl.setAttribute('aria-describedby', 'search-results-count')
@@ -268,8 +268,8 @@ export function renderSearchResultItems(
     // (SearchBar.svelte dynamically imports + renders <SearchResultsComponent>), so the
     // legacy "shell never mounts Svelte" premise is stale.
 
-    if (state.currentSearchSummary) {
-        ;(state.currentSearchSummary as SearchSummaryState).dedupedResultCount = total
+    if (state.searchState.currentSearchSummary) {
+        ;(state.searchState.currentSearchSummary as SearchSummaryState).dedupedResultCount = total
     }
     setupMobileSearchSheetToggle({ isCompactSearchViewport })
 
@@ -281,8 +281,8 @@ export function renderSearchResultItems(
 // ── Search Lifecycle State ──────────────────────────────────────────────────
 
 export function applySemanticSearchLoadingState(resultsEl: HTMLElement | null): void {
-    appState.isSearching = true
-    appState.searchError = null
+    appState.searchState.isSearching = true
+    appState.searchState.searchError = null
 
     if (resultsEl) {
         resultsEl.classList.add('searching')
@@ -302,7 +302,7 @@ export function applySemanticSearchErrorState(
     error: Error | null
 ): void {
     const preservingSameQuery =
-        state.currentSearchSummary && (state.currentSearchSummary as SearchSummaryState).query === trimmedQuery
+        state.searchState.currentSearchSummary && (state.searchState.currentSearchSummary as SearchSummaryState).query === trimmedQuery
 
     const errorData: SearchErrorData = {
         query: trimmedQuery,
@@ -310,8 +310,8 @@ export function applySemanticSearchErrorState(
         message: error?.message || 'Search failed'
     }
 
-    appState.searchError = errorData
-    appState.isSearching = false
+    appState.searchState.searchError = errorData
+    appState.searchState.isSearching = false
 
     if (resultsEl) {
         resultsEl.classList.remove('is-searching-skeleton')
@@ -348,14 +348,14 @@ export function finishSemanticSearchSuccessState(
 }
 
 export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTMLElement | null): void {
-    state.currentSearchSummary = null
+    state.searchState.currentSearchSummary = null
 
     // Clear appState
     appState.searchResults = []
     appState.searchSummary = null
-    appState.isSearching = false
-    appState.searchError = null
-    appState.searchVisibleCount = 10
+    appState.searchState.isSearching = false
+    appState.searchState.searchError = null
+    appState.searchState.searchVisibleCount = 10
 
     setSearchPanelState({ searching: false, focusing: false, resultsRendered: false, degraded: false })
     const spinner = document.getElementById('search-spinner')
@@ -422,8 +422,8 @@ export function applyEmptySemanticSearchState(
 ): void {
     appState.searchResults = []
     appState.searchSummary = { query: trimmedQuery, renderContext: null, mode: 'empty' }
-    appState.searchError = null
-    appState.isSearching = false
+    appState.searchState.searchError = null
+    appState.searchState.isSearching = false
     if (resultsEl) {
         resultsEl.classList.remove('searching')
         resultsEl.classList.remove('is-searching-skeleton')
@@ -503,8 +503,8 @@ export function updateSearchStatusMessage(matchCount: number | null = null): voi
     if (!statusEl) return
     if (Number.isFinite(matchCount)) {
         statusEl.textContent = matchCount === 1 ? '1 match visible.' : `${matchCount} matches visible.`
-    } else if ((state.currentSearchSummary as SearchSummaryState | null)?.visibleMatches) {
-        statusEl.textContent = `${state.currentSearchSummary?.visibleMatches} matches visible.`
+    } else if ((state.searchState.currentSearchSummary as SearchSummaryState | null)?.visibleMatches) {
+        statusEl.textContent = `${state.searchState.currentSearchSummary?.visibleMatches} matches visible.`
     }
 }
 

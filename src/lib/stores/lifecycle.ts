@@ -398,7 +398,7 @@ export function getCurrentEmptyQuery(): string | null {
  * which the elaborate `search-empty-state` branch in `SearchResults.svelte:351-360`
  * reads via `$searchState.summary?.query` to render. Nullifying here made
  * `$searchState.summary` (subscribed to the writable) diverge from
- * `appState.currentSearchSummary` and prevented the empty state from firing
+ * `appState.searchState.currentSearchSummary` and prevented the empty state from firing
  * after the static-dev fallback returned zero results.
  */
 export function recordEmptySearch(query?: string): void {

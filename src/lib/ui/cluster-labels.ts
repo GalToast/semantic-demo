@@ -34,13 +34,13 @@ const _clusterIndices: Map<number, number[]> = new Map()
 function getLabelMode(): string {
     if (appState.semanticDiveMode) return 'inside'
     if (appState.focusedNode !== null && appState.focusedNode !== undefined) return 'focus'
-    if (appState.currentSearchSummary) return 'search'
+    if (appState.searchState.currentSearchSummary) return 'search'
     return 'overview'
 }
 
 function getActiveCluster(): number | null {
     const focusedNode = appState.focusedNode
-    const searchSummary = appState.currentSearchSummary
+    const searchSummary = appState.searchState.currentSearchSummary
     const focusIndex = Number.isFinite(focusedNode)
         ? focusedNode
         : Number.isFinite(searchSummary?.anchorIndex)

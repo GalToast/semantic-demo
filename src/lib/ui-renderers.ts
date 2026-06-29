@@ -111,7 +111,7 @@ export function getInterestingBusinessNote(point: BusinessRecord | null): string
 /** Build selected match narrative copy. */
 export function buildSelectedMatchNarrative(point: BusinessRecord | null): string {
     if (!point) return '';
-    const summary = appState.currentSearchSummary;
+    const summary = appState.searchState.currentSearchSummary;
     if (summary?.reason) return summary.reason;
     return '';
 }

@@ -78,7 +78,7 @@ class CameraControlsRestore {
             appState.navState.mode === 'overview' &&
             !this.autoRotateSuspended &&
             !appState.sceneRevealActive &&
-            !appState.searchGlowActive
+            !appState.searchState.searchGlowActive
         )
     }
 

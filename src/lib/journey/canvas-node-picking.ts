@@ -46,7 +46,7 @@ function getRaycastPoints(): GeoPoint[] {
 }
 
 function getRaycastSporeMesh(): InstancedMesh | null {
-    return (appState.nodeSporeHitMesh ?? appState.nodeSporeMesh) as InstancedMesh | null
+    return appState.nodeSporeMesh as InstancedMesh | null
 }
 
 // ── Candidate Types ─────────────────────────────────────────────────────────

@@ -17,6 +17,7 @@ import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/bus
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
 import type { PocketMotionWithFrame } from '@lib/types/state'
+import type { CacheEntry } from '@lib/search/cache'
 
 /**
  * Structural type for Leaflet map layer objects (L.Map, L.LayerGroup).
@@ -480,7 +481,7 @@ export interface StateConfig {
     LOADING_PHASE_META: Record<LoadingPhaseKey, LoadingPhaseMeta>
 }
 
-/** Shape of state.currentSearchSummary — set by search-state.ts, consumed by map-state, semantic-guide-ui, etc. */
+/** Shape of state.searchState.currentSearchSummary — set by search-state.ts, consumed by map-state, semantic-guide-ui, etc. */
 export interface SearchSummary {
     query: string
     totalMatches: number
@@ -527,7 +528,7 @@ export interface SemanticGuideState {
 }
 
 /**
- * Shape of state.searchError — set by search.svelte.ts (setSearchError) and
+ * Shape of state.searchState.searchError — set by search.svelte.ts (setSearchError) and
  * results-ui.ts (searchErrorEnvelopes). Consumed by triggers.ts as a truthy
  * sentinel only — no consumer currently reads inner fields directly, but the
  * runtime shape is well-defined: a single object per failed search.
@@ -588,7 +589,6 @@ export interface SemanticState extends StateConfig {
     pointsMesh: WebGLContextState['pointsMesh']
     pointsMaterial: WebGLContextState['pointsMaterial']
     nodeSporeMesh: WebGLContextState['nodeSporeMesh']
-    nodeSporeHitMesh: WebGLContextState['nodeSporeHitMesh']
     nodeSporeMaterial: WebGLContextState['nodeSporeMaterial']
     rawPositionsBuffer: Float32Array | null
     rawClustersBuffer: Uint16Array | null
@@ -652,16 +652,22 @@ export interface SemanticState extends StateConfig {
     desiredCameraVector: unknown
     searchTimeout: ReturnType<typeof setTimeout> | null
     searchAbortController: AbortController | null
-    currentSearchSummary: SearchSummary | null
-    currentEmptyQuery: string | null
-    semanticTrailCue: string
+    searchState: {
+        currentSearchSummary: SearchSummary | null
+        currentEmptyQuery: string | null
+        semanticTrailCue: string
+        searchGlowActive: boolean
+        searchGlowRenderStateKey: string
+        searchGlowTopIndex: number | null
+        searchGlowIndices: Set<number>
+        isSearching: boolean
+        searchError: SearchErrorData | null
+        searchVisibleCount: number
+    }
     applyingUrlState: boolean
     restoringBrowserHistory: boolean
     urlStateRestoreToken: number
     eventListenersInitialized: boolean
-    searchGlowActive: boolean
-    searchGlowRenderStateKey: string
-    searchGlowTopIndex: number | null
     loadingOverlayStartedAt: number
     loadingPhaseKey: LoadingPhaseKey
     navState: NavState
@@ -796,3 +802,60 @@ export interface SemanticState extends StateConfig {
     /** Type-token of the last rendered summary card, used to avoid redundant re-renders */
     lastRenderedTypeToken: number
 }
+
+/**
+ * @lib/state/state-types.ts — SearchAppState sub-aggregate (Phase 6b)
+ *
+ * The 20 persistent search-domain fields that used to live flat on
+ * `AppState` are now grouped under `appState.searchState`. The factory
+ * migration's `computeFromAppState` reads from appState, so this
+ * partition doesn't break the search mirror — it just makes the
+ * domain boundary explicit.
+ *
+ * Fields match what was previously flat on AppState (search.svelte.ts
+ * Phase-4 migration snapshot):
+ *   - currentSearchSummary: the active SearchSummary payload
+ *   - searchStatus: idle|searching|focusing|results|empty|error
+ *   - searchError: structured error envelope
+ *   - searchRequestSequence: monotonic counter for stale-request cancellation
+ *   - searchAnchorIndex / searchPreviewIndex: selection/preview hooks
+ *   - searchGlowIndices / searchGlowTopIndex / searchGlowActive: visualization state
+ *   - searchFocusTransitionToken: search↔focus bridge signal
+ *   - isSearching: derived-friendly boolean flag
+ *   - currentEmptyQuery: last query that returned zero results
+ *   - semanticTrailCue: idle|searching|focusing (the search→trail signal)
+ *   - isCompactViewport: UI layout hint for search panel
+ *   - semanticGuideRequestSequence: monotonic counter for guide rebuilds
+ *   - currentSemanticGuide: latest semantic-guide text
+ *   - summaryCardTypeToken: type-token for summary card renders
+ *   - semanticSearchCacheDiagnostics: cache health telemetry
+ *   - semanticSearchResultCache: cached search results by lead-id
+ *   - searchVisibleCount: pagination size
+ */
+export interface SearchAppState {
+    currentSearchSummary: SearchSummary | null
+    searchStatus: SearchStatus
+    searchError: SearchErrorData | null
+    searchRequestSequence: number
+    searchAnchorIndex: number | null
+    searchPreviewIndex: number | null
+    searchGlowIndices: Set<number>
+    searchGlowTopIndex: number | null
+    searchGlowActive: boolean
+    searchFocusTransitionToken: number
+    isSearching: boolean
+    currentEmptyQuery: string | null
+    semanticTrailCue: string
+    isCompactViewport: boolean
+    semanticGuideRequestSequence: number
+    currentSemanticGuide: string | null
+    summaryCardTypeToken: number
+    semanticSearchCacheDiagnostics: SemanticSearchCacheDiagnostics
+    semanticSearchResultCache: Map<string, CacheEntry>
+    searchVisibleCount: number
+}
+
+// Cross-file types — SearchStatus comes from @lib/types/state,
+// CacheEntry is re-exported above. Import SearchStatus locally for
+// the SearchAppState shape.
+import type { SearchStatus } from '@lib/types/state'

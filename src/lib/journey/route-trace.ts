@@ -114,7 +114,7 @@ function getRouteEmbodimentIndices(): number[] {
     }
     if (Number.isFinite(state.navState.focusedIndex)) push(state.navState.focusedIndex!)
     ;(state.navState.walkHistoryIndices || []).forEach(push)
-    const summary = state.currentSearchSummary
+    const summary = state.searchState.currentSearchSummary
     if (summary?.anchorIndex != null) push(summary.anchorIndex!)
     ;(summary?.resultIndices || []).slice(0, 7).forEach(push)
     ;(state.navState.threadCandidates || [])

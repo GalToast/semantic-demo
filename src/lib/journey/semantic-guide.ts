@@ -189,18 +189,18 @@ function normalizeSummaryCardConfig(config: GuideConfig | string = {}): GuideCon
 
 export function showSummaryCard(config: GuideConfig | string = {}): void {
     const settings = normalizeSummaryCardConfig(config)
-    appState.summaryCardTypeToken = (appState.summaryCardTypeToken || 0) + 1
+    appState.searchState.summaryCardTypeToken = (appState.searchState.summaryCardTypeToken || 0) + 1
 
     appState.semanticGuideState.isVisible = true
     appState.semanticGuideState.config = settings
-    appState.semanticGuideState.typeToken = appState.summaryCardTypeToken
+    appState.semanticGuideState.typeToken = appState.searchState.summaryCardTypeToken
 }
 
 export function hideSummaryCard(): void {
-    appState.summaryCardTypeToken = (appState.summaryCardTypeToken || 0) + 1
+    appState.searchState.summaryCardTypeToken = (appState.searchState.summaryCardTypeToken || 0) + 1
     appState.semanticGuideState.isVisible = false
     appState.semanticGuideState.config = null
-    appState.semanticGuideState.typeToken = appState.summaryCardTypeToken
+    appState.semanticGuideState.typeToken = appState.searchState.summaryCardTypeToken
     appState.semanticGuideState.isSynthesizing = false
 }
 
@@ -299,7 +299,7 @@ function startSemanticGuideRequest(): { requestId: number; controller: AbortCont
         appState.semanticGuideAbortController.abort()
         appState.semanticGuideAbortController = null
     }
-    const requestId = (appState.semanticGuideRequestSequence = (appState.semanticGuideRequestSequence || 0) + 1)
+    const requestId = (appState.searchState.semanticGuideRequestSequence = (appState.searchState.semanticGuideRequestSequence || 0) + 1)
     const controller = new AbortController()
     appState.semanticGuideAbortController = controller
     setSemanticGuideButtonState('loading')
@@ -312,7 +312,7 @@ function startSemanticGuideRequest(): { requestId: number; controller: AbortCont
 }
 
 function isSemanticGuideRequestCurrent(requestId: number): boolean {
-    return requestId === appState.semanticGuideRequestSequence
+    return requestId === appState.searchState.semanticGuideRequestSequence
 }
 
 function isSemanticGuideRequestCancelled(requestId: number, controller: AbortController): boolean {

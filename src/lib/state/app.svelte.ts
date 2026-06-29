@@ -31,6 +31,7 @@ import type {
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
+import type { SearchAppState } from './state-types'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
@@ -68,20 +69,40 @@ import { debugWarn } from '@lib/utils/debug'
 // ── App State class ─────────────────────────────────────────────────────────
 
 class AppState {
-    // ==== SEARCH / SEMANTIC LANE STATE ====
-    searchRequestSequence = $state<number>(0)
-    searchAnchorIndex = $state<number | null>(null)
-    searchPreviewIndex = $state<number | null>(null)
-    searchGlowIndices = $state<Set<number>>(new Set())
-    searchGlowTopIndex = $state<number | null>(null)
-    searchGlowActive = $state<boolean>(false)
-    searchFocusTransitionToken = $state<number>(0)
-    searchStatus = $state<SearchStatus>('idle')
-    currentEmptyQuery = $state<string | null>(null)
-    isCompactViewport = $state<boolean>(false)
-    semanticGuideRequestSequence = $state<number>(0)
-    currentSemanticGuide = $state<string | null>(null)
-    summaryCardTypeToken = $state<number>(0)
+    // ==== SEARCH SUB-AGGREGATE (Phase 6b) ====
+    // All 20 persistent search-domain fields grouped here. The factory
+    // migration's `computeFromAppState` reads from appState, so the
+    // search mirror continues to work — it just reads from appState.searchState.
+    searchState = $state<SearchAppState>({
+        searchRequestSequence: 0,
+        searchAnchorIndex: null,
+        searchPreviewIndex: null,
+        searchGlowIndices: new Set<number>(),
+        searchGlowTopIndex: null,
+        searchGlowActive: false,
+        searchFocusTransitionToken: 0,
+        searchStatus: 'idle',
+        currentEmptyQuery: null,
+        isCompactViewport: false,
+        semanticGuideRequestSequence: 0,
+        currentSemanticGuide: null,
+        summaryCardTypeToken: 0,
+        currentSearchSummary: null,
+        semanticTrailCue: 'idle',
+        isSearching: false,
+        searchError: null,
+        searchVisibleCount: 5,
+        semanticSearchResultCache: new Map<string, CacheEntry>(),
+        semanticSearchCacheDiagnostics: {
+            hits: 0,
+            misses: 0,
+            stores: 0,
+            evictions: 0,
+            lastKey: null,
+            lastSource: null,
+            lastAgeMs: null
+        }
+    })
     semanticGuideState = $state<SemanticGuideState>({
         isVisible: false,
         isSynthesizing: false,
@@ -92,8 +113,6 @@ class AppState {
     })
     searchTimeout = $state<ReturnType<typeof setTimeout> | null>(null)
     searchAbortController = $state<AbortController | null>(null)
-    currentSearchSummary = $state<SearchSummary | null>(null)
-    semanticTrailCue = $state<string>('idle')
     searchGlowRenderStateKey = $state<string>('')
     searchPreviewHoverTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     searchVectorScrambleInterval = $state<ReturnType<typeof setInterval> | null>(null)
@@ -103,9 +122,6 @@ class AppState {
     // Migrated from legacy stores (searchResultsStore, searchSummaryStore, isSearchingStore, searchErrorStore, searchVisibleCountStore)
     searchResults = $state<SearchResult[]>([])
     searchSummary = $state<Record<string, unknown> | null>(null)
-    isSearching = $state<boolean>(false)
-    searchError = $state<SearchErrorData | null>(null)
-    searchVisibleCount = $state<number>(5)
     searchTrailCueLastRenderedAt = $state<number>(0)
     mobileRouteFieldPeekToken = $state<number>(0)
     mobileRoutePeekActive = $state<boolean>(false)
@@ -118,16 +134,6 @@ class AppState {
     semanticLanePendingWarm = $state<boolean>(false)
     semanticLaneState = $state<string>('checking')
     semanticLaneSnapshot = $state<LaneHealthPayload | null>(null)
-    semanticSearchResultCache = $state<Map<string, CacheEntry>>(new Map())
-    semanticSearchCacheDiagnostics = $state<SemanticSearchCacheDiagnostics>({
-        hits: 0,
-        misses: 0,
-        stores: 0,
-        evictions: 0,
-        lastKey: null,
-        lastSource: null,
-        lastAgeMs: null
-    })
     semanticResultContextByLeadId = $state<Map<string, unknown>>(new Map())
     semanticGuideAbortController = $state<AbortController | null>(null)
     semanticTrailStoryAbortController = $state<AbortController | null>(null)
@@ -149,7 +155,6 @@ class AppState {
     pointsMesh = $state<Points | null>(null)
     pointsMaterial = $state<PointsMaterial | null>(null)
     nodeSporeMesh = $state<InstancedMesh | null>(null)
-    nodeSporeHitMesh = $state<InstancedMesh | null>(null)
     nodeSporeMaterial = $state<Material | null>(null)
     rawPositionsBuffer = $state<Float32Array | null>(null)
     rawClustersBuffer = $state<Uint16Array | null>(null)
@@ -648,7 +653,7 @@ function getAppState(): AppState {
         // (validateStateProperty at the proxy setter) is fatal.
         try {
             const result = validateAppStateEnumFields(_appStateInstance)
-            if (result.errors.length > 0 && typeof console !== 'undefined') {
+            if (result.errors.length > 0 && typeof console !== 'undefined' && import.meta.env.DEV) {
                 console.warn(
                     `[appState] Phase 6a enum validation found ${result.errors.length} invalid value(s) (${result.checked} checked): ${result.errors.join('; ')}`
                 )

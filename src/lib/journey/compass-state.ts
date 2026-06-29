@@ -61,10 +61,10 @@ export type CompassStateContext = CompassState
 export type { CompassStatus, JourneyAction } from '@lib/stores/compass.svelte.ts'
 
 export function getJourneyCompassState(): CompassState {
-    const cueBeat: string = appState.semanticTrailCue || 'idle'
+    const cueBeat: string = appState.searchState.semanticTrailCue || 'idle'
     const focusedPoint = getFocusedJourneyPoint()
     const focusedName: string = focusedPoint ? formatBusinessName(focusedPoint.name || 'this business') : ''
-    const summary = appState.currentSearchSummary as {
+    const summary = appState.searchState.currentSearchSummary as {
         query?: string
         dedupedResultCount?: number
         resultIndices?: unknown[]
@@ -201,8 +201,8 @@ export function getJourneyCompassState(): CompassState {
         }
     }
 
-    if (appState.currentEmptyQuery) {
-        const label: string = `"${appState.currentEmptyQuery}"`
+    if (appState.searchState.currentEmptyQuery) {
+        const label: string = `"${appState.searchState.currentEmptyQuery}"`
         return {
             phase: 'search',
             kicker: `Search | ${label}`,

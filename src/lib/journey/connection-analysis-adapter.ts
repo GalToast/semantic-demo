@@ -22,6 +22,6 @@ export function getConnectionStateSnapshot(): {
     return {
         focusedNode: _state.focusedNode,
         points: _state.points as unknown as BusinessRecord[],
-        currentSearchSummary: _state.currentSearchSummary
+        currentSearchSummary: _state.searchState.currentSearchSummary
     }
 }

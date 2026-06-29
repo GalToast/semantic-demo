@@ -432,7 +432,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     dirLight: passthrough,
     pointsMaterial: passthrough,
     nodeSporeMaterial: passthrough,
-    nodeSporeHitMesh: passthrough,
     myceliumConnectionPairs: passthrough,
     focusSemanticConnectionPairs: passthrough,
     myceliumDirty: passthrough,
@@ -497,16 +496,10 @@ export const STATE_VALIDATION_STRICT = import.meta.env?.DEV === true
  * consumers), `assertValidEnum` throws synchronously — call it when you
  * want a hard failure rather than a deferred warning.
  */
-export function assertValidEnum<T extends string>(
-    name: string,
-    value: T,
-    validSet: ReadonlySet<string>
-): void {
+export function assertValidEnum<T extends string>(name: string, value: T, validSet: ReadonlySet<string>): void {
     if (typeof value !== 'string' || !validSet.has(value)) {
         const validList = [...validSet].sort().join(', ')
-        throw new Error(
-            `Invalid ${name}: ${JSON.stringify(value)} (valid: ${validList})`
-        )
+        throw new Error(`Invalid ${name}: ${JSON.stringify(value)} (valid: ${validList})`)
     }
 }
 
@@ -531,7 +524,9 @@ export function validateAppStateEnumFields(state: {
         currentView: string
         myceliumMode: string
     }
-    searchStatus: string
+    searchState: {
+        searchStatus: string
+    }
     loadingPhaseKey: string
     semanticLaneState: string
 }): { checked: number; errors: string[] } {
@@ -543,7 +538,7 @@ export function validateAppStateEnumFields(state: {
         ['appState.navState.surface', () => state.navState.surface, VALID_PANEL_SURFACES],
         ['appState.navState.currentView', () => state.navState.currentView, VALID_VIEWS],
         ['appState.navState.myceliumMode', () => state.navState.myceliumMode, VALID_MYCELIUM_MODES],
-        ['appState.searchStatus', () => state.searchStatus, VALID_SEARCH_STATUS],
+        ['appState.searchState.searchStatus', () => state.searchState.searchStatus, VALID_SEARCH_STATUS],
         ['appState.loadingPhaseKey', () => state.loadingPhaseKey, VALID_LOADING_PHASES],
         ['appState.semanticLaneState', () => state.semanticLaneState, VALID_SEMANTIC_LANE_STATES]
     ]

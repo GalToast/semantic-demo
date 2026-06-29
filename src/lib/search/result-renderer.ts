@@ -296,9 +296,9 @@ export function setActiveSearchResultRow(
     const navState = appState.navState
     const isCommittedExplore = navState?.mode === 'trail' && (navState.explorationHistoryIndices || []).length > 1
     const summaryResultIndices: number[] = Array.isArray(
-        (appState.currentSearchSummary as SearchSummary | null)?.resultIndices
+        (appState.searchState.currentSearchSummary as SearchSummary | null)?.resultIndices
     )
-        ? ((appState.currentSearchSummary as SearchSummary).resultIndices as number[])
+        ? ((appState.searchState.currentSearchSummary as SearchSummary).resultIndices as number[])
         : []
     const focusedIndex = Number.isFinite(appState.focusedNode)
         ? (appState.focusedNode as number)
@@ -352,8 +352,8 @@ export function setActiveSearchResultRow(
 }
 
 export function refreshSearchResultHierarchy(resultsEl: HTMLElement): void {
-    if (!resultsEl || !appState.currentSearchSummary) return
-    const summary: SearchSummary = appState.currentSearchSummary
+    if (!resultsEl || !appState.searchState.currentSearchSummary) return
+    const summary: SearchSummary = appState.searchState.currentSearchSummary
     const anchorIndex = summary.anchorIndex
     const topIndex = summary.topIndex ?? null
     const navState = appState.navState

@@ -30,12 +30,13 @@ function readSource(rel: string): string {
 
 describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () => {
     it('appState declares searchError with SearchErrorData type (not unknown)', () => {
-        const appState = readSource('src/lib/state/app.svelte.ts')
-        // The field declaration must use SearchErrorData, not unknown/any
-        const declMatch = appState.match(/searchError\s*=\s*\$state<([^>]+)>\(/)
-        expect(declMatch, 'appState.searchError declaration not found').not.toBeNull()
-        const declaredType = declMatch![1]
-        expect(declType(declaredType), `appState.searchError declared as "${declaredType}" — must be SearchErrorData | null`).toBe(true)
+        // Phase 6b: searchError moved into appState.searchState sub-aggregate
+        // The SearchAppState interface in state-types.ts declares the field type.
+        const stateTypes = readSource('src/lib/state/state-types.ts')
+        const declMatch = stateTypes.match(/searchError:\s*SearchErrorData\s*\|\s*null/)
+        expect(declMatch, 'SearchAppState.searchError declaration not found').not.toBeNull()
+        const declaredType = declMatch![0]
+        expect(declType(declaredType), `SearchAppState.searchError declared as "${declaredType}" — must be "searchError: SearchErrorData | null"`).toBe(true)
         // Negative: must not be loosely typed
         expect(declaredType).not.toMatch(/\bunknown\b/)
         expect(declaredType).not.toMatch(/\bany\b/)
@@ -65,7 +66,8 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
         const setSearchError = searchStore.match(/export\s+function\s+setSearchError[\s\S]*?\n\}/m)
         expect(setSearchError, 'setSearchError not found in search.svelte.ts').not.toBeNull()
         const body = setSearchError![0]
-        expect(body).toMatch(/appState\.searchError\s*=\s*\{[\s\S]*query[\s\S]*type[\s\S]*message/)
+        // Phase 6b: searchError moved into searchState sub-aggregate
+        expect(body).toMatch(/appState\.searchState\.searchError\s*=\s*\{[\s\S]*query[\s\S]*type[\s\S]*message/)
     })
 
     it('state-validation.ts treats searchError as passthrough (no narrow validation)', () => {
@@ -73,11 +75,12 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
         // typed shape, but tightening the appState field type doesn't
         // require changing validation. Lock this in to detect accidental
         // over-validation.
+        // Phase 6b: searchError lives in appState.searchState sub-aggregate
         const validation = readSource('src/lib/state/state-validation.ts')
         expect(validation).toMatch(/^\s*searchError:\s*passthrough,/m)
     })
 })
 
 function declType(declaredType: string): boolean {
-    return declaredType.replace(/\s+/g, ' ').trim() === 'SearchErrorData | null'
+    return declaredType.replace(/\s+/g, ' ').trim() === 'searchError: SearchErrorData | null'
 }

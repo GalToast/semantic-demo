@@ -219,7 +219,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                 } else if (prop === 'weather' && appState) {
                     appState.weather = value
                 } else if (prop === 'currentSearchSummary' && appState) {
-                    appState.currentSearchSummary = value as SearchSummary
+                    appState.searchState.currentSearchSummary = value as SearchSummary
                 } else if (prop === 'points' && appState) {
                     appState.points = value as Point[]
                 } else if (prop === 'focusedNode' && appState) {

@@ -17,7 +17,7 @@ import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 // ── PRIVATE HELPERS — typed accessors (Phase 18 cast consolidation) ───────
 
 /**
- * `appState.currentSearchSummary` is read in three call sites in this
+ * `appState.searchState.currentSearchSummary` is read in three call sites in this
  * module, each shape-narrowing the same `unknown`-bridge. Consolidate
  * behind a typed accessor so the inline `as unknown as Record<...>`
  * dance lives in one helper.
@@ -28,7 +28,7 @@ interface CurrentSearchSummarySnapshot {
 }
 
 function getCurrentSearchSummarySnapshot(): CurrentSearchSummarySnapshot | null {
-    return appState.currentSearchSummary
+    return appState.searchState.currentSearchSummary
 }
 
 const _registry = new DisposableRegistry({ label: 'ui-feedback' })
@@ -63,7 +63,7 @@ export interface SyncSearchStatusOptions {
 export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatusOptions = {}): void {
     const statusEl = document.getElementById('search-status')
     const resultsEl = document.getElementById('search-results')
-    if (!statusEl || !point || !appState.currentSearchSummary) return
+    if (!statusEl || !point || !appState.searchState.currentSearchSummary) return
     if (!resultsEl?.classList.contains('active')) return
 
     const pointIndexByLeadId =
