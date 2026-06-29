@@ -485,3 +485,78 @@ export function validateStateProperty(path: string, value: unknown): string | nu
 
 /** Dev-mode flag — when true, invalid state throws instead of warning. */
 export const STATE_VALIDATION_STRICT = import.meta.env?.DEV === true
+
+// ── Phase 6a — runtime safety net for partition refactors ────────────────────
+
+/**
+ * Throws if `value` isn't in `validSet`. Used at write-path boundaries
+ * (sub-aggregate setters, factory mirrorToAppState hooks, mutation
+ * entrypoints) to catch invalid enum values before they propagate.
+ *
+ * Unlike `oneOf()` (which returns an error string for STATE_VALIDATORS
+ * consumers), `assertValidEnum` throws synchronously — call it when you
+ * want a hard failure rather than a deferred warning.
+ */
+export function assertValidEnum<T extends string>(
+    name: string,
+    value: T,
+    validSet: ReadonlySet<string>
+): void {
+    if (typeof value !== 'string' || !validSet.has(value)) {
+        const validList = [...validSet].sort().join(', ')
+        throw new Error(
+            `Invalid ${name}: ${JSON.stringify(value)} (valid: ${validList})`
+        )
+    }
+}
+
+/**
+ * Validates ALL enum-typed fields on the provided appState-shaped object.
+ * Returns counts + collected error messages (one per field, so a single
+ * invalid field doesn't mask others). Called once at appState init in
+ * app.svelte.ts and again opportunistically by tests.
+ *
+ * The validator takes `state` as an argument rather than importing
+ * appState directly — state-validation is a leaf module (appState
+ * imports from it), so the reverse import would be circular.
+ *
+ * For dev/strict mode, callers wrap in try/catch and surface via
+ * console.warn. Production callers may choose to ignore the result.
+ */
+export function validateAppStateEnumFields(state: {
+    currentView: string
+    navState: {
+        mode: string
+        surface: string
+        currentView: string
+        myceliumMode: string
+    }
+    searchStatus: string
+    loadingPhaseKey: string
+    semanticLaneState: string
+}): { checked: number; errors: string[] } {
+    const errors: string[] = []
+    let checked = 0
+    const checks: Array<readonly [string, () => unknown, ReadonlySet<string>]> = [
+        ['appState.currentView', () => state.currentView, VALID_VIEWS],
+        ['appState.navState.mode', () => state.navState.mode, VALID_NAV_MODES],
+        ['appState.navState.surface', () => state.navState.surface, VALID_PANEL_SURFACES],
+        ['appState.navState.currentView', () => state.navState.currentView, VALID_VIEWS],
+        ['appState.navState.myceliumMode', () => state.navState.myceliumMode, VALID_MYCELIUM_MODES],
+        ['appState.searchStatus', () => state.searchStatus, VALID_SEARCH_STATUS],
+        ['appState.loadingPhaseKey', () => state.loadingPhaseKey, VALID_LOADING_PHASES],
+        ['appState.semanticLaneState', () => state.semanticLaneState, VALID_SEMANTIC_LANE_STATES]
+    ]
+    for (const [name, getter, validSet] of checks) {
+        try {
+            const value = getter()
+            if (typeof value === 'string') {
+                assertValidEnum(name, value, validSet)
+            }
+            checked++
+        } catch (err) {
+            errors.push((err as Error).message)
+        }
+    }
+    return { checked, errors }
+}

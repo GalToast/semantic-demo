@@ -62,7 +62,7 @@ import type {
     Texture
 } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
-import { validateStateProperty, STATE_VALIDATION_STRICT } from './state-validation'
+import { validateStateProperty, STATE_VALIDATION_STRICT, validateAppStateEnumFields } from './state-validation'
 import { debugWarn } from '@lib/utils/debug'
 
 // ── App State class ─────────────────────────────────────────────────────────
@@ -637,6 +637,24 @@ function getAppState(): AppState {
             if (typeof window !== 'undefined') {
                 ;(window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] = _appStateInstance
             }
+        }
+
+        // ── Phase 6a — startup enum safety net ─────────────────────────────
+        // Run once per appState initialization to surface invalid enum values
+        // that would otherwise propagate silently. This catches partition
+        // mistakes (Phase 6b) where field paths get misaligned with their
+        // VALID_* sets. We console.warn instead of throwing so production
+        // doesn't crash on the first violation — only the dev/strict path
+        // (validateStateProperty at the proxy setter) is fatal.
+        try {
+            const result = validateAppStateEnumFields(_appStateInstance)
+            if (result.errors.length > 0 && typeof console !== 'undefined') {
+                console.warn(
+                    `[appState] Phase 6a enum validation found ${result.errors.length} invalid value(s) (${result.checked} checked): ${result.errors.join('; ')}`
+                )
+            }
+        } catch {
+            // Defensive: validation must never block appState init.
         }
     }
     return _appStateInstance
