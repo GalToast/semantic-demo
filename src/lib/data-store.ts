@@ -21,6 +21,7 @@ import type { LoadingPhase } from '@lib/types/state'
 import { loadBusinessData, loadLeadEnrichmentData } from '@lib/data-loader'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { appState } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 import { debugError } from '@lib/utils/debug'
 
 // ── Cross-chunk singleton helpers ────────────────────────────────────────────
@@ -324,11 +325,13 @@ export function setBusinessData(result: BusinessDataResult): void {
     // Sync back to legacy state so legacy engine selectors (getPoints())
     // and focus flows (focusOnNode) see the data.
     try {
-        appState.points = result.records
-        appState.rawPositionsBuffer = result.positionsBuffer
-        appState.rawClustersBuffer = result.clustersBuffer
-        appState.leadEnrichment = result.enrichment
-        appState.pointIndexByLeadId = result.pointIndexByLeadId
+        withStateMutation(() => {
+            appState.points = result.records
+            appState.rawPositionsBuffer = result.positionsBuffer
+            appState.rawClustersBuffer = result.clustersBuffer
+            appState.leadEnrichment = result.enrichment
+            appState.pointIndexByLeadId = result.pointIndexByLeadId
+        })
 
         // Derive originalPositions/nodePositions from the raw buffer so
         // focus-pocket and camera framing can work before/without WebGL init.
@@ -342,8 +345,10 @@ export function setBusinessData(result: BusinessDataResult): void {
                     z: positionsBuffer[i * 3 + 2] as number
                 })
             }
-            appState.originalPositions = derived
-            appState.nodePositions = derived.slice()
+            withStateMutation(() => {
+                appState.originalPositions = derived
+                appState.nodePositions = derived.slice()
+            })
         }
     } catch (e) {
         debugWarn('[data-store] Legacy state sync failed:', e)
@@ -362,7 +367,9 @@ export function setBusinessData(result: BusinessDataResult): void {
 export function setLeadEnrichmentData(enrichment: Record<string, LeadEnrichment> | null): void {
     leadEnrichment.set(enrichment)
     try {
-        appState.leadEnrichment = enrichment
+        withStateMutation(() => {
+            appState.leadEnrichment = enrichment
+        })
     } catch (e) {
         debugWarn('[data-store] Legacy enrichment sync failed:', e)
     }
@@ -409,9 +416,11 @@ export function setSemanticThreadData(result: SemanticThreadDataResult): void {
 
     // Sync back to legacy state so legacy neighborhood / thread builders see the data.
     try {
-        appState.semanticNeighborMapByLeadId = result.neighborMap
-        appState.semanticThreadBundle = result.bundle
-        appState.semanticThreadArtifactName = result.artifactName
+        withStateMutation(() => {
+            appState.semanticNeighborMapByLeadId = result.neighborMap
+            appState.semanticThreadBundle = result.bundle
+            appState.semanticThreadArtifactName = result.artifactName
+        })
     } catch (e) {
         debugWarn('[data-store] Legacy semantic thread sync failed:', e)
     }
