@@ -77,6 +77,14 @@ const EXEMPTED_SHAS = new Set<string>([
     // prefix. The non-doc changes were trivial style normalizations. Already
     // landed on master; grandfathered to avoid rewriting shared history.
     'd3b7f4f81fa6538b54096efbd1c84eae615226c3',
+    // dc32c66 — test(w49b): fix unit tests, contracts, and bridge imports.
+    // Bundled a console.gating fix (DemoChoreography.svelte) and a circular-
+    // import break (compass-controller.ts) alongside test-file updates. Both
+    // code changes were forced by the test fixes (ungated-console test
+    // failure, component-CompassRail circular-import failure). Splitting them
+    // into separate fix commits would create a false history where the code
+    // changes appear unrelated to the test fixes. Grandfathered.
+    'dc32c66b7f9395dad43f7d6ec881b4268584e42a',
     // af18236 — test(parity-attrs): retire viewMode assertion; fix _lastLegacyRender lint
     // Bundled the _lastLegacyRender cleanup in src/lib/search/results-ui.ts together
     // with the parity-attrs-derivation test retirement. Both files are parity-hygiene

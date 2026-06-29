@@ -53,7 +53,7 @@ describe('W46-C2: compass-controller.ts exists and has expected shape', () => {
         expect(src).toMatch(/import\s*\{[^}]*\bfocusStore\b[^}]*\}\s*from\s+['"]@lib\/stores\/focus\.svelte\.ts['"]/)
         expect(src).toMatch(/import\s*\{[^}]*\bappState\b[^}]*\}\s*from\s+['"]@lib\/state\/app\.svelte['"]/)
         expect(src).toMatch(
-            /import\s*\{[^}]*\bJOURNEY_ACTIONS\b[^}]*\}\s*from\s+['"]@lib\/stores\/compass\.svelte\.ts['"]/
+            /import\s*\{[^}]*\bJOURNEY_ACTIONS\b[^}]*\}\s*from\s+['"](?:@lib\/stores\/compass\.svelte\.ts|@lib\/journey\/compass-state)['"]/
         )
     })
 })
