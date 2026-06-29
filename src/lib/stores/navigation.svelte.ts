@@ -552,16 +552,18 @@ export function dispatchNavTransition(
                 _surfaceRaw && (_surfaceRaw as string).length
                     ? (_surfaceRaw as PanelSurface)
                     : ('focus' as PanelSurface)
-            writeNavStateMirror((() => {
-                const patch: Partial<NavState> = {}
-                if (_indexDefined) patch.focusedIndex = payload.index as number
-                patch.mode = _finalMode
-                patch.surface = _finalSurface
-                if (_fromTraversal === true || _fromCanvasNode === true) {
-                    patch.activeStoryPrompt = null
-                }
-                return patch
-            })())
+            writeNavStateMirror(
+                (() => {
+                    const patch: Partial<NavState> = {}
+                    if (_indexDefined) patch.focusedIndex = payload.index as number
+                    patch.mode = _finalMode
+                    patch.surface = _finalSurface
+                    if (_fromTraversal === true || _fromCanvasNode === true) {
+                        patch.activeStoryPrompt = null
+                    }
+                    return patch
+                })()
+            )
             break
         }
         case NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW:
