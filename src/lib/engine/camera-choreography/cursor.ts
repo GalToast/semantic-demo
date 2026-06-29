@@ -25,8 +25,6 @@ import {
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { currentSurface } from '@lib/stores/navigation.svelte'
-import { applyParityAttributes, computeParityAttributes } from '@lib/orchestration/parity-attrs.svelte'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { syncFocusStage, updateSelectedBusiness } from '@lib/journey/selected-card'
 import { unpinThreadInspection } from '@lib/journey/thread-inspector-state'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
@@ -34,14 +32,6 @@ import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { clearRouteExploration } from '../camera-controls-core'
 import { setFocusPanelMode, FOCUS_PANEL_MODE } from '@lib/utils/focus-panel-mode'
 import { animateCameraToNode } from './focus'
-
-// W6-T5: Track pending parity-attr timeouts so rapid focusOnNode calls
-// don't stack up deferred DOM mutations.
-let _parityRegistry = new DisposableRegistry({ label: 'parity-cursor' })
-function clearParityTimeouts(): void {
-    _parityRegistry.disposeAll()
-    _parityRegistry = new DisposableRegistry({ label: 'parity-cursor' })
-}
 
 // Local options interface matching runtime usage across all callers
 export interface FocusOnNodeOptions {
@@ -170,17 +160,9 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
         })
     }
     updateJourneyCompass()
-    // W15+ parity-attrs fix: re-write parity attributes after updateJourneyCompass
-    // and any deferred legacy subscribers. The legacy updateJourneyCompass in
-    // dist/svelte/assets/panel-bindings-* still writes data-journeyPhase from
-    // journey.phase (legacy state, never updated to 'focus'). A full fix requires
-    // rebuilding the Svelte bundle (npm run build:svelte) so the legacy code
-    // no longer overwrites the parity attrs.
-    queueMicrotask(() => applyParityAttributes(computeParityAttributes()))
-    clearParityTimeouts()
-    // eslint-disable-next-line no-restricted-syntax -- wrapped in _parityRegistry.timer()
-    _parityRegistry.timer(setTimeout(() => applyParityAttributes(computeParityAttributes()), 50))
-    // eslint-disable-next-line no-restricted-syntax -- wrapped in _parityRegistry.timer()
-    _parityRegistry.timer(setTimeout(() => applyParityAttributes(computeParityAttributes()), 250))
+    // Phase 1 timing-maze fix: the parity mirror now runs synchronously on
+    // every store change (see parity-attrs.svelte.ts). No need for manual
+    // applyParityAttributes calls or setTimeout delays here — the mirror's
+    // store subscriptions fire immediately when stores update.
     return true
 }

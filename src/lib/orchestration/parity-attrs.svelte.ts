@@ -632,8 +632,12 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
 
     _effectRoot = $effect.root(() => {
         let scheduled = false
+        // Phase 1 timing-maze fix: syncNow runs SYNCHRONOUSLY (no queueMicrotask).
+        // The `scheduled` flag coalesces multi-store updates in the same tick.
+        // `scheduled` is reset at the END of syncNow (not the start) to prevent
+        // infinite recursion if Object.assign(parityMap, map) triggers store
+        // updates via Svelte 5 rune reactivity.
         const syncNow = (): void => {
-            scheduled = false
             const map = computeParityAttributes()
 
             // Mirror the computed map into the rune-backed `parityMap` so
@@ -653,13 +657,15 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
             _lastSnapshot = snapshot
 
             applyParityAttributes(map)
+            scheduled = false
         }
         const scheduleSync = (): void => {
             if (scheduled) return
             scheduled = true
-            // Coalesce multiple store updates in the same tick to avoid redundant
-            // recomputes (e.g., when navigation fires both navStore and journeyStore).
-            queueMicrotask(syncNow)
+            // Was: queueMicrotask(syncNow) — the timing-maze root cause.
+            // Mirror now runs synchronously on every store change, eliminating
+            // the need for caller-side setTimeout/queueMicrotask workarounds.
+            syncNow()
         }
 
         // Explicit .subscribe() per store. Plain function-call reads

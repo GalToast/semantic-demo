@@ -17,7 +17,6 @@ import {
     currentView,
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
-import { applyParityAttributes, computeParityAttributes } from '../orchestration/parity-attrs.svelte'
 import { appState } from '@lib/state/app.svelte'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
@@ -174,7 +173,8 @@ export function refreshCompositionState(): void {
     // parity attribute set on every composition refresh so body data-attrs
     // (mode, navMode, navSurface, panelSurfaceMode, journeyPhase, etc.) always
     // reflect the current Svelte 5 navStore. See tmp/parity-attrs-diagnostic-2026-06-17.md.
-    applyParityAttributes(computeParityAttributes())
+    // Phase 1 timing-maze fix: manual applyParityAttributes call removed —
+    // the mirror now runs synchronously on every store change.
     publish(EVENTS.COMPOSITION_UPDATED)
 }
 
