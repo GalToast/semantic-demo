@@ -269,6 +269,11 @@ function resetAllNavState() {
         braidCount: 0,
         endpointCount: 0,
     }
+    // Clear mock chain-fn call counters so each test starts at zero
+    // (without this, prior tests' calls leak into the next test).
+    mockChainFns.clearSearch.mockClear()
+    mockChainFns.resetFocus.mockClear()
+    mockChainFns.resetJourney.mockClear()
     resetNavState()
 }
 
