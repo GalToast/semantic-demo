@@ -72,6 +72,12 @@ const EXEMPTED_SHAS = new Set<string>([
     // prefix. Already reverted as 0761a80. Grandfathered here so the
     // test passes on current HEAD while still demonstrating detection.
     'b5ad93e0c30431a2ae4650bfac873247ddf77960',
+    // 906eff6c — docs(viewport): ... — Bundled Phase 6d references alongside
+    // refactors in create-state-mirror.ts and legend-panel.svelte.ts. The
+    // non-doc changes are paired doc + refactor changes split awkwardly
+    // between two commits would lose readability. Landed on master from a
+    // parallel lane; grandfathered to avoid rewriting shared history.
+    '906eff6c1e4830fa3149581de137e02759f61f7a',
     // d3b7f4f — docs(bloat): trim AGENTS.md. Bundled formatting-only changes
     // to test files and filter.svelte.ts (whitespace/semicolons) under a docs
     // prefix. The non-doc changes were trivial style normalizations. Already
