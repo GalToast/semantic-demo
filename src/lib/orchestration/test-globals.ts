@@ -31,14 +31,15 @@ import {
     refreshCompositionState,
     setSemanticDiveMode,
     resetExplorationFocus,
-    resetExperienceState,
-    focusOnNode
+    resetExperienceState
 } from '@lib/orchestration/lifecycle'
+import { focusOnNode } from '@lib/engine/camera-choreography/cursor'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
 import { setTrailFromSeed } from '@lib/journey/neighborhood'
 import { setFocusedIndex, setSurface } from '@lib/stores/navigation.svelte'
 import { inspectThreadNeighbor } from '@lib/journey/thread-inspector-state'
 import { search } from '@lib/search/state'
+import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 
 interface NavActions {
     setSurface: typeof setSurface
@@ -55,6 +56,7 @@ interface NavActions {
     search: typeof search
     focusOnNode: typeof focusOnNode
     inspectThreadNeighbor: typeof inspectThreadNeighbor
+    applyLocalNeighborhoodFocus: typeof applyLocalNeighborhoodFocus
 }
 
 declare global {
@@ -84,7 +86,8 @@ export function installTestStoreGlobals(): () => void {
         resetExperienceState,
         search,
         focusOnNode,
-        inspectThreadNeighbor
+        inspectThreadNeighbor,
+        applyLocalNeighborhoodFocus
     }
 
     window.__navStore__ = navStore

@@ -12,4 +12,19 @@
  *
  * Special case documented: 2026-06-20 worker URL closeout.
  */
-export { default as workerUrl } from './data-worker.ts?worker&url'
+let workerUrl: string = ''
+
+if (typeof window === 'undefined') {
+    // Node / test environment: Vite worker URL query is not resolvable.
+    // Provide a placeholder so modules that import this boundary can still load.
+    workerUrl = '/assets/data-worker.js'
+} else {
+    // Browser / Vite build: resolve the bundled worker URL at runtime.
+    // The dynamic import keeps the Vite query out of the static module graph
+    // so Node-based test runners don't choke on it.
+    const mod = await import('./data-worker.ts?worker&url')
+    workerUrl = (mod as { default?: string }).default || ''
+}
+
+export { workerUrl }
+export default workerUrl

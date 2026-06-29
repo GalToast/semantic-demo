@@ -329,6 +329,22 @@ export function setBusinessData(result: BusinessDataResult): void {
         appState.rawClustersBuffer = result.clustersBuffer
         appState.leadEnrichment = result.enrichment
         appState.pointIndexByLeadId = result.pointIndexByLeadId
+
+        // Derive originalPositions/nodePositions from the raw buffer so
+        // focus-pocket and camera framing can work before/without WebGL init.
+        const positionsBuffer = result.positionsBuffer
+        if (positionsBuffer && positionsBuffer.length >= result.records.length * 3) {
+            const derived: { x: number; y: number; z: number }[] = []
+            for (let i = 0; i < result.records.length; i++) {
+                derived.push({
+                    x: positionsBuffer[i * 3] as number,
+                    y: positionsBuffer[i * 3 + 1] as number,
+                    z: positionsBuffer[i * 3 + 2] as number
+                })
+            }
+            appState.originalPositions = derived
+            appState.nodePositions = derived.slice()
+        }
     } catch (e) {
         debugWarn('[data-store] Legacy state sync failed:', e)
     }
