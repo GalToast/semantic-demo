@@ -378,14 +378,16 @@ describe('state-app-class — passthrough validator', () => {
 // surfaces here.
 
 import type {
-    SearchStatus,
     NavState,
     ViewName,
     Point,
     ActiveFilters,
     LoadingPhaseKey
 } from '@lib/state/state-types'
-import type { AppState } from '@lib/state/app.svelte'
+import type { SearchStatus } from '@lib/types/state'
+import { appState } from '@lib/state/app.svelte'
+
+type AppState = typeof appState
 
 describe('state-app-class — AppState class surface (5-field structural fixture)', () => {
     // searchAnchorIndex: number | null. Mirrors app.svelte.ts L73.
