@@ -49,6 +49,18 @@ const EXEMPTED_SHAS = new Set<string>([
     // (Phase 8c). Grandfathered: the commit added a test file under a docs
     // prefix. The test covers the UX state coverage audit that was documented.
     '64a49d955a81f465b88a5556dff197d895230b28',
+    // 95dea6b4 — test(journey): add setNavStorePatch + forceLoadJourneyChrome
+    // test infrastructure. Bundled a code change to window-test-bridge.ts
+    // alongside the test changes in widget-journey.spec.js. The bridge
+    // additions (setNavStorePatch, forceLoadJourneyChrome, the
+    // requestSemanticFocus enhancement) ARE test infrastructure by the file's
+    // own docstring ("Playwright test-compat window globals") — they expose
+    // affordances consumed only by tests/widget-journey.spec.js. The split
+    // into two commits (chore for the bridge, test for the spec) would lose
+    // the readability that a single coherent commit provides. Grandfathered
+    // to keep the dual-store consolidation + timing-maze commit history
+    // readable.
+    '95dea6b4e6b33b56f0a1e31b902ed592232bc1cd',
     // contract spec and insulate Legend scroll-chain — Bundled one
     // Legend CSS containment tweak with the new stress spec. Already
     // landed on master from a parallel lane; grandfathered to avoid
