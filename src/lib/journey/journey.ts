@@ -112,6 +112,7 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
         }
         setTrailFromSeed(index)
         updateTrailIndices(index)
+        applyLocalNeighborhoodFocus(index)
     }
 })
 
