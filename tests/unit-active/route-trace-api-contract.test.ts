@@ -73,7 +73,7 @@ describe('route-trace.ts public API contract', () => {
         // Takes optional phase + details object. Both defaults work.
         expect(() => module.setRouteChoreographyPhase()).not.toThrow()
         expect(() => module.setRouteChoreographyPhase('overview')).not.toThrow()
-        expect(() => module.setRouteChoreographyPhase('focused', { testDetail: 1 })).not.toThrow()
+        expect(() => module.setRouteChoreographyPhase('focused', { reason: 'test' })).not.toThrow()
     })
 
     it('initRouteTraceSubscriptions is void-returning (safe to call in Node)', () => {
