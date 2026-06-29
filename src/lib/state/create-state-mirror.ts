@@ -72,7 +72,7 @@ import { appState } from '@lib/state/app.svelte'
  *
  * @example
  *   const bindings = {
- *     width: 'viewportWidth',           // writes appState.viewportWidth
+ *     width: 'viewportWidth',           // writes appState.viewportState.viewportWidth
  *     height: 'viewportHeight',
  *     dpr: 'viewportDpr',
  *     // isCompact intentionally NOT bound — derived locally

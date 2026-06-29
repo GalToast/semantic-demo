@@ -25,8 +25,8 @@
  * @example
  *   function withViewportNotify(updater: (s: ViewportState) => ViewportState): void {
  *       const next = withNotify(_viewportWritable, updater)
- *       appState.viewportWidth = next.width
- *       appState.viewportHeight = next.height
+ *       appState.viewportState.viewportWidth = next.width
+ *       appState.viewportState.viewportHeight = next.height
  *       // … etc.
  *   }
  */

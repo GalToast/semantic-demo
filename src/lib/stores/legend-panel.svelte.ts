@@ -220,7 +220,7 @@ export function updateLegendGuideState(): void {
     // F1: Don't auto-open the legend on mobile (compact) where the panel
     // would block the "Enter 3D Scene" CTA on the Placeholder2D.
     // Desktop still auto-opens for discoverability.
-    if (appState.viewportIsCompact) {
+    if (appState.viewportState.viewportIsCompact) {
         buildLegend()
         return
     }
