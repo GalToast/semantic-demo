@@ -43,20 +43,20 @@ function restoreGlobalProperty(target: Record<string, unknown>, key: string, val
 
 function installTestWorker(): void {
     restoreGlobalProperty(globalThis, 'Worker', TestWorker)
-    restoreGlobalProperty(window, 'Worker', TestWorker)
+    restoreGlobalProperty(window as unknown as Record<string, unknown>, 'Worker', TestWorker)
 }
 
 function restoreWorker(): void {
     restoreGlobalProperty(globalThis, 'Worker', originalGlobalWorker)
-    restoreGlobalProperty(window, 'Worker', originalWindowWorker)
+    restoreGlobalProperty(window as unknown as Record<string, unknown>, 'Worker', originalWindowWorker)
 }
 
 function installIdleCallbackNoop(): void {
-    restoreGlobalProperty(window, 'requestIdleCallback', vi.fn(() => 0))
+    restoreGlobalProperty(window as unknown as Record<string, unknown>, 'requestIdleCallback', vi.fn(() => 0))
 }
 
 function restoreIdleCallback(): void {
-    restoreGlobalProperty(window, 'requestIdleCallback', originalRequestIdleCallback)
+    restoreGlobalProperty(window as unknown as Record<string, unknown>, 'requestIdleCallback', originalRequestIdleCallback)
 }
 
 class TestWorker {
