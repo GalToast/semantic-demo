@@ -102,7 +102,7 @@ describe('installErrorHandlers — window error capture', () => {
             expect(errorStore.items[0].source).toBe('unhandledrejection')
             expect(errorStore.items[0].kind).toBe('rejection')
             expect(errorStore.items[0].message).toBe('something broke')
-            done()
+            ;(done as unknown as () => void)()
         }, 50)
     })
 
