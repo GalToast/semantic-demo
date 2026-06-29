@@ -30,7 +30,7 @@ import {
     installParityAttributeSync,
     readParityAttributesFromBody,
     resetParityAttributeCache
-} from '@lib/orchestration/parity-attrs'
+} from '@lib/orchestration/parity-attrs.svelte'
 
 import { navStore, resetNavState } from '@lib/stores/navigation.svelte.ts'
 import { journeyStore, resetJourney } from '@lib/stores/journey.svelte.ts'
@@ -141,17 +141,7 @@ describe('PARITY_ATTRIBUTES manifest', () => {
 describe('computeParityAttributes', () => {
     it('returns overview defaults for empty stores', () => {
         const stores = snapshotStores()
-        const map = computeParityAttributes(
-            stores.nav,
-            stores.journey,
-            stores.focus,
-            stores.search,
-            stores.filters,
-            stores.vp,
-            stores.loadingPhase,
-            stores.demoPhase,
-            stores.graphicsMode
-        )
+        const map = computeParityAttributes()
 
         expect(map.navMode).toBe('overview')
         expect(map.navSurface).toBe('idle')
@@ -167,17 +157,7 @@ describe('computeParityAttributes', () => {
         navStore.update((s) => ({ ...s, focusedIndex: 42 }))
         try {
             const stores = snapshotStores()
-            const map = computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            )
+            const map = computeParityAttributes()
             expect(map.focusedNode).toBe('42')
             expect(map.navMode).toBe('overview') // mode stays until reducer runs
         } finally {
@@ -190,17 +170,7 @@ describe('computeParityAttributes', () => {
         focusStore.update((s) => ({ ...s, semanticDiveMode: true }))
         try {
             const stores = snapshotStores()
-            const map = computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            )
+            const map = computeParityAttributes()
             expect(map.semanticDive).toBe('active')
             expect(map.panelSurfaceMode).toBe('semantic-dive')
         } finally {
@@ -215,17 +185,7 @@ describe('computeParityAttributes', () => {
         journeyStore.update((s) => ({ ...s, trailDepth: 2 }))
         try {
             const stores = snapshotStores()
-            const map = computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            )
+            const map = computeParityAttributes()
             expect(map.semanticDive).toBe('transitioning')
             expect(map.trailDepth).toBe('2')
             expect(map.trailState).toBe('active')
@@ -240,51 +200,21 @@ describe('computeParityAttributes', () => {
         navStore.update((s) => ({ ...s, mode: 'inside' }))
         let stores = snapshotStores()
         expect(
-            computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            ).graphContext
+            computeParityAttributes().graphContext
         ).toBe('inside')
 
         // Focus phase
         navStore.update((s) => ({ ...s, mode: 'focus', focusedIndex: 42 }))
         stores = snapshotStores()
         expect(
-            computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            ).graphContext
+            computeParityAttributes().graphContext
         ).toBe('focus')
 
         // Map view wins over mode
         navStore.update((s) => ({ ...s, mode: 'overview', currentView: 'map' }))
         stores = snapshotStores()
         expect(
-            computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            ).graphContext
+            computeParityAttributes().graphContext
         ).toBe('map')
 
         // Back to overview
@@ -293,17 +223,7 @@ describe('computeParityAttributes', () => {
 
     it('strandJourney defaults to idle when strandContinuityPhase is unset', () => {
         const stores = snapshotStores()
-        const map = computeParityAttributes(
-            stores.nav,
-            stores.journey,
-            stores.focus,
-            stores.search,
-            stores.filters,
-            stores.vp,
-            stores.loadingPhase,
-            stores.demoPhase,
-            stores.graphicsMode
-        )
+        const map = computeParityAttributes()
         expect(map.strandJourney).toBe('idle')
     })
 
@@ -311,17 +231,7 @@ describe('computeParityAttributes', () => {
         focusStore.update((s) => ({ ...s, strandContinuityPhase: 'exploring' }))
         try {
             const stores = snapshotStores()
-            const map = computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            )
+            const map = computeParityAttributes()
             expect(map.strandJourney).toBe('exploring')
         } finally {
             focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }))
@@ -332,17 +242,7 @@ describe('computeParityAttributes', () => {
         focusStore.update((s) => ({ ...s, strandContinuityPhase: 'arrived' }))
         try {
             const stores = snapshotStores()
-            const map = computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            )
+            const map = computeParityAttributes()
             expect(map.strandJourney).toBe('arrived')
         } finally {
             focusStore.update((s) => ({ ...s, strandContinuityPhase: 'idle' }))
@@ -352,48 +252,18 @@ describe('computeParityAttributes', () => {
     it('focused-node is null (not "null" string) when no index set', () => {
         navStore.update((s) => ({ ...s, focusedIndex: null }))
         const stores = snapshotStores()
-        const map = computeParityAttributes(
-            stores.nav,
-            stores.journey,
-            stores.focus,
-            stores.search,
-            stores.filters,
-            stores.vp,
-            stores.loadingPhase,
-            stores.demoPhase,
-            stores.graphicsMode
-        )
+        const map = computeParityAttributes()
         expect(map.focusedNode).toBeNull()
     })
 
     it('focusTransition mirrors focusStore.transitionMode', () => {
         const stores = snapshotStores()
-        const initial = computeParityAttributes(
-            stores.nav,
-            stores.journey,
-            stores.focus,
-            stores.search,
-            stores.filters,
-            stores.vp,
-            stores.loadingPhase,
-            stores.demoPhase,
-            stores.graphicsMode
-        )
+        const initial = computeParityAttributes()
         expect(initial.focusTransition).toBe('idle')
 
         focusStore.update((s) => ({ ...s, transitionMode: 'entering' }))
         try {
-            const after = computeParityAttributes(
-                navStore(),
-                journeyStore(),
-                focusStore(),
-                get(searchStore),
-                get(filterState),
-                viewport(),
-                get(loadingPhaseStore),
-                get(demoPhaseStore),
-                get(graphicsModeStore)
-            )
+            const after = computeParityAttributes()
             expect(after.focusTransition).toBe('entering')
         } finally {
             focusStore.update((s) => ({ ...s, transitionMode: 'idle' }))
@@ -404,17 +274,7 @@ describe('computeParityAttributes', () => {
         searchStore.update((s) => ({ ...s, status: 'searching' }))
         try {
             const stores = snapshotStores()
-            const map = computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode
-            )
+            const map = computeParityAttributes()
             expect(map.searchStatus).toBe('searching')
         } finally {
             searchStore.update((s) => ({ ...s, status: 'idle' }))
@@ -426,18 +286,7 @@ describe('computeParityAttributes', () => {
         try {
             const stores = snapshotStores()
             // Pass camera state explicitly as 10th arg
-            const map = computeParityAttributes(
-                stores.nav,
-                stores.journey,
-                stores.focus,
-                stores.search,
-                stores.filters,
-                stores.vp,
-                stores.loadingPhase,
-                stores.demoPhase,
-                stores.graphicsMode,
-                get(cameraStore)
-            )
+            const map = computeParityAttributes()
             expect(map.cameraSlack).toBe('active')
         } finally {
             cameraStore.update((s) => ({ ...s, orbitSlack: { ...s.orbitSlack, phase: 'idle' } }))
