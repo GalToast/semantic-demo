@@ -30,7 +30,8 @@ import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
-const SEARCH_RESULT_SELECTOR = '.search-result-item, #search-result-list [role="option"], .search-result-listitem button'
+const SEARCH_RESULT_SELECTOR =
+    '.search-result-item, #search-result-list [role="option"], .search-result-listitem button'
 
 // ── API stubs ─────────────────────────────────────────────────────────────────
 
@@ -485,7 +486,10 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
         await abortInFlightSearch(page)
 
         // After clear, results panel should be gone or cleared
-        const resultCountAfter = await page.evaluate((selector) => document.querySelectorAll(selector).length, SEARCH_RESULT_SELECTOR)
+        const resultCountAfter = await page.evaluate(
+            (selector) => document.querySelectorAll(selector).length,
+            SEARCH_RESULT_SELECTOR
+        )
         // The key invariant: no contradictory state (focusedNode set with no visible results)
         const focusedWithNoResults = (await probe(page)).focusedNode !== null && resultCountAfter === 0
         expect(focusedWithNoResults).toBe(false)
