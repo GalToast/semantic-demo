@@ -634,30 +634,38 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
         let scheduled = false
         // Phase 1 timing-maze fix: syncNow runs SYNCHRONOUSLY (no queueMicrotask).
         // The `scheduled` flag coalesces multi-store updates in the same tick.
-        // `scheduled` is reset at the END of syncNow (not the start) to prevent
-        // infinite recursion if Object.assign(parityMap, map) triggers store
-        // updates via Svelte 5 rune reactivity.
+        // `scheduled` is reset in `finally` to guarantee it's cleared even when
+        // the snapshot short-circuit returns early. This prevents the mirror
+        // from being permanently disabled by a JSON-equal snapshot.
         const syncNow = (): void => {
-            const map = computeParityAttributes()
+            try {
+                const map = computeParityAttributes()
 
-            // Mirror the computed map into the rune-backed `parityMap` so
-            // Svelte 5 components that read `parityMap.x` inside a
-            // reactive context (template, $derived, $effect) get auto-
-            // re-runs. Object.assign triggers per-key reactivity so
-            // components only re-run when their specific key changes.
-            //
-            // Done BEFORE the snapshot short-circuit so consumers see
-            // parityMap updates even when the DOM write is skipped (e.g.,
-            // when two consecutive snapshots are JSON-equal).
-            Object.assign(parityMap, map)
+                // Mirror the computed map into the rune-backed `parityMap` so
+                // Svelte 5 components that read `parityMap.x` inside a
+                // reactive context (template, $derived, $effect) get auto-
+                // re-runs. Object.assign triggers per-key reactivity so
+                // components only re-run when their specific key changes.
+                //
+                // Done BEFORE the snapshot short-circuit so consumers see
+                // parityMap updates even when the DOM write is skipped (e.g.,
+                // when two consecutive snapshots are JSON-equal).
+                Object.assign(parityMap, map)
 
-            // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
-            const snapshot = JSON.stringify(map)
-            if (snapshot === _lastSnapshot) return
-            _lastSnapshot = snapshot
+                // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
+                const snapshot = JSON.stringify(map)
+                if (snapshot === _lastSnapshot) return
+                _lastSnapshot = snapshot
 
-            applyParityAttributes(map)
-            scheduled = false
+                applyParityAttributes(map)
+            } finally {
+                // Always reset scheduled, even on early return, so the next
+                // external store change can trigger a fresh sync. Also
+                // prevents infinite recursion if Object.assign(parityMap, map)
+                // triggers store updates via Svelte 5 rune reactivity
+                // (during syncNow, scheduled=true, so any scheduleSync is a no-op).
+                scheduled = false
+            }
         }
         const scheduleSync = (): void => {
             if (scheduled) return
