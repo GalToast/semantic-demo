@@ -5,9 +5,10 @@
  * Single source of truth for viewport state. Syncs body data-* attributes
  * via $effect for CSS coexistence during migration.
  */
-import { get, writable, type Readable } from 'svelte/store'
+import { writable, type Readable } from 'svelte/store'
 import type { ViewportState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte.ts'
+import { withNotify } from '@lib/stores/notify'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -54,9 +55,7 @@ const _viewportWritable = writable<ViewportState>(_readViewportFromKernel())
 
 /** Push viewport mutations to both writable and appState. */
 function withViewportNotify(updater: (_s: ViewportState) => ViewportState): void {
-    const current = get(_viewportWritable)
-    const next = updater(current)
-    _viewportWritable.set(next)
+    const next = withNotify(_viewportWritable, updater)
     appState.viewportWidth = next.width
     appState.viewportHeight = next.height
     appState.viewportDpr = next.dpr

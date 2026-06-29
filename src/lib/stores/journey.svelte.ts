@@ -49,6 +49,7 @@ import { get, type Readable, writable } from 'svelte/store'
 // debugWarn removed — was unused in this store
 import { appState } from '@lib/state/app.svelte.ts'
 import { writeNavStateMirror } from './navigation.svelte.ts'
+import { withNotify } from '@lib/stores/notify'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -188,8 +189,7 @@ const _journeyWritable = writable<JourneyStoreState>(_readJourneyFromAppState())
  * for the broader migration contract.
  */
 function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState): void {
-    const current = get(_journeyWritable)
-    const next = updater(current)
+    const next = withNotify(_journeyWritable, updater)
     // depth and trailDepth are aliases in the journey state. The W11-T4
     // migration kept them as separate fields to preserve the legacy
     // contract (some callers set only one), but the parity layer reads

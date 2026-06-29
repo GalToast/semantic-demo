@@ -6,6 +6,7 @@ import type { BusinessRecord } from '@lib/types/business'
 import { appState } from '@lib/state/app.svelte.ts'
 import { getBusinessRecords } from '@lib/data-store'
 import { guardReducedMotion } from '@lib/demo/guards'
+import { withNotify } from '@lib/stores/notify'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -97,9 +98,7 @@ let _startGuardClaimed = false
  * in sync for legacy readers and the engine bridge.
  */
 function withDemoNotify(updater: (_s: DemoStoreState) => DemoStoreState): void {
-    const current = get(_demoWritable)
-    const to = updater(current)
-    _demoWritable.set(to)
+    const to = withNotify(_demoWritable, updater)
     appState.demoPhase = to.phase
 }
 

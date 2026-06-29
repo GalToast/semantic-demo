@@ -58,6 +58,7 @@ import { get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { getBusinessRecords } from '@lib/data-store'
+import { withNotify } from '@lib/stores/notify'
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
@@ -238,8 +239,7 @@ const _focusWritable = writable<FocusStoreState>(_readFocusSnapshot())
  */
 function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): void {
     const current = get(_focusWritable)
-    const next = updater(current)
-    _focusWritable.set(next)
+    const next = withNotify(_focusWritable, updater)
     // Sync all bridged properties back to appState
     const inspectedThreadIndex = next.threadInspector.active
         ? next.threadInspector.inspectedIndex
