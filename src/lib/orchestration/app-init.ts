@@ -32,22 +32,6 @@ import { applyUrlState } from '@lib/orchestration/url-state'
 // canvas hit-test and thread walking work on first user interaction.
 import '@lib/journey/journey'
 
-// Preload the focus-pocket chunk so _restoreAnchorFromParams' dynamic import
-// (src/lib/orchestration/url-state.ts:541) resolves in microtask time, not
-// network time. The W44-S5 chunk separation keeps @lib/focus/pocket (which
-// imports Vector3/PerspectiveCamera from 'three') off the cold-load
-// modulepreload list — this preload only starts the fetch during app-init
-// module evaluation, it does not change which chunks are preloaded. By the
-// time applyUrlState() awaits the dynamic import inside
-// _restoreAnchorFromParams, the chunk is already in the module cache and
-// the await hops a microtask instead of round-tripping the network. This
-// closes the race window where Playwright's load event fires while URL
-// restore is still awaiting the chunk, which caused launch-focus and
-// search-no-results surface tests to flake under the synchronous parity
-// mirror (the mirror's queueMicrotask is still required for the Svelte 5
-// reactivity cascade, but no longer has to absorb a full network hop).
-void import('@lib/focus/pocket').catch(() => null)
-
 // ── Debug Window Extensions (Playwright test compat) ────────────────────────
 // `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims. Their types are
 // declared in src/window.d.ts (the canonical location for window globals).
