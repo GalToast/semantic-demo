@@ -18,6 +18,7 @@
   import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { appState } from '@lib/state/app.svelte';
   import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
+  import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
@@ -172,9 +173,9 @@
 
   // The parity-attrs installer is the single source of truth for all body
   // data-* attributes.  All pre-parity $effect blocks that previously lived
-  // here (data-navSurface, data-journeyPhase, data-demoPhase, data-reducedMotion,
+  // here (data-nav.surface, data-journeyPhase, data-demoPhase, data-reducedMotion,
   // data-mode, data-compact) are now subsumed by computeParityAttributes()
-  // inside parity-attrs.svelte.ts — including navSurface and demoPhase.
+  // inside parity-attrs.svelte.ts — including nav.surface and demoPhase.
   // Read body data attributes reactively. Most parity-mirrored attrs come
   // from `parityMap` (reactive rune-backed proxy kept in sync by
   // parity-attrs.svelte.ts:installParityAttributeSync()).
@@ -187,14 +188,15 @@
   // ── Reactive nav store state ──
   // appState.navState is Svelte 5 rune-backed $state; reads in $derived
   // register reactive dependencies directly — no subscribe mirror needed.
-  let navSurface = $derived(appState.navState.surface ?? 'idle');
-  let navMode = $derived(appState.navState.mode ?? 'overview');
-  let navView = $derived(appState.navState.currentView ?? 'galaxy');
+  // After W48-T4 extraction, the 4 raw nav reads come from useNavState().
+  // Surface composition (mapModeActive, searchSurfaceActive, focusActive,
+  // etc.) stays here because it composes both nav + parity attrs and is
+  // tightly coupled to App.svelte's template-local predicates.
+  const nav = useNavState();
   let weatherVisible = $state(true);
-  let navFocusedIndex = $derived(appState.navState.focusedIndex ?? null);
 
-  let mapModeActive = $derived(navView === 'map');
-  let searchSurfaceActive = $derived((navSurface === 'search' || parity.panelSurface === 'search') && !parity.focusSearchForced);
+  let mapModeActive = $derived(nav.view === 'map');
+  let searchSurfaceActive = $derived((nav.surface === 'search' || parity.panelSurface === 'search') && !parity.focusSearchForced);
   let searchFamilySurfaceActive = $derived(searchSurfaceActive || parity.focusSearchForced);
   let mapTrailSearchLaneActive = $derived(
     mapModeActive &&
@@ -203,7 +205,7 @@
       parity.panelSurface !== 'map-idle' && // audit-ok: literal state check
       parity.panelSurface !== 'map' // audit-ok: literal state check
   );
-  let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
+  let idleSurfaceActive = $derived(nav.surface === 'idle' && !searchSurfaceActive);
 
   // Search only shows when explicitly in search AND has content
   let idleSearchVisible = $derived(idleSurfaceActive);
@@ -212,7 +214,7 @@
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   let focusActive = $derived(
-    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
+    nav.mode === 'focus' || nav.mode === 'inside' || nav.mode === 'trail' || nav.focusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
   );
   let focusStageActive = $derived(focusActive && !mapModeActive);
 
@@ -229,13 +231,13 @@
   // inverts `!==` to `===`. Use positive equality + negation instead.
   let controlsVisible = $derived(
     s3dSceneReady &&
-      !(navSurface === 'focus-search') &&
+      !(nav.surface === 'focus-search') &&
       !parity.focusSearchForced &&
-      !($viewport.isCompact && (parity.panelSurface === 'idle' || navSurface === 'idle')) &&
+      !($viewport.isCompact && (parity.panelSurface === 'idle' || nav.surface === 'idle')) &&
       // A3: suppress camera controls on mobile search surface — the search
       // results/focus-stage owns the cockpit; the zoom/rotate rail competes
       // for the same right-edge viewport budget.
-      !($viewport.isCompact && (parity.panelSurface === 'search' || navSurface === 'search'))
+      !($viewport.isCompact && (parity.panelSurface === 'search' || nav.surface === 'search'))
   );
   let infoPanelOpen = $derived(
     (idleSurfaceActive || searchSurfaceActive || (focusActive && ($viewport.isCompact || parity.compact))) &&
@@ -260,14 +262,14 @@
     focusActive ||
     mapModeActive ||
     parity.panelSurface.startsWith('map-') ||
-    navSurface.startsWith('map-')
+    nav.surface.startsWith('map-')
   );
 
   // Reactive panel cleanup: close panels that don't belong in the current view
   // (W46-C2b: reduces panel stacking clutter in search/trail/focus/inside/map)
   $effect(() => {
-    const surface = navSurface;
-    const mode = navMode;
+    const surface = nav.surface;
+    const mode = nav.mode;
 
     // Close legend when entering search, trail, focus, inside, or map modes
     // The legend is only relevant in idle/overview and info-panel states
@@ -277,7 +279,7 @@
       mode === 'trail' ||
       mode === 'focus' ||
       mode === 'inside' ||
-      navView === 'map'
+      nav.view === 'map'
     ) {
       if (get(legendOpen)) {
         setLegendOpen(false);
