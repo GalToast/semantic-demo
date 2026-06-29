@@ -54,22 +54,20 @@ interface ViewportMirrorState {
 }
 
 function readViewportFromAppState(): ViewportMirrorState {
-    const width = appState.viewportWidth
-    const height = appState.viewportHeight
-    const isCompact = appState.viewportIsCompact
+    const width = appState.viewportState.viewportWidth
+    const height = appState.viewportState.viewportHeight
+    const isCompact = appState.viewportState.viewportIsCompact
     return {
         width,
         height,
-        dpr: appState.viewportDpr,
-        reducedMotion: appState.viewportReducedMotion,
+        dpr: appState.viewportState.viewportDpr,
+        reducedMotion: appState.viewportState.viewportReducedMotion,
         isCompact,
         isMobile: isCompact,
         isLandscape: width > height,
         isCompactLandscape: isCompact && height <= COMPACT_LANDSCAPE_MAX_HEIGHT,
         isUltraCompactPortrait:
-            width <= ULTRA_COMPACT_MAX_WIDTH &&
-            height >= ULTRA_COMPACT_MIN_HEIGHT &&
-            height <= ULTRA_COMPACT_MAX_HEIGHT
+            width <= ULTRA_COMPACT_MAX_WIDTH && height >= ULTRA_COMPACT_MIN_HEIGHT && height <= ULTRA_COMPACT_MAX_HEIGHT
     }
 }
 
@@ -78,24 +76,24 @@ function readViewportFromAppState(): ViewportMirrorState {
 const viewportMirror = createStateMirror<ViewportMirrorState>({
     computeFromAppState: readViewportFromAppState,
     bindings: {
-        // Bound: writes through the factory mirror back to appState
-        width: 'viewportWidth',
-        height: 'viewportHeight',
-        dpr: 'viewportDpr',
-        reducedMotion: 'viewportReducedMotion',
-        isCompact: 'viewportIsCompact',
-        // The remaining fields (isMobile, isLandscape, isCompactLandscape,
-        // isUltraCompactPortrait) are derived locally. They live inside
-        // the writable for subscriber convenience but aren't separately
-        // mirrored — without a binding, the factory skips the appState
-        // write for them. Listed here for documentation; `null` would
-        // also work but redundant.
+        // Phase 6d: viewport fields moved into appState.viewportState
+        // sub-aggregate. The factory's bindings expect flat appState keys,
+        // so all bindings are null. `applyViewportUpdate` below mirrors
+        // each field explicitly via appState.viewportState.X writes.
+        width: null,
+        height: null,
+        dpr: null,
+        reducedMotion: null,
+        isCompact: null,
+        // Derived fields (isMobile, isLandscape, isCompactLandscape,
+        // isUltraCompactPortrait) — these live in the writable for
+        // subscriber convenience but aren't separately mirrored.
         isMobile: null,
         isLandscape: null,
         isCompactLandscape: null,
-        isUltraCompactPortrait: null,
+        isUltraCompactPortrait: null
     },
-    storageKey: '__SEMANTIC_EXPLORER_VIEWPORT_MIRROR__',
+    storageKey: '__SEMANTIC_EXPLORER_VIEWPORT_MIRROR__'
 })
 
 // ── Public Store API (preserved verbatim from previous implementation) ────────
@@ -113,27 +111,44 @@ export type ViewportStoreApi = (() => ViewportMirrorState) &
 /** Single reactive instance of the viewport state. */
 export const viewport = viewportMirror as unknown as ViewportStoreApi
 
+// Phase 6d: explicit mirror bridge — factory bindings are all null
+// (nested path support not in factory contract). Subscribe to the
+// writable once and mirror every viewport field to appState.viewportState
+// on each write. Covers factory.set, factory.update, and the manual
+// syncViewport() write below.
+viewportMirror.subscribe((s) => {
+    if (typeof window === 'undefined' && typeof appState === 'undefined') return
+    appState.viewportState.viewportWidth = s.width
+    appState.viewportState.viewportHeight = s.height
+    appState.viewportState.viewportDpr = s.dpr
+    appState.viewportState.viewportReducedMotion = s.reducedMotion
+    appState.viewportState.viewportIsCompact = s.isCompact
+})
+
 // ── Derived ──────────────────────────────────────────────────────────────────
 
-export const viewportWidth = () => appState.viewportWidth
-export const viewportHeight = () => appState.viewportHeight
-export const dpr = () => appState.viewportDpr
-export const reducedMotion = () => appState.viewportReducedMotion
-export const isCompact = () => appState.viewportIsCompact
-export const isMobile = () => appState.viewportIsCompact
-export const isLandscape = () => appState.viewportWidth > appState.viewportHeight
+export const viewportWidth = () => appState.viewportState.viewportWidth
+export const viewportHeight = () => appState.viewportState.viewportHeight
+export const dpr = () => appState.viewportState.viewportDpr
+export const reducedMotion = () => appState.viewportState.viewportReducedMotion
+export const isCompact = () => appState.viewportState.viewportIsCompact
+export const isMobile = () => appState.viewportState.viewportIsCompact
+export const isLandscape = () => appState.viewportState.viewportWidth > appState.viewportState.viewportHeight
 
 /** Compact landscape: max-width 768px AND max-height 740px (common small mobile). */
 export const isCompactLandscape = () => {
-    return appState.viewportIsCompact && appState.viewportHeight <= COMPACT_LANDSCAPE_MAX_HEIGHT
+    return (
+        appState.viewportState.viewportIsCompact &&
+        appState.viewportState.viewportHeight <= COMPACT_LANDSCAPE_MAX_HEIGHT
+    )
 }
 
 /** Ultra-compact portrait: max-width 430px, height 741-860px. */
 export const isUltraCompactPortrait = () => {
     return (
-        appState.viewportWidth <= ULTRA_COMPACT_MAX_WIDTH &&
-        appState.viewportHeight >= ULTRA_COMPACT_MIN_HEIGHT &&
-        appState.viewportHeight <= ULTRA_COMPACT_MAX_HEIGHT
+        appState.viewportState.viewportWidth <= ULTRA_COMPACT_MAX_WIDTH &&
+        appState.viewportState.viewportHeight >= ULTRA_COMPACT_MIN_HEIGHT &&
+        appState.viewportState.viewportHeight <= ULTRA_COMPACT_MAX_HEIGHT
     )
 }
 
@@ -149,9 +164,10 @@ export function syncViewport(): void {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const isCompact = width <= MOBILE_BREAKPOINT
 
-    // Use the factory's set() — it publishes to the writable AND mirrors
-    // the 5 bound fields back to appState. Subscribers fire synchronously
-    // in any env (test or browser).
+    // Use the factory's set() — it publishes to the writable. Phase 6d
+    // factory bindings are all null (nested path support not in factory
+    // contract), so we mirror each viewport field to appState.viewportState
+    // explicitly below. Subscribers fire synchronously in any env.
     viewportMirror.set({
         width,
         height,
@@ -162,10 +178,16 @@ export function syncViewport(): void {
         isLandscape: width > height,
         isCompactLandscape: isCompact && height <= COMPACT_LANDSCAPE_MAX_HEIGHT,
         isUltraCompactPortrait:
-            width <= ULTRA_COMPACT_MAX_WIDTH &&
-            height >= ULTRA_COMPACT_MIN_HEIGHT &&
-            height <= ULTRA_COMPACT_MAX_HEIGHT
+            width <= ULTRA_COMPACT_MAX_WIDTH && height >= ULTRA_COMPACT_MIN_HEIGHT && height <= ULTRA_COMPACT_MAX_HEIGHT
     })
+
+    // Phase 6d: mirror each viewport field to appState.viewportState
+    // explicitly (factory bindings are all null).
+    appState.viewportState.viewportWidth = width
+    appState.viewportState.viewportHeight = height
+    appState.viewportState.viewportDpr = dpr
+    appState.viewportState.viewportReducedMotion = reducedMotion
+    appState.viewportState.viewportIsCompact = isCompact
 
     // body[data-compact/mobile/reducedMotion] now owned by parity-attrs.svelte.ts.
     // Removed bypass writers; parity's computeParityAttributes() writes the
@@ -218,19 +240,19 @@ export const resetViewportForTests = viewportMirror.resetForTests
 // ── Query helpers ────────────────────────────────────────────────────────────
 
 export function getViewportSize(): { width: number; height: number } {
-    return { width: appState.viewportWidth, height: appState.viewportHeight }
+    return { width: appState.viewportState.viewportWidth, height: appState.viewportState.viewportHeight }
 }
 
 export function isMobileViewport(): boolean {
-    return appState.viewportIsCompact
+    return appState.viewportState.viewportIsCompact
 }
 
 export function isCompactFocusStage(): boolean {
-    return appState.viewportIsCompact
+    return appState.viewportState.viewportIsCompact
 }
 
 export function prefersReducedMotion(): boolean {
-    return appState.viewportReducedMotion
+    return appState.viewportState.viewportReducedMotion
 }
 
 export function hasCoarsePointer(): boolean {
@@ -239,7 +261,7 @@ export function hasCoarsePointer(): boolean {
 }
 
 export function getDevicePixelRatio(): number {
-    return appState.viewportDpr
+    return appState.viewportState.viewportDpr
 }
 
 export function getPanelSurface(): string {

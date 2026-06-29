@@ -905,3 +905,26 @@ export interface FocusAppState {
     focusTransitionStartedAt: number
     nodesAreSettling: boolean
 }
+
+/**
+ * @lib/state/state-types.ts — ViewportAppState sub-aggregate (Phase 6d)
+ *
+ * The 5 viewport-domain fields that the viewport mirror's
+ * `bindings` map mirrors back to appState. These were previously flat
+ * top-level fields; consolidating them into a sub-aggregate keeps
+ * the viewport store's domain boundary explicit.
+ *
+ * Fields:
+ *   - viewportWidth: current viewport width in CSS pixels
+ *   - viewportHeight: current viewport height in CSS pixels
+ *   - viewportDpr: device pixel ratio (window.devicePixelRatio)
+ *   - viewportReducedMotion: prefers-reduced-motion media query
+ *   - viewportIsCompact: compact-viewport breakpoint flag
+ */
+export interface ViewportAppState {
+    viewportWidth: number
+    viewportHeight: number
+    viewportDpr: number
+    viewportReducedMotion: boolean
+    viewportIsCompact: boolean
+}

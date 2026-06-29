@@ -154,7 +154,7 @@ export function applyCompositionState(): void {
                   null)
                 : null
             if (appSt.focusState && (appSt.focusState as any).selectedPoint !== undefined) {
-                (appSt.focusState as any).selectedPoint = $focus.selectedBusiness
+                ;(appSt.focusState as any).selectedPoint = $focus.selectedBusiness
             }
             appSt.semanticDiveMode = appState.composition.semanticDive === 'active'
             if (appSt.navState) {

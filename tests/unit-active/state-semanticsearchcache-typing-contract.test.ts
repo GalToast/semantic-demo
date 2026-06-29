@@ -25,16 +25,17 @@ function readSource(rel: string): string {
 }
 
 describe('engine-boundary refactor / Phase 2-4 / semanticSearchResultCache field typing', () => {
-    it('appState declares semanticSearchResultCache with Map<string, CacheEntry>', () => {
+    it('appState.searchState declares semanticSearchResultCache with Map<string, CacheEntry>', () => {
         const appState = readSource('src/lib/state/app.svelte.ts')
-        const declMatch = appState.match(/semanticSearchResultCache\s*=\s*\$state<Map<string,\s*CacheEntry>>\(/)
+        // Phase 6b moved semanticSearchResultCache into the searchState sub-aggregate.
+        const declMatch = appState.match(/semanticSearchResultCache\s*:\s*new\s+Map<string,\s*CacheEntry>\(\)/)
         expect(
             declMatch,
-            'appState.semanticSearchResultCache declaration not found (pattern: $state<Map<string, CacheEntry>>)'
+            'appState.searchState.semanticSearchResultCache declaration not found (pattern: semanticSearchResultCache: new Map<string, CacheEntry>())'
         ).not.toBeNull()
         // Verify it doesn't match the loose-type pattern
-        const looseMatch = appState.match(/semanticSearchResultCache\s*=\s*\$state<Map<string,\s*unknown>>\(/)
-        expect(looseMatch, 'appState.semanticSearchResultCache is still typed Map<string, unknown>').toBeNull()
+        const looseMatch = appState.match(/semanticSearchResultCache\s*:\s*new\s+Map<string,\s*unknown>\(\)/)
+        expect(looseMatch, 'appState.searchState.semanticSearchResultCache is still typed Map<string, unknown>').toBeNull()
     })
 
     it('state-types.ts re-exports CacheEntry from search/cache', () => {
@@ -55,12 +56,12 @@ describe('engine-boundary refactor / Phase 2-4 / semanticSearchResultCache field
         // The triple-cast pattern must be gone (we tightened it across all sites)
         expect(cache).not.toMatch(/state\.semanticSearchResultCache\s+as\s+unknown\s+as\s+Map<string,\s*CacheEntry>/)
         expect(cache).not.toMatch(/appState\s+as\s+unknown\s+as\s+SemanticState/)
-        // Direct typed access via appState.semanticSearchResultCache must be present
-        expect(cache).toMatch(/appState\.semanticSearchResultCache/)
+        // Direct typed access via appState.searchState.semanticSearchResultCache must be present
+        expect(cache).toMatch(/appState\.searchState\.semanticSearchResultCache/)
     })
 
     it('cache.ts initSearchCache() still initializes Map<string, CacheEntry>', () => {
         const cache = readSource('src/lib/search/cache.ts')
-        expect(cache).toMatch(/appState\.semanticSearchResultCache\s*=\s*new\s+Map<string,\s*CacheEntry>\(\)/)
+        expect(cache).toMatch(/appState\.searchState\.semanticSearchResultCache\s*=\s*new\s+Map<string,\s*CacheEntry>\(\)/)
     })
 })

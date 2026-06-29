@@ -33,6 +33,7 @@ import type {
 import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
 import type { SearchAppState } from './state-types'
 import type { FocusAppState } from './state-types'
+import type { ViewportAppState } from './state-types'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
@@ -131,6 +132,18 @@ class AppState {
         focusTransitionMode: 'idle',
         focusTransitionStartedAt: 0,
         nodesAreSettling: false
+    })
+
+    // ==== VIEWPORT SUB-AGGREGATE (Phase 6d) ====
+    // The 5 viewport-domain fields. The viewport mirror's factory
+    // bindings can only target flat appState keys, so this sub-aggregate
+    // is read by viewport.svelte.ts's computeFromAppState.
+    viewportState = $state<ViewportAppState>({
+        viewportWidth: 1920,
+        viewportHeight: 1080,
+        viewportDpr: 1,
+        viewportReducedMotion: false,
+        viewportIsCompact: false
     })
     semanticGuideState = $state<SemanticGuideState>({
         isVisible: false,
@@ -501,12 +514,7 @@ class AppState {
     lastSuccessfulFetch = $state<string | null>(null)
 
     // ==== VIEWPORT / ENVIRONMENT STATE ====
-    viewportWidth = $state<number>(1920)
-    viewportHeight = $state<number>(1080)
-    viewportDpr = $state<number>(1)
-    viewportReducedMotion = $state<boolean>(false)
-    viewportIsCompact = $state<boolean>(false)
-
+    // Phase 6d: viewport fields moved into appState.viewportState sub-aggregate
     // ==== UI COMPONENT STATE ====
     legendOpen = $state<boolean>(false)
     demoPhase = $state<string>('IDLE')
