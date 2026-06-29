@@ -486,7 +486,7 @@ describe('state validation — validateStateProperty', () => {
 
     it('allows valid demoPhase values', () => {
         expect(validateStateProperty('demoPhase', 'IDLE')).toBeNull()
-        expect(validateStateProperty('demoPhase', 'ARRIVED')).toBeNull()
+        expect(validateStateProperty('demoPhase', 'COMPLETE')).toBeNull()
     })
 
     it('rejects invalid demoPhase values', () => {

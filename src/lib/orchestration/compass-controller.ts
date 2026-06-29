@@ -19,8 +19,7 @@ import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte.ts'
 import { isMapSummarySurface, isSemanticDiveSurface } from '@lib/stores/viewport.svelte.ts'
 import { appState } from '@lib/state/app.svelte'
 import { resetExplorationFocus } from '@lib/orchestration/lifecycle'
-import { getJourneyCompassState, getFocusedJourneyPoint, type CompassStateContext } from '@lib/journey/compass-state'
-import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts'
+import { getJourneyCompassState, getFocusedJourneyPoint, type CompassStateContext, JOURNEY_ACTIONS, type CompassAction } from '@lib/journey/compass-state'
 import type { PanelSurface } from '@lib/types/state'
 
 // ── Types ─────────────────────────────────────────────────────────────────

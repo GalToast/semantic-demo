@@ -177,7 +177,9 @@
       if (performance.now() - startTime > SCENE_READY_TIMEOUT_MS) {
         // Scene never became ready (slow network, webgl blocked, etc.).
         // Better to run captions on chrome than to never run at all.
-        console.warn('[DemoChoreography] Canvas did not become ready in 10s; running demo anyway.');
+        if (import.meta.env.DEV) {
+          console.warn('[DemoChoreography] Canvas did not become ready in 10s; running demo anyway.');
+        }
         scheduleDemoTimer(() => attemptStart(), force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
         return;
       }

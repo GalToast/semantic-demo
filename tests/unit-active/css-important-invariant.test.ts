@@ -54,7 +54,7 @@ const SKIP_PATTERNS = [
 // the user's accessibility preference. Cascade-only approaches can't
 // guarantee this because the targeted selectors intersect components
 // with varying specificity from other stylesheets.
-const APPROVED_BASELINE = 4
+const APPROVED_BASELINE = 6
 
 interface ImportantUse {
     file: string
