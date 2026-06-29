@@ -150,9 +150,9 @@ describe('sceneNeedsContinuousFrame', () => {
         ).toBe(false)
     })
 
-    it('returns true when searchGlowActive is true', () => {
+    it('returns true when searchState.searchGlowActive is true', () => {
         expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ searchGlowActive: true })),
+            sceneNeedsContinuousFrame(Date.now(), mockState({ searchState: { searchGlowActive: true } })),
         ).toBe(true)
     })
 
