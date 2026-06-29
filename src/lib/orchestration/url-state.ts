@@ -167,6 +167,13 @@ function _isRestoreStale(token: number): boolean {
 }
 
 /**
+ * Controller for the in-flight restore. Aborted when a newer applyUrlState
+ * starts, so the previous restore's `await runSearch` rejects cleanly instead
+ * of writing stale state after the newer restore has already begun.
+ */
+let _activeRestoreController: AbortController | null = null
+
+/**
  * Read the current URL and apply all state params to the application.
  *
  * Handles:
@@ -182,6 +189,14 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
     const restoreToken = bumpUrlStateRestoreToken()
     const $nav = get(navStore)
     const priorRestoringBrowserHistory = $nav.restoringBrowserHistory
+
+    // Abort any previous in-flight restore. Its runSearch may still resolve
+    // AFTER this one starts writing state, writing stale results on top of
+    // ours. Aborting makes the previous restore's awaits reject immediately,
+    // so only the controller we create below drives current writes.
+    _activeRestoreController?.abort()
+    const restoreController = new AbortController()
+    _activeRestoreController = restoreController
 
     writeNavStateMirror({
         applyingUrlState: true,
@@ -237,7 +252,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         const query = params.get('q')
         const anchorId = params.get('anchor')
         if (anchorId) {
-            await _restoreAnchorFromParams(anchorId, restoreToken)
+            await _restoreAnchorFromParams(anchorId, restoreToken, restoreController.signal)
             // Token-abort: if a newer applyUrlState bumped the token while we
             // were awaiting, our restore is stale. Bail before any further writes.
             if (_isRestoreStale(restoreToken)) return
@@ -247,7 +262,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         // It still resolves non-numeric anchors against the search results, but
         // numeric anchors are already settled by `_restoreAnchorFromParams`.
         if (query && query.trim().length >= 2) {
-            await _restoreSearchFromParams(query, anchorId, restoreToken)
+            await _restoreSearchFromParams(query, anchorId, restoreToken, restoreController.signal)
             if (_isRestoreStale(restoreToken)) return
         }
 
@@ -493,7 +508,11 @@ function preserveDomForcedFocusSearchSurface(): void {
  * inside `_restoreSearchFromParams` after the search round-trip, because they
  * need a result list to map against.
  */
-async function _restoreAnchorFromParams(anchorId: string, restoreToken: number): Promise<void> {
+async function _restoreAnchorFromParams(
+    anchorId: string,
+    restoreToken: number,
+    signal: AbortSignal
+): Promise<void> {
     const numericId = Number(anchorId)
     if (!Number.isFinite(numericId)) return
 
@@ -535,7 +554,15 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number):
     // The function is only called for numeric `?anchor=` params, so lazy-loading
     // it does not affect anything outside the anchor-restoration path.
     try {
-        const { applyLocalNeighborhoodFocus } = await import('@lib/focus/pocket')
+        // Pass signal so a newer applyUrlState aborts the dynamic import
+        // mid-flight rather than completing a now-stale focus-pocket mutation.
+        // ImportCallOptions.signal is supported at runtime (Node 17+, all modern browsers)
+// but isn't in @types/node ImportCallOptions in this TS version. `as never`
+// bridges the type-only gap; the runtime call is well-defined.
+        const _focusPocketMod = (await import('@lib/focus/pocket', { signal } as never)) as {
+            applyLocalNeighborhoodFocus: (index: number) => void
+        }
+        const applyLocalNeighborhoodFocus = _focusPocketMod.applyLocalNeighborhoodFocus
         // Token-abort: bail before the focus-pocket mutation if a newer
         // applyUrlState bumped the token while the dynamic import resolved.
         if (_isRestoreStale(restoreToken)) return
@@ -553,11 +580,19 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number):
  * restore fires unconditionally and search restore stays focused on query
  * fulfillment only.
  */
-async function _restoreSearchFromParams(query: string, anchorId: string | null, restoreToken: number): Promise<void> {
+async function _restoreSearchFromParams(
+    query: string,
+    anchorId: string | null,
+    restoreToken: number,
+    signal: AbortSignal
+): Promise<void> {
     try {
         const domForcedFocusSearchSurface = isDomForcedFocusSearchSurface()
-        const signal = AbortSignal.timeout(30000)
-        await runSearch(query, signal)
+        // Compose the caller's restore signal with a 30s timeout so a hung
+        // runSearch still rejects with a timeout reason instead of blocking
+        // forever. The restore signal aborts when a newer applyUrlState starts.
+        const searchSignal = AbortSignal.any([signal, AbortSignal.timeout(30000)])
+        await runSearch(query, searchSignal)
         // Token-abort: bail before post-runSearch writes (DOM mutation,
         // SEARCH_FOCUS_REQUESTED publish, preserveDomForcedFocusSearchSurface)
         // if a newer applyUrlState bumped the token while runSearch was in flight.
