@@ -53,7 +53,7 @@ import {
 } from './three-engine-frame-updates'
 import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
 import { ensurePostProcessing } from './three-pp-init'
-import { legacyState } from '@lib/state/legacy-state-adapter'
+import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './three-store-sync'
 import { easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
@@ -122,29 +122,8 @@ export async function initThreeJS() {
 
     const { scene, camera, renderer, controls, hemiLight, dirLight } = sceneResult.setup
 
-    webglContext.scene = scene
-    appState.scene = scene
-    if (engineState.state) engineState.state.scene = scene
-
-    webglContext.camera = camera
-    legacyState.camera = camera
-    if (engineState.state) engineState.state.camera = camera
-
-    webglContext.renderer = renderer
-    appState.renderer = renderer
-    if (engineState.state) engineState.state.renderer = renderer
-
-    webglContext.controls = controls
-    appState.controls = controls
-    if (engineState.state) engineState.state.controls = controls
-
-    webglContext.hemiLight = hemiLight
-    legacyState.hemiLight = hemiLight
-    if (engineState.state) engineState.state.hemiLight = hemiLight
-
-    webglContext.dirLight = dirLight
-    legacyState.dirLight = dirLight
-    if (engineState.state) engineState.state.dirLight = dirLight
+    // C3 — multi-store handle mirror (webglContext + appState + legacyState + engineState.state)
+    syncSceneHandles({ scene, camera, renderer, controls, hemiLight, dirLight })
 
     // Initialize DisposableRegistry for all DOM/Three.js event listeners.
     // Registering at creation time means we can never forget to remove them.
@@ -211,34 +190,29 @@ export async function initThreeJS() {
     // Inline createPoints logic (was engineDelegates.createPoints) to avoid
     // circular dependency with three-engine-mycelium.
     createPointsPort()
-    appState.pointsMesh = webglContext.pointsMesh
-    appState.pointsMaterial = webglContext.pointsMaterial
-    appState.nodeSporeMesh = webglContext.nodeSporeMesh
-    appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    if (engineState.state) {
-        engineState.state.pointsMesh = webglContext.pointsMesh
-        engineState.state.pointsMaterial = webglContext.pointsMaterial
-        engineState.state.nodeSporeMesh = webglContext.nodeSporeMesh
-        engineState.state.nodeSporeMaterial = webglContext.nodeSporeMaterial
-    }
+
+    // C11 — points/spore handle mirror (webglContext → appState + engineState.state)
+    syncPointsHandles({
+        pointsMesh: webglContext.pointsMesh,
+        pointsMaterial: webglContext.pointsMaterial,
+        nodeSporeMesh: webglContext.nodeSporeMesh,
+        nodeSporeMaterial: webglContext.nodeSporeMaterial
+    })
 
     // W8: yield between createPoints() and createMycelium() to keep individual
     // tasks under 200ms. createMycelium() uploads 100k+ edge line segments.
     await yieldToBrowser()
 
     createMyceliumPort()
-    appState.myceliumGroup = webglContext.myceliumGroup
-    appState.myceliumCoreLines = webglContext.myceliumCoreLines
-    appState.myceliumWispyLines = webglContext.myceliumWispyLines
-    appState.myceliumBridgeLines = webglContext.myceliumBridgeLines
-    legacyState.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
-    if (engineState.state) {
-        engineState.state.myceliumGroup = webglContext.myceliumGroup
-        engineState.state.myceliumCoreLines = webglContext.myceliumCoreLines
-        engineState.state.myceliumWispyLines = webglContext.myceliumWispyLines
-        engineState.state.myceliumBridgeLines = webglContext.myceliumBridgeLines
-        engineState.state.myceliumConnectionPairs = webglContext.myceliumConnectionPairs
-    }
+
+    // C12 — mycelium handle mirror (webglContext → appState + legacyState + engineState.state)
+    syncMyceliumHandles({
+        myceliumGroup: webglContext.myceliumGroup,
+        myceliumCoreLines: webglContext.myceliumCoreLines,
+        myceliumWispyLines: webglContext.myceliumWispyLines,
+        myceliumBridgeLines: webglContext.myceliumBridgeLines,
+        myceliumConnectionPairs: webglContext.myceliumConnectionPairs
+    })
 
     // W8: yield after mycelium buffer upload (100k+ edges) before the
     // material compilation and visual setup phases.
