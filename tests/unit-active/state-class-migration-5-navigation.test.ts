@@ -45,8 +45,56 @@ const mockState = vi.hoisted(() => ({
   } as Record<string, unknown>,
 }));
 
+// Stable read-only defaults for `appState.viewportState`. Phase 6c partitioned
+// viewport fields; production's viewport mirror reads them at module-init.
+const mockViewportState = vi.hoisted(() => ({
+  viewportWidth: 1280,
+  viewportHeight: 800,
+  isCompactViewport: false,
+  isMobileViewport: false,
+  isTabletViewport: false,
+  devicePixelRatio: 1,
+  compassViewportWidth: 800,
+  compassViewportHeight: 600
+}))
+
+
+const mockSearchState = vi.hoisted(() => ({
+  currentSearchSummary: null,
+  searchStatus: 'idle',
+  searchError: null,
+  searchRequestSequence: 0,
+  searchAnchorIndex: null,
+  searchPreviewIndex: null,
+  searchGlowIndices: new Set<number>(),
+  searchGlowTopIndex: null,
+  searchGlowActive: false,
+  searchFocusTransitionToken: 0,
+  isSearching: false,
+  currentEmptyQuery: null,
+  semanticTrailCue: 'idle',
+  isCompactViewport: false,
+  semanticGuideRequestSequence: 0,
+  currentSemanticGuide: null,
+  summaryCardTypeToken: 0,
+  semanticSearchCacheDiagnostics: {
+    hits: 0, misses: 0, stores: 0, evictions: 0,
+    lastKey: null, lastSource: null, lastAgeMs: null
+  },
+  semanticSearchResultCache: new Map(),
+  searchVisibleCount: 5
+}))
+
 vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
+    get searchState() {
+      // Stable reference for production's appState.searchState.X reads.
+      return mockSearchState
+    },
+    get viewportState() {
+      // Phase 6c partitioned viewport; production reads at module-init.
+      return mockViewportState
+    },
     get navState() { return mockState.navState; },
     set navState(value: Record<string, unknown>) { mockState.navState = value; },
     withMutation: (fn: () => unknown) => fn(),
