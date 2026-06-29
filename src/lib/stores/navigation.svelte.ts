@@ -374,12 +374,12 @@ export const setCurrentView = switchView
 
 /** Set the focused node index. */
 export function setFocusedIndex(index: number | null): void {
-    _navWritable.update((s) => ({ ...s, focusedIndex: index }))
+    writeNavStateMirror({ focusedIndex: index })
 }
 
 /** Set the navigation mode. */
 export function setNavMode(mode: NavMode): void {
-    _navWritable.update((s) => ({ ...s, mode }))
+    writeNavStateMirror({ mode })
 }
 
 /** Set the active panel surface. */
@@ -396,7 +396,8 @@ export function setSurface(surface: PanelSurface): void {
                   : surface === 'idle'
                     ? 'overview'
                     : (get(_navWritable).mode as NavMode)
-    _navWritable.update((s) => ({ ...s, previousSurface: s.surface, surface, mode }))
+    const prev = get(_navWritable).surface
+    writeNavStateMirror({ previousSurface: prev, surface, mode })
 }
 
 /** Backward-compatible alias for migrated orchestration imports. */
@@ -404,32 +405,32 @@ export const setNavSurface = setSurface
 
 /** Set the current neighborhood index list. */
 export function setNeighborhoodIndices(indices: number[]): void {
-    _navWritable.update((s) => ({ ...s, neighborhoodIndices: [...indices] }))
+    writeNavStateMirror({ neighborhoodIndices: [...indices] })
 }
 
 /** Set the exploration history index list. */
 export function setExplorationHistoryIndices(indices: number[]): void {
-    _navWritable.update((s) => ({ ...s, explorationHistoryIndices: [...indices] }))
+    writeNavStateMirror({ explorationHistoryIndices: [...indices] })
 }
 
 /** Enable or disable auto-rotation. */
 export function setAutoRotate(active: boolean): void {
-    _navWritable.update((s) => ({ ...s, autoRotate: active }))
+    writeNavStateMirror({ autoRotate: active })
 }
 
 /** Suspend auto-rotation (e.g. during hover/interaction). */
 export function suspendAutoRotate(): void {
-    _navWritable.update((s) => ({ ...s, autoRotateSuspended: true }))
+    writeNavStateMirror({ autoRotateSuspended: true })
 }
 
 /** Resume auto-rotation. */
 export function resumeAutoRotate(): void {
-    _navWritable.update((s) => ({ ...s, autoRotateSuspended: false }))
+    writeNavStateMirror({ autoRotateSuspended: false })
 }
 
 /** Set the current loading phase key. */
 export function setLoadingPhase(phase: string): void {
-    _navWritable.update((s) => ({ ...s, loadingPhaseKey: phase }))
+    writeNavStateMirror({ loadingPhaseKey: phase })
 }
 
 /** Backward-compatible alias for callers using the legacy nav-state field name. */
@@ -437,21 +438,19 @@ export const setLoadingPhaseKey = setLoadingPhase
 
 /** Start the scene reveal sequence. */
 export function startSceneReveal(): void {
-    _navWritable.update((s) => ({ ...s, sceneRevealActive: true, sceneRevealStartedAt: Date.now() }))
+    writeNavStateMirror({ sceneRevealActive: true, sceneRevealStartedAt: Date.now() })
 }
 
 /** Complete the scene reveal sequence. */
 export function completeSceneReveal(): void {
-    _navWritable.update((s) => ({ ...s, sceneRevealActive: false }))
+    writeNavStateMirror({ sceneRevealActive: false })
 }
 
 /** Directly set scene reveal active state. */
 export function setSceneRevealActive(active: boolean): void {
-    _navWritable.update((s) => ({
-        ...s,
-        sceneRevealActive: active,
-        sceneRevealStartedAt: active ? s.sceneRevealStartedAt || Date.now() : s.sceneRevealStartedAt
-    }))
+    const cur = get(_navWritable)
+    const startedAt = active ? cur.sceneRevealStartedAt || Date.now() : cur.sceneRevealStartedAt
+    writeNavStateMirror({ sceneRevealActive: active, sceneRevealStartedAt: startedAt })
 }
 
 /** Set the active story prompt (for UI sync). */
@@ -461,23 +460,24 @@ export function setActiveStoryPrompt(_id: string | null): void {
 
 /** Set the mycelium mode (dormant|active|overdrive). */
 export function setMyceliumMode(mode: string, _options?: Record<string, unknown>): void {
-    _navWritable.update((s) => ({ ...s, myceliumMode: mode }))
+    writeNavStateMirror({ myceliumMode: mode })
 }
 
 /** Set whether URL state is currently being applied. */
 export function setApplyingUrlState(applying: boolean): void {
-    _navWritable.update((s) => ({ ...s, applyingUrlState: applying }))
+    writeNavStateMirror({ applyingUrlState: applying })
 }
 
 /** Set whether browser history is currently being restored. */
 export function setRestoringBrowserHistory(restoring: boolean): void {
-    _navWritable.update((s) => ({ ...s, restoringBrowserHistory: restoring }))
+    writeNavStateMirror({ restoringBrowserHistory: restoring })
 }
 
 /** Increment the URL state restore token. */
 export function bumpUrlStateRestoreToken(): number {
-    _navWritable.update((s) => ({ ...s, urlStateRestoreToken: s.urlStateRestoreToken + 1 }))
-    return get(_navWritable).urlStateRestoreToken
+    const next = get(_navWritable).urlStateRestoreToken + 1
+    writeNavStateMirror({ urlStateRestoreToken: next })
+    return next
 }
 
 /** Set focus pocket specific indices. */
@@ -552,30 +552,16 @@ export function dispatchNavTransition(
                 _surfaceRaw && (_surfaceRaw as string).length
                     ? (_surfaceRaw as PanelSurface)
                     : ('focus' as PanelSurface)
-            _navWritable.update((s) => {
-                const next: NavState = { ...s }
-                if (_indexDefined) next.focusedIndex = payload.index as number
-                next.mode = _finalMode
-                next.surface = _finalSurface
+            writeNavStateMirror((() => {
+                const patch: Partial<NavState> = {}
+                if (_indexDefined) patch.focusedIndex = payload.index as number
+                patch.mode = _finalMode
+                patch.surface = _finalSurface
                 if (_fromTraversal === true || _fromCanvasNode === true) {
-                    next.activeStoryPrompt = null
+                    patch.activeStoryPrompt = null
                 }
-                return next
-            })
-            // W15+ parity-attrs fix: also update appState.navState (Svelte 5 class)
-            // so legacy readers and the bundled updateJourneyCompass (which
-            // reads journey.phase from appState.navState.mode) see the new
-            // values. Without this mirror, appState.navState.mode stays at
-            // its initial 'overview' even after a focus click, breaking
-            // compass presentation + the data-journey-phase parity attr.
-            const _legacyMode: NavMode = _finalMode
-            const _legacySurface: PanelSurface = _finalSurface
-            if (_indexDefined) appState.navState.focusedIndex = payload.index as number
-            if (_legacyMode) appState.navState.mode = _legacyMode
-            if (_legacySurface) appState.navState.surface = _legacySurface
-            if (_fromTraversal === true || _fromCanvasNode === true) {
-                appState.navState.activeStoryPrompt = null
-            }
+                return patch
+            })())
             break
         }
         case NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW:
