@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { resetExperienceState } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -91,8 +92,8 @@ test('E2E Semantic Explorer Click Flow', async ({ page }) => {
 
     // 6. Reset
     await page.evaluate(() => {
-        if (typeof window.__APP_ACTIONS__?.resetExperienceState === 'function') {
-            window.__APP_ACTIONS__.resetExperienceState()
+        if (typeof resetExperienceState === 'function') {
+            resetExperienceState()
         }
     })
     await page

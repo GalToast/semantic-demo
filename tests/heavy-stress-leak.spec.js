@@ -12,6 +12,8 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { clearSearch } from '@lib/stores/navigation.svelte'
+import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 const EXPLICIT_BASE_URL =
     process.env.TEST_BASE_URL || process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.BASE_URL || ''
@@ -72,8 +74,8 @@ async function waitForAppReady(page) {
         () => {
             const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             return (
-                typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
-                typeof window.__APP_ACTIONS__?.focusOnNode === 'function' &&
+                typeof clearSearch === 'function' &&
+                typeof focusOnNode === 'function' &&
                 Array.isArray(s?.points) &&
                 s.points.length > 0 &&
                 s?.renderer?.domElement &&
@@ -167,7 +169,7 @@ test.describe('Heavy stress & GPU leak auditor', () => {
 
             // Clear search
             await page.evaluate(() => {
-                window.__APP_ACTIONS__?.clearSearch?.()
+                clearSearch?.()
             })
             await page.waitForTimeout(80)
         }
@@ -177,7 +179,7 @@ test.describe('Heavy stress & GPU leak auditor', () => {
         for (let i = 0; i < 10; i += 1) {
             await page.evaluate((index) => {
                 // Select deterministic nodes
-                window.__APP_ACTIONS__?.focusOnNode?.(index * 2)
+                focusOnNode?.(index * 2)
             }, i)
             await page.waitForTimeout(100)
         }

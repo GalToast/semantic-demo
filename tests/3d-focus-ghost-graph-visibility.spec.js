@@ -26,6 +26,7 @@
 
 import { test, expect } from '@playwright/test';
 import {
+import { setSemanticDiveMode } from '@lib/orchestration/lifecycle'
   openApp,
   isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
@@ -211,7 +212,7 @@ test.describe('3d-focus-ghost-graph-visibility', () => {
     expect(afterFocus.trailDepth, 'focus mode starts at ghost depth').toBe(1);
 
     // Step Inside: production path sets trailDepth=2 with the required gesture gate.
-    await page.evaluate(() => { window.__APP_ACTIONS__.setSemanticDiveMode(true); });
+    await page.evaluate(() => { setSemanticDiveMode(true); });
     await page.waitForFunction(
       () => (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).trailDepth === 2 && (window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}).semanticDiveMode === true,
       { timeout: 15000 }

@@ -10,6 +10,10 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
 import { chromium } from '@playwright/test';
+import { clearSearch } from '@lib/stores/navigation.svelte'
+import { switchView, focusOnNode, refreshCompositionState } from '@lib/orchestration/lifecycle'
+import { search } from '@lib/search/state'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const DEFAULT_URL = 'http://127.0.0.1:5173/?view=galaxy&nodemo=1';
 const targetUrl = process.env.PRODUCT_QA_URL || DEFAULT_URL;
@@ -265,7 +269,7 @@ async function waitForAppReady(page) {
     const hasPoints = Array.isArray(state.points) && state.points.length > 100;
     const hasThreads = state.semanticNeighborMapByLeadId instanceof Map &&
       state.semanticNeighborMapByLeadId.size > 100;
-    const hasSearch = typeof window.__APP_ACTIONS__?.search === 'function' ||
+    const hasSearch = typeof search === 'function' ||
       typeof window.searchBusinesses === 'function';
     const hasSearchInput = Boolean(document.querySelector('#search-input'));
     const sceneReady = document.body.dataset.sceneReady === 'true' ||
@@ -286,7 +290,7 @@ async function waitForAppReady(page) {
         bodyDataset: { ...document.body.dataset },
         points: Array.isArray(state.points) ? state.points.length : null,
         threadMapSize: state.semanticNeighborMapByLeadId instanceof Map ? state.semanticNeighborMapByLeadId.size : null,
-        hasSearchAction: typeof window.__APP_ACTIONS__?.search === 'function',
+        hasSearchAction: typeof search === 'function',
         hasSearchInput: Boolean(document.querySelector('#search-input')),
         overlayClass: overlay?.className || '',
         overlayAriaHidden: overlay?.getAttribute('aria-hidden') || '',
@@ -361,7 +365,7 @@ async function runSearch(page, query) {
   }).then(() => true).catch(() => false);
   if (!hasResults) {
     await page.evaluate((term) => {
-      window.__APP_ACTIONS__?.search?.(term, { preferCachedResults: false });
+      search?.(term, { preferCachedResults: false });
     }, query);
     await markRouteEvidence(page, 'debug-probe', `APP_ACTIONS.search("${query}") fallback`);
     hasResults = await page.waitForFunction(() => document.querySelectorAll('.search-result-item').length > 0, null, {
@@ -405,7 +409,7 @@ async function focusFirstSearchResult(page) {
     await page.evaluate(() => {
       const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
       const index = state.searchResults?.[0]?.index ?? 0;
-      window.__APP_ACTIONS__?.focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
+      focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
     });
     await markRouteEvidence(page, 'debug-probe', 'APP_ACTIONS.focusOnNode fallback for first search result');
   }
@@ -450,9 +454,9 @@ async function forceFocusVisibleResult(page) {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
     const fallback = state.searchResults?.[0]?.index ?? knownIndex;
     const target = Number.isFinite(index) ? index : fallback;
-    window.__APP_ACTIONS__?.focusOnNode?.(target, { fromSearchResult: true, skipUrlSync: true });
-    window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
-    window.__APP_ACTIONS__?.refreshCompositionState?.();
+    focusOnNode?.(target, { fromSearchResult: true, skipUrlSync: true });
+    setTrailDepth?.(1, { skipUrlSync: true });
+    refreshCompositionState?.();
   }, KNOWN_COFFEE_INDEX);
   await markRouteEvidence(page, 'test-forced-state', 'forceFocusVisibleResult fallback');
   await page.waitForFunction(() => {
@@ -635,8 +639,8 @@ async function enterMap(page) {
   }
   if (!clicked) {
     await page.evaluate(() => {
-      const actions = window.__APP_ACTIONS__ || {};
-      if (typeof actions.switchView === 'function') actions.switchView('map', { skipUrlSync: true, silentHandoff: true });
+
+      if (typeof switchView === 'function') switchView('map', { skipUrlSync: true, silentHandoff: true });
       else if (typeof actions.setActiveView === 'function') actions.setActiveView('map');
       else if (typeof actions.showMapView === 'function') actions.showMapView();
       else {
@@ -644,7 +648,7 @@ async function enterMap(page) {
         state.currentView = 'map';
         document.body.dataset.activeView = 'map';
       }
-      actions.refreshCompositionState?.();
+      refreshCompositionState?.();
     });
     await markRouteEvidence(page, 'debug-probe', 'switchView("map") app-action route');
   }
@@ -684,9 +688,9 @@ async function resetToCounty(page) {
   }
   if (!clicked) {
     await page.evaluate(() => {
-      window.__APP_ACTIONS__?.setTrailDepth?.(0, { skipUrlSync: true });
-      window.__APP_ACTIONS__?.clearSearch?.({ skipUrlSync: true });
-      window.__APP_ACTIONS__?.refreshCompositionState?.();
+      setTrailDepth?.(0, { skipUrlSync: true });
+      clearSearch?.({ skipUrlSync: true });
+      refreshCompositionState?.();
     });
     await markRouteEvidence(page, 'debug-probe', 'resetToCounty app-action route');
   }

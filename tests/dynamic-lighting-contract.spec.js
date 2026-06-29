@@ -20,6 +20,7 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { search } from '@lib/search/state'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 
@@ -89,8 +90,8 @@ async function performSearch(page, query = 'coffee') {
     if (!el) return;
     el.value = q;
     el.dispatchEvent(new Event('input', { bubbles: true }));
-    if (typeof window.__APP_ACTIONS__?.search === 'function') {
-      await window.__APP_ACTIONS__.search(q, { preferCachedResults: false });
+    if (typeof search === 'function') {
+      await search(q, { preferCachedResults: false });
     }
   }, query);
   await expect(page.locator('.search-result-item').first()).toBeVisible({ timeout: 15000 });

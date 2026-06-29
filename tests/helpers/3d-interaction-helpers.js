@@ -1,6 +1,7 @@
 export const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
 import { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch } from './mock-semantic-search.js';
+import { focusOnNode } from '@lib/orchestration/lifecycle'
 export { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch };
 
 export async function openApp(page, viewport = { width: 1440, height: 900 }, options = {}) {
@@ -440,7 +441,7 @@ export async function midpointIndex(page) {
 /**
  * Focus a node via the product action entry point.
  *
- * Preferred path: window.__APP_ACTIONS__.focusOnNode. This function is the
+ * Preferred path: focusOnNode. This function is the
  * single call point for focus test code so the app can retire bare window
  * bridges without rewriting every spec.
  *
@@ -451,7 +452,7 @@ export async function midpointIndex(page) {
  */
 export async function focusNodeViaApp(page, index, options = {}) {
   return page.evaluate(({ idx, opts }) => {
-    const focusNode = window.__APP_ACTIONS__?.focusOnNode;
+    const focusNode = focusOnNode;
     if (typeof focusNode !== 'function') return false;
     focusNode(idx, opts);
     return true;

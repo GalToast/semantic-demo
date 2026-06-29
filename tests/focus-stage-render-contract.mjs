@@ -22,6 +22,8 @@ import http from 'node:http'
 import path from 'node:path'
 import fs from 'node:fs'
 import { chromium } from 'playwright'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
+import { focusOnNode, setSemanticDiveMode, refreshCompositionState } from '@lib/orchestration/lifecycle'
 
 const DEFAULT_URL = 'http://127.0.0.1:8813/vector-explorer-polished.html'
 const PORT = 8813
@@ -185,9 +187,9 @@ async function forceFocusSearch(page) {
             const byLeadId = s?.pointIndexByLeadId
             const rawIndex = byLeadId?.get?.('1') ?? byLeadId?.get?.(1) ?? 0
             const focusIndex = Number.isFinite(rawIndex) ? rawIndex : 0
-            const focusNode = window.__APP_ACTIONS__?.focusOnNode
-            const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth
-            const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
+            const focusNode = focusOnNode
+            const setTrailDepth = setTrailDepth
+            const refreshCompositionState = refreshCompositionState
             if (typeof focusNode === 'function') {
                 focusNode(focusIndex, { fromSearchResult: true, skipUrlSync: true })
             }
@@ -276,9 +278,9 @@ async function forceFocusSearch(page) {
 async function forceSemanticDive(page) {
     const applyFixture = async () =>
         page.evaluate(() => {
-            const actions = window.__APP_ACTIONS__ || {}
-            actions.setSemanticDiveMode?.(true)
-            actions.refreshCompositionState?.()
+
+            setSemanticDiveMode?.(true)
+            refreshCompositionState?.()
 
             document.body.classList.add('is-active')
             document.body.dataset.activeView = 'galaxy'

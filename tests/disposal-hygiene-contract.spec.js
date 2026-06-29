@@ -30,6 +30,8 @@
  */
 
 import { test, expect } from '@playwright/test';
+import { clearSearch } from '@lib/stores/navigation.svelte'
+import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -62,7 +64,7 @@ async function setupMockSearch(page) {
 async function waitForAppReady(page) {
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
-    typeof (window.__APP_ACTIONS__?.clearSearch) === 'function' &&
+    typeof (clearSearch) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).points.length > 0 &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).pointIndexByLeadId?.size > 0
@@ -153,7 +155,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
       const el = document.getElementById('search-input');
       el.value = 'coffee';
       el.dispatchEvent(new Event('input', { bubbles: true }));
-      const search = window.__APP_ACTIONS__?.search;
+      const search = search;
       if (typeof search === 'function') {
         await search('coffee', { preferCachedResults: false });
       }
@@ -208,7 +210,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
         const el = document.getElementById('search-input');
         el.value = q;
         el.dispatchEvent(new Event('input', { bubbles: true }));
-        const search = window.__APP_ACTIONS__?.search;
+        const search = search;
         if (typeof search === 'function') {
           await search(q, { preferCachedResults: false });
         }
@@ -275,7 +277,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
         el.value = 'cafe';
         el.dispatchEvent(new Event('input', { bubbles: true }));
       }
-      const search = window.__APP_ACTIONS__?.search;
+      const search = search;
       if (typeof search === 'function') {
         await search('cafe', { preferCachedResults: false });
       }
@@ -333,7 +335,7 @@ test.describe('Disposal Hygiene — Mycelium rebuild lifecycle', () => {
         const el = document.getElementById('search-input');
         el.value = q;
         el.dispatchEvent(new Event('input', { bubbles: true }));
-        const search = window.__APP_ACTIONS__?.search;
+        const search = search;
         if (typeof search === 'function') {
           await search(q, { preferCachedResults: false });
         }

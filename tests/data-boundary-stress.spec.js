@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { search } from '@lib/search/state'
+import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 // Malicious mock data payload
 const MOCK_DATA = [
@@ -71,11 +73,9 @@ test.describe('Data Boundary Stress Tests', () => {
   test('Layouts survive extreme unbreakable strings without X overflow', async ({ page }) => {
     await page.goto('http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy', { waitUntil: 'networkidle' });
 
-    // Ensure we trigger the search or focus state on the malformed node
+    // Ensure we trigger the search state with a malformed query
     await page.evaluate(() => {
-      if (window.__APP_ACTIONS__ && window.__APP_ACTIONS__.triggerSearch) {
-        window.__APP_ACTIONS__.triggerSearch('THIS_IS_A_MASSIVE');
-      }
+      search('THIS_IS_A_MASSIVE', { preferCachedResults: false })
     });
 
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {}); // Wait for UI to render search results
@@ -97,9 +97,7 @@ test.describe('Data Boundary Stress Tests', () => {
 
     // Now force focus onto the node
     await page.evaluate(() => {
-      if (window.__APP_ACTIONS__ && window.__APP_ACTIONS__.focusNode) {
-        window.__APP_ACTIONS__.focusNode(9001, 'search');
-      }
+      focusOnNode(9001, 'search')
     });
 
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => r(true))), { timeout: 5000 }).catch(() => {}); // Wait for UI to render selected card

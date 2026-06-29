@@ -13,6 +13,8 @@
 
 import { test, expect } from '@playwright/test';
 import { openApp } from './helpers/3d-interaction-helpers.js';
+import { focusOnNode, refreshCompositionState } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const ROLE_CASES = [
   { role: 'upstream', label: 'Support', reasonPattern: /support provider/i },
@@ -100,9 +102,9 @@ async function findAndEnterVisibleRolePath(page, relationshipRole) {
       if (value && typeof value === 'object') return Object.values(value);
       return [];
     };
-    const focusOnNode = window.__APP_ACTIONS__?.focusOnNode;
-    const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
-    const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState;
+    const focusOnNode = focusOnNode;
+    const setTrailDepth = setTrailDepth;
+    const refreshCompositionState = refreshCompositionState;
     if (typeof focusOnNode !== 'function') return null;
 
     for (const seed of seeds.slice(0, 80)) {

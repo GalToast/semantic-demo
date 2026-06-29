@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { setupMockSearch } from './helpers/mock-semantic-search.js';
+import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -196,7 +197,7 @@ test.describe('Live URL State Reconstruction', () => {
     try {
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
     } catch {
-      await page.evaluate(() => { if (typeof window.__APP_ACTIONS__?.search === 'function') window.__APP_ACTIONS__.search('coffee'); });
+      await page.evaluate(() => { if (typeof search === 'function') search('coffee'); });
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
     }
     await page.locator('.search-result-item').first().click();

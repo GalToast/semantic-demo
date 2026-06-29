@@ -7,6 +7,8 @@
  */
 
 import { chromium } from 'playwright';
+import { focusOnNode, refreshCompositionState, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_CAMERA_OWNERSHIP_URL || DEFAULT_URL;
@@ -31,8 +33,8 @@ async function waitReady(page) {
       state.renderer &&
       state.camera &&
       state.controls &&
-      typeof window.__APP_ACTIONS__?.focusOnNode === 'function' &&
-      typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function' &&
+      typeof focusOnNode === 'function' &&
+      typeof setSemanticDiveMode === 'function' &&
       state.applyingUrlState === false &&
       window.history.state?.semanticDemo &&
       state.sceneRevealActive === false &&
@@ -42,15 +44,15 @@ async function waitReady(page) {
 
 async function focusNode(page, index, { dive = false } = {}) {
   await page.evaluate(({ targetIndex, shouldDive }) => {
-    const actions = window.__APP_ACTIONS__ || {};
-    actions.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+
+    focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
     if (shouldDive) {
-      actions.setSemanticDiveMode?.(true);
-      actions.setTrailDepth?.(2, { fromUserGesture: true, skipUrlSync: true });
+      setSemanticDiveMode?.(true);
+      setTrailDepth?.(2, { fromUserGesture: true, skipUrlSync: true });
     } else {
-      actions.setTrailDepth?.(1, { skipUrlSync: true });
+      setTrailDepth?.(1, { skipUrlSync: true });
     }
-    actions.refreshCompositionState?.();
+    refreshCompositionState?.();
   }, { targetIndex: index, shouldDive: dive });
 
   await page.waitForFunction(({ targetIndex, shouldDive }) => {

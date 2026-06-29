@@ -781,6 +781,9 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
+import { navStore } from '@lib/stores/navigation.svelte'
+import { appState } from '@lib/state/app.svelte'
+import { focusStore } from '@lib/stores/focus.svelte'
 
 const __filename2 = fileURLToPath(import.meta.url)
 const __dirname2 = dirname(__filename2)
@@ -1185,7 +1188,13 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 }
             ]
             // Update navStore (triggers Svelte reactivity for lazy-loaded components)
-            window.__APP_ACTIONS__?.setNavStorePatch({
+            navStore.update((s) => ({ ...s, ...{
+                mode: 'focus',
+                surface: 'focus-search',
+                focusedIndex: idx,
+                threadSource: 'semantic',
+                focusPocketIndices: candidates.map((c }))
+Object.assign(appState.navState, {
                 mode: 'focus',
                 surface: 'focus-search',
                 focusedIndex: idx,
@@ -1292,7 +1301,13 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                     relationshipAxis: 'support-link'
                 }
             ]
-            window.__APP_ACTIONS__?.setNavStorePatch({
+            navStore.update((s) => ({ ...s, ...{
+                mode: 'focus',
+                surface: 'focus-search',
+                focusedIndex: idx,
+                threadSource: 'semantic',
+                focusPocketIndices: candidates.map((c }))
+Object.assign(appState.navState, {
                 mode: 'focus',
                 surface: 'focus-search',
                 focusedIndex: idx,
@@ -1311,7 +1326,16 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 live.navState.focusPocketRoleByIndex = new Map(candidates.map((c) => [c.index, c.relationshipRole]))
             }
             // FocusPocketA11y gates on focusStore().pocketNodes.length > 0
-            window.__APP_ACTIONS__?.setFocusPocketNodes(candidates.map((c) => c.index))
+            const nodes = (candidates.map((c).filter((i) => typeof i === 'number').map((index) => ({
+    index,
+    position: [0, 0, 0],
+    role: 'direct',
+    score: 0.5,
+    label: `Node ${index}`,
+    rotationSeed: 0,
+    scaleSeed: 0
+}))
+focusStore.update((s) => ({ ...s, pocketNodes: nodes })) => c.index))
         }, 200)
 
         // In headless mode the keyboard hint may not reach visibility due to

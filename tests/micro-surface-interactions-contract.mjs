@@ -10,6 +10,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { chromium } from 'playwright'
+import { refreshCompositionState } from '@lib/orchestration/lifecycle'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html'
 const cliArgs = process.argv.slice(2)
@@ -56,7 +57,7 @@ async function forceFocusSurface(page) {
         document.body.dataset.panelSurface = 'focus-search'
         document.body.dataset.focusPanelMode = 'overview'
         document.body.dataset.routeDirector = 'search-corridor'
-        const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
+        const refreshCompositionState = refreshCompositionState
         if (typeof refreshCompositionState === 'function') refreshCompositionState()
     })
     // state mutation applied synchronously

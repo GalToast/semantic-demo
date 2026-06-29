@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { mutate, stateField } from './helpers/state-harness.js';
+import { refreshCompositionState } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
 
@@ -73,7 +74,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
       `;
       resultsEl.classList.add('active');
       window.setSearchPanelState?.({ hasQuery: true, resultsRendered: true, searching: false, focusing: false, degraded: false });
-      window.__APP_ACTIONS__?.refreshCompositionState?.();
+      refreshCompositionState?.();
     });
 
     // 2. Verify results are visible AND hidden attribute is removed
@@ -86,7 +87,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
     // 3. Simulate the focused surface state and ensure search context persists.
     // setFocusedNode now handles focusedNode, selectedPoint, and navState together.
     await mutate(page, 'setFocusedNode', { focusedNode: 0, selectedPointIdx: 0, navStateMode: 'focus' });
-    await page.evaluate(() => { window.__APP_ACTIONS__?.refreshCompositionState?.(); });
+    await page.evaluate(() => { refreshCompositionState?.(); });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
     // ADVERSARIAL: Verify results rail didn't ghost out.

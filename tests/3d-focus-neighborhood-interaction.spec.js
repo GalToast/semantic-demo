@@ -25,6 +25,8 @@
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
 import {
+import { focusOnNode } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
   openApp,
   probe, isValidNodeIndex, isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
@@ -386,8 +388,8 @@ test.describe('focus-neighborhood interaction', () => {
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+      const focusNode = focusOnNode;
+      const setTrailDepth = setTrailDepth;
       focusNode?.(targetIndex, { skipUrlSync: true });
       setTrailDepth?.(1, { skipUrlSync: true });
     });
@@ -449,8 +451,8 @@ test.describe('focus-neighborhood interaction', () => {
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+      const focusNode = focusOnNode;
+      const setTrailDepth = setTrailDepth;
       focusNode?.(targetIndex, { skipUrlSync: true });
       setTrailDepth?.(1, { skipUrlSync: true });
     });
@@ -850,8 +852,8 @@ test.describe('focus-neighborhood interaction', () => {
           if (node?.neighbors?.length > 0) { targetIndex = i; break; }
         }
       }
-      const focusNode = window.__APP_ACTIONS__?.focusOnNode;
-      const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+      const focusNode = focusOnNode;
+      const setTrailDepth = setTrailDepth;
       focusNode?.(targetIndex, { skipUrlSync: true });
       setTrailDepth?.(1, { skipUrlSync: true });
     });

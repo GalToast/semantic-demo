@@ -25,6 +25,8 @@
 
 import { test, expect } from '@playwright/test'
 import { mutate } from './helpers/state-harness.js'
+import { clearSearch } from '@lib/stores/navigation.svelte'
+import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '')
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -71,7 +73,7 @@ async function openApp(page, viewport = { width: 1440, height: 900 }) {
         () => {
             const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             return (
-                typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
+                typeof clearSearch === 'function' &&
                 Array.isArray(s.points) &&
                 s.points.length > 0 &&
                 s.nodePositions?.length > 0 &&
@@ -219,10 +221,7 @@ async function abortInFlightSearch(page) {
 
     // Start search without awaiting — fire-and-forget
     await page.evaluate(() => {
-        const search = window.__APP_ACTIONS__ && window.__APP_ACTIONS__.search
-        if (typeof search === 'function') {
-            search('coffee', { preferCachedResults: false })
-        }
+        search('coffee', { preferCachedResults: false })
     })
     // Give the request a moment to be dispatched
     await page
@@ -231,8 +230,8 @@ async function abortInFlightSearch(page) {
 
     // Abort via clearSearch (the user-cancels flow)
     await page.evaluate(() => {
-        if (typeof window.__APP_ACTIONS__?.clearSearch === 'function') {
-            window.__APP_ACTIONS__.clearSearch()
+        if (typeof clearSearch === 'function') {
+            clearSearch()
         }
     })
     await page
@@ -273,8 +272,8 @@ async function slowSearchResponse(page) {
     await input.focus()
     await input.fill('latte')
     await page.evaluate(() => {
-        if (typeof window.__APP_ACTIONS__?.search === 'function') {
-            window.__APP_ACTIONS__.search('latte', { preferCachedResults: false })
+        if (typeof search === 'function') {
+            search('latte', { preferCachedResults: false })
         }
     })
     // Wait just long enough for the UI to react to the in-flight state
@@ -439,10 +438,7 @@ test.describe('3D / data edge cases: no blank canvas, no uncaught exceptions, no
         await input.focus()
         await input.fill('coffee')
         await page.evaluate(() => {
-            const search = window.__APP_ACTIONS__ && window.__APP_ACTIONS__.search
-            if (typeof search === 'function') {
-                search('coffee', { preferCachedResults: true })
-            }
+            search('coffee', { preferCachedResults: true })
         })
         await page
             .waitForFunction(

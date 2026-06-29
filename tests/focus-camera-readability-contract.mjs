@@ -10,6 +10,8 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import { inflateSync } from 'node:zlib';
+import { refreshCompositionState, focusOnNode } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_CAMERA_URL || DEFAULT_URL;
@@ -169,9 +171,9 @@ try {
   }, null, { timeout: 45000 });
 
   await page.evaluate((index) => {
-    window.__APP_ACTIONS__?.focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
-    window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
-    window.__APP_ACTIONS__?.refreshCompositionState?.();
+    focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
+    setTrailDepth?.(1, { skipUrlSync: true });
+    refreshCompositionState?.();
   }, KNOWN_FOCUS_INDEX);
 
   await page.waitForFunction(() => {

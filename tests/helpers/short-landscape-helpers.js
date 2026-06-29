@@ -1,4 +1,6 @@
 import { setupMockSearch } from './mock-semantic-search.js';
+import { setSemanticDiveMode } from '@lib/orchestration/lifecycle'
+import { clearSearch } from '@lib/stores/navigation.svelte'
 
 export const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 export const APP_PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
@@ -34,8 +36,8 @@ export async function openApp(page, viewport) {
   await setupMockSearch(page);
   await openAppPage(page, viewport);
   await page.waitForFunction(() => {
-    const clearSearch = window.__APP_ACTIONS__?.clearSearch;
-    const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode;
+    const clearSearch = clearSearch;
+    const setSemanticDiveMode = setSemanticDiveMode;
     const appState = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return typeof clearSearch === 'function' &&
       typeof setSemanticDiveMode === 'function' &&

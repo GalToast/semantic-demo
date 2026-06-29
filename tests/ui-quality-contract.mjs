@@ -11,6 +11,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { chromium } from 'playwright'
+import { focusOnNode, switchView, refreshCompositionState } from '@lib/orchestration/lifecycle'
+import { setTrailFromSeed } from '@lib/journey/neighborhood'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html'
 const cliArgs = process.argv.slice(2)
@@ -197,7 +199,7 @@ async function forceFieldNode(page) {
         document.body.dataset.panelSurface = 'focus-search'
         document.body.dataset.focusPanelMode = 'field-node'
         document.body.dataset.fieldStepSync = 'active'
-        const refreshCompositionState = window.__APP_ACTIONS__?.refreshCompositionState
+        const refreshCompositionState = refreshCompositionState
         if (typeof refreshCompositionState === 'function') refreshCompositionState()
     })
     await page
@@ -215,8 +217,8 @@ async function forceThreadPreview(page) {
         .catch(() => {})
     await page.evaluate(() => {
         const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
-        if (typeof window.__APP_ACTIONS__?.switchView === 'function') {
-            window.__APP_ACTIONS__.switchView('galaxy', { skipUrlSync: true, silentHandoff: true })
+        if (typeof switchView === 'function') {
+            switchView('galaxy', { skipUrlSync: true, silentHandoff: true })
         }
         if (state.currentView !== 'galaxy') state.currentView = 'galaxy'
 
@@ -234,8 +236,8 @@ async function forceThreadPreview(page) {
         document.body.dataset.panelSurface = 'focus'
         document.body.dataset.threadInspectSurface = 'inspector'
 
-        if (Number.isFinite(seedIndex) && typeof window.__APP_ACTIONS__?.focusOnNode === 'function') {
-            window.__APP_ACTIONS__.focusOnNode(seedIndex, {
+        if (Number.isFinite(seedIndex) && typeof focusOnNode === 'function') {
+            focusOnNode(seedIndex, {
                 skipUrlSync: true,
                 fromSearchResult: true,
                 preserveMode: true
@@ -245,8 +247,8 @@ async function forceThreadPreview(page) {
         }
         if (state.navState && Number.isFinite(seedIndex)) {
             state.navState.focusedIndex = seedIndex
-            if (typeof window.__APP_ACTIONS__?.setTrailFromSeed === 'function') {
-                window.__APP_ACTIONS__.setTrailFromSeed(seedIndex)
+            if (typeof setTrailFromSeed === 'function') {
+                setTrailFromSeed(seedIndex)
             }
         }
 
@@ -286,8 +288,8 @@ async function forceThreadPreview(page) {
         document.body.dataset.graphContext = 'focus'
         document.body.dataset.panelSurface = 'focus'
         document.body.dataset.threadInspectSurface = 'inspector'
-        if (typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function') {
-            window.__APP_ACTIONS__.refreshCompositionState()
+        if (typeof refreshCompositionState === 'function') {
+            refreshCompositionState()
         }
 
         const focusStage = document.querySelector('#focus-stage')

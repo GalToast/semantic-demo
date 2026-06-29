@@ -3,6 +3,8 @@ import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { inflateSync } from 'node:zlib';
 import { chromium } from 'playwright';
+import { setTrailDepth } from '@lib/stores/journey.svelte'
+import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 const PORT = Number(process.env.SEMANTIC_SCENE_PLAYTEST_PORT || 8798);
 const BASE_URL = `http://127.0.0.1:${PORT}/vector-explorer-polished.html`;
@@ -384,15 +386,15 @@ async function main() {
                     }
                 }
                 if (targetIndex === null) targetIndex = 0;
-                window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
-                window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
+                focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true });
+                setTrailDepth?.(1, { skipUrlSync: true });
             });
             await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
         };
         const focusedResult = await runFreshPage('02-mobile-focused-node', { view: 'galaxy', q: 'coffee', anchor: '519' }, focusSetup);
         const insideResult = await runFreshPage('03-mobile-step-inside', { view: 'galaxy', q: 'coffee', anchor: '519' }, async (page) => {
             await focusSetup(page);
-            await page.evaluate(() => window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true }));
+            await page.evaluate(() => setTrailDepth?.(2, { fromUserGesture: true }));
             await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
         });
         const mapResult = await runFreshPage('04-mobile-map', { view: 'map', q: 'coffee', anchor: '519' });

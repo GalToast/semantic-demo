@@ -15,6 +15,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { setTrailFromSeed } from '@lib/journey/neighborhood'
 
 const ROOT = path.resolve(process.cwd())
 const APP_PATH = path.join(ROOT, 'src/lib/orchestration/app-init.ts')

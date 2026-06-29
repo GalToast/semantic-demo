@@ -7,6 +7,10 @@
  */
 
 import { chromium } from 'playwright';
+import { switchView, refreshCompositionState, setSemanticDiveMode, returnToOverview } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
+import { clearSearch } from '@lib/stores/navigation.svelte'
+import { search } from '@lib/search/state'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.RESET_MAP_OWNERSHIP_URL || DEFAULT_URL;
@@ -92,15 +96,15 @@ function withCacheBust(url, tag) {
 async function waitReady(page) {
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
-    const actions = window.__APP_ACTIONS__ || {};
+
     return Array.isArray(state.points) &&
       state.points.length > 100 &&
-      typeof actions.search === 'function' &&
-      typeof actions.clearSearch === 'function' &&
-      typeof actions.switchView === 'function' &&
-      typeof actions.setSemanticDiveMode === 'function' &&
-      typeof actions.setTrailDepth === 'function' &&
-      typeof actions.returnToOverview === 'function' &&
+      typeof search === 'function' &&
+      typeof clearSearch === 'function' &&
+      typeof switchView === 'function' &&
+      typeof setSemanticDiveMode === 'function' &&
+      typeof setTrailDepth === 'function' &&
+      typeof returnToOverview === 'function' &&
       state.applyingUrlState === false &&
       window.history.state?.semanticDemo &&
       state.sceneRevealActive === false &&
@@ -335,10 +339,10 @@ async function searchAndFocusFirstResult(page) {
 
 async function enterSemanticDive(page) {
   await page.evaluate(() => {
-    const actions = window.__APP_ACTIONS__ || {};
-    actions.setSemanticDiveMode?.(true);
-    actions.setTrailDepth?.(2, { fromUserGesture: true, skipUrlSync: true });
-    actions.refreshCompositionState?.();
+
+    setSemanticDiveMode?.(true);
+    setTrailDepth?.(2, { fromUserGesture: true, skipUrlSync: true });
+    refreshCompositionState?.();
   });
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -360,8 +364,8 @@ async function runClearButtonScenario(browser) {
   await waitReady(page);
   const focused = await searchAndFocusFirstResult(page);
   await page.evaluate(() => {
-    const actions = window.__APP_ACTIONS__ || {};
-    actions.clearSearch?.();
+
+    clearSearch?.();
   });
   try {
     await page.waitForFunction(() => {
@@ -423,7 +427,7 @@ async function runMapTransitionScenario(browser) {
   await searchAndFocusFirstResult(page);
   await enterSemanticDive(page);
   await page.evaluate(() => {
-    window.__APP_ACTIONS__?.switchView?.('map');
+    switchView?.('map');
   });
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};

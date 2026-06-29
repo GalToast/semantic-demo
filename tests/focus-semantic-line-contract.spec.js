@@ -1,6 +1,8 @@
 import { test, expect } from '@playwright/test'
 import { inflateSync } from 'node:zlib'
 import { focusNodeViaApp } from './helpers/3d-interaction-helpers.js'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
+import { setTrailFromSeed } from '@lib/journey/neighborhood'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -151,9 +153,9 @@ test.describe('focus semantic Line2 shader ownership', () => {
 
         await focusNodeViaApp(page, 0, { fromSearchResult: true, skipUrlSync: true })
         await page.evaluate(() => {
-            const actions = window.__APP_ACTIONS__
-            const setTrailDepth = actions?.setTrailDepth
-            const setTrailFromSeed = actions?.setTrailFromSeed
+
+            const setTrailDepth = setTrailDepth
+            const setTrailFromSeed = setTrailFromSeed
             if (typeof setTrailDepth !== 'function') {
                 throw new Error('__APP_ACTIONS__.setTrailDepth missing')
             }

@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { refreshCompositionState, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
+import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 
@@ -31,9 +33,9 @@ async function openApp(page) {
   await setupMockSearch(page);
   await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
   await page.waitForFunction(() => (
-    typeof window.__APP_ACTIONS__?.setSemanticDiveMode === 'function' &&
-    typeof window.__APP_ACTIONS__?.refreshCompositionState === 'function' &&
-    typeof window.__APP_ACTIONS__?.search === 'function' &&
+    typeof setSemanticDiveMode === 'function' &&
+    typeof refreshCompositionState === 'function' &&
+    typeof search === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&
     window.__TEST_STATE__.points.length > 0 &&
     document.body.dataset.graphicsMode === 'webgl'
@@ -55,8 +57,8 @@ async function searchAndFocusFirstResult(page, query = 'coffee') {
     await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
   } catch {
     await page.evaluate((q) => {
-      if (typeof window.__APP_ACTIONS__?.search === 'function') {
-        return window.__APP_ACTIONS__.search(q);
+      if (typeof search === 'function') {
+        return search(q);
       }
       return null;
     }, query);
@@ -153,7 +155,7 @@ test.describe('Live Step Inside state sync', () => {
     try {
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 8000 });
     } catch {
-      await page.evaluate(() => { if (typeof window.__APP_ACTIONS__?.search === 'function') window.__APP_ACTIONS__.search('coffee'); });
+      await page.evaluate(() => { if (typeof search === 'function') search('coffee'); });
       await page.waitForSelector('.search-result-item', { state: 'visible', timeout: 15000 });
     }
 

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8766').replace(/\/$/, '');
 const APP_PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
@@ -88,7 +89,7 @@ async function runCoffeeFocusFlow(page, { requireCorridor = true } = {}) {
 
   await page.locator('#search-input').fill('coffee');
   await page.evaluate(() => {
-    if (typeof window.__APP_ACTIONS__?.search === 'function') return window.__APP_ACTIONS__.search('coffee');
+    if (typeof search === 'function') return search('coffee');
     document.querySelector('#search-input')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
     return null;
   });

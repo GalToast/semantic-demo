@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { focusOnNode, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const baseRoot = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
 const baseUrl = `${baseRoot}/vector-explorer-polished.html`;
@@ -30,8 +32,8 @@ const states = [
     waitFor: async (page) => {
       await page.waitForFunction(() => document.body?.dataset?.panelSurface === 'focus-search', { timeout: 8000 }).catch(() => {});
       await page.evaluate(() => {
-        const setSemanticDiveMode = window.__APP_ACTIONS__?.setSemanticDiveMode;
-        const setTrailDepth = window.__APP_ACTIONS__?.setTrailDepth;
+        const setSemanticDiveMode = setSemanticDiveMode;
+        const setTrailDepth = setTrailDepth;
         if (typeof setSemanticDiveMode === 'function') {
           setSemanticDiveMode(true);
         } else if (typeof setTrailDepth === 'function') {
@@ -121,7 +123,7 @@ for (const viewport of viewports) {
     await page.waitForLoadState('load', { timeout: 5000 }).catch(() => {});
     await page.evaluate(() => document.fonts?.ready).catch(() => {});
     await page.waitForFunction(
-      () => typeof window.__APP_ACTIONS__?.focusOnNode === 'function' && Array.isArray(window.__TEST_STATE__?.points),
+      () => typeof focusOnNode === 'function' && Array.isArray(window.__TEST_STATE__?.points),
       { timeout: 15000 },
     ).catch(() => {});
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});

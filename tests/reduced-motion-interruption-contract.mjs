@@ -29,6 +29,9 @@ import { readFileSync, mkdirSync } from 'node:fs';
 import { resolve, extname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { chromium } from 'playwright';
+import { refreshCompositionState } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
+import { clearSearch } from '@lib/stores/navigation.svelte'
 
 const __dirname = fileURLToPath(new URL('.', import.meta.url));
 const ROOT = resolve(__dirname, '..');
@@ -247,8 +250,8 @@ async function run() {
 
     // Reduced-motion proof now exercises public state orchestration only; focus-stage
     // rendering is covered by direct module callers, not the retired window bridge.
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') {
-      (window.__APP_ACTIONS__?.refreshCompositionState)();
+    if (typeof (refreshCompositionState) === 'function') {
+      (refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
@@ -270,8 +273,8 @@ async function run() {
   // ── Phase 3: Step Inside ───────────────────────────────────────────────────
   // Enter Step Inside (trailDepth=2) via the official setTrailDepth path
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.setTrailDepth) === 'function') {
-      (window.__APP_ACTIONS__?.setTrailDepth)(2, { fromUserGesture: true, skipUrlSync: true });
+    if (typeof (setTrailDepth) === 'function') {
+      (setTrailDepth)(2, { fromUserGesture: true, skipUrlSync: true });
     } else {
       (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 2;
     }
@@ -281,8 +284,8 @@ async function run() {
       (window.__APP_STATE__ ?? window.__TEST_STATE__).myceliumMode = 'inside';
       (window.__APP_STATE__ ?? window.__TEST_STATE__).navState.mode = 'inside';
     }
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') {
-      (window.__APP_ACTIONS__?.refreshCompositionState)();
+    if (typeof (refreshCompositionState) === 'function') {
+      (refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();
@@ -301,12 +304,12 @@ async function run() {
   // ── Phase 4: Interruption — clearSearch() reset ─────────────────────────────
   // Call the real state-reset function (this is what Escape triggers in the live app)
   await page.evaluate(() => {
-    if (typeof (window.__APP_ACTIONS__?.clearSearch) === 'function') {
-      (window.__APP_ACTIONS__?.clearSearch)();
+    if (typeof (clearSearch) === 'function') {
+      (clearSearch)();
     }
     // Reset trail and navigation state that clearSearch() does not touch
-    if (typeof (window.__APP_ACTIONS__?.setTrailDepth) === 'function') {
-      (window.__APP_ACTIONS__?.setTrailDepth)(0, { skipUrlSync: true });
+    if (typeof (setTrailDepth) === 'function') {
+      (setTrailDepth)(0, { skipUrlSync: true });
     } else {
       (window.__APP_STATE__ ?? window.__TEST_STATE__).trailDepth = 0;
     }
@@ -325,8 +328,8 @@ async function run() {
     if (typeof window.animateCameraToNode === 'function' && (window.__APP_STATE__ ?? window.__TEST_STATE__).navState?.focusedIndex !== null) {
       window.animateCameraToNode(0, { transitionStyle: 'reset', duration: 1 });
     }
-    if (typeof (window.__APP_ACTIONS__?.refreshCompositionState) === 'function') {
-      (window.__APP_ACTIONS__?.refreshCompositionState)();
+    if (typeof (refreshCompositionState) === 'function') {
+      (refreshCompositionState)();
     }
     if (typeof window.updateExplorationUi === 'function') {
       window.updateExplorationUi();

@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import {
+import { focusOnNode, resetExplorationFocus, returnToOverview } from '@lib/orchestration/lifecycle'
+import { clearSearch } from '@lib/stores/navigation.svelte'
   BASE_URL,
   probe,
   isValidNodeIndex,
@@ -35,8 +37,8 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
   await page.waitForFunction(() => {
     const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return (
-      typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
-      typeof (window.__APP_ACTIONS__?.focusOnNode) === 'function' &&
+      typeof clearSearch === 'function' &&
+      typeof (focusOnNode) === 'function' &&
       Array.isArray(s?.points) &&
       s.points.length > 0 &&
       s?.renderer?.domElement &&
@@ -54,10 +56,10 @@ async function openAppHiDPI(browser, viewport = { width: 1440, height: 900 }, { 
       styles.pointerEvents === 'none';
   }, { timeout: 20000 });
   await page.evaluate(() => {
-    if (typeof window.__APP_ACTIONS__?.returnToOverview === 'function') {
-      window.__APP_ACTIONS__.returnToOverview();
-    } else if (typeof window.__APP_ACTIONS__?.resetExplorationFocus === 'function') {
-      window.__APP_ACTIONS__.resetExplorationFocus();
+    if (typeof returnToOverview === 'function') {
+      returnToOverview();
+    } else if (typeof resetExplorationFocus === 'function') {
+      resetExplorationFocus();
     }
   });
   await page.waitForFunction(() => {

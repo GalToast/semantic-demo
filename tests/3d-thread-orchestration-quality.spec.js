@@ -30,6 +30,8 @@
 import { test, expect } from '@playwright/test'
 import { inflateSync } from 'node:zlib'
 import { mutate } from './helpers/state-harness.js'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
+import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 const APP_PATH = process.env.TEST_APP_PATH || '/dist/svelte/index.html'
@@ -461,7 +463,7 @@ test.describe('3D thread orchestration quality', () => {
             return { targetIndex: targetIndex ?? 0 }
         })
         await p.evaluate(
-            ({ idx }) => window.__APP_ACTIONS__?.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
+            ({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
             { idx: focusResult.targetIndex }
         )
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
@@ -549,14 +551,14 @@ test.describe('3D thread orchestration quality', () => {
                 }
             }
             if (targetIndex === null) targetIndex = 0
-            window.__APP_ACTIONS__?.focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true })
-            window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true })
+            focusOnNode?.(targetIndex, { fromSearchResult: true, skipUrlSync: true })
+            setTrailDepth?.(1, { skipUrlSync: true })
         })
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })
         await p.waitForTimeout(400)
 
         await p.evaluate(() => {
-            window.__APP_ACTIONS__?.setTrailDepth?.(2, { fromUserGesture: true })
+            setTrailDepth?.(2, { fromUserGesture: true })
         })
         // Wait for trailDepth=2 to actually settle (not just a fixed timeout)
         await p.waitForFunction(() => window.__TEST_STATE__?.trailDepth === 2, { timeout: 6000 }).catch(() => {})
@@ -739,7 +741,7 @@ test.describe('3D thread orchestration quality', () => {
             return { targetIndex: 0 }
         })
         await p.evaluate(
-            ({ idx }) => window.__APP_ACTIONS__?.focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
+            ({ idx }) => focusOnNode?.(idx, { fromSearchResult: true, skipUrlSync: true }),
             { idx: focusResult.targetIndex }
         )
         await p.waitForFunction(() => Number.isFinite(window.__TEST_STATE__?.focusedNode), { timeout: 8000 })

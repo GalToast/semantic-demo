@@ -7,6 +7,9 @@
  */
 
 import { chromium } from 'playwright';
+import { setTrailDepth } from '@lib/stores/journey.svelte'
+import { clearSearch } from '@lib/stores/navigation.svelte'
+import { resetExplorationFocus, switchView, refreshCompositionState } from '@lib/orchestration/lifecycle'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.MOBILE_ROUTE_OWNERSHIP_URL || DEFAULT_URL;
@@ -385,17 +388,17 @@ try {
   }
   if (!clickedReset) {
     clickedReset = await page.evaluate(() => {
-      const actions = window.__APP_ACTIONS__ || {};
-      if (typeof actions.resetExplorationFocus === 'function') {
-        actions.resetExplorationFocus({ preserveSearch: false, skipUrlSync: true });
-      } else if (typeof actions.setTrailDepth === 'function') {
-        actions.setTrailDepth(0, { skipUrlSync: true });
+
+      if (typeof resetExplorationFocus === 'function') {
+        resetExplorationFocus({ preserveSearch: false, skipUrlSync: true });
+      } else if (typeof setTrailDepth === 'function') {
+        setTrailDepth(0, { skipUrlSync: true });
       } else {
         return false;
       }
-      actions.clearSearch?.();
-      actions.switchView?.('map');
-      actions.refreshCompositionState?.();
+      clearSearch?.();
+      switchView?.('map');
+      refreshCompositionState?.();
       return true;
     });
   }

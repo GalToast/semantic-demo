@@ -7,6 +7,8 @@
  */
 
 import { chromium } from 'playwright';
+import { refreshCompositionState, focusOnNode } from '@lib/orchestration/lifecycle'
+import { inspectThreadNeighbor } from '@lib/journey/thread-inspector-state'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.INTERACTION_OWNERSHIP_URL || DEFAULT_URL;
@@ -26,10 +28,10 @@ function withCacheBust(url) {
 async function waitForReady(page) {
   await page.waitForFunction(() => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
-    const actions = window.__APP_ACTIONS__ || {};
+
     return Array.isArray(state.points) &&
       state.points.length > 100 &&
-      typeof actions.focusOnNode === 'function' &&
+      typeof focusOnNode === 'function' &&
       typeof actions.walkThreadNeighbor === 'function' &&
       state.applyingUrlState === false &&
       window.history.state?.semanticDemo &&
@@ -147,7 +149,7 @@ try {
   await waitForReady(page);
 
   const bridge = await page.evaluate(() => {
-    const actions = window.__APP_ACTIONS__ || {};
+
     return [
       'search',
       'clearSearch',
@@ -174,8 +176,8 @@ try {
   });
 
   await page.evaluate((index) => {
-    window.__APP_ACTIONS__.focusOnNode(index, { fromSearchResult: true, skipUrlSync: true });
-    window.__APP_ACTIONS__.refreshCompositionState();
+    focusOnNode(index, { fromSearchResult: true, skipUrlSync: true });
+    refreshCompositionState();
   }, FOCUS_INDEX);
 
   await page.waitForFunction((index) => {
@@ -198,7 +200,7 @@ try {
   assert(Number.isFinite(candidate), 'focused node should expose a reachable thread/focus candidate');
 
   await page.evaluate((index) => {
-    window.__APP_ACTIONS__.inspectThreadNeighbor(index, { force: true, surface: 'contract' });
+    inspectThreadNeighbor(index, { force: true, surface: 'contract' });
   }, candidate);
   await page.waitForFunction((index) => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};
@@ -248,7 +250,7 @@ try {
   assert(Number.isFinite(followCandidate), 'focused node should expose a fresh follow candidate after pin/clear');
 
   await page.evaluate((index) => {
-    window.__APP_ACTIONS__.inspectThreadNeighbor(index, { force: true, surface: 'contract' });
+    inspectThreadNeighbor(index, { force: true, surface: 'contract' });
   }, followCandidate);
   await page.waitForFunction((index) => {
     const state = window.__APP_STATE__ || window.__TEST_STATE__ || {};

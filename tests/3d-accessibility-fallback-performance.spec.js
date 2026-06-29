@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import { BASE_URL, focusNodeViaApp, midpointIndex } from './helpers/3d-interaction-helpers.js';
+import { focusOnNode } from '@lib/orchestration/lifecycle'
+import { clearSearch } from '@lib/stores/navigation.svelte'
 
 const HEALTH_OK = {
   ok: true,
@@ -31,8 +33,8 @@ async function waitForAppReady(page) {
   await page.waitForFunction(() => {
     const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return (
-      typeof window.__APP_ACTIONS__?.clearSearch === 'function' &&
-      typeof (window.__APP_ACTIONS__?.focusOnNode) === 'function' &&
+      typeof clearSearch === 'function' &&
+      typeof (focusOnNode) === 'function' &&
       Array.isArray(s?.points) &&
       s.points.length > 0 &&
       s?.renderer?.domElement &&

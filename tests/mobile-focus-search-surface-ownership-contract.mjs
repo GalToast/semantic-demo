@@ -8,6 +8,8 @@
  */
 
 import { chromium } from 'playwright';
+import { refreshCompositionState, focusOnNode } from '@lib/orchestration/lifecycle'
+import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const DEFAULT_URL = 'http://127.0.0.1:8795/dist/svelte/index.html?view=galaxy&nodemo=1';
 const TARGET_URL = process.env.FOCUS_SEARCH_SURFACE_URL || DEFAULT_URL;
@@ -45,13 +47,13 @@ try {
   }, null, { timeout: 45000 });
 
   await page.evaluate((index) => {
-    window.__APP_ACTIONS__?.focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
-    window.__APP_ACTIONS__?.setTrailDepth?.(1, { skipUrlSync: true });
+    focusOnNode?.(index, { fromSearchResult: true, skipUrlSync: true });
+    setTrailDepth?.(1, { skipUrlSync: true });
     const input = document.getElementById('search-input');
     if (input) {
       input.value = 'coffee';
     }
-    window.__APP_ACTIONS__?.refreshCompositionState?.();
+    refreshCompositionState?.();
   }, KNOWN_COFFEE_INDEX);
 
   await page.waitForFunction(() => {
