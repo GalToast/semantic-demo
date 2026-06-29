@@ -555,9 +555,9 @@ describe('navStore — mutation functions', () => {
         expect(navStore().mode).toBe('search')
     })
 
-    it('setSurface("full") sets surface=full', () => {
-        setSurface('full')
-        expect(navStore().surface).toBe('full')
+    it('setSurface("focus-search") sets surface=focus-search', () => {
+        setSurface('focus-search')
+        expect(navStore().surface).toBe('focus-search')
     })
 
     it('setSurface("focus") sets surface=focus and mode=focus', () => {
