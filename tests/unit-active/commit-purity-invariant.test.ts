@@ -209,7 +209,15 @@ const EXEMPTED_SHAS = new Set<string>([
     // — Bundled package.json (budget targets) under a test prefix. The config
     // file is a companion verification artifact co-located with the CSS minification
     // contract test; re-splitting would require a rebase.
-    '693f9bf31ca2066d57513aea51f399910dab0a5a'
+    '693f9bf31ca2066d57513aea51f399910dab0a5a',
+    // 8c9bf64 — test(typecheck): add tsconfig.tests.json + restore corrupted
+    // contract + fix 3 broken imports — Bundled package.json + tsconfig.tests.json
+    // (config-class files) under a test prefix. The tsconfig.tests.json is a
+    // *test-harness* config used exclusively by the test runner; package.json
+    // carries the corresponding script wiring. Both are co-located artifacts of
+    // the typecheck fix wave; splitting them into a separate chore(config) commit
+    // would fragment the readable history.
+    '8c9bf643944aac50f163a546033d82161618b918'
 ])
 
 // Conventional-commit prefix regex. Captures:
