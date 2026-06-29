@@ -94,6 +94,13 @@
     isFocused
   );
 
+  let semanticDiveActive = $derived(
+    forceSemanticDiveVisible ||
+      panelSurface === 'semantic-dive' ||
+      panelSurfaceDetail === 'semantic-dive' ||
+      String(surface) === 'semantic-dive'
+  );
+
   let selectedRecord = $derived.by((): BusinessRecord | null => {
     // Read _records (a $state rune) so this $derived is registered as a
     // dep on it. _records is updated in the $effect above via the
@@ -230,7 +237,7 @@
     class="focus-card selected-card focus-stage-card"
     class:surface-focus={panelSurface === 'focus'}
     class:surface-focus-search={panelSurface === 'focus-search'}
-    class:surface-semantic-dive={panelSurface === 'semantic-dive'}
+    class:surface-semantic-dive={semanticDiveActive}
     class:mode-field-node={bodyFocusPanelMode === 'field-node'}
     id="selected-card"
     class:selected-card-empty={isEmpty}

@@ -415,7 +415,7 @@ export const focusStore: FocusStoreApi = _createFocusStore()
 
 export const pocketNodes = () => appState.navState.focusPocketIndices
 export const pocketMeta = () => appState.navState.focusPocketMeta
-export const selectedBusiness = () => get(focusMirror).selectedBusiness
+export const selectedBusiness = () => focusMirror().selectedBusiness
 export const infoPanelOpen = () => appState.infoPanelOpen
 export const pocketListVisible = () => appState.pocketListVisible
 export const semanticDiveMode = () => appState.navState.trailDepth === 2
