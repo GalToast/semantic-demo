@@ -185,11 +185,12 @@
     z-index: var(--z-controls);
     display: flex;
     gap: 0.25rem;
-    background: rgba(7, 16, 24, 0.88);
-    backdrop-filter: blur(10px);
-    border-radius: 0.5rem;
+    background: var(--glass-bg);
+    backdrop-filter: blur(var(--glass-blur));
+    border-radius: var(--glass-radius-action);
     padding: 0.3rem;
-    border: 1px solid rgba(78, 205, 196, 0.12);
+    border: var(--glass-border);
+    box-shadow: var(--shadow-glass);
   }
   .controls[hidden] {
     display: none !important;
