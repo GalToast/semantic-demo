@@ -42,6 +42,11 @@ const _inspectedStrandDiagnostics = vi.hoisted(() => ({
 vi.mock('@lib/state/app.svelte.ts', () => ({
     appState: {
         navState: _focusState,
+        searchState: {
+            currentSearchSummary: null,
+            searchStatus: 'idle' as string,
+            searchRequestSequence: 0,
+        },
         selectedPoint: null as any,
         inspectedThreadIndex: null as number | null,
         pinnedThreadIndex: null as number | null,
