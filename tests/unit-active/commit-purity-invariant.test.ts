@@ -217,7 +217,15 @@ const EXEMPTED_SHAS = new Set<string>([
     // carries the corresponding script wiring. Both are co-located artifacts of
     // the typecheck fix wave; splitting them into a separate chore(config) commit
     // would fragment the readable history.
-    '8c9bf643944aac50f163a546033d82161618b918'
+    '8c9bf643944aac50f163a546033d82161618b918',
+    // bf80eb3c — test(search-cache): update typing contract for searchState
+    // sub-aggregate — Bundled parallel-session state sub-aggregate migration
+    // changes (app.svelte.ts, state-types.ts, lifecycle.ts, viewport.svelte.ts)
+    // under a test-prefix commit. The non-test files were already staged by the
+    // parallel session when the test fix was committed; splitting now would
+    // require a force-push of shared master. Grandfathered with a TODO to avoid
+    // repeating the pattern.
+    'bf80eb3cfa074b439176f1c4cef16a18799f279e'
 ])
 
 // Conventional-commit prefix regex. Captures:
