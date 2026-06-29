@@ -121,7 +121,7 @@
       centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = appState.map;
+        const map = appState.map as unknown as { invalidateSize?: () => void } | undefined;
         map?.invalidateSize?.();
         _registry.schedule(120, () => map?.invalidateSize?.());
       });

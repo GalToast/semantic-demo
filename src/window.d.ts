@@ -86,6 +86,7 @@ declare global {
          * engine/three-postprocessing.ts. Loose record shape.
          */
         __semanticPostprocessing?: Record<string, unknown> & {
+            isPremiumMode?: () => boolean
             setPremiumMode?: (enabled: boolean) => void
             updateBloomParams?: (
                 params: Partial<{ intensity: number; luminanceThreshold: number; radius: number }>
@@ -109,9 +110,12 @@ declare global {
          */
         __spector?: {
             isReady(): boolean
-            capture(canvasSelector?: string): Promise<{ ok: boolean; frameCount?: number }>
-            stop(): Promise<{ ok: boolean; commandCount: number; capture: unknown }>
+            capture(canvasSelector?: string, maxFrames?: number): Promise<{ ok: boolean; reason?: string; frameCount?: number; commandCount?: number; canvas?: string; mode?: string; capture?: unknown; error?: string }>
+            stop(): { ok: boolean; reason?: string; capture?: unknown; error?: string }
+            resume(): { ok: boolean; reason?: string; error?: string }
             listCanvases(): string[]
+            getLastCapture(): unknown
+            getActiveCanvas(): string
         }
 
         /**

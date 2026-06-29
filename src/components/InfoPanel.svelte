@@ -27,7 +27,7 @@
   import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui-renderers';
   import { describeThreadLensForPoint } from '@lib/journey-point-color';
   import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
-  import { buildSelectedBusinessProps } from '@lib/view-models/selected-business-view-model';
+  import { buildSelectedBusinessProps, type SelectedCardAdapter } from '@lib/view-models/selected-business-view-model';
   import { onMount, type Snippet } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { getInfoPanelContent, type InfoPanelContentDescriptor } from '@lib/orchestration/info-panel-state';
@@ -56,7 +56,7 @@
   void infoPanelSurfaceClass;
   void infoPanelCompactClass;
   let infoPanelHasFocusedNode = $derived(
-    testFocusedNode != null && testFocusedNode !== ''
+    testFocusedNode != null
   );
 
   // ── Types ─────────────────────────────────────────────────────────────────────
@@ -221,7 +221,7 @@
   // Using Record<string, unknown> to match the view model's JSDoc-typed return.
   // The `any` here is intentional: it's a legacy port whose typed return would
   // touch ~20 fields; tightening it is tracked separately.
-  const viewModel: Record<string, unknown> = $derived.by(() => {
+  const viewModel = $derived.by(() => {
     if (!selectedRecord) return {
       name: COPY.selectedEmptyName,
       filedAs: '',
@@ -298,13 +298,13 @@
     }
 
     // Point data available — delegate to shared view-model
-    return buildSelectedBusinessProps(point as unknown as Record<string, unknown>, {}, selectedDetailsAdapter as unknown, {
+    return buildSelectedBusinessProps(point as unknown as import('@lib/view-models/selected-business-view-model').BusinessPoint, {}, selectedDetailsAdapter as SelectedCardAdapter | undefined, {
       getBusinessNamePresentation,
       sanitizePublicFacingNote,
       describeCluster,
       getPublicRecordStatusLabel,
       COPY
-    } as Record<string, unknown>);
+    });
   });
 
   let selectedCity = $derived.by(() => {

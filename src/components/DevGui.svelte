@@ -27,7 +27,7 @@ import { debugLog, debugError } from '@lib/utils/debug'
   onMount(() => {
     if (!visible) return;
 
-    let guiInstance: unknown;
+    let guiInstance: import("lil-gui").default | undefined;
 
     void (async () => {
       // Lazy import — keeps the lil-gui bundle out of the main chunk and
@@ -102,6 +102,7 @@ import { debugLog, debugError } from '@lib/utils/debug'
       pocketFolder.open();
 
       // --- Postprocessing folder ---
+      // @ts-ignore — window.__semanticPostprocessing is typed in window.d.ts
       let ppEnabled = window.__semanticPostprocessing?.isPremiumMode?.() ?? false;
       let bloomIntensity = 0.5;
       let bloomThreshold = 0.6;
@@ -165,6 +166,7 @@ import { debugLog, debugError } from '@lib/utils/debug'
     })();
 
     return () => {
+      // @ts-ignore — guiInstance typed explicitly above
       void guiInstance?.destroy();
     };
   });

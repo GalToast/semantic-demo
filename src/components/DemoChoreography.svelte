@@ -96,6 +96,10 @@
         return;
       }
       const step = DEMO_SCRIPT[i];
+      if (!step) {
+        completeDemo();
+        return;
+      }
       transitionDemo(step.phase);
       // Fire the action (may be async — e.g. search() returns a Promise)
       Promise.resolve(step.action()).catch(() => {});

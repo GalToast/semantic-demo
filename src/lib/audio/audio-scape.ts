@@ -229,6 +229,12 @@ export function setAudioMuted(muted: boolean): void {
     audioState.gainNode.gain.setTargetAtTime(muted ? 0 : 0.01, audioState.audioCtx.currentTime, 0.2)
 }
 
+export function isAudioMuted(): boolean {
+    if (!audioState.gainNode || !audioState.audioCtx) return true
+    const gain = audioState.gainNode.gain.value
+    return gain === 0
+}
+
 /**
  * 10/10 Polish: High-frequency 'shimmer' sound for corridor animations.
  */

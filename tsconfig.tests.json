@@ -23,13 +23,6 @@
             "@components/*": ["./src/components/*"]
         }
     },
-    "include": [
-        "types/**/*.d.ts",
-        "src/**/*",
-        "tests/**/*.ts",
-        "tests/**/*.tsx",
-        "vite.config.ts",
-        "vitest.config.js"
-    ],
+    "include": ["types/**/*.d.ts", "src/**/*", "tests/**/*.ts", "tests/**/*.tsx", "vite.config.ts", "vitest.config.js"],
     "exclude": ["node_modules", "dist", "css", "tests/**/*.js", "tests/**/*.mjs", "tests/**/*.cjs"]
 }

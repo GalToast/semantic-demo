@@ -25,7 +25,7 @@ import {
     computeParityAttributes,
     applyParityAttributes,
     resetParityAttributeCache
-} from '@lib/orchestration/parity-attrs'
+} from '@lib/orchestration/parity-attrs.svelte'
 
 import {
     updateNavState,
@@ -36,7 +36,7 @@ import {
     resetNavState
 } from '@lib/stores/navigation.svelte.ts'
 import { resetJourney } from '@lib/stores/journey.svelte.ts'
-import { resetFocus } from '@lib/stores/focus.svelte.ts'
+import { focusStore, resetFocus } from '@lib/stores/focus.svelte.ts'
 import { resetFilters } from '@lib/stores/filter.svelte'
 import { resetCamera } from '@lib/stores/camera.svelte.ts'
 import { resetDemo } from '@lib/stores/demo.svelte.ts'
@@ -149,7 +149,7 @@ describe('parity-attrs smoke: navMode transitions', () => {
         setFocusedIndex(12)
         setNavMode('inside')
         setSurface('inside')
-        updateNavState({ semanticDiveMode: true })
+        focusStore.update((s) => ({ ...s, semanticDiveMode: true }))
 
         const attrs = syncParity()
         expect(attrs.navMode).toBe('inside')
@@ -165,13 +165,13 @@ describe('parity-attrs smoke: navMode transitions', () => {
         setFocusedIndex(33)
         setNavMode('inside')
         setSurface('inside')
-        updateNavState({ semanticDiveMode: true })
+        focusStore.update((s) => ({ ...s, semanticDiveMode: true }))
         syncParity()
         expect(syncParity().navMode).toBe('inside')
 
         setNavMode('focus')
         setSurface('focus')
-        updateNavState({ semanticDiveMode: false })
+        focusStore.update((s) => ({ ...s, semanticDiveMode: false }))
 
         const attrs = syncParity()
         expect(attrs.navMode).toBe('focus')
@@ -183,14 +183,14 @@ describe('parity-attrs smoke: navMode transitions', () => {
     it('inside → overview (no focused index) clears focused + goes idle', () => {
         setNavMode('inside')
         setSurface('inside')
-        updateNavState({ semanticDiveMode: true })
+        focusStore.update((s) => ({ ...s, semanticDiveMode: true }))
         syncParity()
         expect(syncParity().navMode).toBe('inside')
 
         setFocusedIndex(null)
         setNavMode('overview')
         setSurface('idle')
-        updateNavState({ semanticDiveMode: false })
+        focusStore.update((s) => ({ ...s, semanticDiveMode: false }))
 
         const attrs = syncParity()
         expect(attrs.navMode).toBe('overview')
@@ -300,12 +300,12 @@ describe('parity-attrs smoke: subscription liveness', () => {
             () => {
                 setNavMode('inside')
                 setSurface('inside')
-                updateNavState({ semanticDiveMode: true })
+                focusStore.update((s) => ({ ...s, semanticDiveMode: true }))
             },
             () => {
                 setNavMode('focus')
                 setSurface('focus')
-                updateNavState({ semanticDiveMode: false })
+                focusStore.update((s) => ({ ...s, semanticDiveMode: false }))
             },
             () => {
                 setNavMode('search')

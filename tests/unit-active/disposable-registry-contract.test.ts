@@ -24,7 +24,7 @@ describe('DisposableRegistry', () => {
         it('clears a setTimeout on disposeAll()', () => {
             const fn = vi.fn()
             const id = setTimeout(fn, 1_000_000)
-            registry.timer(id)
+            registry.timer(id as unknown as ReturnType<typeof setTimeout>)
             registry.disposeAll()
             expect(registry.isDisposed).toBe(true)
             // Timer should not fire
@@ -35,7 +35,7 @@ describe('DisposableRegistry', () => {
         it('clears a setInterval on disposeAll()', () => {
             const fn = vi.fn()
             const id = setInterval(fn, 100)
-            registry.timer(id)
+            registry.timer(id as unknown as ReturnType<typeof setTimeout>)
             registry.disposeAll()
             vi.advanceTimersByTime(500)
             expect(fn).not.toHaveBeenCalled()
@@ -158,7 +158,7 @@ describe('DisposableRegistry', () => {
 
     describe('label', () => {
         it('preserves the debug label', () => {
-            expect(registry.label).toBe('test')
+            expect((registry as any).label).toBe('test')
         })
     })
 })

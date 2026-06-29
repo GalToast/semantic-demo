@@ -12,11 +12,10 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
-  import { searchState, setSearchQuery } from '@lib/stores/search.svelte';
+  import { searchState } from '@lib/stores/search.svelte';
   import { currentSurface } from '@lib/stores/navigation.svelte.ts';
   import SearchInput from './SearchInput.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
-  import { performSearch } from '@lib/search-engine';
   import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
@@ -52,15 +51,6 @@
 
   let searchInputRef: SearchInput | undefined = $state(undefined);
 
-  // ── Callbacks forwarded to SearchResults ───────────────────────────────────────
-  function handleReturnFocus(): void {
-    searchInputRef?.focusInput();
-  }
-  function handleSuggestionQuery(query: string): void {
-    setSearchQuery(query);
-    performSearch(query);
-    handleReturnFocus();
-  }
   // Only loaded when search results/loading/error/empty state is active.
   // Defers ~27 KB chunk until user actually searches.
   type SearchResultsModule = typeof import('./SearchResults.svelte');
@@ -137,10 +127,7 @@
   {/if}
   <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />
   {#if SearchResultsComponent}
-    <SearchResultsComponent
-      onReturnFocus={handleReturnFocus}
-      onSuggestionQuery={handleSuggestionQuery}
-    />
+    <SearchResultsComponent />
   {/if}
 </div>
 

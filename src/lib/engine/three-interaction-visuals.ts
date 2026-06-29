@@ -263,9 +263,7 @@ export function initSemanticLens() {
 
     initFocusLens(state, state.scene)
 
-
     initAnchorBloomLight(state, state.scene)
-
 
     // Size + ring + pulse focus anchor indicator (see focus-anchor-indicator.js
     // for the cues chosen and the rationale).  Lives in the 3D scene — CSS

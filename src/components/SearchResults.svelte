@@ -68,7 +68,7 @@
   let summary = $derived($searchState.summary);
   let activeId = $derived($searchState.activeResultId);
   let visibleCount = $derived(searchVisibleCountFn());
-  let searchError = $derived(appState.searchError as { type: string; query?: string } | null);
+  let searchError = $derived(appState.searchError);
   let isSearching = $derived(status === 'searching');
 
   const resultSlice = $derived(results.slice(0, visibleCount));

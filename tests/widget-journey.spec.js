@@ -1188,13 +1188,16 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 }
             ]
             // Update navStore (triggers Svelte reactivity for lazy-loaded components)
-            navStore.update((s) => ({ ...s, ...{
-                mode: 'focus',
-                surface: 'focus-search',
-                focusedIndex: idx,
-                threadSource: 'semantic',
-                focusPocketIndices: candidates.map((c) => c.index),
-            }}))
+            navStore.update((s) => ({
+                ...s,
+                ...{
+                    mode: 'focus',
+                    surface: 'focus-search',
+                    focusedIndex: idx,
+                    threadSource: 'semantic',
+                    focusPocketIndices: candidates.map((c) => c.index)
+                }
+            }))
             Object.assign(appState.navState, {
                 mode: 'focus',
                 surface: 'focus-search',
@@ -1302,13 +1305,16 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                     relationshipAxis: 'support-link'
                 }
             ]
-            navStore.update((s) => ({ ...s, ...{
-                mode: 'focus',
-                surface: 'focus-search',
-                focusedIndex: idx,
-                threadSource: 'semantic',
-                focusPocketIndices: candidates.map((c) => c.index),
-            }}))
+            navStore.update((s) => ({
+                ...s,
+                ...{
+                    mode: 'focus',
+                    surface: 'focus-search',
+                    focusedIndex: idx,
+                    threadSource: 'semantic',
+                    focusPocketIndices: candidates.map((c) => c.index)
+                }
+            }))
             Object.assign(appState.navState, {
                 mode: 'focus',
                 surface: 'focus-search',
@@ -1328,16 +1334,19 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 live.navState.focusPocketRoleByIndex = new Map(candidates.map((c) => [c.index, c.relationshipRole]))
             }
             // FocusPocketA11y gates on focusStore().pocketNodes.length > 0
-            const nodes = candidates.map((c) => c.index).filter((i) => typeof i === 'number').map((index) => ({
-    index,
-    position: [0, 0, 0],
-    role: 'direct',
-    score: 0.5,
-    label: `Node ${index}`,
-    rotationSeed: 0,
-    scaleSeed: 0
-}))
-focusStore.update((s) => ({ ...s, pocketNodes: nodes }))
+            const nodes = candidates
+                .map((c) => c.index)
+                .filter((i) => typeof i === 'number')
+                .map((index) => ({
+                    index,
+                    position: [0, 0, 0],
+                    role: 'direct',
+                    score: 0.5,
+                    label: `Node ${index}`,
+                    rotationSeed: 0,
+                    scaleSeed: 0
+                }))
+            focusStore.update((s) => ({ ...s, pocketNodes: nodes }))
         }, 200)
 
         // In headless mode the keyboard hint may not reach visibility due to

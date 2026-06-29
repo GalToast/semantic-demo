@@ -270,6 +270,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       getActiveCanvas: () => (activeCanvas ? 'captured' : 'idle'),
     };
 
+    // @ts-ignore — bridge shape is wider than window.__spector type
     window.__spector = bridge;
     phase = 'ready';
     publishStatus();
