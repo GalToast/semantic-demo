@@ -18,6 +18,19 @@ import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // ── Mutable mock state ────────────────────────────────────────────────────────
 
+type MockNavStoreState = {
+    mode: string
+    currentView: string
+    myceliumMode: string
+    trailDepthFromExploration: number
+    trailDepth: number
+    activeStoryPrompt: string | null
+    focusedIndex: number | null
+    focusedNode: number | null
+    applyingUrlState: boolean
+    restoringBrowserHistory: boolean
+}
+
 const mockState = vi.hoisted(() => ({
     // URL location tracking (so we can read window.location.search)
     locationSearch: '',
@@ -38,8 +51,8 @@ const mockState = vi.hoisted(() => ({
         focusedNode: null as number | null,
         applyingUrlState: false,
         restoringBrowserHistory: false
-    },
-    navStoreUpdateCalls: [] as Array<{ prev: typeof mockState.navStoreState; patch: Record<string, unknown> }>,
+    } as MockNavStoreState,
+    navStoreUpdateCalls: [] as Array<{ prev: MockNavStoreState; patch: Record<string, unknown> }>,
     // appState
     appStateNavState: { trailDepth: 0 } as Record<string, unknown>,
     appStateCurrentView: 'galaxy' as string,
