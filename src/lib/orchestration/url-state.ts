@@ -397,30 +397,6 @@ export async function copyCurrentViewLink(): Promise<string | null> {
 
 // ── Event Subscriptions ───────────────────────────────────────────────────────
 
-/**
- * Initialize URL state event listeners.
- * Call once after the app shell is ready.
- */
-export function initUrlStateSync(): void {
-    if (typeof window === 'undefined') return
-
-    // Listen for popstate (browser back/forward)
-    window.addEventListener('popstate', () => {
-        const nav = get(navStore)
-        if (!nav.applyingUrlState) {
-            applyUrlState({ fromHistory: true })
-        }
-    })
-
-    // Listen for custom url-sync events from other modules
-    window.addEventListener('semantic:url-sync-requested', ((e: CustomEvent) => {
-        updateUrlState(e.detail?.params, {
-            mode: e.detail?.mode || 'push',
-            reason: e.detail?.reason || 'external'
-        })
-    }) as EventListener)
-}
-
 // Keep the browser URL aligned with Svelte-owned lifecycle/search events.
 // The legacy URL module already performs this cleanup; the Svelte shell needs
 // the same behavior so remounted search inputs do not restore stale ?q params.
