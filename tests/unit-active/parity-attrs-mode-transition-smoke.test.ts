@@ -153,11 +153,9 @@ describe('parity-attrs smoke: navMode transitions', () => {
 
         const attrs = syncParity()
         expect(attrs.navMode).toBe('inside')
-        expect(attrs.panelSurface).toBe('inside')
-        // semanticDive state is read from focusStore.semanticDiveMode, not navStore.
-        // setting that requires focus-store mutation (out of scope for this smoke test).
-        // We assert it stays 'inactive' here; the inactive path is covered above.
-        expect(attrs.semanticDive).toBe('inactive')
+        // semanticDiveMode=true routes panelSurface to 'semantic-dive' per parity-attrs rules
+        expect(attrs.panelSurface).toBe('semantic-dive')
+        expect(attrs.semanticDive).toBe('active')
         expect(attrs.focusedNode).toBe('12')
     })
 
