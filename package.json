@@ -37,6 +37,7 @@
         "check:svelte": "svelte-check --workspace src --tsconfig tsconfig.json --diagnostic-sources svelte,css",
         "check": "npm run check:svelte && npm run build:svelte",
         "typecheck": "tsc --noEmit -p tsconfig.typecheck.json",
+        "typecheck:tests": "tsc --noEmit -p tsconfig.tests.json",
         "check:ts-progress": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/ts-js-drift-contract.mjs --progress",
         "check:legacy-budget": "node scripts/check-legacy-ts-budget.mjs",
         "build:safe": "npm run check",

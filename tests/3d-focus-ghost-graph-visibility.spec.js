@@ -25,8 +25,8 @@
  */
 
 import { test, expect } from '@playwright/test';
-import {
 import { setSemanticDiveMode } from '@lib/orchestration/lifecycle'
+import {
   openApp,
   isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';

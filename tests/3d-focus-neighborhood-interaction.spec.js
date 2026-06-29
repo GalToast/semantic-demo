@@ -24,9 +24,9 @@
 
 import { test, expect } from '@playwright/test';
 import fs from 'fs';
-import {
 import { focusOnNode } from '@lib/orchestration/lifecycle'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
+import {
   openApp,
   probe, isValidNodeIndex, isReachableScreenCoordinate, focusNodeViaApp
 } from './helpers/3d-interaction-helpers.js';
