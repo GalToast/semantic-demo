@@ -17,7 +17,7 @@
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { appState } from '@lib/state/app.svelte';
-  import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
+  import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
 
@@ -179,24 +179,11 @@
   // from `parityMap` (reactive rune-backed proxy kept in sync by
   // parity-attrs.svelte.ts:installParityAttributeSync()).
   //
-  // Bypass attrs (focusPanelMode, insideWalkState) are NOT owned by
-  // parity-attrs; they are written by external orchestrators
-  // (focus-panel-mode.ts, semantic-dive.ts). parity-attrs provides a
-  // shared MutationObserver + reactive snapshot via getBypassAttr() so
-  // each component no longer needs its own observer. Reads below are
-  // $derived so they re-fire whenever the shared snapshot mutates.
-  let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
-  let bodyInsideWalkState = $derived(getBypassAttr('insideWalkState') ?? 'idle');
-  // Reactive reads from parityMap (replaces 6 $state mirrors + most of the
-  // MutationObserver). Svelte 5 tracks reads inside `$derived` so template
-  // bindings re-run on parity change.
-  let bodyPanelSurface = $derived(parityMap.panelSurface || '');
-  let bodyGraphContext = $derived(parityMap.graphContext || '');
-  let bodyCompact = $derived(parityMap.compact === 'true');
-  let bodyJourneyNavigationOwner = $derived(parityMap.journeyNavigationOwner || '');
-  let bodyTrailState = $derived(parityMap.trailState || 'inactive');
-  let bodyStrandJourney = $derived(parityMap.strandJourney || 'idle');
-  let focusSearchForced = $derived(bodyPanelSurface === 'focus-search' || bodyGraphContext === 'focus-search' || document.body?.dataset.focusSearchForced === 'true');
+  // Parity attribute bundle — replaces 9 separate $derived reads.
+  // The composable returns reactive getters; reads in the template and
+  // $derived/$effect below register dependencies on parityMap and the
+  // bypass-attr MutationObserver automatically.
+  const parity = useParityAttrs();
   // ── Reactive nav store state ──
   // appState.navState is Svelte 5 rune-backed $state; reads in $derived
   // register reactive dependencies directly — no subscribe mirror needed.
@@ -207,14 +194,14 @@
   let navFocusedIndex = $derived(appState.navState.focusedIndex ?? null);
 
   let mapModeActive = $derived(navView === 'map');
-  let searchSurfaceActive = $derived((navSurface === 'search' || bodyPanelSurface === 'search') && !focusSearchForced);
-  let searchFamilySurfaceActive = $derived(searchSurfaceActive || focusSearchForced);
+  let searchSurfaceActive = $derived((navSurface === 'search' || parity.panelSurface === 'search') && !parity.focusSearchForced);
+  let searchFamilySurfaceActive = $derived(searchSurfaceActive || parity.focusSearchForced);
   let mapTrailSearchLaneActive = $derived(
     mapModeActive &&
-    bodyJourneyNavigationOwner === 'map-trail-strip' &&
-      bodyPanelSurface.startsWith('map-') &&
-      bodyPanelSurface !== 'map-idle' && // audit-ok: literal state check
-      bodyPanelSurface !== 'map' // audit-ok: literal state check
+    parity.journeyNavigationOwner === 'map-trail-strip' &&
+      parity.panelSurface.startsWith('map-') &&
+      parity.panelSurface !== 'map-idle' && // audit-ok: literal state check
+      parity.panelSurface !== 'map' // audit-ok: literal state check
   );
   let idleSurfaceActive = $derived(navSurface === 'idle' && !searchSurfaceActive);
 
@@ -225,7 +212,7 @@
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
   let focusActive = $derived(
-    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex != null || bodyFocusPanelMode === 'field-node' || bodyPanelSurface === 'focus' || bodyPanelSurface === 'inside' || bodyPanelSurface === 'trail' || focusSearchForced || bodyPanelSurface === 'semantic-dive'
+    navMode === 'focus' || navMode === 'inside' || navMode === 'trail' || navFocusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
   );
   let focusStageActive = $derived(focusActive && !mapModeActive);
 
@@ -243,15 +230,15 @@
   let controlsVisible = $derived(
     s3dSceneReady &&
       !(navSurface === 'focus-search') &&
-      !focusSearchForced &&
-      !($viewport.isCompact && (bodyPanelSurface === 'idle' || navSurface === 'idle')) &&
+      !parity.focusSearchForced &&
+      !($viewport.isCompact && (parity.panelSurface === 'idle' || navSurface === 'idle')) &&
       // A3: suppress camera controls on mobile search surface — the search
       // results/focus-stage owns the cockpit; the zoom/rotate rail competes
       // for the same right-edge viewport budget.
-      !($viewport.isCompact && (bodyPanelSurface === 'search' || navSurface === 'search'))
+      !($viewport.isCompact && (parity.panelSurface === 'search' || navSurface === 'search'))
   );
   let infoPanelOpen = $derived(
-    (idleSurfaceActive || searchSurfaceActive || (focusActive && ($viewport.isCompact || bodyCompact))) &&
+    (idleSurfaceActive || searchSurfaceActive || (focusActive && ($viewport.isCompact || parity.compact))) &&
       !mapModeActive
     // W46: On compact/mobile idle the search bar is hosted inside InfoPanel
     // and is the primary entry point. The panel must be considered open so
@@ -272,7 +259,7 @@
     searchFamilySurfaceActive ||
     focusActive ||
     mapModeActive ||
-    bodyPanelSurface.startsWith('map-') ||
+    parity.panelSurface.startsWith('map-') ||
     navSurface.startsWith('map-')
   );
 
@@ -350,11 +337,11 @@
   <Header visible={true} utilityOnly={false} />
 {/if}
 
-<main id="main-content" class="semantic-main" class:surface-semantic-dive={bodyPanelSurface === 'semantic-dive'} tabindex="-1" aria-label="Semantic explorer application">
+<main id="main-content" class="semantic-main" class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'} tabindex="-1" aria-label="Semantic explorer application">
 <div
   id="semantic-explorer"
   class="semantic-explorer"
-  class:surface-semantic-dive={bodyPanelSurface === 'semantic-dive'}
+  class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'}
   class:is-compact={$viewport.isCompact}
   class:reduced-motion={$viewport.reducedMotion}
   class:is-overview={$navStore.mode === 'overview'}
@@ -447,9 +434,9 @@
     class:active={focusStageActive}
     aria-hidden={!focusStageActive ? 'true' : undefined}
     style:pointer-events={focusStageActive ? 'none' : undefined}
-    data-trail-state={bodyTrailState}
-    data-inside-walk-state={bodyInsideWalkState}
-    data-strand-journey={bodyStrandJourney}
+    data-trail-state={parity.trailState}
+    data-inside-walk-state={parity.insideWalkState}
+    data-strand-journey={parity.strandJourney}
   >
     <!-- Focus card for selected business (self-gates via cardVisible = visible && isFocused) -->
     {#if focusCardLazy.current}

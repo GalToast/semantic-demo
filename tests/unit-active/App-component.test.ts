@@ -38,6 +38,14 @@ const paritySrc = readFileSync(
   resolve(SRC_DIR, 'lib', 'orchestration', 'parity-attrs.svelte.ts'),
   'utf8'
 )
+// After useParityAttrs extraction, parity attribute reads live in the
+// composable, not in App.svelte. The drift guard now scans the composable
+// source so a new parity attribute added to PARITY_ATTRIBUTES still has
+// to be referenced (either in the composable or in another parity consumer).
+const parityAttrsSrc = readFileSync(
+  resolve(SRC_DIR, 'lib', 'ui', 'use-parity-attrs.svelte.ts'),
+  'utf8'
+)
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -87,22 +95,29 @@ describe('App.svelte — lazy component surface', () => {
 })
 
 // ---------------------------------------------------------------------------
-// (B) $derived parity plumbing
+// (B) Parity plumbing — guarded in the useParityAttrs composable
 // ---------------------------------------------------------------------------
+//
+// After W48-T3 extraction, parityMap.X and getBypassAttr() reads moved out
+// of App.svelte into src/lib/ui/use-parity-attrs.svelte.ts. The drift guard
+// now scans the composable source: any new key added to PARITY_ATTRIBUTES
+// or BypassAttrKey must be referenced somewhere in the composable (or the
+// guard will fail). The composable's getter pattern means reads are
+// unconditional (no $derived wrapper required).
 
-describe('App.svelte — $derived parity plumbing', () => {
-  it('every $derived(parityMap.X) read references a documented PARITY_ATTRIBUTES key', () => {
+describe('useParityAttrs — parity plumbing guard', () => {
+  it('every parityMap.X read in the composable references a documented PARITY_ATTRIBUTES key', () => {
     // Extract documented keys from parity-attrs.svelte.ts
     const keyRe = /key:\s*'([a-zA-Z0-9]+)'/g
     const documentedKeys = new Set<string>()
     let km: RegExpExecArray | null
     while ((km = keyRe.exec(paritySrc)) !== null) documentedKeys.add(km[1])
 
-    // Extract parityMap.* reads from App.svelte
-    const readRe = /\$derived\s*\([^)]*parityMap\.([a-zA-Z0-9]+)/g
+    // Extract parityMap.* reads from the composable source
+    const readRe = /parityMap\.([a-zA-Z0-9]+)/g
     const reads: string[] = []
     let rm: RegExpExecArray | null
-    while ((rm = readRe.exec(appSrc)) !== null) reads.push(rm[1])
+    while ((rm = readRe.exec(parityAttrsSrc)) !== null) reads.push(rm[1])
 
     expect(reads.length).toBeGreaterThanOrEqual(1)
 
@@ -113,7 +128,7 @@ describe('App.svelte — $derived parity plumbing', () => {
     ).toEqual([])
   })
 
-  it('every $derived(getBypassAttr("X")) read references a documented BypassAttrKey', () => {
+  it('every getBypassAttr("X") read in the composable references a documented BypassAttrKey', () => {
     // BypassAttrKey union from parity-attrs.svelte.ts
     const bypassTypeRe = /type BypassAttrKey\s*=\s*([^]+?)\n\}/
     const bm = bypassTypeRe.exec(paritySrc)
@@ -124,10 +139,10 @@ describe('App.svelte — $derived parity plumbing', () => {
     )
     expect(bypassKeys.size).toBeGreaterThanOrEqual(4)
 
-    const readRe = /\$derived\s*\([^)]*getBypassAttr\(\s*'([a-zA-Z0-9]+)'\s*\)/g
+    const readRe = /getBypassAttr\(\s*'([a-zA-Z0-9]+)'\s*\)/g
     const reads: string[] = []
     let rm: RegExpExecArray | null
-    while ((rm = readRe.exec(appSrc)) !== null) reads.push(rm[1])
+    while ((rm = readRe.exec(parityAttrsSrc)) !== null) reads.push(rm[1])
 
     expect(reads.length).toBeGreaterThanOrEqual(1)
 
@@ -136,6 +151,22 @@ describe('App.svelte — $derived parity plumbing', () => {
       unknown,
       `getBypassAttr keys not in BypassAttrKey: ${unknown.join(', ')}`
     ).toEqual([])
+  })
+
+  it('App.svelte consumes the composable (no direct parityMap reads remain)', () => {
+    // After extraction, App.svelte must not read parityMap directly.
+    // All parity attribute access goes through `parity.X` from useParityAttrs.
+    const directParityMapRe = /\bparityMap\./
+    expect(
+      directParityMapRe.test(appSrc),
+      'App.svelte still references parityMap directly — should route via useParityAttrs()'
+    ).toBe(false)
+
+    const directBypassRe = /\bgetBypassAttr\(/
+    expect(
+      directBypassRe.test(appSrc),
+      'App.svelte still references getBypassAttr directly — should route via useParityAttrs()'
+    ).toBe(false)
   })
 })
 

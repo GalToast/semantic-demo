@@ -1,0 +1,104 @@
+/**
+ * @lib/ui/use-parity-attrs.svelte.ts — composable for parity attribute reads
+ *
+ * App.svelte was reading 8-9 separate reactive parity attributes via
+ * `let bodyPanelSurface = $derived(parityMap.panelSurface || '')` lines.
+ * Each was a leaky abstraction — every parity consumer had to know about
+ * the parityMap shape, the bypass attribute MutationObserver, and the
+ * `focusSearchForced` DOM-fallback chain.
+ *
+ * This composable:
+ *   - Wraps the parity attribute reads in a single reactive bundle
+ *   - Each property is a getter that registers reactive deps when called
+ *     from a tracking context (template, $derived, $effect)
+ *   - The composed `focusSearchForced` flag stays local to consumers
+ *     (it composes the DOM dataset fallback that doesn't belong in the
+ *     parity module itself)
+ *
+ * Usage:
+ *   const parity = useParityAttrs()
+ *   $effect(() => console.log(parity.panelSurface))
+ *   <div class:surface-focus-search={parity.panelSurface === 'focus-search'} />
+ *
+ * Decomp risk: the getter-on-plain-object pattern reads dependencies at
+ * call site, so destructuring loses reactivity:
+ *
+ *   const { panelSurface } = useParityAttrs()  // ❌ loses reactivity
+ *   const parity = useParityAttrs()             // ✅ reactive via getters
+ */
+
+import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte'
+
+export interface ParityAttrs {
+    /** Body data-focus-panel-mode, written by focus-panel-mode.ts */
+    readonly focusPanelMode: string
+    /** Body data-inside-walk-state, written by semantic-dive.ts */
+    readonly insideWalkState: string
+    /** Body data-panel-surface (primary surface id) */
+    readonly panelSurface: string
+    /** Body data-graph-context (semantic-graph vs map-trail) */
+    readonly graphContext: string
+    /** Body data-compact (true/false string) */
+    readonly compact: boolean
+    /** Body data-journey-navigation-owner (who owns nav: trail-strip etc.) */
+    readonly journeyNavigationOwner: string
+    /** Body data-trail-state (active/inactive) */
+    readonly trailState: string
+    /** Body data-strand-journey (semantic-dive trail phase) */
+    readonly strandJourney: string
+    /**
+     * Composed: panelSurface or graphContext equals 'focus-search', OR
+     * body.dataset.focusSearchForced === 'true'. Callers that need the
+     * gate (Controls, InfoPanel, surface predicates) read this instead of
+     * recomputing the OR.
+     */
+    readonly focusSearchForced: boolean
+}
+
+/**
+ * Returns the current parity attribute bundle. Each property is a getter
+ * that re-runs when the underlying parityMap or bypass attribute changes.
+ *
+ * The returned object is fresh per call (no memoization), which matches
+ * App.svelte's expectation that the bundle is component-scoped. If two
+ * components call this, they get two independent bundles — each with its
+ * own dependency tracking, so updates don't double-fire.
+ */
+export function useParityAttrs(): ParityAttrs {
+    return {
+        get focusPanelMode(): string {
+            return getBypassAttr('focusPanelMode') ?? ''
+        },
+        get insideWalkState(): string {
+            return getBypassAttr('insideWalkState') ?? 'idle'
+        },
+        get panelSurface(): string {
+            return parityMap.panelSurface || ''
+        },
+        get graphContext(): string {
+            return parityMap.graphContext || ''
+        },
+        get compact(): boolean {
+            return parityMap.compact === 'true'
+        },
+        get journeyNavigationOwner(): string {
+            return parityMap.journeyNavigationOwner || ''
+        },
+        get trailState(): string {
+            return parityMap.trailState || 'inactive'
+        },
+        get strandJourney(): string {
+            return parityMap.strandJourney || 'idle'
+        },
+        get focusSearchForced(): boolean {
+            // Composes panelSurface/graphContext via getters so dependency
+            // tracking propagates through both. The body.dataset fallback
+            // is a contract-test escape hatch, not a normal-state path.
+            return (
+                this.panelSurface === 'focus-search' ||
+                this.graphContext === 'focus-search' ||
+                document.body?.dataset.focusSearchForced === 'true'
+            )
+        }
+    }
+}
