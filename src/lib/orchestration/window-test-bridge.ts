@@ -217,7 +217,6 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
                 const container = document.createElement('div')
                 container.id = 'journey-chrome-mount'
                 document.body.appendChild(container)
-                // @ts-expect-error Svelte 5 mount API not in ambient types
                 new Cmp({ target: container, props: { visible: true } })
             })
         }) as (...args: unknown[]) => unknown,
@@ -252,8 +251,10 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
 function buildStateProxy(): Record<string, unknown> {
     return {
         get state() {
-            const liveAppState = (window[APP_STATE_DIRECT_KEY] as Record<string, unknown> ||
-                appState) as Record<string, unknown>
+            const liveAppState = ((window[APP_STATE_DIRECT_KEY] as Record<string, unknown>) || appState) as Record<
+                string,
+                unknown
+            >
             return {
                 currentView: get(navStore).currentView,
                 navState: get(navStore),

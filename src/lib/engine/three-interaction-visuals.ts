@@ -711,4 +711,4 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
 // ── Micro-demo Visual Bridge ────────────────────────────────────────────────
 // Extracted to three-micro-demo-bridge.ts (Phase 2).
 // initMicroDemoBridge() is called once at module load time below.
-initMicroDemoBridge();
+initMicroDemoBridge()
