@@ -15,7 +15,7 @@
  * fail at import time until the module is scaffolded. That's expected.
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import type { EngineCallbacks, EngineStatus } from '@lib/engine/adapters/types'
+import type { EngineCallbacks, EngineStatus } from '@lib/engine/lifecycle'
 
 // ── Mock the heavy engine modules ────────────────────────────────────────────
 
