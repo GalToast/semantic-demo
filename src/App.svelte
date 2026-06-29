@@ -151,6 +151,23 @@
   onMount(() => {
     // App lifecycle moved to AppBoot.svelte (W48-T2). Kept here as a
     // no-op placeholder so the visual layers below don't change shape.
+    //
+    // W49b session #2: dismiss the static #loading-overlay placeholder that
+    // index.html ships for first-paint. The Svelte LoadingOverlay component
+    // owns the #loading-overlay id once mounted; when `actuallyVisible` flips
+    // to false (phase === 'launch' or data-load error) the Svelte element is
+    // removed but the pre-mount static one survives — sits on top of the
+    // scene forever and intercepts pointer events. Cleaning it up here:
+    //   - Once, on App mount (so it never races the LoadingOverlay render)
+    //   - For the static index.html placeholder only (no Svelte class +
+    //     no Svelte scoped hash, distinguishable from the live component).
+    if (typeof document !== 'undefined') {
+      const candidates = document.querySelectorAll<HTMLElement>('#loading-overlay');
+      candidates.forEach((el) => {
+        if (el.classList.contains('svelte-')) return;
+        el.remove();
+      });
+    }
   });
 
   // The parity-attrs installer is the single source of truth for all body
