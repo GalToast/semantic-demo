@@ -10,6 +10,16 @@
  */
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
+type MockNavState = {
+    mode: string
+    surface: string
+    currentView: string
+    focusedIndex: number | null
+    applyingUrlState: boolean
+    restoringBrowserHistory: boolean
+    urlStateRestoreToken: number
+}
+
 const mockNavStore = vi.hoisted(() => ({
     state: {
         mode: 'overview',
@@ -19,13 +29,13 @@ const mockNavStore = vi.hoisted(() => ({
         applyingUrlState: false,
         restoringBrowserHistory: false,
         urlStateRestoreToken: 0
-    },
-    subscribers: [] as Array<(s: typeof mockNavStore.state) => void>
+    } as MockNavState,
+    subscribers: [] as Array<(s: MockNavState) => void>
 }))
 
 vi.mock('../../src/lib/stores/navigation.svelte', () => ({
     navStore: {
-        subscribe: (fn: (s: typeof mockNavStore.state) => void) => {
+        subscribe: (fn: (s: MockNavState) => void) => {
             mockNavStore.subscribers.push(fn)
             fn(mockNavStore.state)
             return () => {
@@ -33,13 +43,13 @@ vi.mock('../../src/lib/stores/navigation.svelte', () => ({
                 if (idx >= 0) mockNavStore.subscribers.splice(idx, 1)
             }
         },
-        update: (fn: (s: typeof mockNavStore.state) => typeof mockNavStore.state) => {
+        update: (fn: (s: MockNavState) => MockNavState) => {
             mockNavStore.state = fn(mockNavStore.state)
-            mockNavStore.subscribers.forEach((s) => s(mockNavStore.state))
+            mockNavStore.subscribers.forEach((s: (state: MockNavState) => void) => s(mockNavStore.state))
         },
-        set: (s: typeof mockNavStore.state) => {
+        set: (s: MockNavState) => {
             mockNavStore.state = s
-            mockNavStore.subscribers.forEach((fn) => fn(s))
+            mockNavStore.subscribers.forEach((fn: (s: MockNavState) => void) => fn(s))
         }
     },
     bumpUrlStateRestoreToken: () => {
