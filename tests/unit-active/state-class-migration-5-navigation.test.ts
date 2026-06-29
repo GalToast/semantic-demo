@@ -135,55 +135,65 @@ describe('Navigation store — T4 migration to Svelte 5 state class', () => {
     expect(hasFocus()).toBe(true);
   });
 
-  // ── 2. readLegacyNavField priority chain (appState first) ──────────────
+  // ── 2. Direct-read pattern (no fallback chain) ────────────────────────
+  //
+  // After retiring readLegacyNavField, getters now read directly from
+  // appState.navState when the local writable is empty/falsy. All writers
+  // of the legacy keys (focusedIndex, surface, mode, currentView) go through
+  // writeNavStateMirror, which updates both appState.navState and _navWritable
+  // atomically — so the two sources never diverge in practice.
+  //
+  // Window globals (__APP_STATE__, __TEST_STATE__) are NOT consulted by
+  // the getters anymore — those were transitional scaffolding for the
+  // pre-migration engine reducers.
 
-  it('readLegacyNavField prefers appState over window globals (mode)', () => {
-    // Set both: appState has 'search', window.__APP_STATE__ has 'overview'.
+  it('currentMode() reads appState.navState.mode when local is empty', () => {
+    // Local writable mode is '' (falsy). appState has 'search'.
     mockState.navState.mode = 'search';
-    (window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
-      navState: { mode: 'overview' },
-    };
-    // Setting local to empty triggers fallback through readLegacyNavField.
-    // currentMode returns local || readLegacyNavField('mode') || local.
-    // With local set to 'overview' (default), currentMode returns 'overview'.
-    // To test the fallback path, we mutate the local store to clear mode.
     navStore.set({ ...navStore(), mode: '' });
-    // Now local mode is '' (falsy), so fallback runs. appState wins.
+    // Direct read: appState.navState.mode ?? local → 'search' ?? '' → 'search'
     expect(currentMode()).toBe('search');
   });
 
-  it('readLegacyNavField falls back to window.__APP_STATE__ when appState lacks field', () => {
-    // appState has no 'mode' field; legacy window has it.
+  it('currentMode() ignores window globals — uses appState only', () => {
+    // After retiring readLegacyNavField, window.__APP_STATE__ is not read.
+    // If appState lacks the field, the getter returns the local value.
     delete mockState.navState.mode;
     (window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
       navState: { mode: 'from-app-state-window' },
     };
     navStore.set({ ...navStore(), mode: '' });
-    expect(currentMode()).toBe('from-app-state-window');
+    // appState.navState.mode is undefined → undefined ?? '' → '' (local)
+    expect(currentMode()).toBe('');
   });
 
-  it('readLegacyNavField falls back to window.__TEST_STATE__ when __APP_STATE__ is empty', () => {
-    delete mockState.navState.mode;
-    (window as unknown as { __TEST_STATE__: { navState: { mode: string } } }).__TEST_STATE__ = {
-      navState: { mode: 'from-test-state-window' },
-    };
-    navStore.set({ ...navStore(), mode: '' });
-    expect(currentMode()).toBe('from-test-state-window');
+  it('currentSurface() reads appState.navState.surface when local is empty', () => {
+    mockState.navState.surface = 'search';
+    navStore.set({ ...navStore(), surface: '' });
+    expect(currentSurface()).toBe('search');
   });
 
-  // ── 3. focusedIndex fallback path ──────────────────────────────────────
+  // ── 3. focusedIndex direct-read pattern ────────────────────────────────
 
-  it('focusedIndex() falls back to appState when local is null', () => {
+  it('focusedIndex() reads appState.navState.focusedIndex when local is null', () => {
     // Local focusedIndex is null (default). appState has a value.
     mockState.navState.focusedIndex = 7;
     expect(focusedIndex()).toBe(7);
   });
 
-  it('focusedIndex() falls back to window.__APP_STATE__ when appState lacks it', () => {
+  it('focusedIndex() ignores window globals — uses appState only', () => {
+    // After retiring readLegacyNavField, window.__APP_STATE__ is not read.
     delete mockState.navState.focusedIndex;
     (window as unknown as { __APP_STATE__: { navState: { focusedIndex: number } } }).__APP_STATE__ = {
       navState: { focusedIndex: 99 },
     };
-    expect(focusedIndex()).toBe(99);
+    // appState.navState.focusedIndex is undefined → null (local default)
+    expect(focusedIndex()).toBeNull();
+  });
+
+  it('hasFocus() reads appState.navState.focus fields when local is empty', () => {
+    // Local writable has no focus. appState has focusedIndex set.
+    mockState.navState.focusedIndex = 12;
+    expect(hasFocus()).toBe(true);
   });
 });

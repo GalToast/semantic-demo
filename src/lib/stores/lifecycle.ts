@@ -13,6 +13,7 @@ import { get } from 'svelte/store'
 import {
     navStore,
     updateNavState,
+    writeNavStateMirror,
     switchView,
     currentView,
     setMyceliumMode as _setMyceliumMode
@@ -267,13 +268,11 @@ export function resetExplorationFocus(options?: {
             appState.semanticDiveMode = false
             appState.focusedNode = null
             if (appState.navState) {
-                appState.navState.focusedIndex = null
                 appState.navState.trailDepth = 0
                 appState.navState.walkHistoryIndices = []
                 appState.navState.threadCandidates = []
                 appState.navState.trailNeighborIndices = []
-                appState.navState.surface = 'idle'
-                appState.navState.mode = 'overview'
+                writeNavStateMirror({ focusedIndex: null, surface: 'idle', mode: 'overview' })
             }
         }
     }

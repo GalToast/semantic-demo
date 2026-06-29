@@ -23,76 +23,6 @@ import { clearSearch } from './search.svelte.ts'
 import { resetFocus } from './focus.svelte.ts'
 import { resetJourney } from './journey.svelte.ts'
 
-interface LegacyNavState {
-    focusedIndex?: number | null
-    surface?: string
-    mode?: string
-    currentView?: string
-    panelSurface?: string
-    panelSurfaceDetail?: string
-    focusPanelMode?: string
-}
-
-/**
- * Window globals used during the legacy-state migration bridge.
- * Consolidates the window-type assertion for both readLegacyNavField
- * and getOrCreateNavWritable into a single cast site.
- */
-interface WindowWithGlobals {
-    __semanticState?: { navState?: LegacyNavState }
-    state?: { navState?: LegacyNavState }
-    __APP_STATE__?: { navState?: LegacyNavState }
-    __TEST_STATE__?: { navState?: LegacyNavState }
-    [key: string]: unknown
-}
-
-/** Single typed window reference for legacy-state cross-chunk access. */
-function getGlobalWindow(): WindowWithGlobals {
-    return window as unknown as WindowWithGlobals
-}
-
-/**
- * Structural read of a LegacyNavState field from a NavState object.
- * Some LegacyNavState keys (panelSurface, panelSurfaceDetail,
- * focusPanelMode) don't exist on NavState — use this for the
- * migration bridge.
- */
-function readNavField<T>(nav: NavState, key: keyof LegacyNavState): T | undefined {
-    return Reflect.get(nav, key) as T | undefined
-}
-
-// Legacy state fallback (transitional). The legacy js/state.js is the
-// single source of truth during the migration. When the Svelte navigation
-// store hasn't been populated by an init handler, fall back to it so the
-// focused card / compass / surface attrs reflect real data.
-function readLegacyNavField<T>(legacyKey: keyof LegacyNavState): T | undefined {
-    try {
-        // First, try to read from the new Svelte 5 state class singleton.
-        if (appState && appState.navState) {
-            const value = readNavField<T>(appState.navState, legacyKey)
-            if (value !== undefined) {
-                return value
-            }
-        }
-    } catch {
-        // ignore and fall through to legacy
-    }
-
-    // Legacy fallback (transitional). The legacy js/state.js is the
-    // single source of truth during the migration. When the Svelte navigation
-    // store hasn't been populated by an init handler, fall back to it so the
-    // focused card / compass / surface attrs reflect real data.
-    try {
-        if (typeof window === 'undefined') return undefined
-        const w = getGlobalWindow()
-        const nav =
-            w.__APP_STATE__?.navState ?? w.__TEST_STATE__?.navState ?? w.__semanticState?.navState ?? w.state?.navState
-        return nav?.[legacyKey] as T | undefined
-    } catch {
-        return undefined
-    }
-}
-
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
 export const NAVIGATION_CONFIG = {
@@ -157,7 +87,7 @@ const INITIAL_NAV_STATE: NavState = {
 // Use a global window key so all chunks share the same _navWritable instance.
 function getOrCreateNavWritable(): ReturnType<typeof writable<NavState>> {
     const key = '__SEMANTIC_EXPLORER_NAV_WRITABLE__'
-    const w = typeof window !== 'undefined' ? getGlobalWindow() : null
+    const w = typeof window !== 'undefined' ? (window as unknown as Record<string, unknown>) : null
     const existing = w?.[key]
     if (existing && typeof (existing as Record<string, unknown>).subscribe === 'function') {
         return existing as ReturnType<typeof writable<NavState>>
@@ -244,41 +174,37 @@ export const hasFocus = () => {
     if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
         return true
     }
-    // Mode fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH paths still mutate
-    // legacy state.navState.mode without writing to navStore.
-    const legacyMode = readLegacyNavField<string>('mode')
-    if (legacyMode === 'focus' || legacyMode === 'inside') return true
-    const legacyFocused = readLegacyNavField<number | null>('focusedIndex')
-    if (legacyFocused != null && Number.isFinite(legacyFocused)) return true
+    // All engine-side writes (WALK_TO/BACKTRACK/SET_DEPTH/ENTER_INSIDE/
+    // EXIT_INSIDE) now go through dispatchNavTransition → writeNavStateMirror,
+    // which mirrors to both appState.navState and _navWritable. Read directly
+    // from appState.navState — no fallback chain needed.
+    const mirror = appState.navState
+    if (mirror.mode === 'focus' || mirror.mode === 'inside') return true
+    if (mirror.focusedIndex != null && Number.isFinite(mirror.focusedIndex)) return true
     return false
 }
 export const hasTrail = () => get(_navWritable).trailDepth > 0
 export const currentMode = (): string => {
     const local = get(_navWritable).mode
     if (local) return local
-    // Fallback: engine-side WALK_TO/BACKTRACK/SET_DEPTH/ENTER_INSIDE/EXIT_INSIDE
-    // paths in mutate legacy state.navState.mode
-    // without writing to navStore. Remove once those reducers are store-native.
-    const legacy = readLegacyNavField<string>('mode')
-    if (legacy) return legacy
-    return local
+    // All engine-side writes now go through dispatchNavTransition →
+    // writeNavStateMirror (mirrors to both appState.navState and _navWritable).
+    // Read directly from appState.navState — no fallback chain needed.
+    return appState.navState.mode ?? local
 }
 export const currentSurface = (): string => {
     const local = get(_navWritable).surface
     if (local) return local
-    // Fallback: engine-side navTransitionReducer mutates legacy state.navState
-    // surface fields independently. Remove once all surface writes go through
-    // dispatchNavTransition in src/lib/stores/navigation.svelte.ts.
-    const legacy = readLegacyNavField<string>('surface')
-    if (legacy) return legacy
-    return local
+    // All engine-side surface writes now go through dispatchNavTransition →
+    // writeNavStateMirror. Read directly from appState.navState.
+    return appState.navState.surface ?? local
 }
 export const focusedIndex = () => {
     const local = get(_navWritable).focusedIndex
     if (local != null && Number.isFinite(local)) return local
-    const legacy = readLegacyNavField<number | null>('focusedIndex')
-    if (legacy != null && Number.isFinite(legacy)) return legacy
-    return local
+    // All engine-side writes now go through dispatchNavTransition →
+    // writeNavStateMirror. Read directly from appState.navState.
+    return appState.navState.focusedIndex ?? local
 }
 export const currentView = (): string => {
     // No legacy fallback: currentView is fully bridged.
