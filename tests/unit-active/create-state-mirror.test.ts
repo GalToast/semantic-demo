@@ -42,7 +42,7 @@ function readFromAppState(): MiniState {
         width: appState['viewportWidth'] as number,
         height: appState['viewportHeight'] as number,
         dpr: appState['viewportDpr'] as number,
-        note: 'kernel',
+        note: 'kernel'
     }
 }
 
@@ -50,14 +50,14 @@ const bindings = {
     width: 'viewportWidth' as const,
     height: 'viewportHeight' as const,
     dpr: 'viewportDpr' as const,
-    note: null, // explicitly skipped
+    note: null // explicitly skipped
 }
 
 function makeMirror(storageKey?: string) {
     return createStateMirror<MiniState>({
         computeFromAppState: readFromAppState,
         bindings,
-        storageKey,
+        storageKey
     })
 }
 
@@ -85,7 +85,6 @@ describe('createStateMirror — read surface', () => {
         expect(r1.height).toBe(720)
         expect(r1.dpr).toBe(2)
         expect(r1.note).toBe('kernel')
-
         ;(appState as unknown as Record<string, unknown>)['viewportWidth'] = 999
         const r2 = m.read()
         expect(r2.width).toBe(999)
@@ -189,7 +188,7 @@ describe('createStateMirror — subscribe contract', () => {
             width: 1280,
             height: 720,
             dpr: 2,
-            note: 'kernel',
+            note: 'kernel'
         })
     })
 })
@@ -260,5 +259,58 @@ describe('createStateMirror — type discipline', () => {
         expect(typeof r.height).toBe('number')
         expect(typeof r.dpr).toBe('number')
         expect(typeof r.note).toBe('string')
+    })
+})
+
+// ── Primitive T support ─────────────────────────────────────────────────────
+//
+// The factory must also work when T is a primitive (number / boolean / string
+// / null). Pattern: `createStateMirror<number>({ computeFromAppState: () =>
+// appState.filterVersion, bindings: { filterVersion: 'filterVersion' } })`
+// for primitive version counters. In this case `state[key]` returns
+// undefined for any key (because state isn't an object), so the factory's
+// mirror logic must mirror `state` itself when T is primitive.
+//
+// Regression guard: without this, `appState.filterVersion = $state<number>(0)`
+// followed by `filterVersion.update(v => v + 1)` would write `undefined` to
+// `appState.filterVersion`, tripping the strict validator.
+
+describe('createStateMirror — primitive T support', () => {
+    function makePrimitiveMirror() {
+        return createStateMirror<number>({
+            computeFromAppState: () => appState['filterVersion'] as number,
+            bindings: { filterVersion: 'filterVersion' },
+            storageKey: 'primitive-test',
+        })
+    }
+
+    beforeEach(() => {
+        ;(appState as unknown as Record<string, unknown>)['filterVersion'] = 0
+    })
+
+    afterEach(() => {
+        ;(appState as unknown as Record<string, unknown>)['filterVersion'] = 0
+    })
+
+    it('update mirrors the state itself (not state[key]) when T is primitive', () => {
+        const m = makePrimitiveMirror()
+        m.update((v) => v + 1)
+        expect(appState['filterVersion']).toBe(1)
+    })
+
+    it('set mirrors the literal value when T is primitive', () => {
+        const m = makePrimitiveMirror()
+        m.set(42)
+        expect(appState['filterVersion']).toBe(42)
+    })
+
+    it('does NOT write undefined when binding lookup misses for primitive T', () => {
+        // Regression guard: `0[key]` returns undefined; without the primitive
+        // branch the factory used to write undefined to appState.filterVersion,
+        // tripping the strict validator.
+        const m = makePrimitiveMirror()
+        m.update((v) => v + 1)
+        expect(appState['filterVersion']).not.toBe(undefined)
+        expect(typeof appState['filterVersion']).toBe('number')
     })
 })

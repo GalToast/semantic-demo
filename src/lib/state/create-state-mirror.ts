@@ -76,7 +76,7 @@ import { appState } from '@lib/state/app.svelte'
  */
 export type FieldBindings<T> = {
     [K in keyof T]?: keyof typeof appState | null
-}
+} & Record<string, keyof typeof appState | null | undefined>
 
 /**
  * The store-shaped API exposed by the factory. Compatible with the
@@ -117,14 +117,13 @@ export interface StateMirror<T> extends StateMirrorApi<T> {
  *                                     instance so different stores don't
  *                                     share state by accident.
  */
-export function createStateMirror<T extends Record<string, unknown>>(config: {
+export function createStateMirror<T>(config: {
     computeFromAppState: () => T
     bindings: FieldBindings<T>
     storageKey?: string
 }): StateMirror<T> {
     const storageKey =
-        config.storageKey ??
-        `__SEMANTIC_EXPLORER_STATE_MIRROR_${Math.random().toString(36).slice(2, 10)}__`
+        config.storageKey ?? `__SEMANTIC_EXPLORER_STATE_MIRROR_${Math.random().toString(36).slice(2, 10)}__`
 
     function getOrCreateWritable() {
         if (typeof window !== 'undefined') {
@@ -146,10 +145,19 @@ export function createStateMirror<T extends Record<string, unknown>>(config: {
 
     /** Apply the per-field bindings to mirror the published value into appState. */
     function mirrorToAppState(state: T): void {
+        // For primitive T (number/boolean/string), `state[key]` is undefined
+        // for any key — the state itself IS the bound value. For object T,
+        // we use the key lookup per the bindings map.
+        const isPrimitive =
+            state === null ||
+            state === undefined ||
+            typeof state !== 'object'
         for (const stateKey of Object.keys(config.bindings) as (keyof T)[]) {
             const appStateKey = config.bindings[stateKey]
             if (appStateKey == null) continue
-            const value = state[stateKey]
+            const value = isPrimitive
+                ? (state as unknown)
+                : (state as Record<string, unknown>)[stateKey as string]
             ;(appState as unknown as Record<string, unknown>)[appStateKey as string] = value
         }
     }

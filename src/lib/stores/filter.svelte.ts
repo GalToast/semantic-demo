@@ -4,9 +4,21 @@
  * Replaces and the filter slice from state.js.
  * Manages status, city, and contact-feature filters for the business network.
  * Canonical owner for filter ↔ state sync.
+ *
+ * Migration status:
+ *   - filterVersion / filterColorVersion: migrated to createStateMirror
+ *     (single-field counter mirrors — factory handles writable + mirror).
+ *   - activeClusterFilter: kept as explicit writable + set action because
+ *     filter-ownership-contract.mjs scans source for the literal
+ *     `appState.activeClusterFilter =` assignment. The explicit write
+ *     satisfies both the contract and the legacy kernel sync.
+ *   - filterState: kept as explicit writable + withFilterStateNotify because
+ *     the contract also requires the literal `appState.activeFilters =`
+ *     assignment and the `withFilterStateNotify` helper to exist in source.
  */
 import { derived, get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
+import { createStateMirror } from '@lib/state/create-state-mirror'
 import type { ActiveFilters } from '@lib/types/state'
 
 // ── Constants ────────────────────────────────────────────────────────────────
@@ -27,18 +39,30 @@ const INITIAL_FILTERS: ActiveFilters = {
  *   setter. In Svelte runtime this works because the render_effect re-reads the
  *   getter after mutations and calls the underlying writable's `set`. But in
  *   jsdom/vitest there is no render_effect, so `store.update()` writes to
- * *   appState but subscribers never wake up — `get(store)` returns stale values.
+ *   appState but subscribers never wake up — `get(store)` returns stale values.
  *
  *   A plain `writable` + notify wrapper fixes both: runtime subscribers are
  *   notified by the writable's own `.set()`, and test environments get
  *   synchronous notification too. (A3-1 fix pattern.)
+ *
+ * The two version counters below use createStateMirror — each is a single-
+ * field mirror over appState, so the factory handles both the Svelte writable
+ * notification and the appState write-through with zero boilerplate.
  */
 
 /** Version counter — incremented on every filter change. */
-export const filterVersion = writable(appState.filterVersion)
+export const filterVersion = createStateMirror<number>({
+    computeFromAppState: () => appState.filterVersion,
+    bindings: { filterVersion: 'filterVersion' },
+    storageKey: '__SEMANTIC_EXPLORER_FILTER_VERSION__'
+})
 
 /** Color recompute version — incremented when cluster colors should recalc. */
-export const filterColorVersion = writable(appState.filterColorVersion)
+export const filterColorVersion = createStateMirror<number>({
+    computeFromAppState: () => appState.filterColorVersion,
+    bindings: { filterColorVersion: 'filterColorVersion' },
+    storageKey: '__SEMANTIC_EXPLORER_FILTER_COLOR_VERSION__'
+})
 
 /** Active cluster filter (null = show all clusters). */
 const _activeClusterFilterWritable = writable<string | null>(
