@@ -15,7 +15,7 @@
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeSceneOrFallback, applyReducedMotionGate, applyAutoRotateConfig, exposeDevEngineBridge } from './three-engine-init-helpers'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
-import { Material } from 'three'
+import { Material, FogExp2 } from 'three'
 import * as sceneRevealMod from './scene-reveal'
 import type { NodePosition } from '@lib/state/state-types'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
