@@ -93,7 +93,7 @@ vi.mock('@lib/stores/navigation.svelte.ts', async (importOriginal) => {
             Object.assign(mockState.navStore, patch)
         },
         bumpUrlStateRestoreToken: () => {
-                const next = (mockState.navStore.urlStateRestoreToken as number) + 1
+            const next = (mockState.navStore.urlStateRestoreToken as number) + 1
             mockState.navStore.urlStateRestoreToken = next
             return next
         }
@@ -242,7 +242,9 @@ describe('url-state — applyUrlState race protection', () => {
         mockState.urlSearch = '?q=foo'
         window.history.replaceState({}, '', '/?q=foo')
         let p1Err: unknown = null
-        const p1 = applyUrlState({}).catch((e) => { p1Err = e })
+        const p1 = applyUrlState({}).catch((e) => {
+            p1Err = e
+        })
         // Wait a microtask so runSearch gets called and the signal is captured.
         await new Promise((r) => setTimeout(r, 0))
 
