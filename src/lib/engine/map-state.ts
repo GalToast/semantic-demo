@@ -6,6 +6,7 @@
  * terrain handoff, and route director state synchronization.
  */
 import { appState } from '@lib/state/app.svelte.ts'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 import type { Point, ActiveFilters } from '@lib/state/state-types'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
@@ -79,6 +80,14 @@ interface MapStateShape {
             topIndex?: number | null
         } | null
     }
+    focusState?: {
+        selectedPoint?: Point | null
+        inspectedThreadIndex?: number | null
+        pinnedThreadIndex?: number | null
+        nodesAreSettling?: boolean
+        focusTransitionMode?: string
+        focusTransitionStartedAt?: number
+    }
     activeClusterFilter: number | null
     activeFilters: ActiveFilters | null
     selectedPoint: Point | null
@@ -98,7 +107,7 @@ interface MapStateShape {
  * initMap / refreshMapMarkers / destroyMap call sites.
  */
 function getMapState(): MapStateShape {
-    return appState as MapStateShape
+    return appState as unknown as MapStateShape
 }
 
 let leafletAssetsPromise: Promise<unknown> | null = null
@@ -440,7 +449,7 @@ export function centerMapOnRouteAnchor(): boolean {
     const anchorIdx = appState.searchState.currentSearchSummary?.anchorIndex ?? undefined
     const anchorIdxValid = Number.isFinite(anchorIdx) && anchorIdx! >= 0 && anchorIdx! < appState.points.length
     const focusPoint =
-        appState.selectedPoint ||
+        appState.focusState.selectedPoint ||
         (focusIdxValid ? (appState.points as Point[])[focusIndex!] : null) ||
         (anchorIdxValid ? (appState.points as Point[])[anchorIdx!] : null) ||
         getMapRoutePoints()[0]?.point ||
@@ -477,8 +486,8 @@ export function refreshMapMarkers(): void {
     ;(appState.markersLayer as { clearLayers(): void }).clearLayers()
     const searchResultSet = new Set(appState.searchState.currentSearchSummary?.resultIndices ?? [])
     const selectedLeadId =
-        appState.selectedPoint?.lead_id !== undefined && appState.selectedPoint?.lead_id !== null
-            ? String(appState.selectedPoint.lead_id)
+        appState.focusState.selectedPoint?.lead_id !== undefined && appState.focusState.selectedPoint?.lead_id !== null
+            ? String(appState.focusState.selectedPoint.lead_id)
             : null
 
     if (appState.pointMarkers && Array.isArray(appState.pointMarkers)) {
@@ -562,7 +571,8 @@ export function refreshMapMarkers(): void {
 
 export function getRouteDirectorState(): string {
     if (appState.currentView === 'map') {
-        return appState.selectedPoint || (appState.focusedNode !== null && appState.focusedNode !== undefined)
+        return appState.focusState.selectedPoint ||
+            (appState.focusedNode !== null && appState.focusedNode !== undefined)
             ? 'map-trail'
             : 'map-overview'
     }
@@ -588,13 +598,15 @@ export function setTerrainHandoffState(phase = 'idle', options: TerrainHandoffOp
     const normalizedPhase = String(phase || 'idle').replace(/[^a-z0-9-]/gi, '') || 'idle'
     const routeCount = Number.isFinite(options.routeCount) ? options.routeCount : getRouteEmbodimentIndices().length
 
-    appState.terrainHandoffState = {
-        phase: normalizedPhase,
-        from: options.from || appState.terrainHandoffState?.from || 'overview',
-        to: options.to || appState.terrainHandoffState?.to || appState.currentView || 'galaxy',
-        routeCount: routeCount!,
-        startedAt: performance.now()
-    }
+    withStateMutation(() => {
+        appState.terrainHandoffState = {
+            phase: normalizedPhase,
+            from: options.from || appState.terrainHandoffState?.from || 'overview',
+            to: options.to || appState.terrainHandoffState?.to || appState.currentView || 'galaxy',
+            routeCount: routeCount!,
+            startedAt: performance.now()
+        }
+    })
 
     // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles terrainHandoff sync.
     // The additional terrainHandoffFrom/To/RouteCount attrs are not used by CSS or JS readers.
