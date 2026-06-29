@@ -146,6 +146,7 @@
         <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
+        <!-- Renders as 'Thread connection to node N' (when name missing) or 'Thread connection to {name}' when present. -->
         {inspectedIndex != null ? `Thread connection to ${appState.points[inspectedIndex]?.name ?? `node ${inspectedIndex}`}` : 'Connection Inspector'}
       </h2>
       <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy inspector-source">
