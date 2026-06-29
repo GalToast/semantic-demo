@@ -87,6 +87,16 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
                 }
             }
         },
+        // Viewport mock shape
+        get viewportState() {
+            return {
+                viewportWidth: 1280,
+                viewportHeight: 720,
+                viewportDpr: 1,
+                viewportReducedMotion: false,
+                viewportIsCompact: false
+            }
+        },
         // Camera mock shape
         get autoRotate() {
             return _cameraState.autoRotate

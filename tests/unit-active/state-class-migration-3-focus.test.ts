@@ -42,6 +42,13 @@ const _inspectedStrandDiagnostics = vi.hoisted(() => ({
 vi.mock('@lib/state/app.svelte.ts', () => ({
     appState: {
         navState: _focusState,
+        viewportState: {
+            viewportWidth: 1280,
+            viewportHeight: 720,
+            viewportDpr: 1,
+            viewportReducedMotion: false,
+            viewportIsCompact: false
+        },
         searchState: {
             currentSearchSummary: null,
             searchStatus: 'idle' as string,
