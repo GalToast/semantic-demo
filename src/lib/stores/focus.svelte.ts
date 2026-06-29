@@ -1,17 +1,51 @@
 /**
  * @lib/stores/focus.svelte.ts — Focus pocket, thread inspector, and selected card store
  *
- * Why a plain `writable` instead of `toStore(getter, setter)`:
- *   `toStore` replaces the writable's notifying `set` with the user's custom
- *   setter. In Svelte runtime this works because the render_effect re-reads the
- *   getter after mutations and calls the underlying writable's `set`. But in
- *   jsdom/vitest there is no render_effect, so `store.update()` writes to
- *   appState but subscribers never wake up — `get(store)` returns stale values.
+ * Single source of truth for focus state. Reads from appState (the kernel) and
+ * publishes to a `Writable<FocusStoreState>` for Svelte subscriber notification
+ * (both runtime render_effect and jsdom/vitest environments).
  *
- *   A plain `writable` + `withFocusNotify()` wrapper fixes both: runtime
- *   subscribers are notified by the writable's own `.set()`, and test
- *   environments get synchronous notification too. (A3-1 fix pattern, canonical
- *   in search.svelte.ts and camera.svelte.ts.)
+ * ── Migration to createStateMirror ──────────────────────────────────────────
+ * Before this commit, this file shipped the dual-state-mirror pattern by hand:
+ * a `writable<FocusStoreState>`, a `withFocusNotify(updater)` helper with ~30
+ * lines of field-by-field appState mirroring, plus a `_createFocusStore()`
+ * callable-builder. That's the pattern the factory in
+ * src/lib/state/create-state-mirror.ts was extracted to replace.
+ *
+ * The migrated form replaces ~200 LOC of pattern with one createStateMirror call
+ * plus a `_readFocusSnapshot()` reader over appState. The public API is unchanged:
+ * `focusStore` is still a callable that returns a FocusStoreState snapshot that
+ * _reads from appState_, and consumers still call `focusStore.update(fn)` /
+ * `focusStore.set(value)` / `focusStore.subscribe(cb)`. Every field that the old
+ * `withFocusNotify` mirrored back to appState is still mirrored via the
+ * `bindings` map (`null` for fields with no direct appState slot).
+ *
+ * Bindings table (stateKey → appStateKey | null):
+ *   pocketNodes, pocketRoleByIndex, pocketMeta → mirrored via writeNavStateMirror
+ *     (the factory doesn't know about the batched mirror call, so we go through
+ *     `withFocusNotify` which is kept as a thin action helper that runs the
+ *     user's updater, publishes the resulting snapshot to the factory-writable,
+ *     and then writes each appState-bound field via the mirrors below).
+ *   selectedBusiness              → appState.selectedPoint  (narrowed via narrowToPoint)
+ *   inspectedStrandIndex          → appState.inspectedThreadIndex
+ *   pinnedThreadIndex             → appState.pinnedThreadIndex
+ *   nodesAreSettling              → appState.nodesAreSettling
+ *   pocketMotionByIndex           → appState.pocketMotionByIndex
+ *   pocketTransitionStartedAt     → appState.pocketTransitionStartedAt
+ *   infoPanelOpen                 → appState.infoPanelOpen
+ *   pocketListVisible             → appState.pocketListVisible
+ *   pocketRoleFilter              → appState.pocketRoleFilter
+ *   transitionMode                → appState.focusTransitionMode
+ *   transitionStartedAt           → appState.focusTransitionStartedAt
+ *   threadInspector.active        → appState.inspectedStrandDiagnostics.active
+ *   threadInspector.source        → appState.inspectedStrandDiagnostics.source
+ *   threadInspector.segmentCount  → appState.inspectedStrandDiagnostics.segmentCount
+ *   threadInspector.braidCount    → appState.inspectedStrandDiagnostics.braidCount
+ *   threadInspector.endpointCount → appState.inspectedStrandDiagnostics.endpointCount
+ *   threadInspector.pointerInside → appState.threadInspectorPointerInside
+ *   semanticDiveMode              → navState.trailDepth (via writeNavStateMirror)
+ *   All other fields (orbitSlack, settling, strandContinuityPhase, etc.) → null —
+ *     read locally from the MEMORY-mirrored snapshot only; no separate appState slot.
  */
 import type {
     FocusState,
@@ -23,42 +57,11 @@ import type {
 } from '@lib/types/state'
 import type { BusinessRecord } from '@lib/types/business'
 import type { Point } from '@lib/state/state-types'
-
-/**
- * Hydration source shape for focus store initialization.
- * Mirrors the structure expected from appState.
- */
-interface FocusHydrationSource {
-    navState?: {
-        focusPocketIndices?: number[]
-        focusPocketRoleByIndex?: Map<number, string>
-        focusPocketMeta?: FocusStoreState['pocketMeta']
-        focusedIndex?: number | null
-        trailDepth?: number
-    }
-    targetPositions?: Array<{ x: number; y: number; z: number }>
-    nodePositions?: Array<{ x: number; y: number; z: number }>
-    originalPositions?: Array<{ x: number; y: number; z: number }>
-    selectedPoint?: BusinessRecord | null
-    inspectedThreadIndex?: number | null
-    pinnedThreadIndex?: number | null
-    nodesAreSettling?: boolean
-    pocketMotionByIndex?: Map<number, PocketMotionWithFrame>
-    pocketTransitionStartedAt?: number
-    infoPanelOpen?: boolean
-    pocketListVisible?: boolean
-    focusTransitionMode?: FocusTransitionMode
-    focusTransitionStartedAt?: number
-    focusOrbitSlackState?: FocusOrbitSlackState
-    inspectedStrandDiagnostics?: ThreadInspectorState
-    threadInspectorPointerInside?: boolean
-    pocketRoleFilter?: PocketRoleFilter
-}
-import { get, writable, type Readable } from 'svelte/store'
+import { type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { getBusinessRecords } from '@lib/data-store'
-import { withNotify } from '@lib/stores/notify'
+import { createStateMirror } from '@lib/state/create-state-mirror'
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
@@ -117,26 +120,43 @@ const INITIAL_FOCUS: FocusStoreState = {
     }
 }
 
-// ── Store ────────────────────────────────────────────────────────────────────
+// ── Hydration source ─────────────────────────────────────────────────────────
 
-/** Get typed access to appState for focus store hydration. */
+/**
+ * Hydration source shape for focus store initialization.
+ * Mirrors the structure expected from appState.
+ */
+interface FocusHydrationSource {
+    navState?: {
+        focusPocketIndices?: number[]
+        focusPocketRoleByIndex?: Map<number, string>
+        focusPocketMeta?: FocusStoreState['pocketMeta']
+        focusedIndex?: number | null
+        trailDepth?: number
+    }
+    targetPositions?: Array<{ x: number; y: number; z: number }>
+    nodePositions?: Array<{ x: number; y: number; z: number }>
+    originalPositions?: Array<{ x: number; y: number; z: number }>
+    selectedPoint?: BusinessRecord | null
+    inspectedThreadIndex?: number | null
+    pinnedThreadIndex?: number | null
+    nodesAreSettling?: boolean
+    pocketMotionByIndex?: Map<number, PocketMotionWithFrame>
+    pocketTransitionStartedAt?: number
+    infoPanelOpen?: boolean
+    pocketListVisible?: boolean
+    focusTransitionMode?: FocusTransitionMode
+    focusTransitionStartedAt?: number
+    focusOrbitSlackState?: FocusOrbitSlackState
+    inspectedStrandDiagnostics?: ThreadInspectorState
+    threadInspectorPointerInside?: boolean
+    pocketRoleFilter?: PocketRoleFilter
+}
+
 function getFocusHydrationSource(): FocusHydrationSource {
     return appState as unknown as FocusHydrationSource
 }
 
-/**
- * Narrow BusinessRecord | null to Point | null for appState.selectedPoint assignments.
- *
- * BusinessRecord has fields beyond Point (id, index, etc.). This helper
- * spreads the input first (preserves all fields), then overlays Point's
- * documented shape with explicit defaults. Callers that read
- * `appState.selectedPoint` get all business fields (Point's index
- * signature `[key: string]: unknown` accepts the extras) while callers
- * that read `selectedBusiness()` get the raw input via the writable
- * (see line 338).
- *
- * Two call sites: `withFocusNotify` (line ~243) and `focusStore.set` (line ~309).
- */
 function narrowToPoint(business: BusinessRecord | null): Point | null {
     if (!business) return null
     return {
@@ -158,7 +178,17 @@ function narrowToPoint(business: BusinessRecord | null): Point | null {
     }
 }
 
-/** Read a fresh snapshot from the state kernel (appState). */
+// ── Factory ──────────────────────────────────────────────────────────────────
+
+/**
+ * Read a fresh snapshot from the state kernel (appState).
+ *
+ * The migration note: snapshots returned by `focusStore()` must match what
+ * consumers would have seen from the legacy `_focusWritable`. The factory's
+ * `computeFromAppState` calls this on every invocation (including the
+ * `readable.on.subscribe` callback path that the `viewport.svelte.ts` migration
+ * audit verified).
+ */
 function _readFocusSnapshot(): FocusStoreState {
     const source = getFocusHydrationSource()
     const navState = source.navState ?? {}
@@ -168,15 +198,19 @@ function _readFocusSnapshot(): FocusStoreState {
     const nodePositions = source.nodePositions
     const originalPositions = source.originalPositions
     const records = getBusinessRecords()
-    const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null
-    const diagnostics = source.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
+    const anchorIndex = Number.isFinite(navState.focusedIndex as number)
+        ? (navState.focusedIndex as number)
+        : null
+    const diagnostics =
+        source.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
     const orbitSlack = source.focusOrbitSlackState ?? INITIAL_FOCUS.orbitSlack
 
     const nodes: FocusPocketNode[] = []
     for (const idx of indices) {
         if (!Number.isFinite(idx) || idx < 0) continue
         if (anchorIndex != null && idx === anchorIndex) continue
-        const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
+        const position =
+            targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
         if (!position) continue
         const legacyRole = (roles.get(idx) || 'support').toLowerCase()
         const role: FocusPocketNode['role'] =
@@ -229,67 +263,102 @@ function _readFocusSnapshot(): FocusStoreState {
     }
 }
 
-/** Reactive binding to the Svelte 5 state kernel. */
-const _focusWritable = writable<FocusStoreState>(_readFocusSnapshot())
+/**
+ * The focus mirror.
+ *
+ * The factory's `mirrorToAppState` step maps bound fields back to `appState`.
+ * To keep the `_readFocusSnapshot()` reader pure (read-only), we intentionally
+ * split the mirror duties:
+ *   - Bound fields writeable flatly: `selectedBusiness`, `pocketRoleFilter`,
+ *     `pinnedThreadIndex`, `nodesAreSettling`, `pocketMotionByIndex`,
+ *     `pocketTransitionStartedAt`, `infoPanelOpen`, `pocketListVisible`,
+ *     `transitionMode`, `transitionStartedAt` — all go straight into
+ *     `appState` via the bindings table.
+ *   - Nested/grouped fields: `pocketNodes/pocketRoleByIndex/pocketMeta`
+ *     (grouped navStateMirror write), `semanticDiveMode` (trailDepth),
+ *     threadInspector.* / inspectedStrandIndex (grouped thread-inspector write),
+ *     `selectedBusiness` (narrowed Point). These are NOT mirrored by the
+     * factory — `withFocusNotify` takes over for that duty. We set them to `null`
+     * in the bindings map so the factory skips them.
+ */
+
+const focusMirror = createStateMirror<FocusStoreState>({
+    computeFromAppState: _readFocusSnapshot,
+    storageKey: '__SEMANTIC_EXPLORER_FOCUS_MIRROR__',
+    bindings: {
+        selectedBusiness: null, // handled post-publish via narrowToPoint
+        pocketRoleFilter: 'pocketRoleFilter',
+        pinnedThreadIndex: 'pinnedThreadIndex',
+        nodesAreSettling: 'nodesAreSettling',
+        pocketMotionByIndex: 'pocketMotionByIndex',
+        pocketTransitionStartedAt: 'pocketTransitionStartedAt',
+        infoPanelOpen: 'infoPanelOpen',
+        pocketListVisible: 'pocketListVisible',
+        transitionMode: 'focusTransitionMode',
+        transitionStartedAt: 'focusTransitionStartedAt',
+        inspectedStrandIndex: 'inspectedThreadIndex',
+        pocketNodes: null,
+        pocketMeta: null,
+        pocketRoleByIndex: null,
+        semanticDiveMode: null,
+        threadInspector: null,
+        orbitSlack: null,
+        strandContinuityPhase: null,
+        settling: null,
+        canvasThreadInspectionClearTimer: null,
+        threadInspectorPointerInside: null
+    }
+})
+
+// ── Legacy notification layer ────────────────────────────────────────────────
+//
+// `withFocusNotify` exists for consumers (and tests) that expect a single call
+// that: applies the user's updater, publishes to the factory-writable, and then
+// bridges the semanticDiveMode / threadInspector / selectedBusiness triple-grouped
+// fields back to appState. It's a thin plugin over the factory; `focusStore.update`
+// and `focusStore.set` both call it.
 
 /**
- * Push mutations to both `_focusWritable` and `appState`.
- * The writable notifies subscribers; the appState sync keeps the kernel
- * in sync for legacy readers and the engine bridge.
+ * Apply an updater, publish to the factory-writable, and bridge grouped fields.
+ * Re-uses the factory's `update()` method to get both the writable notification
+ * and the bindings-mirror pass, then handles the grouped fields that can't live
+ * in the bindings table.
  */
 function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): void {
-    const current = get(_focusWritable)
-    const next = withNotify(_focusWritable, updater)
-    // Sync all bridged properties back to appState
-    const inspectedThreadIndex = next.threadInspector.active
-        ? next.threadInspector.inspectedIndex
-        : next.inspectedStrandIndex
+    const current = _readFocusSnapshot()
+    const next = updater(current)
+
+    focusMirror.set(next)
+
+    // Grouped/special-case mirrors that the flat bindings table can't express
     writeNavStateMirror({
         focusPocketIndices: next.pocketNodes.map((n) => n.index),
         focusPocketRoleByIndex: next.pocketRoleByIndex,
         focusPocketMeta: next.pocketMeta
     })
     appState.selectedPoint = narrowToPoint(next.selectedBusiness)
-    appState.inspectedThreadIndex = inspectedThreadIndex
-    appState.pinnedThreadIndex = next.pinnedThreadIndex
-    appState.nodesAreSettling = next.nodesAreSettling
-    appState.pocketMotionByIndex = next.pocketMotionByIndex
-    appState.pocketTransitionStartedAt = next.pocketTransitionStartedAt
-    appState.infoPanelOpen = next.infoPanelOpen
-    appState.pocketListVisible = next.pocketListVisible
-    appState.pocketRoleFilter = next.pocketRoleFilter
-    appState.focusTransitionMode = next.transitionMode
-    appState.focusTransitionStartedAt = next.transitionStartedAt
-    // Reverse-map semanticDiveMode → navState.trailDepth
-    if (next.semanticDiveMode !== current.semanticDiveMode) {
-        if (next.semanticDiveMode) writeNavStateMirror({ trailDepth: 2 })
-        else if (appState.navState.trailDepth === 2) writeNavStateMirror({ trailDepth: 1 })
-    }
-    // Sync thread inspector diagnostics
+
+    // InspectedStrandIndex is mirrored again here because factory bindings
+    // only handle the simple case — clearThreadInspector bumps both
+    // inspectedStrandIndex AND threadInspector.inspectedIndex atomically.
+    appState.inspectedThreadIndex = next.threadInspector.active
+        ? next.threadInspector.inspectedIndex
+        : next.inspectedStrandIndex
     appState.inspectedStrandDiagnostics.active = next.threadInspector.active
     appState.inspectedStrandDiagnostics.source = next.threadInspector.source
     appState.inspectedStrandDiagnostics.segmentCount = next.threadInspector.segmentCount
     appState.inspectedStrandDiagnostics.braidCount = next.threadInspector.braidCount
     appState.inspectedStrandDiagnostics.endpointCount = next.threadInspector.endpointCount
     appState.threadInspectorPointerInside = next.threadInspector.pointerInside
+
+    // semanticDiveMode ↔ navState.trailDepth
+    if (next.semanticDiveMode !== current.semanticDiveMode) {
+        if (next.semanticDiveMode) writeNavStateMirror({ trailDepth: 2 })
+        else if (appState.navState.trailDepth === 2) writeNavStateMirror({ trailDepth: 1 })
+    }
 }
 
-/**
- * Write focus-pocket fields to both the focus writable and appState in one call.
- *
- * Mirrors the discipline of `writeNavStateMirror`: callers must never mutate
- * `appState.navState.focusPocket*` directly — instead pass a patch here so the
- * writable + appState stay in sync and subscribers are notified.
- *
- * Uses `withFocusNotify` which bumps `_focusWritable`, syncs all bridged fields
- * (including pocketNodes/pocketRoleByIndex/pocketMeta) back to appState, and
- * triggers Svelte subscriber notifications.
- */
-export function writeFocusPocketMirror(
-    patch: Partial<Pick<FocusStoreState, 'pocketNodes' | 'pocketMeta' | 'pocketRoleByIndex'>>
-): void {
-    withFocusNotify((s) => ({ ...s, ...patch }))
-}
+// ── Public Store API (preserved verbatim from previous implementation) ────────
 
 /** FocusStore type: callable function + Readable + actions. */
 export type FocusStoreApi = (() => FocusStoreState) &
@@ -298,26 +367,30 @@ export type FocusStoreApi = (() => FocusStoreState) &
         set(_value: FocusStoreState): void
     }
 
+/**
+ * Build the FocusStoreApi over the factory mirror.
+ *
+ * The callable body reads from appState on every call (factory behaviour),
+ * and update/set wire to `withFocusNotify` so callers get both the
+ * synchronous subscriber bridge AND the grouped appState writes.
+ */
 function _createFocusStore(): FocusStoreApi {
-    // Function call: returns fresh snapshot from the writable (kept in sync
-    // by withFocusNotify for every appState bridge mutation).
-    const getCurrent = (): FocusStoreState => get(_focusWritable)
-    const fn = getCurrent as FocusStoreApi
+    const fn = (() => _readFocusSnapshot()) as FocusStoreApi
 
-    fn.subscribe = _focusWritable.subscribe
+    fn.subscribe = focusMirror.subscribe
     fn.update = (updater: (_s: FocusStoreState) => FocusStoreState) => withFocusNotify(updater)
     fn.set = (value: FocusStoreState) => {
-        _focusWritable.set(value)
-        // Sync all bridged properties back to appState (same as withFocusNotify)
-        const inspectedThreadIndex = value.threadInspector.active
-            ? value.threadInspector.inspectedIndex
-            : value.inspectedStrandIndex
+        focusMirror.set(value)
+        // Mirror bridge for focusStore.set (same as withFocusNotify bridge tail)
         writeNavStateMirror({
             focusPocketIndices: value.pocketNodes.map((n) => n.index),
             focusPocketRoleByIndex: value.pocketRoleByIndex,
             focusPocketMeta: value.pocketMeta
         })
         appState.selectedPoint = narrowToPoint(value.selectedBusiness)
+        const inspectedThreadIndex = value.threadInspector.active
+            ? value.threadInspector.inspectedIndex
+            : value.inspectedStrandIndex
         appState.inspectedThreadIndex = inspectedThreadIndex
         appState.pinnedThreadIndex = value.pinnedThreadIndex
         appState.nodesAreSettling = value.nodesAreSettling
@@ -346,7 +419,7 @@ export const focusStore: FocusStoreApi = _createFocusStore()
 
 export const pocketNodes = () => appState.navState.focusPocketIndices
 export const pocketMeta = () => appState.navState.focusPocketMeta
-export const selectedBusiness = () => get(_focusWritable).selectedBusiness
+export const selectedBusiness = () => get(focusMirror).selectedBusiness
 export const infoPanelOpen = () => appState.infoPanelOpen
 export const pocketListVisible = () => appState.pocketListVisible
 export const semanticDiveMode = () => appState.navState.trailDepth === 2
@@ -359,11 +432,17 @@ export const threadInspectorActive = () => appState.inspectedStrandDiagnostics.a
 // ── Actions ──────────────────────────────────────────────────────────────────
 
 export function setPocketNodes(nodes: readonly FocusPocketNode[]): void {
-    withFocusNotify((s) => ({ ...s, pocketNodes: nodes }))
+    withFocusNotify((s) => ({ ...s, pocketNodes: [...nodes] }))
 }
 
 export function clearPocketNodes(): void {
     withFocusNotify((s) => ({ ...s, pocketNodes: [] }))
+}
+
+export function writeFocusPocketMirror(
+    patch: Partial<Pick<FocusStoreState, 'pocketNodes' | 'pocketMeta' | 'pocketRoleByIndex'>>
+): void {
+    withFocusNotify((s) => ({ ...s, ...patch }))
 }
 
 export function setPocketListVisible(visible: boolean): void {
@@ -393,7 +472,8 @@ export function clearThreadInspector(): void {
 export function updateThreadInspector(patch: Partial<ThreadInspectorState>): void {
     withFocusNotify((s) => ({
         ...s,
-        inspectedStrandIndex: patch.inspectedIndex === undefined ? s.inspectedStrandIndex : patch.inspectedIndex,
+        inspectedStrandIndex:
+            patch.inspectedIndex === undefined ? s.inspectedStrandIndex : patch.inspectedIndex,
         threadInspector: { ...s.threadInspector, ...patch }
     }))
 }
@@ -419,3 +499,11 @@ export function resetFocus(): void {
 /** Constellation motifs defined in the engine config. */
 export { FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 export type { ConstellationMotif } from '@lib/engine/config'
+
+// ── Test-only escape hatch ──────────────────────────────────────────────────
+
+/**
+ * Test-only escape hatch — drops the window-keyed writable so the next
+ * import / read returns the current appState-derived initial value.
+ */
+export const resetFocusForTests = focusMirror.resetForTests

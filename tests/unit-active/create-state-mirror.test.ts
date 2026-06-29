@@ -116,7 +116,7 @@ describe('createStateMirror — update()', () => {
         // if the user's updater tries to change it. Verify the assertion:
         // the mirroring target is `null` (set in bindings), so the factory
         // skips the appState write for that field.
-        const appStateKeys = Object.keys(appState as Record<string, unknown>)
+        const appStateKeys = Object.keys(appState as unknown as Record<string, unknown>)
         // appState doesn't even carry the unbound field — verify the
         // factory's mirror logic doesn't accidentally synthesize one.
         const appStateRecord = appState as unknown as Record<string, unknown>

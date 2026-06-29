@@ -16,7 +16,7 @@ const workerHarness = vi.hoisted(() => {
     }
 })
 
-function restoreGlobalProperty(target: Record<string, unknown>, key: string, value: unknown): void {
+function restoreGlobalProperty(target: Record<string, any>, key: string, value: unknown): void {
     if (value === undefined) {
         delete target[key]
         return
@@ -142,7 +142,7 @@ describe('lead enrichment startup seam in data-loader', () => {
     })
 
     it('loads required business data from the worker without fetching the optional enrichment artifact', async () => {
-        const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>(async (url) => {
+        const fetchMock = vi.fn<typeof fetch>(async (url) => {
             const requested = String(url)
             if (requested.includes('leadEnrichment.public.json')) {
                 throw new Error('startup business load must not fetch optional enrichment')
@@ -167,7 +167,7 @@ describe('lead enrichment startup seam in data-loader', () => {
 
     it('falls back to data.dat without fetching optional enrichment when the worker fails', async () => {
         workerHarness.nextResponseType = 'error'
-        const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>(async (url) => {
+        const fetchMock = vi.fn<typeof fetch>(async (url) => {
             const requested = String(url)
             if (requested.includes('leadEnrichment.public.json')) {
                 throw new Error('startup business fallback must not fetch optional enrichment')
@@ -196,7 +196,7 @@ describe('lead enrichment startup seam in data-loader', () => {
     })
 
     it('treats a missing late enrichment artifact as null instead of throwing', async () => {
-        const fetchMock = vi.fn<Parameters<typeof fetch>, ReturnType<typeof fetch>>(
+        const fetchMock = vi.fn<typeof fetch>(
             async () => new Response('missing', { status: 404 })
         )
         vi.stubGlobal('fetch', fetchMock)

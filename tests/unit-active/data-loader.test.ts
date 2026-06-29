@@ -406,7 +406,7 @@ describe('data-loader direct coverage', () => {
             ]
             harness.responseQueue.push((w) => {
                 w.listeners.get('message')?.forEach((fn) =>
-                    fn(new MessageEvent('message', { data: makeLoadRecordsSuccess(points) }))
+                    fn(new MessageEvent('message', { data: makeLoadRecordsSuccess(points as unknown as ReturnType<typeof makePoints>) }))
                 )
             })
 
@@ -434,7 +434,7 @@ describe('data-loader direct coverage', () => {
             ]
             harness.responseQueue.push((w) => {
                 w.listeners.get('message')?.forEach((fn) =>
-                    fn(new MessageEvent('message', { data: makeLoadRecordsSuccess(points) }))
+                    fn(new MessageEvent('message', { data: makeLoadRecordsSuccess(points as unknown as ReturnType<typeof makePoints>) }))
                 )
             })
 
