@@ -245,8 +245,12 @@ function _readFocusSnapshot(): FocusStoreState {
         // parity can see user updates. The mirror is hoisted-after-read for
         // the very first call (during createStateMirror initialization), so
         // fall back to INITIAL_FOCUS defaults when focusMirror isn't defined yet.
-        semanticDiveMode: !_focusMirrorReady ? INITIAL_FOCUS.semanticDiveMode : (get(focusMirror).semanticDiveMode ?? INITIAL_FOCUS.semanticDiveMode),
-        strandContinuityPhase: !_focusMirrorReady ? INITIAL_FOCUS.strandContinuityPhase : (get(focusMirror).strandContinuityPhase ?? INITIAL_FOCUS.strandContinuityPhase),
+        semanticDiveMode: !_focusMirrorReady
+            ? INITIAL_FOCUS.semanticDiveMode
+            : (get(focusMirror).semanticDiveMode ?? INITIAL_FOCUS.semanticDiveMode),
+        strandContinuityPhase: !_focusMirrorReady
+            ? INITIAL_FOCUS.strandContinuityPhase
+            : (get(focusMirror).strandContinuityPhase ?? INITIAL_FOCUS.strandContinuityPhase),
         nodesAreSettling: source.nodesAreSettling ?? false,
         pocketMotionByIndex: new Map(source.pocketMotionByIndex ?? []),
         pocketTransitionStartedAt: source.pocketTransitionStartedAt ?? 0,
