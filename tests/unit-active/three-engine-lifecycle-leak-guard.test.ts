@@ -28,7 +28,7 @@ describe('three-engine.ts lifecycle leak guard', () => {
             }
         }
 
-        reg.listener(fakeControls, 'start', () => {})
+        reg.listener(fakeControls as unknown as EventTarget, 'start', () => {})
         reg.disposeAll()
         expect(removed).toBe(true)
     })
