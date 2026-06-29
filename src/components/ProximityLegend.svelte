@@ -9,6 +9,7 @@
   import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
   import { DisposableRegistry } from '@lib/utils/disposable-registry';
+  import { isDemoActive } from '@lib/stores/demo.svelte.ts';
 
 
   const STORAGE_KEY = 'moco_onboarding_seen_v1';
@@ -36,6 +37,18 @@
   let visible = $state(false);
   let reducedMotion = $state(false);
 
+  /**
+   * Reveal-helper. Centralizes the "show after animation delay" decision so
+   * the on-mount path and the post-demo-deferral path stay in lockstep.
+   */
+  function reveal(): void {
+    if (reducedMotion) {
+      visible = true;
+    } else {
+      _registry.schedule(100, () => { visible = true; });
+    }
+  }
+
   onMount(() => {
     // Check localStorage
     try {
@@ -56,17 +69,28 @@
       reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
-    // Show immediately (or after tiny delay for animation)
-    if (reducedMotion) {
-      visible = true;
-    } else {
-      // Small delay so the CSS animation plays
-      _registry.schedule(100, () => { visible = true; });
+    // If the demo is running at mount time (e.g. ?demo=force first-visit),
+    // defer the legend until it settles — otherwise the legend competes
+    // with the choreography overlay for the bottom-left corner during
+    // OVERVIEW/SEARCH phases. The $effect below flips `visible` on
+    // isDemoActive() false. Otherwise, show after the animation delay.
+    if (!isDemoActive()) {
+      reveal();
     }
 
     return () => {
       _registry.disposeAll();
     };
+  });
+
+  // Post-demo reveal: when the running demo ends (or a previously-running
+  // demo was cancelled/finished), if the legend is still eligible, show it.
+  // Re-runs whenever isDemoActive() changes, so the legend inherits the
+  // mount-time reduced-motion + 100ms-animation-delay discipline.
+  $effect(() => {
+    if (!isDemoActive() && !dismissed && !visible) {
+      reveal();
+    }
   });
 
   function handleDismiss(): void {
@@ -76,7 +100,7 @@
   }
 </script>
 
-{#if !dismissed && visible}
+{#if !dismissed && visible && !isDemoActive()}
   <div
     class="proximity-legend-wrapper"
     aria-label="Proximity legend: dots close together do similar things"
