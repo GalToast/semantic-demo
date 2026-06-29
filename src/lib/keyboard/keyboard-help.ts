@@ -167,9 +167,8 @@ export function initKeyboardShortcutsHint(): void {
                 'Search for a business type above, or click any dot to explore connections.'
             )
         }
+        // { once: true } auto-removes the listener; no setTimeout fallback needed.
         document.addEventListener('demo-cancelled', onCancelled, { once: true })
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        setTimeout(() => document.removeEventListener('demo-cancelled', onCancelled), 10000)
         // Fire the choreography demo. startMicroDemo() owns the re-entry
         // guard (W47 fix) and clears the session gate via shouldRunMicroDemo().
         // It returns silently if guards fail (reduced-motion, no WebGL, etc.).
