@@ -23,6 +23,7 @@
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import { showToast } from '@lib/stores/toast.svelte';
   import { appState } from '@lib/state/app.svelte';
+  import { sceneReady } from '@lib/stores/scene-ready.svelte';
 
   interface Props {
     force?: boolean;
@@ -150,17 +151,24 @@
     // orchestrators fire against an empty canvas (lazy-loaded three.js chunk
     // takes 5-15s to render) and the demo collapses visually — 9/10 phases
     // show blank chrome. Vision QA of commit 28644010 confirmed this FAIL.
-    // Now: poll appState.s3dSceneReady; start the demo only when the canvas
-    // is actually rendered. 10s timeout falls back to running anyway (a few
-    // captions flash on chrome > no demo at all).
+    //
+    // We read `sceneReady.value` (the Svelte 5 $state-backed cross-component
+    // signal in src/lib/stores/scene-ready.svelte.ts) — NOT the
+    // appState.s3dSceneReady mirror field, because mirror fields are not in
+    // the AppState $state shape and their writes create plain non-reactive
+    // properties. The store is signaled by App.svelte on Canvas onSceneReady
+    // callbacks, so the poll observes transitions reliably within ~200ms.
+    //
+    // 10s timeout falls back to running anyway — a few captions flashing on
+    // chrome beats no demo at all when the scene is slow to boot.
     const SCENE_READY_TIMEOUT_MS = 10000;
     const startTime = performance.now();
     const startWhenReady = (): void => {
-      if (appState.s3dSceneReady) {
+      if (sceneReady.value) {
         scheduleDemoTimer(() => attemptStart(), force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
         return;
       }
-      if (appState.s3dSceneError) {
+      if (sceneReady.error) {
         // Canvas errored — skip the demo and show the fallback hint.
         eligible = false;
         scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
@@ -207,9 +215,12 @@
     transform: translateX(-50%);
     z-index: var(--z-journey-block);
     display: flex;
-    flex-direction: column;
+    flex-direction: column-reverse;
     align-items: center;
-    gap: 0.4rem;
+    gap: 0.55rem;
+    pointer-events: none;
+  }
+  .demo-choreography > * {
     pointer-events: auto;
   }
   .demo-dismiss {
@@ -237,8 +248,15 @@
     outline-offset: 2px;
   }
   .demo-status {
-    font-size: 0.65rem;
-    color: rgba(78, 205, 196, 0.4); /* a11y-ok: caption-text — small status label */
+    font-size: 0.95rem;
+    line-height: 1.25;
+    color: rgba(231, 240, 240, 0.92);
     text-align: center;
+    padding: 0.55rem 1.1rem;
+    background: rgba(7, 16, 24, 0.85);
+    border: 1px solid rgba(78, 205, 196, 0.35);
+    border-radius: 999px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
+    max-width: min(560px, 80vw);
   }
 </style>

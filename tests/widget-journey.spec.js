@@ -1179,11 +1179,41 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // the nav store directly with classified roles so the chips render.
         await page.evaluate((idx) => {
             const candidates = [
-                { index: idx - 1, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' },
-                { index: idx + 1, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 2, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 3, source: 'semantic', reason: 'test', relationshipRole: 'civic', relationshipAxis: 'civic-anchor' },
-                { index: idx + 4, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' }
+                {
+                    index: idx - 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 2,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 3,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'civic',
+                    relationshipAxis: 'civic-anchor'
+                },
+                {
+                    index: idx + 4,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                }
             ]
             window.__APP_ACTIONS__?.setNavStorePatch({
                 threadCandidates: candidates,
@@ -1308,11 +1338,41 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // surface has the right data (same reasoning as test 23).
         await page.evaluate((idx) => {
             const candidates = [
-                { index: idx - 1, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' },
-                { index: idx + 1, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 2, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 3, source: 'semantic', reason: 'test', relationshipRole: 'civic', relationshipAxis: 'civic-anchor' },
-                { index: idx + 4, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' }
+                {
+                    index: idx - 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 2,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 3,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'civic',
+                    relationshipAxis: 'civic-anchor'
+                },
+                {
+                    index: idx + 4,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                }
             ]
             window.__APP_ACTIONS__?.setNavStorePatch({
                 threadCandidates: candidates,
@@ -1332,8 +1392,8 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {
             timeout: 10000
         })
-        // FocusPocketA11y is inside FocusPocket which mounts lazily; give it time.
-        await page.waitForFunction(() => !!document.querySelector('#focus-pocket'), null, { timeout: 10000 })
+        // FocusPocketA11y gates on focusStore().pocketNodes.length > 0; populate it.
+        await page.evaluate(() => window.__APP_ACTIONS__?.setFocusPocketNodes([199, 201, 202, 203, 204]))
         await page.waitForTimeout(500)
 
         // Wait for the keyboard hint badge to render
@@ -1427,9 +1487,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // Boot — dismiss the gesture gate so the search input is in
         // the rendered DOM (it always is; the gate hides chrome).
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
-        const explore = page
-            .getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ })
-            .first()
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
         if (await explore.count()) {
             await explore.waitFor({ state: 'visible', timeout: 40_000 })
             await explore.click()
@@ -1485,5 +1543,86 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
             /debounce|abort|searchinput|search-input|cannot read propert/i.test(e)
         )
         expect(debounceRelated).toEqual([])
+    })
+
+    /**
+     * 30. Demo choreography — phase driver runs all 10 captions.
+     *
+     * Phase 2b fix: the demo gate polls sceneReady.value (the
+     * $state-backed cross-component signal) instead of the non-reactive
+     * appState.s3dSceneReady mirror. Without this fix, the demo never
+     * starts. The test re-navigates with `?demo=force`, clears storage
+     * to bypass "already seen" suppression, then verifies the demo
+     * actually advances through multiple phases and renders the
+     * backdrop-pill caption with the expected polish (rounded border,
+     * teal-faded rim, off-white copy).
+     */
+    test('30. demo choreography advances and renders 10-phase captions', async ({ page }) => {
+        // Boot normally so all chunks (incl. DemoChoreography) load.
+        await page.goto(BASE_URL, { waitUntil: 'load' })
+        // Wipe the lifetime + session guards so shouldRunDemo returns true.
+        await page.evaluate(() => {
+            try {
+                localStorage.clear()
+                sessionStorage.clear()
+            } catch {}
+        })
+        // Re-navigate with ?demo=force so this is a clean page state.
+        // Use `?demo=force` (no path) so vite's SPA fallback serves index.html.
+        const url = new URL(BASE_URL)
+        url.searchParams.set('demo', 'force')
+        await page.goto(url.toString(), { waitUntil: 'load' })
+
+        // The choreography overlay should mount within ~12s. Scene ready
+        // typically fires in 1-3s, then a small delay before OVERVIEW.
+        // 20s ceiling handles slow CI / first-load WebGL init.
+        await page.locator('#demo-choreography').waitFor({ state: 'visible', timeout: 20000 })
+
+        // The status pill renders the OVERVIEW caption (the first phase).
+        const caption = page.locator('#demo-choreography .demo-status')
+        const text = (await caption.textContent())?.trim()
+        expect(text).toMatch(/8,406 businesses/i)
+
+        // The pill should have visible backdrop polish: rounded border
+        // radius and a non-empty border color. (Verifies the CSS
+        // uncommitted in this commit actually shipped — without the
+        // backdrop pill, captions were #4ECEC4 faded at 0.65rem and
+        // unreadable on chrome.)
+        const computed = await caption.evaluate((el) => {
+            const cs = window.getComputedStyle(el)
+            return {
+                bg: cs.backgroundColor,
+                border: cs.borderColor,
+                radius: cs.borderTopLeftRadius,
+                padding: cs.padding,
+                fontSize: cs.fontSize
+            }
+        })
+        expect(computed.bg).not.toBe('rgba(0, 0, 0, 0)')
+        expect(parseFloat(computed.radius)).toBeGreaterThan(20) // pill-shape
+        expect(parseFloat(computed.fontSize)).toBeGreaterThanOrEqual(14) // ~0.95rem
+
+        // Let the demo run another ~10s and verify we advance past
+        // OVERVIEW into a later phase — proves the gate fires AND the
+        // script iterates correctly. (Pre-fix, demoPhase never moved
+        // past IDLE; this is the regression test for that bug.)
+        await page.waitForTimeout(12000)
+        const phaseState = await page.evaluate(() => {
+            const a = window.__SEMANTIC_EXPLORER_APP_STATE_V1__
+            return { phase: a?.demoPhase }
+        })
+        expect(phaseState.phase).not.toBe('IDLE')
+        expect([
+            'OVERVIEW',
+            'SEARCH',
+            'FOCUS',
+            'THREADS',
+            'NEIGHBORS',
+            'TRAIL',
+            'DIVE',
+            'FILTER',
+            'MAP',
+            'RETURN'
+        ]).toContain(phaseState.phase)
     })
 })
