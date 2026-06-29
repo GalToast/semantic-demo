@@ -16,6 +16,7 @@ import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
 import { Scene, PerspectiveCamera, WebGLRenderer, FogExp2, Material, MeshPhongMaterial } from 'three'
+import * as sceneRevealMod from './scene-reveal'
 import type { NodePosition } from '@lib/state/state-types'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
 // so it can be shared with legacy-state-adapter.ts without a circular import.
@@ -51,8 +52,6 @@ import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame } from '@lib/engine/journey-webgl-lazy'
-
-
 
 // ── WindowWithDevGlobals (retained for window global exposure in initThreeJS) ──
 
@@ -115,7 +114,12 @@ export async function initThreeJS() {
         engineState.mapButtonClickHandler = showWebGLFallback(
             container,
             { reason: result.reason || 'webgl-unavailable' },
-            { state: engineState.state, viewController: engineState.viewController, mapState: engineState.mapState, uiFeedback: engineState.uiFeedback }
+            {
+                state: engineState.state,
+                viewController: engineState.viewController,
+                mapState: engineState.mapState,
+                uiFeedback: engineState.uiFeedback
+            }
         )
         return false
     }
@@ -485,7 +489,8 @@ export function animate() {
             ? Math.min(250, Math.max(0, frameNow - engineState.state.scenePerformanceDiagnostics.lastFrameAt))
             : 0
         engineState.withStateMutation?.(() => {
-            if (engineState.state?.scenePerformanceDiagnostics) engineState.state.scenePerformanceDiagnostics.lastFrameAt = frameNow
+            if (engineState.state?.scenePerformanceDiagnostics)
+                engineState.state.scenePerformanceDiagnostics.lastFrameAt = frameNow
         })
 
         engineState.cameraControls?.updateAutoRotateSoftResume(frameNow)
@@ -495,7 +500,9 @@ export function animate() {
         }
 
         const updateStart = performance.now()
-        const revealProgress = engineState.sceneReveal?.getSceneRevealProgress(frameNow) ?? 0
+        const _state = engineState.state
+        const _sceneReveal = engineState.sceneReveal
+        const revealProgress = _sceneReveal?.getSceneRevealProgress(frameNow) ?? 0
         const pointsRevealProgress = easeOutQuint(Math.min(1, Math.max(0, revealProgress / 0.7)))
         const cameraRevealProgress = easeInOutCubic(Math.min(1, Math.max(0, revealProgress)))
 
@@ -521,7 +528,10 @@ export function animate() {
             if (engineState.focusPocket?.applyFocusPocketBreathing(frameNow, engineState.state.nodePositions)) {
                 engineState.state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
                     setNodeSporeInstanceMatrixPort(idx)
-                    if (webglContext.nodeSporeHitMesh && engineState.state!.navState?.focusPocketIndices?.includes(idx)) {
+                    if (
+                        webglContext.nodeSporeHitMesh &&
+                        engineState.state!.navState?.focusPocketIndices?.includes(idx)
+                    ) {
                         setNodeSporeInstanceMatrixPort(idx, webglContext.nodeSporeHitMesh)
                     }
                 })
@@ -551,18 +561,20 @@ export function animate() {
             }
             if (revealProgress >= 1) {
                 engineState.withStateMutation?.(() => {
-                    if (!engineState.state) return
-                    engineState.state.sceneRevealActive = false
-                    engineState.state.sceneRevealCameraStart = null
-                    engineState.state.sceneRevealCameraEnd = null
+                    if (!_state) return
+                    _state.sceneRevealActive = false
+                    _state.sceneRevealCameraStart = null
+                    _state.sceneRevealCameraEnd = null
                 })
+                _sceneReveal?.setSceneRevealDataset(false)
                 engineState.cameraControls?.scheduleAutoRotateResume(1200)
             }
         }
 
         if (webglContext.pointsMaterial) {
             const isFocused = Number.isFinite(engineState.state?.focusedNode)
-            const isSemanticDive = engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
+            const isSemanticDive =
+                engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
             const pointsOpacityScale = isSemanticDive ? 0.06 : isFocused ? 0.46 : 1.0
             const pointsSizeScale = isSemanticDive ? 0.36 : isFocused ? 0.8 : 1.0
             webglContext.pointsMaterial.opacity =
@@ -593,7 +605,8 @@ export function animate() {
         }
 
         if (webglContext.nodeSporeMaterial) {
-            const isSemanticDive = engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
+            const isSemanticDive =
+                engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
             const focusBoost = isSemanticDive ? 0.22 : 1.0
             const targetSporeOpacity = (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
             webglContext.nodeSporeMaterial.opacity +=
@@ -605,7 +618,10 @@ export function animate() {
 
         // ── Hover emissive flash (spore material) ───────────────────────────────
         const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
-        const lastHadHover = engineState.lastHoveredNode !== null && Number.isFinite(engineState.lastHoveredNode) && engineState.lastHoveredNode >= 0
+        const lastHadHover =
+            engineState.lastHoveredNode !== null &&
+            Number.isFinite(engineState.lastHoveredNode) &&
+            engineState.lastHoveredNode >= 0
         if (hasHover !== lastHadHover || (hasHover && hoveredNode !== engineState.lastHoveredNode)) {
             engineState.hoverEmissiveFlash = 1.0
         }
@@ -635,13 +651,15 @@ export function animate() {
         const basePulseSpeed = prefersReduced ? 0.0 : 0.015
         const windSpeed = engineState.state?.weather?.wind_speed_10m ?? 8.0
         const pulseIncrement = basePulseSpeed * (0.6 + windSpeed / 15.0)
-        if (engineState.state) engineState.state.pulsePhase = (engineState.state.pulsePhase + pulseIncrement) % (Math.PI * 2)
+        if (engineState.state)
+            engineState.state.pulsePhase = (engineState.state.pulsePhase + pulseIncrement) % (Math.PI * 2)
 
         const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
         const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<
             typeof getMyceliumPresentationProfilePort
         >
-        const semanticDiveThreadScale = engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
+        const semanticDiveThreadScale =
+            engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
         if (threadsVisible) {
             if (webglContext.myceliumCoreLines)
                 (webglContext.myceliumCoreLines.material as Material).opacity =

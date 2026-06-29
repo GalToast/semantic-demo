@@ -562,10 +562,10 @@ async function assert_launch_focus(page, ctx) {
 
     // Use bridge actions instead of clicking search results to avoid
     // focusOnNode triggering a 90s main-thread block in batch mode.
-    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
+    await page.waitForFunction(() => !!window.__navActions__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        if (window.__APP_ACTIONS__?.setFocusedIndex) window.__APP_ACTIONS__.setFocusedIndex(519)
-        if (window.__APP_ACTIONS__?.setSurface) window.__APP_ACTIONS__.setSurface('focus')
+        if (window.__navActions__?.setFocusedIndex) window.__navActions__.setFocusedIndex(519)
+        if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus')
     })
     await page
         .waitForFunction(
@@ -908,10 +908,10 @@ async function assert_map_trail(page, ctx) {
 
     // Use bridge actions instead of clicking search results to avoid
     // focusOnNode triggering a 90s main-thread block in batch mode.
-    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
+    await page.waitForFunction(() => !!window.__navActions__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        if (window.__APP_ACTIONS__?.setFocusedIndex) window.__APP_ACTIONS__.setFocusedIndex(519)
-        if (window.__APP_ACTIONS__?.setSurface) window.__APP_ACTIONS__.setSurface('focus')
+        if (window.__navActions__?.setFocusedIndex) window.__navActions__.setFocusedIndex(519)
+        if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus')
     })
     await page
         .waitForFunction(
@@ -1357,10 +1357,10 @@ async function assert_field_node(page, ctx) {
 
     // Use bridge actions instead of clicking search results to avoid
     // focusOnNode triggering a 90s main-thread block in batch mode.
-    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
+    await page.waitForFunction(() => !!window.__navActions__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        if (window.__APP_ACTIONS__?.setFocusedIndex) window.__APP_ACTIONS__.setFocusedIndex(519)
-        if (window.__APP_ACTIONS__?.setSurface) window.__APP_ACTIONS__.setSurface('focus-search')
+        if (window.__navActions__?.setFocusedIndex) window.__navActions__.setFocusedIndex(519)
+        if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus-search')
     })
     // Allow the app to settle its own surface state after the bridge update.
     await page.waitForTimeout(500)
@@ -1820,10 +1820,10 @@ async function assert_info_panel_empty(page, ctx) {
     // Use bridge actions (setSurface) to update navStore directly — more
     // reliable than body.dataset + syncTestStateFromBody() which can be
     // overwritten by the parity layer's MutationObserver in headed/full-suite mode.
-    await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setSurface, { timeout: 5000 }).catch(() => {})
+    await page.waitForFunction(() => !!window.__navActions__?.setSurface, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        if (window.__APP_ACTIONS__?.setSurface) {
-            window.__APP_ACTIONS__.setSurface('focus')
+        if (window.__navActions__?.setSurface) {
+            window.__navActions__.setSurface('focus')
         } else {
             document.body.dataset.activeView = 'galaxy'
             document.body.dataset.panelSurface = 'focus'
@@ -3585,13 +3585,13 @@ async function assert_info_panel_populated(page, ctx) {
     // as 'focus' rather than 'idle', which keeps InfoPanel.selectionSuppressed
     // false and FocusCard.panelSurface in sync with the CSS rules.
     await page.evaluate(() => {
-        if (window.__APP_ACTIONS__?.setFocusedIndex) {
-            window.__APP_ACTIONS__.setFocusedIndex(0)
+        if (window.__navActions__?.setFocusedIndex) {
+            window.__navActions__.setFocusedIndex(0)
         }
     })
     await page.evaluate(() => {
-        if (window.__APP_ACTIONS__?.setSurface) {
-            window.__APP_ACTIONS__.setSurface('focus')
+        if (window.__navActions__?.setSurface) {
+            window.__navActions__.setSurface('focus')
         }
     })
     // Allow Svelte reactivity + component mount to settle.
@@ -4599,7 +4599,7 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
                 }
             })
 
-            const actions = window.__APP_ACTIONS__
+            const actions = window.__navActions__
             if (actions && typeof actions.inspectThreadNeighbor === 'function') {
                 let candidates = window.__APP_STATE__?.state?.navState?.threadCandidates || []
                 if (!candidates.length && typeof actions.setTrailFromSeed === 'function') {
@@ -4649,7 +4649,7 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
 
     if (preview) {
         await page
-            .waitForFunction(() => typeof window.__APP_ACTIONS__?.inspectThreadNeighbor === 'function', undefined, {
+            .waitForFunction(() => typeof window.__navActions__?.inspectThreadNeighbor === 'function', undefined, {
                 timeout: 5000
             })
             .catch(() => {})
@@ -4658,8 +4658,8 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
     // Drive the real surface state through the store so the parity layer
     // preserves the intended focus-search fixture.
     await page.evaluate(() => {
-        if (window.__APP_ACTIONS__?.setSurface) {
-            window.__APP_ACTIONS__.setSurface('focus-search')
+        if (window.__navActions__?.setSurface) {
+            window.__navActions__.setSurface('focus-search')
         }
     })
     await page.waitForTimeout(250)
@@ -4903,10 +4903,10 @@ async function forceFocusSearchSurface(page) {
     // Drive focus context via the safe setFocusedIndex action (doesn't trigger
     // the reactive cascade that hangs on cached loads).
     try {
-        await page.waitForFunction(() => !!window.__APP_ACTIONS__?.setFocusedIndex, { timeout: 5000 })
+        await page.waitForFunction(() => !!window.__navActions__?.setFocusedIndex, { timeout: 5000 })
         await page.evaluate(() => {
-            if (window.__APP_ACTIONS__?.setFocusedIndex) {
-                window.__APP_ACTIONS__.setFocusedIndex(1)
+            if (window.__navActions__?.setFocusedIndex) {
+                window.__navActions__.setFocusedIndex(1)
             }
         })
         await page.waitForTimeout(300)

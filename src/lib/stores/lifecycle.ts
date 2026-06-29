@@ -73,7 +73,7 @@ export function derivePanelSurface(opts: {
     hasFocus: boolean
     hasActiveTrailState: boolean
 }): string {
-    const { view, graphContext, mapContext, semanticDive } = opts
+    const { view, graphContext, mapContext, semanticDive, hasFocus, hasSearchIntent } = opts
     if (view !== 'galaxy') {
         if (mapContext === 'focus-search') return 'map-focus-search'
         if (mapContext === 'focus') return 'map-focus'
@@ -82,6 +82,7 @@ export function derivePanelSurface(opts: {
         return 'map-idle'
     }
     if (semanticDive === 'active' || semanticDive === 'transitioning') return 'semantic-dive'
+    if (hasFocus && hasSearchIntent) return 'focus-search'
     if (graphContext === 'focus-search') return 'focus-search'
     if (graphContext === 'focus') return 'focus'
     if (graphContext === 'search') return 'search'

@@ -23,7 +23,7 @@ import { debugWarn } from '@lib/utils/debug'
 import { initAdapters } from '@lib/orchestration/adapters'
 import { buildAdapterDeps } from '@lib/orchestration/adapter-deps'
 import { installParityAttributeSync } from '@lib/orchestration/parity-attrs.svelte.ts'
-import { installWindowTestBridge } from '@lib/orchestration/window-test-bridge'
+import { installTestStoreGlobals } from '@lib/orchestration/test-globals'
 import { debugError } from '@lib/utils/debug'
 import { applyUrlState } from '@lib/orchestration/url-state'
 
@@ -241,7 +241,7 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     _safetyTimers = setupSafetyValves()
 
     // ── Phase 2: Window globals (immediate, before async work) ────────────────
-    _unsubWindowGlobals = installWindowTestBridge()
+    _unsubWindowGlobals = installTestStoreGlobals()
 
     // ── Phase 2.5: Viewport listeners + parity attribute sync ─────────────────
     // W46-B1: These were previously installed by App.svelte's onMount, which

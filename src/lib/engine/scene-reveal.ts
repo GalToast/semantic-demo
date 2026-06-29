@@ -1,10 +1,3 @@
-/**
- * @lib/engine/scene-reveal.ts — Scene reveal animation and window resize handler
- *
- * Port of
- * Manages the camera pull-in animation that runs when the 3D scene first
- * becomes visible, and resizes the renderer + camera when the window changes.
- */
 import { Vector3 } from 'three'
 import { appState as state } from '@lib/state/app.svelte.ts'
 
@@ -18,9 +11,9 @@ import { syncClusterSectionState } from '@lib/ui/cluster-labels'
 import { updateTraversalUi } from '@lib/journey/focus-ui'
 import { getViewportSize, prefersReducedMotion, isMobileViewport } from '@lib/utils/environment'
 
-// Note: `state` (Svelte 5 AppState) is structurally a `SemanticState` (the
-// interface from the legacy state). The structural cast is no longer
-// needed — the Svelte 5 class is properly typed.
+export function setSceneRevealDataset(active: boolean): void {
+    document.body.dataset.sceneReveal = active ? 'active' : 'inactive'
+}
 
 export function startSceneReveal(): void {
     const camera = state.camera as { position: Vector3 } | null
@@ -28,6 +21,7 @@ export function startSceneReveal(): void {
     state.sceneRevealActive = true
     state.sceneRevealStartedAt = performance.now()
     state.sceneRevealCameraEnd = camera.position.clone()
+    setSceneRevealDataset(true)
 
     state.sceneRevealCameraStart = (() => {
         const cx = state.sceneRevealCameraEnd.x
@@ -46,6 +40,7 @@ export function startSceneReveal(): void {
 export function getSceneRevealProgress(frameNow: number): number {
     if (!state.sceneRevealActive || !state.sceneRevealStartedAt) return 1
     if (prefersReducedMotion()) {
+        setSceneRevealDataset(false)
         state.sceneRevealActive = false
         return 1.0
     }
