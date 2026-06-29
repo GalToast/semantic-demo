@@ -45,11 +45,11 @@ import type {
     WalkHistoryEntry,
     ThreadCandidateRef
 } from '@lib/types/state'
-import { get, type Readable, writable } from 'svelte/store'
+import { type Readable } from 'svelte/store'
 // debugWarn removed — was unused in this store
 import { appState } from '@lib/state/app.svelte.ts'
 import { writeNavStateMirror } from './navigation.svelte.ts'
-import { withNotify } from '@lib/stores/notify'
+import { createStateMirror } from '@lib/state/create-state-mirror'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -174,12 +174,58 @@ function _readJourneyFromAppState(): JourneyStoreState {
     }
 }
 
-const _journeyWritable = writable<JourneyStoreState>(_readJourneyFromAppState())
+/**
+ * The journey mirror.
+ *
+ * The factory owns the writable subscriber channel (replacing the hand-rolled
+ * `_journeyWritable` from the pre-migration file) and the window-keyed singleton
+ * that preserves the channel across dynamic imports. `computeFromAppState` reads
+ * the current appState-derived snapshot on every call — so `journeyStore()` always
+ * returns a value that matches appState byte-for-byte.
+ *
+ * Every binding is intentionally `null`. This store's writable is a pure
+ * subscriber notification channel; `appState` is the single source of truth
+ * for all fields, and every write path goes through `withJourneyNotify` which
+ * bridges the 6 mirrored fields to `appState.navState` via `writeNavStateMirror`.
+ * There is no mirrorToAppState target — setting a binding would double-write to
+ * appState.
+ *
+ * The `storageKey` MUST be the deterministic string below — tests using
+ * `delete window['__SEMANTIC_EXPLORER_JOURNEY_MIRROR__']` rely on a predictable
+ * key to reset the cross-chunk singleton between cases. Do NOT replace with a
+ * random suffix.
+ */
+const journeyMirror = createStateMirror<JourneyStoreState>({
+    computeFromAppState: _readJourneyFromAppState,
+    storageKey: '__SEMANTIC_EXPLORER_JOURNEY_MIRROR__',
+    bindings: {
+        // All fields null — writable is a notification channel, appState is SoT.
+        phase: null,
+        trail: null,
+        cursor: null,
+        depth: null,
+        threadCandidates: null,
+        threadReasonByIndex: null,
+        threadSource: null,
+        lastTraversalReason: null,
+        terrainHandoffPhase: null,
+        routeExplorationPhase: null,
+        routeChoreographyPhase: null,
+        selectedId: null,
+        selectedStopIndex: null,
+        neighbors: null,
+        compass: null,
+        walkHistory: null,
+        trailDepth: null,
+        walkHistoryIndices: null,
+        trailSeedIndex: null
+    }
+})
 
 /**
- * Push journey mutations to both `_journeyWritable` and `appState`.
- * The writable notifies subscribers; the appState mutation keeps the kernel
- * in sync. The 6 bridged properties are: mode, trailCursor, trailDepth,
+ * Push journey mutations to both the factory mirror and `appState`.
+ * The mirror's writable notifies subscribers; the appState mutation keeps the
+ * kernel in sync. The 6 bridged properties are: mode, trailCursor, trailDepth,
  * walkHistoryIndices, threadSource, lastTraversalReason.
  *
  * Contract: every field that `journeyStore()` exposes must round-trip
@@ -189,7 +235,11 @@ const _journeyWritable = writable<JourneyStoreState>(_readJourneyFromAppState())
  * for the broader migration contract.
  */
 function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState): void {
-    const next = withNotify(_journeyWritable, updater)
+    // Read fresh from appState via the factory callable (not the writable)
+    // so the updater sees the latest kernel-owned state including fields
+    // that withJourneyNotify does not mirror back to appState.
+    const current = journeyMirror()
+    const next = updater(current)
     // depth and trailDepth are aliases in the journey state. The W11-T4
     // migration kept them as separate fields to preserve the legacy
     // contract (some callers set only one), but the parity layer reads
@@ -203,7 +253,7 @@ function withJourneyNotify(updater: (_s: JourneyStoreState) => JourneyStoreState
         depth: next.trailDepth,
         trailDepth: next.trailDepth
     }
-    _journeyWritable.set(normalized)
+    journeyMirror.set(normalized)
     writeNavStateMirror({
         mode: normalized.phase,
         trailCursor: normalized.cursor,
@@ -222,14 +272,11 @@ export type JourneyStoreApi = (() => JourneyStoreState) &
     }
 
 function _createJourneyStore(): JourneyStoreApi {
-    // Function call: returns fresh snapshot from the writable (kept in sync
-    // by withJourneyNotify for every appState bridge mutation). Matches the
-    // focus store pattern: the writable is the Svelte-side source of truth,
-    // so consumers see the latest user-provided state including fields like
-    // `compass` that withJourneyNotify does not mirror back to appState.
-    const fn = (() => get(_journeyWritable)) as unknown as JourneyStoreApi
+    // Function call: returns fresh sync snapshot from kernel (factory callable
+    // reads appState directly via computeFromAppState).
+    const fn = (() => journeyMirror()) as unknown as JourneyStoreApi
 
-    fn.subscribe = _journeyWritable.subscribe
+    fn.subscribe = journeyMirror.subscribe
     // Wrap update/set to also sync appState via withJourneyNotify, so the
     // callable getter (which reads appState) returns fresh values immediately.
     fn.update = (updater: (_s: JourneyStoreState) => JourneyStoreState) => {
@@ -246,6 +293,9 @@ function _createJourneyStore(): JourneyStoreApi {
 export const journeyStore: JourneyStoreApi = _createJourneyStore()
 /** Backwards-compatible alias. */
 export const journeyState: JourneyStoreApi = journeyStore
+
+/** Test-only escape hatch — drops the window-keyed singleton. */
+export const resetJourneyForTests = journeyMirror.resetForTests
 
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
@@ -377,21 +427,21 @@ export function clearWalkHistory(): void {
 
 export function setThreadCandidates(candidates: readonly number[]): void {
     const refs = candidates.map((idx) => ({ index: idx, source: '', reason: '' }))
-    _journeyWritable.update((s) => ({ ...s, threadCandidates: [...refs] }))
+    journeyMirror.update((s) => ({ ...s, threadCandidates: [...refs] }))
     writeNavStateMirror({ threadCandidates: [...refs] })
 }
 
 export function clearThreadCandidates(): void {
-    _journeyWritable.update((s) => ({ ...s, threadCandidates: [] }))
+    journeyMirror.update((s) => ({ ...s, threadCandidates: [] }))
     writeNavStateMirror({ threadCandidates: [] })
 }
 
 export function setTerrainHandoffPhase(phase: JourneyStoreState['terrainHandoffPhase']): void {
-    _journeyWritable.update((s) => ({ ...s, terrainHandoffPhase: phase }))
+    journeyMirror.update((s) => ({ ...s, terrainHandoffPhase: phase }))
 }
 
 export function setRouteExplorationPhase(phase: JourneyStoreState['routeExplorationPhase']): void {
-    _journeyWritable.update((s) => ({ ...s, routeExplorationPhase: phase }))
+    journeyMirror.update((s) => ({ ...s, routeExplorationPhase: phase }))
 }
 
 export function setSelectedId(id: string | null): void {
@@ -400,7 +450,7 @@ export function setSelectedId(id: string | null): void {
 }
 
 export function resetJourney(): void {
-    _journeyWritable.set({ ...INITIAL_JOURNEY })
+    journeyMirror.set({ ...INITIAL_JOURNEY })
     writeNavStateMirror({
         mode: 'overview',
         walkHistoryIndices: [],
