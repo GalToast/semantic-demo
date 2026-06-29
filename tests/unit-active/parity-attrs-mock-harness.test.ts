@@ -305,7 +305,7 @@ function resetAllMockState(): void {
         myceliumMode: 'default',
         surfaceOwner: 'journey-compass'
     }
-    mockState.journeyState = { phase: 'overview' }
+    mockState.journeyState = { phase: 'overview' } as typeof mockState.journeyState
     mockState.focusState = {
         selectedBusiness: null,
         semanticDiveMode: false,
@@ -317,7 +317,7 @@ function resetAllMockState(): void {
             inspectedIndex: null
         }
     }
-    mockState.searchState = { query: '', summary: null }
+    mockState.searchState = { query: '', summary: null } as typeof mockState.searchState
     mockState.filterState = {
         status: '',
         city: '',
