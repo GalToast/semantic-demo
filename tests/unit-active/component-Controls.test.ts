@@ -21,6 +21,7 @@ import { render, fireEvent } from '@testing-library/svelte'
 import Controls from '../../src/components/Controls.svelte'
 import { cameraState } from '../../src/lib/stores/camera.svelte.ts'
 import { toastStore } from '../../src/lib/stores/toast.svelte'
+import { get } from 'svelte/store'
 
 // Mock navigator.clipboard before each test; reset to original after.
 const originalClipboard = (navigator as { clipboard?: unknown }).clipboard
@@ -182,11 +183,10 @@ describe('Controls component — shareLink feedback (regression: silent no-op)',
         await fireEvent.click(btn)
         expect(writeText).toHaveBeenCalledTimes(1)
         expect(writeText).toHaveBeenCalledWith(window.location.href)
-        let captured: { message: string; variant: 'info' | 'error'; active: boolean } | null = null
-        toastStore.subscribe((s) => (captured = s))()
-        expect(captured?.active).toBe(true)
-        expect(captured?.variant).toBe('info')
-        expect(captured?.message).toContain('Link copied')
+        const captured = get(toastStore)
+        expect(captured.active).toBe(true)
+        expect(captured.variant).toBe('info')
+        expect(captured.message).toContain('Link copied')
     })
 
     it('share-link failure path surfaces an error toast (no silent catch)', async () => {
@@ -207,11 +207,10 @@ describe('Controls component — shareLink feedback (regression: silent no-op)',
             const { container } = render(Controls)
             const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
             await fireEvent.click(btn)
-            let captured: { message: string; variant: 'info' | 'error'; active: boolean } | null = null
-            toastStore.subscribe((s) => (captured = s))()
-            expect(captured?.active).toBe(true)
-            expect(captured?.variant).toBe('error')
-            expect(captured?.message).toContain('Copy failed')
+            const captured = get(toastStore)
+            expect(captured.active).toBe(true)
+            expect(captured.variant).toBe('error')
+            expect(captured.message).toContain('Copy failed')
         } finally {
             if (originalExec === undefined) {
                 delete (document as { execCommand?: unknown }).execCommand
@@ -240,10 +239,9 @@ describe('Controls component — shareLink feedback (regression: silent no-op)',
             const btn = container.querySelector('button[aria-label="Share link"]') as HTMLButtonElement
             await fireEvent.click(btn)
             expect(execMock).toHaveBeenCalledWith('copy')
-            let captured: { message: string; variant: 'info' | 'error'; active: boolean } | null = null
-            toastStore.subscribe((s) => (captured = s))()
-            expect(captured?.variant).toBe('info')
-            expect(captured?.message).toContain('Link copied')
+            const captured = get(toastStore)
+            expect(captured.variant).toBe('info')
+            expect(captured.message).toContain('Link copied')
         } finally {
             if (originalExec === undefined) {
                 delete (document as { execCommand?: unknown }).execCommand
