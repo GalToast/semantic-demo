@@ -1,14 +1,29 @@
 /**
  * @lib/stores/viewport.svelte.ts — Viewport dimensions, DPR, reduced-motion, and breakpoints
  *
- * Replaces viewport helpers.
  * Single source of truth for viewport state. Syncs body data-* attributes
  * via $effect for CSS coexistence during migration.
+ *
+ * ── Migration to createStateMirror ──────────────────────────────────────────
+ * Before this commit, this file shipped the dual-state-mirror pattern by
+ * hand: a `writable<ViewportState>`, a `withViewportNotify(updater)` helper,
+ * and a `_createViewportStore()` callable-builder. That's the pattern the
+ * factory in src/lib/state/create-state-mirror.ts was extracted to replace.
+ *
+ * The migrated form replaces ~50 LOC of pattern with one factory call. The
+ * public API is unchanged: `viewport` is still a callable that reads from
+ * appState (the kernel-of-truth), and consumers still call
+ * `viewport.update(fn)` / `viewport.set(value)` / `viewport.subscribe(cb)`.
+ *
+ * Bound fields (those mirrored to appState) are exactly the same 5 the
+ * previous implementation wrote: width, height, dpr, reducedMotion, isCompact.
+ * The derived fields (isMobile, isLandscape, isCompactLandscape,
+ * isUltraCompactPortrait) are still computed locally from appState inside
+ * computeFromAppState and are not bound (no separate appState slot to mirror).
  */
-import { writable, type Readable } from 'svelte/store'
-import type { ViewportState } from '@lib/types/state'
-import { appState } from '@lib/state/app.svelte.ts'
-import { withNotify } from '@lib/stores/notify'
+import type { Readable } from 'svelte/store'
+import { appState } from '@lib/state/app.svelte'
+import { createStateMirror } from '@lib/state/create-state-mirror'
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
@@ -19,92 +34,84 @@ const ULTRA_COMPACT_MIN_HEIGHT = 741
 const ULTRA_COMPACT_MAX_HEIGHT = 860
 const MAX_DPR = 3
 
-// ── Store (reactive binding to kernel) ───────────────────────────────────────
+// ── ViewportState shape ──────────────────────────────────────────────────────
+//
+// The factory needs this shape as a single record. Re-declared inline
+// (instead of imported from @lib/types/state) so the factory's `bindings`
+// object can be inferred against the exact same shape used by
+// computeFromAppState below — keeps the read/write path symmetric.
 
-/**
- * Why a plain `writable` instead of `toStore(getter, setter)`:
- *   `toStore` replaces the writable's notifying `set` with the user's custom
- *   setter. In Svelte runtime this works because the render_effect re-reads the
- *   getter after mutations and calls the underlying writable's `set`. But in
- *   jsdom/vitest there is no render_effect, so `store.update()` writes to
- *   appState but subscribers never wake up — `get(store)` returns stale values.
- *
- *   A plain `writable` + notify wrapper fixes both: runtime subscribers are
- *   notified by the writable's own `.set()`, and test environments get
- *   synchronous notification too. (A3-1 fix pattern.)
- */
+interface ViewportMirrorState {
+    width: number
+    height: number
+    dpr: number
+    reducedMotion: boolean
+    isCompact: boolean
+    isMobile: boolean
+    isLandscape: boolean
+    isCompactLandscape: boolean
+    isUltraCompactPortrait: boolean
+}
 
-function _readViewportFromKernel(): ViewportState {
+function readViewportFromAppState(): ViewportMirrorState {
+    const width = appState.viewportWidth
+    const height = appState.viewportHeight
+    const isCompact = appState.viewportIsCompact
     return {
-        width: appState.viewportWidth,
-        height: appState.viewportHeight,
+        width,
+        height,
         dpr: appState.viewportDpr,
         reducedMotion: appState.viewportReducedMotion,
-        isCompact: appState.viewportIsCompact,
-        isMobile: appState.viewportIsCompact, // Unified in kernel
-        isLandscape: appState.viewportWidth > appState.viewportHeight,
-        isCompactLandscape: appState.viewportIsCompact && appState.viewportHeight <= COMPACT_LANDSCAPE_MAX_HEIGHT,
+        isCompact,
+        isMobile: isCompact,
+        isLandscape: width > height,
+        isCompactLandscape: isCompact && height <= COMPACT_LANDSCAPE_MAX_HEIGHT,
         isUltraCompactPortrait:
-            appState.viewportWidth <= ULTRA_COMPACT_MAX_WIDTH &&
-            appState.viewportHeight >= ULTRA_COMPACT_MIN_HEIGHT &&
-            appState.viewportHeight <= ULTRA_COMPACT_MAX_HEIGHT
+            width <= ULTRA_COMPACT_MAX_WIDTH &&
+            height >= ULTRA_COMPACT_MIN_HEIGHT &&
+            height <= ULTRA_COMPACT_MAX_HEIGHT
     }
 }
 
-const _viewportWritable = writable<ViewportState>(_readViewportFromKernel())
+// ── Mirror ──────────────────────────────────────────────────────────────────
 
-/** Push viewport mutations to both writable and appState. */
-function withViewportNotify(updater: (_s: ViewportState) => ViewportState): void {
-    const next = withNotify(_viewportWritable, updater)
-    appState.viewportWidth = next.width
-    appState.viewportHeight = next.height
-    appState.viewportDpr = next.dpr
-    appState.viewportReducedMotion = next.reducedMotion
-    appState.viewportIsCompact = next.isCompact
-}
+const viewportMirror = createStateMirror<ViewportMirrorState>({
+    computeFromAppState: readViewportFromAppState,
+    bindings: {
+        // Bound: writes through the factory mirror back to appState
+        width: 'viewportWidth',
+        height: 'viewportHeight',
+        dpr: 'viewportDpr',
+        reducedMotion: 'viewportReducedMotion',
+        isCompact: 'viewportIsCompact',
+        // The remaining fields (isMobile, isLandscape, isCompactLandscape,
+        // isUltraCompactPortrait) are derived locally. They live inside
+        // the writable for subscriber convenience but aren't separately
+        // mirrored — without a binding, the factory skips the appState
+        // write for them. Listed here for documentation; `null` would
+        // also work but redundant.
+        isMobile: null,
+        isLandscape: null,
+        isCompactLandscape: null,
+        isUltraCompactPortrait: null,
+    },
+    storageKey: '__SEMANTIC_EXPLORER_VIEWPORT_MIRROR__',
+})
+
+// ── Public Store API (preserved verbatim from previous implementation) ────────
 
 /**
  * Viewport store: callable as `viewport()` for direct state access,
  * and satisfies `Readable<ViewportState>` + `.update()`/`.set()` for store consumers.
  */
-export type ViewportStoreApi = (() => ViewportState) &
-    Readable<ViewportState> & {
-        update(_fn: (_s: ViewportState) => ViewportState): void
-        set(_value: ViewportState): void
+export type ViewportStoreApi = (() => ViewportMirrorState) &
+    Readable<ViewportMirrorState> & {
+        update(_fn: (_s: ViewportMirrorState) => ViewportMirrorState): void
+        set(_value: ViewportMirrorState): void
     }
-
-function _createViewportStore(): ViewportStoreApi {
-    const fn = (() => ({
-        width: appState.viewportWidth,
-        height: appState.viewportHeight,
-        dpr: appState.viewportDpr,
-        reducedMotion: appState.viewportReducedMotion,
-        isCompact: appState.viewportIsCompact,
-        isMobile: appState.viewportIsCompact,
-        isLandscape: appState.viewportWidth > appState.viewportHeight,
-        isCompactLandscape: appState.viewportIsCompact && appState.viewportHeight <= COMPACT_LANDSCAPE_MAX_HEIGHT,
-        isUltraCompactPortrait:
-            appState.viewportWidth <= ULTRA_COMPACT_MAX_WIDTH &&
-            appState.viewportHeight >= ULTRA_COMPACT_MIN_HEIGHT &&
-            appState.viewportHeight <= ULTRA_COMPACT_MAX_HEIGHT
-    })) as unknown as ViewportStoreApi
-
-    fn.subscribe = _viewportWritable.subscribe
-    fn.update = (updater: (_s: ViewportState) => ViewportState) => withViewportNotify(updater)
-    fn.set = (value: ViewportState) => {
-        _viewportWritable.set(value)
-        appState.viewportWidth = value.width
-        appState.viewportHeight = value.height
-        appState.viewportDpr = value.dpr
-        appState.viewportReducedMotion = value.reducedMotion
-        appState.viewportIsCompact = value.isCompact
-    }
-
-    return fn
-}
 
 /** Single reactive instance of the viewport state. */
-export const viewport: ViewportStoreApi = _createViewportStore()
+export const viewport = viewportMirror as unknown as ViewportStoreApi
 
 // ── Derived ──────────────────────────────────────────────────────────────────
 
@@ -142,10 +149,10 @@ export function syncViewport(): void {
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
     const isCompact = width <= MOBILE_BREAKPOINT
 
-    // Use withViewportNotify so the Svelte writable store is also notified.
-    // Without this, $viewport subscribers (e.g. Canvas.svelte $effect) never
-    // see the updated values because _viewportWritable was not being updated.
-    _viewportWritable.set({
+    // Use the factory's set() — it publishes to the writable AND mirrors
+    // the 5 bound fields back to appState. Subscribers fire synchronously
+    // in any env (test or browser).
+    viewportMirror.set({
         width,
         height,
         dpr,
@@ -155,14 +162,10 @@ export function syncViewport(): void {
         isLandscape: width > height,
         isCompactLandscape: isCompact && height <= COMPACT_LANDSCAPE_MAX_HEIGHT,
         isUltraCompactPortrait:
-            width <= ULTRA_COMPACT_MAX_WIDTH && height >= ULTRA_COMPACT_MIN_HEIGHT && height <= ULTRA_COMPACT_MAX_HEIGHT
+            width <= ULTRA_COMPACT_MAX_WIDTH &&
+            height >= ULTRA_COMPACT_MIN_HEIGHT &&
+            height <= ULTRA_COMPACT_MAX_HEIGHT
     })
-
-    appState.viewportWidth = width
-    appState.viewportHeight = height
-    appState.viewportDpr = dpr
-    appState.viewportReducedMotion = reducedMotion
-    appState.viewportIsCompact = isCompact
 
     // body[data-compact/mobile/reducedMotion] now owned by parity-attrs.svelte.ts.
     // Removed bypass writers; parity's computeParityAttributes() writes the
@@ -184,9 +187,10 @@ export function initViewportListeners(): () => void {
         })
     }
     const onMotionChange = (e: MediaQueryListEvent) => {
-        appState.viewportReducedMotion = e.matches
-        // body[data-reducedMotion] is owned by parity-attrs.svelte.ts; the
-        // viewport store subscription there will sync the new value.
+        // Use the factory's update() so writable subscribers (e.g. Canvas.svelte
+        // $viewport) are notified — direct appState assignment before this
+        // mutation only updated subscribers via the legacy kernel path.
+        viewportMirror.update((s) => ({ ...s, reducedMotion: e.matches }))
     }
 
     window.addEventListener('resize', onResize, { passive: true })
@@ -201,6 +205,15 @@ export function initViewportListeners(): () => void {
         motionQuery.removeEventListener('change', onMotionChange)
     }
 }
+
+/**
+ * Test-only escape hatch — drops the window-keyed writable so the next
+ * import / read returns the current appState-derived initial value.
+ * Most tests don't need this because the factory fixture reads from
+ * appState on every call, but the singleton pattern requires it for
+ * tests that need a clean slate between cases.
+ */
+export const resetViewportForTests = viewportMirror.resetForTests
 
 // ── Query helpers ────────────────────────────────────────────────────────────
 
