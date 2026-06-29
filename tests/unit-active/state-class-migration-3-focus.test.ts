@@ -122,8 +122,12 @@ describe('focus store — state-class appState regression', () => {
     });
 
     it('setSelectedBusiness updates writable and appState', () => {
-        const biz = { id: 123 };
-        setSelectedBusiness(biz);
+        // setSelectedBusiness now requires BusinessRecordWithIndex; tests use
+        // a minimal { id } shape and only assert identity. The cast preserves
+        // the contract assertion (=== biz) while satisfying the typed
+        // parameter.
+        const biz = { id: 'stub-record' };
+        setSelectedBusiness(biz as unknown as Parameters<typeof setSelectedBusiness>[0]);
         expect(selectedBusiness()).toBe(biz);
         expect(get(focusStore).selectedBusiness).toBe(biz);
     });
@@ -182,7 +186,7 @@ describe('focus store — state-class appState regression', () => {
 
     it('resetFocus restores defaults and syncs to appState', () => {
         setPocketListVisible(true);
-        setSelectedBusiness({ id: 1 });
+        setSelectedBusiness({ id: '1' } as unknown as Parameters<typeof setSelectedBusiness>[0]);
         setInfoPanelOpen(false);
         resetFocus();
         expect(get(focusStore).pocketListVisible).toBe(false);
