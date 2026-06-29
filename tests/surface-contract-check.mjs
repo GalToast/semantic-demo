@@ -5395,21 +5395,47 @@ async function run() {
 
     // --- Pre-flight server health check ---
     // Detect stale python http.server or wrong directory serving JSON instead of HTML.
-    try {
-        const probeRes = await fetch(positionalUrl, { signal: AbortSignal.timeout(10_000) })
-        const contentType = probeRes.headers.get('content-type') || ''
-        const bodySnippet = (await probeRes.text()).trimStart()
+    // Retries up to 3 times with 2s backoff to absorb transient `vite build` rebuilds
+    // (which set `emptyOutDir: true` and briefly delete dist/svelte/index.html).
+    const HEALTHCHECK_RETRIES = 3
+    const HEALTHCHECK_BACKOFF_MS = 2000
+    let serverHealthy = false
+    for (let attempt = 1; attempt <= HEALTHCHECK_RETRIES; attempt++) {
+        try {
+            const probeRes = await fetch(positionalUrl, { signal: AbortSignal.timeout(10_000) })
+            const contentType = probeRes.headers.get('content-type') || ''
+            const bodySnippet = (await probeRes.text()).trimStart()
 
-        const isHTML = contentType.startsWith('text/html')
-        const looksLikeJSON = bodySnippet.startsWith('{') || bodySnippet.startsWith('[')
+            const isHTML = contentType.startsWith('text/html')
+            const looksLikeJSON = bodySnippet.startsWith('{') || bodySnippet.startsWith('[')
 
-        if (!isHTML || looksLikeJSON) {
-            console.error(`\n[FATAL] Dev server is not serving HTML.`)
+            if (isHTML && !looksLikeJSON) {
+                serverHealthy = true
+                if (attempt > 1) {
+                    console.error(`[preflight] Server healthy on attempt ${attempt}/${HEALTHCHECK_RETRIES}`)
+                }
+                break
+            }
+            console.error(
+                `[preflight] Attempt ${attempt}/${HEALTHCHECK_RETRIES}: server returned non-HTML (Content-Type: ${contentType || '(empty)'}) — retrying in ${HEALTHCHECK_BACKOFF_MS}ms`
+            )
+        } catch (probeErr) {
+            console.error(
+                `[preflight] Attempt ${attempt}/${HEALTHCHECK_RETRIES}: ${probeErr.message || probeErr} — retrying in ${HEALTHCHECK_BACKOFF_MS}ms`
+            )
+        }
+        if (attempt < HEALTHCHECK_RETRIES) {
+            await new Promise((r) => setTimeout(r, HEALTHCHECK_BACKOFF_MS))
+        }
+    }
+    if (!serverHealthy) {
+        {
+            console.error(`\n[FATAL] Dev server is not serving HTML after ${HEALTHCHECK_RETRIES} attempts.`)
             console.error(`URL: ${positionalUrl}`)
-            console.error(`Content-Type: ${contentType || '(empty)'}`)
             console.error(``)
-            console.error(`This usually means a stale python -m http.server is serving the wrong file,`)
-            console.error(`or the server was started from a directory other than the project root.`)
+            console.error(`This usually means a stale python http.server is serving the wrong file,`)
+            console.error(`the server was started from a directory other than the project root,`)
+            console.error(`or vite build is running concurrently (emptyOutDir: true deletes the file briefly).`)
             console.error(``)
             console.error(`Fix:`)
             console.error(`  1. Identify the exact listener on 8795:`)
@@ -5425,13 +5451,6 @@ async function run() {
             console.error(`  5. Re-run the test.`)
             process.exit(1)
         }
-    } catch (probeErr) {
-        console.error(`\n[FATAL] Dev server is not reachable at ${positionalUrl}`)
-        console.error(`Error: ${probeErr.message || probeErr}`)
-        console.error(``)
-        console.error(`Start a server from the project root:`)
-        console.error(`  cd <project-root> && python -m http.server 8795 --bind 127.0.0.1`)
-        process.exit(1)
     }
     // --- End pre-flight server health check ---
 
