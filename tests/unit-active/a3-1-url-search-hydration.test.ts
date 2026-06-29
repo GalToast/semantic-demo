@@ -53,8 +53,83 @@ const mockState = vi.hoisted(() => ({
   summaryCardTypeToken: 0
 }));
 
+// Stable reference for `appState.searchState`. Returns the SAME object
+// every time so production writes like
+// `appState.searchState.currentSearchSummary.resultIndices = [...]`
+// stick. Tracked fields are proxy get/set pointing at mockState so test
+// mutations via the legacy flat setters below propagate. DEFAULT_SEARCH_STATE
+// is referenced via inline defaults because vi.hoisted factories run before
+// top-level imports are initialized (ReferenceError otherwise).
+const mockSearchState = vi.hoisted(() => {
+  const tracked = [
+    'currentSearchSummary',
+    'searchStatus',
+    'searchRequestSequence',
+    'searchAnchorIndex',
+    'searchPreviewIndex',
+    'searchGlowIndices',
+    'searchGlowTopIndex',
+    'searchGlowActive',
+    'currentEmptyQuery',
+    'searchFocusTransitionToken',
+    'semanticTrailCue',
+    'isCompactViewport',
+    'semanticGuideRequestSequence',
+    'currentSemanticGuide',
+    'summaryCardTypeToken'
+  ] as const
+  const obj: Record<string, unknown> = {
+    searchError: null,
+    searchFocusTransitionToken: 0,
+    isSearching: false,
+    currentEmptyQuery: null,
+    semanticTrailCue: 'idle',
+    isCompactViewport: false,
+    semanticGuideRequestSequence: 0,
+    currentSemanticGuide: null,
+    summaryCardTypeToken: 0,
+    semanticSearchCacheDiagnostics: {
+      hits: 0,
+      misses: 0,
+      stores: 0,
+      evictions: 0,
+      lastKey: null,
+      lastSource: null,
+      lastAgeMs: null
+    },
+    semanticSearchResultCache: new Map(),
+    searchVisibleCount: 5,
+    searchGlowIndices: new Set(),
+    searchStatus: 'idle',
+    currentSearchSummary: null,
+    searchRequestSequence: 0,
+    searchAnchorIndex: null,
+    searchPreviewIndex: null,
+    searchGlowTopIndex: null,
+    searchGlowActive: false
+  }
+  for (const field of tracked) {
+    Object.defineProperty(obj, field, {
+      get() {
+        return (mockState as unknown as Record<string, unknown>)[field]
+      },
+      set(v: unknown) {
+        ;(mockState as unknown as Record<string, unknown>)[field] = v
+      },
+      enumerable: true,
+      configurable: true
+    })
+  }
+  return obj
+})
+
 vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
+    get searchState() {
+      // Stable reference: production code can mutate via appState.searchState.X = Y
+      // and the change sticks (proxy on mockSearchState tracks to mockState).
+      return mockSearchState
+    },
     get currentSearchSummary() { return mockState.currentSearchSummary; },
     set currentSearchSummary(v) { mockState.currentSearchSummary = v; },
     get navState() { return mockState.navState; },
