@@ -80,18 +80,10 @@
   // .sceneReady from these same stores. We read from the stores directly to
   // avoid the body.dataset → MutationObserver → $state round-trip.
   let panelSurface = $derived(parityMap.panelSurface ?? '');
-  let bodyNavMode = $derived(nav.mode ?? '');
-  void bodyNavMode;
   let panelSurfaceDetail = $derived(parityMap.panelSurfaceDetail ?? '');
 
   // Read body data-focus-panel-mode reactively via shared parity-attrs observer (set by setFocusPanelMode)
   let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
-
-  // ── CSS class derivation for surface/mode selectors ───────────────────────
-  let focusCardSurfaceClass = $derived(panelSurface ? `surface-${panelSurface}` : '');
-  let focusCardModeClass = $derived(bodyFocusPanelMode ? `mode-${bodyFocusPanelMode}` : '');
-  void focusCardSurfaceClass;
-  void focusCardModeClass;
 
   // Reactive focus detection: read from appState.navState rune so Svelte re-evaluates
   // when nav state changes (same semantics as the former body.dataset reads).
@@ -101,14 +93,6 @@
     nav.mode === 'inside' ||
     isFocused
   );
-
-  let semanticDiveActive = $derived(
-    forceSemanticDiveVisible ||
-      panelSurface === 'semantic-dive' ||
-      panelSurfaceDetail === 'semantic-dive' ||
-      String(surface) === 'semantic-dive'
-  );
-  void semanticDiveActive;
 
   let selectedRecord = $derived.by((): BusinessRecord | null => {
     // Read _records (a $state rune) so this $derived is registered as a
