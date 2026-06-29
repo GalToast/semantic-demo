@@ -26,7 +26,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const ROOT = path.resolve(__dirname, '..')
 const PORT = 8795
 const HOST = '127.0.0.1'
-const URL = `http://${HOST}:${PORT}/`
+const URL = `http://${HOST}:${PORT}/dist/svelte/index.html`
 const BASELINE_DIR = path.join(ROOT, 'docs')
 
 const args = process.argv.slice(2)
@@ -128,17 +128,22 @@ async function main() {
     }
 
     if (updateBaseline) {
-        const baselineFiles = fs.readdirSync(BASELINE_DIR)
+        const baselineFiles = fs
+            .readdirSync(BASELINE_DIR)
             .filter((f) => f.startsWith('lighthouse-baseline'))
             .sort()
         const nextNumber = baselineFiles.length + 1
-        const baselinePath = path.join(BASELINE_DIR, `lighthouse-baseline-2026-06-${nextNumber.toString().padStart(2, '0')}.json`)
+        const baselinePath = path.join(
+            BASELINE_DIR,
+            `lighthouse-baseline-2026-06-${nextNumber.toString().padStart(2, '0')}.json`
+        )
         fs.copyFileSync(reportPath, baselinePath)
         console.log(`\nBaseline updated: ${baselinePath}`)
     }
 
     if (runGate) {
-        const latestBaseline = fs.readdirSync(BASELINE_DIR)
+        const latestBaseline = fs
+            .readdirSync(BASELINE_DIR)
             .filter((f) => f.startsWith('lighthouse-baseline'))
             .sort()
             .at(-1)
