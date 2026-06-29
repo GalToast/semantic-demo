@@ -386,7 +386,7 @@ export function setActiveStoryPrompt(_id: string | null): void {
 
 /** Set the mycelium mode (dormant|active|overdrive). */
 export function setMyceliumMode(mode: string, _options?: Record<string, unknown>): void {
-    writeNavStateMirror({ myceliumMode: mode })
+    _navWritable.update((s) => ({ ...s, myceliumMode: mode }))
 }
 
 /** Set whether URL state is currently being applied. */

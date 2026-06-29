@@ -7,7 +7,7 @@
  *   1. Safety valve timers (detect stuck loading overlay)
  *   2. Data loading (delegates to initData from data-store)
  *   3. URL state application (after data loads)
- *   4. Window globals for Playwright test compat (__APP_STATE__, __APP_ACTIONS__)
+ *   4. Window globals for Playwright test compat (__APP_STATE__, __navActions__)
  *   5. WebGL context restore handler
  *   6. First-paint coordination (scene reveal, hide overlay, deferred hydration, demo)
  *
@@ -33,7 +33,7 @@ import { applyUrlState } from '@lib/orchestration/url-state'
 import '@lib/journey/journey'
 
 // ── Debug Window Extensions (Playwright test compat) ────────────────────────
-// `__APP_STATE__` and `__APP_ACTIONS__` are debug/test shims. Their types are
+// `__APP_STATE__` and `__navActions__` are debug/test shims. Their types are
 // declared in src/window.d.ts (the canonical location for window globals).
 // The action bag itself lives in window-test-bridge.ts; this module only
 // invokes install/teardown.
