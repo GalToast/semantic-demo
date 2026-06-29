@@ -50,7 +50,7 @@ import {
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
-import { triggerSearchHeroMoment, disposeHeroAnimation } from './three-search-animations'
+import { disposeHeroAnimation } from './three-search-animations'
 import { calculateSignalScore } from '@lib/utils/geo-data'
 import {
     createFocusAnchorIndicator,
@@ -60,6 +60,10 @@ import {
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { debugWarn } from '@lib/utils/debug'
+import { updateSelectedNodeMotes } from './three-lens-motes'
+import { updateSelectedNodePetals } from './three-lens-petals'
+import { updateSelectedNodeFilaments } from './three-lens-filaments'
+import { initMicroDemoBridge, disposeMicroDemoBridge } from './three-micro-demo-bridge'
 
 // ── Three.js material narrowing helpers ───────────────────────────────────────
 // All focus/mote/petal/halo objects in this codebase are constructed with a single
@@ -112,166 +116,13 @@ function getSemanticLensNeighborIndices(focusedNode: number): number[] {
         .slice(0, 12)
 }
 
-function updateSelectedNodeMotes(worldPos: Vector3 | null, time: number, isInside: boolean): void {
-    if (!state.focusMoteGroup || !Array.isArray(state.focusMotes)) return
-    const hasFocus = worldPos !== null
-    const targetOpacity = hasFocus ? (isInside ? 0.4 : 0.82) : 0
-    state.focusMoteGroup.visible =
-        hasFocus || state.focusMotes.some((mote: Mesh) => asSingleMaterial(mote.material).opacity > 0.01)
-    if (hasFocus) {
-        state.focusMoteGroup.position.copy(worldPos)
-        state.focusMoteGroup.rotation.set(
-            Math.sin(time * 0.19) * 0.14,
-            Math.sin(time * 0.13 + 0.7) * 0.18,
-            Math.sin(time * 0.17 + 1.4) * 0.1
-        )
-    }
-
-    state.focusMotes.forEach((mote: Mesh, index: number) => {
-        const data = mote.userData || {}
-        const moteMat = asSingleMaterial(mote.material)
-        moteMat.opacity += (targetOpacity - moteMat.opacity) * 0.08
-        mote.visible = moteMat.opacity > 0.01
-        if (!hasFocus) return
-
-        const phase = (data.phase || 0) + time * (data.speed || 0.45)
-        const radius = data.radius || 0.028
-        const breath = 0.82 + Math.sin(time * 0.92 + index * 0.61) * 0.16 + Math.sin(time * 0.31 + index) * 0.07
-        const curl = phase + Math.sin(time * 0.42 + index) * 0.62 + Math.sin(time * 0.17 + index * 1.7) * 0.28
-        const wander = data.drift || 0.6
-        const verticalDrift = Math.sin(phase * 0.61) * radius * 0.46 + Math.sin(time * 0.58 + index) * 0.009 * wander
-        mote.position.set(
-            Math.cos(curl) * radius * breath + Math.sin(time * 0.33 + index * 2.1) * 0.004 * wander,
-            (data.lift || 0) + verticalDrift,
-            Math.sin(curl) * radius * (data.tilt || 0.72) * breath +
-                Math.cos(time * 0.29 + index * 1.6) * 0.004 * wander
-        )
-        const moteScale =
-            (data.scale || 0.0084) *
-            (1.0 + Math.sin(time * 1.08 + index * 0.7) * 0.24 + Math.sin(time * 0.41 + index) * 0.09)
-        mote.scale.set(moteScale, moteScale, 1)
-    })
-}
-
-function updateSelectedNodePetals(worldPos: Vector3 | null, time: number, isInside: boolean): void {
-    if (!state.focusPetalGroup || !Array.isArray(state.focusPetals)) return
-    const hasFocus = worldPos !== null
-    const targetOpacity = hasFocus ? (isInside ? 0.24 : 0.65) : 0
-    state.focusPetalGroup.visible =
-        hasFocus || state.focusPetals.some((petal: Mesh) => asSingleMaterial(petal.material).opacity > 0.01)
-    if (hasFocus) {
-        state.focusPetalGroup.position.copy(worldPos)
-        state.focusPetalGroup.rotation.set(
-            Math.sin(time * 0.12 + 0.3) * 0.1,
-            Math.sin(time * 0.16 + 1.1) * 0.16,
-            Math.sin(time * 0.1 + 2.1) * 0.08
-        )
-    }
-
-    state.focusPetals.forEach((petal: Mesh, index: number) => {
-        const data = petal.userData || {}
-        const mat = asSingleMaterial(petal.material)
-        mat.opacity += (targetOpacity - mat.opacity) * 0.1
-        petal.visible = mat.opacity > 0.01
-        if (!hasFocus) return
-
-        const phase = (data.phase || 0) + time * (data.speed || 0.28)
-        const radius = data.radius || 0.026
-        const sway = Math.sin(time * 0.38 + index * 0.77) * 0.38 + Math.sin(time * 0.16 + index * 1.43) * 0.18
-        const angle = phase + sway
-        const breath = 0.82 + Math.sin(time * 0.64 + index) * 0.18 + Math.sin(time * 0.23 + index * 1.8) * 0.07
-        petal.position.set(
-            Math.cos(angle) * radius * breath,
-            (data.lift || 0) + Math.sin(phase * 0.61) * radius * 0.34,
-            Math.sin(angle) * radius * (data.tilt || 0.72) * breath
-        )
-        ;(mat as Material & { rotation?: number }).rotation =
-            angle + Math.PI * 0.5 + Math.sin(time * 0.46 + index) * 0.44
-        const length = (data.length || 0.042) * (1.0 + Math.sin(time * 0.72 + index * 0.9) * 0.18)
-        const thickness = data.thickness || 0.008
-        petal.scale.set(length, thickness, 1)
-    })
-}
-
-function updateSelectedNodeFilaments(worldPos: Vector3 | null, time: number, isInside: boolean): void {
-    if (!state.focusFilaments?.geometry?.attributes?.position) return
-    const positions = state.focusFilaments.geometry.attributes.position.array
-    const hasFocus = worldPos !== null
-    const targetOpacity = hasFocus ? (isInside ? 0.22 : 0.5) : 0
-    const filMat = asSingleMaterial(state.focusFilaments.material)
-    filMat.opacity += (targetOpacity - filMat.opacity) * 0.1
-    state.focusFilaments.visible = filMat.opacity > 0.01
-    if (!hasFocus) {
-        positions.fill(0)
-        state.focusFilaments.geometry.attributes.position.needsUpdate = true
-        return
-    }
-
-    let offset = 0
-    for (let i = 0; i < FOCUS_WISP_COUNT; i += 1) {
-        const seed = i * 1.713
-        const phase = time * (0.2 + i * 0.008) + seed
-        const rootOrbit = 0.004 + (i % 7) * 0.0011
-        const length = 0.017 + (i % 8) * 0.0024 + Math.sin(time * 0.34 + seed) * 0.002
-        const curlStrength = 0.0045 + (i % 6) * 0.0017
-        const lean = Math.sin(seed * 1.37) * (0.0022 + (i % 5) * 0.0009)
-        const shell = 0.66 + (i % 4) * 0.11
-        const root = {
-            x: worldPos.x + Math.cos(seed + time * 0.06) * rootOrbit,
-            y: worldPos.y - 0.007 + Math.sin(seed * 0.7 + time * 0.09) * 0.0035,
-            z: worldPos.z + Math.sin(seed + time * 0.055) * rootOrbit * 0.78
-        }
-        let prev = null
-        for (let s = 0; s <= FOCUS_WISP_SEGMENTS; s += 1) {
-            const t = s / FOCUS_WISP_SEGMENTS
-            const taper = Math.sin(t * Math.PI)
-            const ease = t * t * (3 - 2 * t)
-            const curl =
-                phase +
-                ease * (2.25 + i * 0.055) +
-                Math.sin(time * 0.34 + seed + t * 5.6) * 0.72 +
-                Math.sin(time * 0.12 + seed * 2.1 + t * 9.2) * 0.3
-            const drift = Math.sin(time * 0.48 + seed + t * 6.8) * taper
-            const lateral = curlStrength * ease * (0.62 + taper * shell)
-            const float = Math.sin(time * 0.28 + seed * 0.8 + t * 3.7) * taper * 0.0075
-            const point = {
-                x: root.x + Math.cos(curl) * lateral + Math.sin(phase * 1.1 + t * 4.6) * taper * 0.0032 + lean * ease,
-                y: root.y + Math.sin(t * Math.PI * 0.74) * length * 0.24 + ease * length * 0.07 + float,
-                z: root.z + Math.sin(curl) * lateral * 0.9 + drift * 0.0048
-            }
-            if (prev) {
-                positions[offset++] = prev.x
-                positions[offset++] = prev.y
-                positions[offset++] = prev.z
-                positions[offset++] = point.x
-                positions[offset++] = point.y
-                positions[offset++] = point.z
-            }
-            prev = point
-        }
-    }
-    while (offset < positions.length) positions[offset++] = 0
-    state.focusFilaments.geometry.attributes.position.needsUpdate = true
-}
-
 // ── Public API ──────────────────────────────────────────────────────────────
 
 export function disposeInteractionVisuals() {
     disposeSemanticLens()
     disposeFocusAnchorIndicator()
     disposeHeroAnimation()
-
-    // Remove micro-demo event listeners to prevent handler leaks
-    if (typeof document !== 'undefined' && document && document.removeEventListener) {
-        if (_onDemoNodeHighlight) {
-            document.removeEventListener('micro-demo-node-highlight', _onDemoNodeHighlight as EventListener)
-            _onDemoNodeHighlight = null
-        }
-        if (_onDemoNamePulse) {
-            document.removeEventListener('micro-demo-name-pulse', _onDemoNamePulse as EventListener)
-            _onDemoNamePulse = null
-        }
-    }
+    disposeMicroDemoBridge()
 }
 
 export function disposeSemanticLens() {
@@ -858,58 +709,6 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
 }
 
 // ── Micro-demo Visual Bridge ────────────────────────────────────────────────
-
-let _demoHighlightNode = null
-let _demoHighlightBoost = 1.0
-
-// Module-level handler references for micro-demo listeners so they can be
-// removed during disposal (Bug #2 – previously leaked at module scope).
-let _onDemoNodeHighlight: ((e: Event) => void) | null = null
-let _onDemoNamePulse: (() => void) | null = null
-
-if (typeof document !== 'undefined' && document && document.addEventListener) {
-    _onDemoNodeHighlight = (e: Event) => {
-        const detail = (e as CustomEvent).detail as { index: number; phase: string }
-        const { index, phase } = detail
-        if (!state.pointsMaterial?.userData?.shader) return
-        const shader = state.pointsMaterial.userData.shader
-
-        if (phase === 'glow' || phase === 'gliding') {
-            _demoHighlightNode = index
-            _demoHighlightBoost = phase === 'gliding' ? 1.55 : 1.35
-            const pos = state.nodePositions[index]
-            if (pos) {
-                shader.uniforms.uHoverNodePos.value.set(pos.x, pos.y, pos.z)
-                shader.uniforms.uHoverBoost.value = _demoHighlightBoost
-                shader.uniforms.uHoverRadius.value = 0.12
-            }
-        } else if (phase === 'arrived') {
-            _demoHighlightNode = index
-            _demoHighlightBoost = 1.65
-            if (typeof triggerSearchHeroMoment === 'function') {
-                triggerSearchHeroMoment(index)
-            }
-        } else if (phase === 'cleanup' || phase === 'wide_view') {
-            _demoHighlightNode = null
-            _demoHighlightBoost = 1.0
-            shader.uniforms.uHoverBoost.value = 1.0
-        }
-    }
-
-    _onDemoNamePulse = () => {
-        const nameEl = document.querySelector('#info-panel h2') as HTMLElement | null
-        if (nameEl) {
-            nameEl.style.transition = 'text-shadow 0.4s ease, color 0.4s ease'
-            nameEl.style.color = '#fff'
-            nameEl.style.textShadow = '0 0 12px rgba(78, 205, 196, 0.8)'
-            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-            setTimeout(() => {
-                nameEl.style.color = ''
-                nameEl.style.textShadow = ''
-            }, 600)
-        }
-    }
-
-    document.addEventListener('micro-demo-node-highlight', _onDemoNodeHighlight as EventListener)
-    document.addEventListener('micro-demo-name-pulse', _onDemoNamePulse as EventListener)
-}
+// Extracted to three-micro-demo-bridge.ts (Phase 2).
+// initMicroDemoBridge() is called once at module load time below.
+initMicroDemoBridge();

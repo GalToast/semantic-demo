@@ -22,6 +22,7 @@
   import type { DemoPhase } from '@lib/stores/demo.svelte.ts';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import { showToast } from '@lib/stores/toast.svelte';
+  import { appState } from '@lib/state/app.svelte';
 
   interface Props {
     force?: boolean;
@@ -144,9 +145,37 @@
       return;
     }
 
-    scheduleDemoTimer(() => {
-      attemptStart();
-    }, force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
+    // Phase 2b-2 fix: gate the demo phase driver on the 3D scene actually
+    // being rendered. Without this, the demo's camera/search/focus/dive/etc.
+    // orchestrators fire against an empty canvas (lazy-loaded three.js chunk
+    // takes 5-15s to render) and the demo collapses visually — 9/10 phases
+    // show blank chrome. Vision QA of commit 28644010 confirmed this FAIL.
+    // Now: poll appState.s3dSceneReady; start the demo only when the canvas
+    // is actually rendered. 10s timeout falls back to running anyway (a few
+    // captions flash on chrome > no demo at all).
+    const SCENE_READY_TIMEOUT_MS = 10000;
+    const startTime = performance.now();
+    const startWhenReady = (): void => {
+      if (appState.s3dSceneReady) {
+        scheduleDemoTimer(() => attemptStart(), force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
+        return;
+      }
+      if (appState.s3dSceneError) {
+        // Canvas errored — skip the demo and show the fallback hint.
+        eligible = false;
+        scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
+        return;
+      }
+      if (performance.now() - startTime > SCENE_READY_TIMEOUT_MS) {
+        // Scene never became ready (slow network, webgl blocked, etc.).
+        // Better to run captions on chrome than to never run at all.
+        console.warn('[DemoChoreography] Canvas did not become ready in 10s; running demo anyway.');
+        scheduleDemoTimer(() => attemptStart(), force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
+        return;
+      }
+      setTimeout(startWhenReady, 200);
+    };
+    startWhenReady();
   });
 
   onDestroy(() => {

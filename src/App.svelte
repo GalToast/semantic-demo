@@ -347,7 +347,7 @@
       <div class="layer canvas-layer" class:active={engineReady.value && canvasLazy.current}>
         {#if engineReady.value && canvasLazy.current}
           {@const Cmp = canvasLazy.current}
-          <Cmp interactive={true} defer={true} onSceneReady={() => (s3dSceneReady = true)} onSceneError={() => (s3dSceneError = true)} />
+          <Cmp interactive={true} defer={true} onSceneReady={() => { s3dSceneReady = true; appState.s3dSceneReady = true }} onSceneError={() => { s3dSceneError = true; appState.s3dSceneError = true }} />
         {/if}
       </div>
       <div class="layer placeholder-layer" class:active={!s3dSceneReady && !s3dSceneError}>
