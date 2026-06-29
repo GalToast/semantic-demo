@@ -12,11 +12,13 @@
 import { webglContext } from './webgl-context'
 import { Vector3, Object3D, LineSegments, NormalBlending, Group, BufferAttribute } from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import { CONFIG } from './config'
+import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
 import type { SemanticNeighborDetail } from '@lib/types/business'
@@ -286,19 +288,27 @@ export function getGroupLineSegmentCount(group: Group) {
 
 function createLineSegments(positions: number[], opacity: number, linewidth: number) {
     if (!positions.length) return null
-    const geometry = new LineGeometry()
+    const geometry = new LineSegmentsGeometry()
     geometry.setPositions(positions)
+    // The @types/three LineMaterial has a stricter parameters type than
+    // the runtime export of the same class. Cast to the constructor's
+    // inferred parameter shape to keep the call site narrow.
+    const material = new LineMaterial({
+        color: SCENE_PALETTE.threadTint,
+        linewidth,
+        worldUnits: false,
+        transparent: true,
+        opacity,
+        depthWrite: true,
+        blending: NormalBlending
+    } as ConstructorParameters<typeof LineMaterial>[0])
+    // The runtime LineMaterial and the @types/three LineMaterial are
+    // seen by the type system as distinct (different module instances).
+    // The runtime instances are the same at execution; bridge with a
+    // constructor-parameter-shaped cast.
     return new LineSegments2(
         geometry,
-        new LineMaterial({
-            color: CONFIG.COLORS.threadTint ?? 0x4ecdc4,
-            linewidth,
-            worldUnits: false,
-            transparent: true,
-            opacity,
-            depthWrite: true,
-            blending: NormalBlending
-        })
+        material as ConstructorParameters<typeof LineSegments2>[1]
     )
 }
 
