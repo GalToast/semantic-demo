@@ -280,7 +280,7 @@ describe('createStateMirror — primitive T support', () => {
         return createStateMirror<number>({
             computeFromAppState: () => appState['filterVersion'] as number,
             bindings: { filterVersion: 'filterVersion' },
-            storageKey: 'primitive-test',
+            storageKey: 'primitive-test'
         })
     }
 

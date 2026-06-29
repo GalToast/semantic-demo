@@ -198,19 +198,15 @@ function _readFocusSnapshot(): FocusStoreState {
     const nodePositions = source.nodePositions
     const originalPositions = source.originalPositions
     const records = getBusinessRecords()
-    const anchorIndex = Number.isFinite(navState.focusedIndex as number)
-        ? (navState.focusedIndex as number)
-        : null
-    const diagnostics =
-        source.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
+    const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null
+    const diagnostics = source.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
     const orbitSlack = source.focusOrbitSlackState ?? INITIAL_FOCUS.orbitSlack
 
     const nodes: FocusPocketNode[] = []
     for (const idx of indices) {
         if (!Number.isFinite(idx) || idx < 0) continue
         if (anchorIndex != null && idx === anchorIndex) continue
-        const position =
-            targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
+        const position = targetPositions?.[idx] ?? nodePositions?.[idx] ?? originalPositions?.[idx] ?? null
         if (!position) continue
         const legacyRole = (roles.get(idx) || 'support').toLowerCase()
         const role: FocusPocketNode['role'] =
@@ -278,8 +274,8 @@ function _readFocusSnapshot(): FocusStoreState {
  *     (grouped navStateMirror write), `semanticDiveMode` (trailDepth),
  *     threadInspector.* / inspectedStrandIndex (grouped thread-inspector write),
  *     `selectedBusiness` (narrowed Point). These are NOT mirrored by the
-     * factory — `withFocusNotify` takes over for that duty. We set them to `null`
-     * in the bindings map so the factory skips them.
+ * factory — `withFocusNotify` takes over for that duty. We set them to `null`
+ * in the bindings map so the factory skips them.
  */
 
 const focusMirror = createStateMirror<FocusStoreState>({
@@ -472,8 +468,7 @@ export function clearThreadInspector(): void {
 export function updateThreadInspector(patch: Partial<ThreadInspectorState>): void {
     withFocusNotify((s) => ({
         ...s,
-        inspectedStrandIndex:
-            patch.inspectedIndex === undefined ? s.inspectedStrandIndex : patch.inspectedIndex,
+        inspectedStrandIndex: patch.inspectedIndex === undefined ? s.inspectedStrandIndex : patch.inspectedIndex,
         threadInspector: { ...s.threadInspector, ...patch }
     }))
 }
