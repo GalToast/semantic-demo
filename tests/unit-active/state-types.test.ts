@@ -34,6 +34,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import type { Vector3 } from 'three';
 import type {
     Vector3Like,
     NodePosition,
@@ -257,7 +258,7 @@ describe('state-types — RendererLike / CameraLike (three.js bridges)', () => {
 
     it('CameraLike accepts a position-only fixture', () => {
         const c: CameraLike = {
-            position: { x: 0, y: 0, z: 0 } as unknown as Vector3Like
+            position: { x: 0, y: 0, z: 0 } as unknown as Vector3
         };
         // Position can be any Vector3Like; we just verify it didn't reject.
         expect(c.position).toBeDefined();
