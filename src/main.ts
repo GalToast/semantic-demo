@@ -18,6 +18,7 @@ import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import type { WeatherData } from '@lib/utils/weather'
 import { appState } from '@lib/state/app.svelte.ts'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 // Side-effect: generates and exposes window.__semanticExplorerSessionSeed
 import '@lib/state/session.svelte'
 import type { ViewName, SearchSummary, Point } from '@lib/state/state-types'
@@ -207,23 +208,27 @@ function createTestCompatProxy(): Record<string, unknown> {
                 legacyState[prop] = value
                 // Also write to Svelte appState so tests that target the
                 // Svelte build see their mutations reflected in the UI.
-                if (prop === 'weatherState' && appState) {
-                    appState.weatherState = value as {
-                        weather: WeatherData | null
-                        lastFetch: number | null
-                        fallback: boolean
-                        stalenessMsg: string
-                    }
-                } else if (prop === 'currentView' && appState) {
-                    appState.currentView = value as ViewName
-                } else if (prop === 'weather' && appState) {
-                    appState.weather = value
-                } else if (prop === 'currentSearchSummary' && appState) {
-                    appState.searchState.currentSearchSummary = value as SearchSummary
-                } else if (prop === 'points' && appState) {
-                    appState.points = value as Point[]
-                } else if (prop === 'focusedNode' && appState) {
-                    appState.focusedNode = value === null ? null : (value as number)
+                if (appState) {
+                    withStateMutation(() => {
+                        if (prop === 'weatherState') {
+                            appState.weatherState = value as {
+                                weather: WeatherData | null
+                                lastFetch: number | null
+                                fallback: boolean
+                                stalenessMsg: string
+                            }
+                        } else if (prop === 'currentView') {
+                            appState.currentView = value as ViewName
+                        } else if (prop === 'weather') {
+                            appState.weather = value
+                        } else if (prop === 'currentSearchSummary') {
+                            appState.searchState.currentSearchSummary = value as SearchSummary
+                        } else if (prop === 'points') {
+                            appState.points = value as Point[]
+                        } else if (prop === 'focusedNode') {
+                            appState.focusedNode = value === null ? null : (value as number)
+                        }
+                    })
                 }
                 return true
             },
