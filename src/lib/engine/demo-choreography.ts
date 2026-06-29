@@ -104,14 +104,22 @@ interface MicroDemoUiModule {
 
 // ── Phase Constants ──────────────────────────────────────────────────────────
 
-export const PHASE: Record<DemoPhase, DemoPhase> = {
+// WIDENED during 6→10-phase migration (2026-06-28).
+// Legacy 6-phase names (GLIDING/ARRIVED/CARD_VISIBLE/PULLBACK/WIDE_VIEW/RETURNING)
+// were removed from DemoPhase in demo.svelte.ts. The PHASE map preserves the
+// legacy string keys as a compatibility shim while mapping values onto the
+// new 10-phase union (see DEMO_PHASE_MAP below). The exported Record uses a
+// widened index signature so unknown keys are allowed; known-valid lookups are
+// non-null asserted at each call site because the object literal is a complete
+// const map of all valid legacy + new phase keys.
+export const PHASE: Readonly<Record<string, DemoPhase>> = {
     IDLE: 'IDLE',
-    GLIDING: 'GLIDING',
-    ARRIVED: 'ARRIVED',
-    CARD_VISIBLE: 'CARD_VISIBLE',
-    PULLBACK: 'PULLBACK',
-    WIDE_VIEW: 'WIDE_VIEW',
-    RETURNING: 'RETURNING',
+    GLIDING: 'SEARCH',
+    ARRIVED: 'FOCUS',
+    CARD_VISIBLE: 'NEIGHBORS',
+    PULLBACK: 'MAP',
+    WIDE_VIEW: 'FILTER',
+    RETURNING: 'RETURN',
     COMPLETE: 'COMPLETE',
     CANCELLED: 'CANCELLED'
 }
@@ -121,7 +129,7 @@ export const PHASE: Record<DemoPhase, DemoPhase> = {
 // the Svelte demo store; these are scratch bookkeeping for the choreography
 // module's own guard checks and timer lifecycle.
 
-let _demoPhase: DemoPhase = PHASE.IDLE
+let _demoPhase: DemoPhase = PHASE.IDLE!
 let _demoNodeIndex: number | null = null
 let _demoRegistry: DisposableRegistry = new DisposableRegistry({ label: 'demo-choreography' })
 let _demoCancelled = false
@@ -150,7 +158,7 @@ export function clearDemoTimers(): void {
 }
 
 export function resetRetryState(): void {
-    _demoPhase = PHASE.IDLE
+    _demoPhase = PHASE.IDLE!
     _demoNodeIndex = null
     _demoCancelled = false
 }
@@ -239,7 +247,7 @@ async function demoReset(): Promise<void> {
         debugWarn('[demo-choreography] demoReset failed:', err)
         // best-effort state recovery so we don't leave the app stuck mid-demo
         try {
-            _demoPhase = PHASE.IDLE
+            _demoPhase = PHASE.IDLE!
         } catch {
             /* swallow */
         }
@@ -280,7 +288,7 @@ async function demoFocusSetup(demoNode: number): Promise<void> {
     } catch (err) {
         debugWarn('[demo-choreography] demoFocusSetup failed:', err)
         try {
-            _demoPhase = PHASE.CANCELLED
+            _demoPhase = PHASE.CANCELLED!
             _demoCancelled = true
         } catch {
             /* swallow */
@@ -299,14 +307,14 @@ async function cleanup(): Promise<void> {
         ui.hideVeil()
         ui.removePill()
         ui.unbindInputInterceptor()
-        _demoPhase = PHASE.IDLE
+        _demoPhase = PHASE.IDLE!
         _demoNodeIndex = null
         _demoCancelled = false
     } catch (err) {
         debugWarn('[demo-choreography] cleanup failed:', err)
         // state is best-effort: ensure scratch flags are sane even if DOM teardown failed
         try {
-            _demoPhase = PHASE.IDLE
+            _demoPhase = PHASE.IDLE!
         } catch {
             /* swallow */
         }
@@ -350,7 +358,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         ])
 
         ui.injectMicroDemoStyles()
-        _demoPhase = PHASE.GLIDING
+        _demoPhase = PHASE.SEARCH!
         _demoCancelled = false
 
         microDemoCamera.captureOverviewCameraSnapshot()
@@ -368,7 +376,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         const demoNode = _demoNodeIndex
         if (demoNode === null || !Number.isFinite(demoNode)) {
             debugWarn('[demo-choreography] runDemo called without setDemoNodeIndex; aborting')
-            _demoPhase = PHASE.IDLE
+            _demoPhase = PHASE.IDLE!
             _demoCancelled = false
             try {
                 clearDemoTimers()
@@ -420,7 +428,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
             // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
             setTimeout(() => {
                 if (_demoCancelled) return
-                _demoPhase = PHASE.ARRIVED
+                _demoPhase = PHASE.FOCUS!
                 // Fire-and-forget: demoFocusSetup is async but caller does not need to await.
                 void demoFocusSetup(demoNode)
                 document.dispatchEvent(
@@ -436,7 +444,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
             // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
             setTimeout(() => {
                 if (_demoCancelled) return
-                _demoPhase = PHASE.CARD_VISIBLE
+                _demoPhase = PHASE.NEIGHBORS!
                 document.dispatchEvent(new CustomEvent('micro-demo-name-pulse'))
             }, 1520)
         )
@@ -455,7 +463,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
             // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
             setTimeout(() => {
                 if (_demoCancelled) return
-                _demoPhase = PHASE.PULLBACK
+                _demoPhase = PHASE.MAP!
                 camera.animateCameraToNode(demoNode, {
                     transitionStyle: 'focus',
                     duration: 1200,
@@ -470,7 +478,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
             // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
             setTimeout(() => {
                 if (_demoCancelled) return
-                _demoPhase = PHASE.WIDE_VIEW
+                _demoPhase = PHASE.FILTER!
                 document.dispatchEvent(
                     new CustomEvent('micro-demo-node-highlight', {
                         detail: { index: demoNode, phase: 'wide_view' }
@@ -485,7 +493,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
             // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
             setTimeout(() => {
                 if (_demoCancelled) return
-                _demoPhase = PHASE.RETURNING
+                _demoPhase = PHASE.RETURN!
                 // Fire-and-forget: demoReset is async but caller does not need to await.
                 void demoReset()
                 microDemoCamera.animateCameraToOverview(1000)
@@ -502,7 +510,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
             // eslint-disable-next-line no-restricted-syntax -- wrapped in _demoRegistry.timer()
             setTimeout(() => {
                 if (_demoCancelled) return
-                _demoPhase = PHASE.COMPLETE
+                _demoPhase = PHASE.COMPLETE!
                 ui.showEndToast()
                 // Fire-and-forget: endDemo is async but the demo is complete at this point.
                 void endDemo('demo-complete', true)
@@ -513,7 +521,7 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
         // veil, pill) throws, the demo can't start cleanly. Reset scratch
         // state and tear down UI so a retry can re-enter from scratch.
         debugWarn('[demo-choreography] runDemo failed:', err)
-        _demoPhase = PHASE.CANCELLED
+        _demoPhase = PHASE.CANCELLED!
         _demoCancelled = true
         clearDemoTimers()
         document.body.removeAttribute('data-demo-active')
@@ -523,11 +531,11 @@ export async function runDemo(cancelMicroDemo: (reason: string) => void): Promis
 // ── cancelChoreography ────────────────────────────────────────────────────────
 
 export async function cancelChoreography(reason: string = 'user-input'): Promise<boolean> {
-    if (_demoPhase === PHASE.IDLE || _demoPhase === PHASE.COMPLETE || _demoCancelled) {
+    if (_demoPhase === PHASE.IDLE! || _demoPhase === PHASE.COMPLETE! || _demoCancelled) {
         return false
     }
     _demoCancelled = true
-    _demoPhase = PHASE.CANCELLED
+    _demoPhase = PHASE.CANCELLED!
     clearDemoTimers()
     try {
         const microDemoCamera = await loadMicroDemoCamera()
@@ -549,5 +557,5 @@ export async function cancelChoreography(reason: string = 'user-input'): Promise
 // ── isMicroDemoRunning ────────────────────────────────────────────────────────
 
 export function isMicroDemoRunning(): boolean {
-    return _demoPhase !== PHASE.IDLE && _demoPhase !== PHASE.COMPLETE && _demoPhase !== PHASE.CANCELLED
+    return _demoPhase !== PHASE.IDLE! && _demoPhase !== PHASE.COMPLETE! && _demoPhase !== PHASE.CANCELLED!
 }
