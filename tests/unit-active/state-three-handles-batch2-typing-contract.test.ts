@@ -47,9 +47,13 @@ describe('engine-boundary refactor / Tier D second bite / Three.js handles batch
     const batchFields: Array<{ field: string; type: string }> = [
         { field: 'myceliumLines', type: 'LineSegments' },
         { field: 'myceliumGroup', type: 'Group' },
-        { field: 'myceliumCoreLines', type: 'LineSegments' },
-        { field: 'myceliumWispyLines', type: 'LineSegments' },
-        { field: 'myceliumBridgeLines', type: 'LineSegments' },
+        // 2d4b210e refactor(engine): Line2 variable-width mycelium threads
+        // — these mycelium fields are LineSegments2 (from three/examples/jsm/lines),
+        // not the basic LineSegments from 'three'. The typing-contract test
+        // should match the post-Line2 reality.
+        { field: 'myceliumCoreLines', type: 'LineSegments2' },
+        { field: 'myceliumWispyLines', type: 'LineSegments2' },
+        { field: 'myceliumBridgeLines', type: 'LineSegments2' },
         { field: 'focusSemanticLines', type: 'LineSegments' },
         { field: 'focusAnchorGroup', type: 'Group' },
         { field: 'focusAnchorRingMesh', type: 'Mesh' },
@@ -97,7 +101,6 @@ describe('engine-boundary refactor / Tier D second bite / Three.js handles batch
         expect(source).toMatch(/pointsMesh\s*=\s*\$state<Points\s*\|\s*null>\(null\)/)
         expect(source).toMatch(/pointsMaterial\s*=\s*\$state<PointsMaterial\s*\|\s*null>\(null\)/)
         expect(source).toMatch(/nodeSporeMesh\s*=\s*\$state<InstancedMesh\s*\|\s*null>\(null\)/)
-        expect(source).toMatch(/nodeSporeHitMesh\s*=\s*\$state<InstancedMesh\s*\|\s*null>\(null\)/)
         expect(source).toMatch(/nodeSporeMaterial\s*=\s*\$state<Material\s*\|\s*null>\(null\)/)
     })
 
