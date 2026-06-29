@@ -26,9 +26,12 @@ import { dirname, resolve } from 'node:path'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 const SRC_PATH = resolve(__dirname, '../../src/lib/engine/three-interaction-visuals.ts')
+const MOTES_PATH = resolve(__dirname, '../../src/lib/engine/three-lens-motes.ts')
+const PETALS_PATH = resolve(__dirname, '../../src/lib/engine/three-lens-petals.ts')
+const FILAMENTS_PATH = resolve(__dirname, '../../src/lib/engine/three-lens-filaments.ts')
 
-function readSource(): string {
-    return readFileSync(SRC_PATH, 'utf-8')
+function readSource(p: string): string {
+    return readFileSync(p, 'utf-8')
 }
 
 // Strip line + block comments so regexes don't false-positive on JSDoc prose.
@@ -37,7 +40,10 @@ function stripComments(src: string): string {
 }
 
 describe('three-interaction-visuals — typing contract (W47 tightening)', () => {
-    const src = readSource()
+    const src = readSource(SRC_PATH)
+    const motes = readSource(MOTES_PATH)
+    const petals = readSource(PETALS_PATH)
+    const filaments = readSource(FILAMENTS_PATH)
     const stripped = stripComments(src)
 
     it('has 0 any occurrences (fully tightened)', () => {
@@ -64,7 +70,7 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('updateSelectedNodeMotes uses (Vector3 | null, number, boolean)', () => {
-        const match = stripped.match(/function\s+updateSelectedNodeMotes\s*\(([^)]+)\)/)
+        const match = motes.match(/function\s+updateSelectedNodeMotes\s*\(([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         const params = match![1]
         expect(params).toMatch(/worldPos\s*:\s*Vector3\s*\|\s*null/)
@@ -73,7 +79,7 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('updateSelectedNodePetals uses (Vector3 | null, number, boolean)', () => {
-        const match = stripped.match(/function\s+updateSelectedNodePetals\s*\(([^)]+)\)/)
+        const match = petals.match(/function\s+updateSelectedNodePetals\s*\(([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         const params = match![1]
         expect(params).toMatch(/worldPos\s*:\s*Vector3\s*\|\s*null/)
@@ -82,7 +88,7 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('updateSelectedNodeFilaments uses (Vector3 | null, number, boolean)', () => {
-        const match = stripped.match(/function\s+updateSelectedNodeFilaments\s*\(([^)]+)\)/)
+        const match = filaments.match(/function\s+updateSelectedNodeFilaments\s*\(([^)]+)\)/)
         expect(match, 'function signature not found').toBeTruthy()
         const params = match![1]
         expect(params).toMatch(/worldPos\s*:\s*Vector3\s*\|\s*null/)
@@ -101,40 +107,37 @@ describe('three-interaction-visuals — typing contract (W47 tightening)', () =>
     })
 
     it('petal in forEach is typed `Mesh` (not any)', () => {
-        const match = stripped.match(/state\.focusPetals\.forEach\s*\(\s*\(\s*petal\s*:\s*([^,)]+)/)
+        const match = petals.match(/state\.focusPetals\.forEach\s*\(\s*\(\s*petal\s*:\s*([^,)]+)/)
         expect(match, 'forEach signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('Mesh')
     })
 
     it('petal in `some` callback is typed `Mesh` (not any)', () => {
-        const match = stripped.match(/state\.focusPetals\.some\s*\(\s*\(\s*petal\s*:\s*([^)]+)/)
+        const match = petals.match(/state\.focusPetals\.some\s*\(\s*\(\s*petal\s*:\s*([^)]+)/)
         expect(match, 'some signature not found').toBeTruthy()
         expect(match![1].trim()).toBe('Mesh')
     })
 
     it('all 3 update*Node* helpers use `worldPos !== null` for narrowing (not Boolean)', () => {
-        // The Boolean(worldPos) pattern doesn't narrow the type. We need
-        // `worldPos !== null` for TypeScript to narrow Vector3 | null to
-        // Vector3 inside the `if (hasFocus)` block. The function body
-        // accesses worldPos.x/y/z, which would be a TS error without
-        // narrowing.
-        const helpers = ['updateSelectedNodeMotes', 'updateSelectedNodePetals', 'updateSelectedNodeFilaments']
-        for (const name of helpers) {
-            // Find the body of each helper. The body starts after the
-            // opening `{` and ends at the matching `}`.
+        const helpers = [
+            { name: 'updateSelectedNodeMotes', src: motes },
+            { name: 'updateSelectedNodePetals', src: petals },
+            { name: 'updateSelectedNodeFilaments', src: filaments }
+        ]
+        for (const { name, src } of helpers) {
             const re = new RegExp(`function\\s+${name}\\b[^{]*\\{`)
-            const m = re.exec(stripped)
+            const m = re.exec(src)
             expect(m, `${name} not found`).toBeTruthy()
             const start = m!.index + m![0].length
             let depth = 1
             let i = start
-            while (i < stripped.length && depth > 0) {
-                const c = stripped[i]
+            while (i < src.length && depth > 0) {
+                const c = src[i]
                 if (c === '{') depth++
                 else if (c === '}') depth--
                 i++
             }
-            const body = stripped.slice(start, i - 1)
+            const body = src.slice(start, i - 1)
             expect(body, `${name} must use worldPos !== null for narrowing`).toMatch(/worldPos\s*!==\s*null/)
             expect(body, `${name} must NOT use Boolean(worldPos) (doesn't narrow)`).not.toMatch(
                 /Boolean\s*\(\s*worldPos\s*\)/

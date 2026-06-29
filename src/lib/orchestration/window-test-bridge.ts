@@ -24,6 +24,8 @@
  * contract tests call these synchronously without awaiting returned promises.
  */
 
+import { requestSemanticGuide } from '@lib/journey/semantic-guide'
+import { showSemanticThreadsDetail } from '@lib/journey/connection-analysis'
 import { get } from 'svelte/store'
 import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
