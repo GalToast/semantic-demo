@@ -390,11 +390,11 @@ import { appState } from '@lib/state/app.svelte'
 type AppState = typeof appState
 
 describe('state-app-class — AppState class surface (5-field structural fixture)', () => {
-    // searchAnchorIndex: number | null. Mirrors app.svelte.ts L73.
-    const searchAnchorIndex: AppState['searchAnchorIndex'] = 7
+    // searchAnchorIndex: number | null. Mirrors app.svelte.ts L73 (lives on searchState).
+    const searchAnchorIndex: AppState['searchState']['searchAnchorIndex'] = 7
     it('searchAnchorIndex is number | null', () => {
         expect(typeof searchAnchorIndex === 'number' ? searchAnchorIndex : null).toBe(7)
-        const asNull: AppState['searchAnchorIndex'] = null
+        const asNull: AppState['searchState']['searchAnchorIndex'] = null
         expect(asNull).toBeNull()
     })
 
