@@ -18,6 +18,7 @@
  */
 import { derived, get, writable, type Readable } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import type { ActiveFilters } from '@lib/types/state'
 
@@ -91,7 +92,9 @@ function withFilterStateNotify(updater: (_s: ActiveFilters) => ActiveFilters): v
     const next = updater(get(_filterStateWritable))
     const cloned = { ...next }
     _filterStateWritable.set(cloned)
-    appState.activeFilters = { ...cloned }
+    withStateMutation(() => {
+        appState.activeFilters = { ...cloned }
+    })
 }
 
 /** Active filters exposed as a Readable + update/set actions. */
@@ -104,7 +107,9 @@ export const filterState: Readable<ActiveFilters> & {
     set: (value: ActiveFilters) => {
         const cloned = { ...value }
         _filterStateWritable.set(cloned)
-        appState.activeFilters = { ...cloned }
+        withStateMutation(() => {
+            appState.activeFilters = { ...cloned }
+        })
     }
 }
 
