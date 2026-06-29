@@ -31,6 +31,7 @@
 import * as http from 'node:http'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
+// @ts-expect-error — pngjs ships no .d.ts; the import is only used at runtime inside tests
 import { PNG } from 'pngjs'
 import pixelmatch from 'pixelmatch'
 import { chromium, type Browser, type Page, type BrowserContext } from 'playwright'
@@ -855,8 +856,11 @@ async function runVisualRegression(): Promise<TestResult[]> {
             console.log(`\n📸 Testing: ${state.name}`)
             console.log(`   ${state.description}`)
 
-            // Determine viewport — use state override or default
-            const viewport = state.viewport || DEFAULT_VIEWPORT
+            // Determine viewport — use state override or default.
+            // NonNullable<TestState['viewport']> retains the optional
+            // isMobile / deviceScaleFactor fields that DEFAULT_VIEWPORT
+            // (only width/height) would otherwise strip from the union.
+            const viewport: NonNullable<TestState['viewport']> = state.viewport || DEFAULT_VIEWPORT
 
             // Create a fresh context with the appropriate viewport
             const contextOptions: any = {
