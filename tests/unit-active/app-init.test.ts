@@ -24,18 +24,18 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 
 // ── Hoisted mock handles (available before any vi.mock factory runs) ────────
 const mock = vi.hoisted(() => ({
-    initData: vi.fn<[], Promise<void>>().mockResolvedValue(undefined),
-    setLoadingPhase: vi.fn(),
-    setDataLoadError: vi.fn(),
-    initViewportListeners: vi.fn<[], () => void>().mockReturnValue(() => {}),
-    initAdapters: vi.fn(),
-    buildAdapterDeps: vi.fn().mockReturnValue({}),
-    installParityAttributeSync: vi.fn<[], () => void>().mockReturnValue(() => {}),
-    installTestStoreGlobals: vi.fn<[], () => void>().mockReturnValue(() => {}),
-    applyUrlState: vi.fn<[], Promise<void>>().mockResolvedValue(undefined),
-    debugWarn: vi.fn(),
-    debugError: vi.fn(),
-    initAudio: vi.fn(),
+    initData: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    setLoadingPhase: vi.fn<() => void>(),
+    setDataLoadError: vi.fn<(msg: string) => void>(),
+    initViewportListeners: vi.fn<() => () => void>().mockReturnValue(() => {}),
+    initAdapters: vi.fn<() => void>(),
+    buildAdapterDeps: vi.fn<() => Record<string, unknown>>().mockReturnValue({}),
+    installParityAttributeSync: vi.fn<() => () => void>().mockReturnValue(() => {}),
+    installTestStoreGlobals: vi.fn<() => () => void>().mockReturnValue(() => {}),
+    applyUrlState: vi.fn<() => Promise<void>>().mockResolvedValue(undefined),
+    debugWarn: vi.fn<() => void>(),
+    debugError: vi.fn<(...args: unknown[]) => void>(),
+    initAudio: vi.fn<() => void>(),
 }))
 
 // ── Module mocks (isolate every downstream consumer) ─────────────────────────
