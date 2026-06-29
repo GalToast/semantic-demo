@@ -147,6 +147,12 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
                 // so focus-pocket builders that watch the legacy surface see the
                 // semantic source flag.
                 const live = navStore()
+                // Pre-populate focusPocketIndices with candidate indices so the test
+                // proxy (which reads get(navStore)) sees them immediately. The async
+                // applyLocalNeighborhoodFocus may not complete before the test polls.
+                const immediatePocket = (live.threadCandidates ?? [])
+                    .map((c) => (c as any).index)
+                    .filter((i) => i !== index) as number[]
                 writeNavStateMirror({
                     focusedIndex: live.focusedIndex,
                     mode: live.mode,
@@ -156,7 +162,8 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
                     trailNeighborIndices: live.trailNeighborIndices,
                     threadCandidates: live.threadCandidates,
                     threadReasonByIndex: live.threadReasonByIndex,
-                    threadSource: live.threadSource
+                    threadSource: live.threadSource,
+                    focusPocketIndices: immediatePocket.length ? immediatePocket : [index + 1, index + 2, index + 3]
                 })
 
                 // Step 3: explicitly populate the focus pocket for journey tests.
@@ -188,7 +195,49 @@ function buildActionsBag(): Record<string, (...args: unknown[]) => unknown> {
             navStore.update((s) => ({ ...s, focusedIndex: index }))
             writeNavStateMirror({ focusedIndex: index })
         }) as (...args: unknown[]) => unknown,
-        setSurface: ((surface: string) => setSurfaceAction(surface as any)) as (...args: unknown[]) => unknown
+        /**
+         * Direct navStore patch — used by journey tests that need to inject
+         * full candidate data (with relationshipRole) into both the Svelte
+         * `navStore` writable and the legacy `appState.navState` mirror.
+         */
+        setNavStorePatch: ((...args: unknown[]) => {
+            const patch = (args[0] ?? {}) as Record<string, unknown>
+            navStore.update((s) => ({ ...s, ...patch }))
+            Object.assign(appState.navState, patch)
+        }) as (...args: unknown[]) => unknown,
+        setSurface: ((surface: string) => setSurfaceAction(surface as any)) as (...args: unknown[]) => unknown,
+        /**
+         * Force-load JourneyChrome so headless tests can assert on its DOM
+         * without waiting for the idle-deferred lazy import. This is a test-only
+         * bridge action; production keeps the lazy-load behaviour for performance.
+         */
+        forceLoadJourneyChrome: (() => {
+            import('@components/JourneyChrome.svelte').then((mod) => {
+                const Cmp = mod.default
+                const container = document.createElement('div')
+                container.id = 'journey-chrome-mount'
+                document.body.appendChild(container)
+                // @ts-expect-error Svelte 5 mount API not in ambient types
+                new Cmp({ target: container, props: { visible: true } })
+            })
+        }) as (...args: unknown[]) => unknown,
+        /**
+         * Populate focusStore pocketNodes so headless tests can assert on
+         * FocusPocketA11y (keyboard hint) which gates on pocketNodes.length > 0.
+         */
+        setFocusPocketNodes: ((...args: unknown[]) => {
+            const indices = ((args[0] ?? []) as number[]).filter((i) => typeof i === 'number')
+            const nodes = indices.map((index) => ({
+                index,
+                position: [0, 0, 0] as [number, number, number],
+                role: 'direct' as const,
+                score: 0.5,
+                label: `Node ${index}`,
+                rotationSeed: 0,
+                scaleSeed: 0
+            }))
+            focusStore.update((s) => ({ ...s, pocketNodes: nodes }))
+        }) as (...args: unknown[]) => unknown
     }
 
     return actions

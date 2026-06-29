@@ -1172,6 +1172,31 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // before this call.
         await page.evaluate(() => window.__APP_ACTIONS__?.requestSemanticFocus(100))
 
+        // The SEARCH_FOCUS_REQUESTED handler writes candidates as
+        // `{index, source, reason}` only — no `relationshipRole`.  The
+        // JourneyChrome chip filter UI (`showRoleFilters`) needs at least one
+        // candidate whose `relationshipRole !== 'unclassified'`.  We patch
+        // the nav store directly with classified roles so the chips render.
+        await page.evaluate((idx) => {
+            const candidates = [
+                { index: idx - 1, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' },
+                { index: idx + 1, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
+                { index: idx + 2, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
+                { index: idx + 3, source: 'semantic', reason: 'test', relationshipRole: 'civic', relationshipAxis: 'civic-anchor' },
+                { index: idx + 4, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' }
+            ]
+            window.__APP_ACTIONS__?.setNavStorePatch({
+                threadCandidates: candidates,
+                focusPocketIndices: candidates.map((c) => c.index),
+                focusedIndex: idx
+            })
+            // Also write relationship roles map for the filter pill render.
+            const live = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__?.navState
+            if (live) {
+                live.focusPocketRoleByIndex = new Map(candidates.map((c) => [c.index, c.relationshipRole]))
+            }
+        }, 100)
+
         const focusedIndex = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
         expect(focusedIndex).toBe(100)
 
@@ -1179,6 +1204,8 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {
             timeout: 10000
         })
+        // Force-mount JourneyChrome in headless mode (the lazy $effect may not fire)
+        await page.evaluate(() => window.__APP_ACTIONS__?.forceLoadJourneyChrome())
         await page.waitForTimeout(500)
 
         // Wait for the filter chip container to render
@@ -1277,6 +1304,27 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // Apply with index 200 to avoid colliding with test 23's index 100.
         await page.evaluate(() => window.__APP_ACTIONS__?.requestSemanticFocus(200))
 
+        // Inject candidates with explicit relationshipRole so the keyboard hint
+        // surface has the right data (same reasoning as test 23).
+        await page.evaluate((idx) => {
+            const candidates = [
+                { index: idx - 1, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' },
+                { index: idx + 1, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
+                { index: idx + 2, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
+                { index: idx + 3, source: 'semantic', reason: 'test', relationshipRole: 'civic', relationshipAxis: 'civic-anchor' },
+                { index: idx + 4, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' }
+            ]
+            window.__APP_ACTIONS__?.setNavStorePatch({
+                threadCandidates: candidates,
+                focusPocketIndices: candidates.map((c) => c.index),
+                focusedIndex: idx
+            })
+            const live = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__?.navState
+            if (live) {
+                live.focusPocketRoleByIndex = new Map(candidates.map((c) => [c.index, c.relationshipRole]))
+            }
+        }, 200)
+
         const focusedIdx = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
         expect(focusedIdx).toBe(200)
 
@@ -1284,6 +1332,8 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.waitForFunction(() => (window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0) > 0, null, {
             timeout: 10000
         })
+        // FocusPocketA11y is inside FocusPocket which mounts lazily; give it time.
+        await page.waitForFunction(() => !!document.querySelector('#focus-pocket'), null, { timeout: 10000 })
         await page.waitForTimeout(500)
 
         // Wait for the keyboard hint badge to render
