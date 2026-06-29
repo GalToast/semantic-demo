@@ -47,6 +47,17 @@
     } else {
       _registry.schedule(100, () => { visible = true; });
     }
+    // W49b Punch 2: demote the proximity legend from pinned onboarding
+    // overlay to peek/popover. Auto-dismiss after 10s if the user has not
+    // closed it manually — the card stays available via btn-help if they
+    // want to re-read it. Auto-dismiss fires from the reveal() call so it
+    // does not stack with re-reveals after demo completion.
+    _registry.schedule(10000, () => {
+      if (!dismissed) {
+        dismissed = true;
+        visible = false;
+      }
+    });
   }
 
   onMount(() => {
