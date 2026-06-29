@@ -250,6 +250,33 @@ const _appState = vi.hoisted(() => ({
         email: false,
         geocoded: false
     },
+    // W11-T4 partition sub-records — Proxy below passes them through.
+    searchState: {
+        currentSearchSummary: null, searchStatus: 'idle', searchError: null,
+        searchRequestSequence: 0, searchAnchorIndex: null, searchPreviewIndex: null,
+        searchGlowIndices: new Set(), searchGlowTopIndex: null, searchGlowActive: false,
+        searchFocusTransitionToken: 0, isSearching: false, currentEmptyQuery: null,
+        semanticTrailCue: 'idle', isCompactViewport: false,
+        semanticGuideRequestSequence: 0, currentSemanticGuide: null, summaryCardTypeToken: 0,
+        semanticSearchCacheDiagnostics: { hits: 0, misses: 0, stores: 0, evictions: 0, lastKey: null, lastSource: null, lastAgeMs: null },
+        semanticSearchResultCache: new Map(),
+        searchVisibleCount: 5
+    },
+    viewportState: {
+        viewportWidth: 1280, viewportHeight: 800,
+        isCompactViewport: false, isMobileViewport: false, isTabletViewport: false,
+        devicePixelRatio: 1
+    },
+    focusState: {
+        selectedPoint: null, inspectedThreadIndex: null, pinnedThreadIndex: null,
+        threadInspectorPointerInside: false,
+        pocketMotionByIndex: new Map(),
+        pocketTransitionStartedAt: 0,
+        infoPanelOpen: true, pocketListVisible: false, pocketRoleFilter: 'all',
+        focusTransitionMode: 'idle', focusTransitionStartedAt: 0,
+        nodesAreSettling: false,
+        inspectedStrandDiagnostics: { active: false, source: '', index: null, focusedIndex: null, segmentCount: 0, braidCount: 0, endpointCount: 0 }
+    },
     withMutation(fn: () => void) {
         return fn()
     }
