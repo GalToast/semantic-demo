@@ -148,29 +148,29 @@ describe('Navigation store — T4 migration to Svelte 5 state class', () => {
   // the getters anymore — those were transitional scaffolding for the
   // pre-migration engine reducers.
 
-  it('currentMode() reads appState.navState.mode when local is empty', () => {
-    // Local writable mode is '' (falsy). appState has 'search'.
-    mockState.navState.mode = 'search';
-    navStore.set({ ...navStore(), mode: '' as NavMode });
-    // Direct read: appState.navState.mode ?? local → 'search' ?? '' → 'search'
+  it('currentMode() reads appState.navState.mode', () => {
+    // The navStore.set bridge Object.assigns the new value into appState.navState.
+    // The getter reads from appState.navState, so the post-bridge value is visible.
+    mockState.navState.mode = 'overview';
+    navStore.set({ ...navStore(), mode: 'search' as NavMode });
     expect(currentMode()).toBe('search');
   });
 
   it('currentMode() ignores window globals — uses appState only', () => {
     // After retiring readLegacyNavField, window.__APP_STATE__ is not read.
-    // If appState lacks the field, the getter returns the local value.
     delete mockState.navState.mode;
     (window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
       navState: { mode: 'from-app-state-window' },
     };
     navStore.set({ ...navStore(), mode: '' as NavMode });
-    // appState.navState.mode is undefined → undefined ?? '' → '' (local)
+    // The bridge Object.assigns '' into appState.navState.mode, so the
+    // getter returns '' regardless of the window global.
     expect(currentMode()).toBe('');
   });
 
-  it('currentSurface() reads appState.navState.surface when local is empty', () => {
-    mockState.navState.surface = 'search';
-    navStore.set({ ...navStore(), surface: '' as PanelSurface });
+  it('currentSurface() reads appState.navState.surface', () => {
+    mockState.navState.surface = 'idle';
+    navStore.set({ ...navStore(), surface: 'search' as PanelSurface });
     expect(currentSurface()).toBe('search');
   });
 
@@ -188,7 +188,10 @@ describe('Navigation store — T4 migration to Svelte 5 state class', () => {
     (window as unknown as { __APP_STATE__: { navState: { focusedIndex: number } } }).__APP_STATE__ = {
       navState: { focusedIndex: 99 },
     };
-    // appState.navState.focusedIndex is undefined → null (local default)
+    // The bridge Object.assigns null into appState.navState.focusedIndex
+    // (from the navStore.set call), so the getter returns null regardless
+    // of the window global.
+    navStore.set({ ...navStore(), focusedIndex: null })
     expect(focusedIndex()).toBeNull();
   });
 

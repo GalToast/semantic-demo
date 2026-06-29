@@ -59,7 +59,7 @@ const mockAppState = vi.hoisted(() => ({
         applyingUrlState: false,
         restoringBrowserHistory: false,
         urlStateRestoreToken: 0,
-        activeStoryPrompt: null,
+        activeStoryPrompt: null
     } as Record<string, unknown>,
     trailDepth: 0,
     currentView: 'galaxy',
@@ -72,20 +72,20 @@ const mockAppState = vi.hoisted(() => ({
         focusedIndex: null,
         segmentCount: 0,
         braidCount: 0,
-        endpointCount: 0,
+        endpointCount: 0
     },
     // focus reset also writes here on the legacy mirror path
     canvasPointerMode: null,
     lastPointerHit: null,
     threadInspectorCleared: false,
     focusPocketLastShownAt: 0,
-    threadInspectorResetAt: 0,
+    threadInspectorResetAt: 0
 }))
 
 const mockChainFns = vi.hoisted(() => ({
     clearSearch: vi.fn(),
     resetFocus: vi.fn(),
-    resetJourney: vi.fn(),
+    resetJourney: vi.fn()
 }))
 
 // Convenience local refs (defined after vi.mock factories via hoisting)
@@ -102,20 +102,20 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         set(target, prop, value) {
             ;(target as Record<string, unknown>)[prop as string] = value
             return true
-        },
-    }),
+        }
+    })
 }))
 
 vi.mock('@lib/stores/search.svelte.ts', () => ({
-    clearSearch: mockChainFns.clearSearch,
+    clearSearch: mockChainFns.clearSearch
 }))
 
 vi.mock('@lib/stores/focus.svelte.ts', () => ({
-    resetFocus: mockChainFns.resetFocus,
+    resetFocus: mockChainFns.resetFocus
 }))
 
 vi.mock('@lib/stores/journey.svelte.ts', () => ({
-    resetJourney: mockChainFns.resetJourney,
+    resetJourney: mockChainFns.resetJourney
 }))
 
 // ── Import SUT after mocks ───────────────────────────────────────────────────
@@ -157,7 +157,7 @@ import {
     setFocusPocketMeta,
     clearFocusPocketMeta,
     writeNavStateMirror,
-    dispatchNavTransition,
+    dispatchNavTransition
 } from '@lib/stores/navigation.svelte.ts'
 import { NAV_TRANSITION_ACTIONS } from '@lib/navigation-actions'
 
@@ -201,7 +201,7 @@ async function freshNavStore() {
         applyingUrlState: false,
         restoringBrowserHistory: false,
         urlStateRestoreToken: 0,
-        activeStoryPrompt: null,
+        activeStoryPrompt: null
     }
     mockAppState.trailDepth = 0
     mockAppState.currentView = 'galaxy'
@@ -245,7 +245,7 @@ const DEFAULT_NAV_STATE = {
     applyingUrlState: false,
     restoringBrowserHistory: false,
     urlStateRestoreToken: 0,
-    activeStoryPrompt: null,
+    activeStoryPrompt: null
 }
 
 /**
@@ -267,7 +267,7 @@ function resetAllNavState() {
         focusedIndex: null,
         segmentCount: 0,
         braidCount: 0,
-        endpointCount: 0,
+        endpointCount: 0
     }
     // Clear mock chain-fn call counters so each test starts at zero
     // (without this, prior tests' calls leak into the next test).
@@ -758,7 +758,7 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
 
     it('FOCUS_NODE sets mode=focus and focusedIndex', () => {
         const result = dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
-            index: 42,
+            index: 42
         })
         expect(result.ok).toBe(true)
         expect(result.previousMode).toBe('overview')
@@ -771,7 +771,7 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
             index: 10,
             mode: 'focus',
-            surface: 'focus',
+            surface: 'focus'
         })
         expect(navStore().mode).toBe('focus')
         expect(navStore().surface).toBe('focus')
@@ -782,7 +782,7 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
         writeNavStateMirror({ activeStoryPrompt: 'some-prompt' })
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
             index: 5,
-            fromTraversal: true,
+            fromTraversal: true
         })
         expect(navStore().activeStoryPrompt).toBeNull()
     })
@@ -908,7 +908,7 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
             trailNeighborIndices: [1, 2, 3],
             trailCursor: 2,
             walkHistoryIndices: [10, 20, 30],
-            lastTraversalReason: 'click',
+            lastTraversalReason: 'click'
         })
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET_FOCUS)
         expect(navStore().focusedIndex).toBeNull()
@@ -935,26 +935,26 @@ describe('navStore — NAV_TRANSITION_ACTIONS dispatch', () => {
 
     it('RESTORE_EXPLORATION_HISTORY sets explorationHistoryIndices', () => {
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY, {
-            restoreHistoryIndices: [100, 200, 300],
+            restoreHistoryIndices: [100, 200, 300]
         })
         expect(navStore().explorationHistoryIndices).toEqual([100, 200, 300])
     })
 
     it('RESTORE_EXPLORATION_HISTORY filters non-finite values', () => {
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY, {
-            restoreHistoryIndices: [100, NaN, 200, Infinity, 300],
+            restoreHistoryIndices: [100, NaN, 200, Infinity, 300]
         })
         expect(navStore().explorationHistoryIndices).toEqual([100, 200, 300])
     })
 
     it('dispatchNavTransition returns ok=true and mode transition', () => {
         const result = dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
-            index: 1,
+            index: 1
         })
         expect(result).toEqual({
             ok: true,
             previousMode: 'overview',
-            nextMode: 'focus',
+            nextMode: 'focus'
         })
     })
 })
@@ -997,7 +997,7 @@ describe('navStore — updateNavState', () => {
             applyingUrlState: false,
             restoringBrowserHistory: false,
             urlStateRestoreToken: 0,
-            activeStoryPrompt: null,
+            activeStoryPrompt: null
         }
     })
 
@@ -1027,7 +1027,7 @@ describe('navStore — updateNavState', () => {
             mode: 'focus',
             surface: 'focus',
             focusedIndex: 55,
-            currentView: 'map',
+            currentView: 'map'
         })
         expect(navStore().mode).toBe('focus')
         expect(navStore().surface).toBe('focus')
@@ -1072,7 +1072,7 @@ describe('navStore — resetNavState', () => {
             applyingUrlState: false,
             restoringBrowserHistory: false,
             urlStateRestoreToken: 0,
-            activeStoryPrompt: null,
+            activeStoryPrompt: null
         }
     })
 
@@ -1085,7 +1085,7 @@ describe('navStore — resetNavState', () => {
             currentView: 'map',
             myceliumMode: 'active',
             autoRotate: false,
-            urlStateRestoreToken: 10,
+            urlStateRestoreToken: 10
         })
         resetNavState()
         expect(navStore().mode).toBe('overview')
@@ -1114,7 +1114,7 @@ describe('navStore — resetNavState', () => {
 
     it('resetNavState clears explorationHistoryIndices', () => {
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESTORE_EXPLORATION_HISTORY, {
-            restoreHistoryIndices: [100, 200],
+            restoreHistoryIndices: [100, 200]
         })
         resetNavState()
         expect(navStore().explorationHistoryIndices).toEqual([])

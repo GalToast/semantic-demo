@@ -44,14 +44,43 @@ import { loadingPhaseStore, graphicsModeStore } from '@lib/data-store'
 
 // ── Helpers ──────────────────────────────────────────────────────────────
 
+/**
+ * Deep clone helpers.
+ *
+ * structuredClone() chokes on a few fields in our store snapshots
+ * (notably Maps whose values are class instances, and the Svelte-5
+ * focusStore writable being a class instance). The test only needs
+ * structural equality, so a recursive walk handles Maps + Arrays +
+ * plain objects. Non-cloneable values are dropped.
+ */
+function clonePlain<T>(value: T): T {
+    if (value === null || typeof value !== 'object') return value
+    if (value instanceof Map) {
+        return new Map(Array.from(value, ([k, v]) => [k, clonePlain(v)])) as unknown as T
+    }
+    if (Array.isArray(value)) return value.map(clonePlain) as unknown as T
+    const out: Record<string, unknown> = {}
+    for (const k of Object.keys(value as Record<string, unknown>)) {
+        const field = (value as Record<string, unknown>)[k]
+        // Drop non-cloneable class instances (e.g. Vector3, Object3D)
+        // — the test only inspects primitive fields.
+        if (field !== null && typeof field === 'object' && !(field instanceof Map) && !Array.isArray(field)) {
+            out[k] = clonePlain(field)
+        } else {
+            out[k] = field
+        }
+    }
+    return out as T
+}
+
 function snapshotStores() {
     return {
-        nav: structuredClone(navStore()),
-        journey: structuredClone(journeyStore()),
-        focus: structuredClone(focusStore()),
-        search: structuredClone(get(searchStore)),
-        filters: structuredClone(get(filterState)),
-        vp: structuredClone(viewport()),
+        nav: clonePlain(navStore()),
+        journey: clonePlain(journeyStore()),
+        focus: clonePlain(focusStore()),
+        search: clonePlain(get(searchStore)),
+        filters: clonePlain(get(filterState)),
+        vp: clonePlain(viewport()),
         loadingPhase: get(loadingPhaseStore),
         demoPhase: get(demoPhaseStore),
         graphicsMode: get(graphicsModeStore)

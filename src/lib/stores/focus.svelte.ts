@@ -57,7 +57,7 @@ import type {
 } from '@lib/types/state'
 import type { BusinessRecord } from '@lib/types/business'
 import type { Point } from '@lib/state/state-types'
-import { type Readable } from 'svelte/store'
+import { type Readable, get } from 'svelte/store'
 import { appState } from '@lib/state/app.svelte.ts'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { getBusinessRecords } from '@lib/data-store'
@@ -236,7 +236,17 @@ function _readFocusSnapshot(): FocusStoreState {
         selectedBusiness: source.selectedPoint ?? null,
         inspectedStrandIndex: source.inspectedThreadIndex ?? null,
         pinnedThreadIndex: source.pinnedThreadIndex ?? null,
-        semanticDiveMode: navState.trailDepth === 2,
+        // Read these two from the focusMirror writable, not appState. The
+        // createStateMirror migration turned them into user-driven fields on
+        // the writable side; deriving `semanticDiveMode` from `trailDepth`
+        // (the pre-migration shape) made parity's `transitioning` branch
+        // unreachable. `strandContinuityPhase` was never wired into
+        // FocusHydrationSource, so reading from the mirror is the only path
+        // parity can see user updates. The mirror is hoisted-after-read for
+        // the very first call (during createStateMirror initialization), so
+        // fall back to INITIAL_FOCUS defaults when focusMirror isn't defined yet.
+        semanticDiveMode: !_focusMirrorReady ? INITIAL_FOCUS.semanticDiveMode : (get(focusMirror).semanticDiveMode ?? INITIAL_FOCUS.semanticDiveMode),
+        strandContinuityPhase: !_focusMirrorReady ? INITIAL_FOCUS.strandContinuityPhase : (get(focusMirror).strandContinuityPhase ?? INITIAL_FOCUS.strandContinuityPhase),
         nodesAreSettling: source.nodesAreSettling ?? false,
         pocketMotionByIndex: new Map(source.pocketMotionByIndex ?? []),
         pocketTransitionStartedAt: source.pocketTransitionStartedAt ?? 0,
@@ -278,6 +288,11 @@ function _readFocusSnapshot(): FocusStoreState {
  * in the bindings map so the factory skips them.
  */
 
+// Forward-declared so `_readFocusSnapshot()` can read user-driven mirror
+// values for `semanticDiveMode` and `strandContinuityPhase`. The TDZ is
+// detected at runtime via `_focusMirrorReady`.
+let _focusMirrorReady = false
+
 const focusMirror = createStateMirror<FocusStoreState>({
     computeFromAppState: _readFocusSnapshot,
     storageKey: '__SEMANTIC_EXPLORER_FOCUS_MIRROR__',
@@ -305,6 +320,11 @@ const focusMirror = createStateMirror<FocusStoreState>({
         threadInspectorPointerInside: null
     }
 })
+
+// Mirror is now constructed — flip the flag so `_readFocusSnapshot()` can
+// safely read from it. Until this line, `_readFocusSnapshot()` falls back to
+// INITIAL_FOCUS defaults for `semanticDiveMode` and `strandContinuityPhase`.
+_focusMirrorReady = true
 
 // ── Legacy notification layer ────────────────────────────────────────────────
 //
@@ -415,7 +435,7 @@ export const focusStore: FocusStoreApi = _createFocusStore()
 
 export const pocketNodes = () => appState.navState.focusPocketIndices
 export const pocketMeta = () => appState.navState.focusPocketMeta
-export const selectedBusiness = () => focusMirror().selectedBusiness
+export const selectedBusiness = () => get(focusMirror).selectedBusiness
 export const infoPanelOpen = () => appState.infoPanelOpen
 export const pocketListVisible = () => appState.pocketListVisible
 export const semanticDiveMode = () => appState.navState.trailDepth === 2

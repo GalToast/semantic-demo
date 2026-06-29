@@ -84,11 +84,15 @@ describe('InfoPanel component', () => {
     })
 
     it('#selected-role-badge and .selected-hero elements exist', () => {
-        // After Phase 3: these moved to SelectedBusinessDetails.svelte
+        // After Phase 3: markup moved to SelectedBusinessDetails.svelte.
+        // CSS selectors live in InfoPanel.svelte's <style> block (extracted
+        // from InfoPanel.css in W46-E), not in the sibling CSS file.
         const childSource = readFileSync(CHILD_PATH, 'utf8')
+        const infoPanelSource = readSource()
         expect(childSource).toContain('id="selected-role-badge"')
-        // Class selector lives in the sibling CSS file (extracted in W46-E).
-        expect(css).toContain('.selected-role-badge')
+        // CSS lives in the Svelte <style> block since W46-E extraction —
+        // selects by id (`#selected-role-badge`), not class.
+        expect(infoPanelSource).toContain('#selected-role-badge')
         expect(childSource).toContain('class="selected-hero"')
     })
 
