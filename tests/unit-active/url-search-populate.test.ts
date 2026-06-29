@@ -86,7 +86,7 @@ describe('URL ?q= populates SearchInput (UI-7)', () => {
 
     it('applyUrlState routes ?q= through _restoreSearchFromParams', () => {
       // The applyUrlState function must call _restoreSearchFromParams for ?q= queries
-      expect(source).toMatch(/if\s*\(\s*query\s*&&\s*query\.trim\(\)\.length\s*>=\s*2\s*\)\s*\{[\s\S]*?_restoreSearchFromParams\s*\(\s*query\s*,\s*anchorId\s*\)/);
+      expect(source).toMatch(/if\s*\(\s*query\s*&&\s*query\.trim\(\)\.length\s*>=\s*2\s*\)\s*\{[\s\S]*?_restoreSearchFromParams\s*\(\s*query\s*,\s*anchorId\s*,[\s\S]*?\)/);
     });
   });
 

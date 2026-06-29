@@ -23,6 +23,7 @@
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import { showToast } from '@lib/stores/toast.svelte';
   import { sceneReady } from '@lib/stores/scene-ready.svelte';
+  import { debugWarn } from '@lib/utils/debug';
 
   interface Props {
     force?: boolean;
@@ -198,13 +199,7 @@
         // nothing) — to switch to the fallback-hint branch instead, see
         // the sceneReady.error handler above for the equivalent path.
         const message = '[DemoChoreography] Canvas did not become ready in 10s; running demo in degraded mode (captions without 3D scene).';
-        if (import.meta.env.DEV) {
-          console.warn(message);
-        } else {
-          // Production: surface so it's findable in DevTools but
-          // non-intrusive. Could be replaced by a telemetry hook later.
-          console.warn(message);
-        }
+        debugWarn(message);
         scheduleDemoTimer(() => attemptStart(), force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
         return;
       }

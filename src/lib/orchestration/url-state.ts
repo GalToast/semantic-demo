@@ -22,6 +22,12 @@ import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import { appState } from '@lib/state/app.svelte'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
 import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller'
+import {
+    getSearchParams,
+    getLocationHref,
+    getLocationPathname,
+    isDomForcedFocusSearchSurface
+} from '@lib/orchestration/url-params'
 
 /**
  * NavState extended with the legacy `activeStoryPrompt` field that lives in
@@ -60,23 +66,6 @@ export interface ActiveFilters {
 }
 
 // ── Internal State ────────────────────────────────────────────────────────────
-
-// ── URL Param Helpers ─────────────────────────────────────────────────────────
-
-function getSearchParams(): URLSearchParams {
-    if (typeof window === 'undefined') return new URLSearchParams()
-    return new URLSearchParams(window.location.search || '')
-}
-
-function getLocationHref(): string {
-    if (typeof window === 'undefined') return ''
-    return window.location.href
-}
-
-function getLocationPathname(): string {
-    if (typeof window === 'undefined') return '/'
-    return window.location.pathname || '/'
-}
 
 /**
  * Parse a depth value from URL params, clamped to [0, 2].
@@ -464,15 +453,6 @@ function _restoreClusterFilter(clusterStr: string): void {
             })
         )
     }
-}
-
-function isDomForcedFocusSearchSurface(): boolean {
-    if (typeof document === 'undefined' || !document.body) return false
-    const nav = get(navStore)
-    return (
-        document.body.dataset.focusSearchForced === 'true' ||
-        (nav.surface === 'focus-search' && document.body.dataset.journeyPhase === 'search')
-    )
 }
 
 function preserveDomForcedFocusSearchSurface(): void {
