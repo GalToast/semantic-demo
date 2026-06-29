@@ -15,12 +15,16 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 // ── Local type replica ───────────────────────────────────────────────────────
 type DemoPhase =
     | 'IDLE'
-    | 'GLIDING'
-    | 'ARRIVED'
-    | 'CARD_VISIBLE'
-    | 'PULLBACK'
-    | 'WIDE_VIEW'
-    | 'RETURNING'
+    | 'OVERVIEW'
+    | 'SEARCH'
+    | 'FOCUS'
+    | 'THREADS'
+    | 'NEIGHBORS'
+    | 'TRAIL'
+    | 'DIVE'
+    | 'FILTER'
+    | 'MAP'
+    | 'RETURN'
     | 'COMPLETE'
     | 'CANCELLED'
 
@@ -134,29 +138,29 @@ describe('Demo store — state-class appState regression', () => {
     // ── 2. Writable / local path ────────────────────────────────────────────
 
     it('demoStore.set() mutates the local writable', () => {
-        demoStore.set(makeState({ phase: 'GLIDING' }))
-        expect(demoStore().phase).toBe('GLIDING')
+        demoStore.set(makeState({ phase: 'OVERVIEW' }))
+        expect(demoStore().phase).toBe('OVERVIEW')
     })
 
     it('demoStore.update() transforms the local writable', () => {
-        demoStore.update((s: DemoStoreState) => ({ ...s, phase: 'WIDE_VIEW' }))
-        expect(demoStore().phase).toBe('WIDE_VIEW')
+        demoStore.update((s: DemoStoreState) => ({ ...s, phase: 'MAP' }))
+        expect(demoStore().phase).toBe('MAP')
     })
 
     // ── 3. Bridge to appState via store actions ─────────────────────────────
 
     it('setDemoPhase pushes the new phase to appState', () => {
-        setDemoPhase('PULLBACK')
-        expect(_demoState.demoPhase).toBe('PULLBACK')
+        setDemoPhase('NEIGHBORS')
+        expect(_demoState.demoPhase).toBe('NEIGHBORS')
     })
 
-    it('startDemo pushes GLIDING to appState', () => {
+    it('startDemo pushes OVERVIEW to appState', () => {
         startDemo()
-        expect(_demoState.demoPhase).toBe('GLIDING')
+        expect(_demoState.demoPhase).toBe('OVERVIEW')
     })
 
     it('cancelDemo pushes CANCELLED to appState', () => {
-        setDemoPhase('GLIDING')
+        setDemoPhase('OVERVIEW')
         cancelDemo()
         expect(_demoState.demoPhase).toBe('CANCELLED')
     })
@@ -170,22 +174,22 @@ describe('Demo store — state-class appState regression', () => {
     })
 
     it('markDemoSessionSkipped writes the session guard without changing the current phase', () => {
-        setDemoPhase('GLIDING')
+        setDemoPhase('OVERVIEW')
         markDemoSessionSkipped()
-        expect(_demoState.demoPhase).toBe('GLIDING')
+        expect(_demoState.demoPhase).toBe('OVERVIEW')
         if (typeof sessionStorage !== 'undefined') {
             expect(sessionStorage.getItem(DEMO_SESSION_KEY)).toBe('1')
         }
     })
 
     it('demoPhase() reads directly from appState', () => {
-        _demoState.demoPhase = 'ARRIVED'
-        expect(demoPhase()).toBe('ARRIVED')
+        _demoState.demoPhase = 'FOCUS'
+        expect(demoPhase()).toBe('FOCUS')
     })
 
     it('writable phase stays in sync with setDemoPhase', () => {
-        setDemoPhase('RETURNING')
-        expect(demoStore().phase).toBe('RETURNING')
+        setDemoPhase('RETURN')
+        expect(demoStore().phase).toBe('RETURN')
     })
 
     // ── 4. Subscriber notifications ───────────────────────────────────────
@@ -193,30 +197,30 @@ describe('Demo store — state-class appState regression', () => {
     it('subscribe fires when demoStore.set() is called', () => {
         const cb = vi.fn()
         const unsub = demoStore.subscribe(cb)
-        demoStore.set(makeState({ phase: 'CARD_VISIBLE' }))
+        demoStore.set(makeState({ phase: 'SEARCH' }))
         unsub()
 
         expect(cb).toHaveBeenCalledTimes(2)
-        expect(cb).toHaveBeenLastCalledWith(expect.objectContaining({ phase: 'CARD_VISIBLE' }))
+        expect(cb).toHaveBeenLastCalledWith(expect.objectContaining({ phase: 'SEARCH' }))
     })
 
     it('subscribe fires when demoStore.update() is called', () => {
         const cb = vi.fn()
         const unsub = demoStore.subscribe(cb)
-        demoStore.update((s: DemoStoreState) => ({ ...s, phase: 'RETURNING' }))
+        demoStore.update((s: DemoStoreState) => ({ ...s, phase: 'RETURN' }))
         unsub()
 
         expect(cb).toHaveBeenCalledTimes(2)
-        expect(cb).toHaveBeenLastCalledWith(expect.objectContaining({ phase: 'RETURNING' }))
+        expect(cb).toHaveBeenLastCalledWith(expect.objectContaining({ phase: 'RETURN' }))
     })
 
     it('withDemoNotify wrapper fires subscriber via setDemoPhase', () => {
         const cb = vi.fn()
         const unsub = demoStore.subscribe(cb)
-        setDemoPhase('WIDE_VIEW')
+        setDemoPhase('MAP')
         unsub()
 
-        expect(cb).toHaveBeenCalledWith(expect.objectContaining({ phase: 'WIDE_VIEW' }))
+        expect(cb).toHaveBeenCalledWith(expect.objectContaining({ phase: 'MAP' }))
     })
 
     // ── 5. isDemoActive / isDemoRunning getters ─────────────────────────────
@@ -237,7 +241,7 @@ describe('Demo store — state-class appState regression', () => {
     })
 
     it('isDemoActive() is true during non-terminal phases', () => {
-        const activePhases: DemoPhase[] = ['GLIDING', 'ARRIVED', 'CARD_VISIBLE', 'PULLBACK', 'WIDE_VIEW', 'RETURNING']
+        const activePhases: DemoPhase[] = ['OVERVIEW', 'SEARCH', 'FOCUS', 'THREADS', 'NEIGHBORS', 'TRAIL', 'DIVE', 'FILTER', 'MAP', 'RETURN']
         for (const phase of activePhases) {
             _demoState.demoPhase = phase
             expect(isDemoActive()).toBe(true)
@@ -245,21 +249,21 @@ describe('Demo store — state-class appState regression', () => {
     })
 
     it('isDemoRunning() mirrors isDemoActive()', () => {
-        _demoState.demoPhase = 'PULLBACK'
+        _demoState.demoPhase = 'FILTER'
         expect(isDemoRunning()).toBe(true)
     })
 
     it('isDemoActive reflects live changes from setDemoPhase', () => {
         resetDemo()
         expect(isDemoActive()).toBe(false)
-        setDemoPhase('GLIDING')
+        setDemoPhase('OVERVIEW')
         expect(isDemoActive()).toBe(true)
     })
 
     // ── 6. Reset ────────────────────────────────────────────────────────────
 
     it('resetDemo returns writable to IDLE with zeroed fields', () => {
-        setDemoPhase('WIDE_VIEW')
+        setDemoPhase('MAP')
         resetDemo()
         expect(demoStore().phase).toBe('IDLE')
         expect(demoStore().startTime).toBe(0)
@@ -267,20 +271,20 @@ describe('Demo store — state-class appState regression', () => {
     })
 
     it('resetDemo resets appState.demoPhase to IDLE', () => {
-        setDemoPhase('RETURNING')
+        setDemoPhase('RETURN')
         resetDemo()
         expect(_demoState.demoPhase).toBe('IDLE')
     })
 
     it('resetDemo resets the start guard so startDemo can be called again', () => {
         expect(startDemo()).toBe(true)
-        expect(_demoState.demoPhase).toBe('GLIDING')
+        expect(_demoState.demoPhase).toBe('OVERVIEW')
 
         expect(startDemo()).toBe(false)
 
         resetDemo()
         expect(startDemo()).toBe(true)
-        expect(_demoState.demoPhase).toBe('GLIDING')
+        expect(_demoState.demoPhase).toBe('OVERVIEW')
     })
 
     // ── 7. Storage helpers ──────────────────────────────────────────────────
@@ -319,8 +323,8 @@ describe('Demo store — state-class appState regression', () => {
     // ── 8. Constants & misc helpers ─────────────────────────────────────────
 
     it('DEMO_TIMING exposes numeric durations', () => {
-        expect(DEMO_TIMING.GLIDE_DURATION_MS).toBeGreaterThan(0)
-        expect(DEMO_TIMING.CARD_VISIBLE_MS).toBeGreaterThan(0)
+        expect(DEMO_TIMING.OVERVIEW_MS).toBeGreaterThan(0)
+        expect(DEMO_TIMING.FOCUS_MS).toBeGreaterThan(0)
     })
 
     it('findDemoNode returns the first valid showcase node', () => {
@@ -373,7 +377,7 @@ describe('Demo store — state-class appState regression', () => {
     })
 
     it('transitionDemo is an alias for setDemoPhase', () => {
-        transitionDemo('PULLBACK')
-        expect(_demoState.demoPhase).toBe('PULLBACK')
+        transitionDemo('TRAIL')
+        expect(_demoState.demoPhase).toBe('TRAIL')
     })
 })

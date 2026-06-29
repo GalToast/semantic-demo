@@ -87,15 +87,19 @@ describe('demo-choreography — static import invariant (Ticket 9C)', () => {
 })
 
 describe('demo-choreography — PHASE constants', () => {
-    it('contains all 9 phase values', () => {
+    it('contains all 13 phase values', () => {
         const expectedPhases: DemoPhase[] = [
             'IDLE',
-            'GLIDING',
-            'ARRIVED',
-            'CARD_VISIBLE',
-            'PULLBACK',
-            'WIDE_VIEW',
-            'RETURNING',
+            'OVERVIEW',
+            'SEARCH',
+            'FOCUS',
+            'THREADS',
+            'NEIGHBORS',
+            'TRAIL',
+            'DIVE',
+            'FILTER',
+            'MAP',
+            'RETURN',
             'COMPLETE',
             'CANCELLED'
         ]

@@ -1148,11 +1148,41 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // headless mode because navStore() returns stale values.
         await page.evaluate((idx) => {
             const candidates = [
-                { index: idx - 1, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' },
-                { index: idx + 1, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 2, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 3, source: 'semantic', reason: 'test', relationshipRole: 'civic', relationshipAxis: 'civic-anchor' },
-                { index: idx + 4, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' }
+                {
+                    index: idx - 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 2,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 3,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'civic',
+                    relationshipAxis: 'civic-anchor'
+                },
+                {
+                    index: idx + 4,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                }
             ]
             // Update navStore (triggers Svelte reactivity for lazy-loaded components)
             window.__APP_ACTIONS__?.setNavStorePatch({
@@ -1226,11 +1256,41 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // Inject focus state directly via the bridge.
         await page.evaluate((idx) => {
             const candidates = [
-                { index: idx - 1, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' },
-                { index: idx + 1, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 2, source: 'semantic', reason: 'test', relationshipRole: 'support', relationshipAxis: 'support-link' },
-                { index: idx + 3, source: 'semantic', reason: 'test', relationshipRole: 'civic', relationshipAxis: 'civic-anchor' },
-                { index: idx + 4, source: 'semantic', reason: 'test', relationshipRole: 'direct', relationshipAxis: 'support-link' }
+                {
+                    index: idx - 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 1,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 2,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'support',
+                    relationshipAxis: 'support-link'
+                },
+                {
+                    index: idx + 3,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'civic',
+                    relationshipAxis: 'civic-anchor'
+                },
+                {
+                    index: idx + 4,
+                    source: 'semantic',
+                    reason: 'test',
+                    relationshipRole: 'direct',
+                    relationshipAxis: 'support-link'
+                }
             ]
             window.__APP_ACTIONS__?.setNavStorePatch({
                 mode: 'focus',
@@ -1422,7 +1482,9 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
             try {
                 localStorage.clear()
                 sessionStorage.clear()
-            } catch {}
+            } catch {
+                /* ignore */
+            }
         })
         // Re-navigate with ?demo=force so this is a clean page state.
         // Use `?demo=force` (no path) so vite's SPA fallback serves index.html.
@@ -1495,7 +1557,12 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // Boot normally so all chunks load. Then clear storage and force-demo.
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
         await page.evaluate(() => {
-            try { localStorage.clear(); sessionStorage.clear(); } catch {}
+            try {
+                localStorage.clear()
+                sessionStorage.clear()
+            } catch {
+                /* ignore */
+            }
         })
         const url = new URL(BASE_URL)
         url.searchParams.set('demo', 'force')
@@ -1508,10 +1575,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
             .locator('.proximity-legend-wrapper')
             .isVisible()
             .catch(() => false)
-        expect(
-            duringDemo,
-            'ProximityLegend must stay hidden while the demo choreography is running'
-        ).toBe(false)
+        expect(duringDemo, 'ProximityLegend must stay hidden while the demo choreography is running').toBe(false)
 
         // Wait for the demo to fully complete. Total runtime is ~41s +
         // scene-readiness delay. 90s ceiling handles slow CI / first-load
@@ -1526,9 +1590,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
 
         // After demo settlement the legend reveals (with the 100ms
         // animation delay built in). Wait up to 5s for it.
-        await page
-            .locator('.proximity-legend-wrapper')
-            .waitFor({ state: 'visible', timeout: 5_000 })
+        await page.locator('.proximity-legend-wrapper').waitFor({ state: 'visible', timeout: 5_000 })
         expect(await page.locator('.proximity-legend-wrapper').isVisible()).toBe(true)
     })
 })

@@ -62,12 +62,16 @@ describe('DemoChoreography component', () => {
     });
 
     it('phase labels object contains all expected phases', () => {
-        expect(source).toContain('GLIDING:');
-        expect(source).toContain('ARRIVED:');
-        expect(source).toContain('CARD_VISIBLE:');
-        expect(source).toContain('PULLBACK:');
-        expect(source).toContain('WIDE_VIEW:');
-        expect(source).toContain('RETURNING:');
+        expect(source).toContain('OVERVIEW:');
+        expect(source).toContain('SEARCH:');
+        expect(source).toContain('FOCUS:');
+        expect(source).toContain('THREADS:');
+        expect(source).toContain('NEIGHBORS:');
+        expect(source).toContain('TRAIL:');
+        expect(source).toContain('DIVE:');
+        expect(source).toContain('FILTER:');
+        expect(source).toContain('MAP:');
+        expect(source).toContain('RETURN:');
         expect(source).toContain('COMPLETE:');
         expect(source).toContain('CANCELLED:');
     });

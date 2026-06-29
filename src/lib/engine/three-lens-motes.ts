@@ -8,11 +8,7 @@
  * Reads: state.focusMoteGroup, state.focusMotes
  * Writes: Three.js mesh positions/opacity/visibility
  */
-import {
-    Vector3,
-    Mesh,
-    Material
-} from 'three'
+import { Vector3, Mesh, Material } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 

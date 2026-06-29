@@ -323,12 +323,16 @@ export interface ThreadInspectorState {
 
 export type DemoPhase =
     | 'IDLE'
-    | 'GLIDING'
-    | 'ARRIVED'
-    | 'CARD_VISIBLE'
-    | 'PULLBACK'
-    | 'WIDE_VIEW'
-    | 'RETURNING'
+    | 'OVERVIEW'
+    | 'SEARCH'
+    | 'FOCUS'
+    | 'THREADS'
+    | 'NEIGHBORS'
+    | 'TRAIL'
+    | 'DIVE'
+    | 'FILTER'
+    | 'MAP'
+    | 'RETURN'
     | 'COMPLETE'
     | 'CANCELLED'
 

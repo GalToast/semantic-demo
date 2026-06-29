@@ -8,11 +8,7 @@
  * Reads: state.focusPetalGroup, state.focusPetals
  * Writes: Three.js mesh positions/opacity/visibility/rotation/scale
  */
-import {
-    Vector3,
-    Mesh,
-    Material
-} from 'three'
+import { Vector3, Mesh, Material } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 

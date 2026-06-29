@@ -111,12 +111,16 @@ export const VALID_COMPOSITION_SEARCH_GLOW_STATES = new Set<string>(['inactive',
 
 export const VALID_DEMO_PHASES = new Set<string>([
     'IDLE',
-    'GLIDING',
-    'ARRIVED',
-    'CARD_VISIBLE',
-    'PULLBACK',
-    'WIDE_VIEW',
-    'RETURNING',
+    'OVERVIEW',
+    'SEARCH',
+    'FOCUS',
+    'THREADS',
+    'NEIGHBORS',
+    'TRAIL',
+    'DIVE',
+    'FILTER',
+    'MAP',
+    'RETURN',
     'COMPLETE',
     'CANCELLED'
 ])
