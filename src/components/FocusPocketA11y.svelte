@@ -41,8 +41,10 @@
   }
 
   // Reactive reads — use $focusStore so Svelte 5 tracks the store as a source.
+  // The focusStore snapshot is flat (FocusStoreState extends FocusState directly,
+  // no `.focusState` wrapper) — mirror other consumers like `focusStore().pocketListVisible`.
   let pocketNodes = $derived($focusStore.pocketNodes);
-  let isVisible = $derived($focusStore.focusState.pocketListVisible);
+  let isVisible = $derived($focusStore.pocketListVisible);
   let hasNodes = $derived(pocketNodes.length > 0);
 </script>
 

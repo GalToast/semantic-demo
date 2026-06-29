@@ -120,6 +120,7 @@
     <div class="proximity-legend-card">
       <button
         class="proximity-legend-dismiss"
+        type="button"
         aria-label="Dismiss proximity legend"
         onclick={handleDismiss}
       >
@@ -134,7 +135,7 @@
       <div class="proximity-legend-swatches">
         {#each swatches as swatch}
           <span class="swatch-item">
-            <span class="swatch-dot" style="background: {swatch.color}"></span>
+            <span class="swatch-dot" style="background: {swatch.color}" aria-hidden="true"></span>
             <span class="swatch-label">{swatch.name}</span>
           </span>
         {/each}
@@ -190,7 +191,7 @@
     right: 8px;
     background: none;
     border: none;
-    color: rgba(224, 240, 240, 0.5);
+    color: rgba(224, 240, 240, 0.6);
     font-size: 1.3rem;
     cursor: pointer;
     padding: 2px 6px;

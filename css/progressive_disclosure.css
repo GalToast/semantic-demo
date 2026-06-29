@@ -1029,14 +1029,21 @@ body.surface-semantic-dive .launch-btn {
 
 /* W49b session #1: collapse the duplicate center journey card on desktop idle. */
 @media (min-width: 769px) {
-    body.surface-idle.view-galaxy[data-panel-surface='idle'] .journey-compass[data-phase='overview'][data-density='expanded'] .journey-compass-step,
-    body.surface-idle.view-galaxy[data-panel-surface='idle'] .journey-compass[data-phase='overview'][data-density='expanded'] .journey-compass-actions,
-    body.surface-idle.view-galaxy[data-panel-surface='idle'] .journey-compass[data-phase='overview'][data-density='expanded'] #journey-compass-note {
+    body.surface-idle.view-galaxy[data-panel-surface='idle']
+        .journey-compass[data-phase='overview'][data-density='expanded']
+        .journey-compass-step,
+    body.surface-idle.view-galaxy[data-panel-surface='idle']
+        .journey-compass[data-phase='overview'][data-density='expanded']
+        .journey-compass-actions,
+    body.surface-idle.view-galaxy[data-panel-surface='idle']
+        .journey-compass[data-phase='overview'][data-density='expanded']
+        #journey-compass-note {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
-    body.surface-idle.view-galaxy[data-panel-surface='idle'] .journey-compass[data-phase='overview'][data-density='expanded'] {
+    body.surface-idle.view-galaxy[data-panel-surface='idle']
+        .journey-compass[data-phase='overview'][data-density='expanded'] {
         width: auto;
         max-width: 340px;
         min-width: 0;

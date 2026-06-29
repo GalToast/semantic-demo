@@ -63,7 +63,6 @@
     body.surface-semantic-dive .info-panel .info-header {
         display: none;
     }
-
 }
 
 /* SD-122: Reduced-motion override for filter/search surfaces
@@ -419,9 +418,7 @@
        compass's secondary/tertiary would duplicate them — hide them.
        Focus and focus-search still need the secondary "County" button
        visible in the compass to provide a 2-button exit toggle. */
-    body.surface-semantic-dive
-        .journey-compass[data-density='compact']
-        .journey-compass-action:not(.primary) {
+    body.surface-semantic-dive .journey-compass[data-density='compact'] .journey-compass-action:not(.primary) {
         display: none;
     }
 
@@ -603,7 +600,6 @@
         border-color: rgba(var(--color-primary-tint-rgb), 0.18);
         background: rgba(5, 10, 16, 0.72);
     }
-
 }
 
 @media (max-width: 768px) {
