@@ -234,7 +234,6 @@ describe('cancelAnimate', () => {
             pointsMesh: null,
             pointsMaterial: null,
             nodeSporeMesh: null,
-            nodeSporeHitMesh: null,
             nodeSporeMaterial: null,
             sceneRevealActive: false,
             sceneRevealCameraStart: null,
@@ -253,7 +252,7 @@ describe('cancelAnimate', () => {
         }
 
         // jsdom: clean up any previous .webgl-fallback-map from prior tests
-        document.body.querySelectorAll('.webgl-fallback-map').forEach(n => n.remove())
+        document.body.querySelectorAll('.webgl-fallback-map').forEach((n) => n.remove())
     })
 
     it('calls pauseRenderLoopTimers with clearRestoreTimer=true first', () => {
@@ -285,7 +284,6 @@ describe('cancelAnimate', () => {
         _engineStateProxy.state!.pointsMesh = dummy as any
         _engineStateProxy.state!.pointsMaterial = dummy as any
         _engineStateProxy.state!.nodeSporeMesh = dummy as any
-        _engineStateProxy.state!.nodeSporeHitMesh = dummy as any
         _engineStateProxy.state!.nodeSporeMaterial = dummy as any
 
         cancelAnimate()
@@ -296,7 +294,6 @@ describe('cancelAnimate', () => {
         expect(_engineStateProxy.state!.pointsMesh).toBeNull()
         expect(_engineStateProxy.state!.pointsMaterial).toBeNull()
         expect(_engineStateProxy.state!.nodeSporeMesh).toBeNull()
-        expect(_engineStateProxy.state!.nodeSporeHitMesh).toBeNull()
         expect(_engineStateProxy.state!.nodeSporeMaterial).toBeNull()
     })
 
