@@ -12,8 +12,13 @@
 
 // ── Static @lib/* imports ────────────────────────────────────────────────────
 
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
-import { buildThreeSceneOrFallback, applyReducedMotionGate, applyAutoRotateConfig, exposeDevEngineBridge } from './three-engine-init-helpers'
+import { registerContextListeners } from './three-listener-registration'
+import {
+    buildThreeSceneOrFallback,
+    applyReducedMotionGate,
+    applyAutoRotateConfig,
+    exposeDevEngineBridge
+} from './three-engine-init-helpers'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
 import { Material, FogExp2 } from 'three'
 import * as sceneRevealMod from './scene-reveal'
@@ -108,7 +113,9 @@ export async function initThreeJS() {
         container,
         width,
         height,
-        (handler) => { engineState.mapButtonClickHandler = handler },
+        (handler) => {
+            engineState.mapButtonClickHandler = handler
+        },
         {
             state: engineState.state,
             viewController: engineState.viewController,
@@ -125,61 +132,19 @@ export async function initThreeJS() {
     // C3 — multi-store handle mirror (webglContext + appState + legacyState + engineState.state)
     syncSceneHandles({ scene, camera, renderer, controls, hemiLight, dirLight })
 
-    // Initialize DisposableRegistry for all DOM/Three.js event listeners.
-    // Registering at creation time means we can never forget to remove them.
+    // C4 — Clean up any previous init cycle's registry before creating a fresh one.
     engineState.sceneRegistry?.disposeAll()
-    engineState.sceneRegistry = new DisposableRegistry({ label: 'three-engine' })
 
-    engineState.sceneRegistry.listener(renderer.domElement, 'webglcontextlost', (event: Event) => {
-        event.preventDefault()
-        engineState.webglContextLost = true
-        pauseRenderLoopTimers({ clearRestoreTimer: true })
-        engineState.uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
-    })
-
-    engineState.sceneRegistry.listener(renderer.domElement, 'webglcontextrestored stimulus', () => {
-        engineState.webglContextLost = false
-        engineState.webglRestoreTimer = window.setTimeout(() => {
-            engineState.webglRestore?.restoreWebGLContext().catch((err) => {
-                debugError('Failed to restore WebGL context:', err)
-            })
-            if (
-                engineState.rafId === null &&
-                !engineState.circuitBreakerTripped &&
-                webglContext.renderer &&
-                webglContext.scene &&
-                webglContext.camera
-            ) {
-                animate()
-            }
-        }, 1000)
-    })
-
-    engineState.sceneRegistry.listener(document, 'visibilitychange', () => {
-        if (
-            !document.hidden &&
-            engineState.rafId === null &&
-            engineState.idleFrameTimerId === null &&
-            !engineState.webglContextLost &&
-            !engineState.circuitBreakerTripped &&
-            webglContext.renderer &&
-            webglContext.scene &&
-            webglContext.camera
-        ) {
-            animate()
-        }
+    // C5-C7/C10 — register all DOM/Three.js event listeners in a single
+    // DisposableRegistry (extracted to three-listener-registration.ts).
+    engineState.sceneRegistry = registerContextListeners({
+        renderer,
+        controls,
+        restartLoop: animate
     })
 
     applyReducedMotionGate(engineState.state, appState)
     applyAutoRotateConfig(controls, engineState.state, appState)
-
-    engineState.sceneRegistry.listener(controls as unknown as EventTarget, 'start', () => {
-        engineState.cameraControls?.releaseFocusCameraAssist('user-control')
-        engineState.cameraControls?.noteSceneInteraction(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
-    })
-    engineState.sceneRegistry.listener(controls as unknown as EventTarget, 'end', () => {
-        engineState.cameraControls?.scheduleAutoRotateResume(CONFIG.AUTO_ROTATE_MANUAL_IDLE_MS)
-    })
 
     // W8: yield before heavy geometry/buffer work to break the init long task.
     // createPoints() uploads 8,406 × 3 floats + 8,406 × 16 instance matrices;

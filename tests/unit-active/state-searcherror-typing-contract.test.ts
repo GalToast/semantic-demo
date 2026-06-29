@@ -36,7 +36,10 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
         const declMatch = stateTypes.match(/searchError:\s*SearchErrorData\s*\|\s*null/)
         expect(declMatch, 'SearchAppState.searchError declaration not found').not.toBeNull()
         const declaredType = declMatch![0]
-        expect(declType(declaredType), `SearchAppState.searchError declared as "${declaredType}" — must be "searchError: SearchErrorData | null"`).toBe(true)
+        expect(
+            declType(declaredType),
+            `SearchAppState.searchError declared as "${declaredType}" — must be "searchError: SearchErrorData | null"`
+        ).toBe(true)
         // Negative: must not be loosely typed
         expect(declaredType).not.toMatch(/\bunknown\b/)
         expect(declaredType).not.toMatch(/\bany\b/)
@@ -48,7 +51,9 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
         expect(stateTypes).toMatch(/export\s+interface\s+SearchErrorData\b/)
         // Must contain the three required fields
         expect(stateTypes).toMatch(/interface\s+SearchErrorData\s*\{[\s\S]*query\s*:\s*string/)
-        expect(stateTypes).toMatch(/interface\s+SearchErrorData\s*\{[\s\S]*type\s*:\s*['"]inline['"]\s*\|\s*['"]full['"]/)
+        expect(stateTypes).toMatch(
+            /interface\s+SearchErrorData\s*\{[\s\S]*type\s*:\s*['"]inline['"]\s*\|\s*['"]full['"]/
+        )
         expect(stateTypes).toMatch(/interface\s+SearchErrorData\s*\{[\s\S]*message\s*:\s*string/)
     })
 
@@ -57,7 +62,9 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
         // Local declaration would be `interface SearchErrorData` (without export)
         expect(resultsUi).not.toMatch(/^\s*interface\s+SearchErrorData\b/m)
         // Must import the type from state-types.ts
-        expect(resultsUi).toMatch(/import\s+type\s*\{[^}]*\bSearchErrorData\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/)
+        expect(resultsUi).toMatch(
+            /import\s+type\s*\{[^}]*\bSearchErrorData\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/
+        )
     })
 
     it('search.svelte.ts runtime assignment matches SearchErrorData shape', () => {

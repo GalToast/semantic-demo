@@ -119,20 +119,36 @@ const mockSearchState = vi.hoisted(() => {
 })
 
 const mockViewportState = vi.hoisted(() => ({
-    viewportWidth: 1280, viewportHeight: 800,
-    isCompactViewport: false, isMobileViewport: false, isTabletViewport: false,
+    viewportWidth: 1280,
+    viewportHeight: 800,
+    isCompactViewport: false,
+    isMobileViewport: false,
+    isTabletViewport: false,
     devicePixelRatio: 1
 }))
 
 const mockFocusState = vi.hoisted(() => ({
-    selectedPoint: null, inspectedThreadIndex: null, pinnedThreadIndex: null,
+    selectedPoint: null,
+    inspectedThreadIndex: null,
+    pinnedThreadIndex: null,
     threadInspectorPointerInside: false,
     pocketMotionByIndex: new Map(),
     pocketTransitionStartedAt: 0,
-    infoPanelOpen: true, pocketListVisible: false, pocketRoleFilter: 'all' as const,
-    focusTransitionMode: 'idle' as const, focusTransitionStartedAt: 0,
+    infoPanelOpen: true,
+    pocketListVisible: false,
+    pocketRoleFilter: 'all' as const,
+    focusTransitionMode: 'idle' as const,
+    focusTransitionStartedAt: 0,
     nodesAreSettling: false,
-    inspectedStrandDiagnostics: { active: false, source: '', index: null, focusedIndex: null, segmentCount: 0, braidCount: 0, endpointCount: 0 }
+    inspectedStrandDiagnostics: {
+        active: false,
+        source: '',
+        index: null,
+        focusedIndex: null,
+        segmentCount: 0,
+        braidCount: 0,
+        endpointCount: 0
+    }
 }))
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
@@ -141,8 +157,12 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
             // Stable reference so production writes via appState.searchState.X = Y stick.
             return mockSearchState
         },
-        get viewportState() { return mockViewportState },
-        get focusState() { return mockFocusState },
+        get viewportState() {
+            return mockViewportState
+        },
+        get focusState() {
+            return mockFocusState
+        },
         get currentSearchSummary() {
             return mockState.currentSearchSummary
         },

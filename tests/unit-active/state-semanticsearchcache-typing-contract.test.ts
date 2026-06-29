@@ -35,7 +35,10 @@ describe('engine-boundary refactor / Phase 2-4 / semanticSearchResultCache field
         ).not.toBeNull()
         // Verify it doesn't match the loose-type pattern
         const looseMatch = appState.match(/semanticSearchResultCache\s*:\s*new\s+Map<string,\s*unknown>\(\)/)
-        expect(looseMatch, 'appState.searchState.semanticSearchResultCache is still typed Map<string, unknown>').toBeNull()
+        expect(
+            looseMatch,
+            'appState.searchState.semanticSearchResultCache is still typed Map<string, unknown>'
+        ).toBeNull()
     })
 
     it('state-types.ts re-exports CacheEntry from search/cache', () => {
@@ -62,6 +65,8 @@ describe('engine-boundary refactor / Phase 2-4 / semanticSearchResultCache field
 
     it('cache.ts initSearchCache() still initializes Map<string, CacheEntry>', () => {
         const cache = readSource('src/lib/search/cache.ts')
-        expect(cache).toMatch(/appState\.searchState\.semanticSearchResultCache\s*=\s*new\s+Map<string,\s*CacheEntry>\(\)/)
+        expect(cache).toMatch(
+            /appState\.searchState\.semanticSearchResultCache\s*=\s*new\s+Map<string,\s*CacheEntry>\(\)/
+        )
     })
 })

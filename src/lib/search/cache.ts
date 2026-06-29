@@ -103,9 +103,7 @@ function validatePayloadSchema(payload: SearchPayload): boolean {
     return true
 }
 
-type CacheDiagnosticsPatch = Partial<
-    Omit<SemanticSearchCacheDiagnostics, 'lastAgeMs'> & { lastAgeMs: number | null }
->
+type CacheDiagnosticsPatch = Partial<Omit<SemanticSearchCacheDiagnostics, 'lastAgeMs'> & { lastAgeMs: number | null }>
 
 function updateSemanticSearchCacheDiagnostics(patch: CacheDiagnosticsPatch): void {
     withStateMutation(() => {

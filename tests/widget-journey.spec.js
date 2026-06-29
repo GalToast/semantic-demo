@@ -1126,7 +1126,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * published CAMERA_NODE_FOCUSED but no subscriber called
      * applyLocalNeighborhoodFocus, so the pocket stayed empty.
      */
-    test("22b. real focus path populates the focus pocket", async ({ page }) => {
+    test('22b. real focus path populates the focus pocket', async ({ page }) => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Do not gate this test on the 3D scene/weather widget: headless
@@ -1168,7 +1168,9 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
 
         expect(pocket.focusedIndex).toBe(0)
         expect(pocket.focusPocketCount, 'focusPocketIndices should be populated after focusOnNode').toBeGreaterThan(0)
-        expect(pocket.threadCandidatesCount, 'threadCandidates should be populated after focusOnNode').toBeGreaterThan(0)
+        expect(pocket.threadCandidatesCount, 'threadCandidates should be populated after focusOnNode').toBeGreaterThan(
+            0
+        )
     })
 
     /**

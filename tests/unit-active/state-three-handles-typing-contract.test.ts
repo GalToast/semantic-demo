@@ -18,7 +18,6 @@
  *   - pointsMesh: $state<Points | null>(null)
  *   - pointsMaterial: $state<PointsMaterial | null>(null)
  *   - nodeSporeMesh: $state<InstancedMesh | null>(null)
- *   - nodeSporeHitMesh: $state<InstancedMesh | null>(null)
  *   - nodeSporeMaterial: $state<Material | null>(null)
  *
  * Camera, renderer, controls were already typed via the `*Like` interfaces
@@ -81,12 +80,6 @@ describe('engine-boundary refactor / Tier D first bite / Three.js handle typing'
         expect(source).not.toMatch(/nodeSporeMesh\s*=\s*\$state<SemanticState\['nodeSporeMesh']>/)
     })
 
-    it('nodeSporeHitMesh is typed as InstancedMesh | null', () => {
-        const source = readSource('src/lib/state/app.svelte.ts')
-        expect(source).toMatch(/nodeSporeHitMesh\s*=\s*\$state<InstancedMesh\s*\|\s*null>\(null\)/)
-        expect(source).not.toMatch(/nodeSporeHitMesh\s*=\s*\$state<SemanticState\['nodeSporeHitMesh']>/)
-    })
-
     it('nodeSporeMaterial is typed as Material | null', () => {
         const source = readSource('src/lib/state/app.svelte.ts')
         expect(source).toMatch(/nodeSporeMaterial\s*=\s*\$state<Material\s*\|\s*null>\(null\)/)
@@ -117,7 +110,6 @@ describe('engine-boundary refactor / Tier D first bite / Three.js handle typing'
         expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['pointsMesh']/)
         expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['pointsMaterial']/)
         expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['nodeSporeMesh']/)
-        expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['nodeSporeHitMesh']/)
         expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['nodeSporeMaterial']/)
     })
 })

@@ -488,11 +488,7 @@ function preserveDomForcedFocusSearchSurface(): void {
  * inside `_restoreSearchFromParams` after the search round-trip, because they
  * need a result list to map against.
  */
-async function _restoreAnchorFromParams(
-    anchorId: string,
-    restoreToken: number,
-    signal: AbortSignal
-): Promise<void> {
+async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, signal: AbortSignal): Promise<void> {
     const numericId = Number(anchorId)
     if (!Number.isFinite(numericId)) return
 
@@ -537,8 +533,8 @@ async function _restoreAnchorFromParams(
         // Pass signal so a newer applyUrlState aborts the dynamic import
         // mid-flight rather than completing a now-stale focus-pocket mutation.
         // ImportCallOptions.signal is supported at runtime (Node 17+, all modern browsers)
-// but isn't in @types/node ImportCallOptions in this TS version. `as never`
-// bridges the type-only gap; the runtime call is well-defined.
+        // but isn't in @types/node ImportCallOptions in this TS version. `as never`
+        // bridges the type-only gap; the runtime call is well-defined.
         const _focusPocketMod = (await import('@lib/focus/pocket', { signal } as never)) as {
             applyLocalNeighborhoodFocus: (index: number) => void
         }

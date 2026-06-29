@@ -148,8 +148,13 @@ const mockFocusState = vi.hoisted(() => ({
     focusTransitionStartedAt: 0,
     nodesAreSettling: false,
     inspectedStrandDiagnostics: {
-        active: false, source: '', index: null, focusedIndex: null,
-        segmentCount: 0, braidCount: 0, endpointCount: 0
+        active: false,
+        source: '',
+        index: null,
+        focusedIndex: null,
+        segmentCount: 0,
+        braidCount: 0,
+        endpointCount: 0
     }
 }))
 
@@ -160,8 +165,12 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
             // and the change sticks (proxy on mockSearchState tracks to mockState).
             return mockSearchState
         },
-        get viewportState() { return mockViewportState },
-        get focusState() { return mockFocusState },
+        get viewportState() {
+            return mockViewportState
+        },
+        get focusState() {
+            return mockFocusState
+        },
         get currentSearchSummary() {
             return mockState.currentSearchSummary
         },

@@ -79,7 +79,7 @@ function getWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`): unknown {
 
 function setWindowSlot(key: `__SEMANTIC_EXPLORER_${string}`, value: unknown): void {
     if (typeof window === 'undefined') return
-    ;asSemanticExplorerWindow()[key] = value
+    asSemanticExplorerWindow()[key] = value
 }
 
 function getOrCreateWritable<T>(windowKey: `__SEMANTIC_EXPLORER_${string}`, initial: T) {

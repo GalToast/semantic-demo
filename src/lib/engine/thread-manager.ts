@@ -306,10 +306,7 @@ function createLineSegments(positions: number[], opacity: number, linewidth: num
     // seen by the type system as distinct (different module instances).
     // The runtime instances are the same at execution; bridge with a
     // constructor-parameter-shaped cast.
-    return new LineSegments2(
-        geometry,
-        material as ConstructorParameters<typeof LineSegments2>[1]
-    )
+    return new LineSegments2(geometry, material as ConstructorParameters<typeof LineSegments2>[1])
 }
 
 export function getThreadPulseOpacity(

@@ -302,7 +302,8 @@ export function applySemanticSearchErrorState(
     error: Error | null
 ): void {
     const preservingSameQuery =
-        state.searchState.currentSearchSummary && (state.searchState.currentSearchSummary as SearchSummaryState).query === trimmedQuery
+        state.searchState.currentSearchSummary &&
+        (state.searchState.currentSearchSummary as SearchSummaryState).query === trimmedQuery
 
     const errorData: SearchErrorData = {
         query: trimmedQuery,

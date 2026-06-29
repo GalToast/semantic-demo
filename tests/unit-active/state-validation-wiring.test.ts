@@ -104,7 +104,7 @@ describe('Phase 6a — validateAppStateEnumFields aggregator', () => {
                 currentView: 'galaxy',
                 myceliumMode: 'default'
             },
-searchState: {
+            searchState: {
                 searchStatus: 'idle'
             },
             loadingPhaseKey: 'records',
@@ -113,9 +113,9 @@ searchState: {
         const result = validateAppStateEnumFields(state)
         expect(result.checked).toBeGreaterThanOrEqual(6)
         expect(result.errors).toEqual([])
-})
+    })
 
-it('surfaces errors when an enum field has an invalid value', () => {
+    it('surfaces errors when an enum field has an invalid value', () => {
         const state = {
             currentView: 'invalid-view',
             navState: {
@@ -145,11 +145,11 @@ it('surfaces errors when an enum field has an invalid value', () => {
                 currentView: 'invalid-view',
                 myceliumMode: 'invalid-mode'
             },
-searchState: {
-            searchStatus: 'invalid-status'
-        },
-        loadingPhaseKey: 'invalid-phase',
-        semanticLaneState: 'invalid-lane'
+            searchState: {
+                searchStatus: 'invalid-status'
+            },
+            loadingPhaseKey: 'invalid-phase',
+            semanticLaneState: 'invalid-lane'
         }
         const result = validateAppStateEnumFields(state)
         expect(result.errors.length).toBeGreaterThanOrEqual(6)

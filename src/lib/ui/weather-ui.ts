@@ -102,7 +102,12 @@ export function updateWeatherStaleness(lastFetch: number | null): void {
 function startStalenessPolling(): void {
     if (_stalenessActive || _registry.isDisposed || typeof window === 'undefined') return
     _stalenessActive = true
-    _registry.timer(window.setInterval(() => updateWeatherStaleness(appState.weatherState?.lastFetch), 60000) as unknown as ReturnType<typeof setTimeout>)
+    _registry.timer(
+        window.setInterval(
+            () => updateWeatherStaleness(appState.weatherState?.lastFetch),
+            60000
+        ) as unknown as ReturnType<typeof setTimeout>
+    )
 }
 
 export function updateWeatherUi(state: WeatherStateValue): void {
@@ -230,11 +235,19 @@ function scheduleLightning(): void {
         if (lightning) {
             lightning.classList.add('flash')
             // 200ms flash removal — track with registry so disposal cancels it.
-            _registry.timer(window.setTimeout(() => lightning.classList.remove('flash'), 200) as unknown as ReturnType<typeof setTimeout>)
+            _registry.timer(
+                window.setTimeout(() => lightning.classList.remove('flash'), 200) as unknown as ReturnType<
+                    typeof setTimeout
+                >
+            )
         }
         if (generation === lightningGeneration) {
             flashCount += 1
-            _registry.timer(window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71cd) * 15000) as unknown as ReturnType<typeof setTimeout>)
+            _registry.timer(
+                window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71cd) * 15000) as unknown as ReturnType<
+                    typeof setTimeout
+                >
+            )
         }
     }
     _registry.timer(window.setTimeout(flash, 3000) as unknown as ReturnType<typeof setTimeout>)

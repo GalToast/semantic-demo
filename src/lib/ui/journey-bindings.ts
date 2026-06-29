@@ -149,9 +149,9 @@ export function bindFocusControls(): void {
 
     // 10/10 Polish: Thread Inspector stable bindings
     bindClick('btn-thread-pin', () => {
-        const index = state.inspectedThreadIndex
+        const index = state.focusState.inspectedThreadIndex
         if (typeof index !== 'number' || !Number.isFinite(index)) return
-        if (state.pinnedThreadIndex === index) {
+        if (state.focusState.pinnedThreadIndex === index) {
             unpinThreadInspection()
         } else {
             // W7-C fix: when the inspected index is the focused node itself,
@@ -172,7 +172,7 @@ export function bindFocusControls(): void {
     bindClick('btn-thread-follow', (event?: MouseEvent) => {
         event?.preventDefault()
         event?.stopPropagation()
-        const index = state.inspectedThreadIndex
+        const index = state.focusState.inspectedThreadIndex
         if (typeof index !== 'number' || !Number.isFinite(index)) return
         const phase = state.strandContinuityState?.phase
         if (index === state.navState.focusedIndex || phase === 'exploring') return

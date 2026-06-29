@@ -104,8 +104,7 @@ vi.mock('@lib/utils/geo-data', () => ({
 }))
 
 vi.mock('@lib/utils/dom-formatters', () => ({
-    formatBusinessName: (name: unknown): string =>
-        typeof name === 'string' && name.length > 0 ? name : ''
+    formatBusinessName: (name: unknown): string => (typeof name === 'string' && name.length > 0 ? name : '')
 }))
 
 vi.mock('@lib/utils/environment', () => ({
@@ -393,10 +392,7 @@ describe('map-state — getMapRoutePoints', () => {
     })
 
     it('filters out points without valid geocodes', () => {
-        _appState.points = [
-            { ...makePoint(0), lat: null, lng: null },
-            makePoint(1)
-        ]
+        _appState.points = [{ ...makePoint(0), lat: null, lng: null }, makePoint(1)]
         _appState.nodePositions = [{ x: 0 }, { x: 1 }]
         _appState.originalPositions = []
         _appState.searchState.currentSearchSummary = { resultIndices: [0, 1], anchorIndex: 0, topIndex: 1 }

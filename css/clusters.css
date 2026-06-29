@@ -144,7 +144,7 @@
 .selected-role-badge {
     flex-shrink: 0;
     padding: 4px 8px;
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;

@@ -79,8 +79,13 @@ const _appState = vi.hoisted(() => ({
         currentSemanticGuide: null,
         summaryCardTypeToken: 0,
         semanticSearchCacheDiagnostics: {
-            hits: 0, misses: 0, stores: 0, evictions: 0,
-            lastKey: null, lastSource: null, lastAgeMs: null
+            hits: 0,
+            misses: 0,
+            stores: 0,
+            evictions: 0,
+            lastKey: null,
+            lastSource: null,
+            lastAgeMs: null
         },
         semanticSearchResultCache: new Map(),
         searchVisibleCount: 5
@@ -107,8 +112,13 @@ const _appState = vi.hoisted(() => ({
         focusTransitionStartedAt: 0,
         nodesAreSettling: false,
         inspectedStrandDiagnostics: {
-            active: false, source: '', index: null, focusedIndex: null,
-            segmentCount: 0, braidCount: 0, endpointCount: 0
+            active: false,
+            source: '',
+            index: null,
+            focusedIndex: null,
+            segmentCount: 0,
+            braidCount: 0,
+            endpointCount: 0
         }
     }
 }))

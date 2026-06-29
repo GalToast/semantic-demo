@@ -96,7 +96,7 @@ export function syncSearchStatusForFocus(point: Point, options: SyncSearchStatus
         )
     }
 
-    const displayPoint = focusedPointOutsideResults && appState.selectedPoint ? appState.selectedPoint : point
+    const displayPoint = focusedPointOutsideResults && appState.focusState.selectedPoint ? appState.focusState.selectedPoint : point
     const pointName = formatBusinessName(displayPoint!.name)
     const searchSummary = getCurrentSearchSummarySnapshot()
     const queryLabel = searchSummary?.query ? `"${searchSummary.query}"` : 'this connection path'

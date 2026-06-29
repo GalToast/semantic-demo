@@ -52,7 +52,10 @@ describe('engine-boundary refactor / Phase 2 latent-bug fix / currentSemanticGui
         const legendPanel = readSource('src/lib/stores/legend-panel.svelte.ts')
         // Both reader sites should pull from semanticGuideState.config
         const configReads = legendPanel.match(/appState\.semanticGuideState\.config\s+as\s+Record/g) || []
-        expect(configReads.length, `Expected ≥2 canonical reads in legend-panel, found ${configReads.length}`).toBeGreaterThanOrEqual(2)
+        expect(
+            configReads.length,
+            `Expected ≥2 canonical reads in legend-panel, found ${configReads.length}`
+        ).toBeGreaterThanOrEqual(2)
         // The old dual-write reads from currentSemanticGuide must be gone
         expect(legendPanel).not.toMatch(/appState\.currentSemanticGuide\s+as\s+Record<string,\s*any>/)
     })
@@ -60,7 +63,9 @@ describe('engine-boundary refactor / Phase 2 latent-bug fix / currentSemanticGui
     it('state-types.ts documents the currentSemanticGuide vs GuideConfig split', () => {
         const stateTypes = readSource('src/lib/state/state-types.ts')
         // The comment block explaining the split must exist
-        expect(stateTypes).toMatch(/Plain-text semantic guide payload[\s\S]*Distinct from GuideConfig[\s\S]*setSemanticGuide/)
+        expect(stateTypes).toMatch(
+            /Plain-text semantic guide payload[\s\S]*Distinct from GuideConfig[\s\S]*setSemanticGuide/
+        )
         // The declaration type must be string | null (NOT unknown)
         expect(stateTypes).toMatch(/currentSemanticGuide:\s*string\s*\|\s*null\b/)
         expect(stateTypes).not.toMatch(/currentSemanticGuide:\s*unknown\b/)

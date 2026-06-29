@@ -39,5 +39,5 @@ export function applyMapFlatteningLayout(enabled: boolean): void {
             }
         })
     }
-    appState.nodesAreSettling = true
+    appState.focusState.nodesAreSettling = true
 }

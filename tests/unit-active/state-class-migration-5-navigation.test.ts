@@ -21,7 +21,7 @@
  *   - Tests verify getter behavior under various appState/window state combos
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest'
 
 // ── Mock factory for appState (plain JS, no runes) ────────────────────────────
 //
@@ -31,221 +31,229 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 // the `navState` field, so the production read path sees the changes.
 
 const mockState = vi.hoisted(() => ({
-  navState: {
-    mode: 'overview',
-    surface: 'idle',
-    previousSurface: 'idle',
-    focusedIndex: null as number | null,
-    trailDepth: 0,
-    currentView: 'galaxy',
-    myceliumMode: 'default',
-    focusPocketIndices: [],
-    focusPocketMeta: null,
-    focusPocketRoleByIndex: null,
-  } as Record<string, unknown>,
-}));
+    navState: {
+        mode: 'overview',
+        surface: 'idle',
+        previousSurface: 'idle',
+        focusedIndex: null as number | null,
+        trailDepth: 0,
+        currentView: 'galaxy',
+        myceliumMode: 'default',
+        focusPocketIndices: [],
+        focusPocketMeta: null,
+        focusPocketRoleByIndex: null
+    } as Record<string, unknown>
+}))
 
 // Stable read-only defaults for `appState.viewportState`. Phase 6c partitioned
 // viewport fields; production's viewport mirror reads them at module-init.
 const mockViewportState = vi.hoisted(() => ({
-  viewportWidth: 1280,
-  viewportHeight: 800,
-  isCompactViewport: false,
-  isMobileViewport: false,
-  isTabletViewport: false,
-  devicePixelRatio: 1,
-  compassViewportWidth: 800,
-  compassViewportHeight: 600
+    viewportWidth: 1280,
+    viewportHeight: 800,
+    isCompactViewport: false,
+    isMobileViewport: false,
+    isTabletViewport: false,
+    devicePixelRatio: 1,
+    compassViewportWidth: 800,
+    compassViewportHeight: 600
 }))
 
-
 const mockSearchState = vi.hoisted(() => ({
-  currentSearchSummary: null,
-  searchStatus: 'idle',
-  searchError: null,
-  searchRequestSequence: 0,
-  searchAnchorIndex: null,
-  searchPreviewIndex: null,
-  searchGlowIndices: new Set<number>(),
-  searchGlowTopIndex: null,
-  searchGlowActive: false,
-  searchFocusTransitionToken: 0,
-  isSearching: false,
-  currentEmptyQuery: null,
-  semanticTrailCue: 'idle',
-  isCompactViewport: false,
-  semanticGuideRequestSequence: 0,
-  currentSemanticGuide: null,
-  summaryCardTypeToken: 0,
-  semanticSearchCacheDiagnostics: {
-    hits: 0, misses: 0, stores: 0, evictions: 0,
-    lastKey: null, lastSource: null, lastAgeMs: null
-  },
-  semanticSearchResultCache: new Map(),
-  searchVisibleCount: 5
+    currentSearchSummary: null,
+    searchStatus: 'idle',
+    searchError: null,
+    searchRequestSequence: 0,
+    searchAnchorIndex: null,
+    searchPreviewIndex: null,
+    searchGlowIndices: new Set<number>(),
+    searchGlowTopIndex: null,
+    searchGlowActive: false,
+    searchFocusTransitionToken: 0,
+    isSearching: false,
+    currentEmptyQuery: null,
+    semanticTrailCue: 'idle',
+    isCompactViewport: false,
+    semanticGuideRequestSequence: 0,
+    currentSemanticGuide: null,
+    summaryCardTypeToken: 0,
+    semanticSearchCacheDiagnostics: {
+        hits: 0,
+        misses: 0,
+        stores: 0,
+        evictions: 0,
+        lastKey: null,
+        lastSource: null,
+        lastAgeMs: null
+    },
+    semanticSearchResultCache: new Map(),
+    searchVisibleCount: 5
 }))
 
 vi.mock('@lib/state/app.svelte.ts', () => ({
-  appState: {
-    get searchState() {
-      // Stable reference for production's appState.searchState.X reads.
-      return mockSearchState
-    },
-    get viewportState() {
-      // Phase 6c partitioned viewport; production reads at module-init.
-      return mockViewportState
-    },
-    get navState() { return mockState.navState; },
-    set navState(value: Record<string, unknown>) { mockState.navState = value; },
-    withMutation: (fn: () => unknown) => fn(),
-    selectedPoint: null,
-    inspectedThreadIndex: null,
-    pinnedThreadIndex: null,
-    nodesAreSettling: false,
-    pocketMotionByIndex: null,
-    pocketTransitionStartedAt: 0,
-    infoPanelOpen: false,
-    pocketListVisible: false,
-    focusTransitionMode: 'none',
-    focusTransitionStartedAt: 0,
-    focusOrbitSlackState: {},
-    inspectedStrandDiagnostics: { active: false, source: 'none', segmentCount: 0, braidCount: 0, endpointCount: 0 },
-    threadInspectorPointerInside: false,
-  },
-}));
+    appState: {
+        get searchState() {
+            // Stable reference for production's appState.searchState.X reads.
+            return mockSearchState
+        },
+        get viewportState() {
+            // Phase 6c partitioned viewport; production reads at module-init.
+            return mockViewportState
+        },
+        get navState() {
+            return mockState.navState
+        },
+        set navState(value: Record<string, unknown>) {
+            mockState.navState = value
+        },
+        withMutation: (fn: () => unknown) => fn(),
+        selectedPoint: null,
+        inspectedThreadIndex: null,
+        pinnedThreadIndex: null,
+        nodesAreSettling: false,
+        pocketMotionByIndex: null,
+        pocketTransitionStartedAt: 0,
+        infoPanelOpen: false,
+        pocketListVisible: false,
+        focusTransitionMode: 'none',
+        focusTransitionStartedAt: 0,
+        focusOrbitSlackState: {},
+        inspectedStrandDiagnostics: { active: false, source: 'none', segmentCount: 0, braidCount: 0, endpointCount: 0 },
+        threadInspectorPointerInside: false
+    }
+}))
 
 // Import the store AFTER the mock is set up so it sees the stubbed appState.
-import type { NavMode, PanelSurface } from '@lib/types/state';
+import type { NavMode, PanelSurface } from '@lib/types/state'
 import {
-  currentMode,
-  currentSurface,
-  currentView,
-  hasFocus,
-  focusedIndex,
-  resetNavState,
-  setNavMode,
-  navStore,
-} from '@lib/stores/navigation.svelte.ts';
+    currentMode,
+    currentSurface,
+    currentView,
+    hasFocus,
+    focusedIndex,
+    resetNavState,
+    setNavMode,
+    navStore
+} from '@lib/stores/navigation.svelte.ts'
 
 describe('Navigation store — T4 migration to Svelte 5 state class', () => {
-  beforeEach(() => {
-    // Reset store to initial state (clears the local writable).
-    resetNavState();
-    // Clear legacy fallback paths.
-    delete (window as unknown as Record<string, unknown>).__APP_STATE__;
-    delete (window as unknown as Record<string, unknown>).__TEST_STATE__;
-    delete (window as unknown as Record<string, unknown>).__semanticState;
-    delete (window as unknown as Record<string, unknown>).state;
-    // Reset mock appState to defaults.
-    mockState.navState = {
-      mode: 'overview',
-      surface: 'idle',
-      previousSurface: 'idle',
-      focusedIndex: null,
-      trailDepth: 0,
-      currentView: 'galaxy',
-      myceliumMode: 'default',
-      focusPocketIndices: [],
-      focusPocketMeta: null,
-      focusPocketRoleByIndex: null,
-    };
-  });
+    beforeEach(() => {
+        // Reset store to initial state (clears the local writable).
+        resetNavState()
+        // Clear legacy fallback paths.
+        delete (window as unknown as Record<string, unknown>).__APP_STATE__
+        delete (window as unknown as Record<string, unknown>).__TEST_STATE__
+        delete (window as unknown as Record<string, unknown>).__semanticState
+        delete (window as unknown as Record<string, unknown>).state
+        // Reset mock appState to defaults.
+        mockState.navState = {
+            mode: 'overview',
+            surface: 'idle',
+            previousSurface: 'idle',
+            focusedIndex: null,
+            trailDepth: 0,
+            currentView: 'galaxy',
+            myceliumMode: 'default',
+            focusPocketIndices: [],
+            focusPocketMeta: null,
+            focusPocketRoleByIndex: null
+        }
+    })
 
-  afterEach(() => {
-    vi.restoreAllMocks();
-  });
+    afterEach(() => {
+        vi.restoreAllMocks()
+    })
 
-  // ── 1. Local store drives getters when set ─────────────────────────────
+    // ── 1. Local store drives getters when set ─────────────────────────────
 
-  it('currentMode() reads from local store after setNavMode', () => {
-    setNavMode('search');
-    expect(currentMode()).toBe('search');
-  });
+    it('currentMode() reads from local store after setNavMode', () => {
+        setNavMode('search')
+        expect(currentMode()).toBe('search')
+    })
 
-  it('currentSurface() reads from local store after setNavMode', () => {
-    setNavMode('focus');
-    expect(currentSurface()).not.toBe('');
-  });
+    it('currentSurface() reads from local store after setNavMode', () => {
+        setNavMode('focus')
+        expect(currentSurface()).not.toBe('')
+    })
 
-  it('focusedIndex() returns null when local is null', () => {
-    expect(focusedIndex()).toBeNull();
-  });
+    it('focusedIndex() returns null when local is null', () => {
+        expect(focusedIndex()).toBeNull()
+    })
 
-  it('currentView() reads from local store default', () => {
-    expect(currentView()).toBe('galaxy');
-  });
+    it('currentView() reads from local store default', () => {
+        expect(currentView()).toBe('galaxy')
+    })
 
-  it('hasFocus() returns false when local mode is overview and focusedIndex is null', () => {
-    expect(hasFocus()).toBe(false);
-  });
+    it('hasFocus() returns false when local mode is overview and focusedIndex is null', () => {
+        expect(hasFocus()).toBe(false)
+    })
 
-  it('hasFocus() returns true when local focusedIndex is set', () => {
-    navStore.update((s) => ({ ...s, focusedIndex: 42 }));
-    expect(hasFocus()).toBe(true);
-  });
+    it('hasFocus() returns true when local focusedIndex is set', () => {
+        navStore.update((s) => ({ ...s, focusedIndex: 42 }))
+        expect(hasFocus()).toBe(true)
+    })
 
-  // ── 2. Direct-read pattern (no fallback chain) ────────────────────────
-  //
-  // After retiring readLegacyNavField, getters now read directly from
-  // appState.navState when the local writable is empty/falsy. All writers
-  // of the legacy keys (focusedIndex, surface, mode, currentView) go through
-  // writeNavStateMirror, which updates both appState.navState and _navWritable
-  // atomically — so the two sources never diverge in practice.
-  //
-  // Window globals (__APP_STATE__, __TEST_STATE__) are NOT consulted by
-  // the getters anymore — those were transitional scaffolding for the
-  // pre-migration engine reducers.
+    // ── 2. Direct-read pattern (no fallback chain) ────────────────────────
+    //
+    // After retiring readLegacyNavField, getters now read directly from
+    // appState.navState when the local writable is empty/falsy. All writers
+    // of the legacy keys (focusedIndex, surface, mode, currentView) go through
+    // writeNavStateMirror, which updates both appState.navState and _navWritable
+    // atomically — so the two sources never diverge in practice.
+    //
+    // Window globals (__APP_STATE__, __TEST_STATE__) are NOT consulted by
+    // the getters anymore — those were transitional scaffolding for the
+    // pre-migration engine reducers.
 
-  it('currentMode() reads appState.navState.mode', () => {
-    // The navStore.set bridge Object.assigns the new value into appState.navState.
-    // The getter reads from appState.navState, so the post-bridge value is visible.
-    mockState.navState.mode = 'overview';
-    navStore.set({ ...navStore(), mode: 'search' as NavMode });
-    expect(currentMode()).toBe('search');
-  });
+    it('currentMode() reads appState.navState.mode', () => {
+        // The navStore.set bridge Object.assigns the new value into appState.navState.
+        // The getter reads from appState.navState, so the post-bridge value is visible.
+        mockState.navState.mode = 'overview'
+        navStore.set({ ...navStore(), mode: 'search' as NavMode })
+        expect(currentMode()).toBe('search')
+    })
 
-  it('currentMode() ignores window globals — uses appState only', () => {
-    // After retiring readLegacyNavField, window.__APP_STATE__ is not read.
-    delete mockState.navState.mode;
-    (window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
-      navState: { mode: 'from-app-state-window' },
-    };
-    navStore.set({ ...navStore(), mode: '' as NavMode });
-    // The bridge Object.assigns '' into appState.navState.mode, so the
-    // getter returns '' regardless of the window global.
-    expect(currentMode()).toBe('');
-  });
+    it('currentMode() ignores window globals — uses appState only', () => {
+        // After retiring readLegacyNavField, window.__APP_STATE__ is not read.
+        delete mockState.navState.mode
+        ;(window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
+            navState: { mode: 'from-app-state-window' }
+        }
+        navStore.set({ ...navStore(), mode: '' as NavMode })
+        // The bridge Object.assigns '' into appState.navState.mode, so the
+        // getter returns '' regardless of the window global.
+        expect(currentMode()).toBe('')
+    })
 
-  it('currentSurface() reads appState.navState.surface', () => {
-    mockState.navState.surface = 'idle';
-    navStore.set({ ...navStore(), surface: 'search' as PanelSurface });
-    expect(currentSurface()).toBe('search');
-  });
+    it('currentSurface() reads appState.navState.surface', () => {
+        mockState.navState.surface = 'idle'
+        navStore.set({ ...navStore(), surface: 'search' as PanelSurface })
+        expect(currentSurface()).toBe('search')
+    })
 
-  // ── 3. focusedIndex direct-read pattern ────────────────────────────────
+    // ── 3. focusedIndex direct-read pattern ────────────────────────────────
 
-  it('focusedIndex() reads appState.navState.focusedIndex when local is null', () => {
-    // Local focusedIndex is null (default). appState has a value.
-    mockState.navState.focusedIndex = 7;
-    expect(focusedIndex()).toBe(7);
-  });
+    it('focusedIndex() reads appState.navState.focusedIndex when local is null', () => {
+        // Local focusedIndex is null (default). appState has a value.
+        mockState.navState.focusedIndex = 7
+        expect(focusedIndex()).toBe(7)
+    })
 
-  it('focusedIndex() ignores window globals — uses appState only', () => {
-    // After retiring readLegacyNavField, window.__APP_STATE__ is not read.
-    delete mockState.navState.focusedIndex;
-    (window as unknown as { __APP_STATE__: { navState: { focusedIndex: number } } }).__APP_STATE__ = {
-      navState: { focusedIndex: 99 },
-    };
-    // The bridge Object.assigns null into appState.navState.focusedIndex
-    // (from the navStore.set call), so the getter returns null regardless
-    // of the window global.
-    navStore.set({ ...navStore(), focusedIndex: null })
-    expect(focusedIndex()).toBeNull();
-  });
+    it('focusedIndex() ignores window globals — uses appState only', () => {
+        // After retiring readLegacyNavField, window.__APP_STATE__ is not read.
+        delete mockState.navState.focusedIndex
+        ;(window as unknown as { __APP_STATE__: { navState: { focusedIndex: number } } }).__APP_STATE__ = {
+            navState: { focusedIndex: 99 }
+        }
+        // The bridge Object.assigns null into appState.navState.focusedIndex
+        // (from the navStore.set call), so the getter returns null regardless
+        // of the window global.
+        navStore.set({ ...navStore(), focusedIndex: null })
+        expect(focusedIndex()).toBeNull()
+    })
 
-  it('hasFocus() reads appState.navState.focus fields when local is empty', () => {
-    // Local writable has no focus. appState has focusedIndex set.
-    mockState.navState.focusedIndex = 12;
-    expect(hasFocus()).toBe(true);
-  });
-});
+    it('hasFocus() reads appState.navState.focus fields when local is empty', () => {
+        // Local writable has no focus. appState has focusedIndex set.
+        mockState.navState.focusedIndex = 12
+        expect(hasFocus()).toBe(true)
+    })
+})

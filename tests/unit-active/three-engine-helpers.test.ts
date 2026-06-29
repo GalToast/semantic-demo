@@ -18,7 +18,7 @@ describe('hasFiniteNodeIndex', () => {
         ['null', null, false],
         ['undefined', undefined, false],
         ['object', {}, false],
-        ['array', [1], false],
+        ['array', [1], false]
     ])('returns %s for %j', (_label, input, expected) => {
         expect(hasFiniteNodeIndex(input)).toBe(expected)
     })
@@ -42,7 +42,7 @@ describe('sceneNeedsContinuousFrame', () => {
     function mockState(partial: Record<string, unknown>) {
         return partial as unknown as ReturnType<typeof sceneNeedsContinuousFrame> extends (
             _now: number,
-            state: infer S,
+            state: infer S
         ) => boolean
             ? S
             : never
@@ -52,191 +52,148 @@ describe('sceneNeedsContinuousFrame', () => {
     // Each individual truthy flag forces true
     // -----------------------------------------------------------------------
     it('returns true when forceAnimate is true', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ forceAnimate: true })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ forceAnimate: true }))).toBe(true)
     })
 
     it('returns true when sceneRevealActive is true', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ sceneRevealActive: true })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ sceneRevealActive: true }))).toBe(true)
     })
 
     it('returns true when nodesAreSettling is true', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ nodesAreSettling: true })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ nodesAreSettling: true }))).toBe(true)
     })
 
     it('returns true when myceliumDirty is true', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ myceliumDirty: true })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ myceliumDirty: true }))).toBe(true)
     })
 
     it('returns true when routeTraceLines is truthy', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ routeTraceLines: {} })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ routeTraceLines: {} }))).toBe(true)
     })
 
     it('returns true when routeTraceLines is falsy (empty)', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ routeTraceLines: undefined })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ routeTraceLines: undefined }))).toBe(false)
     })
 
     it('returns true when focusPocketMotion is a non-empty array', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: [{}] })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: [{}] }))).toBe(true)
     })
 
     it('returns true when focusPocketMotion is a non-empty Map', () => {
         const m = new Map()
         m.set('k', 'v')
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: m })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: m }))).toBe(true)
     })
 
     it('returns false when focusPocketMotion is an empty array', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: [] })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: [] }))).toBe(false)
     })
 
     it('returns false when focusPocketMotion is an empty Map', () => {
         const m = new Map()
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: m })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusPocketMotionByIndex: m }))).toBe(false)
     })
 
     it('returns true when autoRotate is true and autoRotateSuspended is false', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: true, autoRotateSuspended: false })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: true, autoRotateSuspended: false }))).toBe(
+            true
+        )
     })
 
     it('returns false when autoRotate is true but autoRotateSuspended is also true', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: true, autoRotateSuspended: true })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: true, autoRotateSuspended: true }))).toBe(
+            false
+        )
     })
 
     it('returns false when autoRotate is false', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: false })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotate: false }))).toBe(false)
     })
 
     it('returns true when autoRotateResumeDueAt is in the future', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: Date.now() + 60_000 })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: Date.now() + 60_000 }))).toBe(
+            true
+        )
     })
 
     it('returns false when autoRotateResumeDueAt is in the past', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: Date.now() - 60_000 })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: Date.now() - 60_000 }))).toBe(
+            false
+        )
     })
 
     it('returns false when autoRotateResumeDueAt is not a number', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: 'soon' })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ autoRotateResumeDueAt: 'soon' }))).toBe(false)
     })
 
     it('returns true when searchState.searchGlowActive is true', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ searchState: { searchGlowActive: true } })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ searchState: { searchGlowActive: true } }))).toBe(true)
     })
 
     it('returns true when hoverHighlightIndex is a finite non-negative number', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ hoverHighlightIndex: 5 })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ hoverHighlightIndex: 5 }))).toBe(true)
     })
 
     it('returns false when hoverHighlightIndex is NaN', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ hoverHighlightIndex: NaN })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ hoverHighlightIndex: NaN }))).toBe(false)
     })
 
     it('returns false when hoverHighlightIndex is negative', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ hoverHighlightIndex: -1 })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ hoverHighlightIndex: -1 }))).toBe(false)
     })
 
     it('returns true when focusedNode is a finite non-negative number', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ focusedNode: 3 })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusedNode: 3 }))).toBe(true)
     })
 
     it('returns false when focusedNode is null', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ focusedNode: null })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ focusedNode: null }))).toBe(false)
     })
 
     it('returns true when inspectedThreadIndex is a finite non-negative number', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ inspectedThreadIndex: 2 })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ inspectedThreadIndex: 2 }))).toBe(true)
     })
 
     it('returns false when inspectedThreadIndex is null', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ inspectedThreadIndex: null })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ inspectedThreadIndex: null }))).toBe(false)
     })
 
     it('returns true when pinnedThreadIndex is a finite non-negative number', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ pinnedThreadIndex: 7 })),
-        ).toBe(true)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ pinnedThreadIndex: 7 }))).toBe(true)
     })
 
     it('returns false when pinnedThreadIndex is null', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({ pinnedThreadIndex: null })),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({ pinnedThreadIndex: null }))).toBe(false)
     })
 
     // -----------------------------------------------------------------------
     // All-clear scenario — every flag falsy / empty
     // -----------------------------------------------------------------------
     it('returns false when every flag is falsy and all indices are invalid', () => {
-        expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({})),
-        ).toBe(false)
+        expect(sceneNeedsContinuousFrame(Date.now(), mockState({}))).toBe(false)
     })
 
     it('returns false with explicit all-clear values', () => {
         expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({
-                forceAnimate: false,
-                sceneRevealActive: false,
-                nodesAreSettling: false,
-                myceliumDirty: false,
-                routeTraceLines: undefined,
-                focusPocketMotionByIndex: [],
-                autoRotate: false,
-                autoRotateSuspended: false,
-                autoRotateResumeDueAt: undefined,
-                searchGlowActive: false,
-                hoverHighlightIndex: NaN,
-                focusedNode: null,
-                inspectedThreadIndex: null,
-                pinnedThreadIndex: null,
-            })),
+            sceneNeedsContinuousFrame(
+                Date.now(),
+                mockState({
+                    forceAnimate: false,
+                    sceneRevealActive: false,
+                    nodesAreSettling: false,
+                    myceliumDirty: false,
+                    routeTraceLines: undefined,
+                    focusPocketMotionByIndex: [],
+                    autoRotate: false,
+                    autoRotateSuspended: false,
+                    autoRotateResumeDueAt: undefined,
+                    searchGlowActive: false,
+                    hoverHighlightIndex: NaN,
+                    focusedNode: null,
+                    inspectedThreadIndex: null,
+                    pinnedThreadIndex: null
+                })
+            )
         ).toBe(false)
     })
 
@@ -245,11 +202,14 @@ describe('sceneNeedsContinuousFrame', () => {
     // -----------------------------------------------------------------------
     it('returns true when multiple flags are set', () => {
         expect(
-            sceneNeedsContinuousFrame(Date.now(), mockState({
-                forceAnimate: true,
-                sceneRevealActive: true,
-                nodesAreSettling: true,
-            })),
+            sceneNeedsContinuousFrame(
+                Date.now(),
+                mockState({
+                    forceAnimate: true,
+                    sceneRevealActive: true,
+                    nodesAreSettling: true
+                })
+            )
         ).toBe(true)
     })
 })

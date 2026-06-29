@@ -66,7 +66,11 @@ function installIdleCallbackNoop(): void {
 }
 
 function restoreIdleCallback(): void {
-    restoreGlobalProperty(window as unknown as Record<string, unknown>, 'requestIdleCallback', originalRequestIdleCallback)
+    restoreGlobalProperty(
+        window as unknown as Record<string, unknown>,
+        'requestIdleCallback',
+        originalRequestIdleCallback
+    )
 }
 
 class TestWorker {
@@ -95,7 +99,7 @@ class TestWorker {
     postMessage(message: unknown): void {
         setTimeout(() => {
             if (this.terminated) return
-            const msg = (message as { type?: string } | undefined)
+            const msg = message as { type?: string } | undefined
             let response: unknown
             if (msg?.type === 'LOAD_LEAD_ENRICHMENT') {
                 // Enrichment load always errors in tests — the fallback to fetch

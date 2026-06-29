@@ -27,7 +27,6 @@ import type {
     Group,
     HemisphereLight,
     InstancedMesh,
-    LineSegments,
     Material,
     PerspectiveCamera,
     Points,
@@ -36,6 +35,7 @@ import type {
     WebGLRenderer,
     DirectionalLight
 } from 'three'
+import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import type { NodePosition, ScenePerformanceDiagnostics } from './state-types'
 import type { NavState, Point } from './state-types'
 import type { BusinessRecord } from '@lib/types/business'
@@ -53,9 +53,9 @@ export interface LegacyState {
     nodeSporeMesh: InstancedMesh | null
     nodeSporeMaterial: Material | null
     myceliumGroup: Group | null
-    myceliumCoreLines: LineSegments | null
-    myceliumWispyLines: LineSegments | null
-    myceliumBridgeLines: LineSegments | null
+    myceliumCoreLines: LineSegments2 | null
+    myceliumWispyLines: LineSegments2 | null
+    myceliumBridgeLines: LineSegments2 | null
     myceliumConnectionPairs: Array<{ a: number; b: number; layer?: number }>
 
     // ── Lighting ──────────────────────────────────────────────────────────────
