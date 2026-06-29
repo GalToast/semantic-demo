@@ -102,12 +102,12 @@ describe('thread-settler.ts public API contract', () => {
         // The function summarizes a neighbor reason; with no
         // candidate/point it may return an empty string or a
         // generic message. Both are valid string outputs.
-        const result = module.summarizeNeighborReason(null, null, null)
+        const result = module.summarizeNeighborReason({})
         expect(typeof result).toBe('string')
     })
 
     it('getInsideRelationshipLabel returns a string', () => {
-        const result = module.getInsideRelationshipLabel(null)
+        const result = module.getInsideRelationshipLabel({})
         expect(typeof result).toBe('string')
     })
 
