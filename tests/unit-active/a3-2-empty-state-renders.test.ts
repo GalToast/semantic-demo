@@ -67,8 +67,54 @@ const mockState = vi.hoisted(() => ({
   summaryCardTypeToken: 0
 }));
 
+// Stable reference for `appState.searchState`. Tracked fields proxy
+// to mockState so production writes via the new path stick AND test
+// mutations via the legacy mockState setters below propagate.
+const mockSearchState = vi.hoisted(() => {
+  const tracked = [
+    'currentSearchSummary',
+    'searchStatus',
+    'searchRequestSequence',
+    'searchAnchorIndex',
+    'searchPreviewIndex',
+    'searchGlowIndices',
+    'searchGlowTopIndex',
+    'searchGlowActive',
+    'currentEmptyQuery',
+    'searchFocusTransitionToken',
+    'semanticTrailCue',
+    'isCompactViewport',
+    'semanticGuideRequestSequence',
+    'currentSemanticGuide',
+    'summaryCardTypeToken'
+  ] as const
+  const obj: Record<string, unknown> = {
+    searchError: null,
+    isSearching: false,
+    semanticSearchCacheDiagnostics: {
+      hits: 0, misses: 0, stores: 0, evictions: 0,
+      lastKey: null, lastSource: null, lastAgeMs: null
+    },
+    semanticSearchResultCache: new Map(),
+    searchVisibleCount: 5
+  }
+  for (const field of tracked) {
+    Object.defineProperty(obj, field, {
+      get() { return (mockState as unknown as Record<string, unknown>)[field] },
+      set(v: unknown) { (mockState as unknown as Record<string, unknown>)[field] = v },
+      enumerable: true,
+      configurable: true
+    })
+  }
+  return obj
+})
+
 vi.mock('@lib/state/app.svelte.ts', () => ({
   appState: {
+    get searchState() {
+      // Stable reference so production writes via appState.searchState.X = Y stick.
+      return mockSearchState
+    },
     get currentSearchSummary() { return mockState.currentSearchSummary; },
     set currentSearchSummary(v) { mockState.currentSearchSummary = v; },
     get navState() { return mockState.navState; },
