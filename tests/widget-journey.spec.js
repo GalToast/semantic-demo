@@ -1691,4 +1691,29 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.locator('.proximity-legend-wrapper').waitFor({ state: 'visible', timeout: 5_000 })
         expect(await page.locator('.proximity-legend-wrapper').isVisible()).toBe(true)
     })
+
+    /**
+     * 32. Toast container is programmatically focusable but not in tab order.
+     *
+     * Regression catch: the toast container briefly had tabindex="0", placing
+     * a non-interactive alert/status region into the natural keyboard tab
+     * order. It should be tabindex="-1" so screen-reader users hear the live
+     * region without tabbing to it, while remaining focusable programmatically.
+     */
+    test('32. toast container uses tabindex=-1 and a real dismiss button', async ({ page }) => {
+        const url = new URL(BASE_URL)
+        url.searchParams.set('anchor', '99999')
+        await page.goto(url.toString(), { waitUntil: 'domcontentloaded' })
+
+        const toast = page.locator('#experience-reset-toast')
+        await toast.waitFor({ state: 'visible', timeout: 10_000 })
+
+        await expect(toast).toHaveAttribute('tabindex', '-1')
+        await expect(toast).toHaveAttribute('role', 'status')
+        await expect(toast).toHaveAttribute('aria-live', 'polite')
+
+        const closeButton = toast.locator('.experience-toast-close')
+        await expect(closeButton).toHaveAttribute('aria-label', 'Dismiss notification')
+        expect(await closeButton.evaluate((el) => el.tagName.toLowerCase())).toBe('button')
+    })
 })
