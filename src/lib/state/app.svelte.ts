@@ -12,25 +12,21 @@ import type {
     TerrainHandoffState,
     StrandContinuityState,
     FocusOrbitSlackState,
-    InspectedStrandDiagnostics,
     ArrivalHandoffDiagnostics,
     RouteTraceDiagnostics,
     ScenePerformanceDiagnostics,
     FocusFrameDiagnostics,
     FocusThreadDiagnostics,
-    SemanticSearchCacheDiagnostics,
     CanvasHoverCandidate,
     LoadingPhaseKey,
     Vector3Like,
-    SearchSummary,
-    SearchErrorData,
     SearchResult,
     LaneHealthPayload,
     CacheEntry,
     SemanticGuideState
     // SemanticNode — unused import; removed to satisfy lint
 } from './state-types'
-import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
+import type { NavState, ActiveFilters } from '@lib/types/state'
 import type { SearchAppState } from './state-types'
 import type { FocusAppState } from './state-types'
 import type { ViewportAppState } from './state-types'
