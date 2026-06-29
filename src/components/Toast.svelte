@@ -98,7 +98,7 @@
   aria-hidden={toastActive ? 'false' : 'true'}
   aria-live={isError ? 'assertive' : 'polite'}
   role={isError ? 'alert' : 'status'}
-  tabindex="0"
+  tabindex="-1"
   onclick={dismissToast}
 >
   <div class="experience-toast-content">
