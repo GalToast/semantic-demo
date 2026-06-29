@@ -113,15 +113,30 @@ interface MicroDemoUiModule {
 // non-null asserted at each call site because the object literal is a complete
 // const map of all valid legacy + new phase keys.
 export const PHASE: Readonly<Record<string, DemoPhase>> = {
+    // Terminal phases (stable names from both APIs)
     IDLE: 'IDLE',
+    COMPLETE: 'COMPLETE',
+    CANCELLED: 'CANCELLED',
+    // New 10-phase keys (identity mapping for direct lookup)
+    OVERVIEW: 'OVERVIEW',
+    SEARCH: 'SEARCH',
+    FOCUS: 'FOCUS',
+    THREADS: 'THREADS',
+    NEIGHBORS: 'NEIGHBORS',
+    TRAIL: 'TRAIL',
+    DIVE: 'DIVE',
+    FILTER: 'FILTER',
+    MAP: 'MAP',
+    RETURN: 'RETURN',
+    // Legacy 6-phase keys (compatibility shim — values mapped to closest
+    // new-phase equivalent. Used by src/lib/demo/choreography.ts callers
+    // that still reference the deprecated names.)
     GLIDING: 'SEARCH',
     ARRIVED: 'FOCUS',
     CARD_VISIBLE: 'NEIGHBORS',
     PULLBACK: 'MAP',
     WIDE_VIEW: 'FILTER',
-    RETURNING: 'RETURN',
-    COMPLETE: 'COMPLETE',
-    CANCELLED: 'CANCELLED'
+    RETURNING: 'RETURN'
 }
 
 // ── Module-level Scratch State ────────────────────────────────────────────────
