@@ -124,3 +124,9 @@ src/data.dat.gz
 
 # Decomposed subagent artifacts (generated, not source)
 decompose-and-delegate*
+
+# Root sweep artifacts (W48)
+server.err
+ts
+tmp-*.py
+tmp-*.ts
