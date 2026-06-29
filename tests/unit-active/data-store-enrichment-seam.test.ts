@@ -52,7 +52,17 @@ function restoreWorker(): void {
 }
 
 function installIdleCallbackNoop(): void {
-    restoreGlobalProperty(window as unknown as Record<string, unknown>, 'requestIdleCallback', vi.fn(() => 0))
+    // Schedule a no-op idle callback that still invokes the handler so
+    // downstream tests (e.g. lazy-component runtime) don't hang if the
+    // mock accidentally leaks past this test's restore.
+    restoreGlobalProperty(
+        window as unknown as Record<string, unknown>,
+        'requestIdleCallback',
+        vi.fn((cb: () => void) => {
+            cb()
+            return 0
+        })
+    )
 }
 
 function restoreIdleCallback(): void {
