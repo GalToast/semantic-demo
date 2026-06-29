@@ -264,13 +264,7 @@ export function computeParityAttributes(): ParityAttributeMap {
     const { graphContext } = resolveGraphContext(ctx, hasFocusContext, hasSearchContext)
     const { panelSurfaceMode } = resolvePanelSurfaceMode(ctx, hasFocusContext, hasSearchContext)
     const { mapContext } = resolveMapContext(ctx, panelSurfaceMode)
-    const { trailState } = resolveMapTrailState(
-        ctx,
-        hasFocusContext,
-        hasSearchContext,
-        panelSurfaceMode,
-        graphContext
-    )
+    const { trailState } = resolveMapTrailState(ctx, hasFocusContext, hasSearchContext, panelSurfaceMode, graphContext)
     const { semanticDive } = resolveSemanticDive(ctx, hasFocusContext)
     const { threadInspectionActive, inspectedThreadIndex } = resolveThreadInspection(ctx)
     const { panelSurfaceDetail } = resolvePanelSurfaceDetail(panelSurfaceMode)
@@ -632,11 +626,19 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
 
     _effectRoot = $effect.root(() => {
         let scheduled = false
-        // Phase 1 timing-maze fix: syncNow runs SYNCHRONOUSLY (no queueMicrotask).
-        // The `scheduled` flag coalesces multi-store updates in the same tick.
-        // `scheduled` is reset in `finally` to guarantee it's cleared even when
-        // the snapshot short-circuit returns early. This prevents the mirror
-        // from being permanently disabled by a JSON-equal snapshot.
+        // Phase 1 timing-maze fix: the mirror's single timing layer is
+        // queueMicrotask(syncNow). This gives Svelte 5 reactivity time to
+        // settle (Object.assign(parityMap, map) triggers $derived/$effect
+        // cascades that may call back into store mutators) before we write
+        // to body.dataset.
+        //
+        // The CALLERS' timing workarounds (cursor.ts queueMicrotask,
+        // setTimeout 50ms/250ms) have been removed — the mirror's microtask
+        // is the single source of truth for body.dataset writes.
+        //
+        // `scheduled` is reset in `finally` to guarantee it's cleared even
+        // when the snapshot short-circuit returns early. This prevents the
+        // mirror from being permanently disabled by a JSON-equal snapshot.
         const syncNow = (): void => {
             try {
                 const map = computeParityAttributes()
@@ -660,20 +662,18 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
                 applyParityAttributes(map)
             } finally {
                 // Always reset scheduled, even on early return, so the next
-                // external store change can trigger a fresh sync. Also
-                // prevents infinite recursion if Object.assign(parityMap, map)
-                // triggers store updates via Svelte 5 rune reactivity
-                // (during syncNow, scheduled=true, so any scheduleSync is a no-op).
+                // external store change can trigger a fresh sync.
                 scheduled = false
             }
         }
         const scheduleSync = (): void => {
             if (scheduled) return
             scheduled = true
-            // Was: queueMicrotask(syncNow) — the timing-maze root cause.
-            // Mirror now runs synchronously on every store change, eliminating
-            // the need for caller-side setTimeout/queueMicrotask workarounds.
-            syncNow()
+            // Coalesce multiple store updates in the same tick to avoid
+            // redundant recomputes (e.g., when navigation fires both
+            // navStore and journeyStore). The microtask gives Svelte 5
+            // reactivity time to settle before the body.dataset write.
+            queueMicrotask(syncNow)
         }
 
         // Explicit .subscribe() per store. Plain function-call reads
