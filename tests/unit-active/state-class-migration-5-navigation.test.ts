@@ -67,6 +67,7 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
 }));
 
 // Import the store AFTER the mock is set up so it sees the stubbed appState.
+import type { NavMode, PanelSurface } from '@lib/types/state';
 import {
   currentMode,
   currentSurface,
@@ -150,7 +151,7 @@ describe('Navigation store — T4 migration to Svelte 5 state class', () => {
   it('currentMode() reads appState.navState.mode when local is empty', () => {
     // Local writable mode is '' (falsy). appState has 'search'.
     mockState.navState.mode = 'search';
-    navStore.set({ ...navStore(), mode: '' });
+    navStore.set({ ...navStore(), mode: '' as NavMode });
     // Direct read: appState.navState.mode ?? local → 'search' ?? '' → 'search'
     expect(currentMode()).toBe('search');
   });
@@ -162,14 +163,14 @@ describe('Navigation store — T4 migration to Svelte 5 state class', () => {
     (window as unknown as { __APP_STATE__: { navState: { mode: string } } }).__APP_STATE__ = {
       navState: { mode: 'from-app-state-window' },
     };
-    navStore.set({ ...navStore(), mode: '' });
+    navStore.set({ ...navStore(), mode: '' as NavMode });
     // appState.navState.mode is undefined → undefined ?? '' → '' (local)
     expect(currentMode()).toBe('');
   });
 
   it('currentSurface() reads appState.navState.surface when local is empty', () => {
     mockState.navState.surface = 'search';
-    navStore.set({ ...navStore(), surface: '' });
+    navStore.set({ ...navStore(), surface: '' as PanelSurface });
     expect(currentSurface()).toBe('search');
   });
 
