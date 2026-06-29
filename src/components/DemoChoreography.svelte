@@ -101,8 +101,19 @@
         return;
       }
       transitionDemo(step.phase);
-      // Fire the action (may be async — e.g. search() returns a Promise)
-      Promise.resolve(step.action()).catch(() => {});
+      // Fire the action (may be async — e.g. search() returns a Promise).
+      // W49c: previously used `.catch(() => {})` which silently dropped
+      // failures — a failed search step would advance to the next phase
+      // with no signal that anything went wrong. Now we log so demo-step
+      // failures are diagnosable.
+      Promise.resolve(step.action()).catch((err) => {
+        if (import.meta.env.DEV) {
+          console.error(
+            `[DemoChoreography] Step "${step.phase}" failed; advancing anyway.`,
+            err
+          );
+        }
+      });
       // Schedule the next step after this phase's duration
       scheduleDemoTimer(() => {
         i++;
@@ -179,9 +190,20 @@
       }
       if (performance.now() - startTime > SCENE_READY_TIMEOUT_MS) {
         // Scene never became ready (slow network, webgl blocked, etc.).
-        // Better to run captions on chrome than to never run at all.
+        // W49c: previously ran demo "anyway" on chrome-only, which showed
+        // captions without 3D visualizations — silently degraded UX with
+        // no signal to the user. Now we log in DEV AND production so the
+        // fallback is at least observable. The "run anyway" behavior is
+        // preserved here as a deliberate UX call (better captions than
+        // nothing) — to switch to the fallback-hint branch instead, see
+        // the sceneReady.error handler above for the equivalent path.
+        const message = '[DemoChoreography] Canvas did not become ready in 10s; running demo in degraded mode (captions without 3D scene).';
         if (import.meta.env.DEV) {
-          console.warn('[DemoChoreography] Canvas did not become ready in 10s; running demo anyway.');
+          console.warn(message);
+        } else {
+          // Production: surface so it's findable in DevTools but
+          // non-intrusive. Could be replaced by a telemetry hook later.
+          console.warn(message);
         }
         scheduleDemoTimer(() => attemptStart(), force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
         return;
