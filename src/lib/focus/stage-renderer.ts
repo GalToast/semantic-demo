@@ -53,7 +53,7 @@ export function updateSelectedCardHeading(point: Point | null = null): void {
     const titleEl = document.getElementById('selected-card-title');
     if (!titleEl) return;
 
-    const activePoint = point || appState.selectedPoint || null;
+    const activePoint = point || appState.focusState.selectedPoint || null;
     const points = Array.isArray(appState.points) ? (appState.points as Point[]) : [];
     const activeIndex = activePoint && points.length > 0
         ? points.indexOf(activePoint)

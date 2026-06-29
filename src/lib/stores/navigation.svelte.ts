@@ -47,6 +47,7 @@ import { clearSearch } from './search.svelte.ts'
 import { resetFocus } from './focus.svelte.ts'
 import { resetJourney } from './journey.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 

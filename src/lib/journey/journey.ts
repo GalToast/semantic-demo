@@ -119,11 +119,11 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
 export function initJourneyState(): void {
     withStateMutation(() => {
         state.trailIndices = state.trailIndices ?? new Set<number>()
-        state.inspectedThreadIndex ??= null
-        state.pinnedThreadIndex ??= null
+        state.focusState.inspectedThreadIndex ??= null
+        state.focusState.pinnedThreadIndex ??= null
         state.canvasThreadInspectionClearTimer ??= null
-        state.threadInspectorPointerInside ??= false
-        state.inspectedStrandDiagnostics ??= {
+        state.focusState.threadInspectorPointerInside ??= false
+        state.focusState.inspectedStrandDiagnostics ??= {
             active: false,
             source: 'idle',
             index: null,
@@ -161,8 +161,8 @@ export function initJourneyState(): void {
         state.signalScores ??= []
         state.bridgeScores ??= []
         state.semanticDiveMode ??= false
-        state.pocketTransitionStartedAt ??= 0
-        state.pocketMotionByIndex ??= new Map()
+        state.focusState.pocketTransitionStartedAt ??= 0
+        state.focusState.pocketMotionByIndex ??= new Map()
     })
 }
 
@@ -212,7 +212,7 @@ function restoreFocusTrailState(priorFocused: number | null = state.focusedNode)
     applyLocalNeighborhoodFocus(priorFocused!)
     applyPointFilterColors()
     const priorPoint = state.points[priorFocused!] || null
-    syncFocusStage(priorPoint || state.selectedPoint || null)
+    syncFocusStage(priorPoint || state.focusState.selectedPoint || null)
     updateTraversalUi()
 }
 

@@ -100,7 +100,7 @@ let clearingThreadInspection = false
 // ── Core functions ───────────────────────────────────────────────────────────
 
 export function getThreadInspectionState(
-    index: number | null = appState.inspectedThreadIndex,
+    index: number | null = appState.focusState.inspectedThreadIndex,
     options: ThreadInspectionOptions = {}
 ): ThreadInspectionState | null {
     const pts = getBusinessRecords()
@@ -142,7 +142,7 @@ export function getThreadInspectionState(
             : 'current cloud fallback'
         : ''
     const title = active ? `${focusName} -> ${targetName}` : 'Select a nearby stop'
-    const pinned = active && appState.pinnedThreadIndex === candidateIndex
+    const pinned = active && appState.focusState.pinnedThreadIndex === candidateIndex
     const journeyPhase =
         active && appState.strandContinuityState.targetIndex === candidateIndex
             ? appState.strandContinuityState.phase
@@ -190,11 +190,11 @@ export function getThreadInspectionState(
         copy,
         meta,
         strandVisual: {
-            active: !!appState.inspectedStrandDiagnostics.active,
-            source: appState.inspectedStrandDiagnostics.source || 'none',
-            segmentCount: appState.inspectedStrandDiagnostics.segmentCount || 0,
-            braidCount: appState.inspectedStrandDiagnostics.braidCount || 0,
-            endpointCount: appState.inspectedStrandDiagnostics.endpointCount || 0
+            active: !!appState.focusState.inspectedStrandDiagnostics.active,
+            source: appState.focusState.inspectedStrandDiagnostics.source || 'none',
+            segmentCount: appState.focusState.inspectedStrandDiagnostics.segmentCount || 0,
+            braidCount: appState.focusState.inspectedStrandDiagnostics.braidCount || 0,
+            endpointCount: appState.focusState.inspectedStrandDiagnostics.endpointCount || 0
         },
         threadSource: appState.navState.threadSource || null
     }
@@ -204,29 +204,29 @@ export function inspectThreadNeighbor(
     index: number,
     options: ThreadInspectionOptions = {}
 ): ThreadInspectionState | null {
-    if (appState.pinnedThreadIndex !== null && !options.force) {
-        return renderThreadInspection(appState.pinnedThreadIndex, { surface: 'pinned', pinned: true })
+    if (appState.focusState.pinnedThreadIndex !== null && !options.force) {
+        return renderThreadInspection(appState.focusState.pinnedThreadIndex, { surface: 'pinned', pinned: true })
     }
-    appState.inspectedThreadIndex = Number.isFinite(index) ? index : null
+    appState.focusState.inspectedThreadIndex = Number.isFinite(index) ? index : null
     focusStore.update((s) => ({
         ...s,
-        inspectedStrandIndex: appState.inspectedThreadIndex,
-        pinnedThreadIndex: appState.pinnedThreadIndex,
+        inspectedStrandIndex: appState.focusState.inspectedThreadIndex,
+        pinnedThreadIndex: appState.focusState.pinnedThreadIndex,
         threadInspector: {
             ...s.threadInspector,
-            inspectedIndex: appState.inspectedThreadIndex,
-            pinnedIndex: appState.pinnedThreadIndex,
-            active: appState.inspectedThreadIndex !== null
+            inspectedIndex: appState.focusState.inspectedThreadIndex,
+            pinnedIndex: appState.focusState.pinnedThreadIndex,
+            active: appState.focusState.inspectedThreadIndex !== null
         }
     }))
-    if (Number.isFinite(appState.inspectedThreadIndex) && !options.preserveJourney) {
+    if (Number.isFinite(appState.focusState.inspectedThreadIndex) && !options.preserveJourney) {
         setStrandContinuityState('preview', {
-            targetIndex: appState.inspectedThreadIndex,
+            targetIndex: appState.focusState.inspectedThreadIndex,
             fromIndex: getFocusedIndex(),
             reason: options.surface || 'inspect'
         })
     }
-    return renderThreadInspection(appState.inspectedThreadIndex, options)
+    return renderThreadInspection(appState.focusState.inspectedThreadIndex, options)
 }
 
 /**
@@ -277,8 +277,8 @@ export function pinThreadNeighbor(index: number, options: ThreadInspectionOption
         appState.canvasThreadInspectionClearTimer = null
     }
 
-    appState.pinnedThreadIndex = index
-    appState.inspectedThreadIndex = index
+    appState.focusState.pinnedThreadIndex = index
+    appState.focusState.inspectedThreadIndex = index
     focusStore.update((s) => ({
         ...s,
         inspectedStrandIndex: index,
@@ -348,8 +348,8 @@ export function unpinThreadInspection(): ThreadInspectionState | null {
         })
         appState.canvasThreadInspectionClearTimer = null
     }
-    appState.pinnedThreadIndex = null
-    appState.inspectedThreadIndex = null
+    appState.focusState.pinnedThreadIndex = null
+    appState.focusState.inspectedThreadIndex = null
     focusStore.update((s) => ({
         ...s,
         inspectedStrandIndex: null,
@@ -371,7 +371,7 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
 
     const id = window.setTimeout(() => {
         appState.canvasThreadInspectionClearTimer = null
-        if (appState.threadInspectorPointerInside || appState.pinnedThreadIndex !== null) return
+        if (appState.focusState.threadInspectorPointerInside || appState.focusState.pinnedThreadIndex !== null) return
         if (typeof document !== 'undefined' && document.body.dataset.threadInspectSurface === 'canvas') {
             clearThreadInspection()
         }
@@ -381,9 +381,9 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
     if (clearingThreadInspection) {
-        appState.pinnedThreadIndex = null
-        appState.inspectedThreadIndex = null
-        appState.threadInspectorPointerInside = false
+        appState.focusState.pinnedThreadIndex = null
+        appState.focusState.inspectedThreadIndex = null
+        appState.focusState.threadInspectorPointerInside = false
         focusStore.update((s) => ({
             ...s,
             inspectedStrandIndex: null,
@@ -402,33 +402,33 @@ export function clearThreadInspection(options: ThreadInspectionOptions = {}): Th
             appState.canvasThreadInspectionClearTimer = null
         }
         if (options.force) {
-            appState.pinnedThreadIndex = null
-            appState.inspectedThreadIndex = null
-            appState.threadInspectorPointerInside = false
+            appState.focusState.pinnedThreadIndex = null
+            appState.focusState.inspectedThreadIndex = null
+            appState.focusState.threadInspectorPointerInside = false
             focusStore.update((s) => ({
                 ...s,
                 inspectedStrandIndex: null,
                 pinnedThreadIndex: null,
                 threadInspector: { ...s.threadInspector, active: false }
             }))
-            syncFocusStage(appState.selectedPoint)
+            syncFocusStage(appState.focusState.selectedPoint)
             syncSemanticDiveUi()
             if (!options.preserveJourney) clearStrandContinuityState('force-clear')
             cancelAllThreadTimers()
         }
-        if (appState.pinnedThreadIndex !== null && !options.force) {
-            return renderThreadInspection(appState.pinnedThreadIndex, { surface: 'pinned', pinned: true })
+        if (appState.focusState.pinnedThreadIndex !== null && !options.force) {
+            return renderThreadInspection(appState.focusState.pinnedThreadIndex, { surface: 'pinned', pinned: true })
         }
         if (!options.preserveJourney && appState.strandContinuityState.phase === 'preview') {
             clearStrandContinuityState('preview-clear')
             cancelAllThreadTimers()
         }
-        appState.inspectedThreadIndex = null
-        appState.threadInspectorPointerInside = false
+        appState.focusState.inspectedThreadIndex = null
+        appState.focusState.threadInspectorPointerInside = false
         focusStore.update((s) => ({
             ...s,
             inspectedStrandIndex: null,
-            pinnedThreadIndex: appState.pinnedThreadIndex,
+            pinnedThreadIndex: appState.focusState.pinnedThreadIndex,
             threadInspector: { ...s.threadInspector, active: false }
         }))
         return renderThreadInspection(null, { surface: 'idle' })
@@ -461,8 +461,8 @@ export function exploreThreadNeighbor(
     const reason =
         summarizeNeighborReason(candidateObj) || candidateObj.reason || options.reason || 'nearby business relationship'
     cancelAllThreadTimers()
-    appState.pinnedThreadIndex = null
-    appState.inspectedThreadIndex = index
+    appState.focusState.pinnedThreadIndex = null
+    appState.focusState.inspectedThreadIndex = index
     focusStore.update((s) => ({
         ...s,
         inspectedStrandIndex: index,
@@ -516,7 +516,7 @@ export function exploreThreadNeighbor(
                 Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < pts.length
                     ? pts[capturedIndex]
                     : null
-            syncFocusStage(pointAtArrival || appState.selectedPoint || null)
+            syncFocusStage(pointAtArrival || appState.focusState.selectedPoint || null)
             updateJourneyCompass()
         }
     })
@@ -529,7 +529,7 @@ export function exploreThreadNeighbor(
                 Number.isFinite(capturedIndex) && capturedIndex >= 0 && capturedIndex < pts.length
                     ? pts[capturedIndex]
                     : null
-            syncFocusStage(pointAtSettle || appState.selectedPoint || null)
+            syncFocusStage(pointAtSettle || appState.focusState.selectedPoint || null)
         }
     })
     return { targetIndex: index, fromIndex: fromIndex ?? null, reason }

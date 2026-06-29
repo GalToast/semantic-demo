@@ -15,7 +15,7 @@
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { buildThreeScene } from './renderer/scene-init'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
-import { Scene, PerspectiveCamera, WebGLRenderer, FogExp2, Material, MeshPhongMaterial } from 'three'
+import { Scene, PerspectiveCamera, WebGLRenderer, FogExp2, Material } from 'three'
 import * as sceneRevealMod from './scene-reveal'
 import type { NodePosition } from '@lib/state/state-types'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
@@ -44,10 +44,17 @@ import {
 // Postprocessing is dynamically imported to save ~150-200 kB from the main
 // chunk. The module is only needed when premium mode is toggled ON.
 import { engineState, ensureModules } from './three-engine-state'
+import {
+    computeRevealProgress,
+    updatePointsMaterial,
+    updateHoverEmissiveFlash,
+    updateMyceliumPulse,
+    updatePointsShaderHoverBoost
+} from './three-engine-frame-updates'
 import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
 import { ensurePostProcessing } from './three-pp-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'
-import { easeInOutCubic, easeOutQuint } from '@lib/utils/math-easing'
+import { easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
@@ -228,13 +235,11 @@ export async function initThreeJS() {
     appState.pointsMesh = webglContext.pointsMesh
     appState.pointsMaterial = webglContext.pointsMaterial
     appState.nodeSporeMesh = webglContext.nodeSporeMesh
-    appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
     appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
     if (engineState.state) {
         engineState.state.pointsMesh = webglContext.pointsMesh
         engineState.state.pointsMaterial = webglContext.pointsMaterial
         engineState.state.nodeSporeMesh = webglContext.nodeSporeMesh
-        engineState.state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
         engineState.state.nodeSporeMaterial = webglContext.nodeSporeMaterial
     }
 
@@ -411,7 +416,6 @@ export function cancelAnimate() {
         engineState.state.pointsMesh = null
         engineState.state.pointsMaterial = null
         engineState.state.nodeSporeMesh = null
-        engineState.state.nodeSporeHitMesh = null
         engineState.state.nodeSporeMaterial = null
     }
     webglContext.scene = null
@@ -421,7 +425,6 @@ export function cancelAnimate() {
     webglContext.pointsMesh = null
     webglContext.pointsMaterial = null
     webglContext.nodeSporeMesh = null
-    webglContext.nodeSporeHitMesh = null
     webglContext.nodeSporeMaterial = null
     engineState.lastHoveredNode = null
     engineState.hoverEmissiveFlash = 0
@@ -501,13 +504,15 @@ export function animate() {
 
         const updateStart = performance.now()
         const _state = engineState.state
-        const revealProgress = sceneRevealMod.getSceneRevealProgress(frameNow) ?? 0
-        const pointsRevealProgress = easeOutQuint(Math.min(1, Math.max(0, revealProgress / 0.7)))
-        const cameraRevealProgress = easeInOutCubic(Math.min(1, Math.max(0, revealProgress)))
+        const {
+            revealed: revealProgress,
+            points: pointsRevealProgress,
+            camera: cameraRevealProgress
+        } = computeRevealProgress(frameNow)
 
         let anyNodeMoved = false
         if (engineState.state?.nodePositions && engineState.state?.targetPositions) {
-            const lerpFactor = engineState.state.nodesAreSettling ? 0.14 : 0.08
+            const lerpFactor = engineState.state?.focusState?.nodesAreSettling ? 0.14 : 0.08
             engineState.state.nodePositions.forEach((pos: NodePosition, i: number) => {
                 const target = engineState.state!.targetPositions[i]
                 if (!target) return
@@ -527,19 +532,12 @@ export function animate() {
             if (engineState.focusPocket?.applyFocusPocketBreathing(frameNow, engineState.state.nodePositions)) {
                 engineState.state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
                     setNodeSporeInstanceMatrixPort(idx)
-                    if (
-                        webglContext.nodeSporeHitMesh &&
-                        engineState.state!.navState?.focusPocketIndices?.includes(idx)
-                    ) {
-                        setNodeSporeInstanceMatrixPort(idx, webglContext.nodeSporeHitMesh)
-                    }
                 })
                 anyNodeMoved = true
             }
 
             if (anyNodeMoved) {
                 if (webglContext.nodeSporeMesh) webglContext.nodeSporeMesh.instanceMatrix.needsUpdate = true
-                if (webglContext.nodeSporeHitMesh) webglContext.nodeSporeHitMesh.instanceMatrix.needsUpdate = true
                 if (engineState.state) engineState.state.myceliumDirty = true
             }
         }
@@ -570,21 +568,7 @@ export function animate() {
             }
         }
 
-        if (webglContext.pointsMaterial) {
-            const isFocused = Number.isFinite(engineState.state?.focusedNode)
-            const isSemanticDive =
-                engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
-            const pointsOpacityScale = isSemanticDive ? 0.06 : isFocused ? 0.46 : 1.0
-            const pointsSizeScale = isSemanticDive ? 0.36 : isFocused ? 0.8 : 1.0
-            webglContext.pointsMaterial.opacity =
-                0.32 * (PORT_SCENE_ATMOSPHERE.pointOpacityScale ?? 1) * pointsRevealProgress * pointsOpacityScale
-            webglContext.pointsMaterial.size =
-                CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale
-            if (webglContext.pointsMaterial.userData.shader) {
-                webglContext.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress
-                webglContext.pointsMaterial.userData.shader.uniforms.uTime.value = performance.now() * 0.001
-            }
-        }
+        updatePointsMaterial(pointsRevealProgress, engineState.state)
 
         if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
             ;(webglContext.scene.fog as FogExp2).density =
@@ -616,42 +600,9 @@ export function animate() {
         const focusedNode = engineState.state?.focusedNode ?? null
 
         // ── Hover emissive flash (spore material) ───────────────────────────────
-        const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
-        const lastHadHover =
-            engineState.lastHoveredNode !== null &&
-            Number.isFinite(engineState.lastHoveredNode) &&
-            engineState.lastHoveredNode >= 0
-        if (hasHover !== lastHadHover || (hasHover && hoveredNode !== engineState.lastHoveredNode)) {
-            engineState.hoverEmissiveFlash = 1.0
-        }
-        engineState.lastHoveredNode = hoveredNode
-        if (engineState.hoverEmissiveFlash > 0.001 && webglContext.nodeSporeMaterial) {
-            // W48-T1A: base intensity bumped from 0.34 → 0.55 to match the
-            // new spore material baseline (was 0.34, raised for bioluminescent
-            // identity). Without this sync, the post-flash settle would set
-            // emissive back to 0.34 — dimmer than the resting state.
-            const baseIntensity = 0.55
-            const flashPeak = 1.8
-            const targetIntensity = baseIntensity + (flashPeak - baseIntensity) * engineState.hoverEmissiveFlash
-            ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = targetIntensity
-            engineState.hoverEmissiveFlash *= 0.92
-            if (engineState.hoverEmissiveFlash < 0.005) {
-                engineState.hoverEmissiveFlash = 0
-                ;(webglContext.nodeSporeMaterial as MeshPhongMaterial).emissiveIntensity = baseIntensity
-            }
-        }
+        updateHoverEmissiveFlash(engineState.state)
 
-        const threadsVisible = shouldRenderThreadsPort()
-        if (webglContext.myceliumGroup) {
-            webglContext.myceliumGroup.visible = threadsVisible
-        }
-        const prefersReduced =
-            typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
-        const basePulseSpeed = prefersReduced ? 0.0 : 0.015
-        const windSpeed = engineState.state?.weather?.wind_speed_10m ?? 8.0
-        const pulseIncrement = basePulseSpeed * (0.6 + windSpeed / 15.0)
-        if (engineState.state)
-            engineState.state.pulsePhase = (engineState.state.pulsePhase + pulseIncrement) % (Math.PI * 2)
+        const threadsVisible = updateMyceliumPulse(engineState.state)
 
         const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
         const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<
@@ -690,16 +641,7 @@ export function animate() {
             if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as Material).opacity = 0
         }
 
-        if (webglContext.pointsMaterial?.userData?.shader) {
-            const shader = webglContext.pointsMaterial.userData.shader
-            const hasHover = Number.isFinite(hoveredNode) && hoveredNode >= 0
-            const targetBoost = hasHover ? 1.5 : 1.0
-            shader.uniforms.uHoverBoost.value += (targetBoost - shader.uniforms.uHoverBoost.value) * 0.2
-            if (hasHover && engineState.state?.nodePositions[hoveredNode]) {
-                const hoverPos = engineState.state.nodePositions[hoveredNode]
-                shader.uniforms.uHoverNodePos.value.set(hoverPos.x, hoverPos.y, hoverPos.z)
-            }
-        }
+        updatePointsShaderHoverBoost(hoveredNode, engineState.state)
 
         if (sceneNeedsContinuous) {
             engineState.threeInteractionVisuals?.updateInteractionVisuals(frameNow, hoveredNode, focusedNode)

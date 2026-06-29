@@ -14,6 +14,7 @@
 import { Vector3 } from 'three'
 import type { PocketMotion, PocketMotionWithFrame, FocusPocketMeta } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
+import { withStateMutation } from '@lib/state/with-state-mutation'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore, writeFocusPocketMirror } from '@lib/stores/focus.svelte'
 import { normalizeCityForFilter } from '@lib/utils/geo-data'
@@ -95,23 +96,23 @@ export function clearFocusPocketRoleByIndex(): void {
 }
 
 export function getFocusPocketMotionByIndex(): Map<number, PocketMotion> {
-    return appState.pocketMotionByIndex ?? new Map()
+    return appState.focusState.pocketMotionByIndex ?? new Map()
 }
 
 export function setFocusPocketMotionByIndex(map: Map<number, PocketMotionWithFrame>): void {
-    appState.pocketMotionByIndex = map
+    appState.focusState.pocketMotionByIndex = map
     focusStore.update((s) => ({ ...s, pocketMotionByIndex: new Map(map) }))
 }
 
 export function setFocusPocketMotionForIndex(index: number, motion: unknown): void {
-    if (!(appState.pocketMotionByIndex instanceof Map)) {
-        appState.pocketMotionByIndex = new Map()
+    if (!(appState.focusState.pocketMotionByIndex instanceof Map)) {
+        appState.focusState.pocketMotionByIndex = new Map()
     }
-    appState.pocketMotionByIndex.set(index, motion as PocketMotionWithFrame)
+    appState.focusState.pocketMotionByIndex.set(index, motion as PocketMotionWithFrame)
 }
 
 export function clearFocusPocketMotionByIndex(): void {
-    appState.pocketMotionByIndex = new Map()
+    appState.focusState.pocketMotionByIndex = new Map()
 }
 
 export function clearFocusPocketIndices(): void {
@@ -173,7 +174,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     clearFocusPocketMeta()
     clearFocusPocketRoleByIndex()
     clearFocusPocketMotionByIndex()
-    appState.pocketTransitionStartedAt = performance.now()
+    appState.focusState.pocketTransitionStartedAt = performance.now()
 
     if (navState.threadSource === 'semantic') {
         const pocket = buildFocusedSemanticPocket(index)
@@ -217,7 +218,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
                     motifLabel: pocketMotifLabel
                 }
             )
-            appState.nodesAreSettling = true
+            appState.focusState.nodesAreSettling = true
             appState.autoRotate = false
             return true
         }
@@ -225,7 +226,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
 
     const focusPos = originalPositions?.[index]
     if (!focusPos) {
-        appState.nodesAreSettling = false
+        appState.focusState.nodesAreSettling = false
         appState.autoRotate = true
         return false
     }
@@ -293,7 +294,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             motifLabel: fallbackPocket.motif?.label || 'threaded neighborhood',
             viewportProfile: fallbackPocket.viewportProfile || viewportProfile
         })
-        appState.nodesAreSettling = true
+        appState.focusState.nodesAreSettling = true
         appState.autoRotate = false
         return false
     }
@@ -374,7 +375,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             }
         }
     }
-    appState.nodesAreSettling = true
+    appState.focusState.nodesAreSettling = true
     return true
 }
 
@@ -384,14 +385,14 @@ export function applyFocusPocketBreathing(
 ): boolean {
     const navState = appState.navState
     const focusPocketMeta = navState.focusPocketMeta as { active?: boolean } | null
-    const pocketMotionByIndex = appState.pocketMotionByIndex
+    const pocketMotionByIndex = appState.focusState.pocketMotionByIndex
     const targetPositions = appState.targetPositions
     const nodePositions = appState.nodePositions
     const originalPositions = appState.originalPositions
 
     if (!focusPocketMeta?.active || !pocketMotionByIndex.size || !positions) return false
     if (prefersReducedMotion()) return false
-    const age = now - appState.pocketTransitionStartedAt
+    const age = now - appState.focusState.pocketTransitionStartedAt
     const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null
     const anchor = Number.isFinite(anchorIndex)
         ? targetPositions[anchorIndex!] || nodePositions[anchorIndex!] || originalPositions[anchorIndex!]
@@ -451,9 +452,9 @@ export function getRuntimeStateSnapshot(): Record<string, unknown> {
     return {
         navState: appState.navState,
         targetPositions: appState.targetPositions,
-        pocketMotionByIndex: appState.pocketMotionByIndex,
-        pocketTransitionStartedAt: appState.pocketTransitionStartedAt,
-        nodesAreSettling: appState.nodesAreSettling,
+        pocketMotionByIndex: appState.focusState.pocketMotionByIndex,
+        pocketTransitionStartedAt: appState.focusState.pocketTransitionStartedAt,
+        nodesAreSettling: appState.focusState.nodesAreSettling,
         autoRotate: appState.autoRotate
     }
 }
@@ -467,17 +468,20 @@ export function syncRuntimeState(snapshot: Record<string, unknown>): void {
     const s = snapshot as Partial<{
         navState: typeof appState.navState
         targetPositions: typeof appState.targetPositions
-        pocketMotionByIndex: typeof appState.pocketMotionByIndex
+        pocketMotionByIndex: typeof appState.focusState.pocketMotionByIndex
         pocketTransitionStartedAt: number
         nodesAreSettling: boolean
         autoRotate: boolean
     }>
-    if (s.navState !== undefined) appState.navState = s.navState
-    if (s.targetPositions !== undefined) appState.targetPositions = s.targetPositions
-    if (s.pocketMotionByIndex !== undefined) appState.pocketMotionByIndex = s.pocketMotionByIndex
-    if (s.pocketTransitionStartedAt !== undefined) appState.pocketTransitionStartedAt = s.pocketTransitionStartedAt
-    if (s.nodesAreSettling !== undefined) appState.nodesAreSettling = s.nodesAreSettling
-    if (s.autoRotate !== undefined) appState.autoRotate = s.autoRotate
+    withStateMutation(() => {
+        if (s.navState !== undefined) appState.navState = s.navState
+        if (s.targetPositions !== undefined) appState.targetPositions = s.targetPositions
+        if (s.pocketMotionByIndex !== undefined) appState.focusState.pocketMotionByIndex = s.pocketMotionByIndex
+        if (s.pocketTransitionStartedAt !== undefined)
+            appState.focusState.pocketTransitionStartedAt = s.pocketTransitionStartedAt
+        if (s.nodesAreSettling !== undefined) appState.focusState.nodesAreSettling = s.nodesAreSettling
+        if (s.autoRotate !== undefined) appState.autoRotate = s.autoRotate
+    })
 }
 
 // ── Pocket Node Sync ─────────────────────────────────────────────────────────

@@ -32,6 +32,7 @@ import type {
 } from './state-types'
 import type { NavState, ActiveFilters, SearchStatus, PocketMotionWithFrame } from '@lib/types/state'
 import type { SearchAppState } from './state-types'
+import type { FocusAppState } from './state-types'
 import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
@@ -102,6 +103,34 @@ class AppState {
             lastSource: null,
             lastAgeMs: null
         }
+    })
+
+    // ==== FOCUS SUB-AGGREGATE (Phase 6c) ====
+    // The 13 persistent focus-domain fields that the focus mirror reads.
+    // Three.js mesh references, ripples, settling watchdogs stay flat
+    // (transient engine state, not domain state).
+    focusState = $state<FocusAppState>({
+        selectedPoint: null,
+        inspectedThreadIndex: null,
+        pinnedThreadIndex: null,
+        inspectedStrandDiagnostics: {
+            active: false,
+            source: '',
+            index: null,
+            focusedIndex: null,
+            segmentCount: 0,
+            braidCount: 0,
+            endpointCount: 0
+        },
+        threadInspectorPointerInside: false,
+        pocketMotionByIndex: new Map(),
+        pocketTransitionStartedAt: 0,
+        infoPanelOpen: true,
+        pocketListVisible: false,
+        pocketRoleFilter: 'all',
+        focusTransitionMode: 'idle',
+        focusTransitionStartedAt: 0,
+        nodesAreSettling: false
     })
     semanticGuideState = $state<SemanticGuideState>({
         isVisible: false,
@@ -199,14 +228,12 @@ class AppState {
     weather = $state<WeatherData | null>(null)
     weatherInitialized = $state<boolean>(false)
     clockTimer = $state<ReturnType<typeof setTimeout> | null>(null)
-    selectedPoint = $state<Point | null>(null)
     rippleActive = $state<boolean>(false)
     rippleStartTime = $state<number>(0)
     bloomPulseStartTime = $state<number>(0)
     bridgePulseStartTime = $state<number>(0)
     pointColorStateVersion = $state<number>(0)
     pulsePhase = $state<number>(0)
-    nodesAreSettling = $state<boolean>(false)
     _settlingMaxDelta = $state<number>(0)
     _settlingWatchdogStartedAt = $state<number | null>(null)
     _settlingLowFrames = $state<number>(0)
@@ -405,11 +432,8 @@ class AppState {
     pointMarkers = $state<unknown[]>([])
 
     // ==== FOCUS / THREAD STATE ====
-    inspectedThreadIndex = $state<number | null>(null)
-    pinnedThreadIndex = $state<number | null>(null)
     canvasThreadInspectionClearTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     suppressCanvasFocusUntil = $state<number>(0)
-    threadInspectorPointerInside = $state<boolean>(false)
     focusPocketTransitionStartedAt = $state<number>(0)
     mobileRouteFieldPeekTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     urlStateRestoreToken = $state<number>(0)
@@ -417,15 +441,6 @@ class AppState {
     semanticSpaceLayoutManifest = $state<unknown>(null)
     semanticSpaceLayoutStatus = $state<string>('')
     semanticSpaceLayoutError = $state<string | null>(null)
-    inspectedStrandDiagnostics = $state<InspectedStrandDiagnostics>({
-        active: false,
-        source: 'none',
-        index: null,
-        focusedIndex: null,
-        segmentCount: 0,
-        braidCount: 0,
-        endpointCount: 0
-    })
     // ==== INSPECTOR / TEXTURE STATE ====
     inspectedStrandGroup = $state<Group | null>(null)
     focusRingTexture = $state<Texture | null>(null)
@@ -462,8 +477,6 @@ class AppState {
         rotateSpeed: 0.6,
         panSpeed: 0.5
     })
-    focusTransitionMode = $state<string>('idle')
-    focusTransitionStartedAt = $state<number>(0)
     focusTransitionSettleTimer = $state<ReturnType<typeof setTimeout> | null>(null)
     focusCameraAnimationToken = $state<number>(0)
     focusCameraAssistActive = $state<boolean>(false)
@@ -537,11 +550,6 @@ class AppState {
     })
 
     // ==== newly consolidated state (MIGRATED FROM INDIVIDUAL STORES) ====
-    pocketMotionByIndex = $state<Map<number, PocketMotionWithFrame>>(new Map())
-    pocketTransitionStartedAt = $state<number>(0)
-    infoPanelOpen = $state<boolean>(true)
-    pocketListVisible = $state<boolean>(false)
-    pocketRoleFilter = $state<'all' | 'direct' | 'support' | 'civic'>('all')
     semanticNeighborMapByLeadId = $state<Map<string, SemanticNeighborEntry>>(new Map())
     semanticThreadBundle = $state<SemanticThreadBundle | null>(null)
     semanticThreadArtifactName = $state<string | null>(null)

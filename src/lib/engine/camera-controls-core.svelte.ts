@@ -75,9 +75,9 @@ class CameraControlsCore {
             window.clearTimeout(this.focusTransitionSettleTimer)
             this.focusTransitionSettleTimer = null
         }
-        // Legacy mirror for choreography files that still read from state.focusTransitionMode
-        appState.focusTransitionMode = canonicalMode
-        appState.focusTransitionStartedAt = this.focusTransitionStartedAt
+        // Legacy mirror for choreography files that still read from state.focusState.focusTransitionMode
+        appState.focusState.focusTransitionMode = canonicalMode
+        appState.focusState.focusTransitionStartedAt = this.focusTransitionStartedAt
 
         // Tier-2 parity cleanup: drop the body.dataset write. CSS uses class
         // selectors (body.focus-transition-phase-arriving), not data attributes.

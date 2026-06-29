@@ -30,7 +30,7 @@ export const JOURNEY_ACTIONS = Object.freeze({
 } as const)
 
 export function getFocusedJourneyPoint(): Point | null {
-    if (appState.selectedPoint) return appState.selectedPoint
+    if (appState.focusState.selectedPoint) return appState.focusState.selectedPoint
     if (Number.isFinite(appState.focusedNode) && appState.points) return appState.points[appState.focusedNode!] || null
     if (Number.isFinite(appState.navState?.focusedIndex) && appState.points)
         return appState.points[appState.navState!.focusedIndex!] || null

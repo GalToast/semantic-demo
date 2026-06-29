@@ -460,7 +460,7 @@ export function updateTraversalUi(): void {
     const nav = appState.navState!
     const currentFocusPoint =
         appState.currentView === 'map'
-            ? appState.selectedPoint
+            ? appState.focusState.selectedPoint
             : Number.isFinite(nav.focusedIndex)
               ? (points[nav.focusedIndex!] ?? null)
               : null

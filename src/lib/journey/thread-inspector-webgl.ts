@@ -59,7 +59,7 @@ const getScene = (): Scene | null => state.scene as Scene | null
 const getFocusRingTexture = () => state.focusRingTexture
 const getFocusNextCueTexture = () => state.focusNextCueTexture
 const getFocusBeaconTexture = () => state.focusBeaconTexture
-const getPinnedThreadIndex = () => state.pinnedThreadIndex
+const getPinnedThreadIndex = () => state.focusState.pinnedThreadIndex
 const getPulsePhase = () => state.pulsePhase
 
 // ── Direct import (was adapter bridge; moved here to keep focus/geometry.ts
@@ -309,7 +309,7 @@ export function syncInspectedStrandOverlay(
     }
     updateInspectedStrandEndpointSprites()
     withStateMutation(() => {
-        state.inspectedStrandDiagnostics = {
+        state.focusState.inspectedStrandDiagnostics = {
             active: true,
             source:
                 getPinnedThreadIndex() === inspectionState.index
@@ -360,7 +360,7 @@ export function disposeInspectedStrandOverlay(): void {
     const strandGroup = getInspectedStrandGroup()
     if (!strandGroup) {
         withStateMutation(() => {
-            state.inspectedStrandDiagnostics = {
+            state.focusState.inspectedStrandDiagnostics = {
                 active: false,
                 source: 'none',
                 index: null,
@@ -384,7 +384,7 @@ export function disposeInspectedStrandOverlay(): void {
     })
     setInspectedStrandGroup(null)
     withStateMutation(() => {
-        state.inspectedStrandDiagnostics = {
+        state.focusState.inspectedStrandDiagnostics = {
             active: false,
             source: 'none',
             index: null,

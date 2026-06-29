@@ -241,14 +241,14 @@ export class ThreadSettler {
             'nearby business relationship'
 
         withStateMutation(() => {
-            appState.pinnedThreadIndex = null
-            appState.inspectedThreadIndex = null
+            appState.focusState.pinnedThreadIndex = null
+            appState.focusState.inspectedThreadIndex = null
             appState.suppressCanvasFocusUntil =
                 typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
         })
 
-        appState.pinnedThreadIndex = null
-        appState.inspectedThreadIndex = null
+        appState.focusState.pinnedThreadIndex = null
+        appState.focusState.inspectedThreadIndex = null
 
         cancelAllThreadTimers()
         setStrandContinuityState('exploring', { targetIndex: index, fromIndex, reason })
@@ -297,8 +297,8 @@ export class ThreadSettler {
         withStateMutation(() => {
             appState.focusedNode = index
             appState.trailDepth = Math.max(1, Number(appState.trailDepth) || 0)
-            appState.inspectedThreadIndex = null
-            appState.pinnedThreadIndex = null
+            appState.focusState.inspectedThreadIndex = null
+            appState.focusState.pinnedThreadIndex = null
         })
 
         const reassertThreadTarget = (): void => {
@@ -318,14 +318,14 @@ export class ThreadSettler {
             })
             withStateMutation(() => {
                 appState.focusedNode = index
-                appState.selectedPoint = (point ||
-                    appState.selectedPoint ||
-                    null) as unknown as typeof appState.selectedPoint
+                appState.focusState.selectedPoint = (point ||
+                    appState.focusState.selectedPoint ||
+                    null) as unknown as typeof appState.focusState.selectedPoint
                 appState.trailDepth = Math.max(1, Number(appState.trailDepth) || 0)
-                appState.inspectedThreadIndex = null
-                appState.pinnedThreadIndex = null
+                appState.focusState.inspectedThreadIndex = null
+                appState.focusState.pinnedThreadIndex = null
             })
-            syncFocusStage(point || appState.selectedPoint || null)
+            syncFocusStage(point || appState.focusState.selectedPoint || null)
             syncSemanticDiveUi()
             updateJourneyCompass()
         }
@@ -364,7 +364,7 @@ export class ThreadSettler {
 
                 const pointAtArrival =
                     capturedIndex >= 0 && capturedIndex < recordsList.length ? recordsList[capturedIndex] : null
-                syncFocusStage(pointAtArrival || appState.selectedPoint || null)
+                syncFocusStage(pointAtArrival || appState.focusState.selectedPoint || null)
                 updateJourneyCompass()
 
                 if (appState.semanticDiveMode) {
@@ -387,7 +387,7 @@ export class ThreadSettler {
 
                 const pointAtSettle =
                     capturedIndex >= 0 && capturedIndex < recordsList.length ? recordsList[capturedIndex] : null
-                syncFocusStage(pointAtSettle || appState.selectedPoint || null)
+                syncFocusStage(pointAtSettle || appState.focusState.selectedPoint || null)
             }
         })
 

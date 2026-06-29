@@ -26,23 +26,23 @@
  *     `withFocusNotify` which is kept as a thin action helper that runs the
  *     user's updater, publishes the resulting snapshot to the factory-writable,
  *     and then writes each appState-bound field via the mirrors below).
- *   selectedBusiness              → appState.selectedPoint  (narrowed via narrowToPoint)
- *   inspectedStrandIndex          → appState.inspectedThreadIndex
- *   pinnedThreadIndex             → appState.pinnedThreadIndex
- *   nodesAreSettling              → appState.nodesAreSettling
- *   pocketMotionByIndex           → appState.pocketMotionByIndex
- *   pocketTransitionStartedAt     → appState.pocketTransitionStartedAt
- *   infoPanelOpen                 → appState.infoPanelOpen
- *   pocketListVisible             → appState.pocketListVisible
- *   pocketRoleFilter              → appState.pocketRoleFilter
- *   transitionMode                → appState.focusTransitionMode
- *   transitionStartedAt           → appState.focusTransitionStartedAt
- *   threadInspector.active        → appState.inspectedStrandDiagnostics.active
- *   threadInspector.source        → appState.inspectedStrandDiagnostics.source
- *   threadInspector.segmentCount  → appState.inspectedStrandDiagnostics.segmentCount
- *   threadInspector.braidCount    → appState.inspectedStrandDiagnostics.braidCount
- *   threadInspector.endpointCount → appState.inspectedStrandDiagnostics.endpointCount
- *   threadInspector.pointerInside → appState.threadInspectorPointerInside
+ *   selectedBusiness              → appState.focusState.selectedPoint  (narrowed via narrowToPoint)
+ *   inspectedStrandIndex          → appState.focusState.inspectedThreadIndex
+ *   pinnedThreadIndex             → appState.focusState.pinnedThreadIndex
+ *   nodesAreSettling              → appState.focusState.nodesAreSettling
+ *   pocketMotionByIndex           → appState.focusState.pocketMotionByIndex
+ *   pocketTransitionStartedAt     → appState.focusState.pocketTransitionStartedAt
+ *   infoPanelOpen                 → appState.focusState.infoPanelOpen
+ *   pocketListVisible             → appState.focusState.pocketListVisible
+ *   pocketRoleFilter              → appState.focusState.pocketRoleFilter
+ *   transitionMode                → appState.focusState.focusTransitionMode
+ *   transitionStartedAt           → appState.focusState.focusTransitionStartedAt
+ *   threadInspector.active        → appState.focusState.inspectedStrandDiagnostics.active
+ *   threadInspector.source        → appState.focusState.inspectedStrandDiagnostics.source
+ *   threadInspector.segmentCount  → appState.focusState.inspectedStrandDiagnostics.segmentCount
+ *   threadInspector.braidCount    → appState.focusState.inspectedStrandDiagnostics.braidCount
+ *   threadInspector.endpointCount → appState.focusState.inspectedStrandDiagnostics.endpointCount
+ *   threadInspector.pointerInside → appState.focusState.threadInspectorPointerInside
  *   semanticDiveMode              → navState.trailDepth (via writeNavStateMirror)
  *   All other fields (orbitSlack, settling, strandContinuityPhase, etc.) → null —
  *     read locally from the MEMORY-mirrored snapshot only; no separate appState slot.
@@ -151,6 +151,25 @@ interface FocusHydrationSource {
     inspectedStrandDiagnostics?: ThreadInspectorState
     threadInspectorPointerInside?: boolean
     pocketRoleFilter?: PocketRoleFilter
+    // Phase 6c: focus sub-aggregate — supersedes the flat fields above
+    // for the canonical source-of-truth. The flat fields above are
+    // retained for backward compat with FocusHydrationSource callers
+    // that pre-date the partition.
+    focusState?: {
+        selectedPoint?: BusinessRecord | null
+        inspectedThreadIndex?: number | null
+        pinnedThreadIndex?: number | null
+        nodesAreSettling?: boolean
+        pocketMotionByIndex?: Map<number, PocketMotionWithFrame>
+        pocketTransitionStartedAt?: number
+        infoPanelOpen?: boolean
+        pocketListVisible?: boolean
+        focusTransitionMode?: FocusTransitionMode
+        focusTransitionStartedAt?: number
+        inspectedStrandDiagnostics?: ThreadInspectorState
+        threadInspectorPointerInside?: boolean
+        pocketRoleFilter?: PocketRoleFilter
+    }
 }
 
 function getFocusHydrationSource(): FocusHydrationSource {
@@ -199,7 +218,7 @@ function _readFocusSnapshot(): FocusStoreState {
     const originalPositions = source.originalPositions
     const records = getBusinessRecords()
     const anchorIndex = Number.isFinite(navState.focusedIndex as number) ? (navState.focusedIndex as number) : null
-    const diagnostics = source.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
+    const diagnostics = source.focusState?.inspectedStrandDiagnostics ?? INITIAL_FOCUS.threadInspector
     const orbitSlack = source.focusOrbitSlackState ?? INITIAL_FOCUS.orbitSlack
 
     const nodes: FocusPocketNode[] = []
@@ -233,9 +252,9 @@ function _readFocusSnapshot(): FocusStoreState {
         pocketNodes: nodes,
         pocketMeta: navState.focusPocketMeta ?? null,
         pocketRoleByIndex: new Map(roles),
-        selectedBusiness: source.selectedPoint ?? null,
-        inspectedStrandIndex: source.inspectedThreadIndex ?? null,
-        pinnedThreadIndex: source.pinnedThreadIndex ?? null,
+        selectedBusiness: source.focusState?.selectedPoint ?? null,
+        inspectedStrandIndex: source.focusState?.inspectedThreadIndex ?? null,
+        pinnedThreadIndex: source.focusState?.pinnedThreadIndex ?? null,
         // Read these two from the focusMirror writable, not appState. The
         // createStateMirror migration turned them into user-driven fields on
         // the writable side; deriving `semanticDiveMode` from `trailDepth`
@@ -251,21 +270,21 @@ function _readFocusSnapshot(): FocusStoreState {
         strandContinuityPhase: !_focusMirrorReady
             ? INITIAL_FOCUS.strandContinuityPhase
             : (get(focusMirror).strandContinuityPhase ?? INITIAL_FOCUS.strandContinuityPhase),
-        nodesAreSettling: source.nodesAreSettling ?? false,
-        pocketMotionByIndex: new Map(source.pocketMotionByIndex ?? []),
-        pocketTransitionStartedAt: source.pocketTransitionStartedAt ?? 0,
-        infoPanelOpen: source.infoPanelOpen ?? true,
-        pocketListVisible: source.pocketListVisible ?? false,
-        pocketRoleFilter: (source.pocketRoleFilter as PocketRoleFilter) ?? 'all',
-        transitionMode: source.focusTransitionMode ?? 'idle',
-        transitionStartedAt: source.focusTransitionStartedAt ?? 0,
+        nodesAreSettling: source.focusState?.nodesAreSettling ?? false,
+        pocketMotionByIndex: new Map(source.focusState?.pocketMotionByIndex ?? []),
+        pocketTransitionStartedAt: source.focusState?.pocketTransitionStartedAt ?? 0,
+        infoPanelOpen: source.focusState?.infoPanelOpen ?? true,
+        pocketListVisible: source.focusState?.pocketListVisible ?? false,
+        pocketRoleFilter: (source.focusState?.pocketRoleFilter as PocketRoleFilter) ?? 'all',
+        transitionMode: source.focusState?.focusTransitionMode ?? 'idle',
+        transitionStartedAt: source.focusState?.focusTransitionStartedAt ?? 0,
         orbitSlack: { ...orbitSlack } as FocusOrbitSlackState,
         threadInspector: {
             active: diagnostics.active,
             source: diagnostics.source,
-            inspectedIndex: source.inspectedThreadIndex ?? null,
-            pinnedIndex: source.pinnedThreadIndex ?? null,
-            pointerInside: source.threadInspectorPointerInside ?? false,
+            inspectedIndex: source.focusState?.inspectedThreadIndex ?? null,
+            pinnedIndex: source.focusState?.pinnedThreadIndex ?? null,
+            pointerInside: source.focusState?.threadInspectorPointerInside ?? false,
             segmentCount: diagnostics.segmentCount,
             braidCount: diagnostics.braidCount,
             endpointCount: diagnostics.endpointCount
@@ -301,17 +320,21 @@ const focusMirror = createStateMirror<FocusStoreState>({
     computeFromAppState: _readFocusSnapshot,
     storageKey: '__SEMANTIC_EXPLORER_FOCUS_MIRROR__',
     bindings: {
+        // Phase 6c: focus fields moved into appState.focusState sub-aggregate.
+        // The factory's bindings expect flat appState keys, so all bindings
+        // are null. Data flows appState.focusState.X via withFocusNotify's
+        // explicit bridge writes (search.svelte.ts's same pattern).
         selectedBusiness: null, // handled post-publish via narrowToPoint
-        pocketRoleFilter: 'pocketRoleFilter',
-        pinnedThreadIndex: 'pinnedThreadIndex',
-        nodesAreSettling: 'nodesAreSettling',
-        pocketMotionByIndex: 'pocketMotionByIndex',
-        pocketTransitionStartedAt: 'pocketTransitionStartedAt',
-        infoPanelOpen: 'infoPanelOpen',
-        pocketListVisible: 'pocketListVisible',
-        transitionMode: 'focusTransitionMode',
-        transitionStartedAt: 'focusTransitionStartedAt',
-        inspectedStrandIndex: 'inspectedThreadIndex',
+        pocketRoleFilter: null,
+        pinnedThreadIndex: null,
+        nodesAreSettling: null,
+        pocketMotionByIndex: null,
+        pocketTransitionStartedAt: null,
+        infoPanelOpen: null,
+        pocketListVisible: null,
+        transitionMode: null,
+        transitionStartedAt: null,
+        inspectedStrandIndex: null,
         pocketNodes: null,
         pocketMeta: null,
         pocketRoleByIndex: null,
@@ -356,20 +379,33 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
         focusPocketRoleByIndex: next.pocketRoleByIndex,
         focusPocketMeta: next.pocketMeta
     })
-    appState.selectedPoint = narrowToPoint(next.selectedBusiness)
+    appState.focusState.selectedPoint = narrowToPoint(next.selectedBusiness)
 
     // InspectedStrandIndex is mirrored again here because factory bindings
     // only handle the simple case — clearThreadInspector bumps both
     // inspectedStrandIndex AND threadInspector.inspectedIndex atomically.
-    appState.inspectedThreadIndex = next.threadInspector.active
+    appState.focusState.inspectedThreadIndex = next.threadInspector.active
         ? next.threadInspector.inspectedIndex
         : next.inspectedStrandIndex
-    appState.inspectedStrandDiagnostics.active = next.threadInspector.active
-    appState.inspectedStrandDiagnostics.source = next.threadInspector.source
-    appState.inspectedStrandDiagnostics.segmentCount = next.threadInspector.segmentCount
-    appState.inspectedStrandDiagnostics.braidCount = next.threadInspector.braidCount
-    appState.inspectedStrandDiagnostics.endpointCount = next.threadInspector.endpointCount
-    appState.threadInspectorPointerInside = next.threadInspector.pointerInside
+    appState.focusState.inspectedStrandDiagnostics.active = next.threadInspector.active
+    appState.focusState.inspectedStrandDiagnostics.source = next.threadInspector.source
+    appState.focusState.inspectedStrandDiagnostics.segmentCount = next.threadInspector.segmentCount
+    appState.focusState.inspectedStrandDiagnostics.braidCount = next.threadInspector.braidCount
+    appState.focusState.inspectedStrandDiagnostics.endpointCount = next.threadInspector.endpointCount
+    appState.focusState.threadInspectorPointerInside = next.threadInspector.pointerInside
+
+    // Phase 6c: factory bindings are all null (nested path support not in
+    // factory contract). Mirror every persistent focus field explicitly
+    // so `_readFocusSnapshot` returns the new value on next call.
+    appState.focusState.pinnedThreadIndex = next.pinnedThreadIndex
+    appState.focusState.nodesAreSettling = next.nodesAreSettling
+    appState.focusState.pocketMotionByIndex = next.pocketMotionByIndex
+    appState.focusState.pocketTransitionStartedAt = next.pocketTransitionStartedAt
+    appState.focusState.infoPanelOpen = next.infoPanelOpen
+    appState.focusState.pocketListVisible = next.pocketListVisible
+    appState.focusState.pocketRoleFilter = next.pocketRoleFilter
+    appState.focusState.focusTransitionMode = next.transitionMode
+    appState.focusState.focusTransitionStartedAt = next.transitionStartedAt
 
     // semanticDiveMode ↔ navState.trailDepth
     if (next.semanticDiveMode !== current.semanticDiveMode) {
@@ -407,26 +443,26 @@ function _createFocusStore(): FocusStoreApi {
             focusPocketRoleByIndex: value.pocketRoleByIndex,
             focusPocketMeta: value.pocketMeta
         })
-        appState.selectedPoint = narrowToPoint(value.selectedBusiness)
+        appState.focusState.selectedPoint = narrowToPoint(value.selectedBusiness)
         const inspectedThreadIndex = value.threadInspector.active
             ? value.threadInspector.inspectedIndex
             : value.inspectedStrandIndex
-        appState.inspectedThreadIndex = inspectedThreadIndex
-        appState.pinnedThreadIndex = value.pinnedThreadIndex
-        appState.nodesAreSettling = value.nodesAreSettling
-        appState.pocketMotionByIndex = value.pocketMotionByIndex
-        appState.pocketTransitionStartedAt = value.pocketTransitionStartedAt
-        appState.infoPanelOpen = value.infoPanelOpen
-        appState.pocketListVisible = value.pocketListVisible
-        appState.pocketRoleFilter = value.pocketRoleFilter
-        appState.focusTransitionMode = value.transitionMode
-        appState.focusTransitionStartedAt = value.transitionStartedAt
-        appState.inspectedStrandDiagnostics.active = value.threadInspector.active
-        appState.inspectedStrandDiagnostics.source = value.threadInspector.source
-        appState.inspectedStrandDiagnostics.segmentCount = value.threadInspector.segmentCount
-        appState.inspectedStrandDiagnostics.braidCount = value.threadInspector.braidCount
-        appState.inspectedStrandDiagnostics.endpointCount = value.threadInspector.endpointCount
-        appState.threadInspectorPointerInside = value.threadInspector.pointerInside
+        appState.focusState.inspectedThreadIndex = inspectedThreadIndex
+        appState.focusState.pinnedThreadIndex = value.pinnedThreadIndex
+        appState.focusState.nodesAreSettling = value.nodesAreSettling
+        appState.focusState.pocketMotionByIndex = value.pocketMotionByIndex
+        appState.focusState.pocketTransitionStartedAt = value.pocketTransitionStartedAt
+        appState.focusState.infoPanelOpen = value.infoPanelOpen
+        appState.focusState.pocketListVisible = value.pocketListVisible
+        appState.focusState.pocketRoleFilter = value.pocketRoleFilter
+        appState.focusState.focusTransitionMode = value.transitionMode
+        appState.focusState.focusTransitionStartedAt = value.transitionStartedAt
+        appState.focusState.inspectedStrandDiagnostics.active = value.threadInspector.active
+        appState.focusState.inspectedStrandDiagnostics.source = value.threadInspector.source
+        appState.focusState.inspectedStrandDiagnostics.segmentCount = value.threadInspector.segmentCount
+        appState.focusState.inspectedStrandDiagnostics.braidCount = value.threadInspector.braidCount
+        appState.focusState.inspectedStrandDiagnostics.endpointCount = value.threadInspector.endpointCount
+        appState.focusState.threadInspectorPointerInside = value.threadInspector.pointerInside
     }
 
     return fn
@@ -440,14 +476,14 @@ export const focusStore: FocusStoreApi = _createFocusStore()
 export const pocketNodes = () => appState.navState.focusPocketIndices
 export const pocketMeta = () => appState.navState.focusPocketMeta
 export const selectedBusiness = () => get(focusMirror).selectedBusiness
-export const infoPanelOpen = () => appState.infoPanelOpen
-export const pocketListVisible = () => appState.pocketListVisible
+export const infoPanelOpen = () => appState.focusState.infoPanelOpen
+export const pocketListVisible = () => appState.focusState.pocketListVisible
 export const semanticDiveMode = () => appState.navState.trailDepth === 2
-export const nodesAreSettling = () => appState.nodesAreSettling
-export const inspectedStrandIndex = () => appState.inspectedThreadIndex
-export const pinnedThreadIndex = () => appState.pinnedThreadIndex
+export const nodesAreSettling = () => appState.focusState.nodesAreSettling
+export const inspectedStrandIndex = () => appState.focusState.inspectedThreadIndex
+export const pinnedThreadIndex = () => appState.focusState.pinnedThreadIndex
 export const threadInspector = () => focusStore().threadInspector
-export const threadInspectorActive = () => appState.inspectedStrandDiagnostics.active
+export const threadInspectorActive = () => appState.focusState.inspectedStrandDiagnostics.active
 
 // ── Actions ──────────────────────────────────────────────────────────────────
 

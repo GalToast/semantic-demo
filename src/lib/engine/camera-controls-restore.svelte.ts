@@ -45,7 +45,7 @@ class CameraControlsRestore {
         if (appState.camera == null || appState.controls == null) return false
         if (appState.sceneRevealActive) return false
         if (appState.focusedNode != null) return false
-        if (appState.selectedPoint != null) return false
+        if (appState.focusState.selectedPoint != null) return false
         const _mode = appState.navState?.mode
         if (_mode === 'overview') {
             /* ok — fall through */
@@ -74,7 +74,7 @@ class CameraControlsRestore {
             !prefersReduced &&
             appState.currentView === 'galaxy' &&
             appState.focusedNode === null &&
-            appState.selectedPoint === null &&
+            appState.focusState.selectedPoint === null &&
             appState.navState.mode === 'overview' &&
             !this.autoRotateSuspended &&
             !appState.sceneRevealActive &&
@@ -129,7 +129,7 @@ class CameraControlsRestore {
         if (prefersReducedMotion()) return
         const _isGalaxy = appState.currentView === 'galaxy'
         const _noFocus = appState.focusedNode == null
-        const _noSelection = appState.selectedPoint == null
+        const _noSelection = appState.focusState.selectedPoint == null
         const _isOverview = appState.navState.mode === 'overview'
         const _pocketActive = (appState.navState.focusPocketMeta as { active?: boolean } | null)?.active === true
         const _trailZero = appState.trailDepth === 0
@@ -156,7 +156,7 @@ class CameraControlsRestore {
                 this.autoRotate &&
                 appState.currentView === 'galaxy' &&
                 appState.focusedNode == null &&
-                appState.selectedPoint == null &&
+                appState.focusState.selectedPoint == null &&
                 appState.navState.mode === 'overview' &&
                 !appState.sceneRevealActive &&
                 (appState.navState.focusPocketMeta as { active?: boolean } | null)?.active !== true &&

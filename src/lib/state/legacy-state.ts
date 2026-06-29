@@ -78,6 +78,12 @@ export interface LegacyState {
     searchState?: {
         searchGlowActive?: boolean
     }
+    focusState?: {
+        selectedPoint?: BusinessRecord | null
+        pinnedThreadIndex?: number | null
+        inspectedThreadIndex?: number | null
+        nodesAreSettling?: boolean
+    }
 
     // ── Thread inspection ────────────────────────────────────────────────────
     inspectedThreadIndex?: number | null

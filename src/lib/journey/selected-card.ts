@@ -94,7 +94,7 @@ export function initJourneySelectedCard(deps: Record<string, unknown> = {}): voi
 
     // Phase 3: Declarative synchronization
     const sync = (): void => {
-        updateSelectedBusiness(appState.selectedPoint || null, { skipHydrate: true })
+        updateSelectedBusiness(appState.focusState.selectedPoint || null, { skipHydrate: true })
     }
 
     subscribeKeyed('journey-selected-card:camera-node-focused', EVENTS.CAMERA_NODE_FOCUSED, sync)
@@ -166,7 +166,7 @@ export function syncFocusStage(point: BusinessRecord | Point | null): void {
     const focusedNode = appState.focusedNode
     const effectivePoint =
         point ||
-        appState.selectedPoint ||
+        appState.focusState.selectedPoint ||
         (focusedNode !== null &&
         focusedNode !== undefined &&
         Number.isFinite(focusedNode) &&

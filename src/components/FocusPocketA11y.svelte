@@ -42,7 +42,7 @@
 
   // Reactive reads — use $focusStore so Svelte 5 tracks the store as a source.
   let pocketNodes = $derived($focusStore.pocketNodes);
-  let isVisible = $derived($focusStore.pocketListVisible);
+  let isVisible = $derived($focusStore.focusState.pocketListVisible);
   let hasNodes = $derived(pocketNodes.length > 0);
 </script>
 

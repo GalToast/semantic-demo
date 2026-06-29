@@ -447,7 +447,7 @@ export function setSemanticLaneUiState(laneState: string, options: LaneUiOptions
     const assistEl = doc?.getElementById?.('semantic-lane-assist') || null
     if (assistEl) {
         const hasFocusedRecord =
-            Boolean(state.selectedPoint) ||
+            Boolean(state.focusState.selectedPoint) ||
             (state.focusedNode !== null && state.focusedNode !== undefined) ||
             (state.navState?.focusedIndex !== null && state.navState?.focusedIndex !== undefined)
         const focusOwnsRail =

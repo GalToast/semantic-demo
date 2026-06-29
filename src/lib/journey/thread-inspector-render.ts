@@ -29,7 +29,7 @@ import type { InspectorElement, ThreadInspectionOptions, ThreadInspectionState }
 setInspectedStrandOverlayUpdater(updateInspectedStrandOverlay)
 
 export function renderThreadInspection(
-    index: number | null = appState.inspectedThreadIndex,
+    index: number | null = appState.focusState.inspectedThreadIndex,
     options: ThreadInspectionOptions = {}
 ): ThreadInspectionState | null {
     const inspector = document.getElementById('focus-thread-inspector') as InspectorElement | null
@@ -52,8 +52,8 @@ export function renderThreadInspection(
         active: !!inspectionState?.active,
         source: options.surface || 'none',
         inspectedIndex: index,
-        pinnedIndex: appState.pinnedThreadIndex,
-        pointerInside: appState.threadInspectorPointerInside,
+        pinnedIndex: appState.focusState.pinnedThreadIndex,
+        pointerInside: appState.focusState.threadInspectorPointerInside,
         segmentCount: inspectionState?.strandVisual.segmentCount || 0,
         braidCount: inspectionState?.strandVisual.braidCount || 0,
         endpointCount: inspectionState?.strandVisual.endpointCount || 0
@@ -77,7 +77,7 @@ export function renderThreadInspection(
     if (!inspector.dataset.pointerGuardBound) {
         inspector.dataset.pointerGuardBound = 'true'
         const pointerEnter = (): void => {
-            appState.threadInspectorPointerInside = true
+            appState.focusState.threadInspectorPointerInside = true
             const clearTimerId = appState.canvasThreadInspectionClearTimer
             if (clearTimerId) {
                 window.clearTimeout(clearTimerId)
@@ -88,11 +88,11 @@ export function renderThreadInspection(
             }
         }
         const pointerLeave = (): void => {
-            appState.threadInspectorPointerInside = false
+            appState.focusState.threadInspectorPointerInside = false
             if (
                 typeof document !== 'undefined' &&
                 document.body.dataset.threadInspectSurface === 'canvas' &&
-                appState.pinnedThreadIndex === null
+                appState.focusState.pinnedThreadIndex === null
             ) {
                 scheduleCanvasThreadInspectionClear(1800)
             }
@@ -193,11 +193,11 @@ export function renderThreadInspection(
         )
     }
     if (clearBtn) {
-        clearBtn.disabled = !inspectionState?.active && appState.pinnedThreadIndex === null
+        clearBtn.disabled = !inspectionState?.active && appState.focusState.pinnedThreadIndex === null
         clearBtn.setAttribute('aria-disabled', String(clearBtn.disabled))
         clearBtn.setAttribute(
             'aria-label',
-            appState.pinnedThreadIndex !== null ? 'Clear pinned connection' : 'Clear connection preview'
+            appState.focusState.pinnedThreadIndex !== null ? 'Clear pinned connection' : 'Clear connection preview'
         )
     }
 

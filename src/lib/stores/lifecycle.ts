@@ -153,7 +153,9 @@ export function applyCompositionState(): void {
                   ($focus.selectedBusiness ? ($focus.selectedBusiness as { index?: number }).index : null) ??
                   null)
                 : null
-            appSt.selectedPoint = $focus.selectedBusiness
+            if (appSt.focusState && (appSt.focusState as any).selectedPoint !== undefined) {
+                (appSt.focusState as any).selectedPoint = $focus.selectedBusiness
+            }
             appSt.semanticDiveMode = appState.composition.semanticDive === 'active'
             if (appSt.navState) {
                 appSt.navState.focusedIndex = appSt.focusedNode
