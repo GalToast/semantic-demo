@@ -36,6 +36,7 @@
   import Placeholder2D from '@components/Placeholder2D.svelte';
   import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
+  import { signalSceneReady, signalSceneError } from '@lib/stores/scene-ready.svelte';
   import Legend from '@components/Legend.svelte';
   import SearchBar from '@components/SearchBar.svelte';
   import FocusPocketA11y from '@components/FocusPocketA11y.svelte';
@@ -347,7 +348,7 @@
       <div class="layer canvas-layer" class:active={engineReady.value && canvasLazy.current}>
         {#if engineReady.value && canvasLazy.current}
           {@const Cmp = canvasLazy.current}
-          <Cmp interactive={true} defer={true} onSceneReady={() => { s3dSceneReady = true; appState.s3dSceneReady = true }} onSceneError={() => { s3dSceneError = true; appState.s3dSceneError = true }} />
+          <Cmp interactive={true} defer={true} onSceneReady={() => { s3dSceneReady = true; signalSceneReady(); }} onSceneError={() => { s3dSceneError = true; signalSceneError(); }} />
         {/if}
       </div>
       <div class="layer placeholder-layer" class:active={!s3dSceneReady && !s3dSceneError}>
@@ -357,7 +358,7 @@
   {:else}
     {#if engineReady.value && canvasLazy.current}
       {@const Cmp = canvasLazy.current}
-      <Cmp interactive={true} defer={true} onSceneReady={() => (s3dSceneReady = true)} onSceneError={() => (s3dSceneError = true)} />
+      <Cmp interactive={true} defer={true} onSceneReady={() => { s3dSceneReady = true; signalSceneReady(); }} onSceneError={() => { s3dSceneError = true; signalSceneError(); }} />
     {:else}
       <Splash />
     {/if}
