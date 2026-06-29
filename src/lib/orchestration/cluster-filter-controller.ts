@@ -18,7 +18,7 @@ import {
     resetFilters
 } from '@lib/stores/filter.svelte'
 import { searchStore, clearSearchGlow } from '@lib/stores/search.svelte'
-import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
+import { writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { publish, subscribe, EVENTS } from '@lib/orchestration/event-bus'
 import { setMyceliumMode } from '@lib/stores/lifecycle'
 import { businessRecords } from '@lib/data-store'

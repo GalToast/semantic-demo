@@ -22,7 +22,6 @@
   import type { DemoPhase } from '@lib/stores/demo.svelte.ts';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import { showToast } from '@lib/stores/toast.svelte';
-  import { appState } from '@lib/state/app.svelte';
   import { sceneReady } from '@lib/stores/scene-ready.svelte';
 
   interface Props {

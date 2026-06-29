@@ -1193,8 +1193,9 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 surface: 'focus-search',
                 focusedIndex: idx,
                 threadSource: 'semantic',
-                focusPocketIndices: candidates.map((c }))
-Object.assign(appState.navState, {
+                focusPocketIndices: candidates.map((c) => c.index),
+            }}))
+            Object.assign(appState.navState, {
                 mode: 'focus',
                 surface: 'focus-search',
                 focusedIndex: idx,
@@ -1306,8 +1307,9 @@ Object.assign(appState.navState, {
                 surface: 'focus-search',
                 focusedIndex: idx,
                 threadSource: 'semantic',
-                focusPocketIndices: candidates.map((c }))
-Object.assign(appState.navState, {
+                focusPocketIndices: candidates.map((c) => c.index),
+            }}))
+            Object.assign(appState.navState, {
                 mode: 'focus',
                 surface: 'focus-search',
                 focusedIndex: idx,
@@ -1326,7 +1328,7 @@ Object.assign(appState.navState, {
                 live.navState.focusPocketRoleByIndex = new Map(candidates.map((c) => [c.index, c.relationshipRole]))
             }
             // FocusPocketA11y gates on focusStore().pocketNodes.length > 0
-            const nodes = (candidates.map((c).filter((i) => typeof i === 'number').map((index) => ({
+            const nodes = candidates.map((c) => c.index).filter((i) => typeof i === 'number').map((index) => ({
     index,
     position: [0, 0, 0],
     role: 'direct',
@@ -1335,7 +1337,7 @@ Object.assign(appState.navState, {
     rotationSeed: 0,
     scaleSeed: 0
 }))
-focusStore.update((s) => ({ ...s, pocketNodes: nodes })) => c.index))
+focusStore.update((s) => ({ ...s, pocketNodes: nodes }))
         }, 200)
 
         // In headless mode the keyboard hint may not reach visibility due to

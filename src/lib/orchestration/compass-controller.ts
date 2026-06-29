@@ -17,7 +17,6 @@ import {
 } from '@lib/stores/journey.svelte.ts'
 import { focusStore, setSemanticDiveMode } from '@lib/stores/focus.svelte.ts'
 import { isMapSummarySurface, isSemanticDiveSurface } from '@lib/stores/viewport.svelte.ts'
-import { appState } from '@lib/state/app.svelte'
 import { resetExplorationFocus } from '@lib/orchestration/lifecycle'
 import {
     getJourneyCompassState,

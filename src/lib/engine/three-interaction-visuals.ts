@@ -37,14 +37,10 @@ import {
     DoubleSide,
     NormalBlending,
     Mesh,
-    SphereGeometry,
     BufferGeometry,
     BufferAttribute,
     LineSegments,
-    IcosahedronGeometry,
     AdditiveBlending,
-    BackSide,
-    PointLight,
     Color,
     Group
 } from 'three'

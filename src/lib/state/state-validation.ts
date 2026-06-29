@@ -197,7 +197,7 @@ function plainObject(label: string): StateValidator {
 }
 
 /** No validation — always passes. */
-const passthrough: StateValidator = () => null
+export const passthrough: StateValidator = () => null
 
 // ── Guarded property map ─────────────────────────────────────────────────────
 

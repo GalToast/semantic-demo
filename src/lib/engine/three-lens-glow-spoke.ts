@@ -20,7 +20,7 @@ import {
     BackSide,
     NormalBlending
 } from 'three'
-import type { Group as GroupType, Scene as SceneType } from 'three'
+import type { Group as GroupType } from 'three'
 import type { appState } from '@lib/state/app.svelte'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 

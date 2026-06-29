@@ -501,8 +501,7 @@ export function animate() {
 
         const updateStart = performance.now()
         const _state = engineState.state
-        const _sceneReveal = engineState.sceneReveal
-        const revealProgress = _sceneReveal?.getSceneRevealProgress(frameNow) ?? 0
+        const revealProgress = sceneRevealMod.getSceneRevealProgress(frameNow) ?? 0
         const pointsRevealProgress = easeOutQuint(Math.min(1, Math.max(0, revealProgress / 0.7)))
         const cameraRevealProgress = easeInOutCubic(Math.min(1, Math.max(0, revealProgress)))
 
@@ -566,7 +565,7 @@ export function animate() {
                     _state.sceneRevealCameraStart = null
                     _state.sceneRevealCameraEnd = null
                 })
-                _sceneReveal?.setSceneRevealDataset(false)
+                sceneRevealMod.setSceneRevealDataset(false)
                 engineState.cameraControls?.scheduleAutoRotateResume(1200)
             }
         }
