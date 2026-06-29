@@ -152,8 +152,7 @@ export function getThreadInspectionState(
                 ? 'preview'
                 : 'idle'
     const cleanReason = stripTerminalPunctuation(reason)
-    const displayReason =
-        active && reason.includes('...') ? getInsideRelationshipLabel(candidateObj) : cleanReason
+    const displayReason = active && reason.includes('...') ? getInsideRelationshipLabel(candidateObj) : cleanReason
     const rawCopy = active
         ? journeyPhase === 'exploring'
             ? `${displayReason}. Following this connection into the next neighborhood.`
@@ -377,7 +376,7 @@ export function scheduleCanvasThreadInspectionClear(delay: number = 1800): void 
             clearThreadInspection()
         }
     }, delay)
-    appState.canvasThreadInspectionClearTimer = id
+    appState.canvasThreadInspectionClearTimer = id as unknown as ReturnType<typeof setTimeout>
 }
 
 export function clearThreadInspection(options: ThreadInspectionOptions = {}): ThreadInspectionState | null {
@@ -460,10 +459,7 @@ export function exploreThreadNeighbor(
         candidate && typeof candidate === 'object' ? candidate : { index, source: '', reason: '' }
     ) as ThreadCandidateRef
     const reason =
-        summarizeNeighborReason(candidateObj) ||
-        candidateObj.reason ||
-        options.reason ||
-        'nearby business relationship'
+        summarizeNeighborReason(candidateObj) || candidateObj.reason || options.reason || 'nearby business relationship'
     cancelAllThreadTimers()
     appState.pinnedThreadIndex = null
     appState.inspectedThreadIndex = index

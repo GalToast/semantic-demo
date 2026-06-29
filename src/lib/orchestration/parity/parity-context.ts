@@ -78,7 +78,7 @@ export function resolveParityContext(): ParityContext {
     // pattern in FocusCard.svelte::currentFocusedIdx.
     let legacyFocusedIndex: number | null = null
     try {
-        const legacy = window.__APP_STATE__?.navState?.focusedIndex
+        const legacy = (window.__APP_STATE__?.navState as { focusedIndex?: number } | undefined)?.focusedIndex
         if (typeof legacy === 'number' && Number.isFinite(legacy)) {
             legacyFocusedIndex = legacy
         }
