@@ -250,7 +250,6 @@ function restoreWorker(): void {
     vi.unstubAllGlobals()
     // Restore original Worker if it existed
     if (originalWorker) {
-        // @ts-expect-error — restoring pre-stub value
         globalThis.Worker = originalWorker
     }
 }
