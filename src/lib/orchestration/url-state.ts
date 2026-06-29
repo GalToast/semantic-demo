@@ -150,6 +150,23 @@ export function resetStateBeforeUrlRestore(options: { clearSearchInput?: boolean
 // ── Apply URL State ───────────────────────────────────────────────────────────
 
 /**
+ * Token check for in-flight applyUrlState calls.
+ *
+ * When a newer applyUrlState() bumps `navState.urlStateRestoreToken`, any
+ * earlier in-flight restore should bail out before writing stale state.
+ * `bindGlobalEvents` registers the active popstate listener and does NOT
+ * guard on `applyingUrlState`, so a rapid back/forward can re-enter
+ * applyUrlState mid-await. The token check below short-circuits the stale
+ * restore at each await point.
+ *
+ * @returns true if THIS applyUrlState's token no longer matches the current
+ *   global token (a newer applyUrlState has started). Caller should bail.
+ */
+function _isRestoreStale(token: number): boolean {
+    return get(navStore).urlStateRestoreToken !== token
+}
+
+/**
  * Read the current URL and apply all state params to the application.
  *
  * Handles:
@@ -220,14 +237,18 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         const query = params.get('q')
         const anchorId = params.get('anchor')
         if (anchorId) {
-            await _restoreAnchorFromParams(anchorId)
+            await _restoreAnchorFromParams(anchorId, restoreToken)
+            // Token-abort: if a newer applyUrlState bumped the token while we
+            // were awaiting, our restore is stale. Bail before any further writes.
+            if (_isRestoreStale(restoreToken)) return
         }
 
         // Search-query restoration runs only when there's a query to fulfill.
         // It still resolves non-numeric anchors against the search results, but
         // numeric anchors are already settled by `_restoreAnchorFromParams`.
         if (query && query.trim().length >= 2) {
-            await _restoreSearchFromParams(query, anchorId)
+            await _restoreSearchFromParams(query, anchorId, restoreToken)
+            if (_isRestoreStale(restoreToken)) return
         }
 
         preserveDomForcedFocusSearchSurface()
@@ -496,7 +517,7 @@ function preserveDomForcedFocusSearchSurface(): void {
  * inside `_restoreSearchFromParams` after the search round-trip, because they
  * need a result list to map against.
  */
-async function _restoreAnchorFromParams(anchorId: string): Promise<void> {
+async function _restoreAnchorFromParams(anchorId: string, restoreToken: number): Promise<void> {
     const numericId = Number(anchorId)
     if (!Number.isFinite(numericId)) return
 
@@ -539,6 +560,9 @@ async function _restoreAnchorFromParams(anchorId: string): Promise<void> {
     // it does not affect anything outside the anchor-restoration path.
     try {
         const { applyLocalNeighborhoodFocus } = await import('@lib/focus/pocket')
+        // Token-abort: bail before the focus-pocket mutation if a newer
+        // applyUrlState bumped the token while the dynamic import resolved.
+        if (_isRestoreStale(restoreToken)) return
         applyLocalNeighborhoodFocus(numericId)
     } catch (e) {
         debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e)
@@ -553,11 +577,15 @@ async function _restoreAnchorFromParams(anchorId: string): Promise<void> {
  * restore fires unconditionally and search restore stays focused on query
  * fulfillment only.
  */
-async function _restoreSearchFromParams(query: string, anchorId: string | null): Promise<void> {
+async function _restoreSearchFromParams(query: string, anchorId: string | null, restoreToken: number): Promise<void> {
     try {
         const domForcedFocusSearchSurface = isDomForcedFocusSearchSurface()
         const signal = AbortSignal.timeout(30000)
         await runSearch(query, signal)
+        // Token-abort: bail before post-runSearch writes (DOM mutation,
+        // SEARCH_FOCUS_REQUESTED publish, preserveDomForcedFocusSearchSurface)
+        // if a newer applyUrlState bumped the token while runSearch was in flight.
+        if (_isRestoreStale(restoreToken)) return
 
         // UI-7: Directly populate the search input from the URL ?q= param.
         // runSearch sets the store query, but the SearchInput component may not
