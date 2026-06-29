@@ -16,7 +16,6 @@
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { appState } from '@lib/state/app.svelte';
   import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
