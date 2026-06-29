@@ -112,7 +112,6 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
         set autoRotateSoftResumeStartedAt(v: number) {
             _cameraState.autoRotateSoftResumeStartedAt = v
         },
-        withMutation: (fn: () => unknown) => fn(),
         // Legend mock shape
         get legendOpen() {
             return _legendState.legendOpen
@@ -306,7 +305,7 @@ import {
     pointMatchesActiveFilters,
     setClusterFilter
 } from '@lib/stores/filter.svelte.ts'
-import type { ActiveFilters } from '@lib/stores/filter.svelte.ts'
+import type { ActiveFilters } from '@lib/types/state'
 
 import {
     searchStore,
