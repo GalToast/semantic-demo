@@ -64,6 +64,9 @@ import { updateSelectedNodeMotes } from './three-lens-motes'
 import { updateSelectedNodePetals } from './three-lens-petals'
 import { updateSelectedNodeFilaments } from './three-lens-filaments'
 import { initMicroDemoBridge, disposeMicroDemoBridge } from './three-micro-demo-bridge'
+import { initLensGlowSpoke } from './three-lens-glow-spoke'
+import { initFocusLens } from './three-lens-focusgeo'
+import { initAnchorBloomLight } from './three-lens-anchor-bloom'
 
 // ── Three.js material narrowing helpers ───────────────────────────────────────
 // All focus/mote/petal/halo objects in this codebase are constructed with a single
@@ -260,126 +263,13 @@ export function initSemanticLens() {
     state.semanticLensGroup.visible = false
     state.scene.add(state.semanticLensGroup)
 
-    const glowGeo = new SphereGeometry(0.12, 32, 32)
-    const glowMat = new ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uColor: { value: new Color(SCENE_PALETTE.threadTint) },
-            uOpacity: { value: 0 },
-            uSignalScore: { value: 0 }
-        },
-        vertexShader: `
-            varying vec3 vNormal;
-            void main() {
-                vNormal = normalize(normalMatrix * normal);
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float uTime;
-            uniform vec3 uColor;
-            uniform float uOpacity;
-            uniform float uSignalScore;
-            varying vec3 vNormal;
-            void main() {
-                float intensity = pow(0.7 - dot(vNormal, vec3(0, 0, 1.0)), 3.0);
-                float signalLift = 0.76 + clamp(uSignalScore, 0.0, 1.0) * 0.34;
-                float pulse = 0.82 + sin(uTime * 2.4) * 0.18;
-                gl_FragColor = vec4(uColor * signalLift, intensity * uOpacity * pulse);
-            }
-        `,
-        transparent: true,
-        side: BackSide,
-        blending: NormalBlending,
-        depthWrite: false
-    })
-    state.semanticLensGlow = new Mesh(glowGeo, glowMat)
-    state.semanticLensGlow.renderOrder = -1
-    state.semanticLensGroup.add(state.semanticLensGlow)
+    initLensGlowSpoke(state, state.semanticLensGroup)
 
-    const spokeGeo = new BufferGeometry()
-    const spokePos = new Float32Array(12 * 2 * 3)
-    const spokeAlpha = new Float32Array(12 * 2)
-    spokeGeo.setAttribute('position', new BufferAttribute(spokePos, 3))
-    spokeGeo.setAttribute('alpha', new BufferAttribute(spokeAlpha, 1))
+    initFocusLens(state, state.scene)
 
-    const spokeMat = new ShaderMaterial({
-        uniforms: {
-            uTime: { value: 0 },
-            uColor: { value: new Color(0xfff4ba) }
-        },
-        vertexShader: `
-            attribute float alpha;
-            varying float vAlpha;
-            void main() {
-                vAlpha = alpha;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float uTime;
-            uniform vec3 uColor;
-            varying float vAlpha;
-            void main() {
-                float wave = 0.72 + sin(uTime * 4.0 + vAlpha * 10.0) * 0.28;
-                gl_FragColor = vec4(uColor, vAlpha * (0.4 + wave * 0.6));
-            }
-        `,
-        transparent: true,
-        blending: NormalBlending,
-        depthWrite: false
-    })
-    const spokes = new LineSegments(spokeGeo, spokeMat)
-    state.semanticLensSpokes = spokes
-    state.semanticLensGroup.add(spokes)
 
-    const focusLensGeo = new IcosahedronGeometry(0.08, 3)
-    const focusLensMat = new ShaderMaterial({
-        uniforms: {
-            time: { value: 0 },
-            color: { value: new Color(0x7ce7dd) },
-            opacity: { value: 0.0 }
-        },
-        vertexShader: `
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-            void main() {
-                vNormal = normalize(normalMatrix * normal);
-                vPosition = (modelViewMatrix * vec4(position, 1.0)).xyz;
-                gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-            }
-        `,
-        fragmentShader: `
-            uniform float time;
-            uniform vec3 color;
-            uniform float opacity;
-            varying vec3 vNormal;
-            varying vec3 vPosition;
-            void main() {
-                vec3 viewDir = normalize(-vPosition);
-                float fresnel = pow(1.0 - dot(viewDir, vNormal), 3.0);
-                float pulse = sin(time * 2.5) * 0.15 + 0.85;
-                gl_FragColor = vec4(color * pulse, (fresnel * 0.6 + 0.05) * opacity);
-            }
-        `,
-        transparent: true,
-        depthWrite: false,
-        blending: AdditiveBlending
-    })
-    state.focusLens = new Mesh(focusLensGeo, focusLensMat)
-    state.focusLens.visible = false
-    state.scene.add(state.focusLens)
+    initAnchorBloomLight(state, state.scene)
 
-    // Step Inside bloom: warm point light at anchor node when trailDepth === 2
-    if (state.anchorBloomLight) {
-        state.scene.remove(state.anchorBloomLight)
-        state.anchorBloomLight.dispose?.()
-        state.anchorBloomLight = null
-    }
-    const anchorBloomLight = new PointLight(0xfff4ba, 0, 0.6)
-    anchorBloomLight.name = 'anchorBloomLight'
-    state.scene.add(anchorBloomLight)
-    state.anchorBloomLight = anchorBloomLight
 
     // Size + ring + pulse focus anchor indicator (see focus-anchor-indicator.js
     // for the cues chosen and the rationale).  Lives in the 3D scene — CSS
