@@ -18,6 +18,7 @@ import { appState } from '@lib/state/app.svelte.ts'
 import { writeNavStateMirror } from './navigation.svelte.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { getBusinessRecords } from '@lib/data-store'
+import { createStateMirror } from '@lib/state/create-state-mirror'
 
 // ── Rerank Feature Flag ─────────────────────────────────────────────────────
 
@@ -82,46 +83,6 @@ export interface SearchStoreState extends SearchState {
 }
 
 // ── Store ────────────────────────────────────────────────────────────────────
-
-/**
- * Reactive bridge to the Svelte 5 state kernel.
- *
- * Why a plain `writable` instead of `toStore(getter, setter)`:
- *   `toStore` returns the user's custom `set` as the store's `.set`, and the
- *   only path that actually notifies subscribers is the inner `render_effect`
- *   it wires up to re-run when the getter's dependencies change. That works
- *   in production (the real `appState` is a Svelte 5 `$state` class whose
- *   reads register reactive deps), but it means subscriber notifications are
- *   implicit and depend on reactivity tracking. For actions like
- *   `setSearchResults` that fire during synchronous URL→input→results
- *   hydration, we want explicit, deterministic notification that does not
- *   rely on the render_effect picking up the change. A plain `writable` does
- *   exactly that: `withSearchNotify` reads a fresh snapshot after every
- *   `appState` mutation and calls `_searchWritable.set(fresh)`, which goes
- *   through `safe_not_equal` and notifies every subscriber. The fresh
- *   snapshot is always a new object literal, so referential equality
- *   confirms a change.
- *
- * The callable `searchStore()` path is unaffected — it still reads from
- * `appState` directly via the snapshot getter, so callers that want a
- * current read never have to wait for a notification.
- */
-const _searchWritable = writable<SearchStoreState>({
-    ...INITIAL_SEARCH_STATE,
-    requestSequence: 0,
-    anchorIndex: null,
-    previewIndex: null,
-    glowIndices: new Set<number>(),
-    glowTopIndex: null,
-    glowActive: false,
-    currentEmptyQuery: null,
-    focusTransitionToken: 0,
-    trailCue: 'idle',
-    isCompactViewport: false,
-    semanticGuideRequestSequence: 0,
-    currentSemanticGuide: null,
-    summaryCardTypeToken: 0
-})
 
 /** SearchStore type: callable function + Readable + actions. */
 export type SearchStoreApi = (() => SearchStoreState) &
@@ -189,13 +150,65 @@ function buildSearchStoreSnapshot(): SearchStoreState {
     }
 }
 
+// ── Factory ──────────────────────────────────────────────────────────────────
+
+/**
+ * The search mirror.
+ *
+ * The factory owns the writable subscriber channel (replacing the hand-rolled
+ * `_searchWritable` from the pre-migration file) and the window-keyed singleton
+ * that preserves the channel
+ * across dynamic imports. `computeFromAppState` reads the current appState-
+ * derived snapshot on every call — so `searchStore()` always returns a value
+ * that matches appState byte-for-byte.
+ *
+ * Every binding is intentionally `null`. This store's writable is a pure
+ * subscriber notification channel; `appState` is the single source of truth
+ * for all 22 fields, and every write path goes `appState.X =
+ * ...; searchMirror.set(fresh)` via `withSearchNotify`. There is no
+ * mirrorToAppState target — setting a binding would double-write to appState.
+ *
+ * The `storageKey` MUST be the deterministic string below — tests using
+ * `delete window['__SEMANTIC_EXPLORER_SEARCH_MIRROR__']` rely on a predictable
+ * key to reset the cross-chunk singleton between cases. Do NOT replace with a
+ * random suffix.
+ */
+const searchMirror = createStateMirror<SearchStoreState>({
+    computeFromAppState: buildSearchStoreSnapshot,
+    storageKey: '__SEMANTIC_EXPLORER_SEARCH_MIRROR__',
+    bindings: {
+        // All fields null — writable is a notification channel, appState is SoT.
+        query: null,
+        results: null,
+        activeResultId: null,
+        summary: null,
+        status: null,
+        hasQuery: null,
+        resultsRendered: null,
+        requestSequence: null,
+        anchorIndex: null,
+        previewIndex: null,
+        glowIndices: null,
+        glowTopIndex: null,
+        glowActive: null,
+        currentEmptyQuery: null,
+        focusTransitionToken: null,
+        trailCue: null,
+        isCompactViewport: null,
+        semanticGuideRequestSequence: null,
+        currentSemanticGuide: null,
+        summaryCardTypeToken: null
+    }
+})
+
+/** Build the SearchStoreApi over the factory mirror. */
 function _createSearchStore(): SearchStoreApi {
     // Function call: returns fresh sync snapshot from kernel
-    const fn = (() => buildSearchStoreSnapshot()) as unknown as SearchStoreApi
+    const fn = (() => searchMirror()) as unknown as SearchStoreApi
 
-    fn.subscribe = _searchWritable.subscribe
-    fn.update = _searchWritable.update
-    fn.set = _searchWritable.set
+    fn.subscribe = searchMirror.subscribe
+    fn.update = searchMirror.update
+    fn.set = searchMirror.set
 
     return fn
 }
@@ -205,6 +218,9 @@ export const searchStore: SearchStoreApi = _createSearchStore()
 
 /** Backwards-compatible alias. */
 export const searchState: SearchStoreApi = searchStore
+
+/** Test-only escape hatch — drops the window-keyed singleton. */
+export const resetSearchForTests = searchMirror.resetForTests
 
 // ── Derived Getters ──────────────────────────────────────────────────────────
 
@@ -231,24 +247,23 @@ export function getSearchSummary(): SearchSummary | null {
 /**
  * Wrap an appState mutation so the Svelte store facade wakes its subscribers.
  *
- * The `toStore(getter, setter)` bridge in this file does NOT auto-notify
- * subscribers when the underlying Svelte 5 `appState` class is mutated
- * externally. Without this wrapper, `SearchResults.svelte` and every other
- * `$searchState`-prefixed consumer stays stale after a search fires. This
- * is the A3-1 regression root cause: `?q=restaurant` updates the store
- * query, but the result list never repaints because the facade never
- * propagates the new `resultIndices` to its subscribers.
+ * After `fn()` runs (and therefore all `appState.X = ...` mutations have fired),
+ * this re-reads the current appState-derived snapshot and publishes it to the
+ * factory-writable. Since `buildSearchStoreSnapshot()` returns a brand-new
+ * object literal every call, `safe_not_equal` detects the change and notifies
+ * every `$searchState` subscriber — which is what wakes `SearchResults.svelte`
+ * and the other `$searchState`-prefixed consumers. This is the A3-1 regression
+ * root cause: `?q=restaurant` updates the store query in appState, but without
+ * this explicit publish, the result list never repaints because the facade
+ * never propagates the new `resultIndices` to its subscribers.
  *
- * Always prefer this over calling `appState.withMutation` directly inside
- * the action functions below.
+ * Always prefer this over direct `appState.X = ...` writes inside the action
+ * functions below.
  */
 export function withSearchNotify<T>(fn: () => T): T {
     const result = fn()
-    // Re-read the latest snapshot through the store getter so the toStore
-    // setter is bypassed (calling _searchWritable.set() recursively would
-    // re-enter the toStore setter and infinite-loop).
     const fresh = buildSearchStoreSnapshot()
-    _searchWritable.set(fresh)
+    searchMirror.set(fresh)
     return result
 }
 
