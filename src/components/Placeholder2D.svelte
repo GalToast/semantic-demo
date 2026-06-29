@@ -276,13 +276,6 @@
     line-height: 1.5;
   }
 
-  .placeholder-count {
-    font-size: 0.85rem;
-    opacity: 0.55;
-    margin: 0 0 2rem;
-    letter-spacing: 0.04em;
-  }
-
   .placeholder-cta {
     display: inline-flex;
     align-items: center;

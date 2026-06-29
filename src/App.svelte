@@ -567,7 +567,7 @@
   .semantic-explorer.surface-semantic-dive {
     pointer-events: none;
   }
-  .semantic-explorer.surface-semantic-dive button {
+  :global(.semantic-explorer.surface-semantic-dive button) {
     pointer-events: auto;
   }
 
