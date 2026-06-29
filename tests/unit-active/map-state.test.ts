@@ -31,7 +31,9 @@ const _appState = vi.hoisted(() => ({
     points: [] as Array<Record<string, unknown> | null | undefined>,
     currentView: 'galaxy' as string,
     focusedNode: null as number | null,
-    selectedPoint: null as Record<string, unknown> | null,
+    focusState: {
+        selectedPoint: null as Record<string, unknown> | null
+    },
     navState: {
         focusedIndex: null as number | null,
         walkHistoryIndices: [] as number[],
@@ -39,11 +41,13 @@ const _appState = vi.hoisted(() => ({
         mode: 'overview' as string
     },
     semanticDiveMode: false as boolean,
-    currentSearchSummary: null as {
-        resultIndices?: number[]
-        anchorIndex?: number | null
-        topIndex?: number | null
-    } | null,
+    searchState: {
+        currentSearchSummary: null as {
+            resultIndices?: number[]
+            anchorIndex?: number | null
+            topIndex?: number | null
+        } | null
+    },
     activeClusterFilter: null as number | null,
     activeFilters: {
         status: 'all',
@@ -163,7 +167,7 @@ function resetAppState(): void {
     _appState.points = []
     _appState.currentView = 'galaxy'
     _appState.focusedNode = null
-    _appState.selectedPoint = null
+    _appState.focusState.selectedPoint = null
     _appState.navState = {
         focusedIndex: null,
         walkHistoryIndices: [],
@@ -171,7 +175,7 @@ function resetAppState(): void {
         mode: 'overview'
     }
     _appState.semanticDiveMode = false
-    _appState.currentSearchSummary = null
+    _appState.searchState.currentSearchSummary = null
     _appState.activeClusterFilter = null
     _appState.activeFilters = {
         status: 'all',
@@ -208,7 +212,7 @@ describe('map-state — getRouteDirectorState', () => {
 
     it('returns "map-trail" when view is map with a selected point', () => {
         _appState.currentView = 'map'
-        _appState.selectedPoint = makePoint(0)
+        _appState.focusState.selectedPoint = makePoint(0)
         expect(getRouteDirectorState()).toBe('map-trail')
     })
 
@@ -238,7 +242,7 @@ describe('map-state — getRouteDirectorState', () => {
 
     it('returns "search-focus" when focusedNode + currentSearchSummary', () => {
         _appState.focusedNode = 1
-        _appState.currentSearchSummary = { resultIndices: [1, 2], anchorIndex: 1, topIndex: 1 }
+        _appState.searchState.currentSearchSummary = { resultIndices: [1, 2], anchorIndex: 1, topIndex: 1 }
         expect(getRouteDirectorState()).toBe('search-focus')
     })
 
@@ -248,7 +252,7 @@ describe('map-state — getRouteDirectorState', () => {
     })
 
     it('returns "search-corridor" when only search summary is present', () => {
-        _appState.currentSearchSummary = { resultIndices: [0, 1], anchorIndex: 0, topIndex: 0 }
+        _appState.searchState.currentSearchSummary = { resultIndices: [0, 1], anchorIndex: 0, topIndex: 0 }
         expect(getRouteDirectorState()).toBe('search-corridor')
     })
 
@@ -301,7 +305,7 @@ describe('map-state — getRouteEmbodimentIndices', () => {
         _appState.points = [makePoint(0), makePoint(1), makePoint(2)]
         _appState.nodePositions = [{ x: 0 }, { x: 1 }, { x: 2 }]
         _appState.originalPositions = []
-        _appState.currentSearchSummary = { resultIndices: [0, 1, 2], anchorIndex: 0, topIndex: 2 }
+        _appState.searchState.currentSearchSummary = { resultIndices: [0, 1, 2], anchorIndex: 0, topIndex: 2 }
         const result = getRouteEmbodimentIndices()
         expect(result).toContain(0)
         expect(result).toContain(2)
@@ -324,7 +328,7 @@ describe('map-state — getRouteEmbodimentIndices', () => {
         _appState.points = Array.from({ length: count }, (_, i) => makePoint(i))
         _appState.nodePositions = Array.from({ length: count }, (_, i) => ({ x: i }))
         _appState.originalPositions = []
-        _appState.currentSearchSummary = {
+        _appState.searchState.currentSearchSummary = {
             resultIndices: Array.from({ length: count }, (_, i) => i),
             anchorIndex: 0,
             topIndex: 1
@@ -344,7 +348,7 @@ describe('map-state — getRouteAnchorIndex', () => {
     it('returns null only when routeIndices is empty (routeIndices[0] always matches otherwise)', () => {
         _appState.focusedNode = null
         _appState.navState.focusedIndex = null
-        _appState.currentSearchSummary = null
+        _appState.searchState.currentSearchSummary = null
         // With empty routeIndices, there is no routeIndices[0] candidate, so null
         expect(getRouteAnchorIndex([])).toBeNull()
     })
@@ -352,28 +356,28 @@ describe('map-state — getRouteAnchorIndex', () => {
     it('returns routeIndices[0] as the fallback anchor when no focus/search candidate matches', () => {
         _appState.focusedNode = null
         _appState.navState.focusedIndex = null
-        _appState.currentSearchSummary = null
+        _appState.searchState.currentSearchSummary = null
         // No focus/search match, but searchCandidates includes routeIndices[0] = 5
         expect(getRouteAnchorIndex([5, 6, 7])).toBe(5)
     })
 
     it('prefers focus candidates when focus owns the route', () => {
         _appState.focusedNode = 2
-        _appState.currentSearchSummary = { anchorIndex: 3, topIndex: 3, resultIndices: [2, 3] }
+        _appState.searchState.currentSearchSummary = { anchorIndex: 3, topIndex: 3, resultIndices: [2, 3] }
         // focusOwnsRoute = true → focus candidates first → 2 wins
         expect(getRouteAnchorIndex([2, 3])).toBe(2)
     })
 
     it('prefers search candidates when not in focus mode', () => {
         _appState.focusedNode = null
-        _appState.currentSearchSummary = { anchorIndex: 3, topIndex: 4, resultIndices: [3, 4] }
+        _appState.searchState.currentSearchSummary = { anchorIndex: 3, topIndex: 4, resultIndices: [3, 4] }
         // focusOwnsRoute = false → search candidates first → 3 wins
         expect(getRouteAnchorIndex([3, 4])).toBe(3)
     })
 
     it('falls back to first routeIndices entry when no focus/search match', () => {
         _appState.focusedNode = null
-        _appState.currentSearchSummary = null
+        _appState.searchState.currentSearchSummary = null
         expect(getRouteAnchorIndex([7, 8, 9])).toBe(7)
     })
 })
@@ -395,7 +399,7 @@ describe('map-state — getMapRoutePoints', () => {
         ]
         _appState.nodePositions = [{ x: 0 }, { x: 1 }]
         _appState.originalPositions = []
-        _appState.currentSearchSummary = { resultIndices: [0, 1], anchorIndex: 0, topIndex: 1 }
+        _appState.searchState.currentSearchSummary = { resultIndices: [0, 1], anchorIndex: 0, topIndex: 1 }
         const result = getMapRoutePoints()
         // Point 0 has no geocode → filtered out
         expect(result.every((r) => r.point != null)).toBe(true)
@@ -407,7 +411,7 @@ describe('map-state — getMapRoutePoints', () => {
         _appState.points = Array.from({ length: count }, (_, i) => makePoint(i))
         _appState.nodePositions = Array.from({ length: count }, (_, i) => ({ x: i }))
         _appState.originalPositions = []
-        _appState.currentSearchSummary = {
+        _appState.searchState.currentSearchSummary = {
             resultIndices: Array.from({ length: count }, (_, i) => i),
             anchorIndex: 0,
             topIndex: 1
@@ -420,7 +424,7 @@ describe('map-state — getMapRoutePoints', () => {
         _appState.points = [makePoint(0), makePoint(1)]
         _appState.nodePositions = [{ x: 0 }, { x: 1 }]
         _appState.originalPositions = []
-        _appState.currentSearchSummary = { resultIndices: [0, 1], anchorIndex: 0, topIndex: 1 }
+        _appState.searchState.currentSearchSummary = { resultIndices: [0, 1], anchorIndex: 0, topIndex: 1 }
         const result = getMapRoutePoints()
         expect(result[0]).toHaveProperty('index')
         expect(result[0]).toHaveProperty('point')
