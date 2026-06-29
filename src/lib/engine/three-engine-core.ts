@@ -13,9 +13,9 @@
 // ── Static @lib/* imports ────────────────────────────────────────────────────
 
 import { DisposableRegistry } from '@lib/utils/disposable-registry'
-import { buildThreeScene } from './renderer/scene-init'
+import { buildThreeSceneOrFallback, applyReducedMotionGate, applyAutoRotateConfig, exposeDevEngineBridge } from './three-engine-init-helpers'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
-import { Scene, PerspectiveCamera, WebGLRenderer, FogExp2, Material } from 'three'
+import { Material } from 'three'
 import * as sceneRevealMod from './scene-reveal'
 import type { NodePosition } from '@lib/state/state-types'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
@@ -23,7 +23,7 @@ import type { NodePosition } from '@lib/state/state-types'
 import type { LegacyState } from '@lib/state/legacy-state'
 export type { LegacyState }
 import { webglContext } from '@lib/engine/webgl-context'
-import { showWebGLFallback } from './renderer/webgl-fallback'
+
 import { sampleScenePerformance } from './renderer/renderer-diagnostics'
 import { CONFIG } from '@lib/engine/config'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
@@ -59,18 +59,6 @@ import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
 import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame } from '@lib/engine/journey-webgl-lazy'
-
-// ── WindowWithDevGlobals (retained for window global exposure in initThreeJS) ──
-
-interface WindowWithDevGlobals extends Window {
-    __semanticEngine?: {
-        readonly renderer: WebGLRenderer | null
-        readonly scene: Scene | null
-        readonly camera: PerspectiveCamera | null
-        readonly canvas: HTMLCanvasElement | null
-        renderOnce: () => void
-    }
-}
 
 export function updateCameraViewportOffset() {
     const camera = webglContext.camera || appState.camera
@@ -116,22 +104,23 @@ export async function initThreeJS() {
     const width = container.clientWidth || window.innerWidth
     const height = container.clientHeight || window.innerHeight
 
-    const result = await buildThreeScene(container, width, height)
-    if (!result.success) {
-        engineState.mapButtonClickHandler = showWebGLFallback(
-            container,
-            { reason: result.reason || 'webgl-unavailable' },
-            {
-                state: engineState.state,
-                viewController: engineState.viewController,
-                mapState: engineState.mapState,
-                uiFeedback: engineState.uiFeedback
-            }
-        )
+    const sceneResult = await buildThreeSceneOrFallback(
+        container,
+        width,
+        height,
+        (handler) => { engineState.mapButtonClickHandler = handler },
+        {
+            state: engineState.state,
+            viewController: engineState.viewController,
+            mapState: engineState.mapState,
+            uiFeedback: engineState.uiFeedback
+        }
+    )
+    if (!sceneResult.success) {
         return false
     }
 
-    const { scene, camera, renderer, controls, hemiLight, dirLight } = result.setup
+    const { scene, camera, renderer, controls, hemiLight, dirLight } = sceneResult.setup
 
     webglContext.scene = scene
     appState.scene = scene
@@ -202,18 +191,8 @@ export async function initThreeJS() {
         }
     })
 
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
-        appState.autoRotate = false
-        if (engineState.state) engineState.state.autoRotate = false
-        const rotateBtn = document.getElementById('btn-rotate')
-        if (rotateBtn) rotateBtn.setAttribute('aria-pressed', 'false')
-    }
-
-    controls.autoRotate = !!(
-        (appState.autoRotate || engineState.state?.autoRotate) &&
-        !(appState.autoRotateSuspended || engineState.state?.autoRotateSuspended)
-    )
-    controls.autoRotateSpeed = CONFIG.AUTO_ROTATE_BASE_SPEED
+    applyReducedMotionGate(engineState.state, appState)
+    applyAutoRotateConfig(controls, engineState.state, appState)
 
     engineState.sceneRegistry.listener(controls as unknown as EventTarget, 'start', () => {
         engineState.cameraControls?.releaseFocusCameraAssist('user-control')
@@ -305,32 +284,7 @@ export async function initThreeJS() {
         debugInfo('[three-engine] postprocessing skipped on mobile viewport (performance mode)')
     }
 
-    // Dev-only: expose engine handle for the Spector.js frame-capture bridge.
-    // Lets SpectorInspector force a render call before captureContext() so
-    // Spector's frame-finder always sees an in-flight draw. Tree-shaken from
-    // production by the import.meta.env.DEV guard (Vite dead-code-eliminates
-    // the false branch during the production build).
-    if (import.meta.env.DEV && typeof window !== 'undefined') {
-        ;(window as WindowWithDevGlobals).__semanticEngine = {
-            get renderer() {
-                return webglContext.renderer
-            },
-            get scene() {
-                return webglContext.scene
-            },
-            get camera() {
-                return webglContext.camera
-            },
-            get canvas() {
-                return webglContext.renderer?.domElement ?? null
-            },
-            renderOnce: () => {
-                if (webglContext.renderer && webglContext.scene && webglContext.camera) {
-                    webglContext.renderer.render(webglContext.scene, webglContext.camera)
-                }
-            }
-        }
-    }
+    exposeDevEngineBridge()
 
     return true
 }
