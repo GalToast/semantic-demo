@@ -1,24 +1,44 @@
 /**
  * @lib/ui/weather-ui.ts
  *
- * Ported from:
  * Weather widget DOM rendering and effects.
+ *
+ * W49c: replaced module-level `let stalenessIntervalId` / `lightningTimer`
+ * with a module-owned DisposableRegistry. The previous design was
+ * singleton-soup: timers tracked with module-level `let` variables,
+ * never registered with DisposableRegistry, with a dynamic-import
+ * teardown path that swallowed errors. If the dynamic import failed
+ * (network blip, bundling issue), the 60-second staleness interval
+ * would leak forever.
+ *
+ * Now: all timers go through `_registry.timer()` / `_registry.schedule()`,
+ * and `disposeWeatherUi()` is a synchronous `_registry.disposeAll()`
+ * call. AppBoot.svelte can import it directly (no dynamic import).
+ *
+ * `lightningGeneration` stays as a module-level `let` because it's a
+ * generation counter for cancellation, not a disposable resource.
+ * `_stalenessActive` is a dedupe flag for the 60-second polling timer;
+ * reset to false in `disposeWeatherUi()` so re-mount restarts the timer.
  */
 
 import { appState } from '@lib/state/app.svelte'
 import type { WeatherData } from '@lib/utils/weather'
 import { seededUnit } from '@lib/utils/seeded-random'
+import { createDisposableRegistry, type DisposableRegistry } from '@lib/utils/disposable-registry'
 
-let lightningTimer: number | null = null
+/** Generation counter for the lightning loop — bumped on each scheduleLightning()
+ *  call so a stale flash chain self-aborts. Module-level because it's a
+ *  counter, not a disposable resource. */
 let lightningGeneration: number = 0
-let stalenessIntervalId: number | null = null
 
-function clearStalenessInterval(): void {
-    if (stalenessIntervalId !== null) {
-        window.clearInterval(stalenessIntervalId)
-        stalenessIntervalId = null
-    }
-}
+/** Dedupe flag for the 60-second staleness polling timer. Reset to false
+ *  in `disposeWeatherUi()` so re-mount restarts the timer. */
+let _stalenessActive: boolean = false
+
+/** Module-owned disposable registry. Owns the staleness interval and the
+ *  lightning flash timers. Created at module load, cleared by
+ *  `disposeWeatherUi()`. Replaces the previous module-level `let`s. */
+const _registry: DisposableRegistry = createDisposableRegistry({ label: 'weather-ui' })
 
 function canUseWeatherDom(): boolean {
     return (
@@ -76,6 +96,15 @@ export function updateWeatherStaleness(lastFetch: number | null): void {
     }
 }
 
+/** Start the 60-second staleness polling timer. Idempotent — if already
+ *  running, this is a no-op. Caller doesn't need to track; the registry
+ *  owns the interval. */
+function startStalenessPolling(): void {
+    if (_stalenessActive || _registry.isDisposed || typeof window === 'undefined') return
+    _stalenessActive = true
+    _registry.timer(window.setInterval(() => updateWeatherStaleness(appState.weatherState?.lastFetch), 60000) as unknown as ReturnType<typeof setTimeout>)
+}
+
 export function updateWeatherUi(state: WeatherStateValue): void {
     if (!canUseWeatherDom()) return
     const weather = state.weather
@@ -104,10 +133,7 @@ export function updateWeatherUi(state: WeatherStateValue): void {
         applyWeatherEffects(weather)
     }
 
-    if (!stalenessIntervalId && typeof window !== 'undefined') {
-        clearStalenessInterval()
-        stalenessIntervalId = window.setInterval(() => updateWeatherStaleness(appState.weatherState?.lastFetch), 60000)
-    }
+    startStalenessPolling()
 }
 
 export function renderWeatherFallback(state: WeatherStateValue): void {
@@ -157,10 +183,6 @@ export function clearWeatherEffects(): void {
         mapOverlay.classList.remove('fog-active')
         mapOverlay.style.filter = ''
     }
-    if (lightningTimer !== null) {
-        window.clearTimeout(lightningTimer)
-        lightningTimer = null
-    }
 }
 
 function revealWeatherWidget(): void {
@@ -207,20 +229,29 @@ function scheduleLightning(): void {
         const lightning = document.getElementById('lightning-flash')
         if (lightning) {
             lightning.classList.add('flash')
-            window.setTimeout(() => lightning.classList.remove('flash'), 200)
+            // 200ms flash removal — track with registry so disposal cancels it.
+            _registry.timer(window.setTimeout(() => lightning.classList.remove('flash'), 200) as unknown as ReturnType<typeof setTimeout>)
         }
         if (generation === lightningGeneration) {
             flashCount += 1
-            lightningTimer = window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71cd) * 15000)
+            _registry.timer(window.setTimeout(flash, 5000 + seededUnit(flashCount, 0x71cd) * 15000) as unknown as ReturnType<typeof setTimeout>)
         }
     }
-    lightningTimer = window.setTimeout(flash, 3000)
+    _registry.timer(window.setTimeout(flash, 3000) as unknown as ReturnType<typeof setTimeout>)
 }
 
+/**
+ * Synchronously tear down all weather-ui timers and DOM state.
+ *
+ * W49c: replaces the previous implementation that manually tracked
+ * `stalenessIntervalId` / `lightningTimer` and the dynamic-import teardown
+ * path in AppBoot.svelte that swallowed errors. Now we delegate to the
+ * module-owned DisposableRegistry, which clears every registered timer
+ * in reverse order.
+ *
+ * Safe to call multiple times (registry's disposeAll is idempotent).
+ */
 export function disposeWeatherUi(): void {
-    clearStalenessInterval()
-    if (lightningTimer !== null) {
-        window.clearTimeout(lightningTimer)
-        lightningTimer = null
-    }
+    _registry.disposeAll()
+    _stalenessActive = false
 }

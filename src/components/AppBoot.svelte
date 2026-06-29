@@ -18,6 +18,7 @@
   import { teardownAppShell } from '@lib/orchestration/app-init';
   import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
   import { installErrorHandlers } from '@lib/error-boundary';
+  import { disposeWeatherUi } from '@lib/ui/weather-ui';
 
   type ContractWindow = Window & {
     __forceSemanticDiveContractSurface?: () => void;
@@ -100,9 +101,17 @@
       delete contractWindow.__forceSemanticDiveContractSurface;
       teardownAppShell();
       resetSemanticThreadWorker();
-      import('@lib/ui/weather-ui')
-        .then(({ disposeWeatherUi }) => disposeWeatherUi())
-        .catch(() => {});
+      // W49c: previously a dynamic import inside teardown — race condition
+      // plus `.catch(() => {})` that silently swallowed import failures.
+      // If the import ever failed, the 60-second weather staleness interval
+      // would leak forever. Now: direct call, no dynamic import, no silent
+      // catch. If dispose throws, log it (don't swallow) so HMR/dev tools
+      // surface the issue.
+      try {
+        disposeWeatherUi();
+      } catch (err) {
+        console.error('[AppBoot] disposeWeatherUi failed:', err);
+      }
     };
   });
 
