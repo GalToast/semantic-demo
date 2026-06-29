@@ -155,10 +155,10 @@ function setupMinimalState(pointsCount = 12) {
     state.navState.focusPocketRoleByIndex = new Map();
     state.navState.threadCandidates = [];
     state.navState.threadSource = 'semantic';
-    state.pocketMotionByIndex = new Map();
-    state.focusPocketAnimationFrameId = undefined;
-    state.pocketTransitionStartedAt = 0;
-    state.nodesAreSettling = false;
+    state.focusState.pocketMotionByIndex = new Map();
+    state.navState.focusPocketAnimationFrameId = undefined;
+    state.focusState.pocketTransitionStartedAt = 0;
+    state.focusState.nodesAreSettling = false;
     state.camera = null;
     state.navState.focusPocketAnimationFrameId = undefined;
   });
@@ -419,11 +419,11 @@ function testReducedMotionBreathing() {
     state.navState.focusedIndex = 0;
     state.navState.focusPocketMeta = { active: true };
   });
-  state.pocketMotionByIndex = new Map([
+  state.focusState.pocketMotionByIndex = new Map([
     [0, { role: 'anchor', delay: 0, duration: 800, speed: 0.42, breatheAmp: 0.0022, phase: 0 }],
     [1, { role: 'primary', delay: 52, duration: 980, speed: 0.24, breatheAmp: 0.0024, phase: 1.2 }],
   ]);
-  state.pocketTransitionStartedAt = 0;
+  state.focusState.pocketTransitionStartedAt = 0;
   _clockNow = 500; // mid-animation
 
   // positions buffer (flat x,y,z per node)
@@ -528,13 +528,13 @@ function testSyncRuntimeState() {
 
   // Temporarily mutate state
   const orig = { ...state };
-  state.nodesAreSettling = false;
+  state.focusState.nodesAreSettling = false;
   state.autoRotate = true;
 
   // Re-apply snapshot
   syncRuntimeState(snapshot);
 
-  assert(state.nodesAreSettling === true,  'nodesAreSettling synced');
+  assert(state.focusState.nodesAreSettling === true,  'nodesAreSettling synced');
   assert(state.autoRotate === false,        'autoRotate synced');
   const restored = getRuntimeStateSnapshot();
   assert(restored.nodesAreSettling === true, 'snapshot sees synced nodesAreSettling');
@@ -563,10 +563,10 @@ function teardownState() {
     state.navState.threadCandidates = [];
     state.navState.threadSource = 'semantic';
   });
-  state.pocketMotionByIndex  = new Map();
-  state.focusPocketAnimationFrameId = undefined;
-  state.pocketTransitionStartedAt = 0;
-  state.nodesAreSettling          = false;
+  state.focusState.pocketMotionByIndex  = new Map();
+  state.navState.focusPocketAnimationFrameId = undefined;
+  state.focusState.pocketTransitionStartedAt = 0;
+  state.focusState.nodesAreSettling          = false;
   state.camera                    = null;
 }
 
