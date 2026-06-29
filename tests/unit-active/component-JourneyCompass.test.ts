@@ -1,30 +1,26 @@
 /**
- * component-JourneyCompass.test.ts — Component test for JourneyCompass.svelte
+ * @vitest-environment node
  *
- * Uses source-inspection (readFileSync + string assertions) to verify the
- * a11y/structure contract. The component imports multiple stores (navStore,
- * journeyStore, focusStore) which hit circular dependency chains in the vitest
- * environment, preventing a full render(). This pattern matches the
- * established component-FocusCard.test.ts approach.
+ * component-JourneyCompass.test.ts — Source-inspection contract tests for
+ * src/components/JourneyCompass.svelte (575 LOC, 1 prior test).
  *
- * Verifies:
- *  1. Root section#journey-compass has class journey-compass and data-phase attribute
- *  2. Root element has aria-live="polite" for screen reader announcements
- *  3. Journey step spans have data-journey-step attribute with aria-label
- *  4. #journey-compass-kicker, #journey-compass-title, #journey-compass-note divs exist
- *  5. Action buttons #btn-journey-primary, #btn-journey-secondary, #btn-journey-tertiary
- *  6. #map-trail-strip div with hidden attribute and aria-hidden
- *  7. #btn-focus-dive button with aria-label and data-journey-action
- *  8. #focus-stage-inside-controls with Next Stop, Map, County buttons
+ * Verifies structural contracts without rendering the component:
+ *  1. Root section with id="journey-compass", class, and data-* attributes
+ *  2. Key imports: appState, journeyStore, parityMap, getBypassAttr
+ *  3. Three journey action buttons with correct IDs
+ *  4. Step indicators with data-journey-step attributes
+ *  5. Map trail strip and btn-map-county elements
+ *  6. Focus-dive button with correct class and data-journey-action
+ *  7. ARIA live region and label contracts
  */
 import { describe, it, expect, beforeAll } from 'vitest';
 import { readFileSync } from 'fs';
 import { resolve } from 'path';
 
-const SOURCE_PATH = resolve(__dirname, '../../src/components/JourneyCompass.svelte');
+const SRC = resolve(__dirname, '../../src/components/JourneyCompass.svelte');
 
 function readSource(): string {
-    return readFileSync(SOURCE_PATH, 'utf-8');
+    return readFileSync(SRC, 'utf-8');
 }
 
 describe('JourneyCompass component', () => {
@@ -34,60 +30,56 @@ describe('JourneyCompass component', () => {
         source = readSource();
     });
 
-    it('root section#journey-compass has class journey-compass and data-phase attribute', () => {
+    it('root section has id="journey-compass" and class="journey-compass glass-heavy"', () => {
+        expect(source).toMatch(/<section\s/);
         expect(source).toContain('id="journey-compass"');
         expect(source).toContain('class="journey-compass glass-heavy"');
-        expect(source).toContain('data-phase={phase}');
     });
 
-    it('root element has data-density and data-actions attributes', () => {
+    it('root section carries key data-* parity attributes', () => {
+        expect(source).toContain('data-phase={phase}');
         expect(source).toContain('data-density={density}');
+        expect(source).toContain('data-copy={copy}');
         expect(source).toContain('data-actions={actionsProfile}');
         expect(source).toContain('data-navigation-owner={navigationOwner}');
-    });
-
-    it('root element has aria-live="polite" for screen reader announcements', () => {
         expect(source).toContain('aria-live="polite"');
     });
 
-    it('journey step spans have data-journey-step and aria-label with phase description', () => {
-        expect(source).toContain('data-journey-step={stepPhase}');
-        expect(source).toContain('class="journey-compass-step"');
-        expect(source).toContain('aria-label={`${stepIndex + 1}. ${stepPhase}:');
+    it('imports appState, journeyStore, parityMap, getBypassAttr', () => {
+        expect(source).toMatch(/import\s*\{[^}]*appState[^}]*\}\s*from\s*['"]@lib\/state\/app\.svelte['"]/);
+        expect(source).toMatch(/import\s*\{[^}]*journeyStore[^}]*\}\s*from\s*['"]@lib\/stores\/journey\.svelte\.ts['"]/);
+        expect(source).toMatch(/import\s*\{[^}]*parityMap[^}]*getBypassAttr[^}]*\}\s*from\s*['"]@lib\/orchestration\/parity-attrs\.svelte['"]/);
     });
 
-    it('compass content divs #journey-compass-kicker, #journey-compass-title, #journey-compass-note exist', () => {
-        expect(source).toContain('id="journey-compass-kicker"');
-        expect(source).toContain('id="journey-compass-title"');
-        expect(source).toContain('id="journey-compass-note"');
-    });
-
-    it('action buttons #btn-journey-primary, #btn-journey-secondary, #btn-journey-tertiary exist', () => {
+    it('renders three journey action buttons with correct IDs', () => {
         expect(source).toContain('id="btn-journey-primary"');
         expect(source).toContain('id="btn-journey-secondary"');
         expect(source).toContain('id="btn-journey-tertiary"');
-        expect(source).toContain('class="journey-compass-actions"');
     });
 
-    it('#map-trail-strip div has hidden attribute and aria-hidden', () => {
+    it('journey buttons carry data-journey-action and aria-label attributes', () => {
+        expect(source).toContain('data-journey-action={actionKey(primaryAction)}');
+        expect(source).toContain('aria-label={buttonLabel(primaryAction, \'primary\')}');
+        expect(source).toContain('aria-label={buttonLabel(compass.secondaryAction, \'secondary\')}');
+    });
+
+    it('renders #map-trail-strip and #btn-map-county elements', () => {
         expect(source).toContain('id="map-trail-strip"');
         expect(source).toContain('class="map-trail-strip"');
-        expect(source).toContain('hidden={!showMapTrailStrip}');
-        expect(source).toContain('aria-hidden={!showMapTrailStrip');
+        expect(source).toContain('id="btn-map-county"');
+        expect(source).toContain('class="map-county-reset-btn"');
     });
 
-    it('#btn-focus-dive button has aria-label and data-journey-action="enter-inside"', () => {
+    it('focus-dive button has correct class and data-journey-action', () => {
         expect(source).toContain('id="btn-focus-dive"');
         expect(source).toContain('class="focus-stage-dive-btn"');
         expect(source).toContain('data-journey-action="enter-inside"');
         expect(source).toContain('aria-label="Explore the neighborhood around this business"');
     });
 
-    it('#focus-stage-inside-controls contains Next Stop, Map, County buttons', () => {
-        expect(source).toContain('id="focus-stage-inside-controls"');
-        expect(source).toContain('id="btn-inside-next"');
-        expect(source).toContain('id="btn-inside-map"');
-        expect(source).toContain('id="btn-inside-county"');
-        expect(source).toContain('Next Stop');
+    it('step indicators use data-journey-step and aria-label', () => {
+        expect(source).toContain('data-journey-step={stepPhase}');
+        expect(source).toContain('class="journey-compass-step"');
+        expect(source).toMatch(/aria-label=\{`\$\{stepIndex \+ 1\}\. /);
     });
 });

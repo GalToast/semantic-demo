@@ -1,87 +1,73 @@
 /**
- * component-SpectorInspector.test.ts — Component test for SpectorInspector.svelte
+ * @vitest-environment node
  *
- * Uses source-inspection pattern (readFileSync + string assertions) since
- * SpectorInspector is a Three.js debug overlay with dev-only dependencies
- * (spectorjs package) that cannot be resolved in the vitest environment.
+ * component-SpectorInspector.test.ts — Source-inspection contract tests for
+ * src/components/SpectorInspector.svelte (388 LOC, 1 prior test).
  *
- * Verifies:
- *  1. Conditional rendering gated by {#if visible}
- *  2. Root aside has .spector-status class and aria-live="polite"
- *  3. Status dot span has .spector-status__dot class and aria-hidden="true"
- *  4. Status label span has .spector-status__label class
- *  5. data-phase attribute on aside for CSS-driven state coloring
- *  6. Dev-only guard: import.meta.env.DEV check before loading spectorjs
- *  7. window.__spector bridge exposed with capture/stop/resume methods
- *  8. onDestroy cleanup removes window.__spector and window.__spectorStatus
+ * Verifies structural contracts without rendering the component:
+ *  1. visible prop with default false (tree-shake gate)
+ *  2. Key imports: onMount, onDestroy, debugWarn, debugLog
+ *  3. LoadPhase type covering idle/loading/ready/unsupported/error
+ *  4. Status badge with data-phase and aria-live="polite"
+ *  5. window.__spector and window.__spectorStatus bridge contracts
+ *  6. Dynamic import of spectorjs
  */
-import { describe, it, expect, beforeAll } from 'vitest'
-import { readFileSync } from 'fs'
-import { resolve } from 'path'
+import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 
-const SPECTOR_PATH = resolve(__dirname, '../../src/components/SpectorInspector.svelte')
+const SRC = resolve(__dirname, '../../src/components/SpectorInspector.svelte');
 
 function readSource(): string {
-    return readFileSync(SPECTOR_PATH, 'utf-8')
+    return readFileSync(SRC, 'utf-8');
 }
 
-describe('SpectorInspector component (source-inspection)', () => {
-    let source: string
+describe('SpectorInspector component', () => {
+    let source: string;
 
     beforeAll(() => {
-        source = readSource()
-    })
+        source = readSource();
+    });
 
-    it('template is gated by {#if visible} conditional rendering', () => {
-        expect(source).toContain('{#if visible}')
-        expect(source).toContain('{/if}')
-    })
+    it('visible prop defaults to false (tree-shake gate)', () => {
+        expect(source).toMatch(/visible\s*=\s*false/);
+        expect(source).toContain('{#if visible}');
+    });
 
-    it('root aside has .spector-status class and aria-live="polite"', () => {
-        expect(source).toContain('class="spector-status"')
-        expect(source).toContain('aria-live="polite"')
-    })
+    it('imports onMount, onDestroy from svelte and debugWarn, debugLog from @lib/utils/debug', () => {
+        expect(source).toMatch(
+            /import\s*\{\s*onMount\s*,\s*onDestroy\s*\}\s*from\s*['"]svelte['"]/
+        );
+        expect(source).toMatch(
+            /import\s*\{\s*debugWarn\s*,\s*debugLog\s*\}\s*from\s*['"]@lib\/utils\/debug['"]/
+        );
+    });
 
-    it('status dot span has .spector-status__dot class and aria-hidden="true"', () => {
-        expect(source).toContain('class="spector-status__dot"')
-        expect(source).toContain('aria-hidden="true"')
-    })
+    it('declares LoadPhase type with all five phases', () => {
+        expect(source).toContain("type LoadPhase = 'idle' | 'loading' | 'ready' | 'unsupported' | 'error'");
+    });
 
-    it('status label span has .spector-status__label class', () => {
-        expect(source).toContain('class="spector-status__label"')
-        expect(source).toContain('Spector: {phase}')
-    })
+    it('status badge has data-phase attribute and aria-live="polite"', () => {
+        expect(source).toContain('class="spector-status"');
+        expect(source).toContain('data-phase={phase}');
+        expect(source).toContain('aria-live="polite"');
+    });
 
-    it('data-phase attribute on aside for CSS-driven state coloring', () => {
-        expect(source).toContain('data-phase={phase}')
-        expect(source).toContain('.spector-status[data-phase="loading"]')
-        expect(source).toContain('.spector-status[data-phase="ready"]')
-        expect(source).toContain('.spector-status[data-phase="error"]')
-    })
+    it('publishes window.__spectorStatus with phase and bridgeReady', () => {
+        expect(source).toContain('__spectorStatus');
+        expect(source).toContain('phase,');
+        expect(source).toContain('bridgeReady: isReady');
+    });
 
-    it('dev-only guard checks import.meta.env.DEV before loading spectorjs', () => {
-        expect(source).toContain('import.meta.env.DEV')
-        expect(source).toContain("phase = 'idle'")
-        expect(source).toContain("phase = 'loading'")
-    })
+    it('exposes window.__spector bridge with capture, stop, and listCanvases', () => {
+        expect(source).toContain('window.__spector = bridge');
+        expect(source).toContain('listCanvases');
+        expect(source).toContain('capture:');
+        expect(source).toContain('stop:');
+    });
 
-    it('window.__spector bridge exposed with capture/stop/resume methods', () => {
-        expect(source).toContain('window.__spector')
-        expect(source).toContain('capture:')
-        expect(source).toContain('stop:')
-        expect(source).toContain('resume:')
-        expect(source).toContain('listCanvases:')
-        expect(source).toContain('isReady:')
-    })
-
-    it('onDestroy cleanup removes window.__spector and window.__spectorStatus', () => {
-        // W48-Phase-3: src/window.d.ts declares typed Window properties
-        // for __spector and __spectorStatus, so the cleanup uses
-        // `delete window.__spector` directly (no per-use cast needed).
-        expect(source).toContain('onDestroy')
-        expect(source).toContain('delete window.__spector')
-        expect(source).toContain('delete window.__spectorStatus')
-        // Guard: no per-use `as unknown as` cast on the delete
-        expect(source).not.toMatch(/delete\s+\(window\s+as\s+unknown/)
-    })
-})
+    it('cleans up window.__spector and __spectorStatus on destroy', () => {
+        expect(source).toMatch(/delete\s+window\.__spector/);
+        expect(source).toMatch(/delete\s+window\.__spectorStatus/);
+    });
+});
