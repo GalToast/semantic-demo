@@ -219,19 +219,13 @@ describe('camera.svelte.ts — Svelte 5 rune mock harness (Phase 6d)', () => {
         })
 
         it('startCameraTransition sets phase to "transitioning"', () => {
-            startCameraTransition({
-                to: { position: [1, 2, 3], target: [0, 0, 0] },
-                durationMs: 1000
-            })
+            startCameraTransition({ position: [1, 2, 3], target: [0, 0, 0] }, 1000)
             expect(isTransitioning()).toBe(true)
             expect(cameraTransitionPhase()).toBe('transitioning')
         })
 
         it('completeCameraTransition sets phase to "arrived" (not idle)', () => {
-            startCameraTransition({
-                to: { position: [1, 2, 3], target: [0, 0, 0] },
-                durationMs: 1000
-            })
+            startCameraTransition({ position: [1, 2, 3], target: [0, 0, 0] }, 1000)
             completeCameraTransition()
             expect(isTransitioning()).toBe(false)
             // completeCameraTransition marks the transition as arrived, NOT idle.
