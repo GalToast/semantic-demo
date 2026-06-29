@@ -48,6 +48,12 @@
         pointer-events: none;
     }
 
+    body[data-panel-surface='idle'] .share-toggle {
+        display: none;
+        visibility: hidden;
+        pointer-events: none;
+    }
+
     body.surface-idle .info-content {
         gap: 8px;
         padding: 14px 16px 18px;
