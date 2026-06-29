@@ -31,13 +31,11 @@ export function createPoints(): void {
     appState.pointsMesh = webglContext.pointsMesh
     appState.pointsMaterial = webglContext.pointsMaterial
     appState.nodeSporeMesh = webglContext.nodeSporeMesh
-    appState.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
     appState.nodeSporeMaterial = webglContext.nodeSporeMaterial
     if (engineState.state) {
         engineState.state.pointsMesh = webglContext.pointsMesh
         engineState.state.pointsMaterial = webglContext.pointsMaterial
         engineState.state.nodeSporeMesh = webglContext.nodeSporeMesh
-        engineState.state.nodeSporeHitMesh = webglContext.nodeSporeHitMesh
         engineState.state.nodeSporeMaterial = webglContext.nodeSporeMaterial
     }
 }

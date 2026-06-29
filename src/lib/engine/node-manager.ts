@@ -26,7 +26,6 @@ import {
     Points,
     LineBasicMaterial,
     LineLoop,
-    MeshBasicMaterial,
     Material
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
@@ -74,7 +73,6 @@ const THREAD_TINT_COLOR = SCENE_PALETTE.threadTint
 const _threadTintColor = new Color(THREAD_TINT_COLOR)
 
 const SPORE_SEGMENTS_VISIBLE = 6
-const SPORE_SEGMENTS_HIT_PROXY = 4
 
 // _nodeSporeObject is a module-level scratch Object3D used in setNodeSporeInstanceMatrix().
 // This is safe under the single-threaded JS execution model. If any future Web Worker
@@ -178,14 +176,6 @@ export function setNodeSporeInstanceMatrix(
     )
     _nodeSporeObject.updateMatrix()
     targetMesh.setMatrixAt(index, _nodeSporeObject.matrix)
-    const hitProxy = webglContext.nodeSporeHitMesh
-    if (targetMesh === webglContext.nodeSporeMesh && hitProxy) {
-        const hitBase = NODE_SPORE_BASE_RADIUS * (0.86 + seededUnit(index, 2.7) * 0.48) * 1.85
-        _nodeSporeObject.position.set(pos.x, pos.y, pos.z)
-        _nodeSporeObject.scale.set(hitBase, hitBase, hitBase)
-        _nodeSporeObject.updateMatrix()
-        hitProxy.setMatrixAt(index, _nodeSporeObject.matrix)
-    }
 }
 
 export function getNodeSporeColor(index: number, factor = 1) {
@@ -364,10 +354,7 @@ export function disposeNodeVisuals() {
         disposeObject3D(webglContext.nodeSporeMesh)
         webglContext.nodeSporeMesh = null
     }
-    if (webglContext.nodeSporeHitMesh) {
-        disposeObject3D(webglContext.nodeSporeHitMesh)
-        webglContext.nodeSporeHitMesh = null
-    }
+
     disposeTextures()
 }
 
@@ -410,24 +397,6 @@ export function createNodeSporeLayer() {
     sporeMesh.instanceMatrix.needsUpdate = true
     sporeMesh.visible = true
     webglContext.scene.add(sporeMesh)
-
-    const hitMat = new MeshBasicMaterial({
-        color: 0xffffff,
-        transparent: true,
-        opacity: 0.0,
-        depthWrite: false
-    })
-    const hitGeo = new SphereGeometry(1, SPORE_SEGMENTS_HIT_PROXY, SPORE_SEGMENTS_HIT_PROXY - 1)
-    const hitMesh = new InstancedMesh(hitGeo, hitMat, state.points.length)
-    hitMesh.name = 'node-spore-instanced-hit-proxy'
-    hitMesh.frustumCulled = false
-    hitMesh.instanceMatrix.setUsage(DynamicDrawUsage)
-    for (let i = 0; i < state.points.length; i += 1) {
-        setNodeSporeInstanceMatrix(i, hitMesh, 1.8)
-    }
-    hitMesh.instanceMatrix.needsUpdate = true
-    webglContext.nodeSporeHitMesh = hitMesh
-    webglContext.scene.add(hitMesh)
 }
 
 export function createPoints() {

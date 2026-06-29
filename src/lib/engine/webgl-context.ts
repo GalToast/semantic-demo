@@ -17,6 +17,7 @@ import type {
     PointLight
 } from 'three'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 
 export interface WebGLContextState {
     // ==== SCENE / THREE.JS ====
@@ -27,15 +28,14 @@ export interface WebGLContextState {
     pointsMesh: Points | null
     pointsMaterial: PointsMaterial | null
     nodeSporeMesh: InstancedMesh | null
-    nodeSporeHitMesh: InstancedMesh | null
     nodeSporeMaterial: Material | null
     rawPositionsBuffer: Float32Array | null
     rawClustersBuffer: Uint16Array | null
     myceliumLines: LineSegments | null
     myceliumGroup: Group | null
-    myceliumCoreLines: LineSegments | null
-    myceliumWispyLines: LineSegments | null
-    myceliumBridgeLines: LineSegments | null
+    myceliumCoreLines: LineSegments2 | null
+    myceliumWispyLines: LineSegments2 | null
+    myceliumBridgeLines: LineSegments2 | null
     focusSemanticLines: LineSegments | null
     focusSemanticConnectionPairs: Array<import('@lib/state/state-types').FocusConnectionSegment>
     semanticLensGroup: Group | null
@@ -79,7 +79,6 @@ export const webglContext: WebGLContextState = {
     pointsMesh: null,
     pointsMaterial: null,
     nodeSporeMesh: null,
-    nodeSporeHitMesh: null,
     nodeSporeMaterial: null,
     rawPositionsBuffer: null,
     rawClustersBuffer: null,

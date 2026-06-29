@@ -10,17 +10,10 @@
  */
 
 import { webglContext } from './webgl-context'
-import {
-    Vector3,
-    Object3D,
-    BufferGeometry,
-    Float32BufferAttribute,
-    LineSegments,
-    LineBasicMaterial,
-    NormalBlending,
-    Group,
-    BufferAttribute
-} from 'three'
+import { Vector3, Object3D, LineSegments, NormalBlending, Group, BufferAttribute } from 'three'
+import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
+import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import { CONFIG } from './config'
@@ -291,18 +284,18 @@ export function getGroupLineSegmentCount(group: Group) {
     return total
 }
 
-function createLineSegments(positions: number[], colors: number[], opacity: number) {
+function createLineSegments(positions: number[], opacity: number, linewidth: number) {
     if (!positions.length) return null
-    const geometry = new BufferGeometry()
-    geometry.setAttribute('position', new Float32BufferAttribute(positions, 3))
-    geometry.setAttribute('color', new Float32BufferAttribute(colors, 3))
-    return new LineSegments(
+    const geometry = new LineGeometry()
+    geometry.setPositions(positions)
+    return new LineSegments2(
         geometry,
-        new LineBasicMaterial({
-            vertexColors: true,
+        new LineMaterial({
+            color: CONFIG.COLORS.threadTint ?? 0x4ecdc4,
+            linewidth,
+            worldUnits: false,
             transparent: true,
             opacity,
-            linewidth: 1,
             depthWrite: true,
             blending: NormalBlending
         })
@@ -333,18 +326,30 @@ export function getMyceliumPresentationProfile() {
         // opacity appeared nearly invisible). Bumped to ~3-5× the previous
         // base opacities so the mycelium reads as a clear ambient texture while
         // still staying subordinate to points and spore materials.
-        return { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04 }
+        return { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04, linewidth: { core: 2.5, wispy: 1.0, bridge: 1.8 } }
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
-        return { core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008 }
+        return {
+            core: 0.16,
+            wispy: 0.055,
+            bridge: 0.085,
+            pulse: 0.008,
+            linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 }
+        }
     }
     if (state.searchState.currentSearchSummary || state.searchState.searchGlowActive) {
-        return { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 }
+        return {
+            core: 0.32,
+            wispy: 0.14,
+            bridge: 0.22,
+            pulse: 0.072,
+            linewidth: { core: 2.5, wispy: 1.0, bridge: 1.8 }
+        }
     }
     if (state.trailDepth >= 1) {
-        return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+        return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044, linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 } }
     }
-    return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+    return { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044, linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 } }
 }
 
 // ── Public API ──────────────────────────────────────────────────────────────
@@ -439,9 +444,9 @@ export function createMycelium() {
 
     webglContext.myceliumGroup = new Group()
     const profile = getMyceliumPresentationProfile()
-    webglContext.myceliumCoreLines = createLineSegments(coreConnections, coreColors, profile.core)
-    webglContext.myceliumWispyLines = createLineSegments(wispyConnections, wispyColors, profile.wispy)
-    webglContext.myceliumBridgeLines = createLineSegments(bridgeConnections, bridgeColors, profile.bridge)
+    webglContext.myceliumCoreLines = createLineSegments(coreConnections, profile.core, profile.linewidth.core)
+    webglContext.myceliumWispyLines = createLineSegments(wispyConnections, profile.wispy, profile.linewidth.wispy)
+    webglContext.myceliumBridgeLines = createLineSegments(bridgeConnections, profile.bridge, profile.linewidth.bridge)
 
     if (webglContext.myceliumCoreLines) webglContext.myceliumGroup.add(webglContext.myceliumCoreLines)
     if (webglContext.myceliumWispyLines) webglContext.myceliumGroup.add(webglContext.myceliumWispyLines)
@@ -459,9 +464,11 @@ export function createMycelium() {
 export function updateMyceliumThreads(): void {
     if (!webglContext.myceliumConnectionPairs?.length) return
 
-    const updateLayer = (line: LineSegments | null, layer: number): void => {
-        const positionAttr = line?.geometry?.attributes?.position as BufferAttribute | undefined
-        if (!positionAttr) return
+    const updateLayer = (line: LineSegments2 | null, layer: number): void => {
+        const geom = line?.geometry as LineGeometry | undefined
+        const startAttr = geom?.getAttribute('instanceStart') as BufferAttribute | undefined
+        const endAttr = geom?.getAttribute('instanceEnd') as BufferAttribute | undefined
+        if (!startAttr || !endAttr) return
 
         const nextPositions: number[] = []
         const nextColors: number[] = []
@@ -470,19 +477,31 @@ export function updateMyceliumThreads(): void {
             pushBezierLinePair(nextPositions, nextColors, { a: pair.a, b: pair.b }, 1, 5)
         })
 
-        const array = positionAttr.array as Float32Array
-        const limit = Math.min(array.length, nextPositions.length)
-        for (let i = 0; i < limit; i += 1) {
-            array[i] = Number.isFinite(nextPositions[i]) ? nextPositions[i]! : 0
+        const startArray = startAttr.array as Float32Array
+        const endArray = endAttr.array as Float32Array
+        const maxSegs = Math.min(startArray.length / 3, endArray.length / 3, nextPositions.length / 6)
+        for (let s = 0; s < maxSegs; s += 1) {
+            const pi = s * 6
+            const si = s * 3
+            startArray[si] = Number.isFinite(nextPositions[pi]) ? nextPositions[pi]! : 0
+            startArray[si + 1] = Number.isFinite(nextPositions[pi + 1]) ? nextPositions[pi + 1]! : 0
+            startArray[si + 2] = Number.isFinite(nextPositions[pi + 2]) ? nextPositions[pi + 2]! : 0
+            endArray[si] = Number.isFinite(nextPositions[pi + 3]) ? nextPositions[pi + 3]! : 0
+            endArray[si + 1] = Number.isFinite(nextPositions[pi + 4]) ? nextPositions[pi + 4]! : 0
+            endArray[si + 2] = Number.isFinite(nextPositions[pi + 5]) ? nextPositions[pi + 5]! : 0
         }
-        for (let i = limit; i < array.length; i += 1) {
-            array[i] = 0
+        for (let s = maxSegs * 3; s < startArray.length; s += 1) {
+            startArray[s] = 0
         }
-        positionAttr.needsUpdate = true
+        for (let s = maxSegs * 3; s < endArray.length; s += 1) {
+            endArray[s] = 0
+        }
+        startAttr.needsUpdate = true
+        endAttr.needsUpdate = true
     }
 
-    updateLayer(webglContext.myceliumCoreLines, 0)
-    updateLayer(webglContext.myceliumWispyLines, 1)
-    updateLayer(webglContext.myceliumBridgeLines, 2)
+    updateLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0)
+    updateLayer(webglContext.myceliumWispyLines as unknown as LineSegments2, 1)
+    updateLayer(webglContext.myceliumBridgeLines as unknown as LineSegments2, 2)
     state.myceliumDirty = false
 }
