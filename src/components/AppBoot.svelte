@@ -19,6 +19,7 @@
   import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
   import { installErrorHandlers } from '@lib/error-boundary';
   import { disposeWeatherUi } from '@lib/ui/weather-ui';
+  import { debugError } from '@lib/utils/debug';
 
   type ContractWindow = Window & {
     __forceSemanticDiveContractSurface?: () => void;
@@ -110,7 +111,7 @@
       try {
         disposeWeatherUi();
       } catch (err) {
-        console.error('[AppBoot] disposeWeatherUi failed:', err);
+        debugError('[AppBoot] disposeWeatherUi failed:', err);
       }
     };
   });
