@@ -239,7 +239,48 @@
         </svg>
 
         <!-- Svelte mounts here -->
-        <div id="app"></div>
+        <div id="app">
+            <!-- Inline first-paint loading state: shown immediately while the
+                 JS bundle downloads/parses; replaced by the Svelte app on mount. -->
+            <div
+                id="loading-overlay"
+                style="
+                    position: fixed;
+                    inset: 0;
+                    display: grid;
+                    place-items: center;
+                    background: #071018;
+                    color: #e0f0f0;
+                    z-index: 3000;
+                    font-family: 'Nunito Sans', system-ui, sans-serif;
+                "
+            >
+                <div style="text-align: center; padding: 2rem;">
+                    <div
+                        style="
+                            inline-size: 48px;
+                            block-size: 48px;
+                            margin: 0 auto 1rem;
+                            border: 3px solid rgba(224, 240, 240, 0.15);
+                            border-top-color: #61d8ca;
+                            border-radius: 50%;
+                            animation: semantic-spin 1s linear infinite;
+                        "
+                    ></div>
+                    <p style="margin: 0; font-size: 1rem;">Montgomery County Semantic Explorer</p>
+                    <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: rgba(224, 240, 240, 0.68);">
+                        Loading 8,406 business records…
+                    </p>
+                </div>
+            </div>
+            <style>
+                @keyframes semantic-spin {
+                    to {
+                        transform: rotate(360deg);
+                    }
+                }
+            </style>
+        </div>
 
         <!--
     Entry point: resolves to src/main.ts because vite root is src/.
