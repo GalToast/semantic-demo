@@ -781,9 +781,10 @@ test.describe('Widget Journey Tests — dev mock banner', () => {
 import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
 import { dirname, resolve } from 'node:path'
-import { navStore } from '@lib/stores/navigation.svelte'
-import { appState } from '@lib/state/app.svelte'
-import { focusStore } from '@lib/stores/focus.svelte'
+// NOTE: do not import @lib source modules at the top level of Playwright test
+// files. Svelte 5 runes ($state) and Vite worker URL queries are not valid in
+// Node's module loader. Access runtime state via window globals inside
+// page.evaluate() instead.
 
 const __filename2 = fileURLToPath(import.meta.url)
 const __dirname2 = dirname(__filename2)
@@ -1118,6 +1119,59 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
     })
 
     /**
+     * 22b. Focusing a node via the real focus path populates focusPocketIndices.
+     *
+     * Regression catch: for a stretch the focus pocket was only built when
+     * tests manually set focusPocketIndices. The real user path (focusOnNode)
+     * published CAMERA_NODE_FOCUSED but no subscriber called
+     * applyLocalNeighborhoodFocus, so the pocket stayed empty.
+     */
+    test("22b. real focus path populates the focus pocket", async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Do not gate this test on the 3D scene/weather widget: headless
+        // Chromium may not expose WebGL, leaving the loading overlay visible
+        // while data still loads in the background. Programmatic state
+        // mutation via page.evaluate works regardless of overlay pointer events.
+
+        // Poll until business records are available.
+        await page.waitForFunction(
+            () => {
+                const app = window.__APP_STATE__
+                return (app?.points?.length ?? 0) > 0
+            },
+            null,
+            { timeout: 30000 }
+        )
+
+        // Drive focus through the real user action exposed on window.
+        const focusResult = await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                return { error: 'focusOnNode not exposed' }
+            }
+            return { ok: actions.focusOnNode(0) }
+        })
+        expect(focusResult.ok, `focusOnNode should return true, got ${JSON.stringify(focusResult)}`).toBe(true)
+
+        // Give the subscriber a moment to run applyLocalNeighborhoodFocus.
+        await page.waitForTimeout(500)
+
+        const pocket = await page.evaluate(() => {
+            const app = window.__APP_STATE__
+            return {
+                focusedIndex: app?.navState?.focusedIndex,
+                focusPocketCount: app?.navState?.focusPocketIndices?.length ?? 0,
+                threadCandidatesCount: app?.navState?.threadCandidates?.length ?? 0
+            }
+        })
+
+        expect(pocket.focusedIndex).toBe(0)
+        expect(pocket.focusPocketCount, 'focusPocketIndices should be populated after focusOnNode').toBeGreaterThan(0)
+        expect(pocket.threadCandidatesCount, 'threadCandidates should be populated after focusOnNode').toBeGreaterThan(0)
+    })
+
+    /**
      * ProximityLegend: renders on first visit (fresh localStorage),
      * is dismissible, and disappears after dismissal.
      */
@@ -1188,6 +1242,8 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 }
             ]
             // Update navStore (triggers Svelte reactivity for lazy-loaded components)
+            const navStore = window.__navStore__
+            const appState = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
             navStore.update((s) => ({
                 ...s,
                 ...{
@@ -1198,14 +1254,16 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                     focusPocketIndices: candidates.map((c) => c.index)
                 }
             }))
-            Object.assign(appState.navState, {
-                mode: 'focus',
-                surface: 'focus-search',
-                focusedIndex: idx,
-                threadSource: 'semantic',
-                focusPocketIndices: candidates.map((c) => c.index),
-                threadCandidates: candidates
-            })
+            if (appState) {
+                Object.assign(appState.navState, {
+                    mode: 'focus',
+                    surface: 'focus-search',
+                    focusedIndex: idx,
+                    threadSource: 'semantic',
+                    focusPocketIndices: candidates.map((c) => c.index),
+                    threadCandidates: candidates
+                })
+            }
             // Update appState.navState directly for components that read it
             const live = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
             if (live) {
@@ -1305,6 +1363,8 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                     relationshipAxis: 'support-link'
                 }
             ]
+            const navStore = window.__navStore__
+            const appState = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
             navStore.update((s) => ({
                 ...s,
                 ...{
@@ -1315,14 +1375,16 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                     focusPocketIndices: candidates.map((c) => c.index)
                 }
             }))
-            Object.assign(appState.navState, {
-                mode: 'focus',
-                surface: 'focus-search',
-                focusedIndex: idx,
-                threadSource: 'semantic',
-                focusPocketIndices: candidates.map((c) => c.index),
-                threadCandidates: candidates
-            })
+            if (appState) {
+                Object.assign(appState.navState, {
+                    mode: 'focus',
+                    surface: 'focus-search',
+                    focusedIndex: idx,
+                    threadSource: 'semantic',
+                    focusPocketIndices: candidates.map((c) => c.index),
+                    threadCandidates: candidates
+                })
+            }
             const live = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
             if (live) {
                 live.navState.mode = 'focus'
@@ -1334,6 +1396,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 live.navState.focusPocketRoleByIndex = new Map(candidates.map((c) => [c.index, c.relationshipRole]))
             }
             // FocusPocketA11y gates on focusStore().pocketNodes.length > 0
+            const focusStore = window.__focusStore__
             const nodes = candidates
                 .map((c) => c.index)
                 .filter((i) => typeof i === 'number')
