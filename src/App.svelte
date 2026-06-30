@@ -587,34 +587,29 @@
     pointer-events: none;
   }
 
-  /* A2-6: Visible H1 page title — first heading on the page.
-   * Owns the top 36px of the viewport as a fixed banner. The header's
-   * absolutely-positioned chip rail (top: 0) is pushed below it via the
-   * sibling selector so the two never overlap. */
+  /* A2-6: H1 page title — first heading on the page.
+   * Styled as a small, unobtrusive page-title rather than a competing
+   * banner. The header below carries the visible brand + chip rail;
+   * the h1 provides the same identity to screen readers and search
+   * engines without visually duplicating the chrome row. Sits inline at
+   * the top-left of the viewport (in flow at top: 0). The header chip
+   * rail (position: absolute; top: 0; z-index: 800) covers any overlap,
+   * so this can sit at natural document flow without conflict. */
   .app-title {
     font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 1.1rem;
-    font-weight: 700;
+    font-size: 0.78rem;
+    font-weight: 600;
     line-height: 1;
-    color: #e0f0f0;
-    box-sizing: border-box;
-    height: 36px;
-    padding: 0.5rem 1rem;
+    letter-spacing: 0.02em;
+    color: rgba(224, 240, 240, 0.65);
+    padding: 0.6rem 1rem 0.35rem;
     margin: 0;
-    background: rgba(7, 16, 24, 0.85);
-    border-bottom: 1px solid rgba(78, 205, 196, 0.12);
-    position: relative;
-    z-index: var(--z-legend, 50);
+    max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-  }
-  /* Push the header chip rail below the h1 banner so the two top
-   * chrome rows don't visually overlap. Uses :global(.app-header) because
-   * the header class lives inside Header.svelte's CSS scope. */
-  :global(.app-title + .app-header),
-  :global(.app-title ~ .app-header) {
-    top: 36px;
+    position: relative;
+    z-index: var(--z-legend, 50);
   }
 
   .semantic-explorer.reduced-motion {
