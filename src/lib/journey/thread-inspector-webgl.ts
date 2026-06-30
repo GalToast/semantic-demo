@@ -4,14 +4,13 @@
  * Ported from:
  * WebGL line geometry and shader setup for the thread inspector.
  *
- * Type-safety notes (W46-era tightening):
- *   - The file's `appState as any` cast at module load is an intentional
- *     escape hatch for the engine-bridge fields (Scene/Group/Vector3[]) which
- *     are still loosely typed at the appState level. Every getter below
- *     narrows the return type at the boundary so callers don't repeat
- *     the cast.
- *   - Three.js objects are typed via the actual classes (LineSegments, Sprite,
- *     Group, Object3D) rather than `as any`.
+ * Type-safety notes (W46-era tightening; current state 2026-06-30):
+ *   - `state` is a plain alias for `appState` (no module-level cast).
+ *     Engine-bridge fields (Scene/Group/Vector3[]) are loosely typed at
+ *     the appState level, so each local selector below narrows the
+ *     return type at the boundary so callers don't repeat the cast.
+ *   - Three.js objects are typed via the actual classes (LineSegments,
+ *     Sprite, Group, Object3D) rather than `as any`.
  *   - Duck-type checks on Three.js child objects are replaced with
  *     `instanceof` so the typechecker enforces exhaustiveness.
  *
@@ -41,10 +40,9 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 
 // ── Local selectors (replacing js/state/selectors/index.ts imports) ─────────
 //
-// `state` is `appState as any` because the engine surface in appState is
-// still typed loosely (engine files are JS-bridged). Each getter below
-// narrows the return type at the boundary so callers don't need to repeat
-// the cast.
+// `state` is a plain alias for `appState` (no cast at the alias site).
+// Each getter below narrows the return type at the boundary so callers
+// don't need to repeat the cast at use sites.
 
 const getNavState = () => state.navState
 const getFocusConstellationMotifs = (): Record<string, any> => FOCUS_CONSTELLATION_MOTIFS

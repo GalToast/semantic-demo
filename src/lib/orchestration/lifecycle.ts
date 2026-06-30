@@ -64,8 +64,6 @@ export {
     setMyceliumMode,
     setTrailDepth,
     setSemanticDiveMode,
-    getBloomIndices,
-    getBridgeIndices,
     resetExplorationFocus,
     resetNodePositions,
     resetExperienceState,

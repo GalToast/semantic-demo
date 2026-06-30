@@ -23,10 +23,7 @@ import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } f
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
 import { publish, EVENTS } from '../orchestration/event-bus'
-import {
-    computeParityAttributes,
-    applyParityAttributes
-} from '../orchestration/parity-attrs.svelte.ts'
+import { computeParityAttributes, applyParityAttributes } from '../orchestration/parity-attrs.svelte.ts'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
 
@@ -177,28 +174,6 @@ export function refreshCompositionState(): void {
  */
 export function updateExplorationUi(): void {
     refreshCompositionState()
-}
-
-// ── Bloom / Bridge Indices (legacy state bridge) ────────────────────────────
-
-/**
- * Get bloom indices from the legacy global state.
- * The bloom/bridge computation lives in the legacy lifecycle.js (recomputeBloomIndices)
- * and operates on the global state.points array, so we bridge through window.
- */
-export function getBloomIndices(): number[] {
-    const s = window.__semanticState as { bloomIndices?: Set<number> } | undefined
-    if (!s?.bloomIndices) return []
-    return Array.from(s.bloomIndices)
-}
-
-/**
- * Get bridge indices from the legacy global state.
- */
-export function getBridgeIndices(): number[] {
-    const s = window.__semanticState as { bridgeIndices?: Set<number> } | undefined
-    if (!s?.bridgeIndices) return []
-    return Array.from(s.bridgeIndices)
 }
 
 // ── Focus Reset (ported from ) ─────────────────
