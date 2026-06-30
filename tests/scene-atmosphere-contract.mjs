@@ -22,6 +22,9 @@ try {
 const rendererSrc = src + '\n' + sceneInitSrc
 const nodeManagerSrc = readFileSync(resolveSource('src/lib/engine/node-manager.ts', CWD), 'utf8')
 const interactionSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-interaction-visuals.ts'), 'utf8')
+const lensGlowSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-lens-glow-spoke.ts'), 'utf8')
+const frameUpdateSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-engine-frame-updates.ts'), 'utf8')
+const coreSrc = readFileSync(resolve(CWD, 'src/lib/engine/three-engine-core.ts'), 'utf8')
 const shellCss = readFileSync(resolve(CWD, 'css/shell.css'), 'utf8')
 const biofieldCss = readFileSync(resolve(CWD, 'src/lib/css/biofield.css'), 'utf8')
 const semanticManifoldSrc =
@@ -74,25 +77,25 @@ const checks = [
     {
         name: 'semantic lens score uniform exists before render loop updates it',
         pass:
-            /uSignalScore:\s*\{\s*value:\s*0\s*\}/.test(interactionSrc) &&
+            /uSignalScore:\s*\{\s*value:\s*0\s*\}/.test(lensGlowSrc) &&
             /glowUniforms\.uSignalScore/.test(interactionSrc)
     },
     {
         name: 'base point and spore opacity are driven by scene atmosphere',
         pass:
             /opacity:\s*SCENE_ATMOSPHERE\.pointOpacityScale/.test(nodeManagerSrc) &&
-            /const\s+isFocused\s*=\s*Number\.isFinite\(_state\?\.focusedNode\)/.test(src) &&
-            /const\s+isSemanticDive\s*=\s*_state\?\.semanticDiveMode\s*===\s*true\s*\|\|\s*\(_state\?\.trailDepth\s*\?\?\s*0\)\s*>=\s*2/.test(
-                src
+            /const\s+isFocused\s*=\s*Number\.isFinite\(state\?\.focusedNode\)/.test(frameUpdateSrc) &&
+            /const\s+isSemanticDive\s*=\s*state\?\.semanticDiveMode\s*===\s*true\s*\|\|\s*\(state\?\.trailDepth\s*\?\?\s*0\)\s*>=\s*2/.test(
+                frameUpdateSrc
             ) &&
-            /const\s+pointsOpacityScale\s*=\s*isSemanticDive\s*\?\s*0\.06\s*:\s*isFocused/.test(src) &&
+            /const\s+pointsOpacityScale\s*=\s*isSemanticDive\s*\?\s*0\.06\s*:\s*isFocused\s*\?\s*0\.46\s*:\s*1\.0/.test(frameUpdateSrc) &&
             /opacity:\s*SCENE_ATMOSPHERE\.sporeOpacity/.test(nodeManagerSrc) &&
-            /const\s+focusBoost\s*=\s*isSemanticDive\s*\?\s*0\.22\s*:\s*1\.0/.test(src) &&
-            /const\s+targetSporeOpacity\s*=\s*\(SCENE_ATMOSPHERE\.sporeOpacity\s*\?\?\s*0\.5\)\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(
-                src
+            /const\s+focusBoost\s*=\s*isSemanticDive\s*\?\s*0\.22\s*:\s*1\.0/.test(coreSrc) &&
+            /const\s+targetSporeOpacity\s*=\s*\(PORT_SCENE_ATMOSPHERE\.sporeOpacity\s*\?\?\s*0\.5\)\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(
+                coreSrc
             ) &&
             /webglContext\.nodeSporeMaterial\.opacity\s*\+=\s*\(targetSporeOpacity\s*-\s*webglContext\.nodeSporeMaterial\.opacity\)\s*\*\s*0\.12/.test(
-                src
+                coreSrc
             )
     },
     {
