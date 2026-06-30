@@ -54,7 +54,7 @@ describe('engine-boundary refactor / Tier D second bite / Three.js handles batch
         { field: 'myceliumCoreLines', type: 'LineSegments2' },
         { field: 'myceliumWispyLines', type: 'LineSegments2' },
         { field: 'myceliumBridgeLines', type: 'LineSegments2' },
-        { field: 'focusSemanticLines', type: 'LineSegments' },
+        { field: 'focusSemanticLines', type: 'Line2' },
         { field: 'focusAnchorGroup', type: 'Group' },
         { field: 'focusAnchorRingMesh', type: 'Mesh' },
         { field: 'focusAnchorHaloSprite', type: 'Sprite' },

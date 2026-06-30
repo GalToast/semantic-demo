@@ -407,7 +407,7 @@ export function refreshFocusSemanticOverlay(): void {
         lineMaterial.uniforms.denseBundleMode.value = denseBundleMode
     }
 
-    state.focusSemanticLines = new Line2(lineGeometry, lineMaterial) as LineSegments
+    state.focusSemanticLines = new Line2(lineGeometry, lineMaterial)
     state.focusSemanticLines!.computeLineDistances()
     state.focusSemanticLines!.userData = {
         focusedIndex: focusIndex,

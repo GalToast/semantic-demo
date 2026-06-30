@@ -61,6 +61,7 @@ import type {
     Texture
 } from 'three'
 import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
+import type { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { validateStateProperty, STATE_VALIDATION_STRICT, validateAppStateEnumFields } from './state-validation'
 import { debugWarn } from '@lib/utils/debug'
@@ -205,7 +206,7 @@ class AppState {
     myceliumCoreLines = $state<LineSegments2 | null>(null)
     myceliumWispyLines = $state<LineSegments2 | null>(null)
     myceliumBridgeLines = $state<LineSegments2 | null>(null)
-    focusSemanticLines = $state<LineSegments | null>(null)
+    focusSemanticLines = $state<Line2 | null>(null)
     focusAnchorGroup = $state<Group | null>(null)
     focusAnchorRingMesh = $state<Mesh | null>(null)
     focusAnchorHaloSprite = $state<Sprite | null>(null)
