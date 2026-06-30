@@ -500,11 +500,6 @@ export function setSceneRevealActive(active: boolean): void {
     writeNavStateMirror({ sceneRevealActive: active, sceneRevealStartedAt: startedAt })
 }
 
-/** Set the active story prompt (for UI sync). */
-export function setActiveStoryPrompt(_id: string | null): void {
-    // Logic to handle story prompt mapping if needed
-}
-
 /** Set the mycelium mode (dormant|active|overdrive). */
 export function setMyceliumMode(mode: string, _options?: Record<string, unknown>): void {
     writeNavStateMirror({ myceliumMode: mode })

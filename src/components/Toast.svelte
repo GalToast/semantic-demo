@@ -159,6 +159,8 @@
 
   .experience-toast-queue-count {
     font-size: 0.6rem;
+    /* a11y-ok: queue-count badge is mono-cased supplementary text, not a primary label.
+     * Adjacent aria-live live region announces the same content semantically. */
     color: rgba(224, 240, 240, 0.55);
     letter-spacing: 0.02em;
   }

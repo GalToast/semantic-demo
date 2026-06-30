@@ -23,6 +23,15 @@
     refreshMapRouteEmbodiment
   } from '@lib/engine/map-state';
 
+  /**
+   * Leaflet's invalidateSize signature isn't visible from appState.map's
+   * loose Record<string, unknown> type. Mirrors the structural-typing
+   * pattern in @lib/engine/map-state.ts (LeafletMapWithFitBounds).
+   */
+  interface LeafletMapWithInvalidateSize {
+    invalidateSize?: () => void
+  }
+
   type MapStatus = 'loading' | 'ready' | 'error';
 
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
@@ -121,7 +130,7 @@
       centerMapOnRouteAnchor();
 
       requestAnimationFrame(() => {
-        const map = appState.map as unknown as { invalidateSize?: () => void } | undefined;
+        const map = appState.map as unknown as LeafletMapWithInvalidateSize | undefined;
         map?.invalidateSize?.();
         _registry.schedule(120, () => map?.invalidateSize?.());
       });
