@@ -29,15 +29,6 @@ const JOURNEY_CANVAS_INTERACTION_PATH = resolveSource('src/lib/journey/canvas-in
 const JOURNEY_CANVAS_NODE_PICKING_PATH = resolveSource('src/lib/journey/canvas-node-picking.ts', SEMDEMO_ROOT)
 const JOURNEY_CANVAS_HIT_TEST_PATH = resolveSource('src/lib/journey/canvas-hit-test.ts', SEMDEMO_ROOT)
 const THREAD_INSPECTOR_PATH = resolveSource('src/lib/journey/thread-inspector.ts', SEMDEMO_ROOT)
-const threadInspectorCombinedSrc = () => {
-    const paths = [
-        resolveSource('src/lib/journey/thread-inspector-state.ts', SEMDEMO_ROOT),
-        resolveSource('src/lib/journey/thread-inspector-webgl.ts', SEMDEMO_ROOT),
-        resolveSource('src/lib/journey/thread-inspector-render.ts', SEMDEMO_ROOT),
-        resolveSource('src/lib/journey/thread-inspector-adapter.ts', SEMDEMO_ROOT)
-    ]
-    return paths.map((p) => fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : '').join('\n')
-}
 const JOURNEY_THREAD_MODEL_PATH = resolveSource('src/lib/journey/thread-model.ts', SEMDEMO_ROOT)
 // retired journey-thread-model-bridge.ts in Svelte 5 modernization sweep
 // @ts-ignore
@@ -109,7 +100,7 @@ function testNoGhostTeardownReferences() {
     console.log('\n[TEST] No ghost teardown references in journey.js and thread-inspector.ts')
 
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
     const ghostTerms = [
         'ghostTeardown',
@@ -303,17 +294,14 @@ function testGetCanvasNodePickingMode() {
 function testThreadInspectorSemanticFirst() {
     console.log('\n[TEST] Thread-inspector dual candidates - semantic-first strategy')
 
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const journeyModelSrc = fs.readFileSync(JOURNEY_THREAD_MODEL_PATH, 'utf-8')
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
 
-    // Thread inspector split into state/webgl/render/adapter; the helpers are
-    // re-exported by journey.ts and neighborhood.ts as the public surface.
+    // Both files must have getSemanticThreadCandidates
     assert(
-        threadInspectorSrc.includes('getSemanticThreadCandidates') ||
-            journeySrc.includes('getSemanticThreadCandidates') ||
-            fs.readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8').includes('getSemanticThreadCandidates'),
-        'thread-inspector or journey re-exports getSemanticThreadCandidates'
+        threadInspectorSrc.includes('getSemanticThreadCandidates'),
+        'thread-inspector re-exports getSemanticThreadCandidates'
     )
     assertContains(
         journeyModelSrc,
@@ -321,11 +309,10 @@ function testThreadInspectorSemanticFirst() {
         'journey-thread-model exports getSemanticThreadCandidates'
     )
 
+    // Both must have getThreadCandidatesForIndex
     assert(
-        threadInspectorSrc.includes('getThreadCandidatesForIndex') ||
-            journeySrc.includes('getThreadCandidatesForIndex') ||
-            fs.readFileSync(resolveSource('src/lib/journey/neighborhood.ts', SEMDEMO_ROOT), 'utf-8').includes('getThreadCandidatesForIndex'),
-        'thread-inspector or journey re-exports getThreadCandidatesForIndex'
+        threadInspectorSrc.includes('getThreadCandidatesForIndex'),
+        'thread-inspector re-exports getThreadCandidatesForIndex'
     )
     assertContains(
         journeyModelSrc,
@@ -377,7 +364,7 @@ function testSharedStrandContinuityOwner() {
     console.log('\n[TEST] Shared strand-continuity owner')
 
     const journeySrc = fs.readFileSync(JOURNEY_PATH, 'utf-8')
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const strandContinuityPath = resolveSource('src/lib/utils/strand-continuity.ts', SEMDEMO_ROOT)
     const strandContinuitySrc = fs.readFileSync(strandContinuityPath, 'utf-8')
 
@@ -440,7 +427,7 @@ function testSharedStrandContinuityOwner() {
 function testWave60ExploreThreadNeighborSettleBehavior() {
     console.log('\n[TEST] Wave60: exploreThreadNeighbor stranded phase=arrived fix + followTargetsCurrent')
 
-    const tiSrc = threadInspectorCombinedSrc()
+    const tiSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
 
     // Timer storage is centralized behind named setTimer/clearTimer helpers.
     // setTimer replaces any existing timer for the same purpose before scheduling.
@@ -533,7 +520,7 @@ function testJourneyTextHelpersExtraction() {
 function testThreadInspectorTextHelpersExtraction() {
     console.log('\n[TEST] thread-inspector text helpers extraction (via journey-text-helpers)')
 
-    const threadInspectorSrc = threadInspectorCombinedSrc()
+    const threadInspectorSrc = fs.readFileSync(THREAD_INSPECTOR_PATH, 'utf-8')
     const helperSrc = fs.readFileSync(resolveSource('src/lib/journey/text-helpers.ts', SEMDEMO_ROOT), 'utf-8')
 
     assertContains(
