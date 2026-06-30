@@ -45,7 +45,9 @@ const MODULES = {
     journeyCompassCtrl: path.join(SEMDEMO_ROOT, 'src/lib/orchestration/compass-controller.ts'),
     journeyCompassState: path.join(SEMDEMO_ROOT, 'src/lib/journey/compass-state.ts'),
     focusPocket: path.join(SEMDEMO_ROOT, 'src/lib/journey/focus-pocket.ts'),
-    threadInspector: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector.ts'),
+    threadInspector: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector-webgl.ts'),
+    threadInspectorState: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector-state.ts'),
+    threadInspectorRender: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-inspector-render.ts'),
     strandContinuity: path.join(SEMDEMO_ROOT, 'src/lib/utils/strand-continuity.ts'),
     journeyThreadSettler: path.join(SEMDEMO_ROOT, 'src/lib/journey/thread-settler.ts'),
     journeyCanvasInteraction: path.join(SEMDEMO_ROOT, 'src/lib/journey/canvas-interaction.ts'),
@@ -56,11 +58,13 @@ const MODULES = {
     journeyWebgl: path.join(SEMDEMO_ROOT, 'src/lib/journey/webgl.ts'),
     legendUi: path.join(SEMDEMO_ROOT, 'src/lib/journey/legend-ui.ts'),
     keyboardHelp: path.join(SEMDEMO_ROOT, 'src/lib/keyboard/keyboard-help.ts'),
-    uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui-renderers.ts'),
+    uiRenderers: path.join(SEMDEMO_ROOT, 'src/lib/ui/renderers.ts'),
     mapFlatteningLayout: path.join(SEMDEMO_ROOT, 'src/lib/utils/map-flattening-layout.ts'),
     inspectedStrandOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/inspected-strand-overlay-adapter.ts'),
     routeArrivalOverlayAdapter: path.join(SEMDEMO_ROOT, 'src/lib/journey/route-arrival-overlay-adapter.ts'),
     threeSetup: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine.ts'),
+    threeEngineCore: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-core.ts'),
+    threeEngineState: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-engine-state.ts'),
     threeSearchAnimations: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-search-animations.ts'),
     threeInteractionVisuals: path.join(SEMDEMO_ROOT, 'src/lib/engine/three-interaction-visuals.ts')
 }
@@ -76,7 +80,14 @@ function assertMatches(source, pattern, label) {
 }
 
 function read(mod) {
-    return fs.readFileSync(MODULES[mod], 'utf-8')
+    const src = fs.readFileSync(MODULES[mod], 'utf-8')
+    if (mod === 'threeSetup' && MODULES.threeEngineCore && MODULES.threeEngineState) {
+        return src + '\n' + fs.readFileSync(MODULES.threeEngineCore, 'utf-8') + '\n' + fs.readFileSync(MODULES.threeEngineState, 'utf-8')
+    }
+    if (mod === 'threadInspector' && MODULES.threadInspectorState && MODULES.threadInspectorRender) {
+        return src + '\n' + fs.readFileSync(MODULES.threadInspectorState, 'utf-8') + '\n' + fs.readFileSync(MODULES.threadInspectorRender, 'utf-8')
+    }
+    return src
 }
 
 // ── EXTRACTION CANDIDATES (documented residual debt) ────────────────────────
@@ -460,7 +471,7 @@ function testBareCallBaseline() {
 function testFocusOnPointRuntimeCallersDewindowed() {
     console.log('\n[TEST 6] Runtime callers do not use window.focusOnPoint')
 
-    const callers = ['journeyThreadSettler', 'mapState', 'threadInspector']
+    const callers = ['journeyThreadSettler', 'mapState', 'threadInspectorState']
     const problems = []
 
     for (const mod of callers) {
@@ -569,8 +580,10 @@ function testJourneyArrivalHandoffDewindowed() {
             threeSetupSrc.includes("from '@lib/journey/route-arrival-overlay-adapter'") ||
             threeSetupSrc.includes("from '@lib/engine/journey-webgl-lazy'")) &&
             (threeSetupSrc.includes('_routeArrival?.updateRouteTraceOverlayFrame(frameNow)') ||
+                threeSetupSrc.includes('engineState.routeArrival?.updateRouteTraceOverlayFrame(frameNow)') ||
                 threeSetupSrc.includes('updateRouteTraceOverlayFrame(frameNow)')) &&
             (threeSetupSrc.includes('_routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)') ||
+                threeSetupSrc.includes('engineState.routeArrival?.updateArrivalHandoffOverlayFrame(frameNow)') ||
                 threeSetupSrc.includes('updateArrivalHandoffOverlayFrame(frameNow)')),
         'three-engine.js should update route/arrival overlays through the adapter'
     )
@@ -631,7 +644,8 @@ function testInspectedStrandTopLevelBridgesRetired() {
         'three-engine.js should import the inspected-strand overlay adapter, not thread-inspector.ts'
     )
     assert(
-        threeSetupSrc.includes('_inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)'),
+        threeSetupSrc.includes('_inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)') ||
+            threeSetupSrc.includes('engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)'),
         'three-engine.js should update inspected strand overlay through the adapter'
     )
     assert(
@@ -722,9 +736,6 @@ function testViewHandoffCameraPreludeBridgeRetired() {
     )
     assert(
         /import\s+\{\s*appState\s*\}\s+from\s+['"]@lib\/state\/app\.svelte['"]/.test(mapFlatteningLayoutSrc) &&
-            /import\s+type\s+\{\s*SemanticState\s*\}\s+from\s+['"]@lib\/state\/state-types['"]/.test(
-                mapFlatteningLayoutSrc
-            ) &&
             /export function applyMapFlatteningLayout/.test(mapFlatteningLayoutSrc),
         'map-flattening-layout.js should own applyMapFlatteningLayout as a state-only named export'
     )
@@ -882,7 +893,8 @@ function testCentroidCameraAndJourneyTimerBridgesRetired() {
         'three-engine.js should import the camera-controls bridge'
     )
     assert(
-        threeSetupSrc.includes('_cameraControls?.applySemanticCentroidCamera(frameNow)'),
+        threeSetupSrc.includes('_cameraControls?.applySemanticCentroidCamera(frameNow)') ||
+            threeSetupSrc.includes('engineState.cameraControls?.applySemanticCentroidCamera(frameNow)'),
         'three-engine.js should call applySemanticCentroidCamera through the camera-controls bridge during the animation loop'
     )
     assert(

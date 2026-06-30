@@ -63,7 +63,7 @@ vi.mock('@lib/journey/canvas-interaction', () => ({
 }))
 
 // Mock semantic-threads loader
-vi.mock('@lib/semantic-threads', () => ({
+vi.mock('@lib/engine/semantic-threads', () => ({
     loadSemanticThreads: vi.fn(async () => {}),
     attachLegacyState: vi.fn()
 }))
@@ -292,7 +292,7 @@ import {
     ensureCanvasNodeInteractionBindings,
     disposeCanvasNodeInteractionBindings
 } from '@lib/journey/canvas-interaction'
-import { loadSemanticThreads } from '@lib/semantic-threads'
+import { loadSemanticThreads } from '@lib/engine/semantic-threads'
 import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
 
 // ── Test Helpers ─────────────────────────────────────────────────────────────

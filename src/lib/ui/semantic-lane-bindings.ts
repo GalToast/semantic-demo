@@ -1,5 +1,5 @@
 import { probeSemanticLane } from '@lib/orchestration/lifecycle'
-import { loadSemanticThreads } from '@lib/semantic-threads'
+import { loadSemanticThreads } from '@lib/engine/semantic-threads'
 import { handleError, silenceError } from '@lib/utils/error-handler'
 
 type RecordSemanticLaneSnapshot = (snapshot: { state: string; attempted_warm: boolean }) => void

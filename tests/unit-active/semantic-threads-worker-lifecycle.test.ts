@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { attachLegacyState, loadSemanticThreads } from '../../src/lib/semantic-threads'
+import { attachLegacyState, loadSemanticThreads } from '../../src/lib/engine/semantic-threads'
 import {
     getLayoutManifest,
     getSemanticNeighborMap,

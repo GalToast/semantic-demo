@@ -22,7 +22,7 @@ const VALID_ROLES = new Set(['core_peer', 'upstream', 'downstream', 'complement'
 const CODE_PROPAGATION_FILES = [
     'src/lib/workers/data-worker.ts',
     'src/lib/data-loader.ts',
-    'src/lib/semantic-threads.ts',
+    'src/lib/engine/semantic-threads.ts',
     'src/lib/journey/thread-model.ts',
     'src/lib/journey/focus-pocket.ts',
     'src/lib/journey/focus-pocket-geometry.ts'
@@ -94,7 +94,7 @@ assert(
     'relationship role owner must define explicit unclassified UI fallback copy'
 )
 
-const semanticThreadsSource = read('src/lib/semantic-threads.ts')
+const semanticThreadsSource = read('src/lib/engine/semantic-threads.ts')
 assert(
     /function _normalizeSemanticNeighborEntries\s*\(/.test(semanticThreadsSource),
     'semantic-threads.ts must normalize worker-loaded neighbor entries through the relationship role owner'

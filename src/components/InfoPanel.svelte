@@ -24,8 +24,8 @@
   import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores/index.svelte.ts';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';
-  import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui-renderers';
-  import { describeThreadLensForPoint } from '@lib/journey-point-color';
+  import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui/renderers';
+  import { describeThreadLensForPoint } from '@lib/journey/point-color';
   import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
   import { buildSelectedBusinessProps, type SelectedCardAdapter } from '@lib/view-models/selected-business-view-model';
   import { onMount, type Snippet } from 'svelte';

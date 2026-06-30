@@ -80,7 +80,7 @@ const ALLOWED_DIRECT_WRITE_FILES = new Set([
 ]);
 
 const ALLOWED_GUARDED_LOCAL_WRITERS = new Set([
-  'src/lib/semantic-threads.ts',
+  'src/lib/engine/semantic-threads.ts',
   'src/lib/orchestration/semantic-lane.ts',
 ]);
 

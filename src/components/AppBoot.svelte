@@ -14,7 +14,7 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import { setSemanticDiveMode } from '@lib/stores/focus.svelte';
-  import { resetSemanticThreadWorker } from '@lib/semantic-threads';
+  import { resetSemanticThreadWorker } from '@lib/engine/semantic-threads';
   import { teardownAppShell } from '@lib/orchestration/app-init';
   import { setupGlobalShortcuts } from '@lib/keyboard/global-shortcuts';
   import { installErrorHandlers } from '@lib/error-boundary';

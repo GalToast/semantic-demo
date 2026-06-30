@@ -37,7 +37,7 @@ import {
     getSemanticThreadBundle,
     getSemanticThreadArtifactName,
     getSemanticNeighborMapByLeadId,
-} from '@lib/semantic-threads'
+} from '@lib/engine/semantic-threads'
 
 // ── Mock Worker ──────────────────────────────────────────────────────────────
 

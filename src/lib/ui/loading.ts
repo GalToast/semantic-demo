@@ -10,7 +10,7 @@
 
 import { setLoadingPhase as setNavLoadingPhase } from '@lib/stores/navigation.svelte.ts'
 import { setLoadingPhase as setDataLoadingPhase } from '@lib/data-store'
-import { loadSemanticThreads } from '@lib/semantic-threads'
+import { loadSemanticThreads } from '@lib/engine/semantic-threads'
 import { isWeatherInitialized, setWeatherInitialized } from '@lib/stores/weather.svelte'
 
 import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state'

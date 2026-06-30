@@ -11,10 +11,10 @@ import './helpers/svelte-rune-shim.mjs'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { state } from './helpers/canonical-state.mjs'
-import { buildSelectedMatchNarrative, getInterestingBusinessNote } from '../src/lib/ui-renderers.ts'
+import { buildSelectedMatchNarrative, getInterestingBusinessNote } from '../src/lib/ui/renderers.ts'
 
 const ROOT = process.cwd()
-const UI_RENDERERS = join(ROOT, 'src/lib/ui-renderers.ts')
+const UI_RENDERERS = join(ROOT, 'src/lib/ui/renderers.ts')
 const FOCUS_STAGE_RENDERER = join(ROOT, 'src/lib/focus/stage-renderer.ts')
 const LIFECYCLE = join(ROOT, 'src/lib/orchestration/lifecycle.ts')
 
