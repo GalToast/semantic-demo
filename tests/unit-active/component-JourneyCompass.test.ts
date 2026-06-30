@@ -82,4 +82,28 @@ describe('JourneyCompass component', () => {
         expect(source).toContain('class="journey-compass-step"');
         expect(source).toMatch(/aria-label=\{`\$\{stepIndex \+ 1\}\. /);
     });
+
+    // ── PR-C: Mode picker dedup ────────────────────────────────────────────
+
+    it('PR-C: adds suppress-step-indicators class gated by focus/inside phase', () => {
+        expect(source).toContain('class:suppress-step-indicators={suppressStepIndicators}');
+        expect(source).toContain('let suppressStepIndicators = $derived(');
+        expect(source).toMatch(/phase === 'focus' \|\| phase === 'inside'/);
+    });
+
+    it('PR-C: adds suppress-actions class gated by focus/inside phase on desktop', () => {
+        expect(source).toContain('class:suppress-actions={suppressJourneyActions}');
+        expect(source).toContain('let suppressJourneyActions = $derived(');
+        expect(source).toMatch(/\(phase === 'focus' \|\| phase === 'inside'\) && !\$viewport\.isCompact/);
+    });
+
+    it('PR-C: CSS hides step indicators under .suppress-step-indicators', () => {
+        expect(source).toContain('.journey-compass.suppress-step-indicators [data-journey-step]');
+        expect(source).toContain('display: none;');
+    });
+
+    it('PR-C: CSS hides action buttons under .suppress-actions', () => {
+        expect(source).toContain('.journey-compass.suppress-actions .journey-compass-actions');
+        expect(source).toContain('display: none;');
+    });
 });

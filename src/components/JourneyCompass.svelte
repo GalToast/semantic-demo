@@ -296,6 +296,25 @@
   let hideCompassForSearch = $derived(
     searchSurface && !(navState.currentView === 'map')
   );
+
+  // Suppress step indicators in focus/inside phase on desktop.
+  // The header chip rail already shows the same 6 mode options
+  // (Overview, Search, Trail, Focus, Inside, Map) as clickable chips.
+  // The journey-compass-step pills duplicate these visually and consume
+  // ~340px of horizontal space — competing with the chip rail for attention
+  // and re-asking the user "what mode?" when they already chose one.
+  let suppressStepIndicators = $derived(
+    phase === 'focus' || phase === 'inside'
+  );
+
+  // Suppress journey action buttons (primary/secondary/tertiary) in
+  // focus/inside phase on desktop. The header chip rail + btn-focus-dive
+  // provide all needed navigation. The 3 compass action buttons duplicate
+  // 'Step Inside' / 'Map' / 'County' options already available in the
+  // chip rail and the focus-stage card.
+  let suppressJourneyActions = $derived(
+    (phase === 'focus' || phase === 'inside') && !$viewport.isCompact
+  );
   let visibleTitle = $derived(
     searchSurface
       ? (compass.title || 'Search results')
@@ -317,6 +336,8 @@
   class:focus-search-active={bodyPanelSurface === 'focus-search'}
   class:hidden-by-nodemo={hideCompassForNoDemo}
   class:hidden-by-search={hideCompassForSearch}
+  class:suppress-step-indicators={suppressStepIndicators}
+  class:suppress-actions={suppressJourneyActions}
   data-phase={phase}
   data-density={density}
   data-copy={copy}
@@ -571,5 +592,43 @@
     display: none;
     visibility: hidden;
     pointer-events: none;
+  }
+
+  /*
+    PR-C: Suppress step indicators in focus/inside phase on desktop.
+    The header chip rail (Overview / Search / Trail / Focus / Inside / Map)
+    already surfaces all mode choices as clickable chips. The journey-compass-step
+    pills are progress indicators that re-present the same options — confusing
+    and redundant. Keep them visible in search/map/overview phases where the
+    chip rail is partially hidden or the user needs progress orientation.
+  */
+  .journey-compass.suppress-step-indicators [data-journey-step] {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /*
+    PR-C: Suppress the 3 journey action buttons on desktop in focus/inside.
+    The header chip rail + btn-focus-dive provide all needed navigation.
+    The action buttons duplicate 'Step Inside' / 'Map' / 'County' options
+    already available in the chip rail.
+  */
+  .journey-compass.suppress-actions .journey-compass-actions {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  /*
+    PR-C: On mobile, also suppress step indicators in focus/inside phase
+    when the header chip rail is visible but condensed.
+  */
+  @media (max-width: 768px) {
+    .journey-compass.suppress-step-indicators [data-journey-step] {
+      display: none;
+      visibility: hidden;
+      pointer-events: none;
+    }
   }
 </style>
