@@ -339,6 +339,12 @@
     overflow-y: hidden;
     overflow-x: hidden;
     scroll-snap-align: center;
+    /* PR-G: Shrink to content in grid mode (map view single-column layout).
+       The journey-compass grid uses minmax(0, 1fr) which forces children to
+       fill the cell. Without this, each step pill expands to ~530px wide
+       and the six steps stack vertically, dominating the header area. */
+    width: max-content;
+    justify-self: start;
     transition:
         color 0.24s ease,
         background 0.24s ease,

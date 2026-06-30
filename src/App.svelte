@@ -587,18 +587,34 @@
     pointer-events: none;
   }
 
-  /* A2-6: Visible H1 page title — first heading on the page */
+  /* A2-6: Visible H1 page title — first heading on the page.
+   * Owns the top 36px of the viewport as a fixed banner. The header's
+   * absolutely-positioned chip rail (top: 0) is pushed below it via the
+   * sibling selector so the two never overlap. */
   .app-title {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 1.1rem;
     font-weight: 700;
+    line-height: 1;
     color: #e0f0f0;
+    box-sizing: border-box;
+    height: 36px;
     padding: 0.5rem 1rem;
     margin: 0;
     background: rgba(7, 16, 24, 0.85);
     border-bottom: 1px solid rgba(78, 205, 196, 0.12);
     position: relative;
     z-index: var(--z-legend, 50);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  /* Push the header chip rail below the h1 banner so the two top
+   * chrome rows don't visually overlap. Uses :global(.app-header) because
+   * the header class lives inside Header.svelte's CSS scope. */
+  :global(.app-title + .app-header),
+  :global(.app-title ~ .app-header) {
+    top: 36px;
   }
 
   .semantic-explorer.reduced-motion {
