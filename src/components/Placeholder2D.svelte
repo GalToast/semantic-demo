@@ -244,7 +244,7 @@
   }
 
   .placeholder-title {
-    font-size: 2rem;
+    font-size: clamp(1.3rem, 5.5vw, 2rem);
     font-weight: 200;
     letter-spacing: 0.08em;
     margin: 0 0 0.5rem;
@@ -270,7 +270,7 @@
   }
 
   .placeholder-subtitle {
-    font-size: 0.95rem;
+    font-size: clamp(0.75rem, 2.5vw, 0.95rem);
     opacity: 0.72;
     margin: 0 0 0.25rem;
     line-height: 1.5;
