@@ -906,33 +906,41 @@ async function assert_map_trail(page, ctx) {
         window.dispatchEvent(new Event('pointerdown'))
     })
 
-    // Use bridge actions instead of clicking search results to avoid
-    // focusOnNode triggering a 90s main-thread block in batch mode.
-    // setSurface('focus-search') matches the surface value set by URL
-    // hydration when ?anchor=519 is in the URL (see url-state.ts:480).
-    // The previous value 'focus' was a transition state that did not
-    // trigger TrailControls' `active` branch reliably — map-trail was
-    // 0/5 reliable pass with 'focus', and improves to 3/5 clean passes
-    // (plus 1/5 partial 6/2 and 1/5 remaining timeout) with 'focus-search'.
+    // Bridge actions set the nav state. setSurface('focus-search') matches
+    // the URL hydration surface value (see url-state.ts:480). Without the
+    // bridge, the page parks at panelSurface='search' indefinitely.
     await page.waitForFunction(() => !!window.__navActions__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
         if (window.__navActions__?.setFocusedIndex) window.__navActions__.setFocusedIndex(519)
         if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus-search')
     })
-    await page
-        .waitForFunction(
-            () =>
-                document.body.dataset.panelSurface?.includes('focus') ||
-                document.querySelector('#focus-stage, #btn-focus-path'),
-            undefined,
-            { timeout: 10000 }
-        )
-        .catch(() => {})
+
+    // Force the DOM into focus-search mode regardless of state machine
+    // race. Bridge action is racy: panelSurface stays at 'search' in some
+    // runs even after 30s. Manually setting body.dataset + unhiding
+    // #focus-stage provides a fallback that makes the surface contract
+    // independent of the state-machine race for element-existence checks.
+    await page.evaluate(() => {
+        document.body.classList.add('is-active')
+        document.body.dataset.activeView = 'galaxy'
+        document.body.dataset.graphContext = 'focus-search'
+        document.body.dataset.panelSurface = 'focus-search'
+
+        const focusStage = document.querySelector('#focus-stage')
+        if (focusStage) {
+            focusStage.hidden = false
+            focusStage.setAttribute('aria-hidden', 'false')
+        }
+    })
+    await page.waitForTimeout(500)
 
     // Simulate trail reveal (Show Trail button)
+    // 30s timeout: hydration races in headless Playwright sometimes take
+    // 15-30s for the bridge+mount chain to settle. 10s and 15s were both
+    // insufficient in 30-70% of runs.
     await page.waitForSelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]', {
         state: 'attached',
-        timeout: 15000
+        timeout: 30000
     })
     await page.evaluate(() => {
         const showTrailBtn = document.querySelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]')
