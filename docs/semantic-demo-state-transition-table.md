@@ -4,7 +4,23 @@
 > Defines all phases, their body-dataset signatures, JS-state fields, URL param contracts,
 > and the official reset/orchestration API. All other docs must converge here.
 
-**Verified against:** `js/state.js` lines 67, 148, 182-200, 216, 239-241, 394-402, 679-744, 811-844, 984-987, 1077-1091, 1099-1213, 1337-1588, 2112-2141, 2394-2421, 2551-2607, `js/modules/semantic-dive-ui.js` lines 54-77, `js/modules/journey.js` lines 337-344, 363, 1081-1085.
+> ⚠️ **Last refreshed 2026-06-29:** The phase machine itself (`overview → search → focus → inside → map-trail`) and the dataset and URL contracts are **stable and unchanged**. The references to `js/state.js`, `js/modules/lifecycle.js`, `js/modules/search-state.js`, etc. are **stale**: that engine was retired by W42. The canonical modern equivalents are:
+>
+> | Legacy path cited in this doc | Modern home |
+> |---|---|
+> | `js/state.js` | `src/lib/state/app.svelte.ts` (state class) + `src/lib/state/state-types.ts` (interfaces) |
+> | `js/modules/lifecycle.js` | `src/lib/orchestration/lifecycle.ts` + `src/lib/stores/lifecycle.ts` |
+> | `js/modules/semantic-dive-ui.js` | `src/lib/journey/semantic-dive.ts` |
+> | `js/modules/journey.js` | `src/lib/journey/journey.ts` (+ 30+ satellites) |
+> | `js/modules/search-state.js` | `src/lib/stores/search.svelte.ts` |
+> | `js/modules/lifecycle.js` (reset & URL) | `src/lib/orchestration/lifecycle.ts` (`returnToOverview`, `resetExperienceState`, `refreshCompositionState`, `updateUrlState`); `src/lib/stores/lifecycle.ts` (`resetExplorationFocus`) |
+> | `js/modules/camera-controls.js` (`focusOnNode`) | `src/lib/engine/camera-controls.ts` |
+> | `js/modules/thread-inspector.js` | `src/lib/journey/thread-inspector-{state,render,adapter}.ts` |
+> | Window globals (`window.setSemanticDiveMode`, `window.refreshCompositionState`) | The same calls now live as exports in `src/lib/stores/focus.svelte.ts` (`setSemanticDiveMode`), `src/lib/orchestration/lifecycle.ts` (`refreshCompositionState`), etc. |
+>
+> Field types are defined in `src/lib/state/state-types.ts` (`NavState`, `ActiveFilters`, `ViewName`, `CompassPhase`, `Point[]`, etc.). Field values are mutated through the Svelte 5 state class via `withStateMutation(...)`. The "Key State Fields" section at the bottom of this doc maps each surfaced field to its modern type or accessor.
+>
+> **For implementation authority, read the source code in `src/lib/...`. For drift between this doc and the code, follow the source. For historical context (W47-A through W48) consult `docs/migration-plan.md` and `docs/typing-contract.md`.**
 
 ---
 
@@ -22,7 +38,7 @@
 
 ## Body Dataset Fields by Phase
 
-**Sourced from three separate sync functions in `js/modules/lifecycle.js`:**
+**Sourced from the parity-bridge sync in `src/lib/orchestration/parity-attrs.svelte.ts` (the modern equivalent of the old `js/modules/lifecycle.js` sync functions: `switchView()`, `refreshCompositionState()`, `updateExplorationUi()`).** The dataset values drive CSS animations and layout shifts in the module CSS under `css/`.
 
 | Dataset Field | Set by | overview | search | focus | inside | map-trail |
 |--------------|--------|----------|--------|-------|--------|-----------|
@@ -114,6 +130,7 @@ Managed by `updateUrlState()` in `js/modules/lifecycle.js`.
 ## Official Reset / Orchestration API
 
 ### `resetExplorationFocus()` — *Preserve Search*
+
 **File:** `js/modules/lifecycle.js` line 711
 
 Resets focus, trail, and mycelium mode **without** clearing the active search.
@@ -133,6 +150,7 @@ export function resetExplorationFocus() {
 ```
 
 **State effects:**
+
 - `myceliumMode` → `'default'`
 - `trailDepth` → `0`
 - `focusedNode` → `null`
@@ -144,6 +162,7 @@ export function resetExplorationFocus() {
 - `currentSearchSummary.anchorIndex` → **preserved**
 
 ### `resetExperienceState()` — *Full Reset*
+
 **File:** `js/modules/lifecycle.js` line 679
 
 Full scene reset including search, filters, focus, and trail. Returns to galaxy view.
@@ -169,6 +188,7 @@ export function resetExperienceState() {
 ```
 
 **State effects:**
+
 - `currentSearchSummary` → `null`
 - `selectedPoint` → `null`
 - `focusedNode` → `null`
@@ -180,6 +200,7 @@ export function resetExperienceState() {
 - `currentView` → `'galaxy'`
 
 ### `returnToOverview()` — *Full Reset Alias*
+
 **File:** `js/modules/lifecycle.js` line 742
 
 ```js
@@ -187,6 +208,7 @@ export function returnToOverview() { resetExperienceState(); }
 ```
 
 ### `resetStateBeforeUrlRestore()` — *Pre-restore Cleanup*
+
 **File:** `js/modules/lifecycle.js` line 746
 
 Called before URL state is reapplied. Clears search, focus, trail, and filters.
@@ -216,6 +238,7 @@ export function resetStateBeforeUrlRestore(options = {}) {
 ```
 
 ### `setSemanticDiveMode(enabled)` — *Enter/Exit Semantic Dive*
+
 **File:** `js/modules/lifecycle.js` line 2551 (window bridge)
 
 ```js
@@ -251,7 +274,10 @@ window.setSemanticDiveMode = function (enabled) {
 
 ## Key State Fields
 
+> Field types live in `src/lib/state/state-types.ts` (`NavState` interface at line 162, `ActiveFilters`, `ViewName`, `CompassPhase`, `ThreadSource`, `LoadingPhaseKey`, etc.). Field values are stored on `appState` from `src/lib/state/app.svelte.ts` (Svelte 5 state class) and mutated through `withStateMutation(...)` from `src/lib/state/with-state-mutation.ts`. The compat path `src/lib/state/legacy-state.ts` exposes `legacyState.navState` and friends for engine modules that haven't completed the conversion. The line-number references below (e.g., "File: js/state.js line 182") are historical — read `src/lib/state/state-types.ts` for current declared types.
+
 ### `navState.mode` — Primary Phase Flag
+
 **File:** `js/state.js` line 182
 
 ```js
@@ -279,6 +305,7 @@ navState: {
 Transitions: `mode` is set by `setMyceliumMode()`, `setTrailDepth()`, `resetNodePositions()`, and `resetStateBeforeUrlRestore()`.
 
 ### `trailDepth` — Trail Progression Level
+
 **File:** `js/state.js` line 216
 
 | Value | Meaning |
@@ -292,6 +319,7 @@ Transitions: `mode` is set by `setMyceliumMode()`, `setTrailDepth()`, `resetNode
 - `trailDepth === 2` sets `semanticDiveMode = true` (via getter/setter at line 394)
 
 ### `semanticDiveMode` — Derived from trailDepth
+
 **File:** `js/state.js` line 394
 
 ```js
@@ -307,6 +335,7 @@ Object.defineProperty(state, 'semanticDiveMode', {
 ```
 
 ### `currentView` — Galaxy vs Map
+
 **File:** `js/state.js` line 148
 
 ```js
@@ -318,6 +347,7 @@ currentView: 'galaxy'  // 'galaxy' | 'map'
 - `switchView()` owns `body.dataset.activeView`; `refreshCompositionState()` mirrors it from `state.currentView`
 
 ### `currentSearchSummary` — Search Result Container
+
 **File:** `js/state.js` line 173
 
 ```js
@@ -386,6 +416,7 @@ Map branch (currentView !== 'galaxy'):
 ```
 
 derivePanelSurface (lifecycle.js:1077):
+
 ```
 if view !== 'galaxy':
   if mapContext === 'focus-search' → return 'map-focus-search'
@@ -402,7 +433,7 @@ return 'idle'
 
 ---
 
-*Last verified against:* `js/state.js` line 67, `js/modules/lifecycle.js` lines 67-68, 182-200, 216, 239-241, 679-744, 811-844, 984-987, 1077-1091, 1099-1213, 1337-1588, 2112-2141, 2394-2421, 2551-2607, `js/modules/semantic-dive-ui.js` lines 54-77, `js/modules/journey.js` lines 337-344, 363, 1081-1085.
+*Last verified against:* `src/lib/state/state-types.ts` (NavState, CompassPhase, ViewName, ActiveFilters), `src/lib/state/app.svelte.ts` (state class), `src/lib/orchestration/lifecycle.ts` (refreshCompositionState, returnToOverview, resetExperienceState, switchView, updateUrlState), `src/lib/stores/lifecycle.ts` (`resetExplorationFocus`), `src/lib/stores/focus.svelte.ts` (`setSemanticDiveMode`, `setInfoPanelOpen`), `src/lib/journey/semantic-dive.ts`, `src/lib/journey/journey.ts`.
 
 ---
 
@@ -465,35 +496,42 @@ in one atomic step, resolving this dissonance.
 ### 8.4 Callsite Migration Order (7 phases)
 
 **Phase 1** — Export reducer, no behavior change:
+
 - Create `navTransitionReducer()` in `lifecycle.js` (internal, non-exported)
 - Export `dispatchNavTransition()` as window bridge
 - All existing callers unchanged; contracts verify reducer parity with scattered writers
 
 **Phase 2** — Redirect `camera-controls.focusOnNode()`:
+
 - Replace direct `navState.mode`, `navState.focusedIndex`, `navState.walkHistoryIndices` writes with `dispatchNavTransition('FOCUS_NODE', ...)`
 - Retain direct writes to `focusedNode`, `selectedPoint` (its canonical domain)
 
 **Phase 3** — Redirect `lifecycle.setTrailDepth` / `setMyceliumMode`:
+
 - `setTrailDepth(n, opts)` → `dispatchNavTransition('SET_DEPTH', {depth:n, ...opts})`
 - `setMyceliumMode('trail')` → `dispatchNavTransition('SET_DEPTH', {depth:1})`
 - `setMyceliumMode('inside')` → `dispatchNavTransition('ENTER_INSIDE', {fromUserGesture:true})`
 - `setMyceliumMode('default'|'bridge'|'bloom')` → `dispatchNavTransition('RESET_FOCUS')`
 
 **Phase 4** — Redirect `journey.walkThreadNeighbor()` / `backtrackWalk()`:
+
 - `walkThreadNeighbor()` → `dispatchNavTransition('WALK_TO', ...)`
 - `backtrackWalk()` → `dispatchNavTransition('BACKTRACK')`
 
 **Phase 5** — Redirect lifecycle reset functions:
+
 - `resetNodePositions()` → `dispatchNavTransition('RESET_FOCUS')`
 - `resetStateBeforeUrlRestore()` → `dispatchNavTransition('RESET_EXPERIENCE')`
 - `resetExplorationFocus()` → `dispatchNavTransition('RESET_FOCUS', {preserveSearch:true})`
 
 **Phase 6** — Redirect remaining transitional owners:
+
 - `thread-inspector.renderThreadInspection()` → `dispatchNavTransition('FOCUS_NODE', {index, fromTraversal:true})`
 - `search-state.js` filter-eviction → `dispatchNavTransition('RESET_FOCUS')`
 - `micro-demo.js` demo focus/reset → `dispatchNavTransition(...)` (demo-specific payload)
 
 **Phase 7** — Flag deprecated direct writers:
+
 - Add `state-ownership-contract.mjs` assertion: no module may directly write `navState.mode`, `navState.walkHistoryIndices`, `navState.trailCursor`, `navState.trailNeighborIndices` outside the reducer
 - Existing direct writes in journey, thread-inspector, search-state, micro-demo are "transitional owners" during migration window only
 
