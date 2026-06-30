@@ -117,18 +117,18 @@ if (hasSvelte) {
         )
     })
 
-    test('DemoChoreography.svelte sets body.dataset.demoPhase on transitions', () => {
+    test('DemoChoreography.svelte exposes demoPhase from the demo store', () => {
         assert(
-            /document\.body\.dataset\.demoPhase/.test(svelteComponentSource) ||
-                /document\.body\.dataset\.demoPhase/.test(svelteStoreSource),
-            'DemoChoreography or demo store must set body.dataset.demoPhase'
+            /demoPhase\s*\(\s*\)/.test(svelteComponentSource) || /demoPhase\s*,/.test(svelteComponentSource),
+            'DemoChoreography must consume demoPhase from the demo store'
         )
     })
 
-    test('demo.ts transitionDemo syncs body data attribute', () => {
+    test('demo.ts transitionDemo updates the canonical demoPhase', () => {
         assert(
-            /document\.body\.dataset\.demoPhase\s*=\s*to/.test(svelteStoreSource),
-            'transitionDemo must set body.dataset.demoPhase to the target phase'
+            /export\s+function\s+transitionDemo/.test(svelteStoreSource) &&
+                /setDemoPhase\(nextPhase\)/.test(svelteStoreSource),
+            'transitionDemo must call setDemoPhase(nextPhase) to update the canonical phase'
         )
     })
 
