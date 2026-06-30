@@ -17,8 +17,8 @@ const { getFocusedJourneyPoint, getJourneyCompassState } = await import('../src/
 function resetState() {
     withStateMutation(() => {
         state.currentView = 'galaxy'
-        state.currentSearchSummary = null
-        state.selectedPoint = null
+        state.searchState.currentSearchSummary = null
+        state.focusState.selectedPoint = null
         state.focusedNode = null
         state.points = []
         state.semanticDiveMode = false
@@ -51,7 +51,7 @@ const indexedPoint = { name: 'Indexed Business', cluster: 4 }
 withStateMutation(() => {
     state.points = [indexedPoint]
     state.focusedNode = 0
-    state.selectedPoint = selectedPoint
+    state.focusState.selectedPoint = selectedPoint
 })
 assert.equal(getFocusedJourneyPoint(), selectedPoint, 'selectedPoint wins over focusedNode')
 
@@ -61,7 +61,7 @@ assert.equal(compassState.phase, 'overview', 'empty state is overview phase')
 assert.equal(compassState.primaryAction?.action, 'focus-search', 'overview primary action focuses search')
 
 withStateMutation(() => {
-    state.currentSearchSummary = { query: 'roof repair', anchorIndex: 0 }
+    state.searchState.currentSearchSummary = { query: 'roof repair', anchorIndex: 0 }
 })
 globalThis.__searchContainer = fakeSearchContainer()
 compassState = getJourneyCompassState()
