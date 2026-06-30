@@ -128,11 +128,11 @@
     margin: 0;
     clip: auto;
     white-space: normal;
-    background: rgba(7, 16, 24, 0.94);
+    background: rgba(var(--color-surface-chrome-rgb), 0.94);
     backdrop-filter: blur(14px);
     -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(78, 205, 196, 0.18);
-    border-radius: 0.5rem;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
+    border-radius: var(--radius-tight);
     z-index: var(--z-panels);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
   }
@@ -152,13 +152,13 @@
 
   .focus-pocket-a11y li:hover,
   .focus-pocket-a11y li:focus-visible {
-    background: rgba(78, 205, 196, 0.08);
+    background: rgba(var(--color-primary-alt-rgb), 0.08);
     color: var(--color-text-teal-light);
     outline: none;
   }
 
   .focus-pocket-a11y li:focus-visible {
-    box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.4);
+    box-shadow: 0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.4);
   }
 
   .role-dot {
@@ -166,7 +166,7 @@
     width: 8px;
     height: 8px;
     border-radius: 50%;
-    background: rgba(78, 205, 196, 0.4);
+    background: rgba(var(--color-primary-alt-rgb), 0.4);
   }
   .role-dot[data-role='direct'] { background: var(--color-primary-alt); }
   .role-dot[data-role='support'] { background: #ffd93d; }
@@ -183,13 +183,13 @@
     right: 0.75rem;
     bottom: 0.75rem;
     padding: 0.45rem 0.8rem;
-    background: rgba(7, 16, 24, 0.92);
+    background: rgba(var(--color-surface-chrome-rgb), 0.92);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.28);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.28);
     border-radius: 0.4rem;
     color: var(--color-primary-alt);
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.7rem;
     font-weight: 600;
     cursor: pointer;
@@ -199,13 +199,13 @@
 
   .focus-pocket-list-toggle:hover,
   .focus-pocket-list-toggle:focus-visible {
-    background: rgba(78, 205, 196, 0.12);
-    border-color: rgba(78, 205, 196, 0.5);
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
     outline: none;
   }
 
   .focus-pocket-list-toggle:focus-visible {
-    box-shadow: 0 0 0 2px rgba(78, 205, 196, 0.4);
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-alt-rgb), 0.4);
   }
 
   /* When the visible list is open, lift the toggle above it and re-anchor. */
@@ -223,23 +223,23 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.35rem 0.65rem;
-    background: rgba(7, 16, 24, 0.88);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(78, 205, 196, 0.15);
+    background: rgba(var(--color-surface-chrome-rgb), 0.88);
+    backdrop-filter: blur(var(--glass-blur-light));
+    -webkit-backdrop-filter: blur(var(--glass-blur-light));
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     border-radius: 0.35rem;
-    color: #8aaeae;
-    font-family: 'Nunito Sans', sans-serif;
+    color: var(--color-text-teal-medium);
+    font-family: var(--font-body);
     font-size: 0.6rem;
     z-index: var(--z-panels);
     pointer-events: none;
   }
   .focus-keyboard-hint kbd {
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 0.55rem;
-    color: #e0f0f0;
-    background: rgba(78, 205, 196, 0.12);
-    border: 1px solid rgba(78, 205, 196, 0.25);
+    color: var(--color-text-teal-light);
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
     border-radius: 0.2rem;
     padding: 0.05rem 0.25rem;
   }

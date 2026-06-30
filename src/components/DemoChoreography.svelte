@@ -247,7 +247,7 @@
   }
   .demo-dismiss {
     background: rgba(7, 16, 24, 0.8);
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     color: var(--color-text-teal-dark);
     font-size: 1rem;
     width: 44px;
@@ -263,10 +263,10 @@
   }
   .demo-dismiss:hover {
     color: var(--color-text-teal-light);
-    border-color: rgba(78, 205, 196, 0.5);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
   }
   .demo-dismiss:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: 2px;
   }
   .demo-status {
@@ -276,7 +276,7 @@
     text-align: center;
     padding: 0.55rem 1.1rem;
     background: rgba(7, 16, 24, 0.85);
-    border: 1px solid rgba(78, 205, 196, 0.35);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.35);
     border-radius: 999px;
     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.4);
     max-width: min(560px, 80vw);

@@ -159,7 +159,7 @@
   .proximity-legend-card {
     pointer-events: auto;
     background: rgba(7, 16, 24, 0.92);
-    border: 1px solid rgba(78, 205, 196, 0.25);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
     border-radius: 10px;
     padding: 14px 18px;
     max-width: 300px;
@@ -213,7 +213,7 @@
     font-size: 0.95rem;
     font-weight: 600;
     line-height: 1.3;
-    color: #4ecdc4;
+    color: var(--color-primary-alt);
   }
 
   .proximity-legend-sub {

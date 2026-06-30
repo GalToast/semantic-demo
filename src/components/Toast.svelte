@@ -128,7 +128,7 @@
     padding: 0.6rem 0.75rem;
     background: rgba(7, 16, 24, 0.94);
     backdrop-filter: blur(14px);
-    border: 1px solid rgba(78, 205, 196, 0.22);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.22);
     border-radius: 0.5rem;
     opacity: 0;
     pointer-events: none;
@@ -174,8 +174,8 @@
     min-height: 44px;
     padding: 0;
     margin: 0;
-    background: rgba(78, 205, 196, 0.1);
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 4px;
     color: rgba(224, 240, 240, 0.5); /* a11y-ok: icon-color — toast close button */
     cursor: pointer;
@@ -184,13 +184,13 @@
   }
 
   .experience-toast-close:hover {
-    background: rgba(78, 205, 196, 0.2);
-    border-color: rgba(78, 205, 196, 0.4);
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
     color: var(--color-text-teal-light);
   }
 
   .experience-toast-close:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.8);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.8);
     outline-offset: 1px;
   }
 

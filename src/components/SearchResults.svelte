@@ -456,19 +456,19 @@
     overscroll-behavior: contain;
     touch-action: pan-y;
     /* Visual styles previously on orphaned .search-results selector */
-    background: rgba(7, 16, 24, 0.95);
+    background: rgba(var(--color-surface-chrome-rgb), 0.95);
     backdrop-filter: blur(12px);
     -webkit-backdrop-filter: blur(12px);
-    border-radius: 0.5rem;
-    border: 1px solid rgba(78, 205, 196, 0.15);
+    border-radius: var(--radius-tight);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     scrollbar-width: thin;
-    scrollbar-color: rgba(78, 205, 196, 0.2) transparent;
+    scrollbar-color: rgba(var(--color-primary-alt-rgb), 0.2) transparent;
   }
   .search-results-wrapper::-webkit-scrollbar {
     width: 4px;
   }
   .search-results-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(78, 205, 196, 0.2);
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 2px;
   }
 
@@ -487,8 +487,8 @@
     min-height: 44px;
     margin-top: 0.5rem;
     padding: 0 1rem;
-    background: rgba(78, 205, 196, 0.08);
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    background: rgba(var(--color-primary-alt-rgb), 0.08);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.4rem;
     color: rgba(224, 240, 240, 0.9);
     font-family: inherit;
@@ -501,12 +501,12 @@
         color 0.18s ease;
   }
   .search-show-more-btn:hover {
-    background: rgba(78, 205, 196, 0.16);
-    border-color: rgba(78, 205, 196, 0.34);
+    background: rgba(var(--color-primary-alt-rgb), 0.16);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.34);
     color: var(--color-text-teal-light);
   }
   .search-show-more-btn:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: 2px;
   }
 

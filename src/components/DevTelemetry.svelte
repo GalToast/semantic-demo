@@ -169,7 +169,7 @@
         background: rgba(7, 16, 24, 0.94);
         backdrop-filter: blur(8px);
         -webkit-backdrop-filter: blur(8px);
-        border: 1px solid rgba(78, 205, 196, 0.3);
+        border: 1px solid rgba(var(--color-primary-alt-rgb), 0.3);
         border-radius: 0.5rem;
         color: var(--color-text-teal-light);
         font-family: 'JetBrains Mono', monospace;
@@ -180,7 +180,7 @@
 
     .dev-telemetry-header {
         padding: 0.5rem 0.6rem;
-        border-bottom: 1px solid rgba(78, 205, 196, 0.2);
+        border-bottom: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
         display: grid;
         grid-template-columns: auto 1fr auto;
         gap: 0.5rem;
@@ -212,8 +212,8 @@
     }
 
     .dev-telemetry-btn {
-        background: rgba(78, 205, 196, 0.12);
-        border: 1px solid rgba(78, 205, 196, 0.25);
+        background: rgba(var(--color-primary-alt-rgb), 0.12);
+        border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
         border-radius: 0.25rem;
         color: var(--color-text-teal-light);
         padding: 0.15rem 0.4rem;
@@ -223,7 +223,7 @@
     }
 
     .dev-telemetry-btn:hover {
-        background: rgba(78, 205, 196, 0.2);
+        background: rgba(var(--color-primary-alt-rgb), 0.2);
     }
 
     .dev-telemetry-btn:focus-visible {
@@ -239,7 +239,7 @@
 
     .dev-telemetry-counts {
         max-height: 30vh;
-        border-bottom: 1px solid rgba(78, 205, 196, 0.15);
+        border-bottom: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     }
 
     .dev-telemetry-recent {
@@ -292,7 +292,7 @@
         align-items: baseline;
         padding: 0.15rem 0.25rem;
         border-radius: 0.2rem;
-        background: rgba(78, 205, 196, 0.04);
+        background: rgba(var(--color-primary-alt-rgb), 0.04);
     }
 
     .dev-telemetry-list .seq {
@@ -314,7 +314,7 @@
     }
 
     .dev-telemetry-list .key {
-        background: rgba(78, 205, 196, 0.08);
+        background: rgba(var(--color-primary-alt-rgb), 0.08);
         padding: 0.05rem 0.25rem;
         border-radius: 0.15rem;
         font-family: inherit;

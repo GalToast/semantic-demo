@@ -35,12 +35,19 @@ Do not inject CSS custom properties from JavaScript. CSS root tokens stay in `cs
 | `--color-accent-border`     |  `rgba(255, 223, 76, 0.22)` | Low-strength accent borders                                       |
 | `--color-surface-glass`     |    `rgba(15, 18, 28, 0.88)` | Glass surface fallback                                            |
 | `--color-surface-panel`     |    `rgba(12, 17, 26, 0.93)` | Opaque panel fallback                                             |
+| `--color-surface-chrome`    |    `rgba(7, 16, 24, 0.88)` | Journey chrome surface background                                   |
+| `--color-surface-chrome-rgb` |    `7, 16, 24`              | RGB base for alpha-mixed chrome backgrounds                       |
 | `--color-border-subtle`     | `rgba(255, 255, 255, 0.08)` | Low-contrast borders                                              |
 | `--color-border-muted`      |  `rgba(255, 255, 255, 0.1)` | Standard muted borders                                            |
 | `--color-text-strong`       | `rgba(255, 255, 255, 0.98)` | Highest-emphasis copy                                             |
 | `--color-text-primary`      | `rgba(255, 255, 255, 0.94)` | Primary body and labels                                           |
 | `--color-text-secondary`    | `rgba(255, 255, 255, 0.78)` | Secondary copy                                                    |
 | `--color-text-muted`        | `rgba(255, 255, 255, 0.58)` | Captions, metadata, disabled-adjacent copy                        |
+| `--color-text-teal-light`   |                   `#e0f0f0` | Light teal headings / labels                                      |
+| `--color-text-teal-muted`   |                   `#b0d0d0` | Muted teal body text                                              |
+| `--color-text-teal-dark`    |                   `#6a8a8a` | Dark teal metadata                                                |
+| `--color-text-teal-medium`  |                   `#8aaeae` | Mid-tone teal labels                                              |
+| `--color-text-teal-dim`     |                   `#4a6a6a` | Dim teal metadata                                                 |
 | `--status-success`          |                   `#8ff7d0` | Semantic lane success / healthy state                             |
 | `--status-warning`          |                   `#ffd66b` | Semantic lane degraded / warning state                            |
 | `--status-danger`           |                   `#ff6b6b` | Semantic lane failure / error state                               |

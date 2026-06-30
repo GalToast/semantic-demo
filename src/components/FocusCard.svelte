@@ -277,7 +277,7 @@
     min-width: 0;
     background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.18);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: 0.6rem;
     padding: 0.75rem;
     pointer-events: auto;
@@ -320,7 +320,7 @@
     gap: 0.4rem;
   }
   .empty-icon {
-    color: rgba(78, 205, 196, 0.25); /* a11y-ok: icon-color — empty-state icon, not body text */
+    color: rgba(var(--color-primary-alt-rgb), 0.25); /* a11y-ok: icon-color — empty-state icon, not body text */
   }
   .selected-empty-headline {
     font-size: 0.8rem;

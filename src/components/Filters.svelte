@@ -196,9 +196,9 @@
   .filter-toolbar {
     display: flex;
     gap: 1rem;
-    background: rgba(7, 16, 24, 0.92);
+    background: rgba(var(--color-surface-chrome-rgb), 0.92);
     backdrop-filter: blur(12px);
-    border-radius: 0.5rem;
+    border-radius: var(--radius-tight);
     padding: 0.6rem 0.75rem;
     align-items: center;
     flex-wrap: wrap;
@@ -215,17 +215,17 @@
     letter-spacing: 0.05em;
     color: var(--color-primary-alt);
     margin-right: 0.3rem;
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     margin: 0;
   }
   .filter-chip {
     padding: 0 0.5rem;
-    background: rgba(78, 205, 196, 0.08);
-    border: 1px solid rgba(78, 205, 196, 0.15);
+    background: rgba(var(--color-primary-alt-rgb), 0.08);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     border-radius: 0.3rem;
     color: var(--color-text-teal-muted);
     font-size: 0.65rem;
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: var(--font-body);
     cursor: pointer;
     transition: all 0.15s;
     height: 44px;
@@ -238,31 +238,31 @@
     line-height: 44px;
   }
   .filter-chip:hover {
-    border-color: rgba(78, 205, 196, 0.35);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.35);
   }
   .filter-chip.active {
-    background: rgba(78, 205, 196, 0.2);
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
     border-color: var(--color-primary-alt);
     color: var(--color-primary-alt);
   }
   .city-filter {
     padding: 0.3rem 0.5rem;
-    background: rgba(78, 205, 196, 0.08);
-    border: 1px solid rgba(78, 205, 196, 0.15);
+    background: rgba(var(--color-primary-alt-rgb), 0.08);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     border-radius: 0.3rem;
     color: var(--color-text-teal-muted);
     font-size: 0.65rem;
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: var(--font-body);
     height: 44px;
     cursor: pointer;
     box-sizing: border-box;
   }
   .city-filter:focus {
-    border-color: rgba(78, 205, 196, 0.5);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
     outline: none;
   }
   .city-filter:focus-visible {
-    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.6);
     outline-offset: 2px;
   }
   .filter-reset {
@@ -272,7 +272,7 @@
     border-radius: 0.3rem;
     color: var(--status-danger);
     font-size: 0.6rem;
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: var(--font-body);
     cursor: pointer;
     transition: all 0.15s;
     white-space: nowrap;

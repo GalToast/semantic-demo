@@ -158,15 +158,15 @@
     padding: 1rem;
   }
   .loading-kicker {
-    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-family: var(--font-body);
     font-size: 0.65rem;
     text-transform: uppercase;
     letter-spacing: 0.12em;
-    color: rgba(78, 205, 196, 0.5); /* a11y-ok: caption-text — UPPERCASE tracked kicker */
+    color: rgba(var(--color-primary-alt-rgb), 0.5); /* a11y-ok: caption-text — UPPERCASE tracked kicker */
     font-weight: 600;
   }
   .loading-title {
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 1.5rem;
     font-weight: 700;
     color: var(--color-text-teal-light);
@@ -176,7 +176,7 @@
     animation: pulse 2s ease-in-out infinite;
   }
   .loading-note {
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 1rem;
     font-weight: 600;
     color: var(--color-text-teal-light);
@@ -185,7 +185,7 @@
   .loading-bar-track {
     width: 200px;
     height: 4px;
-    background: rgba(78, 205, 196, 0.15);
+    background: rgba(var(--color-primary-alt-rgb), 0.15);
     border-radius: 2px;
     overflow: hidden;
   }
@@ -204,21 +204,21 @@
   }
   .loading-phase-chip {
     font-size: 0.6rem;
-    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-family: var(--font-body);
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     padding: 0.15rem 0.45rem;
     border-radius: 0.25rem;
-    background: rgba(78, 205, 196, 0.08);
+    background: rgba(var(--color-primary-alt-rgb), 0.08);
     color: rgba(224, 240, 240, 0.3); /* a11y-ok: caption-text — small loading footnote */
-    border: 1px solid rgba(78, 205, 196, 0.1);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.1);
     transition: all 0.2s ease;
   }
   .loading-phase-chip.is-active {
-    background: rgba(78, 205, 196, 0.2);
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
     color: var(--color-primary-alt);
-    border-color: rgba(78, 205, 196, 0.5);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
   }
   .loading-phase-chip.is-complete {
     background: rgba(150, 206, 180, 0.12);
@@ -239,23 +239,23 @@
     color: var(--status-danger, #ff6b6b);
   }
   .loading-retry-btn {
-    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-family: var(--font-body);
     font-size: 0.8rem;
     font-weight: 600;
     padding: 0.5rem 1.25rem;
-    border: 1px solid var(--color-primary-alt, #4ecdc4);
+    border: 1px solid var(--color-primary-alt, var(--color-primary-alt));
     border-radius: 0.375rem;
     background: transparent;
-    color: var(--color-primary-alt, #4ecdc4);
+    color: var(--color-primary-alt, var(--color-primary-alt));
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
   }
   .loading-retry-btn:hover {
-    background: var(--color-primary-alt, #4ecdc4);
+    background: var(--color-primary-alt, var(--color-primary-alt));
     color: #071018;
   }
   .loading-retry-btn:focus-visible {
-    outline: 2px solid var(--color-primary-alt, #4ecdc4);
+    outline: 2px solid var(--color-primary-alt, var(--color-primary-alt));
     outline-offset: 2px;
   }
   @media (prefers-reduced-motion: reduce) {

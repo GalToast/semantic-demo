@@ -111,7 +111,7 @@
     padding: 0.2rem 0.5rem;
     background: rgba(7, 16, 24, 0.8);
     backdrop-filter: blur(8px);
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.3rem;
     color: var(--color-primary-alt);
     font-size: 0.6rem;

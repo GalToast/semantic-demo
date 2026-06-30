@@ -259,10 +259,10 @@
     top: 1rem;
     left: 1rem;
     z-index: var(--z-compass);
-    background: rgba(7, 16, 24, 0.92);
+    background: rgba(var(--color-surface-chrome-rgb), 0.92);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.2);
-    border-radius: 0.5rem;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
+    border-radius: var(--radius-tight);
     padding: 0.6rem 0.75rem;
     max-width: 260px;
     pointer-events: auto;
@@ -270,7 +270,7 @@
   .thread-inspector--empty {
     opacity: 0.7;
     border-style: dashed;
-    border-color: rgba(78, 205, 196, 0.14);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.14);
   }
   .focus-thread-inspector {
     display: grid;
@@ -282,7 +282,7 @@
     align-items: center;
   }
   .focus-thread-inspector-kicker {
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.62rem;
     font-weight: 600;
     letter-spacing: 0;
@@ -291,7 +291,7 @@
   }
   .focus-thread-inspector-title {
     margin: 0;
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.84rem;
     font-weight: 700;
     line-height: 1.15;
@@ -325,7 +325,7 @@
     display: flex;
     flex-wrap: wrap;
     gap: 0.35rem 0.55rem;
-    font-family: 'JetBrains Mono', monospace;
+    font-family: var(--font-mono);
     font-size: 0.6rem;
     color: var(--color-text-teal-dark);
   }
@@ -338,9 +338,9 @@
   }
   .thread-action {
     min-height: 44px;
-    border: 1px solid rgba(78, 205, 196, 0.22);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.22);
     border-radius: 0.35rem;
-    background: rgba(78, 205, 196, 0.08);
+    background: rgba(var(--color-primary-alt-rgb), 0.08);
     color: var(--color-text-teal-light);
     font: 600 0.64rem/1 'Bricolage Grotesque', sans-serif;
     cursor: pointer;
@@ -351,19 +351,19 @@
     background: rgba(255, 255, 255, 0.04);
   }
   .thread-action.primary {
-    border-color: rgba(78, 205, 196, 0.65);
-    background: rgba(78, 205, 196, 0.35);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.65);
+    background: rgba(var(--color-primary-alt-rgb), 0.35);
     color: #caf4f1;
-    box-shadow: 0 0 8px rgba(78, 205, 196, 0.2);
+    box-shadow: 0 0 8px rgba(var(--color-primary-alt-rgb), 0.2);
   }
   .thread-action.primary:hover:not(:disabled) {
-    background: rgba(78, 205, 196, 0.45);
-    box-shadow: 0 0 12px rgba(78, 205, 196, 0.35);
+    background: rgba(var(--color-primary-alt-rgb), 0.45);
+    box-shadow: 0 0 12px rgba(var(--color-primary-alt-rgb), 0.35);
   }
   .thread-action.primary:disabled {
     color: var(--color-text-teal-dark);
     background: rgba(255, 255, 255, 0.04);
-    border-color: rgba(78, 205, 196, 0.22);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.22);
     box-shadow: none;
   }
 </style>

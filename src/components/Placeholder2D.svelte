@@ -75,7 +75,7 @@
     <defs>
       <!-- Background wash -->
       <radialGradient id="bg-grad" cx="50%" cy="40%" r="70%">
-        <stop offset="0%" stop-color="rgba(78,205,196,0.14)" />
+        <stop offset="0%" stop-color="rgba(var(--color-primary-alt-rgb), 0.14)" />
         <stop offset="60%" stop-color="rgba(7,16,24,0.95)" />
         <stop offset="100%" stop-color="rgba(0,0,0,0.98)" />
       </radialGradient>
@@ -262,8 +262,8 @@
     font-size: 0.55em;
     font-weight: 600;
     letter-spacing: 0.12em;
-    color: rgba(78, 205, 196, 0.95);
-    border: 1px solid rgba(78, 205, 196, 0.45);
+    color: rgba(var(--color-primary-alt-rgb), 0.95);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.45);
     border-radius: 4px;
     vertical-align: middle;
     text-transform: uppercase;
@@ -280,8 +280,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(78, 205, 196, 0.18);
-    border: 1px solid rgba(78, 205, 196, 0.6);
+    background: rgba(var(--color-primary-alt-rgb), 0.18);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.6);
     color: rgba(255, 255, 255, 0.98);
     font-size: 1rem;
     padding: 0.75rem 2rem;
@@ -307,14 +307,14 @@
 
   .placeholder-cta:hover,
   .placeholder-cta:focus-visible {
-    background: rgba(78, 205, 196, 0.32);
+    background: rgba(var(--color-primary-alt-rgb), 0.32);
     border-color: rgba(78, 229, 215, 0.85);
     box-shadow:
       0 0 32px rgba(82, 229, 215, 0.45),
       0 12px 32px rgba(0, 0, 0, 0.6),
       inset 0 1px 0 rgba(255, 255, 255, 0.18);
     transform: translateY(-1px);
-    outline: 2px solid rgba(78, 205, 196, 0.85);
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.85);
     outline-offset: 2px;
   }
 

@@ -32,7 +32,7 @@
     width: min(90vw, 400px);
     background: rgba(7, 16, 24, 0.92);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(78, 205, 196, 0.18);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: 0.5rem;
     padding: 0.6rem 0.75rem;
     display: flex;
@@ -60,7 +60,7 @@
     font-size: 0.6rem;
     padding: 0.15rem 0.4rem;
     border-radius: 0.2rem;
-    background: rgba(78, 205, 196, 0.1);
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
     color: var(--color-text-teal-muted);
   }
   .search-trail-cue-note {

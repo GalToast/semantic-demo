@@ -262,8 +262,8 @@
     padding: 0.5rem 1rem;
     background: linear-gradient(
       to bottom,
-      rgba(7, 16, 24, 0.85) 0%,
-      rgba(7, 16, 24, 0.5) 70%,
+      rgba(var(--color-surface-chrome-rgb), 0.85) 0%,
+      rgba(var(--color-surface-chrome-rgb), 0.5) 70%,
       transparent 100%
     );
     backdrop-filter: blur(8px);
@@ -293,14 +293,14 @@
     gap: 0.5rem;
   }
   .brand-mark {
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.85rem;
     font-weight: 700;
     color: var(--color-text-teal-light);
     letter-spacing: 0.08em;
   }
   .brand-label {
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 0.85rem;
     font-weight: 600;
     color: var(--color-text-primary);
@@ -312,8 +312,8 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: rgba(78, 205, 196, 0.06);
-    border: 1px solid rgba(78, 205, 196, 0.15);
+    background: rgba(var(--color-primary-alt-rgb), 0.06);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
     border-radius: 0.3rem;
     color: rgba(176, 208, 208, 0.75);
     cursor: pointer;
@@ -321,13 +321,13 @@
   }
   .legend-toggle:hover,
   .help-toggle:hover {
-    background: rgba(78, 205, 196, 0.15);
+    background: rgba(var(--color-primary-alt-rgb), 0.15);
     color: var(--color-text-teal-light);
   }
   .legend-toggle.active {
-    background: rgba(78, 205, 196, 0.25);
+    background: rgba(var(--color-primary-alt-rgb), 0.25);
     color: var(--color-text-teal-light);
-    border-color: rgba(78, 205, 196, 0.5);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
   }
   .app-help-label {
     font-size: 0.7rem;
@@ -344,11 +344,11 @@
     align-items: center;
     gap: 0.3rem;
     padding: 0.35rem 0.6rem;
-    background: rgba(78, 205, 196, 0.06);
-    border: 1px solid rgba(78, 205, 196, 0.18);
+    background: rgba(var(--color-primary-alt-rgb), 0.06);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: 999px;
     color: rgba(176, 208, 208, 0.85);
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: var(--font-body);
     font-size: 0.75rem;
     font-weight: 500;
     cursor: pointer;
@@ -357,15 +357,15 @@
     outline: none;
   }
   .mode-chip:hover:not(:disabled) {
-    background: rgba(78, 205, 196, 0.15);
+    background: rgba(var(--color-primary-alt-rgb), 0.15);
     color: var(--color-text-teal-light);
-    border-color: rgba(78, 205, 196, 0.4);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
   }
   .mode-chip.active {
-    background: rgba(78, 205, 196, 0.25);
+    background: rgba(var(--color-primary-alt-rgb), 0.25);
     color: var(--color-text-teal-light);
-    border-color: rgba(78, 205, 196, 0.5);
-    box-shadow: 0 0 12px rgba(78, 205, 196, 0.18);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
+    box-shadow: 0 0 12px rgba(var(--color-primary-alt-rgb), 0.18);
   }
   .mode-chip:focus-visible {
     outline: 2px solid var(--color-text-teal-light);
@@ -379,8 +379,8 @@
     cursor: not-allowed;
   }
   .mode-chip.is-locked:hover {
-    background: rgba(78, 205, 196, 0.06); /* same as base — no hover lift */
-    border-color: rgba(78, 205, 196, 0.18);
+    background: rgba(var(--color-primary-alt-rgb), 0.06); /* same as base — no hover lift */
+    border-color: rgba(var(--color-primary-alt-rgb), 0.18);
     color: rgba(176, 208, 208, 0.85); /* same as base — no hover lighten */
     box-shadow: none;
   }
@@ -393,7 +393,7 @@
     white-space: nowrap;
   }
   .header-description {
-    font-family: 'Nunito Sans', sans-serif;
+    font-family: var(--font-body);
     font-size: 0.6rem;
     color: rgba(176, 208, 208, 0.45); /* a11y-ok: caption-text — header description */
     line-height: 1.3;
@@ -410,14 +410,14 @@
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    background: rgba(7, 16, 24, 0.95);
-    border: 1px solid rgba(78, 205, 196, 0.25);
-    border-radius: 0.5rem;
+    background: rgba(var(--color-surface-chrome-rgb), 0.95);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
+    border-radius: var(--radius-tight);
     padding: 0;
     max-width: 28rem;
     width: 90vw;
     color: rgba(224, 240, 240, 0.9);
-    box-shadow: 0 0 0 1px rgba(78, 205, 196, 0.1), 0 20px 60px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.1), 0 20px 60px rgba(0, 0, 0, 0.5);
   }
   .help-dialog::backdrop {
     background: rgba(0, 0, 0, 0.4);
@@ -427,7 +427,7 @@
     padding: 1.5rem;
   }
   .help-dialog-inner h3 {
-    font-family: 'Bricolage Grotesque', sans-serif;
+    font-family: var(--font-display);
     font-size: 1rem;
     font-weight: 600;
     color: var(--color-text-teal-light);
@@ -441,8 +441,8 @@
   }
   .help-dialog-close {
     padding: 0.4rem 1rem;
-    background: rgba(78, 205, 196, 0.12);
-    border: 1px solid rgba(78, 205, 196, 0.3);
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.3);
     border-radius: 0.3rem;
     color: var(--color-text-teal-light);
     font-size: 0.75rem;
@@ -450,8 +450,8 @@
     transition: all 0.15s;
   }
   .help-dialog-close:hover {
-    background: rgba(78, 205, 196, 0.2);
-    border-color: rgba(78, 205, 196, 0.5);
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
   }
 
   @media (max-width: 768px) {
