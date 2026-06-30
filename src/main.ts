@@ -51,7 +51,7 @@ const mountTarget = document.getElementById('app') ?? document.getElementById('a
 let app: ReturnType<typeof mount> | undefined
 
 // Ensure legacy state is exposed on window before any async data loads
-// so that semantic-threads.ts (which may fall back to window.__APP_STATE__)
+// so that @lib/engine/semantic-threads.ts (which may fall back to window.__APP_STATE__)
 // writes to the real state object instead of an empty placeholder.
 if (typeof window !== 'undefined') {
     window.__LEGACY_APP_STATE__ = legacyState

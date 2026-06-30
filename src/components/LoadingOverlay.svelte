@@ -43,19 +43,13 @@
   let progress = $derived(phaseMeta[phase as LoadingPhase]?.progress ?? 0);
   let note = $derived(phaseMeta[phase as LoadingPhase]?.note ?? '');
   let foot = $derived(phaseMeta[phase as LoadingPhase]?.foot ?? '');
-  // W47-D: hide on launch (success) OR on data-load error (failure).
-  // The app-init.ts safety-valve timeout fires after 15s of stalling and
-  // shows the "Failed to load" UI but historically left the overlay visible
-  // because phase stayed at 'restore' — the 15s timeout didn't advance the
-  // phase to 'launch'. Result: the overlay stayed on top of everything,
-  // intercepting clicks in tests and (rarely) in real browsers on slow
-  // networks. Now `dataLoadState.status === 'error'` also dismisses the
-  // overlay. Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler
-  // bug inverts `!==` to `===`. Use positive equality + negation instead.
+  // W47-D: hide on launch (success). On error, stay visible and switch to the
+  // error state so the user knows what happened and can reload.
+  let isError = $derived($dataLoadState.status === 'error');
+  let errorMessage = $derived($dataLoadState.error);
   let actuallyVisible = $derived(
     visible &&
-      !(phase === 'launch') &&
-      !($dataLoadState.status === 'error')
+      !(phase === 'launch')
   );
 
   /** Derive the active index for chip highlighting */
@@ -69,6 +63,7 @@
 {#if actuallyVisible}
   <div
     class="loading-overlay"
+    class:is-error={isError}
     id="loading-overlay"
     role="progressbar"
     aria-valuenow={Math.round(progress * 100)}
@@ -76,52 +71,66 @@
     aria-valuemax={100}
     aria-label="Loading semantic explorer"
     data-loading-phase={phase}
-    data-loading-state="active"
+    data-loading-state={isError ? 'error' : 'active'}
     transition:fade={{ duration: 600 }}
   >
     <div class="loading-shell">
-      <!-- Kicker label -->
-      <div class="loading-kicker">Semantic Explorer</div>
+      {#if isError}
+        <div class="loading-kicker">Semantic Explorer</div>
+        <div class="loading-title">Unable to load</div>
+        <p class="loading-note">{errorMessage ?? 'The data failed to load.'}</p>
+        <button
+          type="button"
+          class="loading-retry-btn"
+          onclick={() => window.location.reload()}
+        >
+          Reload
+        </button>
+        <p class="loading-foot">If the problem continues, check your connection and try again.</p>
+      {:else}
+        <!-- Kicker label -->
+        <div class="loading-kicker">Semantic Explorer</div>
 
-      <!-- Title -->
-      <div class="loading-title">Loading business records…</div>
+        <!-- Title -->
+        <div class="loading-title">Loading business records…</div>
 
-      <!-- SVG logo -->
-      <div class="loading-logo">
-        <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true">
-          <circle cx="12" cy="12" r="2.2" fill="var(--color-primary-alt)"/>
-          <circle cx="5" cy="6" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
-          <circle cx="19" cy="7" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
-          <circle cx="6" cy="18" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
-          <circle cx="18" cy="18" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
-          <path d="M10.3 10.5 6.3 7.2M13.8 10.7l3.9-2.8M10.2 13.4 7.1 17M13.7 13.5l3 3.2"
-            fill="none" stroke="var(--color-primary-alt)" stroke-width="1" opacity="0.5"/>
-        </svg>
-      </div>
+        <!-- SVG logo -->
+        <div class="loading-logo">
+          <svg width="48" height="48" viewBox="0 0 24 24" aria-hidden="true">
+            <circle cx="12" cy="12" r="2.2" fill="var(--color-primary-alt)"/>
+            <circle cx="5" cy="6" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
+            <circle cx="19" cy="7" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
+            <circle cx="6" cy="18" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
+            <circle cx="18" cy="18" r="1.6" fill="var(--color-primary-alt)" opacity="0.6"/>
+            <path d="M10.3 10.5 6.3 7.2M13.8 10.7l3.9-2.8M10.2 13.4 7.1 17M13.7 13.5l3 3.2"
+              fill="none" stroke="var(--color-primary-alt)" stroke-width="1" opacity="0.5"/>
+          </svg>
+        </div>
 
-      <p class="loading-note">{note}</p>
+        <p class="loading-note">{note}</p>
 
-      <!-- Progress bar -->
-      <div class="loading-bar-track">
-        <div class="loading-bar-fill" id="loading-progress-bar" style="width: {Math.round(progress * 100)}%"></div>
-      </div>
-      <span class="loading-progress-text" id="loading-progress-text">{Math.round(progress * 100)}%</span>
+        <!-- Progress bar -->
+        <div class="loading-bar-track">
+          <div class="loading-bar-fill" id="loading-progress-bar" style="width: {Math.round(progress * 100)}%"></div>
+        </div>
+        <span class="loading-progress-text" id="loading-progress-text">{Math.round(progress * 100)}%</span>
 
-      <!-- Phase row with chips -->
-      <div id="loading-phase-row" class="loading-phase-row">
-        {#each PHASE_ORDER as phaseKey, idx (phaseKey)}
-          <span
-            class="loading-phase-chip"
-            class:is-active={phaseKey === phase}
-            class:is-complete={idx < activePhaseIndex}
-            data-loading-phase={phaseKey}
-          >
-            {phaseKey === 'records' ? 'Data' : phaseKey === 'scene' ? 'Assets' : phaseKey === 'restore' ? 'Restore' : 'Ready'}
-          </span>
-        {/each}
-      </div>
+        <!-- Phase row with chips -->
+        <div id="loading-phase-row" class="loading-phase-row">
+          {#each PHASE_ORDER as phaseKey, idx (phaseKey)}
+            <span
+              class="loading-phase-chip"
+              class:is-active={phaseKey === phase}
+              class:is-complete={idx < activePhaseIndex}
+              data-loading-phase={phaseKey}
+            >
+              {phaseKey === 'records' ? 'Data' : phaseKey === 'scene' ? 'Assets' : phaseKey === 'restore' ? 'Restore' : 'Ready'}
+            </span>
+          {/each}
+        </div>
 
-      <p class="loading-foot" id="loading-foot">{foot}</p>
+        <p class="loading-foot" id="loading-foot">{foot}</p>
+      {/if}
     </div>
   </div>
 {/if}
@@ -225,6 +234,34 @@
     font-size: 0.7rem;
     color: var(--color-primary-alt);
     margin-top: 0.25rem;
+  }
+  .loading-overlay.is-error .loading-note {
+    color: var(--status-danger, #ff6b6b);
+  }
+  .loading-retry-btn {
+    font-family: 'Nunito Sans', system-ui, sans-serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    padding: 0.5rem 1.25rem;
+    border: 1px solid var(--color-primary-alt, #4ecdc4);
+    border-radius: 0.375rem;
+    background: transparent;
+    color: var(--color-primary-alt, #4ecdc4);
+    cursor: pointer;
+    transition: background 0.15s ease, color 0.15s ease;
+  }
+  .loading-retry-btn:hover {
+    background: var(--color-primary-alt, #4ecdc4);
+    color: #071018;
+  }
+  .loading-retry-btn:focus-visible {
+    outline: 2px solid var(--color-primary-alt, #4ecdc4);
+    outline-offset: 2px;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .loading-logo {
+      animation: none;
+    }
   }
   @keyframes pulse {
     0%, 100% { opacity: 0.8; }
