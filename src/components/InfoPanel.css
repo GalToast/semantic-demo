@@ -208,6 +208,12 @@
         }
     }
 
+    @media (prefers-reduced-motion: reduce) {
+        .info-panel-loading svg {
+            animation: none;
+        }
+    }
+
     .info-panel-content {
         padding-top: 1rem;
     }

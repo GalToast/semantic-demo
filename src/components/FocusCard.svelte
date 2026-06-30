@@ -283,6 +283,13 @@
     pointer-events: auto;
     animation: card-enter 0.25s ease-out;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .focus-card {
+      animation: none;
+    }
+  }
+
   /* Offset focus card above journey chrome when both are active
      to avoid vertical collision on narrow viewports. */
   .focus-card.surface-focus,

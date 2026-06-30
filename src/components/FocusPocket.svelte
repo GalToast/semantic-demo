@@ -106,6 +106,13 @@
     width: 40px;
     animation-delay: 0.2s;
   }
+
+  @media (prefers-reduced-motion: reduce) {
+    .pocket-shimmer {
+      animation: none;
+    }
+  }
+
   @keyframes pocketShimmer {
     0% { background-position: 200% 0; }
     100% { background-position: -200% 0; }

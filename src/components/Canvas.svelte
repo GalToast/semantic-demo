@@ -322,6 +322,13 @@
     animation: pulse 2s ease-in-out infinite;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .canvas-loading-overlay,
+    .loading-pulse {
+      animation: none;
+    }
+  }
+
   .canvas-error-overlay {
     position: absolute;
     inset: 0;
@@ -362,6 +369,10 @@
   }
   .error-dismiss:hover {
     background: rgba(78, 205, 196, 0.2);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .loading-pulse { animation: none; }
   }
 
   @keyframes pulse {
