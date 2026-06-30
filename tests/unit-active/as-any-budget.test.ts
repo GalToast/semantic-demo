@@ -22,7 +22,7 @@ function countAnyOccurrences(src: string): number {
 
 /** Strip both block (`/* ... */ ;`) and line (` // ...`) comments. */
 function stripComments(src: string): string {
-    return src.replace(/\/[\/*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
+    return src.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/.*$/gm, '')
 }
 
 function walk(dir: string, callback: (path: string) => void): void {
