@@ -19,6 +19,7 @@ import {
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
 import { appState } from '@lib/state/app.svelte'
+import { legacyState } from '@lib/state/legacy-state-adapter'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
@@ -31,26 +32,13 @@ export function setTrailDepth(depth: number, _options?: unknown): void {
     _setTrailDepth(nextDepth)
     updateNavState({ trailDepth: nextDepth })
 
+    // Mirror to test-compat globals via legacyState. See applyCompositionState()
+    // for the test-compat proxy convergence. window.state was retired
+    // 2026-05-27; window.__semanticState is never set.
     if (typeof window !== 'undefined') {
-        const stateWindow = window as Window & {
-            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
-        }
-        for (const appState of [
-            stateWindow.__APP_STATE__,
-            stateWindow.__TEST_STATE__,
-            stateWindow.__LEGACY_APP_STATE__,
-            stateWindow.__semanticState,
-            stateWindow.state
-        ]) {
-            if (!appState) continue
-            appState.trailDepth = nextDepth
-            if (appState.navState) {
-                appState.navState.trailDepth = nextDepth
-            }
+        legacyState.trailDepth = nextDepth
+        if (legacyState.navState) {
+            legacyState.navState.trailDepth = nextDepth
         }
     }
 }
@@ -131,36 +119,29 @@ export function applyCompositionState(): void {
         root.dataset.searchGlow = $search.glowActive ? 'active' : 'inactive'
     }
 
-    // Setup global state mirrors for tests
+    // Mirror to the test-compat global state. The test-compat proxy in
+    // main.ts forwards writes back to legacyState — i.e. setting
+    // `legacyState.x = y` here mirrors to all live window globals
+    // (`__APP_STATE__`, `__TEST_STATE__`, `__LEGACY_APP_STATE__`) in one go.
+    // `window.state` was retired 2026-05-27 and `window.__semanticState` is
+    // never set, so the previous 5-element iteration contained two dead
+    // entries. See docs/window-global-allowlist.md for the deprecation
+    // record. See tests/widget-journey.spec.js for the test-compat surface.
     if (typeof window !== 'undefined') {
-        const stateWindow = window as Window & {
-            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            __LEGACY_APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            __semanticState?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
+        legacyState.focusedNode = hasFocus
+            ? $nav.focusedIndex ??
+              ($focus.selectedBusiness
+                  ? ($focus.selectedBusiness as { index?: number }).index
+                  : null) ??
+              null
+            : null
+        if (legacyState.focusState) {
+            legacyState.focusState.selectedPoint = $focus.selectedBusiness
         }
-        for (const appSt of [
-            stateWindow.__APP_STATE__,
-            stateWindow.__TEST_STATE__,
-            stateWindow.__LEGACY_APP_STATE__,
-            stateWindow.__semanticState,
-            stateWindow.state
-        ]) {
-            if (!appSt) continue
-            appSt.focusedNode = hasFocus
-                ? ($nav.focusedIndex ??
-                  ($focus.selectedBusiness ? ($focus.selectedBusiness as { index?: number }).index : null) ??
-                  null)
-                : null
-            if (appSt.focusState && (appSt.focusState as any).selectedPoint !== undefined) {
-                ;(appSt.focusState as any).selectedPoint = $focus.selectedBusiness
-            }
-            appSt.semanticDiveMode = appState.composition.semanticDive === 'active'
-            if (appSt.navState) {
-                appSt.navState.focusedIndex = appSt.focusedNode
-                appSt.navState.mode = $nav.mode
-            }
+        legacyState.semanticDiveMode = appState.composition.semanticDive === 'active'
+        if (legacyState.navState) {
+            legacyState.navState.focusedIndex = legacyState.focusedNode
+            legacyState.navState.mode = $nav.mode
         }
     }
 }
@@ -259,24 +240,20 @@ export function resetExplorationFocus(options?: {
         publish(EVENTS.STATE_RESET, { reason: 'manual-reset', options })
     }
 
+    // Mirror to test-compat globals via legacyState. The test-compat proxy
+    // forwards writes from __APP_STATE__ / __TEST_STATE__ back to
+    // legacyState; a single direct write here is equivalent to iterating
+    // the live globals. window.state was retired 2026-05-27.
     if (typeof window !== 'undefined') {
-        const stateWindow = window as Window & {
-            __APP_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            __TEST_STATE__?: Record<string, unknown> & { navState?: Record<string, unknown> }
-            state?: Record<string, unknown> & { navState?: Record<string, unknown> }
-        }
-        for (const appState of [stateWindow.__APP_STATE__, stateWindow.__TEST_STATE__, stateWindow.state]) {
-            if (!appState) continue
-            appState.trailDepth = 0
-            appState.semanticDiveMode = false
-            appState.focusedNode = null
-            if (appState.navState) {
-                appState.navState.trailDepth = 0
-                appState.navState.walkHistoryIndices = []
-                appState.navState.threadCandidates = []
-                appState.navState.trailNeighborIndices = []
-                writeNavStateMirror({ focusedIndex: null, surface: 'idle', mode: 'overview' })
-            }
+        legacyState.trailDepth = 0
+        legacyState.semanticDiveMode = false
+        legacyState.focusedNode = null
+        if (legacyState.navState) {
+            legacyState.navState.trailDepth = 0
+            legacyState.navState.walkHistoryIndices = []
+            legacyState.navState.threadCandidates = []
+            legacyState.navState.trailNeighborIndices = []
+            writeNavStateMirror({ focusedIndex: null, surface: 'idle', mode: 'overview' })
         }
     }
 

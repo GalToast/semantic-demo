@@ -10,6 +10,7 @@
 import { get } from 'svelte/store'
 import { navStore, switchView as navSwitchView, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { searchStore } from '@lib/stores/search.svelte'
+import { legacyState } from '@lib/state/legacy-state-adapter'
 import {
     JOURNEY_COMPASS_PHASE_ORDER,
     JOURNEY_CONFIG,
@@ -325,20 +326,15 @@ export function executeJourneyCompassAction(action: string): void {
             journeySetTrailDepth(2)
             setSemanticDiveMode(true)
             writeNavStateMirror({ trailDepth: 2 })
-            // Parity-attrs owns semanticDive, panelSurface, trailDepth
+            // Parity-attrs owns semanticDive, panelSurface, trailDepth.
+            // Mirror to test-compat globals via legacyState. The test-compat
+            // proxy forwards writes from __APP_STATE__ / __TEST_STATE__
+            // back to legacyState — a single direct write replaces the
+            // two-block mirror that previously duplicated per-global writes.
+            // See lifecycle.ts applyCompositionState() for the convergence contract.
             if (typeof window !== 'undefined') {
-                const stateWindow = window as Window & {
-                    __APP_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number }
-                    __TEST_STATE__?: { semanticDiveMode?: boolean; trailDepth?: number }
-                }
-                if (stateWindow.__APP_STATE__) {
-                    stateWindow.__APP_STATE__.semanticDiveMode = true
-                    stateWindow.__APP_STATE__.trailDepth = 2
-                }
-                if (stateWindow.__TEST_STATE__) {
-                    stateWindow.__TEST_STATE__.semanticDiveMode = true
-                    stateWindow.__TEST_STATE__.trailDepth = 2
-                }
+                legacyState.semanticDiveMode = true
+                legacyState.trailDepth = 2
             }
             return
 
