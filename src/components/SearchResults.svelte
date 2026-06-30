@@ -146,6 +146,28 @@
   // ── Screen reader live announcement for active result (WCAG 4.1.3) ──────────
   let liveAnnouncement = $state('');
   $effect(() => {
+    // Search state changes take priority over keyboard nav announcements
+    if (isSearching) {
+      liveAnnouncement = 'Searching...';
+      return;
+    }
+    if (isFullError) {
+      const detail = searchError?.query ? `for "${searchError.query}"` : '';
+      liveAnnouncement = `Search error ${detail ? detail + ' ' : ''}Retry or clear.`;
+      return;
+    }
+    if (isEmpty) {
+      const q = summary?.query ? `"${summary.query}"` : '';
+      liveAnnouncement = `No results found ${q ? q + ' ' : ''}. Try a different term.`;
+      return;
+    }
+    if (isInlineError) {
+      const q = searchError?.query ? `"${searchError.query}"` : '';
+      liveAnnouncement = `Search is recovering ${q ? q + ' ' : ''}.`;
+      return;
+    }
+    
+    // Keyboard navigation within results
     const idx = activeIndex;
     if (idx < 0 || resultSlice.length === 0) {
       liveAnnouncement = '';
@@ -155,7 +177,7 @@
     if (active) {
       const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;
       const name = pt?.name ?? active.name ?? 'Unknown';
-      const snippet = pt?.what ?? active.snippet ?? '';
+      const snippet = pt?.what ?? active.snippet ?? active.snippet ?? '';
       const context = pt?.city ?? active.category ?? '';
       const rank = idx === 0 ? 'Top match' : `Match ${idx + 1}`;
       liveAnnouncement = `Focus ${name}. ${rank}. ${snippet} ${context}. (${idx + 1} of ${resultSlice.length})`;
@@ -306,12 +328,12 @@
   <div id="search-results" class="search-results-wrapper" class:active={isResultsSurfaceActive}>
     <!-- Loading state -->
     {#if isSearching}
-      <div class="search-loading" role="status" aria-live="polite">
+      <div class="search-loading">
         <div class="search-loading-spinner"></div>
         <div class="search-loading-text">Searching...</div>
       </div>
     {:else if isFullError}
-      <div class="search-error-state" role="status" aria-live="polite">
+      <div class="search-error-state">
         <span class="search-error-kicker">Retry needed</span>
         <div class="search-error-text">
           We could not finish "<strong>{searchError?.query}</strong>" just now. Retry the live search or clear it and keep exploring.
@@ -328,7 +350,7 @@
         </div>
       </div>
     {:else if isEmpty}
-      <div class="search-empty-state fade-in" role="status" aria-live="polite">
+      <div class="search-empty-state fade-in">
         <div class="search-empty-icon-wrap">
           <svg class="search-empty-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
             <circle cx="11" cy="11" r="7"></circle>
@@ -354,7 +376,7 @@
       </div>
     {:else if total > 0}
       {#if isInlineError}
-        <div class="search-error-inline-retry" role="status" aria-live="polite">
+        <div class="search-error-inline-retry">
           <span class="search-error-inline-msg">
             Search is recovering for "<strong>{searchError?.query}</strong>".
           </span>
@@ -362,7 +384,7 @@
         </div>
       {/if}
 
-      <div id="search-results-count" class="search-results-count" role="status" aria-live="polite" aria-atomic="true">
+      <div id="search-results-count" class="search-results-count">
         {#if total === 1}
           <span class="search-results-count-anchor">Top match</span>
         {:else if appState.composition.panelSurfaceDetail === 'peek' && total > visibleCount}
