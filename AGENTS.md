@@ -55,7 +55,7 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 ## Key Product Invariants
 
 - The 8,406-point mycelium data lives in `state.rawPositionsBuffer` as `[0,1]^3` positions. W7-B Pair 2 prep preserved the unit-cube invariant via the canonical `seededUnit` re-export from `@lib/utils/seeded-random`.
-- `getPointBoundsCenter(points, positionBuffer)` in `src/lib/engine/node-manager.ts` must receive the raw position buffer. Passing only point objects mis-centers the network.
+- `getPointBoundsCenter(points, positionBuffer)` in `src/lib/engine/node-manager.ts` requires a non-null `Float32Array` `positionBuffer` (TypeScript-enforced). The legacy `point.x/y/z` fallback was removed because `state.points` is `BusinessRecord[]` at runtime and never carries those fields, so the fallback would silently produce `count=0` and a wrong center.
 - `src/lib/state/app.svelte.ts` is the Svelte 5 global state source of truth.
 - `js/workers/data-worker.ts` is active runtime via `data-worker-url-bridge.ts`.
 - `micro-demo.js` / `src/lib/demo/choreography.ts` is the sole demo entry point and owns first-visit eligibility.

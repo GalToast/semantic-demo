@@ -3,9 +3,11 @@
 Stable repo invariants. Update only when architecture materially changes.
 
 ## Project
+
 3D semantic mycelium visualization for exploring Montgomery County TX business relationships. 8,406-point network rendered via Three.js instanced meshes, driven by UMAP/PCA projection in `[0,1]³` unit-cube space.
 
 ## Production shell
+
 Production is the Svelte/Vite shell: `src/index.html` -> `dist/svelte/index.html`.
 Deploy scripts publish that built file as both `/semantic-demo/index.html` and
 `/semantic-demo/vector-explorer-polished.html`. The repo-root
@@ -14,6 +16,7 @@ Deploy scripts publish that built file as both `/semantic-demo/index.html` and
 engine kernel remains active runtime, accessed via `src/lib/engine/bridge.ts`.
 
 ## Key file roles
+
 | Path | Role |
 |---|---|
 | `js/modules/app.js` | Legacy JS reference entry; not the production entry |
@@ -33,29 +36,35 @@ engine kernel remains active runtime, accessed via `src/lib/engine/bridge.ts`.
 | `src/lib/engine/bridge.ts` | Imperative bridge: Svelte → legacy Three.js (~1212L) |
 
 ## State machines
+
 - **micro-demo:** `IDLE → GLIDING → ARRIVED → CARD_VISIBLE → PULLBACK → WIDE_VIEW → RETURNING → COMPLETE`; `CANCELLED` branches from any non-terminal phase.
 - **journey-compass-state:** Pure derivation function (not FSM). Returns `phase ∈ {map, inside, focus, search, overview}`.
 
 ## Storage keys
+
 - `localStorage.moco_mycelium_demo_v1` — lifetime per-browser demo flag
 - `sessionStorage.moco_mycelium_demo_session_v1` — per-session demo guard
 
 ## CSS architecture
+
 - `css/` split into ordered modules; `semantic-demo.css` is an import manifest.
 - `css/mobile_premium__*.css` files loaded directly by the app shell (not via manifest).
 - Use `docs/semantic-demo-css-ownership-map.md` and `docs/semantic-demo-mobile-state-ownership.md` to find owning module before editing.
 - No `!important` — every instance signals unresolved specificity conflict.
 
 ## Durable code invariants
+
 - `withStateMutation()` required for tracked sub-objects (`navState`, `strandContinuityState`, etc.) — `_makeProdProxy` throws in production without it.
 - Dead CSS selectors are deleted outright (no TODO comments).
 - `initSemanticLens()` disposes before reinit (both `.js` and `.ts` paths must stay in sync).
 - Use `seededUnit(index, salt)` — never `Math.random()` in WebGL/geometry code.
-- Always pass the raw buffer to `getPointBoundsCenter()`, not just the points array.
+- `getPointBoundsCenter()` requires a non-null `Float32Array` buffer (TypeScript-enforced); passing only the points array is a compile error.
 
 ## Z-index architecture
+
 All z-index values flow from `src/lib/z-index.ts` → `src/lib/css/z-layers.css` → `src/index.html` inline `<style>`. Use `var(--z-*)` in components — never hardcode.
 
 ## Debug flags
+
 - `?demo=force` — re-trigger demo
 - `?nodemo=1` — suppress demo

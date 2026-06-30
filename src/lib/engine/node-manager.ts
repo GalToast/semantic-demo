@@ -201,45 +201,34 @@ export function getNodeSporeColor(index: number, factor = 1) {
 
 export function getPointBoundsCenter(
     points: Array<{ x?: number; y?: number; z?: number }>,
-    positionBuffer: Float32Array | null = null
+    positionBuffer: Float32Array
 ) {
     const min = new Vector3(Infinity, Infinity, Infinity)
     const max = new Vector3(-Infinity, -Infinity, -Infinity)
     let count = 0
 
-    if (positionBuffer && positionBuffer.length >= points.length * 3) {
-        const len = points.length
-        for (let i = 0; i < len; i += 1) {
-            const rawX = positionBuffer[i * 3]
-            const rawY = positionBuffer[i * 3 + 1]
-            const rawZ = positionBuffer[i * 3 + 2]
-            if (rawX === undefined || rawY === undefined || rawZ === undefined) continue
-            const x = Number(rawX)
-            const y = Number(rawY)
-            const z = Number(rawZ)
-            if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue
-            if (x < min.x) min.x = x
-            if (y < min.y) min.y = y
-            if (z < min.z) min.z = z
-            if (x > max.x) max.x = x
-            if (y > max.y) max.y = y
-            if (z > max.z) max.z = z
-            count += 1
-        }
-    } else {
-        points.forEach((point: { x?: number; y?: number; z?: number }) => {
-            const x = Number(point?.x)
-            const y = Number(point?.y)
-            const z = Number(point?.z)
-            if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) return
-            if (x < min.x) min.x = x
-            if (y < min.y) min.y = y
-            if (z < min.z) min.z = z
-            if (x > max.x) max.x = x
-            if (y > max.y) max.y = y
-            if (z > max.z) max.z = z
-            count += 1
-        })
+    // `positionBuffer` is a required `Float32Array` (TypeScript-enforced).
+    // The legacy `point.x/y/z` fallback has been removed: at runtime
+    // `state.points` is `BusinessRecord[]` and does not carry `.x`/`.y`/`.z`,
+    // so the fallback would silently produce `count=0` and a wrong center.
+    // See `tmp/bounds-center-audit-2026-06-29.md` for the audit history.
+    const len = points.length
+    for (let i = 0; i < len; i += 1) {
+        const rawX = positionBuffer[i * 3]
+        const rawY = positionBuffer[i * 3 + 1]
+        const rawZ = positionBuffer[i * 3 + 2]
+        if (rawX === undefined || rawY === undefined || rawZ === undefined) continue
+        const x = Number(rawX)
+        const y = Number(rawY)
+        const z = Number(rawZ)
+        if (!Number.isFinite(x) || !Number.isFinite(y) || !Number.isFinite(z)) continue
+        if (x < min.x) min.x = x
+        if (y < min.y) min.y = y
+        if (z < min.z) min.z = z
+        if (x > max.x) max.x = x
+        if (y > max.y) max.y = y
+        if (z > max.z) max.z = z
+        count += 1
     }
 
     if (!count) {
@@ -416,7 +405,11 @@ export function createPoints() {
     const rawPositionsBuffer = webglContext.rawPositionsBuffer || state.rawPositionsBuffer
     const rawClustersBuffer = webglContext.rawClustersBuffer || state.rawClustersBuffer
     const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer)
-    const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer)
+    // `rawPositionsBuffer` is non-null: createPoints()'s early-return guard
+    // at the top of this function (line ~362 per the audit) ensures
+    // `state.points.length > 0`, and `setBusinessData` populates the buffer
+    // alongside `state.points`. The `!` documents the runtime invariant.
+    const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer!)
     const renderCenter = bounds.center
     state.overviewBounds = {
         sourceMin: { x: bounds.min.x, y: bounds.min.y, z: bounds.min.z },

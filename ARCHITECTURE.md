@@ -74,7 +74,7 @@ The repo-root `index.html` is a routing/front-door page only. It may link into t
 ### Journey and Focus Layer (`src/lib/journey/`, `src/lib/focus/`)
 
 - **`src/lib/journey/journey.ts`** — Journey orchestration layer: thread walk, neighbor timers, trail seed, route index. **Off-limits write surface**; touch only with explicit lead approval.
-- **`src/lib/journey/focus-pocket.ts`, `focus-pocket-geometry.ts`, `focus-pocket-personality.ts`** — Focus-pocket data structures and Three.js geometry. `focus-pocket-geometry.ts` is 848 LOC and contains `getPointBoundsCenter(points, positionBuffer)` — the function **must receive the raw position buffer**; passing only point objects mis-centers the network. This is a sharp edge.
+- **`src/lib/journey/focus-pocket.ts`, `focus-pocket-geometry.ts`, `focus-pocket-personality.ts`** — Focus-pocket data structures and Three.js geometry. (`getPointBoundsCenter` was historically cited here but actually lives in `src/lib/engine/node-manager.ts:202` — its `positionBuffer` parameter is now a TypeScript-enforced required `Float32Array`; passing only points would be a compile error.)
 - **`src/lib/journey/{focus-ui, focus-anchor-indicator, focus-stage-dom, selected-card, semantic-overlay, semantic-dive, semantic-guide, semantic-guide-payload, semantic-guide-payload-adapter, route-trace, route-arrival-overlay-adapter, search-trail-cue-renderer, neighborhood, neighborhood-manifest, neighborhood-helpers, point-color, text-helpers}.ts`** — Journey UI and rendering helpers.
 - **`src/lib/journey/{thread-inspector, thread-inspector-{state,render,adapter}, thread-settler-adapter}.ts`** — Thread inspector UI; near off-limits; coordinate before edit.
 - **`src/lib/journey/{connection-analysis, connection-analysis-adapter, inspected-strand-overlay-adapter, lifecycle-adapter, compass-state, canvas-{hover, hit-test, interaction, hover-preview, node-picking}, legend-ui}.ts`** — Adapter cycle-breakers (see "Two Patterns" below).
@@ -154,4 +154,4 @@ For the layered details:
 
 ---
 
-*Last refreshed 2026-06-29 as part of the docs-rot sweep. Maintained alongside the lifecycle of `src/lib/state/app.svelte.ts` and the engine-boundary refactor plan.*
+_Last refreshed 2026-06-29 as part of the docs-rot sweep. Maintained alongside the lifecycle of `src/lib/state/app.svelte.ts` and the engine-boundary refactor plan._

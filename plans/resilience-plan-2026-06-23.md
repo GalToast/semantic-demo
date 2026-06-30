@@ -202,7 +202,7 @@ Why: Close quick wins first (weather, state, data loader) to build confidence an
 ## Key Invariants to Preserve
 
 - `state.rawPositionsBuffer` must remain `[0,1]^3` unit cube
-- `getPointBoundsCenter(points, positionBuffer)` must receive raw position buffer
+- `getPointBoundsCenter(points, positionBuffer)` requires a `Float32Array` buffer (TypeScript-enforced)
 - `src/lib/state/app.svelte.ts` is the Svelte 5 global state source of truth
 - `js/workers/data-worker.ts` is active runtime
 - `body.dataset.renderKind` is set once at init and updated by `engineReady.signalReady()`
