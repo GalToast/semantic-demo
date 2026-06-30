@@ -1864,3 +1864,112 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         //    focusedNode remains null. No explicit cleanup needed.
     })
 })
+
+/**
+ * PR-A (2026-06-30): Header utility buttons must render inside the header
+ * bar (and NOT with computed `position: fixed` at the viewport right edge).
+ *
+ * Regression catch for the layout bug discovered in the
+ * 2026-06-30 walkthrough (tmp/walkthrough-2026-06-30/REPORT.md Issue 01).
+ * The 3 buttons (`#btn-legend`, `#btn-keyboard-help`, `#btn-app-help`) were
+ * rendering at the right edge of the viewport (x=1398, y=117/169) instead
+ * of inline with the brand in the header bar. Two of them overlapped at
+ * the same coordinates, making one of them unclickable.
+ *
+ * Root cause was unconfirmed in the walkthrough (no CSS rule matched
+ * `position: fixed` for these buttons and no inline style was applied,
+ * but the computed style was `fixed`). PR-A added an explicit
+ * `position: static` to the `.legend-toggle, .help-toggle` rule in
+ * `header.css` to lock it down.
+ *
+ * These tests verify:
+ *   (1) `position` is `static` (not `fixed`, not `absolute`)
+ *   (2) all 3 buttons are inside the header bar rect (y < 60, since
+ *       the header is 60px tall)
+ *   (3) the 3 buttons do NOT overlap each other
+ */
+test.describe('Widget Journey Tests — header utility buttons (PR-A layout fix)', () => {
+    test('24a. all 3 header utility buttons have position: static and live inside the header bar', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        // Wait for header to render
+        await page.locator('#app-header').waitFor({ state: 'attached', timeout: 10000 })
+
+        const layout = await page.evaluate(() => {
+            const ids = ['btn-legend', 'btn-keyboard-help', 'btn-app-help']
+            const header = document.getElementById('app-header')
+            const headerRect = header?.getBoundingClientRect()
+            const out = { header: null, buttons: [] }
+            if (headerRect) {
+                out.header = { x: Math.round(headerRect.x), y: Math.round(headerRect.y), w: Math.round(headerRect.width), h: Math.round(headerRect.height) }
+            }
+            for (const id of ids) {
+                const btn = document.getElementById(id)
+                if (!btn) { out.buttons.push({ id, found: false }); continue }
+                const rect = btn.getBoundingClientRect()
+                const cs = window.getComputedStyle(btn)
+                out.buttons.push({
+                    id,
+                    found: true,
+                    position: cs.position,
+                    rect: { x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.width), h: Math.round(rect.height) },
+                    inHeader: headerRect ? rect.top >= headerRect.top && rect.bottom <= headerRect.bottom : false,
+                })
+            }
+            return out
+        })
+
+        expect(layout.header, 'header should be present').not.toBeNull()
+        expect(layout.header.h, 'header should be 60px tall').toBe(60)
+
+        for (const btn of layout.buttons) {
+            expect(btn.found, `${btn.id} should be in the DOM`).toBe(true)
+            expect(btn.position, `${btn.id} must have position: static (PR-A fix)`).toBe('static')
+            expect(btn.inHeader, `${btn.id} must be inside the header bar (y=${btn.rect.y}, header y=${layout.header.y}..${layout.header.y + layout.header.h})`).toBe(true)
+        }
+
+        // 3 buttons must not overlap each other (PR-A also fixed the overlap)
+        const positions = layout.buttons.map(b => `${b.rect.x},${b.rect.y}`)
+        const uniquePositions = new Set(positions)
+        expect(uniquePositions.size, `all 3 buttons must be at distinct coordinates, got ${positions.join(' | ')}`).toBe(positions.length)
+    })
+})
+
+/**
+ * PR-A (2026-06-30): Mobile mode-chip touch targets must meet WCAG 2.5.8 AA
+ * (24x24 minimum). The pre-fix chips were 22x22 (below AA) because the
+ * mobile @media (max-width: 768px) rule had `.mode-chip { padding: 0.25rem }`
+ * which combined with the 0.9rem icon gave 14 + 4 + 4 = 22px. PR-A bumped
+ * the mobile padding to 0.6rem so chips are 14 + 9.6 + 9.6 + 2 (borders) =
+ * 35.2px tall, well above the 24px AA minimum.
+ *
+ * The chip row's total width must still fit in the 339px mobile budget
+ * (per the W46-D4 comment in header.css).
+ */
+test.describe('Widget Journey Tests — mobile touch targets (PR-A a11y fix)', () => {
+    test('25a. mobile mode chips meet WCAG 2.5.8 AA 24x24 minimum', async ({ page }) => {
+        // Use mobile viewport
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        await page.locator('#mode-chips').waitFor({ state: 'attached', timeout: 10000 })
+
+        const sizes = await page.evaluate(() => {
+            const chips = Array.from(document.querySelectorAll('.mode-chip'))
+            const out = []
+            for (const c of chips) {
+                const rect = c.getBoundingClientRect()
+                out.push({
+                    mode: c.getAttribute('data-mode'),
+                    w: Math.round(rect.width),
+                    h: Math.round(rect.height),
+                    meetsAA: rect.width >= 24 && rect.height >= 24,
+                })
+            }
+            return out
+        })
+
+        expect(sizes).toHaveLength(6)
+        for (const c of sizes) {
+            expect(c.meetsAA, `${c.mode} chip is ${c.w}x${c.h}, must be >= 24x24 (WCAG 2.5.8 AA)`).toBe(true)
+        }
+    })
+})
