@@ -284,6 +284,7 @@ const PINNED_FILES = [
     'lifecycle-search-panel-ownership-contract.mjs',
     'lifecycle-journey-quick-dewindowing-contract.mjs',
     'search-lifecycle-adapter-contract.mjs',
+    'search-trail-cue-lifecycle-contract.mjs',
     'view-controller-ownership-contract.mjs',
     'loading-ui-contract.mjs',
     'state-ownership-contract.mjs',

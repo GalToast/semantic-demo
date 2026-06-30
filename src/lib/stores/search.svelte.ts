@@ -15,6 +15,7 @@ import {
 import { testCompatStore } from './test-compat.svelte'
 import { performSearch } from '@lib/search-engine'
 import { appState } from '@lib/state/app.svelte.ts'
+import { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 import { writeNavStateMirror } from './navigation.svelte.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { getBusinessRecords } from '@lib/data-store'
@@ -313,6 +314,9 @@ export function setSearchQuery(query: string): void {
 export function setSearchStatus(status: SearchStatus): void {
     withSearchNotify(() => {
         appState.searchState.searchStatus = status
+        if (status === 'searching') {
+            updateSearchTrailCue({ stage: 'query' })
+        }
     })
 }
 
@@ -327,6 +331,7 @@ export function setSearchError(query: string, error: unknown, type: SearchErrorT
             message: error instanceof Error ? error.message : String(error || 'Search failed')
         }
         appState.searchState.isSearching = false
+        updateSearchTrailCue({ stage: 'empty' })
     })
 }
 
@@ -436,6 +441,7 @@ export function clearSearch(): void {
         appState.searchState.searchPreviewIndex = null
         appState.searchState.searchGlowIndices = new Set()
         appState.searchState.searchGlowActive = false
+        updateSearchTrailCue({ beat: 'idle' })
     })
 }
 
@@ -515,6 +521,7 @@ export function setSearchResults(results: SearchResult[]): void {
         appState.searchState.searchStatus = 'results'
         appState.searchState.searchError = null
         appState.searchState.isSearching = false
+        updateSearchTrailCue(results.length > 0 ? { stage: 'explore' } : { stage: 'empty' })
     })
 }
 

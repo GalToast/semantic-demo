@@ -251,6 +251,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     resultsEl.hidden = false
     resultsEl.classList.add('active')
+    updateSearchTrailCue({ stage: 'explore' })
     setSearchPanelState({ searching: false, focusing: false, hasQuery: true, resultsRendered: true })
     setupMobileSearchSheetToggle({ isCompactSearchViewport })
     setActiveSearchResultRow(resultsEl, anchorIndex)
@@ -334,6 +335,7 @@ function updateSearchTrailCue(params: {
     kicker?: string
     title?: string
     note?: string
+    stage?: string
     immediate?: boolean
 }): void {
     renderSearchTrailCue(params)
