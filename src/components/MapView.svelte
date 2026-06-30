@@ -328,7 +328,7 @@
 
   .map-back-btn,
   .map-retry-btn {
-    min-height: 42px;
+    min-height: 44px;
     border: 1px solid rgba(126, 231, 219, 0.35);
     border-radius: 8px;
     background: rgba(10, 23, 29, 0.78);
