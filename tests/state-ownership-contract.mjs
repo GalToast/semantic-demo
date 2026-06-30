@@ -399,7 +399,8 @@ assert(
     'focusOnNode must be owned by camera-choreography/cursor.ts'
 )
 assert(
-    /appState\.selectedPoint\s*=\s*next\.selectedBusiness/.test(focusStoreSource),
+    /appState\.focusState\.selectedPoint\s*=\s*narrowToPoint\(next\.selectedBusiness\)/.test(focusStoreSource) ||
+        /appState\.selectedPoint\s*=\s*next\.selectedBusiness/.test(focusStoreSource),
     'focusOnNode must set selectedPoint through appState (via focus store)'
 )
 assert(
@@ -431,13 +432,13 @@ console.log('PASS CONTRACT 6: search-state.js clears focusedNode/selectedPoint o
 // ─── CONTRACT 7: lifecycle owns resetStateBeforeUrlRestore ───────────────────
 
 state.focusedNode = 7
-state.selectedPoint = state.points[7]
+state.focusState.selectedPoint = state.points[7]
 withStateMutation(() => {
     state.navState.focusedIndex = 7
     state.navState.mode = 'focus'
 })
 state.trailDepth = 1
-state.currentSearchSummary = { query: 'test', visibleMatches: 3 }
+state.searchState.currentSearchSummary = { query: 'test', visibleMatches: 3 }
 withStateMutation(() => {
     state.navState.trailCursor = 0
 })
@@ -445,31 +446,31 @@ withStateMutation(() => {
 lifecycle.resetStateBeforeUrlRestore({ clearSearchInput: false })
 
 assertEq(state.focusedNode, null, 'resetStateBeforeUrlRestore must clear focusedNode')
-assertEq(state.selectedPoint, null, 'resetStateBeforeUrlRestore must clear selectedPoint')
+assertEq(state.focusState.selectedPoint, null, 'resetStateBeforeUrlRestore must clear selectedPoint')
 assertEq(state.navState.focusedIndex, null, 'resetStateBeforeUrlRestore must clear navState.focusedIndex')
 assertEq(state.trailDepth, 0, 'resetStateBeforeUrlRestore must reset trailDepth=0')
-assertEq(state.currentSearchSummary, null, 'resetStateBeforeUrlRestore must clear currentSearchSummary')
+assertEq(state.searchState.currentSearchSummary, null, 'resetStateBeforeUrlRestore must clear currentSearchSummary')
 assertEq(state.navState.mode, 'overview', 'resetStateBeforeUrlRestore must reset navState.mode to overview')
 
 console.log('PASS CONTRACT 7: lifecycle resetStateBeforeUrlRestore clears all focus/trail state')
 
 // ─── CONTRACT 8: resetExplorationFocus preserves search ────────────────────────
 
-state.selectedPoint = state.points[3]
+state.focusState.selectedPoint = state.points[3]
 withStateMutation(() => {
     state.navState.focusedIndex = 3
     state.navState.mode = 'focus'
 })
 state.trailDepth = 1
-state.currentSearchSummary = { query: 'preserve me', visibleMatches: 5 }
+state.searchState.currentSearchSummary = { query: 'preserve me', visibleMatches: 5 }
 
 lifecycle.resetExplorationFocus()
 
 assertEq(state.focusedNode, null, 'resetExplorationFocus must clear focusedNode')
-assertEq(state.selectedPoint, null, 'resetExplorationFocus must clear selectedPoint')
+assertEq(state.focusState.selectedPoint, null, 'resetExplorationFocus must clear selectedPoint')
 assertEq(state.trailDepth, 0, 'resetExplorationFocus must reset trailDepth=0')
 assertEq(state.navState.mode, 'overview', 'resetExplorationFocus must reset navState.mode')
-assertEq(state.currentSearchSummary?.query, 'preserve me', 'resetExplorationFocus must preserve currentSearchSummary')
+assertEq(state.searchState.currentSearchSummary?.query, 'preserve me', 'resetExplorationFocus must preserve currentSearchSummary')
 
 console.log('PASS CONTRACT 8: resetExplorationFocus preserves search context')
 
@@ -612,13 +613,13 @@ withStateMutation(() => {
     state.navState.mode = 'overview'
 })
 state.focusedNode = null
-state.selectedPoint = null
+state.focusState.selectedPoint = null
 
 const snapshotBefore = {
     trailDepth: state.trailDepth,
     navStateMode: state.navState.mode,
     focusedNode: state.focusedNode,
-    selectedPoint: state.selectedPoint
+    selectedPoint: state.focusState.selectedPoint
 }
 
 state.semanticDiveMode = true
@@ -630,7 +631,7 @@ assertEq(
     'semanticDiveMode setter must not change navState.mode directly'
 )
 assertEq(state.focusedNode, snapshotBefore.focusedNode, 'semanticDiveMode setter must not change focusedNode')
-assertEq(state.selectedPoint, snapshotBefore.selectedPoint, 'semanticDiveMode setter must not change selectedPoint')
+assertEq(state.focusState.selectedPoint, snapshotBefore.selectedPoint, 'semanticDiveMode setter must not change selectedPoint')
 
 console.log('PASS CONTRACT 10: semanticDiveMode setter has no side-effects beyond trailDepth')
 
