@@ -6,7 +6,7 @@
  */
 
 import { appState } from '@lib/state/app.svelte'
-import { getViewportSize } from '../utils/environment'
+import { getViewportSize, prefersReducedMotion } from '../utils/environment'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
 
@@ -345,7 +345,7 @@ export function setActiveSearchResultRow(
         }
         const rowToReveal: HTMLElement = activeRow
         if (!revealActiveSearchResultOnCompact(resultsEl, rowToReveal)) {
-            rowToReveal.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+            rowToReveal.scrollIntoView({ block: 'nearest', behavior: prefersReducedMotion() ? 'auto' : 'smooth' })
         }
         scheduleCompactSearchResultReveal(resultsEl, effectiveIndex)
     }

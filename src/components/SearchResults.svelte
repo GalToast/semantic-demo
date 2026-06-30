@@ -28,7 +28,7 @@
   import { activeClusterFilter } from '@lib/stores/filter.svelte';
   import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
-
+  import { prefersReducedMotion } from '@lib/utils/environment';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { appState } from '@lib/state/app.svelte';
@@ -223,7 +223,7 @@
 
     requestAnimationFrame(() => {
       const firstNewItem = document.querySelector(`[data-index="${results[firstNewIndex]?.index}"]`);
-      if (firstNewItem) firstNewItem.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      if (firstNewItem) firstNewItem.scrollIntoView({ behavior: prefersReducedMotion() ? 'auto' : 'smooth', block: 'nearest' });
     });
   }
 
