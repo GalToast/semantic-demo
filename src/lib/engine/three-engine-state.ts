@@ -37,7 +37,10 @@ type SceneRevealModule = typeof import('./scene-reveal')
 type CameraControlsModule = typeof import('@lib/engine/camera-controls')
 type MapStateModule = typeof import('@lib/engine/map-state')
 type MyceliumEngineModule = typeof import('./mycelium-engine')
-type UiFeedbackModule = typeof import('@lib/ui/ui-feedback')
+type UiFeedbackModule = typeof import('@lib/ui/ui-feedback') &
+    // PR-D7 merged in the Svelte toastOrchMod to expose showExperienceToast
+    // after the legacy DOM-direct implementation was retired from ui-feedback.
+    { showExperienceToast(title: string, message?: string): void }
 type MapFlatteningModule = typeof import('../utils/map-flattening-layout')
 type WebGLRestoreModule = typeof import('@lib/utils/webgl-restore-adapter')
 type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overlay-adapter')
@@ -132,6 +135,7 @@ import { legacyState } from '@lib/state/legacy-state-adapter'
 import * as viewControllerMod from '@lib/orchestration/view-controller'
 import * as mapStateMod from '@lib/engine/map-state'
 import * as uiFeedbackMod from '@lib/ui/ui-feedback'
+import * as toastOrchMod from '@lib/orchestration/toast'
 import * as mapFlatteningMod from '../utils/map-flattening-layout'
 import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter'
 import * as focusAnchorMod from '@lib/journey/focus-anchor-indicator'
@@ -164,7 +168,7 @@ export function ensureModules(): void {
         engineState.cameraControls = cameraControlsMod
         engineState.mapState = mapStateMod
         engineState.myceliumEngine = myceliumEngineMod
-        engineState.uiFeedback = uiFeedbackMod
+        engineState.uiFeedback = { ...uiFeedbackMod, ...toastOrchMod }
         engineState.mapFlattening = mapFlatteningMod
         engineState.webglRestore = webglRestoreMod
         engineState.inspectedStrand = inspectedStrandMod

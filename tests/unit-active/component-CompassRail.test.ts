@@ -61,7 +61,7 @@ describe('CompassRail component', () => {
     })
 
     it('step label text is non-empty and matches known phase names', () => {
-        const knownPhases = ['overview', 'search', 'focus', 'inside', 'map']
+        const knownPhases = ['overview', 'search', 'focus', 'trail', 'inside', 'map']
         const { container } = render(CompassRail, { props: { visible: true } })
         const labels = container.querySelectorAll('.step-label')
         labels.forEach((label) => {

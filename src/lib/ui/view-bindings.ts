@@ -10,7 +10,7 @@ import { switchView } from '@lib/orchestration/view-controller'
 import { toggleAutoRotate } from '@lib/engine/camera-controls-restore.svelte'
 import { debugWarn } from '@lib/utils/debug'
 import { resetExperienceState, copyCurrentViewLink } from '@lib/orchestration/lifecycle'
-import { showExperienceToast } from '@lib/ui/ui-feedback'
+import { showExperienceToast } from '@lib/orchestration/toast'
 import { zoomMap } from '@lib/engine/map-state'
 
 interface BindClickOptions {

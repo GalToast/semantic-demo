@@ -2,7 +2,7 @@ import { appState as _state } from '@lib/state/app.svelte'
 const state = _state
 import { applyStoryPrompt } from '@lib/orchestration/cluster-filter-controller'
 import { focusSearchInputForReplacement, search } from '@lib/search/state'
-import { showExperienceToast } from '@lib/ui/ui-feedback'
+import { showExperienceToast } from '@lib/orchestration/toast'
 import { isModeLocked } from '@lib/navigation/mode-affordances'
 
 type SetMyceliumMode = (mode: string) => void

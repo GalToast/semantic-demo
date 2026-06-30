@@ -259,9 +259,18 @@ describe('journey store — T4 writable + withJourneyNotify migration', () => {
         expect(JOURNEY_CONFIG.TERRAIN_LANDING_SETTLE_MS).toBeGreaterThan(0)
     })
 
-    it('JOURNEY_COMPASS_PHASE_ORDER has 5 phases', () => {
-        expect(JOURNEY_COMPASS_PHASE_ORDER).toHaveLength(5)
+    it('JOURNEY_COMPASS_PHASE_ORDER has 6 phases (overview, search, focus, trail, inside, map)', () => {
+        expect(JOURNEY_COMPASS_PHASE_ORDER).toHaveLength(6)
         expect(JOURNEY_COMPASS_PHASE_ORDER[0]).toBe('overview')
-        expect(JOURNEY_COMPASS_PHASE_ORDER[4]).toBe('map')
+        expect(JOURNEY_COMPASS_PHASE_ORDER[5]).toBe('map')
+        expect(JOURNEY_COMPASS_PHASE_ORDER).toContain('trail')
+        // Trail is positioned between focus and inside (PR-D6) so the compass
+        // rail narrative becomes overview → search → focus → trail → inside → map.
+        expect(JOURNEY_COMPASS_PHASE_ORDER.indexOf('focus')).toBeLessThan(
+            JOURNEY_COMPASS_PHASE_ORDER.indexOf('trail')
+        )
+        expect(JOURNEY_COMPASS_PHASE_ORDER.indexOf('trail')).toBeLessThan(
+            JOURNEY_COMPASS_PHASE_ORDER.indexOf('inside')
+        )
     })
 })

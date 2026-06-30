@@ -1,14 +1,20 @@
 /**
  * @lib/ui/ui-feedback.ts — DOM status/toast feedback operations
  *
- * Port of
- * Provides `showExperienceToast` (transient toast) and `syncSearchStatusForFocus`
- * (announces the focused point's relationship to the active search stack).
+ * Provides `syncSearchStatusForFocus` (announces the focused point's
+ * relationship to the active search stack).
+ *
+ * Note: `showExperienceToast` was historically defined here as a DOM-direct
+ * mutator (textContent / classList / setAttribute on `#experience-reset-toast`).
+ * That implementation is gone — migrated to `@lib/orchestration/toast` which
+ * writes to the Svelte `toastStore`. Toast.svelte renders the same DOM IDs
+ * (more reliably, since Svelte's render_effect can wipe manual mutations).
+ * Callers: `from '@lib/orchestration/toast'` in mode-bindings.ts,
+ * map-state.ts, journey-bindings.ts, view-bindings.ts (was `ui-feedback`).
  */
 import { appState } from '@lib/state/app.svelte'
 import type { Point } from '@lib/state/state-types'
 
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { isCompactMapViewport, isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { setActiveSearchResultRow } from '@lib/search/result-renderer'
@@ -29,30 +35,6 @@ interface CurrentSearchSummarySnapshot {
 
 function getCurrentSearchSummarySnapshot(): CurrentSearchSummarySnapshot | null {
     return appState.searchState.currentSearchSummary
-}
-
-const _registry = new DisposableRegistry({ label: 'ui-feedback' })
-
-export function showExperienceToast(title: string, copy: string): void {
-    const toast = document.getElementById('experience-reset-toast')
-    if (!toast) return
-    const titleEl = document.getElementById('experience-toast-title')
-    const copyEl = document.getElementById('experience-toast-copy')
-    toast.setAttribute('aria-hidden', 'false')
-    toast.setAttribute('aria-live', 'polite')
-    if (titleEl) titleEl.textContent = title
-    if (copyEl) copyEl.textContent = copy
-    toast.classList.add('active')
-    _registry.timer(
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        setTimeout(() => {
-            toast.classList.remove('active')
-            toast.setAttribute('aria-hidden', 'true')
-            toast.setAttribute('aria-live', 'polite')
-            if (titleEl) titleEl.textContent = ''
-            if (copyEl) copyEl.textContent = ''
-        }, 2100)
-    )
 }
 
 export interface SyncSearchStatusOptions {

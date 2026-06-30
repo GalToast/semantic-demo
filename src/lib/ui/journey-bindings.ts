@@ -19,7 +19,7 @@ import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { animateCameraToNode } from '@lib/engine/camera-choreography'
 import { clearClusterFilter } from '@lib/orchestration/cluster-filter-controller'
-import { showExperienceToast } from '@lib/ui/ui-feedback'
+import { showExperienceToast } from '@lib/orchestration/toast'
 
 let _journeyAbortController: AbortController | null = null
 
