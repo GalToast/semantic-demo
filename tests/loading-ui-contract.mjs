@@ -126,6 +126,20 @@ if (hasSvelte && svelteLoadingSource) {
         ok('Svelte LoadingOverlay has accessibility attributes and loading state')
     })
 
+    svelteTests.push(async function testSvelteOverlayDoesNotOverrideGlobalBackground() {
+        if (!svelteLoadingSource) return skip('LoadingOverlay.svelte not readable')
+        const styleMatch = svelteLoadingSource.match(/<style>([\s\S]*?)<\/style>/)
+        if (!styleMatch) throw new Error('LoadingOverlay must have a style block')
+        const styleBlock = styleMatch[1]
+        // The rich gradient/glass treatment lives in css/loading.css; the component
+        // must not re-declare backgrounds on .loading-overlay or .loading-shell.
+        const overlayBg = /\.loading-overlay\s*\{[\s\S]*?background[\s\S]*?\}/.test(styleBlock)
+        const shellBg = /\.loading-shell\s*\{[\s\S]*?background[\s\S]*?\}/.test(styleBlock)
+        if (overlayBg) throw new Error('LoadingOverlay scoped styles must not set .loading-overlay background; use css/loading.css')
+        if (shellBg) throw new Error('LoadingOverlay scoped styles must not set .loading-shell background; use css/loading.css')
+        ok('LoadingOverlay scoped styles defer overlay/shell background to css/loading.css')
+    })
+
     svelteTests.push(async function testSvelteOverlayHasRequiredDOMStructure() {
         if (!svelteLoadingSource) return skip('LoadingOverlay.svelte not readable')
         const hasShell = svelteLoadingSource.includes('loading-shell')

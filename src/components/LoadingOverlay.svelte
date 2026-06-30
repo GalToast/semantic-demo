@@ -110,8 +110,8 @@
         <p class="loading-note">{note}</p>
 
         <!-- Progress bar -->
-        <div class="loading-bar-track">
-          <div class="loading-bar-fill" id="loading-progress-bar" style="width: {Math.round(progress * 100)}%"></div>
+        <div id="loading-progress-bar" class="loading-progress">
+          <div class="loading-progress-bar" style="width: {Math.round(progress * 100)}%"></div>
         </div>
         <span class="loading-progress-text" id="loading-progress-text">{Math.round(progress * 100)}%</span>
 
@@ -136,99 +136,15 @@
 {/if}
 
 <style>
-  .loading-overlay {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    z-index: var(--z-loading, 3000);
-    background: #071018;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-  .loading-shell {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.75rem;
-    max-width: 300px;
-    text-align: center;
-    padding: 1rem;
-  }
-  .loading-kicker {
-    font-family: var(--font-body);
-    font-size: 0.65rem;
-    text-transform: uppercase;
-    letter-spacing: 0.12em;
-    color: rgba(var(--color-primary-alt-rgb), 0.5); /* a11y-ok: caption-text — UPPERCASE tracked kicker */
-    font-weight: 600;
-  }
-  .loading-title {
-    font-family: var(--font-display);
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: var(--color-text-teal-light);
-  }
+  /*
+    Visual distinction (gradient background, glass shell, progress-bar glow,
+    phase-chip states) is owned by css/loading.css. The component styles below
+    only cover elements that are not styled by the global sheet: the SVG logo
+    animation, the percentage text, error-state copy, and the retry button.
+  */
   .loading-logo {
     opacity: 0.8;
     animation: pulse 2s ease-in-out infinite;
-  }
-  .loading-note {
-    font-family: var(--font-display);
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--color-text-teal-light);
-    margin: 0;
-  }
-  .loading-bar-track {
-    width: 200px;
-    height: 4px;
-    background: rgba(var(--color-primary-alt-rgb), 0.15);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-  .loading-bar-fill {
-    height: 100%;
-    background: var(--color-primary-alt);
-    border-radius: 1px;
-    transition: width 0.4s ease;
-  }
-  .loading-phase-row {
-    display: flex;
-    gap: 0.5rem;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-  }
-  .loading-phase-chip {
-    font-size: 0.6rem;
-    font-family: var(--font-body);
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    padding: 0.15rem 0.45rem;
-    border-radius: 0.25rem;
-    background: rgba(var(--color-primary-alt-rgb), 0.08);
-    color: rgba(224, 240, 240, 0.3); /* a11y-ok: caption-text — small loading footnote */
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.1);
-    transition: all 0.2s ease;
-  }
-  .loading-phase-chip.is-active {
-    background: rgba(var(--color-primary-alt-rgb), 0.2);
-    color: var(--color-primary-alt);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.5);
-  }
-  .loading-phase-chip.is-complete {
-    background: rgba(150, 206, 180, 0.12);
-    color: #96ceb4;
-    border-color: rgba(150, 206, 180, 0.3);
-  }
-  .loading-foot {
-    font-size: 0.75rem;
-    color: var(--color-text-teal-dark);
-    margin: 0;
   }
   .loading-progress-text {
     font-size: 0.7rem;
