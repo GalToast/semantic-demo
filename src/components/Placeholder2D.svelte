@@ -19,8 +19,8 @@
       --color-accent, --color-text-strong)
     - "Preview" label in the title (W47-C) so the user knows this is the
       fallback, not the real product
-    - "Open on desktop for the full 3D experience" subtitle (W47-C) gives
-      the user a clear alternative path
+   - "Click or tap to load the full scene, or open on desktop for the full 3D
+     experience" subtitle (W47-C) gives the user a clear alternative path
     - "Enter 3D Scene" CTA, large tap target (≥ 44×44 px), with subtle
       drop shadow + cyan glow that wins the eye-test against the blurred
       orb cluster behind it
@@ -165,7 +165,7 @@
       Semantic Explorer
       <span class="placeholder-badge">Preview</span>
     </h1>
-    <p class="placeholder-subtitle">Mobile preview · Montgomery County business mycelium</p>
+    <p class="placeholder-subtitle">Preview · Montgomery County business mycelium</p>
 
     <button
       class="placeholder-cta"
@@ -189,7 +189,7 @@
     </ul>
 
     <p class="placeholder-hint" id="placeholder-hint">
-      Tap to load the full scene, or open on desktop for the full 3D experience.
+      Click or tap to load the full 3D scene.
     </p>
   </div>
 </main>
@@ -425,6 +425,52 @@
     .placeholder-cta {
       animation: none !important;
       transition: none !important;
+    }
+  }
+
+  /* Small-viewport adjustments: keep the placeholder usable on 320–360 px
+     devices and on narrow desktop windows that still fall back to the
+     2D preview. Reduces padding, collapses the legend to a single column,
+     and slightly trims the CTA so content is not pushed below the fold. */
+  @media (max-width: 360px) {
+    .placeholder-overlay {
+      padding: 1.25rem;
+      max-width: 100%;
+    }
+    .placeholder-title {
+      font-size: 1.2rem;
+    }
+    .placeholder-badge {
+      margin-left: 0.4rem;
+      padding: 0.1rem 0.4rem;
+      font-size: 0.5em;
+    }
+    .placeholder-cta {
+      padding: 0.6rem 1.5rem;
+      font-size: 0.95rem;
+    }
+    .placeholder-legend {
+      grid-template-columns: 1fr;
+      max-width: 16rem;
+      gap: 0.25rem 0.6rem;
+    }
+    .placeholder-legend-item {
+      font-size: 0.65rem;
+    }
+    .placeholder-hint {
+      font-size: 0.75rem;
+    }
+  }
+
+  @media (max-height: 700px) {
+    .placeholder-overlay {
+      padding: 1.25rem;
+    }
+    .placeholder-legend {
+      margin-top: 0.8rem;
+    }
+    .placeholder-hint {
+      margin-top: 0.6rem;
     }
   }
 </style>
