@@ -98,10 +98,12 @@ export function syncSemanticDiveUi(): void {
     // syncSemanticDiveUi is the sole authority for body data-journey-phase='inside'
     // in the dive-active state — enforced by semantic-dive-ui-surface-contract.mjs.
     //
-    // (The former companion write `semanticDive='inactive'` IS safe to omit:
-    // parity derives semanticDive from focusStore.semanticDiveMode, which
-    // round-trips trailDepth===2. Only this journeyPhase write must stay.)
-
+    // Restore the body dataset write so syncSemanticDiveUi remains testable
+    // in Node contract tests (parity-attrs overwrites it in the browser, so
+    // this is idempotent in production).
+    if (document.body) {
+        document.body.dataset.semanticDive = isTransitioning ? 'transitioning' : active ? 'active' : 'inactive'
+    }
 
     const diveButton = document.getElementById('btn-focus-dive') as HTMLButtonElement | null
     const insideControls = document.getElementById('focus-stage-inside-controls')
