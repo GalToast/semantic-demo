@@ -51,19 +51,19 @@ function testInterestingBusinessNote() {
 }
 
 function testSelectedMatchNarrative() {
-    const previous = state.currentSearchSummary
+    const previous = state.searchState.currentSearchSummary
     try {
-        state.currentSearchSummary = null
+        state.searchState.currentSearchSummary = null
         assert(buildSelectedMatchNarrative({ name: 'Example' }) === '', 'empty narrative without search reason')
         assert(buildSelectedMatchNarrative(null) === '', 'empty narrative without point')
 
-        state.currentSearchSummary = { reason: 'Matched the search because the record mentions emergency repair.' }
+        state.searchState.currentSearchSummary = { reason: 'Matched the search because the record mentions emergency repair.' }
         assert(
-            buildSelectedMatchNarrative({ name: 'Example' }) === state.currentSearchSummary.reason,
+            buildSelectedMatchNarrative({ name: 'Example' }) === state.searchState.currentSearchSummary.reason,
             'narrative uses current search reason'
         )
     } finally {
-        state.currentSearchSummary = previous
+        state.searchState.currentSearchSummary = previous
     }
 }
 
