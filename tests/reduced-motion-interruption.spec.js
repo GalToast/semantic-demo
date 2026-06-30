@@ -106,8 +106,8 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
                 graphContext: body.graphContext,
                 panelSurface: body.panelSurface,
                 focusStageHidden: focusStage?.hidden ?? true,
-                currentSearchSummary: s.currentSearchSummary ? 'present' : null,
-                focusedNode: s.focusedNode
+                currentSearchSummary: s.searchState?.currentSearchSummary ? 'present' : null,
+                focusedNode: s.navState?.focusedIndex ?? s.focusedNode
             }
         })
         expect(baseline.searchGlow).toBe('inactive')
@@ -158,9 +158,9 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
                 graphContext: body.graphContext,
                 panelSurface: body.panelSurface,
                 currentSearchSummary: s.currentSearchSummary ? 'present' : null,
-                focusedNode: s.navState?.focusedIndex,
+                focusedNode: s.navState?.focusedIndex ?? s.focusedNode,
                 navStateMode: s.navState?.mode,
-                trailDepth: s.trailDepth,
+                trailDepth: s.navState?.trailDepth ?? s.trailDepth,
                 focusTransitionMode: s.focusTransitionMode
             }
         })
@@ -205,9 +205,9 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
             body.panelSurface = 'semantic-dive'
             body.graphContext = 'focus'
             return {
-                trailDepth: s.trailDepth,
+                trailDepth: s.navState?.trailDepth ?? s.trailDepth,
                 navStateMode: s.navState?.mode,
-                focusedNode: s.navState?.focusedIndex,
+                focusedNode: s.navState?.focusedIndex ?? s.focusedNode,
                 panelSurface: body.panelSurface,
                 cameraAssist: body.cameraAssist,
                 focusTransition: body.focusTransition
@@ -262,8 +262,8 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
                 return (
                     body.searchGlow === 'inactive' &&
                     !s.currentSearchSummary &&
-                    s.trailDepth === 0 &&
-                    s.focusedNode === null &&
+                    (s.navState?.trailDepth ?? s.trailDepth) === 0 &&
+                    (s.navState?.focusedIndex ?? s.focusedNode) === null &&
                     s.navState?.mode === 'overview' &&
                     body.graphContext === 'idle' &&
                     body.panelSurface === 'idle' &&
@@ -285,8 +285,8 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
             return {
                 searchGlow: body.searchGlow,
                 currentSearchSummary: s.currentSearchSummary ? 'present' : null,
-                trailDepth: s.trailDepth,
-                focusedNode: s.focusedNode,
+                trailDepth: s.navState?.trailDepth ?? s.trailDepth,
+                focusedNode: s.navState?.focusedIndex ?? s.focusedNode,
                 navStateMode: s.navState?.mode,
                 graphContext: body.graphContext,
                 panelSurface: body.panelSurface,

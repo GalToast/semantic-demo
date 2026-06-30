@@ -6,7 +6,10 @@
  */
 import { mount, unmount } from 'svelte'
 import { get } from 'svelte/store'
-import { navStore } from '@lib/stores/navigation.svelte'
+import { navStore, setFocusedIndex } from '@lib/stores/navigation.svelte'
+import { setSearchSummary } from '@lib/stores/search.svelte'
+import { focusStore } from '@lib/stores/focus.svelte'
+import type { NavState } from '@lib/types/state'
 import App from './App.svelte'
 // W5-T3: JourneyCompass is now lazy-loaded by App.svelte via
 // requestIdleCallback (scheduleIdleComponentImport). Removed static
@@ -22,6 +25,7 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 // Side-effect: generates and exposes window.__semanticExplorerSessionSeed
 import '@lib/state/session.svelte'
 import type { ViewName, SearchSummary, Point } from '@lib/state/state-types'
+import type { BusinessRecord } from '@lib/types/business'
 import { appInit } from '@lib/orchestration/app-init'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
@@ -138,6 +142,7 @@ type TestCompatWindow = Window & {
     __TEST_STATE__?: unknown
     __LEGACY_APP_STATE__?: unknown
     __refreshTestCompatState__?: () => void
+    withStateMutation?: (fn: () => void) => void
 }
 
 let latestTestState: unknown = null
@@ -223,10 +228,33 @@ function createTestCompatProxy(): Record<string, unknown> {
                             appState.weather = value
                         } else if (prop === 'currentSearchSummary') {
                             appState.searchState.currentSearchSummary = value as SearchSummary
+                            // Keep the searchStore writable in sync so parity-attrs
+                            // recomputes panelSurface/graphContext for tests that
+                            // write through the compat proxy.
+                            setSearchSummary(value as SearchSummary | null)
                         } else if (prop === 'points') {
                             appState.points = value as Point[]
                         } else if (prop === 'focusedNode') {
                             appState.focusedNode = value === null ? null : (value as number)
+                            // Keep navStore in sync for parity-attrs.
+                            setFocusedIndex(value === null ? null : (value as number))
+                        } else if (prop === 'selectedPoint') {
+                            // Keep focusStore.selectedBusiness in sync for parity-attrs.
+                            focusStore.update((s) => ({
+                                ...s,
+                                selectedBusiness: (value as BusinessRecord | null)
+                            }))
+                        } else if (prop === 'navState' && value && typeof value === 'object') {
+                            // Preserve the reactive $state navState object; merge
+                            // the test-supplied patch in place instead of replacing it.
+                            Object.assign(appState.navState, value)
+                            // Keep the navStore writable in sync so tests that
+                            // read back s.navState see the mutated mode/trailDepth.
+                            navStore.set(appState.navState as NavState)
+                        } else if (prop === 'focusState' && value && typeof value === 'object') {
+                            Object.assign(appState.focusState, value)
+                        } else if (prop === 'searchState' && value && typeof value === 'object') {
+                            Object.assign(appState.searchState, value)
                         }
                     })
                 }
@@ -265,6 +293,7 @@ function publishTestCompatState(): void {
 }
 
 window.__refreshTestCompatState__ = publishTestCompatState
+window.withStateMutation = withStateMutation
 const unsubTestState = testState.subscribe((value) => {
     latestTestState = value
     publishTestCompatState()
