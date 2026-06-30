@@ -1,6 +1,6 @@
 # Active Context — semantic-explorer
 
-**Last updated:** 2026-06-30 (W30 UI/UX focus round CLOSED: PR-A header lock + mobile WCAG, PR-B content + mobile desc, PR-C MANIFOLD dedup, PR-D lock SVG + View-on-Map wrap, PR-E MANIFOLD auto-dismiss + trail-context CSS fix + mobile desc ellipsis)
+**Last updated:** 2026-06-30 (W30 UI/UX focus round CLOSED: PR-A header lock + mobile WCAG, PR-B content + mobile desc, PR-C MANIFOLD dedup, PR-D lock SVG + View-on-Map wrap, PR-E MANIFOLD auto-dismiss + trail-context CSS fix + mobile desc ellipsis, PR-F mobile desc ellipsis, PR-G step indicator width, PR-H weather widget title, PR-I utility buttons 44px + map-back-btn 44px + global-spacing contract pass)
 **⚠ Update-prone:** Refresh this file whenever migration state, demo readiness, or blockers change.
 
 ## Migration status (Svelte + TypeScript)
@@ -54,7 +54,7 @@ To add a sixth invariant test: follow the same pattern (read the AGENTS.md rule,
 
 ## Known blockers / open items
 
-- **Main chunk still large.** Next bridge target is reducing the main entry chunk size. Current `engine-*.js` chunk separation helps but the index-*.js chunk is still 1.4 MB pre-gzip.
+- **Main chunk still large.** Next bridge target is reducing the main entry chunk size. Current `engine-*.js` chunk separation helps but the index-\*.js chunk is still 1.4 MB pre-gzip.
 - **relationship-roles finalization (B2).** Blocked until all UI consumers migrate. Unblocks after S6 arc.
 - **CORS production proxy for rerank (B3).** Production-readiness work. Defer until prod gate.
 - **Wave 10: legacy runtime retirement (the next big arc).** After S6 lands, the Svelte track is fully canonical. The legacy `js/modules/*` tree can be retired in a follow-up wave (similar to Wave 9 but for runtime, not alias).
@@ -67,13 +67,13 @@ To add a sixth invariant test: follow the same pattern (read the AGENTS.md rule,
 
 The S6 arc finishes the Svelte migration by porting the 10 remaining TODO-without-ticket violations. **All 5 tickets DONE.**
 
-| Ticket | File(s) | What | Status | Commit |
-|---|---|---|---|---|
-| **S1** | `src/lib/ui/loading.ts` (3 TODOs) | Port weather + thread hydration flow | ✅ DONE | `3ccccac` |
-| **S2** | `src/lib/orchestration/url-state.ts:412` | Switch URL-state to direct Svelte filter store mutations | ✅ DONE | `e5e01ad` |
-| **S3** | `src/lib/orchestration/view-controller.ts:293,296` + `src/App.svelte:389` + `src/lib/orchestration/url-state.ts:529` | Toast notifications + semantic-guide icon (4 TODOs) | ✅ DONE | `3c6253c` |
-| **S4** | `js/modules/legend-ui.ts:287` + `js/modules/tooltip.ts:149` | Move legacy call sites to Svelte component lifecycle | ✅ DONE | `ce7747d` |
-| **S5** | `tests/unit-active/todo-without-ticket-invariant.test.ts` + `memory/active-context.md` + `docs/both-pattern-follow-ups-2026-06-13.md` | Drop baseline to 0; close-out | ✅ DONE | (this commit) |
+| Ticket | File(s)                                                                                                                               | What                                                     | Status  | Commit        |
+| ------ | ------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------- | ------------- |
+| **S1** | `src/lib/ui/loading.ts` (3 TODOs)                                                                                                     | Port weather + thread hydration flow                     | ✅ DONE | `3ccccac`     |
+| **S2** | `src/lib/orchestration/url-state.ts:412`                                                                                              | Switch URL-state to direct Svelte filter store mutations | ✅ DONE | `e5e01ad`     |
+| **S3** | `src/lib/orchestration/view-controller.ts:293,296` + `src/App.svelte:389` + `src/lib/orchestration/url-state.ts:529`                  | Toast notifications + semantic-guide icon (4 TODOs)      | ✅ DONE | `3c6253c`     |
+| **S4** | `js/modules/legend-ui.ts:287` + `js/modules/tooltip.ts:149`                                                                           | Move legacy call sites to Svelte component lifecycle     | ✅ DONE | `ce7747d`     |
+| **S5** | `tests/unit-active/todo-without-ticket-invariant.test.ts` + `memory/active-context.md` + `docs/both-pattern-follow-ups-2026-06-13.md` | Drop baseline to 0; close-out                            | ✅ DONE | (this commit) |
 
 **S6 is complete.** The Svelte track is fully canonical. 0 TODO-without-ticket violations remain. The legacy `js/modules/*` tree is the only remaining retirement work (next arc: Wave 10).
 
@@ -120,7 +120,7 @@ The `js/` directory is NOT dead legacy code — it's the active Three.js engine 
 3. **5 invariant tests in place**
 4. **Test suite green:** 18/18 files, 130/130 tests. svelte-check 0/0
 5. **Next arc: product features** (the migration is done; time to ship product work)
-   - Specific candidates: new visual diagnostic features, main chunk split, relationship-roles finalization (now unblocked), CORS production proxy for rerank
+    - Specific candidates: new visual diagnostic features, main chunk split, relationship-roles finalization (now unblocked), CORS production proxy for rerank
 6. **Engine port (separate multi-week arc)** — porting the kernel from `js/modules/*.ts` to `src/lib/engine/*.ts` and thinning the bridge. Not this project's scope.
 
 ## W30 cleanup session (CLOSED, 2026-06-30)
