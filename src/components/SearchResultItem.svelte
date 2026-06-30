@@ -2,26 +2,21 @@
   import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';
+  import type { SearchResult } from '@lib/types/state';
 
-  // ── Types (mirrored from SearchResults.svelte) ─────────────────────────────
-
-  interface SearchResult {
-    id?: string;
-    name?: string;
-    index: number;
-    category?: string;
-    snippet?: string;
-    point?: {
-      name?: string;
-      what?: string;
-      cluster?: number;
-      city?: string;
-      website?: string | null;
-      email?: string | null;
-      phone?: string | null;
-    };
-    score?: number;
-  }
+  // ── Types (re-exported from canonical SearchResult in @lib/types/state) ──────
+  //
+  // The local SearchResult shape was previously duplicated here AND in
+  // SearchResults.svelte. The local copy made every field optional except
+  // `index`, which forced 5× `(resultSlice as SearchResult[])` casts at call
+  // sites. The canonical @lib/types/state.SearchResult is structural-compatible
+  // (it has the same fields with the same nullability), so we import it and
+  // drop the casts. The `point` shape mirrors `SearchResultPoint` (same fields).
+  //
+  // This re-import keeps the file's contract:
+  //   - `point` is typed as `SearchResultPoint | undefined` (canonical)
+  //   - `SearchResultItem` props still take `point: NonNullable<SearchResult['point']>`
+  //     because the search result list only renders items with a hydrated point.
 
   interface HighlightSegment {
     text: string;

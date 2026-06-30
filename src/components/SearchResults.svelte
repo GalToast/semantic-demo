@@ -32,6 +32,7 @@
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { appState } from '@lib/state/app.svelte';
+  import type { SearchResult } from '@lib/types/state';
   import SearchResultItem from '@components/SearchResultItem.svelte';
 
   interface Props {
@@ -40,26 +41,6 @@
   }
 
   let { visible = true }: Props = $props();
-
-  // ── Types ──────────────────────────────────────────────────────────────────────
-
-  interface SearchResult {
-    id?: string;
-    name?: string;
-    index: number;
-    category?: string;
-    snippet?: string;
-    point?: {
-      name?: string;
-      what?: string;
-      cluster?: number;
-      city?: string;
-      website?: string | null;
-      email?: string | null;
-      phone?: string | null;
-    };
-    score?: number;
-  }
 
   // ── Derived ───────────────────────────────────────────────────────────────────
 
@@ -111,7 +92,7 @@
   let activeIndex = $derived.by(() => {
     if (resultSlice.length === 0) return -1;
     // Find the result matching the store's activeResultId
-    const matchIdx = (resultSlice as SearchResult[]).findIndex(
+    const matchIdx = resultSlice.findIndex(
       (r) => r.id === activeId
     );
     return matchIdx >= 0 ? matchIdx : 0;
@@ -120,7 +101,7 @@
   /** Set the active result by its position in the visible slice. */
   function setActiveResultByIndex(idx: number): void {
     const clamped = Math.max(0, Math.min(idx, resultSlice.length - 1));
-    const result = (resultSlice as SearchResult[])[clamped];
+    const result = resultSlice[clamped];
     if (result?.id) {
       setActiveResult(result.id);
     }
@@ -173,7 +154,7 @@
       liveAnnouncement = '';
       return;
     }
-    const active = (resultSlice as SearchResult[])[idx];
+    const active = resultSlice[idx];
     if (active) {
       const pt = active.point ?? getBusinessRecords()[Number(active.index)] ?? null;
       const name = pt?.name ?? active.name ?? 'Unknown';
@@ -256,7 +237,7 @@
     } else if (key === 'Enter' || key === ' ') {
       event.preventDefault();
       if (activeIndex >= 0) {
-        const active = (resultSlice as SearchResult[])[activeIndex];
+        const active = resultSlice[activeIndex];
         if (active) handleResultClick(active.index);
       }
     } else if (key === 'Escape') {
@@ -408,7 +389,7 @@
         role="listbox"
         tabindex="-1"
         aria-label="Search result businesses"
-        aria-activedescendant={activeIndex >= 0 ? `search-result-${Number((resultSlice as SearchResult[])[activeIndex]?.index)}` : undefined}
+        aria-activedescendant={activeIndex >= 0 ? `search-result-${Number(resultSlice[activeIndex]?.index)}` : undefined}
         aria-keyshortcuts="ArrowDown ArrowUp ArrowLeft ArrowRight Home End Enter Escape"
         onkeydown={handleContainerKeyDown}
       >
