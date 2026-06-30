@@ -560,4 +560,7 @@
   @keyframes spin {
     to { transform: rotate(360deg); }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .search-spinner { animation: none; }
+  }
 </style>

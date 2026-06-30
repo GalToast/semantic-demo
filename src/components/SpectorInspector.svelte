@@ -385,4 +385,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
     0%, 100% { opacity: 1; }
     50% { opacity: 0.35; }
   }
+  @media (prefers-reduced-motion: reduce) {
+    .spector-status__dot { animation: none; }
+  }
 </style>
