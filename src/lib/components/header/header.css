@@ -179,10 +179,14 @@
 }
 .header-description {
     font-family: var(--font-body);
-    font-size: 0.6rem;
-    color: rgba(176, 208, 208, 0.45); /* a11y-ok: caption-text — header description */
+    /* PR-B (2026-06-30): bumped from 0.6rem/0.45-opacity (unreadable
+       caption) to 0.75rem/0.7-opacity (readable orientation signal).
+       The header description is the only signal telling the user what
+       the current mode actually does — see REPORT.md Issue 03. */
+    font-size: 0.75rem;
+    color: rgba(224, 240, 240, 0.7);
     line-height: 1.3;
-    max-width: 16rem;
+    max-width: 18rem;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -245,6 +249,20 @@
     .app-header {
         padding: 0.35rem 0.5rem;
         gap: 0.4rem;
+        flex-wrap: wrap; /* PR-B: allow description to wrap to its own row on mobile */
+    }
+    /* PR-B (2026-06-30): show the mode description on mobile too.
+       On mobile, wrap to its own row below the chip rail so it doesn't
+       push the chip rail off-screen. The description spans the full
+       header width via `flex-basis: 100%`. */
+    .header-description {
+        flex-basis: 100%;
+        font-size: 0.65rem;
+        color: rgba(224, 240, 240, 0.55);
+        margin-left: 0;
+        margin-top: 0.25rem;
+        text-align: left;
+        max-width: 100%;
     }
     .mode-chip .chip-label {
         display: none;

@@ -14,14 +14,19 @@
 
 import type { NavMode } from '@lib/types/state'
 
-/** Per-mode tooltip / description text. Ported from lifecycle.js MODE_DESCRIPTIONS. */
+/**
+ * Per-mode tooltip / description text. PR-B (2026-06-30) rewrote these
+ * from abstract nouns ("Focused path of related business entities") to
+ * action verbs and concrete outcomes so users immediately know what
+ * they'll be doing when they enter a mode. See REPORT.md Issue 07.
+ */
 export const MODE_DESCRIPTIONS: Record<NavMode, string> = {
-    overview: 'County-wide overview across all visible records.',
-    search: 'Search results across all business records.',
-    trail: 'Focused path of related business entities.',
-    focus: 'Living records with high relationship potential.',
-    inside: 'Immersive exploration of local neighborhoods.',
-    map: 'Geographic map view of the county.',
+    overview: 'See all 8,406 Montgomery County businesses in one view.',
+    search: 'Find businesses by name, type, or location.',
+    trail: 'Walk from the focused business to its closest neighbors — click any node to keep going.',
+    focus: 'See all businesses linked to the focused node, ranked by relationship strength.',
+    inside: 'Surround yourself with the focused business and its local neighborhood.',
+    map: 'Switch to a geographic map view of the county.',
     bridge: 'Transitioning between navigation states.'
 }
 

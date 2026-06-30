@@ -220,6 +220,13 @@
 
     {#if activeDescription && !$viewport.isCompact}
       <span class="header-description">{activeDescription}</span>
+    {:else if activeDescription}
+      <!-- PR-B (2026-06-30): show the mode description on mobile too.
+           On mobile (compact viewport) the header chips + utility buttons
+           already fill the row width, so the description wraps to its
+           own row below the chips via `flex-wrap: wrap` + `flex-basis: 100%`
+           in header.css. -->
+      <span class="header-description">{activeDescription}</span>
     {/if}
   </header>
 
