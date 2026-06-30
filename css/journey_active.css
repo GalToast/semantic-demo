@@ -579,3 +579,14 @@ body.surface-focus-search .focus-stage-journey-meta {
         animation: none;
     }
 }
+
+/* TrailControls owns Show trail + Prev + context + Next as a single toolbar
+   element, but the parent `.focus-stage-journey.active` grid above splits
+   the row into 3 columns (54px / 1fr / 64px). Without this span, the
+   trail-controls lands in column 1 (~42px after gap) and its 4 flex
+   children wrap into a vertical stack, breaking the row chrome and
+   truncating the trail-context text to 1–2 chars per line. */
+body.surface-focus .focus-stage-journey.active > #trail-controls,
+body.surface-focus-search .focus-stage-journey.active > #trail-controls {
+    grid-column: 1 / -1;
+}
