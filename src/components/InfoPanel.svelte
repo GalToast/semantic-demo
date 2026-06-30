@@ -27,7 +27,7 @@
   import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui/renderers';
   import { describeThreadLensForPoint } from '@lib/journey/point-color';
   import { buildSelectedMatchNarrative as buildPointMatchNarrative } from '@lib/orchestration/lifecycle';
-  import { buildSelectedBusinessProps, type SelectedCardAdapter } from '@lib/view-models/selected-business-view-model';
+  import { buildSelectedBusinessProps, type SelectedCardAdapter, type BusinessPoint } from '@lib/view-models/selected-business-view-model';
   import { onMount, type Snippet } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { getInfoPanelContent, type InfoPanelContentDescriptor } from '@lib/orchestration/info-panel-state';
@@ -57,23 +57,9 @@
 
   // ── Types ─────────────────────────────────────────────────────────────────────
 
-  interface BusinessPoint {
-    name?: string;
-    what?: string;
-    cluster?: number;
-    status?: string;
-    city?: string;
-    website?: string;
-    email?: string;
-    phone?: string;
-    lat?: number;
-    lng?: number;
-    weather_sensitive?: boolean;
-    sensitivity_flags?: string[];
-    public_note?: string;
-    zip?: string;
-    category?: string;
-  }
+  // BusinessPoint is imported from @lib/view-models/selected-business-view-model.
+  // Its [key: string]: unknown index signature accommodates the extra fields
+  // (public_note, zip, category) that were previously in a local copy here.
 
   // ── Adapters ──────────────────────────────────────────────────────────────────
 
