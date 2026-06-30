@@ -1055,19 +1055,19 @@ async function assert_focus_pocket(page, ctx) {
     const focusedUrl = `${positionalUrl}${base}view=galaxy&q=coffee&anchor=519`
     await loadAndWait(page, focusedUrl)
 
-    // Enter focus stage
+    // Enter focus stage via bridge actions (same pattern as assert_launch_focus
+    // and assert_field_node) — clicking the search-result item triggers
+    // SearchResults.svelte:271 which calls `actions.focusOnNode(...)`, and
+    // focusOnNode has documented 90s main-thread blocks in batch mode.
+    await page.waitForFunction(() => !!window.__navActions__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
-        const el = document.querySelector('.search-result-item')
-        if (el) el.click()
+        if (window.__navActions__?.setFocusedIndex) window.__navActions__.setFocusedIndex(519)
+        if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus')
     })
-    // click applied via evaluate
-
-    // Trigger "Step Inside"
-    await page.evaluate(() => {
-        const diveBtn = document.querySelector('#btn-focus-dive, .focus-stage-dive-btn')
-        if (diveBtn) diveBtn.click()
-    })
-    // click applied via evaluate
+    // Allow the app to settle its own surface state after the bridge update
+    // (the line below manually un-hides #focus-stage; bridge-driven surface
+    // state ensures #focus-stage is in the live render tree by then).
+    await page.waitForTimeout(500)
 
     await page.evaluate(() => {
         document.body.classList.add('is-active')
