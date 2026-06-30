@@ -334,21 +334,24 @@ async function testSearchContextSnapshotReturnsCurrentState() {
   const { getSearchContextSnapshot } = await import('../src/lib/journey/semantic-guide-payload-adapter.ts');
 
   // Set up state
-  const originalSummary = state.currentSearchSummary;
+  const originalSummary = state.searchState.currentSearchSummary;
   const originalView = state.currentView;
 
   withStateMutation(() => {
-    state.currentSearchSummary = { query: 'test search', resultIndices: [0, 1] };
+    state.searchState.currentSearchSummary = { query: 'test search', resultIndices: [0, 1] };
     state.currentView = 'galaxy';
   });
 
   const snap = getSearchContextSnapshot();
-  assert(snap.currentSearchSummary === state.currentSearchSummary, 'snapshot reflects currentSearchSummary');
+  assert(
+    snap.currentSearchSummary === state.searchState.currentSearchSummary,
+    'snapshot reflects currentSearchSummary'
+  );
   assert(snap.currentView === state.currentView, 'snapshot reflects currentView');
 
   // Restore
   withStateMutation(() => {
-    state.currentSearchSummary = originalSummary;
+    state.searchState.currentSearchSummary = originalSummary;
     state.currentView = originalView;
   });
 
