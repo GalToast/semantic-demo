@@ -35,6 +35,7 @@ import {
 } from 'three'
 import { CONFIG, FOCUS_CONSTELLATION_MOTIFS } from '@lib/engine/config'
 import { appState } from '@lib/state/app.svelte'
+import type { NodePosition, ConstellationMotifName, ConstellationMotif } from '@lib/state/state-types'
 const state = appState
 import { withStateMutation } from '@lib/state/with-state-mutation'
 
@@ -45,13 +46,16 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 // don't need to repeat the cast at use sites.
 
 const getNavState = () => state.navState
-const getFocusConstellationMotifs = (): Record<string, any> => FOCUS_CONSTELLATION_MOTIFS
+// Local record alias uses the already-exported types from state-types.ts
+// (avoids expanding config.ts's public-API surface just for typing).
+type LocalConstellationMotifs = Record<ConstellationMotifName, ConstellationMotif>
+const getFocusConstellationMotifs = (): LocalConstellationMotifs => FOCUS_CONSTELLATION_MOTIFS as unknown as LocalConstellationMotifs
 const getFocusThreadSegments = (): number => CONFIG.FOCUS_THREAD_SEGMENTS
 const getInspectedStrandGroup = (): Group | null => state.inspectedStrandGroup as Group | null
 const setInspectedStrandGroup = (g: Group | null): void => {
     state.inspectedStrandGroup = g
 }
-const getNodePositions = (): Vector3[] => state.nodePositions as Vector3[]
+const getNodePositions = (): NodePosition[] => state.nodePositions as NodePosition[] 
 const getCurrentView = () => state.currentView
 const getScene = (): Scene | null => state.scene as Scene | null
 const getFocusRingTexture = () => state.focusRingTexture
@@ -92,9 +96,9 @@ export interface InspectionState {
 export function getInspectedStrandEdge(index: number, lane: number = 0): InspectedStrandEdge | null {
     const focusIndex = Number.isFinite(getNavState()?.focusedIndex) ? getNavState()?.focusedIndex : null
     if (focusIndex === null || !Number.isFinite(index) || index === focusIndex) return null
-    const motifKey = (getNavState()?.focusPocketMeta as Record<string, unknown>)?.motif || 'market'
+    const motifKey = ((getNavState()?.focusPocketMeta as Record<string, unknown>)?.motif || 'market') as ConstellationMotifName
     const motifs = getFocusConstellationMotifs()
-    const motifConfig = { ...(motifs[motifKey as string] || motifs.market || FOCUS_CONSTELLATION_MOTIFS.market || {}) }
+    const motifConfig = { ...(motifs[motifKey] || FOCUS_CONSTELLATION_MOTIFS.market || {}) }
     const directLift = Number.isFinite(motifConfig.directLift) ? motifConfig.directLift : 0.6
     const braid = Number.isFinite(motifConfig.braid) ? motifConfig.braid : 0.3
     const side = (focusIndex * 31 + index * 17) % 2 === 0 ? 1 : -1
