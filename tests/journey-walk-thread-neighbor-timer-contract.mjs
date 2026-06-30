@@ -187,7 +187,8 @@ assert(
     settleBlock.includes("clearStrandContinuityState('arrival-settled')") &&
         (settleBlock.includes('syncFocusStage(pointAtSettle || state.selectedPoint || null)') ||
             settleBlock.includes('syncFocusStage(pointAtSettle || legacyState.selectedPoint || null)') ||
-            settleBlock.includes('syncFocusStage(pointAtSettle || appState.selectedPoint || null)')),
+            settleBlock.includes('syncFocusStage(pointAtSettle || appState.selectedPoint || null)') ||
+            settleBlock.includes('syncFocusStage(pointAtSettle || appState.focusState.selectedPoint || null)')),
     'settle timer should clear the strand journey and resync the focus stage'
 )
 
