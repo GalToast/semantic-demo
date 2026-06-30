@@ -336,3 +336,15 @@
         transform: rotate(360deg);
     }
 }
+
+
+@media (prefers-reduced-motion: reduce) {
+    /* Silence loading field drift, aura, and spore animations for users who prefer reduced motion. */
+    .loading-overlay::before,
+    .loading-overlay::after,
+    .loading-shell::before,
+    .loading-spore,
+    .loading-spore::after {
+        animation: none;
+    }
+}

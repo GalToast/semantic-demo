@@ -71,3 +71,12 @@
     animation: biofieldDrift 8s infinite linear;
     mix-blend-mode: normal;
 }
+
+
+@media (prefers-reduced-motion: reduce) {
+    /* Silence biofield pulse and drift animations for users who prefer reduced motion. */
+    .biofield-glow,
+    .biofield-glow::before {
+        animation: none;
+    }
+}

@@ -425,3 +425,17 @@
     backdrop-filter: blur(var(--glass-blur-ultra));
     -webkit-backdrop-filter: blur(var(--glass-blur-ultra));
 }
+
+
+@media (prefers-reduced-motion: reduce) {
+    /* Silence rain, snow, fog, sun, and weather pulse animations for users who prefer reduced motion. */
+    .rain-drop,
+    .snow-flake,
+    .fog-overlay,
+    .sun-rays,
+    .lightning-flash.flash,
+    .weather-icon .weather-seed-base,
+    .time-display::before {
+        animation: none;
+    }
+}

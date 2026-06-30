@@ -63,7 +63,7 @@ async function seedSearchGuideState(page) {
                 }))
             }
 
-            s.currentSearchSummary = {
+            s.searchState.currentSearchSummary = {
                 query: 'coffee',
                 anchorIndex: 0,
                 resultIndices: [0, 1, 2, 3]
@@ -119,7 +119,7 @@ test.describe('Semantic Guide Error Fallback (Gemma Fallback)', () => {
                         status: 'active'
                     }))
                 }
-                s.currentSearchSummary = {
+                s.searchState.currentSearchSummary = {
                     query: 'coffee',
                     anchorIndex: 0,
                     resultIndices: [0, 1, 2, 3]

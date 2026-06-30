@@ -736,3 +736,15 @@ body.view-map[data-terrain-handoff='landing']
         transform: scale(1);
     }
 }
+
+
+@media (prefers-reduced-motion: reduce) {
+    /* Silence terrain bridge and map route pulse animations for users who prefer reduced motion. */
+    body.view-map[data-terrain-handoff='landing'] #map-container::before,
+    body.view-map[data-terrain-handoff='landing'] #map-container::after,
+    #map-container .leaflet-interactive.semantic-map-route-line,
+    #map-container .leaflet-interactive.semantic-map-route-line-aura,
+    #map-container .leaflet-interactive.semantic-map-route-pulse {
+        animation: none;
+    }
+}

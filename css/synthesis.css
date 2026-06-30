@@ -186,3 +186,11 @@
 }
 
 
+
+
+@media (prefers-reduced-motion: reduce) {
+    /* Silence synthesis card pulse for users who prefer reduced motion. */
+    .summary-card.is-synthesizing {
+        animation: none;
+    }
+}

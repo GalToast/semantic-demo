@@ -1826,3 +1826,19 @@ body.surface-map-focus-search .semantic-lane-assist-meta {
     color: var(--color-primary);
     text-decoration: underline;
 }
+
+
+@media (prefers-reduced-motion: reduce) {
+    /* Silence search glow, spinner, and loading pulse animations for users who prefer reduced motion. */
+    .search-vector-scramble.active,
+    body.searching .search-spinner,
+    .search-results.searching .search-spinner-overlay,
+    .empty-state,
+.no-results,
+.search-loading,
+    .search-loading-spinner,
+    .shake-input,
+    .suggestion-btn.shake {
+        animation: none;
+    }
+}
