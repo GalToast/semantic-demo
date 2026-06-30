@@ -402,8 +402,13 @@ export function createPoints() {
     const pointBaseColors = state.pointBaseColors
     state.pointColorStateVersion += 1
     state.searchGlowRenderStateKey = ''
-    const rawPositionsBuffer = webglContext.rawPositionsBuffer || state.rawPositionsBuffer
-    const rawClustersBuffer = webglContext.rawClustersBuffer || state.rawClustersBuffer
+    // `webglContext.rawPositionsBuffer` / `webglContext.rawClustersBuffer` were
+    // dead fields (never assigned anywhere in src/ or tests/). The legacy
+    // `webglContext.rawX || state.rawX` always fell through to the appState
+    // value. PR-2 retired both fields; this now reads directly from appState.
+    // See tmp/outstanding-cleanup-audit-2026-06-29.md Item 2.
+    const rawPositionsBuffer = state.rawPositionsBuffer
+    const rawClustersBuffer = state.rawClustersBuffer
     // `!` asserts non-null per the same runtime invariant as in getPointBoundsCenter (PR-A cherry-picked as 432bee1c):
     // createPoints()'s early-return guard ensures state.points.length > 0,
     // and setBusinessData populates the buffer alongside the points.
