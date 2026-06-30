@@ -66,7 +66,7 @@ export const JOURNEY_CONFIG = {
 } as const
 
 /** Journey milestones in sequence. */
-export const JOURNEY_COMPASS_PHASE_ORDER = ['overview', 'search', 'focus', 'inside', 'map']
+export const JOURNEY_COMPASS_PHASE_ORDER = ['overview', 'search', 'focus', 'trail', 'inside', 'map']
 
 function valueArray(value: unknown): unknown[] {
     if (Array.isArray(value)) return value
