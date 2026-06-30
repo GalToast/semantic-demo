@@ -18,7 +18,8 @@
 
 import type { NavMode } from '@lib/types/state'
 import type { ModeOption } from './mode-constants'
-import { SELECTION_DEPENDENT_MODES, modes } from './mode-constants'
+import { modes } from './mode-constants'
+import { SELECTION_DEPENDENT_MODES, isModeLocked } from '@lib/navigation/mode-affordances'
 
 /** Side-effecting collaborators passed into `selectMode`. Types are
  * kept deliberately loose so test code can substitute recordings with
@@ -30,10 +31,11 @@ export interface SelectModeContext {
     debugWarn: (...args: unknown[]) => void
 }
 
-/** A mode is "locked" when it requires a focused business and none exists. */
-export function isModeLocked(modeId: NavMode | 'map', hasSelection: boolean): boolean {
-    return SELECTION_DEPENDENT_MODES.has(modeId) && !hasSelection
-}
+// Re-export from the shared navigation module so existing imports of these
+// symbols from `@lib/components/header/mode-nav` keep working without
+// changing every Header call site. The `mode-affordances` module is the
+// canonical home (PR-D3 split it out so mode-bindings can share too).
+export { isModeLocked, SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
 
 /** A mode is "active" when navState reflects it (mode or view, depending on kind). */
 export function isActive(modeId: NavMode | 'map', activeMode: NavMode, activeView: string): boolean {

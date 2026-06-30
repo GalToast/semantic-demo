@@ -3,6 +3,7 @@ const state = _state
 import { applyStoryPrompt } from '@lib/orchestration/cluster-filter-controller'
 import { focusSearchInputForReplacement, search } from '@lib/search/state'
 import { showExperienceToast } from '@lib/ui/ui-feedback'
+import { isModeLocked } from '@lib/navigation/mode-affordances'
 
 type SetMyceliumMode = (mode: string) => void
 
@@ -10,7 +11,7 @@ export function bindModeAndPromptControls(setMyceliumMode: SetMyceliumMode): voi
     document.querySelectorAll<HTMLElement>('[data-mode]').forEach((button) => {
         button.onclick = () => {
             if (button.dataset.story && typeof applyStoryPrompt === 'function') {
-                if (button.dataset.story === 'trail' && state.focusedNode === null) {
+                if (isModeLocked('trail', state.focusedNode != null)) {
                     showExperienceToast('Trail locked', 'Select a business first.')
                     return
                 }
@@ -18,7 +19,7 @@ export function bindModeAndPromptControls(setMyceliumMode: SetMyceliumMode): voi
                 return
             }
             const mode = button.dataset.mode || 'default'
-            if (mode === 'trail' && state.focusedNode === null) {
+            if (isModeLocked('trail', state.focusedNode != null)) {
                 showExperienceToast('Trail locked', 'Select a business first.')
                 return
             }
