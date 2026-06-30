@@ -5032,9 +5032,13 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
     await forceSemanticDiveSurface(page)
     await waitForFocusStageLayoutStable(page)
     const info = await page.evaluate(() => {
-        // If the helper was already injected by forceSemanticDiveSurface(), reuse it.
-        // Otherwise define + call it as a fallback.
-        if (!window.__forceSemanticDiveContractSurface) {
+        // Re-invoke the contract helper at measure time so Svelte's reactive
+        // cycle hasn't undone the dataset writes before the assertions run.
+        // If the helper exists, just call it again; otherwise define + call
+        // a fallback that writes the same dataset state directly.
+        if (window.__forceSemanticDiveContractSurface) {
+            window.__forceSemanticDiveContractSurface()
+        } else {
             function forceSemanticDiveContractSurface() {
                 document.body.classList.add('is-active', 'surface-semantic-dive')
                 document.body.classList.remove('surface-idle')
