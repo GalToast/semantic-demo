@@ -18,12 +18,15 @@ import {
     currentView,
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
-import { appState } from '@lib/state/app.svelte'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
 import { publish, EVENTS } from '../orchestration/event-bus'
+import {
+    computeParityAttributes,
+    applyParityAttributes
+} from '../orchestration/parity-attrs.svelte.ts'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
 
@@ -136,7 +139,12 @@ export function applyCompositionState(): void {
         if (legacyState.focusState) {
             legacyState.focusState.selectedPoint = $focus.selectedBusiness
         }
-        legacyState.semanticDiveMode = appState.composition.semanticDive === 'active'
+        // NOTE: do not mirror semanticDiveMode here. appState.semanticDiveMode
+        // is a getter derived from trailDepth, so writing to it (via the
+        // legacyState adapter, which is just appState cast) would re-set
+        // trailDepth and create a circular reset. Parity-attrs owns the body
+        // data-attr; the legacy test surface can read appState.semanticDiveMode
+        // directly.
         if (legacyState.navState) {
             legacyState.navState.focusedIndex = legacyState.focusedNode
             legacyState.navState.mode = $nav.mode
@@ -152,12 +160,14 @@ export function applyCompositionState(): void {
 export function refreshCompositionState(): void {
     applyCompositionState()
     // W15+ parity-attrs fix: the $effect.root() subscription in parity-attrs
-    // doesn't fire reliably in the live browser. Force-write the full
-    // parity attribute set on every composition refresh so body data-attrs
-    // (mode, navMode, navSurface, panelSurfaceMode, journeyPhase, etc.) always
-    // reflect the current Svelte 5 navStore. See tmp/parity-attrs-diagnostic-2026-06-17.md.
-    // Phase 1 timing-maze fix: manual applyParityAttributes call removed —
-    // the mirror now runs synchronously on every store change.
+    // doesn't fire reliably in the live browser or in Node contract tests.
+    // Force-write the full parity attribute set on every composition refresh
+    // so body data-attrs (mode, navMode, navSurface, panelSurfaceMode,
+    // journeyPhase, etc.) always reflect the current Svelte 5 navStore.
+    // The manual call is idempotent in production because parity-attrs'
+    // $effect.root() will write the same values. See
+    // tmp/parity-attrs-diagnostic-2026-06-17.md.
+    applyParityAttributes(computeParityAttributes())
     publish(EVENTS.COMPOSITION_UPDATED)
 }
 

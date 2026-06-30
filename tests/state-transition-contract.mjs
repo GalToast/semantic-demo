@@ -171,6 +171,8 @@ try {
     refreshCompositionState = globalThis.window.refreshCompositionState
 }
 
+
+
 assert(typeof refreshCompositionState === 'function', 'refreshCompositionState is callable')
 
 // ── Helpers ────────────────────────────────────────────────────────────────────

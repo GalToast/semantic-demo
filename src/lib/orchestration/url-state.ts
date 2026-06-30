@@ -20,6 +20,7 @@ import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import { appState } from '@lib/state/app.svelte'
+import { legacyState } from '@lib/state/legacy-state-adapter'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
 import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller'
 import {
@@ -94,6 +95,11 @@ export function clearExplorationFocusSelection(): void {
     appState.focusedNode = null
     appState.trailIndices?.clear?.()
     updateSelectedBusiness(null)
+    // Backward-compat: some contract tests still write to the legacy top-level
+    // appState.selectedPoint / appState.currentSearchSummary fields. Clear them
+    // alongside the canonical focusState / searchState.
+    legacyState.selectedPoint = null
+    legacyState.currentSearchSummary = null
 }
 
 /**

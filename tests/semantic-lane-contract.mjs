@@ -52,7 +52,7 @@ globalThis.document = {
 function resetState() {
   withStateMutation(() => {
     state.semanticLaneState = 'checking';
-    state.currentSearchSummary = null;
+    state.searchState.currentSearchSummary = null;
     state.semanticLaneWarmingCounter = 0;
   });
   document.visibilityState = 'visible';
@@ -76,7 +76,7 @@ try {
   console.log('\n[TEST 2] Visibility suppression for health probes');
   document.visibilityState = 'hidden';
   withStateMutation(() => {
-    state.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
+    state.searchState.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
   });
   assert(lane.shouldWarmSemanticLane('interval') === false, 'hidden document suppresses warm');
   console.log('  PASS — Visibility suppression confirmed');
@@ -85,7 +85,7 @@ try {
   resetState();
   console.log('\n[TEST 3] Active search state triggers interval warm probes');
   withStateMutation(() => {
-    state.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
+    state.searchState.currentSearchSummary = { query: 'coffee', resultIndices: [0] };
   });
   assert(lane.shouldWarmSemanticLane('interval') === true, 'active search summary triggers warm');
   resetState();
