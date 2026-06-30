@@ -76,6 +76,6 @@ describe('Placeholder2D component', () => {
     it('placeholder-hint paragraph exists and is linked from CTA via id', () => {
         expect(source).toContain('id="placeholder-hint"');
         expect(source).toContain('class="placeholder-hint"');
-        expect(source).toContain('Tap to load the full scene');
+        expect(source).toContain('Click or tap to load the full 3D scene.');
     });
 });
