@@ -110,6 +110,7 @@
       class="weather-toggle"
       onclick={toggleExpanded}
       aria-label="Toggle weather details — weather affects which outdoor businesses are active"
+      title="Weather affects which outdoor businesses are active"
       aria-expanded={expanded}
       aria-controls="weather-details"
       type="button"
