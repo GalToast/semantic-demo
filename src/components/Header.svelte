@@ -19,7 +19,17 @@
   import { legendOpen, toggleLegend } from '@lib/stores/legend.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
-import { debugWarn } from '@lib/utils/debug'
+  import { debugWarn } from '@lib/utils/debug'
+  import { modes } from '@lib/components/header/mode-constants';
+  import {
+    isModeLocked,
+    isActive,
+    getActiveIndexForMode,
+    getActiveDescription,
+    computeModeKeydown,
+    indexForModeId,
+    selectMode as applyModeSelect
+  } from '@lib/components/header/mode-nav';
 
   interface Props {
     /** Whether the header is visible */
@@ -30,163 +40,65 @@ import { debugWarn } from '@lib/utils/debug'
 
   let { visible = true, utilityOnly = false }: Props = $props();
 
-  /** Mode descriptions ported from lifecycle.js MODE_DESCRIPTIONS */
-  const MODE_DESCRIPTIONS: Record<NavMode, string> = {
-    overview: 'County-wide overview across all visible records.',
-    search: 'Search results across all business records.',
-    trail: 'Focused path of related business entities.',
-    focus: 'Living records with high relationship potential.',
-    inside: 'Immersive exploration of local neighborhoods.',
-    map: 'Geographic map view of the county.',
-    bridge: 'Transitioning between navigation states.'
-  };
-
-  interface ModeOption {
-    id: NavMode | 'map';
-    label: string;
-    description: string;
-    /** SVG sprite symbol id (e.g. 'icon-mycelium') */
-    iconId: string;
-  }
-
-  const modes: ModeOption[] = [
-    { id: 'overview', label: 'Overview', description: MODE_DESCRIPTIONS.overview, iconId: 'icon-mycelium' },
-    { id: 'search', label: 'Search', description: MODE_DESCRIPTIONS.search, iconId: 'icon-search' },
-    { id: 'trail', label: 'Trail', description: MODE_DESCRIPTIONS.trail, iconId: 'icon-trail-bloom' },
-    { id: 'focus', label: 'Focus', description: MODE_DESCRIPTIONS.focus, iconId: 'icon-orbit' },
-    { id: 'inside', label: 'Inside', description: MODE_DESCRIPTIONS.inside, iconId: 'icon-zoom-in' },
-    { id: 'map', label: 'Map', description: 'Geographic map view of the county.', iconId: 'icon-map' }
-  ];
-
   // Read directly from appState.navState (Svelte 5 rune-backed $state) — no mirror needed.
   let activeMode = $derived(appState.navState.mode ?? 'overview');
   let activeView = $derived(appState.navState.currentView ?? 'galaxy');
   let hasSelection = $derived(
     appState.navState.focusedIndex != null && Number.isFinite(appState.navState.focusedIndex as number)
   );
-  let activeIndex = $derived.by(() => {
-    const idx = modes.findIndex((m) => {
-      if (m.id === 'map') return appState.navState.currentView === 'map';
-      return appState.navState.mode === m.id;
-    });
-    return idx >= 0 ? idx : 0;
-  });
+  let activeIndex = $derived(getActiveIndexForMode(activeMode, activeView));
+  let activeDescription = $derived(getActiveDescription(activeMode, activeView));
 
-  /** Modes that require a focused business node to be meaningful.
-   * These match the selection guard in navigation.svelte.ts (mode ===
-   * 'focus' || 'inside' || focusedIndex != null) and the trail lock in
-   * mode-bindings.ts. They render empty/no-op without a selection, so they
-   * are proactively disabled (aria-disabled) rather than appearing active. */
-  const SELECTION_DEPENDENT_MODES = new Set<string>(['trail', 'focus', 'inside']);
+  /** Roving tabindex: which chip currently has keyboard focus. Defaults to
+   * the active-mode index; diverges after keyboard navigation. */
+  let keyboardFocusIndex = $state<number>(0);
 
-  function isModeLocked(modeId: NavMode | 'map'): boolean {
-    return SELECTION_DEPENDENT_MODES.has(modeId) && !hasSelection;
+  /** Thin wrappers that close over the Svelte 5 derived values. These exist
+   * because the module functions take hasSelection / activeMode / activeView
+   * as explicit args (pure), while the Svelte template expects single-arg
+   * chip-id calls. Mapping names so we don't shadow the imported `isModeLocked`
+   * / `isActive`. */
+  function isChipLocked(modeId: NavMode | 'map'): boolean {
+    return isModeLocked(modeId, hasSelection);
+  }
+  function isChipActive(modeId: NavMode | 'map'): boolean {
+    return isActive(modeId, activeMode, activeView);
   }
 
-  function isActive(modeId: NavMode | 'map'): boolean {
-    if (modeId === 'map') return activeView === 'map';
-    return activeMode === modeId;
-  }
-
-  /** Roving tabindex keyboard handler for the mode-chip radiogroup.
-   *  Skips disabled (locked) chips per WAI-ARIA radiogroup guidance. */
   function handleModeKeydown(e: KeyboardEvent): void {
-    const firstEnabled = modes.findIndex((m) => !isModeLocked(m.id));
-    const lastEnabled = (() => {
-      for (let i = modes.length - 1; i >= 0; i--) {
-        const m = modes[i];
-        if (m && !isModeLocked(m.id)) return i;
-      }
-      return activeIndex;
-    })();
-
-    let newIndex: number;
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        e.preventDefault();
-        newIndex = nextEnabledIndex(activeIndex, 1);
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        e.preventDefault();
-        newIndex = nextEnabledIndex(activeIndex, -1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        newIndex = firstEnabled;
-        break;
-      case 'End':
-        e.preventDefault();
-        newIndex = lastEnabled;
-        break;
-      default:
-        return; // Let Enter/Space pass through to native button click behavior
-    }
-
-    activeIndex = newIndex;
-    const target = modes[newIndex];
+    const result = computeModeKeydown(
+      e.key,
+      keyboardFocusIndex,
+      (id) => isModeLocked(id, hasSelection)
+    );
+    if (result.kind === 'noop') return;
+    e.preventDefault();
+    keyboardFocusIndex = result.index;
+    const target = modes[result.index];
     if (!target) return;
     const chip = document.querySelector<HTMLElement>(`.mode-chip[data-mode="${target.id}"]`);
     chip?.focus();
   }
 
-  /** Find the next/previous non-locked mode index, wrapping around. */
-  function nextEnabledIndex(from: number, dir: 1 | -1): number {
-    const n = modes.length;
-    for (let step = 1; step <= n; step++) {
-      const candidate = ((from + dir * step) % n + n) % n;
-      const m = modes[candidate];
-      if (m && !isModeLocked(m.id)) return candidate;
-    }
-    return from;
-  }
-
-  /** Sync activeIndex when a chip receives focus (roving tabindex pattern) */
   function handleModeFocusin(e: FocusEvent): void {
     const target = e.target as HTMLElement;
     if (!target?.classList.contains('mode-chip')) return;
-    const modeId = target.getAttribute('data-mode');
-    if (!modeId) return;
-    const idx = modes.findIndex((m) => m.id === modeId);
-    if (idx >= 0) activeIndex = idx;
+    const idx = indexForModeId(target.getAttribute('data-mode'));
+    if (idx >= 0) keyboardFocusIndex = idx;
   }
 
   function selectMode(modeId: NavMode | 'map'): void {
-    if (isModeLocked(modeId)) return; // disabled chips no-op (defense in depth)
-    if (modeId === 'overview') {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-    } else if (modeId === 'search') {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
-    } else if (modeId === 'focus') {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' });
-    } else if (modeId === 'inside') {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' });
-    } else if (modeId === 'trail') {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'trail' });
-    } else if (modeId === 'map') {
-      // Map is a view-level switch (galaxy ↔ map), not just a surface change.
-      // SET_VIEW updates currentView; SET_SURFACE preserves the map-family
-      // surface for downstream panels that still read navState.surface.
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
-    }
-    // Sync URL after mode change so the browser bar reflects the new state
-    try {
-      updateUrlState({}, { reason: 'mode-switch' });
-    } catch (e) {
-      debugWarn('Header.selectMode: URL update failed', e);
-    }
-    // Keep roving tabindex index in sync with the selected mode
-    const idx = modes.findIndex((m) => m.id === modeId);
-    if (idx >= 0) activeIndex = idx;
+    const idx = applyModeSelect(modeId, hasSelection, {
+      navActions: NAV_TRANSITION_ACTIONS,
+      dispatchNavTransition: dispatchNavTransition as unknown as (
+        action: unknown,
+        payload?: Record<string, unknown>
+      ) => unknown,
+      updateUrlState: updateUrlState as unknown as (...args: unknown[]) => void,
+      debugWarn: debugWarn as unknown as (...args: unknown[]) => void
+    });
+    if (idx >= 0) keyboardFocusIndex = idx;
   }
-
-  /** Find the active mode description for the tooltip */
-  let activeDescription = $derived.by(() => {
-    const active = modes.find((m) => isActive(m.id));
-    return active?.description ?? '';
-  });
 
   function openKeyboardHelp(): void {
     try {
@@ -286,15 +198,15 @@ import { debugWarn } from '@lib/utils/debug'
       {#each modes as mode (mode.id)}
         <button type="button"
           class="mode-chip"
-          class:active={isActive(mode.id)}
-          class:is-locked={isModeLocked(mode.id)}
-          disabled={isModeLocked(mode.id)}
-          aria-disabled={isModeLocked(mode.id)}
+          class:active={isChipActive(mode.id)}
+          class:is-locked={isChipLocked(mode.id)}
+          disabled={isChipLocked(mode.id)}
+          aria-disabled={isChipLocked(mode.id)}
           role="radio"
-          tabindex={isActive(mode.id) ? 0 : -1}
-          aria-checked={isActive(mode.id)}
+          tabindex={isChipActive(mode.id) ? 0 : -1}
+          aria-checked={isChipActive(mode.id)}
           aria-label={mode.label}
-          title={isModeLocked(mode.id)
+          title={isChipLocked(mode.id)
             ? `${mode.label}: ${mode.description} Select a business to unlock.`
             : mode.description}
           data-mode={mode.id}
@@ -348,165 +260,138 @@ import { debugWarn } from '@lib/utils/debug'
     align-items: center;
     gap: 1rem;
     padding: 0.5rem 1rem;
-    background: rgba(7, 16, 24, 0.75);
+    background: linear-gradient(
+      to bottom,
+      rgba(7, 16, 24, 0.85) 0%,
+      rgba(7, 16, 24, 0.5) 70%,
+      transparent 100%
+    );
     backdrop-filter: blur(8px);
-    border-bottom: 1px solid rgba(var(--color-primary-alt-rgb), 0.08);
+    -webkit-backdrop-filter: blur(8px);
+    transition: opacity 0.2s;
+    pointer-events: none;
+  }
+  .app-header > * {
+    pointer-events: auto;
+  }
+  .app-header.utility-only {
+    background: transparent;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    justify-content: flex-end;
+    padding: 0.25rem 0.5rem;
   }
   .app-header.compact {
-    padding: 0.4rem 0.5rem;
-    gap: 0.5rem;
+    padding: 0.35rem 0.5rem;
+    gap: 0.4rem;
   }
-  .app-header.utility-only,
-  .header-brand.utility-only {
-    display: contents;
-  }
-
-  /* ── Brand ─────────────────────────────────────────────────────────────── */
+  /* W46-D6: hide brand text and shrink padding on mobile. The mode chips stay
+     visible (icon-only); brand shrinks to "SE"; help/legend collapse to icons. */
   .header-brand {
     display: flex;
     align-items: center;
-    gap: 0.4rem;
-    flex-shrink: 0;
+    gap: 0.5rem;
   }
   .brand-mark {
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.7rem;
+    font-family: 'Bricolage Grotesque', sans-serif;
+    font-size: 0.85rem;
     font-weight: 700;
-    color: var(--color-primary-alt);
-    background: rgba(var(--color-primary-alt-rgb), 0.12);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
-    border-radius: 0.25rem;
-    padding: 0.15rem 0.35rem;
-    letter-spacing: 0.05em;
+    color: var(--color-text-teal-light);
+    letter-spacing: 0.08em;
   }
   .brand-label {
     font-family: 'Bricolage Grotesque', sans-serif;
-    font-size: 0.8rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: var(--color-text-teal-light);
-    white-space: nowrap;
+    color: var(--color-text-primary);
   }
-
-  /* ── Utility toggles ───────────────────────────────────────────────────── */
   .legend-toggle,
   .help-toggle {
-    display: flex;
+    width: 1.6rem;
+    height: 1.6rem;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 44px;
-    height: 44px;
-    padding: 0;
-    background: none;
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
-    border-radius: 0.25rem;
-    color: var(--color-text-teal-dark);
+    background: rgba(78, 205, 196, 0.06);
+    border: 1px solid rgba(78, 205, 196, 0.15);
+    border-radius: 0.3rem;
+    color: rgba(176, 208, 208, 0.75);
     cursor: pointer;
     transition: all 0.15s;
-    flex-shrink: 0;
-    /* Stable stacking so the icon-only #btn-keyboard-help does not get
-       visually swallowed by the wider #btn-app-help "Help" label when
-       both share the header flex row (journey test 7 regression). */
-    position: relative;
-    z-index: 1;
   }
   .legend-toggle:hover,
   .help-toggle:hover {
-    color: var(--color-text-teal-muted);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.3);
-    background: rgba(var(--color-primary-alt-rgb), 0.06);
-  }
-  /* The "Help" affordance carries a visible text label on desktop so a
-     stranded user can find the explainer without hunting for an icon-only
-     button (audit 2026-06-26: the `?` was too peripheral to discover). */
-  .app-help-toggle {
-    gap: 0.3rem;
-    width: auto;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0 0.55rem;
-  }
-  .app-help-label {
-    font-family: 'Nunito Sans', sans-serif;
-    font-size: 0.68rem;
-    font-weight: 600;
-    letter-spacing: 0.02em;
-    color: var(--color-text-teal-dark);
+    background: rgba(78, 205, 196, 0.15);
+    color: var(--color-text-teal-light);
   }
   .legend-toggle.active {
-    color: var(--color-primary-alt);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
-    background: rgba(var(--color-primary-alt-rgb), 0.1);
+    background: rgba(78, 205, 196, 0.25);
+    color: var(--color-text-teal-light);
+    border-color: rgba(78, 205, 196, 0.5);
   }
-
-  /* ── Mode chips ────────────────────────────────────────────────────────── */
+  .app-help-label {
+    font-size: 0.7rem;
+    margin-left: 0.25rem;
+  }
+  /* ── Mode chips ─────────────────────────────────────────────────────────── */
   .mode-chips {
     display: flex;
+    gap: 0.35rem;
     align-items: center;
-    gap: 0.25rem;
   }
   .mode-chip {
-    display: flex;
+    display: inline-flex;
     align-items: center;
-    justify-content: center;
     gap: 0.3rem;
-    padding: 0.3rem 0.5rem;
-    min-width: 44px;
-    min-height: 44px;
-    background: none;
-    border: 1px solid transparent;
-    border-radius: 0.3rem;
-    color: var(--color-text-teal-dark);
-    cursor: pointer;
+    padding: 0.35rem 0.6rem;
+    background: rgba(78, 205, 196, 0.06);
+    border: 1px solid rgba(78, 205, 196, 0.18);
+    border-radius: 999px;
+    color: rgba(176, 208, 208, 0.85);
     font-family: 'Nunito Sans', sans-serif;
-    font-size: 0.7rem;
+    font-size: 0.75rem;
+    font-weight: 500;
+    cursor: pointer;
     transition: all 0.15s;
-    white-space: nowrap;
+    pointer-events: auto;
+    outline: none;
   }
-  .mode-chip:hover {
-    color: var(--color-text-teal-muted);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.15);
+  .mode-chip:hover:not(:disabled) {
+    background: rgba(78, 205, 196, 0.15);
+    color: var(--color-text-teal-light);
+    border-color: rgba(78, 205, 196, 0.4);
   }
   .mode-chip.active {
-    background: rgba(var(--color-primary-alt-rgb), 0.12);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
-    color: var(--color-primary-alt);
-    font-weight: 600;
+    background: rgba(78, 205, 196, 0.25);
+    color: var(--color-text-teal-light);
+    border-color: rgba(78, 205, 196, 0.5);
+    box-shadow: 0 0 12px rgba(78, 205, 196, 0.18);
   }
-  :global(#mode-chips .mode-chip.is-waiting) {
-    opacity: 0.75;
-    border-style: solid;
-    border-color: rgba(255, 176, 30, 0.5);
-    background: rgba(255, 176, 30, 0.08);
-    color: rgba(255, 210, 130, 0.9);
-    box-shadow: 0 0 0 1px rgba(255, 176, 30, 0.15);
+  .mode-chip:focus-visible {
+    outline: 2px solid var(--color-text-teal-light);
+    outline-offset: 2px;
   }
-  :global(#mode-chips .mode-chip.is-locked) {
-    background: rgba(var(--color-primary-alt-rgb), 0.18);
-    border-color: rgba(var(--color-primary-alt-rgb), 0.55);
-    color: rgba(201, 255, 248, 0.98);
-    box-shadow:
-      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.25),
-      0 0 12px rgba(var(--color-primary-alt-rgb), 0.15);
-  }
-  :global(#mode-chips .mode-chip.is-locked .chip-label) {
-    color: rgba(201, 255, 248, 1);
-  }
-  :global(#mode-chips .mode-chip:disabled) {
+  /* Selection-dependent modes (trail / focus / inside) are dimmed when no
+     business is focused — proactively disabled (aria-disabled) rather than
+     appearing active. Matches the lock guard in navigation.svelte.ts. */
+  .mode-chip.is-locked {
+    opacity: 0.35;
     cursor: not-allowed;
-    opacity: 0.45;
-    pointer-events: none;
+  }
+  .mode-chip.is-locked:hover {
+    background: rgba(78, 205, 196, 0.06); /* same as base — no hover lift */
+    border-color: rgba(78, 205, 196, 0.18);
+    color: rgba(176, 208, 208, 0.85); /* same as base — no hover lighten */
+    box-shadow: none;
   }
   .chip-icon {
-    display: none;
-    flex-shrink: 0;
-    width: 16px;
-    height: 16px;
+    display: none; /* hidden on desktop by default */
+    width: 0.9rem;
+    height: 0.9rem;
   }
   .chip-label {
-    font-size: 0.7rem;
+    white-space: nowrap;
   }
-
-  /* ── Active description ────────────────────────────────────────────────── */
   .header-description {
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.6rem;
@@ -519,7 +404,7 @@ import { debugWarn } from '@lib/utils/debug'
     margin-left: auto;
   }
 
-  /* ── Help dialog ───────────────────────────────────────────────────────── */
+  /* ── Help dialog ─────────────────────────────────────────────────────────── */
   .help-dialog {
     position: fixed;
     top: 50%;
