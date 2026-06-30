@@ -1,9 +1,10 @@
 # Active Context — semantic-explorer
 
-**Last updated:** 2026-06-30 (W30 cleanup session CLOSED: toast consolidation, mode/compass decomposition, header CSS extraction, `__semanticState` retirement)
+**Last updated:** 2026-06-30 (W30 UI/UX focus round CLOSED: PR-A header lock + mobile WCAG, PR-B content + mobile desc, PR-C MANIFOLD dedup, PR-D lock SVG + View-on-Map wrap, PR-E MANIFOLD auto-dismiss + trail-context CSS fix + mobile desc ellipsis)
 **⚠ Update-prone:** Refresh this file whenever migration state, demo readiness, or blockers change.
 
 ## Migration status (Svelte + TypeScript)
+
 - **Scaffold:** 25 Svelte components currently present under `src/components/`
 - **Stores/types:** 12/12 stores, 4/4 type files, 4/4 orchestration files complete
 - **Bridge:** `src/lib/engine/bridge.ts` ~1212 lines, imperative legacy bridge
@@ -20,6 +21,7 @@
 ## Invariant tests (in `tests/unit-active/`, run with `npm run test:unit`)
 
 5 invariant tests in place, all pass:
+
 - **`with-state-mutation-invariant.test.ts`** — scans for direct mutations of `CRITICAL_KEYS` / `TRACKED_SUB_KEYS` (per `src/lib/state/with-state-mutation.ts`) outside a `withStateMutation(() => { ... })` block. Supports the local alias `withMutation` (used in `demo-choreography.ts`). Catches regressions in the AGENTS.md invariant: "All mutations to navState, strandContinuityState, and other TRACKED_SUB_KEYS in state.js MUST be wrapped in withStateMutation()." Current: 0 violations.
 - **`css-important-invariant.test.ts`** — regression detector for the AGENTS.md rule "Avoid `!important` as a default CSS fix." Counts `!important` uses across `css/` and `src/lib/css/`; fails on increase. Current: 7 uses (matches baseline; no new uses).
 - **`commit-purity-invariant.test.ts`** — meta-test that scans `git log` for commit title prefixes (e.g., `docs(...)`, `fix(...)`) and asserts the prefix matches the file classes in the commit. HARD FAIL: `docs(...)` or `test(...)` must be 100% file-class match. SOFT WARN: `feat/fix/refactor(...)` should have ≥50% parenthetical-scope match. Motivation: the `b5ad93e → 0761a80` failure mode. The test is grandfathered with `EXEMPTED_SHAS` for known exceptions.
@@ -29,6 +31,7 @@
 To add a sixth invariant test: follow the same pattern (read the AGENTS.md rule, write a regex/scanner test, fail with a clear error message). Examples: off-limits-files guard, no-Math.random()-in-WebGL guard, seededUnit() invariant in geometry code.
 
 ## Demo readiness
+
 - Svelte demo store/choreography regression for dismiss-in-COMPLETE state passes via `node tests/dismiss-in-complete-state-contract.mjs` as of 2026-06-13.
 - Headed Svelte product playthrough passes with 0 ownership failures as of artifact `tmp/product-qa/2026-06-13T22-13-17-040Z`. The route seam is fixed: search focus hydrates neighbor candidates/pills, pill tap opens the thread inspector, Follow creates trail walk history, Step Inside reaches semantic dive, Map is reached through a real user route, and County reset returns to `map-idle` with search cleared from URL/store/DOM.
 - Micro-demo legacy/reference path remains functional with verified state machine unless current contract runs prove otherwise.
@@ -36,18 +39,21 @@ To add a sixth invariant test: follow the same pattern (read the AGENTS.md rule,
 - Bugsweep 2026-06-05 resolved all 4 HIGH JS bugs (strand-continuity, three-interaction-visuals, state.js Proxy, three-node-manager textures).
 
 ## Subagent model rotation (2026-06-13)
+
 - **`docs/subagent-model-catalog.md`** captures the active routing defaults and the new "Clip / Screenshot Diagnostic Rotation" pattern (clips as evidence artifacts, not deterministic DOM/layout replacements).
 - **`nvidia/moonshotai/kimi-k2.6`** is the new priority-1 diagnostic scout (long-horizon coding + multimodal with image/video input). Source: Kimi K2.6 post; NVIDIA Build card.
 - **`modelscope/Qwen/Qwen3-VL-{8B,235B}`** are the ModelScope visual QA candidates. Use 8B for smoke, 235B for full.
 - `nvidia-capabilities` MCP is the live interface for NIM calls.
 
 ## High-risk surfaces (lead approval required to touch)
+
 - `js/state.js`, `js/modules/app.js`, `js/modules/journey.js`, `js/modules/lifecycle.js`
 - `js/modules/ui-renderers.js`, `js/modules/focus-pocket.js`, `js/modules/journey-compass-state.js`
 - CSS mobile cascade files (`css/journey_active.css`, `css/mobile_premium__*.css`, etc.)
 - Deploy scripts (`deploy.sh`, `deploy.ps1`)
 
 ## Known blockers / open items
+
 - **Main chunk still large.** Next bridge target is reducing the main entry chunk size. Current `engine-*.js` chunk separation helps but the index-*.js chunk is still 1.4 MB pre-gzip.
 - **relationship-roles finalization (B2).** Blocked until all UI consumers migrate. Unblocks after S6 arc.
 - **CORS production proxy for rerank (B3).** Production-readiness work. Defer until prod gate.
@@ -81,6 +87,7 @@ The S6 arc finishes the Svelte migration by porting the 10 remaining TODO-withou
 Pre-staged worker prompts at `tmp/commit-messages-2026-06-13/worker-ticket-S{1..5}-*.txt`.
 
 ## Session artifacts (2026-06-13 wave)
+
 - **14 ready-to-fire worker prompts** in `tmp/commit-messages-2026-06-13/` (1+2, 1+2-v2, 4, 5, 6, 8, 9C, 9D, 9E, S1, S2, S3, S4, S5)
 - **3 memories + 2 skills + 1 profile doc** saved (bash-detach, v2-prompt recovery, session summary; bash-detach-handling + dev-server-drift-handling skills; `notes/fred-profile.md`)
 - **Key router running** at `127.0.0.1:8788` with 18 keys across 5 providers (OpenCode Zen, NVIDIA NIM, Mistral, ModelScope, Kilo). The session has been using `pi:direct-opencode-go/mimo-v2.5` direct (bypasses the router); future work on nvidia/mistral/modelscope/kilo routes can use the router.
@@ -124,6 +131,13 @@ Code-quality sweep — subagent audits → bounded PRs → verify → commit. 28
 
 - **PR-Item1** — `focusRing/NextCue/BeaconTexture` getters were cast via `as Texture` against `appState.*` runes that didn't exist. Routed to `webglContext.*` (the actual writers in `node-manager.ts`). Endpoints now render with non-null `material.map`. (`b9dd923b`)
 - **PR-selectedPoint** — `url-state.ts:101,103` wrote to `legacyState.selectedPoint`, which the test mock harness defines as getter-only. Threw "Cannot set property ... has only a getter". Removed the dead writes, added `focusState?.selectedPoint` / `searchState?.currentSearchSummary` fallbacks in `getCompatValue`. (`5efe4571`)
+- **PR-A** — Header utility buttons had unconfirmed `position: fixed` cascade (defensive `position: static` lock-down). Mobile `.mode-chip` padding bumped 0.25rem→0.6rem (22px→35px) to meet WCAG 2.5.8 AA. 2 new Playwright journey tests (24a header position, 25a mobile AA). (`4b6b1e34`)
+- **PR-B** — MODE_DESCRIPTIONS rewritten with action verbs (overview/search/trail/focus/inside/map). Header description 0.6rem/0.45-opacity→0.75rem/0.7-opacity. Now shown on mobile via `flex-wrap: wrap` + `flex-basis: 100%` (wraps to row 2). (`08252ed5`)
+- **PR-C** — Subagent-delegated: CSS-only suppression of duplicate mode picker overlay in focus/inside phase. Adds `suppress-step-indicators` + `suppress-actions` classes on `.journey-compass`. DOM preserved, only display hidden. (`43dc5c73`)
+- **PR-D** — Lock SVG on locked mode chips (replaced 🔒 emoji in accessibility tree). `white-space: nowrap` on "View on Map" button. Bundled with parallel-session toast queue refactor. (`68c282dd`)
+- **PR-E1** — MANIFOLD `#518 Semantic proximity active` badge auto-dismisses after 4s. Animation: `overlay-in` 0.3s ease-out then `overlay-out` 0.3s ease-in 4s forwards. Keeps first-visit context, removes recurring noise. (`66928c8e`)
+- **PR-E2** — Fixed CSS scoping bug: `.trail-context-text` styles in `JourneyChrome.css` were scoped to the parent component but elements live in `TrailControls.svelte` child, so they silently failed. Computed styles confirmed 16px default font (expected: 0.6rem). Moved styles into TrailControls.svelte's `<style>` block; removed duplicate scoped rules from JourneyChrome.css (kept `:global()` selectors). (`66928c8e`)
+- **PR-F** — Mobile header description ellipsis: at 390x844, focus-mode description text bled off-screen. Added `white-space: nowrap; overflow: hidden; text-overflow: ellipsis` on mobile. (`66928c8e`)
 
 ### Decomposition
 
