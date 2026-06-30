@@ -74,9 +74,6 @@ export interface WebGLContextState {
     focusAnchorRingMesh: THREE.Mesh | null
     focusAnchorHaloSprite: THREE.Sprite | null
     hoverHalo: THREE.Sprite | null
-    focusBeaconTexture: THREE.Texture | null
-    focusRingTexture: THREE.Texture | null
-    focusNextCueTexture: THREE.Texture | null
     semanticManifold: THREE.Mesh | null
     routeTraceLines: THREE.LineSegments | null
     arrivalHandoffGroup: THREE.Group | null

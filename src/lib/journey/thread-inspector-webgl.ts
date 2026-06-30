@@ -38,6 +38,7 @@ import { appState } from '@lib/state/app.svelte'
 import type { NodePosition, ConstellationMotifName, ConstellationMotif } from '@lib/state/state-types'
 const state = appState
 import { withStateMutation } from '@lib/state/with-state-mutation'
+import { webglContext } from '@lib/engine/webgl-context'
 
 // ── Local selectors (replacing js/state/selectors/index.ts imports) ─────────
 //
@@ -49,18 +50,22 @@ const getNavState = () => state.navState
 // Local record alias uses the already-exported types from state-types.ts
 // (avoids expanding config.ts's public-API surface just for typing).
 type LocalConstellationMotifs = Record<ConstellationMotifName, ConstellationMotif>
-const getFocusConstellationMotifs = (): LocalConstellationMotifs => FOCUS_CONSTELLATION_MOTIFS as unknown as LocalConstellationMotifs
+const getFocusConstellationMotifs = (): LocalConstellationMotifs =>
+    FOCUS_CONSTELLATION_MOTIFS as unknown as LocalConstellationMotifs
 const getFocusThreadSegments = (): number => CONFIG.FOCUS_THREAD_SEGMENTS
 const getInspectedStrandGroup = (): Group | null => state.inspectedStrandGroup as Group | null
 const setInspectedStrandGroup = (g: Group | null): void => {
     state.inspectedStrandGroup = g
 }
-const getNodePositions = (): NodePosition[] => state.nodePositions as NodePosition[] 
+const getNodePositions = (): NodePosition[] => state.nodePositions as NodePosition[]
 const getCurrentView = () => state.currentView
 const getScene = (): Scene | null => state.scene as Scene | null
-const getFocusRingTexture = () => state.focusRingTexture
-const getFocusNextCueTexture = () => state.focusNextCueTexture
-const getFocusBeaconTexture = () => state.focusBeaconTexture
+// These read from `webglContext`, not `state`/`appState`. The corresponding
+// appState.$state fields declared at app.svelte.ts:457-459 are dead (zero writers)
+// — see PR-Item1 audit at tmp/texture-routing-audit-2026-06-29.md Section 1.
+const getFocusRingTexture = () => webglContext.focusRingTexture
+const getFocusNextCueTexture = () => webglContext.focusNextCueTexture
+const getFocusBeaconTexture = () => webglContext.focusBeaconTexture
 const getPinnedThreadIndex = () => state.focusState.pinnedThreadIndex
 const getPulsePhase = () => state.pulsePhase
 
@@ -96,7 +101,8 @@ export interface InspectionState {
 export function getInspectedStrandEdge(index: number, lane: number = 0): InspectedStrandEdge | null {
     const focusIndex = Number.isFinite(getNavState()?.focusedIndex) ? getNavState()?.focusedIndex : null
     if (focusIndex === null || !Number.isFinite(index) || index === focusIndex) return null
-    const motifKey = ((getNavState()?.focusPocketMeta as Record<string, unknown>)?.motif || 'market') as ConstellationMotifName
+    const motifKey = ((getNavState()?.focusPocketMeta as Record<string, unknown>)?.motif ||
+        'market') as ConstellationMotifName
     const motifs = getFocusConstellationMotifs()
     const motifConfig = { ...(motifs[motifKey] || FOCUS_CONSTELLATION_MOTIFS.market || {}) }
     const directLift = Number.isFinite(motifConfig.directLift) ? motifConfig.directLift : 0.6
@@ -280,7 +286,13 @@ export function syncInspectedStrandOverlay(
         strandGroup.add(createInspectedStrandLine(inspectionState.index, [0], false))
         ;[inspectionState.focusedIndex, inspectionState.index].forEach((endpointIndex: number, order: number) => {
             const endpointMaterial = new SpriteMaterial({
-                map: (getFocusRingTexture() || getFocusNextCueTexture() || getFocusBeaconTexture()) as Texture,
+                // SpriteMaterial accepts Texture | null natively. The previous
+                // `as Texture` cast was masking the always-null getter values
+                // that came from the unassigned appState runes. Now that the
+                // getters read from webglContext (which IS populated in
+                // node-manager.ts:428-430), the || chain returns a real
+                // CanvasTexture when one is available, otherwise null.
+                map: getFocusRingTexture() || getFocusNextCueTexture() || getFocusBeaconTexture(),
                 color: order === 0 ? 0xffe27a : 0x7ce7dd,
                 transparent: true,
                 opacity: order === 0 ? 0.42 : 0.58,

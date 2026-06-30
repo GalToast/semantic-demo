@@ -454,9 +454,11 @@ class AppState {
     semanticSpaceLayoutError = $state<string | null>(null)
     // ==== INSPECTOR / TEXTURE STATE ====
     inspectedStrandGroup = $state<Group | null>(null)
-    focusRingTexture = $state<Texture | null>(null)
-    focusNextCueTexture = $state<Texture | null>(null)
-    focusBeaconTexture = $state<Texture | null>(null)
+    // focusRingTexture / focusNextCueTexture / focusBeaconTexture runes were
+    // retired in PR-Item1. The textures live on `webglContext` and are
+    // populated by node-manager.ts:428-430; the prior appState fields had
+    // zero writers, so the getters always returned null. See
+    // tmp/texture-routing-audit-2026-06-29.md Section 1.
 
     arrivalHandoffDiagnostics = $state<ArrivalHandoffDiagnostics>({
         active: false,

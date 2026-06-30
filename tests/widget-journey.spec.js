@@ -1174,6 +1174,84 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
     })
 
     /**
+     * 22c. Inspected-strand endpoint sprites receive textured maps after focus.
+     *
+     * PR-Item1 audit (tmp/texture-routing-audit-2026-06-29.md) found that
+     * the focusRingTexture / focusNextCueTexture / focusBeaconTexture getters
+     * in thread-inspector-webgl.ts:62-64 had been reading from appState
+     * fields that were never assigned (zero writers in src/). The SpriteMaterial
+     * `map` chain always evaluated to `null as Texture`, so the endpoint
+     * sprites rendered as plain white instead of the intended ring/beacon
+     * textures. PR-Item1 routed the getters to webglContext (which IS populated
+     * by node-manager.ts:428-430) and dropped the cast.
+     *
+     * This journey test asserts the routing works end-to-end: after a real
+     * focus, `inspectedStrandGroup.children[].material.map` must be a real
+     * CanvasTexture instance for the endpoint Sprites. The test uses the
+     * `__APP_STATE__` eval path so it works even if WebGL fails to initialize
+     * in headless chromium (same pattern as test 22b).
+     */
+    test('22c. inspected-strand endpoint sprites receive textured maps after focus', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Poll until business records are available — same gating as 22b.
+        await page.waitForFunction(
+            () => {
+                const app = window.__APP_STATE__
+                return (app?.points?.length ?? 0) > 0
+            },
+            null,
+            { timeout: 30000 }
+        )
+
+        // Drive focus via the same real-user-action path as 22b. We deliberately
+        // avoid clicking the canvas (headless chromium may not have WebGL) and
+        // use the exposed `__navActions__.focusOnNode` entry point.
+        const focusResult = await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                return { error: 'focusOnNode not exposed' }
+            }
+            return { ok: actions.focusOnNode(0) }
+        })
+        expect(focusResult.ok, `focusOnNode should return true, got ${JSON.stringify(focusResult)}`).toBe(true)
+
+        // Allow syncInspectedStrandOverlay's subscriber to run.
+        await page.waitForTimeout(500)
+
+        // Inspect the inspected-strand group via the proxy bridge. The proxy
+        // delegates `.inspectedStrandGroup` reads to `appState.inspectedStrandGroup`
+        // which is set by setInspectedStrandGroup() at sync time. Three.js
+        // Sprite references propagate through the Proxy.
+        const strandState = await page.evaluate(() => {
+            const app = window.__APP_STATE__
+            const group = app?.inspectedStrandGroup
+            if (!group || !group.children) return { groupExists: false, spriteCount: 0, spritesWithMap: 0 }
+            let spriteCount = 0
+            let spritesWithMap = 0
+            for (const child of group.children) {
+                if (child && child.type === 'Sprite' && child.material) {
+                    spriteCount += 1
+                    if (child.material.map !== null && child.material.map !== undefined) {
+                        spritesWithMap += 1
+                    }
+                }
+            }
+            return { groupExists: true, spriteCount, spritesWithMap }
+        })
+
+        // The endpoint Sprites are added by syncInspectedStrandOverlay() (see
+        // thread-inspector-webgl.ts:280-300). After PR-Item1, their material
+        // map must be the populated CanvasTexture from webglContext, not null.
+        expect(strandState.groupExists, 'inspectedStrandGroup should exist after focusOnNode').toBe(true)
+        expect(strandState.spriteCount, 'at least one endpoint Sprite should be built').toBeGreaterThan(0)
+        expect(
+            strandState.spritesWithMap,
+            `every endpoint Sprite's material.map must be a real CanvasTexture (got ${strandState.spritesWithMap}/${strandState.spriteCount} with maps)`
+        ).toBe(strandState.spriteCount)
+    })
+
+    /**
      * ProximityLegend: renders on first visit (fresh localStorage),
      * is dismissible, and disappears after dismissal.
      */
