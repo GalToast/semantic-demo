@@ -201,6 +201,32 @@ export const passthrough: StateValidator = () => null
 
 // ── Guarded property map ─────────────────────────────────────────────────────
 
+/**
+ * STATE_VALIDATORS — runtime validation for appState mutations.
+ *
+ * Top-level entries below validate direct writes via `appState.X = Y`
+ * (caught by the Proxy `set` trap). Nested entries like
+ * `'navState.mode'` validate writes through the Svelte 5 reactive
+ * Proxy at `appState.navState.X` (caught when the outer Proxy receives
+ * a `navState` assignment that triggers `Reflect.set` on the inner).
+ *
+ * Sub-aggregate writes (`appState.searchState.X`, `appState.focusState.X`,
+ * `appState.viewportState.X`) are NOT validated by these entries
+ * because the outer Proxy's `set` trap only sees the top-level key
+ * (`searchState`, not `searchState.searchStatus`). Validation for those
+ * paths happens in `validateAppStateEnumFields` at startup.
+ *
+ * Removed in W50 cleanup (these fields now live in sub-aggregates):
+ *   - searchStatus, searchVisibleCount, searchRequestSequence,
+ *     searchFocusTransitionToken, semanticGuideRequestSequence,
+ *     summaryCardTypeToken  → searchState
+ *   - focusTransitionMode, focusTransitionStartedAt, nodesAreSettling,
+ *     infoPanelOpen, pocketListVisible, threadInspectorPointerInside,
+ *     pocketTransitionStartedAt, inspectedThreadIndex, pinnedThreadIndex
+ *     → focusState
+ *   - viewportWidth, viewportHeight, viewportDpr, viewportReducedMotion,
+ *     viewportIsCompact  → viewportState
+ */
 export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     // Views
     currentView: oneOf(VALID_VIEWS, 'currentView'),
@@ -213,10 +239,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     'navState.surface': oneOf(VALID_PANEL_SURFACES, 'navState.surface'),
     'navState.previousSurface': oneOf(VALID_PANEL_SURFACES, 'navState.previousSurface'),
 
-    // Search
-    searchStatus: oneOf(VALID_SEARCH_STATUS, 'searchStatus'),
-    searchVisibleCount: nonNegativeInt('searchVisibleCount'),
-
     // Loading
     loadingPhaseKey: oneOf(VALID_LOADING_PHASES, 'loadingPhaseKey'),
     'navState.loadingPhaseKey': oneOf(VALID_LOADING_PHASES, 'navState.loadingPhaseKey'),
@@ -224,9 +246,7 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     // Semantic lane
     semanticLaneState: oneOf(VALID_SEMANTIC_LANE_STATES, 'semanticLaneState'),
 
-    // Focus
-    focusTransitionMode: oneOf(VALID_FOCUS_TRANSITION_MODES, 'focusTransitionMode'),
-    focusTransitionStartedAt: nonNegativeNumber('focusTransitionStartedAt'),
+    // Focus (transition/trail are dual-located: top-level + navState)
     trailDepth: nonNegativeInt('trailDepth'),
     'navState.trailDepth': nonNegativeInt('navState.trailDepth'),
 
@@ -257,26 +277,15 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     // Demo
     demoPhase: oneOf(VALID_DEMO_PHASES, 'demoPhase'),
 
-    // Viewport
-    viewportWidth: nonNegativeInt('viewportWidth'),
-    viewportHeight: nonNegativeInt('viewportHeight'),
-    viewportDpr: nonNegativeNumber('viewportDpr'),
-    viewportReducedMotion: boolean('viewportReducedMotion'),
-    viewportIsCompact: boolean('viewportIsCompact'),
-
     // Booleans
     autoRotate: boolean('autoRotate'),
     autoRotateSuspended: boolean('autoRotateSuspended'),
     weatherInitialized: boolean('weatherInitialized'),
     mapInitialized: boolean('mapInitialized'),
     rippleActive: boolean('rippleActive'),
-    nodesAreSettling: boolean('nodesAreSettling'),
-    infoPanelOpen: boolean('infoPanelOpen'),
-    pocketListVisible: boolean('pocketListVisible'),
     legendOpen: boolean('legendOpen'),
     sceneRevealActive: boolean('sceneRevealActive'),
     focusCameraAssistActive: boolean('focusCameraAssistActive'),
-    threadInspectorPointerInside: boolean('threadInspectorPointerInside'),
     eventListenersInitialized: boolean('eventListenersInitialized'),
     deferredHydrationStarted: boolean('deferredHydrationStarted'),
     applyingUrlState: boolean('applyingUrlState'),
@@ -289,10 +298,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     pulsePhase: nonNegativeNumber('pulsePhase'),
     _settlingMaxDelta: nonNegativeNumber('_settlingMaxDelta'),
     pointColorStateVersion: nonNegativeInt('pointColorStateVersion'),
-    searchRequestSequence: nonNegativeInt('searchRequestSequence'),
-    searchFocusTransitionToken: nonNegativeInt('searchFocusTransitionToken'),
-    semanticGuideRequestSequence: nonNegativeInt('semanticGuideRequestSequence'),
-    summaryCardTypeToken: nonNegativeInt('summaryCardTypeToken'),
     compactSearchRevealToken: nonNegativeInt('compactSearchRevealToken'),
     mobileRouteFieldPeekToken: nonNegativeInt('mobileRouteFieldPeekToken'),
     semanticTrailStoryRequestSequence: nonNegativeInt('semanticTrailStoryRequestSequence'),
@@ -300,7 +305,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     filterVersion: nonNegativeInt('filterVersion'),
     filterColorVersion: nonNegativeInt('filterColorVersion'),
     focusCameraAnimationToken: nonNegativeInt('focusCameraAnimationToken'),
-    pocketTransitionStartedAt: nonNegativeNumber('pocketTransitionStartedAt'),
     _semanticDiveTransitionDeadline: nonNegativeNumber('_semanticDiveTransitionDeadline'),
     lastRenderedTypeToken: nonNegativeInt('lastRenderedTypeToken'),
     loadingOverlayStartedAt: nonNegativeNumber('loadingOverlayStartedAt'),
@@ -319,8 +323,7 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
         if (value === -1) return null
         return nonNegativeInt('hoverHighlightIndex')(value)
     },
-    inspectedThreadIndex: nullableNumber('inspectedThreadIndex'),
-    pinnedThreadIndex: nullableNumber('pinnedThreadIndex'),
+    // (inspectedThreadIndex + pinnedThreadIndex moved to focusState)
 
     // NavState (object-level validation when assigning the whole object)
     navState: plainObject('navState'),

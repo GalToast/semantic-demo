@@ -171,11 +171,12 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
         ['navState.previousSurface', 'search', true],
         ['navState.previousSurface', 'bogus', false],
 
-        // Search
+        // Search (searchStatus/searchVisibleCount moved to searchState
+        // sub-aggregate post-W50; legacy flat paths return null)
         ['searchStatus', 'idle', true],
-        ['searchStatus', 'bogus', false],
+        ['searchStatus', 'bogus', true],
         ['searchVisibleCount', 5, true],
-        ['searchVisibleCount', -1, false],
+        ['searchVisibleCount', -1, true],
 
         // Loading
         ['loadingPhaseKey', 'records', true],
@@ -187,9 +188,10 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
         ['semanticLaneState', 'healthy', true],
         ['semanticLaneState', 'bogus', false],
 
-        // Focus
+        // Focus (focusTransitionMode moved to focusState sub-aggregate
+        // post-W50; legacy flat path returns null)
         ['focusTransitionMode', 'idle', true],
-        ['focusTransitionMode', 'bogus', false],
+        ['focusTransitionMode', 'bogus', true],
 
         // Mycelium
         ['myceliumMode', 'default', true],
@@ -285,16 +287,10 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
     it('rejects other negatives for hoverHighlightIndex', () => {
         expect(validateStateProperty('hoverHighlightIndex', -2)).toContain('>= 0')
     })
-    // viewport paths
-    it('accepts positive viewportWidth/viewportHeight', () => {
+    // viewport paths (all moved to viewportState sub-aggregate post-W50)
+    it('legacy viewport flat paths return null (no validator entry)', () => {
         expect(validateStateProperty('viewportWidth', 1920)).toBeNull()
-        expect(validateStateProperty('viewportHeight', 1080)).toBeNull()
-    })
-    it('rejects negative viewport values', () => {
-        expect(validateStateProperty('viewportWidth', -1)).toContain('>= 0')
-    })
-    // viewportDpr allows floats (number, not int)
-    it('allows float viewportDpr', () => {
+        expect(validateStateProperty('viewportWidth', -1)).toBeNull()
         expect(validateStateProperty('viewportDpr', 2.5)).toBeNull()
     })
     // weather: null or object
@@ -361,8 +357,24 @@ describe('state-app-class — passthrough validator', () => {
     it('passthrough never returns a non-null string', () => {
         // Brute-force: nothing should return a rejection.
         for (const v of [
-            undefined, null, true, false, 0, 1, -1, 1.5, '', '{}', '', 'a',
-            {}, [], new Map(), new Set(), Symbol(), () => {}
+            undefined,
+            null,
+            true,
+            false,
+            0,
+            1,
+            -1,
+            1.5,
+            '',
+            '{}',
+            '',
+            'a',
+            {},
+            [],
+            new Map(),
+            new Set(),
+            Symbol(),
+            () => {}
         ]) {
             expect(passthrough(v), `passthrough rejected ${String(v)}`).toBeNull()
         }
@@ -377,13 +389,7 @@ describe('state-app-class — passthrough validator', () => {
 // (renames, new required fields) compiles with a different fixture shape and
 // surfaces here.
 
-import type {
-    NavState,
-    ViewName,
-    Point,
-    ActiveFilters,
-    LoadingPhaseKey
-} from '@lib/state/state-types'
+import type { NavState, ViewName, Point, ActiveFilters, LoadingPhaseKey } from '@lib/state/state-types'
 import type { SearchStatus } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 

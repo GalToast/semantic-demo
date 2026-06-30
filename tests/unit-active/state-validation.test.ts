@@ -332,6 +332,7 @@ vi.mock('@lib/state/app.svelte.ts', () => ({
 // Now import the validation module directly (it doesn't depend on appState)
 import {
     validateStateProperty,
+    STATE_VALIDATORS,
     VALID_VIEWS,
     VALID_NAV_MODES,
     VALID_PANEL_SURFACES,
@@ -427,17 +428,6 @@ describe('state validation — validateStateProperty', () => {
         expect(error).toContain('navState.surface')
     })
 
-    it('allows valid searchStatus values', () => {
-        expect(validateStateProperty('searchStatus', 'idle')).toBeNull()
-        expect(validateStateProperty('searchStatus', 'searching')).toBeNull()
-        expect(validateStateProperty('searchStatus', 'results')).toBeNull()
-    })
-
-    it('rejects invalid searchStatus values', () => {
-        const error = validateStateProperty('searchStatus', 'bogus')
-        expect(error).toContain('searchStatus')
-    })
-
     it('allows valid loadingPhaseKey values', () => {
         expect(validateStateProperty('loadingPhaseKey', 'records')).toBeNull()
         expect(validateStateProperty('loadingPhaseKey', 'scene')).toBeNull()
@@ -458,14 +448,20 @@ describe('state validation — validateStateProperty', () => {
         expect(error).toContain('semanticLaneState')
     })
 
-    it('allows valid focusTransitionMode values', () => {
-        expect(validateStateProperty('focusTransitionMode', 'idle')).toBeNull()
-        expect(validateStateProperty('focusTransitionMode', 'entering')).toBeNull()
-    })
-
-    it('rejects invalid focusTransitionMode values', () => {
-        const error = validateStateProperty('focusTransitionMode', 'bogus')
-        expect(error).toContain('focusTransitionMode')
+    // searchStatus, focusTransitionMode, searchVisibleCount, viewportWidth/Height
+    // moved into searchState / focusState / viewportState sub-aggregates after
+    // W50 cleanup. Top-level STATE_VALIDATORS entries were removed; nested-path
+    // validation is now handled by `validateAppStateEnumFields` (startup enum
+    // safety net) and initial-value factories. `validateStateProperty` for
+    // those legacy flat paths returns null (write passes through).
+    it('legacy flat paths return null (no validator entry exists post-W50)', () => {
+        expect(validateStateProperty('searchStatus', 'bogus')).toBeNull()
+        expect(validateStateProperty('focusTransitionMode', 'bogus')).toBeNull()
+        expect(validateStateProperty('searchVisibleCount', -1)).toBeNull()
+        expect(validateStateProperty('viewportWidth', -100)).toBeNull()
+        expect(STATE_VALIDATORS['searchStatus']).toBeUndefined()
+        expect(STATE_VALIDATORS['focusTransitionMode']).toBeUndefined()
+        expect(STATE_VALIDATORS['viewportWidth']).toBeUndefined()
     })
 
     it('allows valid myceliumMode values', () => {
@@ -489,16 +485,6 @@ describe('state validation — validateStateProperty', () => {
         expect(validateStateProperty('trailDepth', 1.5)).toContain('integer')
     })
 
-    it('allows valid searchVisibleCount values', () => {
-        expect(validateStateProperty('searchVisibleCount', 5)).toBeNull()
-        expect(validateStateProperty('searchVisibleCount', 10)).toBeNull()
-    })
-
-    it('rejects invalid searchVisibleCount values', () => {
-        expect(validateStateProperty('searchVisibleCount', -1)).toContain('>= 0')
-        expect(validateStateProperty('searchVisibleCount', 'five')).toContain('number')
-    })
-
     it('allows valid boolean properties', () => {
         expect(validateStateProperty('weatherInitialized', true)).toBeNull()
         expect(validateStateProperty('weatherInitialized', false)).toBeNull()
@@ -517,16 +503,6 @@ describe('state validation — validateStateProperty', () => {
 
     it('rejects invalid nullable number properties', () => {
         expect(validateStateProperty('focusedNode', '42')).toContain('number | null')
-    })
-
-    it('allows valid viewport dimensions', () => {
-        expect(validateStateProperty('viewportWidth', 1920)).toBeNull()
-        expect(validateStateProperty('viewportHeight', 1080)).toBeNull()
-    })
-
-    it('rejects invalid viewport dimensions', () => {
-        expect(validateStateProperty('viewportWidth', -100)).toContain('>= 0')
-        expect(validateStateProperty('viewportHeight', '1080')).toContain('number')
     })
 
     it('allows valid composition properties', () => {
