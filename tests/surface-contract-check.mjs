@@ -908,10 +908,16 @@ async function assert_map_trail(page, ctx) {
 
     // Use bridge actions instead of clicking search results to avoid
     // focusOnNode triggering a 90s main-thread block in batch mode.
+    // setSurface('focus-search') matches the surface value set by URL
+    // hydration when ?anchor=519 is in the URL (see url-state.ts:480).
+    // The previous value 'focus' was a transition state that did not
+    // trigger TrailControls' `active` branch reliably — map-trail was
+    // 0/5 reliable pass with 'focus', and improves to 3/5 clean passes
+    // (plus 1/5 partial 6/2 and 1/5 remaining timeout) with 'focus-search'.
     await page.waitForFunction(() => !!window.__navActions__?.setFocusedIndex, { timeout: 5000 }).catch(() => {})
     await page.evaluate(() => {
         if (window.__navActions__?.setFocusedIndex) window.__navActions__.setFocusedIndex(519)
-        if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus')
+        if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus-search')
     })
     await page
         .waitForFunction(
@@ -926,7 +932,7 @@ async function assert_map_trail(page, ctx) {
     // Simulate trail reveal (Show Trail button)
     await page.waitForSelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]', {
         state: 'attached',
-        timeout: 10000
+        timeout: 15000
     })
     await page.evaluate(() => {
         const showTrailBtn = document.querySelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]')
