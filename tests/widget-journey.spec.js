@@ -1796,4 +1796,71 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await expect(closeButton).toHaveAttribute('aria-label', 'Dismiss notification')
         expect(await closeButton.evaluate((el) => el.tagName.toLowerCase())).toBe('button')
     })
+
+    // ── PR-D5 ───────────────────────────────────────────────────────────────────
+
+    /**
+     * PR-D5: mode-bindings Trail-locked toast fires when clicking trail mode
+     *        without a focused business.
+     *
+     * `bindModeAndPromptControls()` in src/lib/ui/mode-bindings.ts assigns a
+     * DOM0 `button.onclick` handler on every `[data-mode]` element. When the
+     * user clicks data-mode="trail" while `focusedNode` is null, it must call
+     * `showExperienceToast('Trail locked', 'Select a business first.')` and bail.
+     *
+     * This journey test proves the toast actually renders in a real browser by
+     * clicking the (disabled) trail chip and asserting the toast container
+     * becomes visible with the expected title and copy text.
+     */
+    test('PR-D5: mode-bindings Trail-locked toast fires when clicking trail mode without focus', async ({ page }) => {
+        test.setTimeout(60000)
+
+        // 1. Boot — same pattern as test 22b/22c (own navigation, no beforeEach)
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // 2. Dismiss the gesture gate (splash screen)
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // 3. Wait for business records to load (same gate as 22b)
+        await page.waitForFunction(
+            () => {
+                const app = window.__APP_STATE__
+                return (app?.points?.length ?? 0) > 0
+            },
+            null,
+            { timeout: 30000 }
+        )
+
+        // 4. Locate a data-mode="trail" button (rendered in Header.svelte mode-chip rail)
+        const trailBtn = page.locator('[data-mode="trail"]')
+        const trailBtnCount = await trailBtn.count()
+
+        if (trailBtnCount === 0) {
+            test.skip()
+            return
+        }
+
+        // 5. Click it with { force: true } — the chip is `disabled` when no
+        //    business is focused, so a normal click would be suppressed. Using
+        //    force:true bypasses the actionability check and dispatches the
+        //    click event via dispatchEvent, which triggers the DOM0 onclick
+        //    handler that mode-bindings assigned.
+        await trailBtn.click({ force: true })
+
+        // 6. Assert the toast becomes visible with the expected title/copy.
+        //    The toast is rendered by Toast.svelte (#experience-reset-toast).
+        //    showExperienceToast in ui-feedback.ts adds the `active` class,
+        //    sets aria-hidden="false", and populates the title/copy elements.
+        const toast = page.locator('#experience-reset-toast')
+        await toast.waitFor({ state: 'visible', timeout: 3000 })
+
+        await expect(toast).toHaveClass(/active/)
+        await expect(page.locator('#experience-toast-title')).toHaveText('Trail locked')
+        await expect(page.locator('#experience-toast-copy')).toHaveText('Select a business first.')
+
+        // 7. Cleanup: no focus was set (the handler bailed early), so
+        //    focusedNode remains null. No explicit cleanup needed.
+    })
 })
