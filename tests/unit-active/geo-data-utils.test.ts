@@ -190,11 +190,16 @@ describe('geo-data utilities', () => {
 
     describe('computeOverviewScatterOffsets', () => {
         it('returns zero offsets for empty input', () => {
-            expect(computeOverviewScatterOffsets([])).toEqual([])
+            // rawPositionsBuffer is now a required Float32Array (TS-enforced).
+            // Empty buffer is fine — early-return guard handles sourcePoints.length < 2.
+            expect(computeOverviewScatterOffsets([], new Float32Array(0))).toEqual([])
         })
 
         it('returns zero offsets for single point', () => {
-            const result = computeOverviewScatterOffsets([{ x: 1, y: 2, z: 3 }])
+            const result = computeOverviewScatterOffsets(
+                [{ x: 1, y: 2, z: 3 }],
+                new Float32Array([1, 2, 3])
+            )
             expect(result).toHaveLength(1)
             expect(result[0]).toEqual({ x: 0, y: 0, z: 0 })
         })
@@ -205,7 +210,8 @@ describe('geo-data utilities', () => {
                 { x: 0.5, y: 0.5, z: 0.5 },
                 { x: 1, y: 1, z: 1 }
             ]
-            const result = computeOverviewScatterOffsets(points)
+            const buffer = new Float32Array([0, 0, 0, 0.5, 0.5, 0.5, 1, 1, 1])
+            const result = computeOverviewScatterOffsets(points, buffer)
             expect(result).toHaveLength(3)
             // Offsets should be finite numbers
             result.forEach((offset) => {

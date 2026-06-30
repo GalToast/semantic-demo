@@ -195,7 +195,7 @@ export function countTokenMatches(
 
 export function computeOverviewScatterOffsets(
 	sourcePoints: readonly GeoPoint[],
-	rawPositionsBuffer: Float32Array | null = null,
+	rawPositionsBuffer: Float32Array,
 	threshold: number = 0.055
 ): ScatterOffset[] {
 	if (!Array.isArray(sourcePoints) || sourcePoints.length < 2) {
@@ -233,23 +233,16 @@ export function computeOverviewScatterOffsets(
 	const cellKey = (x: number, y: number, z: number): string =>
 		`${Math.floor(x / cellSize)},${Math.floor(y / cellSize)},${Math.floor(z / cellSize)}`;
 
-	const hasRawBuffer =
-		rawPositionsBuffer && rawPositionsBuffer.length >= sourcePoints.length * 3;
-	const getPosition = (index: number): { x: number; y: number; z: number } => {
-		const point = sourcePoints[index] || ({} as GeoPoint);
-		if (hasRawBuffer && rawPositionsBuffer) {
-		return {
-			x: rawPositionsBuffer[index * 3]!,
-			y: rawPositionsBuffer[index * 3 + 1]!,
-			z: rawPositionsBuffer[index * 3 + 2]!
-		};
-		}
-		return {
-			x: Number.isFinite(point.x) ? point.x! : 0,
-			y: Number.isFinite(point.y) ? point.y! : 0,
-			z: Number.isFinite(point.z) ? point.z! : 0
-		};
-	};
+	// `rawPositionsBuffer` is a required `Float32Array` (TypeScript-enforced).
+	// The legacy `point.x/y/z` fallback was removed: at runtime
+	// `state.points` is `BusinessRecord[]` and doesn't carry those fields,
+	// so the fallback would silently produce all-zeros → all points
+	// collapsing to origin. See `tmp/scatter-offsets-audit-2026-06-29.md`.
+	const getPosition = (index: number): { x: number; y: number; z: number } => ({
+		x: rawPositionsBuffer[index * 3]!,
+		y: rawPositionsBuffer[index * 3 + 1]!,
+		z: rawPositionsBuffer[index * 3 + 2]!
+	});
 
 	sourcePoints.forEach((_, index) => {
 		const { x, y, z } = getPosition(index);

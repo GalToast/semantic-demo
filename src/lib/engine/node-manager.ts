@@ -404,11 +404,11 @@ export function createPoints() {
     state.searchGlowRenderStateKey = ''
     const rawPositionsBuffer = webglContext.rawPositionsBuffer || state.rawPositionsBuffer
     const rawClustersBuffer = webglContext.rawClustersBuffer || state.rawClustersBuffer
-    const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer)
-    // `rawPositionsBuffer` is non-null: createPoints()'s early-return guard
-    // at the top of this function (line ~362 per the audit) ensures
-    // `state.points.length > 0`, and `setBusinessData` populates the buffer
-    // alongside `state.points`. The `!` documents the runtime invariant.
+    // `!` asserts non-null per the same runtime invariant as in getPointBoundsCenter (PR-A cherry-picked as 432bee1c):
+    // createPoints()'s early-return guard ensures state.points.length > 0,
+    // and setBusinessData populates the buffer alongside the points.
+    const scatterOffsets = computeOverviewScatterOffsets(state.points, rawPositionsBuffer!)
+    // Same invariant applies for the bounds read.
     const bounds = getPointBoundsCenter(state.points, rawPositionsBuffer!)
     const renderCenter = bounds.center
     state.overviewBounds = {
