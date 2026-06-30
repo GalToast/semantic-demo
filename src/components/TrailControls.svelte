@@ -81,3 +81,84 @@
     </div>
   </div>
 {/if}
+
+<style>
+  /* PR-E2: These styles were originally in JourneyChrome.css, but Svelte's
+     scoped CSS prevented them from applying to elements owned by this
+     child component. Moved here so the trail-context text gets the intended
+     0.6rem / muted-teal treatment instead of the default 16px fallback. */
+
+  .trail-controls {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(var(--color-surface-chrome-rgb), 0.9);
+    backdrop-filter: blur(var(--glass-blur-light));
+    border-radius: var(--radius-tight);
+    padding: 0.35rem 0.65rem;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.12);
+  }
+  .trail-controls.idle {
+    opacity: 0.6;
+  }
+  .trail-context-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.15rem;
+    min-width: 0;
+  }
+  .trail-context {
+    /* Parent of the trail-context-text span; kept unstyled by design so
+       the .trail-context-text typography owns the visual treatment. */
+    display: contents;
+  }
+  .trail-context-text {
+    font-family: var(--font-body);
+    font-size: 0.6rem;
+    color: var(--color-text-teal-muted);
+    text-align: center;
+    line-height: 1.3;
+    max-width: 320px;
+    /* Wrap instead of ellipsis so the full trail context stays readable.
+       Cap at 2 lines to keep the journey chrome height bounded. */
+    white-space: normal;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    line-clamp: 2;
+    -webkit-box-orient: vertical;
+  }
+  .progress-text {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    color: var(--color-text-teal-dark);
+  }
+  .next-label {
+    font-family: var(--font-body);
+    font-size: 0.55rem;
+    color: var(--color-primary-alt);
+    opacity: 0.8;
+  }
+  .trail-btn {
+    background: none;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
+    border-radius: 0.3rem;
+    color: var(--color-primary-alt);
+    cursor: pointer;
+    padding: 0.25rem 0.6rem;
+    font-family: var(--font-body);
+    font-size: 0.65rem;
+    font-weight: 600;
+    transition: all 0.15s;
+    white-space: nowrap;
+  }
+  .trail-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+  .trail-btn:not(:disabled):hover {
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.4);
+  }
+</style>

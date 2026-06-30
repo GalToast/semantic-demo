@@ -117,7 +117,10 @@
     font-size: 0.6rem;
     font-family: 'Nunito Sans', sans-serif;
     font-weight: 600;
-    animation: overlay-in 0.3s ease-out;
+    /* PR-E1: Auto-dismiss the badge after ~4s. Fade-out in last 0.3s.
+       Keeps first-visit context while removing recurring noise — the chip
+       rail already signals the active mode (Focus / Inside). */
+    animation: overlay-in 0.3s ease-out, overlay-out 0.3s ease-in 4s forwards;
   }
   .overlay-badge.thread {
     border-color: rgba(255, 107, 107, 0.25);
@@ -126,13 +129,18 @@
 
   @media (prefers-reduced-motion: reduce) {
     .overlay-badge {
-      animation: none;
+      animation: overlay-in 0.3s ease-out;
     }
   }
 
   @keyframes overlay-in {
     from { opacity: 0; transform: translateY(-4px); }
     to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes overlay-out {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(-4px); pointer-events: none; }
   }
 
   .badge-label {
@@ -144,11 +152,15 @@
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
     color: rgba(176, 208, 208, 0.4); /* a11y-ok: caption-text — mono node indicator */
+    /* PR-E1: Node index fades alongside the badge. */
+    animation: overlay-out 0.3s ease-in 4s forwards;
   }
 
   .overlay-hint {
     font-size: 0.55rem;
     color: rgba(176, 208, 208, 0.35); /* a11y-ok: caption-text — italic overlay hint */
     font-style: italic;
+    /* PR-E1: Hint text fades alongside the badge (desktop only). */
+    animation: overlay-out 0.3s ease-in 4s forwards;
   }
 </style>

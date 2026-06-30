@@ -270,6 +270,14 @@
         margin-top: 0.25rem;
         text-align: left;
         max-width: 100%;
+        /* PR-F (2026-06-30): Truncate the focus-mode description at the
+           viewport edge with an ellipsis. The full sentence
+           ("See all businesses linked to the focused node, ranked by
+           relationship strength") doesn't fit in 390px and was bleeding
+           off-screen before this fix. */
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
     .mode-chip .chip-label {
         display: none;
