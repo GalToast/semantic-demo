@@ -30,11 +30,14 @@
     transform: translateX(-50%);
     z-index: var(--z-toast, 700);
     width: min(90vw, 400px);
-    background: rgba(7, 16, 24, 0.92);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
+    background: rgba(7, 16, 24, 0.94);
+    backdrop-filter: blur(14px);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
     border-radius: 0.5rem;
     padding: 0.6rem 0.75rem;
+    box-shadow:
+      0 8px 28px rgba(0, 0, 0, 0.5),
+      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.12);
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
@@ -77,7 +80,7 @@
   }
   .search-trail-cue-note {
     font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.5); /* a11y-ok: caption-text — small trail-cue note */
+    color: rgba(224, 240, 240, 0.72); /* caption-text — stronger contrast over the 3D scene */
     line-height: 1.4;
     overflow-wrap: break-word;
   }

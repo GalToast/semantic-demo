@@ -282,6 +282,9 @@
     padding: 0.75rem;
     pointer-events: auto;
     animation: card-enter 0.25s ease-out;
+    box-shadow:
+      0 10px 32px rgba(0, 0, 0, 0.55),
+      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.2);
   }
 
   @media (prefers-reduced-motion: reduce) {
