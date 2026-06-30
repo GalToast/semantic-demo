@@ -566,12 +566,10 @@ body.surface-focus-search .focus-stage-journey-meta {
     margin-top: 10px;
 }
 
-
 @media (prefers-reduced-motion: reduce) {
     /* Silence action-beacon and other journey-active animations for users who prefer reduced motion. */
     .journey-compass-action.primary[data-journey-action='center-anchor']::after,
-.journey-compass-action.primary[data-journey-action='next-stop']::after,
-    @media (max-width: 768px) {
+    .journey-compass-action.primary[data-journey-action='next-stop']::after {
         animation: none;
     }
 }
