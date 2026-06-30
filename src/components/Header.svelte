@@ -214,6 +214,19 @@
         >
           <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
           <span class="chip-label">{mode.label}</span>
+          {#if isChipLocked(mode.id)}
+            <!-- PR-D (2026-06-30): visible lock indicator on locked chips.
+                 Previously the chip relied solely on dimmed opacity
+                 (`.is-locked` at 0.35) and the title tooltip to convey
+                 "this is locked". Users had to hover/long-press to
+                 discover the lock. Inline a small SVG padlock that
+                 matches the chip's icon styling so the lock is visible
+                 at a glance on both desktop and mobile. -->
+            <svg class="chip-lock" width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="7" width="10" height="7" rx="1" />
+              <path d="M5.5 7V4.5a2.5 2.5 0 0 1 5 0V7" />
+            </svg>
+          {/if}
         </button>
       {/each}
     </div>

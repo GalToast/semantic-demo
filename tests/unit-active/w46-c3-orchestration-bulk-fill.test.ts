@@ -27,8 +27,10 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const ORCH = (file: string) => resolve(import.meta.dirname, `../../src/lib/orchestration/${file}`)
+const STORES = (file: string) => resolve(import.meta.dirname, `../../src/lib/stores/${file}`)
 const JOURNEY = (file: string) => resolve(import.meta.dirname, `../../src/lib/journey/${file}`)
 const src = (file: string) => readFileSync(ORCH(file), 'utf-8')
+const srcStore = (file: string) => readFileSync(STORES(file), 'utf-8')
 
 // Vite requires a file extension in the static part of dynamic imports.
 // These helpers strip the redundant `.ts` from `file` and add it to the
@@ -42,18 +44,30 @@ const importJourney = (file: string) => import(`../../src/lib/journey/${file.rep
 
 describe('W46-C3: toast.ts contract', () => {
     const file = 'toast.ts'
+    const storeFile = 'toast.svelte.ts'
+    // After the queue refactor, the toastStore writes live in the store
+    // module (toast.svelte.ts) and orchestration/toast.ts is a thin facade.
+    // Contract checks therefore read both files so the assertions survive
+    // the layering split without weakening the intent.
+    const combinedSrc = () => src(file) + '\n' + srcStore(storeFile)
+
     it('exports showExperienceToast and dismissToast', () => {
         const s = src(file)
+        // showExperienceToast is a declared function in the orchestrator facade.
         expect(s).toMatch(/export\s+function\s+showExperienceToast\s*\(\s*title:\s*string,\s*copy:\s*string\s*\)/)
-        expect(s).toMatch(/export\s+function\s+dismissToast\s*\(/)
+        // dismissToast may be declared here OR re-exported from the store
+        // module (the queue-aware refactor moved lifetime logic into the store).
+        const dismissDeclared = /export\s+function\s+dismissToast\s*\(/.test(s)
+        const dismissReExported = /export\s*\{[^}]*\bdismissToast\b[^}]*\}/.test(s)
+        expect(dismissDeclared || dismissReExported).toBe(true)
     })
 
     it('uses a Svelte store for cross-component communication', () => {
-        expect(src(file)).toMatch(/toastStore\.set/)
-        expect(src(file)).toMatch(/toastStore\.update/)
+        expect(combinedSrc()).toMatch(/toastStore\.set/)
+        expect(combinedSrc()).toMatch(/toastStore\.update/)
         // Body attribute bridge removed in Phase 3 migration
-        expect(src(file)).not.toMatch(/body\.dataset\.toastMessage/)
-        expect(src(file)).not.toMatch(/body\.dataset\.toastState/)
+        expect(combinedSrc()).not.toMatch(/body\.dataset\.toastMessage/)
+        expect(combinedSrc()).not.toMatch(/body\.dataset\.toastState/)
     })
 
     it('showExperienceToast sets store state and dismissToast clears it', async () => {
@@ -73,14 +87,14 @@ describe('W46-C3: toast.ts contract', () => {
         unsub()
     })
 
-    it('delegates auto-dismiss to the Toast component via a variant flag', () => {
-        // W46-C3: toast.ts no longer owns a dismiss timer. It sets a
-        // `variant` ('info' | 'error') on the store; Toast.svelte owns the
-        // auto-dismiss (DISMISS_DELAY = 8000 for error, 5000 otherwise) plus a
-        // close button. Verify the bridge contract instead of the old 3500ms
-        // literal that moved out of this module.
-        expect(src(file)).toMatch(/variant/)
-        expect(src(file)).not.toMatch(/setTimeout\([\s\S]*?3500\s*\)/)
+    it('delegates auto-dismiss via a variant flag (no hardcoded 3500ms timer)', () => {
+        // W46-C3: the toast system sets a `variant` ('info' | 'error' |
+        // 'warning') on the store; the store module owns the auto-dismiss
+        // timer (DEFAULT_DURATIONS: 5000 info / 6500 warning / 8000 error).
+        // Verify the variant flag exists across the toast modules and that
+        // the old 3500ms literal is gone.
+        expect(combinedSrc()).toMatch(/variant/)
+        expect(combinedSrc()).not.toMatch(/setTimeout\([\s\S]*?3500\s*\)/)
     })
 })
 

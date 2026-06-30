@@ -1,46 +1,35 @@
-import { toastStore } from '@lib/stores/toast.svelte'
+import {
+    toastStore,
+    showToast,
+    showWarningToast,
+    showErrorToast,
+    showToastSpec,
+    dismissToast,
+    clearToastQueue,
+    type ToastSpec,
+    type ToastVariant
+} from '@lib/stores/toast.svelte'
 
 /**
- * @lib/orchestration/toast.ts — Toast notification orchestrator
+ * @lib/orchestration/toast.ts — Toast notification orchestrator (legacy surface)
  *
- * Writes to the Svelte toastStore which Toast.svelte subscribes to.
- * Replaces the legacy body data-attribute bridge.
+ * Thin re-export of the queue-aware toast store API so callers keep using the
+ * orchestration module as their public entry point. New code may import the
+ * store functions directly; this file exists to keep historical imports
+ * (`showExperienceToast`, `dismissToast`) stable.
  *
- * The Svelte Toast component handles rendering, auto-dismiss, and close button.
+ * Behavior change vs. the pre-queue version: rapid calls no longer overwrite
+ * each other. Each call enqueues; the active toast is followed by the queue
+ * in FIFO order. Auto-dismiss advances the queue automatically.
  */
 
-/**
- * Show a transient toast notification.
- *
- * Pushes to the toast store. Toast.svelte renders the toast
- * and auto-hides after 5s (info) or 8s (error). The user can also
- * dismiss early via the close button or clicking the toast.
- */
+export type { ToastSpec, ToastVariant }
+export { toastStore, showWarningToast, showErrorToast, showToastSpec, clearToastQueue }
+
+/** Show a transient info toast. Enqueues behind any currently visible toast. */
 export function showExperienceToast(title: string, copy: string): void {
-    toastStore.set({
-        message: `${title}\n${copy}`,
-        variant: 'info',
-        active: true
-    })
+    showToast(title, copy)
 }
 
-/**
- * Show an error toast notification.
- *
- * Same as showExperienceToast but with error variant styling
- * and longer auto-dismiss (8s vs 5s).
- */
-export function showErrorToast(title: string, copy: string): void {
-    toastStore.set({
-        message: `${title}\n${copy}`,
-        variant: 'error',
-        active: true
-    })
-}
-
-/**
- * Dismiss the toast immediately.
- */
-export function dismissToast(): void {
-    toastStore.update((s) => ({ ...s, active: false }))
-}
+/** Dismiss the visible toast and advance the queue. */
+export { dismissToast }

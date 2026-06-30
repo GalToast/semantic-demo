@@ -7,51 +7,43 @@
   Renders with DOM IDs matching the legacy contract (#experience-reset-toast,
   #experience-toast-title, #experience-toast-copy).
 
+  Queue-aware (see @lib/stores/toast.svelte.ts): when a caller enqueues a
+  toast while one is already visible, the new one waits behind it. The
+  visible count "1 of N" hint lets the user know there are more to come,
+  and a "Skip all" affordance clears the rest.
+
   Features:
-    - Close button for manual dismissal
-    - Auto-dismiss after 5s (info) or 8s (error)
+    - Close button for manual dismissal (advances the queue)
+    - Auto-dismiss driven by the store (info ~5s / warning ~6.5s / error ~8s)
     - Click-to-dismiss on toast body
     - Keyboard accessible (Escape to dismiss when focused)
+    - Queue counter + "Skip all" when items are waiting
 -->
 <script lang="ts">
-  import { onMount, onDestroy } from 'svelte';
-  import { toastStore, dismissToast } from '@lib/stores/toast.svelte';
+  import { toastStore, dismissToast, clearToastQueue } from '@lib/stores/toast.svelte';
 
   // eslint-disable-next-line no-empty-pattern -- empty $props() destructuring is the Svelte 5 idiom for "no props accepted"
   let {} = $props();
 
-  let toastMessage = $state('');
-  let toastActive = $state(false);
-  let toastVariant = $state<'info' | 'error'>('info');
-  let toastTitle = $derived(toastMessage.split('\n')[0] || '');
-  let toastCopy = $derived(toastMessage.split('\n').slice(1).join('\n') || '');
-  let isError = $derived(toastVariant === 'error');
-
-  /** Auto-dismiss duration in ms — longer for errors so users can read them */
-  const DISMISS_DELAY = $derived(isError ? 8000 : 5000);
-
-  let dismissTimer: ReturnType<typeof setTimeout> | null = null;
-  let toastElement: HTMLElement | null = null;
-
-  function clearDismissTimer(): void {
-    if (dismissTimer !== null) {
-      clearTimeout(dismissTimer);
-      dismissTimer = null;
-    }
-  }
-
-  function startDismissTimer(): void {
-    clearDismissTimer();
-    dismissTimer = setTimeout(() => {
-      dismissToast();
-    }, DISMISS_DELAY);
-  }
+  // Auto-subscription: $toastStore mirrors the store and is reactive.
+  const active = $derived($toastStore.active);
+  const title = $derived($toastStore.title);
+  const copy = $derived($toastStore.copy);
+  const variant = $derived($toastStore.variant);
+  const queueLength = $derived($toastStore.queueLength);
+  const isError = $derived(variant === 'error');
+  const isWarning = $derived(variant === 'warning');
+  const hasQueue = $derived(queueLength > 0);
 
   function handleKeydown(e: KeyboardEvent): void {
-    if (e.key === 'Escape' && toastActive) {
+    if (e.key === 'Escape' && active) {
       e.preventDefault();
       dismissToast();
     }
+  }
+
+  function handleBodyClick(): void {
+    dismissToast();
   }
 
   function handleCloseClick(e: MouseEvent): void {
@@ -59,51 +51,40 @@
     dismissToast();
   }
 
-  // Subscribe to toast store instead of body MutationObserver
-  let _toastUnsub: (() => void) | null = null;
-  onMount(() => {
-    _toastUnsub = toastStore.subscribe((state) => {
-      const wasActive = toastActive;
-      toastMessage = state.message;
-      toastActive = state.active;
-      toastVariant = state.variant;
-
-      if (toastActive && !wasActive) {
-        startDismissTimer();
-      } else if (!toastActive) {
-        clearDismissTimer();
-      }
-    });
-
-    document.addEventListener('keydown', handleKeydown);
-
-    return () => {
-      _toastUnsub?.();
-      document.removeEventListener('keydown', handleKeydown);
-      clearDismissTimer();
-    };
-  });
-
-  onDestroy(() => {
-    clearDismissTimer();
-  });
+  function handleSkipAllClick(e: MouseEvent): void {
+    e.stopPropagation();
+    clearToastQueue();
+  }
 </script>
 
+<svelte:window onkeydown={handleKeydown} />
+
 <div
-  bind:this={toastElement}
   id="experience-reset-toast"
   class="experience-reset-toast"
-  class:active={toastActive}
+  class:active={active}
   class:error={isError}
-  aria-hidden={toastActive ? 'false' : 'true'}
+  class:warning={isWarning}
+  aria-hidden={active ? 'false' : 'true'}
   aria-live={isError ? 'assertive' : 'polite'}
   role={isError ? 'alert' : 'status'}
   tabindex="-1"
-  onclick={dismissToast}
+  onclick={handleBodyClick}
 >
   <div class="experience-toast-content">
-    <div id="experience-toast-title" class="experience-toast-title">{toastTitle}</div>
-    <div id="experience-toast-copy" class="experience-toast-copy">{toastCopy}</div>
+    <div id="experience-toast-title" class="experience-toast-title">{title}</div>
+    <div id="experience-toast-copy" class="experience-toast-copy">{copy}</div>
+    {#if hasQueue}
+      <div class="experience-toast-queue" aria-live="polite">
+        <span class="experience-toast-queue-count">+{queueLength} more</span>
+        <button
+          class="experience-toast-skip"
+          type="button"
+          aria-label={`Dismiss ${queueLength} queued notification${queueLength === 1 ? '' : 's'}`}
+          onclick={handleSkipAllClick}
+        >Skip all</button>
+      </div>
+    {/if}
   </div>
   <button
     class="experience-toast-close"
@@ -165,6 +146,47 @@
     overflow-wrap: break-word;
   }
 
+  /* Queue counter + Skip all */
+  .experience-toast-queue {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-top: 0.35rem;
+    padding-top: 0.3rem;
+    border-top: 1px solid rgba(var(--color-primary-alt-rgb), 0.12);
+  }
+
+  .experience-toast-queue-count {
+    font-size: 0.6rem;
+    color: rgba(224, 240, 240, 0.55);
+    letter-spacing: 0.02em;
+  }
+
+  .experience-toast-skip {
+    background: none;
+    border: none;
+    padding: 0;
+    margin: 0;
+    font-size: 0.6rem;
+    font-family: inherit;
+    color: var(--color-text-teal-light);
+    cursor: pointer;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    min-height: 0;
+    min-width: auto;
+  }
+
+  .experience-toast-skip:hover {
+    color: var(--color-primary-alt);
+  }
+
+  .experience-toast-skip:focus-visible {
+    outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.8);
+    outline-offset: 1px;
+  }
+
   /* Close button */
   .experience-toast-close {
     display: flex;
@@ -192,6 +214,26 @@
   .experience-toast-close:focus-visible {
     outline: 2px solid rgba(var(--color-primary-alt-rgb), 0.8);
     outline-offset: 1px;
+  }
+
+  /* Warning variant */
+  .experience-reset-toast.warning {
+    border-color: rgba(255, 193, 7, 0.35);
+    background: rgba(30, 24, 8, 0.94);
+  }
+  .experience-reset-toast.warning .experience-toast-title {
+    color: #ffc107;
+  }
+  .experience-reset-toast.warning .experience-toast-copy {
+    color: rgba(255, 224, 130, 0.75);
+  }
+  .experience-reset-toast.warning .experience-toast-close {
+    background: rgba(255, 193, 7, 0.1);
+    border-color: rgba(255, 193, 7, 0.2);
+  }
+  .experience-reset-toast.warning .experience-toast-close:hover {
+    background: rgba(255, 193, 7, 0.2);
+    border-color: rgba(255, 193, 7, 0.4);
   }
 
   /* Error variant */

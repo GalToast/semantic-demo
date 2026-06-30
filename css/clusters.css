@@ -295,6 +295,13 @@ body.surface-map-focus-search .selected-card h3 {
     align-items: center;
     justify-content: center;
     padding: 8px 12px;
+    /* PR-D (2026-06-30): View on Map button was wrapping to 3 lines on
+       mobile (390px viewport) because the button had no
+       `white-space: nowrap`. Locking it to a single line keeps the
+       button readable. Also `min-width: 88px` gives it a stable
+       tap target so the text doesn't squeeze when the panel is narrow. */
+    white-space: nowrap;
+    min-width: 88px;
 }
 .selected-action-row .action-btn:focus-visible {
     outline: 2px solid rgba(78, 205, 196, 0.6);
