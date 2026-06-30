@@ -51,7 +51,7 @@
       onContractSurfaceForced();
       document.body.classList.add('is-active');
       document.body.classList.add('surface-semantic-dive');
-      document.body.classList.remove('surface-idle');
+      document.body.classList.remove('surface-idle', 'surface-focus', 'surface-focus-search');
       document.body.dataset.activeView = 'galaxy';
       document.body.dataset.graphContext = 'focus';
       document.body.dataset.semanticDive = 'active';

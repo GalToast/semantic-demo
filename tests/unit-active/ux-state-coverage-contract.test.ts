@@ -54,23 +54,13 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
         {
             component: 'SearchResults',
             file: 'src/components/SearchResults.svelte',
-            loading: { marker: 'search-loading', role: 'status', live: 'polite' as const },
-            error: {
-                marker: 'search-error-state',
-                role: 'status',
-                live: 'polite' as const,
-                hasRetry: true
-            },
-            empty: {
-                marker: 'search-empty-state',
-                role: 'status',
-                live: 'polite' as const,
-                hasSuggestions: true
-            }
-            // NOTE: error uses role="status" + aria-live="polite" (not
-            // role="alert") because search failures are recoverable via
-            // the explicit Retry/Clear buttons — they're not critical
-            // alerts that need to interrupt screen-reader speech.
+            loading: { marker: 'search-loading' },
+            error: { marker: 'search-error-state', hasRetry: true },
+            empty: { marker: 'search-empty-state', hasSuggestions: true }
+            // NOTE: A single .sr-only live region at the top of the component
+            // announces loading/error/empty state changes; markers themselves
+            // do not carry role="status" / aria-live. This avoids duplicate
+            // or interruptive announcements for recoverable search states.
         }
     ]
 
@@ -150,6 +140,11 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
 // ── Tier 1b — single-state components (SearchInput + MapView + FocusPocket) ─
 
 describe('UX state coverage — Tier 1b (loading OR error OR empty)', () => {
+    it('SearchResults uses a single polite live region for all state announcements', () => {
+        const src = readFile('src/components/SearchResults.svelte')
+        expect(src).toMatch(/<div[^>]*class="sr-only"[^>]*aria-live="polite"[^>]*aria-atomic="true"[^>]*role="status"/)
+    })
+
     it('SearchInput announces loading + error + empty in one status div', () => {
         const src = readFile('src/components/SearchInput.svelte')
         // The status div handles all three states via conditional rendering

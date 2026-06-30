@@ -45,22 +45,23 @@ describe('SearchResults component', () => {
         expect(source).toContain('Searching...');
     });
 
-    it('error state .search-error-state with role="status" and aria-live="polite"', () => {
-        expect(source).toContain('class="search-error-state" role="status" aria-live="polite"');
+    it('error state .search-error-state exists and a single polite live region announces it', () => {
+        expect(source).toContain('class="search-error-state"');
         expect(source).toContain('search-error-kicker');
         expect(source).toContain('Retry needed');
+        // A single .sr-only live region (not the marker itself) handles all
+        // loading/error/empty announcements so they don't interrupt the user.
+        expect(source).toMatch(/<div[^>]*class="sr-only"[^>]*aria-live="polite"[^>]*role="status"/);
     });
 
-    it('empty state .search-empty-state with role="status" and aria-live="polite"', () => {
+    it('empty state .search-empty-state exists and is announced by the polite live region', () => {
         expect(source).toContain('class="search-empty-state');
-        expect(source).toContain('role="status" aria-live="polite"');
         expect(source).toContain('search-empty-title');
         expect(source).toContain('No results found');
     });
 
-    it('results count #search-results-count with role="status" and aria-live="polite"', () => {
+    it('results count #search-results-count exists and is announced by the polite live region', () => {
         expect(source).toContain('id="search-results-count"');
-        expect(source).toContain('role="status" aria-live="polite"');
         expect(source).toContain('aria-atomic="true"');
     });
 

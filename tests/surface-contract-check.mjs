@@ -1168,8 +1168,6 @@ async function assert_focus_pocket(page, ctx) {
             const rect = el.getBoundingClientRect()
             if (
                 style.display === 'none' ||
-                style.visibility === 'hidden' ||
-                style.opacity === '0' ||
                 rect.width <= 0 ||
                 rect.height <= 0
             )
@@ -1187,8 +1185,6 @@ async function assert_focus_pocket(page, ctx) {
             const rect = el.getBoundingClientRect()
             if (
                 style.display === 'none' ||
-                style.visibility === 'hidden' ||
-                style.opacity === '0' ||
                 rect.width <= 0 ||
                 rect.height <= 0
             )
@@ -1497,8 +1493,6 @@ async function assert_field_node(page, ctx) {
             const rect = el.getBoundingClientRect()
             if (
                 style.display === 'none' ||
-                style.visibility === 'hidden' ||
-                style.opacity === '0' ||
                 rect.width <= 0 ||
                 rect.height <= 0
             )
@@ -1516,8 +1510,6 @@ async function assert_field_node(page, ctx) {
             const rect = el.getBoundingClientRect()
             if (
                 style.display === 'none' ||
-                style.visibility === 'hidden' ||
-                style.opacity === '0' ||
                 rect.width <= 0 ||
                 rect.height <= 0
             )
@@ -3002,8 +2994,6 @@ async function assert_search_chrome(page, ctx) {
             const rect = el.getBoundingClientRect()
             if (
                 style.display === 'none' ||
-                style.visibility === 'hidden' ||
-                style.opacity === '0' ||
                 rect.width <= 0 ||
                 rect.height <= 0
             )
@@ -5041,7 +5031,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
         } else {
             function forceSemanticDiveContractSurface() {
                 document.body.classList.add('is-active', 'surface-semantic-dive')
-                document.body.classList.remove('surface-idle')
+                document.body.classList.remove('surface-idle', 'surface-focus', 'surface-focus-search')
                 document.body.dataset.activeView = 'galaxy'
                 document.body.dataset.graphContext = 'focus'
                 document.body.dataset.semanticDive = 'active'
@@ -5123,8 +5113,6 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             const rect = el.getBoundingClientRect()
             if (
                 style.display === 'none' ||
-                style.visibility === 'hidden' ||
-                style.opacity === '0' ||
                 rect.width <= 0 ||
                 rect.height <= 0
             )
@@ -5142,8 +5130,6 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             const rect = el.getBoundingClientRect()
             if (
                 style.display === 'none' ||
-                style.visibility === 'hidden' ||
-                style.opacity === '0' ||
                 rect.width <= 0 ||
                 rect.height <= 0
             )

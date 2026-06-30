@@ -47,11 +47,12 @@ describe('LoadingOverlay component', () => {
         expect(shell!.querySelector('.loading-note')).toBeTruthy()
     })
 
-    it('renders #loading-progress-bar fill element inside .loading-bar-track', () => {
+    it('renders #loading-progress-bar container with .loading-progress-bar fill', () => {
         const { container } = render(LoadingOverlay)
-        const track = container.querySelector('.loading-bar-track')
-        expect(track).toBeTruthy()
-        const fill = track!.querySelector('#loading-progress-bar')
+        const bar = container.querySelector('#loading-progress-bar')
+        expect(bar).toBeTruthy()
+        expect(bar!.classList.contains('loading-progress')).toBe(true)
+        const fill = bar!.querySelector('.loading-progress-bar')
         expect(fill).toBeTruthy()
         expect(fill!.getAttribute('style')).toContain('width:')
     })

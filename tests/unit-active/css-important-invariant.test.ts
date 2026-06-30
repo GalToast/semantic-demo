@@ -42,19 +42,19 @@ const SKIP_PATTERNS = [
 // Baseline count of approved `!important` uses. Update this when
 // approving a new use (see comment in the test body).
 //
-// 4 approved uses:
+// 5 approved uses:
 //   css/search.css × 2                         — historical fixes
-//   src/lib/css/canvas-hover-preview.css × 2   —
+//   src/lib/css/canvas-hover-preview.css × 3   —
 //       inside @media (prefers-reduced-motion: reduce) for the floating
-//       hover-preview tooltip and the click-pulse ring; standard
-//       accessibility pattern, requires !important to override any
-//       animated transition when the user requests reduced motion.
-// Justification for reduced-motion pair: the [class*=…] catch-all
-// must override any component-level transition durations to honour
-// the user's accessibility preference. Cascade-only approaches can't
-// guarantee this because the targeted selectors intersect components
-// with varying specificity from other stylesheets.
-const APPROVED_BASELINE = 6
+//       hover-preview tooltip, the click-pulse ring, and the hover-preview
+//       container; standard accessibility pattern, requires !important to
+//       override any animated transition when the user requests reduced motion.
+// Justification for reduced-motion trio: the [class*=…] catch-all and the
+// .canvas-hover-preview container must override any component-level transition
+// durations to honour the user's accessibility preference. Cascade-only
+// approaches can't guarantee this because the targeted selectors intersect
+// components with varying specificity from other stylesheets.
+const APPROVED_BASELINE = 7
 
 interface ImportantUse {
     file: string
