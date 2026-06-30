@@ -2,18 +2,46 @@
  * src/lib/ui/tooltip.ts
  *
  * Tooltip display, positioning, and event-bus integration.
- * Ported from
+ *
+ * W49c: replaced module-level `_tooltipUnsubs` Array + manual cleanup with
+ * a module-owned DisposableRegistry (same pattern as weather-ui.ts). The
+ * previous `disposeTooltipEventBusSubscriptions()` only cleared event-bus
+ * subscriptions, leaving `tooltipRevealFrame` (RAF) and `tooltipHideTimer`
+ * (setTimeout) orphaned across engine destroy. Now `dispose…` delegates
+ * to `_registry.disposeAll()` which clears every tracked resource in
+ * reverse order, including the RAF and setTimeout.
  */
 
 import { formatBusinessName, cleanPublicNoteText, sanitizePublicFacingNote } from '@lib/utils/dom-formatters'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { getViewportSize } from '@lib/utils/environment'
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
-import { debugWarn } from '@lib/utils/debug'
+import { createDisposableRegistry, type DisposableRegistry } from '@lib/utils/disposable-registry'
 import type { Point } from '@lib/state/state-types'
 
+/** Last RAF id — kept for inline cancellation when the tooltip is
+ *  re-positioned before the fade-in completes. The registry owns the
+ *  cancellation callback for dispose-all, but the inline code also clears
+ *  it on rapid re-position so we don't leak RAF callbacks. */
 let tooltipRevealFrame: number | null = null
+
+/** Last setTimeout id (200ms hide-delay timer). Same pattern as the RAF
+ *  — inline clears on re-position; registry owns dispose. */
 let tooltipHideTimer: ReturnType<typeof setTimeout> | null = null
+
+/**
+ * Module-owned disposable registry. Owns event-bus subscriptions, the
+ * RAF, and the setTimeout. Created lazily on first use so dispose is
+ * safe even if init never ran (returns early on null registry).
+ */
+let _registry: DisposableRegistry | null = null
+
+function ensureRegistry(): DisposableRegistry {
+    if (!_registry) {
+        _registry = createDisposableRegistry({ label: 'tooltip' })
+    }
+    return _registry
+}
 
 export function updateTooltipContent(point: Point): void {
     const tooltip = document.getElementById('hover-tooltip')
@@ -128,10 +156,13 @@ export function positionTooltip(x: number, y: number): void {
 
     if (!tooltip.classList.contains('visible')) {
         // eslint-disable-next-line no-restricted-syntax -- animation loop helper (intentional RAF call)
-        tooltipRevealFrame = requestAnimationFrame(() => {
+        const frameId = requestAnimationFrame(() => {
             tooltipRevealFrame = null
             tooltip.classList.add('visible')
         })
+        tooltipRevealFrame = frameId
+        // Register for cleanup so engine destroy cancels pending RAF.
+        ensureRegistry().raf(frameId)
     }
 }
 
@@ -149,9 +180,12 @@ export function hideTooltip(): void {
 
     if (tooltipHideTimer) clearTimeout(tooltipHideTimer)
     // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-    tooltipHideTimer = setTimeout(() => {
+    const timerId = setTimeout(() => {
         tooltipHideTimer = null
     }, 200)
+    tooltipHideTimer = timerId
+    // Register for cleanup so engine destroy cancels pending timer.
+    ensureRegistry().timer(timerId as unknown as ReturnType<typeof setTimeout>)
 }
 
 /**
@@ -161,33 +195,41 @@ export function hideTooltip(): void {
  * Called from src/lib/engine/adapters/lifecycle-bridge.ts init() step 9b
  * (Svelte-track owner). The previous app.js / lifecycle.js caller is
  * off-limits; the engine bridge lifecycle now drives this initialization.
+ *
+ * W49c: subscriptions register with the module-owned DisposableRegistry
+ * instead of the previous parallel `_tooltipUnsubs` array.
  */
-let _tooltipUnsubs: Array<() => void> = []
-
 export function initTooltipEventBusSubscriptions(): void {
-    _tooltipUnsubs = [
-        subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip),
+    const reg = ensureRegistry()
+    reg.add(
+        subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip)
+    )
+    reg.add(
         subscribeKeyed('tooltip:position-requested', EVENTS.TOOLTIP_POSITION_REQUESTED, ({ x, y }) =>
             positionTooltip(x as number, y as number)
-        ),
-        subscribeKeyed('tooltip:content-update-requested', EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED, ({ point }) =>
-            updateTooltipContent(point as Point)
-        ),
-        subscribeKeyed('tooltip:camera-moved', EVENTS.CAMERA_MOVED, hideTooltip)
-    ]
+        )
+    )
+    reg.add(
+        subscribeKeyed(
+            'tooltip:content-update-requested',
+            EVENTS.TOOLTIP_CONTENT_UPDATE_REQUESTED,
+            ({ point }) => updateTooltipContent(point as Point)
+        )
+    )
+    reg.add(subscribeKeyed('tooltip:camera-moved', EVENTS.CAMERA_MOVED, hideTooltip))
 }
 
 /**
- * Tear down all tooltip event-bus subscriptions.
- * Called during engine destroy to prevent leaked listeners.
+ * Tear down all tooltip resources — event-bus subscriptions, RAF, and
+ * setTimeout — in reverse registration order. Idempotent: safe to call
+ * multiple times; subsequent calls are no-ops until the next init.
+ *
+ * W49c: previously only cleared `_tooltipUnsubs`, leaving RAF and
+ * setTimeout orphaned. Now delegates to the registry which owns all
+ * three resource classes.
  */
 export function disposeTooltipEventBusSubscriptions(): void {
-    for (const unsub of _tooltipUnsubs) {
-        try {
-            unsub()
-        } catch (error) {
-            debugWarn('[ui/tooltip] Best-effort unsubscribe failed:', error)
-        }
-    }
-    _tooltipUnsubs = []
+    if (!_registry) return
+    _registry.disposeAll()
+    _registry = null
 }
