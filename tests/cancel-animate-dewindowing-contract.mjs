@@ -80,7 +80,7 @@ const checks = [
     },
     {
         name: 'cancelAnimate preserves context-lost state before render guard',
-        pass: /const\s+contextWasLost\s*=\s*_webglContextLost[\s\S]{0,400}?if\s*\(\s*!contextWasLost\s*&&\s*renderer\s*&&\s*scene\s*&&\s*camera\s*\)/.test(
+        pass: /const\s+contextWasLost\s*=\s*(?:engineState\.)?webglContextLost[\s\S]{0,400}?if\s*\(\s*!contextWasLost\s*&&\s*renderer\s*&&\s*scene\s*&&\s*camera\s*\)/.test(
             threeSetupSrc
         )
     },
