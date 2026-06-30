@@ -138,7 +138,7 @@ class CameraControlsRestore {
             !_isGalaxy ||
             !_noFocus ||
             !_noSelection ||
-            !appState.sceneRevealActive ||
+            appState.sceneRevealActive ||
             !_isOverview ||
             _pocketActive ||
             !_trailZero

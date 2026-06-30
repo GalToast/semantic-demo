@@ -21,6 +21,30 @@ register(tsResolve, import.meta.url)
 class FakeElement {
     constructor() {
         this.dataset = {}
+        this.classList = {
+            _items: new Set(),
+            add(cls) {
+                this._items.add(cls)
+            },
+            remove(cls) {
+                this._items.delete(cls)
+            },
+            contains(cls) {
+                return this._items.has(cls)
+            },
+            toggle(cls, force) {
+                const has = this._items.has(cls)
+                if (force === undefined ? !has : force) {
+                    this._items.add(cls)
+                    return true
+                }
+                this._items.delete(cls)
+                return false
+            },
+            *[Symbol.iterator]() {
+                yield* this._items
+            }
+        }
     }
 }
 
@@ -166,8 +190,8 @@ function resetState() {
         state.trailDepth = 0
         state.sceneRevealActive = false
         state.searchGlowActive = false
-        state.focusTransitionMode = 'idle'
-        state.focusTransitionStartedAt = 0
+        state.focusState.focusTransitionMode = 'idle'
+        state.focusState.focusTransitionStartedAt = 0
         state.focusTransitionSettleTimer = null
     })
     document.body.dataset = {}
@@ -394,28 +418,25 @@ resetState()
 
 // idle mode: canonical mode should be 'idle' and phase should be 'idle'
 setFocusTransitionMode('idle')
-assert(state.focusTransitionMode === 'idle', 'setFocusTransitionMode(idle): state.focusTransitionMode is idle')
+assert(state.focusState.focusTransitionMode === 'idle', 'setFocusTransitionMode(idle): state.focusState.focusTransitionMode is idle')
 assert(
-    document.body.dataset.focusTransitionPhase === 'idle',
-    'setFocusTransitionMode(idle): body.dataset.focusTransitionPhase is idle'
+    document.body.classList.contains('focus-transition-phase-idle'),
+    'setFocusTransitionMode(idle): body has focus-transition-phase-idle class'
 )
 
 // non-idle mode: canonical mode should be 'entering' and phase should be 'arriving'.
-// Note: body.dataset.focusTransition is no longer written by this method — parity-attrs
-// owns that attr (writes canonical mode from focusStore.transitionMode). This Node test
-// does not install parity, so body.dataset.focusTransition is undefined; we verify the
-// canonical state field instead.
+// The method writes CSS classes (not data attributes) for phase state.
 setFocusTransitionMode('focus')
-assert(state.focusTransitionMode === 'entering', 'setFocusTransitionMode(focus): state.focusTransitionMode is entering')
+assert(state.focusState.focusTransitionMode === 'entering', 'setFocusTransitionMode(focus): state.focusState.focusTransitionMode is entering')
 assert(
-    document.body.dataset.focusTransitionPhase === 'arriving',
-    'setFocusTransitionMode(focus): body.dataset.focusTransitionPhase starts as arriving'
+    document.body.classList.contains('focus-transition-phase-arriving'),
+    'setFocusTransitionMode(focus): body has focus-transition-phase-arriving class'
 )
 
 // Progress before settle: still arriving
 globalThis._now = 100
 withStateMutation(() => {
-    state.focusTransitionStartedAt = 100
+    state.focusState.focusTransitionStartedAt = 100
 })
 const p0 = getFocusTransitionProgress(720)
 assert(p0 >= 0 && p0 <= 1, 'getFocusTransitionProgress: returns normalized 0-1')
@@ -428,16 +449,16 @@ assert(p1 === 1, 'getFocusTransitionProgress: at elapsed>duration returns 1')
 // setFocusTransitionMode normalizes input via regex strip and applies
 // canonical-mode derivation. Non-idle inputs collapse to 'entering'.
 setFocusTransitionMode('walk-with-extra')
-assert(state.focusTransitionMode === 'entering', 'setFocusTransitionMode: non-idle input maps to entering')
+assert(state.focusState.focusTransitionMode === 'entering', 'setFocusTransitionMode: non-idle input maps to entering')
 
 // Strictly invalid input (only non-alphanumeric) collapses to idle
 setFocusTransitionMode('!@#')
-assert(state.focusTransitionMode === 'idle', 'setFocusTransitionMode: only-invalid-chars collapse to idle')
+assert(state.focusState.focusTransitionMode === 'idle', 'setFocusTransitionMode: only-invalid-chars collapse to idle')
 
 // Alphanumeric with embedded invalid chars: regex strips invalid chars, but canonical is still entering
 setFocusTransitionMode('Dive!@#')
 assert(
-    state.focusTransitionMode === 'entering',
+    state.focusState.focusTransitionMode === 'entering',
     'setFocusTransitionMode: embedded invalid chars stripped, canonical is entering'
 )
 

@@ -153,8 +153,10 @@ class CameraControlsCore {
     }
 
     syncCameraAssistDataset(): void {
-        // NOTE: body.dataset writes removed. parity-attrs.svelte.ts handles body.dataset sync
-        // from appState.focusCameraAssistActive (set by this class's legacy mirror).
+        if (!document.body) return
+        const active = this.focusCameraAssistActive && this.focusCameraAssistUntil > performance.now()
+        document.body.dataset.cameraAssist = active ? 'arriving' : 'free'
+        document.body.dataset.cameraAssistReason = active ? this.focusCameraAssistReason : 'idle'
     }
 
     setCameraAssistChoreography(_phase: string = 'free', _reason: string = 'view-handoff'): void {
