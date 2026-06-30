@@ -21,6 +21,11 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 
   import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
+  import { selectMode as applyModeSelect } from '@lib/components/header/mode-nav';
+  import { appState } from '@lib/state/app.svelte';
+  import { updateUrlState } from '@lib/orchestration/url-state';
+  import { debugWarn } from '@lib/utils/debug';
+  import type { NavMode } from '@lib/types/state';
 
   interface Props {
     /** Whether the compass rail is visible */
@@ -32,6 +37,11 @@
   // ── Parity-attrs reactive reads (replaces inline parity computation) ────
   let panelSurface = $derived(parityMap.panelSurface || '');
   let graphContext = $derived(parityMap.graphContext || '');
+
+  // Whether a business node is currently focused (enables selection-dependent modes).
+  let hasSelection = $derived(
+    appState.navState.focusedIndex != null && Number.isFinite(appState.navState.focusedIndex as number)
+  );
 
   // Track pending timeouts so they can be cleared on unmount.
   const pendingTimers: ReturnType<typeof setTimeout>[] = [];
@@ -51,26 +61,22 @@
     // 1. Start compass animation
     transitionCompass('checking');
 
-    // 2. Dispatch nav transition for the clicked phase
-    switch (phase) {
-      case 'overview':
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-        break;
-      case 'search':
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
-        break;
-      case 'focus':
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'focus' });
-        break;
-      case 'inside':
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'inside' });
-        break;
-      case 'map':
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
-        break;
-      default:
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET);
-        break;
+    // 2. Dispatch nav transition using the shared selectMode helper.
+    //    selectMode handles all 7 known modes (overview, search, focus, inside, trail, map)
+    //    plus lock-guard for selection-dependent modes and URL sync.
+    const KNOWN_NAV_MODES: readonly string[] = ['overview', 'search', 'focus', 'inside', 'trail', 'map'];
+    if (KNOWN_NAV_MODES.includes(phase)) {
+      applyModeSelect(phase as NavMode, hasSelection, {
+        navActions: NAV_TRANSITION_ACTIONS,
+        dispatchNavTransition: dispatchNavTransition as unknown as (
+          action: unknown,
+          payload?: Record<string, unknown>
+        ) => unknown,
+        updateUrlState: updateUrlState as unknown as (...args: unknown[]) => void,
+        debugWarn: debugWarn as unknown as (...args: unknown[]) => void,
+      });
+    } else {
+      dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET);
     }
 
     // 3. Animate through the state machine (tracked for cleanup)
