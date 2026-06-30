@@ -92,14 +92,16 @@ const checks = [
         pass: !/window\.initThreeJS\b/.test(appSrc)
     },
     {
-        // TS split: switchView is now imported via `import * as viewControllerMod from
-        // '@lib/orchestration/view-controller'` and called as viewControllerMod.switchView,
-        // not via a bare named import from './view-controller.ts'. Match either shape.
+        // TS split: switchView now lives in renderer/webgl-fallback.ts; three-engine.ts
+        // re-exports engine functions only. Accept the import in either module.
         name: 'three-engine imports switchView directly for WebGL fallback',
         pass:
             /import\s+\{[^}]*\bswitchView\b[^}]*\}/.test(threeSetupSrc) ||
             /import\s+\*\s+as\s+\w*[Vv]iew[Cc]ontroller\w*\s+from\s+['"][^'"]*view-controller/.test(threeSetupSrc) ||
-            /\bswitchView\b/.test(threeSetupSrc)
+            /\bswitchView\b/.test(threeSetupSrc) ||
+            /import\s+\{[^}]*\bswitchView\b[^}]*\}/.test(webglFallbackSrc) ||
+            /import\s+\*\s+as\s+\w*[Vv]iew[Cc]ontroller\w*\s+from\s+['"][^'"]*view-controller/.test(webglFallbackSrc) ||
+            /\bswitchView\b/.test(webglFallbackSrc)
     },
     {
         // TS migration: switchView is invoked via _viewController.switchView (composition),
