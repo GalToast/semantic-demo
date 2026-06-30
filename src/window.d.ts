@@ -76,12 +76,6 @@ declare global {
         __semanticExplorerSessionSeed?: number
 
         /**
-         * Live state mirror published by DevGui for `window.__semanticState`
-         * console inspection during dev work.
-         */
-        __semanticState?: Record<string, unknown>
-
-        /**
          * Live postprocessing state mirror set by
          * engine/three-postprocessing.ts. Loose record shape.
          */

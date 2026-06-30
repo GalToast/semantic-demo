@@ -53,14 +53,9 @@ import { debugLog, debugError } from '@lib/utils/debug'
             debugError('[dev-gui] clearStorage failed', err);
           }
         },
-        logSemanticState: () => {
-          const state = window.__semanticState
-          debugLog('[dev-gui] window.__semanticState:', state);
-        },
       };
       gui.add(actions, 'triggerDemo').name('▶ Trigger demo');
       gui.add(actions, 'clearStorage').name('🗑 Clear storage');
-      gui.add(actions, 'logSemanticState').name('🔍 Log state');
 
       // --- Scene folder ---
       const sceneFolder = gui.addFolder('Scene');
@@ -90,13 +85,12 @@ import { debugLog, debugError } from '@lib/utils/debug'
         .name('Force personality')
         .onChange((v: string) => {
           focusPersonalityOverride = v;
-          const state = window.__semanticState
-          if (state) {
-            state.focusPersonalityOverride = v === 'auto' ? undefined : v;
-            debugLog('[dev-gui] focusPersonalityOverride =', v);
-          } else {
-            debugLog('[dev-gui] focusPersonalityOverride =', v, '(no state bridge yet)');
-          }
+          // The legacy `window.__semanticState` write here was retired in
+          // PR-D8: that global is declared in window.d.ts but never set, and
+          // lifecycle.ts:37 documents that fact. The override now lives only
+          // in the local $state rune above and is consumed by the focus
+          // pocket via the normal test-compat proxy.
+          debugLog('[dev-gui] focusPersonalityOverride =', v);
         });
 
       pocketFolder.open();
