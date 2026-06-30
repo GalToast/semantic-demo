@@ -50,6 +50,7 @@ const FAILURE_CONTEXT_LINES = 8
 // Groups that require a local static server. The runner owns a fresh dynamic
 // port for these groups and passes TEST_BASE_URL to child contracts.
 const SERVER_GROUPS = new Set([
+    'full',
     'scene',
     'browser-interaction',
     'short-landscape',
