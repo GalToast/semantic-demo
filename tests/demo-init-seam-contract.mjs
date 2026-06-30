@@ -103,7 +103,8 @@ if (hasSvelte) {
             'App.svelte or app-init must install the parity attribute sync'
         )
         assert(
-            /key:\s*['"]demoPhase['"]/.test(paritySource) && /demoPhaseGetter\(\)/.test(paritySource),
+            /key:\s*['"]demoPhase['"]/.test(paritySource) &&
+                (/demoPhaseGetter\(\)/.test(paritySource) || /demoStore\.phase/.test(paritySource)),
             'parity-attrs.svelte.ts must sync demoPhase from the demo store to body.dataset.demoPhase'
         )
     })
@@ -119,12 +120,16 @@ if (hasSvelte) {
     test('demo store defines all valid state machine phases', () => {
         const requiredPhases = [
             'IDLE',
-            'GLIDING',
-            'ARRIVED',
-            'CARD_VISIBLE',
-            'PULLBACK',
-            'WIDE_VIEW',
-            'RETURNING',
+            'OVERVIEW',
+            'SEARCH',
+            'FOCUS',
+            'THREADS',
+            'NEIGHBORS',
+            'TRAIL',
+            'DIVE',
+            'FILTER',
+            'MAP',
+            'RETURN',
             'COMPLETE',
             'CANCELLED'
         ]
