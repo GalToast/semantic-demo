@@ -211,13 +211,17 @@ async function testAdapterStateSnapshot() {
         { lead_id: 'LI_003', name: 'Biz C' },
         { lead_id: 'LI_004', name: 'Biz D' }
     ]
-    state.currentSearchSummary = { resultIndices: [3], anchorIndex: 3 }
+    state.searchState.currentSearchSummary = { resultIndices: [3], anchorIndex: 3 }
 
     const snap = getConnectionStateSnapshot()
 
     assertEqual(snap.focusedNode, 3, 'focusedNode in snapshot')
     assertEqual(snap.points, state.points, 'points reference in snapshot')
-    assertEqual(snap.currentSearchSummary, state.currentSearchSummary, 'currentSearchSummary in snapshot')
+    assertEqual(
+        snap.currentSearchSummary,
+        state.searchState.currentSearchSummary,
+        'currentSearchSummary in snapshot'
+    )
 
     // Mutation of state is reflected in snapshot (same reference)
     state.focusedNode = 1
