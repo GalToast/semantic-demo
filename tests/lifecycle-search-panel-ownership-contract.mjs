@@ -136,8 +136,9 @@ function testLifecycleCallsSetSearchPanelStateDirectly() {
         'resetStateBeforeUrlRestore must delegate canonical state clearing to clearSearch()'
     )
     assert(
-        /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.currentSearchSummary\s*=\s*null/.test(searchStoreSrc),
-        'clearSearch() must clear appState.currentSearchSummary in the canonical search store'
+        /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.searchState\.currentSearchSummary\s*=\s*null/.test(searchStoreSrc) ||
+            /export\s+function\s+clearSearch\s*\([\s\S]*?appState\.currentSearchSummary\s*=\s*null/.test(searchStoreSrc),
+        'clearSearch() must clear currentSearchSummary in the canonical search store'
     )
     assert(
         /input\.dispatchEvent\s*\(\s*new\s+Event\s*\(\s*['"]input['"]/.test(src),
