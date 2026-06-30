@@ -28,7 +28,7 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
     const noteEl = document.getElementById('search-trail-cue-note');
     if (!cueEl || !kickerEl || !titleEl || !noteEl) return;
 
-    if (nextCue.beat === 'idle' || (!nextCue.title && !nextCue.stage)) {
+    if (nextCue.beat === 'idle') {
         cueEl.hidden = true;
         cueEl.classList.remove('active');
         return;
@@ -39,12 +39,14 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
     const title = nextCue.title || (
         nextCue.stage === 'query' ? `Sifting 8,406 records for '${query}' patterns.` :
         nextCue.stage === 'anchor' ? 'Anchor identified. Trail initialized.' :
+        nextCue.stage === 'empty' ? 'No matching anchor found.' :
         nextCue.stage === 'explore' ? 'Search opens a trail.' :
         'Search opens a trail.'
     );
     const note = nextCue.note || (
         nextCue.stage === 'query' ? 'High-fidelity semantic analysis is aligning relevant business clusters.' :
         nextCue.stage === 'anchor' ? 'The strongest match has become the anchor. You can now center it and explore its neighborhood.' :
+        nextCue.stage === 'empty' ? 'Try a different term or filter to discover a trail.' :
         nextCue.stage === 'explore' ? 'Enter the neighborhood to explore related businesses and discover record-backed connections.' :
         'The first strong match becomes the anchor; from there you can center it and continue through related businesses.'
     );

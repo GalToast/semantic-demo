@@ -10,14 +10,14 @@
   aria-live="polite"
   hidden
 >
-  <div class="search-trail-cue-kicker">Connection cue</div>
-  <div class="search-trail-cue-title">Search opens a trail.</div>
+  <div id="search-trail-cue-kicker" class="search-trail-cue-kicker">Connection cue</div>
+  <div id="search-trail-cue-title" class="search-trail-cue-title">Search opens a trail.</div>
   <div class="search-trail-cue-stage" aria-hidden="true">
     <span class="search-trail-cue-step" data-cue-stage="query">Query</span>
     <span class="search-trail-cue-step" data-cue-stage="anchor">Anchor</span>
-    <span class="search-trail-cue-step" data-cue-stage="walk">Explore</span>
+    <span class="search-trail-cue-step" data-cue-stage="explore">Explore</span>
   </div>
-  <div class="search-trail-cue-note">
+  <div id="search-trail-cue-note" class="search-trail-cue-note">
     The first strong match becomes the anchor; from there you can center it and explore the neighborhood.
   </div>
 </div>
@@ -38,6 +38,18 @@
     display: flex;
     flex-direction: column;
     gap: 0.3rem;
+  }
+  /* Restore native `hidden` behavior: the base rule sets `display: flex`,
+     which overrides the browser's default `[hidden] { display: none }`. This
+     rule makes the cue genuinely hidden when the renderer/JS removes it. */
+  .search-trail-cue[hidden] {
+    display: none;
+  }
+  /* When the renderer marks the cue as active (search/focus states), it must
+     stay visible even if Svelte re-applies the static `hidden` attribute or a
+     surface body class sets `display: none`. */
+  :global(.search-trail-cue.active) {
+    display: flex !important;
   }
   .search-trail-cue-kicker {
     font-size: 0.55rem;
