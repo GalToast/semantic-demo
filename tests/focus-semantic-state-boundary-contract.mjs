@@ -164,7 +164,7 @@ function resetState() {
     withStateMutation(() => {
         state.currentView = 'galaxy'
         state.focusedNode = null
-        state.selectedPoint = null
+        state.focusState.selectedPoint = null
         state.navState.focusedIndex = null
         state.navState.mode = 'overview'
         state.navState.trailCursor = -1
@@ -175,7 +175,7 @@ function resetState() {
         state.navState.trailDepth = 0
         state.trailDepth = 0
         state.semanticDiveMode = false
-        state.currentSearchSummary = null
+        state.searchState.currentSearchSummary = null
         state.activeFilters = { status: 'all', city: 'all', website: false, email: false, geocoded: false }
         state.trailIndices.clear()
     })
@@ -199,9 +199,9 @@ function setTestTrailDepth(depth) {
 
 function syncStoresFromState() {
     const searchInput = elementsById.get('search-input')
-    const query = String(state.currentSearchSummary?.query ?? searchInput?.value ?? '')
-    const hasSearchIntent = !!state.currentSearchSummary || query.trim().length >= 2
-    const hasFocus = state.navState.focusedIndex != null || state.focusedNode != null || state.selectedPoint != null
+    const query = String(state.searchState.currentSearchSummary?.query ?? searchInput?.value ?? '')
+    const hasSearchIntent = !!state.searchState.currentSearchSummary || query.trim().length >= 2
+    const hasFocus = state.navState.focusedIndex != null || state.focusedNode != null || state.focusState.selectedPoint != null
     const activeView = state.currentView || 'galaxy'
     const semanticDiveActive = activeView === 'galaxy' && hasFocus && state.semanticDiveMode === true
 
@@ -228,11 +228,11 @@ function syncStoresFromState() {
         surface,
         trailDepth: state.trailDepth ?? state.navState.trailDepth ?? 0
     })
-    setSelectedBusiness(state.selectedPoint ?? null)
+    setSelectedBusiness(state.focusState.selectedPoint ?? null)
     setSemanticDiveMode(semanticDiveActive)
 
-    if (state.currentSearchSummary) {
-        setSearchSummary({ query, ...state.currentSearchSummary })
+    if (state.searchState.currentSearchSummary) {
+        setSearchSummary({ query, ...state.searchState.currentSearchSummary })
     } else if (query.trim().length >= 2) {
         setSearchQuery(query)
     } else {
@@ -258,7 +258,7 @@ resetState()
 withStateMutation(() => {
     state.focusedNode = 4
     state.navState.focusedIndex = 4
-    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+    state.searchState.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 })
 elementsById.set('search-input', new FakeElement('input'))
 commit('focus-state')
@@ -273,7 +273,7 @@ console.log('  PASS: focus state is correct\n')
 // Trigger semantic-dive: trailDepth jumps to 2, search context cleared to isolate inside-walk
 withStateMutation(() => {
     setTestTrailDepth(2)
-    state.currentSearchSummary = null
+    state.searchState.currentSearchSummary = null
 })
 commit('semantic-dive-state')
 
@@ -291,8 +291,8 @@ withStateMutation(() => {
     state.currentView = 'map'
     state.focusedNode = 4
     state.navState.focusedIndex = 4
-    state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
-    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+    state.focusState.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+    state.searchState.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 })
 elementsById.set('search-input', new FakeElement('input'))
 commit('map-trail-state')
@@ -301,7 +301,7 @@ assert(ds('activeView') === 'map', 'map-trail: activeView is map')
 assert(ds('panelSurface') === 'map-focus-search', 'map-trail: panelSurface is map-focus-search')
 assert(ds('semanticDive') === 'inactive', 'map-trail: semanticDive is inactive (map view overrides)')
 assert(ds('trailState') === 'active', 'map-trail: trailState is active')
-assert(state.selectedPoint !== null, 'map-trail: selectedPoint is set')
+assert(state.focusState.selectedPoint !== null, 'map-trail: selectedPoint is set')
 console.log('  PASS: map-trail state is correct\n')
 
 // BOUNDARY 2b: map-trail -> semantic-dive reactivation
@@ -313,7 +313,7 @@ console.log('[BOUNDARY 2b] map-trail -> galaxy (semantic-dive reactivation)')
 withStateMutation(() => {
     state.currentView = 'galaxy'
     setTestTrailDepth(2)
-    state.currentSearchSummary = null
+    state.searchState.currentSearchSummary = null
     state.focusedNode = 4
     state.navState.focusedIndex = 4
 })
@@ -345,8 +345,8 @@ resetState()
 withStateMutation(() => {
     state.focusedNode = 4
     state.navState.focusedIndex = 4
-    state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
-    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+    state.focusState.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+    state.searchState.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
     setTestTrailDepth(2)
 })
 elementsById.set('search-input', new FakeElement('input'))
@@ -357,8 +357,8 @@ resetStateBeforeUrlRestore({ clearSearchInput: true })
 commit('post-reset')
 
 assert(state.focusedNode === null, 'reset: focusedNode is null')
-assert(state.selectedPoint === null, 'reset: selectedPoint is null')
-assert(state.currentSearchSummary === null, 'reset: currentSearchSummary is null')
+assert(state.focusState.selectedPoint === null, 'reset: selectedPoint is null')
+assert(state.searchState.currentSearchSummary === null, 'reset: currentSearchSummary is null')
 assert(state.navState.focusedIndex === null, 'reset: focusedIndex is null')
 assert(state.trailDepth === 0, 'reset: trailDepth is 0')
 assert(state.semanticDiveMode === false, 'reset: semanticDiveMode is false')
@@ -374,7 +374,7 @@ withStateMutation(() => {
     state.focusedNode = null
     state.navState.focusedIndex = null
     setTestTrailDepth(2)
-    state.currentSearchSummary = null
+    state.searchState.currentSearchSummary = null
 })
 commit('semantic-dive-no-focus')
 
@@ -388,8 +388,8 @@ resetState()
 withStateMutation(() => {
     state.focusedNode = 4
     state.navState.focusedIndex = 4
-    state.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
-    state.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
+    state.focusState.selectedPoint = { lead_id: 'x123', name: 'Alpha Cafe', cluster: 2 }
+    state.searchState.currentSearchSummary = { query: 'coffee', visibleMatches: 5 }
 })
 elementsById.set('search-input', new FakeElement('input'))
 // Exit focus by clearing focusedNode but keep selectedPoint + search context
@@ -399,7 +399,7 @@ withStateMutation(() => {
 })
 commit('focus-exit')
 
-assert(state.selectedPoint !== null, 'focus-exit: selectedPoint persists after focusNode cleared')
+assert(state.focusState.selectedPoint !== null, 'focus-exit: selectedPoint persists after focusNode cleared')
 // panelSurface stays focus-search because selectedPoint/selectedBusiness remains the focus owner.
 assert(
     ds('panelSurface') === 'focus-search',
