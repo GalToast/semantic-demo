@@ -31,6 +31,9 @@
   import { onMount, type Snippet } from 'svelte';
   import { testCompatStore, syncTestStateFromBody } from '@lib/stores/test-compat.svelte.ts';
   import { getInfoPanelContent, type InfoPanelContentDescriptor } from '@lib/orchestration/info-panel-state';
+  // CSS side-effect import. Svelte 5 does NOT support `<style src="./X.css">`.
+  // See JourneyChrome.svelte for the full note.
+  import './InfoPanel.css';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
@@ -401,4 +404,8 @@
   </div>
 </aside>
 
-<style src="./InfoPanel.css"></style>
+<!--
+  Svelte 5 does NOT support `<style src="./X.css">` (Svelte 4 directive that
+  is silently dropped). The CSS for this component is loaded via the
+  side-effect `import './InfoPanel.css'` in the script block above.
+-->

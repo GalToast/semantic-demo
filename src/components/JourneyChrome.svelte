@@ -30,16 +30,11 @@
   import TrailControls from '@components/TrailControls.svelte';
   import NeighborRail from '@components/NeighborRail.svelte';
 
-  // CSS import: side-effect import so Vite tracks this file and bundles its
-  // rules into the main CSS chunk (or, when the component is lazy-loaded,
-  // into a per-component chunk that the JS dynamically imports). Required
-  // because JourneyChrome.svelte is loaded via `createLazyComponent()` in
-  // App.svelte (34 KB source, only needed in focus/trail/inside mode), and
-  // Vite's CSS code-splitting treats lazy components differently from
-  // eagerly-imported ones — the CSS chunk would otherwise be orphaned.
-  // Svelte 5 does NOT support `<style src="./X.css">` (silently dropped).
-  // The `<style>@import '...'` form below exists for documentation; the
-  // script-side import here is what actually wires the CSS into the build.
+  // CSS side-effect import. Required because Svelte 5 does NOT support
+  // `<style src="./X.css">` (silently dropped — file ends up outside
+  // Vite's graph). The component is lazy-loaded via createLazyComponent()
+  // in App.svelte, so Vite emits a per-component CSS chunk that this
+  // import wires into the dynamic-import dependency map.
   import './JourneyChrome.css';
 
   type CandidateLike = number | {
@@ -415,18 +410,7 @@
 {/if}
 
 <!--
-  CSS import: Svelte 5 does NOT support the `<style src="./X.css">` directive
-  that was used in Svelte 4 — the attribute is parsed and silently dropped,
-  leaving the CSS file outside Vite's graph and never emitted into the
-  bundle. Use `@import '...'` inside a `<style>` block instead, which Vite's
-  CSS plugin processes as part of the component's scoped CSS.
-
-  Before this fix, edits to JourneyChrome.css were silently no-ops: the file
-  was 11.5 KB / 362 lines but only TrailControls.svelte's scoped styles made
-  it into dist/svelte/assets/JourneyChrome-*.css, and that chunk was never
-  <link>-ed from index.html. Discovered while debugging a 42px-wide trail
-  controls column on focus.
+  Svelte 5 does NOT support `<style src="./X.css">` (Svelte 4 directive that
+  is silently dropped). The CSS for this component is loaded via the
+  side-effect `import './JourneyChrome.css'` in the script block above.
 -->
-<style>
-  @import './JourneyChrome.css';
-</style>
