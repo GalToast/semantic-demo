@@ -25,6 +25,10 @@ function read(path, label) {
 const appInitSrc = read(appInitPath, 'src/lib/orchestration/app-init.ts')
 const threeSetupSrc = read(threeSetupPath, 'src/lib/engine/three-engine.ts')
 const adapterSrc = read(adapterPath, 'src/lib/utils/webgl-restore-adapter.ts')
+const engineStatePath = resolve(CWD, 'src/lib/engine/three-engine-state.ts')
+const engineStateSrc = read(engineStatePath, 'src/lib/engine/three-engine-state.ts')
+const listenerPath = resolve(CWD, 'src/lib/engine/three-listener-registration.ts')
+const listenerSrc = read(listenerPath, 'src/lib/engine/three-listener-registration.ts')
 
 const checks = [
     {
@@ -67,9 +71,10 @@ const checks = [
     },
     {
         name: 'three-setup imports restoreWebGLContext',
-        pass: /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(
-            threeSetupSrc
-        )
+        pass:
+            /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(threeSetupSrc) ||
+            /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(engineStateSrc) ||
+            /import\s+\*\s+as\s+webglRestoreMod\s+from\s+['"]@lib\/utils\/webgl-restore-adapter['"]/.test(listenerSrc)
     },
     {
         // TS-split restores invoke `restoreWebGLContext()` inside a registered
@@ -78,7 +83,9 @@ const checks = [
         name: 'webglcontextrestored path calls restoreWebGLContext',
         pass:
             /webglcontextrestored[\s\S]{0,900}?restoreWebGLContext\s*\(\s*\)\.catch/.test(threeSetupSrc) ||
-            /restoreWebGLContext\s*\(\s*\)\.catch/m.test(threeSetupSrc)
+            /restoreWebGLContext\s*\(\s*\)\.catch/m.test(threeSetupSrc) ||
+            /restoreWebGLContext\s*\(\s*\)\.catch/m.test(engineStateSrc) ||
+            /restoreWebGLContext\s*\(\s*\)\.catch/m.test(listenerSrc)
     },
     {
         name: 'three-setup does not call window.init',
