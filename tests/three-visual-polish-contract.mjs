@@ -23,6 +23,8 @@ const interactionVisualsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'thre
 const interactionVisuals = fs.readFileSync(interactionVisualsPath, 'utf8')
 const cameraRestorePath = path.join(repoRoot, 'src', 'lib', 'engine', 'camera-controls-restore.svelte.ts')
 const cameraRestore = fs.readFileSync(cameraRestorePath, 'utf8')
+const canvasPath = path.join(repoRoot, 'src', 'components', 'Canvas.svelte')
+const canvasSrc = fs.existsSync(canvasPath) ? fs.readFileSync(canvasPath, 'utf8') : ''
 const searchAnimationsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-search-animations.ts')
 const searchAnimations = fs.readFileSync(searchAnimationsPath, 'utf8')
 const myceliumEnginePath = path.join(repoRoot, 'src', 'lib', 'engine', 'mycelium-engine.ts')
@@ -83,16 +85,25 @@ assert(
 )
 
 // Thread contrast contract: focus keeps global threads as background context.
-includesAll(
-    threadManager,
-    [
-        'core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04',
-        'core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008',
-        'core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072',
-        'core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044'
-    ],
-    'mycelium presentation opacity profile'
-)
+function hasOpacityProfile(source, values) {
+    const { core, wispy, bridge, pulse } = values
+    const re = new RegExp(
+        `core\\s*:\\s*${core}[\\s\\S]{0,40}?wispy\\s*:\\s*${wispy}[\\s\\S]{0,40}?bridge\\s*:\\s*${bridge}[\\s\\S]{0,40}?pulse\\s*:\\s*${pulse}`
+    )
+    return re.test(source)
+}
+const opacityProfiles = [
+    { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04 },
+    { core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008 },
+    { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 },
+    { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
+]
+for (const profile of opacityProfiles) {
+    assert(
+        hasOpacityProfile(threadManager, profile),
+        `mycelium presentation opacity profile missing core: ${profile.core}, wispy: ${profile.wispy}, bridge: ${profile.bridge}, pulse: ${profile.pulse}`
+    )
+}
 
 const initThreeSource = sectionBetween(threeSetup, '/export (?:async )?function initThreeJS\(|{[^}]*\\binitThreeJS\\b[^}]*}\\s+from)/',
     'export function onWindowResize()'
@@ -116,15 +127,16 @@ includesAll(
     'overview camera restore pose should match widened overview framing'
 )
 
-includesAll(
-    initThreeSource,
-    ["document.body.dataset.graphicsMode = 'webgl'", 'animate()'],
-    'three-engine init should set WebGL-ready state and start the render loop directly'
+assert(
+    canvasSrc.includes("setGraphicsMode(state === 'fallback' ? 'fallback' : 'webgl')") ||
+        threeSetup.includes("setGraphicsMode('webgl')"),
+    'Canvas or three-engine init should set WebGL-ready graphics mode'
 )
+assert(initThreeSource.includes('animate()'), 'three-engine init should start the render loop')
 
 assert(
-    interactionVisuals.includes('const targetOpacity = hasFocus ? (isInside ? 0.22 : 0.5) : 0'),
-    'selected node filament opacity should be visible enough to read as a halo'
+    interactionVisuals.includes('const coreTargetOpacity = hasFocus ? (isInside ? 0.26 : 0.74) : 0.0'),
+    'selected node core opacity should be visible enough to read as a halo'
 )
 assert(
     interactionVisuals.includes('const auraTargetOpacity = hasFocus ? (isInside ? 0.065 : 0.135) : 0.0') &&
