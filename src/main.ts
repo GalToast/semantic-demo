@@ -196,6 +196,24 @@ function getCompatValue(prop: string | symbol): unknown {
     if (svelteValue !== undefined) return svelteValue
     const legacyValue = legacyState[prop]
     if (legacyValue !== undefined) return legacyValue
+    // Backward-compat fallback for fields that live under `focusState` /
+    // `searchState` at runtime but legacy contract tests still query at
+    // the flat appState.* path. Without this, snapshots racing the async
+    // init clear see `undefined` and assertions like
+    // `expect(snap.selectedPoint).toBeNull()` fail. See
+    // tmp/selectedPoint-bug-audit-2026-06-29.md Section 4(c).
+    if (typeof prop === 'string') {
+        if (prop === 'selectedPoint') {
+            const nested = (legacyState as unknown as { focusState?: { selectedPoint?: unknown } })
+                .focusState?.selectedPoint
+            if (nested !== undefined) return nested
+        }
+        if (prop === 'currentSearchSummary') {
+            const nested = (legacyState as unknown as { searchState?: { currentSearchSummary?: unknown } })
+                .searchState?.currentSearchSummary
+            if (nested !== undefined) return nested
+        }
+    }
     // Fallback to Svelte appState for properties not synced to legacy/testState
     return legacyState[prop]
 }

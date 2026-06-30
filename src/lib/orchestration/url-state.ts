@@ -95,11 +95,21 @@ export function clearExplorationFocusSelection(): void {
     appState.focusedNode = null
     appState.trailIndices?.clear?.()
     updateSelectedBusiness(null)
-    // Backward-compat: some contract tests still write to the legacy top-level
-    // appState.selectedPoint / appState.currentSearchSummary fields. Clear them
-    // alongside the canonical focusState / searchState.
-    legacyState.selectedPoint = null
-    legacyState.currentSearchSummary = null
+    // Note: the prior line `legacyState.selectedPoint = null`
+    // (and `legacyState.currentSearchSummary = null`) was deleted.
+    // It was a no-op at runtime (the flat `selectedPoint` slot does
+    // not exist on the Svelte 5 class instance, only `focusState` does),
+    // and it threw "Cannot set property selectedPoint of #<Object>
+    // which has only a getter" in the url-state mock harness because
+    // the mock defines a getter-only accessor for the flat path.
+    //
+    // Compatibility reads via the test-bridge proxy (Playwright
+    // surface tests, journey contract tests) are now satisfied by
+    // a fallback in src/main.ts:182 getCompatValue(): if the flat
+    // `legacyState[prop]` is undefined, the getter falls back to
+    // `legacyState.focusState[prop]` for selectedPoint-family fields
+    // and `legacyState.searchState[prop]` for currentSearchSummary.
+    // See tmp/selectedPoint-bug-audit-2026-06-29.md Section 4.
 }
 
 /**
