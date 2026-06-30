@@ -1243,3 +1243,8 @@ body:has(.info-panel.active) .panel-toggle {
         bottom: calc(88px + env(safe-area-inset-bottom, 0px));
     }
 }
+
+/* ── Placeholder2D: suppress info-panel until user loads the 3D scene ── */
+body.render-kind-placeholder2d .info-panel {
+    display: none !important;
+}
