@@ -3,7 +3,20 @@
 **Date:** 2026-06-05
 **Task:** Verify/complete conversion of 16 blocked entry-import JS modules to TypeScript shadow files
 
-## Actual State (Discovered)
+## Current Status (2026-06-29)
+
+The TS shadow conversion this session described is **fully completed and superseded by W47/W48**. The legacy `js/modules/*.ts` shadow files no longer exist; their work has been ported into the canonical Svelte 5 / TypeScript runtime under `src/lib/`. See:
+
+- `docs/migration-plan.md` § "Engine kernel" — engine deployment
+- `docs/typing-contract.md` — current `as any` budget (5 occurrences, 43 files affected, down from 575 in W47-A)
+- `src/lib/engine/` (41 files), `src/lib/journey/`, `src/lib/orchestration/`, `src/lib/state/` for the current owners
+- `tests/unit-active/as-any-budget.test.ts` for the live budget enforcement
+
+This doc is retained as a **historical snapshot** of the migration's midway point. The "Next Steps" section at the bottom is no longer active work.
+
+---
+
+## Actual State (as of 2026-06-05; superseded)
 
 **The 16 target `.ts` shadow files already exist.** They were created as part of prior migration work. The `ts-readiness` report confirms the entry point is already ready for flip:
 
@@ -13,41 +26,45 @@ Entry ready for flip: YES
 TS coverage: 56.9%
 ```
 
-### Existing `.ts` shadow files (all in `js/modules/`)
+### Historical Shadow-File Inventory (all since migrated into `src/lib/`)
 
-| File | Size | Type |
-|------|------|------|
-| `bridge-registry.ts` | 2.5 KB | Full implementation |
-| `camera-controls.ts` | 4.1 KB | Facade re-export (core + restore + choreography) |
-| `data-loader.ts` | 9.7 KB | Full implementation (worker API + main-thread fallback) |
-| `exploration-mode.ts` | 2.9 KB | Full implementation |
-| `focus-pocket.ts` | 16.2 KB | Full implementation (THREE.js + geometry + personality) |
-| `journey.ts` | 8.8 KB | Facade re-export (60+ APIs from sub-modules) |
-| `journey-compass-controller.ts` | 16.4 KB | Full implementation |
-| `journey-point-color.ts` | 8.1 KB | Full implementation |
-| `journey-webgl.ts` | 0.9 KB | Re-export facade (route-trace, arrival-handoff, semantic-overlay) |
-| `micro-demo.ts` | 11.1 KB | Full implementation (guards, camera, UI sub-modules) |
-| `lifecycle.ts` | 17.0 KB | Full implementation (518 lines) |
-| `scene-reveal.ts` | 2.6 KB | Full implementation |
-| `semantic-dive-ui.ts` | 11.2 KB | Full implementation |
-| `semantic-guide.ts` | 12.0 KB | Full implementation |
-| `semantic-threads.ts` | 16.3 KB | Full implementation |
-| `webgl-restore-adapter.ts` | 0.5 KB | Full implementation |
+| Shadow file (since removed) | Modern home |
+|---|---|
+| `js/modules/bridge-registry.ts` | deprecated — dewindowed; `__APP_STATE__` removed; replaced by `src/lib/state/app.svelte.ts` |
+| `js/modules/camera-controls.ts` | `src/lib/engine/camera-controls.ts` (+ `camera-controls-core.ts`, `camera-choreography/`, `camera-controls-restore.svelte.ts`) |
+| `js/modules/data-loader.ts` | `src/lib/data-loader.ts` (moved to lib root) |
+| `js/modules/exploration-mode.ts` | `src/lib/orchestration/lifecycle.ts` |
+| `js/modules/focus-pocket.ts` | `src/lib/journey/focus-pocket.ts` + `focus-pocket-geometry.ts` |
+| `js/modules/journey.ts` | `src/lib/journey/journey.ts` |
+| `js/modules/journey-compass-controller.ts` | `src/lib/orchestration/compass-controller.ts` (+ `compass-state.ts`) |
+| `js/modules/journey-point-color.ts` | `src/lib/journey/point-color.ts` (rename pending per Step 3 cleanup plan) |
+| `js/modules/journey-webgl.ts` | webgl helpers split into `src/lib/engine/three-engine-*.ts` (multiple files) |
+| `js/modules/micro-demo.ts` | `src/lib/demo/choreography.ts` (+ `camera.ts`, `guards.ts`, `ui.ts`, `demo-script.ts`) |
+| `js/modules/lifecycle.ts` | `src/lib/orchestration/lifecycle.ts` + `src/lib/stores/lifecycle.ts` |
+| `js/modules/scene-reveal.ts` | `src/lib/engine/scene-reveal.ts` |
+| `js/modules/semantic-dive-ui.ts` | `src/lib/journey/semantic-dive.ts` + `semantic-overlay.ts` |
+| `js/modules/semantic-guide.ts` | `src/lib/journey/semantic-guide.ts` (+ `semantic-guide-payload.ts`) |
+| `js/modules/semantic-threads.ts` | `src/lib/semantic-threads.ts` (still at lib root; rename to `src/lib/engine/semantic-threads.ts` pending per Step 3 cleanup plan) |
+| `js/modules/webgl-restore-adapter.ts` | deprecated — replaced by Engine WebGL restore path in `src/lib/engine/` |
 
-### Verification Results
+### Historical Verification Results
 
 | Check | Result |
 |-------|--------|
-| `npm run typecheck` (tsc --noEmit) | **0 errors** |
-| `npm run build` (esbuild) | **Build succeeds** (562.6 KB in 403ms) |
-| `npm run ts-readiness` | **44/44 imports ready, Entry flip: YES** |
+| `npm run typecheck` (tsc --noEmit) | **0 errors** (was 0 errors; current `npm run test:unit` enforces a tighter `as any` budget of 5) |
+| `npm run build` (esbuild) | **Build succeeds** (562.6 KB in 403ms) (current bundle ~1,217 KB raw / ~338 KB gzip per `docs/migration-plan.md`) |
+| `npm run ts-readiness` | **44/44 imports ready, Entry flip: YES** (current state: full Svelte 5 + TS shell at `dist/svelte/index.html`) |
 
-### Stale docs
+### Status of "Stale Docs" item
 
-`docs/ts-migration-readiness.md` still reports the old state (28/44, 45.1%, NO). Needs updating to reflect current 44/44, 56.9%, YES.
+`docs/ts-migration-readiness.md`: **never written / no longer applicable.** This doc was the planned follow-up. The actual current state lives in `docs/typing-contract.md` and `docs/migration-plan.md`. There is no `docs/ts-migration-readiness.md` to update; refer to those two docs instead.
 
-## Next Steps
+---
 
-1. **Update `docs/ts-migration-readiness.md`** with current metrics
-2. **Port `app.js` logic into `app.ts`** for the true flip — currently `app.ts` is a thin shim that dynamically imports `app.js`
-3. **Convert remaining 62 JS-only modules** (all non-entry-path sub-modules like camera-controls-core, journey-focus-ui, thread-inspector, etc.) — these don't block the entry flip but would complete the migration
+## Historical Next Steps (no longer active)
+
+> These items were active as of 2026-06-05. They have since been completed or superseded by the W47/W48 migration arc.
+
+1. Doppler / immigrate `app.js` logic into `app.ts`. **Completed**: `app.ts` is the Svelte `src/main.ts` entry; legacy `app.js` no longer exists.
+2. Convert remaining 62 JS-only modules. **Completed**: all entry-path modules are now TypeScript under `src/lib/`. Sub-modules are similarly typed. The `as any` budget is currently 5 (per `docs/typing-contract.md`).
+3. Update `docs/ts-migration-readiness.md` — **N/A**, that doc was never created; the live readiness doc is `docs/typing-contract.md`.

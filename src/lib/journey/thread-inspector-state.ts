@@ -20,7 +20,7 @@ import { syncFocusStage } from '@lib/journey/selected-card'
 import { syncSemanticDiveUi } from '@lib/journey/semantic-dive'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { showExperienceToast } from '@lib/orchestration/toast'
-import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts'
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import {
     summarizeNeighborReason,
     getInsideRelationshipLabel,
@@ -482,9 +482,7 @@ export function exploreThreadNeighbor(
         appendHistory: !options.restoreHistory
     })
     renderThreadInspection(index, { force: true, surface: options.surface || 'explore' })
-    withStateMutation(() => {
-        appState.navState.lastTraversalReason = reason
-    })
+    writeNavStateMirror({ lastTraversalReason: reason })
     if (appState.currentView === 'map') {
         focusOnPoint(targetPoint)
     } else {

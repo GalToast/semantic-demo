@@ -1,5 +1,26 @@
 {
-  "src/lib/stores/navigation.svelte.ts": [
-    [418, 460, "FOCUS_NODE branch: direct appState.navState.* writes inside appState.withMutation() — the canonical mirror path for focusedIndex/mode/surface/activeStoryPrompt"]
-  ]
+    "src/lib/stores/navigation.svelte.ts": [
+        [
+            418,
+            460,
+            "FOCUS_NODE branch: direct appState.navState.* writes inside appState.withMutation() — the canonical mirror path for focusedIndex/mode/surface/activeStoryPrompt"
+        ]
+    ],
+    "src/lib/stores/lifecycle.ts": [
+        [
+            38,
+            45,
+            "Legacy window-state compatibility mirror in setTrailDepth(): legacyState.navState.trailDepth is an intentional test-compat write, not the canonical appState path"
+        ],
+        [
+            140,
+            148,
+            "Legacy window-state compatibility writes in applyCompositionState(): legacyState.navState.* mirrors are intentional test-compat surface, not the canonical appState path"
+        ],
+        [
+            248,
+            258,
+            "Legacy window-state compatibility reset in reset function: legacyState.navState.* mirrors are intentional test-compat surface, not the canonical appState path"
+        ]
+    ]
 }

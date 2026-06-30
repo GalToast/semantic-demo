@@ -1,12 +1,33 @@
 # Window Global Allowlist
 
-Date: 2026-05-28
+Date: 2026-05-28 (last refreshed 2026-06-29 to update owner paths)
 
 This policy turns `window.* =` assignments into an explicit ratchet. It does not
 block known legacy globals yet; it prevents new globals from appearing without a
 classification and an owner.
 
 The enforcement contract is [tests/window-global-allowlist-contract.mjs](../tests/window-global-allowlist-contract.mjs).
+
+> **Note (2026-06-29):** The owner paths in this doc reference `js/modules/X.js` for historical context. The actual code is currently type-checked and lives under the `src/lib/` tree. The **Modern → Legacy owner map** below is authoritative when reading this doc. The policy itself (categories, classification, enforcement via `tests/window-global-allowlist-contract.mjs`) is unchanged.
+
+## Modern → Legacy Owner Map
+
+| Legacy path cited in this doc | Modern home |
+|---|---|
+| `js/modules/app.js` | `src/lib/orchestration/app-init.ts` (+ `src/main.ts` entry) |
+| `js/modules/micro-demo.js` | `src/lib/demo/choreography.ts` (+ `camera.ts`, `guards.ts`, `ui.ts`, `demo-script.ts`) |
+| `js/modules/camera-controls.js` | `src/lib/engine/camera-controls.ts` (+ `camera-controls-core.ts`, `camera-controls-restore.svelte.ts`, `camera-choreography/*`) |
+| `js/modules/lifecycle.js` | `src/lib/orchestration/lifecycle.ts` + `src/lib/stores/lifecycle.ts` |
+| `js/modules/journey.js` | `src/lib/journey/journey.ts` (+ 30+ satellites in `src/lib/journey/`) |
+| `js/state.js` | `src/lib/state/app.svelte.ts` (state class) + `src/lib/state/legacy-state.ts` (compat shim) |
+| `js/modules/bridge-registry.js` | deprecated — dewindowed; modern equivalent is direct imports from the typed stores |
+| `js/modules/thread-inspector.js` | `src/lib/journey/thread-inspector-{state,render,adapter}.ts` |
+| `js/modules/search-state.js` | `src/lib/stores/search.svelte.ts` (+ `src/lib/search/orchestration.ts`) |
+| `js/modules/view-controller.js` | `src/lib/orchestration/view-controller.ts` |
+| `js/modules/event-bindings.js` | folded into `src/lib/orchestration/lifecycle.ts` and per-domain stores |
+| `js/modules/cluster-labels.js` | not re-introduced; cluster labelling lives in `src/lib/journey/point-color.ts` + `src/lib/utils/design-tokens.ts` |
+| `js/modules/map-state.js` | `src/lib/engine/map-state.ts` |
+| `js/modules/legend-ui.js` | `src/lib/journey/legend-ui.ts` (+ `src/lib/stores/legend.svelte.ts`) |
 
 ## Categories
 
@@ -25,7 +46,7 @@ avoid the global entirely.
 Classification: `live-product`.
 Introduced: 2026-05-28. Replaces one-off window bridges as the single classified compatibility entry point for app action access.
 
-**Owner:** `js/modules/app.js`
+**Owner:** `src/main.ts` / `src/lib/orchestration/app-init.ts` (legacy: `js/modules/app.js`)
 
 **Purpose:** Consolidates one-off `window.*` action bridges into a single explicitly classified namespace. It is the compatibility owner for Playwright specs, visual-audit helpers, manual DevTools probing, and external callers still crossing the app boundary through `window`. Retired migration-debt bare globals like `window.focusOnNode` and `window.setTrailFromSeed` now route through `window.__APP_ACTIONS__`.
 
@@ -33,7 +54,7 @@ Introduced: 2026-05-28. Replaces one-off window bridges as the single classified
 
 Classification: `live-product`.
 
-**Owner:** `js/modules/micro-demo.js`
+**Owner:** `src/lib/demo/choreography.ts` (legacy: `js/modules/micro-demo.js`)
 
 **Purpose:** Replaces the retired `window.demoController` namespace. These two globals are the only remaining surface for first-visit demo eligibility and cancellation now that the dedicated controller module is gone.
 
@@ -46,22 +67,22 @@ Classification: `live-product`.
 
 | Key | Source | Notes |
 |---|---|---|
-| `search` | `search-state.js` | Search entry point for test specs |
-| `clearSearch` | `search-state.js` | Search reset for test specs |
-| `switchView` | `view-controller.js` | Classified view handoff for test/dev harnesses that need map/galaxy transitions |
-| `focusOnNode` | `camera-controls.js` | Primary focus navigation action |
-| `setTrailFromSeed` | `journey.js` | Seeded trail setup for route/focus tests |
-| `setTrailDepth` | `lifecycle.js` | Trail depth control |
-| `setSemanticDiveMode` | `lifecycle.js` | Dive mode toggle |
-| `returnToOverview` | `lifecycle.js` | Overview reset |
-| `resetExplorationFocus` | `lifecycle.js` | Exploration state reset |
-| `refreshCompositionState` | `lifecycle.js` | Composition refresh |
-| `traverseNeighbor` | `journey.js` | Prev/next focus-stage traversal |
-| `inspectThreadNeighbor` | `journey.js` | Thread preview/relationship inspector |
-| `pinThreadNeighbor` | `journey.js` | Pin a relationship for comparison |
-| `unpinThreadInspection` | `journey.js` | Clear pinned relationship state |
-| `clearThreadInspection` | `journey.js` | Clear preview/pin/follow inspector state |
-| `walkThreadNeighbor` | `journey.js` | Follow a semantic connection to the next focused stop |
+| `search` | `src/lib/stores/search.svelte.ts` | Search entry point for test specs |
+| `clearSearch` | `src/lib/stores/search.svelte.ts` | Search reset for test specs |
+| `switchView` | `src/lib/orchestration/view-controller.ts` | Classified view handoff for test/dev harnesses that need map/galaxy transitions |
+| `focusOnNode` | `src/lib/engine/camera-controls.ts` | Primary focus navigation action |
+| `setTrailFromSeed` | `src/lib/journey/journey.ts` | Seeded trail setup for route/focus tests |
+| `setTrailDepth` | `src/lib/orchestration/lifecycle.ts` | Trail depth control |
+| `setSemanticDiveMode` | `src/lib/stores/focus.svelte.ts` | Dive mode toggle |
+| `returnToOverview` | `src/lib/orchestration/lifecycle.ts` | Overview reset |
+| `resetExplorationFocus` | `src/lib/stores/lifecycle.ts` | Exploration state reset |
+| `refreshCompositionState` | `src/lib/orchestration/lifecycle.ts` | Composition refresh |
+| `traverseNeighbor` | `src/lib/journey/journey.ts` | Prev/next focus-stage traversal |
+| `inspectThreadNeighbor` | `src/lib/journey/journey.ts` | Thread preview/relationship inspector |
+| `pinThreadNeighbor` | `src/lib/journey/journey.ts` | Pin a relationship for comparison |
+| `unpinThreadInspection` | `src/lib/journey/journey.ts` | Clear pinned relationship state |
+| `clearThreadInspection` | `src/lib/journey/journey.ts` | Clear preview/pin/follow inspector state |
+| `walkThreadNeighbor` | `src/lib/journey/journey.ts` | Follow a semantic connection to the next focused stop |
 
 Migration: `window.focusOnNode` and `window.setTrailFromSeed` are retired as bare globals. The namespace is the intended target for test/dev harness calls.
 
@@ -125,7 +146,7 @@ Classification: `migration-debt`. These exist but have no desired long-term owne
    - Gate-on (default): all 17 thread-inspection functions available for diagnostics.
    - `_ti` uses the same `window.__DEBUG_PROBES__` default-on guard pattern.
 
-3. ✅ **Gate `window._ti` assignment with default-on** — refined guard to `typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true` so gate-on is the default in dev/test environments where __DEBUG_PROBES__ is often unset.
+3. ✅ **Gate `window._ti` assignment with default-on** — refined guard to `typeof window.__DEBUG_PROBES__ !== 'undefined' ? window.__DEBUG_PROBES__ : true` so gate-on is the default in dev/test environments where **DEBUG_PROBES** is often unset.
    - Source contracts are gate-aware and pass regardless of whether the gate is on or off.
 
 4. **Verify contract** — run `node tests/thread-inspector-dewindowing-contract.mjs tests/journey-window-surface-contract.mjs tests/journey-thread-inspector-contract.mjs` with gate both on and off; both must pass.

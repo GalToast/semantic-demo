@@ -129,11 +129,9 @@ export function applyCompositionState(): void {
     // record. See tests/widget-journey.spec.js for the test-compat surface.
     if (typeof window !== 'undefined') {
         legacyState.focusedNode = hasFocus
-            ? $nav.focusedIndex ??
-              ($focus.selectedBusiness
-                  ? ($focus.selectedBusiness as { index?: number }).index
-                  : null) ??
-              null
+            ? ($nav.focusedIndex ??
+              ($focus.selectedBusiness ? ($focus.selectedBusiness as { index?: number }).index : null) ??
+              null)
             : null
         if (legacyState.focusState) {
             legacyState.focusState.selectedPoint = $focus.selectedBusiness

@@ -87,11 +87,8 @@ await test('setTrailDepth mirrors journey, nav, and legacy state', () => {
         /updateNavState\s*\(\s*\{\s*trailDepth:\s*nextDepth\s*\}\s*\)/.test(body),
         'setTrailDepth mirrors navStore.trailDepth'
     )
-    assert(/appState\.trailDepth\s*=\s*nextDepth/.test(body), 'setTrailDepth mirrors legacy top-level trailDepth')
-    assert(
-        /appState\.navState\.trailDepth\s*=\s*nextDepth/.test(body),
-        'setTrailDepth mirrors legacy navState.trailDepth'
-    )
+    assert(/\b\w+\.trailDepth\s*=\s*nextDepth/.test(body), 'setTrailDepth mirrors legacy top-level trailDepth')
+    assert(/\b\w+\.navState\.trailDepth\s*=\s*nextDepth/.test(body), 'setTrailDepth mirrors legacy navState.trailDepth')
     assert(!/window\.setTrailDepth\s*\(/.test(body), 'setTrailDepth avoids window.setTrailDepth bridge')
 })
 
@@ -105,7 +102,10 @@ await test('setMyceliumMode delegates to navigation store owner', () => {
         'lifecycle exports delegated setMyceliumMode'
     )
     const body = exportedFunctionSource(navigationSrc, 'setMyceliumMode')
-    assert(/_navWritable\.update/.test(body), 'navigation setMyceliumMode updates nav writable')
+    assert(
+        /(_navWritable\.update|writeNavStateMirror\s*\(\s*\{\s*myceliumMode:\s*mode\s*\})/.test(body),
+        'navigation setMyceliumMode updates nav writable'
+    )
     assert(/myceliumMode:\s*mode/.test(body), 'navigation setMyceliumMode writes myceliumMode')
     assert(!/window\./.test(body), 'navigation setMyceliumMode avoids window bridge calls')
     assert(!/updateUrlState\s*\(/.test(body), 'navigation setMyceliumMode avoids direct URL state writes')

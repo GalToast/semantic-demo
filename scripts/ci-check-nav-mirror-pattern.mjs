@@ -89,7 +89,22 @@ for (const absFile of listSourceFiles(SRC_DIR)) {
     const tracksLegacyState = /import\s*\{[^}]*\blegacyState\b[^}]*\}/.test(source)
     if (!tracksAppState && !tracksLegacyState) continue
 
+    let inBlockComment = false
     source.split('\n').forEach((text, index) => {
+        const trimmed = text.trim()
+
+        // Track /* */ block comments so we don't flag prose examples in JSDoc.
+        if (!inBlockComment && trimmed.includes('/*')) {
+            inBlockComment = !trimmed.includes('*/')
+        } else if (inBlockComment && trimmed.includes('*/')) {
+            inBlockComment = false
+            return
+        }
+        if (inBlockComment) return
+
+        // Skip single-line comments.
+        if (trimmed.startsWith('//')) return
+
         const mutationMatch = text.match(DIRECT_NAV_MUTATION_RE)
         if (!mutationMatch) return
         const receiver = mutationMatch[1]
@@ -195,8 +210,6 @@ for (const v of violations) {
     console.log(`    ${v.text}`)
     console.log()
 }
-console.log(
-    '[nav-mirror-check] These mutations should be moved inside writeNavStateMirror().'
-)
+console.log('[nav-mirror-check] These mutations should be moved inside writeNavStateMirror().')
 
 process.exit(1)

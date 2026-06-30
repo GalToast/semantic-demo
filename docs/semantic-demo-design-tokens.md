@@ -7,7 +7,7 @@ This is the human-readable token sheet for the Semantic Explorer demo. The canon
 ## Source Of Truth
 
 - `css/base.css` owns the root token values.
-- `js/modules/design-tokens.js` owns JS/WebGL mirrors such as scene fog, thread tint, corridor shader colors, and the legacy cluster palette.
+- `src/lib/utils/design-tokens.ts` owns JS/WebGL mirrors such as scene palette (`SCENE_PALETTE`), thread tints, route-trace colors (`ROUTE_TRACE_COLORS`), cluster palette (`CLUSTER_COLORS`), and any other token consumed from JS.
 - `semantic-demo.css` is only an import shell. Do not treat it as selector or token authority.
 - Surface ownership remains documented in `docs/semantic-demo-css-authority-map.md`.
 - Visual acceptance criteria remain documented in `docs/semantic-demo-ui-quality-rubric.md`.

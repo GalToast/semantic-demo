@@ -53,9 +53,9 @@ check('module:exports:applyMapFlatteningLayout', /export\s+function\s+applyMapFl
 check(
     'enabled-path:reads rawPositionsBuffer',
     /hasRawBuffer/.test(targetSrc) &&
-        /state\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\]/.test(targetSrc) &&
-        /state\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(targetSrc),
-    'map-flattening-layout.js must read state.rawPositionsBuffer[i*3] and [i*3+1] in the enabled branch'
+        /(?:state|appState)\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\]/.test(targetSrc) &&
+        /(?:state|appState)\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(targetSrc),
+    'map-flattening-layout.js must read rawPositionsBuffer[i*3] and [i*3+1] in the enabled branch'
 )
 
 // ---------------------------------------------------------------------------
@@ -72,8 +72,8 @@ check(
 )
 check(
     'enabled-path:primary read is from buffer',
-    /state\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(enabledBranch),
-    'the enabled branch must read y from state.rawPositionsBuffer[i*3+1], not point.y'
+    /(?:state|appState)\.rawPositionsBuffer\s*\[\s*i\s*\*\s*3\s*\+\s*1\s*\]/.test(enabledBranch),
+    'the enabled branch must read y from rawPositionsBuffer[i*3+1], not point.y'
 )
 
 // ---------------------------------------------------------------------------
