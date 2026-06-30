@@ -347,25 +347,33 @@ export interface NavTransitionResult {
  * and trigger the flat bindings mirror for trailDepth/currentView.
  */
 export function writeNavStateMirror(patch: Partial<NavState>): void {
-    withStateMutation(() => {
-        // Update legacy state in place (mirrors what withMutation/Object.assign does).
-        // This is required because many imperative readers captured a reference to
-        // appState.navState at module-init time; replacing the reference (rather
-        // than mutating in place) would leave those readers stale.
-        Object.assign(appState.navState, patch)
-        // Mirror kernel top-level fields that the flat bindings table doesn't cover.
-        if (typeof patch.trailDepth === 'number') {
-            appState.trailDepth = patch.trailDepth
-        }
-        if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
-            appState.currentView = patch.currentView
-        }
+    // Use the factory's update() method to atomically:
+    //   1. computeFromAppState() reads the current appState.navState
+    //   2. The callback applies the patch IN PLACE (canonical mutation)
+    //      and returns the new snapshot for the writable
+    //   3. _writable.set(next) fires subscribers with the new snapshot
+    //   4. mirrorToAppState(next) writes bindable fields back to appState
+    //      (no-op for navMirror — all bindings are null)
+    //
+    // This eliminates the timing window in the previous two-step sequence
+    // (`Object.assign(appState.navState, ...)` followed by `navMirror.set(...)`),
+    // where a $derived consumer could read appState.navState directly after
+    // the Object.assign but before the writable's set fired, then fire a
+    // downstream cascade on stale state while subscribers of $navStore still
+    // saw the old value. The factory's update() guarantees subscribers
+    // receive a snapshot that's consistent with the canonical mutation.
+    navMirror.update((current) => {
+        withStateMutation(() => {
+            Object.assign(appState.navState, patch)
+            if (typeof patch.trailDepth === 'number') {
+                appState.trailDepth = patch.trailDepth
+            }
+            if (patch.currentView === 'galaxy' || patch.currentView === 'map') {
+                appState.currentView = patch.currentView
+            }
+        })
+        return { ...current, ...patch }
     })
-    // Notify Svelte subscribers via the factory. We push the freshly-mirrored
-    // appState.navState slice so any .subscribe() listener wakes up with
-    // the new value (the writable's value matches appState.navState after the
-    // Object.assign, so pushing either would be equivalent).
-    navMirror.set({ ...appState.navState })
 }
 
 /** Reset navigation state to initial values. */
