@@ -1,6 +1,6 @@
 # Active Context — semantic-explorer
 
-**Last updated:** 2026-06-14 (S6 arc CLOSED; S5 landed; arc-review confirms clean single-purpose S1–S4)
+**Last updated:** 2026-06-30 (W30 cleanup session CLOSED: toast consolidation, mode/compass decomposition, header CSS extraction, `__semanticState` retirement)
 **⚠ Update-prone:** Refresh this file whenever migration state, demo readiness, or blockers change.
 
 ## Migration status (Svelte + TypeScript)
@@ -115,3 +115,45 @@ The `js/` directory is NOT dead legacy code — it's the active Three.js engine 
 5. **Next arc: product features** (the migration is done; time to ship product work)
    - Specific candidates: new visual diagnostic features, main chunk split, relationship-roles finalization (now unblocked), CORS production proxy for rerank
 6. **Engine port (separate multi-week arc)** — porting the kernel from `js/modules/*.ts` to `src/lib/engine/*.ts` and thinning the bridge. Not this project's scope.
+
+## W30 cleanup session (CLOSED, 2026-06-30)
+
+Code-quality sweep — subagent audits → bounded PRs → verify → commit. 28+ commits beyond the original PR-A/B/C wave. No new features, only real bug fixes and dead-code removal.
+
+### Bug fixes (real bugs, not type tightening)
+
+- **PR-Item1** — `focusRing/NextCue/BeaconTexture` getters were cast via `as Texture` against `appState.*` runes that didn't exist. Routed to `webglContext.*` (the actual writers in `node-manager.ts`). Endpoints now render with non-null `material.map`. (`b9dd923b`)
+- **PR-selectedPoint** — `url-state.ts:101,103` wrote to `legacyState.selectedPoint`, which the test mock harness defines as getter-only. Threw "Cannot set property ... has only a getter". Removed the dead writes, added `focusState?.selectedPoint` / `searchState?.currentSearchSummary` fallbacks in `getCompatValue`. (`5efe4571`)
+
+### Decomposition
+
+- **PR-D1** — Retired 45 source-grep test assertions across 4 files (cargo-culted "is this string in this file" tests). 0/-527 lines. (`a2e626f1`)
+- **PR-D2** — Extracted Header mode logic + constants into pure TS modules. Header.svelte: 613 → 498 lines. +35 new unit tests. (`d02a8e0d`)
+- **PR-D3** — Lifted the selection-lock rule to `src/lib/navigation/mode-affordances.ts`. Reused in `mode-bindings.ts` and Header. +7 new tests. (`d09620d4`)
+- **PR-D4** — CompassRail reuses `selectMode` from `mode-nav`. Found and fixed two real consistency bugs (missing lock guard for `focus`/`inside`; missing URL sync; no `SET_VIEW` for `map`). +26/-20. (`c129fff3`)
+- **PR-D9** — Header.svelte 498 → 254 lines (–49%). Extracted 247-line `<style>` block to `src/lib/components/header/header.css`. Uses the same `@import`-inside-`<style>` pattern ProximityLegend uses. (`9dd9c346`)
+
+### Feature parity
+
+- **PR-D6** — `JOURNEY_COMPASS_PHASE_ORDER` grew from 5 to 6 phases; added `trail` between `focus` and `inside`. Brings the compass rail in line with the Header chip rail and `mode-bindings.ts`. (`3c3a016f`)
+
+### Cleanup
+
+- **PR-D5** — Playwright journey test for the mode-bindings Trail-locked toast. Catches the toast fragility path (Svelte re-render wiping manual DOM mutations). (`144eeeff`)
+- **PR-D7** — Consolidated the duplicate `showExperienceToast` exports onto the Svelte-store path. 4 importers switched; DOM-direct implementation removed from `ui-feedback.ts`. (`7dc6ebc3`)
+- **PR-D8** — Retired the never-set `window.__semanticState` global (declared in `window.d.ts`, never assigned anywhere; 3 dead readers). (`22ec205d`)
+- **PR-2** — Retired dead `webglContext.rawPositions` / `ClustersBuffer` fields. (`1084f76f`)
+- **PR-3a/3b** — Path-cascade type tightening in `state-types.ts` + `app.svelte.ts`. (`7b72028e`, `d6296c6a`)
+- **`getPointBoundsCenter` unit tests** — Real unit coverage for the testing contract. (`c027926c`)
+
+### What this session enables for future work
+
+- The Header / CompassRail / mode-bindings / welcome demo all switch modes through the same `selectMode` entry point. Adding a new selection-dependent mode = one line in `SELECTION_DEPENDENT_MODES` + one entry in `mode-constants.ts` + one click target.
+- The toast is now store-driven. The PR-D5 journey test protects the contract.
+- The `__semanticState` global is gone — window globals are now a closed set (`__APP_STATE__`, `__TEST_STATE__`, `__LEGACY_APP_STATE__`).
+
+### Test surface
+
+- 190 vitest files, 2640 tests passing, 4 todo, 0 failed.
+- svelte-check: 0 errors / 0 warnings.
+- 1 Playwright journey test (`tests/widget-journey.spec.js` — PR-D5 + PR-Item1 test 22c) cannot fire here (no browser harness) — validates in CI.

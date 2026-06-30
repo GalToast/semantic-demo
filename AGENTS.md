@@ -61,6 +61,14 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 - `micro-demo.js` / `src/lib/demo/choreography.ts` is the sole demo entry point and owns first-visit eligibility.
 - CSS ownership is split by ordered modules under `css/`; use the ownership docs before editing mobile/surface styles.
 
+## Conventions (header / mode / toast)
+
+- **Switching modes** from any UI surface (chip rail, compass rail, welcome demo): call `selectMode(modeId, source)` from `@lib/components/header/mode-nav`. It encapsulates the lock check, URL sync, and `navState` write in one place. Don't reach into `updateUrlState` / `setJourneyPhase` / `updateNavState` directly from a click handler.
+- **Checking if a mode is locked** (requires a focused business): `isModeLocked(modeId, hasSelection)` from `@lib/navigation/mode-affordances`. The `SELECTION_DEPENDENT_MODES` set (`trail`, `focus`, `inside`) is the canonical list — add new selection-dependent modes there.
+- **Toast:** import `showExperienceToast` from `@lib/orchestration/toast` (Svelte-store-driven; the Toast.svelte component renders the DOM). The DOM-direct version in `@lib/ui/ui-feedback` was retired 2026-06-30.
+- **Header CSS** lives in `src/lib/components/header/header.css`; Header.svelte imports it via `@import '@lib/components/header/header.css'` inside its `<style>` block. Use the same `@import`-inside-`<style>` pattern ProximityLegend uses for `z-layers.css` when extracting component CSS.
+- **Journey phases are 6:** `overview → search → focus → trail → inside → map`. `trail` was added to `JOURNEY_COMPASS_PHASE_ORDER` in PR-D6.
+
 ## Reference Docs
 
 Read these only when relevant:

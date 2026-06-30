@@ -31,6 +31,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/orchestration/lifecycle.ts`
 - `src/lib/orchestration/view-controller.ts`
 - `src/lib/orchestration/event-bus.ts`
+- `src/lib/orchestration/toast.ts` — canonical toast path (Svelte store; replaces the DOM-direct version in `src/lib/ui/ui-feedback.ts`).
 
 ## State / Data
 
@@ -53,3 +54,8 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/ui-renderers.ts`
 - `src/lib/navigation-actions.ts`
 - `src/lib/z-index.ts`
+- `src/lib/navigation/mode-affordances.ts` — canonical selection-lock rule (`isModeLocked`, `SELECTION_DEPENDENT_MODES = {trail, focus, inside}`). Shared by Header, CompassRail, and `mode-bindings.ts`.
+- `src/lib/components/header/mode-constants.ts` — header mode labels, icons, descriptions.
+- `src/lib/components/header/mode-nav.ts` — `selectMode` is the canonical mode-switch entry point.
+- `src/lib/components/header/header.css` — extracted Header visual contract.
+- `src/components/CompassRail.svelte` — 6-phase compass rail.
