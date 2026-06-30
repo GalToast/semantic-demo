@@ -17,6 +17,7 @@ import { findNearestCanvasFieldNode } from './canvas-node-picking'
 import { clearCanvasFieldHover, setCanvasFieldHover } from './canvas-hover'
 import type { HoverCandidate } from './canvas-hover'
 import { showExperienceToast } from '@lib/orchestration/toast'
+import { prefersReducedMotion } from '@lib/utils/environment'
 
 // F3: Track whether the empty-click hint has been shown this session so
 // users aren't spammed with toasts.
@@ -32,6 +33,7 @@ function setCanvasDragCursor(canvas: HTMLCanvasElement, isDragging: boolean): vo
 
 /** Show a brief pulse ring at the click position to confirm node selection. */
 function showClickPulse(x: number, y: number): void {
+    if (prefersReducedMotion()) return
     const pulse = document.createElement('div')
     pulse.className = 'click-pulse-ring'
     pulse.style.cssText = `

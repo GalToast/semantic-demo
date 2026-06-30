@@ -305,6 +305,8 @@ const PINNED_FILES = [
     'motion-state-contract.mjs',
     'demo-state-sync-contract.mjs',
     'three-visual-polish-contract.mjs',
+    'reduced-motion-coverage-contract.mjs',
+    'js-reduced-motion-animation-guard-contract.mjs',
     'search-peek-expanded-render-contract.mjs',
     'semantic-guide-payload-contract.mjs',
     'connection-analysis-render-state-contract.mjs',

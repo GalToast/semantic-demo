@@ -56,6 +56,7 @@ import {
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { debugWarn } from '@lib/utils/debug'
+import { prefersReducedMotion } from '@lib/utils/environment'
 import { updateSelectedNodeMotes } from './three-lens-motes'
 import { updateSelectedNodePetals } from './three-lens-petals'
 import { updateSelectedNodeFilaments } from './three-lens-filaments'
@@ -385,7 +386,8 @@ export function initSemanticLens() {
 
 export function updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void {
     if (!state.pointsMesh) return
-    const time = now / 1000
+    const reducedMotion = prefersReducedMotion()
+    const time = reducedMotion ? 0 : now / 1000
 
     const activeNode =
         focusedNode !== null && Number.isFinite(focusedNode) && focusedNode >= 0
@@ -423,11 +425,15 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
         const coreColorMat = asColorMaterial(state.focusCore.material)
         if (isActive) {
             coreColorMat?.color.setHex(0xeafffb)
-            const corePulse = 1.0 + Math.sin(time * 1.2) * 0.09
+            const corePulse = reducedMotion ? 1.0 : 1.0 + Math.sin(time * 1.2) * 0.09
             state.focusCore.scale.set(baseScale * corePulse, baseScale * corePulse, 1)
         } else if (hasFocus) {
             coreColorMat?.color.setHex(0xcffcf4)
-            const corePulse = isInside ? 1.0 + Math.sin(time * 1.25) * 0.09 : 1.0 + Math.sin(time * 2.4) * 0.045
+            const corePulse = reducedMotion
+                ? 1.0
+                : isInside
+                  ? 1.0 + Math.sin(time * 1.25) * 0.09
+                  : 1.0 + Math.sin(time * 2.4) * 0.045
             state.focusCore.scale.set(baseScale * corePulse, baseScale * corePulse, 1)
         }
 
@@ -441,7 +447,9 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
             if (state.pointsMesh?.localToWorld) state.pointsMesh.localToWorld(worldPos)
 
             if (state.focusHalo) {
-                const auraPulse = 1.0 + Math.sin(time * 0.82) * 0.09 + Math.sin(time * 0.31 + 1.4) * 0.035
+                const auraPulse = reducedMotion
+                    ? 1.0
+                    : 1.0 + Math.sin(time * 0.82) * 0.09 + Math.sin(time * 0.31 + 1.4) * 0.035
                 state.focusHalo.position.copy(worldPos)
                 const auraScale = isInside ? 0.044 : 0.082
                 state.focusHalo.scale.set(auraScale * auraPulse, auraScale * auraPulse, 1)
@@ -548,7 +556,7 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
         const colorUniform = lensUniforms?.color
         if (opacityUniform && timeUniform && colorUniform) {
             opacityUniform.value += (targetOpacity - opacityUniform.value) * lerpSpeed
-            timeUniform.value = time
+            timeUniform.value = reducedMotion ? 0 : time
             colorUniform.value.setHex(isDiving ? 0xd8fff8 : 0x9fffee)
         }
         state.focusLens.visible = (opacityUniform?.value ?? 0) > 0.01
@@ -563,10 +571,14 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
             const pulseFreq = isDiving ? 1.35 : 0.82
             const pulseAmp = isDiving ? 0.17 : 0.09
             const baseScale = isDiving ? 1.55 : 1.28
-            const pulse = baseScale + Math.sin(time * pulseFreq) * pulseAmp + Math.sin(time * 0.37 + 1.7) * 0.04
+            const pulse = reducedMotion
+                ? baseScale
+                : baseScale + Math.sin(time * pulseFreq) * pulseAmp + Math.sin(time * 0.37 + 1.7) * 0.04
 
-            state.focusLens.rotation.y += rotationSpeed
-            state.focusLens.rotation.z += rotationSpeed * 0.5
+            if (!reducedMotion) {
+                state.focusLens.rotation.y += rotationSpeed
+                state.focusLens.rotation.z += rotationSpeed * 0.5
+            }
             state.focusLens.scale.set(pulse, pulse, pulse)
         }
     }

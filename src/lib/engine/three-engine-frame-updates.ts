@@ -66,8 +66,12 @@ export function updatePointsMaterial(
     webglContext.pointsMaterial.size =
         CONFIG.POINTS_MATERIAL_BASE_SIZE * (1.06 + pointsRevealProgress * 0.46) * pointsSizeScale
     if (webglContext.pointsMaterial.userData.shader) {
+        const prefersReduced =
+            typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches
         webglContext.pointsMaterial.userData.shader.uniforms.uRevealProgress.value = pointsRevealProgress
-        webglContext.pointsMaterial.userData.shader.uniforms.uTime.value = performance.now() * 0.001
+        if (!prefersReduced) {
+            webglContext.pointsMaterial.userData.shader.uniforms.uTime.value = performance.now() * 0.001
+        }
     }
 }
 

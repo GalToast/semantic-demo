@@ -42,6 +42,7 @@ import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import { triggerCorridorBloom } from '@lib/audio/audio-scape'
 import { seededUnit } from '@lib/utils/seeded-random'
+import { prefersReducedMotion } from '@lib/utils/environment'
 
 // ── Constants ───────────────────────────────────────────────────────────────
 
@@ -541,12 +542,13 @@ export function updateSearchCorridorAnimation(frameNow: number): boolean {
     if (!st || !st.line) return false
     if (_corridorAnimStartTime === null) return false
     const elapsed = frameNow - _corridorAnimStartTime
+    const reducedMotion = prefersReducedMotion()
 
     const drawProgress = Math.min(elapsed / CORRIDOR_SOFT_DRAW_DURATION, 1.0)
 
     if (st.material?.uniforms?.uDrawProgress && st.material.uniforms.uTime) {
         st.material.uniforms.uDrawProgress.value = drawProgress
-        st.material.uniforms.uTime.value = frameNow / 1000
+        st.material.uniforms.uTime.value = reducedMotion ? 0 : frameNow / 1000
     }
 
     // particles.material is typed Material | Material[] in three.js but we
@@ -555,7 +557,7 @@ export function updateSearchCorridorAnimation(frameNow: number): boolean {
     const particlesMaterial = st.particles?.material as ShaderMaterial | undefined
     if (particlesMaterial?.uniforms?.uDrawProgress && particlesMaterial.uniforms.uTime) {
         particlesMaterial.uniforms.uDrawProgress.value = drawProgress
-        particlesMaterial.uniforms.uTime.value = frameNow / 1000
+        particlesMaterial.uniforms.uTime.value = reducedMotion ? 0 : frameNow / 1000
     }
 
     if (elapsed > CORRIDOR_SOFT_DRAW_DURATION) {

@@ -25,7 +25,7 @@
 
 import type { Point } from '@lib/state/state-types';
 import { appState } from '@lib/state/app.svelte';
-import { getPanelSurface } from '@lib/utils/environment';
+import { getPanelSurface, prefersReducedMotion } from '@lib/utils/environment';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -111,6 +111,10 @@ function scheduleFrame(callback: FrameRequestCallback | (() => void)): void {
 
 export function triggerSelectedCardFade(cardEl: HTMLElement): void {
     if (!cardEl) return;
+    if (prefersReducedMotion()) {
+        cardEl.style.setProperty('--selected-card-fade-ms', '0ms');
+        return;
+    }
     cardEl.style.setProperty('--selected-card-fade-ms', `${appState.SELECTED_CARD_FADE_MS}ms`);
     cardEl.classList.add('is-fading');
     scheduleFrame(() => {
