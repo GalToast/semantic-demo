@@ -2041,3 +2041,78 @@ test.describe('Widget Journey Tests — PR-C mode picker dedup', () => {
         expect(hasActionsRule).toBe(true)
     })
 })
+
+/**
+ * PR-D (2026-06-30): Panel separation over busy 3D scene. After the visual
+ * QA audit found the FocusCard, neighbor count badge, and search-trail-cue
+ * blending into the constellation, we added drop shadows, borders, and
+ * contrast. These tests verify the computed styles are applied when the
+ * panels are actually visible to the user.
+ */
+test.describe('Widget Journey Tests — PR-D panel separation over 3D scene', () => {
+    test('PR-D-1: focus card has a drop shadow and neighbor badge is readable when a node is focused', async ({ page }) => {
+        // Wait for business data, then focus the first node via the real
+        // navigation action bridge (same path the canvas click would take).
+        await page.waitForFunction(
+            () => (window.__APP_STATE__?.points?.length ?? 0) > 0,
+            null,
+            { timeout: 20000 }
+        )
+
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('focusOnNode is not exposed on window.__navActions__')
+            }
+            actions.focusOnNode(0)
+        })
+
+        await page.locator('#selected-card').waitFor({ state: 'visible', timeout: 20000 })
+        await page.locator('#focus-stage-neighbors').waitFor({ state: 'visible', timeout: 20000 })
+
+        const styles = await page.evaluate(() => {
+            const card = document.getElementById('selected-card')
+            const count = document.getElementById('focus-stage-neighbor-count')
+            const out = { card: null, count: null }
+            if (card) {
+                const cs = window.getComputedStyle(card)
+                out.card = { boxShadow: cs.boxShadow, borderWidth: cs.borderWidth }
+            }
+            if (count) {
+                const cs = window.getComputedStyle(count)
+                out.count = { color: cs.color, backgroundColor: cs.backgroundColor, borderWidth: cs.borderWidth }
+            }
+            return out
+        })
+
+        expect(styles.card, 'focus card should be present').not.toBeNull()
+        expect(styles.card.boxShadow, 'focus card must have a drop shadow').not.toBe('none')
+        expect(styles.card.borderWidth, 'focus card must have a border').not.toBe('0px')
+
+        expect(styles.count, 'neighbor count badge should be present').not.toBeNull()
+        expect(styles.count.backgroundColor, 'neighbor count badge must have a background').not.toBe('rgba(0, 0, 0, 0)')
+        expect(styles.count.borderWidth, 'neighbor count badge must have a border').not.toBe('0px')
+        // The old unreadable teal-dark (#6a8a8a) was rgb(106, 138, 138)
+        expect(styles.count.color, 'neighbor count badge color must not be the old teal-dark').not.toBe('rgb(106, 138, 138)')
+    })
+
+    test('PR-D-2: search trail cue has a drop shadow when a search is active', async ({ page }) => {
+        // Enter a search query so the search surface activates and the trail
+        // cue is shown.
+        await page.locator('#search-input').fill('coffee')
+        await page.keyboard.press('Enter')
+        await page.locator('#search-trail-cue').waitFor({ state: 'visible', timeout: 20000 })
+
+        const style = await page.evaluate(() => {
+            const cue = document.getElementById('search-trail-cue')
+            if (!cue) return null
+            const cs = window.getComputedStyle(cue)
+            return { boxShadow: cs.boxShadow, borderWidth: cs.borderWidth, backdropFilter: cs.backdropFilter }
+        })
+
+        expect(style, 'search trail cue should be in the DOM').not.toBeNull()
+        expect(style.boxShadow, 'search trail cue must have a drop shadow').not.toBe('none')
+        expect(style.borderWidth, 'search trail cue must have a border').not.toBe('0px')
+        expect(style.backdropFilter, 'search trail cue must have a backdrop blur').not.toBe('none')
+    })
+})
