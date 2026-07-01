@@ -50,8 +50,7 @@
 <div
   id="synthesize-trigger"
   class="synthesize-trigger"
-  class:hidden={appState.semanticGuideState.isVisible}
-
+  class:hidden={appState.semanticGuideState.isVisible || appState.currentView === 'map'}
 >
   <button id="btn-synthesize" type="button" class="btn-synthesize" onclick={requestSemanticGuide}>
     Synthesize trail
