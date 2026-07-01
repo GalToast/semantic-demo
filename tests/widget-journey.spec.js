@@ -22,6 +22,18 @@ import { test, expect } from '@playwright/test'
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8797'
 
 test.describe('Widget Journey Tests — what the user actually sees', () => {
+    /** Close the auto-open help dialog if it surfaced for this first-visit session. */
+    async function dismissOnboardingHelpDialog(page) {
+        const dialog = page.locator('dialog.help-dialog[open]')
+        try {
+            await dialog.waitFor({ state: 'visible', timeout: 5000 })
+            await dialog.locator('.help-dialog-close').click()
+            await dialog.waitFor({ state: 'hidden', timeout: 5000 })
+        } catch {
+            /* dialog wasn't open – that's fine */
+        }
+    }
+
     /**
      * Boot: navigate, dismiss the gesture gate, wait for the weather widget.
      * The widget only renders when the canvas's onSceneReady callback fires,
@@ -58,6 +70,9 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
             .filter({ hasText: /^[1-9]\d?°$/ })
             .first()
             .waitFor({ timeout: 40000 })
+
+        // Close the W52 onboarding help dialog if it auto-opened.
+        await dismissOnboardingHelpDialog(page)
 
         // Store the error collector on the page object for later assertions
         page._bootErrors = errors
