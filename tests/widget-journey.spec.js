@@ -317,6 +317,55 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
     })
 
     /**
+     * 11. The "What is this?" help dialog auto-opens on first visit once the
+     *    3D scene is ready. The small Help icon is otherwise easy to miss,
+     *    so first-time users get the core concept surfaced automatically.
+     *
+     *    Catches: help dialog only opens on manual click and never surfaces
+     *    for first-time users; or auto-open fires on every reload (not
+     *    gated by localStorage).
+     */
+    test('11. help dialog auto-opens on first visit', async ({ page }) => {
+        // Simulate a clean first visit by clearing the shared onboarding flag.
+        await page.evaluate(() => {
+            localStorage.removeItem('moco_onboarding_seen_v1')
+        })
+        await page.reload({ waitUntil: 'domcontentloaded' })
+
+        // Dismiss the gate again after the reload.
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for the weather widget to confirm the scene is ready.
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+
+        // The help dialog should appear automatically.
+        const dialog = page.locator('dialog.help-dialog[open]')
+        await expect(dialog).toBeVisible({ timeout: 10000 })
+
+        // Verify the core concept copy is present.
+        await expect(dialog.locator('#help-title')).toContainText('What is Semantic Explorer?')
+        await expect(dialog.locator('#help-desc')).toContainText(/dots close together do similar things/i)
+
+        // Dismissing the dialog should mark onboarding seen.
+        await dialog.locator('.help-dialog-close').click()
+        await expect(dialog).not.toBeVisible({ timeout: 5000 })
+
+        const stored = await page.evaluate(() => localStorage.getItem('moco_onboarding_seen_v1'))
+        expect(stored).not.toBeNull()
+        const parsed = JSON.parse(stored ?? '{}')
+        expect(parsed.seen).toBe(true)
+
+        // Reloading again should NOT auto-open the dialog.
+        await page.reload({ waitUntil: 'domcontentloaded' })
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await expect(dialog).not.toBeVisible({ timeout: 5000 })
+    })
+
+    /**
      * 12. The summary card suggestion buttons fire focusOnNode on click.
      *
      * Catches: `SemanticGuideCard.svelte` rendering `.suggestion-btn` elements

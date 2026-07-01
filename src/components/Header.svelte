@@ -20,6 +20,7 @@
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   import { debugWarn } from '@lib/utils/debug'
+  import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { modes } from '@lib/components/header/mode-constants';
   import {
     isModeLocked,
@@ -36,6 +37,21 @@
     visible?: boolean;
     /** Render only floating utility controls, without brand or mode chips */
     utilityOnly?: boolean;
+  }
+
+  const ONBOARDING_STORAGE_KEY = 'moco_onboarding_seen_v1';
+
+  /** Mark the first-visit onboarding as seen (shared with ProximityLegend). */
+  function markOnboardingSeen(): void {
+    if (typeof window === 'undefined') return;
+    try {
+      window.localStorage.setItem(
+        ONBOARDING_STORAGE_KEY,
+        JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+      );
+    } catch {
+      /* storage full / private browsing – silently ignore */
+    }
   }
 
   let { visible = true, utilityOnly = false }: Props = $props();
@@ -111,14 +127,49 @@
 
   /** Show / hide the "What is this?" help dialog. */
   let helpDialog: HTMLDialogElement | undefined = $state();
+  let helpDialogAutoOpened = $state(false);
+
+  function openHelpDialog(): void {
+    if (!helpDialog || helpDialog.open) return;
+    helpDialog.showModal();
+  }
+
+  function closeHelpDialog(): void {
+    if (!helpDialog || !helpDialog.open) return;
+    helpDialog.close();
+    markOnboardingSeen();
+  }
+
   function toggleHelpDialog(): void {
     if (!helpDialog) return;
     if (helpDialog.open) {
-      helpDialog.close();
+      closeHelpDialog();
     } else {
-      helpDialog.showModal();
+      openHelpDialog();
     }
   }
+
+  /**
+   * W52-UX: auto-open the help dialog on first visit once the 3D scene is
+   * ready. The small ? icon is hard to discover; surfacing the core concept
+   * ("dots close together do similar things") immediately after the user
+   * enters the scene prevents stranded users. Shares the same localStorage
+   * first-visit flag as ProximityLegend so we don't spam returning users.
+   */
+  $effect(() => {
+    if (engineReady.value && helpDialog && !helpDialogAutoOpened) {
+      try {
+        const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
+        if (!raw) {
+          helpDialog.showModal();
+        }
+      } catch {
+        /* storage unavailable – silently skip */
+      } finally {
+        helpDialogAutoOpened = true;
+      }
+    }
+  });
 </script>
 
 {#if visible}
@@ -248,7 +299,7 @@
     class="help-dialog"
     aria-labelledby="help-title"
     aria-describedby="help-desc"
-    onclick={(e) => { if (e.target === helpDialog) toggleHelpDialog(); }}
+    onclick={(e) => { if (e.target === helpDialog) closeHelpDialog(); }}
   >
     <div class="help-dialog-inner">
       <h3 id="help-title">What is Semantic Explorer?</h3>
@@ -261,7 +312,7 @@
       <button
         class="help-dialog-close"
         type="button"
-        onclick={() => toggleHelpDialog()}
+        onclick={() => closeHelpDialog()}
       >
         Got it
       </button>
