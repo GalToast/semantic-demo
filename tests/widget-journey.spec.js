@@ -2072,11 +2072,7 @@ test.describe('Widget Journey Tests — PR-E relationship context in FocusCard',
     test('PR-E-1: focused business card surfaces the dominant relationship role and reason', async ({ page }) => {
         // Wait for the point corpus, then focus the first node via the real
         // action bridge. This mirrors the canvas-click focus path.
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.points?.length ?? 0) > 0,
-            null,
-            { timeout: 20000 }
-        )
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 0, null, { timeout: 20000 })
 
         await page.evaluate(() => {
             const actions = window.__navActions__
@@ -2172,5 +2168,68 @@ test.describe('Widget Journey Tests — PR-D panel separation over 3D scene', ()
         expect(style.boxShadow, 'search trail cue must have a drop shadow').not.toBe('none')
         expect(style.borderWidth, 'search trail cue must have a border').not.toBe('0px')
         expect(style.backdropFilter, 'search trail cue must have a backdrop blur').not.toBe('none')
+    })
+})
+
+/**
+ * PR-F (2026-06-30): Onboarding fallback toast reliability. When the auto-demo
+ * is suppressed (?nodemo=1, returning user, reduced motion), the user still
+ * needs a "getting started" hint after they enter the scene. Previously the
+ * toast scheduled immediately on mount and was suppressed by the mandatory
+ * splash/placeholder click, so it rarely fired. Now it waits for the scene to
+ * be ready before listening for interactions, so the hint appears reliably.
+ */
+test.describe('Widget Journey Tests — PR-F onboarding fallback toast', () => {
+    async function enterSuppressedScene(page) {
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the gesture gate. The button might be labelled "Explore" or
+        // "Enter 3D Scene" depending on which branch renders.
+        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+    }
+
+    test('PR-F-1: fallback onboarding toast appears when the demo is suppressed', async ({ page }) => {
+        await enterSuppressedScene(page)
+
+        // The fallback hint schedules after sceneReady + a short delay. It should
+        // not be suppressed by the mandatory splash/placeholder gate click.
+        const toast = page.locator('#experience-reset-toast.active').first()
+        await toast.waitFor({ state: 'visible', timeout: 20000 })
+
+        const title = await page.locator('#experience-toast-title').first().textContent()
+        const copy = await page.locator('#experience-toast-copy').first().textContent()
+
+        expect(title?.trim(), 'fallback toast title should be visible').not.toBe('')
+        expect(copy?.trim(), 'fallback toast copy should be visible').not.toBe('')
+        expect(copy?.toLowerCase(), 'fallback toast should mention search').toContain('search')
+        expect(copy?.toLowerCase(), 'fallback toast should mention clicking dots').toContain('click')
+    })
+
+    test('PR-F-2: fallback hint is suppressed when the user explores after scene ready', async ({ page }) => {
+        await enterSuppressedScene(page)
+
+        // Wait for the canvas to report ready. The gate click is mandatory
+        // navigation and happens before listeners are attached; this click is
+        // real exploration and should silence the hint.
+        await page.locator('#canvas-container.canvas-ready').first().waitFor({ state: 'visible', timeout: 20000 })
+
+        // Give the DemoChoreography polling loop (200ms) a chance to attach
+        // listeners now that the scene is ready, so our interaction is counted.
+        await page.waitForTimeout(300)
+
+        // Interact after the scene is ready but before the hint would fire.
+        // Use keyboard navigation: a real keydown on the document is caught by
+        // the capture-phase listener and marks the user as exploring, which
+        // suppresses the fallback hint. Canvas pointer events are harder to
+        // simulate reliably in Playwright because the 3D engine consumes them.
+        await page.keyboard.press('ArrowDown')
+
+        // Wait for the hint delay plus a buffer.
+        await page.waitForTimeout(3500)
+
+        const toast = page.locator('#experience-reset-toast.active')
+        await expect(toast).toHaveCount(0)
     })
 })

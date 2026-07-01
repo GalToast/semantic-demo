@@ -38,6 +38,8 @@
   const RETRY_START_DELAY_MS = 250;
   /** Delay before the fallback onboarding toast appears after splash dismissal. */
   const FALLBACK_HINT_DELAY_MS = 2500;
+  /** Maximum time to wait for the 3D scene to become ready before falling back. */
+  const SCENE_READY_TIMEOUT_MS = 10000;
 
   /**
    * Track whether the user has interacted since mount. If they have, the
@@ -50,6 +52,24 @@
   function markInteraction(): void {
     userInteractedSinceMount = true;
     interactionAbortController.abort();
+  }
+
+  /**
+   * Attach the document-level interaction listeners that mark the user as
+   * "already exploring" so the fallback hint can be suppressed. Kept as a
+   * helper so the suppressed branch can attach listeners *after* the scene
+   * is ready — the splash/placeholder gate click is mandatory navigation,
+   * not exploration, and must not silence the onboarding hint.
+   */
+  function attachInteractionListeners(): void {
+    if (interactionAbortController.signal.aborted) return;
+    const interactionSignal = interactionAbortController.signal;
+    // Capture phase so the canvas/orbit handlers can't stop propagation
+    // before we see the interaction (e.g., a click or tap on a 3D dot is still
+    // user exploration and should suppress the fallback hint).
+    ['pointerdown', 'pointermove', 'mousemove', 'keydown', 'click', 'touchstart'].forEach((evt) =>
+      document.addEventListener(evt, markInteraction, { capture: true, passive: true, signal: interactionSignal })
+    );
   }
 
   const phaseLabels: Record<DemoPhase, string> = {
@@ -145,21 +165,39 @@
   }
 
   onMount(() => {
-    // Phase 2: listen for user interaction so the fallback toast can be
-    // suppressed if the user is already exploring (Scout B Rec #4).
-    const interactionSignal = interactionAbortController.signal;
-    ['mousemove', 'keydown', 'click'].forEach((evt) =>
-      document.addEventListener(evt, markInteraction, { passive: true, signal: interactionSignal })
-    );
-
     if (suppress || (!force && !shouldRunDemo())) {
       eligible = false;
       // W6 audit: Show a fallback onboarding hint when the demo is suppressed.
       // This catches returning users, reduced-motion users, and software-renderer
       // users who would otherwise land in the 3D scene with zero guidance.
-      scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
+      //
+      // Reliability fix: gate the hint on the scene actually being ready and
+      // only attach interaction listeners at that point. The splash/placeholder
+      // "Enter 3D Scene" click is required navigation, not exploration; if we
+      // listen for it, the hint is suppressed for every user who enters normally.
+      const startTime = performance.now();
+      const offerHintWhenReady = (): void => {
+        if (sceneReady.value || sceneReady.error) {
+          attachInteractionListeners();
+          scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
+          return;
+        }
+        if (performance.now() - startTime > SCENE_READY_TIMEOUT_MS) {
+          // Scene never became ready — still better to offer a hint than nothing.
+          attachInteractionListeners();
+          scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
+          return;
+        }
+        setTimeout(offerHintWhenReady, 200);
+      };
+      offerHintWhenReady();
       return;
     }
+
+    // Phase 2: listen for user interaction so the fallback toast can be
+    // suppressed if the user is already exploring (Scout B Rec #4).
+    // A hint on top of active exploration is noise, not guidance.
+    attachInteractionListeners();
 
     // Phase 2b-2 fix: gate the demo phase driver on the 3D scene actually
     // being rendered. Without this, the demo's camera/search/focus/dive/etc.
@@ -176,7 +214,6 @@
     //
     // 10s timeout falls back to running anyway — a few captions flashing on
     // chrome beats no demo at all when the scene is slow to boot.
-    const SCENE_READY_TIMEOUT_MS = 10000;
     const startTime = performance.now();
     const startWhenReady = (): void => {
       if (sceneReady.value) {
