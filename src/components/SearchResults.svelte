@@ -30,6 +30,7 @@
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { prefersReducedMotion } from '@lib/utils/environment';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
+  import { showErrorToast } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { appState } from '@lib/state/app.svelte';
   import type { SearchResult } from '@lib/types/state';
@@ -276,6 +277,15 @@
       // the route-trace overlay refreshes in response to CAMERA_NODE_FOCUSED.
       publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: Number(index) });
       actions?.focusOnNode?.(Number(index), { fromSearchResult: true });
+    } else if (result) {
+      // W52-UX: previously the click silently did nothing when the underlying
+      // record was missing (corrupt catalogue index). The user clicked a
+      // result and got no feedback. Surface a warning so the user understands
+      // why the click had no effect and can retry.
+      showErrorToast(
+        'Selection unavailable',
+        'This result is missing its detail record. Please retry the search.'
+      );
     }
   }
 

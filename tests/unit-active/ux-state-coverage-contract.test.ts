@@ -48,8 +48,14 @@ describe('UX state coverage — Tier 1 (full loading + error + empty)', () => {
             component: 'InfoPanel',
             file: 'src/components/InfoPanel.svelte',
             loading: { marker: 'info-panel-loading', role: 'status' },
-            error: { marker: 'info-panel-error', role: 'alert' },
             empty: { marker: 'selected-empty' }
+            // NOTE: No error contract — InfoPanel currently has no error-state
+            // path. There is no record-fetch failure surface; selectedRecord
+            // is read from a synchronous mirror backed by the global state.
+            // Adding an error marker here before there is a real error source
+            // would be aspirational dead UI (see W52-UX teardown of
+            // `let hasError = $derived(false)` + the never-rendered
+            // { #if hasError } block in InfoPanel.svelte).
         },
         {
             component: 'SearchResults',
