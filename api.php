@@ -23,8 +23,22 @@ function getSemanticDataset(): array
         return $cache;
     }
 
-    $dataPath = __DIR__ . DIRECTORY_SEPARATOR . 'data.dat';
-    if (!is_file($dataPath)) {
+    // PR-N: search multiple candidate locations for data.dat so dev mode
+    // works without a manual copy. Production deploys drop data.dat next
+    // to api.php (canonical). Dev falls through to src/data.dat so a
+    // fresh checkout works the moment PHP CLI server starts.
+    $candidates = [
+        __DIR__ . DIRECTORY_SEPARATOR . 'data.dat',
+        __DIR__ . DIRECTORY_SEPARATOR . 'src' . DIRECTORY_SEPARATOR . 'data.dat'
+    ];
+    $dataPath = null;
+    foreach ($candidates as $candidate) {
+        if (is_file($candidate)) {
+            $dataPath = $candidate;
+            break;
+        }
+    }
+    if ($dataPath === null) {
         respond(500, ['error' => 'Missing semantic dataset']);
     }
 
