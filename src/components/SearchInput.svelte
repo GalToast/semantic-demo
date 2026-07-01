@@ -343,12 +343,20 @@
    * dropdown sit in the same flow as the input without being painted
    * over by a sibling stacking context.
    */
-  .search-input-container {
-    position: relative;
-    z-index: var(--z-search, 100);
-    width: min(420px, 90vw);
-    font-family: 'Nunito Sans', system-ui, sans-serif;
-  }
+.search-input-container {
+     position: relative;
+     z-index: var(--z-search, 100);
+     width: min(420px, 90vw);
+     /* PR-L: never overflow the info-panel's content area. The base rule
+        caps at 420px (or 90vw on narrow viewports), but when the search
+        lives inside .info-panel-content (~284px wide on desktop), the
+        420px overflows the parent. info-panel-content has overflow:hidden,
+        so the overflow gets clipped — but a stale scrollLeft of ~88px
+        drifts into view, making every text line look truncated on the
+        left ("Top match" → "atch", "Angel Fire Coffee" → "e Coffee"). */
+     max-width: 100%;
+     font-family: 'Nunito Sans', system-ui, sans-serif;
+   }
 
   /* ── Semantic lane pill ───────────────────────────────────────────────────── */
   .semantic-lane-pill {
