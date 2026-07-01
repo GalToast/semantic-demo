@@ -25,6 +25,21 @@
         box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* D: Hide the journey compass panel in map mode (no active route context).
+ * The component sets data-density='hidden' to signal "I'm not relevant now"
+ * (see src/lib/orchestration/compass-controller.ts: density = 'hidden' when
+ * phase === 'map' && !hasActiveRouteContext). The mobile chrome cascade
+ * honors this signal in @media (max-width: 768px) — extend it to all
+ * viewports. Without this rule, desktop users in ?view=map see a 560×339
+ * panel duplicating the top chip rail (mode switching) and the
+ * .map-empty-state (the "Choose a business to map its neighborhood"
+ * prompt). The panel has no unique purpose on desktop in this state. */
+body.surface-map-any .journey-compass[data-density='hidden'] {
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+}
+
 @media (min-width: 769px) {
     .journey-compass {
         left: calc(360px + (100vw - 360px) / 2);
