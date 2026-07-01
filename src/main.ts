@@ -36,17 +36,26 @@ import { debugError } from '@lib/utils/debug'
 
 // ── URL parameter initialization ──────────────────────────────────────────────
 
-function parseUrlParams(): { forceDemo: boolean; noDemo: boolean } {
+function parseUrlParams(): { forceDemo: boolean; noDemo: boolean; isDeepLink: boolean } {
     const params = new URLSearchParams(window.location.search)
+    const queryLen = params.get('q')?.trim().length ?? 0
     return {
         forceDemo: params.get('demo') === 'force',
-        noDemo: params.get('nodemo') === '1'
+        noDemo: params.get('nodemo') === '1',
+        // PR-B2: detect deep-link params so we can dismiss the Splash
+        // gesture gate before the user clicks Explore. Without this,
+        // a user landing on ?anchor=519 sees focus state restored
+        // behind the modal and has to click through to view it. Same
+        // for ?q=coffee (search results) and ?view=map (map deep-link).
+        // ?story= is intentionally NOT included — story prompts fire
+        // post-splash as part of DemoChoreography.
+        isDeepLink: params.has('anchor') || params.get('view') === 'map' || queryLen >= 2
     }
 }
 
 // ── Mount ─────────────────────────────────────────────────────────────────────
 
-const { forceDemo, noDemo } = parseUrlParams()
+const { forceDemo, noDemo, isDeepLink } = parseUrlParams()
 const mountTarget = document.getElementById('app') ?? document.getElementById('app-root')
 let app: ReturnType<typeof mount> | undefined
 
@@ -115,6 +124,15 @@ engineReady.subscribe((ready) => {
 // the monitor can skip auto-fire when the 2D placeholder is shown on mobile.
 if (typeof document !== 'undefined' && document.body) {
     setRenderKind(getInitialRenderKind())
+}
+// PR-B2: dismiss the Splash gesture gate early on deep-link boot.
+// parseUrlParams() already classified the URL; on desktop (webgl) we
+// can signal ready now so the focus/search/map state — which app-init
+// loads in the background — is visible to the user immediately. The
+// renderKind guard mirrors GestureMonitor's own skip-on-placeholder2d
+// logic: mobile keeps the 2D placeholder + splash flow.
+if (isDeepLink && document.body?.dataset?.renderKind !== 'placeholder2d') {
+    engineReady.signalReady()
 }
 const teardownGestureMonitor = installGestureMonitor({
     onReady: () => engineReady.signalReady()
@@ -204,13 +222,13 @@ function getCompatValue(prop: string | symbol): unknown {
     // tmp/selectedPoint-bug-audit-2026-06-29.md Section 4(c).
     if (typeof prop === 'string') {
         if (prop === 'selectedPoint') {
-            const nested = (legacyState as unknown as { focusState?: { selectedPoint?: unknown } })
-                .focusState?.selectedPoint
+            const nested = (legacyState as unknown as { focusState?: { selectedPoint?: unknown } }).focusState
+                ?.selectedPoint
             if (nested !== undefined) return nested
         }
         if (prop === 'currentSearchSummary') {
-            const nested = (legacyState as unknown as { searchState?: { currentSearchSummary?: unknown } })
-                .searchState?.currentSearchSummary
+            const nested = (legacyState as unknown as { searchState?: { currentSearchSummary?: unknown } }).searchState
+                ?.currentSearchSummary
             if (nested !== undefined) return nested
         }
     }
@@ -260,7 +278,7 @@ function createTestCompatProxy(): Record<string, unknown> {
                             // Keep focusStore.selectedBusiness in sync for parity-attrs.
                             focusStore.update((s) => ({
                                 ...s,
-                                selectedBusiness: (value as BusinessRecord | null)
+                                selectedBusiness: value as BusinessRecord | null
                             }))
                         } else if (prop === 'navState' && value && typeof value === 'object') {
                             // Preserve the reactive $state navState object; merge
