@@ -1900,19 +1900,32 @@ test.describe('Widget Journey Tests — header utility buttons (PR-A layout fix)
             const headerRect = header?.getBoundingClientRect()
             const out = { header: null, buttons: [] }
             if (headerRect) {
-                out.header = { x: Math.round(headerRect.x), y: Math.round(headerRect.y), w: Math.round(headerRect.width), h: Math.round(headerRect.height) }
+                out.header = {
+                    x: Math.round(headerRect.x),
+                    y: Math.round(headerRect.y),
+                    w: Math.round(headerRect.width),
+                    h: Math.round(headerRect.height)
+                }
             }
             for (const id of ids) {
                 const btn = document.getElementById(id)
-                if (!btn) { out.buttons.push({ id, found: false }); continue }
+                if (!btn) {
+                    out.buttons.push({ id, found: false })
+                    continue
+                }
                 const rect = btn.getBoundingClientRect()
                 const cs = window.getComputedStyle(btn)
                 out.buttons.push({
                     id,
                     found: true,
                     position: cs.position,
-                    rect: { x: Math.round(rect.x), y: Math.round(rect.y), w: Math.round(rect.width), h: Math.round(rect.height) },
-                    inHeader: headerRect ? rect.top >= headerRect.top && rect.bottom <= headerRect.bottom : false,
+                    rect: {
+                        x: Math.round(rect.x),
+                        y: Math.round(rect.y),
+                        w: Math.round(rect.width),
+                        h: Math.round(rect.height)
+                    },
+                    inHeader: headerRect ? rect.top >= headerRect.top && rect.bottom <= headerRect.bottom : false
                 })
             }
             return out
@@ -1924,13 +1937,19 @@ test.describe('Widget Journey Tests — header utility buttons (PR-A layout fix)
         for (const btn of layout.buttons) {
             expect(btn.found, `${btn.id} should be in the DOM`).toBe(true)
             expect(btn.position, `${btn.id} must have position: static (PR-A fix)`).toBe('static')
-            expect(btn.inHeader, `${btn.id} must be inside the header bar (y=${btn.rect.y}, header y=${layout.header.y}..${layout.header.y + layout.header.h})`).toBe(true)
+            expect(
+                btn.inHeader,
+                `${btn.id} must be inside the header bar (y=${btn.rect.y}, header y=${layout.header.y}..${layout.header.y + layout.header.h})`
+            ).toBe(true)
         }
 
         // 3 buttons must not overlap each other (PR-A also fixed the overlap)
-        const positions = layout.buttons.map(b => `${b.rect.x},${b.rect.y}`)
+        const positions = layout.buttons.map((b) => `${b.rect.x},${b.rect.y}`)
         const uniquePositions = new Set(positions)
-        expect(uniquePositions.size, `all 3 buttons must be at distinct coordinates, got ${positions.join(' | ')}`).toBe(positions.length)
+        expect(
+            uniquePositions.size,
+            `all 3 buttons must be at distinct coordinates, got ${positions.join(' | ')}`
+        ).toBe(positions.length)
     })
 })
 
@@ -1961,7 +1980,7 @@ test.describe('Widget Journey Tests — mobile touch targets (PR-A a11y fix)', (
                     mode: c.getAttribute('data-mode'),
                     w: Math.round(rect.width),
                     h: Math.round(rect.height),
-                    meetsAA: rect.width >= 24 && rect.height >= 24,
+                    meetsAA: rect.width >= 24 && rect.height >= 24
                 })
             }
             return out
@@ -2043,6 +2062,45 @@ test.describe('Widget Journey Tests — PR-C mode picker dedup', () => {
 })
 
 /**
+ * PR-E (2026-06-30): Relationship context in FocusCard. When a business is
+ * focused, the card now surfaces the dominant relationship role among its
+ * neighbors (e.g., "Direct link", "Peer") and a human-readable reason.
+ * This catches the case where the relationship data is computed but never
+ * shown to the user.
+ */
+test.describe('Widget Journey Tests — PR-E relationship context in FocusCard', () => {
+    test('PR-E-1: focused business card surfaces the dominant relationship role and reason', async ({ page }) => {
+        // Wait for the point corpus, then focus the first node via the real
+        // action bridge. This mirrors the canvas-click focus path.
+        await page.waitForFunction(
+            () => (window.__APP_STATE__?.points?.length ?? 0) > 0,
+            null,
+            { timeout: 20000 }
+        )
+
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('focusOnNode is not exposed on window.__navActions__')
+            }
+            actions.focusOnNode(0)
+        })
+
+        await page.locator('#selected-card').waitFor({ state: 'visible', timeout: 20000 })
+
+        const context = page.locator('#selected-relationship-context').first()
+        await expect(context).toBeVisible({ timeout: 5000 })
+
+        const role = await context.locator('#selected-relationship-role').textContent()
+        expect(role?.trim(), 'relationship role label should be visible').not.toBe('')
+
+        const reason = await context.locator('#selected-relationship-reason').textContent()
+        expect(reason?.trim(), 'relationship reason should be visible').not.toBe('')
+        expect(reason?.trim().length, 'relationship reason should be more than a placeholder').toBeGreaterThan(10)
+    })
+})
+
+/**
  * PR-D (2026-06-30): Panel separation over busy 3D scene. After the visual
  * QA audit found the FocusCard, neighbor count badge, and search-trail-cue
  * blending into the constellation, we added drop shadows, borders, and
@@ -2050,14 +2108,12 @@ test.describe('Widget Journey Tests — PR-C mode picker dedup', () => {
  * panels are actually visible to the user.
  */
 test.describe('Widget Journey Tests — PR-D panel separation over 3D scene', () => {
-    test('PR-D-1: focus card has a drop shadow and neighbor badge is readable when a node is focused', async ({ page }) => {
+    test('PR-D-1: focus card has a drop shadow and neighbor badge is readable when a node is focused', async ({
+        page
+    }) => {
         // Wait for business data, then focus the first node via the real
         // navigation action bridge (same path the canvas click would take).
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.points?.length ?? 0) > 0,
-            null,
-            { timeout: 20000 }
-        )
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 0, null, { timeout: 20000 })
 
         await page.evaluate(() => {
             const actions = window.__navActions__
@@ -2093,7 +2149,9 @@ test.describe('Widget Journey Tests — PR-D panel separation over 3D scene', ()
         expect(styles.count.backgroundColor, 'neighbor count badge must have a background').not.toBe('rgba(0, 0, 0, 0)')
         expect(styles.count.borderWidth, 'neighbor count badge must have a border').not.toBe('0px')
         // The old unreadable teal-dark (#6a8a8a) was rgb(106, 138, 138)
-        expect(styles.count.color, 'neighbor count badge color must not be the old teal-dark').not.toBe('rgb(106, 138, 138)')
+        expect(styles.count.color, 'neighbor count badge color must not be the old teal-dark').not.toBe(
+            'rgb(106, 138, 138)'
+        )
     })
 
     test('PR-D-2: search trail cue has a drop shadow when a search is active', async ({ page }) => {

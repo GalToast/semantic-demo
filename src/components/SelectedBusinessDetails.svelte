@@ -91,6 +91,26 @@
   </button>
 </div>
 
+<!-- Relationship context (dominant relationship role + reason for neighbors) -->
+{#if viewModel.isPopulated && viewModel.relationshipContext}
+  {@const ctx = viewModel.relationshipContext as Record<string, unknown>}
+  <div class="selected-relationship-context" id="selected-relationship-context">
+    <div class="selected-relationship-header">
+      <span class="selected-relationship-label">Why these neighbors</span>
+      <span class="selected-relationship-role" id="selected-relationship-role">{ctx.roleLabel}</span>
+    </div>
+    <p class="selected-relationship-reason" id="selected-relationship-reason">{ctx.roleReason}</p>
+    {#if Array.isArray(ctx.distribution) && ctx.distribution.length > 1}
+      <ul class="selected-relationship-distribution" aria-label="Relationship types">
+        {#each ctx.distribution as item}
+          {@const typed = item as Record<string, unknown>}
+          <li><span class="rel-count">{typed.count}</span> {typed.label}</li>
+        {/each}
+      </ul>
+    {/if}
+  </div>
+{/if}
+
 <!-- Grid -->
 <div class="selected-grid">
   <div class="selected-item">
@@ -114,3 +134,75 @@
 {#if viewModel.showTrivia}
   <div class="selected-trivia" id="selected-trivia">{viewModel.trivia}</div>
 {/if}
+
+<style>
+  .selected-relationship-context {
+    margin: 0.6rem 0 0.4rem;
+    padding: 0.6rem 0.75rem;
+    background: rgba(7, 16, 24, 0.6);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.15);
+    border-radius: 0.4rem;
+  }
+
+  .selected-relationship-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 0.3rem;
+  }
+
+  .selected-relationship-label {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: rgba(224, 240, 240, 0.7);
+  }
+
+  .selected-relationship-role {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 0.15rem 0.45rem;
+    border-radius: 999px;
+    background: rgba(var(--color-primary-alt-rgb), 0.12);
+    color: var(--color-primary-alt);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.3);
+  }
+
+  .selected-relationship-reason {
+    margin: 0;
+    font-size: 0.75rem;
+    line-height: 1.45;
+    color: rgba(224, 240, 240, 0.85);
+  }
+
+  .selected-relationship-distribution {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.3rem 0.75rem;
+    margin: 0.4rem 0 0;
+    padding: 0;
+    list-style: none;
+    font-size: 0.65rem;
+    color: rgba(224, 240, 240, 0.7);
+  }
+
+  .selected-relationship-distribution li {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+  }
+
+  .rel-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.1rem;
+    padding: 0.05rem 0.25rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    font-weight: 600;
+    color: rgba(224, 240, 240, 0.92);
+  }
+</style>

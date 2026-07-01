@@ -22,6 +22,12 @@
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
+  import {
+    normalizeRelationshipRole,
+    getRelationshipRoleLabel,
+    describeRelationshipRoleReason,
+    type RelationshipRole
+  } from '@lib/utils/relationship-roles';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
 
 
@@ -129,6 +135,45 @@
     return null;
   });
 
+  function relationshipContextFor(candidates: unknown): Record<string, unknown> | null {
+    if (!Array.isArray(candidates)) return null;
+    const normalized: Array<{ relationshipRole: RelationshipRole; roleReason: string; reason: string }> = [];
+    for (const c of candidates) {
+      if (!c || typeof c !== 'object') continue;
+      const detail = c as Record<string, unknown>;
+      const role = normalizeRelationshipRole(String(detail.relationshipRole || ''));
+      normalized.push({
+        relationshipRole: role,
+        roleReason: String(detail.roleReason || ''),
+        reason: String(detail.reason || 'Neighborhood connection')
+      });
+    }
+    if (normalized.length === 0) return null;
+
+    const counts = new Map<RelationshipRole, number>();
+    for (const c of normalized) {
+      counts.set(c.relationshipRole, (counts.get(c.relationshipRole) || 0) + 1);
+    }
+    const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
+    const dominantRole = sorted[0][0];
+    const dominantCount = sorted[0][1];
+    const topCandidate = normalized.find((c) => c.relationshipRole === dominantRole);
+    const distribution = sorted.slice(0, 3).map(([role, count]) => ({
+      label: getRelationshipRoleLabel(role, 'rail'),
+      count
+    }));
+
+    return {
+      roleLabel: getRelationshipRoleLabel(dominantRole, 'rail'),
+      roleTitle: getRelationshipRoleLabel(dominantRole, 'title'),
+      roleReason: describeRelationshipRoleReason(dominantRole, topCandidate?.roleReason),
+      dominantCount,
+      total: normalized.length,
+      distribution,
+      hasContext: true
+    };
+  }
+
   // ── View Model (mirrors InfoPanel fallback path) ──────────────────────────────
   let viewModel = $derived.by((): Record<string, unknown> => {
     if (!selectedRecord) return {
@@ -178,6 +223,7 @@
       ? `${selectedRecord.lat.toFixed(4)}, ${selectedRecord.lng.toFixed(4)}`
       : 'No geocoded point yet';
     const threadText = '';
+    const relationshipContext = relationshipContextFor(nav.threadCandidates);
 
     return {
       name,
@@ -195,6 +241,7 @@
       sensitivityBadges,
       mapText,
       threadText,
+      relationshipContext,
       isPopulated: true
     };
   });
