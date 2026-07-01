@@ -55,7 +55,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
 
         // Dismiss the gesture gate. The button might be labelled "Explore" or
         // "Enter 3D Scene" depending on which branch renders. We match both.
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
@@ -348,7 +348,7 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         await page.reload({ waitUntil: 'domcontentloaded' })
 
         // Dismiss the gate again after the reload.
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
@@ -709,7 +709,7 @@ test.describe('Widget Journey Tests — neighbor rail CSS visibility', () => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the splash screen
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
@@ -1014,7 +1014,7 @@ test.describe('Widget Journey Tests — legend keyboard shortcut', () => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the splash screen
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
         await page.waitForTimeout(3000)
@@ -1056,7 +1056,7 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the splash screen
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
         // Wait for the data worker to load the 8,406-point dataset.
@@ -1144,7 +1144,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the splash screen
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
         // Wait for the 3D scene to fully initialize — the weather widget is
@@ -1334,7 +1334,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
@@ -1459,7 +1459,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
@@ -1578,7 +1578,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.reload({ waitUntil: 'domcontentloaded' })
 
         // Dismiss the gesture gate
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
@@ -1646,7 +1646,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // Boot — dismiss the gesture gate so the search input is in
         // the rendered DOM (it always is; the gate hides chrome).
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         if (await explore.count()) {
             await explore.waitFor({ state: 'visible', timeout: 40_000 })
             await explore.click()
@@ -1883,7 +1883,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
         // 2. Dismiss the gesture gate (splash screen)
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
@@ -2249,7 +2249,7 @@ test.describe('Widget Journey Tests — PR-F onboarding fallback toast', () => {
 
         // Dismiss the gesture gate. The button might be labelled "Explore" or
         // "Enter 3D Scene" depending on which branch renders.
-        const explore = page.getByRole('button', { name: /^(Explore|Enter 3D [Ss]cene)$/ }).first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
     }
