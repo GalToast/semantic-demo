@@ -33,3 +33,21 @@ export function showExperienceToast(title: string, copy: string): void {
 
 /** Dismiss the visible toast and advance the queue. */
 export { dismissToast }
+
+/**
+ * Test/dev affordance: expose the toast trigger functions on `window` so
+ * Playwright (and DevTools) can drive the toast UI without rebuilding the
+ * full call stack. Same pattern as `__refreshTestCompatState__`,
+ * `showSemanticThreadsDetail`, and `requestSemanticGuide` — typed in
+ * `src/window.d.ts`, mounted by `main.ts` for adjacent hooks, here directly
+ * because `@lib/orchestration/toast.ts` is the canonical test path for
+ * exercising SearchResults' missing-point toast (PR-W52-1).
+ */
+if (typeof window !== 'undefined') {
+    window.__toastHooks__ = {
+        showErrorToast,
+        dismissToast,
+        clearToastQueue,
+        showToastSpec
+    }
+}

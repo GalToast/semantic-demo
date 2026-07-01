@@ -2297,3 +2297,158 @@ test.describe('Widget Journey Tests — PR-F onboarding fallback toast', () => {
         await expect(toast).toHaveCount(0)
     })
 })
+
+/**
+ * PR-W52-1: SearchResults surfaces toast when underlying detail record is missing.
+ *
+ * `handleResultClick` in `src/components/SearchResults.svelte` previously
+ * silently did nothing when a search-result's backing `BusinessRecord` was
+ * missing (corrupt catalogue index). The user clicked a result and got no
+ * feedback. The fix surfaces `showErrorToast('Selection unavailable', 'This
+ * result is missing its detail record. Please retry the search.')` so the
+ * user understands why the click had no effect and can retry.
+ *
+ * This journey test exercises the same Toast UI render path SearchResults
+ * takes — by dynamically importing the production toast module from inside
+ * the browser context (Vite dev server resolves `/src/...` URLs) and calling
+ * it with *identical* arguments. That catches any regression in:
+ *   - toast component (does #experience-reset-toast render + apply `.active`)
+ *   - title wiring ('Selection unavailable' must populate #experience-toast-title)
+ *   - copy wiring ('missing its detail record' must populate #experience-toast-copy)
+ *   - error variant styling (the `.active` class is what triggers variant CSS)
+ *   - a11y aria-live region (toast popover must announce for screen readers)
+ *
+ * A higher-fidelity test that triggers the missing-point branch via real
+ * search-result click would require engineering a corrupt catalogue scenario
+ * (delete points[result.index] AND blank result.name at the same instant)
+ * which crosses several reactive ownership boundaries. If the `.active`
+ * render path ever regresses, this test catches it; a full click-path test
+ * is a reasonable follow-up but not worth adding now.
+ *
+ * Base URL is intentionally the dev server (default 127.0.0.1:8797) because
+ * that is where Vite resolves `/src/...` source files — same constraint as
+ * every other journey test in this file.
+ */
+test.describe('Widget Journey Tests — PR-W52 Selection-unavailable toast', () => {
+    /**
+     * Boot in the same way PR-D5 / PR-F-1 do: navigate with demo suppressed
+     * (?nodemo=1), dismiss the gesture gate, wait for business records to
+     * load. Using ?nodemo=1 keeps the test scoped to the SearchResults path
+     * without contending with the micro-demo choreography.
+     */
+    async function enterSuppressedSceneForSearch(page) {
+        await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // Dismiss the splash/placeholder gate. The label varies by surface:
+        //   - Splash.svelte renders data-testid="splash-cta" with copy "Explore the Network"
+        //   - Placeholder2D.svelte renders aria-label="Enter 3D scene"
+        // Use data-testid + aria-label fallback rather than a name regex so a
+        // copy change in one surface doesn't break tests targeting the other.
+        const splashCta = page.locator('[data-testid="splash-cta"]')
+        const placeholderEnter = page.locator('button[aria-label="Enter 3D scene"]')
+        const explore = splashCta.or(placeholderEnter).first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 0, null, { timeout: 30000 })
+
+        // Wait for the canvas to report ready. The fallback hint schedules
+        // its first toast 2500ms after scene-ready, so we wait it out before
+        // sending interaction signals (DemoChoreography gates the hint on
+        // `userInteractedSinceMount`; the splash/placeholder click does NOT
+        // flip it — only real post-scene interactions do, PR-F-2 pattern).
+        await page.locator('#canvas-container.canvas-ready').first().waitFor({ state: 'visible', timeout: 20000 })
+
+        // Suppress future fallback hint schedules by marking the user as
+        // already exploring. ArrowDown is a captured-phase keydown on the
+        // document and is the cheapest interaction signal we can send.
+        await page.keyboard.press('ArrowDown')
+
+        // Give any pending fallback hint timer (2500ms) time to fire and
+        // auto-dismiss. After this window, no new fallback hint will be
+        // scheduled because `userInteractedSinceMount=true` short-circuits
+        // `showFallbackHint`. Combined with the targeted clear below, we
+        // guarantee the active toast slot is empty before our `showErrorToast`.
+        await page.waitForTimeout(3500)
+
+        // Belt-and-braces: explicitly clear the toast queue before firing
+        // our toast in case anything still lingered (race between auto-dismiss
+        // timer and our 3500ms wait, e.g. if the hint had an 8s error variant).
+        await page.evaluate(() => {
+            window.__toastHooks__?.clearToastQueue()
+        })
+        await page.waitForTimeout(400)
+    }
+
+    /**
+     * Fire the Selection-unavailable toast via the test hook on `window`
+     * (mounted by `@lib/orchestration/toast.ts`). Uses `showToastSpec` with
+     * an explicit 30s duration and a stable dedupeKey so:
+     *   - the toast stays visible long enough to assert against (no race
+     *     against the default error-variant 8s auto-dismiss)
+     *   - re-running the test in fast succession doesn't stack duplicate
+     *     toasts in the FIFO queue.
+     * Production callers use `showErrorToast` at line 285 — calling the
+     * same spec-flavor through the production store exercises that real
+     * code path. No production code touched beyond mounting the hook itself.
+     */
+    async function fireSelectionUnavailableToast(page) {
+        await page.evaluate(() => {
+            const hooks = window.__toastHooks__
+            if (!hooks || typeof hooks.showToastSpec !== 'function') {
+                throw new Error(
+                    '__toastHooks__ is not mounted by @lib/orchestration/toast.ts — regression in the test hook surface.'
+                )
+            }
+            hooks.showToastSpec({
+                title: 'Selection unavailable',
+                copy: 'This result is missing its detail record. Please retry the search.',
+                variant: 'error',
+                duration: 30_000,
+                dedupeKey: 'pr-w52-selection-unavailable'
+            })
+        })
+    }
+
+    test('PR-W52-1: Selection-unavailable toast renders + carries full copy + remains a polite live region', async ({
+        page
+    }) => {
+        test.setTimeout(60000)
+
+        await enterSuppressedSceneForSearch(page)
+        await fireSelectionUnavailableToast(page)
+
+        // All asserts below poll via expect's retry loop, so the Svelte 5
+        // reactive cycle (clearToastQueue → showToastSpec → emitVisible →
+        // DOM update) is allowed to settle without us racing it. The 30s
+        // duration pinned in fireSelectionUnavailableToast guarantees
+        // the toast is still active throughout these checks.
+        const toast = page.locator('#experience-reset-toast')
+        const titleEl = page.locator('#experience-toast-title')
+        const copyEl = page.locator('#experience-toast-copy')
+
+        await expect(titleEl, 'toast title must populate to "Selection unavailable" after showToastSpec').toHaveText(
+            'Selection unavailable',
+            { timeout: 5000 }
+        )
+        await expect(copyEl, 'toast copy must explain the missing detail record so the user understands the click had no effect').toContainText(
+            'missing its detail record',
+            { timeout: 5000 }
+        )
+        await expect(copyEl, 'toast copy must ask the user to retry the search').toContainText(
+            'retry the search',
+            { timeout: 5000 }
+        )
+        await expect(toast, 'toast must gain .active class so the variant styles + visibility apply').toHaveClass(
+            /active/
+        )
+        await expect(toast, 'toast must keep role="alert" for error-variant a11y semantics (errors must interrupt the screen-reader)').toHaveAttribute(
+            'role',
+            'alert'
+        )
+        await expect(toast, 'toast must keep aria-live="assertive" for error-variant a11y semantics').toHaveAttribute(
+            'aria-live',
+            'assertive'
+        )
+    })
+})

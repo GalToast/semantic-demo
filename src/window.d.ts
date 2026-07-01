@@ -104,7 +104,19 @@ declare global {
          */
         __spector?: {
             isReady(): boolean
-            capture(canvasSelector?: string, maxFrames?: number): Promise<{ ok: boolean; reason?: string; frameCount?: number; commandCount?: number; canvas?: string; mode?: string; capture?: unknown; error?: string }>
+            capture(
+                canvasSelector?: string,
+                maxFrames?: number
+            ): Promise<{
+                ok: boolean
+                reason?: string
+                frameCount?: number
+                commandCount?: number
+                canvas?: string
+                mode?: string
+                capture?: unknown
+                error?: string
+            }>
             stop(): { ok: boolean; reason?: string; capture?: unknown; error?: string }
             resume(): { ok: boolean; reason?: string; error?: string }
             listCanvases(): string[]
@@ -143,5 +155,33 @@ declare global {
          * data-attributes externally.
          */
         syncTestStateFromBody?: () => void
+
+        /**
+         * Test-only function hooks published by `lib/orchestration/toast.ts`
+         * (re-exporting from `stores/toast.svelte.ts`). Lets Playwright trigger
+         * `showErrorToast(title, copy)`, `dismissToast()`, and `clearToastQueue()`
+         * without engineering a corrupt-catalogue scenario in the search store.
+         * Same surface pattern as `__refreshTestCompatState__`,
+         * `showSemanticThreadsDetail`, and `requestSemanticGuide` above.
+         */
+        __toastHooks__?: {
+            showErrorToast: (title: string, copy: string) => void
+            dismissToast: () => void
+            clearToastQueue: () => void
+            /**
+             * Full spec variant — lets tests pin a known duration so the
+             * toast stays visible long enough to assert against, instead of
+             * racing the default error-variant 8s auto-dismiss. Optional
+             * `dedupeKey` lets repeated test invocations exponent out by
+             * id rather than stacking in the queue.
+             */
+            showToastSpec: (spec: {
+                title: string
+                copy: string
+                variant?: 'info' | 'warning' | 'error'
+                duration?: number
+                dedupeKey?: string
+            }) => void
+        }
     }
 }
