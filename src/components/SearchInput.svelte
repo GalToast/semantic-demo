@@ -18,12 +18,10 @@
     searchState,
     setSearchQuery,
     setSearchStatus,
-    setSearchResults,
-    setSearchError,
+    runSearch,
     requestSearchInputFocus,
     consumeSearchInputFocusIntent
   } from '@lib/stores/search.svelte';
-  import { performSearch } from '@lib/search-engine';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
   import {
@@ -31,6 +29,7 @@
     NAV_TRANSITION_ACTIONS
   } from '@lib/stores/navigation.svelte.ts';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
+  import { debugWarn } from '@lib/utils/debug';
 
   interface Props {
     /** Placeholder text for the input */
@@ -133,17 +132,23 @@
     dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
     surfaceSwitchedToSearch = true;
 
-    performSearch(trimmed, signal)
-      .then((results) => {
-        if (searchAbortController !== null && signal === searchAbortController.signal) {
-          setSearchResults(results);
-        }
-      })
+    // Route through runSearch (the URL-hydration gateway) instead of calling
+    // performSearch directly. This unifies the two call paths so that during
+    // `?q=` URL hydration the same query doesn't fire two separate
+    // performSearch invocations: the url-state path calls runSearch, and the
+    // SearchInput input event handler now also calls runSearch. The
+    // performSearch cache + pending-request layer still dedups the index
+    // scan, but routing through one gateway keeps the state-update side
+    // effects (setSearchResults, event bus publish) consistent across
+    // entry points. PR-O5.
+    runSearch(trimmed, signal)
       .catch((err: unknown) => {
+        // runSearch already handles AbortError + setSearchError internally;
+        // only catch non-AbortError so a hung promise doesn't hang the
+        // dispatch chain. The intent here is to keep the Svelte store's
+        // status updated by runSearch's own error path.
         if (err instanceof DOMException && err.name === 'AbortError') return;
-        if (searchAbortController !== null && signal === searchAbortController.signal) {
-          setSearchError(trimmed, err);
-        }
+        debugWarn('SearchInput.dispatchSearch runSearch failed:', err);
       });
   }
 
