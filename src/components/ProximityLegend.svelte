@@ -10,6 +10,7 @@
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
   import { DisposableRegistry } from '@lib/utils/disposable-registry';
   import { isDemoActive } from '@lib/stores/demo.svelte.ts';
+  import { engineReady } from '@lib/stores/engine-ready.svelte';
 
 
   const STORAGE_KEY = 'moco_onboarding_seen_v1';
@@ -80,13 +81,30 @@
       reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     }
 
+    // W52-UX: only reveal when the 3D engine is actually mounted. On
+    // the mobile 2D cold-load Placeholder2D, the engine hasn't been
+    // initiated yet — the legend teaching about "dots close together"
+    // references content that doesn't exist (the splash shows colored
+    // orbs, not the data points). Showing the legend there makes the
+    // onboarding card feel unmoored from the surface the user can see.
+    // Subscribe to engineReady so the card appears the moment the user
+    // enters the 3D scene (clicking Enter 3D Scene) OR when it was
+    // already ready (desktop auto-init / cached boot).
+    //
     // If the demo is running at mount time (e.g. ?demo=force first-visit),
     // defer the legend until it settles — otherwise the legend competes
     // with the choreography overlay for the bottom-left corner during
     // OVERVIEW/SEARCH phases. The $effect below flips `visible` on
-    // isDemoActive() false. Otherwise, show after the animation delay.
-    if (!isDemoActive()) {
+    // isDemoActive() false. Otherwise, show after the engine is ready.
+    if (engineReady.value && !isDemoActive()) {
       reveal();
+    } else if (!engineReady.value) {
+      const unsub = engineReady.subscribe((ready) => {
+        if (ready && !dismissed && !isDemoActive()) {
+          unsub();
+          reveal();
+        }
+      });
     }
 
     return () => {
@@ -95,11 +113,18 @@
   });
 
   // Post-demo reveal: when the running demo ends (or a previously-running
-  // demo was cancelled/finished), if the legend is still eligible, show it.
-  // Re-runs whenever isDemoActive() changes, so the legend inherits the
-  // mount-time reduced-motion + 100ms-animation-delay discipline.
+  // demo was cancelled/finished), if the legend is still eligible AND the
+  // engine has fired ready, show it. Re-runs whenever isDemoActive() or
+  // engineReady.value change, so the legend inherits the mount-time
+  // reduced-motion + 100ms-animation-delay discipline.
+  //
+  // W52-UX: the engineReady gate is REQUIRED here, not optional — without
+  // it, the initial-render effect fires reveal() the moment isDemoActive()
+  // returns false on the placeholder view, since the mount-time branch
+  // returned early without subscribing (engine wasn't ready). The previous
+  // version of this effect leaked the legend back onto the placeholder.
   $effect(() => {
-    if (!isDemoActive() && !dismissed && !visible) {
+    if (engineReady.value && !isDemoActive() && !dismissed && !visible) {
       reveal();
     }
   });
