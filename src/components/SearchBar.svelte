@@ -17,6 +17,7 @@
   import SearchInput from './SearchInput.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
+  import { readApiUnreachable } from '@lib/search/mock-search-fallback';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -79,9 +80,10 @@
   // initialize from sessionStorage on mount for the page-reload case.
   let mockBannerVisible = $state(false)
   onMount(() => {
+    // PR-M: use the timestamp-aware reader so an expired bypass flag
+    // doesn't paint the banner after a transient dev-server restart.
     try {
-      mockBannerVisible =
-        window.sessionStorage?.getItem('api_unreachable') === '1'
+      mockBannerVisible = readApiUnreachable() !== null
     } catch {
       mockBannerVisible = false
     }
@@ -121,8 +123,10 @@
       <strong>Showing demo data:</strong> the search API fell back to a local
       mock catalog (20 fake businesses across 4 categories: coffee, roof,
       childcare, dog). The 8,406-business Montgomery County dataset is not
-      loaded. Append <code>?staticDev=0</code> to the URL to force the API,
-      or clear <code>sessionStorage.api_unreachable</code> to retry.
+      loaded. The bypass flag expires after 60s and clears on the next
+      successful API response, so a restarted server is picked up
+      automatically. To force the API right now, append
+      <code>?staticDev=0</code> to the URL.
     </div>
   {/if}
   <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />

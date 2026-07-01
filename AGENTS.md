@@ -69,6 +69,13 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 - **Header CSS** lives in `src/lib/components/header/header.css`; Header.svelte imports it via `@import '@lib/components/header/header.css'` inside its `<style>` block. Use the same `@import`-inside-`<style>` pattern ProximityLegend uses for `z-layers.css` when extracting component CSS.
 - **Journey phases are 6:** `overview → search → focus → trail → inside → map`. `trail` was added to `JOURNEY_COMPASS_PHASE_ORDER` in PR-D6.
 
+## Conventions (search fallback)
+
+- **The yellow "Showing demo data" banner is intentional, not a bug.** When the live `/api.php` endpoint is unreachable (typical in dev against a static server without PHP), the engine falls back to a 20-business mock catalog and surfaces the banner so a developer doesn't mistake a 20-row fake for the full 8,406-record dataset. Don't suppress the banner; if it's noisy, lower the trigger frequency, don't silence it.
+- **`sessionStorage.api_unreachable` is a time-bounded sticky bypass (PR-M), not a permanent lock.** The record is `{setAt: Date.now(), reason: string}` and expires after `API_BYPASS_STICKY_MS` (60s) on the read path. It also clears on the next successful API response. Legacy `'1'` strings are treated as expired so old tabs recover automatically. Helpers: `markApiUnreachable(reason)`, `clearApiUnreachable()`, `readApiUnreachable()` in `@lib/search/mock-search-fallback`. Never call `sessionStorage.setItem('api_unreachable', ...)` directly — go through `markApiUnreachable` so the timestamp is recorded.
+- **`?staticDev=0` forces live API and surfaces failures as errors.** Used by contract tests; do not use in normal dev flows.
+- **Vite dev proxies `/api*` to `127.0.0.1:8795`.** The system expects a PHP backend there (see `docs/ops/DEPLOY_STATUS.md` and `docs/ops/walkthrough-r7-findings.md`). If you see the demo-data banner unexpectedly, the backend on 8795 is probably wrong — `php -S 127.0.0.1:8795` from the repo root starts the right one. `npm run serve` (Python static) binds the same port but does not execute PHP.
+
 ## Reference Docs
 
 Read these only when relevant:

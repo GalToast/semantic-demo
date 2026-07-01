@@ -39,7 +39,9 @@ import {
     performMockSearch,
     canUseStaticDevFallback,
     shouldSurfaceApiFailures,
-    shouldBypassApiSearch
+    shouldBypassApiSearch,
+    markApiUnreachable,
+    clearApiUnreachable
 } from '@lib/search/mock-search-fallback'
 import { debugLog } from '@lib/utils/debug'
 import {
@@ -132,17 +134,23 @@ async function fetchSemanticSearchResultsDirect(
         }
 
         const rawRows = getPayloadResults(payload)
+        // PR-M: a successful API response clears the time-bounded bypass
+        // flag so the tab immediately returns to live data without
+        // requiring a manual sessionStorage.clear() or page reload.
+        // This pairs with markApiUnreachable in the catch block below
+        // (60s expiry) to make transient dev-server restarts self-healing.
+        clearApiUnreachable()
         return rawRows
             .map((row: RawServiceRow, idx: number) => mapServiceRow(row, idx))
             .filter((r): r is SearchResult => r !== null)
             .slice(0, safeLimit)
     } catch (err) {
         if (canUseStaticDevFallback()) {
-            try {
-                window.sessionStorage.setItem('api_unreachable', '1')
-            } catch (error) {
-                debugWarn('[search-engine] sessionStorage read/write blocked:', error)
-            }
+            // PR-M: time-bounded sticky bypass. Replaces the previous
+            // permanent '1' flag so dev-server restarts don't lock the
+            // tab into mock mode for the rest of the session.
+            const reason = err instanceof Error ? err.message : 'unknown'
+            markApiUnreachable(reason)
         }
         if (timedOut && err instanceof DOMException && err.name === 'AbortError') {
             throw new Error(`Semantic search timed out after ${timeoutMs}ms.`, { cause: err })

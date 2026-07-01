@@ -261,27 +261,109 @@ export function shouldSurfaceApiFailures(): boolean {
     return params.get('staticDev') === '0'
 }
 
+// PR-M: time-bounded sticky bypass. The flag is recorded with a timestamp
+// so transient dev-server restarts (PHP CLI server, key router, etc.) don't
+// permanently lock the tab into mock-catalog mode for the rest of the
+// session. Default 60s — long enough to avoid hammering a freshly-crashed
+// backend, short enough that a dev who fixes the server doesn't have to
+// clear sessionStorage manually. The previous permanent flag was the root
+// cause of the "I just restarted the key router and search is still using
+// demo data" footgun.
+export const API_BYPASS_STICKY_MS = 60_000
+
+interface ApiUnreachableRecord {
+    setAt: number
+    reason: string
+}
+
+/**
+ * Mark the search API as currently unreachable so subsequent searches in
+ * this tab can skip the network call and go straight to the mock catalog.
+ * The record carries a timestamp so the flag self-expires after
+ * API_BYPASS_STICKY_MS — see isApiBypassStale for the read path.
+ */
+export function markApiUnreachable(reason: string): void {
+    if (typeof window === 'undefined' || !window.sessionStorage) return
+    try {
+        const record: ApiUnreachableRecord = { setAt: Date.now(), reason }
+        window.sessionStorage.setItem('api_unreachable', JSON.stringify(record))
+    } catch (error) {
+        debugWarn('[search-engine] session storage write-blocked:', error)
+    }
+}
+
+/**
+ * Clear the bypass flag. Called from the search-engine success path so
+ * a single good API response immediately restores live-data behavior
+ * without requiring the user to clear sessionStorage manually.
+ */
+export function clearApiUnreachable(): void {
+    if (typeof window === 'undefined' || !window.sessionStorage) return
+    try {
+        window.sessionStorage.removeItem('api_unreachable')
+    } catch (error) {
+        debugWarn('[search-engine] session storage write-blocked:', error)
+    }
+}
+
+/**
+ * Read the stored bypass record. Returns null when no flag is set, when
+ * the stored value is unreadable, or when the flag has expired. Backward
+ * compat: legacy `'1'` values (pre-PR-M) are treated as expired so they
+ * get a fresh timestamp on the next failure rather than locking the tab
+ * forever.
+ */
+export function readApiUnreachable(): ApiUnreachableRecord | null {
+    if (typeof window === 'undefined' || !window.sessionStorage) return null
+    let raw: string | null = null
+    try {
+        raw = window.sessionStorage.getItem('api_unreachable')
+    } catch (error) {
+        debugWarn('[search-engine] storage disabled or forbidden in iframe:', error)
+        return null
+    }
+    if (raw === null || raw === '') return null
+    // Legacy format (pre-PR-M) was the literal string '1'. Treat as expired
+    // and let the caller overwrite with a fresh timestamped record.
+    if (raw === '1') return null
+    try {
+        const parsed = JSON.parse(raw) as ApiUnreachableRecord
+        if (
+            typeof parsed?.setAt !== 'number' ||
+            typeof parsed?.reason !== 'string'
+        ) {
+            return null
+        }
+        if (Date.now() - parsed.setAt > API_BYPASS_STICKY_MS) {
+            return null
+        }
+        return parsed
+    } catch {
+        // Unparseable garbage — clear it so we don't keep failing the parse
+        try {
+            window.sessionStorage.removeItem('api_unreachable')
+        } catch {
+            /* storage disabled */
+        }
+        return null
+    }
+}
+
 /**
  * Whether the live API should be skipped entirely. Triggered by the
- * staticOnly/offline/noApi URL params, or by a sticky sessionStorage flag set
- * the first time the API returned an unreachable response.
+ * staticOnly/offline/noApi URL params, or by a sticky sessionStorage flag
+ * set the first time the API returned an unreachable response. The flag
+ * expires after API_BYPASS_STICKY_MS (60s) so transient dev restarts
+ * don't permanently lock the tab into mock-catalog mode.
  */
 export function shouldBypassApiSearch(): boolean {
     if (typeof window === 'undefined' || !window.location) return false
     if (shouldSurfaceApiFailures()) return false
-    try {
-        if (window.sessionStorage.getItem('api_unreachable') === '1') return true
-    } catch (error) {
-        debugWarn('[search-engine] storage disabled or forbidden in iframe:', error)
-    }
+    if (readApiUnreachable() !== null) return true
     const params = new URLSearchParams(window.location.search || '')
     const bypass = params.get('staticOnly') === '1' || params.get('offline') === '1' || params.get('noApi') === '1'
     if (bypass) {
-        try {
-            window.sessionStorage.setItem('api_unreachable', '1')
-        } catch (error) {
-            debugWarn('[search-engine] session storage write-blocked:', error)
-        }
+        markApiUnreachable('url-param')
         return true
     }
     return false
