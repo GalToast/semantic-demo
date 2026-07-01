@@ -91,6 +91,36 @@
 
   let filtered = $derived($hasActiveFilters);
 
+  // Surface a "scroll for more" hint when the legend panel's max-height
+  // clips its inner list. Without this, a 21-entry legend at desktop shows
+  // only ~6 entries with no clue that the other 15 are scrollable. The
+  // scroll container is the .legend aside itself (overflow-y: auto +
+  // max-height), not the .legend-list div — measure the aside so the
+  // comparison is between actual clip region and total content height.
+  let panelEl: HTMLElement | null = $state(null);
+  let panelScrollHeight = $state(0);
+  let panelClientHeight = $state(0);
+  let hasOverflow = $derived(panelScrollHeight > panelClientHeight + 1);
+  let approxVisibleCount = $derived(
+    panelClientHeight > 0 ? Math.max(1, Math.floor(panelClientHeight / 50)) : clusterEntries.length
+  );
+
+  $effect(() => {
+    if (!panelEl) return;
+    const measure = () => {
+      panelScrollHeight = panelEl?.scrollHeight ?? 0;
+      panelClientHeight = panelEl?.clientHeight ?? 0;
+    };
+    measure();
+    const ro = new ResizeObserver(measure);
+    ro.observe(panelEl);
+    window.addEventListener('resize', measure);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener('resize', measure);
+    };
+  });
+
   $effect(() => {
     if (activeLegendButtonIndex >= clusterEntries.length) {
       activeLegendButtonIndex = Math.max(0, clusterEntries.length - 1);
@@ -145,6 +175,7 @@
 </script>
 
 <aside
+  bind:this={panelEl}
   class="legend"
   class:open
   class:map-view={mapView}
@@ -163,7 +194,11 @@
   {#if filtered}
     <span class="legend-filtered-badge">filtered</span>
   {/if}
-  <div class="legend-list" role="group" aria-label="Business categories. Use arrow keys to move between categories.">
+  <div
+    class="legend-list"
+    role="group"
+    aria-label="Business categories. Use arrow keys to move between categories."
+  >
     {#each clusterEntries as entry, i (entry.name)}
       <button
         bind:this={legendButtons[i]}
@@ -188,6 +223,14 @@
       </button>
     {/each}
   </div>
+  {#if hasOverflow}
+    <div class="legend-overflow-indicator" aria-live="polite" data-testid="legend-overflow">
+      <span class="legend-overflow-text">
+        {approxVisibleCount} of {clusterEntries.length} shown
+      </span>
+      <span class="legend-overflow-hint" aria-hidden="true">scroll for more ↓</span>
+    </div>
+  {/if}
 </aside>
 
 <style>
@@ -296,5 +339,37 @@
     font-size: 0.6rem;
     color: rgba(176, 208, 208, 0.75);
     flex-shrink: 0;
+  }
+  /* D: "N of M shown" overflow affordance. The legend list has
+   * max-height: 38vh in map mode (60vh elsewhere) — at ~50px per
+   * item, a 21-entry dataset shows ~6 entries and hides ~15 with no
+   * visible scrollbar affordance. Sticky bottom inside the .legend
+   * scroll container pins the cue to the panel's bottom edge so it
+   * stays visible as the user scrolls. */
+  .legend-overflow-indicator {
+    position: sticky;
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin: 0.5rem -0.75rem -0.5rem;
+    padding: 0.5rem 0.75rem 0.5rem;
+    background: linear-gradient(180deg, rgba(7, 16, 24, 0) 0%, rgba(7, 16, 24, 0.92) 35%, rgba(7, 16, 24, 0.96) 100%);
+    border-top: 1px solid rgba(var(--color-primary-rgb), 0.18);
+    color: rgba(176, 208, 208, 0.78);
+    backdrop-filter: blur(2px);
+  }
+  .legend-overflow-text {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.6rem;
+    font-weight: 600;
+    color: rgba(126, 231, 219, 0.85);
+    letter-spacing: 0.04em;
+  }
+  .legend-overflow-hint {
+    font-family: 'Nunito Sans', sans-serif;
+    font-size: 0.6rem;
+    color: rgba(176, 208, 208, 0.6);
+    text-align: center;
   }
 </style>
