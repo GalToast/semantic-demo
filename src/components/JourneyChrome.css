@@ -119,15 +119,20 @@ body.surface-focus-search .journey-header {
 }
 
 /* ── Trail Controls ─────────────────────────────────────────────────────── */
+/* PR-E2: Visual styles for the trail-controls panel live in
+   TrailControls.svelte (which owns the elements). This rule was
+   previously a `flex-direction: column; align-items: center;` "layout
+   fallback" but it actively fought TrailControls.svelte's row layout
+   (`.trail-controls { display: flex; align-items: center; gap: 0.5rem; }`).
+   Until the build-pipeline fix (d92a4987) wired JourneyChrome.css into
+   the bundle, this conflict was invisible: the rule never applied, and
+   TrailControls.svelte's row layout won by default. With the CSS now
+   actually loaded, the column direction stacks the toolbar (Show trail /
+   Prev / context / Next) into a vertical column inside the ~147px-wide
+   `.journey-chrome` wrapper. The fix is a no-op here: let
+   TrailControls.svelte's styles own the row layout. */
 .trail-controls {
-    /* PR-E2: Visual styles for the trail-controls panel moved to
-       TrailControls.svelte (which owns the elements). This scoped rule
-       only retains the layout fallback so JourneyChrome's wrapping
-       container has a sane box model. */
     display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.5rem;
 }
 :global(.trail-controls.focus-stage-actions),
 :global(#trail-controls) {
