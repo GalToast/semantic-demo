@@ -114,6 +114,7 @@
   aria-modal="true"
   aria-labelledby="splash-title"
   bind:this={rootEl}
+  hidden={engineReady.value}
 >
   <div class="splash-frame">
     <h2 class="splash-title" id="splash-title">Semantic Explorer</h2>
