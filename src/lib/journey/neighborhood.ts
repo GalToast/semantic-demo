@@ -423,11 +423,10 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
             } as NonNullable<typeof nav.focusPocketMeta>
         }
         if (!nav.neighborhoodManifest) {
-            nav.neighborhoodManifest = buildNeighborhoodManifest(
-                seedIndex,
-                finiteIndexList(nav.neighborhoodIndices),
-                { displayLimit: getSemanticThreadDisplayLimit(), getCandidateForIndex }
-            )
+            nav.neighborhoodManifest = buildNeighborhoodManifest(seedIndex, finiteIndexList(nav.neighborhoodIndices), {
+                displayLimit: getSemanticThreadDisplayLimit(),
+                getCandidateForIndex
+            })
         }
         return
     }
@@ -511,13 +510,14 @@ export function setTrailFromSeed(seedIndex: number): void {
         return tc >= 0 ? tc : 0
     })()
 
-    const n = appState.navState
-    n.trailSeedIndex = seedIndex
-    n.threadCandidates = candidates
-    n.threadSource = source
-    n.threadReasonByIndex = reasonByIndex
-    n.trailNeighborIndices = neighborIndices
-    n.trailCursor = cursor
+    writeNavStateMirror({
+        trailSeedIndex: seedIndex,
+        threadCandidates: candidates,
+        threadSource: source,
+        threadReasonByIndex: reasonByIndex,
+        trailNeighborIndices: neighborIndices,
+        trailCursor: cursor
+    })
 }
 
 /**

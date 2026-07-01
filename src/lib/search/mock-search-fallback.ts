@@ -315,7 +315,7 @@ export function clearApiUnreachable(): void {
  */
 export function readApiUnreachable(): ApiUnreachableRecord | null {
     if (typeof window === 'undefined' || !window.sessionStorage) return null
-    let raw: string | null = null
+    let raw: string | null
     try {
         raw = window.sessionStorage.getItem('api_unreachable')
     } catch (error) {
@@ -328,10 +328,7 @@ export function readApiUnreachable(): ApiUnreachableRecord | null {
     if (raw === '1') return null
     try {
         const parsed = JSON.parse(raw) as ApiUnreachableRecord
-        if (
-            typeof parsed?.setAt !== 'number' ||
-            typeof parsed?.reason !== 'string'
-        ) {
+        if (typeof parsed?.setAt !== 'number' || typeof parsed?.reason !== 'string') {
             return null
         }
         if (Date.now() - parsed.setAt > API_BYPASS_STICKY_MS) {

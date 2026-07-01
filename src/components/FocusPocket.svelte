@@ -30,6 +30,12 @@
     nav.mode === 'focus' || nav.mode === 'inside' || focusedIndex_ != null
   );
 
+  // W46: also react to threadCandidates so the pocket is rebuilt after the
+  // deferred setTrailFromSeed populates the candidate list.
+  const threadCandidates_ = $derived(
+    Array.isArray(nav.threadCandidates) ? nav.threadCandidates : []
+  );
+
   // Loading state: true while data is loading and focus is active
   let isLoading = $derived(
     hasFocus_ && !(getDataLoadState().status === 'ready')
@@ -41,18 +47,30 @@
     return unsub;
   });
 
-  // Last-applied index prevents redundant rebuilds on data-status ticks.
+  // Last-applied index prevents redundant rebuilds on data-status ticks;
+  // lastCandidateSignature lets us rebuild when deferred setTrailFromSeed
+  // populates the candidate list after the initial focus.
   let lastFocusIndex: number | null = null;
+  let lastCandidateSignature: string | null = null;
 
   $effect(() => {
     if (!(getDataLoadState().status === 'ready')) return;
     if (!(engineStatus === 'ready')) return;
     const idx = focusedIndex_;
-    if (hasFocus_ && idx != null && !(idx === lastFocusIndex)) {
+    const signature = threadCandidates_.map((c: { index?: number }) => c.index).join(',') || '';
+    if (
+      hasFocus_ &&
+      idx != null &&
+      (!(idx === lastFocusIndex) || signature !== lastCandidateSignature)
+    ) {
       const ok = applyLocalNeighborhoodFocus(idx);
-      if (ok) lastFocusIndex = idx;
+      if (ok) {
+        lastFocusIndex = idx;
+        lastCandidateSignature = signature;
+      }
     } else if (!hasFocus_ && lastFocusIndex != null) {
       lastFocusIndex = null;
+      lastCandidateSignature = null;
       clearPocketNodes();
     }
   });

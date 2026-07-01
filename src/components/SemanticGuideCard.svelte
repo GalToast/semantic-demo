@@ -6,6 +6,7 @@
   import { appState } from '@lib/state/app.svelte.ts'
   import { hideSummaryCard, requestSemanticGuide } from '@lib/journey/semantic-guide'
   import { focusOnNode } from '@lib/engine/camera-choreography'
+  import { syncSvelteNavFromLegacy } from '@lib/orchestration/window-actions'
 
   type Suggestion = {
     lead_id?: string | number
@@ -44,6 +45,7 @@
     const idx = appState.pointIndexByLeadId?.get?.(leadKey)
     if (!Number.isFinite(idx)) return
     focusOnNode(idx as number, { fromCanvasNode: true })
+    syncSvelteNavFromLegacy()
   }
 </script>
 

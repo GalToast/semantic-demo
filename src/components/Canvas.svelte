@@ -55,6 +55,8 @@
       // cursor.ts focusOnNode is the canonical writer for surface; this
       // bridge re-dispatch should defer to whatever surface is current.
       const _currentSurface = navStore().surface
+      const _currentFocusedIndex = get(navStore).focusedIndex
+      if (_currentFocusedIndex === index) return
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.FOCUS_NODE, {
         index,
         surface: _currentSurface && _currentSurface !== 'idle' ? _currentSurface : undefined // audit-ok: plain function, not transformed

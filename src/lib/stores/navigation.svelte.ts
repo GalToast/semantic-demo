@@ -347,6 +347,29 @@ export interface NavTransitionResult {
  * and trigger the flat bindings mirror for trailDepth/currentView.
  */
 export function writeNavStateMirror(patch: Partial<NavState>): void {
+    const current = _readNavSnapshot()
+    // Skip no-op patches to avoid re-entrant subscriber cascades. Every
+    // caller that actually changes state will pass a value that differs by
+    // reference or primitive value; callers that pass the current state
+    // (e.g. the legacy mirror line at the end of dispatchNavTransition) will
+    // be a perfect shallow match and can safely short-circuit.
+    let noop = true
+    for (const key in patch) {
+        // `current` is `NavState` (no index signature), so the standard
+        // `as Record<string, unknown>` direct cast is rejected by
+        // svelte-check ("Index signature for type 'string' is missing
+        // in type 'NavState'"). Route through `unknown` first — same
+        // double-cast used elsewhere in this file for the `window`
+        // augmentation.
+        if (
+            (patch as unknown as Record<string, unknown>)[key] !== (current as unknown as Record<string, unknown>)[key]
+        ) {
+            noop = false
+            break
+        }
+    }
+    if (noop) return
+
     // Use the factory's update() method to atomically:
     //   1. computeFromAppState() reads the current appState.navState
     //   2. The callback applies the patch IN PLACE (canonical mutation)
@@ -696,7 +719,7 @@ export function dispatchNavTransition(
     // `navMirror.update((s) => ({...s, X}))` still propagate their changes
     // back to the legacy `appState.navState` reference that imperative
     // readers captured at module init.
-    writeNavStateMirror(get(navMirror))
+    // writeNavStateMirror(get(navMirror))
 
     return {
         ok: true,

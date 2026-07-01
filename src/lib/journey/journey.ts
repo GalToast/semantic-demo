@@ -5,8 +5,11 @@
  * Facade module for the Semantic Journey / Exploration Trail feature set.
  */
 
+import { get } from 'svelte/store'
 import { appState as state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
+
+import { engineStatusStore } from '@lib/stores/engine.svelte.ts'
 
 import { subscribe, publish, EVENTS } from '@lib/orchestration/event-bus'
 import {
@@ -96,8 +99,15 @@ export function ensureCanvasNodeInteractionBindings(): void {
 }
 import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket'
 import { applyPointFilterColors, describeThreadLensForPoint } from './point-color'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 import { truncateMicrocopy, getSharedTrailTopicLabel } from '@lib/journey/text-helpers'
 import { setSemanticDiveMode as setSemanticDiveModeImpl } from '@lib/orchestration/lifecycle'
+
+/** Fire-and-forget timer registry for the deferred CAMERA_NODE_FOCUSED work. */
+const journeyFocusTimerRegistry = new DisposableRegistry({
+    label: 'journey-focus-defer',
+    warnAfterDispose: false
+})
 
 subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
     const index = typeof payload.index === 'number' ? payload.index : NaN
@@ -110,7 +120,20 @@ subscribe(EVENTS.CAMERA_NODE_FOCUSED, (payload: Record<string, unknown>) => {
         ) {
             return
         }
-        setTrailFromSeed(index)
+        // Defer the heavier trail-seed computation to avoid a reactive/effect
+        // cascade while the camera focus choreographer is still in the same
+        // synchronous publish block (W46 fix). FocusPocket.svelte watches
+        // threadCandidates and will rebuild the pocket once the deferred work
+        // populates it. When the engine/FocusPocket effect is not active (e.g.
+        // headless tests that call __navActions__.focusOnNode without mounting
+        // the scene), we still need to populate the pocket here.
+        journeyFocusTimerRegistry.schedule(0, () => {
+            setTrailFromSeed(index)
+            const engineIsReady = get(engineStatusStore) === 'ready'
+            if (!engineIsReady) {
+                applyLocalNeighborhoodFocus(index)
+            }
+        })
         updateTrailIndices(index)
         applyLocalNeighborhoodFocus(index)
     }

@@ -177,7 +177,7 @@ function asFiniteNumber(value: unknown): number | null {
     return Number.isFinite(index) ? index : null
 }
 
-function syncSvelteNavFromLegacy(): void {
+export function syncSvelteNavFromLegacy(): void {
     const navState = (getLegacyModules()?.state as { navState?: Record<string, unknown> } | undefined)?.navState
     if (!navState) return
 
@@ -205,8 +205,7 @@ function syncSvelteNavFromLegacy(): void {
                 : cur.threadReasonByIndex,
         threadSource: typeof navState.threadSource === 'string' ? navState.threadSource : cur.threadSource,
         focusPocketIndices: finiteIndexList(navState.focusPocketIndices) ?? cur.focusPocketIndices,
-        focusPocketMeta:
-            (navState.focusPocketMeta as typeof cur.focusPocketMeta | undefined) ?? cur.focusPocketMeta,
+        focusPocketMeta: (navState.focusPocketMeta as typeof cur.focusPocketMeta | undefined) ?? cur.focusPocketMeta,
         focusPocketRoleByIndex:
             navState.focusPocketRoleByIndex instanceof Map
                 ? (navState.focusPocketRoleByIndex as Map<number, string>)
@@ -232,7 +231,6 @@ function syncSvelteNavFromLegacy(): void {
         lastTraversalReason:
             typeof navState.lastTraversalReason === 'string' ? navState.lastTraversalReason : state.lastTraversalReason
     }))
-
     ;(window as Window & { __refreshTestCompatState__?: () => void }).__refreshTestCompatState__?.()
 }
 

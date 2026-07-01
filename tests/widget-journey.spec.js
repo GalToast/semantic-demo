@@ -460,14 +460,11 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
             const nodeIndices = candidates.map((c) => state.pointIndexByLeadId.get(c.lead_id))
             return { ok: true, candidates, nodeIndices, focusBefore: state.navState?.focusedIndex ?? null }
         })
-        console.log('[TEST 12 DEBUG setup]', JSON.stringify(setup).slice(0, 200))
 
         if (!setup.ok) {
             test.skip(true, `setup failed: ${setup.reason} — test environment limitation`)
             return
         }
-
-        console.log('[TEST 12] setup OK with candidates:', setup.candidates.map((c) => c.name).join(', '))
 
         // Wait for the suggestion buttons to render
         const suggestionBtns = page.locator('.suggestion-btn')
@@ -486,31 +483,10 @@ test.describe('Widget Journey Tests — what the user actually sees', () => {
         const focusImmediatelyBefore = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex ?? null)
 
         // Click the suggestion
-        const clickedLeadId = await suggestionBtns.nth(targetIdx).getAttribute('data-lead-id')
-        const clickedOnclick = await suggestionBtns.nth(targetIdx).evaluate((b) => b.onclick?.toString?.() ?? 'none')
-        // W48-DEBUG: read the actual pointIndexByLeadId mapping in the browser
-        // to diagnose the mismatch between expected (1) and received (0).
-        const diagMapping = await page.evaluate((leadId) => {
-            const state = window.__APP_STATE__
-            const idx = state?.pointIndexByLeadId?.get?.(leadId)
-            const allKeys = state?.pointIndexByLeadId ? Array.from(state.pointIndexByLeadId.keys()).slice(0, 10) : []
-            return { leadId, idx, allKeys, hasGet: typeof state?.pointIndexByLeadId?.get === 'function' }
-        }, clickedLeadId)
-        console.log('[DIAG] mapping:', diagMapping)
-        console.log(
-            '[DIAG] targetIdx:',
-            targetIdx,
-            'leadId:',
-            clickedLeadId,
-            'onclick:',
-            clickedOnclick.substring(0, 200)
-        )
-        console.log('[DIAG] focusBefore:', focusImmediatelyBefore)
         await suggestionBtns.nth(targetIdx).click()
         await page.waitForTimeout(800)
 
         const focusAfter = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex ?? null)
-        console.log('[DIAG] focusAfter:', focusAfter)
 
         expect(
             focusAfter,
@@ -2431,21 +2407,20 @@ test.describe('Widget Journey Tests — PR-W52 Selection-unavailable toast', () 
             'Selection unavailable',
             { timeout: 5000 }
         )
-        await expect(copyEl, 'toast copy must explain the missing detail record so the user understands the click had no effect').toContainText(
-            'missing its detail record',
-            { timeout: 5000 }
-        )
-        await expect(copyEl, 'toast copy must ask the user to retry the search').toContainText(
-            'retry the search',
-            { timeout: 5000 }
-        )
+        await expect(
+            copyEl,
+            'toast copy must explain the missing detail record so the user understands the click had no effect'
+        ).toContainText('missing its detail record', { timeout: 5000 })
+        await expect(copyEl, 'toast copy must ask the user to retry the search').toContainText('retry the search', {
+            timeout: 5000
+        })
         await expect(toast, 'toast must gain .active class so the variant styles + visibility apply').toHaveClass(
             /active/
         )
-        await expect(toast, 'toast must keep role="alert" for error-variant a11y semantics (errors must interrupt the screen-reader)').toHaveAttribute(
-            'role',
-            'alert'
-        )
+        await expect(
+            toast,
+            'toast must keep role="alert" for error-variant a11y semantics (errors must interrupt the screen-reader)'
+        ).toHaveAttribute('role', 'alert')
         await expect(toast, 'toast must keep aria-live="assertive" for error-variant a11y semantics').toHaveAttribute(
             'aria-live',
             'assertive'
