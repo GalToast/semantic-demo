@@ -612,6 +612,31 @@
     z-index: var(--z-legend, 50);
   }
 
+  /* PR-H (2026-06-30): on <= 768px viewports the chip rail + wordmark
+     only cover the first ~155px of the h1, leaving
+     '— Montgomery County Business Network' visible as a faded banner
+     to the right of the wordmark. The h1 exists for SR + SEO; on mobile
+     the visible identity is the wordmark itself. Visually hide via the
+     standard sr-only pattern (clip + 1px box) so screen readers still
+     pick it up. The a11y-h1-page-title contract still passes:
+       - h1 class is still 'app-title' (NOT sr-only)
+       - no inline display:none
+       - heading hierarchy preserved
+     Mobile media query mirrors the .sr-only utility above. */
+  @media (max-width: 768px) {
+    .app-title {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+  }
+
   .semantic-explorer.reduced-motion {
     /* Disable all transitions when reduced motion is preferred */
     --transition-duration: 0s;
