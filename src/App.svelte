@@ -638,6 +638,12 @@
     right: 0;
     bottom: 0;
     left: 0;
+    /* Override .focus-stage { width: min(332px, ...) } from journey_steps.css
+       (lower specificity but defines width). Without this, focus-stage
+       collapses to ~389px on focus instead of spanning the full viewport.
+       Computed `width: 100%` is redundant with left:0/right:0 but wins
+       against the inherited width via specificity. */
+    width: 100%;
     pointer-events: none;
   }
   :global(.focus-stage.active > *) {

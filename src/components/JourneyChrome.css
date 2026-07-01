@@ -10,6 +10,13 @@
     gap: 0.5rem;
     pointer-events: auto;
     width: auto;
+    /* PR-pre-existing: trail controls (Show trail | Prev | context | Next)
+       need ~360px to fit in one row. Without this, the column-flex centering
+       shrinks the chrome to the 3-col grid width (~194px) and the controls
+       wrap into 4 stacked rows. With 360px, the trail controls fit in a
+       single row inside the 3-col grid (after the grid-column: 1 / -1 fix
+       in journey_active.css). */
+    min-width: 360px;
     max-width: min(90vw, 640px);
 }
 
