@@ -155,8 +155,9 @@
       counts.set(c.relationshipRole, (counts.get(c.relationshipRole) || 0) + 1);
     }
     const sorted = [...counts.entries()].sort((a, b) => b[1] - a[1]);
-    const dominantRole = sorted[0][0];
-    const dominantCount = sorted[0][1];
+    const top = sorted[0];
+    if (!top) return null;
+    const [dominantRole, dominantCount] = top;
     const topCandidate = normalized.find((c) => c.relationshipRole === dominantRole);
     const distribution = sorted.slice(0, 3).map(([role, count]) => ({
       label: getRelationshipRoleLabel(role, 'rail'),
