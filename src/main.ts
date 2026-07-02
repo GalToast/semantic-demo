@@ -49,7 +49,7 @@ function parseUrlParams(): { forceDemo: boolean; noDemo: boolean; isDeepLink: bo
         // for ?q=coffee (search results) and ?view=map (map deep-link).
         // ?story= is intentionally NOT included — story prompts fire
         // post-splash as part of DemoChoreography.
-        isDeepLink: params.has('anchor') || params.get('view') === 'map' || queryLen >= 2
+        isDeepLink: params.has('anchor') || params.has('record') || params.get('view') === 'map' || queryLen >= 2
     }
 }
 

@@ -13,6 +13,7 @@ describe('PR-B2 deep-link detection in parseUrlParams', () => {
         return {
             isDeepLink:
                 params.has('anchor') ||
+                params.has('record') ||
                 params.get('view') === 'map' ||
                 queryLen >= 2
         }
@@ -20,6 +21,10 @@ describe('PR-B2 deep-link detection in parseUrlParams', () => {
 
     it('classifies ?anchor=519 as deep-link', () => {
         expect(classify('?anchor=519').isDeepLink).toBe(true)
+    })
+
+    it('classifies ?record=519 as deep-link (PR-B4)', () => {
+        expect(classify('?record=519').isDeepLink).toBe(true)
     })
 
     it('classifies ?q=coffee as deep-link', () => {

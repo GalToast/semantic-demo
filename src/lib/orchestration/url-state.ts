@@ -250,12 +250,32 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
             writeNavStateMirror({ trailDepthFromExploration: depth })
         }
 
+        // Record (lead_id) restoration. The camera/focus pipeline writes
+        // `record=<lead_id>` when a business is focused, but applyUrlState
+        // only restored `anchor` (array index). For shared links like
+        // `?q=coffee&record=519` (with no anchor), the focus was silently
+        // dropped and the app fell back to the default business.
+        // Map record to an array index, then treat it as the anchor for the
+        // existing focus-restoration path. If both are present, anchor
+        // wins (record is preserved in the URL for sharing).
+        const query = params.get('q')
+        let anchorId = params.get('anchor')
+        const recordId = params.get('record')
+        if (recordId && !anchorId) {
+            const recordIndex =
+                appState.points?.findIndex((p) => String(p.lead_id) === recordId) ?? -1
+            if (recordIndex >= 0) {
+                anchorId = String(recordIndex)
+            } else {
+                debugWarn('[url-state] record', recordId, 'not found in dataset; ignoring')
+                showExperienceToast('Record not found', `Record ${recordId} isn't available in this dataset.`)
+            }
+        }
+
         // Anchor restoration runs whenever ?anchor is present (independent of ?q).
         // Split this out of the search-restoration branch so bare-anchor URLs and
         // search URLs share the same focus path. Numeric and non-numeric anchor
         // ids take different routes; see helpers below.
-        const query = params.get('q')
-        const anchorId = params.get('anchor')
         if (anchorId) {
             await _restoreAnchorFromParams(anchorId, restoreToken, restoreController.signal)
             // Token-abort: if a newer applyUrlState bumped the token while we
@@ -537,6 +557,21 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
         }
         return
     }
+
+    // PR-B4: set focusedIndex / mode / surface directly. The legacy URL
+    // writes `record=<lead_id>` when a business is focused, and the focus
+    // state must be restored even if triggers.ts (which normally handles
+    // SEARCH_FOCUS_REQUESTED) is still loading via requestIdleCallback.
+    // Without this direct write, the event is published but no subscriber
+    // has registered yet, so focusedIndex stays null and the app falls back
+    // to overview (showing the wrong/default business).
+    writeNavStateMirror({
+        focusedIndex: numericId,
+        mode: 'focus',
+        surface: 'focus-search',
+        trailDepth: 1,
+        trailSeedIndex: numericId
+    })
 
     publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId })
     // W44-S5: dynamic import keeps Three.js + focus-pocket geometry off the
