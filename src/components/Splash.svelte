@@ -252,7 +252,7 @@
 
   .splash-submit {
     flex-shrink: 0;
-    min-height: 40px;
+    min-height: 44px;
     padding: 0 1rem;
     border: none;
     border-radius: 4px;
@@ -273,7 +273,10 @@
   }
 
   .splash-cta {
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
     margin-top: 1.25rem;
     background: transparent;
     border: none;
