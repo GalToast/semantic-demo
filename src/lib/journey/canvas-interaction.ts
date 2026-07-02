@@ -87,16 +87,10 @@ export function ensureCanvasNodeInteractionBindings(): void {
                 releaseFocusCameraAssist('canvasHover')
                 if (isThreadCandidateVisibleOnCanvas(candidate.index)) {
                     const { walkThreadNeighbor, inspectThreadNeighbor } = canvasInteractionAdapter
-                    const idx = candidate.index
-                    // Defer the walk to the next task so the pointermove event is
-                    // not blocked by the heavy focus/camera choreography path
-                    // (PR-M: avoids main-thread saturation on real DOM events).
-                    window.setTimeout(() => {
-                        const threadOk = walkThreadNeighbor(idx, { force: true })
-                        if (threadOk) {
-                            inspectThreadNeighbor(idx)
-                        }
-                    }, 0)
+                    const threadOk = walkThreadNeighbor(candidate.index, { force: true })
+                    if (threadOk) {
+                        inspectThreadNeighbor(candidate.index)
+                    }
                 }
             } else {
                 clearCanvasFieldHover(canvas)

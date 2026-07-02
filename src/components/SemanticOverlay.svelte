@@ -129,7 +129,11 @@
 
   @media (prefers-reduced-motion: reduce) {
     .overlay-badge {
-      animation: overlay-in 0.3s ease-out;
+      /* Disable animation entirely for users who prefer reduced motion.
+         The badge remains visible (base state) so content is not lost;
+         auto-dismiss is handled by a time-bounded visibility effect in
+         the component script to avoid persistent click occlusion. */
+      animation: none;
     }
   }
 

@@ -282,6 +282,37 @@
             </style>
         </div>
 
+        <noscript>
+            <style>
+                #loading-overlay { display: none !important; }
+            </style>
+            <div
+                id="noscript-fallback"
+                style="
+                    position: fixed;
+                    inset: 0;
+                    display: grid;
+                    place-items: center;
+                    background: #071018;
+                    color: #e0f0f0;
+                    font-family: 'Nunito Sans', system-ui, sans-serif;
+                    z-index: 3001;
+                    padding: 2rem;
+                    text-align: center;
+                "
+            >
+                <div>
+                    <p style="margin: 0 0 0.5rem; font-size: 1.1rem; font-weight: 600;">
+                        JavaScript is required
+                    </p>
+                    <p style="margin: 0 0 1rem; font-size: 0.9rem; color: rgba(224, 240, 240, 0.68); line-height: 1.5;">
+                        This 3D semantic explorer needs JavaScript to run. <br />
+                        Please enable JavaScript in your browser, or visit the <a href="case-study.html" style="color: #4ecdc4;">case study page</a> for a static overview.
+                    </p>
+                </div>
+            </div>
+        </noscript>
+
         <!--
     Entry point: resolves to src/main.ts because vite root is src/.
     Paths starting with / are relative to the vite root.

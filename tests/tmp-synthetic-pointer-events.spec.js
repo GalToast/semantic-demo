@@ -1,12 +1,14 @@
 import { test, expect } from '@playwright/test'
 
-const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8797'
+const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:5173'
 
 test('synthetic pointermove + click on canvas', async ({ page }) => {
     page.on('console', (msg) => {
         console.log('[page]', msg.type(), msg.text())
     })
     page.on('pageerror', (err) => console.log('[pageerror]', err.message))
+
+    await page.emulateMedia({ reducedMotion: 'reduce' })
 
     await page.goto(`${BASE_URL}?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
 
