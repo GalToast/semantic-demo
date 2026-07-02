@@ -236,7 +236,6 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         await page.locator('#thread-inspector').waitFor({ state: 'detached', timeout: 5000 })
         // The store's threadInspector.active should be false
         const active = await page.evaluate(() => {
-            const snap = window.__focusStore__ ? null : null
             // focusStore is a Svelte store, subscribe to read it
             let value = null
             const unsub = window.__focusStore__.subscribe((s) => { value = s })
