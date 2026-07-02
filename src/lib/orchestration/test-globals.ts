@@ -23,8 +23,9 @@
  *   await page.evaluate(() => window.__navActions__.setSurface('focus'))
  */
 
-import { navStore } from '@lib/stores/navigation.svelte'
+import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
+import { journeyStore } from '@lib/stores/journey.svelte'
 import {
     switchView,
     returnToOverview,
@@ -57,12 +58,14 @@ interface NavActions {
     focusOnNode: typeof focusOnNode
     inspectThreadNeighbor: typeof inspectThreadNeighbor
     applyLocalNeighborhoodFocus: typeof applyLocalNeighborhoodFocus
+    writeNavStateMirror: typeof writeNavStateMirror
 }
 
 declare global {
     interface Window {
         __navStore__?: typeof navStore
         __focusStore__?: typeof focusStore
+        __journeyStore__?: typeof journeyStore
         __navActions__?: NavActions
     }
 }
@@ -87,16 +90,19 @@ export function installTestStoreGlobals(): () => void {
         search,
         focusOnNode,
         inspectThreadNeighbor,
-        applyLocalNeighborhoodFocus
+        applyLocalNeighborhoodFocus,
+        writeNavStateMirror
     }
 
     window.__navStore__ = navStore
     window.__focusStore__ = focusStore
+    window.__journeyStore__ = journeyStore
     window.__navActions__ = navActions
 
     return () => {
         delete window.__navStore__
         delete window.__focusStore__
+        delete window.__journeyStore__
         delete window.__navActions__
     }
 }
