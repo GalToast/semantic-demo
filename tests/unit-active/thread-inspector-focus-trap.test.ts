@@ -52,7 +52,9 @@ describe('PR-T3: ThreadInspector focus trap', () => {
         // The selectors are only active when panelSurface is one of
         // search/focus-search/focus/semantic-dive (the inspector
         // opens in those states). Verify the placement.
-        expect(src).toMatch(/surface === ['"]focus['"][\s\S]{0,500}setupFocusTrap\(\[[\s\S]{0,2000}\.thread-inspector[\s\S]{0,500}\]\)/)
+        expect(src).toMatch(
+            /surface === ['"]focus['"][\s\S]{0,500}setupFocusTrap\(\[[\s\S]{0,2000}\.thread-inspector[\s\S]{0,500}\]\)/
+        )
     })
 
     it('ThreadInspector captures the previously focused element on open', () => {
@@ -92,4 +94,4 @@ describe('PR-T3: ThreadInspector focus trap', () => {
         // Use tick() to wait for Svelte to commit the DOM
         expect(src).toMatch(/void\s+tick\(\)\.then\(/)
     })
-});
+})

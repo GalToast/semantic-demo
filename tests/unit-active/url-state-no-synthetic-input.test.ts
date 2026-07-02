@@ -50,4 +50,4 @@ describe('PR-O5-followup: url-state no longer dispatches synthetic input', () =>
         expect(src).toMatch(/PR-O5[\s-]followup/)
         expect(src).toMatch(/performsearch-dup-audit/i)
     })
-});
+})

@@ -81,6 +81,11 @@
     const focusFirst = () => focusables()[0]?.focus();
     const raf = requestAnimationFrame(focusFirst);
     const onKeydown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault();
+        dismiss();
+        return;
+      }
       if (e.key !== 'Tab') return;
       const els = focusables();
       if (els.length === 0) return;

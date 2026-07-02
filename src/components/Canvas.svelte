@@ -265,7 +265,7 @@
       <div class="error-content">
         <p class="error-title">3D scene unavailable</p>
         <p class="error-message">{canvasErrorMessage || 'WebGL could not be initialized.'}</p>
-        <button type="button" class="error-dismiss" onclick={() => canvasError = false}>
+        <button type="button" class="error-dismiss" onclick={() => { canvasError = false; canvasEl?.focus(); }}>
           Continue in 2D
         </button>
       </div>

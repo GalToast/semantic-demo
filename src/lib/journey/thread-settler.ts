@@ -224,7 +224,18 @@ export class ThreadSettler {
 
     walkThreadNeighbor(index: number, options: WalkOptions = {}): WalkResult | null {
         if (!Number.isFinite(index)) return null
+        // Guard: re-walking the same focused index from canvas hover is redundant
+        // and can saturate the main thread when many pointermove events fire in
+        // quick succession. Clicks/traversal still run so the user can re-select a
+        // focused node if they explicitly click it again.
         const focusedIndex = get(navStore).focusedIndex
+        if (
+            index === focusedIndex &&
+            appState.navState?.mode === 'trail' &&
+            !options.fromCanvasNode
+        ) {
+            return null
+        }
         const fromIndex = Number.isFinite(options.fromIndex)
             ? (options.fromIndex as number)
             : getCurrentTrailFocusIndex(focusedIndex)
@@ -243,8 +254,12 @@ export class ThreadSettler {
         withStateMutation(() => {
             appState.focusState.pinnedThreadIndex = null
             appState.focusState.inspectedThreadIndex = null
-            appState.suppressCanvasFocusUntil =
-                typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
+            // Only suppress canvas focus from pointermove-driven walks; clicks
+            // need to be able to focus when no pointermove has happened first.
+            if (!options.fromCanvasNode) {
+                appState.suppressCanvasFocusUntil =
+                    typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
+            }
         })
 
         appState.focusState.pinnedThreadIndex = null
@@ -275,7 +290,8 @@ export class ThreadSettler {
                 preserveNeighborhood,
                 appendHistory: !options.restoreHistory,
                 restoreHistory: !!options.restoreHistory,
-                fromIndex: fromIndex ?? undefined
+                fromIndex: fromIndex ?? undefined,
+                skipUrlSync: true
             })
         }
 

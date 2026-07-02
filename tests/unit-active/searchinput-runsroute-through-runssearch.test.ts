@@ -34,10 +34,7 @@ describe('PR-O5: SearchInput routes through runSearch', () => {
     it('does NOT call performSearch() directly in dispatchSearch', () => {
         const src = readSearchInput()
         // Extract the dispatchSearch function body
-        const body = src.slice(
-            src.indexOf('function dispatchSearch'),
-            src.indexOf('function debounceDispatch')
-        )
+        const body = src.slice(src.indexOf('function dispatchSearch'), src.indexOf('function debounceDispatch'))
         expect(body).not.toMatch(/performSearch\s*\(/)
         expect(body).toMatch(/runSearch\s*\(/)
     })
@@ -53,11 +50,10 @@ describe('PR-O5: SearchInput routes through runSearch', () => {
         // This is the one side effect runSearch does NOT do — only
         // SearchInput knows to flip the nav surface when the user types
         const src = readSearchInput()
-        const body = src.slice(
-            src.indexOf('function dispatchSearch'),
-            src.indexOf('function debounceDispatch')
+        const body = src.slice(src.indexOf('function dispatchSearch'), src.indexOf('function debounceDispatch'))
+        expect(body).toMatch(
+            /dispatchNavTransition\(NAV_TRANSITION_ACTIONS\.SET_SURFACE,\s*\{\s*surface:\s*['"]search['"]\s*\}\)/
         )
-        expect(body).toMatch(/dispatchNavTransition\(NAV_TRANSITION_ACTIONS\.SET_SURFACE,\s*\{\s*surface:\s*['"]search['"]\s*\}\)/)
         expect(body).toMatch(/surfaceSwitchedToSearch\s*=\s*true/)
     })
 
@@ -65,10 +61,7 @@ describe('PR-O5: SearchInput routes through runSearch', () => {
         // runSearch also sets status, but SearchInput's pre-set gives
         // the UI immediate feedback before the await microtask fires
         const src = readSearchInput()
-        const body = src.slice(
-            src.indexOf('function dispatchSearch'),
-            src.indexOf('function debounceDispatch')
-        )
+        const body = src.slice(src.indexOf('function dispatchSearch'), src.indexOf('function debounceDispatch'))
         expect(body).toMatch(/setSearchStatus\(['"]searching['"]\)/)
     })
 
@@ -79,11 +72,8 @@ describe('PR-O5: SearchInput routes through runSearch', () => {
         // browser autofill, an a11y tool, or a custom event) does NOT
         // re-trigger runSearch. Defense in depth.
         const src = readSearchInput()
-        const handler = src.slice(
-            src.indexOf('function handleInput'),
-            src.indexOf('function handleClear')
-        )
+        const handler = src.slice(src.indexOf('function handleInput'), src.indexOf('function handleClear'))
         expect(handler).toMatch(/value\s*===\s*\(\$searchState\.query\s*\?\?\s*['"]['"]\)/)
         expect(handler).toMatch(/return;[\s\S]{0,50}\}/)
     })
-});
+})
