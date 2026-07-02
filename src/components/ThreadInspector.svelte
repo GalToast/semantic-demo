@@ -57,6 +57,25 @@
     return () => obs.disconnect();
   });
 
+  // ── Escape key to close inspector ───────────────────────────────────────────
+  // T1: a global keydown listener (active only while the inspector is
+  // visible + active) so users can close the panel with the Escape key
+  // without first moving focus into the panel. The listener is removed
+  // on inspector hide/unmount, so it doesn't leak when the panel isn't
+  // open. Cancel the event so any outer handler doesn't double-handle.
+  $effect(() => {
+    if (!visible || !focusSnapshot.threadInspector.active) return;
+    const handleKeydown = (event: KeyboardEvent): void => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        event.stopPropagation();
+        clearThreadInspector();
+      }
+    };
+    window.addEventListener('keydown', handleKeydown);
+    return () => window.removeEventListener('keydown', handleKeydown);
+  });
+
   /** Fallback: read inspectedThreadIndex from focusStore (body.dataset was a legacy mirror). */
   function bodyInspectedIndex(): number | null {
     const snap = focusStore();
@@ -143,7 +162,7 @@
     >
       <div class="inspector-header">
         <span class="focus-thread-inspector-kicker">Connection Preview</span>
-        <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
+        <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector"></button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
         <!-- Renders as 'Thread connection to node N' (when name missing) or 'Thread connection to {name}' when present. -->
@@ -212,7 +231,7 @@
     >
       <div class="inspector-header">
         <span class="focus-thread-inspector-kicker">Connection Preview</span>
-        <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector">&times;</button>
+        <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector"></button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
         Connection Inspector
@@ -317,6 +336,14 @@
     padding: 0;
     line-height: 1;
     transition: color 0.15s;
+  }
+  /* T1: × glyph via CSS pseudo-element (not text content) so screen
+   * readers don't read the character when announcing the button.
+   * The aria-label='Close inspector' already provides the accessible name. */
+  .inspector-close::before {
+    content: '\00d7';
+    font-size: 1.2rem;
+    line-height: 1;
   }
   .inspector-close:hover {
     color: var(--color-text-teal-light);
