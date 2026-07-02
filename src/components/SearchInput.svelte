@@ -29,6 +29,7 @@
     NAV_TRANSITION_ACTIONS
   } from '@lib/stores/navigation.svelte.ts';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
+  import { showExperienceToast } from '@lib/orchestration/toast';
   import { debugWarn } from '@lib/utils/debug';
 
   interface Props {
@@ -203,8 +204,20 @@
   }
 
   function handleKeydown(e: KeyboardEvent): void {
-    if (e.key === 'Escape' && queryInput.length > 0) {
-      handleClear();
+    // W52-UX-esc: Escape behavior is contextual:
+    //  - If a search is currently in-flight (`showLoading` true), abort it
+    //    AND keep the typed query so the user can edit and retry without
+    //    re-typing. This matches the cancel button affordance.
+    //  - Otherwise, clear the query via the standard wipe flow.
+    if (e.key === 'Escape') {
+      if (showLoading) {
+        e.preventDefault();
+        handleCancel();
+        return;
+      }
+      if (queryInput.length > 0) {
+        handleClear();
+      }
     } else if (e.key === 'ArrowDown') {
       // Move focus to first search result if results are visible
       const list = document.getElementById('search-result-list');
@@ -229,6 +242,17 @@
     setSearchStatus('idle');
     publish(EVENTS.SEARCH_CANCELLED, { query: cancelledQuery, durationMs });
     searchStartTime = 0;
+    // W52-UX-cancel: surface a transient toast so the user has visible feedback
+    // that their cancel took effect. Without this, the spinner + cancel button
+    // both vanish in the same frame and the user is left wondering whether
+    // anything happened. Only show if a query was actually in flight —
+    // avoids noisy toasts on a stray Escape / click.
+    if (cancelledQuery.length > 0) {
+      showExperienceToast(
+        'Search cancelled',
+        'Cancelled mid-search. Try a different term or refine the query.'
+      );
+    }
   }
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────────
