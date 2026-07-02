@@ -65,11 +65,11 @@
     class="loading-overlay"
     class:is-error={isError}
     id="loading-overlay"
-    role="progressbar"
-    aria-valuenow={Math.round(progress * 100)}
-    aria-valuemin={0}
-    aria-valuemax={100}
-    aria-label="Loading semantic explorer"
+    role={isError ? 'alert' : 'progressbar'}
+    aria-valuenow={isError ? undefined : Math.round(progress * 100)}
+    aria-valuemin={isError ? undefined : 0}
+    aria-valuemax={isError ? undefined : 100}
+    aria-label={isError ? 'Loading failed — Semantic Explorer' : 'Loading semantic explorer'}
     data-loading-phase={phase}
     data-loading-state={isError ? 'error' : 'active'}
     transition:fade={{ duration: 600 }}
