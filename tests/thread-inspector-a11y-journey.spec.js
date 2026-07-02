@@ -72,8 +72,11 @@ async function openInspector(page, inspectedIndex = 1) {
             }
         }))
     }, inspectedIndex)
-    // Wait for the inspector to render
-    await page.locator('#thread-inspector .inspector-close').waitFor({ state: 'visible', timeout: 5000 })
+    // Wait for the inspector to render. ThreadInspector is lazy-mounted
+    // (App.svelte $effect -> threadInspectorLazy.ensure), so the FIRST open in
+    // a session can take >5s while the chunk loads under headless pressure —
+    // give it 15s so the first test (T1.1) doesn't flake on the cold mount.
+    await page.locator('#thread-inspector .inspector-close').waitFor({ state: 'visible', timeout: 15000 })
     // Wait a tick for Svelte's reactive sync to complete
     await page.waitForTimeout(50)
 }
@@ -203,9 +206,7 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         // The aria-label is the sole accessible name
         expect(ariaLabel).toBe('Close inspector')
         // The CSS ::before pseudo-element provides the visual ×
-        const beforeContent = await closeBtn.evaluate((el) =>
-            window.getComputedStyle(el, '::before').content
-        )
+        const beforeContent = await closeBtn.evaluate((el) => window.getComputedStyle(el, '::before').content)
         // The browser resolves the CSS escape to the × character
         // (U+00D7 MULTIPLICATION SIGN). Verify the content is
         // non-empty and contains the multiplication sign character.
@@ -238,7 +239,9 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         const active = await page.evaluate(() => {
             // focusStore is a Svelte store, subscribe to read it
             let value = null
-            const unsub = window.__focusStore__.subscribe((s) => { value = s })
+            const unsub = window.__focusStore__.subscribe((s) => {
+                value = s
+            })
             unsub()
             return value?.threadInspector?.active ?? null
         })
@@ -266,7 +269,9 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         // exception is thrown and the focus state remains unchanged)
         const beforeFocus = await page.evaluate(() => {
             let value = null
-            const unsub = window.__focusStore__.subscribe((s) => { value = s })
+            const unsub = window.__focusStore__.subscribe((s) => {
+                value = s
+            })
             unsub()
             return value?.focusedIndex ?? null
         })
@@ -274,7 +279,9 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         await page.waitForTimeout(100)
         const afterFocus = await page.evaluate(() => {
             let value = null
-            const unsub = window.__focusStore__.subscribe((s) => { value = s })
+            const unsub = window.__focusStore__.subscribe((s) => {
+                value = s
+            })
             unsub()
             return value?.focusedIndex ?? null
         })
@@ -363,7 +370,9 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
             const el = document.activeElement
             return el ? `${el.tagName.toLowerCase()}.${el.className || '(no class)'}` : null
         })
-        expect(activeSelector, 'document.activeElement should be .inspector-close after open').toContain('inspector-close')
+        expect(activeSelector, 'document.activeElement should be .inspector-close after open').toContain(
+            'inspector-close'
+        )
 
         await closeInspector(page)
     })
@@ -377,7 +386,7 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         // First, give focus to a known element (the help button in
         // the header) so we can verify restoration
         const helpBtn = page.locator('button[aria-label*="Help"]').first()
-        if (await helpBtn.count() > 0) {
+        if ((await helpBtn.count()) > 0) {
             await helpBtn.focus()
             const beforeTrigger = await page.evaluate(() => {
                 const el = document.activeElement
@@ -441,7 +450,7 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
                 // 'btn-thread-follow', 'btn-thread-clear'); the close button
                 // has no id but class 'inspector-close'. Use id with className
                 // fallback so the substring match works for all 4 buttons.
-                return el ? (el.id || el.className) : null
+                return el ? el.id || el.className : null
             })
             expect(active, `Tab should land on the ${expectedSuffix}-related button`).toContain(expectedSuffix)
         }
@@ -476,9 +485,7 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         expect(((await closeBtn.textContent()) ?? '').trim()).toBe('')
 
         // Verify initial focus
-        const active = await page.evaluate(() =>
-            document.activeElement?.className ?? ''
-        )
+        const active = await page.evaluate(() => document.activeElement?.className ?? '')
         expect(active).toContain('inspector-close')
 
         // Close via Escape
@@ -486,9 +493,7 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         await page.locator('#thread-inspector').waitFor({ state: 'detached', timeout: 5000 })
 
         // Verify focus restored
-        const restored = await page.evaluate(() =>
-            document.activeElement?.getAttribute('aria-label') ?? ''
-        )
+        const restored = await page.evaluate(() => document.activeElement?.getAttribute('aria-label') ?? '')
         expect(restored).toContain('Help')
     })
-});
+})
