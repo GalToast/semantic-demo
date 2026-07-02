@@ -593,11 +593,19 @@ async function _restoreSearchFromParams(
         // UI-7: Directly populate the search input from the URL ?q= param.
         // runSearch sets the store query, but the SearchInput component may not
         // have mounted yet or its reactive sync may not have propagated to the
-        // DOM <input> value. Setting it here guarantees the input reflects the URL.
+        // DOM <input> value. Setting input.value here guarantees the input
+        // reflects the URL on first paint.
+        //
+        // PR-O5-followup: do NOT dispatch a synthetic 'input' event. The event
+        // was originally used to trigger SearchInput's onInput handler, but
+        // that path bypassed the onMount guard in SearchInput and produced a
+        // second `runSearch` call (state-update side effects double-fired).
+        // SearchInput's reactive sync (\$effect reading $searchState.query)
+        // and the onMount guard together handle the input value correctly
+        // without the synthetic event. See tmp/performsearch-dup-audit-2026-07-01.md.
         const input = document.getElementById('search-input') as HTMLInputElement | null
         if (input && input.value !== query) {
             input.value = query
-            input.dispatchEvent(new Event('input', { bubbles: true }))
         }
 
         if (domForcedFocusSearchSurface) preserveDomForcedFocusSearchSurface()

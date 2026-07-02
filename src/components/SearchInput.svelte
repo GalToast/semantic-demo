@@ -166,7 +166,18 @@
 
   function handleInput(e: Event): void {
     const target = e.target as HTMLInputElement;
-    queryInput = target.value;
+    const value = target.value;
+    // Defense-in-depth: if the input value already matches the store
+    // query (e.g. url-state restored `?q=` while we're still mounted),
+    // the reactive sync will update `queryInput` from the store and
+    // the search has already been kicked off. Skip the redundant
+    // setSearchQuery + debounceDispatch to avoid a second `runSearch`
+    // call. See PR-O5 followup + tmp/performsearch-dup-audit-2026-07-01.md.
+    if (value === ($searchState.query ?? '')) {
+      queryInput = value;
+      return;
+    }
+    queryInput = value;
     // User is typing — flag that the next mount (idle→search-surface swap)
     // must reclaim focus so the keystroke stream isn't interrupted.
     requestSearchInputFocus();

@@ -71,4 +71,19 @@ describe('PR-O5: SearchInput routes through runSearch', () => {
         )
         expect(body).toMatch(/setSearchStatus\(['"]searching['"]\)/)
     })
+
+    it('handleInput skips redundant dispatch when input value matches the store query (defense-in-depth dedup)', () => {
+        // PR-O5 followup: even though the synthetic input event was
+        // removed from url-state.ts, this guard ensures any future
+        // path that sets the input value to match the store (e.g. a
+        // browser autofill, an a11y tool, or a custom event) does NOT
+        // re-trigger runSearch. Defense in depth.
+        const src = readSearchInput()
+        const handler = src.slice(
+            src.indexOf('function handleInput'),
+            src.indexOf('function handleClear')
+        )
+        expect(handler).toMatch(/value\s*===\s*\(\$searchState\.query\s*\?\?\s*['"]['"]\)/)
+        expect(handler).toMatch(/return;[\s\S]{0,50}\}/)
+    })
 });
