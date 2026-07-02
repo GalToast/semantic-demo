@@ -77,6 +77,43 @@
     return () => window.removeEventListener('keydown', handleKeydown);
   });
 
+  // ── Initial focus + focus restoration ──────────────────────────────────────────
+  // T3: when the inspector opens, move focus to the close button (the
+  // canonical 'first focusable' for a modal-like panel). This anchors
+  // keyboard navigation in the panel — Tab/Shift+Tab will then cycle
+  // through the buttons within the panel because `.thread-inspector`
+  // is in the focus-trap selector set. When the inspector closes,
+  // restore focus to whichever element triggered the open
+  // (typically a thread-neighbor pill in the focus rail), so the
+  // keyboard user lands back where they were.
+  let previouslyFocused: HTMLElement | null = null;
+  $effect(() => {
+    const isOpen = visible && focusSnapshot.threadInspector.active;
+    if (isOpen) {
+      if (typeof document !== 'undefined' && previouslyFocused === null) {
+        previouslyFocused = document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+      }
+      // Move focus to the close button on the next tick so the
+      // DOM has settled (the inspector just mounted)
+      void tick().then(() => {
+        const closeBtn = document.querySelector<HTMLElement>('.thread-inspector .inspector-close');
+        if (closeBtn) closeBtn.focus();
+      });
+    } else if (previouslyFocused && typeof document !== 'undefined') {
+      // Inspector closed — restore focus to the trigger element
+      // (if still in the DOM and focusable). Guard with try/catch
+      // because focus() on a detached element throws.
+      try {
+        previouslyFocused.focus();
+      } catch {
+        // ignore — element may have been removed
+      }
+      previouslyFocused = null;
+    }
+  });
+
   /** Fallback: read inspectedThreadIndex from focusStore (body.dataset was a legacy mirror). */
   function bodyInspectedIndex(): number | null {
     const snap = focusStore();

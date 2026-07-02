@@ -29,6 +29,14 @@ export function bindFocusTrapObserver(): void {
         '.journey-compass',
         '.controls',
         '.search-drawer-chrome',
+        // PR-T3: include the thread-inspector in the focus-trap selector
+        // set when a focus surface is active. Without this, Tab from a
+        // thread-inspector button would jump to .search-container
+        // (the search input) because the thread-inspector buttons
+        // weren't in any of the trap selectors. The inspector owns
+        // the focus while it's visible + active in focus/focus-search
+        // states (body surface is unchanged by the inspector).
+        '.thread-inspector',
       ]);
     } else {
       releaseFocusTrap();
