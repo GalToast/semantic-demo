@@ -32,7 +32,7 @@ import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
-import { debugError } from '@lib/utils/debug'
+import { debugError, debugWarn } from '@lib/utils/debug'
 
 // ── URL parameter initialization ──────────────────────────────────────────────
 
@@ -102,19 +102,29 @@ appInit({ forceDemo, noDemo })
 // arrival phase (which begins after splash dismiss = the same gesture), and
 // preloadJourneyWebgl only primes the thread inspector (user-initiated).
 let journeyWebglPreloaded = false
-engineReady.subscribe((ready) => {
+let unsubJourneyWebglPreload: (() => void) | null = engineReady.subscribe((ready) => {
     if (!ready || journeyWebglPreloaded) return
     journeyWebglPreloaded = true
-    // Dynamic import to keep Three.js out of the main bundle
+    // Dynamic import keeps Three.js out of the main bundle.
     import('@lib/journey/route-trace')
         .then(({ initRouteTraceSubscriptions }) => {
             initRouteTraceSubscriptions()
         })
-        .catch(() => {})
-    // Preload journey WebGL overlay modules so they're available when the
-    // user first opens the thread inspector or reaches the arrival phase.
+        .catch((err) => {
+            // Surface dynamic-import failures so they're visible in dev;
+            // route-trace is non-critical and the welcome demo degrades
+            // gracefully when it can't load.
+            debugWarn('[main] initRouteTraceSubscriptions failed (non-fatal):', err)
+        })
+    // Prime thread-inspector + arrival-phase overlays so they're ready
+    // the first time the user opens them.
     preloadJourneyWebgl()
 })
+
+function disposeJourneyWebglPreload(): void {
+    unsubJourneyWebglPreload?.()
+    unsubJourneyWebglPreload = null
+}
 
 // ── W6-T1 gesture-driven engine-ready signal ─────────────────────────────────
 // The engine waits for first user gesture (or visibility flip) before any
@@ -341,6 +351,7 @@ const cleanupWindowActions = installWindowActions()
 window.addEventListener('beforeunload', () => {
     unsubTestState()
     cleanupWindowActions()
+    disposeJourneyWebglPreload()
     appInitCleanup?.()
     if (app) unmount(app)
 })
@@ -358,6 +369,7 @@ if (import.meta.hot) {
     import.meta.hot.dispose(() => {
         unsubTestState()
         cleanupWindowActions()
+        disposeJourneyWebglPreload()
         teardownGestureMonitor()
         appInitCleanup?.()
         if (app) unmount(app)
