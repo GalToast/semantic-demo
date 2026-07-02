@@ -145,7 +145,7 @@
     <div class="proximity-legend-card">
       <button
         class="proximity-legend-dismiss"
-_queries        type="button"
+        type="button"
         aria-label="Dismiss proximity legend"
         onclick={handleDismiss}
       ></button>
