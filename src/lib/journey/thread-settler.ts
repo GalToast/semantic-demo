@@ -290,8 +290,7 @@ export class ThreadSettler {
                 preserveNeighborhood,
                 appendHistory: !options.restoreHistory,
                 restoreHistory: !!options.restoreHistory,
-                fromIndex: fromIndex ?? undefined,
-                skipUrlSync: true
+                fromIndex: fromIndex ?? undefined
             })
         }
 

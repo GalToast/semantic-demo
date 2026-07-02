@@ -145,12 +145,10 @@
     <div class="proximity-legend-card">
       <button
         class="proximity-legend-dismiss"
-        type="button"
+_queries        type="button"
         aria-label="Dismiss proximity legend"
         onclick={handleDismiss}
-      >
-        ×
-      </button>
+      ></button>
       <h2 class="proximity-legend-headline">
         Dots close together do similar things — not just those nearby.
       </h2>
@@ -227,6 +225,12 @@
     align-items: center;
     justify-content: center;
     transition: color 0.2s;
+  }
+
+  .proximity-legend-dismiss::before {
+    content: '\00d7';
+    font-size: 1.3rem;
+    line-height: 1;
   }
 
   .proximity-legend-dismiss:hover {

@@ -166,6 +166,37 @@
     background-clip: padding-box;
 }
 
+/* PR-T4: make the categories panel scrollbar more discoverable.
+ * The default 6px / 0.28 opacity scrollbar is barely visible against
+ * the dark glass background; users don't realize the panel is
+ * scrollable (it has 21 categories but only ~10 fit in 38vh/60vh
+ * max-height). The "10 of 21 shown" overflow indicator from PR-O3
+ * tells the user there's more, but a more visible scrollbar makes
+ * active scrolling more discoverable too. Bumped to 8px width,
+ * 0.5 thumb opacity, and 0.08 track tint so the track and thumb
+ * are both visible during scroll.
+ */
+.legend-panel::-webkit-scrollbar {
+    width: 8px;
+}
+
+.legend-panel::-webkit-scrollbar-track {
+    background: rgba(var(--color-primary-rgb), 0.08);
+    border-radius: 999px;
+}
+
+.legend-panel::-webkit-scrollbar-thumb {
+    background: rgba(var(--color-primary-rgb), 0.5);
+    border-radius: 999px;
+    border: 1px solid transparent;
+    background-clip: padding-box;
+}
+
+.legend-panel {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(var(--color-primary-rgb), 0.5) rgba(var(--color-primary-rgb), 0.08);
+}
+
 /* polish288: info-panel stats-row base styles — extracted from vector-explorer-polished.html inline style block */
 .stats-row {
     display: flex;

@@ -3,6 +3,11 @@ import { test, expect } from '@playwright/test'
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8797'
 
 test('synthetic pointermove + click on canvas', async ({ page }) => {
+    page.on('console', (msg) => {
+        console.log('[page]', msg.type(), msg.text())
+    })
+    page.on('pageerror', (err) => console.log('[pageerror]', err.message))
+
     await page.goto(`${BASE_URL}?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
 
     const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
@@ -26,27 +31,22 @@ test('synthetic pointermove + click on canvas', async ({ page }) => {
         }
     })
 
-    // Dispatch synthetic pointermove to an empty corner, then to the center
+    // Dispatch synthetic click without any prior pointermove. The click
+    // handler should focus the node and update the URL because the
+    // suppressCanvasFocusUntil guard is not set for fromCanvasNode walks.
     await canvas.evaluate((el, coords) => {
         const canvas = el
-        const makePointerEvent = (type, x, y, buttons) => {
-            const ev = new Event(type, { bubbles: true })
-            Object.assign(ev, {
-                clientX: x,
-                clientY: y,
-                pointerId: 1,
-                isPrimary: true,
-                pointerType: 'mouse',
-                buttons,
-                relatedTarget: null
-            })
-            return ev
-        }
-        // Empty corner
-        canvas.dispatchEvent(makePointerEvent('pointermove', 0, 0, 0))
-        // Center (node likely here)
-        canvas.dispatchEvent(makePointerEvent('pointermove', coords.cx, coords.cy, 0))
-        canvas.dispatchEvent(makePointerEvent('click', coords.cx, coords.cy, 1))
+        const ev = new Event('click', { bubbles: true })
+        Object.assign(ev, {
+            clientX: coords.cx,
+            clientY: coords.cy,
+            pointerId: 1,
+            isPrimary: true,
+            pointerType: 'mouse',
+            buttons: 1,
+            relatedTarget: null
+        })
+        canvas.dispatchEvent(ev)
     }, { cx, cy })
 
     await page.waitForTimeout(4000)

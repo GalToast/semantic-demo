@@ -261,7 +261,7 @@
     aria-live="polite"
     aria-label="Guided demo"
   >
-    <button type="button" class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo">&times;</button>
+    <button type="button" class="demo-dismiss" onclick={dismissDemo} aria-label="Dismiss demo"></button>
     <p class="demo-status">{phaseLabels[demoPhase()] ?? demoPhase()}</p>
   </div>
 {/if}
@@ -296,6 +296,11 @@
     justify-content: center;
     transition: color 0.15s, border-color 0.15s;
     padding: 0;
+    line-height: 1;
+  }
+  .demo-dismiss::before {
+    content: '\00d7';
+    font-size: 1.2rem;
     line-height: 1;
   }
   .demo-dismiss:hover {
