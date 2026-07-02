@@ -371,6 +371,18 @@ function withFocusNotify(updater: (_s: FocusStoreState) => FocusStoreState): voi
     const current = _readFocusSnapshot()
     const next = updater(current)
 
+    // Sync derived threadInspector.pinnedIndex with bound pinnedThreadIndex.
+    // `next` was built from `current`'s stale appState read, so subscribers
+    // would otherwise see threadInspector.pinnedIndex unchanged on pin/unpin.
+    // T2: the factory's bindings map is all-null for focusStore, so the
+    // factory's mirror step doesn't bridge these two slots — do it here.
+    if (next.threadInspector.pinnedIndex !== next.pinnedThreadIndex) {
+        next.threadInspector = {
+            ...next.threadInspector,
+            pinnedIndex: next.pinnedThreadIndex
+        }
+    }
+
     focusMirror.set(next)
 
     // Grouped/special-case mirrors that the flat bindings table can't express
