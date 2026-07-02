@@ -300,6 +300,44 @@
     border-color: var(--status-danger);
   }
 
+  .filter-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.65rem;
+    background: rgba(var(--color-surface-chrome-rgb), 0.85);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
+    border-radius: var(--radius-tight);
+    cursor: pointer;
+    user-select: none;
+    /* Hide native <details> disclosure triangle */
+    list-style: none;
+  }
+  /* WebKit legacy: hide the disclosure marker */
+  .filter-toggle::-webkit-details-marker {
+    display: none;
+  }
+  .filter-toggle-label {
+    font-family: var(--font-display);
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--color-text-teal-light);
+  }
+  .filter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 0.3rem;
+    background: var(--color-primary-alt);
+    color: var(--color-surface-deep);
+    font-size: 0.6rem;
+    font-weight: 700;
+    border-radius: 9999px;
+    font-family: var(--font-mono);
+  }
+
   @media (max-width: 768px) {
     .filter-toolbar {
       flex-direction: column;

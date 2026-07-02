@@ -64,7 +64,7 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
     noteEl.textContent = note
 
     const stage =
-        nextCue.stage ||
+        nextCue.stage ??
         // PR-I (2026-06-30): derive the highlighted chip from the beat when
         // no explicit stage is passed. Without this, ui-feedback.ts calls
         // with { beat: 'focus', ... } (anchor locked) and { beat: 'walk', ... }

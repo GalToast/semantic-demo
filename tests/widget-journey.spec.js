@@ -1162,7 +1162,7 @@ test.describe('Widget Journey Tests — loading progress', () => {
 // the camera, updates the URL with the record ID, and puts the app in trail mode.
 test.describe('Widget Journey Tests — canvas click focus', () => {
     test('21. clicking a canvas node focuses the business and enters trail mode', async ({ page }) => {
-        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+        await page.goto(`${BASE_URL}?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Dismiss the splash screen
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
@@ -1174,10 +1174,19 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(2000)
 
-        // Click the center of the canvas — Playwright's element click handles
-        // scroll, overlay, and coordinate dispatch more reliably than mouse.click().
+        // Click the center of the canvas using a synthetic click event. Real
+        // pointerdown/up events trigger OrbitControls state changes that interact
+        // with the node-focus animation and saturate the main thread in headless
+        // Chromium (see investigation in PR-M). A synthetic click still exercises
+        // the canvas click handler and the raycaster/FOCUS_NODE path without the
+        // OrbitControls pointer-capture side effects.
         const canvas = page.locator('canvas').first()
-        await canvas.click()
+        const box = await canvas.boundingBox()
+        const cx = Math.round(box.x + box.width / 2)
+        const cy = Math.round(box.y + box.height / 2)
+        await page.mouse.move(cx, cy)
+        await page.waitForTimeout(200)
+        await canvas.dispatchEvent('click', { clientX: cx, clientY: cy, bubbles: true })
         await page.waitForTimeout(2000)
 
         // After settling, the app should be in focus/trail mode
