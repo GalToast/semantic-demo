@@ -218,8 +218,15 @@ export function getJourneyCompassState(): CompassState {
 
     return {
         phase: 'overview',
-        kicker: 'Overview | Montgomery County',
-        title: 'The MoCo Mycelium',
+        /* PR-K (2026-06-30): drop ' | Montgomery County' from the kicker
+           and drop the 'The MoCo Mycelium' title. Both phrases repeated
+           "Montgomery County" which the header description already
+           provides ("See all 8,406 Montgomery County businesses in one
+           view."). Net result: JourneyCompass now shows just "Overview"
+           as the kicker and no title — matching the chip rail's active
+           chip and letting the header description own the location copy. */
+        kicker: 'Overview',
+        title: '',
         note: idleNote,
         primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
         secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },

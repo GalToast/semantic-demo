@@ -93,6 +93,17 @@
     align-items: center;
     justify-content: center;
     line-height: 1.1;
+    /* PR-J (2026-06-30): add a static low-opacity teal background so the
+       button is readable against the dark InfoPanel even during the
+       off-phase of the biofield-glow animation. The biofield pulse
+       cycles between box-shadow opacity 0.2 and 0.6 every 4s; without
+       a base background the button appears to fade into the panel at
+       the dim end of the cycle. The animation still layers on top for
+       the ambient breathing effect — this just guarantees a readable
+       floor. */
+    background: rgba(78, 205, 196, 0.12);
+    border: 1px solid rgba(78, 205, 196, 0.4);
+    border-radius: 0.4rem;
 }
 
 /* ── Public note ─────────────────────────────────────────────────────────── */
