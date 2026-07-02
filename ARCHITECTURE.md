@@ -20,6 +20,7 @@ semantic-explorer/
 │   ├── state-transition-table.md Phase machine contract.
 │   ├── design-tokens.md          Token vocabulary.
 │   └── archive/                  Frozen historical references (do not edit).
+│       docs/archive/vector-explorer-polished-legacy.html is the archived legacy shell.
 ├── css/                          Modular CSS, loaded through `semantic-demo.css`.
 ├── src/                          Single-page Svelte + Three.js application.
 │   ├── main.ts                   Vite entry; initializes URL/demo flags + mounts App.

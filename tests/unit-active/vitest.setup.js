@@ -10,18 +10,27 @@
  * test case runs.
  */
 if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
-  Object.defineProperty(window, 'matchMedia', {
-    writable: true,
-    configurable: true,
-    value: (query) => ({
-      matches: false,
-      media: query,
-      onchange: null,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
-      dispatchEvent: () => {}
+    Object.defineProperty(window, 'matchMedia', {
+        writable: true,
+        configurable: true,
+        value: (query) => ({
+            matches: false,
+            media: query,
+            onchange: null,
+            addEventListener: () => {},
+            removeEventListener: () => {},
+            addListener: () => {},
+            removeListener: () => {},
+            dispatchEvent: () => {}
+        })
     })
-  });
+}
+
+/** ResizeObserver stub — used by Legend.svelte and other components. */
+if (typeof window !== 'undefined' && typeof window.ResizeObserver === 'undefined') {
+    window.ResizeObserver = class ResizeObserver {
+        observe() {}
+        unobserve() {}
+        disconnect() {}
+    }
 }

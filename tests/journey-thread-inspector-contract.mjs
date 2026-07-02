@@ -34,7 +34,12 @@ const threadInspectorCombinedSrc = () => {
         resolveSource('src/lib/journey/thread-inspector-state.ts', SEMDEMO_ROOT),
         resolveSource('src/lib/journey/thread-inspector-webgl.ts', SEMDEMO_ROOT),
         resolveSource('src/lib/journey/thread-inspector-render.ts', SEMDEMO_ROOT),
-        resolveSource('src/lib/journey/thread-inspector-adapter.ts', SEMDEMO_ROOT)
+        resolveSource('src/lib/journey/thread-inspector-adapter.ts', SEMDEMO_ROOT),
+        // PR-T2: Svelte component now owns the button text logic (was
+        // previously the imperative render.ts). Include it in the
+        // combined source so text-content contract assertions
+        // ('Current Stop', 'Pin Connection', etc.) find the strings.
+        resolveSource('src/components/ThreadInspector.svelte', SEMDEMO_ROOT)
     ]
     return paths.map((p) => fs.existsSync(p) ? fs.readFileSync(p, 'utf-8') : '').join('\n')
 }

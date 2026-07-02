@@ -115,6 +115,15 @@
   aria-label="Business filters"
   {open}
 >
+  <summary class="filter-toggle" aria-label="Toggle business filters">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path d="M1 3h12M3 7h8M5 11h4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+    </svg>
+    <span class="filter-toggle-label">Filters</span>
+    {#if $activeFilterCount > 0}
+      <span class="filter-badge" aria-label="{$activeFilterCount} active filters">{$activeFilterCount}</span>
+    {/if}
+  </summary>
   <div class="filter-toolbar">
     <!-- Status filter chips -->
     <div class="filter-group">

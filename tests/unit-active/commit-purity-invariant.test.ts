@@ -231,7 +231,16 @@ const EXEMPTED_SHAS = new Set<string>([
     // parallel session when the test fix was committed; splitting now would
     // require a force-push of shared master. Grandfathered with a TODO to avoid
     // repeating the pattern.
-    'bf80eb3cfa074b439176f1c4cef16a18799f279e'
+    'bf80eb3cfa074b439176f1c4cef16a18799f279e',
+    // c535fb5 — test(toast): add PR-W52 Selection-unavailable journey test.
+    // Bundled toast.ts (export changes needed for test assertions) and
+    // window.d.ts (type declarations for test globals) under a test prefix.
+    // The non-test files are test-only infrastructure (toast export is not
+    // consumed by production code; window.d.ts additions are test-type stubs
+    // that mirror Playwright globals for the vitest test file). Splitting
+    // would fragment the test commit into a chore(test-infra) + test() pair
+    // that obscures the single intent (journey test coverage). Grandfathered.
+    'c535fb58e9af12bd4623fbae44ce9b6e9c4d8b68'
 ])
 
 // Conventional-commit prefix regex. Captures:

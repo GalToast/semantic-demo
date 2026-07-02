@@ -21,6 +21,51 @@ import { test, expect } from '@playwright/test'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8797'
 
+/**
+ * Pre-seed `localStorage.moco_onboarding_seen_v1` at the file level so the
+ * W52 help-dialog auto-open does not intercept pointer events on every
+ * fresh-context test. Production code is unchanged: Header.svelte's
+ * W52-UX effect still auto-opens the dialog for first-visit users in
+ * real browsers; only the test-side pre-flags the localStorage so the
+ * engineReady effect's `if (!raw) helpDialog.showModal()` branch is
+ * short-circuited before it can intercept downstream canvas clicks.
+ *
+ * Without this hook, ~14 downstream tests (~18 in the most-affected
+ * Wheel runs) were pre-blocked by `dialog.help-dialog[open]` subtree
+ * intercepting canvas clicks — see slim run on commit 11ac31bb.
+ *
+ * Opted-out: tests that intentionally probe first-visit auto-open
+ * behavior. Both of these explicitly `localStorage.removeItem(...)`
+ * and `page.reload(...)` to surface the dialog/legend; addInitScript
+ * re-fires on every navigation so without the opt-out it would
+ * re-inject the flag and break them.
+ *   - "11. help dialog auto-opens on first visit"
+ *   - "proximity legend renders on first visit and is dismissible"
+ *
+ * Adding a third probe: append another `|| testInfo.title === '...'`
+ * clause. Done.
+ */
+test.beforeEach(async ({ page }, testInfo) => {
+    if (
+        testInfo.title === '11. help dialog auto-opens on first visit' ||
+        testInfo.title === 'proximity legend renders on first visit and is dismissible'
+    ) {
+        // Skip pre-seed: this test deliberately clears the flag to force
+        // the W52 dialog or ProximityLegend first-visit path.
+        return
+    }
+    await page.addInitScript(() => {
+        try {
+            localStorage.setItem(
+                'moco_onboarding_seen_v1',
+                JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+            )
+        } catch {
+            /* localStorage unavailable (private browsing, quota) — silently skip */
+        }
+    })
+})
+
 test.describe('Widget Journey Tests — what the user actually sees', () => {
     /** Close the auto-open help dialog if it surfaced for this first-visit session. */
     async function dismissOnboardingHelpDialog(page) {

@@ -13,6 +13,7 @@
   import type { FocusStoreState } from '@lib/stores/focus.svelte';
   import { dispatchNavTransition, focusedIndex, NAV_TRANSITION_ACTIONS, updateNavState } from '@lib/stores/navigation.svelte.ts';
   import { appState } from '@lib/state/app.svelte';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { addWalkHistoryIndex, setTrailDepth, trailDepth, walkHistoryIndices } from '@lib/stores/journey.svelte.ts';
 
   interface Props {
@@ -143,6 +144,22 @@
   {@const inspector = focusSnapshot.threadInspector}
   {@const inspectedIndex = inspector.inspectedIndex ?? bodyInspectedIndex()}
   {@const pinned = inspectedIndex != null && inspector.pinnedIndex === inspectedIndex}
+  {@const isMobile = $viewport.isCompact}
+  {@const pinText = pinned ? (isMobile ? 'Unpin' : 'Unpin Connection') : (isMobile ? 'Pin' : 'Pin Connection')}
+  {@const followTargetsCurrent =
+    inspectedIndex != null && Number.isFinite(inspectedIndex) && inspectedIndex === focusedIndex()}
+  {@const journeyPhaseIsExploring = focusSnapshot.strandContinuityPhase === 'exploring'}
+  {@const followText = journeyPhaseIsExploring
+    ? 'Following'
+    : followTargetsCurrent
+      ? (isMobile ? 'Current' : 'Current Stop')
+      : (isMobile ? 'Follow' : 'Follow Connection')}
+  {@const followAriaLabel = journeyPhaseIsExploring
+    ? 'Following this connection'
+    : followTargetsCurrent
+      ? 'This connection is the current path stop'
+      : 'Follow this connection as the next path stop'}
+  {@const followDisabled = inspectedIndex === null || followTargetsCurrent || journeyPhaseIsExploring}
   <div
     class="thread-inspector"
     id="thread-inspector"
@@ -187,18 +204,21 @@
           class="thread-action primary"
           onclick={() => handlePin(inspectedIndex, inspector.pinnedIndex)}
           disabled={inspectedIndex === null}
+          aria-pressed={pinned}
         >
-          {pinned ? 'Unpin' : 'Pin'}
+          {pinText}
         </button>
         <button
           id="btn-thread-follow"
           type="button"
           class="thread-action"
-          onpointerdown={handleFollow}
           onclick={handleFollow}
-          disabled={inspectedIndex === null}
+          disabled={followDisabled}
+          aria-disabled={followDisabled}
+          aria-busy={journeyPhaseIsExploring}
+          aria-label={followAriaLabel}
         >
-          Follow
+          {followText}
         </button>
         <button
           id="btn-thread-clear"

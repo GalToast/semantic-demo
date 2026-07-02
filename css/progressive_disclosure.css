@@ -856,7 +856,14 @@ body.surface-idle .search-trail-cue,
 body.surface-idle .synthesize-trigger,
 body.surface-idle .search-results.active,
 body.surface-semantic-dive .search-results.active,
-body.surface-idle #filters-section,
+/* #filters-section is intentionally NOT hidden here — the Filters.svelte
+   <details>/<summary> toggle is a deliberate user-facing affordance on
+   idle. Hiding the whole <details> collapses the summary too, so the
+   toggle becomes unreachable. Native <details> behavior already hides
+   the non-summary children when [open] is absent; the [open]-only
+   showing rule in App.svelte (`:global(#filters-section[open])`) keeps
+   the open state working. Other surfaces (focus, focus-search,
+   semantic-dive) still suppress filters-section in the rules below. */
 body.surface-idle #cluster-section {
     display: none;
 }

@@ -147,21 +147,24 @@ export function renderThreadInspection(
     const pinBtn = document.getElementById('btn-thread-pin') as HTMLButtonElement | null
     const followBtn = document.getElementById('btn-thread-follow') as HTMLButtonElement | null
     const clearBtn = document.getElementById('btn-thread-clear') as HTMLButtonElement | null
-    const isMobile = typeof window !== 'undefined' && window.innerWidth <= 768
 
     if (titleEl) titleEl.textContent = inspectionState?.title ?? null
     if (copyEl) copyEl.textContent = inspectionState?.copy ?? null
     if (metaEl) metaEl.textContent = inspectionState?.meta ?? null
 
+    // PR-T2: button textContent is owned by the Svelte component
+    // (ThreadInspector.svelte), which renders the same logic via
+    // {@const pinText/followText} derived from focusStore +
+    // viewport.isCompact + strandContinuityPhase. The previous version
+    // overwrote the Svelte-rendered text imperatively, which produced
+    // a brief flash of the static 'Pin/Follow/Clear' before the
+    // 'Pin Connection/Follow Connection/Current/Following' text landed.
+    // The Svelte component now renders the correct text from the
+    // initial paint, so this renderer only updates attributes that
+    // Svelte can't easily derive (disabled, aria-pressed, aria-label,
+    // aria-disabled, aria-busy).
     if (pinBtn) {
         pinBtn.disabled = !inspectionState?.active
-        pinBtn.textContent = inspectionState?.pinned
-            ? isMobile
-                ? 'Unpin'
-                : 'Unpin Connection'
-            : isMobile
-              ? 'Pin'
-              : 'Pin Connection'
         pinBtn.setAttribute('aria-pressed', String(!!inspectionState?.pinned))
     }
     if (followBtn) {
@@ -173,16 +176,6 @@ export function renderThreadInspection(
             !inspectionState?.active || !!followTargetsCurrent || inspectionState?.journeyPhase === 'exploring'
         followBtn.setAttribute('aria-disabled', String(followBtn.disabled))
         followBtn.setAttribute('aria-busy', String(inspectionState?.journeyPhase === 'exploring'))
-        followBtn.textContent =
-            inspectionState?.journeyPhase === 'exploring'
-                ? 'Following'
-                : followTargetsCurrent
-                  ? isMobile
-                      ? 'Current'
-                      : 'Current Stop'
-                  : isMobile
-                    ? 'Follow'
-                    : 'Follow Connection'
         followBtn.setAttribute(
             'aria-label',
             inspectionState?.journeyPhase === 'exploring'

@@ -14,8 +14,16 @@
        ---------------------------------------------------------------- */
 
     body.surface-idle #selected-card,
-    body.surface-idle #cluster-section,
-    body.surface-idle #filters-section:not([open]) {
+    body.surface-idle #cluster-section {
+        /* #filters-section is intentionally NOT hidden on mobile idle —
+           even when closed. The Filters.svelte <details>/<summary>
+           toggle is a deliberate user-facing affordance; native
+           <details> behavior keeps non-summary children hidden when
+           [open] is absent. The [open]-only showing rule in App.svelte
+           (`:global(#filters-section[open])`) and the mobile_premium
+           idle-open rule in mobile_premium__chrome.css both handle the
+           expanded state. See the matching comments in
+           progressive_disclosure.css and strands.css. */
         display: none;
     }
 

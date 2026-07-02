@@ -3,8 +3,7 @@
 @media (max-width: 768px) {
     /* ─── CHROME (UI furniture across states) ─────────── */
     /* A. Rail sections / filters (idle state) */
-        body.surface-idle
-        .rail-section[open] {
+    body.surface-idle .rail-section[open] {
         isolation: isolate;
         max-height: min(50vh, 320px);
         overflow-y: auto;
@@ -149,9 +148,7 @@
 
     body.surface-search .search-result-item,
     body.surface-focus-search .search-result-item,
-    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any)
-        .search-container.has-query
-        .search-result-item {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .search-container.has-query .search-result-item {
         border-radius: 8px;
     }
 
@@ -283,8 +280,7 @@
         pointer-events: none;
     }
 
-    body.surface-focus-search
-        .journey-compass-action:not(.primary):not([data-journey-action='enter-inside']) {
+    body.surface-focus-search .journey-compass-action:not(.primary):not([data-journey-action='enter-inside']) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -458,14 +454,22 @@
         display: none;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         :is(.share-toggle, .legend-toggle) {
         display: none;
         visibility: hidden;
         pointer-events: none;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         #canvas-color-legend {
         display: none;
         visibility: hidden;
@@ -490,9 +494,7 @@
         transform: none;
     }
 
-    body.surface-focus-search:not([data-focus-panel-mode='field-node'])
-        #btn-keyboard-help
-        .ui-icon {
+    body.surface-focus-search:not([data-focus-panel-mode='field-node']) #btn-keyboard-help .ui-icon {
         width: 18px;
         height: 18px;
     }
@@ -538,7 +540,12 @@
         color: var(--color-primary);
     }
 
-    body:not(.surface-idle):is([data-panel-surface='search'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive']) .controls {
+    body:not(.surface-idle):is(
+            [data-panel-surface='search'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
+        .controls {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -635,8 +642,7 @@
             0 6px 12px var(--shadow-antumbra);
     }
 
-    body.surface-focus-search:not([data-focus-panel-mode='field-node'])
-        .keyboard-hint-panel::before {
+    body.surface-focus-search:not([data-focus-panel-mode='field-node']) .keyboard-hint-panel::before {
         content: '';
         position: absolute;
         top: -7px;
@@ -683,8 +689,7 @@
         display: none;
     }
 
-    body.navigation-map-trail-strip
-        :is(.controls, #btn-legend, #btn-keyboard-help, .panel-toggle, .time-display) {
+    body.navigation-map-trail-strip :is(.controls, #btn-legend, #btn-keyboard-help, .panel-toggle, .time-display) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -769,7 +774,10 @@
     body.surface-idle .stat-caption,
     body.surface-idle .launch-btn,
     body.surface-idle #cluster-section,
-    body.surface-idle #filters-section,
+    /* #filters-section is intentionally NOT hidden here — see the
+       matching comment in css/progressive_disclosure.css. On mobile
+       idle the <details>/<summary> toggle in Filters.svelte stays
+       visible so users can tap to expand the filter rail. */
     body.surface-idle .mode-grid,
     body.surface-idle .semantic-lane-assist,
     body.surface-idle .search-trail-cue,
@@ -807,12 +815,7 @@
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
-        :is(
-            .share-toggle,
-            .controls,
-            .panel-toggle,
-            .time-display
-        ) {
+        :is(.share-toggle, .controls, .panel-toggle, .time-display) {
         display: none;
         visibility: hidden;
         pointer-events: none;
@@ -829,7 +832,11 @@
         pointer-events: none;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         :is(#btn-legend, #btn-keyboard-help) {
         position: fixed;
         top: calc(18px + env(safe-area-inset-top, 0px));
@@ -846,12 +853,20 @@
         opacity: 1;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         #btn-keyboard-help {
         top: calc(70px + env(safe-area-inset-top, 0px));
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         .controls.controls-rail {
         display: contents;
         visibility: visible;
@@ -859,12 +874,20 @@
         opacity: 1;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         #btn-legend {
         top: calc(112px + env(safe-area-inset-top, 0px));
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
+    body:not(.surface-idle):is(
+            [data-panel-surface='focus'],
+            [data-panel-surface='focus-search'],
+            [data-panel-surface='semantic-dive']
+        )
         #btn-keyboard-help {
         top: calc(164px + env(safe-area-inset-top, 0px));
     }

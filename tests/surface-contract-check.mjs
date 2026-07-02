@@ -273,6 +273,13 @@ async function loadIdleAndTypeSearch(page, query, params = {}) {
         else url.searchParams.set(key, String(value))
     }
     await loadAndWait(page, url.toString())
+    // Dismiss the splash on phone-class viewports. On mobile the
+    // body.render-kind-placeholder2d .info-panel { display: none }
+    // rule hides the search input until the user clicks through the
+    // splash CTA, so typing into #search-input would block on a hidden
+    // element. On desktop the splash dismisses itself (no-op). The
+    // .catch() swallows CTAs that aren't present.
+    await page.click('[data-testid="splash-cta"]').catch(() => {})
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })
     await page.locator('#search-input').first().fill(query)
     await page.waitForTimeout(350)
@@ -1166,12 +1173,7 @@ async function assert_focus_pocket(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (
-                style.display === 'none' ||
-                rect.width <= 0 ||
-                rect.height <= 0
-            )
-                return null
+            if (style.display === 'none' || rect.width <= 0 || rect.height <= 0) return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
@@ -1183,12 +1185,7 @@ async function assert_focus_pocket(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (
-                style.display === 'none' ||
-                rect.width <= 0 ||
-                rect.height <= 0
-            )
-                return null
+            if (style.display === 'none' || rect.width <= 0 || rect.height <= 0) return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
@@ -1491,12 +1488,7 @@ async function assert_field_node(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (
-                style.display === 'none' ||
-                rect.width <= 0 ||
-                rect.height <= 0
-            )
-                return null
+            if (style.display === 'none' || rect.width <= 0 || rect.height <= 0) return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
@@ -1508,12 +1500,7 @@ async function assert_field_node(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (
-                style.display === 'none' ||
-                rect.width <= 0 ||
-                rect.height <= 0
-            )
-                return null
+            if (style.display === 'none' || rect.width <= 0 || rect.height <= 0) return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
@@ -2992,12 +2979,7 @@ async function assert_search_chrome(page, ctx) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (
-                style.display === 'none' ||
-                rect.width <= 0 ||
-                rect.height <= 0
-            )
-                return null
+            if (style.display === 'none' || rect.width <= 0 || rect.height <= 0) return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
@@ -5123,12 +5105,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (
-                style.display === 'none' ||
-                rect.width <= 0 ||
-                rect.height <= 0
-            )
-                return null
+            if (style.display === 'none' || rect.width <= 0 || rect.height <= 0) return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,
@@ -5140,12 +5117,7 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             if (!el) return null
             const style = getComputedStyle(el)
             const rect = el.getBoundingClientRect()
-            if (
-                style.display === 'none' ||
-                rect.width <= 0 ||
-                rect.height <= 0
-            )
-                return null
+            if (style.display === 'none' || rect.width <= 0 || rect.height <= 0) return null
             const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
             return {
                 bottomInset,

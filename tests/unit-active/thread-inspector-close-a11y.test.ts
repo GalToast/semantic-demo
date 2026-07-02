@@ -49,13 +49,17 @@ describe('PR-T1: ThreadInspector close button + Escape key', () => {
     it('adds a global Escape key handler that calls clearThreadInspector', () => {
         const src = readThreadInspector()
         // Find the Escape key effect
-        expect(src).toMatch(/\$effect\(\(\)\s*=>\s*\{[^}]*!\s*visible\s*\|\|\s*!focusSnapshot\.threadInspector\.active[^}]*return;[\s\S]{0,200}event\.key\s*===\s*['"]Escape['"][\s\S]{0,200}clearThreadInspector\(\)/)
+        expect(src).toMatch(
+            /\$effect\(\(\)\s*=>\s*\{[^}]*!\s*visible\s*\|\|\s*!focusSnapshot\.threadInspector\.active[^}]*return;[\s\S]{0,200}event\.key\s*===\s*['"]Escape['"][\s\S]{0,200}clearThreadInspector\(\)/
+        )
     })
 
     it('Escape key handler is removed on cleanup (no listener leak)', () => {
         const src = readThreadInspector()
         // The $effect should return a cleanup that removes the listener
-        const escapeEffect = src.match(/\$effect\(\(\)\s*=>\s*\{[\s\S]{0,800}event\.key\s*===\s*['"]Escape['"][\s\S]{0,500}\}\)/)
+        const escapeEffect = src.match(
+            /\$effect\(\(\)\s*=>\s*\{[\s\S]{0,800}event\.key\s*===\s*['"]Escape['"][\s\S]{0,500}\}\)/
+        )
         expect(escapeEffect).toBeTruthy()
         expect(escapeEffect![0]).toMatch(/window\.removeEventListener\(['"]keydown['"]/)
     })
@@ -67,4 +71,4 @@ describe('PR-T1: ThreadInspector close button + Escape key', () => {
         expect(src).toMatch(/event\.preventDefault\(\)/)
         expect(src).toMatch(/event\.stopPropagation\(\)/)
     })
-});
+})

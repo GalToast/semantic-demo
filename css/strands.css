@@ -809,8 +809,12 @@ body.surface-focus-search .controls .control-btn {
 
     body.surface-idle .semantic-lane-pill,
     body.surface-idle .semantic-lane-assist,
-    body.surface-idle #cluster-section,
-    body.surface-idle #filters-section {
+    body.surface-idle #cluster-section {
+        /* #filters-section is intentionally NOT hidden here — see the
+           matching comments in css/progressive_disclosure.css and
+           css/mobile_premium__chrome.css. On mobile idle the
+           <details>/<summary> toggle in Filters.svelte stays visible
+           so users can tap to expand the filter rail. */
         display: none;
     }
 

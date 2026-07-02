@@ -202,7 +202,7 @@ describe('FocusPocket component engine-status subscription', () => {
         expect(source).toMatch(/engineStatus\s*===\s*['"]ready['"]/)
         // Must check the return value of applyLocalNeighborhoodFocus
         expect(source).toMatch(/const\s+ok\s*=\s*applyLocalNeighborhoodFocus/)
-        // The code: if (ok) lastFocusIndex = idx; (no braces)
-        expect(source).toMatch(/if\s*\(\s*ok\s*\)\s*lastFocusIndex/)
+        // The code: if (ok) { lastFocusIndex = idx; } (braced form, PR refactor)
+        expect(source).toMatch(/if\s*\(\s*ok\s*\)\s*\{[\s\S]{0,200}lastFocusIndex/)
     })
 })

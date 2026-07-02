@@ -255,6 +255,15 @@
     font-size: 0.75rem;
     cursor: pointer;
     transition: all 0.15s;
+    /* Touch target: keep the 'Got it' text visually centered when the
+       box grows past content height; 44×44 meets WCAG 2.5.5 / the project's
+       qa:surface 44-px floor. The text-aligned-only padding gave 28 px
+       which global-spacing rightly flags. */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
 }
 .help-dialog-close:hover {
     background: rgba(var(--color-primary-alt-rgb), 0.2);
