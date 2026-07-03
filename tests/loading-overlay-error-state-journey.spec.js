@@ -57,10 +57,7 @@ test.describe('LoadingOverlay error-state role=alert transition', () => {
         const alertOverlay = page.locator('#loading-overlay[role="alert"]')
         await alertOverlay.waitFor({ state: 'visible', timeout: 10_000 })
 
-        await expect(alertOverlay).toHaveAttribute(
-            'aria-label',
-            'Loading failed — Semantic Explorer'
-        )
+        await expect(alertOverlay).toHaveAttribute('aria-label', 'Loading failed — Semantic Explorer')
         await expect(alertOverlay).toHaveAttribute('data-loading-state', 'error')
         await expect(alertOverlay).toHaveAttribute('id', 'loading-overlay')
 

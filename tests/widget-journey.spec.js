@@ -1177,17 +1177,11 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
     test('20c. canvas keyboard navigation: ArrowDown cycles to next cluster sibling', async ({ page }) => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
-        const explore = page
-            .locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]')
-            .first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
-            null,
-            { timeout: 15000 }
-        )
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -1204,9 +1198,7 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
         await page.locator('canvas').first().focus()
 
         // Snapshot starting focused index
-        const startIndex = await page.evaluate(
-            () => /** @type {any} */ (window).__TEST_STATE__?.navState?.focusedIndex
-        )
+        const startIndex = await page.evaluate(() => /** @type {any} */ (window).__TEST_STATE__?.navState?.focusedIndex)
 
         // Press ArrowDown — should step to next cluster sibling (focused index
         // changes to a non-null int). Toast `'End of cluster'` may surface
@@ -1214,9 +1206,7 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
         await page.keyboard.press('ArrowDown')
         await page.waitForTimeout(400)
 
-        const afterIndex = await page.evaluate(
-            () => /** @type {any} */ (window).__TEST_STATE__?.navState?.focusedIndex
-        )
+        const afterIndex = await page.evaluate(() => /** @type {any} */ (window).__TEST_STATE__?.navState?.focusedIndex)
         expect(typeof afterIndex).toBe('number')
         expect(Number.isFinite(afterIndex)).toBe(true)
     })
@@ -1227,17 +1217,11 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
     test('20d. canvas keyboard navigation: Plus dispatches zoomCamera', async ({ page }) => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
 
-        const explore = page
-            .locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]')
-            .first()
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
         await explore.waitFor({ state: 'visible', timeout: 40000 })
         await explore.click()
 
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
-            null,
-            { timeout: 15000 }
-        )
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
         await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(1500)
 
@@ -1247,9 +1231,7 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
         // (zoomCamera has observable side-effects on the camera position; we
         // assert the canvas Tab-focus succeeded via the focused element
         // check, which is the gating contract for the keyboard listener).
-        const isCanvasFocused = await page.evaluate(
-            () => document.activeElement?.tagName?.toLowerCase() === 'canvas'
-        )
+        const isCanvasFocused = await page.evaluate(() => document.activeElement?.tagName?.toLowerCase() === 'canvas')
         expect(isCanvasFocused).toBe(true)
 
         // Pressing the key — runtime assertion is via no-throw + dispatch

@@ -84,9 +84,7 @@ export function getClusterSiblings(focusedIndex: number): readonly number[] {
     for (let i = 0; i < records.length; i++) {
         const r = records[i]
         if (!r || r.cluster !== myCluster) continue
-        const score = calculateSignalScore(
-            r as unknown as Parameters<typeof calculateSignalScore>[0]
-        )
+        const score = calculateSignalScore(r as unknown as Parameters<typeof calculateSignalScore>[0])
         ranked.push({ index: i, score })
     }
     ranked.sort((a, b) => {
@@ -169,10 +167,7 @@ function dispatchClusterAction(step: 1 | -1, focusedIndex: number): void {
         const records = get(businessRecords)
         const focused = records[focusedIndex]
         const clusterName = focused ? describeCluster(focused.cluster ?? 0) : 'this cluster'
-        showExperienceToast(
-            'End of cluster',
-            `No ${step > 0 ? 'next' : 'previous'} sibling in ${clusterName}.`
-        )
+        showExperienceToast('End of cluster', `No ${step > 0 ? 'next' : 'previous'} sibling in ${clusterName}.`)
         return
     }
     const targetIndex = siblings[nextPos]

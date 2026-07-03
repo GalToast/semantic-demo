@@ -89,13 +89,18 @@ describe('canvas-hover-preview (W48-B keyboard / AT parity)', () => {
         container.style.height = '720px'
         // jsdom default rect is all zeros — set a stable rect so the
         // positioning math has something to anchor against.
-        container.getBoundingClientRect = (): DOMRect => ({
-            x: 0, y: 0,
-            width: 1280,
-            height: 720,
-            top: 0, right: 1280, bottom: 720, left: 0,
-            toJSON: () => ({})
-        } as DOMRect)
+        container.getBoundingClientRect = (): DOMRect =>
+            ({
+                x: 0,
+                y: 0,
+                width: 1280,
+                height: 720,
+                top: 0,
+                right: 1280,
+                bottom: 720,
+                left: 0,
+                toJSON: () => ({})
+            }) as DOMRect
         document.body.appendChild(container)
     })
 

@@ -35,7 +35,12 @@ import { hideSummaryCard } from '@lib/journey/semantic-guide'
 import { updateUrlState } from '@lib/orchestration/url-state'
 import { syncSearchStatusForFocus } from '@lib/ui/ui-feedback'
 import { traverseNeighbor } from '@lib/journey/thread-settler-adapter'
-import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS, writeNavStateMirror } from '@lib/stores/navigation.svelte'
+import {
+    navStore,
+    dispatchNavTransition,
+    NAV_TRANSITION_ACTIONS,
+    writeNavStateMirror
+} from '@lib/stores/navigation.svelte'
 import { activeClusterFilter } from '@lib/stores/filter.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
 import { getBusinessRecords } from '@lib/data-store'
@@ -407,4 +412,3 @@ subscribeKeyed(
         setSemanticLaneUiState(laneState ?? '', options)
     }
 )
-
