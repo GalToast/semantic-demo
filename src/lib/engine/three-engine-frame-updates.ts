@@ -21,7 +21,7 @@ import {
     SCENE_ATMOSPHERE as PORT_SCENE_ATMOSPHERE,
     setNodeSporeInstanceMatrix as setNodeSporeInstanceMatrixPort
 } from '@lib/engine/node-manager'
-import { shouldRenderThreads } from '@lib/engine/thread-manager'
+import { shouldRenderThreads, markNodesDirty } from '@lib/engine/thread-manager'
 import { easeOutQuint, easeInOutCubic } from '@lib/utils/math-easing'
 import * as sceneRevealMod from './scene-reveal'
 
@@ -54,11 +54,7 @@ export function computeRevealProgress(now: number): { revealed: number; points: 
  */
 export function updatePointsMaterial(
     pointsRevealProgress: number,
-    state:
-        | Pick<LegacyState, 'focusedNode' | 'trailDepth'> &
-              { semanticDiveMode?: boolean }
-        | null
-        | undefined
+    state: (Pick<LegacyState, 'focusedNode' | 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
 ): void {
     if (!webglContext.pointsMaterial) return
     const isFocused = Number.isFinite(state?.focusedNode)
@@ -135,10 +131,7 @@ export function updateHoverEmissiveFlash(
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A12)
  */
 export function updateMyceliumPulse(
-    state:
-        | (Pick<LegacyState, 'pulsePhase'> & { weather?: { wind_speed_10m?: number } | null })
-        | null
-        | undefined
+    state: (Pick<LegacyState, 'pulsePhase'> & { weather?: { wind_speed_10m?: number } | null }) | null | undefined
 ): boolean {
     const threadsVisible = shouldRenderThreads()
     if (webglContext.myceliumGroup) {
@@ -202,6 +195,7 @@ export function lerpNodesForFrame(now: number): boolean {
     const state = engineState.state
     if (!state?.nodePositions || !state?.targetPositions) return false
     let anyNodeMoved = false
+    const movedIndices: number[] = []
     const lerpFactor = state.focusState?.nodesAreSettling ? 0.14 : 0.08
     state.nodePositions.forEach((pos: NodePosition, i: number) => {
         const target = state.targetPositions[i]
@@ -215,6 +209,7 @@ export function lerpNodesForFrame(now: number): boolean {
             pos.z += dz * lerpFactor
             setNodeSporeInstanceMatrixPort(i)
             anyNodeMoved = true
+            movedIndices.push(i)
         }
     })
 
@@ -226,11 +221,15 @@ export function lerpNodesForFrame(now: number): boolean {
     if (engineState.focusPocket?.applyFocusPocketBreathing(now, engineState.state.nodePositions)) {
         engineState.state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
             setNodeSporeInstanceMatrixPort(idx)
+            movedIndices.push(idx)
         })
         anyNodeMoved = true
     }
 
     if (anyNodeMoved) {
+        // Feed the dirty-node set BEFORE myceliumDirty flips so that
+        // updateMyceliumThreads() can filter pairs on the next call.
+        markNodesDirty(movedIndices)
         if (webglContext.nodeSporeMesh) webglContext.nodeSporeMesh.instanceMatrix.needsUpdate = true
         if (engineState.state) engineState.state.myceliumDirty = true
     }

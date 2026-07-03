@@ -264,6 +264,33 @@ function pushBezierLinePair(positions: number[], colors: number[], pair: EdgePai
     }
 }
 
+// ── Dirty-node tracking for amortized updates ──────────────────────────────
+
+/**
+ * Set of node indices whose positions changed this frame.
+ * Consumed by `updateMyceliumThreads()` to skip pairs that don't
+ * touch any moved node, turning O(N²) bezier rebuilds into O(k·d)
+ * where k = pairs-per-dirty-node and d = dirty-node count.
+ *
+ * Populated by `markNodesDirty()` (called from the lerp loop in
+ * three-engine-frame-updates) and drained at the end of each
+ * `updateMyceliumThreads()` call.
+ */
+const dirtyNodeIndices = new Set<number>()
+
+/**
+ * Record one or more node indices as having moved this frame.
+ * Must be called BEFORE `state.myceliumDirty = true` so the
+ * downstream `updateMyceliumThreads()` can filter pairs.
+ *
+ * @param indices — node indices that had their position lerp'd
+ */
+export function markNodesDirty(indices: Iterable<number>): void {
+    for (const idx of indices) {
+        dirtyNodeIndices.add(idx)
+    }
+}
+
 function getNavigationMode() {
     return state.navState?.mode
 }
@@ -505,6 +532,9 @@ export function createMycelium() {
 export function updateMyceliumThreads(): void {
     if (!webglContext.myceliumConnectionPairs?.length) return
 
+    // Fast path: no nodes moved this frame — skip the entire rebuild.
+    const hasDirtyNodes = dirtyNodeIndices.size > 0
+
     const updateLayer = (line: LineSegments2 | null, layer: number): void => {
         const geom = line?.geometry as LineGeometry | undefined
         const startAttr = geom?.getAttribute('instanceStart') as BufferAttribute | undefined
@@ -512,10 +542,14 @@ export function updateMyceliumThreads(): void {
         if (!startAttr || !endAttr) return
 
         const nextPositions: number[] = []
-        const nextColors: number[] = []
+        // nextColors removed — colors are static post-Fix 1 and not wired
+        // into the per-frame update path. Rebuilding them every frame is
+        // wasted work; skip until the long-term color-amortization follow-up.
         webglContext.myceliumConnectionPairs.forEach((pair) => {
             if (pair.layer !== layer) return
-            pushBezierLinePair(nextPositions, nextColors, { a: pair.a, b: pair.b }, 1, 5)
+            // Amortization: skip pairs where neither endpoint moved.
+            if (hasDirtyNodes && !dirtyNodeIndices.has(pair.a) && !dirtyNodeIndices.has(pair.b)) return
+            pushBezierLinePair(nextPositions, [], { a: pair.a, b: pair.b }, 1, 5)
         })
 
         const startArray = startAttr.array as Float32Array
@@ -544,5 +578,8 @@ export function updateMyceliumThreads(): void {
     updateLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0)
     updateLayer(webglContext.myceliumWispyLines as unknown as LineSegments2, 1)
     updateLayer(webglContext.myceliumBridgeLines as unknown as LineSegments2, 2)
+
+    // Drain the dirty set — consumed for this frame.
+    dirtyNodeIndices.clear()
     state.myceliumDirty = false
 }
