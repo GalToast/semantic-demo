@@ -42,7 +42,7 @@ describe('A11y W42-B: Canvas focus-visible indicator', () => {
     })
 
     it('canvas element has aria-label', () => {
-        expect(src).toMatch(/aria-label="3D semantic business explorer"/)
+        expect(src).toMatch(/aria-label="3D business explorer"/)
     })
 
     it('canvas has :focus-visible CSS rule for visible focus ring', () => {
@@ -82,7 +82,8 @@ describe('A11y W42-B: Thread inspector screen reader labels', () => {
     })
 
     it('title is descriptive (not just "Node N thread")', () => {
-        expect(src).toContain('Thread connection to node')
+        // Renders as 'Connection to {name}' (when name present) or 'Connection to business #N'.
+        expect(src).toMatch(/Connection to \$?\{/)
     })
 
     it('close button has aria-label', () => {
