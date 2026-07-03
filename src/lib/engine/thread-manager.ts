@@ -338,6 +338,22 @@ export function getMyceliumPresentationProfile() {
         // still staying subordinate to points and spore materials.
         return { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04, linewidth: { core: 2.5, wispy: 1.0, bridge: 1.8 } }
     }
+    // Semantic-dive mode needs its own profile because the downstream
+    // `semanticDiveThreadScale` multiplier (0.42 in three-engine-core) applies
+    // on top of whatever core/wispy/bridge values we return here. The old
+    // focusedNode profile (0.16 × 0.42 ≈ 0.067) made threads nearly invisible;
+    // this boosted profile (0.38 × 0.42 ≈ 0.16) keeps them legible while
+    // remaining subordinate to the focused point. Must run BEFORE the generic
+    // focusedNode branch so it captures the semantic-dive case specifically.
+    if (state.semanticDiveMode && state.focusedNode !== null && state.focusedNode !== undefined) {
+        return {
+            core: 0.38,
+            wispy: 0.16,
+            bridge: 0.24,
+            pulse: 0.04,
+            linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 }
+        }
+    }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
         return {
             core: 0.16,
