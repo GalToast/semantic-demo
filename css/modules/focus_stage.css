@@ -195,6 +195,7 @@
     --btn-rgb: var(--cluster-rgb, 121 235 222);
     flex: 1 1 0;
     justify-content: center;
+    min-height: 44px;
     border: 1px solid rgb(var(--btn-rgb) / 0.2);
     background: linear-gradient(180deg, rgb(var(--btn-rgb) / 0.14), rgb(var(--btn-rgb) / 0.08));
     color: var(--color-text-primary);
@@ -842,12 +843,15 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
         min-width: 96px;
     }
 
-    /* Subtle secondary actions: a row of text links under the back button. */
+    /* Subtle secondary actions: a row of text links under the back button.
+       WCAG AAA 2.5.5: keep the quiet visual treatment but ensure each
+       target is at least 44px tall so the secondary actions are usable
+       on desktop too. */
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #btn-focus-center,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #btn-focus-expand,
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search']) #btn-focus-path {
         flex: 0 0 auto;
-        min-height: 24px;
+        min-height: 44px;
         padding: 4px 8px;
         background: transparent;
         border: none;
