@@ -254,6 +254,67 @@
     color: rgba(224, 240, 240, 0.75);
     margin: 0 0 1rem;
 }
+
+/* W49-B: step-by-step quickstart list. Show concrete actions (Search /
+   Click / arrow keys / drag) instead of vague "explore connections" filler.
+   Screen-reader users get the same content via the aria-label on the
+   <ul> ("Quick start steps") + each <li>'s natural bullet semantics. */
+.help-dialog-steps {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1rem;
+}
+.help-dialog-steps li {
+    font-size: 0.78rem;
+    line-height: 1.45;
+    color: rgba(224, 240, 240, 0.78);
+    padding: 0.35rem 0 0.35rem 1.1rem;
+    position: relative;
+    border-top: 1px solid rgba(var(--color-primary-alt-rgb), 0.06);
+}
+.help-dialog-steps li:first-child {
+    border-top: none;
+}
+.help-dialog-steps li::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0.55rem;
+    width: 0.4rem;
+    height: 0.4rem;
+    border-radius: 50%;
+    background: var(--color-primary-alt);
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-alt-rgb), 0.18);
+}
+.help-dialog-steps strong {
+    color: var(--color-text-teal-light);
+    font-weight: 600;
+}
+
+/* Inline <kbd> for keyboard hints. Match the existing kbd pattern
+   (.onboarding-hint .key) so visually it reads as a single design
+   system. Border + dark fill keeps contrast >= 4.5:1 against the
+   help-dialog background per W49-C contrast audit. */
+.help-dialog-inner kbd {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    padding: 0.1rem 0.4rem;
+    border: 1px solid rgba(224, 240, 240, 0.28);
+    border-radius: 0.25rem;
+    background: rgba(0, 0, 0, 0.45);
+    color: var(--color-text-teal-light);
+    line-height: 1;
+    margin: 0 0.1rem;
+}
+
+/* Subtle "press ? for shortcuts" reminder. Slightly de-emphasized so
+   it doesn't compete with the Got it CTA. */
+.help-dialog-hint {
+    font-size: 0.7rem;
+    color: rgba(224, 240, 240, 0.55);
+    margin: 0 0 1.25rem;
+}
 .help-dialog-close {
     padding: 0.4rem 1rem;
     background: rgba(var(--color-primary-alt-rgb), 0.12);

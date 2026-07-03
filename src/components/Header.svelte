@@ -317,12 +317,19 @@
     onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); closeHelpDialog(); } }}
   >
     <div class="help-dialog-inner">
-      <h3 id="help-title">What is Semantic Explorer?</h3>
+      <h3 id="help-title">Explore Montgomery County businesses visually</h3>
       <p id="help-desc">
-        A 3D network of <strong>8,406 Montgomery County businesses</strong>.
-        Dots close together do similar things — not just those nearby.
-        Search, click, and discover connections by what a business does,
-        not just where it is.
+        All <strong>8,406 local businesses</strong> are shown as a 3D network.
+        Businesses that offer similar services sit close together, so you can
+        find <em>connections by what a business does</em>, not just where it is.
+      </p>
+      <ul class="help-dialog-steps" aria-label="Quick start steps">
+        <li><strong>Search</strong> for a service like "coffee" or "HVAC".</li>
+        <li><strong>Click</strong> any business to see details and reviews.</li>
+        <li>Use <kbd>arrow keys</kbd> or <strong>drag</strong> to explore nearby neighbors.</li>
+      </ul>
+      <p class="help-dialog-hint">
+        Press <kbd aria-label="Question mark">?</kbd> anytime for keyboard shortcuts.
       </p>
       <button
         class="help-dialog-close"
