@@ -70,11 +70,13 @@ describe('MapSummary component', () => {
     it('SVG has role="img" with aria-labelledby + aria-describedby', () => {
         expect(source).toContain('class="map-svg"')
         expect(source).toContain('viewBox="0 0 164 70"')
-        expect(source).toMatch(/<svg[^>]*role="img"[^>]*aria-labelledby="map-trail-title"[^>]*aria-describedby="map-trail-desc"/)
+        expect(source).toMatch(
+            /<svg[^>]*role="img"[^>]*aria-labelledby="map-trail-svg-title"[^>]*aria-describedby="map-trail-desc"/
+        )
     })
 
     it('SVG has a <title> + <desc> describing the trail', () => {
-        expect(source).toContain('<title id="map-trail-title">Journey trail</title>')
+        expect(source).toContain('<title id="map-trail-svg-title">Journey trail</title>')
         expect(source).toContain('<desc id="map-trail-desc">')
         // The desc block reports total stops and (when focused) the current
         // step. The exact text is templated, so we look for the substrings.
@@ -93,9 +95,7 @@ describe('MapSummary component', () => {
     })
 
     it('each <li class="map-stop"> gets aria-current="step" when current', () => {
-        expect(source).toMatch(
-            /<li[\s\S]*?aria-current=\{isCurrent \? 'step' : undefined\}/
-        )
+        expect(source).toMatch(/<li[\s\S]*?aria-current=\{isCurrent \? 'step' : undefined\}/)
     })
 
     it('announces the current step via a polite live region', () => {
@@ -108,4 +108,3 @@ describe('MapSummary component', () => {
         expect(source).toContain('Now on step')
     })
 })
-
