@@ -9,6 +9,7 @@
   import { debugLog, debugWarn, debugError } from '@lib/utils/debug';
   import type { EngineCallbacks } from '@lib/engine/lifecycle';
   import type { LoadingPhase } from '@lib/types/state';
+  import { handleCanvasKeydown } from '@lib/journey/canvas-keyboard-nav';
 
   interface Props {
     interactive?: boolean;
@@ -95,6 +96,20 @@
 
   onMount(() => {
     if (!canvasEl) return;
+
+    // ── W48-C keyboard navigation ──────────────────────────────────────────────────
+    // Honor the canvas's declared aria-keyshortcuts
+    // (ArrowUp/Down/Left/Right, Home, End, Plus/Minus). The handler calls
+    // preventDefault + stopImmediatePropagation to override Three.js
+    // OrbitControls (also bound to this canvas DOM element, defaults to
+    // arrow-key camera pan). Listener pattern matches selected-card.ts:240-256:
+    // store the handler ref on the element for idempotent removal on destroy.
+    type CanvasWithKeyHandler = HTMLCanvasElement & {
+      _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
+    }
+    const keyHandler = (e: KeyboardEvent): void => handleCanvasKeydown(e)
+    ;(canvasEl as CanvasWithKeyHandler)._canvasKeyHandler = keyHandler
+    canvasEl.addEventListener('keydown', keyHandler)
 
     // Fallback: hide overlay after 5 seconds if engine hasn't signalled ready.
     // Gate on !canvasReady so a fast scene-ready path (onLoadingPhase →
@@ -203,6 +218,24 @@
   });
 
   onDestroy(() => {
+    // W48-C: remove the canvas keyboard listener (idempotent via the
+    // _canvasKeyHandler ref pattern, mirroring selected-card.ts:240-256).
+    if (canvasEl) {
+      const handler = (
+        canvasEl as HTMLCanvasElement & {
+          _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
+        }
+      )._canvasKeyHandler
+      if (handler) {
+        canvasEl.removeEventListener('keydown', handler)
+        ;(
+          canvasEl as HTMLCanvasElement & {
+            _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
+          }
+        )._canvasKeyHandler = null
+      }
+    }
+
     componentDestroyed = true;
     engineLifecycleDestroyed = true;
     engineHasInit = false;
