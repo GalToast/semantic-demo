@@ -80,7 +80,9 @@ describe('SearchResults component', () => {
     });
 
     it('keyboard aria-keyshortcuts on result list container', () => {
-        expect(source).toContain('aria-keyshortcuts="ArrowDown ArrowUp ArrowLeft ArrowRight Home End Enter Escape"');
+        // W48-D: ArrowLeft/Right removed (they were silently cycling).
+        // The listbox now only advertises the keys it actually honors.
+        expect(source).toContain('aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"');
     });
 
     it('peek label uses canonical panelSurfaceDetail state, not summary.mode', () => {

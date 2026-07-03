@@ -40,12 +40,16 @@ describe('A11y W43-A: Arrow key navigation in search results', () => {
         expect(src).toMatch(/key === 'ArrowUp'[\s\S]*?setActiveResultByIndex/)
     })
 
-    it('ArrowDown wraps to first result from last', () => {
-        expect(src).toMatch(/ArrowDown[\s\S]*?setActiveResultByIndex[\s\S]*?activeIndex \+ 1 : 0/)
+    // W48-D: ArrowDown at the last result no longer wraps — it surfaces an
+    // "End of results" toast instead. Verifies the boundary branch fires.
+    it('ArrowDown at last result surfaces an end-of-results toast (no silent wrap)', () => {
+        expect(src).toMatch(/ArrowDown[\s\S]*?showExperienceToast\(['"]End of results['"]/)
     })
 
-    it('ArrowUp wraps to last result from first', () => {
-        expect(src).toMatch(/ArrowUp[\s\S]*?setActiveResultByIndex[\s\S]*?activeIndex - 1 : count - 1/)
+    // W48-D: ArrowUp at the first result returns focus to the search input
+    // instead of wrapping to the last result.
+    it('ArrowUp at first result returns focus to search input (no silent wrap)', () => {
+        expect(src).toMatch(/ArrowUp[\s\S]*?activeIndex === 0[\s\S]*?search-input/)
     })
 
     it('Home key navigates to first result', () => {

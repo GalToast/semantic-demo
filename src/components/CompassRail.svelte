@@ -46,6 +46,46 @@
   // Track pending timeouts so they can be cleared on unmount.
   const pendingTimers: ReturnType<typeof setTimeout>[] = [];
 
+  // ── W48-D: roving tabindex + arrow-key navigation ────────────────────────
+  // Without this, screen-reader and keyboard-only users must Tab through
+  // every compass step individually. With roving tabindex + ArrowUp/Down,
+  // they can navigate the journey phases like a vertical WAI-ARIA tablist.
+  // Tracks which step has focus so arrow keys move focus + activate on Enter/Space.
+  let compassFocusIndex = $state(0);
+
+  function handleCompassKeydown(event: KeyboardEvent): void {
+    const steps = compassSteps();
+    if (steps.length === 0) return;
+    const last = steps.length - 1;
+    let nextIndex: number;
+
+    switch (event.key) {
+      case 'ArrowDown':
+        nextIndex = compassFocusIndex < last ? compassFocusIndex + 1 : 0;
+        break;
+      case 'ArrowUp':
+        nextIndex = compassFocusIndex > 0 ? compassFocusIndex - 1 : last;
+        break;
+      case 'Home':
+        nextIndex = 0;
+        break;
+      case 'End':
+        nextIndex = last;
+        break;
+      case 'Enter':
+      case ' ':
+        event.preventDefault();
+        handleAction(steps[compassFocusIndex]?.phase ?? '');
+        return;
+      default:
+        return;
+    }
+    event.preventDefault();
+    compassFocusIndex = nextIndex;
+    const buttons = document.querySelectorAll<HTMLButtonElement>('.compass-rail .compass-step');
+    buttons[nextIndex]?.focus();
+  }
+
   /**
    * Dispatch nav transition + compass state animation for a clicked step.
    *
@@ -106,11 +146,13 @@
     class:synthesizing={compassPhase() === 'synthesizing'}
     id="compass-rail"
     aria-label="Journey compass"
+    aria-keyshortcuts="ArrowUp ArrowDown Home End Enter Space"
     onpointerdown={(e) => e.stopPropagation()}
     onwheel={(e) => e.stopPropagation()}
     ondblclick={(e) => e.stopPropagation()}
+    onkeydown={handleCompassKeydown}
   >
-    {#each compassSteps() as step (step.phase)}
+    {#each compassSteps() as step, idx (step.phase)}
       <button
         class="compass-step"
         class:primary={step.phase === 'search' && (panelSurface === 'focus-search' || graphContext === 'focus-search') || step.state === 'current' || step.state === 'done'}
@@ -119,6 +161,7 @@
         onclick={() => handleAction(step.phase)}
         aria-label="Navigate to {step.phase}"
         aria-current={step.state === 'current' ? 'step' : undefined}
+        tabindex={idx === compassFocusIndex ? 0 : -1}
         type="button"
       >
         <span class="step-dot"></span>

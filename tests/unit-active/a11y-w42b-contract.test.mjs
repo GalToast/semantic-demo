@@ -126,7 +126,11 @@ describe('A11y W42-B: Search results live announcement', () => {
     })
 
     it('result listbox has aria-keyshortcuts', () => {
-        expect(src).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp ArrowLeft ArrowRight Home End Enter Escape"/)
+        // W48-D: dropped ArrowLeft/Right from the advertised shortcuts since
+        // they were removed from the handler. The listbox only honors
+        // ArrowDown/Up (move), Home/End (jump), Enter/Space (activate),
+        // Escape (clear).
+        expect(src).toMatch(/aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"/)
     })
 
     it('result listbox has aria-activedescendant', () => {
