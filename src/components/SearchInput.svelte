@@ -364,13 +364,13 @@
 
   <div class="search-status search-hint" id="search-status" role="status" aria-live="polite" hidden={status === 'idle' || status === 'results' || $searchState.results.length > 0}>
     <span class="search-spinner" id="search-spinner" aria-hidden={status !== 'searching'}></span> <!-- audit-ok: template attribute, not transformed — bundle preserves native !== -->
-    {status === 'searching'
-      ? 'Searching semantic field...'
-      : status === 'error'
-        ? 'Search is unavailable right now.'
-        : status === 'empty'
-          ? 'No matching businesses found.'
-          : ''}
+    {#if status === 'error'}
+      Search is unavailable right now.
+    {:else if status === 'empty'}
+      No matching businesses found.
+    {:else if status === 'searching'}
+      <!-- The search-trail cue overlay supplies the narrative "Scanning..." message. Keep the spinner here for local feedback without duplicating the announcement. -->
+    {/if}
   </div>
 </div>
 

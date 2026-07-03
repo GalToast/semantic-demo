@@ -151,13 +151,14 @@ describe('UX state coverage — Tier 1b (loading OR error OR empty)', () => {
         expect(src).toMatch(/<div[^>]*class="sr-only"[^>]*aria-live="polite"[^>]*aria-atomic="true"[^>]*role="status"/)
     })
 
-    it('SearchInput announces loading + error + empty in one status div', () => {
+    it('SearchInput announces error + empty in one status div and defers searching narrative to the cue', () => {
         const src = readFile('src/components/SearchInput.svelte')
-        // The status div handles all three states via conditional rendering
+        // The status div handles error/empty states; searching state keeps the
+        // spinner visible and lets the search-trail cue overlay provide the
+        // narrative so we don't duplicate "Scanning..." announcements.
         expect(src).toContain('search-status')
         expect(src).toContain('aria-live="polite"')
-        // Each state message is present
-        expect(src).toContain('Searching semantic field')
+        expect(src).toContain("status === 'searching'")
         expect(src).toContain('Search is unavailable')
         expect(src).toContain('No matching businesses found')
     })

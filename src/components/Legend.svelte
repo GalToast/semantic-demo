@@ -291,6 +291,15 @@
     bottom: calc(122px + env(safe-area-inset-bottom, 0px));
     max-height: 38vh;
   }
+  @media (max-width: 768px) {
+    .legend,
+    .legend.open {
+      /* Leave room for the bottom-center toast / status pills so the legend
+         does not overlap them on mobile. The legend remains scrollable. */
+      bottom: 5.5rem;
+      max-height: 45vh;
+    }
+  }
   .legend.open {
     transform: translateX(0);
   }

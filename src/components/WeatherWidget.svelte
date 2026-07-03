@@ -305,10 +305,10 @@
   }
 
   .weather-widget.compact {
-    /* Mobile header collapses to ~48px on compact; keep the same
-       token-driven clearance pattern as the desktop rule above so the
-       pill never overlaps the chrome bar. */
-    top: calc(var(--app-header-height, 60.8px) + 0.3rem);
+    /* The real mobile header is 94–121px tall (mode chips + brand), not the
+       ~48px the previous comment assumed. Use a fixed top offset that clears
+       the full header across all mobile states. */
+    top: 8.5rem;
     right: 0.3rem;
     display: block;
   }
