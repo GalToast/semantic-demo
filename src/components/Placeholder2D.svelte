@@ -60,9 +60,18 @@
   }))
 </script>
 
-<main
-  class="placeholder-2d"
+<!--
+  W49-G: this used to be a <main> element, but App.svelte already declares
+  one <main id="main-content">. Nesting a second <main> inside the outer
+  one trips axe-core's landmark-main-is-top-level and
+  landmark-no-duplicate-main rules. Convert to role="region" (a valid
+  nested landmark) — same semantics for assistive tech, no duplicate
+  main violation.
+-->
+<div
+  role="region"
   aria-label="Semantic explorer preview"
+  class="placeholder-2d"
   data-testid="placeholder-2d"
 >
   <svg
@@ -192,8 +201,7 @@
       Click or tap to load the full 3D scene.
     </p>
   </div>
-</main>
-
+</div>
 <style>
   .placeholder-2d {
     position: fixed;

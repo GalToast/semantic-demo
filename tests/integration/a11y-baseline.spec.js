@@ -34,7 +34,7 @@
 import { test } from '@playwright/test'
 import AxeBuilder from '@axe-core/playwright'
 import {
-    _installMockFetch,
+    installMockFetch,
     captureConsoleErrors,
     withRetry,
     navigateToApp,

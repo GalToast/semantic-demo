@@ -16,7 +16,6 @@
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
-  import { getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
   import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
@@ -35,7 +34,6 @@
 
   import Splash from '@components/Splash.svelte';
   import Placeholder2D from '@components/Placeholder2D.svelte';
-  import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { signalSceneReady, signalSceneError } from '@lib/stores/scene-ready.svelte';
   import Legend from '@components/Legend.svelte';
@@ -142,7 +140,7 @@
   // Playwright auto-signal in this file calls setRenderKind('webgl') on
   // mount, which would otherwise leave this local at 'placeholder2d'
   // forever and keep <Placeholder2D> rendered on top of <SearchInput>).
-  let renderKind = $derived(getBypassAttr('renderKind') ?? getInitialRenderKind());
+  let renderKind = $derived(parity.renderKind);
   let s3dSceneReady = $state(false);
   let s3dSceneError = $state(false);
 
@@ -216,8 +214,14 @@
   // Focus stage: only when in focus/inside/trail or a node is explicitly focused
   // Note: avoid `!==` in $derived — Svelte 5 strict-mode compiler bug
   // inverts `!==` to `===`. Use `!= null` (Pattern 3) for null checks.
+  // W49-c: include `parity.panelSurface === 'focus-search'` so the surface-contract
+  // test path (which falls back to body.dataset mutations when the bridge actions
+  // are racy) still mounts JourneyChrome and TrailControls. Without this, map-trail
+  // surface contract times out at `#btn-focus-path` because JourneyChrome never
+  // mounts in the focus-search fallback path even though URL hydration routes
+  // nav.surface = 'focus-search' through the production chain.
   let focusActive = $derived(
-    nav.mode === 'focus' || nav.mode === 'inside' || nav.mode === 'trail' || nav.focusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
+    nav.mode === 'focus' || nav.mode === 'inside' || nav.mode === 'trail' || nav.focusedIndex != null || parity.focusPanelMode === 'field-node' || parity.panelSurface === 'focus' || parity.panelSurface === 'inside' || parity.panelSurface === 'trail' || parity.panelSurface === 'focus-search' || parity.focusSearchForced || parity.panelSurface === 'semantic-dive'
   );
   let focusStageActive = $derived(focusActive && !mapModeActive);
 
@@ -315,8 +319,11 @@
   {/if}
 {/snippet}
 
-<!-- A2-6: H1 page title — first heading, visible to screen readers and sighted users -->
-<h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
+<!-- A2-6: H1 page title — first heading, visible to screen readers and sighted users.
+     W49-G: previously rendered before <Header> and <main>, which tripped
+     axe-core's region rule ("all page content in a landmark"). The H1 is
+     page content the user needs (SR + SEO + wordmark fallback on mobile)
+     and so belongs inside the main landmark, not floating outside it. -->
 
 <!-- App lifecycle bootstrap (side-effect component, no DOM output) -->
 <AppBoot
@@ -333,8 +340,11 @@
   }}
 />
 
-<!-- Screen-reader-only live region for dynamic announcements -->
-<div class="sr-only" aria-live="polite" aria-atomic="true" id="sr-announcer"></div>
+<!-- Screen-reader-only live region for dynamic announcements.
+     W49-G: relocated INSIDE <main> below so axe-core's region rule
+     ("all content in a landmark") passes — page content like this
+     announcer belongs inside the main landmark, not floating outside. -->
+<!-- (moved) -->
 
 {#if headerVisible}
   <!-- Header with mode chips — outside <main> as its own banner landmark -->
@@ -343,6 +353,12 @@
 {/if}
 
 <main id="main-content" class="semantic-main" class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'} tabindex="-1" aria-label="Semantic explorer application">
+<h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
+<!-- Screen-reader-only live region for dynamic announcements.
+     W49-G: relocated inside <main> so axe-core's region rule
+     ("all content in a landmark") passes. Page content like this
+     announcer belongs inside the main landmark, not floating outside. -->
+<div class="sr-only" aria-live="polite" aria-atomic="true" id="sr-announcer"></div>
 <div
   id="semantic-explorer"
   class="semantic-explorer"
