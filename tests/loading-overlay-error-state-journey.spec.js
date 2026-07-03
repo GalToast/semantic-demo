@@ -63,8 +63,15 @@ test.describe('LoadingOverlay error-state role=alert transition', () => {
 
         // The error-state copy + retry button are rendered in the error branch.
         await expect(alertOverlay.locator('.loading-title')).toHaveText('Unable to load')
-        await expect(alertOverlay.locator('.loading-note')).toContainText('Test forced error from journey test')
         await expect(alertOverlay.locator('.loading-retry-btn')).toBeVisible()
+
+        // W48-H: the visible note now shows a friendly title + detail
+        // (not the raw 'Test forced error...' message). The raw message
+        // is preserved in the <details> block for diagnostics.
+        const note = alertOverlay.locator('#loading-error-message')
+        await expect(note).toContainText('Something went wrong')
+        const technical = alertOverlay.locator('.loading-error-technical code')
+        await expect(technical).toHaveText('Test forced error from journey test')
 
         // The aria-valuenow attribute is intentionally absent in the error state
         // (a progressbar with no value would be invalid). Assert by absence.

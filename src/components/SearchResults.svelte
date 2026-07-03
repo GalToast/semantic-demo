@@ -33,6 +33,7 @@
   import { showErrorToast, showExperienceToast } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { appState } from '@lib/state/app.svelte';
+  import { friendlyErrorMessage } from '@lib/utils/error-messages';
   import type { SearchResult } from '@lib/types/state';
   import SearchResultItem from '@components/SearchResultItem.svelte';
 
@@ -85,6 +86,11 @@
 
   let isFullError = $derived(searchError != null && searchError.type === 'full');
   let isInlineError = $derived(searchError != null && searchError.type === 'inline');
+  // W48-H: normalize the raw searchError.message ("Failed to fetch",
+  // "NetworkError...", etc.) into user-friendly copy via the shared
+  // friendlyErrorMessage() normalizer. Both the full error panel and the
+  // inline retry banner use the same friendly title/detail.
+  let friendlyError = $derived(isFullError || isInlineError ? friendlyErrorMessage(searchError?.message) : null);
   const isResultsSurfaceActive = $derived(isSearching || isFullError || isEmpty || total > 0);
 
   // ── Roving tabindex active index ──────────────────────────────────────────────
@@ -356,13 +362,16 @@
       <div class="search-error-state">
         <span class="search-error-kicker">Retry needed</span>
         <div class="search-error-text">
-          We could not finish "<strong>{searchError?.query}</strong>" just now. Retry the live search or clear it and keep exploring.
+          <strong>{friendlyError?.title ?? 'Something went wrong'}</strong>
+          {#if friendlyError?.detail}
+            <div class="search-error-detail-message">{friendlyError.detail}</div>
+          {/if}
         </div>
-        {#if searchError?.message}
-          <div class="search-error-detail" data-testid="search-error-detail">
-            <span class="search-error-detail-label">Reason:</span>
-            <code class="search-error-detail-message">{searchError.message}</code>
-          </div>
+        {#if friendlyError?.technical}
+          <details class="search-error-technical" data-testid="search-error-detail">
+            <summary>Technical details</summary>
+            <code>{friendlyError.technical}</code>
+          </details>
         {/if}
         <div class="search-error-actions">
           <button class="search-error-retry-btn" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
@@ -390,15 +399,17 @@
           </div>
         </div>
         <div class="search-empty-discovery">
-          <span class="discovery-tag">Pro Tip</span>
-          <span class="discovery-text">The mycelium thrives on semantic relationships. Try searching for a specific trade like "HVAC" or a mood like "cozy".</span>
+          <span class="discovery-tag">Tip</span>
+          <span class="discovery-text">Results match what businesses do, not just where they are. Try a category like “HVAC” or a vibe like “cozy.”</span>
         </div>
       </div>
     {:else if total > 0}
       {#if isInlineError}
         <div class="search-error-inline-retry">
           <span class="search-error-inline-msg">
-            Search is recovering for "<strong>{searchError?.query}</strong>".
+            <strong>{friendlyError?.title ?? 'Search is recovering'}</strong>
+            for "<strong>{searchError?.query}</strong>".
+            {#if friendlyError?.detail}<span class="search-error-inline-detail">{friendlyError.detail}</span>{/if}
           </span>
           <button class="search-error-retry-btn compact" type="button" aria-label={`Retry search for ${searchError?.query}`} onclick={onRetry}>Retry</button>
         </div>

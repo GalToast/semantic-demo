@@ -15,6 +15,7 @@
   import { withStateMutation } from '@lib/state/with-state-mutation';
   import { debugWarn } from '@lib/utils/debug'
   import { DisposableRegistry } from '@lib/utils/disposable-registry'
+  import { friendlyErrorMessage } from '@lib/utils/error-messages'
   import {
     centerMapOnRouteAnchor,
     initMap,
@@ -40,7 +41,14 @@
   const _registry = new DisposableRegistry({ label: 'MapView', warnAfterDispose: false });
 
   let status = $state<MapStatus>('loading');
+  // W48-H: statusDetail surfaces the map-load state. We hold a separate
+  // rawError so the error state can be normalized through friendlyErrorMessage
+  // — Leaflet/Cloudflare failures produce technical messages like
+  // "Failed to fetch" or HTML error pages that are incomprehensible to
+  // users. The friendly title + detail are derived from rawError.
   let statusDetail = $state('Loading county terrain');
+  let rawError: unknown = $state(null);
+  let friendlyMapError = $derived(status === 'error' ? friendlyErrorMessage(rawError) : null);
   let mounted = false;
   let activationToken = 0;
 
@@ -140,6 +148,7 @@
     } catch (error) {
       debugWarn('MapView Leaflet activation failed:', error);
       status = 'error';
+      rawError = error;
       statusDetail = error instanceof Error ? error.message : 'Map failed to load';
     }
   }
@@ -191,9 +200,20 @@
   {#if !(status === 'ready')}
     <div class="map-status" class:is-error={status === 'error'} role="status" aria-live="polite">
       <span class="map-status-dot" aria-hidden="true"></span>
-      <span>{statusDetail}</span>
-      {#if status === 'error'}
+      {#if status === 'error' && friendlyMapError}
+        <div class="map-status-text">
+          <strong>{friendlyMapError.title}</strong>
+          {#if friendlyMapError.detail}<div class="map-status-detail">{friendlyMapError.detail}</div>{/if}
+          {#if friendlyMapError.technical}
+            <details class="map-status-technical">
+              <summary>Technical details</summary>
+              <code>{friendlyMapError.technical}</code>
+            </details>
+          {/if}
+        </div>
         <button class="map-retry-btn" type="button" onclick={activateLeafletMap}>Retry</button>
+      {:else}
+        <span>{statusDetail}</span>
       {/if}
     </div>
   {/if}
@@ -314,6 +334,36 @@
     background: #ff976b;
     box-shadow: 0 0 18px rgba(255, 151, 107, 0.75);
     animation: none;
+  }
+
+  .map-status-text {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    text-align: left;
+  }
+  .map-status-detail {
+    font-size: 0.78rem;
+    color: rgba(255, 225, 209, 0.78);
+    font-weight: 400;
+  }
+  .map-status-technical {
+    font-size: 0.65rem;
+    margin-top: 0.25rem;
+  }
+  .map-status-technical summary {
+    cursor: pointer;
+    user-select: none;
+    color: rgba(255, 225, 209, 0.6);
+  }
+  .map-status-technical code {
+    display: block;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.6rem;
+    color: rgba(255, 225, 209, 0.5);
+    word-break: break-word;
+    margin-top: 0.2rem;
   }
 
   .map-view-footer {

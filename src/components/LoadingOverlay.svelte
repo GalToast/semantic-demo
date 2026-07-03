@@ -18,6 +18,7 @@
 <script lang="ts">
   import { fade } from 'svelte/transition';
   import { loadingPhaseStore, dataLoadState } from '@lib/data-store';
+  import { friendlyErrorMessage } from '@lib/utils/error-messages';
   import type { LoadingPhase, LoadingPhaseMeta } from '@lib/types/state';
 
   interface Props {
@@ -46,7 +47,13 @@
   // W47-D: hide on launch (success). On error, stay visible and switch to the
   // error state so the user knows what happened and can reload.
   let isError = $derived($dataLoadState.status === 'error');
-  let errorMessage = $derived($dataLoadState.error);
+  // W48-H: surface user-friendly error copy (was: raw $dataLoadState.error
+  // like "Failed to fetch" or "Unexpected token < in JSON at position 0").
+  // The raw message is preserved in friendly.technical for diagnostics and
+  // for the optional <details> expansion; the headline + detail come from
+  // the shared friendlyErrorMessage() normalizer so all error surfaces
+  // (LoadingOverlay, MapView, SearchResults) speak in one voice.
+  let friendly = $derived(isError ? friendlyErrorMessage($dataLoadState.error) : null);
   let actuallyVisible = $derived(
     visible &&
       !(phase === 'launch')
@@ -66,9 +73,10 @@
     class:is-error={isError}
     id="loading-overlay"
     role={isError ? 'alert' : 'progressbar'}
-    aria-valuenow={isError ? undefined : Math.round(progress * 100)}
-    aria-valuemin={isError ? undefined : 0}
-    aria-valuemax={isError ? undefined : 100}
+    aria-describedby={isError ? 'loading-error-message' : undefined}
+    aria-valuenow={isError ? null : Math.round(progress * 100)}
+    aria-valuemin={isError ? null : 0}
+    aria-valuemax={isError ? null : 100}
     aria-label={isError ? 'Loading failed — Semantic Explorer' : 'Loading semantic explorer'}
     data-loading-phase={phase}
     data-loading-state={isError ? 'error' : 'active'}
@@ -78,7 +86,16 @@
       {#if isError}
         <div class="loading-kicker">Semantic Explorer</div>
         <div class="loading-title">Unable to load</div>
-        <p class="loading-note">{errorMessage ?? 'The data failed to load.'}</p>
+        <p id="loading-error-message" class="loading-note" role="alert" aria-live="assertive">
+          <strong>{friendly?.title ?? 'Something went wrong'}</strong>
+          {#if friendly?.detail}<br />{friendly.detail}{/if}
+        </p>
+        {#if friendly?.technical}
+          <details class="loading-error-technical">
+            <summary>Technical details</summary>
+            <code>{friendly.technical}</code>
+          </details>
+        {/if}
         <button
           type="button"
           class="loading-retry-btn"
@@ -165,6 +182,26 @@
     color: var(--color-primary-alt, var(--color-primary-alt));
     cursor: pointer;
     transition: background 0.15s ease, color 0.15s ease;
+  }
+  .loading-error-technical {
+    font-size: 0.7rem;
+    color: rgba(255, 230, 230, 0.65);
+    margin: 0.25rem 0 0.5rem;
+  }
+  .loading-error-technical summary {
+    cursor: pointer;
+    user-select: none;
+    margin-bottom: 0.25rem;
+  }
+  .loading-error-technical code {
+    display: block;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.65rem;
+    color: rgba(255, 230, 230, 0.5);
+    word-break: break-word;
+    padding: 0.25rem 0.5rem;
+    background: rgba(0, 0, 0, 0.25);
+    border-radius: 0.25rem;
   }
   .loading-retry-btn:hover {
     background: var(--color-primary-alt, var(--color-primary-alt));

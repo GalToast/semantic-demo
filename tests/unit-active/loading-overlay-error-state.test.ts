@@ -55,7 +55,7 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
         expect(overlay!.getAttribute('aria-valuemax')).toBe('100')
     })
 
-    it('flips to role="alert" and aria-label="Loading failed — Semantic Explorer" when status="error"', async () => {
+    it('flips to role="alert" and surfaces friendly error copy when status="error"', async () => {
         const { container } = render(LoadingOverlay)
         // Sanity: start as progressbar
         const overlay = container.querySelector('#loading-overlay')!
@@ -74,14 +74,23 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
         await Promise.resolve()
         await Promise.resolve()
 
-        // role=alert takes precedence, role-aria-label updates, role-value attrs
-        // absent (role=alert doesn't carry value attrs).
+        // On error the overlay switches to alert so screen readers announce the
+        // failure; the raw/technical error is preserved in the details block.
         expect(overlay.getAttribute('role')).toBe('alert')
         expect(overlay.getAttribute('aria-label')).toBe('Loading failed — Semantic Explorer')
         expect(overlay.getAttribute('data-loading-state')).toBe('error')
-        expect(overlay.getAttribute('aria-valuenow')).toBeNull()
-        expect(overlay.getAttribute('aria-valuemin')).toBeNull()
-        expect(overlay.getAttribute('aria-valuemax')).toBeNull()
+        expect(overlay.getAttribute('aria-describedby')).toBe('loading-error-message')
+
+        const errorMessage = overlay.querySelector('#loading-error-message')
+        expect(errorMessage).toBeTruthy()
+        expect(errorMessage!.getAttribute('role')).toBe('alert')
+        expect(errorMessage!.getAttribute('aria-live')).toBe('assertive')
+        expect(errorMessage!.textContent).toContain('Something went wrong')
+
+        // Raw technical detail is surfaced in the disclosure for diagnostics.
+        const technical = overlay.querySelector('.loading-error-technical code')
+        expect(technical).toBeTruthy()
+        expect(technical!.textContent).toContain('Data file missing')
     })
 
     it('shows the error copy (kicker=Semantic Explorer, title=Unable to load, note=error message) on status="error"', async () => {
@@ -98,7 +107,12 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
         const overlay = container.querySelector('#loading-overlay')!
         expect(overlay.querySelector('.loading-kicker')?.textContent).toContain('Semantic Explorer')
         expect(overlay.querySelector('.loading-title')?.textContent).toContain('Unable to load')
-        expect(overlay.querySelector('.loading-note')?.textContent).toContain('Worker build failed')
+        // W48-H: the note now shows the friendly normalized title + detail
+        // (was: raw 'Worker build failed'). The raw message is preserved
+        // in the <details> block.
+        expect(overlay.querySelector('.loading-note')?.textContent).toContain('Something went wrong')
+        expect(overlay.querySelector('.loading-note')?.textContent).toContain('Please try again')
+        expect(overlay.querySelector('.loading-error-technical code')?.textContent).toBe('Worker build failed')
         // Retry button is rendered in error state.
         expect(overlay.querySelector('.loading-retry-btn')).toBeTruthy()
     })
