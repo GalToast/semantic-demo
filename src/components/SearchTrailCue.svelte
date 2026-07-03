@@ -28,7 +28,18 @@
     bottom: 5rem;
     left: 50%;
     transform: translateX(-50%);
-    z-index: var(--z-toast, 700);
+    /* W47 audit round 4 (mobile-cue overlap): the original
+       `var(--z-toast, 700)` resolved to 1200 (defined in z-layers.css),
+       above every other interactive layer including search results at
+       z-index: calc(var(--z-search, 100) - 1) = 99. On mobile, where the
+       search panel is bottom-anchored at the same screen region as the
+       cue, the cue rendered ON TOP of result cards and occluded Match 3
+       until the user clicked "Show more". Fix: drop the cue to z-index 50,
+       above canvas/threads (z=0/20) but below all interactive chrome
+       (panels z=80, results z=99). Search results now win the overlap on
+       mobile; the cue remains visible when no result list is on screen
+       (intro beat). */
+    z-index: 50;
     width: min(90vw, 400px);
     background: rgba(7, 16, 24, 0.94);
     backdrop-filter: blur(14px);
