@@ -143,3 +143,13 @@ Use narrower checks when validating a scoped change.
 - Pi harness self-improvement is allowed when friction reveals a safe, scoped upgrade.
 - Keep reusable Pi harness rules in global Pi docs/skills where appropriate, not in this repo file unless they are repo-specific.
 - For JavaScript scratch work, prefer the `js-repl` skill/tool when available instead of embedding REPL rules here.
+
+## Key Product Invariants (W47 hot-path)
+
+- **Svelte 5 reactivity fix pattern (PR-2 / 3-bug stack, see `346891d8`):**
+  - **One-time-snapshot state reads `const renderKind = getInitialRenderKind()`** is the foot-gun. Switch to `$state: $derived(getBypassAttr('renderKind') ?? getInitialRenderKind())" so body class flips react to gate flips.
+  - **Order matters:** `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)` so the Playwright auto-signal from `__PLAYWRIGHT__` wins cleanly when the test wants webgl, instead of being overwrote by the later placeholder-path setRenderKind.
+  - **First-visit help dialog** can sit on top of the search input on mobile; dismiss it in any test that types into the input (fills dialog + 1 .fill() line).
+  - All three land together in one fix. Same pattern recurs wherever a module has `const foo = getInitial*()` at the top.
+
+## Pi Harness Notes
