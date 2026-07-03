@@ -406,7 +406,13 @@
   {/if}
 
   <!-- Layer 80: Info panel -->
-  {#if infoPanelLazy.current}
+  <!-- W47-d: hide InfoPanel in Map mode. infoPanelLazy.ensure() may keep
+       `infoPanelLazy.current` truthy (mapTrailSearchLaneActive triggers it),
+       which would otherwise render the panel AND its search-results
+       wrapper, double-stacking with the floating map-trail <SearchBar>
+       and producing two .search-results-wrapper.active elements (one
+       off-screen at x=-624). Map mode owns its own chrome. -->
+  {#if infoPanelLazy.current && !mapModeActive}
     {@const Cmp = infoPanelLazy.current}
     <Cmp open={infoPanelOpen} content={searchPanelContent as unknown as Snippet} />
   {/if}

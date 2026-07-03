@@ -385,6 +385,17 @@ body.surface-map-any .info-panel {
     box-shadow: 0 28px 68px var(--shadow-penumbra);
 }
 
+/* W47-e: drop the SearchBar.svelte translateX(-50%) centering transform for
+   Map mode at all viewports. The mobile_premium__state.css and
+   mobile_premium__surfaces.css rules handle narrow screens via their own
+   media queries; this is the desktop fallback. Without this override the
+   floating map-trail SearchBar centers on the full container width and the
+   search-result-row grid first column shifts off-screen left, hiding
+   business names inside the cards. */
+body.surface-map-any .search-container {
+    transform: none;
+}
+
 .info-panel.collapsed {
     transform: translateX(calc(-100% - 16px));
     opacity: 0;

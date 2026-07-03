@@ -588,6 +588,12 @@
         top: calc(10px + env(safe-area-inset-top, 0px));
         bottom: auto;
         margin: 0;
+        /* W47-e: drop the SearchBar.svelte translateX(-50%) centering transform
+           for Map mode. With left:8px + right:8px the container spans 1264px,
+           so translateX(-50%) shifts the visible area to x=-624..640 and
+           pushes the search-result-row grid first column off-screen left,
+           hiding business names. */
+        transform: none;
         box-shadow: var(--shadow-glass);
         border: var(--glass-border-glow);
     }

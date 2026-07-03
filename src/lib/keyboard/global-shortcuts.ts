@@ -126,6 +126,15 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         // browser's default back-nav fires AFTER the handler and
         // overwrites the page to about:blank (Visual QA Round 3 finding).
         if (e.key === 'Escape') {
+            // W47-c: If a <dialog open> is on screen, let the browser's
+            // native cancel handler close it. Without this early return,
+            // our preventDefault() below would suppress the dialog's
+            // built-in Escape handler, leaving the modal stuck (audited
+            // against the help-dialog in src/components/Header.svelte).
+            const openDialog = document.querySelector('dialog[open]')
+            if (openDialog) {
+                return
+            }
             e.preventDefault()
             const searchInput = document.getElementById('search-input') as HTMLInputElement | null
             if (searchInput) {

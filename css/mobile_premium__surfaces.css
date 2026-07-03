@@ -876,6 +876,10 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         max-width: none;
         max-height: min(38dvh, 320px);
         box-sizing: border-box;
+        /* W47-e: drop the SearchBar.svelte translateX(-50%) centering transform
+           for Map mode. With width:100% the -50% shifts visible content off-screen
+           left and the search-result-row grid first column hides business names. */
+        transform: none;
     }
 
     body.surface-map-any .search-container .search-results.active {
