@@ -1279,13 +1279,17 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
      * focusBeaconTexture getters in thread-inspector-webgl.ts were reading from
      * appState fields that were never assigned, so endpoint sprites rendered as
      * plain white. PR-Item1 routed the getters to webglContext.
-     *
-     * Skipped: after focusOnNode the inspectedStrandGroup is not created in
-     * headless Chromium in the widget-journey context, so this assertion cannot
-     * pass. Re-enable once the strand-overlay subscriber fires reliably.
      */
-    test.skip('22c. inspected-strand endpoint sprites receive textured maps after focus', async ({ page }) => {
+    test('22c. inspected-strand endpoint sprites receive textured maps after focus', async ({ page }) => {
         await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Do not gate this test on dismissing the gesture gate / mounting the
+        // 3D scene. headless Chromium may not expose WebGL, but appState-level
+        // strand bookkeeping is independent of the renderer. Match the 22b
+        // pattern: poll for data, drive focus through the exposed action, then
+        // inspect the strand state. Earlier attempts to click the splash/placeholder
+        // CTA before focusing deadlocked the focus pocket population (the gate
+        // dismissal triggers WebGL work that competes with the focus subscriber).
 
         // Poll until business records are available — same gating as 22b.
         await page.waitForFunction(
@@ -1297,9 +1301,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
             { timeout: 30000 }
         )
 
-        // Drive focus via the same real-user-action path as 22b. We deliberately
-        // avoid clicking the canvas (headless chromium may not have WebGL) and
-        // use the exposed `__navActions__.focusOnNode` entry point.
+        // Drive focus through the real user action exposed on window.
         const focusResult = await page.evaluate(() => {
             const actions = window.__navActions__
             if (!actions || typeof actions.focusOnNode !== 'function') {
@@ -1308,6 +1310,57 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
             return { ok: actions.focusOnNode(0) }
         })
         expect(focusResult.ok, `focusOnNode should return true, got ${JSON.stringify(focusResult)}`).toBe(true)
+
+        // Give the subscriber a moment to run applyLocalNeighborhoodFocus,
+        // then assert the focus pocket populated (same shape as 22b).
+        await page.waitForTimeout(500)
+
+        const pocket = await page.evaluate(() => {
+            const app = window.__APP_STATE__
+            return {
+                focusedIndex: app?.navState?.focusedIndex,
+                focusPocketCount: app?.navState?.focusPocketIndices?.length ?? 0,
+                threadCandidatesCount: app?.navState?.threadCandidates?.length ?? 0
+            }
+        })
+        expect(pocket.focusedIndex).toBe(0)
+        expect(pocket.focusPocketCount, 'focusPocketIndices should be populated after focusOnNode').toBeGreaterThan(0)
+        expect(pocket.threadCandidatesCount, 'threadCandidates should be populated after focusOnNode').toBeGreaterThan(0)
+
+        // Soft-skip the actual strand-sprite assertions if headless Chromium
+        // has no WebGL context: the inspectedStrandGroup exists in appState
+        // regardless, but the Sprite children only get a CanvasTexture once
+        // webglContext is alive. Without WebGL the map will be null even after
+        // PR-Item1 and the assertion would fail for the wrong reason.
+        const webgl = await page.evaluate(() => {
+            const c = document.querySelector('canvas')
+            return c ? !!(c.getContext('webgl2') || c.getContext('webgl')) : false
+        })
+        if (!webgl) {
+            test.skip(true, 'headless Chromium has no WebGL context for strand-sprite assertions')
+            return
+        }
+
+        // focusOnNode focuses a business but does NOT inspect a thread. The
+        // inspectedStrandGroup is built only by syncInspectedStrandOverlay,
+        // which is reached through inspectThreadNeighbor (rail/canvas hover),
+        // walkToThread, or a pinned thread. Use the exposed test action to
+        // inspect the first neighbor directly in a surface that doesn't depend
+        // on JourneyChrome/NeighborRail DOM rendering.
+        const inspectResult = await page.evaluate(
+            (neighborIndex) => {
+                const actions = window.__navActions__
+                if (!actions || typeof actions.inspectThreadNeighbor !== 'function') {
+                    return { error: 'inspectThreadNeighbor not exposed' }
+                }
+                actions.inspectThreadNeighbor(neighborIndex, { surface: 'rail' })
+                return { ok: true }
+            },
+            await page.evaluate(() => window.__APP_STATE__.navState.focusPocketIndices[0])
+        )
+        expect(inspectResult.ok, `inspectThreadNeighbor should not throw, got ${JSON.stringify(inspectResult)}`).toBe(
+            true
+        )
 
         // Allow syncInspectedStrandOverlay's subscriber to run.
         await page.waitForTimeout(500)
@@ -1336,7 +1389,7 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         // The endpoint Sprites are added by syncInspectedStrandOverlay() (see
         // thread-inspector-webgl.ts:280-300). After PR-Item1, their material
         // map must be the populated CanvasTexture from webglContext, not null.
-        expect(strandState.groupExists, 'inspectedStrandGroup should exist after focusOnNode').toBe(true)
+        expect(strandState.groupExists, 'inspectedStrandGroup should exist after inspectThreadNeighbor').toBe(true)
         expect(strandState.spriteCount, 'at least one endpoint Sprite should be built').toBeGreaterThan(0)
         expect(
             strandState.spritesWithMap,
@@ -1352,15 +1405,8 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
 
     /**
      * 23. focus-role-filters render and filter neighbors.
-     *
-     * Skipped in the widget-journey context: the state-injection approach
-     * (writeNavStateMirror + journeyStore.update()) works in a standalone
-     * diagnostic but JourneyChrome does not mount here, and the polling loop
-     * saturates the headless Chromium main thread. Re-enable once the mount
-     * trigger is understood or the widget-journey context no longer starves
-     * the main thread.
      */
-    test.skip('23. focus-role-filters render and filter neighbors by relationship', async ({ page }) => {
+    test('23. focus-role-filters render and filter neighbors by relationship', async ({ page }) => {
         // Suppress the demo so the main thread stays available for the lazy
         // JourneyChrome load and the focus-state injection.
         await page.goto(`${BASE_URL}?nodemo=1`, { waitUntil: 'domcontentloaded' })
@@ -1389,15 +1435,13 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                 })
         )
 
-        // Inject focus state directly via the bridge so the lazy-loaded
-        // JourneyChrome mounts and the filter chips render. We use
-        // writeNavStateMirror (the same API production code uses) so BOTH
-        // the nav writable and the Svelte 5 reactive appState are updated
-        // atomically, and journeyStore.update() so the journey mirror also
-        // sees threadCandidates. Without the journey-store update,
-        // JourneyChrome's currentThreadCandidates reads journeySnapshot first
-        // (which is empty), and the fallback to navSnapshot never triggers
-        // re-evaluation in the bundled build.
+        // Inject focus state directly. In the widget-journey headless context,
+        // writeNavStateMirror triggers a reactive store/URL sync loop that hangs
+        // the main thread and prevents JourneyChrome from mounting. Updating the
+        // navStore directly (the same mechanism writeNavStateMirror targets) plus
+        // assigning into __SEMANTIC_EXPLORER_APP_STATE_DIRECT__.navState avoids
+        // the URL-sync side effect and reliably mounts JourneyChrome in ~3s.
+        // Keep the journeyStore update so currentThreadCandidates is populated.
         await page.evaluate((idx) => {
             const candidates = [
                 {
@@ -1436,15 +1480,25 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
                     relationshipAxis: 'support-link'
                 }
             ]
-            const actions = window.__navActions__
-            if (actions && typeof actions.writeNavStateMirror === 'function') {
-                actions.writeNavStateMirror({
+            const ns = window.__navStore__
+            if (ns && typeof ns.update === 'function') {
+                ns.update((s) => ({
+                    ...s,
                     mode: 'focus',
                     surface: 'focus-search',
                     focusedIndex: idx,
                     threadSource: 'semantic',
-                    focusPocketIndices: candidates.map((c) => c.index),
-                    threadCandidates: candidates
+                    focusPocketIndices: candidates.map((c) => c.index)
+                }))
+            }
+            const app = window.__SEMANTIC_EXPLORER_APP_STATE_DIRECT__
+            if (app && app.navState) {
+                Object.assign(app.navState, {
+                    mode: 'focus',
+                    surface: 'focus-search',
+                    focusedIndex: idx,
+                    threadSource: 'semantic',
+                    focusPocketIndices: candidates.map((c) => c.index)
                 })
             }
             const journeyStore = window.__journeyStore__
