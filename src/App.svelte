@@ -16,6 +16,7 @@
   import { onMount, type Snippet } from 'svelte';
   import { get } from 'svelte/store';
   import { navStore } from '@lib/stores/navigation.svelte.ts';
+  import { getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
   import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
@@ -137,7 +138,12 @@
   // W45-A: Decide initial render kind synchronously at mount time.
   // Mobile / narrow-viewport / automated sessions get the 2D placeholder
   // so the 587 KB three.js chunk stays off the cold-load critical path.
-  const renderKind = typeof window !== 'undefined' ? getInitialRenderKind() : 'webgl';
+  // Reactive render kind: read from the parity-attr snapshot so the {#if}
+  // branches below re-render when the body dataset flips (e.g., the
+  // Playwright auto-signal in this file calls setRenderKind('webgl') on
+  // mount, which would otherwise leave this local at 'placeholder2d'
+  // forever and keep <Placeholder2D> rendered on top of <SearchInput>).
+  let renderKind = $derived(getBypassAttr('renderKind') ?? getInitialRenderKind());
   let s3dSceneReady = $state(false);
   let s3dSceneError = $state(false);
 

@@ -296,6 +296,16 @@ async function loadIdleAndTypeSearch(page, query, params = {}) {
         el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
     })
     await page.waitForTimeout(300)
+    // Dismiss the first-visit help dialog if it's open. It auto-opens on
+    // first visit (W47) and sits at z-index above #search-input, so
+    // page.fill() can't reach the input while it's open. The dialog's
+    // first button is the close affordance; .catch() tolerates it being
+    // already closed (e.g., on a re-run with persisted onboarding state).
+    const helpDialog = page.locator('dialog.help-dialog[open]')
+    if (await helpDialog.isVisible().catch(() => false)) {
+        await helpDialog.locator('button').first().click().catch(() => {})
+        await page.waitForTimeout(150)
+    }
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })
     await page.locator('#search-input').first().fill(query)
     await page.waitForTimeout(350)

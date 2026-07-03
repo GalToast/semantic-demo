@@ -53,6 +53,22 @@ function parseUrlParams(): { forceDemo: boolean; noDemo: boolean; isDeepLink: bo
     }
 }
 
+// ── W45-A: Set the render kind on body BEFORE mounting App.svelte ─────────────
+// App.svelte has a Playwright-test branch that auto-signals engineReady when
+// window.__PLAYWRIGHT__ is set, which calls setRenderKind('webgl') on body.
+// If we mount App.svelte before writing the initial renderKind, the test
+// auto-signal flips the body to 'webgl', then main.ts's later
+// setRenderKind(getInitialRenderKind()) overwrites it back to 'placeholder2d'.
+// That leaves engineReady._value=true (locked) while body says placeholder2d:
+// the placeholder-cta click then short-circuits via the signalReady early
+// return, so the surface-contract test for search-no-results can't get the
+// info-panel unblocked. Writing the initial renderKind first, then mounting,
+// lets the Playwright auto-signal win cleanly when the test wants webgl and
+// otherwise stay in the placeholder2d path.
+if (typeof document !== 'undefined' && document.body) {
+    setRenderKind(getInitialRenderKind())
+}
+
 // ── Mount ─────────────────────────────────────────────────────────────────────
 
 const { forceDemo, noDemo, isDeepLink } = parseUrlParams()
@@ -130,11 +146,9 @@ function disposeJourneyWebglPreload(): void {
 // The engine waits for first user gesture (or visibility flip) before any
 // heavy init runs from <Canvas defer />. Idempotent — safe to call once.
 //
-// W45-A: Set the render kind on body BEFORE installing the gesture monitor so
-// the monitor can skip auto-fire when the 2D placeholder is shown on mobile.
-if (typeof document !== 'undefined' && document.body) {
-    setRenderKind(getInitialRenderKind())
-}
+// (The initial setRenderKind(getInitialRenderKind()) call moved up before
+// mount(App) so App.svelte's Playwright auto-signal doesn't race with it.
+// See the comment above the mount block for the full rationale.)
 // PR-B2: dismiss the Splash gesture gate early on deep-link boot.
 // parseUrlParams() already classified the URL; on desktop (webgl) we
 // can signal ready now so the focus/search/map state — which app-init
