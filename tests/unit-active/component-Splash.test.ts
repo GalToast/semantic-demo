@@ -1,58 +1,96 @@
 /**
- * component-Splash.test.ts — Component test for Splash.svelte
+ * component-Splash.test.ts — Source-inspection test for Splash.svelte
+ * (W48-D CTA feedback).
  *
- * Verifies the welcome modal structure and WCAG AAA 2.5.5 target sizes.
+ * The Splash is a modal gate that hides once the user clicks "Explore".
+ * Adding aria-describedby + aria-busy + disabled feedback to the CTA
+ * closes a real a11y gap: previously the button had no hint description,
+ * no busy feedback during the transition, and double-clicks could fire
+ * `engineReady.signalReady()` multiple times.
+ *
+ * Uses the source-inspection pattern from component-FocusCard.test.ts
+ * because Splash imports from @lib/stores/* which has a circular
+ * dependency chain in vitest.
+ *
+ * Verifies:
+ *   1. The CTA declares aria-describedby pointing to the hint + busy hint
+ *   2. The hint <p> has the matching id="splash-hint"
+ *   3. aria-busy reflects the ctaBusy state
+ *   4. The CTA is disabled while busy
+ *   5. The CTA label swaps to "Entering…" while busy
+ *   6. dismiss() sets ctaBusy = true before signalReady()
+ *   7. The busy hint is an aria-live region
  */
-import { describe, it, expect, vi } from 'vitest'
-import { render } from '@testing-library/svelte'
-import Splash from '../../src/components/Splash.svelte'
+import { describe, it, expect } from 'vitest'
+import { readFileSync } from 'fs'
+import { resolve } from 'path'
 
-vi.mock('../../src/lib/stores/engine-ready.svelte', () => ({
-    engineReady: {
-        value: false,
-        signalReady: vi.fn(),
-        getReady: () => false,
-        subscribe: (fn: (v: boolean) => void) => {
-            fn(false)
-            return () => {}
-        }
-    }
-}))
+const SPLASH_PATH = resolve(__dirname, '../../src/components/Splash.svelte')
 
-describe('Splash component', () => {
-    it('renders as a modal dialog with aria-labelledby title', () => {
-        const { container } = render(Splash)
-        const splash = container.querySelector('.splash')
-        expect(splash).toBeTruthy()
-        expect(splash!.getAttribute('role')).toBe('dialog')
-        expect(splash!.getAttribute('aria-modal')).toBe('true')
-        expect(splash!.getAttribute('aria-labelledby')).toBe('splash-title')
+function readSplashSource(): string {
+    return readFileSync(SPLASH_PATH, 'utf8')
+}
 
-        const title = container.querySelector('#splash-title')
-        expect(title).toBeTruthy()
-        expect(title!.textContent).toContain('Semantic Explorer')
+describe('Splash component (W48-D CTA feedback)', () => {
+    it('CTA declares aria-describedby pointing to the hint + busy hints', () => {
+        const src = readSplashSource()
+        expect(src).toMatch(
+            /aria-describedby="splash-hint splash-cta-busy"/
+        )
     })
 
-    it('exposes a search form with accessible input and submit button', () => {
-        const { container } = render(Splash)
-        const form = container.querySelector('form.splash-search')
-        expect(form).toBeTruthy()
-        expect(form!.getAttribute('role')).toBe('search')
-
-        const input = container.querySelector('.splash-search-input')
-        expect(input).toBeTruthy()
-        expect(input!.getAttribute('type')).toBe('search')
-        expect(input!.getAttribute('aria-label')).toBe('Search Montgomery County businesses')
-
-        const submit = container.querySelector('.splash-submit')
-        expect(submit).toBeTruthy()
-        expect(submit!.getAttribute('type')).toBe('submit')
+    it('hint <p> carries id="splash-hint" matching the aria-describedby', () => {
+        const src = readSplashSource()
+        expect(src).toMatch(/<p[^>]*class="splash-hint"[^>]*id="splash-hint"/)
     })
 
-    it('renders the Explore CTA as a button', () => {
-        const { container } = render(Splash)
-        const cta = container.querySelector('.splash-cta')
-        expect(cta).toBeTruthy()
-        expect(cta!.getAttribute('type')).toBe('button')
+    it('CTA has reactive aria-busy bound to ctaBusy state', () => {
+        const src = readSplashSource()
+        expect(src).toMatch(/aria-busy=\{ctaBusy\}/)
+    })
+
+    it('CTA is disabled while busy (prevents double-fire of signalReady)', () => {
+        const src = readSplashSource()
+        expect(src).toMatch(/disabled=\{ctaBusy\}/)
+    })
+
+    it('CTA label swaps to "Entering…" while busy', () => {
+        const src = readSplashSource()
+        expect(src).toMatch(/\{ctaBusy \? 'Entering…' : 'Explore'\}/)
+    })
+
+    it('dismiss() flips ctaBusy to true before signalReady()', () => {
+        const src = readSplashSource()
+        // Assert the assignment precedes the signalReady call within dismiss.
+        const dismissMatch = src.match(
+            /const dismiss = \(e\?: Event\) => \{[\s\S]*?\n\s+\}/
+        )
+        expect(dismissMatch, 'dismiss() handler must exist').toBeTruthy()
+        const dismissBody = dismissMatch?.[0] ?? ''
+        const busyIdx = dismissBody.indexOf('ctaBusy = true')
+        const signalIdx = dismissBody.indexOf('engineReady.signalReady')
+        expect(busyIdx).toBeGreaterThan(-1)
+        expect(signalIdx).toBeGreaterThan(-1)
+        expect(busyIdx).toBeLessThan(signalIdx)
+    })
+
+    it('declares ctaBusy as $state', () => {
+        const src = readSplashSource()
+        expect(src).toMatch(/let ctaBusy = \$state\(false\)/)
+    })
+
+    it('busy hint is an aria-live region for AT announcement', () => {
+        const src = readSplashSource()
+        expect(src).toMatch(/<span[^>]*id="splash-cta-busy"[^>]*aria-live="polite"/)
+    })
+
+    it('busy hint uses .sr-only (defined in css/base.css)', () => {
+        const baseCss = readFileSync(
+            resolve(__dirname, '../../css/base.css'),
+            'utf8'
+        )
+        expect(baseCss).toMatch(/\.sr-only\s*\{/)
+        const src = readSplashSource()
+        expect(src).toMatch(/<span class="sr-only"[^>]*id="splash-cta-busy"/)
     })
 })

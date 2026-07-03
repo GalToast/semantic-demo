@@ -28,6 +28,12 @@
   let rootEl: HTMLDivElement | undefined = $state();
   let query = $state('');
 
+  // W48-D: tracks whether the user has just clicked the Explore CTA so
+  // the button can carry aria-busy="true" until the splash dismisses.
+  // Prevents the user from clicking multiple times and gives screen
+  // readers explicit feedback that a transition is happening.
+  let ctaBusy = $state(false);
+
   /** Visible focusable elements inside the dialog (filters hidden/zero-size). */
   function focusables(): HTMLElement[] {
     if (!rootEl) return [];
@@ -52,6 +58,13 @@
 
   const dismiss = (e?: Event) => {
     e?.preventDefault();
+    // W48-D: mark the CTA as busy and disable further clicks while the
+    // splash transitions. The splash hides when engineReady flips true,
+    // at which point this component unmounts and ctaBusy is moot — but
+    // the busy state covers the brief frame where the 3D canvas is
+    // mounting. aria-busy="true" tells screen readers the button is in
+    // a loading state; disabled prevents double-fire.
+    ctaBusy = true;
     engineReady.signalReady();
   };
 
@@ -155,10 +168,16 @@
       type="button"
       onclick={dismiss}
       data-testid="splash-cta"
+      aria-describedby="splash-hint splash-cta-busy"
+      aria-busy={ctaBusy}
+      disabled={ctaBusy}
     >
-      Explore
+      {ctaBusy ? 'Entering…' : 'Explore'}
     </button>
-    <p class="splash-hint">Press Enter to search, or just look around.</p>
+    <p class="splash-hint" id="splash-hint">Press Enter to search, or just look around.</p>
+    <span class="sr-only" id="splash-cta-busy" aria-hidden="true" aria-live="polite">
+      {#if ctaBusy}Entering the 3D scene, please wait.{/if}
+    </span>
   </div>
 </div>
 
