@@ -78,7 +78,6 @@ const requiredFragments = [
 assertImportShell('semantic-demo.css', [
     'css/base.css',
     'css/loading.css',
-    'css/tooltips.css',
     'css/shell.css',
     'css/time_weather.css',
     'css/demo_ui.css',

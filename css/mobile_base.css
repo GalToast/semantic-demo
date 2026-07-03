@@ -520,9 +520,7 @@ body.view-map .onboarding-hint {
 
     /* Broaden transition disable for #950 hardening */
     .loading-overlay,
-    .loading-phase-chip,
-    .hover-tooltip,
-    .hover-tooltip.visible {
+    .loading-phase-chip {
         transform: none;
         transition: none;
     }
@@ -549,7 +547,6 @@ body.view-map .onboarding-hint {
     }
 
     /* Disable transition-based animations - broaden coverage per #950 */
-    .hover-tooltip,
     .search-clear-btn,
     .journey-compass,
     .journey-compass-action,
