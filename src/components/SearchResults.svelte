@@ -9,7 +9,7 @@
     .search-results-count-suffix, .search-results-count-shown, .search-results-count-divider,
     .search-results-count-hidden, #search-result-list, .search-result-list,
     .search-result-listitem, .search-result, .search-result-row,
-    .search-result-eyebrow, .search-result-rank, .search-result-strength,
+    .search-result-eyebrow, .search-result-rank,
     .search-result-name, .search-result-match, .search-result-badges,
     .search-result-badge.website, .search-result-badge.email, .search-result-badge.phone,
     .search-result-what, .search-result-context, .search-result-bar,
@@ -30,7 +30,7 @@
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { prefersReducedMotion } from '@lib/utils/environment';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
-  import { showErrorToast } from '@lib/orchestration/toast';
+  import { showErrorToast, showExperienceToast } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { appState } from '@lib/state/app.svelte';
   import type { SearchResult } from '@lib/types/state';
@@ -215,10 +215,23 @@
 
     const key = event.key;
 
-    if (key === 'ArrowDown' || key === 'ArrowRight') {
+    // W48-D: only ArrowDown / ArrowUp navigate the list (the WAI-ARIA listbox
+    // pattern). ArrowLeft / ArrowRight are intentionally NOT bound — they
+    // would surprise users by re-mapping horizontal-arrow expectations
+    // (cursor movement inside a search input, RTL flips, etc.). Home / End /
+    // Enter / Escape keep their existing semantics.
+    if (key === 'ArrowDown') {
       event.preventDefault();
-      setActiveResultByIndex(activeIndex < count - 1 ? activeIndex + 1 : 0);
-    } else if (key === 'ArrowUp' || key === 'ArrowLeft') {
+      if (activeIndex < count - 1) {
+        setActiveResultByIndex(activeIndex + 1);
+      } else {
+        // W48-D: at the bottom — don't silently wrap (a11y + UX surprise).
+        // Mirror the canvas-keyboard-nav 'End of cluster' toast so the user
+        // gets explicit feedback that they hit the boundary. Focus stays on
+        // the last result; pressing Esc clears the search.
+        showExperienceToast('End of results', 'Press Escape to clear search.');
+      }
+    } else if (key === 'ArrowUp') {
       event.preventDefault();
       if (activeIndex === 0) {
         // Return focus to search input when moving up from first result
@@ -400,7 +413,7 @@
         tabindex="-1"
         aria-label="Search result businesses"
         aria-activedescendant={activeIndex >= 0 ? `search-result-${Number(resultSlice[activeIndex]?.index)}` : undefined}
-        aria-keyshortcuts="ArrowDown ArrowUp ArrowLeft ArrowRight Home End Enter Escape"
+        aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"
         onkeydown={handleContainerKeyDown}
       >
         {#each resultSlice as result, order (result.index ?? order)}

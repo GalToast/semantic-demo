@@ -28,7 +28,6 @@
     index: number | string;
     order: number;
     strength: number;
-    strengthLabel: string;
     rankLabel: string;
     cardClasses: string;
     point: NonNullable<SearchResult['point']>;
@@ -88,7 +87,6 @@
 
     const deps = {
       getSearchResultStrength: (r: SearchResult) => r.score || 0,
-      getSearchResultStrengthLabel: (strength: number) => strength > 0.8 ? 'Strong match' : strength > 0.5 ? 'Good match' : 'Related',
       buildSearchRankLabel: (order: number) => order === 0 ? 'Top match' : `Match ${order + 1}`,
       getSearchResultCardClasses: () => 'search-result',
       buildSearchResultSnippet: () => point.what || resultItem.snippet || '',
@@ -97,7 +95,6 @@
     };
 
     const strength = deps.getSearchResultStrength(resultItem);
-    const strengthLabel = deps.getSearchResultStrengthLabel(strength);
     const rankLabel = deps.buildSearchRankLabel(orderIdx);
     const cardClasses = `${deps.getSearchResultCardClasses()} search-result-item`;
     const snippetText = deps.buildSearchResultSnippet();
@@ -115,7 +112,6 @@
       index: resultItem.index,
       order: orderIdx,
       strength,
-      strengthLabel,
       rankLabel,
       cardClasses,
       point,
@@ -146,7 +142,6 @@
     <div class="search-result-row">
       <div class="search-result-eyebrow">
         <span class="search-result-rank">{item.rankLabel}</span>
-        <span class="search-result-strength">{item.strengthLabel}</span>
       </div>
       <div class="search-result-name">
         {#each item.highlight as segment}

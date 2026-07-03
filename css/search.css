@@ -287,7 +287,7 @@ body:is(
     grid-column: 1 / -1;
     display: flex;
     align-items: center;
-    justify-content: space-between;
+    justify-content: flex-start;
     gap: 8px;
     min-width: 0;
 }
@@ -311,24 +311,6 @@ body:is(
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-}
-
-body:is(
-        [data-panel-surface='search'],
-        [data-panel-surface='focus-search'],
-        [data-panel-surface='map-search'],
-        [data-panel-surface='map-focus-search']
-    )
-    .search-container.has-query
-    .search-result-strength {
-    flex: 0 0 auto;
-    color: rgba(255, 226, 143, 0.72);
-    font-family: var(--font-mono, 'JetBrains Mono', monospace);
-    font-size: 8.5px;
-    font-weight: 700;
-    line-height: 1.1;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
 }
 
 body:is(
@@ -1477,8 +1459,7 @@ body.surface-map-focus-search .search-container {
         linear-gradient(180deg, rgba(12, 18, 26, 0.98), rgba(11, 14, 23, 0.9));
 }
 
-body.surface-map-focus-search[data-journey-navigation-owner='map-trail-strip']
-    .search-container {
+body.surface-map-focus-search[data-journey-navigation-owner='map-trail-strip'] .search-container {
     position: fixed;
     display: block !important;
     visibility: visible !important;
@@ -1748,9 +1729,7 @@ body.surface-map-focus-search .semantic-lane-assist-meta {
         padding: 7px 8px;
     }
 
-    body.route-peek[data-panel-surface]:not(.surface-map-any)
-        .search-container
-        #synthesize-trigger {
+    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-container #synthesize-trigger {
         display: none;
     }
 }
@@ -1827,15 +1806,14 @@ body.surface-map-focus-search .semantic-lane-assist-meta {
     text-decoration: underline;
 }
 
-
 @media (prefers-reduced-motion: reduce) {
     /* Silence search glow, spinner, and loading pulse animations for users who prefer reduced motion. */
     .search-vector-scramble.active,
     body.searching .search-spinner,
     .search-results.searching .search-spinner-overlay,
     .empty-state,
-.no-results,
-.search-loading,
+    .no-results,
+    .search-loading,
     .search-loading-spinner,
     .shake-input,
     .suggestion-btn.shake {
