@@ -79,3 +79,34 @@ describe('Toast component', () => {
         expect(copy!.tagName).toBe('DIV');
     });
 });
+
+// W49-A: the queue block now includes a "Next: <title>" preview line.
+// It only renders when hasQueue && nextTitle.length > 0. The default
+// render has no queued toast, so the preview must NOT be in the DOM.
+describe('Toast component — next-title preview (W49-A)', () => {
+    it('does NOT render .experience-toast-next when queue is empty', () => {
+        const { container } = render(Toast);
+        const next = container.querySelector('.experience-toast-next');
+        expect(next).toBeNull();
+        // Same: the data-testid the journey tests use.
+        const nextById = container.querySelector('[data-testid="toast-next-preview"]');
+        expect(nextById).toBeNull();
+    });
+
+    it('does NOT render .experience-toast-queue when queue is empty', () => {
+        const { container } = render(Toast);
+        const queue = container.querySelector('.experience-toast-queue');
+        expect(queue).toBeNull();
+    });
+
+    it('source contains the .experience-toast-next markup + styling hook', async () => {
+        const fs = await import('node:fs')
+        const src = fs.readFileSync('src/components/Toast.svelte', 'utf-8')
+        // The class is referenced in both template and styles block.
+        expect(src).toContain('class="experience-toast-next"')
+        expect(src).toContain('.experience-toast-next {')
+        // data-testid hook lets journey tests assert the preview text
+        // even though the markup may shuffle in future refactors.
+        expect(src).toContain('data-testid="toast-next-preview"')
+    });
+});

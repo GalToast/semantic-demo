@@ -40,6 +40,14 @@ interface ToastState {
     active: boolean
     /** Number of toasts queued behind the currently visible one. */
     queueLength: number
+    /**
+     * Title of the next toast in the queue (if any). Surfaced in the
+     * Toast UI as a "Next: <title>" preview so users know what's coming
+     * without having to dismiss the current one to find out.
+     * W49-A: added so callers can trust a single source of truth for
+     * the queue preview.
+     */
+    nextTitle: string
 }
 
 const DEFAULT_DURATIONS: Record<ToastVariant, number> = {
@@ -54,7 +62,8 @@ const defaultState: ToastState = {
     copy: '',
     variant: 'info',
     active: false,
-    queueLength: 0
+    queueLength: 0,
+    nextTitle: ''
 }
 
 export const toastStore = writable<ToastState>({ ...defaultState })
@@ -78,7 +87,8 @@ function emitVisible(spec: ToastSpec): void {
         copy: spec.copy,
         variant,
         active: true,
-        queueLength: queue.length
+        queueLength: queue.length,
+        nextTitle: queue[0]?.title ?? ''
     })
 }
 
@@ -121,7 +131,14 @@ function enqueue(spec: ToastSpec): void {
 
     if (isActive) {
         queue.push(spec)
-        toastStore.update((s) => ({ ...s, queueLength: queue.length }))
+        toastStore.update((s) => ({
+            ...s,
+            queueLength: queue.length,
+            // Surface the next-in-line title. queue[0] is the next visible
+            // toast; the just-pushed one only becomes "next" if the queue
+            // was empty before the push (i.e. this is the first queued item).
+            nextTitle: queue[0]?.title ?? ''
+        }))
     } else {
         emitVisible(spec)
         startAuto(spec)

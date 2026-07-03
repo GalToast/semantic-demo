@@ -31,9 +31,11 @@
   const copy = $derived($toastStore.copy);
   const variant = $derived($toastStore.variant);
   const queueLength = $derived($toastStore.queueLength);
+  const nextTitle = $derived($toastStore.nextTitle);
   const isError = $derived(variant === 'error');
   const isWarning = $derived(variant === 'warning');
   const hasQueue = $derived(queueLength > 0);
+  const hasNextPreview = $derived(hasQueue && nextTitle.length > 0);
 
   function handleKeydown(e: KeyboardEvent): void {
     if (e.key === 'Escape' && active) {
@@ -84,6 +86,11 @@
           onclick={handleSkipAllClick}
         >Skip all</button>
       </div>
+      {#if hasNextPreview}
+        <div class="experience-toast-next" data-testid="toast-next-preview">
+          Next: <span class="experience-toast-next-title">{nextTitle}</span>
+        </div>
+      {/if}
     {/if}
   </div>
   <button
@@ -155,6 +162,23 @@
     margin-top: 0.35rem;
     padding-top: 0.3rem;
     border-top: 1px solid rgba(var(--color-primary-alt-rgb), 0.12);
+  }
+
+  /* W49-A: "Next: <title>" preview so users know what's queued without
+     having to dismiss the current toast to find out. The line is muted
+     so it doesn't compete with the main title; contrast against the
+     chrome bg is documented by the a11y-ok comment. */
+  .experience-toast-next {
+    font-size: 0.6rem;
+    color: rgba(224, 240, 240, 0.6); /* a11y-ok: supplementary preview line — same as .experience-toast-queue-count */
+    margin-top: 0.25rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .experience-toast-next-title {
+    color: var(--color-text-teal-light);
+    font-weight: 500;
   }
 
   .experience-toast-queue-count {
