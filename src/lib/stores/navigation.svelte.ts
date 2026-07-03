@@ -48,6 +48,7 @@ import { resetFocus } from './focus.svelte.ts'
 import { resetJourney } from './journey.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import { withStateMutation } from '@lib/state/with-state-mutation'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -385,6 +386,12 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
     // downstream cascade on stale state while subscribers of $navStore still
     // saw the old value. The factory's update() guarantees subscribers
     // receive a snapshot that's consistent with the canonical mutation.
+    // Capture previousView BEFORE the in-place mutation below.
+    // _readNavSnapshot() returns the live `appState.navState` reference,
+    // which Object.assign mutates in place — reading current.currentView
+    // AFTER the update would always equal patch.currentView.
+    const previousView = current.currentView
+
     navMirror.update((current) => {
         withStateMutation(() => {
             Object.assign(appState.navState, patch)
@@ -397,6 +404,35 @@ export function writeNavStateMirror(patch: Partial<NavState>): void {
         })
         return { ...current, ...patch }
     })
+
+    // W49-F: dispatch VIEW_CHANGED when currentView (or any field
+    // affected by a view swap) is the patched field. Nine modules
+    // subscribe to this event (focus-ui, semantic-dive, selected-card,
+    // route-trace, map-state, legend-ui, legend-panel, cluster-labels,
+    // engine lifecycle) — before this publish was added they had been
+    // silently waiting for an event that never fired, leaving the
+    // legend panel open behind the map view, route-trace overlays
+    // on the galaxy DOM when the user toggled views, etc.
+    //
+    // Payload fields per events.ts:
+    //   view?: string             — the new view id
+    //   previousView?: string     — the view id before the patch
+    //   myceliumMode?: string     — current visual mode (proxy for
+    //                                cluster palette changes that often
+    //                                accompany a view switch)
+    //
+    // We only publish when the value actually changed (otherwise a
+    // dispatchNavTransition noop that re-asserts the current view
+    // would create spurious sync loops in the consumers above).
+    if (typeof patch.currentView === 'string') {
+        if (patch.currentView !== previousView) {
+            publish(EVENTS.VIEW_CHANGED, {
+                view: patch.currentView,
+                previousView,
+                myceliumMode: appState.myceliumMode || undefined
+            })
+        }
+    }
 }
 
 /** Reset navigation state to initial values. */

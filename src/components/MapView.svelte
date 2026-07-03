@@ -94,7 +94,20 @@
    */
   function setLegacyView(view: 'galaxy' | 'map'): void {
     withStateMutation(() => {
+      // W49-F: capture the previous view BEFORE the mutation so the
+      // VIEW_CHANGED payload can carry it. writeNavStateMirror takes
+      // the same shape; see src/lib/stores/navigation.svelte.ts.
+      const previousView = appState.currentView === 'galaxy' || appState.currentView === 'map'
+        ? appState.currentView
+        : undefined
       appState.currentView = view;
+      if (previousView !== view) {
+        publish(EVENTS.VIEW_CHANGED, {
+          view,
+          previousView,
+          myceliumMode: appState.myceliumMode || undefined
+        })
+      }
     });
   }
 

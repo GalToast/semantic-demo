@@ -6,18 +6,18 @@ This document captures the runtime contract for transient UI surfaces (tooltips,
 
 ## TL;DR
 
-| Surface                  | Action                | Bus event(s) to publish         |
-| ------------------------ | --------------------- | ------------------------------- |
-| Search results UI        | re-renders            | `TOOLTIP_HIDE_REQUESTED`        |
-| Thread inspector open    | `pinThread(idx)`      | `TOOLTIP_HIDE_REQUESTED`        |
-| Map view activate        | `activateLeafletMap`  | `TOOLTIP_HIDE_REQUESTED`        |
-| Splash dismiss           | `dismiss()`           | `TOOLTIP_HIDE_REQUESTED` (defense-in-depth) |
+| Surface               | Action               | Bus event(s) to publish                     |
+| --------------------- | -------------------- | ------------------------------------------- |
+| Search results UI     | re-renders           | `TOOLTIP_HIDE_REQUESTED`                    |
+| Thread inspector open | `pinThread(idx)`     | `TOOLTIP_HIDE_REQUESTED`                    |
+| Map view activate     | `activateLeafletMap` | `TOOLTIP_HIDE_REQUESTED`                    |
+| Splash dismiss        | `dismiss()`          | `TOOLTIP_HIDE_REQUESTED` (defense-in-depth) |
 
-| Subscriber                       | Event                       | Effect                         |
-| -------------------------------- | --------------------------- | ------------------------------ |
-| `src/lib/ui/tooltip.ts`          | `TOOLTIP_HIDE_REQUESTED`    | `hideCanvasHoverPreview()`     |
+| Subscriber                              | Event                              | Effect                                  |
+| --------------------------------------- | ---------------------------------- | --------------------------------------- |
+| `src/lib/ui/tooltip.ts`                 | `TOOLTIP_HIDE_REQUESTED`           | `hideCanvasHoverPreview()`              |
 | `canvas-hover-preview:focused-business` | `CAMERA_NODE_FOCUSED` (idx=number) | `showCanvasHoverPreviewForFocused(idx)` |
-| `canvas-hover-preview:focused-business` | `CAMERA_NODE_FOCUSED` (idx=null)   | `hideCanvasHoverPreview()`    |
+| `canvas-hover-preview:focused-business` | `CAMERA_NODE_FOCUSED` (idx=null)   | `hideCanvasHoverPreview()`              |
 
 ## Why the bridge exists
 
@@ -51,13 +51,11 @@ Defensive only. The canvas isn't mounted yet when the splash is dismissed; the p
 // src/lib/ui/tooltip.ts (excerpt)
 export function initTooltipEventBusSubscriptions(): void {
     if (_tooltipUnsubs.length > 0) return
-    _tooltipUnsubs.push(
-        subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip)
-    )
+    _tooltipUnsubs.push(subscribeKeyed('tooltip:hide-requested', EVENTS.TOOLTIP_HIDE_REQUESTED, hideTooltip))
 }
 
 export function hideTooltip(): void {
-    hideCanvasHoverPreview()  // direct sync entry point
+    hideCanvasHoverPreview() // direct sync entry point
 }
 ```
 
@@ -69,8 +67,27 @@ The bridge is idempotent across init/dispose cycles, but **every publish should 
 
 ## Out of scope
 
-- `VIEW_CHANGED` is published nowhere — see `docs/w49-perf-audit.md` for the related perf work. Adding VIEW_CHANGED publishers would activate the silent subscribers in `cluster-labels`, `legend-ui`, `focus-ui`, etc.; that is a separate refactor and not part of the W49-E scope.
 - DOM-level listeners on the cursor that fire `pointermove` will still re-show the preview the moment the cursor moves over a node — that is by design and orthogonal to the bus.
+
+## VIEW_CHANGED — activated as part of W49-F
+
+`EVENTS.VIEW_CHANGED` was published from `writeNavStateMirror` only when the patch's `currentView` differed from the current view. The publisher also fires from `MapView.svelte`'s `setLegacyView` for the direct-bypass mutation path. The pre-state view is captured **before** the in-place `Object.assign` mutates `appState.navState` (capturing from `_readNavSnapshot()` is not safe post-mutation).
+
+| Subscriber | Sync action |
+| ---------- | ----------- |
+| `src/lib/engine/lifecycle.ts` | forwards to `callbacks.onViewChanged?.(view)` |
+| `src/lib/journey/focus-ui.ts`   | `updateFocusNeighborRail()` |
+| `src/lib/journey/semantic-dive.ts` | `syncSemanticDiveUi()` |
+| `src/lib/journey/selected-card.ts` | `updateSelectedBusiness()` (with skipHydrate) |
+| `src/lib/journey/route-trace.ts` | `refreshRouteTraceOverlay()` |
+| `src/lib/engine/map-state.ts` | syncRouteDirectorState + refreshMapMarkers + refreshMapRouteEmbodiment |
+| `src/lib/journey/legend-ui.ts` | `setLegendOpen(false)` |
+| `src/lib/stores/legend-panel.svelte.ts` | `setLegendOpen(false)` |
+| `src/lib/ui/cluster-labels.ts` | `syncClusterSectionState()` |
+
+Every subscriber is an idempotent DOM-state sync. They re-read appState and re-apply to the DOM, so calling them again with view-change context just produces the visible state for the current view. Subscribe pattern: each subscriber uses `subscribeKeyed` or `subscribe` keyed on its own module name so they don't duplicate or leak between consumers.
+
+These subscribers had been silently waiting on `VIEW_CHANGED` from before W49-F; the publish was missing, so they never fired during view transitions. The earlier W48-fix attempts that added one-off `subscribeKeyed` calls in individual modules left the **publish** side missing. W49-F closes the gap: the publish now fires whenever `currentView` changes, AND the existing silent subscribers activate.
 
 ## Verifying the contract
 
