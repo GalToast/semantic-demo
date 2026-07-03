@@ -17,6 +17,7 @@
     resetFilters,
     getFilterState
   } from '@lib/stores/filter.svelte';
+  import { getBusinessRecords } from '@lib/data-store';
 
   interface Props {
     /** Whether the filter panel is open */
@@ -66,7 +67,7 @@
     toggleFilter('status', id);
   }
 
-  function handleContactToggle(id: string): void {
+function handleContactToggle(id: string): void {
     const fs = getFilterState();
     switch (id) {
       case 'website':
@@ -80,6 +81,26 @@
         break;
     }
   }
+
+  // W48-F: build the city list from the actual business records so the
+  // dropdown reflects every city in the dataset (32 distinct cities vs. the
+  // previous 5 hardcoded options, which silently hid Willis, Cleveland,
+  // Houston, Cut And Shoot, and ~25 others). Sorted by record count DESC
+  // so the most populous cities appear first — matches the user's
+  // intuition about where to look.
+  const cityOptions = $derived.by(() => {
+    const records = getBusinessRecords()
+    if (records.length === 0) return []
+    const counts = new Map<string, number>()
+    for (const r of records) {
+      const city = r.city?.trim()
+      if (!city) continue
+      counts.set(city, (counts.get(city) ?? 0) + 1)
+    }
+    return Array.from(counts.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([city, count]) => ({ city, count }))
+  })
 
   function handleCityChange(e: Event): void {
     const target = e.target as HTMLSelectElement;
@@ -171,12 +192,10 @@
         value={getFilterState().city}
         onchange={handleCityChange}
       >
-        <option value="">All Cities</option>
-        <option value="Conroe">Conroe</option>
-        <option value="The Woodlands">The Woodlands</option>
-        <option value="Spring">Spring</option>
-        <option value="Magnolia">Magnolia</option>
-        <option value="Montgomery">Montgomery</option>
+        <option value="">All Cities ({getBusinessRecords().length})</option>
+        {#each cityOptions as opt (opt.city)}
+          <option value={opt.city}>{opt.city} ({opt.count})</option>
+        {/each}
       </select>
     </div>
 
