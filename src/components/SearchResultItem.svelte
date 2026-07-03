@@ -2,6 +2,7 @@
   import { getBusinessRecords } from '@lib/data-store';
   import { describeCluster } from '@lib/utils/ui-presentation';
   import { formatBusinessName } from '@lib/utils/dom-formatters';
+  import { humanizeBusinessName } from '@lib/business/humanize';
   import type { SearchResult } from '@lib/types/state';
 
   // ── Types (re-exported from canonical SearchResult in @lib/types/state) ──────
@@ -101,7 +102,14 @@
     const cardClasses = `${deps.getSearchResultCardClasses()} search-result-item`;
     const snippetText = deps.buildSearchResultSnippet();
     const contextText = point.city || resultItem.category || '';
-    const businessName = deps.formatBusinessName(point.name || resultItem.name || 'Unknown');
+    // Humanize via the full BusinessRecord lookup so the Legal name from
+    // public_note is preferred over the slug; formatBusinessName is kept as
+    // a final safety net if the helpers above ever need it back.
+    const recordRef = getBusinessRecords()[Number(resultItem.index)];
+    const businessName = humanizeBusinessName({
+      name: point.name ?? recordRef?.name ?? resultItem.name ?? 'Unknown',
+      public_note: recordRef?.public_note ?? ''
+    });
 
     return {
       index: resultItem.index,

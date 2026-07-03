@@ -21,6 +21,7 @@
   import { appState } from '@lib/state/app.svelte';
   import type { BusinessRecord } from '@lib/types/business';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, describeCluster } from '@lib/utils';
+  import { parseLegalName } from '@lib/business/humanize';
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
   import {
     normalizeRelationshipRole,
@@ -198,7 +199,11 @@
 
     const rawName = selectedRecord.name ?? '';
     const namePresentation = getBusinessNamePresentation(rawName);
-    const name = namePresentation.display || 'Business Name';
+    // Prefer the human-readable Legal name (from public_note) when present so
+    // the user sees "ANGEL FIRE COFFEE" instead of the slug "519-angel-fire-coffee".
+    // Falls back to the existing slug-derived title-case name otherwise.
+    const legalName = parseLegalName(selectedRecord.public_note);
+    const name = legalName ?? namePresentation.display ?? 'Business Name';
     const filedAs = '';
     const showFiledAs = false;
     const what = sanitizePublicFacingNote(selectedRecord.what ?? '');
