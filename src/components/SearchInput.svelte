@@ -186,6 +186,23 @@
     debounceDispatch(queryInput);
   }
 
+  function handleClearQuery(): void {
+    queryInput = '';
+    setSearchQuery('');
+    if (debounceTimer !== null) {
+      clearTimeout(debounceTimer);
+      debounceTimer = null;
+    }
+    if (searchAbortController) {
+      searchAbortController.abort();
+      searchAbortController = null;
+    }
+    setSearchStatus('idle');
+    requestAnimationFrame(() => {
+      inputEl?.focus();
+    });
+  }
+
   function handleClear(): void {
     queryInput = '';
     if (debounceTimer !== null) {
@@ -217,6 +234,27 @@
       }
       if (queryInput.length > 0) {
         handleClear();
+      }
+    } else if (e.key === 'Enter') {
+      // W48-G: pressing Enter in the search input used to do nothing (the
+      // input isn't wrapped in a form). The 300ms debounce handles auto-fire
+      // on typing, but impatient users who type-then-Enter saw no immediate
+      // action. Fire the search immediately AND move focus to the first
+      // result so the user can navigate with Enter / ArrowDown as in the
+      // WAI-ARIA combobox/listbox pattern.
+      e.preventDefault()
+      const q = queryInput.trim()
+      if (q.length > 0) {
+        if (debounceTimer !== null) {
+          clearTimeout(debounceTimer)
+          debounceTimer = null
+        }
+        dispatchSearch(q)
+      }
+      const list = document.getElementById('search-result-list')
+      if (list) {
+        const first = list.querySelector('[data-order="0"]') as HTMLElement | null
+        first?.focus()
       }
     } else if (e.key === 'ArrowDown') {
       // Move focus to first search result if results are visible
@@ -343,7 +381,7 @@
     />
     <kbd class="search-shortcut-hint" aria-hidden="true">/</kbd>
     {#if hasQuery}
-      <button class="search-clear" id="search-clear-btn" onclick={handleClear} aria-label="Clear search" type="button">
+      <button class="search-clear" id="search-clear-btn" onclick={handleClearQuery} aria-label="Clear query" type="button">
         <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true">
           <path d="m6 6 12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         </svg>
