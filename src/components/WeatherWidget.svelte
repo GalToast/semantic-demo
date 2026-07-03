@@ -104,13 +104,14 @@
     class:surface-focus-search={bodyPanelSurface === 'focus-search'}
     class:mode-field-node={bodyFocusPanelMode === 'field-node'}
     id="weather-widget"
-    aria-label="Weather conditions"
+    aria-label="Weather conditions for Montgomery County"
+    title="Current conditions for Montgomery County"
   >
     <button
       class="weather-toggle"
       onclick={toggleExpanded}
-      aria-label="Toggle weather details — weather affects which outdoor businesses are active"
-      title="Weather affects which outdoor businesses are active"
+      aria-label="Toggle weather details — current conditions for Montgomery County"
+      title="Current conditions for Montgomery County"
       aria-expanded={expanded}
       aria-controls="weather-details"
       type="button"

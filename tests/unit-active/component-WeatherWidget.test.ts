@@ -33,9 +33,9 @@ describe('WeatherWidget component', () => {
         source = readSource()
     })
 
-    it('root #weather-widget has aria-label="Weather conditions"', () => {
+    it('root #weather-widget has aria-label="Weather conditions for Montgomery County"', () => {
         expect(source).toContain('id="weather-widget"')
-        expect(source).toContain('aria-label="Weather conditions"')
+        expect(source).toContain('aria-label="Weather conditions for Montgomery County"')
     })
 
     it('root element has .weather-widget class', () => {
