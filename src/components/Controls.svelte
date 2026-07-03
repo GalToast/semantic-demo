@@ -133,6 +133,7 @@
         <path d="M10.5 7.8v5.4M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
+      <span class="control-label">Zoom in</span>
     </button>
 
     <button class="control-btn" onclick={zoomOut} title="Zoom out" aria-label="Zoom out" type="button">
@@ -141,6 +142,7 @@
         <path d="M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M15 15l5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
+      <span class="control-label">Zoom out</span>
     </button>
 
     <button class="control-btn" onclick={resetView} title="Reset view" aria-label="Reset view" type="button">
@@ -148,6 +150,7 @@
         <path d="M7 8a7 7 0 1 1-1 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M7 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
+      <span class="control-label">Reset</span>
     </button>
 
     <div class="control-divider"></div>
@@ -165,6 +168,7 @@
         <path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M4 5v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
+      <span class="control-label">Rotate</span>
     </button>
 
     <button class="control-btn" onclick={shareLink} title="Share link" aria-label="Share link" type="button">
@@ -174,6 +178,7 @@
         <circle cx="17" cy="18" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="m8.8 11 6.4-4M8.8 13l6.4 4" fill="none" stroke="currentColor" stroke-width="2"/>
       </svg>
+      <span class="control-label">Share</span>
     </button>
 </div>
 
@@ -210,18 +215,31 @@
   }
   .control-btn {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
+    gap: 0.15rem;
     width: 2.75rem;
-    height: 2.75rem;
-    min-width: 2.75rem;
-    min-height: 2.75rem;
+    min-height: 4rem;
     background: none;
     border: none;
     border-radius: 0.3rem;
     color: var(--color-text-teal-muted);
     cursor: pointer;
     transition: all 0.15s;
+  }
+  .control-label {
+    font-size: 0.7rem;
+    color: var(--color-text-teal-muted);
+    line-height: 1;
+    pointer-events: none;
+    user-select: none;
+  }
+  .control-btn:hover .control-label {
+    color: var(--color-text-teal-light);
+  }
+  .control-btn.active .control-label {
+    color: var(--color-primary-alt);
   }
   .control-btn:hover {
     color: var(--color-text-teal-light);
