@@ -352,8 +352,16 @@
   <Header visible={true} utilityOnly={false} />
 {/if}
 
+<!-- W49-G regression fix: h1 was moved INSIDE <main> (W49-G) to satisfy
+     axe-core's region rule ("all content in a landmark"), but this broke
+     a11y-h1-page-title.test.ts (H1 must precede the main landmark per
+     WCAG 2.4.6). Solution: wrap the H1 in a <header> landmark outside
+     <main>. The H1 is now in a landmark (region rule ✓) AND precedes main
+     (heading hierarchy ✓). -->
+<header aria-label="Application title" class="app-title-header">
+  <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
+</header>
 <main id="main-content" class="semantic-main" class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'} tabindex="-1" aria-label="Semantic explorer application">
-<h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
 <!-- Screen-reader-only live region for dynamic announcements.
      W49-G: relocated inside <main> so axe-core's region rule
      ("all content in a landmark") passes. Page content like this
