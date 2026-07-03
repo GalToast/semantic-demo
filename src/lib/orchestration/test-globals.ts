@@ -25,6 +25,7 @@
 
 import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
+import { searchStore } from '@lib/stores/search.svelte'
 import { journeyStore } from '@lib/stores/journey.svelte'
 import {
     switchView,
@@ -66,6 +67,7 @@ declare global {
         __navStore__?: typeof navStore
         __focusStore__?: typeof focusStore
         __journeyStore__?: typeof journeyStore
+        __searchStore__?: typeof searchStore
         __navActions__?: NavActions
     }
 }
@@ -97,12 +99,14 @@ export function installTestStoreGlobals(): () => void {
     window.__navStore__ = navStore
     window.__focusStore__ = focusStore
     window.__journeyStore__ = journeyStore
+    window.__searchStore__ = searchStore
     window.__navActions__ = navActions
 
     return () => {
         delete window.__navStore__
         delete window.__focusStore__
         delete window.__journeyStore__
+        delete window.__searchStore__
         delete window.__navActions__
     }
 }
