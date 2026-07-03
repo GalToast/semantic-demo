@@ -75,8 +75,8 @@ describe('SelectedBusinessDetails user-facing labels (W48-J)', () => {
         expect(src).toContain('Similar businesses')
         expect(src).toContain('Business type')
         expect(src).toContain('Status')
-        // Map Coordinates → just Coordinates (we can keep or change).
-        expect(src).toContain('Coordinates')
+        // Location replaced raw Coordinates (raw lat/lng not useful to users).
+        expect(src).toContain('Location')
     })
 
     it('grid row titles explain the value when hovered (screen-reader friendly)', () => {

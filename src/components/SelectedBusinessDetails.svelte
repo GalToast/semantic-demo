@@ -39,13 +39,13 @@
 <!-- Badge row -->
 <div class="badge-row" id="selected-badges">
   {#if point?.website}
-    <span class="signal-badge meta" title="Website present">Website present</span>
+    <span class="signal-badge meta" title="Website">Website</span>
   {/if}
   {#if point?.email}
-    <span class="signal-badge fact" title="Email present">Email present</span>
+    <span class="signal-badge fact" title="Email">Email</span>
   {/if}
   {#if point?.phone}
-    <span class="signal-badge ai" title="Phone present">Phone present</span>
+    <span class="signal-badge ai" title="Phone">Phone</span>
   {/if}
 </div>
 
@@ -137,7 +137,7 @@
     <div class="selected-item-value" id="selected-status">{viewModel.status}</div>
   </div>
   <div class="selected-item">
-    <div class="selected-item-label">Coordinates</div>
+    <div class="selected-item-label">Location</div>
     <div class="selected-item-value" id="selected-map">{viewModel.mapText}</div>
   </div>
   <div class="selected-item">
