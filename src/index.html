@@ -241,9 +241,14 @@
         <!-- Svelte mounts here -->
         <div id="app">
             <!-- Inline first-paint loading state: shown immediately while the
-                 JS bundle downloads/parses; replaced by the Svelte app on mount. -->
+                 JS bundle downloads/parses; replaced by the Svelte app on mount.
+                 Note: id is `app-loading-placeholder` (not `loading-overlay`)
+                 so it doesn't collide with the Svelte LoadingOverlay.svelte
+                 component's root `#loading-overlay` id. App.svelte's onMount
+                 cleanup targets #app-loading-placeholder and removes only the
+                 static version (filtered by absence of `.svelte-` class). -->
             <div
-                id="loading-overlay"
+                id="app-loading-placeholder"
                 style="
                     position: fixed;
                     inset: 0;
@@ -255,7 +260,7 @@
                     font-family: 'Nunito Sans', system-ui, sans-serif;
                 "
             >
-                <div style="text-align: center; padding: 2rem;">
+                <div style="text-align: center; padding: 2rem">
                     <div
                         style="
                             inline-size: 48px;
@@ -267,8 +272,8 @@
                             animation: semantic-spin 1s linear infinite;
                         "
                     ></div>
-                    <p style="margin: 0; font-size: 1rem;">Montgomery County Semantic Explorer</p>
-                    <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: rgba(224, 240, 240, 0.68);">
+                    <p style="margin: 0; font-size: 1rem">Montgomery County Semantic Explorer</p>
+                    <p style="margin: 0.25rem 0 0; font-size: 0.85rem; color: rgba(224, 240, 240, 0.68)">
                         Loading 8,406 business records…
                     </p>
                 </div>
@@ -284,7 +289,9 @@
 
         <noscript>
             <style>
-                #loading-overlay { display: none !important; }
+                #app-loading-placeholder {
+                    display: none !important;
+                }
             </style>
             <div
                 id="noscript-fallback"
@@ -302,12 +309,11 @@
                 "
             >
                 <div>
-                    <p style="margin: 0 0 0.5rem; font-size: 1.1rem; font-weight: 600;">
-                        JavaScript is required
-                    </p>
-                    <p style="margin: 0 0 1rem; font-size: 0.9rem; color: rgba(224, 240, 240, 0.68); line-height: 1.5;">
+                    <p style="margin: 0 0 0.5rem; font-size: 1.1rem; font-weight: 600">JavaScript is required</p>
+                    <p style="margin: 0 0 1rem; font-size: 0.9rem; color: rgba(224, 240, 240, 0.68); line-height: 1.5">
                         This 3D semantic explorer needs JavaScript to run. <br />
-                        Please enable JavaScript in your browser, or visit the <a href="case-study.html" style="color: #4ecdc4;">case study page</a> for a static overview.
+                        Please enable JavaScript in your browser, or visit the
+                        <a href="case-study.html" style="color: #4ecdc4">case study page</a> for a static overview.
                     </p>
                 </div>
             </div>
