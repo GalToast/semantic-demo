@@ -96,15 +96,9 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
         await Promise.resolve()
         await Promise.resolve()
         const overlay = container.querySelector('#loading-overlay')!
-        expect(overlay.querySelector('.loading-kicker')?.textContent).toContain(
-            'Semantic Explorer'
-        )
-        expect(overlay.querySelector('.loading-title')?.textContent).toContain(
-            'Unable to load'
-        )
-        expect(overlay.querySelector('.loading-note')?.textContent).toContain(
-            'Worker build failed'
-        )
+        expect(overlay.querySelector('.loading-kicker')?.textContent).toContain('Semantic Explorer')
+        expect(overlay.querySelector('.loading-title')?.textContent).toContain('Unable to load')
+        expect(overlay.querySelector('.loading-note')?.textContent).toContain('Worker build failed')
         // Retry button is rendered in error state.
         expect(overlay.querySelector('.loading-retry-btn')).toBeTruthy()
     })

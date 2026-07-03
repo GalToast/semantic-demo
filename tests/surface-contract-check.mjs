@@ -273,13 +273,29 @@ async function loadIdleAndTypeSearch(page, query, params = {}) {
         else url.searchParams.set(key, String(value))
     }
     await loadAndWait(page, url.toString())
-    // Dismiss the splash on phone-class viewports. On mobile the
-    // body.render-kind-placeholder2d .info-panel { display: none }
-    // rule hides the search input until the user clicks through the
-    // splash CTA, so typing into #search-input would block on a hidden
-    // element. On desktop the splash dismisses itself (no-op). The
-    // .catch() swallows CTAs that aren't present.
-    await page.click('[data-testid="splash-cta"]').catch(() => {})
+    // Dismiss the gate that hides the info-panel under phone-class viewports.
+    // On mobile Placeholder2D owns the CTA (data-testid="placeholder-cta");
+    // on desktop while the canvas chunk is still loading the Splash modal
+    // owns it (data-testid="splash-cta"). Either click fires
+    // engineReady.signalReady() which removes the render-kind-placeholder2d
+    // body class and unblocks the info-panel / #search-input.
+    //
+    // We dispatch the click via page.evaluate() rather than page.click()
+    // because:
+    //   - Under isMobile contexts, Playwright's `click` waits for touch
+    //     actionability that may never resolve if the loading overlay or
+    //     a transient shell is still intercepting at the element position.
+    //   - Svelte 5's `onclick` handler is bound on the element directly,
+    //     so a JS .click() reliably fires it without going through
+    //     pointer/hover simulation that real users don't experience here.
+    //   - We only need to fire the engineReady gesture, not test the
+    //     touch path (covered by the dedicated mobile journey spec).
+    await page.evaluate(() => {
+        const el = document.querySelector('[data-testid="splash-cta"], [data-testid="placeholder-cta"]')
+        if (!el) return
+        el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
+    })
+    await page.waitForTimeout(300)
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })
     await page.locator('#search-input').first().fill(query)
     await page.waitForTimeout(350)

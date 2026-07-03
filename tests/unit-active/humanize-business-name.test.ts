@@ -6,11 +6,7 @@
  */
 
 import { describe, it, expect } from 'vitest'
-import {
-    humanizeBusinessName,
-    parseLegalName,
-    titleCaseSlug
-} from '../../src/lib/business/humanize'
+import { humanizeBusinessName, parseLegalName, titleCaseSlug } from '../../src/lib/business/humanize'
 
 describe('humanizeBusinessName', () => {
     it('returns the Legal name from public_note, preserving ALL CAPS', () => {
