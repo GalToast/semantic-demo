@@ -303,7 +303,11 @@ async function loadIdleAndTypeSearch(page, query, params = {}) {
     // already closed (e.g., on a re-run with persisted onboarding state).
     const helpDialog = page.locator('dialog.help-dialog[open]')
     if (await helpDialog.isVisible().catch(() => false)) {
-        await helpDialog.locator('button').first().click().catch(() => {})
+        await helpDialog
+            .locator('button')
+            .first()
+            .click()
+            .catch(() => {})
         await page.waitForTimeout(150)
     }
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })

@@ -1282,7 +1282,6 @@ body[data-panel-surface]:not(.surface-map-any) .focus-stage-neighbor-pill.is-nex
 
 /* ── 6. Accessibility & Motion ───────────────────────────────────────────── */
 
-
 @media (prefers-reduced-motion: reduce) {
     /* Silence inside-walk pocket pulse for users who prefer reduced motion. */
     #focus-stage[data-inside-walk-state='walking'] .focus-stage-inside-pulse {
