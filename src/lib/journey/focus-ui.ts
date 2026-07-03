@@ -372,6 +372,36 @@ export function updateFocusNeighborRail(): void {
         })
     })
 
+    // ── Roving tabindex arrow-key navigation ──────────────────────────
+    // ArrowDown/Up moves between pill buttons; Home/End jump to first/last.
+    // Tab follows natural DOM order (Walk → Inspect → Pin → next Walk → …).
+    list.onkeydown = (event: KeyboardEvent) => {
+        const pills = Array.from(list.querySelectorAll<HTMLButtonElement>('[data-index]'))
+        if (!pills.length) return
+        const active = document.activeElement as HTMLElement | null
+        const currentIdx = active ? pills.indexOf(active as HTMLButtonElement) : -1
+        let nextIdx = -1
+        switch (event.key) {
+            case 'ArrowDown':
+                event.preventDefault()
+                nextIdx = currentIdx < pills.length - 1 ? currentIdx + 1 : 0
+                break
+            case 'ArrowUp':
+                event.preventDefault()
+                nextIdx = currentIdx > 0 ? currentIdx - 1 : pills.length - 1
+                break
+            case 'Home':
+                event.preventDefault()
+                nextIdx = 0
+                break
+            case 'End':
+                event.preventDefault()
+                nextIdx = pills.length - 1
+                break
+        }
+        if (nextIdx >= 0) pills[nextIdx]?.focus()
+    }
+
     rail.classList.add('active')
 }
 
@@ -442,6 +472,34 @@ function updateWalkBreadcrumb(hasFocus: boolean = false): void {
 
         breadcrumb.appendChild(chip)
     })
+
+    // ── Arrow-key navigation between breadcrumb chips ──────────────────
+    breadcrumb.onkeydown = (event: KeyboardEvent) => {
+        const chips = Array.from(breadcrumb.querySelectorAll<HTMLButtonElement>('.walk-breadcrumb-chip'))
+        if (!chips.length) return
+        const active = document.activeElement as HTMLElement | null
+        const currentIdx = active ? chips.indexOf(active as HTMLButtonElement) : -1
+        let nextIdx = -1
+        switch (event.key) {
+            case 'ArrowRight':
+                event.preventDefault()
+                nextIdx = currentIdx < chips.length - 1 ? currentIdx + 1 : 0
+                break
+            case 'ArrowLeft':
+                event.preventDefault()
+                nextIdx = currentIdx > 0 ? currentIdx - 1 : chips.length - 1
+                break
+            case 'Home':
+                event.preventDefault()
+                nextIdx = 0
+                break
+            case 'End':
+                event.preventDefault()
+                nextIdx = chips.length - 1
+                break
+        }
+        if (nextIdx >= 0) chips[nextIdx]?.focus()
+    }
 }
 
 export function updateTraversalUi(): void {
