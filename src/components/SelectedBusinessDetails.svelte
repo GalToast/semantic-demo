@@ -136,6 +136,25 @@
 {/if}
 
 <style>
+  /*
+   * Inner-chip overflow handling lives in this component's <style> block
+   * (not css/modules/focus_stage.css) because that file is currently the
+   * lane's WIP — touching it would conflict with their pending changes.
+   * The override is global because .focus-stage-chip is a class used by
+   * multiple surfaces (FocusCard, SelectedBusinessDetails, etc.) and the
+   * underlying lane file owns the visual style.
+   *
+   * Long cluster names (e.g. "Professional Services & Office Support") would
+   * otherwise push a single chip past its container's 100% width on mobile.
+   * Clamp with ellipsis; the chip's title attribute stays for full disclosure.
+   */
+  :global(.focus-stage-chip) {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   .selected-relationship-context {
     margin: 0.6rem 0 0.4rem;
     padding: 0.6rem 0.75rem;
