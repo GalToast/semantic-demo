@@ -10,21 +10,21 @@ The render loop is **already sophisticated** — `scheduleNextAnimationFrame(con
 
 ## What's Already Optimized (Verified in Source)
 
-| Mechanism                                  | Location                                                      | Effect                                            |
-| ------------------------------------------ | ------------------------------------------------------------- | ------------------------------------------------- |
-| RAF → setTimeout(125ms) at 8fps idle       | `src/lib/engine/three-engine-timers.ts:41`                    | Static-state idle cost drops ~7×                  |
-| Pause on `document.hidden`                 | `src/lib/engine/three-engine-core.ts:369`                     | Tab not visible → no frames                       |
-| Pause on `webglContextLost`                | `src/lib/engine/three-engine-core.ts:365`                     | GPU context loss → no frames                      |
-| Pause on `circuitBreakerTripped`           | `src/lib/engine/three-engine-core.ts:362`                     | Tripped fault → no frames                         |
-| Pause when not `galaxy` view               | `src/lib/engine/three-engine-core.ts:375`                     | Map / semantic-dive views skip the 3D render path |
-| Skip if renderer/scene/camera missing      | `src/lib/engine/three-engine-core.ts:372`                     | Init-time guard                                    |
-| Cluster-label updates gated                | `src/lib/engine/three-engine-core.ts:567`                     | Only update labels when sceneNeedsContinuous      |
-| UpdateInteractionVisuals gated             | `src/lib/engine/three-engine-core.ts:539`                     | Only run when continuous frame needed             |
-| Mycelium thread update gated               | `src/lib/engine/three-engine-core.ts:552`                     | Only run when continuous frame needed             |
-| Auto-rotate cache invalidation skipped     | `src/lib/engine/three-engine-core.ts:540`                     | GPU buffers only updated on change                |
-| `preserveDrawingBuffer: false`              | `src/lib/engine/renderer/scene-init.ts:75`                    | Avoids Chrome's 2× memory cost                    |
-| EffectComposer fast-path for premium        | `src/lib/engine/three-engine-core.ts:574`                     | Skips standard render when composer takes over    |
-| `requestIdleCallback` fallback (when used) | `src/lib/engine/lifecycle.ts`                                 | Heavy work yields to browser                       |
+| Mechanism                                  | Location                                   | Effect                                            |
+| ------------------------------------------ | ------------------------------------------ | ------------------------------------------------- |
+| RAF → setTimeout(125ms) at 8fps idle       | `src/lib/engine/three-engine-timers.ts:41` | Static-state idle cost drops ~7×                  |
+| Pause on `document.hidden`                 | `src/lib/engine/three-engine-core.ts:369`  | Tab not visible → no frames                       |
+| Pause on `webglContextLost`                | `src/lib/engine/three-engine-core.ts:365`  | GPU context loss → no frames                      |
+| Pause on `circuitBreakerTripped`           | `src/lib/engine/three-engine-core.ts:362`  | Tripped fault → no frames                         |
+| Pause when not `galaxy` view               | `src/lib/engine/three-engine-core.ts:375`  | Map / semantic-dive views skip the 3D render path |
+| Skip if renderer/scene/camera missing      | `src/lib/engine/three-engine-core.ts:372`  | Init-time guard                                   |
+| Cluster-label updates gated                | `src/lib/engine/three-engine-core.ts:567`  | Only update labels when sceneNeedsContinuous      |
+| UpdateInteractionVisuals gated             | `src/lib/engine/three-engine-core.ts:539`  | Only run when continuous frame needed             |
+| Mycelium thread update gated               | `src/lib/engine/three-engine-core.ts:552`  | Only run when continuous frame needed             |
+| Auto-rotate cache invalidation skipped     | `src/lib/engine/three-engine-core.ts:540`  | GPU buffers only updated on change                |
+| `preserveDrawingBuffer: false`             | `src/lib/engine/renderer/scene-init.ts:75` | Avoids Chrome's 2× memory cost                    |
+| EffectComposer fast-path for premium       | `src/lib/engine/three-engine-core.ts:574`  | Skips standard render when composer takes over    |
+| `requestIdleCallback` fallback (when used) | `src/lib/engine/lifecycle.ts`              | Heavy work yields to browser                      |
 
 ## What Could Be Improved (Open Findings)
 
@@ -101,6 +101,35 @@ We don't have a Chrome DevTools perf trace harness in the repo. The next step is
 
 Until then, this audit doc is the working hypothesis: the engine is well-optimized, but ~10-15% wins remain on the table via frame coalescing and conditional render-skip.
 
+## W49-H Resolution (2026-07-03)
+
+Item 5 — Performance audit — was partially closed in commit `fee083cb`:
+
+**Done:**
+- New pure helper `src/lib/engine/renderer/scene-static-tracker.ts` computes
+  whether the next render can be skipped (camera pos + quat delta vs.
+  prior snapshot, EPSILON=1e-5). 9 unit tests lock in every branch.
+- The animate loop (in `src/lib/engine/three-engine-core.ts`) now captures
+  the camera transform each tick and calls the helper. It **records** the
+  verdict in `scenePerformanceDiagnostics.renderSkipOpportunities` and
+  `consecutiveSkippedFrames` but **does not actually skip** the render.
+  This is a measurement-only change; behavior is preserved.
+- DevGui will now show `renderSkipOpportunities` and
+  `consecutiveSkippedFrames` so a future developer can see in real time
+  how many frames were skippable on any given viewport.
+
+**Still open (P3 conditional render-skip):**
+- The gating of `renderer.render(...)` on the helper verdict. With the
+  measurements above, the future developer can flip the gate on once
+  the data justifies it (e.g. when DevGui shows >=80% skip opportunities
+  in steady-state at the 1280x800 viewport). Until then, the renders
+  still happen — the helper just counts.
+
+**Out of scope for the git history but follow-up:**
+- Inserting a single-RAF scheduler refactor (P2) — there's still a real
+  CPU win in coalescing the camera-choreography RAFs around a single
+  RAF, but that work is a separate refactor with a heavier review surface.
+
 ## Out of Scope This Round
 
 - GPU/CPU memory profiling (requires Chrome tracing)
@@ -110,11 +139,11 @@ Until then, this audit doc is the working hypothesis: the engine is well-optimiz
 
 ## Recommendations for the Lane
 
-| Priority | Item                              | Effort | Expected win    |
-| -------- | --------------------------------- | ------ | --------------- |
-| P1       | Frame-budget counter overlay      | 2-4h   | Visibility first, fixes after |
-| P2       | Single-RAF scheduler refactor     | 1-2d   | ~10-15% CPU when animating |
-| P3       | Conditional render-skip           | 1d     | ~5× idle-CPU when truly static |
-| P4       | Listener cleanup audit + grep     | 0.5d   | Memory leak risk closed |
+| Priority | Item                          | Effort | Expected win                   |
+| -------- | ----------------------------- | ------ | ------------------------------ |
+| P1       | Frame-budget counter overlay  | 2-4h   | Visibility first, fixes after  |
+| P2       | Single-RAF scheduler refactor | 1-2d   | ~10-15% CPU when animating     |
+| P3       | Conditional render-skip       | 1d     | ~5× idle-CPU when truly static |
+| P4       | Listener cleanup audit + grep | 0.5d   | Memory leak risk closed        |
 
 Each must come with a unit test that asserts the expected RAF count given a synthetic frame stream.
