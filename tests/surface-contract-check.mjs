@@ -3856,28 +3856,38 @@ async function assert_info_panel_populated(page, ctx) {
 }
 
 // ---------------------------------------------------------------------------
-// hover-tooltip — tests the map/canvas hover card.
+// hover-tooltip — tests the canvas hover preview card (the replacement for the
+// legacy #hover-tooltip, which was retired in 03448f26). The preview element
+// (#canvas-hover-preview) is created on demand by canvas-hover-preview.ts, so
+// the test drives it via the test-only CAMERA_NODE_FOCUSED bridge.
 // Validates: tooltip present, not clipped, text styling.
 // ---------------------------------------------------------------------------
 
 async function assert_hover_tooltip(page, ctx) {
     await loadAndWait(page, positionalUrl)
 
+    // The legacy #hover-tooltip was retired in 03448f26; the canvas hover
+    // preview is now created on demand by @lib/journey/canvas-hover-preview.ts.
+    // Drive the focused-business preview path via the test-only event bridge
+    // so the element is created and made visible without needing a real hit-test.
+    await page
+        .waitForFunction(() => typeof window.__publishCameraNodeFocused__ === 'function', {
+            timeout: 10000
+        })
+        .catch(() => {})
     await page.evaluate(() => {
-        const tooltip = document.querySelector('#hover-tooltip')
-        if (tooltip) {
-            tooltip.classList.add('visible')
-            tooltip.style.visibility = 'visible'
-            tooltip.style.opacity = '1'
-            tooltip.style.left = '50px'
-            tooltip.style.top = '50px'
-            tooltip.setAttribute('aria-hidden', 'false')
+        if (window.__publishCameraNodeFocused__) window.__publishCameraNodeFocused__(0)
+    })
+    await page.waitForSelector('#canvas-hover-preview', { state: 'visible', timeout: 10000 }).catch(() => {})
 
-            const name = tooltip.querySelector('#tooltip-name')
-            if (name) name.textContent = 'A Very Long Business Name That Might Clip If Not Handled'
-            const what = tooltip.querySelector('#tooltip-what')
-            if (what) what.textContent = 'This is a test of the what string.'
-        }
+    // Inject long text to exercise clipping defences.
+    await page.evaluate(() => {
+        const tooltip = document.querySelector('#canvas-hover-preview')
+        if (!tooltip) return
+        const name = tooltip.querySelector('.preview-name')
+        if (name) name.textContent = 'A Very Long Business Name That Might Clip If Not Handled'
+        const what = tooltip.querySelector('.preview-what')
+        if (what) what.textContent = 'This is a test of the what string.'
     })
 
     const info = await page.evaluate(() => {
@@ -3890,33 +3900,34 @@ async function assert_hover_tooltip(page, ctx) {
         }
 
         const results = {}
-        const tooltip = document.querySelector('#hover-tooltip')
+        const tooltip = document.querySelector('#canvas-hover-preview')
         results.tooltipPresent = tooltip !== null
         if (tooltip) {
             const style = getComputedStyle(tooltip)
-            results.tooltipVisible = style.visibility === 'visible' && style.opacity !== '0'
+            results.tooltipVisible =
+                style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'
         }
 
-        const name = document.querySelector('#tooltip-name')
+        const name = document.querySelector('#canvas-hover-preview .preview-name')
         results.nameClipped = name ? textClipped(name) : null
 
-        const what = document.querySelector('#tooltip-what')
+        const what = document.querySelector('#canvas-hover-preview .preview-what')
         results.whatClipped = what ? textClipped(what) : null
 
         return results
     })
 
-    if (info.tooltipPresent) ctx.pass('hover-tooltip', 'dom:hover-tooltip')
-    else ctx.fail('hover-tooltip', 'dom:hover-tooltip', 'missing #hover-tooltip')
+    if (info.tooltipPresent) ctx.pass('hover-tooltip', 'dom:canvas-hover-preview')
+    else ctx.fail('hover-tooltip', 'dom:canvas-hover-preview', 'missing #canvas-hover-preview')
 
-    if (info.tooltipVisible) ctx.pass('hover-tooltip', 'visibility:hover-tooltip')
-    else ctx.fail('hover-tooltip', 'visibility:hover-tooltip', 'tooltip is hidden')
+    if (info.tooltipVisible) ctx.pass('hover-tooltip', 'visibility:canvas-hover-preview')
+    else ctx.fail('hover-tooltip', 'visibility:canvas-hover-preview', 'canvas hover preview is hidden')
 
-    if (info.nameClipped) ctx.fail('hover-tooltip', 'text-clipping:tooltip-name', 'tooltip name text is clipped')
-    else if (info.nameClipped === false) ctx.pass('hover-tooltip', 'text-clipping:tooltip-name')
+    if (info.nameClipped) ctx.fail('hover-tooltip', 'text-clipping:preview-name', 'preview name text is clipped')
+    else if (info.nameClipped === false) ctx.pass('hover-tooltip', 'text-clipping:preview-name')
 
-    if (info.whatClipped) ctx.fail('hover-tooltip', 'text-clipping:tooltip-what', 'tooltip what text is clipped')
-    else if (info.whatClipped === false) ctx.pass('hover-tooltip', 'text-clipping:tooltip-what')
+    if (info.whatClipped) ctx.fail('hover-tooltip', 'text-clipping:preview-what', 'preview what text is clipped')
+    else if (info.whatClipped === false) ctx.pass('hover-tooltip', 'text-clipping:preview-what')
 
     return info
 }
