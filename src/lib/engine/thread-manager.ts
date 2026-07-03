@@ -18,7 +18,6 @@ import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { appState as state } from '@lib/state/app.svelte'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import { CONFIG } from './config'
-import { SCENE_PALETTE } from '@lib/utils/design-tokens'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
 import type { SemanticNeighborDetail } from '@lib/types/business'
@@ -286,21 +285,25 @@ export function getGroupLineSegmentCount(group: Group) {
     return total
 }
 
-function createLineSegments(positions: number[], opacity: number, linewidth: number) {
+function createLineSegments(positions: number[], colors: number[], opacity: number, linewidth: number) {
     if (!positions.length) return null
     const geometry = new LineSegmentsGeometry()
     geometry.setPositions(positions)
+    if (colors.length) {
+        geometry.setColors(colors)
+    }
     // The @types/three LineMaterial has a stricter parameters type than
     // the runtime export of the same class. Cast to the constructor's
     // inferred parameter shape to keep the call site narrow.
     const material = new LineMaterial({
-        color: SCENE_PALETTE.threadTint,
+        color: 0xffffff,
         linewidth,
         worldUnits: false,
         transparent: true,
         opacity,
         depthWrite: true,
-        blending: NormalBlending
+        blending: NormalBlending,
+        vertexColors: !!colors.length
     } as ConstructorParameters<typeof LineMaterial>[0])
     // The runtime LineMaterial and the @types/three LineMaterial are
     // seen by the type system as distinct (different module instances).
@@ -451,9 +454,24 @@ export function createMycelium() {
 
     webglContext.myceliumGroup = new Group()
     const profile = getMyceliumPresentationProfile()
-    webglContext.myceliumCoreLines = createLineSegments(coreConnections, profile.core, profile.linewidth.core)
-    webglContext.myceliumWispyLines = createLineSegments(wispyConnections, profile.wispy, profile.linewidth.wispy)
-    webglContext.myceliumBridgeLines = createLineSegments(bridgeConnections, profile.bridge, profile.linewidth.bridge)
+    webglContext.myceliumCoreLines = createLineSegments(
+        coreConnections,
+        coreColors,
+        profile.core,
+        profile.linewidth.core
+    )
+    webglContext.myceliumWispyLines = createLineSegments(
+        wispyConnections,
+        wispyColors,
+        profile.wispy,
+        profile.linewidth.wispy
+    )
+    webglContext.myceliumBridgeLines = createLineSegments(
+        bridgeConnections,
+        bridgeColors,
+        profile.bridge,
+        profile.linewidth.bridge
+    )
 
     if (webglContext.myceliumCoreLines) webglContext.myceliumGroup.add(webglContext.myceliumCoreLines)
     if (webglContext.myceliumWispyLines) webglContext.myceliumGroup.add(webglContext.myceliumWispyLines)
