@@ -45,7 +45,7 @@ test.describe('SD-143: mobile Map mode search visibility', () => {
   });
 
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await expect(page.locator('.search-container')).toBeVisible({ timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
   });

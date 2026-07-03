@@ -169,7 +169,7 @@ async function startServer(port) {
         // Strip leading slash and resolve to root
         let urlPath = req.url.split('?')[0];
         if (urlPath === '/' || !urlPath.includes('.')) {
-            urlPath = '/vector-explorer-polished.html';
+            urlPath = '/index.html';
         }
         const filePath = path.join(root, urlPath);
         try {
@@ -214,7 +214,7 @@ async function run() {
         // Emulate reduced motion
         await page.emulateMedia({ reducedMotion: 'reduce' });
 
-        const targetUrl = `${SERVER_URL}/vector-explorer-polished.html?nodemo=1`;
+        const targetUrl = `${SERVER_URL}/index.html?nodemo=1`;
         await page.goto(targetUrl, { waitUntil: 'commit', timeout: 15000 });
         await waitForReady(page);
 

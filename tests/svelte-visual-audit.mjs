@@ -12,7 +12,7 @@ import path from 'node:path';
 import { chromium } from 'playwright';
 
 const SVELTE_URL = 'http://localhost:5173/';
-const LEGACY_URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
+const LEGACY_URL = 'http://127.0.0.1:8795/index.html';
 const SCREENSHOT_DIR = path.resolve(process.cwd(), 'reports', 'screenshots', 'svelte-audit');
 const REPORT_FILE = path.resolve(process.cwd(), 'reports', 'svelte-visual-audit-report.md');
 

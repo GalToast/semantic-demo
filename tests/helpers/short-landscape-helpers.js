@@ -4,7 +4,7 @@ import { setSemanticDiveMode } from '@lib/orchestration/lifecycle'
 import { clearSearch } from '@lib/stores/navigation.svelte'
 
 export const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
-export const APP_PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
+export const APP_PATH = process.env.TEST_APP_PATH || '/index.html';
 
 function buildAppUrl(baseUrl = BASE_URL, appPath = APP_PATH) {
   return `${baseUrl}${appPath}?nodemo=1`;

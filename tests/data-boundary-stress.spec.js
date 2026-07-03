@@ -77,7 +77,7 @@ test.describe('Data Boundary Stress Tests', () => {
     })
 
     test('Layouts survive extreme unbreakable strings without X overflow', async ({ page }) => {
-        await page.goto('http://127.0.0.1:8795/vector-explorer-polished.html?view=galaxy', { waitUntil: 'networkidle' })
+        await page.goto('http://127.0.0.1:8795/index.html?view=galaxy', { waitUntil: 'networkidle' })
 
         // Ensure we trigger the search state with a malformed query
         await page.evaluate(() => {

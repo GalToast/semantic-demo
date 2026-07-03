@@ -22,7 +22,7 @@
 import { chromium } from 'playwright'
 import assert from 'node:assert/strict'
 
-const URL = process.env.TEST_URL || 'http://127.0.0.1:8795/vector-explorer-polished.html'
+const URL = process.env.TEST_URL || 'http://127.0.0.1:8795/index.html'
 const VIEWPORT = { width: 1440, height: 900 }
 
 const EXPECTED_CONTROLS = ['#view-toggle', '#info-controls', '#camera-controls']

@@ -36,7 +36,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     test('resetExperienceState completes and returns to galaxy view within 15s', async ({ page }) => {
         test.setTimeout(30000)
 
-        await page.goto(`${BASE_URL}/vector-explorer-polished.html`)
+        await page.goto(`${BASE_URL}/index.html`)
         await page.waitForFunction(() => typeof resetExperienceState === 'function', { timeout: 20000 })
         await page
             .waitForFunction(
@@ -78,7 +78,7 @@ test.describe('resetExperienceState cleanup regression', () => {
             await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) })
         })
 
-        await page.goto(`${BASE_URL}/vector-explorer-polished.html`)
+        await page.goto(`${BASE_URL}/index.html`)
         await page.waitForFunction(() => typeof resetExperienceState === 'function', { timeout: 20000 })
         await page
             .waitForFunction(
@@ -117,7 +117,7 @@ test.describe('resetExperienceState cleanup regression', () => {
     test('resetExperienceState does not leave a pending viewSwitchPreludeTimer', async ({ page }) => {
         test.setTimeout(30000)
 
-        await page.goto(`${BASE_URL}/vector-explorer-polished.html`)
+        await page.goto(`${BASE_URL}/index.html`)
         await page.waitForFunction(() => typeof resetExperienceState === 'function', { timeout: 20000 })
         await page
             .waitForFunction(

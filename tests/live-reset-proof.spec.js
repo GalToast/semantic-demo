@@ -60,7 +60,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForFunction(() => typeof (resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
@@ -131,7 +131,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForFunction(() => typeof (resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
@@ -169,7 +169,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForFunction(() => typeof (returnToOverview) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 
@@ -209,7 +209,7 @@ test.describe('Live reset: Escape → clearSearch + resetExplorationFocus', () =
       await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(SEARCH_STUB) });
     });
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForFunction(() => typeof (resetExplorationFocus) === 'function', { timeout: 20000 });
     await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
 

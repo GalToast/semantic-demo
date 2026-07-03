@@ -53,7 +53,7 @@ async function setupNetworkStubs(page) {
 }
 
 async function waitForAppReady(page) {
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
+  await page.goto(`${BASE_URL}/index.html?view=galaxy`);
   await page.waitForFunction(() => (
     typeof (clearSearch) === 'function' &&
     typeof (refreshCompositionState) === 'function' &&

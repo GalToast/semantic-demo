@@ -31,7 +31,7 @@ async function setupMockSearch(page) {
 
 async function openApp(page) {
   await setupMockSearch(page);
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`);
+  await page.goto(`${BASE_URL}/index.html?view=galaxy`);
   await page.waitForFunction(() => (
     typeof setSemanticDiveMode === 'function' &&
     typeof refreshCompositionState === 'function' &&

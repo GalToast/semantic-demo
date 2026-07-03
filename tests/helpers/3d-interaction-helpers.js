@@ -4,7 +4,7 @@ import { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch } from './mock-seman
 export { SEMANTIC_HEALTH_STUB, SEARCH_STUB, setupMockSearch }
 
 export async function openApp(page, viewport = { width: 1440, height: 900 }, options = {}) {
-    const appPath = options.appPath || '/vector-explorer-polished.html'
+    const appPath = options.appPath || '/index.html'
     page.on('console', (msg) => console.log('BROWSER:', msg.text()))
     await setupMockSearch(page)
     await page.setViewportSize(viewport)
@@ -85,7 +85,10 @@ export async function waitForGalaxyReady(page, viewport = { width: 1440, height:
 export async function openAppForTouch(page, viewport = { width: 1440, height: 900 }) {
     await setupMockSearch(page)
     await page.setViewportSize(viewport)
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
+    // NOTE: vector-explorer-polished.html was the legacy entry point; the
+    // Svelte 5 build serves /index.html as the canonical entry. Tests
+    // that still pass a custom appPath via options still get it.
+    await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(
         () => {
             const state = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}

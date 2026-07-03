@@ -52,7 +52,7 @@ function startServer() {
     const server = createServer((req, res) => {
       let urlPath = req.url.split('?')[0];
       if (urlPath === '/' || !extname(urlPath)) {
-        urlPath = '/vector-explorer-polished.html';
+        urlPath = '/index.html';
       }
       const filePath = join(ROOT, urlPath.replace(/^\//, ''));
       try {
@@ -196,7 +196,7 @@ async function run() {
   });
   const page = await context.newPage();
 
-  const url = `http://127.0.0.1:${port}/vector-explorer-polished.html?nodemo=1`;
+  const url = `http://127.0.0.1:${port}/index.html?nodemo=1`;
   await page.goto(url, { waitUntil: 'commit', timeout: 15000 });
   await waitForReady(page);
 

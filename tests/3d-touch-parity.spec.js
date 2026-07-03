@@ -18,7 +18,7 @@ async function openTouchPage(browser, viewport) {
   await page.route('**/api.php?action=semantic_lane_health**', route =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(HEALTH_OK) })
   );
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => {
     const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {};
     return (

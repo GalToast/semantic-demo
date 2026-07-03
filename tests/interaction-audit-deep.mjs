@@ -13,7 +13,7 @@
 import { chromium } from 'playwright';
 import fs from 'fs';
 
-const URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
+const URL = 'http://127.0.0.1:8795/index.html';
 const LOAD_WAIT_MS = 10_000;
 
 const consoleErrors = [];

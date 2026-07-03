@@ -2,7 +2,7 @@ import { test, expect } from '@playwright/test';
 import { search } from '@lib/search/state'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8766').replace(/\/$/, '');
-const APP_PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
+const APP_PATH = process.env.TEST_APP_PATH || '/index.html';
 const GPU_SMOKE = process.env.SEMANTIC_DEMO_USE_GPU === '1';
 const GPU_ARGS = [
   '--enable-gpu',

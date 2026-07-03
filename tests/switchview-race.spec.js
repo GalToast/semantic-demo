@@ -20,7 +20,7 @@ test.describe('switchView race condition regression', () => {
     test.setTimeout(30000);
     const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '');
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForFunction(() => !!document.getElementById('btn-map') && !!document.getElementById('btn-galaxy'), { timeout: 20000 });
 
     // Switch to map through the UI button, which exercises the same underlying view handoff path.
@@ -48,7 +48,7 @@ test.describe('switchView race condition regression', () => {
     test.setTimeout(30000);
     const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '');
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForFunction(() => !!document.getElementById('btn-map') && !!document.getElementById('btn-galaxy'), { timeout: 20000 });
 
     // Establish map as current view

@@ -14,7 +14,7 @@
  *
  * Usage:
  *   node tests/focus-transition-contract.mjs
- *   node tests/focus-transition-contract.mjs http://127.0.0.1:8795/vector-explorer-polished.html
+ *   node tests/focus-transition-contract.mjs http://127.0.0.1:8795/index.html
  */
 
 import http from 'node:http'

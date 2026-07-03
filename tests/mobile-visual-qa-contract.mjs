@@ -5,7 +5,7 @@ import { focusOnNode, setSemanticDiveMode } from '@lib/orchestration/lifecycle'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
 
 const baseRoot = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
-const baseUrl = `${baseRoot}/vector-explorer-polished.html`;
+const baseUrl = `${baseRoot}/index.html`;
 const runId = new Date().toISOString().replace(/[:.]/g, '-');
 const outDir = path.resolve('tmp', 'visual-qa-reels', `semantic-mobile-surfaces-${runId}`);
 fs.mkdirSync(outDir, { recursive: true });

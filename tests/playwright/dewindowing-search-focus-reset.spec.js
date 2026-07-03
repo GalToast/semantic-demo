@@ -66,7 +66,7 @@ for (const viewportProfile of VIEWPORTS) {
       test.setTimeout(60000);
 
       await setupMockSearch(page);
-      await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+      await page.goto(`${BASE_URL}/index.html`);
       await page.waitForFunction(() => typeof (clearSearch) === 'function', { timeout: 20000 });
 
       await enterSearchQuery(page, 'coffee');

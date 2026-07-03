@@ -201,7 +201,7 @@ test.describe('3D semantic state transition integrity', () => {
 
   test.beforeEach(async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+    await page.goto(`${BASE_URL}/index.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
     await waitForAppReady(page);
   }, 90000);
 

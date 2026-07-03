@@ -21,7 +21,7 @@ import { chromium } from 'playwright';
 import { spawn } from 'node:child_process';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
-const APP_PATH = '/vector-explorer-polished.html';
+const APP_PATH = '/index.html';
 const SERVER_PORT = 8795;
 let server = null;
 

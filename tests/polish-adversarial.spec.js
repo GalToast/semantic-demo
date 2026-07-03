@@ -14,7 +14,7 @@ test.describe('Adversarial Polish & Edge Case Audit', () => {
         })
         page.on('pageerror', (err) => pageErrors.push(err.message))
 
-        await page.goto(`${BASE_URL}/vector-explorer-polished.html?v=adversarial-suite`)
+        await page.goto(`${BASE_URL}/index.html?v=adversarial-suite`)
 
         try {
             await page.waitForSelector('#loading-overlay', { state: 'hidden', timeout: 45000 })

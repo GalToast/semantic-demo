@@ -11,7 +11,7 @@
  *
  * Usage:
  *   node tests/search-peek-expanded-render-contract.mjs [url]
- *   Default URL: http://127.0.0.1:8812/vector-explorer-polished.html
+ *   Default URL: http://127.0.0.1:8812/index.html
  */
 
 import { chromium } from 'playwright'
@@ -606,7 +606,7 @@ async function main() {
 
     const server = requestedUrl ? null : await startServer(0)
     const localPort = server?.address()?.port
-    const url = requestedUrl || `http://127.0.0.1:${localPort}/vector-explorer-polished.html`
+    const url = requestedUrl || `http://127.0.0.1:${localPort}/index.html`
     if (server) console.log(`Server started on http://127.0.0.1:${localPort}`)
 
     const browser = await chromium.launch({

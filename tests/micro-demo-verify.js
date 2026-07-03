@@ -3,7 +3,7 @@
  * Micro-demo Visual QA Test Runner
  *
  * Run: node tests/micro-demo-verify.js
- * Default URL: http://127.0.0.1:8795/vector-explorer-polished.html
+ * Default URL: http://127.0.0.1:8795/index.html
  *
  * Override with TEST_BASE_URL and TEST_APP_PATH.
  *
@@ -18,7 +18,7 @@ import { chromium } from 'playwright';
 import fs from 'node:fs/promises';
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795';
-const PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
+const PATH = process.env.TEST_APP_PATH || '/index.html';
 const DEMO_FORCE = '?demo=force';
 const DEMO_NODEMO = '?nodemo';
 const STORAGE_KEY = 'moco_mycelium_demo_v1';

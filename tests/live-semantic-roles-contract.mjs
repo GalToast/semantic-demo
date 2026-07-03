@@ -9,7 +9,7 @@ import { chromium } from '@playwright/test'
 
 const LIVE_URL =
     process.env.LIVE_SEMANTIC_URL ||
-    'https://mccullough.cloud/semantic-demo/vector-explorer-polished.html?view=galaxy&nodemo=1'
+    'https://mccullough.cloud/semantic-demo/index.html?view=galaxy&nodemo=1'
 
 const EXPECTED = {
     points: 8406,

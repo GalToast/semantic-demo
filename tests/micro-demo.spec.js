@@ -26,7 +26,7 @@ const SVELTE_URL = process.env.SVELTE_URL || `http://localhost:${SVELTE_PORT}`;
 /** Which server to target — set via TEST_SERVER env var or auto-detect. */
 const TEST_SERVER = process.env.TEST_SERVER || 'svelte'; // 'legacy' | 'svelte'
 const BASE_URL = TEST_SERVER === 'legacy' ? LEGACY_URL : SVELTE_URL;
-const APP_PATH = TEST_SERVER === 'legacy' ? '/vector-explorer-polished.html' : '/';
+const APP_PATH = TEST_SERVER === 'legacy' ? '/index.html' : '/';
 const DEMO_FORCE = '?demo=force';
 const STORAGE_KEY = 'moco_mycelium_demo_v1';
 const SESSION_KEY = 'moco_mycelium_demo_session_v1';

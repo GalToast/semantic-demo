@@ -5,7 +5,7 @@ const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:8795';
 test.describe('UI Renderers Module Validation', () => {
   
   test.beforeEach(async ({ page }) => {
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html?v=renderer-test`);
+    await page.goto(`${BASE_URL}/index.html?v=renderer-test`);
     await page.waitForSelector('#loading-overlay', { state: 'hidden', timeout: 30000 });
   });
 

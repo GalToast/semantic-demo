@@ -1,7 +1,7 @@
 const { chromium } = require('playwright');
 
-const APP_URL = process.env.APP_URL || 'http://127.0.0.1:8795/vector-explorer-polished.html';
-const FALLBACK_URL = 'http://127.0.0.1:8766/vector-explorer-polished.html';
+const APP_URL = process.env.APP_URL || 'http://127.0.0.1:8795/index.html';
+const FALLBACK_URL = 'http://127.0.0.1:8766/index.html';
 
 const VIEWPORTS = [
   { name: 'tablet', width: 768, height: 900 },

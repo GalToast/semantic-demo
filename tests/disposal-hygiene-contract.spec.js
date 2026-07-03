@@ -64,7 +64,7 @@ async function setupMockSearch(page) {
 }
 
 async function waitForAppReady(page) {
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}/index.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
     typeof (clearSearch) === 'function' &&
     Array.isArray(window.__TEST_STATE__?.points) &&

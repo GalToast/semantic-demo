@@ -9,7 +9,7 @@
 
 import { chromium } from 'playwright';
 
-const URL = 'http://127.0.0.1:8795/vector-explorer-polished.html';
+const URL = 'http://127.0.0.1:8795/index.html';
 const LOAD_WAIT_MS = 10_000;
 
 const consoleErrors = [];
@@ -551,7 +551,7 @@ function generateReport(results, errors, warnings, bodyState, stateCheck, demoSt
   const lines = [];
   lines.push('# Semantic Explorer — Interaction Audit Report');
   lines.push(`**Date:** ${new Date().toISOString()}`);
-  lines.push(`**URL:** http://127.0.0.1:8795/vector-explorer-polished.html`);
+  lines.push(`**URL:** http://127.0.0.1:8795/index.html`);
   lines.push('');
 
   // Summary

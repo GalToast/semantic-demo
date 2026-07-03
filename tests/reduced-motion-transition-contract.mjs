@@ -173,7 +173,7 @@ async function startServer(port) {
   const server = http.createServer((req, res) => {
     let urlPath = req.url.split('?')[0];
     if (urlPath === '/' || !urlPath.includes('.')) {
-      urlPath = '/vector-explorer-polished.html';
+      urlPath = '/index.html';
     }
     const filePath = resolve(root, urlPath.replace(/^\//, ''));
     try {
@@ -215,7 +215,7 @@ async function runBrowserProof(port) {
   const desktopPage = await browser.newPage({ viewport: { width: 1440, height: 900 } });
   await desktopPage.emulateMedia({ reducedMotion: 'reduce' });
 
-  const url = `http://127.0.0.1:${port}/vector-explorer-polished.html?nodemo=1`;
+  const url = `http://127.0.0.1:${port}/index.html?nodemo=1`;
   await desktopPage.goto(url, { waitUntil: 'commit', timeout: 15000 });
   await waitForReady(desktopPage);
 

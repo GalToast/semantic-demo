@@ -15,7 +15,7 @@ test.describe('Extraction & De-monolith Contract Verification', () => {
     });
     page.on('pageerror', err => pageErrors.push(err.message));
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html?v=contract-test`);
+    await page.goto(`${BASE_URL}/index.html?v=contract-test`);
 
     try {
       await page.waitForSelector('#loading-overlay', { state: 'hidden', timeout: 45000 });

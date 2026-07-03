@@ -29,7 +29,7 @@ test.describe('btn-journey-primary mobile overflow regression', () => {
     test.setTimeout(30000);
     const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '');
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForSelector('#btn-journey-primary', { state: 'visible', timeout: 20000 });
 
     // Get the button and its nearest scrollable ancestor
@@ -73,7 +73,7 @@ test.describe('btn-journey-primary mobile overflow regression', () => {
     test.setTimeout(30000);
     const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:9876').replace(/\/$/, '');
 
-    await page.goto(`${BASE_URL}/vector-explorer-polished.html`);
+    await page.goto(`${BASE_URL}/index.html`);
     await page.waitForSelector('#btn-journey-primary', { state: 'visible', timeout: 20000 });
 
     const styleProps = await page.evaluate(() => {

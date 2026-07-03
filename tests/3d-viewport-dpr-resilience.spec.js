@@ -10,7 +10,7 @@ async function openPage(browser, { width, height, deviceScaleFactor = 1 }) {
 
   await setupMockSearch(page);
 
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}/index.html?view=galaxy&nodemo=1`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
     Array.isArray(window.__TEST_STATE__?.nodePositions) &&
     (window.__APP_STATE__ ?? window.__TEST_STATE__).nodePositions.length > 0 &&

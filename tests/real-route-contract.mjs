@@ -23,7 +23,7 @@
 import { chromium } from 'playwright';
 
 const baseRoot = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
-const TARGET_URL = `${baseRoot}/vector-explorer-polished.html?view=galaxy&q=coffee&anchor=1&mode=trail&depth=1&record=1`;
+const TARGET_URL = `${baseRoot}/index.html?view=galaxy&q=coffee&anchor=1&mode=trail&depth=1&record=1`;
 
 const VIEWPORT = { width: 390, height: 844 };
 const DEVICE_SCALE_FACTOR = 2;

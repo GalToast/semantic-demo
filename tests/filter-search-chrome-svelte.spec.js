@@ -9,7 +9,7 @@
 import { test, expect } from '@playwright/test';
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8795').replace(/\/$/, '');
-const APP_PATH = process.env.TEST_APP_PATH || '/vector-explorer-polished.html';
+const APP_PATH = process.env.TEST_APP_PATH || '/index.html';
 
 const SEMANTIC_HEALTH_STUB = {
   ok: true,

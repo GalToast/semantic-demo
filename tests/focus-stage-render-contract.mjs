@@ -15,7 +15,7 @@
  *
  * Usage:
  *   node tests/focus-stage-render-contract.mjs
- *   node tests/focus-stage-render-contract.mjs http://127.0.0.1:8813/vector-explorer-polished.html
+ *   node tests/focus-stage-render-contract.mjs http://127.0.0.1:8813/index.html
  */
 
 import http from 'node:http'
@@ -25,7 +25,7 @@ import { chromium } from 'playwright'
 import { setTrailDepth } from '@lib/stores/journey.svelte'
 import { focusOnNode, setSemanticDiveMode, refreshCompositionState } from '@lib/orchestration/lifecycle'
 
-const DEFAULT_URL = 'http://127.0.0.1:8813/vector-explorer-polished.html'
+const DEFAULT_URL = 'http://127.0.0.1:8813/index.html'
 const PORT = 8813
 const HTML_FILE = path.resolve(process.cwd(), 'docs/archive/vector-explorer-polished-legacy.html')
 
@@ -119,7 +119,7 @@ async function run() {
     // Load the app
     console.log('[load] navigating...')
     await page
-        .goto(`${baseUrl}/vector-explorer-polished.html?nodemo=1`, { waitUntil: 'domcontentloaded', timeout: 15000 })
+        .goto(`${baseUrl}/index.html?nodemo=1`, { waitUntil: 'domcontentloaded', timeout: 15000 })
         .catch((e) => {
             console.error('[load] navigation error:', e.message)
         })

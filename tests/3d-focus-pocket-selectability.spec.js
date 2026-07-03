@@ -63,7 +63,7 @@ async function setupMockSearch(page) {
 async function openApp(page, viewport = { width: 1440, height: 900 }) {
   await setupMockSearch(page);
   await page.setViewportSize(viewport);
-  await page.goto(`${BASE_URL}/vector-explorer-polished.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
+  await page.goto(`${BASE_URL}/index.html?view=galaxy`, { waitUntil: 'domcontentloaded' });
   await page.waitForFunction(() => (
     typeof clearSearch === 'function' &&
     typeof focusOnNode === 'function' &&

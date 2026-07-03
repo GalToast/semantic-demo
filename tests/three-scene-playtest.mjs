@@ -7,7 +7,7 @@ import { setTrailDepth } from '@lib/stores/journey.svelte'
 import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 const PORT = Number(process.env.SEMANTIC_SCENE_PLAYTEST_PORT || 8798);
-const BASE_URL = `http://127.0.0.1:${PORT}/vector-explorer-polished.html`;
+const BASE_URL = `http://127.0.0.1:${PORT}/index.html`;
 const outDir = path.resolve(
     process.cwd(),
     'tmp',
