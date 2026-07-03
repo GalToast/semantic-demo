@@ -556,8 +556,18 @@ export function updateTraversalUi(): void {
         const reason = nav.lastTraversalReason || currentCandidate?.reason || 'nearby business relationship'
         const walkLength = (nav.walkHistoryIndices || []).length
         const stepNumber = walkLength + 1
-        contextEl.textContent = `Stop ${stepNumber}: ${currentName}. Why here: ${reason}. Source: ${sourceLabel}. Use Prev to go back or Next to continue.`
-        focusProgressEl.textContent = `Stop ${stepNumber} of ${neighborCount}`
+        // W48 audit fix (PR-W47-g): the branch-A guard `(nav.walkHistoryIndices || []).length >= 0`
+        // is a tautology (always true), so this branch fired even when neighborCount was 0 and
+        // shadowed the dedicated empty-neighbor branch below, producing the documented
+        // "Stop 2 of 0". Guard the "of ${neighborCount}" total so the progress line never shows a
+        // total smaller than the current stop, and drop the "Use Next" cue when Next is disabled.
+        contextEl.textContent = `Stop ${stepNumber}: ${currentName}. Why here: ${reason}. Source: ${sourceLabel}. Use Prev to go back${
+            neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
+        }.`
+        focusProgressEl.textContent =
+            neighborCount > 0
+                ? `Stop ${stepNumber} of ${neighborCount}`
+                : `Stop ${stepNumber}. No more visible stops in this slice.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`
