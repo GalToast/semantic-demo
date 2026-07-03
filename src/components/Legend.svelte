@@ -14,6 +14,9 @@
   import { CLUSTER_NAMES } from '@lib/utils/ui-presentation';
   import { CLUSTER_COLORS } from '@lib/utils/design-tokens';
 
+  import { legendOpen } from '@lib/stores/legend.svelte';
+  import { DisposableRegistry } from '@lib/utils/disposable-registry';
+
   interface Props {
     open?: boolean;
     mapView?: boolean;
@@ -24,6 +27,33 @@
   let { open = false, mapView = false, concealedByFocus = false }: Props = $props();
   let activeLegendButtonIndex = $state(0);
   let legendButtons: HTMLButtonElement[] = $state([]);
+
+  const legendRegistry = new DisposableRegistry({ label: 'Legend', warnAfterDispose: false });
+
+  /**
+   * Auto-hide the category legend after 10s of inactivity.
+   * Mirrors the ProximityLegend behavior: users who want to keep reading
+   * can hover / focus the panel to reset the timer; otherwise the panel
+   * closes automatically so it doesn't overlap the canvas.
+   */
+  function scheduleLegendAutoHide(): void {
+    legendRegistry.dispose();
+    legendRegistry.schedule(10000, () => {
+      legendOpen.set(false);
+    });
+  }
+
+  function resetLegendAutoHide(): void {
+    scheduleLegendAutoHide();
+  }
+
+  $effect(() => {
+    if (open) {
+      scheduleLegendAutoHide();
+    } else {
+      legendRegistry.dispose();
+    }
+  });
 
   // ── Body state for CSS class derivation ────────────────────────────────────
   // panelSurface is mirrored by parity-attrs.svelte.ts:installParityAttributeSync()
@@ -170,7 +200,10 @@
   onMount(() => {
     initLegendEventBusSubscriptions();
     const cleanup = initLegendKeyboardShortcut();
-    return cleanup;
+    return () => {
+      cleanup();
+      legendRegistry.dispose();
+    };
   });
 </script>
 
@@ -186,6 +219,8 @@
   aria-hidden={!open || concealedByFocus}
   aria-label="Business category legend"
   id="legend-panel"
+  onpointerenter={resetLegendAutoHide}
+  onfocusin={resetLegendAutoHide}
   onpointerdown={(e) => e.stopPropagation()}
   onwheel={(e) => e.stopPropagation()}
   ondblclick={(e) => e.stopPropagation()}

@@ -314,6 +314,7 @@
     aria-labelledby="help-title"
     aria-describedby="help-desc"
     onclick={(e) => { if (e.target === helpDialog) closeHelpDialog(); }}
+    onkeydown={(e) => { if (e.key === 'Escape') { e.preventDefault(); closeHelpDialog(); } }}
   >
     <div class="help-dialog-inner">
       <h3 id="help-title">What is Semantic Explorer?</h3>
