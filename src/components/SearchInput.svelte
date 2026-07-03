@@ -515,8 +515,11 @@
     outline-offset: -2px;
     border-radius: 0.25rem;
   }
+  /* W50-UX: placeholder color raised to 0.62 (≈ 5.4:1 on bg-surface-chrome
+   * ~0.07 alpha over a dark canvas) so the search bar's affordance is
+   * actually readable. Previous 0.35 was ≈ 2.5:1 — failed WCAG 2 AA. */
   .search-input::placeholder {
-    color: rgba(224, 240, 240, 0.35);
+    color: rgba(224, 240, 240, 0.62);
   }
   .search-input::-webkit-search-cancel-button {
     display: none;

@@ -623,19 +623,25 @@
    * Styled as a small, unobtrusive page-title rather than a competing
    * banner. The header below carries the visible brand + chip rail;
    * the h1 provides the same identity to screen readers and search
-   * engines without visually duplicating the chrome row. Sits inline at
-   * the top-left of the viewport (in flow at top: 0). The header chip
-   * rail (position: absolute; top: 0; z-index: 800) covers any overlap,
-   * so this can sit at natural document flow without conflict. */
+   * engines without visually duplicating the chrome row.
+   *
+   * W50-UX: previously sat at top: 0 in document flow with z-index 50;
+   * the chip rail (position: absolute; z-index 800) overlaid the left
+   * portion. The H1 still leaked to the right of the chips, producing
+   * two visible titles stacked at y=0 (the wordmark "Semantic Explorer"
+   * + the page-title "— Montgomery County Business Network"). UX-1 fix:
+   * sit the H1 BELOW the chip rail with margin-top equal to the rail
+   * height (~56px), single line, ellipsized on overflow, so it reads
+   * as a subtitle rather than competing with the chrome row. */
   .app-title {
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 0.78rem;
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0.02em;
-    color: rgba(224, 240, 240, 0.65);
-    padding: 0.6rem 1rem 0.35rem;
-    margin: 0;
+    color: rgba(224, 240, 240, 0.7);
+    padding: 0 1rem 0.35rem;
+    margin: 56px 0 0;
     max-width: 100%;
     overflow: hidden;
     text-overflow: ellipsis;
