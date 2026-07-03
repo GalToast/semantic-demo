@@ -258,6 +258,7 @@
         class:active={$legendOpen}
         onclick={toggleLegend}
         type="button"
+        aria-expanded={$legendOpen}
         aria-label={$legendOpen ? 'Close category legend' : 'Open category legend'}
         title={$legendOpen ? 'Close legend' : 'Open legend'}
       >

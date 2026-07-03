@@ -37,9 +37,32 @@
   existing Canvas mount + three.js lazy load flow.
 -->
 <script lang="ts">
+  import { onMount } from 'svelte'
   import { engineReady } from '@lib/stores/engine-ready.svelte'
+  import { viewport } from '@lib/stores/viewport.svelte'
+  import { setLegendOpen } from '@lib/stores/legend.svelte'
+  import { getBypassAttr } from '@lib/orchestration/parity-attrs.svelte'
   import { CONFIG } from '@lib/engine/config'
   import { CLUSTER_COLORS } from '@lib/utils/design-tokens'
+
+  // W50-UX-2: Auto-open the category legend on mobile splash so users
+  // discover the category labels. The full Legend.svelte panel is
+  // normally hidden via CSS when renderKind is 'placeholder2d', but
+  // opening it here makes the categories discoverable without
+  // requiring the user to find the small header toggle.
+  onMount(() => {
+    const renderKind = getBypassAttr('renderKind')
+    if (renderKind === 'placeholder2d' && $viewport.isCompact) {
+      setLegendOpen(true)
+    }
+    // Return cleanup: reset legend to closed when the component unmounts
+    // (user clicks Explore → renderKind flips to 'webgl'). This ensures
+    // the legend returns to its closed-by-default behavior in the
+    // 3D scene.
+    return () => {
+      setLegendOpen(false)
+    }
+  })
 
   const enter3d = (e: Event): void => {
     e.preventDefault()
