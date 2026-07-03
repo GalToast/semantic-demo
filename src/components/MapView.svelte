@@ -361,7 +361,7 @@
     display: block;
     font-family: var(--font-mono, monospace);
     font-size: 0.6rem;
-    color: rgba(255, 225, 209, 0.5);
+    color: rgba(255, 225, 209, 0.5); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
     word-break: break-word;
     margin-top: 0.2rem;
   }

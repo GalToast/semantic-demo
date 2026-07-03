@@ -129,19 +129,19 @@
 <!-- Grid -->
 <div class="selected-grid">
   <div class="selected-item">
-    <div class="selected-item-label" title="Other businesses connected to this one through recorded relationships.">Semantic Neighborhood</div>
+    <div class="selected-item-label" title="The kind of business this is — what it does, based on similar listings in the area.">Business type</div>
     <div class="selected-item-value" id="selected-theme">{viewModel.theme}</div>
   </div>
   <div class="selected-item">
-    <div class="selected-item-label">Record Status</div>
+    <div class="selected-item-label">Status</div>
     <div class="selected-item-value" id="selected-status">{viewModel.status}</div>
   </div>
   <div class="selected-item">
-    <div class="selected-item-label">Map Coordinates</div>
+    <div class="selected-item-label">Coordinates</div>
     <div class="selected-item-value" id="selected-map">{viewModel.mapText}</div>
   </div>
   <div class="selected-item">
-    <div class="selected-item-label" title="A path of connected businesses following the strongest signal chain from this one.">Related Thread</div>
+    <div class="selected-item-label" title="Other similar businesses in the area, ordered by how strongly they relate to this one.">Similar businesses</div>
     <div class="selected-item-value" id="selected-thread">{viewModel.threadText}</div>
   </div>
 </div>

@@ -18,10 +18,7 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-const SELECTED_DETAILS_PATH = resolve(
-    __dirname,
-    '../../src/components/SelectedBusinessDetails.svelte'
-)
+const SELECTED_DETAILS_PATH = resolve(__dirname, '../../src/components/SelectedBusinessDetails.svelte')
 
 function readSelectedDetailsSource(): string {
     return readFileSync(SELECTED_DETAILS_PATH, 'utf8')
@@ -31,9 +28,7 @@ describe('SelectedBusinessDetails component (W48-D external-link a11y)', () => {
     it('external links carry an aria-label warning of new tab', () => {
         const src = readSelectedDetailsSource()
         // Template-level conditional aria-label: only set when isExternal.
-        expect(src).toMatch(
-            /aria-label=\{fact\.isExternal \? `\$\{fact\.label\} \(opens in new tab\)` : null\}/
-        )
+        expect(src).toMatch(/aria-label=\{fact\.isExternal \? `\$\{fact\.label\} \(opens in new tab\)` : null\}/)
     })
 
     it('external links include a .sr-only "(opens in new tab)" suffix', () => {
@@ -63,5 +58,33 @@ describe('SelectedBusinessDetails component (W48-D external-link a11y)', () => {
         // visually-hidden suffix actually hides visually.
         const baseCss = readFileSync(resolve(__dirname, '../../css/base.css'), 'utf8')
         expect(baseCss).toMatch(/\.sr-only\s*\{/)
+    })
+})
+
+// W48-J: rename user-facing labels in the .selected-grid to drop
+// engineering jargon. The ids stay the same (the contract tests lock
+// them in), only the visible label text changes.
+describe('SelectedBusinessDetails user-facing labels (W48-J)', () => {
+    it('grid row labels are user-friendly (no "Thread", "Record", "Neighborhood", "Coordinates"?)', () => {
+        const src = readSelectedDetailsSource()
+        // Old labels must be gone.
+        expect(src).not.toContain('Related Thread')
+        expect(src).not.toContain('Semantic Neighborhood')
+        expect(src).not.toContain('Record Status')
+        // New friendly labels must be present.
+        expect(src).toContain('Similar businesses')
+        expect(src).toContain('Business type')
+        expect(src).toContain('Status')
+        // Map Coordinates → just Coordinates (we can keep or change).
+        expect(src).toContain('Coordinates')
+    })
+
+    it('grid row titles explain the value when hovered (screen-reader friendly)', () => {
+        const src = readSelectedDetailsSource()
+        // Title tooltips for the renamed labels. The engineer's old
+        // copy ("strongest signal chain", "through recorded
+        // relationships") is dropped in favor of plain user-language.
+        expect(src).toMatch(/title="The kind of business this is[^"]*"/)
+        expect(src).toMatch(/title="Other similar businesses in the area[^"]*"/)
     })
 })

@@ -14,7 +14,7 @@ import { formatBusinessName } from '@lib/utils/dom-formatters'
 const _state = state
 
 export function describeThreadLensForPoint(point: BusinessRecord): string {
-    if (!point) return 'Waiting for a semantic thread.'
+    if (!point) return 'No related businesses yet.'
 
     const leadId = point.lead_id !== undefined && point.lead_id !== null ? String(point.lead_id).trim() : null
 
@@ -25,15 +25,17 @@ export function describeThreadLensForPoint(point: BusinessRecord): string {
         const mode = _state.myceliumMode || 'default'
         const clusterLabel = describeCluster(point.cluster)
         const LENS_BY_MODE: Record<string, string> = {
-            bloom: 'Signal-rich — surfaced for businesses with a website plus email or phone',
-            bridge: 'Between neighborhoods — highlighted for businesses linking neighborhoods',
+            bloom: 'Has website and contact info on file',
+            bridge: 'Connects different kinds of businesses',
             trail:
-                'Connection Trail — focused on semantic neighbors of ' +
-                (point.name ? formatBusinessName(point.name) : 'the focused business'),
-            default: clusterLabel ? clusterLabel + ' neighborhood' : 'County View'
+                'Showing connections from ' +
+                (point.name ? formatBusinessName(point.name) : 'this business'),
+            default: clusterLabel
+                ? 'Similar to ' + clusterLabel + ' businesses'
+                : 'All Montgomery County businesses'
         }
         const base = (LENS_BY_MODE[mode] ?? LENS_BY_MODE.default)!
-        if (point.status === 'disqualified') return 'Archive layer — ' + base
+        if (point.status === 'disqualified') return 'No longer active. Was a ' + base
         return base
     }
 
@@ -41,14 +43,14 @@ export function describeThreadLensForPoint(point: BusinessRecord): string {
     const clusterLabel = describeCluster(point.cluster)
 
     if (neighborCount === 0) {
-        return 'Isolated node — no semantic connections yet.'
+        return 'No similar businesses found.'
     }
     if (neighborCount <= 3) {
-        return 'Sparse node — only ' + neighborCount + ' connection' + (neighborCount === 1 ? '' : 's') + '.'
+        return 'Only ' + neighborCount + ' similar business' + (neighborCount === 1 ? '' : 'es') + '.'
     }
     if (neighborCount >= 20) {
-        const anchorWord = clusterLabel ? clusterLabel : 'County'
-        return 'Strong anchor in ' + anchorWord + ' cluster with ' + neighborCount + ' semantic neighbors.'
+        const anchorWord = clusterLabel ? clusterLabel : 'Montgomery County'
+        return 'One of ' + neighborCount + ' similar ' + anchorWord + ' businesses.'
     }
-    return 'Connected node — ' + neighborCount + ' semantic neighbors in ' + (clusterLabel || 'local') + ' cluster.'
+    return neighborCount + ' similar ' + (clusterLabel || 'local') + ' businesses.'
 }

@@ -93,6 +93,7 @@ Read these only when relevant:
 - Session coordination: `docs/session-coordination.md` — session lock, parallel-session rules, test-strategy gap.
 - Subagent delegation: `docs/subagent-delegation.md` — delegation lifecycle, rate/polish, vision matrix, lane inventory.
 - Important files: `docs/important-files.md` — canonical file inventory by module.
+- UX copy rules: `docs/ux-copy-rules.md` — forbidden jargon in user-facing strings, friendly copy patterns, label conventions. For any change that touches strings the user sees (`.svelte` template text, copy returned by helpers, status messages), check against this list.
 - Historical full agent reference: `docs/archive/agents-full-reference-2026-06-19.md`
 
 If a referenced doc is missing, use the archived full reference as fallback and consider restoring a concise dedicated doc.
@@ -147,9 +148,9 @@ Use narrower checks when validating a scoped change.
 ## Key Product Invariants (W47 hot-path)
 
 - **Svelte 5 reactivity fix pattern (PR-2 / 3-bug stack, see `346891d8`):**
-    - **One-time-snapshot state reads `const renderKind = getInitialRenderKind()`** is the foot-gun. Switch to `$state: $derived(getBypassAttr('renderKind') ?? getInitialRenderKind())" so body class flips react to gate flips.
-    - **Order matters:** `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)` so the Playwright auto-signal from `__PLAYWRIGHT__` wins cleanly when the test wants webgl, instead of being overwrote by the later placeholder-path setRenderKind.
-    - **First-visit help dialog** can sit on top of the search input on mobile; dismiss it in any test that types into the input (fills dialog + 1 .fill() line).
-    - All three land together in one fix. Same pattern recurs wherever a module has `const foo = getInitial*()` at the top.
+  - **One-time-snapshot state reads `const renderKind = getInitialRenderKind()`** is the foot-gun. Switch to `$state: $derived(getBypassAttr('renderKind') ?? getInitialRenderKind())" so body class flips react to gate flips.
+  - **Order matters:** `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)` so the Playwright auto-signal from `__PLAYWRIGHT__` wins cleanly when the test wants webgl, instead of being overwrote by the later placeholder-path setRenderKind.
+  - **First-visit help dialog** can sit on top of the search input on mobile; dismiss it in any test that types into the input (fills dialog + 1 .fill() line).
+  - All three land together in one fix. Same pattern recurs wherever a module has `const foo = getInitial*()` at the top.
 
 ## Pi Harness Notes
