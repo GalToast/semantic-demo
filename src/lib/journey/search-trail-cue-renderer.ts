@@ -34,6 +34,20 @@ export function updateSearchTrailCue(nextCue: SearchTrailCue = {}): void {
         return
     }
 
+    // W48-UX: hide the search-trail-cue when the user has reached focus
+    // mode. The cue is a search-stage narrative ("Search opens a trail.")
+    // that loses relevance once the focus card + trail controls render
+    // at the same anchor: 5rem. The two stack on each other in the
+    // focus state, which is the user-visible overlap bug the W47
+    // audit flagged for a different fix path. Hide the cue when the
+    // current panel surface is any focus-* state.
+    const panelSurface = document.body.dataset?.panelSurface ?? ''
+    if (panelSurface.startsWith('focus')) {
+        cueEl.hidden = true
+        cueEl.classList.remove('active')
+        return
+    }
+
     const query = (state.searchState.currentSearchSummary as Record<string, unknown> | null)?.query || 'the network'
     const kicker = nextCue.kicker || (nextCue.stage === 'query' ? 'Scanning...' : 'Connection cue')
     const title =

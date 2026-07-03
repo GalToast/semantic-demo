@@ -109,7 +109,7 @@
   class:is-compact={$viewport.isCompact}
   class:info-panel-contained={panelContained}
   role="search"
-  aria-label="Search businesses in the semantic field"
+  aria-label="Search businesses"
   onpointerdown={(e) => e.stopPropagation()}
   onwheel={(e) => e.stopPropagation()}
   ondblclick={(e) => e.stopPropagation()}
@@ -163,6 +163,18 @@
     z-index: var(--z-search-bar, 2);
     margin: -1rem -1rem 0 0;
     padding: 0 1rem;
+  }
+
+  /* W48-UX: search-panel inner elements (search-input-wrap + search-results)
+     each have their own borders; the outer container border created a
+     "3 stacked search boxes" visual when all three nested borders are
+     visible at once. Drop the outer container border + background when
+     the container is inside an info panel — the inner elements provide
+     sufficient surface distinction. */
+  .search-container.info-panel-contained {
+    border: none;
+    background: transparent;
+    padding: 0;
   }
 
   /* W47-E: dev-only mock-data banner. Sits above the search input as a

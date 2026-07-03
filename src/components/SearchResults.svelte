@@ -439,7 +439,7 @@
         role="listbox"
         tabindex="-1"
         aria-label="Search result businesses"
-        aria-activedescendant={activeIndex >= 0 ? `search-result-${Number(resultSlice[activeIndex]?.index)}` : undefined}
+        aria-activedescendant={activeIndex >= 0 ? `search-result-option-${activeIndex}` : undefined}
         aria-keyshortcuts="ArrowDown ArrowUp Home End Enter Escape"
         onkeydown={handleContainerKeyDown}
       >
@@ -532,6 +532,15 @@
     right: auto;
     z-index: calc(var(--z-search, 100) + 1);
     margin-top: 0.5rem;
+    /* W48-UX: in panel-contained mode the wrapper's own border + dark
+       background created a "3 stacked search boxes" reading. Strip
+       both so the results flow as a continuation of the search input,
+       and let the InfoPanel surface chrome provide the visual
+       container. */
+    background: transparent;
+    border: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .search-show-more-btn {

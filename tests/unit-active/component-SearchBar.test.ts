@@ -27,7 +27,7 @@ describe('SearchBar component', () => {
     it('container has aria-label="Search businesses in the semantic field"', () => {
         const { container } = render(SearchBar)
         const search = container.querySelector('.search-container')
-        expect(search!.getAttribute('aria-label')).toBe('Search businesses in the semantic field')
+        expect(search!.getAttribute('aria-label')).toBe('Search businesses')
     })
 
     afterEach(() => {
@@ -87,14 +87,9 @@ describe('SearchBar component', () => {
         // Now it reacts to SEARCH_DEGRADED / SEARCH_SUCCESS via the event bus.
         const { readFileSync } = await import('fs')
         const { resolve } = await import('path')
-        const source = readFileSync(
-            resolve(__dirname, '../../src/components/SearchBar.svelte'),
-            'utf-8'
-        )
+        const source = readFileSync(resolve(__dirname, '../../src/components/SearchBar.svelte'), 'utf-8')
         // Strip Svelte comments and JS comments so doc references don't trip the check
-        const stripped = source
-            .replace(/<!--[\s\S]*?-->/g, '')
-            .replace(/\/\/[^\n]*/g, '')
+        const stripped = source.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\/[^\n]*/g, '')
         expect(stripped).not.toMatch(/setInterval\(/)
         expect(source).toMatch(/EVENTS\.SEARCH_DEGRADED/)
         expect(source).toMatch(/EVENTS\.SEARCH_SUCCESS/)

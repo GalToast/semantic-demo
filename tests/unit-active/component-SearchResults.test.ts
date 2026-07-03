@@ -101,9 +101,7 @@ describe('SearchResults component', () => {
         // updated aria-activedescendant but the user couldn't see what was
         // highlighted. The wrapper has overflow-y: auto so a scrollIntoView
         // on the new listitem is the right fix.
-        expect(source).toMatch(
-            /getElementById\(`search-result-option-\$\{clamped\}`\)/
-        )
+        expect(source).toMatch(/getElementById\(`search-result-option-\$\{clamped\}`\)/)
         expect(source).toMatch(/item\.scrollIntoView\(\{[\s\S]*?block: 'nearest'/)
         // Honors prefers-reduced-motion for instant scroll.
         expect(source).toMatch(/behavior: prefersReducedMotion\(\) \? 'auto' : 'smooth'/)

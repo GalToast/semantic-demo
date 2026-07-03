@@ -530,15 +530,19 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-width: 22px;
-    height: 22px;
-    padding: 0 6px;
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 4px;
-    background: rgba(255, 255, 255, 0.04);
-    color: rgba(255, 255, 255, 0.55); /* a11y-ok: decorative kbd hint, aria-hidden */
+    min-width: 18px;
+    height: 18px;
+    padding: 0 5px;
+    /* W48-UX: a bordered + filled box that visually echoed the search input
+       border created a "3 stacked search boxes" reading on the search
+       panel. Drop the border + fill so the hint reads as a typographic
+       label, not a separate input. The kbd is still a11y-decorative
+       (aria-hidden="true"). */
+    border: none;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.45);
     font-family: 'Bricolage Grotesque', monospace;
-    font-size: 12px;
+    font-size: 11px;
     font-weight: 600;
     margin-left: auto;
     pointer-events: none;
