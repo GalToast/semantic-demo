@@ -177,3 +177,16 @@ export function getPublicRecordStatusLabel(status: unknown): string {
   if (normalized === 'disqualified') return 'Archive layer';
   return 'County record';
 }
+
+/**
+ * Map a raw threadSource string to a user-friendly label.
+ *
+ * The engine stores `'semantic'` when record-backed connections exist and
+ * `'geometric-fallback'` (or any other string) when it falls back to
+ * approximate cloud projection. Raw values like `'geometric-fallback'`
+ * are meaningless to users; this function translates them.
+ */
+export function formatThreadSourceLabel(source: string | null | undefined): string {
+    if (source === 'semantic') return 'semantic thread'
+    return 'geographic proximity'
+}

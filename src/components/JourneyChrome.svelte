@@ -24,6 +24,7 @@
 
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
   import { normalizeRelationshipRole, getRelationshipRoleLabel } from '@lib/utils/relationship-roles';
+  import { formatThreadSourceLabel } from '@lib/utils/dom-formatters';
   import type { BusinessRecord } from '@lib/types/business';
   import type { RelationshipRole } from '@lib/utils/relationship-roles';
   import WalkBreadcrumb from '@components/WalkBreadcrumb.svelte';
@@ -114,7 +115,11 @@
       : normalizeCandidates(navSnapshot.threadCandidates);
   });
   const currentThreadSource = $derived(journeySnapshot.threadSource || navSnapshot.threadSource);
-  const isLoading = $derived(false); // Extensible: set true when trail data is loading
+  // Thread computation is synchronous (walkThreadNeighbor → WalkResult | null), so there is no
+  // async trail-loading state to surface here. If trail fetch ever becomes async, wire isLoading
+  // to that signal and aria-busy (below) will announce it. Kept as `false` to preserve the
+  // aria-busy attribute hook for contract tests rather than removing it.
+  const isLoading = $derived(false);
   const chromeHasFocus = $derived(
     navSnapshot.mode === 'focus' ||
     navSnapshot.mode === 'inside' ||
@@ -182,7 +187,7 @@
       ? (getBusinessRecords()[focusIdx] as BusinessRecord)?.name ?? ''
       : '';
     if (currentTrailDepth >= 1 && walkLen >= 1) {
-      return `Stop ${walkLen + 1}: ${name}. ${lastReason ? `Source: ${currentThreadSource}` : ''}`;
+      return `Stop ${walkLen + 1}: ${name}. ${lastReason ? `Source: ${formatThreadSourceLabel(currentThreadSource)}` : ''}`;
     }
     if (neighborCount === 0 && currentThreadSource === 'semantic') {
       return `Semantic connections exist around ${name}, but none survive the current slice.`;

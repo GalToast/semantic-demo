@@ -5,7 +5,7 @@
  */
 
 import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
-import { formatBusinessName, cleanOptionalValue } from '@lib/utils/dom-formatters'
+import { formatBusinessName, cleanOptionalValue, formatThreadSourceLabel } from '@lib/utils/dom-formatters'
 import { isCompactFocusStageViewport } from '@lib/utils/ui-presentation'
 import { isPointVisible } from '@lib/utils/geo-data'
 import type { ThreadCandidateRef } from '@lib/types/state'
@@ -583,7 +583,7 @@ export function updateTraversalUi(): void {
     const currentName = formatBusinessName(currentFocusPoint?.name || 'this business')
     const currentCandidate =
         nav.mode === 'trail' && nav.trailCursor >= 0 && neighborCount > 0 ? nav.threadCandidates[nav.trailCursor] : null
-    const sourceLabel = nav.threadSource === 'semantic' ? 'semantic thread' : 'approximate cloud projection fallback'
+    const sourceLabel = formatThreadSourceLabel(nav.threadSource)
     const currentIndexForWalk = nav.focusedIndex ?? getCurrentTrailFocusIndex(nav.focusedIndex)
     const nextWalkCandidate = getNextWalkCandidateForIndex(currentIndexForWalk ?? 0)
     const nextWalkPoint = nextWalkCandidate ? points[nextWalkCandidate.index] : null
