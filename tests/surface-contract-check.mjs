@@ -3904,8 +3904,7 @@ async function assert_hover_tooltip(page, ctx) {
         results.tooltipPresent = tooltip !== null
         if (tooltip) {
             const style = getComputedStyle(tooltip)
-            results.tooltipVisible =
-                style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'
+            results.tooltipVisible = style.display !== 'none' && style.visibility !== 'hidden' && style.opacity !== '0'
         }
 
         const name = document.querySelector('#canvas-hover-preview .preview-name')
