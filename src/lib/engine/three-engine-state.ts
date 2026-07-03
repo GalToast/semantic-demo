@@ -88,6 +88,15 @@ export interface ThreeEngineState {
     hoverEmissiveFlash: number
     sceneRegistry: DisposableRegistry | null
     mapButtonClickHandler: ((event: MouseEvent) => void) | null
+
+    // W49-H: camera-matrix-delta snapshot for the conditional render-skip.
+    // Reset by the dispose path so a fresh engine mount gets a non-stale baseline.
+    // null → no baseline yet (first frame always renders).
+    lastCameraSnapshot: { pos: readonly [number, number, number]; quat: readonly [number, number, number, number] } | null
+    /** W49-H: consecutive frames skipped because the camera scene was static. */
+    consecutiveSkippedFrames: number
+    /** W49-H: total render-skip opportunities since engine init. */
+    renderSkipOpportunities: number
 }
 
 // ── Singleton Instance ───────────────────────────────────────────────────────
@@ -126,7 +135,12 @@ export const engineState: ThreeEngineState = {
     lastHoveredNode: null,
     hoverEmissiveFlash: 0,
     sceneRegistry: null,
-    mapButtonClickHandler: null
+    mapButtonClickHandler: null,
+
+    // W49-H: initialize the camera-snapshot tracker.
+    lastCameraSnapshot: null,
+    consecutiveSkippedFrames: 0,
+    renderSkipOpportunities: 0
 }
 
 // ── Module Bootstrap ─────────────────────────────────────────────────────────

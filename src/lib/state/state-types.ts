@@ -250,6 +250,10 @@ export interface ScenePerformanceDiagnostics {
     drawCalls?: number
     triangles?: number
     renderables?: ReturnType<typeof import('@lib/engine/renderer/renderer-diagnostics').getSceneRenderableDiagnostics>
+    /** W49-H: total frames where the conditional-skip helper returned true. */
+    renderSkipOpportunities?: number
+    /** W49-H: consecutive frames skipped at the current run. Resets when a render fires. */
+    consecutiveSkippedFrames?: number
 }
 /** A single segment in the focus-stage semantic thread rendering.
  *  Each parent edge (a → b) is subdivided into many segments so the

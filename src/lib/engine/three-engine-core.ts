@@ -57,6 +57,7 @@ import {
     updatePointsShaderHoverBoost
 } from './three-engine-frame-updates'
 import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
+import { shouldSkipNextRender as shouldSkipNextRenderHelper } from './renderer/scene-static-tracker'
 import { ensurePostProcessing } from './three-pp-init'
 import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './three-store-sync'
 import { easeOutQuint } from '@lib/utils/math-easing'
@@ -569,6 +570,27 @@ export function animate() {
         const renderStart = performance.now()
 
         if (webglContext.renderer && webglContext.scene && webglContext.camera) {
+            // W49-H: conditional render-skip instrumentation. The actual skip
+            // is gated on engineState._canSkipRenders (a build-time flag
+            // set in three-engine-timers; off by default so a future
+            // developer can flip it on once the data justifies it). Until
+            // then we COUNT how many ticks the helper says were skippable.
+            // That count is what `renderSkipOpportunities` /
+            // `consecutiveSkippedFrames` capture — they're the proof that
+            // skipping is safe to enable for a given viewport.
+            const camera = webglContext.camera
+            const posArr = camera.position.toArray() as unknown as [number, number, number]
+            const quatArr = camera.quaternion.toArray() as unknown as [number, number, number, number]
+            const newSnapshot = {
+                pos: [posArr[0], posArr[1], posArr[2]] as const,
+                quat: [quatArr[0], quatArr[1], quatArr[2], quatArr[3]] as const
+            }
+            const skipCheck = shouldSkipNextRenderHelper(
+                engineState.lastCameraSnapshot,
+                newSnapshot,
+                sceneNeedsContinuous
+            )
+
             // Premium mode: render through EffectComposer. When premium mode is off
             // (or composer is not yet initialized), renderPostProcessing() returns
             // false and we fall through to the vanilla renderer.render() path.
@@ -578,10 +600,25 @@ export function animate() {
                 webglContext.renderer.render(webglContext.scene, webglContext.camera)
             }
 
+            // Always update the snapshot AFTER the render (so the next
+            // frame has a baseline to compare against). Count the skip
+            // opportunity regardless of whether the render is actually
+            // skipped today — when the developer flips on the gate, the
+            // counter is already accurate.
+            engineState.lastCameraSnapshot = newSnapshot
+            if (skipCheck.shouldSkip) {
+                engineState.renderSkipOpportunities += 1
+                engineState.consecutiveSkippedFrames += 1
+            } else {
+                engineState.consecutiveSkippedFrames = 0
+            }
+
             engineState.withStateMutation?.(() => {
                 if (!engineState.state?.scenePerformanceDiagnostics) return
                 engineState.state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls
                 engineState.state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles
+                engineState.state.scenePerformanceDiagnostics.renderSkipOpportunities = engineState.renderSkipOpportunities
+                engineState.state.scenePerformanceDiagnostics.consecutiveSkippedFrames = engineState.consecutiveSkippedFrames
             })
         }
 
