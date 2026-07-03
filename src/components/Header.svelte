@@ -9,6 +9,7 @@
   Sits above the canvas at the top of the viewport.
 -->
 <script lang="ts">
+  import { onMount } from 'svelte';
   import type { NavMode } from '@lib/types/state';
   import {
     dispatchNavTransition,
@@ -148,6 +149,71 @@
       openHelpDialog();
     }
   }
+
+  /**
+   * W49-I: close the help dialog when the user wants to interact with the
+   * search surface. The dialog's `showModal()` backdrop sits in the browser
+   * top-layer and absorbs all pointer events, which blocked search input
+   * clicks AND programmatic .focus() calls from keyboard shortcuts. So we
+   * hook focusin (capture phase) at the document level — when focus moves
+   * into the search bar regardless of source, close the dialog first.
+   *
+   * Also close on `/` (the global search shortcut) so users who press `/`
+   * while reading the dialog don't have to dismiss twice.
+   *
+   * The click outside handler (e.target === helpDialog) still fires for
+   * explicit backdrop dismissals; the existing Escape handler still fires.
+   */
+  function handleSearchSurfaceFocus(): void {
+    if (!helpDialog?.open) return;
+    closeHelpDialog();
+  }
+
+  function handleSearchSurfaceKeydown(e: KeyboardEvent): void {
+    if (!helpDialog?.open) return;
+    // Closing on / is explicit: user is signalling search intent.
+    // Letters / numbers / Backspace / Delete / ArrowKeys also imply
+    // "I'm typing, not reading this dialog" — close on any char key
+    // when the dialog is open. Don't close on modifier-only keys.
+    if (
+      e.key === '/' ||
+      e.key === 'Backspace' ||
+      e.key === 'Delete' ||
+      (e.key.length === 1 && !e.metaKey && !e.ctrlKey && !e.altKey)
+    ) {
+      closeHelpDialog();
+    }
+  }
+
+  /**
+   * pointerdown (capture) closes the dialog when ANY non-dialog element is
+   * pressed. The existing dialog onclick handler covers clicks on the
+   * backdrop element itself, but synthesized Playwright pointer events
+   * bypass dialog markup and target child elements directly. Closing on
+   * pointerdown at document level lets the synthetic click reach the
+   * intended target on the second frame.
+   *
+   * Ignore pointerdown inside the open dialog itself so the close-button
+   * and the backdrop click still work as before.
+   */
+  function handleSearchSurfacePointerdown(e: PointerEvent): void {
+    if (!helpDialog?.open) return;
+    if (!(e.target instanceof Node)) return;
+    if (helpDialog.contains(e.target)) return;
+    closeHelpDialog();
+  }
+
+  onMount(() => {
+    // Capture phase so we fire BEFORE the modal-restoring focus handlers.
+    document.addEventListener('focusin', handleSearchSurfaceFocus, true);
+    document.addEventListener('keydown', handleSearchSurfaceKeydown, true);
+    document.addEventListener('pointerdown', handleSearchSurfacePointerdown, true);
+    return () => {
+      document.removeEventListener('focusin', handleSearchSurfaceFocus, true);
+      document.removeEventListener('keydown', handleSearchSurfaceKeydown, true);
+      document.removeEventListener('pointerdown', handleSearchSurfacePointerdown, true);
+    };
+  });
 
   /**
    * W52-UX: auto-open the help dialog on first visit once the 3D scene is
