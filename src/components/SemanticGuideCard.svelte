@@ -135,6 +135,20 @@
     border-radius: 0.5rem;
     padding: 0.75rem;
   }
+  /* W48 mobile audit: both .synthesize-trigger (a CTA button) and .summary-card
+     (a 300px-wide ambient panel) anchor to bottom: 5rem, right: 1rem. On mobile
+     (≤768px) the bottom-anchored search panel claims that same rectangle, so the
+     synthesize-trigger overlaps the third match card and the summary-card would
+     occlude the whole match list. Hide both below the MOBILE_MAX_WIDTH (768)
+     breakpoint — mobile users are action-oriented (tap results directly) and
+     synthesis is a desktop ambient affordance. If/when mobile UX needs the
+     synthesis flow, replace with a bottom-sheet anchored above the search panel. */
+  @media (max-width: 768px) {
+    .synthesize-trigger:not(.hidden),
+    .summary-card:not(.hidden) {
+      display: none;
+    }
+  }
   .summary-card.hidden {
     display: none;
   }

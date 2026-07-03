@@ -148,4 +148,98 @@ test.describe('Widget journey', () => {
             `when neighborCount===0, progress must show the "No more visible stops" fallback — got "${focusInfo.progress}"`
         ).toMatch(/No more visible stops in this slice/)
     })
+
+    test('5i. Mobile (375px): synthesize-trigger + search-trail-cue never overlap result cards (W48 audit)', async ({ page }) => {
+        // W48 mobile audit: at 375px the bottom-anchored search panel shares
+        // its screen region with two absolute-positioned overlays:
+        //   1. .synthesize-trigger  ("Synthesize trail" CTA)
+        //   2. .search-trail-cue    ("Connection cue / Search opens a trail.")
+        // Both anchored to bottom: 5rem, right: 1rem. On desktop they sit in
+        // unused bottom-right space; on mobile the search panel claims that
+        // exact rectangle, so the overlays occluded Match 3's body and city
+        // text. Fix hides both at max-width: 768px.
+        await page.setViewportSize({ width: 375, height: 812 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(1500)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Trigger a search so the connection cue becomes visible (it shows
+        // during the 'query' stage of the search lifecycle).
+        await page.fill('#search-input', 'coffee')
+        await page.evaluate(() => {
+            const f = document.querySelector('#search-input').closest('form')
+            if (f) f.requestSubmit()
+        })
+        // Wait for at least 4 results to render so Match 3 actually exists.
+        await page.waitForFunction(() => {
+            const items = document.querySelectorAll('.search-result-listitem, [role="option"]')
+            return items.length >= 4
+        }, null, { timeout: 8000 })
+        await page.waitForTimeout(800)
+
+        // The synthesize-trigger and search-trail-cue must both be hidden
+        // at mobile (max-width: 768px) regardless of whether their internal
+        // "show" state is true.
+        const overlap = await page.evaluate(() => {
+            const result = { synth: null, cue: null }
+            const synth = document.querySelector('.synthesize-trigger')
+            if (synth) {
+                const cs = getComputedStyle(synth)
+                result.synth = {
+                    display: cs.display,
+                    visibility: cs.visibility,
+                    width: synth.getBoundingClientRect().width,
+                    height: synth.getBoundingClientRect().height,
+                }
+            }
+            const cue = document.querySelector('#search-trail-cue')
+            if (cue) {
+                const cs = getComputedStyle(cue)
+                result.cue = {
+                    display: cs.display,
+                    visibility: cs.visibility,
+                    width: cue.getBoundingClientRect().width,
+                    height: cue.getBoundingClientRect().height,
+                }
+            }
+            return result
+        })
+
+        expect(
+            overlap.synth,
+            'synthesize-trigger must be display:none on mobile (375px)'
+        ).toMatchObject({ display: 'none', width: 0, height: 0 })
+        expect(
+            overlap.cue,
+            'search-trail-cue must be display:none on mobile (375px)'
+        ).toMatchObject({ display: 'none', width: 0, height: 0 })
+
+        // Also verify Match 3 is not occluded — its text rects should not be
+        // covered by anything with the synth/cue classes.
+        const match3 = await page.evaluate(() => {
+            const items = document.querySelectorAll('.search-result-listitem, [role="option"]')
+            const m3 = items[2]
+            if (!m3) return null
+            const r = m3.getBoundingClientRect()
+            return { x: r.x, y: r.y, w: r.width, h: r.height }
+        })
+        expect(match3, 'pre-condition: Match 3 result card must exist').not.toBeNull()
+        // Bottom of Match 3 should not be overlapped by synthesize-trigger (which
+        // sat at bottom: 5rem = ~80px from bottom = ~y 730 at 812px viewport).
+        // Just confirm Match 3 has positive height and is visible.
+        expect(match3.h).toBeGreaterThan(0)
+    })
 })

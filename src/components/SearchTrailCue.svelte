@@ -53,6 +53,19 @@
     flex-direction: column;
     gap: 0.3rem;
   }
+  /* W48 mobile audit: the search-trail-cue anchors to bottom: 5rem (same
+     region as the bottom-anchored search panel on mobile). Even though
+     z-index 50 keeps it behind result cards (z=99), the result cards
+     have semi-transparent backgrounds and the cue text shows through.
+     Hide the cue below MOBILE_MAX_WIDTH (768) — the cue is a brief
+     search-stage narrative that loses its value once results are
+     visible on small screens where every pixel counts. */
+  @media (max-width: 768px) {
+    .search-trail-cue:not([hidden]) {
+      display: none !important;
+    }
+  }
+
   /* Restore native `hidden` behavior: the base rule sets `display: flex`,
      which overrides the browser's default `[hidden] { display: none }`. This
      rule makes the cue genuinely hidden when the renderer/JS removes it. */
