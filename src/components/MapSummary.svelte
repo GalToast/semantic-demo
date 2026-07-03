@@ -49,11 +49,24 @@
   <div
     class="map-summary"
     id="map-trail"
-    aria-label="Journey trail mini-map"
-    role="img"
+    aria-labelledby="map-trail-title"
+    role="region"
   >
-    <span class="map-title">Trail</span>
-    <svg class="map-svg" viewBox="0 0 164 70" aria-hidden="true">
+    <h2 class="map-title" id="map-trail-title">Trail</h2>
+
+    <svg
+      class="map-svg"
+      viewBox="0 0 164 70"
+      role="img"
+      aria-labelledby="map-trail-title"
+      aria-describedby="map-trail-desc"
+    >
+      <title id="map-trail-title">Journey trail</title>
+      <desc id="map-trail-desc">
+        {trail.length} stop{trail.length === 1 ? '' : 's'} on the current trail.
+        {#if currentIdx != null}Currently focused: stop {trail.findIndex((s) => s.index === currentIdx) + 1} of {trail.length}.{/if}
+      </desc>
+
       <!-- Connection lines -->
       {#each trail as stop, i}
         {#if i > 0}
@@ -67,6 +80,7 @@
             stroke="rgba(var(--color-primary-alt-rgb), 0.3)"
             stroke-width="1.5"
             stroke-linecap="round"
+            aria-hidden="true"
           />
         {/if}
       {/each}
@@ -82,18 +96,34 @@
           fill={isCurrent ? 'var(--color-primary-alt)' : 'rgba(var(--color-primary-alt-rgb), 0.5)'}
           stroke={isCurrent ? '#fff' : 'none'}
           stroke-width={isCurrent ? 1 : 0}
+          aria-hidden="true"
         />
       {/each}
     </svg>
 
-    <div class="map-stops">
+    <!-- W48-I: replace role="img" + flat span list with role="region" + a
+         proper ordered list (<ol>). Each <li> carries aria-current="step"
+         so screen readers announce the focused stop, plus a stable
+         step-position label. A separate <p aria-live="polite"> announces
+         the current stop whenever the user navigates the trail. -->
+    <p class="sr-only" id="map-trail-status" aria-live="polite" aria-atomic="true">
+      {#if currentIdx != null && trail.length > 0}
+        Now on step {trail.findIndex((s) => s.index === currentIdx) + 1} of {trail.length}: {getStopName(currentIdx)}.
+      {/if}
+    </p>
+    <ol class="map-stops" aria-label="Trail stops">
       {#each trail as stop, i}
-        <span class="map-stop" class:current={currentIdx === stop.index}>
-          <span class="stop-num">{i + 1}</span>
+        {@const isCurrent = currentIdx === stop.index}
+        <li
+          class="map-stop"
+          class:current={isCurrent}
+          aria-current={isCurrent ? 'step' : undefined}
+        >
+          <span class="stop-num" aria-hidden="true">{i + 1}</span>
           <span class="stop-name">{getStopName(stop.index)}</span>
-        </span>
+        </li>
       {/each}
-    </div>
+    </ol>
   </div>
 {/if}
 
