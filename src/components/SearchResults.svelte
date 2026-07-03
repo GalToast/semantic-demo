@@ -106,6 +106,22 @@
     if (result?.id) {
       setActiveResult(result.id);
     }
+    // W48-E: scroll the active listitem into view. The listbox renders all
+    // items in resultSlice but the wrapper has max-height: min(52vh, 420px)
+    // with overflow-y: auto, so items past the cap are scrolled out of
+    // view. Without this scrollIntoView, ArrowDown past the cap updates
+    // aria-activedescendant but the user can't see what's now highlighted.
+    // Block: 'nearest' keeps the scroll minimal (no yank if the item is
+    // already visible); reduced-motion is honored for instant scroll.
+    if (typeof document !== 'undefined') {
+      const item = document.getElementById(`search-result-option-${clamped}`)
+      if (item && typeof item.scrollIntoView === 'function') {
+        item.scrollIntoView({
+          block: 'nearest',
+          behavior: prefersReducedMotion() ? 'auto' : 'smooth'
+        })
+      }
+    }
   }
 
   // ── Reset active index when query changes (A2-8) ──────────────────────────────
