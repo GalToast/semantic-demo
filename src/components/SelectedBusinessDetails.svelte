@@ -54,11 +54,26 @@
   {#if viewModel.facts.length > 0}
     {#each viewModel.facts as fact, i}
       {#if fact.type === 'link'}
-        <a href={fact.href} target={fact.isExternal ? '_blank' : null} rel={fact.isExternal ? 'noopener noreferrer' : null}>{fact.label}</a>
+        <a
+          href={fact.href}
+          target={fact.isExternal ? '_blank' : null}
+          rel={fact.isExternal ? 'noopener noreferrer' : null}
+          aria-label={fact.isExternal ? `${fact.label} (opens in new tab)` : null}
+        >
+          {fact.label}
+          {#if fact.isExternal}
+            <!-- W48-D: visually-hidden but announced by screen readers via the
+                 aria-label above. WCAG 2.1 SC 2.4.4 (Link Purpose) + W3C G201
+                 (warning users of new windows). -->
+            <span class="sr-only" aria-hidden="false">(opens in new tab)</span>
+          {/if}
+        </a>
       {:else}
         {fact.value}
       {/if}
-      {#if i < viewModel.facts.length - 1} &nbsp;|&nbsp; {/if}
+      {#if i < viewModel.facts.length - 1}
+        <span class="fact-sep" aria-hidden="true">·</span>
+      {/if}
     {/each}
   {:else}
     <span class="facts-none">No contact info on file</span>
@@ -153,6 +168,16 @@
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+  }
+
+  /* W48 audit fix (PR-W47-g): the phone / website / email fact row used to
+     render the separator as raw "&nbsp;|&nbsp;" text. Screen readers read it as
+     "vertical bar", and the pipe was unstyled. Switch to a muted middle-dot in
+     an aria-hidden span so humans get a clean divider and AT skips it. */
+  .fact-sep {
+    margin: 0 0.4rem;
+    opacity: 0.45;
+    color: rgba(var(--color-primary-alt-rgb), 0.9);
   }
 
   .selected-relationship-context {
