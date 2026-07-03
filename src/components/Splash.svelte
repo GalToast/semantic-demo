@@ -19,6 +19,7 @@
 <script lang="ts">
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
+  import { publish, EVENTS } from '@lib/orchestration/event-bus';
 
   /** CSS selector for focusable elements cycled by the modal trap. */
   const FOCUSABLE =
@@ -65,6 +66,13 @@
     // mounting. aria-busy="true" tells screen readers the button is in
     // a loading state; disabled prevents double-fire.
     ctaBusy = true;
+    // W49-E: defense-in-depth. The canvas hover preview can only render
+    // when the canvas is mounted, but if the demo choreography opened
+    // the help dialog and the user hovered before dismissing the splash,
+    // a stale preview could remain when the canvas mounts. Publish the
+    // hide-request so the tooltip bridge fires the moment we start
+    // tearing the splash down.
+    publish(EVENTS.TOOLTIP_HIDE_REQUESTED);
     engineReady.signalReady();
   };
 

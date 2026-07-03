@@ -62,6 +62,7 @@ import { appState } from '@lib/state/app.svelte.ts'
 import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { getBusinessRecords } from '@lib/data-store'
 import { createStateMirror } from '@lib/state/create-state-mirror'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
@@ -523,6 +524,12 @@ export function setPocketRoleFilter(filter: PocketRoleFilter): void {
 
 export function pinThread(index: number): void {
     withFocusNotify((s) => ({ ...s, pinnedThreadIndex: index }))
+    // W49-E: opening the thread inspector overlays the canvas. The
+    // cursor-driven hover preview belongs to the galaxy view and would
+    // otherwise remain visible behind the inspector card. Publish the
+    // event the tooltip bridge subscribes to so it calls
+    // hideCanvasHoverPreview() atomically with the inspector open.
+    publish(EVENTS.TOOLTIP_HIDE_REQUESTED)
 }
 
 export function unpinThread(): void {

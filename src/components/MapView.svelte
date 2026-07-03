@@ -16,6 +16,7 @@
   import { debugWarn } from '@lib/utils/debug'
   import { DisposableRegistry } from '@lib/utils/disposable-registry'
   import { friendlyErrorMessage } from '@lib/utils/error-messages'
+  import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import {
     centerMapOnRouteAnchor,
     initMap,
@@ -111,6 +112,9 @@
     }
 
     setLegacyView('galaxy');
+    // W49-E: returning to galaxy. The canvas hover preview will start
+    // showing again the moment the cursor moves over a node; no need to
+    // actively show it here.
   }
 
   async function activateLeafletMap(): Promise<void> {
@@ -127,6 +131,15 @@
       if (!mounted || token !== activationToken) return;
 
       setLegacyView('map');
+
+      // W49-E: hide the canvas hover preview when the map takes over the
+      // surface. The preview is positioned `fixed` near the cursor and
+      // is meant for the galaxy view; without this publish it would
+      // remain visible on top of the map tiles, drawing the eye to a
+      // 2D preview over a 2D map. The bridge in @lib/ui/tooltip.ts
+      // subscribes to TOOLTIP_HIDE_REQUESTED and calls
+      // hideCanvasHoverPreview() in response.
+      publish(EVENTS.TOOLTIP_HIDE_REQUESTED);
 
       initMapStateSubscriptions();
       await initMap();
