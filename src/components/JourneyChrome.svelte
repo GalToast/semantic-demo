@@ -193,7 +193,14 @@
   const progressText = $derived.by(() => {
     if (!chromeHasFocus) return 'Pick a business, then explore its nearby neighbors.';
     if (currentTrailDepth >= 1 && currentWalkHistory.length >= 0) {
-      return `Stop ${currentWalkHistory.length + 1} of ${neighborCount}`;
+      // W48 audit (parallel to focus-ui.ts:566-570): the original `Stop N of ${neighborCount}`
+      // rendered "Stop 2 of 0" when neighborCount was 0 because the branch fired whenever
+      // currentTrailDepth >= 1. Guard the "of ${neighborCount}" total so the progress line
+      // never shows a total smaller than the current stop, and route to the "No more visible
+      // stops in this slice." copy that already exists in the focus-ui.ts twin.
+      return neighborCount > 0
+        ? `Stop ${currentWalkHistory.length + 1} of ${neighborCount}`
+        : `Stop ${currentWalkHistory.length + 1}. No more visible stops in this slice.`;
     }
     return neighborCount
       ? `${neighborCount} nearby ready`
