@@ -295,7 +295,7 @@
 
     body.surface-map-idle .map-empty-state {
         top: auto;
-        bottom: calc(28px + env(safe-area-inset-bottom, 0px));
+        bottom: calc(120px + env(safe-area-inset-bottom, 0px));
         transform: translateX(-50%);
         width: min(292px, calc(100vw - 48px));
         min-height: 0;
