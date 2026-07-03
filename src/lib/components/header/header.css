@@ -174,11 +174,19 @@
     width: 0.9rem;
     height: 0.9rem;
 }
-/* PR-D (2026-06-30): small visible lock indicator on locked chips. */
+/* PR-D (2026-06-30): small visible lock indicator on locked chips.
+   2026-07-03: lock was rendered at `currentColor` (inheriting the
+   dimmed grey of `.is-locked`) with opacity 0.7 — net effect was a
+   nearly-invisible decoration on an already-faded chip, reading as
+   "broken element." Switched to `--status-warning` so the lock
+   reads as an amber status indicator that survives the chip's
+   dimmed-opacity layer. Size bumped from 11px → 13px to balance the
+   filled glyph against the chip icon next to it. */
 .chip-lock {
-    width: 0.7rem;
-    height: 0.7rem;
-    opacity: 0.7;
+    width: 0.8125rem;
+    height: 0.8125rem;
+    color: var(--status-warning);
+    opacity: 1;
     flex-shrink: 0;
 }
 .chip-label {

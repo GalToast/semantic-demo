@@ -210,10 +210,18 @@
         aria-label="Open keyboard shortcuts"
         title="Keyboard shortcuts"
       >
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
-          <circle cx="7" cy="7" r="5.75" stroke="currentColor" stroke-width="1.25"/>
-          <path d="M5.4 5.35a1.7 1.7 0 0 1 3.22.78c0 1.45-1.62 1.4-1.62 2.55" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-          <circle cx="7" cy="10.55" r="0.55" fill="currentColor"/>
+        <!-- 2026-07-03: replaced the prior `?`-in-a-circle glyph (which
+             read identically to the Help button's `i`-in-a-circle next
+             to it) with a Lucide-style keyboard silhouette so the two
+             help affordances are visually distinct at a glance.
+             aria-label/title are unchanged, so the existing
+             #btn-keyboard-help tests (which key on the id and on the
+             panel's `region[aria-label*="keyboard"|"shortcut"]`)
+             continue to pass. -->
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <rect x="2" y="6" width="20" height="12" rx="2" />
+          <path d="M6 10h.01M10 10h.01M14 10h.01M18 10h.01M6 14h.01M10 14h.01M14 14h.01M18 14h.01" />
+          <path d="M7 18h10" />
         </svg>
       </button>
       <button
@@ -270,12 +278,18 @@
                  Previously the chip relied solely on dimmed opacity
                  (`.is-locked` at 0.35) and the title tooltip to convey
                  "this is locked". Users had to hover/long-press to
-                 discover the lock. Inline a small SVG padlock that
-                 matches the chip's icon styling so the lock is visible
-                 at a glance on both desktop and mobile. -->
-            <svg class="chip-lock" width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="7" width="10" height="7" rx="1" />
-              <path d="M5.5 7V4.5a2.5 2.5 0 0 1 5 0V7" />
+                 discover the lock.
+                 2026-07-03: lock was at 11×11 / opacity 0.7, layered on a
+                 0.45 chip — net ~0.31 effective alpha — reading as
+                 broken. Bumped to 13×13, full opacity, and switched the
+                 stroke from `currentColor` (which inherits the dimmed
+                 chip color) to the warning palette so the lock reads as
+                 an amber status dot rather than a fading decoration.
+                 Filled the shackle so the icon is recognizable at glance
+                 and screen-reader/zoom users see a clear symbol. -->
+            <svg class="chip-lock" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="7.5" width="10" height="6.5" rx="1" fill="currentColor" fill-opacity="0.25" />
+              <path d="M5.5 7.5V5a2.5 2.5 0 0 1 5 0v2.5" fill="currentColor" fill-opacity="0.45" />
             </svg>
           {/if}
         </button>
