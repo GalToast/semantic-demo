@@ -2,7 +2,11 @@
 
 > **Source**: `src/lib/engine/three-engine-core.ts` (971 LOC)  
 > **Pattern reference**: `neighborhood.ts` (938 → 3 modules, commit `300906d9`)  
-> **Status**: Research only — DO NOT implement
+> **Status**: Design record — Phase 0–5 extractions are live; the per-concern file layout below was a research proposal (actual landing co-located frame-update concerns in `three-engine-frame-updates.ts`).
+
+> **Decomposition log**
+>
+> - 2026-07-03 — **A5 (node position lerp + focus-pocket breathing)** extracted from `animate()` (L407–436 in the post-Phase-0 core) into `lerpNodesForFrame()` in `three-engine-frame-updates.ts`, co-located with the existing A4/A7/A11/A12/A14 helpers rather than the proposed `three-node-lerp.ts` (the consolidated `three-engine-frame-updates.ts` is the established Phase-4 home). Diverges from the file's read-only-`state`-param pattern: reads `engineState.state` live so the defensive mid-frame `if (!engineState.state) return true` bail still catches teardowns that null the singleton. Call site: `if (lerpNodesForFrame(frameNow)) return`. Verified: build clean (28s), core contract group 11/11, cancel-animate/three-setup-loop/motion-state/focus-pocket-motion/three-setup-init dewindowing + scene-atmosphere/three-visual-polish/residual-window-bridge/js-reduced-motion-guard contracts green, and `three-engine-animate-regression`/`three-engine-core`/`three-engine-frame-updates` unit tests 66/66.
 
 ---
 
@@ -95,15 +99,19 @@ _state                             │ 12+ functions                 │ initThr
 ### State coupling clusters
 
 **Cluster A — Render-loop bookkeeping** (only `animate` + `scheduleNextAnimationFrame` + `pauseRenderLoopTimers`):
+
 - `_rafId`, `_idleFrameTimerId`, `_circuitBreakerTripped`, `_webglContextLost`, `_lastHoveredNode`, `_hoverEmissiveFlash`
 
 **Cluster B — Lifecycle / teardown** (`initThreeJS`, `cancelAnimate`, `deinit`):
+
 - `_sceneRegistry`, `_mapButtonClickHandler`, `_webglRestoreTimer`, `_loaded`, all lazy module refs
 
 **Cluster C — Module bootstrap** (`_ensureModules` only):
+
 - All 17 lazy module refs + `_loaded` + `window.__LEGACY_APP_STATE__`
 
 **Cluster D — Frame-time visual state** (`animate` only):
+
 - `_lastHoveredNode`, `_hoverEmissiveFlash`
 
 ---
@@ -152,7 +160,7 @@ _state                             │ 12+ functions                 │ initThr
 | **A2 — Frame interval + perf diag** | 701–711 | 11 | Compute `sceneFrameMs`, write `lastFrameAt` via `_withStateMutation` |
 | **A3 — Camera update** | 713–718 | 6 | `updateAutoRotateSoftResume`, `focusCameraAssistIsActive`, `controls.update()` |
 | **A4 — Reveal progression** | 720–723 | 4 | `getSceneRevealProgress`, compute eased `pointsRevealProgress` + `cameraRevealProgress` |
-| **A5 — Node position lerp** | 724–757 | 34 | Lerp `nodePositions → targetPositions`, `setNodeSporeInstanceMatrixPort`, focus-pocket breathing, mark `myceliumDirty` |
+| **A5 — Node position lerp** ✅ | 724–757 | 34 | Lerp `nodePositions → targetPositions`, `setNodeSporeInstanceMatrixPort`, focus-pocket breathing, mark `myceliumDirty`. **Extracted 2026-07-03 → `lerpNodesForFrame()` in `three-engine-frame-updates.ts`** (see decomposition log). |
 | **A6 — Camera reveal lerp** | 759–782 | 24 | `lerpVectors` for scene-reveal camera path, clear reveal state at completion |
 | **A7 — Points material update** | 784–801 | 18 | Compute opacity/size scales from focus/semantic-dive state, update shader uniforms |
 | **A8 — Fog density** | 803–807 | 5 | Scale `FogExp2.density` by reveal progress |
@@ -287,6 +295,7 @@ export const engineState: ThreeEngineState = { /* all null/false */ }
 | `three-dev-bridge.ts` | ~30 | C16 | Low — DEV-only, tree-shaken |
 
 **Pattern for each**:
+
 ```ts
 // three-scene-bootstrap.ts (example)
 export async function bootstrapScene(
@@ -311,6 +320,7 @@ export async function bootstrapScene(
 | `three-interaction-update.ts` | ~25 | A15 | Low |
 
 **Pattern for each**:
+
 ```ts
 // three-hover-flash.ts (example — low risk)
 export function updateHoverEmissiveFlash(
@@ -324,6 +334,7 @@ export function updateHoverEmissiveFlash(
 #### Phase 5 — Orchestrator slim-down
 
 After all extractions, `three-engine-core.ts` becomes:
+
 - Imports from all sibling modules
 - `initThreeJS()` → calls `bootstrapScene()`, `syncMultiStore()`, `registerListeners()`, `initGeometry()`, `initPostprocessing()`, `initDevBridge()`, then `animate()`
 - `animate()` → calls `updateCamera()`, `updateReveal()`, `lerpNodes()`, `updateMaterials()`, `updateHoverFlash()`, `updateMycelium()`, `updateInteractions()`, `renderFrame()`, `recordPerf()`

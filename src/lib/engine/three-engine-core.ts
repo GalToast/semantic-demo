@@ -22,7 +22,6 @@ import {
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
 import { Material, FogExp2 } from 'three'
 import * as sceneRevealMod from './scene-reveal'
-import type { NodePosition } from '@lib/state/state-types'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
 // so it can be shared with legacy-state-adapter.ts without a circular import.
 import type { LegacyState } from '@lib/state/legacy-state'
@@ -36,8 +35,7 @@ import {
     compilePointMaterialForReadiness as compilePointMaterialForReadinessPort,
     createPoints as createPointsPort,
     disposeNodeVisuals as disposeNodeVisualsPort,
-    SCENE_ATMOSPHERE as PORT_SCENE_ATMOSPHERE,
-    setNodeSporeInstanceMatrix as setNodeSporeInstanceMatrixPort
+    SCENE_ATMOSPHERE as PORT_SCENE_ATMOSPHERE
 } from '@lib/engine/node-manager'
 import {
     createMycelium as createMyceliumPort,
@@ -51,6 +49,7 @@ import {
 import { engineState, ensureModules } from './three-engine-state'
 import {
     computeRevealProgress,
+    lerpNodesForFrame,
     updatePointsMaterial,
     updateHoverEmissiveFlash,
     updateMyceliumPulse,
@@ -404,37 +403,7 @@ export function animate() {
             camera: cameraRevealProgress
         } = computeRevealProgress(frameNow)
 
-        let anyNodeMoved = false
-        if (engineState.state?.nodePositions && engineState.state?.targetPositions) {
-            const lerpFactor = engineState.state?.focusState?.nodesAreSettling ? 0.14 : 0.08
-            engineState.state.nodePositions.forEach((pos: NodePosition, i: number) => {
-                const target = engineState.state!.targetPositions[i]
-                if (!target) return
-                const dx = target.x - pos.x
-                const dy = target.y - pos.y
-                const dz = target.z - pos.z
-                if (Math.abs(dx) > 0.0001 || Math.abs(dy) > 0.0001 || Math.abs(dz) > 0.0001) {
-                    pos.x += dx * lerpFactor
-                    pos.y += dy * lerpFactor
-                    pos.z += dz * lerpFactor
-                    setNodeSporeInstanceMatrixPort(i)
-                    anyNodeMoved = true
-                }
-            })
-
-            if (!engineState.state) return
-            if (engineState.focusPocket?.applyFocusPocketBreathing(frameNow, engineState.state.nodePositions)) {
-                engineState.state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
-                    setNodeSporeInstanceMatrixPort(idx)
-                })
-                anyNodeMoved = true
-            }
-
-            if (anyNodeMoved) {
-                if (webglContext.nodeSporeMesh) webglContext.nodeSporeMesh.instanceMatrix.needsUpdate = true
-                if (engineState.state) engineState.state.myceliumDirty = true
-            }
-        }
+        if (lerpNodesForFrame(frameNow)) return
 
         if (
             engineState.state?.sceneRevealActive &&
