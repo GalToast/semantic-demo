@@ -7,7 +7,6 @@
  *
  * Bug fixes over the bridge:
  *   FIX #1 (resize): Added missing resizePostProcessing() call
- *   FIX #2 (destroy): Added missing disposeTooltipEventBusSubscriptions() call
  *
  * Public API:
  *   initEngine, resizeEngine, destroyEngine, getEngineStatus
@@ -51,7 +50,6 @@ import {
     ensureCanvasNodeInteractionBindings,
     disposeCanvasNodeInteractionBindings
 } from '@lib/journey/canvas-interaction'
-import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
 
 // Semantic threads are loaded in the heavy idle path to keep this chunk out of
 // the first-paint bundle.
@@ -399,10 +397,7 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // 9. Subscribe to the legacy event bus
         bindEventBridge(callbacks)
 
-        // 10. Wire tooltip event-bus subscriptions
-        initTooltipEventBusSubscriptions()
-
-        // 11. Start the animation loop
+        // 10. Start the animation loop
         // _animate() is started internally by initThreeJS on success
 
         // 12. Mark ready
@@ -465,9 +460,6 @@ export function resizeEngine(width: number, height: number): void {
 
 /**
  * Destroy the engine and release all resources.
- *
- * FIX #2: Calls disposeTooltipEventBusSubscriptions() which was missing
- * in the bridge destroy.
  */
 export function destroyEngine(): void {
     if (_destroyed) return
@@ -491,13 +483,6 @@ export function destroyEngine(): void {
             debugWarn('[engine/lifecycle] Best-effort canvas interaction dispose failed:', error)
         }
         _canvasInteractionBound = false
-    }
-
-    // FIX #2: Dispose tooltip event-bus subscriptions (was missing in bridge)
-    try {
-        disposeTooltipEventBusSubscriptions()
-    } catch (error) {
-        debugWarn('[engine/lifecycle] Best-effort tooltip event-bus dispose failed:', error)
     }
 
     // FIX #3: Dispose Leaflet Map state recursively (was missing in bridge)

@@ -85,10 +85,6 @@ export interface SummaryCardHideRequestedPayload {
   // No payload — notification only
 }
 
-export interface TooltipHideRequestedPayload {
-  // No payload — notification only
-}
-
 export interface UrlSyncRequestedPayload {
   params: Record<string, string>;
   reason: string;
@@ -119,7 +115,6 @@ export interface EventMap {
   EXPLORATION_FOCUS_SYNC: { index: number };
   EXPLORATION_RESET_REQUESTED: Record<string, unknown>;
   SEMANTIC_LANE_STATE_REQUESTED: SemanticLaneStateRequestedPayload;
-  TOOLTIP_HIDE_REQUESTED: TooltipHideRequestedPayload;
   SUMMARY_CARD_HIDE_REQUESTED: SummaryCardHideRequestedPayload;
   URL_SYNC_REQUESTED: UrlSyncRequestedPayload;
   SEMANTIC_GUIDE_BUTTON_STATE_REQUESTED: {

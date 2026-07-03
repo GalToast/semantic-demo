@@ -13,7 +13,6 @@ import { pointHasGeocode, isPointVisible } from '@lib/utils/geo-data'
 import { formatBusinessName } from '@lib/utils/dom-formatters'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { focusOnPoint } from '@lib/orchestration/lifecycle'
-import { hideTooltip } from '@lib/ui/tooltip'
 import { hideViewHandoff } from '@lib/orchestration/view-controller'
 import { isMobileViewport } from '@lib/utils/environment'
 import { debugWarn } from '@lib/utils/debug'
@@ -256,14 +255,11 @@ export async function initMap(): Promise<void> {
             })
 
             marker.on('mouseover', () => {
-                if (typeof hideTooltip === 'function') {
-                    // No-op: tooltip is updated by updateMapTooltip
-                }
                 const name = formatBusinessName(point.name)
                 marker.bindTooltip(name, { direction: 'top', offset: [0, -5], className: 'glass_medium' }).openTooltip()
             })
             marker.on('mouseout', () => {
-                if (typeof hideTooltip === 'function') hideTooltip()
+                // tooltip is updated by updateMapTooltip
             })
             marker.on('click', () => {
                 const routeSet = new Set(getRouteEmbodimentIndices())
@@ -317,7 +313,6 @@ export async function initMap(): Promise<void> {
 }
 
 export function showMapTooltip(point: Point, marker: { bindTooltip: Function; openTooltip: Function }): void {
-    if (typeof hideTooltip === 'function') hideTooltip()
     const name = formatBusinessName(point.name)
     marker.bindTooltip(name, { direction: 'top', offset: [0, -5], className: 'glass_medium' }).openTooltip()
 }

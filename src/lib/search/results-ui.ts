@@ -384,7 +384,6 @@ export function beginSemanticSearchUiState(
     statusEl: HTMLElement | null,
     trimmedQuery: string
 ): void {
-    publish(EVENTS.TOOLTIP_HIDE_REQUESTED)
     applySemanticSearchLoadingState(resultsEl)
     if (statusEl) {
         statusEl.textContent = `Searching for businesses related to "${trimmedQuery}"...`

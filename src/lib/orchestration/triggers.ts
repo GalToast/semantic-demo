@@ -408,8 +408,3 @@ subscribeKeyed(
     }
 )
 
-/**
- * TOOLTIP_HIDE_REQUESTED is now handled directly by
- * src/lib/ui/tooltip.ts:initTooltipEventBusSubscriptions().
- * The previous no-op subscriber here was redundant; removed W7-C.
- */

@@ -49,7 +49,6 @@
   import MapSummary from '@components/MapSummary.svelte';
   import SemanticOverlay from '@components/SemanticOverlay.svelte';
   import Toast from '@components/Toast.svelte';
-  import HoverTooltip from '@components/HoverTooltip.svelte';
   import SemanticGuideCard from '@components/SemanticGuideCard.svelte';
   import SearchTrailCue from '@components/SearchTrailCue.svelte';
   import ProximityLegend from '@components/ProximityLegend.svelte';
@@ -526,8 +525,6 @@
 
   <!-- Layer 1200: Toast notification -->
   <Toast />
-
-  <HoverTooltip />
 
   <SemanticGuideCard />
 
