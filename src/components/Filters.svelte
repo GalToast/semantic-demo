@@ -357,6 +357,21 @@ function handleContactToggle(id: string): void {
     font-family: var(--font-mono);
   }
 
+  /* W50-LAYOUT-1: One-time pulse-glow on the FILTERS pill to boost
+     discoverability on first idle splash. Runs once then stops. */
+  body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle {
+    animation: filters-pulse-glow 3.6s ease-in-out 1;
+  }
+  @keyframes filters-pulse-glow {
+    0%, 100% {
+      box-shadow: none;
+      border-color: rgba(var(--color-primary-alt-rgb), 0.25);
+    }
+    50% {
+      box-shadow: 0 0 14px 4px rgba(var(--color-primary-alt-rgb), 0.35);
+      border-color: rgba(var(--color-primary-alt-rgb), 0.6);
+    }
+  }
   @media (max-width: 768px) {
     .filter-toolbar {
       flex-direction: column;
