@@ -58,10 +58,10 @@
       class="map-svg"
       viewBox="0 0 164 70"
       role="img"
-      aria-labelledby="map-trail-title"
+      aria-labelledby="map-trail-svg-title"
       aria-describedby="map-trail-desc"
     >
-      <title id="map-trail-title">Journey trail</title>
+      <title id="map-trail-svg-title">Journey trail</title>
       <desc id="map-trail-desc">
         {trail.length} stop{trail.length === 1 ? '' : 's'} on the current trail.
         {#if currentIdx != null}Currently focused: stop {trail.findIndex((s) => s.index === currentIdx) + 1} of {trail.length}.{/if}
