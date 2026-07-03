@@ -1117,6 +1117,62 @@ test.describe('Widget Journey Tests — canvas hover preview', () => {
         const isVisible = await preview.evaluate((el) => el.style.opacity === '1')
         expect(isVisible).toBe(false)
     })
+
+    // W48-B: a focused business exposes its cluster context + signal score
+    // to AT users (mouse only on hover is a real a11y gap). When the focused
+    // index is set (via __navActions__.focusOnNode, which search-result Enter
+    // / click / keyboard nav all go through), #canvas-hover-preview appears
+    // pinned to the top-right of #canvas-container.
+    test('20b. focused business surfaces cluster + signal preview (AT/keyboard parity)', async ({ page }) => {
+        await page.goto(BASE_URL, { waitUntil: 'domcontentloaded' })
+
+        // Splash dismissal
+        const explore = page
+            .locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]')
+            .first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for the 3D scene + data worker to fully boot
+        await page.waitForFunction(
+            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
+            null,
+            { timeout: 15000 }
+        )
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(1500)
+
+        // Drive the same focus path search-result Enter / click / keyboard
+        // navigation all converge on: CAMERA_NODE_FOCUSED. Direct publish
+        // via test global bypasses the legacy focusOnNode orchestrator's
+        // surface guards + normalization, which aren't relevant to this
+        // test's "does the focused-business preview appear?" question.
+        await page.evaluate(() => {
+            const w = /** @type {any} */ (window)
+            w.__publishCameraNodeFocused__(0)
+        })
+
+        // Preview should appear, pinned to top-right (no cursor to follow)
+        const preview = page.locator('#canvas-hover-preview').first()
+        await preview.waitFor({ state: 'visible', timeout: 5000 })
+        await expect(preview).toHaveAttribute('aria-hidden', 'false')
+
+        // aria-describedby wiring on #canvas-container so AT hears the preview
+        const container = page.locator('#canvas-container').first()
+        await expect(container).toHaveAttribute('aria-describedby', 'canvas-hover-preview')
+
+        // Preview contains the focused business name (Sunset Grill, or any
+        // name from the records at index 0 — we don't pin a specific record
+        // because the test index may shift with data updates, but the
+        // preview-name class always reflects the focused record).
+        const previewText = (await preview.textContent()) ?? ''
+        expect(previewText).toBeTruthy()
+        expect(previewText.length).toBeGreaterThan(5)
+
+        // Right-pinned position
+        const rightValue = await preview.evaluate((el) => el.style.right)
+        expect(rightValue).toBe('16px')
+    })
 })
 
 // W49-L1: loading progress bar shows a percentage text alongside the bar.
@@ -1325,7 +1381,9 @@ test.describe('Widget Journey Tests — canvas click focus', () => {
         })
         expect(pocket.focusedIndex).toBe(0)
         expect(pocket.focusPocketCount, 'focusPocketIndices should be populated after focusOnNode').toBeGreaterThan(0)
-        expect(pocket.threadCandidatesCount, 'threadCandidates should be populated after focusOnNode').toBeGreaterThan(0)
+        expect(pocket.threadCandidatesCount, 'threadCandidates should be populated after focusOnNode').toBeGreaterThan(
+            0
+        )
 
         // Soft-skip the actual strand-sprite assertions if headless Chromium
         // has no WebGL context: the inspectedStrandGroup exists in appState

@@ -239,6 +239,7 @@
     class="semantic-canvas-container"
     class:canvas-ready={canvasReady}
     data-graphics-mode={graphicsMode}
+    aria-describedby="canvas-hover-preview"
   >
     <canvas
       bind:this={canvasEl}

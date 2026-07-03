@@ -20,11 +20,24 @@
  *   - Transitions are CSS-only (no JS animation frames)
  *
  * Cluster colors match `src/lib/utils/design-tokens.ts` SCENE_PALETTE.
+ *
+ * # Keyboard / AT parity (W48-B)
+ *
+ * Mouse hover drives the preview via pointermove. To give AT users and
+ * keyboard-only users an equivalent (cluster context + signal score for the
+ * focused business, not just the hovered one), we *also* subscribe to
+ * `CAMERA_NODE_FOCUSED` (fired by `focusOnNode(index)`). When a business is
+ * focused — via search-result Enter, click, or any path — the same preview
+ * is shown, but pinned to the top-right of `#canvas-container` instead of
+ * cursor-following (no cursor to follow). The `#canvas-container` element
+ * has `aria-describedby="canvas-hover-preview"` so screen readers hear the
+ * focused business's context when focus arrives.
  */
 import { businessRecords } from '@lib/data-store'
 import { get } from 'svelte/store'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { calculateSignalScore } from '@lib/utils/geo-data'
+import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
 import type { BusinessRecord } from '@lib/types/business'
 
 // Cluster colors matching the legend palette
@@ -232,6 +245,76 @@ export function hideCanvasHoverPreview(): void {
     _previewEl.setAttribute('aria-hidden', 'true')
 }
 
+/**
+ * W48-B: show the preview for the FOCUSED business (no cursor — pinned to
+ * the top-right of `#canvas-container`). Triggered by `focusOnNode(index)`
+ * via the `CAMERA_NODE_FOCUSED` event subscription in
+ * `initCanvasHoverPreviewSubscription()` below.
+ *
+ * Reuses the same DOM element + content builder as the cursor-following
+ * `showCanvasHoverPreview(index, x, y)`. The only differences:
+ *   1. Position: top-right of canvas-container instead of near cursor
+ *   2. Animation state: same fade-in/out as the cursor variant
+ *   3. The aria-hidden flips to false, so AT users focusing the canvas hear
+ *      the content via `aria-describedby` on `#canvas-container`.
+ */
+export function showCanvasHoverPreviewForFocused(index: number): void {
+    const records = get(businessRecords)
+    const record = records[index] ?? null
+    const el = getPreviewElement()
+    buildPreviewContent(record, index, el)
+    el.style.opacity = '1'
+    el.style.transform = 'translateY(0) scale(1)'
+
+    // Pin to top-right of canvas-container (or viewport top-right if the
+    // container isn't found — e.g., during route changes). Reset the
+    // cursor-style `left` to `auto` so the previous `left` value doesn't
+    // conflict with the new `right` value.
+    const container = document.getElementById('canvas-container')
+    const containerRect = container?.getBoundingClientRect()
+    el.style.left = 'auto'
+    el.style.right = '16px'
+    if (containerRect) {
+        el.style.top = `${Math.max(16, containerRect.top + 16)}px`
+    } else {
+        el.style.top = '16px'
+    }
+    el.setAttribute('aria-hidden', 'false')
+}
+
+// ── Focused-business subscription (W48-B) ──────────────────────────────────────────
+
+let _focusUnsub: (() => void) | null = null
+
+/**
+ * Subscribe to `CAMERA_NODE_FOCUSED` so keyboard / AT users get the same
+ * cluster-context preview that mouse users get on hover. Wired by
+ * `initAdapters()` in `src/lib/orchestration/adapters.ts` alongside the
+ * other engine-kernel adapters; torn down by `destroyCanvasHoverPreview()`.
+ *
+ * The event payload carries `index: number | null` — `null` clears the focus,
+ * so we hide the preview. A defined `index` shows the preview pinned to the
+ * canvas-container's top-right (no cursor to follow for keyboard users).
+ */
+export function initCanvasHoverPreviewSubscription(): void {
+    if (_focusUnsub) return
+    _focusUnsub = subscribeKeyed(
+        'canvas-hover-preview:focused-business',
+        EVENTS.CAMERA_NODE_FOCUSED,
+        ({ index }: { index?: unknown; point?: unknown }) => {
+            if (typeof index === 'number' && Number.isFinite(index)) {
+                showCanvasHoverPreviewForFocused(index)
+            } else {
+                hideCanvasHoverPreview()
+            }
+        }
+    )
+}
+
 export function destroyCanvasHoverPreview(): void {
+    if (_focusUnsub) {
+        _focusUnsub()
+        _focusUnsub = null
+    }
     removePreviewElement()
 }

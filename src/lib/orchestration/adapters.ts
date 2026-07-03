@@ -14,6 +14,7 @@ import { initFocusNeighborRailSubscriptions } from '@lib/journey/focus-ui'
 import { initThreadInspectorAdapter } from '@lib/journey/thread-inspector-adapter'
 import { initMapStateSubscriptions } from '@lib/engine/map-state'
 import { initViewControllerAdapter } from '@lib/orchestration/view-controller'
+import { initCanvasHoverPreviewSubscription } from '@lib/journey/canvas-hover-preview'
 import { setupMobileSearchSheetToggle } from '@lib/search/search-panel-adapter'
 import { handleError } from '@lib/utils/error-handler'
 import type { ThreadCandidate, WalkCandidateOptions } from '@lib/journey/thread-model'
@@ -158,6 +159,11 @@ export function initAdapters(deps: AdapterDeps): void {
 
     // 4. Semantic dive UI subscriptions (no deps)
     initSemanticDiveUiSubscriptions()
+
+    // 5. W48-B: Canvas hover preview — keyboard / AT parity. Subscribes to
+    //    CAMERA_NODE_FOCUSED so focused businesses get the same cluster +
+    //    signal preview that mouse-hover users get.
+    initCanvasHoverPreviewSubscription()
 
     // 6. Focus neighbor rail subscriptions (no deps)
     initFocusNeighborRailSubscriptions()

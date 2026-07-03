@@ -20,6 +20,10 @@
  *                        resetExplorationFocus, resetExperienceState, search }
  *   - __dataLoadState__ → dataLoadState writable + helpers (.set/.error/.reset)
  *     used by journey tests to drive the boot-time load failure state.
+ *   - __publishCameraNodeFocused__ → publish CAMERA_NODE_FOCUSED for tests
+ *     that want to drive the focused-business preview without routing through
+ *     the legacy focusOnNode orchestrator (which goes through normalization,
+ *     surface guards, etc. that aren't relevant to "does the preview appear?").
  *
  * surface-contract-check.mjs calls these directly via page.evaluate:
  *   await page.evaluate(() => window.__navActions__.setSurface('focus'))
@@ -29,6 +33,7 @@ import { navStore, writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { focusStore } from '@lib/stores/focus.svelte'
 import { searchStore } from '@lib/stores/search.svelte'
 import { dataLoadState } from '@lib/data-store'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { journeyStore } from '@lib/stores/journey.svelte'
 import {
     switchView,
@@ -72,6 +77,7 @@ declare global {
         __journeyStore__?: typeof journeyStore
         __searchStore__?: typeof searchStore
         __navActions__?: NavActions
+        __publishCameraNodeFocused__?: (index: number | null) => void
         __dataLoadState__?: {
             store: typeof dataLoadState
             set: typeof dataLoadState.set
@@ -147,6 +153,19 @@ export function installTestStoreGlobals(): () => void {
     }
     window.__dataLoadState__ = dataLoadStateApi
 
+    // W48-B: drive the canvas-hover-preview subscription directly. The
+    // legacy focusOnNode orchestrator routes through CAMERA_NODE_FOCUSED
+    // but also runs surface guards + data normalization; for a journey test
+    // focused on "does the focused-business preview appear?", driving the
+    // event directly is both faster and more deterministic.
+    window.__publishCameraNodeFocused__ = (index: number | null): void => {
+        if (typeof index === 'number' && Number.isFinite(index)) {
+            publish(EVENTS.CAMERA_NODE_FOCUSED, { index, point: null })
+        } else {
+            publish(EVENTS.CAMERA_NODE_FOCUSED, { point: null })
+        }
+    }
+
     return () => {
         delete window.__navStore__
         delete window.__focusStore__
@@ -154,5 +173,6 @@ export function installTestStoreGlobals(): () => void {
         delete window.__searchStore__
         delete window.__navActions__
         delete window.__dataLoadState__
+        delete window.__publishCameraNodeFocused__
     }
 }
