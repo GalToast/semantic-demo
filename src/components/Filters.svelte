@@ -372,6 +372,11 @@ function handleContactToggle(id: string): void {
       border-color: rgba(var(--color-primary-alt-rgb), 0.6);
     }
   }
+  @media (prefers-reduced-motion: reduce) {
+    body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle {
+      animation: none;
+    }
+  }
   @media (max-width: 768px) {
     .filter-toolbar {
       flex-direction: column;
