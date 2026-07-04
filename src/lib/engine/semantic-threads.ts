@@ -397,22 +397,22 @@ function _normalizeSemanticNeighborEntries(
             name: node?.name ?? null,
             city: node?.city ?? null,
             status: node?.status ?? null,
-            signalScore: Number(node?.signal_score ?? 0),
+            signalScore: Number(node?.signalScore ?? 0),
             neighbors: Array.isArray(node?.neighbors)
                 ? node.neighbors.map((neighbor) => ({
-                      leadId: _normalizeLeadId(neighbor?.lead_id) ?? '',
+                      leadId: _normalizeLeadId(neighbor?.leadId) ?? '',
                       score: Number(neighbor?.score ?? 0),
-                      semanticScore: Number(neighbor?.semantic_score ?? 0),
-                      sameCity: Boolean(neighbor?.same_city),
-                      sameStatus: Boolean(neighbor?.same_status),
-                      bridgeScore: Number(neighbor?.bridge_score ?? 0),
-                      signalScore: Number(neighbor?.signal_score ?? 0),
-                      threadType: cleanOptionalValue(neighbor?.thread_type) || 'local_semantic_neighbor',
+                      semanticScore: Number(neighbor?.semanticScore ?? 0),
+                      sameCity: Boolean(neighbor?.sameCity),
+                      sameStatus: Boolean(neighbor?.sameStatus),
+                      bridgeScore: Number(neighbor?.bridgeScore ?? 0),
+                      signalScore: Number(neighbor?.signalScore ?? 0),
+                      threadType: cleanOptionalValue(neighbor?.threadType) || 'local_semantic_neighbor',
                       relationshipRole: normalizeRelationshipRole(
-                          neighbor?.relationship_role
+                          neighbor?.relationshipRole
                       ) as SemanticNeighborDetail['relationshipRole'],
-                      relationshipAxis: cleanOptionalValue(neighbor?.relationship_axis) || '',
-                      roleReason: cleanOptionalValue(neighbor?.role_reason) || '',
+                      relationshipAxis: cleanOptionalValue(neighbor?.relationshipAxis) || '',
+                      roleReason: cleanOptionalValue(neighbor?.roleReason) || '',
                       reason: cleanOptionalValue(neighbor?.reason) || 'semantic neighbor'
                   }))
                 : []

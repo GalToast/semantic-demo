@@ -59,6 +59,72 @@ function createSemanticThreadNode(): SemanticThreadNode {
     }
 }
 
+/**
+ * Create a node matching the real worker output shape (camelCase, normalized).
+ * This mirrors the `NeighborEntry` interface in src/lib/workers/data-worker.ts
+ * — the worker builds these entries with `leadId` (not `lead_id`), so the
+ * main-thread `_normalizeSemanticNeighborEntries` MUST read camelCase.
+ */
+function createWorkerOutputNode(): {
+    leadId: string
+    name: string | null
+    city: string | null
+    status: string | null
+    signalScore: number
+    neighbors: Array<{
+        leadId: string
+        score: number
+        semanticScore: number
+        sameCity: boolean
+        sameStatus: boolean
+        bridgeScore: number
+        signalScore: number
+        threadType: string
+        relationshipRole: string
+        relationshipAxis: string
+        roleReason: string
+        reason: string
+    }>
+} {
+    return {
+        leadId: '519',
+        name: 'Angel Fire Coffee',
+        city: 'Cleveland',
+        status: 'active',
+        signalScore: 2.6,
+        neighbors: [
+            {
+                leadId: '7070',
+                score: 1.1497,
+                semanticScore: 0.8757,
+                sameCity: true,
+                sameStatus: true,
+                bridgeScore: 0.7557,
+                signalScore: 2.6,
+                threadType: 'same_city_semantic_neighbor',
+                relationshipRole: 'downstream',
+                relationshipAxis: 'industrial_supply_serves_food_hospitality',
+                roleReason: 'candidate looks like a customer',
+                reason: 'close semantic neighbor, same city'
+            },
+            {
+                leadId: '8812',
+                score: 1.13,
+                semanticScore: 0.86,
+                sameCity: false,
+                sameStatus: true,
+                bridgeScore: 0.7,
+                signalScore: 2.5,
+                threadType: 'local_semantic_neighbor',
+                relationshipRole: 'core_peer',
+                relationshipAxis: 'shared_category',
+                roleReason: 'core category overlap',
+                reason: 'close semantic neighbor'
+            }
+        ]
+    }
+}
+
 function createBundle(): SemanticThreadBundle {
     return {
         nodes: {
@@ -261,5 +327,114 @@ describe('semantic thread worker lifecycle', () => {
         expect(getSemanticThreadArtifactName()).toBeNull()
         expect(getSemanticNeighborMap().size).toBe(0)
         expect(getLayoutManifest()).toBeNull()
+    })
+})
+
+describe('semantic thread worker — camelCase worker output (regression: empty-leadId cascade)', () => {
+    /**
+     * Regression: src/lib/engine/semantic-threads.ts `_normalizeSemanticNeighborEntries`
+     * historically read snake_case fields (`neighbor.lead_id`) from the worker's
+     * postMessage payload, but the worker (src/lib/workers/data-worker.ts) sends
+     * camelCase (`neighbor.leadId`). The mismatch produced empty-string leadIds
+     * for all 100,872 semantic neighbors across the dataset, silently breaking
+     * `resolveSemanticNeighbors` and `getSemanticNeighborRecordBetween` so every
+     * focused business ended up with an empty constellation. The main-thread
+     * transform must read camelCase to match what the worker actually emits.
+     */
+
+    let state: ReturnType<typeof createState>
+
+    beforeEach(() => {
+        vi.useFakeTimers()
+        MockWorker.instances = []
+        vi.stubGlobal('Worker', MockWorker)
+        resetDataStores()
+        state = createState()
+        attachLegacyState(state)
+
+        vi.spyOn(globalThis, 'fetch').mockImplementation((input: RequestInfo | URL) => {
+            const url = String(input)
+            if (url.includes('semantic_space_layout_manifest.json')) {
+                return Promise.resolve(
+                    new Response(
+                        JSON.stringify({
+                            generated_at: '2026-06-18',
+                            method: 'test',
+                            rows: 1,
+                            edges: 2,
+                            thread_path: 'semantic_threads_ui.dat',
+                            data_path: 'data.dat'
+                        }),
+                        { status: 200 }
+                    )
+                )
+            }
+            throw new Error(`Unexpected fetch: ${url}`)
+        })
+    })
+
+    afterEach(() => {
+        vi.useRealTimers()
+        vi.unstubAllGlobals()
+        vi.restoreAllMocks()
+    })
+
+    it('preserves neighbor leadIds when the worker emits camelCase NeighborEntry shape', async () => {
+        const workerNode = createWorkerOutputNode()
+        const bundle = {
+            nodes: { '519': workerNode }
+        }
+
+        const promise = loadSemanticThreads({ reason: 'unit-test-camelcase' })
+        await Promise.resolve()
+        await Promise.resolve()
+
+        const worker = MockWorker.instances[0]
+        expect(worker).toBeDefined()
+
+        const request = worker.lastMessage as { requestId: number }
+        worker.dispatchEvent(
+            new MessageEvent('message', {
+                data: {
+                    type: 'LOAD_THREADS_SUCCESS',
+                    requestId: request.requestId,
+                    payload: {
+                        neighborEntries: [['519', workerNode]],
+                        artifactName: 'semantic_threads_ui.dat',
+                        bundle
+                    }
+                }
+            })
+        )
+
+        await expect(promise).resolves.toBe(true)
+
+        const map = state.semanticNeighborMapByLeadId as Map<string, {
+            leadId: string
+            neighbors: Array<{ leadId: string; score: number; sameCity: boolean; relationshipRole: string }>
+        }>
+
+        const entry = map.get('519')
+        expect(entry).toBeDefined()
+        expect(entry.leadId).toBe('519')
+        expect(entry.neighbors).toHaveLength(2)
+
+        // The critical regression assertion: every neighbor must have a
+        // non-empty leadId. Before the fix, all neighbors had leadId: ''
+        // because the transform read snake_case `lead_id` (which was
+        // undefined on the worker's camelCase output).
+        for (const neighbor of entry.neighbors) {
+            expect(neighbor.leadId).toBeTruthy()
+            expect(neighbor.leadId).not.toBe('')
+        }
+
+        expect(entry.neighbors[0].leadId).toBe('7070')
+        expect(entry.neighbors[1].leadId).toBe('8812')
+
+        // Verify that other camelCase fields also propagate (not just leadId).
+        expect(entry.neighbors[0].score).toBe(1.1497)
+        expect(entry.neighbors[0].sameCity).toBe(true)
+        expect(entry.neighbors[0].relationshipRole).toBe('downstream')
+        expect(entry.neighbors[1].relationshipRole).toBe('core_peer')
     })
 })
