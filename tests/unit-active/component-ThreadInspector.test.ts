@@ -8,13 +8,13 @@
  *
  * Verifies:
  *  1. Root .thread-inspector with id="thread-inspector" and role="complementary"
- *  2. Root has aria-label="Thread connection inspector"
+ *  2. Root has aria-label="Connection inspector"
  *  3. Section .focus-thread-inspector with aria-labelledby
  *  4. Header .inspector-header with kicker text and close button
  *  5. h2 .focus-thread-inspector-title with id
  *  6. Copy paragraph .focus-thread-inspector-copy with id
- *  7. Meta stats .focus-thread-inspector-meta for segments/braids/endpoints
- *  8. Action buttons: #btn-thread-pin, #btn-thread-follow, #btn-thread-clear
+ *  7. Meta stats .focus-thread-inspector-meta for stops/overlapping paths/destinations
+ *  8. Action buttons: #btn-thread-pin, #btn-thread-follow, #btn-thread-clear (Clear→Close)
  */
 import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
@@ -39,8 +39,16 @@ describe('ThreadInspector component', () => {
         expect(source).toContain('role="complementary"')
     })
 
-    it('root has aria-label="Thread connection inspector"', () => {
-        expect(source).toContain('aria-label="Thread connection inspector"')
+    it('root has aria-label="Connection inspector"', () => {
+        expect(source).toContain('aria-label="Connection inspector"')
+    })
+
+    it('clear action button (#btn-thread-clear) is labelled "Close" (UX-2 Clear→Close rename)', () => {
+        expect(source).toContain('id="btn-thread-clear"')
+        // The visible action label changed from "Clear" to "Close" (the button
+        // keeps its id; only the user-facing text was renamed).
+        expect(source).toMatch(/>\s*Close\s*</)
+        expect(source).not.toMatch(/>\s*Clear\s*</)
     })
 
     it('section .focus-thread-inspector with aria-labelledby', () => {
@@ -65,15 +73,15 @@ describe('ThreadInspector component', () => {
     it('copy paragraph .focus-thread-inspector-copy with id', () => {
         expect(source).toContain('id="focus-thread-inspector-copy"')
         expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-copy\b[^"]*"/)
-        expect(source).toContain('Previewing the semantic connection')
+        expect(source).toContain('Previewing the connection')
     })
 
-    it('meta stats .focus-thread-inspector-meta for segments/braids/endpoints', () => {
+    it('meta stats .focus-thread-inspector-meta for stops/overlapping paths/destinations', () => {
         expect(source).toContain('id="focus-thread-inspector-meta"')
         expect(source).toMatch(/class="[^"]*\bfocus-thread-inspector-meta\b[^"]*"/)
-        expect(source).toContain('segments')
-        expect(source).toContain('braids')
-        expect(source).toContain('endpoints')
+        expect(source).toContain('stops')
+        expect(source).toContain('overlapping paths')
+        expect(source).toContain('destinations')
     })
 
     it('action buttons: #btn-thread-pin, #btn-thread-follow, #btn-thread-clear', () => {
@@ -81,6 +89,6 @@ describe('ThreadInspector component', () => {
         expect(source).toContain('class="thread-action primary"')
         expect(source).toContain('id="btn-thread-follow"')
         expect(source).toContain('id="btn-thread-clear"')
-        expect(source).toContain('aria-label="Thread actions"')
+        expect(source).toContain('aria-label="Connection actions"')
     })
 })

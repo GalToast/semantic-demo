@@ -179,10 +179,10 @@
   // ── View Model (mirrors InfoPanel fallback path) ──────────────────────────────
   let viewModel = $derived.by((): Record<string, unknown> => {
     if (!selectedRecord) return {
-      name: 'Select a node',
+      name: 'Select a business',
       filedAs: '',
       showFiledAs: false,
-      what: 'Click a business in the field to explore.',
+      what: 'Click a business on the map to explore.',
       role: 'Record',
       theme: 'Theme',
       status: 'Record status',
@@ -209,7 +209,9 @@
     const what = sanitizePublicFacingNote(selectedRecord.what ?? '');
     const theme = describeCluster(selectedRecord.cluster);
     const status = formatStatus(selectedRecord.status ?? 'active');
-    const role = selectionSource === 'search' ? 'Search Match' : 'Field Node';
+    // PR-UX (UI/UX audit): replace internal-data jargon "Field Node" / "Search Match"
+    // with user-friendly role labels. See docs/ux-copy-rules.md.
+    const role = selectionSource === 'search' ? 'Search result' : 'Business view';
     const trivia = '';
     const showTrivia = false;
     const matchNarrative = '';
@@ -305,8 +307,8 @@
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 16v-4M12 8h.01"/>
       </svg>
-      <p class="selected-empty-headline">Select a node</p>
-      <p class="selected-empty-sub">Click a business in the field to explore.</p>
+      <p class="selected-empty-headline">Select a business</p>
+      <p class="selected-empty-sub">Click a business on the map to explore.</p>
     </div>
     {/if}
 

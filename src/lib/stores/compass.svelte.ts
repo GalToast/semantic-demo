@@ -18,9 +18,24 @@ export type CompassPhase = CompassPhaseType
 
 // ── Step Types ───────────────────────────────────────────────────────────────
 
+/** Display labels for compass steps. Mirrors `mode-constants.ts` so the
+ *  compass rail and the header mode chips stay visually consistent.
+ *  Decoupled from phase IDs so future renames can edit one place. */
+const COMPASS_STEP_LABELS: Record<string, string> = {
+    overview: 'Overview',
+    search: 'Search',
+    focus: 'Focus',
+    trail: 'Trail',
+    inside: 'Inside',
+    map: 'Map',
+}
+
 export interface CompassStep {
-    /** Phase name: overview | search | focus | inside | map */
+    /** Canonical phase identifier used in URL params and nav state.
+     *  Do not display directly — render `label` instead. */
     phase: string
+    /** User-facing display label, derived from COMPASS_STEP_LABELS. */
+    label: string
     /** Progress state relative to the current journey phase */
     state: 'done' | 'current' | 'upcoming'
 }
@@ -64,6 +79,10 @@ export function compassSteps(): CompassStep[] {
             state = 'upcoming'
         }
 
-        return { phase, state }
+        return {
+            phase,
+            label: COMPASS_STEP_LABELS[phase] ?? phase,
+            state,
+        }
     })
 }

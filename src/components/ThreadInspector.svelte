@@ -200,7 +200,7 @@
   <div
     class="thread-inspector"
     id="thread-inspector"
-    aria-label="Thread connection inspector"
+    aria-label="Connection inspector"
     role="complementary"
     aria-live="polite"
     onpointerdown={(e) => e.stopPropagation()}
@@ -219,22 +219,22 @@
         <button type="button" class="inspector-close" onclick={clearThreadInspector} aria-label="Close inspector"></button>
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
-        <!-- Renders as 'Thread connection to node N' (when name missing) or 'Thread connection to {name}' when present. -->
-        {inspectedIndex != null ? `Thread connection to ${appState.points[inspectedIndex]?.name ?? `node ${inspectedIndex}`}` : 'Connection Inspector'}
+        <!-- Renders as 'Connection to business #N' (when name missing) or 'Connection to {name}' when present. -->
+        {inspectedIndex != null ? `Connection to ${appState.points[inspectedIndex]?.name ?? `business #${inspectedIndex}`}` : 'Connection Inspector'}
       </h2>
       <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy inspector-source">
         {inspectedIndex != null
-          ? `Previewing the semantic connection from ${localizeSource(inspector.source)} to ${appState.points[inspectedIndex]?.name ?? `node ${inspectedIndex}`}.`
+          ? `Previewing the connection from ${localizeSource(inspector.source)} to ${appState.points[inspectedIndex]?.name ?? `business #${inspectedIndex}`}.`
           : 'Preview why this nearby stop belongs in the current focus path.'}
       </p>
       {#if inspector.segmentCount > 0 || inspector.braidCount > 0 || inspector.endpointCount > 0}
-        <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label="Connection statistics: {inspector.segmentCount} segments, {inspector.braidCount} braids, {inspector.endpointCount} endpoints">
-          <span role="listitem">{inspector.segmentCount} segments</span>
-          <span role="listitem">{inspector.braidCount} braids</span>
-          <span role="listitem">{inspector.endpointCount} endpoints</span>
+        <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label="Connection statistics: {inspector.segmentCount} stops, {inspector.braidCount} overlapping paths, {inspector.endpointCount} destinations">
+          <span role="listitem">{inspector.segmentCount} stops</span>
+          <span role="listitem">{inspector.braidCount} overlapping paths</span>
+          <span role="listitem">{inspector.endpointCount} destinations</span>
         </div>
       {/if}
-      <div class="focus-thread-inspector-actions" aria-label="Thread actions">
+      <div class="focus-thread-inspector-actions" aria-label="Connection actions">
         <button
           id="btn-thread-pin"
           type="button"
@@ -263,7 +263,7 @@
           class="thread-action"
           onclick={clearThreadInspector}
         >
-          Clear
+          Close
         </button>
       </div>
     </section>
@@ -273,7 +273,7 @@
   <div
     class="thread-inspector thread-inspector--empty"
     id="thread-inspector"
-    aria-label="Thread connection inspector"
+    aria-label="Connection inspector"
     role="complementary"
     onpointerdown={(e) => e.stopPropagation()}
     onwheel={(e) => e.stopPropagation()}
@@ -298,8 +298,8 @@
       </p>
       <div id="focus-thread-inspector-meta" class="focus-thread-inspector-meta inspector-stats" role="list" aria-label="Connection statistics unavailable until a nearby stop is selected">
         <span role="listitem">Preview connection</span>
-      </div>
-      <div class="focus-thread-inspector-actions" aria-label="Thread actions">
+     </div>
+      <div class="focus-thread-inspector-actions" aria-label="Connection actions">
         <button
           id="btn-thread-pin"
           type="button"
@@ -322,7 +322,7 @@
           class="thread-action"
           onclick={clearThreadInspector}
         >
-          Clear
+          Close
         </button>
       </div>
     </section>

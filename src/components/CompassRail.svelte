@@ -159,13 +159,13 @@
         class:current={step.state === 'current'}
         class:done={step.state === 'done'}
         onclick={() => handleAction(step.phase)}
-        aria-label="Navigate to {step.phase}"
+        aria-label="Navigate to {step.label}"
         aria-current={step.state === 'current' ? 'step' : undefined}
         tabindex={idx === compassFocusIndex ? 0 : -1}
         type="button"
       >
         <span class="step-dot"></span>
-        <span class="step-label">{step.phase}</span>
+        <span class="step-label">{step.label}</span>
       </button>
         {/each}
   </nav>
