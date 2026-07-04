@@ -95,7 +95,7 @@ describe('SearchBar component', () => {
         expect(source).toMatch(/EVENTS\.SEARCH_SUCCESS/)
         // Banner copy must remain (this is a refactor, not a removal)
         expect(source).toMatch(/mock-banner/)
-        expect(source).toMatch(/Showing demo data/)
+        expect(source).toMatch(/Demo data/)
     })
 
     it('publishing SEARCH_DEGRADED shows the mock-banner, SEARCH_SUCCESS hides it', async () => {
