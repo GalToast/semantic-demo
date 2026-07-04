@@ -539,17 +539,17 @@ export function updateMyceliumThreads(): void {
         const geom = line?.geometry as LineGeometry | undefined
         const startAttr = geom?.getAttribute('instanceStart') as BufferAttribute | undefined
         const endAttr = geom?.getAttribute('instanceEnd') as BufferAttribute | undefined
+        const colorStartAttr = geom?.getAttribute('instanceColorStart') as BufferAttribute | undefined
+        const colorEndAttr = geom?.getAttribute('instanceColorEnd') as BufferAttribute | undefined
         if (!startAttr || !endAttr) return
 
         const nextPositions: number[] = []
-        // nextColors removed — colors are static post-Fix 1 and not wired
-        // into the per-frame update path. Rebuilding them every frame is
-        // wasted work; skip until the long-term color-amortization follow-up.
+        const nextColors: number[] = []
         webglContext.myceliumConnectionPairs.forEach((pair) => {
             if (pair.layer !== layer) return
             // Amortization: skip pairs where neither endpoint moved.
             if (hasDirtyNodes && !dirtyNodeIndices.has(pair.a) && !dirtyNodeIndices.has(pair.b)) return
-            pushBezierLinePair(nextPositions, [], { a: pair.a, b: pair.b }, 1, 5)
+            pushBezierLinePair(nextPositions, nextColors, { a: pair.a, b: pair.b }, 1, 5)
         })
 
         const startArray = startAttr.array as Float32Array
@@ -573,6 +573,30 @@ export function updateMyceliumThreads(): void {
         }
         startAttr.needsUpdate = true
         endAttr.needsUpdate = true
+
+        if (colorStartAttr && colorEndAttr && nextColors.length) {
+            const colorStartArray = colorStartAttr.array as Float32Array
+            const colorEndArray = colorEndAttr.array as Float32Array
+            const maxColorSegs = Math.min(colorStartArray.length / 3, colorEndArray.length / 3, nextColors.length / 6)
+            for (let s = 0; s < maxColorSegs; s += 1) {
+                const ci = s * 6
+                const si = s * 3
+                colorStartArray[si] = nextColors[ci] ?? 0
+                colorStartArray[si + 1] = nextColors[ci + 1] ?? 0
+                colorStartArray[si + 2] = nextColors[ci + 2] ?? 0
+                colorEndArray[si] = nextColors[ci + 3] ?? 0
+                colorEndArray[si + 1] = nextColors[ci + 4] ?? 0
+                colorEndArray[si + 2] = nextColors[ci + 5] ?? 0
+            }
+            for (let s = maxColorSegs * 3; s < colorStartArray.length; s += 1) {
+                colorStartArray[s] = 0
+            }
+            for (let s = maxColorSegs * 3; s < colorEndArray.length; s += 1) {
+                colorEndArray[s] = 0
+            }
+            colorStartAttr.needsUpdate = true
+            colorEndAttr.needsUpdate = true
+        }
     }
 
     updateLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0)
