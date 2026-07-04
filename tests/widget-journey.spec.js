@@ -251,7 +251,9 @@ test.describe('Widget journey', () => {
         expect(match3.h).toBeGreaterThan(0)
     })
 
-    test('5j. W48 search-surface polish: no double-bordered input at idle, no cue overlap in focus (regression)', async ({ page }) => {
+    test('5j. W48 search-surface polish: no double-bordered input at idle, no cue overlap in focus (regression)', async ({
+        page
+    }) => {
         // W48 audit roundup — the user-visible complaints were:
         //   (a) the search panel at idle/idle-search showed 3 visually
         //       distinct bordered regions (outer .search-container +
@@ -283,32 +285,54 @@ test.describe('Widget journey', () => {
         }
 
         // ── (a) Idle: search panel container has no border, results-wrapper has no border
+        // ── (a) idle-check search-container has no border.
+        // The .search-results-wrapper is dynamic-imported only when a search has
+        // fired (showResults/showLoading/isError/isStoreError/isEmpty). At idle
+        // it's not in the DOM, so we trigger a search first to load it, then
+        // assert the new CSS strips the bordered wrapper that previously read
+        // as a 3rd boxed card.
         const idleStyles = await page.evaluate(() => {
             const sc = document.querySelector('.search-container')
-            const sw = document.querySelector('.search-results-wrapper')
             const cs = sc ? getComputedStyle(sc) : null
-            const ws = sw ? getComputedStyle(sw) : null
             return {
-                containerBorder: cs?.borderTopWidth,
-                resultsBorder: ws?.borderTopWidth,
+                containerBorder: cs?.borderTopWidth
             }
         })
         expect(
             idleStyles.containerBorder,
             `.search-container should have border-top-width 0 in panel mode (got ${idleStyles.containerBorder})`
         ).toBe('0px')
+
+        // Trigger a search so SearchResults loads.
+        const searchInput = page.locator('#search-input')
+        await searchInput.waitFor({ state: 'attached', timeout: 10000 })
+        await searchInput.fill('coffee')
+        await page.keyboard.press('Enter')
+        await page
+            .locator('.search-results-wrapper')
+            .waitFor({ state: 'attached', timeout: 12000 })
+            .catch(() => {})
+        await page.waitForTimeout(1500)
+
+        const resultsStyles = await page.evaluate(() => {
+            const sw = document.querySelector('.search-results-wrapper')
+            const ws = sw ? getComputedStyle(sw) : null
+            return {
+                resultsBorder: ws?.borderTopWidth
+            }
+        })
         expect(
-            idleStyles.resultsBorder,
-            `.search-results-wrapper should have border-top-width 0 in panel mode (got ${idleStyles.resultsBorder})`
+            resultsStyles.resultsBorder ?? 'absent',
+            `.search-results-wrapper should have border-top-width 0 in panel mode (got ${resultsStyles.resultsBorder})`
         ).toBe('0px')
 
         // ── (b) Focus: search-trail-cue is hidden (regression for W48 cue/trail overlap)
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee&record=519`, { waitUntil: 'domcontentloaded' })
-        await page.waitForFunction(
-            () => document.body.dataset?.panelSurface?.startsWith('focus'),
-            null,
-            { timeout: 10000 }
-        )
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee&record=519`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await page.waitForFunction(() => document.body.dataset?.panelSurface?.startsWith('focus'), null, {
+            timeout: 10000
+        })
         await page.waitForTimeout(1500)
 
         const focusCueState = await page.evaluate(() => {
@@ -318,17 +342,14 @@ test.describe('Widget journey', () => {
                 panelSurface: document.body.dataset?.panelSurface,
                 cueHidden: cue ? cue.hidden || cue.getAttribute('hidden') !== null : true,
                 cueRect: cue ? cue.getBoundingClientRect() : null,
-                journeyChromeRect: jc ? jc.getBoundingClientRect() : null,
+                journeyChromeRect: jc ? jc.getBoundingClientRect() : null
             }
         })
         expect(
             focusCueState.panelSurface?.startsWith('focus'),
             'pre-condition: focus mode must be active for the cue overlap test'
         ).toBe(true)
-        expect(
-            focusCueState.cueHidden,
-            'search-trail-cue must be hidden in focus mode (W48 fix)'
-        ).toBe(true)
+        expect(focusCueState.cueHidden, 'search-trail-cue must be hidden in focus mode (W48 fix)').toBe(true)
         // Verify the cue does not occupy visible space (height = 0 when hidden)
         if (focusCueState.cueRect) {
             expect(
@@ -336,5 +357,63 @@ test.describe('Widget journey', () => {
                 `search-trail-cue should have 0 height when hidden in focus mode (got ${focusCueState.cueRect.height})`
             ).toBe(0)
         }
+    })
+
+    test('5k. Focus card shows friendly role label "Business view" after selecting a node (UX-2 de-jargon)', async ({
+        page
+    }) => {
+        // UX-2: the FocusCard role label was changed from internal-data jargon
+        // "Field Node" to "Business view" (and "Search Match" to "Search result").
+        // This test exercises the real DOM after clicking a node.
+        // NOTE: the badge may be visually hidden by the info-panel CSS, but its
+        // textContent is still deterministically "Business view" after focus.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1200)
+
+        // Dismiss first-visit help dialog if present.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Click the first data point to enter focus mode (same idiom as 5g/5h).
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            const points = window.__APP_STATE__?.points
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            if (!points || points.length === 0) throw new Error('no points available')
+            const ok = actions.focusOnNode(0)
+            if (!ok) throw new Error('focusOnNode(0) returned falsy')
+        })
+
+        // Wait for the badge text to update (it may be hidden by CSS but still
+        // in the DOM — we validate the content, not presentation).
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#selected-role-badge')
+                return !!el && el.textContent?.trim() === 'Business view'
+            },
+            null,
+            { timeout: 10000 }
+        )
+
+        // Also assert no stale "Field Node" string remains anywhere in the
+        // rendered focus card.
+        const cardHtml = await page.evaluate(() => {
+            const card = document.querySelector('#selected-card, .focus-card')
+            return card?.outerHTML ?? ''
+        })
+        expect(cardHtml, 'focus card must not contain the old jargon "Field Node"').not.toContain('Field Node')
     })
 })

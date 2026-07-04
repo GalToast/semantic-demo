@@ -541,6 +541,12 @@
     border: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    /* W48-UX: the parent .info-panel-content has overflow:hidden which
+       clips wider-than-parent result text ("Top match" → "atch") if
+       any horizontal scrollLeft drift occurs. Constrain the wrapper
+       to its parent to prevent this. */
+    max-width: 100%;
+    overflow-x: hidden;
   }
 
   .search-show-more-btn {

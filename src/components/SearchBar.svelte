@@ -119,14 +119,11 @@
       class="mock-banner"
       role="status"
       data-testid="mock-banner"
+      title="The search API fell back to a local mock catalog. To force the
+        real API, append ?staticDev=0 to the URL."
     >
-      <strong>Showing demo data:</strong> the search API fell back to a local
-      mock catalog (20 fake businesses across 4 categories: coffee, roof,
-      childcare, dog). The 8,406-business Montgomery County dataset is not
-      loaded. The bypass flag expires after 60s and clears on the next
-      successful API response, so a restarted server is picked up
-      automatically. To force the API right now, append
-      <code>?staticDev=0</code> to the URL.
+      <strong>Demo data:</strong> search is using a 20-business mock catalog.
+      Append <code>?staticDev=0</code> for the real API.
     </div>
   {/if}
   <SearchInput bind:this={searchInputRef} expanded={isExpanded} surface={currentSurface()} />
@@ -177,20 +174,24 @@
     padding: 0;
   }
 
-  /* W47-E: dev-only mock-data banner. Sits above the search input as a
-     small status pill so it's visible but doesn't displace layout. The
-     cyan-on-amber palette signals "this is not the real data" without
-     being alarming. */
+  /* W47-E: dev-only mock-data banner. W48-UX compact to a single-line
+     status pill so it doesn't displace the search layout (the previous
+     multi-line version took ~150px and clipped the "Top match" label
+     below). The full diagnostic text lives in the title attribute for
+     hover / screen-reader access. */
   .mock-banner {
     background: rgba(255, 193, 7, 0.16);
     border: 1px solid rgba(255, 193, 7, 0.5);
     color: rgba(255, 224, 130, 0.96);
     font-size: 0.7rem;
-    line-height: 1.4;
-    padding: 0.45rem 0.6rem;
+    line-height: 1.3;
+    padding: 0.3rem 0.55rem;
     border-radius: 6px;
-    margin-bottom: 0.45rem;
+    margin-bottom: 0.4rem;
     font-family: 'Nunito Sans', system-ui, sans-serif;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
   .mock-banner strong {
     color: rgba(255, 224, 130, 1);
