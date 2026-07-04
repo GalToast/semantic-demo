@@ -57,7 +57,10 @@ import {
     updatePointsShaderHoverBoost
 } from './three-engine-frame-updates'
 import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
-import { shouldSkipNextRender as shouldSkipNextRenderHelper } from './renderer/scene-static-tracker'
+import {
+    shouldSkipNextRender as shouldSkipNextRenderHelper,
+    type SceneStaticSnapshot
+} from './renderer/scene-static-tracker'
 import { ensurePostProcessing } from './three-pp-init'
 import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './three-store-sync'
 import { easeOutQuint } from '@lib/utils/math-easing'
@@ -69,8 +72,9 @@ import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame } from '
 export function updateCameraViewportOffset() {
     const camera = webglContext.camera || appState.camera
     if (!camera) return
-    const width = window.innerWidth
-    const height = window.innerHeight
+    const container = document.getElementById('canvas-container')
+    const width = container?.clientWidth ?? window.innerWidth
+    const height = container?.clientHeight ?? window.innerHeight
 
     // Only shift the camera frustum when the info-panel is actually showing
     // content that takes real screen real estate on desktop. Idle / launch
@@ -472,9 +476,9 @@ export function animate() {
             const camera = webglContext.camera
             const posArr = camera.position.toArray() as unknown as [number, number, number]
             const quatArr = camera.quaternion.toArray() as unknown as [number, number, number, number]
-            const newSnapshot = {
-                pos: [posArr[0], posArr[1], posArr[2]] as const,
-                quat: [quatArr[0], quatArr[1], quatArr[2], quatArr[3]] as const
+            const newSnapshot: SceneStaticSnapshot = {
+                cameraPos: [posArr[0], posArr[1], posArr[2]] as const,
+                cameraQuat: [quatArr[0], quatArr[1], quatArr[2], quatArr[3]] as const
             }
             const skipCheck = shouldSkipNextRenderHelper(
                 engineState.lastCameraSnapshot,
@@ -508,8 +512,10 @@ export function animate() {
                 if (!engineState.state?.scenePerformanceDiagnostics) return
                 engineState.state.scenePerformanceDiagnostics.drawCalls = webglContext.renderer!.info.render.calls
                 engineState.state.scenePerformanceDiagnostics.triangles = webglContext.renderer!.info.render.triangles
-                engineState.state.scenePerformanceDiagnostics.renderSkipOpportunities = engineState.renderSkipOpportunities
-                engineState.state.scenePerformanceDiagnostics.consecutiveSkippedFrames = engineState.consecutiveSkippedFrames
+                engineState.state.scenePerformanceDiagnostics.renderSkipOpportunities =
+                    engineState.renderSkipOpportunities
+                engineState.state.scenePerformanceDiagnostics.consecutiveSkippedFrames =
+                    engineState.consecutiveSkippedFrames
             })
         }
 

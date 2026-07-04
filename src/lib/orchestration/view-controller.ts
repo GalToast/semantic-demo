@@ -12,7 +12,6 @@ import { get } from 'svelte/store'
 import { navStore, updateNavState } from '@lib/stores/navigation.svelte.ts'
 import { animateCameraToTerrainPrelude } from '@lib/engine/camera-controls'
 import { applyMapFlatteningLayout } from '@lib/utils/map-flattening-layout'
-import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -45,7 +44,9 @@ const CONFIG = {
 
 // ── Internal State ────────────────────────────────────────────────────────────
 
-const _registry = new DisposableRegistry({ label: 'view-controller' })
+let _handoffDismissTimer: ReturnType<typeof setTimeout> | null = null
+let _viewTransitionTimer: ReturnType<typeof setTimeout> | null = null
+let _preludeTimer: ReturnType<typeof setTimeout> | null = null
 let _refreshCompositionState: () => void = () => {}
 
 // ── Public API ────────────────────────────────────────────────────────────────
@@ -64,7 +65,14 @@ export function initViewControllerAdapter(opts: { refreshCompositionState?: () =
  */
 export function hideViewHandoff(): void {
     const handoff = document.getElementById('view-handoff')
-    _registry.disposeAll()
+    if (_handoffDismissTimer !== null) {
+        clearTimeout(_handoffDismissTimer)
+        _handoffDismissTimer = null
+    }
+    if (_preludeTimer !== null) {
+        clearTimeout(_preludeTimer)
+        _preludeTimer = null
+    }
     // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
     if (!handoff) return
     handoff.classList.remove('active')
@@ -110,11 +118,17 @@ export function showViewHandoff(view: ViewName): void {
     handoff.classList.add('active')
     // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
 
-    _registry.schedule(CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS, () => {
+    if (_handoffDismissTimer !== null) {
+        clearTimeout(_handoffDismissTimer)
+        _handoffDismissTimer = null
+    }
+    // eslint-disable-next-line no-restricted-syntax -- one-shot DOM timers wrapped for cancellation
+    _handoffDismissTimer = setTimeout(() => {
+        _handoffDismissTimer = null
         handoff.classList.remove('active')
         handoff.setAttribute('aria-hidden', 'true')
         // body.dataset.viewHandoffActive is owned by parity-attrs.svelte.ts.
-    })
+    }, CONFIG.SHOW_VIEW_HANDOFF_DISMISS_MS)
 }
 
 /**
@@ -136,6 +150,10 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
     // previous prelude is now stale — cancel it immediately so the
     // wrong "switching to map" overlay doesn't linger during a
     // galaxy→galaxy or map→galaxy reverse switch.
+    if (_viewTransitionTimer !== null) {
+        clearTimeout(_viewTransitionTimer)
+        _viewTransitionTimer = null
+    }
     hideViewHandoff()
 
     // Terrain prelude: galaxy → map with animated flattening
@@ -159,11 +177,17 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
     document.body.classList.add('view-transitioning')
 
     // Auto-remove transitioning class after animation
-    _registry.schedule(CONFIG.VIEW_HANDOFF_OUT_MS, () => {
+    if (_viewTransitionTimer !== null) {
+        clearTimeout(_viewTransitionTimer)
+        _viewTransitionTimer = null
+    }
+    // eslint-disable-next-line no-restricted-syntax -- one-shot DOM timers wrapped for cancellation
+    _viewTransitionTimer = setTimeout(() => {
+        _viewTransitionTimer = null
         const current = get(navStore).currentView
         if (current !== view) return // Guard against rapid switching
         document.body.classList.remove('view-transitioning')
-    })
+    }, CONFIG.VIEW_HANDOFF_OUT_MS)
 
     // Map-specific setup
     if (view === 'map') {
@@ -205,7 +229,13 @@ function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav:
     showViewHandoff('map')
     animateCameraToTerrainPrelude({ duration: CONFIG.MAP_HANDOFF_PRELUDE_MS })
 
-    _registry.schedule(CONFIG.MAP_HANDOFF_PRELUDE_MS, () => {
+    if (_preludeTimer !== null) {
+        clearTimeout(_preludeTimer)
+        _preludeTimer = null
+    }
+    // eslint-disable-next-line no-restricted-syntax -- one-shot DOM timers wrapped for cancellation
+    _preludeTimer = setTimeout(() => {
+        _preludeTimer = null
         const current = get(navStore).currentView
         if (current !== 'galaxy') return
         switchView('map', {
@@ -213,7 +243,7 @@ function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav:
             skipTerrainPrelude: true,
             handoffFrom: options.handoffFrom
         })
-    })
+    }, CONFIG.MAP_HANDOFF_PRELUDE_MS)
 }
 
 function _clearGalaxyTimers(): void {
