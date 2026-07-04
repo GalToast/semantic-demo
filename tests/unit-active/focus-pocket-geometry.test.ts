@@ -347,6 +347,71 @@ describe('focus-pocket-geometry — placement & relationship bias', () => {
             expect(Number.isFinite(result.angle)).toBe(true)
             expect(Number.isFinite(result.radius)).toBe(true)
             expect(Number.isFinite(result.zOffset)).toBe(true)
+            expect(Number.isFinite(result.breatheAmp)).toBe(true)
+        })
+
+        it('produces finite breatheAmp for every known motif key (regression: delta-branch gap)', () => {
+            // Regression: the delta branch historically omitted breatheAmp
+            // assignment, producing NaN after the `*= isHalo ? 0.72 : 1`
+            // multiplier and forcing the downstream `|| 0.02` fallback to
+            // fire with a wildly wrong amplitude (~0.02 vs intended ~0.003).
+            const motifKeys: Array<'rosette' | 'lattice' | 'delta' | 'civic' | 'market'> = [
+                'rosette',
+                'lattice',
+                'delta',
+                'civic',
+                'market'
+            ]
+            const groups: Array<'primary' | 'halo' | 'support'> = ['primary', 'halo', 'support']
+            const vp = makeViewportProfile()
+            for (const key of motifKeys) {
+                for (const group of groups) {
+                    const result = getFocusConstellationPlacement(
+                        makeMotif({ key, seed: 0.3 }),
+                        { score: 0.5 },
+                        0,
+                        group,
+                        5,
+                        vp
+                    )
+                    expect(Number.isFinite(result.breatheAmp)).toBe(true)
+                    // Sanity bound: breatheAmp should be a small positive
+                    // amplitude (not NaN, not 0, not the 0.02 fallback that
+                    // would fire if NaN reached the downstream `||`).
+                    expect(result.breatheAmp).toBeGreaterThan(0)
+                    expect(result.breatheAmp).toBeLessThan(0.01)
+                }
+            }
+        })
+
+        it('delta motif primary breatheAmp is distinct from market/else fallback (regression: delta-branch gap)', () => {
+            // Tighter regression: even with the safe-default defense in
+            // `let breatheAmp = 0.003`, the delta branch must assign its
+            // own per-group value (0.0026 for primary) — otherwise the
+            // delta motif would silently match the market/else branch and
+            // lose its tighter amplitude profile.
+            const vp = makeViewportProfile()
+            const deltaPrimary = getFocusConstellationPlacement(
+                makeMotif({ key: 'delta', seed: 0.3 }),
+                { score: 0.5 },
+                0,
+                'primary',
+                5,
+                vp
+            )
+            const marketPrimary = getFocusConstellationPlacement(
+                makeMotif({ key: 'market', seed: 0.3 }),
+                { score: 0.5 },
+                0,
+                'primary',
+                5,
+                vp
+            )
+            // Delta primary is 0.0026; market/else primary is 0.003.
+            // They must differ — if the delta branch were missing the
+            // assignment, both would collapse to 0.003 (the safe default).
+            expect(deltaPrimary.breatheAmp).toBeLessThan(marketPrimary.breatheAmp)
+            expect(deltaPrimary.breatheAmp).toBeCloseTo(0.0026, 5)
         })
 
         it('produces different angles for different motif keys', () => {

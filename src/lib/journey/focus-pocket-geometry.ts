@@ -310,7 +310,12 @@ export function getFocusConstellationPlacement(
     let angle = motif.seed
     let radius: number
     let zOffset: number
-    let breatheAmp!: number // delta branch omits assignment (matches JS: undefined→NaN via *=)
+    // Default fallback matches the `else` (market/arc) branch. If a future
+    // motif branch is added without assigning `breatheAmp`, this prevents
+    // the downstream `undefined → NaN via *=` cascade that previously made
+    // the delta motif nodes throb at 0.02 instead of the intended ~0.003
+    // (see commit fixing the delta-branch gap).
+    let breatheAmp = 0.003
 
     const compressionMult = personality?.compressionMult || 1.0
 
@@ -344,6 +349,7 @@ export function getFocusConstellationPlacement(
               ? 0.284 + order * 0.01
               : 0.238 + order * 0.018
         zOffset = isPrimary ? 0.03 - absNormalized * 0.018 : isHalo ? -0.034 - order * 0.003 : -0.018 - order * 0.006
+        breatheAmp = isPrimary ? 0.0026 : isHalo ? 0.003 : 0.0036
     } else if (motif.key === 'civic') {
         angle += (isPrimary ? -Math.PI * 0.52 : isHalo ? Math.PI * 0.72 : Math.PI * 0.45) + normalized * Math.PI * 1.34
         radius = isPrimary
