@@ -12,7 +12,8 @@
  */
 
 import type { LegacyState } from '@lib/state/legacy-state'
-import type { MeshPhongMaterial } from 'three'
+import type { MeshPhongMaterial, Material } from 'three'
+import { FogExp2 } from 'three'
 import type { NodePosition } from '@lib/state/state-types'
 import { engineState } from './three-engine-state'
 import { webglContext } from '@lib/engine/webgl-context'
@@ -21,7 +22,12 @@ import {
     SCENE_ATMOSPHERE as PORT_SCENE_ATMOSPHERE,
     setNodeSporeInstanceMatrix as setNodeSporeInstanceMatrixPort
 } from '@lib/engine/node-manager'
-import { shouldRenderThreads, markNodesDirty } from '@lib/engine/thread-manager'
+import {
+    shouldRenderThreads,
+    markNodesDirty,
+    getThreadPulseOpacity as getThreadPulseOpacityPort,
+    getMyceliumPresentationProfile as getMyceliumPresentationProfilePort
+} from '@lib/engine/thread-manager'
 import { easeOutQuint, easeInOutCubic } from '@lib/utils/math-easing'
 import * as sceneRevealMod from './scene-reveal'
 
@@ -234,4 +240,178 @@ export function lerpNodesForFrame(now: number): boolean {
         if (engineState.state) engineState.state.myceliumDirty = true
     }
     return false
+}
+
+// ── A6 — Camera reveal lerp ────────────────────────────────────────────────
+
+/**
+ * Lerp the camera from its scene-reveal start position to its end
+ * position over the eased camera progress. When the reveal completes
+ * (revealProgress >= 1), clear the reveal state and schedule the
+ * auto-rotate soft resume.
+ *
+ * @param cameraRevealProgress — eased camera progress fraction (0–1), from computeRevealProgress().camera
+ * @param revealProgress — raw scene reveal fraction (0–1), from computeRevealProgress().revealed
+ * @param state — the full LegacyState (or null), used inside withStateMutation to clear reveal flags
+ *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A6)
+ */
+export function lerpCameraForReveal(
+    cameraRevealProgress: number,
+    revealProgress: number,
+    state: LegacyState | null | undefined
+): void {
+    if (
+        engineState.state?.sceneRevealActive &&
+        engineState.state?.sceneRevealCameraStart &&
+        engineState.state?.sceneRevealCameraEnd &&
+        engineState.state?.focusedNode === null
+    ) {
+        webglContext.camera.position.lerpVectors(
+            engineState.state.sceneRevealCameraStart,
+            engineState.state.sceneRevealCameraEnd,
+            cameraRevealProgress
+        )
+        if (webglContext.controls) {
+            webglContext.controls.target.set(0, 0, 0)
+        }
+        if (revealProgress >= 1) {
+            engineState.withStateMutation?.(() => {
+                if (!state) return
+                state.sceneRevealActive = false
+                state.sceneRevealCameraStart = null
+                state.sceneRevealCameraEnd = null
+            })
+            sceneRevealMod.setSceneRevealDataset(false)
+            engineState.cameraControls?.scheduleAutoRotateResume(1200)
+        }
+    }
+}
+
+// ── A8 — Fog density adjustment ──────────────────────────────────────────────
+
+/**
+ * Scale scene fog density by the eased reveal progress so the fog
+ * fades in during the entry animation.
+ *
+ * @param pointsRevealProgress — eased reveal fraction for points (0–1)
+ *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A8)
+ */
+export function updateFogDensity(pointsRevealProgress: number): void {
+    if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
+        ;(webglContext.scene.fog as FogExp2).density =
+            (PORT_SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
+    }
+}
+
+// ── A9 — Reference sphere wireframe opacity boost ────────────────────────────
+
+/**
+ * Peak the reference sphere wireframe opacity mid-reveal so the first 2s
+ * of entry gives users a clear "structured network" cue, then settle back
+ * to the steady-state 0.03 opacity. Sin curve: 0 → 0.05 → 0.
+ *
+ * @param revealProgress — raw reveal fraction (0–1, not eased)
+ * @param sceneRevealActive — whether the scene reveal animation is running
+ *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A9)
+ */
+export function updateReferenceSphereOpacity(
+    revealProgress: number,
+    sceneRevealActive: boolean | undefined
+): void {
+    const refSphere = webglContext.scene.getObjectByName('county-depth-reference') as
+        | (import('three').Mesh & { material: import('three').MeshBasicMaterial })
+        | undefined
+    if (refSphere?.material) {
+        const baseRefOpacity = 0.03
+        const revealBoost = sceneRevealActive ? Math.sin(revealProgress * Math.PI) * 0.05 : 0
+        refSphere.material.opacity = baseRefOpacity + revealBoost
+    }
+}
+
+// ── A10 — Spore material opacity lerp ────────────────────────────────────────
+
+/**
+ * Lerp node-spore material opacity toward a reveal- and focus-scaled target
+ * each frame for a smooth fade-in.
+ *
+ * @param pointsRevealProgress — eased reveal fraction for points (0–1)
+ * @param state — subset of LegacyState for semanticDiveMode/trailDepth reads
+ *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A10)
+ */
+export function updateSporeOpacity(
+    pointsRevealProgress: number,
+    state: (Pick<LegacyState, 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
+): void {
+    if (webglContext.nodeSporeMaterial) {
+        const isSemanticDive =
+            state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2
+        const focusBoost = isSemanticDive ? 0.22 : 1.0
+        const targetSporeOpacity =
+            (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
+        webglContext.nodeSporeMaterial.opacity +=
+            (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
+    }
+}
+
+// ── A13 — Thread per-layer opacity ─────────────────────────────────────────
+
+/**
+ * Compute per-layer opacity for core/wispy/bridge mycelium lines based on
+ * the pulse phase, graph profile, thread reveal progress, and semantic-dive
+ * scale factor.
+ *
+ * When threads are not visible, all three layer opacities are zeroed.
+ *
+ * @param threadsVisible — whether mycelium threads should render (from A12)
+ * @param pointsRevealProgress — eased points-material reveal fraction (0–1),
+ *   used to compute threadRevealProgress (threads fade in after points)
+ * @param state — subset of LegacyState for pulsePhase/semanticDiveMode/trailDepth reads
+ *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A13)
+ */
+export function updateThreadLayerOpacities(
+    threadsVisible: boolean,
+    pointsRevealProgress: number,
+    state: (
+        Pick<LegacyState, 'pulsePhase'> & {
+            semanticDiveMode?: boolean
+            trailDepth?: number
+        }
+    ) | null | undefined
+): void {
+    const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
+    const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<
+        typeof getMyceliumPresentationProfilePort
+    >
+    const semanticDiveThreadScale =
+        state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
+    if (threadsVisible) {
+        if (webglContext.myceliumCoreLines)
+            (webglContext.myceliumCoreLines.material as Material).opacity =
+                (getThreadPulseOpacityPort(
+                    graphProfile.core,
+                    Math.sin(state?.pulsePhase ?? 0),
+                    graphProfile.pulse,
+                    threadRevealProgress
+                ) ?? 0) * semanticDiveThreadScale
+        if (webglContext.myceliumWispyLines)
+            (webglContext.myceliumWispyLines.material as Material).opacity =
+                (getThreadPulseOpacityPort(
+                    graphProfile.wispy,
+                    Math.sin((state?.pulsePhase ?? 0) * 0.7),
+                    graphProfile.pulse * 0.36,
+                    threadRevealProgress
+                ) ?? 0) * semanticDiveThreadScale
+        if (webglContext.myceliumBridgeLines)
+            (webglContext.myceliumBridgeLines.material as Material).opacity =
+                (getThreadPulseOpacityPort(
+                    graphProfile.bridge,
+                    Math.sin((state?.pulsePhase ?? 0) * 0.45),
+                    graphProfile.pulse * 0.28,
+                    threadRevealProgress
+                ) ?? 0) * semanticDiveThreadScale
+    } else {
+        if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as Material).opacity = 0
+        if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as Material).opacity = 0
+        if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as Material).opacity = 0
+    }
 }

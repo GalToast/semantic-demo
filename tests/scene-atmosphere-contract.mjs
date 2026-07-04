@@ -90,12 +90,12 @@ const checks = [
             ) &&
             /const\s+pointsOpacityScale\s*=\s*isSemanticDive\s*\?\s*0\.06\s*:\s*isFocused\s*\?\s*0\.46\s*:\s*1\.0/.test(frameUpdateSrc) &&
             /opacity:\s*SCENE_ATMOSPHERE\.sporeOpacity/.test(nodeManagerSrc) &&
-            /const\s+focusBoost\s*=\s*isSemanticDive\s*\?\s*0\.22\s*:\s*1\.0/.test(coreSrc) &&
+            /const\s+focusBoost\s*=\s*isSemanticDive\s*\?\s*0\.22\s*:\s*1\.0/.test(frameUpdateSrc) &&
             /const\s+targetSporeOpacity\s*=\s*\(PORT_SCENE_ATMOSPHERE\.sporeOpacity\s*\?\?\s*0\.5\)\s*\*\s*pointsRevealProgress\s*\*\s*focusBoost/.test(
-                coreSrc
+                frameUpdateSrc
             ) &&
             /webglContext\.nodeSporeMaterial\.opacity\s*\+=\s*\(targetSporeOpacity\s*-\s*webglContext\.nodeSporeMaterial\.opacity\)\s*\*\s*0\.12/.test(
-                coreSrc
+                frameUpdateSrc
             )
     },
     {

@@ -20,7 +20,6 @@ import {
     exposeDevEngineBridge
 } from './three-engine-init-helpers'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
-import { Material, FogExp2 } from 'three'
 import * as sceneRevealMod from './scene-reveal'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
 // so it can be shared with legacy-state-adapter.ts without a circular import.
@@ -34,14 +33,11 @@ import { disposeObject3D } from '@lib/engine/resource-tracker'
 import {
     compilePointMaterialForReadiness as compilePointMaterialForReadinessPort,
     createPoints as createPointsPort,
-    disposeNodeVisuals as disposeNodeVisualsPort,
-    SCENE_ATMOSPHERE as PORT_SCENE_ATMOSPHERE
+    disposeNodeVisuals as disposeNodeVisualsPort
 } from '@lib/engine/node-manager'
 import {
     createMycelium as createMyceliumPort,
     disposeMycelium as disposeMyceliumPort,
-    getMyceliumPresentationProfile as getMyceliumPresentationProfilePort,
-    getThreadPulseOpacity as getThreadPulseOpacityPort,
     shouldRenderThreads as shouldRenderThreadsPort
 } from '@lib/engine/thread-manager'
 // Postprocessing is dynamically imported to save ~150-200 kB from the main
@@ -50,9 +46,14 @@ import { engineState, ensureModules } from './three-engine-state'
 import {
     computeRevealProgress,
     lerpNodesForFrame,
+    lerpCameraForReveal,
+    updateFogDensity,
     updatePointsMaterial,
+    updateReferenceSphereOpacity,
+    updateSporeOpacity,
     updateHoverEmissiveFlash,
     updateMyceliumPulse,
+    updateThreadLayerOpacities,
     updatePointsShaderHoverBoost
 } from './three-engine-frame-updates'
 import { scheduleNextAnimationFrame, yieldToBrowser, pauseRenderLoopTimers, setAnimateFn } from './three-engine-timers'
@@ -405,59 +406,15 @@ export function animate() {
 
         if (lerpNodesForFrame(frameNow)) return
 
-        if (
-            engineState.state?.sceneRevealActive &&
-            engineState.state?.sceneRevealCameraStart &&
-            engineState.state?.sceneRevealCameraEnd &&
-            engineState.state?.focusedNode === null
-        ) {
-            webglContext.camera.position.lerpVectors(
-                engineState.state.sceneRevealCameraStart,
-                engineState.state.sceneRevealCameraEnd,
-                cameraRevealProgress
-            )
-            if (webglContext.controls) {
-                webglContext.controls.target.set(0, 0, 0)
-            }
-            if (revealProgress >= 1) {
-                engineState.withStateMutation?.(() => {
-                    if (!_state) return
-                    _state.sceneRevealActive = false
-                    _state.sceneRevealCameraStart = null
-                    _state.sceneRevealCameraEnd = null
-                })
-                sceneRevealMod.setSceneRevealDataset(false)
-                engineState.cameraControls?.scheduleAutoRotateResume(1200)
-            }
-        }
+        lerpCameraForReveal(cameraRevealProgress, revealProgress, _state)
 
         updatePointsMaterial(pointsRevealProgress, engineState.state)
 
-        if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
-            ;(webglContext.scene.fog as FogExp2).density =
-                (PORT_SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
-        }
+        updateFogDensity(pointsRevealProgress)
 
-        // W48-T2: Entry moment — peak the reference sphere wireframe mid-reveal
-        // so the first 2s of entry gives users a clear "structured network" cue,
-        // then settle back to the steady-state 0.03 opacity. Sin curve: 0 → 0.05 → 0.
-        const refSphere = webglContext.scene.getObjectByName('county-depth-reference') as
-            | (import('three').Mesh & { material: import('three').MeshBasicMaterial })
-            | undefined
-        if (refSphere?.material) {
-            const baseRefOpacity = 0.03
-            const revealBoost = engineState.state?.sceneRevealActive ? Math.sin(revealProgress * Math.PI) * 0.05 : 0
-            refSphere.material.opacity = baseRefOpacity + revealBoost
-        }
+        updateReferenceSphereOpacity(revealProgress, engineState.state?.sceneRevealActive)
 
-        if (webglContext.nodeSporeMaterial) {
-            const isSemanticDive =
-                engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2
-            const focusBoost = isSemanticDive ? 0.22 : 1.0
-            const targetSporeOpacity = (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
-            webglContext.nodeSporeMaterial.opacity +=
-                (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
-        }
+        updateSporeOpacity(pointsRevealProgress, engineState.state)
 
         const hoveredNode = engineState.state?.hoverHighlightIndex ?? -1
         const focusedNode = engineState.state?.focusedNode ?? null
@@ -467,42 +424,7 @@ export function animate() {
 
         const threadsVisible = updateMyceliumPulse(engineState.state)
 
-        const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
-        const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<
-            typeof getMyceliumPresentationProfilePort
-        >
-        const semanticDiveThreadScale =
-            engineState.state?.semanticDiveMode === true || (engineState.state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
-        if (threadsVisible) {
-            if (webglContext.myceliumCoreLines)
-                (webglContext.myceliumCoreLines.material as Material).opacity =
-                    (getThreadPulseOpacityPort(
-                        graphProfile.core,
-                        Math.sin(engineState.state?.pulsePhase ?? 0),
-                        graphProfile.pulse,
-                        threadRevealProgress
-                    ) ?? 0) * semanticDiveThreadScale
-            if (webglContext.myceliumWispyLines)
-                (webglContext.myceliumWispyLines.material as Material).opacity =
-                    (getThreadPulseOpacityPort(
-                        graphProfile.wispy,
-                        Math.sin((engineState.state?.pulsePhase ?? 0) * 0.7),
-                        graphProfile.pulse * 0.36,
-                        threadRevealProgress
-                    ) ?? 0) * semanticDiveThreadScale
-            if (webglContext.myceliumBridgeLines)
-                (webglContext.myceliumBridgeLines.material as Material).opacity =
-                    (getThreadPulseOpacityPort(
-                        graphProfile.bridge,
-                        Math.sin((engineState.state?.pulsePhase ?? 0) * 0.45),
-                        graphProfile.pulse * 0.28,
-                        threadRevealProgress
-                    ) ?? 0) * semanticDiveThreadScale
-        } else {
-            if (webglContext.myceliumCoreLines) (webglContext.myceliumCoreLines.material as Material).opacity = 0
-            if (webglContext.myceliumWispyLines) (webglContext.myceliumWispyLines.material as Material).opacity = 0
-            if (webglContext.myceliumBridgeLines) (webglContext.myceliumBridgeLines.material as Material).opacity = 0
-        }
+        updateThreadLayerOpacities(threadsVisible, pointsRevealProgress, engineState.state)
 
         updatePointsShaderHoverBoost(hoveredNode, engineState.state)
 

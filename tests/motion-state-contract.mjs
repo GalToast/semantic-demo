@@ -15,6 +15,7 @@ const source = {
     searchAdapter: readFileSync(resolveSource('src/lib/search/search-panel-adapter.ts', root), 'utf8'),
     sceneReveal: readFileSync(resolveSource('src/lib/engine/scene-reveal.ts', root), 'utf8'),
     threeSetup: readFileSync(resolveSource('src/lib/engine/three-engine-core.ts', root), 'utf8'),
+    frameUpdates: readFileSync(resolveSource('src/lib/engine/three-engine-frame-updates.ts', root), 'utf8'),
     journey: readFileSync(resolveSource('src/lib/journey/journey.ts', root), 'utf8'),
     journeyWebgl: readFileSync(resolveSource('src/lib/journey/route-trace.ts', root), 'utf8'),
     lifecycle: readFileSync(resolveSource('src/lib/stores/lifecycle.ts', root), 'utf8'),
@@ -54,8 +55,8 @@ const checks = [
             /import\s+\*\s+as\s+sceneRevealMod\s+from\s+['"](?:@lib\/engine\/scene-reveal|\.\/scene-reveal)['"]/.test(
                 source.threeSetup
             ) &&
-            /revealProgress\s*>=\s*1[\s\S]*?_state\.sceneRevealActive\s*=\s*false[\s\S]*?sceneRevealMod\.setSceneRevealDataset\s*\(\s*false\s*\)/.test(
-                source.threeSetup
+            /revealProgress\s*>=\s*1[\s\S]*?state\.sceneRevealActive\s*=\s*false[\s\S]*?sceneRevealMod\.setSceneRevealDataset\s*\(\s*false\s*\)/.test(
+                source.frameUpdates
             )
     },
     {
