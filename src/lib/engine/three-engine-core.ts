@@ -39,6 +39,7 @@ import {
     createMycelium as createMyceliumPort,
     disposeMycelium as disposeMyceliumPort,
     updateMyceliumThreads as updateMyceliumThreadsPort,
+    drainMyceliumDirtyState as drainMyceliumDirtyStatePort,
     syncMyceliumLineResolution as syncMyceliumLineResolutionPort,
     shouldRenderThreads as shouldRenderThreadsPort
 } from '@lib/engine/thread-manager'
@@ -69,7 +70,11 @@ import { easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
-import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame, updateFocusSemanticOverlayFrame } from '@lib/engine/journey-webgl-lazy'
+import {
+    updateRouteTraceOverlayFrame,
+    updateArrivalHandoffOverlayFrame,
+    updateFocusSemanticOverlayFrame
+} from '@lib/engine/journey-webgl-lazy'
 
 export function updateCameraViewportOffset() {
     const camera = webglContext.camera || appState.camera
@@ -464,6 +469,13 @@ export function animate() {
             // dirty-node amortization) instead of the legacy mycelium-engine.ts
             // path, whose updateMyceliumThreads only wrote positions.
             updateMyceliumThreadsPort()
+        } else if (sceneNeedsContinuous) {
+            // Threads are not being rendered this frame (e.g. map mode).
+            // Drain the dirty-node set + myceliumDirty so they don't accumulate
+            // unboundedly while updateMyceliumThreads is skipped. Without this,
+            // markNodesDirty() grows every frame and myceliumDirty stays true,
+            // keeping the RAF loop from going idle.
+            drainMyceliumDirtyStatePort()
         }
         if (sceneNeedsContinuous) {
             engineState.cameraControls?.applySemanticCentroidCamera(frameNow)
@@ -482,7 +494,7 @@ export function animate() {
             // That count is what `renderSkipOpportunities` /
             // `consecutiveSkippedFrames` capture — they're the proof that
             // skipping is safe to enable for a given viewport.
-            const camera = webglContext.camera
+            const camera = webglContext.camera!
             const posArr = camera.position.toArray() as unknown as [number, number, number]
             const quatArr = camera.quaternion.toArray() as unknown as [number, number, number, number]
             const newSnapshot: SceneStaticSnapshot = {

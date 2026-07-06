@@ -726,3 +726,15 @@ export function updateMyceliumThreads(): void {
     dirtyNodeIndices.clear()
     state.myceliumDirty = false
 }
+
+/**
+ * Drain the dirty-node set and clear myceliumDirty WITHOUT rebuilding the
+ * thread buffers. Called when threads are not being rendered (e.g. map mode
+ * where shouldRenderThreads() is false) — without this, markNodesDirty()
+ * accumulates unboundedly every frame (up to all 8406 node indices) and
+ * myceliumDirty stays stuck true, keeping the RAF loop from going idle.
+ */
+export function drainMyceliumDirtyState(): void {
+    dirtyNodeIndices.clear()
+    state.myceliumDirty = false
+}

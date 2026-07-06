@@ -258,7 +258,17 @@ export function shouldRunDemo(force = false): boolean {
 
 export function hasDemoBeenSeen(): boolean {
     if (typeof localStorage === 'undefined') return false
-    const raw = localStorage.getItem(DEMO_LIFETIME_KEY)
+    // Guard the read: localStorage can throw even when `typeof localStorage`
+    // is defined — Safari private mode, sandboxed iframes, and cookies-disabled
+    // contexts all throw on access. The write path (markDemoCompleted) already
+    // wraps setItem in try-catch; this mirrors it so first-visit demo
+    // eligibility doesn't crash in storage-restricted contexts.
+    let raw: string | null
+    try {
+        raw = localStorage.getItem(DEMO_LIFETIME_KEY)
+    } catch {
+        return false
+    }
     if (!raw) return false
     try {
         const parsed = JSON.parse(raw) as { seen?: boolean } | number | string | boolean
@@ -272,7 +282,15 @@ export function hasDemoBeenSeen(): boolean {
 
 export function isDemoSuppressedThisSession(): boolean {
     if (typeof sessionStorage === 'undefined') return false
-    return sessionStorage.getItem(DEMO_SESSION_KEY) !== null
+    // Guard the read: see hasDemoBeenSeen — sessionStorage can throw even
+    // when defined (Safari private mode, sandboxed iframes). On the
+    // shouldRunDemo critical path, treat a thrown read as "not suppressed"
+    // rather than crashing first-visit eligibility.
+    try {
+        return sessionStorage.getItem(DEMO_SESSION_KEY) !== null
+    } catch {
+        return false
+    }
 }
 
 export function markDemoCompleted(): void {
@@ -292,8 +310,13 @@ export function markDemoCompleted(): void {
 }
 
 export function markDemoSessionSkipped(_reason = 'user-input'): void {
-    if (typeof sessionStorage !== 'undefined') {
+    if (typeof sessionStorage === 'undefined') return
+    // Guard the write: see hasDemoBeenSeen — sessionStorage can throw even
+    // when defined (Safari private mode, sandboxed iframes).
+    try {
         sessionStorage.setItem(DEMO_SESSION_KEY, '1')
+    } catch {
+        /* storage unavailable — skip is in-memory only for this session */
     }
 }
 
