@@ -8,7 +8,7 @@
  * deferred state restoration (for data that loads async), and share-link generation.
  */
 
-import { get } from 'svelte/store'
+import { get, type Unsubscriber } from 'svelte/store'
 import { navStore, bumpUrlStateRestoreToken, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { setJourneyPhase, journeyStore } from '@lib/stores/journey.svelte'
 import type { NavState, ViewName } from '@lib/types/state'
@@ -23,6 +23,7 @@ import { appState } from '@lib/state/app.svelte'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
 import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller'
+import { semanticNeighborMap } from '@lib/data-store'
 import {
     getSearchParams,
     getLocationHref,
@@ -596,6 +597,69 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
         applyLocalNeighborhoodFocus(numericId)
     } catch (e) {
         debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e)
+    }
+
+    // PR-B5: deep-link constellation race fix.
+    //
+    // The initial focus dispatch above runs immediately after `initData()`
+    // resolves, but `initData()` explicitly does NOT wait for the 40 MB
+    // semantic-thread artifact — see data-store.ts:initData():
+    //   "Semantic threads are deferred to engine/lifecycle.ts so the main
+    //    startup path does not block on the 40 MB thread artifact."
+    // Threads load later (requestIdleCallback → loadSemanticThreads),
+    // populating `semanticNeighborMap`. At the time this function runs,
+    // `semanticNeighborMap` is empty, so the `SEARCH_FOCUS_REQUESTED`
+    // subscriber's `buildNeighborhoodManifest` call resolves 0 semantic
+    // neighbors and writes empty `threadCandidates`. The FocusPocket
+    // `$effect` builds an empty/geom-fallback constellation, and nothing
+    // re-fires focus when threads arrive — so `?record=N` deep-links show
+    // "0 visible neighbors" / "No neighboring stops found in this area".
+    //
+    // The normal click flow doesn't hit this: by the time a user clicks,
+    // threads are loaded, so `getSemanticThreadCandidates` returns real
+    // neighbors. The deep-link path runs at boot, before threads.
+    //
+    // Fix: if threads aren't loaded yet, subscribe to `semanticNeighborMap`
+    // and re-fire the focus pipeline (SEARCH_FOCUS_REQUESTED +
+    // applyLocalNeighborhoodFocus) EXACTLY ONCE when it becomes non-empty.
+    // This is idempotent:
+    //   - The triggers.ts subscriber overwrites `threadCandidates` on each
+    //     publish (no accumulation).
+    //   - FocusPocket.svelte's `$effect` dedupes rebuilds by candidate
+    //     signature (`lastCandidateSignature`), so a no-op re-fire is cheap.
+    //   - We guard on `focusedIndex === numericId` so a user navigation away
+    //     from the deep-linked business cancels the deferred re-fire.
+    //   - We guard on the restore token so a newer applyUrlState supersedes
+    //     this one (the subscription is torn down before firing).
+    if (get(semanticNeighborMap).size === 0) {
+        let unsub: Unsubscriber | null = null
+        const refire = async (): Promise<void> => {
+            // Bail if the user navigated away or a newer restore superseded us.
+            if (appState.navState.focusedIndex !== numericId) return
+            if (_isRestoreStale(restoreToken)) return
+            try {
+                publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId })
+                const _focusPocketMod = (await import('@lib/focus/pocket')) as {
+                    applyLocalNeighborhoodFocus: (index: number) => void
+                }
+                // Re-check staleness after the await — the user may have
+                // navigated or a newer restore may have started during the
+                // dynamic import resolution.
+                if (appState.navState.focusedIndex !== numericId) return
+                if (_isRestoreStale(restoreToken)) return
+                _focusPocketMod.applyLocalNeighborhoodFocus(numericId)
+            } catch (e) {
+                debugWarn('[url-state] deferred constellation rebuild failed for anchor', numericId, e)
+            }
+        }
+        unsub = semanticNeighborMap.subscribe((map) => {
+            if (map.size > 0) {
+                // Threads just became available — fire once and tear down.
+                unsub?.()
+                unsub = null
+                void refire()
+            }
+        })
     }
 }
 
