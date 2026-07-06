@@ -19,7 +19,7 @@
   import { useParityAttrs } from '@lib/ui/use-parity-attrs.svelte';
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
-  import { viewport, isCompact } from '@lib/stores/viewport.svelte.ts';
+  import { viewport } from '@lib/stores/viewport.svelte.ts';
 
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
@@ -135,6 +135,11 @@
   // W45-A: Decide initial render kind synchronously at mount time.
   // Mobile / narrow-viewport / automated sessions get the 2D placeholder
   // so the 587 KB three.js chunk stays off the cold-load critical path.
+  // The parity-attr composable returned below is the source of truth for
+  // `renderKind`; declare it here so the $derived initializer below is in
+  // scope (Svelte 5 will invalidate `renderKind` whenever `parity.renderKind`
+  // changes via the parityMap MutationObserver).
+  const parity = useParityAttrs();
   // Reactive render kind: read from the parity-attr snapshot so the {#if}
   // branches below re-render when the body dataset flips (e.g., the
   // Playwright auto-signal in this file calls setRenderKind('webgl') on
@@ -185,7 +190,8 @@
   // The composable returns reactive getters; reads in the template and
   // $derived/$effect below register dependencies on parityMap and the
   // bypass-attr MutationObserver automatically.
-  const parity = useParityAttrs();
+  // (parity is declared earlier — just above the renderKind $derived — so
+  //  the renderKind initializer has parity in scope.)
   // ── Reactive nav store state ──
   // appState.navState is Svelte 5 rune-backed $state; reads in $derived
   // register reactive dependencies directly — no subscribe mirror needed.
@@ -300,11 +306,13 @@
   // The Splash modal trap restores focus to <body> (its previouslyFocused)
   // on dismiss, leaving keyboard/screen-reader users stranded in document
   // limbo. Land them on the primary entry point instead. rAF defers past the
-  // trap teardown; the compact guard avoids popping the mobile keyboard.
+  // trap teardown. Previously gated on !isCompact() to avoid popping the
+  // mobile keyboard, but that stranded mobile screen-reader users at <body>
+  // with no focus target at all. The keyboard pop is a minor UX cost; the
+  // a11y gap was worse. Focus the search input on all viewports.
   $effect(() => {
     if (!engineReady.value) return;
     requestAnimationFrame(() => {
-      if (isCompact()) return;
       const input = document.getElementById('search-input') as HTMLInputElement | null;
       if (input && document.activeElement !== input) input.focus();
     });
