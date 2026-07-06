@@ -163,9 +163,21 @@
    *
    * The click outside handler (e.target === helpDialog) still fires for
    * explicit backdrop dismissals; the existing Escape handler still fires.
+   *
+   * W48-UX bugfix: the previous implementation closed on ANY focusin event,
+   * including the focus that showModal() itself moves into the dialog. That
+   * made the `?` button reopen a no-op (open → focusin → close in one frame).
+   * Now we only close when the new focus target is OUTSIDE the dialog. The
+   * dialog's own showModal()-driven focusin is inside the dialog and is
+   * ignored, so `?` re-opens cleanly.
    */
-  function handleSearchSurfaceFocus(): void {
+  function handleSearchSurfaceFocus(e: FocusEvent): void {
     if (!helpDialog?.open) return;
+    // Skip focus events that originate from inside the dialog itself —
+    // showModal() moves focus into the dialog and that focusin must not
+    // immediately re-close the dialog we just opened.
+    const target = e.target;
+    if (target instanceof Node && helpDialog.contains(target)) return;
     closeHelpDialog();
   }
 
@@ -331,7 +343,9 @@
           role="radio"
           tabindex={isChipActive(mode.id) ? 0 : -1}
           aria-checked={isChipActive(mode.id)}
-          aria-label={mode.label}
+          aria-label={isChipLocked(mode.id)
+            ? `${mode.label} — locked, select a business to unlock`
+            : mode.label}
           title={isChipLocked(mode.id)
             ? `${mode.label}: ${mode.description} Select a business to unlock.`
             : mode.description}

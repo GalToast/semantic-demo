@@ -100,6 +100,7 @@ function startAuto(spec: ToastSpec): void {
     clearAuto()
     const variant: ToastVariant = spec.variant ?? 'info'
     const duration = spec.duration ?? DEFAULT_DURATIONS[variant]
+    // eslint-disable-next-line no-restricted-syntax -- module-scoped singleton; the autoTimer is tracked in module scope and cleared in clearAuto() + the self-sync subscribe below. DisposableRegistry is for component-scoped lifecycles, which a singleton store doesn't have.
     autoTimer = setTimeout(() => {
         advance()
     }, duration)

@@ -19,6 +19,7 @@
 <script lang="ts">
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
+  import { clearToastQueue } from '@lib/stores/toast.svelte';
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
 
   /** CSS selector for focusable elements cycled by the modal trap. */
@@ -73,6 +74,12 @@
     // hide-request so the tooltip bridge fires the moment we start
     // tearing the splash down.
     publish(EVENTS.TOOLTIP_HIDE_REQUESTED);
+    // W48-UX: clear any queued toasts so a stale notification from a prior
+    // session's dismissal cycle (or one enqueued mid-flight before the
+    // splash began tearing down) doesn't bleed into the live surface.
+    // DemoChoreography fires fresh toasts AFTER engineReady, so clearing
+    // here doesn't suppress the welcome hint — it just drops ghosts.
+    clearToastQueue();
     engineReady.signalReady();
   };
 
@@ -183,7 +190,7 @@
       {ctaBusy ? 'Entering…' : 'Explore'}
     </button>
     <p class="splash-hint" id="splash-hint">Press Enter to search, or just look around.</p>
-    <span class="sr-only" id="splash-cta-busy" aria-hidden="true" aria-live="polite">
+    <span class="sr-only" id="splash-cta-busy" aria-live="polite">
       {#if ctaBusy}Entering the 3D scene, please wait.{/if}
     </span>
   </div>

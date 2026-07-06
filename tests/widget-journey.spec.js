@@ -416,4 +416,94 @@ test.describe('Widget journey', () => {
         })
         expect(cardHtml, 'focus card must not contain the old jargon "Field Node"').not.toContain('Field Node')
     })
+
+    test('W50-A11y: focus moves to #search-input on mobile after splash dismiss', async ({ page }) => {
+        // Regression: App.svelte's post-engineReady focus effect was gated on
+        // !isCompact(), which stranded mobile screen-reader users at <body>
+        // with no focus target after dismissing the splash. Verify focus lands
+        // on #search-input (the primary entry point) on a mobile viewport.
+        await page.setViewportSize({ width: 375, height: 667 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(500) // allow rAF + focus effect to settle
+
+        // Dismiss the first-visit help dialog if it auto-opened (it can
+        // steal focus from the search-input effect on some viewports).
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(300) // allow focus effect to re-run after dialog close
+        }
+
+        // The fix: focus must be on #search-input, NOT <body>.
+        const focusState = await page.evaluate(() => {
+            const el = document.activeElement
+            const input = document.getElementById('search-input')
+            return {
+                activeId: el ? el.id || el.tagName.toLowerCase() : 'null',
+                inputExists: !!input,
+                inputVisible: input ? input.offsetParent !== null : false
+            }
+        })
+        expect(focusState.inputExists, '#search-input must exist in the DOM after splash dismiss').toBe(true)
+        expect(focusState.activeId, 'mobile screen-reader users must land on #search-input, not body').toBe(
+            'search-input'
+        )
+    })
+
+    test('5l. Help (?) button re-opens the help dialog after dismissal (W48 fix)', async ({ page }) => {
+        // W48 audit: the ? (btn-app-help) toggle looked broken — clicking it
+        // after dismissal left the dialog closed. Root cause: the W49-I
+        // focusin capture handler closed the dialog on ANY focusin event,
+        // including the focus showModal() itself moves into the dialog.
+        // Open → focusin → close happened in one frame, so the user never
+        // saw the dialog open. The fix skips focusin events whose target is
+        // inside the dialog.
+        //
+        // This test exercises the real DOM: dismiss any auto-opened help,
+        // then click #btn-app-help, then assert the dialog is open.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1500)
+
+        // Dismiss first-visit help dialog if auto-opened.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(300)
+        }
+
+        // Pre-condition: dialog is closed.
+        const closedBefore = await page.evaluate(() => {
+            const d = document.querySelector('dialog.help-dialog')
+            return d ? !d.open : true
+        })
+        expect(closedBefore, 'pre-condition: help dialog must be closed before the ? click').toBe(true)
+
+        // Click the ? button to re-open.
+        const helpBtn = page.locator('#btn-app-help').first()
+        await helpBtn.waitFor({ state: 'attached', timeout: 5000 })
+        await helpBtn.click()
+        await page.waitForTimeout(500)
+
+        // The fix: dialog must be OPEN after the click.
+        const openAfter = await page.evaluate(() => {
+            const d = document.querySelector('dialog.help-dialog')
+            return d ? d.open : false
+        })
+        expect(openAfter, '? button must re-open the help dialog after dismissal (W48 fix)').toBe(true)
+    })
 })
