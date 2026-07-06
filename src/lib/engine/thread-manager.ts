@@ -554,7 +554,7 @@ export function syncMyceliumLineResolution(): void {
     for (const line of [
         webglContext.myceliumCoreLines,
         webglContext.myceliumWispyLines,
-        webglContext.myceliumBridgeLines,
+        webglContext.myceliumBridgeLines
     ]) {
         if (!line) continue
         const mat = (line as { material?: { resolution?: Vector2 } }).material
@@ -573,10 +573,13 @@ export function updateMyceliumThreads(): void {
     // when nodes move, breaking the visual continuity of the mycelium layers.
     const hasSemantic = !!state.semanticNeighborMapByLeadId?.size
     const layerIntensity: Record<number, number> = {
-        0: hasSemantic ? 0.38 : 0.28,  // core
-        1: hasSemantic ? 0.22 : 0.16,  // wispy
-        2: hasSemantic ? 0.32 : 0.24   // bridge
+        0: hasSemantic ? 0.38 : 0.28, // core
+        1: hasSemantic ? 0.22 : 0.16, // wispy
+        2: hasSemantic ? 0.32 : 0.24 // bridge
     }
+
+    const SEGMENTS_PER_PAIR = 5
+    const FLOATS_PER_SEGMENT = 6 // 3 start + 3 end
 
     const updateLayer = (line: LineSegments2 | null, layer: number): void => {
         const geom = line?.geometry as LineGeometry | undefined
@@ -586,60 +589,133 @@ export function updateMyceliumThreads(): void {
         const colorEndAttr = geom?.getAttribute('instanceColorEnd') as BufferAttribute | undefined
         if (!startAttr || !endAttr) return
 
-        const nextPositions: number[] = []
-        const nextColors: number[] = []
-        webglContext.myceliumConnectionPairs.forEach((pair) => {
-            if (pair.layer !== layer) return
-            // Amortization: skip pairs where neither endpoint moved.
-            if (hasDirtyNodes && !dirtyNodeIndices.has(pair.a) && !dirtyNodeIndices.has(pair.b)) return
-            pushBezierLinePair(nextPositions, nextColors, { a: pair.a, b: pair.b }, layerIntensity[layer] ?? 1, 5)
-        })
-
         const startArray = startAttr.array as Float32Array
         const endArray = endAttr.array as Float32Array
-        const maxSegs = Math.min(startArray.length / 3, endArray.length / 3, nextPositions.length / 6)
-        for (let s = 0; s < maxSegs; s += 1) {
-            const pi = s * 6
-            const si = s * 3
-            startArray[si] = Number.isFinite(nextPositions[pi]) ? nextPositions[pi]! : 0
-            startArray[si + 1] = Number.isFinite(nextPositions[pi + 1]) ? nextPositions[pi + 1]! : 0
-            startArray[si + 2] = Number.isFinite(nextPositions[pi + 2]) ? nextPositions[pi + 2]! : 0
-            endArray[si] = Number.isFinite(nextPositions[pi + 3]) ? nextPositions[pi + 3]! : 0
-            endArray[si + 1] = Number.isFinite(nextPositions[pi + 4]) ? nextPositions[pi + 4]! : 0
-            endArray[si + 2] = Number.isFinite(nextPositions[pi + 5]) ? nextPositions[pi + 5]! : 0
+        const colorStartArray = colorStartAttr?.array as Float32Array | undefined
+        const colorEndArray = colorEndAttr?.array as Float32Array | undefined
+
+        // Full rebuild: no dirty set (or a create/rebuild signal) — rewrite
+        // the entire buffer from scratch, zeroing any tail slack.
+        if (!hasDirtyNodes) {
+            const nextPositions: number[] = []
+            const nextColors: number[] = []
+            webglContext.myceliumConnectionPairs.forEach((pair) => {
+                if (pair.layer !== layer) return
+                pushBezierLinePair(
+                    nextPositions,
+                    nextColors,
+                    { a: pair.a, b: pair.b },
+                    layerIntensity[layer] ?? 1,
+                    SEGMENTS_PER_PAIR
+                )
+            })
+            const maxSegs = Math.min(
+                startArray.length / 3,
+                endArray.length / 3,
+                nextPositions.length / FLOATS_PER_SEGMENT
+            )
+            for (let s = 0; s < maxSegs; s += 1) {
+                const pi = s * FLOATS_PER_SEGMENT
+                const si = s * 3
+                startArray[si] = Number.isFinite(nextPositions[pi]) ? nextPositions[pi]! : 0
+                startArray[si + 1] = Number.isFinite(nextPositions[pi + 1]) ? nextPositions[pi + 1]! : 0
+                startArray[si + 2] = Number.isFinite(nextPositions[pi + 2]) ? nextPositions[pi + 2]! : 0
+                endArray[si] = Number.isFinite(nextPositions[pi + 3]) ? nextPositions[pi + 3]! : 0
+                endArray[si + 1] = Number.isFinite(nextPositions[pi + 4]) ? nextPositions[pi + 4]! : 0
+                endArray[si + 2] = Number.isFinite(nextPositions[pi + 5]) ? nextPositions[pi + 5]! : 0
+            }
+            for (let s = maxSegs * 3; s < startArray.length; s += 1) startArray[s] = 0
+            for (let s = maxSegs * 3; s < endArray.length; s += 1) endArray[s] = 0
+            startAttr.needsUpdate = true
+            endAttr.needsUpdate = true
+
+            if (colorStartArray && colorEndArray && nextColors.length) {
+                const maxColorSegs = Math.min(
+                    colorStartArray.length / 3,
+                    colorEndArray.length / 3,
+                    nextColors.length / FLOATS_PER_SEGMENT
+                )
+                for (let s = 0; s < maxColorSegs; s += 1) {
+                    const ci = s * FLOATS_PER_SEGMENT
+                    const si = s * 3
+                    colorStartArray[si] = nextColors[ci] ?? 0
+                    colorStartArray[si + 1] = nextColors[ci + 1] ?? 0
+                    colorStartArray[si + 2] = nextColors[ci + 2] ?? 0
+                    colorEndArray[si] = nextColors[ci + 3] ?? 0
+                    colorEndArray[si + 1] = nextColors[ci + 4] ?? 0
+                    colorEndArray[si + 2] = nextColors[ci + 5] ?? 0
+                }
+                for (let s = maxColorSegs * 3; s < colorStartArray.length; s += 1) colorStartArray[s] = 0
+                for (let s = maxColorSegs * 3; s < colorEndArray.length; s += 1) colorEndArray[s] = 0
+                colorStartAttr!.needsUpdate = true
+                colorEndAttr!.needsUpdate = true
+            }
+            return
         }
-        for (let s = maxSegs * 3; s < startArray.length; s += 1) {
-            startArray[s] = 0
-        }
-        for (let s = maxSegs * 3; s < endArray.length; s += 1) {
-            endArray[s] = 0
-        }
+
+        // Partial update (dirty-node amortization): update ONLY dirty pairs
+        // IN-PLACE at their original buffer offset. Clean pairs are left
+        // untouched — no repacking, no zeroing. The previous implementation
+        // packed dirty pairs at buffer index 0 and zeroed the rest, which
+        // collapsed the entire mycelium to ~12 visible segments during focus
+        // pocket breathing (every frame had ~12 dirty nodes).
+        let layerPairIndex = 0
+        webglContext.myceliumConnectionPairs.forEach((pair) => {
+            if (pair.layer !== layer) return
+            const pairIsDirty = dirtyNodeIndices.has(pair.a) || dirtyNodeIndices.has(pair.b)
+            layerPairIndex += 1
+            if (!pairIsDirty) return
+
+            const pairPositions: number[] = []
+            const pairColors: number[] = []
+            pushBezierLinePair(
+                pairPositions,
+                pairColors,
+                { a: pair.a, b: pair.b },
+                layerIntensity[layer] ?? 1,
+                SEGMENTS_PER_PAIR
+            )
+
+            // Write this pair's segments to its original buffer offset.
+            // Pair N in the layer starts at segment (N-1)*SEGMENTS_PER_PAIR.
+            const baseSeg = (layerPairIndex - 1) * SEGMENTS_PER_PAIR
+            const maxSegsForPair = Math.min(
+                SEGMENTS_PER_PAIR,
+                Math.floor(startArray.length / 3) - baseSeg,
+                Math.floor(pairPositions.length / FLOATS_PER_SEGMENT)
+            )
+            for (let s = 0; s < maxSegsForPair; s += 1) {
+                const pi = s * FLOATS_PER_SEGMENT
+                const si = (baseSeg + s) * 3
+                startArray[si] = Number.isFinite(pairPositions[pi]) ? pairPositions[pi]! : 0
+                startArray[si + 1] = Number.isFinite(pairPositions[pi + 1]) ? pairPositions[pi + 1]! : 0
+                startArray[si + 2] = Number.isFinite(pairPositions[pi + 2]) ? pairPositions[pi + 2]! : 0
+                endArray[si] = Number.isFinite(pairPositions[pi + 3]) ? pairPositions[pi + 3]! : 0
+                endArray[si + 1] = Number.isFinite(pairPositions[pi + 4]) ? pairPositions[pi + 4]! : 0
+                endArray[si + 2] = Number.isFinite(pairPositions[pi + 5]) ? pairPositions[pi + 5]! : 0
+            }
+            if (colorStartArray && colorEndArray && pairColors.length) {
+                const maxColorSegsForPair = Math.min(
+                    SEGMENTS_PER_PAIR,
+                    Math.floor(colorStartArray.length / 3) - baseSeg,
+                    Math.floor(pairColors.length / FLOATS_PER_SEGMENT)
+                )
+                for (let s = 0; s < maxColorSegsForPair; s += 1) {
+                    const ci = s * FLOATS_PER_SEGMENT
+                    const si = (baseSeg + s) * 3
+                    colorStartArray[si] = pairColors[ci] ?? 0
+                    colorStartArray[si + 1] = pairColors[ci + 1] ?? 0
+                    colorStartArray[si + 2] = pairColors[ci + 2] ?? 0
+                    colorEndArray[si] = pairColors[ci + 3] ?? 0
+                    colorEndArray[si + 1] = pairColors[ci + 4] ?? 0
+                    colorEndArray[si + 2] = pairColors[ci + 5] ?? 0
+                }
+                colorStartAttr!.needsUpdate = true
+                colorEndAttr!.needsUpdate = true
+            }
+        })
         startAttr.needsUpdate = true
         endAttr.needsUpdate = true
-
-        if (colorStartAttr && colorEndAttr && nextColors.length) {
-            const colorStartArray = colorStartAttr.array as Float32Array
-            const colorEndArray = colorEndAttr.array as Float32Array
-            const maxColorSegs = Math.min(colorStartArray.length / 3, colorEndArray.length / 3, nextColors.length / 6)
-            for (let s = 0; s < maxColorSegs; s += 1) {
-                const ci = s * 6
-                const si = s * 3
-                colorStartArray[si] = nextColors[ci] ?? 0
-                colorStartArray[si + 1] = nextColors[ci + 1] ?? 0
-                colorStartArray[si + 2] = nextColors[ci + 2] ?? 0
-                colorEndArray[si] = nextColors[ci + 3] ?? 0
-                colorEndArray[si + 1] = nextColors[ci + 4] ?? 0
-                colorEndArray[si + 2] = nextColors[ci + 5] ?? 0
-            }
-            for (let s = maxColorSegs * 3; s < colorStartArray.length; s += 1) {
-                colorStartArray[s] = 0
-            }
-            for (let s = maxColorSegs * 3; s < colorEndArray.length; s += 1) {
-                colorEndArray[s] = 0
-            }
-            colorStartAttr.needsUpdate = true
-            colorEndAttr.needsUpdate = true
-        }
     }
 
     updateLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0)
