@@ -89,6 +89,7 @@ export function setFocusPocketRoleForIndex(index: number, role: string): void {
         navState.focusPocketRoleByIndex = new Map()
     }
     navState.focusPocketRoleByIndex.set(index, role)
+    writeFocusPocketMirror({ pocketRoleByIndex: new Map(navState.focusPocketRoleByIndex) })
 }
 
 export function clearFocusPocketRoleByIndex(): void {
@@ -109,6 +110,7 @@ export function setFocusPocketMotionForIndex(index: number, motion: unknown): vo
         appState.focusState.pocketMotionByIndex = new Map()
     }
     appState.focusState.pocketMotionByIndex.set(index, motion as PocketMotionWithFrame)
+    focusStore.update((s) => ({ ...s, pocketMotionByIndex: new Map(appState.focusState.pocketMotionByIndex) }))
 }
 
 export function clearFocusPocketMotionByIndex(): void {
@@ -299,31 +301,19 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         return false
     }
 
-    setFocusPocketIndices([...localIndices].filter((candidateIndex: number) => candidateIndex !== index))
-    setFocusPocketRoleByIndex(new Map([[index, 'anchor']]))
-    setFocusPocketMotionByIndex(
-        new Map<number, PocketMotion>([
-            [
-                index,
-                {
-                    role: 'anchor',
-                    delay: 0,
-                    duration: personality.cameraDuration * 0.7,
-                    speed: 0.38,
-                    personality: personality.type
-                }
-            ]
-        ])
-    )
-    setFocusPocketMeta({
-        active: getFocusPocketIndices().length > 0,
-        nodeCount: localIndices.size,
-        primaryCount: primaryIndices.length,
-        supportCount: supportIndices.length,
-        haloCount: 0,
-        viewportProfile,
-        personality: personality.type
-    })
+    const roleMap = new Map<number, string>([[index, 'anchor']])
+    const motionMap = new Map<number, PocketMotion>([
+        [
+            index,
+            {
+                role: 'anchor',
+                delay: 0,
+                duration: personality.cameraDuration * 0.7,
+                speed: 0.38,
+                personality: personality.type
+            }
+        ]
+    ])
 
     const focusPosX = Number.isFinite(focusPos.x) ? focusPos.x : 0
     const focusPosY = Number.isFinite(focusPos.y) ? focusPos.y : 0
@@ -341,11 +331,11 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         const dy = focusPosY - origY
         const dz = focusPosZ - origZ
         const isPrimary = primaryIndices.includes(i)
-        setFocusPocketRoleForIndex(i, isPrimary ? 'primary' : 'support')
+        roleMap.set(i, isPrimary ? 'primary' : 'support')
 
         const baseDelay = isPrimary ? primaryIndices.indexOf(i) * 34 : 160
 
-        setFocusPocketMotionForIndex(i, {
+        motionMap.set(i, {
             role: isPrimary ? 'primary' : 'support',
             delay: baseDelay * personality.staggerMult,
             duration: (isPrimary ? 980 : 1120) * (personality.cameraDuration / 980),
@@ -375,7 +365,24 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
             }
         }
     }
+
+    // Write all state in one go so syncPocketNodesToStore picks up
+    // correct roles on the PocketNodes sent to the focus store.
+    setFocusPocketRoleByIndex(roleMap)
+    setFocusPocketMotionByIndex(motionMap)
+    setFocusPocketMeta({
+        active: localIndices.size > 1,
+        nodeCount: localIndices.size,
+        primaryCount: primaryIndices.length,
+        supportCount: supportIndices.length,
+        haloCount: 0,
+        viewportProfile,
+        personality: personality.type
+    })
+    setFocusPocketIndices([...localIndices].filter((candidateIndex: number) => candidateIndex !== index))
+
     appState.focusState.nodesAreSettling = true
+    appState.autoRotate = false
     return true
 }
 
@@ -494,7 +501,7 @@ export function syncPocketNodesToStore(): void {
     const navState = lState.navState
     if (!navState) return
     const indices = navState.focusPocketIndices ?? []
-    const roles = navState.focusPocketRoleByIndex
+    const roles = navState.focusPocketRoleByIndex ?? new Map()
     const targetPositions = lState.targetPositions
     const nodePositions = lState.nodePositions
     const originalPositions = lState.originalPositions

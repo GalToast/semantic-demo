@@ -573,6 +573,57 @@ test.describe('Widget journey', () => {
         await expect(page.locator('*:focus')).toHaveAttribute('aria-label', labels[4])
     })
 
+    test('W51-B1: FocusPocket A11y list shows correct per-node roles and color dots', async ({ page }) => {
+        // Regression: applyLocalNeighborhoodFocus geometric-fallback branch
+        // used per-index setters that bypassed the focusStore mirror, so all
+        // pocket nodes appeared as role="support" in the A11y list.
+        // This test verifies the list items have the correct role labels.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 15000
+        })
+        await page.waitForTimeout(700)
+
+        // Trigger focus via the nav-actions bridge.
+        const ok = await page.evaluate(() => {
+            const actions = window.__navActions__
+            return actions && typeof actions.focusOnNode === 'function' ? actions.focusOnNode(0) : false
+        })
+        expect(ok, 'focusOnNode(0) must succeed').toBe(true)
+
+        // Wait for the focus-pocket A11y list to populate.
+        await page.waitForSelector('#focus-pocket-a11y li[role="button"]', { timeout: 5000 })
+
+        const items = await page.$$eval('#focus-pocket-a11y li[role="button"]', (lis) =>
+            lis.map((li) => ({
+                label: li.querySelector('.label')?.textContent || '',
+                role: li.querySelector('.role-dot')?.getAttribute('data-role') || '',
+                ariaLabel: li.getAttribute('aria-label') || ''
+            }))
+        )
+
+        expect(items.length, 'focus pocket A11y list must contain at least one item').toBeGreaterThan(0)
+
+        // Every item must have a clearly declared role (WCAG 4.1.2).
+        items.forEach((item) => {
+            expect(item.ariaLabel).toBeTruthy()
+            expect(['direct', 'support', 'civic'], `unknown role '${item.role}'`).toContain(item.role)
+        })
+
+        // Defensive regression: if ALL items were "support", the old bug is back.
+        const nonSupportCount = items.filter((i) => i.role !== 'support').length
+        expect(
+            nonSupportCount,
+            `focus-pocket A11y should contain a mix of roles, got all "support"; ${items.map((i) => `${i.label} (${i.role})`).join(', ')}`
+        ).toBeGreaterThanOrEqual(1)
+    })
+
     test('W51-city-dropdown: All Cities shows real count, no garbage values, dedup case variants', async ({ page }) => {
         // W51 audit #6 + #9. After data hydration, the city filter dropdown
         // must (1) show "All Cities (8406)", not "(0)" or "(loading…)",
@@ -616,14 +667,20 @@ test.describe('Widget journey', () => {
         expect(garbageEntries, `Found garbage city values: ${garbageEntries.join(', ')}`).toHaveLength(0)
 
         // Dedup case variants: 'Cut And Shoot' (any case) should appear exactly once.
-// Dropdown format is "<city> (<count>)" — match the city name portion only.
+        // Dropdown format is "<city> (<count>)" — match the city name portion only.
         const cutAndShootEntries = allOptionTexts.filter((t) => /^cut and shoot \(\d/i.test(t))
-        expect(cutAndShootEntries.length, `Cut And Shoot case-dedup (got ${cutAndShootEntries.length}: ${cutAndShootEntries.join(', ')})`).toBeGreaterThanOrEqual(1)
+        expect(
+            cutAndShootEntries.length,
+            `Cut And Shoot case-dedup (got ${cutAndShootEntries.length}: ${cutAndShootEntries.join(', ')})`
+        ).toBeGreaterThanOrEqual(1)
         expect(cutAndShootEntries.length, `Cut And Shoot must be deduped to ≤1 entry`).toBeLessThanOrEqual(1)
 
         // Coldspring / Cold Spring dedup — accept either spacing/case variant
         const coldSpringEntries = allOptionTexts.filter((t) => /^cold ?spring \(\d/i.test(t))
-        expect(coldSpringEntries.length, `Cold Spring dedup (got ${coldSpringEntries.length}: ${coldSpringEntries.join(', ')})`).toBeLessThanOrEqual(1)
+        expect(
+            coldSpringEntries.length,
+            `Cold Spring dedup (got ${coldSpringEntries.length}: ${coldSpringEntries.join(', ')})`
+        ).toBeLessThanOrEqual(1)
         expect(coldSpringEntries.length, `Cold Spring must appear at least once`).toBeGreaterThanOrEqual(1)
     })
 
@@ -636,23 +693,26 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         // Wait for hydration + renderKind=placeholder2d to take effect
-        await page.waitForFunction(
-            () => document.body.classList.contains('render-kind-placeholder2d'),
-            null,
-            { timeout: 10000 }
-        )
+        await page.waitForFunction(() => document.body.classList.contains('render-kind-placeholder2d'), null, {
+            timeout: 10000
+        })
         await page.waitForTimeout(500)
 
         // Count visible H1s in the accessibility tree
         const visibleH1s = await page.evaluate(() => {
             const all = Array.from(document.querySelectorAll('h1'))
-            return all.filter((h) => {
-                const r = h.getBoundingClientRect()
-                const cs = getComputedStyle(h)
-                return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'
-            }).map((h) => ({ text: h.textContent.trim().slice(0, 60), visible: true }))
+            return all
+                .filter((h) => {
+                    const r = h.getBoundingClientRect()
+                    const cs = getComputedStyle(h)
+                    return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'
+                })
+                .map((h) => ({ text: h.textContent.trim().slice(0, 60), visible: true }))
         })
-        expect(visibleH1s, `Expected exactly 1 visible H1 on mobile, got ${visibleH1s.length}: ${JSON.stringify(visibleH1s)}`).toHaveLength(1)
+        expect(
+            visibleH1s,
+            `Expected exactly 1 visible H1 on mobile, got ${visibleH1s.length}: ${JSON.stringify(visibleH1s)}`
+        ).toHaveLength(1)
     })
 
     test('W51-mode-chip-locked-aria-label: locked mode radios have descriptive aria-label', async ({ page }) => {
@@ -677,5 +737,111 @@ test.describe('Widget journey', () => {
             expect(ariaLabel.toLowerCase(), `${mode} chip aria-label must mention "lock"`).toContain('lock')
             expect(ariaLabel.toLowerCase(), `${mode} chip aria-label must mention "select"`).toContain('select')
         }
+    })
+
+    test('W51-demo-auto-cancel: user interaction during auto-demo dismisses the choreography', async ({ page }) => {
+        // W51 audit #4 (M3). The 10-phase auto-demo runs for ~41 seconds
+        // and ends with a "Now explore your way" caption that would normally
+        // linger for 3 more seconds. If the user clicks a 3D dot during
+        // the demo, markInteraction() should call cancelDemo() so the
+        // caption clears immediately.
+        //
+        // ?demo=force bypasses the demo-session/eligibility guards so the
+        // choreography starts immediately after the splash dismisses.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        // Clear any sessionStorage left over from previous tests (the demo
+        // session flag persists across tests in the same browser context).
+        await page.context().clearCookies()
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?demo=force`, { waitUntil: 'domcontentloaded' })
+        await page.evaluate(() => {
+            sessionStorage.clear()
+            localStorage.clear()
+        })
+        await page.reload({ waitUntil: 'domcontentloaded' })
+
+        // Get past the splash
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        // Wait for the demo choreography box to appear
+        const demo = page.locator('#demo-choreography')
+        await demo.waitFor({ state: 'visible', timeout: 15000 })
+
+        // Wait for the first demo phase to render — confirms the interaction
+        // listeners were attached (they're added in onMount before attemptStart
+        // schedules the first transition).
+        await page.waitForFunction(
+            () => {
+                const el = document.querySelector('#demo-choreography')
+                return el && el.querySelector('p')?.textContent && el.querySelector('p').textContent.length > 0
+            },
+            null,
+            { timeout: 5000 }
+        )
+
+        // Verify the interaction listeners are actually registered on document.
+        // DemoChoreography's markInteraction() listens for mousemove/pointerdown/
+        // click/keydown/touchstart with capture: true. If they're not there,
+        // there's a regression where the listeners were removed.
+        const listenersAttached = await page.evaluate(() => {
+            // No way to enumerate listeners directly, so check the choreography
+            // element is reachable and the demo is active
+            return document.querySelector('#demo-choreography') !== null
+        })
+        expect(listenersAttached, 'demo choreography should be visible before interaction').toBe(true)
+
+        // Simulate user interaction. We dispatch BOTH a real mouse click (via
+        // Playwright) AND a synthetic pointerdown on document — the demo's
+        // listeners may not be attached yet when the mouse click arrives if
+        // there's a race between the demo starting and the listener being
+        // registered. The synthetic event guarantees we trigger the listener.
+        await page.waitForTimeout(200) // settle
+        await page.mouse.move(400, 400)
+        await page.mouse.click(400, 400)
+        await page.evaluate(() => {
+            document.dispatchEvent(new MouseEvent('pointerdown', { bubbles: true, clientX: 400, clientY: 400 }))
+            document.dispatchEvent(new MouseEvent('mousemove', { bubbles: true, clientX: 400, clientY: 400 }))
+        })
+
+        // The choreography box should disappear within a couple of frames
+        await demo.waitFor({ state: 'detached', timeout: 5000 })
+    })
+
+    test('W51-category-legend-default-open: legend panel visible on desktop first paint', async ({ page }) => {
+        // W51 audit #5. On desktop viewport, the category legend must be
+        // visible by default (transform translateX(0)) instead of being
+        // hidden off-screen behind the header toggle. The audit found
+        // users never opened it because it was off-screen at x=-230.
+        //
+        // Use ?webgl=1 to bypass the Playwright webdriver → placeholder2d
+        // auto-detection (the placeholder path intentionally hides the
+        // legend). We're testing the real-user desktop path here.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1`, { waitUntil: 'domcontentloaded' })
+
+        // Wait for hydration + first paint
+        await page.waitForTimeout(1500)
+
+        // Find the legend panel and check it's not translated off-screen
+        const legend = page.locator('#legend-panel')
+        await legend.waitFor({ state: 'attached', timeout: 5000 })
+
+        const result = await legend.evaluate((el) => {
+            const r = el.getBoundingClientRect()
+            const cs = getComputedStyle(el)
+            return {
+                open: el.classList.contains('open'),
+                ariaHidden: el.getAttribute('aria-hidden'),
+                x: Math.round(r.x),
+                width: Math.round(r.width),
+                transform: cs.transform,
+                inViewport: r.x + r.width > 0 && r.x < window.innerWidth
+            }
+        })
+
+        expect(result.open, 'legend should have .open class on desktop default').toBe(true)
+        expect(result.ariaHidden, 'legend should not be aria-hidden when open').not.toBe('true')
+        expect(result.inViewport, `legend x=${result.x} width=${result.width} should be in viewport`).toBe(true)
     })
 })
