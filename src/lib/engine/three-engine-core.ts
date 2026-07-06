@@ -73,7 +73,8 @@ import { appState } from '@lib/state/app.svelte'
 import {
     updateRouteTraceOverlayFrame,
     updateArrivalHandoffOverlayFrame,
-    updateFocusSemanticOverlayFrame
+    updateFocusSemanticOverlayFrame,
+    syncFocusSemanticOverlayResolutionPort
 } from '@lib/engine/journey-webgl-lazy'
 
 export function updateCameraViewportOffset() {
@@ -256,6 +257,9 @@ export function onWindowResize() {
     // Keep LineMaterial.resolution in sync with the drawing buffer so the
     // mycelium linewidth shader renders thin filaments, not fat bands.
     syncMyceliumLineResolutionPort()
+    // Sync the focus semantic overlay resolution too — a resize while focused
+    // would otherwise leave the overlay linewidth shader at the old size.
+    syncFocusSemanticOverlayResolutionPort()
 }
 
 export function cancelAnimate() {

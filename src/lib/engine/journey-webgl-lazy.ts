@@ -106,6 +106,17 @@ export function updateFocusSemanticOverlayFrame(now: number = performance.now())
     webglModule.updateFocusSemanticOverlayTime(now)
 }
 
+// Sync the focus semantic overlay LineMaterial.resolution to the drawing
+// buffer. Called from onWindowResize so a resize while focused keeps the
+// linewidth shader correct.
+export function syncFocusSemanticOverlayResolutionPort(): void {
+    if (!webglModule) {
+        ensureWebglModule()
+        return
+    }
+    webglModule.syncFocusSemanticOverlayResolution()
+}
+
 export function removeFocusSemanticOverlay(): void {
     if (!webglModule) {
         ensureWebglModule()
