@@ -54,8 +54,8 @@ import { debugLog, debugError } from '@lib/utils/debug'
           }
         },
       };
-      gui.add(actions, 'triggerDemo').name('▶ Trigger demo');
-      gui.add(actions, 'clearStorage').name('🗑 Clear storage');
+      gui.add(actions, 'triggerDemo').name('Trigger demo');
+      gui.add(actions, 'clearStorage').name('Clear storage');
 
       // --- Scene folder ---
       const sceneFolder = gui.addFolder('Scene');
