@@ -662,6 +662,25 @@ async function _restoreSearchFromParams(
             // (results .id is a lead_id string). Re-fire by numeric index directly.
             publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: Number(anchorId) })
         }
+
+        // Rebuild the constellation now that threadCandidates is populated
+        // by the SEARCH_FOCUS_REQUESTED subscriber (which runs synchronously
+        // after the publish above). The earlier call in _restoreAnchorFromParams
+        // ran before search results were available, leaving the constellation
+        // empty. See PR-B4 deep-link restoration path.
+        const rebuildIndex = byId ? byId.index : (numericAnchor ? Number(anchorId) : -1)
+        if (rebuildIndex >= 0) {
+            try {
+                const _focusPocketMod = (await import('@lib/focus/pocket', { signal } as never)) as {
+                    applyLocalNeighborhoodFocus: (index: number) => void
+                }
+                if (_isRestoreStale(restoreToken)) return
+                _focusPocketMod.applyLocalNeighborhoodFocus(rebuildIndex)
+            } catch (e) {
+                debugWarn('[url-state] applyLocalNeighborhoodFocus re-build failed after search restore', e)
+            }
+        }
+
         preserveDomForcedFocusSearchSurface()
     } catch (err) {
         debugWarn('[url-state] Search restore from URL failed:', err)
