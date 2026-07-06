@@ -506,4 +506,176 @@ test.describe('Widget journey', () => {
         })
         expect(openAfter, '? button must re-open the help dialog after dismissal (W48 fix)').toBe(true)
     })
+
+    test('5m. W51-C4: camera controls toolbar supports roving tabindex + arrow-key navigation', async ({ page }) => {
+        // W51 audit: the camera-controls toolbar had role="toolbar" and
+        // tabindex="0" but NO arrow-key handler, so keyboard users had to Tab
+        // through all 5 buttons individually instead of using Arrow keys to
+        // move within the toolbar (WAI-ARIA toolbar pattern). The fix adds
+        // roving tabindex + Arrow/Home/End navigation.
+        await page.setViewportSize({ width: 1280, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1500)
+
+        // Dismiss first-visit help dialog if auto-opened (steals focus).
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(300)
+        }
+
+        const toolbar = page.locator('#camera-controls')
+        await expect(toolbar).toHaveAttribute('role', 'toolbar')
+        // Roving tabindex: container has tabindex=-1 (not a tab stop); one
+        // button holds the roving tabindex=0 tab stop.
+        await expect(toolbar).toHaveAttribute('tabindex', '-1')
+
+        const buttons = toolbar.locator('button.control-btn')
+        await expect(buttons).toHaveCount(5)
+
+        // Exactly one button should be the tab stop (tabindex=0).
+        const tabStops = await page.evaluate(() =>
+            Array.from(document.querySelectorAll('#camera-controls button.control-btn')).filter(
+                (b) => b.getAttribute('tabindex') === '0'
+            )
+        )
+        expect(tabStops.length, 'exactly one button holds the roving tab stop').toBe(1)
+
+        // Focus the toolbar's first button and drive arrow-key navigation.
+        const labels = await page.evaluate(() =>
+            Array.from(document.querySelectorAll('#camera-controls button.control-btn')).map((b) =>
+                b.getAttribute('aria-label')
+            )
+        )
+        await page.focus('#camera-controls button.control-btn:first-child')
+        await expect(page.locator('*:focus')).toHaveAttribute('aria-label', labels[0])
+
+        // ArrowRight should move focus to the next button.
+        await page.keyboard.press('ArrowRight')
+        await expect(page.locator('*:focus')).toHaveAttribute('aria-label', labels[1])
+
+        // End should jump to the last button (Share link).
+        await page.keyboard.press('End')
+        await expect(page.locator('*:focus')).toHaveAttribute('aria-label', labels[4])
+
+        // Home should jump back to the first button (Zoom in).
+        await page.keyboard.press('Home')
+        await expect(page.locator('*:focus')).toHaveAttribute('aria-label', labels[0])
+
+        // ArrowLeft should wrap to the last button.
+        await page.keyboard.press('ArrowLeft')
+        await expect(page.locator('*:focus')).toHaveAttribute('aria-label', labels[4])
+    })
+
+    test('W51-city-dropdown: All Cities shows real count, no garbage values, dedup case variants', async ({ page }) => {
+        // W51 audit #6 + #9. After data hydration, the city filter dropdown
+        // must (1) show "All Cities (8406)", not "(0)" or "(loading…)",
+        // (2) drop garbage entries (street addresses, ZIPs, unmatched parens),
+        // (3) dedupe case variants (Cut And Shoot + Cut and Shoot → 1 entry).
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1500)
+
+        const citySelect = page.locator('#city-filter')
+        await citySelect.waitFor({ state: 'attached', timeout: 5000 })
+
+        // First option must say "All Cities (8406)" — the full record count
+        await expect(citySelect).toBeEnabled()
+        const firstOptionText = await citySelect.locator('option').first().textContent()
+        expect(firstOptionText.trim()).toMatch(/^All Cities \(8406\)$/)
+
+        // No garbage entries (street addresses, ZIPs, malformed parens)
+        const allOptionTexts = await citySelect.locator('option').allTextContents()
+        // Strip the " (count)" suffix from each option, then check the remaining
+        // city label for garbage patterns. The dropdown entries follow "<city> (<count>)",
+        // so we split on the last ' (' to isolate the city label.
+        const cityLabels = allOptionTexts
+            .map((t) => t.replace(/^All Cities.*$/, '').trim())
+            .filter((t) => t.length > 0)
+            .map((t) => {
+                const lastParen = t.lastIndexOf(' (')
+                return lastParen >= 0 ? t.slice(0, lastParen) : t
+            })
+        // Garbage: starts with digit (ZIP/address), contains digit-letter mix
+        // (street address like "13070 S. HWY 242"), or has unmatched parens
+        const garbagePattern = /^\d|\d+\s+[A-Z]|\b[A-Z]+\s+\d+\b|[A-Za-z]\d{2,}/
+        const unmatchedParen = (s) => (s.match(/\(/g) || []).length !== (s.match(/\)/g) || []).length
+        const garbageEntries = cityLabels.filter((c) => garbagePattern.test(c) || unmatchedParen(c))
+        expect(garbageEntries, `Found garbage city values: ${garbageEntries.join(', ')}`).toHaveLength(0)
+
+        // Dedup case variants: 'Cut And Shoot' (any case) should appear exactly once.
+// Dropdown format is "<city> (<count>)" — match the city name portion only.
+        const cutAndShootEntries = allOptionTexts.filter((t) => /^cut and shoot \(\d/i.test(t))
+        expect(cutAndShootEntries.length, `Cut And Shoot case-dedup (got ${cutAndShootEntries.length}: ${cutAndShootEntries.join(', ')})`).toBeGreaterThanOrEqual(1)
+        expect(cutAndShootEntries.length, `Cut And Shoot must be deduped to ≤1 entry`).toBeLessThanOrEqual(1)
+
+        // Coldspring / Cold Spring dedup — accept either spacing/case variant
+        const coldSpringEntries = allOptionTexts.filter((t) => /^cold ?spring \(\d/i.test(t))
+        expect(coldSpringEntries.length, `Cold Spring dedup (got ${coldSpringEntries.length}: ${coldSpringEntries.join(', ')})`).toBeLessThanOrEqual(1)
+        expect(coldSpringEntries.length, `Cold Spring must appear at least once`).toBeGreaterThanOrEqual(1)
+    })
+
+    test('W51-mobile-h1: only one H1 visible on mobile (placeholder2d path)', async ({ page }) => {
+        // W51 audit #2. On mobile viewport with renderKind=placeholder2d,
+        // the App.svelte H1 must be hidden so screen readers see ONE H1,
+        // not two (App's "Semantic Explorer — ..." + Placeholder2D's
+        // "Semantic Explorer Preview").
+        await page.setViewportSize({ width: 375, height: 667 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // Wait for hydration + renderKind=placeholder2d to take effect
+        await page.waitForFunction(
+            () => document.body.classList.contains('render-kind-placeholder2d'),
+            null,
+            { timeout: 10000 }
+        )
+        await page.waitForTimeout(500)
+
+        // Count visible H1s in the accessibility tree
+        const visibleH1s = await page.evaluate(() => {
+            const all = Array.from(document.querySelectorAll('h1'))
+            return all.filter((h) => {
+                const r = h.getBoundingClientRect()
+                const cs = getComputedStyle(h)
+                return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'
+            }).map((h) => ({ text: h.textContent.trim().slice(0, 60), visible: true }))
+        })
+        expect(visibleH1s, `Expected exactly 1 visible H1 on mobile, got ${visibleH1s.length}: ${JSON.stringify(visibleH1s)}`).toHaveLength(1)
+    })
+
+    test('W51-mode-chip-locked-aria-label: locked mode radios have descriptive aria-label', async ({ page }) => {
+        // W51 audit #10. Locked mode chips (Trail/Focus/Inside) must have
+        // an aria-label that explains WHY they're locked, not just "Trail".
+        // The SVG lock indicator is aria-hidden=true so screen readers
+        // should hear a descriptive label, not "lock" or U+1F512.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.waitForTimeout(1000)
+
+        // Get the trail/focus/inside chips' aria-labels (locked state)
+        for (const mode of ['trail', 'focus', 'inside']) {
+            const chip = page.locator(`#mode-chips [data-mode="${mode}"]`)
+            await chip.waitFor({ state: 'attached', timeout: 5000 })
+            const ariaLabel = await chip.getAttribute('aria-label')
+            expect(ariaLabel, `${mode} chip aria-label`).not.toBeNull()
+            expect(ariaLabel.toLowerCase(), `${mode} chip aria-label must mention "lock"`).toContain('lock')
+            expect(ariaLabel.toLowerCase(), `${mode} chip aria-label must mention "select"`).toContain('select')
+        }
+    })
 })

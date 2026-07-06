@@ -49,11 +49,15 @@
 </script>
 
 <!--
-  Shadow list — always present in the DOM so screen readers see it.
-  When the user has not opted in to the visible list, the ul is positioned
-  off-screen with the standard sr-only / clip pattern. No visual layout
-  impact. When opted in, it appears as a floating panel in the bottom-right.
+  Shadow list — only present in the DOM when there's a focus pocket to
+  enumerate. A persistent empty <ul role="list"> would be announced as
+  "empty list" by screen readers (audit finding #8 from the 2026-07-03
+  UI/UX sweep). When the user has not opted in to the visible list, the
+  ul is positioned off-screen with the standard sr-only / clip pattern.
+  No visual layout impact. When opted in, it appears as a floating panel
+  in the bottom-right.
 -->
+{#if hasNodes}
 <!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <ul
   id="focus-pocket-a11y"
@@ -78,6 +82,7 @@
     </li>
   {/each}
 </ul>
+{/if}
 
 <!--
   Toggle button — only shown when there's a focus pocket to enumerate.

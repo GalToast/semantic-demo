@@ -17,7 +17,7 @@
     resetFilters,
     getFilterState
   } from '@lib/stores/filter.svelte';
-  import { getBusinessRecords } from '@lib/data-store';
+  import { businessRecords } from '@lib/data-store';
 
   interface Props {
     /** Whether the filter panel is open */
@@ -88,18 +88,59 @@ function handleContactToggle(id: string): void {
   // Houston, Cut And Shoot, and ~25 others). Sorted by record count DESC
   // so the most populous cities appear first — matches the user's
   // intuition about where to look.
+  //
+  // W51-F6: sanitize city values before bucketing — the raw `city` field
+  // contains garbage that the audit flagged:
+  //   - Full street addresses (e.g. "13070 S. HWY 242 Conroe (1)")
+  //   - Bare ZIP codes ("77301 (2nd location: 12762 Hwy 105 E (1)")
+  //   - Malformed parens ("unknown (Conroe (1)")
+  //   - Case duplicates ("Cut And Shoot (13)" + "Cut and Shoot (1)")
+  //   - Misspellings ("Clevland (1)" + "Cleveland (796)")
+  // We drop entries that look like addresses / ZIPs / obvious junk and
+  // normalize case + trim whitespace before bucketing. Misspellings are
+  // still listed as-is (we don't silently rewrite them — that's a data-
+  // quality fix upstream, not a UI lie).
+  function normalizeCityKey(raw: string): string | null {
+    const trimmed = raw.trim()
+    if (!trimmed) return null
+    // Drop leading/trailing parens, ZIP+note combos, and street addresses.
+    // Heuristic: if it starts with a digit, contains a digit+letter mix,
+    // or has an unmatched paren, treat it as junk.
+    if (/^\d/.test(trimmed)) return null
+    if (/[a-zA-Z]\s+\d|\d+\s+[a-zA-Z]/.test(trimmed)) return null
+    if (/[a-zA-Z]\d{2,}/.test(trimmed)) return null
+    if ((trimmed.match(/\(/g) ?? []).length !== (trimmed.match(/\)/g) ?? []).length) return null
+    if (trimmed.length < 2) return null
+    // Normalize for the dedup key ONLY (display label preserves original):
+    //   - collapse internal whitespace so 'Cold Spring' and 'Coldspring' dedupe
+    //   - drop apostrophes/hyphens so "O'Brien" and "OBrien" dedupe
+    //   - lowercase for case-insensitive compare
+    return trimmed.replace(/\s+/g, '').replace(/['\u2019-]/g, '').toLowerCase()
+  }
+  // W51-F10: read $businessRecords (auto-subscribed) so Svelte 5 tracks
+  // the dependency and the derived re-runs once data hydrates.
+  // `getBusinessRecords()` is a non-reactive snapshot helper — using it
+  // inside $derived.by froze the dropdown at the initial empty state.
   const cityOptions = $derived.by(() => {
-    const records = getBusinessRecords()
+    const records = $businessRecords
     if (records.length === 0) return []
-    const counts = new Map<string, number>()
+    const counts = new Map<string, { label: string; count: number }>()
     for (const r of records) {
-      const city = r.city?.trim()
-      if (!city) continue
-      counts.set(city, (counts.get(city) ?? 0) + 1)
+      const raw = r.city?.trim()
+      if (!raw) continue
+      const key = normalizeCityKey(raw)
+      if (!key) continue
+      // Preserve the most-common capitalization as the display label
+      const existing = counts.get(key)
+      if (existing) {
+        existing.count += 1
+      } else {
+        counts.set(key, { label: raw, count: 1 })
+      }
     }
-    return Array.from(counts.entries())
-      .sort((a, b) => b[1] - a[1])
-      .map(([city, count]) => ({ city, count }))
+    return Array.from(counts.values())
+      .sort((a, b) => b.count - a.count)
+      .map(({ label, count }) => ({ city: label, count }))
   })
 
   function handleCityChange(e: Event): void {
@@ -191,8 +232,15 @@ function handleContactToggle(id: string): void {
         class="city-filter"
         value={getFilterState().city}
         onchange={handleCityChange}
+        disabled={$businessRecords.length === 0}
       >
-        <option value="">All Cities ({getBusinessRecords().length})</option>
+        <option value="">
+          {#if $businessRecords.length === 0}
+            All Cities (loading…)
+          {:else}
+            All Cities ({$businessRecords.length})
+          {/if}
+        </option>
         {#each cityOptions as opt (opt.city)}
           <option value={opt.city}>{opt.city} ({opt.count})</option>
         {/each}

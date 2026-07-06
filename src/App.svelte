@@ -365,10 +365,14 @@
      because Header.svelte already provides the page banner. Use <div
      role="region"> instead — the H1 keeps its own landmark (satisfies
      region rule "all page content in a landmark") AND precedes <main>
-     (satisfies a11y-h1-page-title.test.ts via WCAG 2.4.6). -->
-<div role="region" aria-label="Application title" class="app-title-header">
-  <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
-</div>
+     (satisfies a11y-h1-page-title.test.ts via WCAG 2.4.6).
+     W51-M2: hide this H1 when Placeholder2D is rendering so mobile
+     doesn't expose two H1s (placeholder's own heading + this one). -->
+{#if renderKind !== 'placeholder2d'}
+  <div role="region" aria-label="Application title" class="app-title-header">
+    <h1 class="app-title">Semantic Explorer — Montgomery County Business Network</h1>
+  </div>
+{/if}
 <main id="main-content" class="semantic-main" class:surface-semantic-dive={parity.panelSurface === 'semantic-dive'} tabindex="-1" aria-label="Semantic explorer application">
 <!-- Screen-reader-only live region for dynamic announcements.
      W49-G: relocated inside <main> so axe-core's region rule
