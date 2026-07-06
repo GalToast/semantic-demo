@@ -31,7 +31,7 @@ interface LoadRecordsResult {
     invalidPositionIndices: number[]
 }
 
-interface NeighborEntry {
+export interface NeighborEntry {
     leadId: string
     name: string | null
     city: string | null

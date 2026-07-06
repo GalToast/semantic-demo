@@ -13,9 +13,9 @@
 
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import { workerUrl } from '@lib/workers/data-worker-url'
+import type { NeighborEntry } from '@lib/workers/data-worker'
 import type {
     SemanticThreadBundle,
-    SemanticThreadNode,
     SemanticNeighborEntry,
     SemanticNeighborDetail,
     LayoutManifest
@@ -318,7 +318,7 @@ interface WorkerResponse {
 }
 
 interface WorkerThreadResult {
-    neighborEntries: Array<[string, SemanticThreadNode]>
+    neighborEntries: Array<[string, NeighborEntry]>
     artifactName: string
     bundle: SemanticThreadBundle
 }
@@ -387,7 +387,7 @@ function _normalizeLeadId(id: unknown): string | null {
 }
 
 function _normalizeSemanticNeighborEntries(
-    neighborEntries: Array<[string, SemanticThreadNode]>
+    neighborEntries: Array<[string, NeighborEntry]>
 ): Array<[string, SemanticNeighborEntry]> {
     if (!Array.isArray(neighborEntries)) return []
     return neighborEntries.map(([leadId, node]) => [
