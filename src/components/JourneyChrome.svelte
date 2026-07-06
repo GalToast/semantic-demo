@@ -187,7 +187,7 @@
       ? (getBusinessRecords()[focusIdx] as BusinessRecord)?.name ?? ''
       : '';
     if (currentTrailDepth >= 1 && walkLen >= 1) {
-      return `Stop ${walkLen + 1}: ${name}. ${lastReason ? `Source: ${formatThreadSourceLabel(currentThreadSource)}` : ''}`;
+      return `Stop ${walkLen}: ${name}. ${lastReason ? `Source: ${formatThreadSourceLabel(currentThreadSource)}` : ''}`;
     }
     if (neighborCount === 0 && currentThreadSource === 'semantic') {
       return `Semantic connections exist around ${name}, but none survive the current slice.`;
@@ -204,8 +204,8 @@
       // never shows a total smaller than the current stop, and route to the "No more visible
       // stops in this slice." copy that already exists in the focus-ui.ts twin.
       return neighborCount > 0
-        ? `Stop ${currentWalkHistory.length + 1} of ${neighborCount}`
-        : `Stop ${currentWalkHistory.length + 1}. No more visible stops in this slice.`;
+        ? `Stop ${currentWalkHistory.length} of ${neighborCount}`
+        : `Stop ${currentWalkHistory.length}. No more visible stops in this slice.`;
     }
     return neighborCount
       ? `${neighborCount} nearby ready`

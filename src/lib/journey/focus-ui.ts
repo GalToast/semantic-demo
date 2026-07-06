@@ -613,7 +613,7 @@ export function updateTraversalUi(): void {
     if ((appState.trailDepth ?? 0) >= 1 && (nav.walkHistoryIndices || []).length >= 0) {
         const reason = nav.lastTraversalReason || currentCandidate?.reason || 'nearby business relationship'
         const walkLength = (nav.walkHistoryIndices || []).length
-        const stepNumber = walkLength + 1
+        const stepNumber = walkLength
         // W48 audit fix (PR-W47-g): the branch-A guard `(nav.walkHistoryIndices || []).length >= 0`
         // is a tautology (always true), so this branch fired even when neighborCount was 0 and
         // shadowed the dedicated empty-neighbor branch below, producing the documented
