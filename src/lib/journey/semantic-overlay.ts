@@ -7,7 +7,7 @@
 
 import { appState as state } from '@lib/state/app.svelte'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { Vector3, Color, AdditiveBlending, Float32BufferAttribute, LineSegments } from 'three'
+import { Vector3, Vector2, Color, AdditiveBlending, Float32BufferAttribute, LineSegments } from 'three'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
@@ -84,6 +84,24 @@ export function removeFocusSemanticOverlay(): void {
     else mat?.dispose?.()
     state.focusSemanticLines = null
     state.focusSemanticConnectionPairs = []
+}
+
+/**
+ * Sync the focus semantic overlay LineMaterial.resolution to the current
+ * drawing-buffer size. Call on canvas resize while an overlay is mounted.
+ * (Same TS-port regression as the mycelium threads — the legacy per-frame
+ * sync was dropped during the port.)
+ */
+export function syncFocusSemanticOverlayResolution(): void {
+    if (!state.focusSemanticLines || !state.renderer) return
+    const size = new Vector2()
+    state.renderer.getSize(size)
+    const dpr = state.renderer.getPixelRatio()
+    const mat = (state.focusSemanticLines as { material?: { resolution?: { x: number; y: number } } }).material
+    if (mat?.resolution) {
+        mat.resolution.x = Math.max(1, Math.round(size.x * dpr))
+        mat.resolution.y = Math.max(1, Math.round(size.y * dpr))
+    }
 }
 
 function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
@@ -409,6 +427,18 @@ export function refreshFocusSemanticOverlay(): void {
 
     state.focusSemanticLines = new Line2(lineGeometry, lineMaterial)
     state.focusSemanticLines!.computeLineDistances()
+    // Sync LineMaterial.resolution to the drawing buffer so the linewidth
+    // shader renders thin filaments (same TS-port regression as the mycelium
+    // threads — see thread-manager.syncMyceliumLineResolution).
+    if (state.renderer) {
+        const _size = new Vector2()
+        state.renderer.getSize(_size)
+        const _dpr = state.renderer.getPixelRatio()
+        const _w = Math.max(1, Math.round(_size.x * _dpr))
+        const _h = Math.max(1, Math.round(_size.y * _dpr))
+        lineMaterial.resolution.x = _w
+        lineMaterial.resolution.y = _h
+    }
     state.focusSemanticLines!.userData = {
         focusedIndex: focusIndex,
         nextIndex: Number.isFinite(nextFocusIndex) ? nextFocusIndex : null,
