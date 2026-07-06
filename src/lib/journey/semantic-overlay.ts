@@ -528,6 +528,32 @@ export function updateFocusSemanticOverlayPositions(now: number = performance.no
     }
 }
 
+/**
+ * Lightweight per-frame sync of the focus semantic overlay's `time` uniform
+ * (drives the flow/breath shader animation). Does NOT recompute edge
+ * positions — only advances the shader clock. The legacy js/modules render
+ * loop synced this every frame; the TS port dropped it, freezing the
+ * overlay's flow/breath animation between focus events.
+ */
+export function updateFocusSemanticOverlayTime(now: number = performance.now()): void {
+    const line = state.focusSemanticLines
+    if (!line) return
+    const rawMat = line.material
+    const mat: SemanticLineMaterial | undefined = Array.isArray(rawMat)
+        ? (rawMat[0] as SemanticLineMaterial | undefined)
+        : (rawMat as SemanticLineMaterial | undefined)
+    if (!mat) return
+    const reducedMotion = prefersReducedMotion()
+    if (!reducedMotion) {
+        if (mat.userData?.shader?.uniforms?.time) {
+            mat.userData.shader.uniforms.time.value = now / 1000
+        }
+        if (mat.uniforms?.time) {
+            mat.uniforms.time.value = now / 1000
+        }
+    }
+}
+
 export function getSemanticFocusCueProbeSnapshot(): Record<string, unknown> {
     return {
         visible: !!state.focusSemanticLines && !!state.focusThreadDiagnostics?.active,

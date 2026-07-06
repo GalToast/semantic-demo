@@ -69,7 +69,7 @@ import { easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
-import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame } from '@lib/engine/journey-webgl-lazy'
+import { updateRouteTraceOverlayFrame, updateArrivalHandoffOverlayFrame, updateFocusSemanticOverlayFrame } from '@lib/engine/journey-webgl-lazy'
 
 export function updateCameraViewportOffset() {
     const camera = webglContext.camera || appState.camera
@@ -446,6 +446,7 @@ export function animate() {
                 engineState.inspectedStrand?.updateInspectedStrandOverlayFrame(frameNow)
                 updateRouteTraceOverlayFrame(frameNow)
                 updateArrivalHandoffOverlayFrame(frameNow)
+                updateFocusSemanticOverlayFrame(frameNow)
             } catch (overlayErr) {
                 debugWarn('overlay update threw:', overlayErr)
             }

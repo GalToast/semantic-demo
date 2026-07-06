@@ -32,6 +32,7 @@ export {
     removeFocusSemanticOverlay,
     refreshFocusSemanticOverlay,
     updateFocusSemanticOverlayPositions,
+    updateFocusSemanticOverlayTime,
     getSemanticFocusCueProbeSnapshot
 } from '@lib/journey/semantic-overlay'
 
