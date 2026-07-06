@@ -10,7 +10,7 @@
  */
 
 import { webglContext } from './webgl-context'
-import { Vector3, Object3D, LineSegments, NormalBlending, Group, BufferAttribute } from 'three'
+import { Vector3, Vector2, Object3D, LineSegments, NormalBlending, Group, BufferAttribute } from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
@@ -527,6 +527,39 @@ export function createMycelium() {
         state.scenePerformanceDiagnostics.myceliumWispySegments = wispyConnections.length / 6
         state.scenePerformanceDiagnostics.myceliumBridgeSegments = bridgeConnections.length / 6
     })
+
+    // LineMaterial.resolution must match the drawing buffer size or the
+    // screen-space linewidth shader (offset /= resolution.y) produces lines
+    // ~1000× too thick. The legacy js/modules/three-engine.ts synced this
+    // every frame; the TS port dropped it (regression). Sync once at creation
+    // and on resize (see syncMyceliumLineResolution).
+    syncMyceliumLineResolution()
+}
+
+/**
+ * Sync LineMaterial.resolution on all three mycelium line layers to the
+ * renderer's current drawing-buffer size. Must be called after createMycelium
+ * and on every canvas resize. Without this, LineMaterial keeps its default
+ * resolution (1,1) and the mycelium renders as fat bands instead of thin
+ * filaments (TS-port regression of the legacy per-frame sync).
+ */
+export function syncMyceliumLineResolution(): void {
+    const renderer = webglContext.renderer
+    if (!renderer) return
+    const size = new Vector2()
+    renderer.getSize(size)
+    const dpr = renderer.getPixelRatio()
+    const width = Math.max(1, Math.round(size.x * dpr))
+    const height = Math.max(1, Math.round(size.y * dpr))
+    for (const line of [
+        webglContext.myceliumCoreLines,
+        webglContext.myceliumWispyLines,
+        webglContext.myceliumBridgeLines,
+    ]) {
+        if (!line) continue
+        const mat = (line as { material?: { resolution?: Vector2 } }).material
+        if (mat?.resolution) mat.resolution.set(width, height)
+    }
 }
 
 export function updateMyceliumThreads(): void {
@@ -534,6 +567,16 @@ export function updateMyceliumThreads(): void {
 
     // Fast path: no nodes moved this frame — skip the entire rebuild.
     const hasDirtyNodes = dirtyNodeIndices.size > 0
+
+    // Per-layer intensity values matching createMycelium() vertex color baking.
+    // Without these, rebuilt threads flash to full brightness (intensity=1)
+    // when nodes move, breaking the visual continuity of the mycelium layers.
+    const hasSemantic = !!state.semanticNeighborMapByLeadId?.size
+    const layerIntensity: Record<number, number> = {
+        0: hasSemantic ? 0.38 : 0.28,  // core
+        1: hasSemantic ? 0.22 : 0.16,  // wispy
+        2: hasSemantic ? 0.32 : 0.24   // bridge
+    }
 
     const updateLayer = (line: LineSegments2 | null, layer: number): void => {
         const geom = line?.geometry as LineGeometry | undefined
@@ -549,7 +592,7 @@ export function updateMyceliumThreads(): void {
             if (pair.layer !== layer) return
             // Amortization: skip pairs where neither endpoint moved.
             if (hasDirtyNodes && !dirtyNodeIndices.has(pair.a) && !dirtyNodeIndices.has(pair.b)) return
-            pushBezierLinePair(nextPositions, nextColors, { a: pair.a, b: pair.b }, 1, 5)
+            pushBezierLinePair(nextPositions, nextColors, { a: pair.a, b: pair.b }, layerIntensity[layer] ?? 1, 5)
         })
 
         const startArray = startAttr.array as Float32Array

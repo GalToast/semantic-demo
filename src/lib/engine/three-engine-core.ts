@@ -39,6 +39,7 @@ import {
     createMycelium as createMyceliumPort,
     disposeMycelium as disposeMyceliumPort,
     updateMyceliumThreads as updateMyceliumThreadsPort,
+    syncMyceliumLineResolution as syncMyceliumLineResolutionPort,
     shouldRenderThreads as shouldRenderThreadsPort
 } from '@lib/engine/thread-manager'
 // Postprocessing is dynamically imported to save ~150-200 kB from the main
@@ -247,6 +248,9 @@ export function onWindowResize() {
     camera.updateProjectionMatrix()
     renderer.setSize(width, height)
     engineState.ppModule?.resizePostProcessing(width, height)
+    // Keep LineMaterial.resolution in sync with the drawing buffer so the
+    // mycelium linewidth shader renders thin filaments, not fat bands.
+    syncMyceliumLineResolutionPort()
 }
 
 export function cancelAnimate() {
