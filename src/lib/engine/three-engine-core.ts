@@ -38,6 +38,7 @@ import {
 import {
     createMycelium as createMyceliumPort,
     disposeMycelium as disposeMyceliumPort,
+    updateMyceliumThreads as updateMyceliumThreadsPort,
     shouldRenderThreads as shouldRenderThreadsPort
 } from '@lib/engine/thread-manager'
 // Postprocessing is dynamically imported to save ~150-200 kB from the main
@@ -454,7 +455,10 @@ export function animate() {
         // W15-T1 focus-deadlock diagnosis (tmp/w15-focus-deadlock-diagnosis.md).
 
         if (sceneNeedsContinuous && shouldRenderThreadsPort()) {
-            engineState.myceliumEngine?.updateMyceliumThreads()
+            // W50: route through thread-manager.ts (per-vertex color updates +
+            // dirty-node amortization) instead of the legacy mycelium-engine.ts
+            // path, whose updateMyceliumThreads only wrote positions.
+            updateMyceliumThreadsPort()
         }
         if (sceneNeedsContinuous) {
             engineState.cameraControls?.applySemanticCentroidCamera(frameNow)

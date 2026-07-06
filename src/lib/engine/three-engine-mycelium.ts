@@ -14,6 +14,7 @@ import { engineState } from './three-engine-state'
 import { createPoints as createPointsPort } from '@lib/engine/node-manager'
 import {
     createMycelium as createMyceliumPort,
+    updateMyceliumThreads as updateMyceliumThreadsPort,
     shouldRenderThreads as shouldRenderThreadsPort,
     shouldRenderBridgeThreads as shouldRenderBridgeThreadsPort
 } from '@lib/engine/thread-manager'
@@ -22,8 +23,14 @@ import { appState } from '@lib/state/app.svelte'
 
 // ── Backward-compatible wrapper exports ────────────────────────────────────────
 
+// W50: route through thread-manager.ts (the newer TS port with per-vertex
+// color updates + dirty-node amortization) instead of the legacy
+// mycelium-engine.ts whose updateMyceliumThreads only writes positions.
+// The prior indirection via engineState.myceliumEngine left the color-update
+// fix (commit ddf5604f) in dead code — thread endpoints kept initial-cluster
+// colors instead of interpolating during focus transitions.
 export function updateMyceliumThreads(): void {
-    engineState.myceliumEngine?.updateMyceliumThreads()
+    updateMyceliumThreadsPort()
 }
 
 export function createPoints(): void {
