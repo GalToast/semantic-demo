@@ -294,10 +294,9 @@
     class:surface-focus-search={panelSurface === 'focus-search'}
     class:surface-semantic-dive={semanticDiveActive}
     class:mode-field-node={bodyFocusPanelMode === 'field-node'}
-    id="selected-card"
+    id="focus-card-selected"
     class:selected-card-empty={isEmpty}
     role="region"
-    tabindex="0"
     aria-label="Selected business"
   >
     <!-- Empty state -->
@@ -402,7 +401,8 @@
 
   @media (max-width: 768px) {
     .focus-card.surface-semantic-dive,
-    .focus-card.surface-focus-search.mode-field-node {
+    .focus-card.surface-focus-search.mode-field-node,
+    .focus-card.surface-focus {
       position: fixed;
       left: 0;
       right: 0;
@@ -426,6 +426,10 @@
     .focus-card.surface-focus-search,
     .focus-card.surface-focus {
       border-radius: 22px 22px 0 0;
+    }
+
+    .focus-card.surface-focus {
+      z-index: 70;
     }
   }
 </style>

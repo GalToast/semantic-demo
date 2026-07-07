@@ -70,15 +70,17 @@
 >
   {#each pocketNodes as node (node.index)}
     <!-- svelte-ignore a11y_no_noninteractive_element_to_interactive_role -->
-    <li
-      role="button"
-      tabindex={0}
-      aria-label="{node.label} ({node.role})"
-      onclick={() => focusOnNode(node)}
-      onkeydown={(event) => handleKeydown(event, node)}
-    >
-      <span class="role-dot" data-role={node.role} aria-hidden="true"></span>
-      <span class="label">{node.label}</span>
+    <li class="focus-pocket-item">
+      <button
+        type="button"
+        class="focus-pocket-item-btn"
+        aria-label="{node.label} ({node.role})"
+        onclick={() => focusOnNode(node)}
+        onkeydown={(event) => handleKeydown(event, node)}
+      >
+        <span class="role-dot" data-role={node.role} aria-hidden="true"></span>
+        <span class="label">{node.label}</span>
+      </button>
     </li>
   {/each}
 </ul>
@@ -99,7 +101,7 @@
     type="button"
     aria-expanded={isVisible}
     aria-controls="focus-pocket-a11y"
-    aria-label={isVisible ? 'Hide focus pocket list' : 'Show focus pocket list'}
+    aria-label={isVisible ? 'Hide nearby business list' : 'Show nearby business list'}
     onclick={toggleList}
   >
     {isVisible ? 'Hide list' : 'View as list'}
@@ -143,6 +145,10 @@
   }
 
   .focus-pocket-a11y li {
+    list-style: none;
+  }
+
+  .focus-pocket-a11y .focus-pocket-item-btn {
     display: flex;
     align-items: center;
     gap: 0.55rem;
@@ -153,16 +159,21 @@
     font-size: 0.75rem;
     line-height: 1.3;
     transition: background 0.15s ease, color 0.15s ease;
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
   }
 
-  .focus-pocket-a11y li:hover,
-  .focus-pocket-a11y li:focus-visible {
+  .focus-pocket-a11y .focus-pocket-item-btn:hover,
+  .focus-pocket-a11y .focus-pocket-item-btn:focus-visible {
     background: rgba(var(--color-primary-alt-rgb), 0.08);
     color: var(--color-text-teal-light);
     outline: none;
   }
 
-  .focus-pocket-a11y li:focus-visible {
+  .focus-pocket-a11y .focus-pocket-item-btn:focus-visible {
     box-shadow: 0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.4);
   }
 

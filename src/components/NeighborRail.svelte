@@ -147,3 +147,10 @@
     {/each}
   </div>
 </div>
+
+<style>
+  .focus-stage-neighbors {
+    position: relative;
+    z-index: 110;
+  }
+</style>

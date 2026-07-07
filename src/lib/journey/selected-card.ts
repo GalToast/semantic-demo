@@ -282,7 +282,7 @@ export function updateSelectedBusiness(
 
     // --- point is non-null below ---
     const detailsEl = document.getElementById('selected-details')
-    const cardEl = document.getElementById('selected-card')
+    const cardEl = document.getElementById('focus-card-selected')
 
     const mapSummarySurface = isMapSummarySurface()
     const cardWasEmpty = detailsEl && window.getComputedStyle(detailsEl).display === 'none'

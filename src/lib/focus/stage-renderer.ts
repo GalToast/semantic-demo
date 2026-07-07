@@ -150,7 +150,7 @@ export function syncSelectedCardContentVariant(point: Point | null = null, els?:
     titleEl?: HTMLElement | null;
     cascadeEl?: HTMLElement | null;
 }): void {
-    const cardEl = els?.cardEl ?? document.getElementById('selected-card');
+    const cardEl = els?.cardEl ?? document.getElementById('focus-card-selected');
     const emptyEl = els?.emptyEl ?? document.getElementById('selected-empty');
     const detailsEl = els?.detailsEl ?? document.getElementById('selected-details');
     const titleEl = els?.titleEl ?? document.getElementById('selected-card-title');

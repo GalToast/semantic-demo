@@ -77,11 +77,11 @@
     selectedFiledAs: (raw: string) => `Filed as ${raw}`,
     selectedEmptyName: 'Business Name',
     selectedEmptyWhat: 'What they do',
-    selectedEmptyRole: 'Record',
+    selectedEmptyRole: 'Business',
     selectedEmptyMap: 'No geocoded point yet',
     selectedEmptyThread: 'Waiting for a related path.',
     selectedEmptyTheme: 'Theme',
-    selectedEmptyStatus: 'Record status'
+    selectedEmptyStatus: 'Business status'
   };
 
   // ── Derived state ─────────────────────────────────────────────────────────────
