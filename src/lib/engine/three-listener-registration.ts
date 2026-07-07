@@ -96,29 +96,7 @@ export function registerContextListeners(
     })
 
     // C6 — WebGL context restored
-    // NOTE: The event name 'webglcontextrestored stimulus' contains a typo
-    // (trailing word "stimulus").  This is a real latent production bug –
-    // the handler has never fired because the event string does not match
-    // any browser-emitted event.  It is preserved exactly here to be fixed
-    // in a separate bugfix commit so this refactor does not mix behavioural
-    // changes with structural moves.
-    registry.listener(renderer.domElement, 'webglcontextrestored stimulus', () => {
-        sinks.engineState.webglContextLost = false
-        sinks.engineState.webglRestoreTimer = sinks.windowObj.setTimeout(() => {
-            sinks.engineState.webglRestore?.restoreWebGLContext().catch((err: unknown) => {
-                sinks.debugError('Failed to restore WebGL context:', err)
-            })
-            if (
-                sinks.engineState.rafId === null &&
-                !sinks.engineState.circuitBreakerTripped &&
-                sinks.webglContext.renderer &&
-                sinks.webglContext.scene &&
-                sinks.webglContext.camera
-            ) {
-                restartLoop()
-            }
-        }, 1000)
-    })
+    // NOTE: The live 'webglcontextrestored' handler lives in app-init.ts.
 
     // C7 — document visibility change
     registry.listener(sinks.document, 'visibilitychange', () => {

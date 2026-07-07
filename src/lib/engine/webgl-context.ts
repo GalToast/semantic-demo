@@ -1,3 +1,8 @@
+/**
+ * WebGL lifecycle state (context lost/restored, circuit breaker) is
+ * managed by other modules (e.g., app-init.ts, three-engine-core).
+ * This file only holds the scene/render object references.
+ */
 import type {
     Scene,
     PerspectiveCamera,

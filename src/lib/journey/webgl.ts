@@ -6,9 +6,9 @@
  * journey-webgl.js twin.
  */
 
-import { updateRouteTraceOverlayPositions } from '@lib/journey/route-trace';
-import { updateArrivalHandoffOverlay } from '@lib/journey/arrival-handoff';
-import { setRouteArrivalOverlayUpdaters } from '@lib/journey/route-arrival-overlay-adapter';
+import { updateRouteTraceOverlayPositions } from '@lib/journey/route-trace'
+import { updateArrivalHandoffOverlay } from '@lib/journey/arrival-handoff'
+import { setRouteArrivalOverlayUpdaters } from '@lib/journey/route-arrival-overlay-adapter'
 
 export {
     resetRouteTraceDiagnostics,
@@ -40,4 +40,4 @@ export {
 setRouteArrivalOverlayUpdaters({
     updateRouteTraceOverlayPositions,
     updateArrivalHandoffOverlay
-});
+})

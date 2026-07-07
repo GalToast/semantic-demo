@@ -196,25 +196,48 @@ export function resolveGeometricNeighbors(
     if (!Number.isFinite(ax) || !Number.isFinite(ay) || !Number.isFinite(az)) return []
 
     const candidates: Array<{ index: number; score: number; reason: string; source: string }> = []
-    const stride = Math.max(1, Math.floor(count / 500))
 
-    for (let i = 0; i < count; i += stride) {
-        if (i === anchorIndex) continue
+    const cellSize = 0.12
+    const grid = new Map<string, number[]>()
+    for (let i = 0; i < count; i++) {
         const offset = i * 3
         const px = positions[offset] as number
         const py = positions[offset + 1] as number
         const pz = positions[offset + 2] as number
         if (!Number.isFinite(px) || !Number.isFinite(py) || !Number.isFinite(pz)) continue
+        const key = `${Math.floor(px / cellSize)},${Math.floor(py / cellSize)},${Math.floor(pz / cellSize)}`
+        if (!grid.has(key)) grid.set(key, [])
+        grid.get(key)!.push(i)
+    }
 
-        const dist = Math.hypot(px - ax, py - ay, pz - az)
-        if (!Number.isFinite(dist) || dist < 0.0001) continue
+    const seenIndices = new Set<number>()
+    const cx = Math.floor(ax / cellSize)
+    const cy = Math.floor(ay / cellSize)
+    const cz = Math.floor(az / cellSize)
 
-        candidates.push({
-            index: i,
-            score: 1 / Math.max(dist, 0.0001),
-            reason: 'geometric proximity',
-            source: 'geometric-fallback'
-        })
+    for (let dx = -1; dx <= 1; dx++) {
+        for (let dy = -1; dy <= 1; dy++) {
+            for (let dz = -1; dz <= 1; dz++) {
+                const cell = grid.get(`${cx + dx},${cy + dy},${cz + dz}`)
+                if (!cell) continue
+                for (const i of cell) {
+                    if (i === anchorIndex || seenIndices.has(i)) continue
+                    seenIndices.add(i)
+                    const offset = i * 3
+                    const px = positions[offset] as number
+                    const py = positions[offset + 1] as number
+                    const pz = positions[offset + 2] as number
+                    const dist = Math.hypot(px - ax, py - ay, pz - az)
+                    if (!Number.isFinite(dist) || dist < 0.0001) continue
+                    candidates.push({
+                        index: i,
+                        score: 1 / Math.max(dist, 0.0001),
+                        reason: 'geometric proximity',
+                        source: 'geometric-fallback'
+                    })
+                }
+            }
+        }
     }
 
     candidates.sort((a, b) => b.score - a.score)

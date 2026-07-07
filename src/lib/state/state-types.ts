@@ -177,7 +177,6 @@ export interface NavState {
     focusPocketIndices: number[]
     focusPocketMeta: NavFocusPocketMeta | null
     focusPocketRoleByIndex: Map<number, string>
-    focusPocketAnimationFrameId: number | null
     focusFramingMeta: NavFocusFramingMeta | null
     currentPersonality: Record<string, unknown> | null
     neighborhoodIndices: number[]

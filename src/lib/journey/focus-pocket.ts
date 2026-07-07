@@ -166,10 +166,9 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     const personality = getNeighborhoodPersonality(index)
     navState.currentPersonality = personality.type
 
-    const animationFrameId = navState.focusPocketAnimationFrameId
-    if (Number.isFinite(animationFrameId)) {
-        cancelAnimationFrame(animationFrameId!)
-        navState.focusPocketAnimationFrameId = null
+    if (Array.isArray(appState.recentArrangements)) {
+        ;(appState.recentArrangements as string[]).push(personality.type)
+        if ((appState.recentArrangements as string[]).length > 5) (appState.recentArrangements as string[]).shift()
     }
 
     clearFocusPocketIndices()
@@ -298,7 +297,7 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         })
         appState.focusState.nodesAreSettling = true
         appState.autoRotate = false
-        return false
+        return true
     }
 
     const roleMap = new Map<number, string>([[index, 'anchor']])
@@ -406,8 +405,9 @@ export function applyFocusPocketBreathing(
         : null
     if (anchor && !(Number.isFinite(anchor.x) && Number.isFinite(anchor.y) && Number.isFinite(anchor.z))) return false
 
+    if (!appState.camera) return false
     const viewVec = new Vector3(0, 0, 1)
-    if (appState.camera && anchor) {
+    if (anchor) {
         viewVec.subVectors(appState.camera.position, new Vector3(anchor.x, anchor.y, anchor.z)).normalize()
     }
 

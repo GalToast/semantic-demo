@@ -44,7 +44,6 @@ export interface NavState {
     focusPocketIndices: readonly number[]
     focusPocketMeta: FocusPocketMeta | null
     focusPocketRoleByIndex: Map<number, string>
-    focusPocketAnimationFrameId: number | null
     focusFramingMeta: FocusFramingMeta | null
     currentPersonality: string | null
     neighborhoodIndices: readonly number[]

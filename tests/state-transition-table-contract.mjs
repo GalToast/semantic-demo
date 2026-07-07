@@ -112,7 +112,6 @@ const navFields = [
     'focusPocketIndices',
     'focusPocketMeta',
     'focusPocketRoleByIndex',
-    'focusPocketAnimationFrameId',
     'focusFramingMeta',
     'currentPersonality',
     'neighborhoodIndices'

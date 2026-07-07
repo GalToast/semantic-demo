@@ -370,6 +370,10 @@ export function getFocusConstellationPlacement(
               ? 0.302 + absNormalized * 0.038
               : 0.258 + absNormalized * 0.062 + (1 - score) * 0.022
         zOffset = isPrimary ? 0.03 * Math.cos(normalized * Math.PI) : isHalo ? -0.036 : -0.022 - (order % 2) * 0.016
+        if (motif.key !== 'market' && import.meta.env.DEV) {
+            // eslint-disable-next-line no-console
+            console.warn(`[focus-pocket-geometry] Unknown motif key "${motif.key}" — using default placement.`)
+        }
         breatheAmp = 0.003
     }
 
@@ -487,8 +491,9 @@ export function getFocusThreadCurvePoint(edge: ThreadEdge, t: number): Vec3 {
     const mid = start.clone().lerp(end, 0.5)
     const span = new Vec3().subVectors(end, start)
     const spanLength = Math.max(span.length(), 0.001)
-    const viewVector = state.camera ? new Vec3().subVectors(state.camera.position, mid) : new Vec3(0.28, 0.2, 1)
-    if (viewVector.lengthSq() < 0.0001) viewVector.set(0.28, 0.2, 1)
+    // Use a stable view vector instead of the live camera, which shifts every
+    // frame during transitions and causes thread curves to visibly wobble.
+    const viewVector = new Vec3(0.28, 0.2, 1)
     viewVector.normalize()
 
     const worldUp = new Vec3(0, 1, 0)

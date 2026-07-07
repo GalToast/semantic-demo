@@ -264,7 +264,8 @@ export function lerpCameraForReveal(
         engineState.state?.sceneRevealActive &&
         engineState.state?.sceneRevealCameraStart &&
         engineState.state?.sceneRevealCameraEnd &&
-        engineState.state?.focusedNode === null
+        engineState.state?.focusedNode === null &&
+        webglContext.camera
     ) {
         webglContext.camera.position.lerpVectors(
             engineState.state.sceneRevealCameraStart,
@@ -297,9 +298,8 @@ export function lerpCameraForReveal(
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A8)
  */
 export function updateFogDensity(pointsRevealProgress: number): void {
-    if (webglContext.scene.fog && 'density' in webglContext.scene.fog) {
-        ;(webglContext.scene.fog as FogExp2).density =
-            (PORT_SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
+    if (webglContext.scene?.fog && 'density' in webglContext.scene.fog) {
+        ;(webglContext.scene.fog as FogExp2).density = (PORT_SCENE_ATMOSPHERE.fogDensity ?? 0.62) * pointsRevealProgress
     }
 }
 
@@ -314,10 +314,8 @@ export function updateFogDensity(pointsRevealProgress: number): void {
  * @param sceneRevealActive — whether the scene reveal animation is running
  *   Plan reference: docs/three-engine-decomposition-plan.md §4 (A9)
  */
-export function updateReferenceSphereOpacity(
-    revealProgress: number,
-    sceneRevealActive: boolean | undefined
-): void {
+export function updateReferenceSphereOpacity(revealProgress: number, sceneRevealActive: boolean | undefined): void {
+    if (!webglContext.scene) return
     const refSphere = webglContext.scene.getObjectByName('county-depth-reference') as
         | (import('three').Mesh & { material: import('three').MeshBasicMaterial })
         | undefined
@@ -343,13 +341,10 @@ export function updateSporeOpacity(
     state: (Pick<LegacyState, 'trailDepth'> & { semanticDiveMode?: boolean }) | null | undefined
 ): void {
     if (webglContext.nodeSporeMaterial) {
-        const isSemanticDive =
-            state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2
+        const isSemanticDive = state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2
         const focusBoost = isSemanticDive ? 0.22 : 1.0
-        const targetSporeOpacity =
-            (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
-        webglContext.nodeSporeMaterial.opacity +=
-            (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
+        const targetSporeOpacity = (PORT_SCENE_ATMOSPHERE.sporeOpacity ?? 0.5) * pointsRevealProgress * focusBoost
+        webglContext.nodeSporeMaterial.opacity += (targetSporeOpacity - webglContext.nodeSporeMaterial.opacity) * 0.12
     }
 }
 
@@ -371,19 +366,17 @@ export function updateSporeOpacity(
 export function updateThreadLayerOpacities(
     threadsVisible: boolean,
     pointsRevealProgress: number,
-    state: (
-        Pick<LegacyState, 'pulsePhase'> & {
-            semanticDiveMode?: boolean
-            trailDepth?: number
-        }
-    ) | null | undefined
+    state:
+        | (Pick<LegacyState, 'pulsePhase'> & {
+              semanticDiveMode?: boolean
+              trailDepth?: number
+          })
+        | null
+        | undefined
 ): void {
     const threadRevealProgress = easeOutQuint(Math.min(1.0, Math.max(0.0, (pointsRevealProgress - 0.25) / 0.5)))
-    const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<
-        typeof getMyceliumPresentationProfilePort
-    >
-    const semanticDiveThreadScale =
-        state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
+    const graphProfile = getMyceliumPresentationProfilePort() as ReturnType<typeof getMyceliumPresentationProfilePort>
+    const semanticDiveThreadScale = state?.semanticDiveMode === true || (state?.trailDepth ?? 0) >= 2 ? 0.42 : 1
     if (threadsVisible) {
         if (webglContext.myceliumCoreLines)
             (webglContext.myceliumCoreLines.material as Material).opacity =

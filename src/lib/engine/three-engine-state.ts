@@ -12,6 +12,7 @@
 
 import type { LegacyState } from '@lib/state/legacy-state'
 import type { DisposableRegistry } from '@lib/utils/disposable-registry'
+import type { SceneStaticSnapshot } from '@lib/engine/renderer/scene-static-tracker'
 export type PostProcessingModule = {
     initPostProcessing: typeof import('@lib/engine/three-postprocessing').initPostProcessing
     renderPostProcessing: typeof import('@lib/engine/three-postprocessing').renderPostProcessing
@@ -91,8 +92,10 @@ export interface ThreeEngineState {
 
     // W49-H: camera-matrix-delta snapshot for the conditional render-skip.
     // Reset by the dispose path so a fresh engine mount gets a non-stale baseline.
-    // null → no baseline yet (first frame always renders).
-    lastCameraSnapshot: { pos: readonly [number, number, number]; quat: readonly [number, number, number, number] } | null
+    // null → no baseline yet (first frame always renders). Shape mirrors
+    // SceneStaticSnapshot (cameraPos/cameraQuat) so shouldSkipNextRender's
+    // shape compare against the W49-H refactor doesn't silently disagree.
+    lastCameraSnapshot: SceneStaticSnapshot | null
     /** W49-H: consecutive frames skipped because the camera scene was static. */
     consecutiveSkippedFrames: number
     /** W49-H: total render-skip opportunities since engine init. */

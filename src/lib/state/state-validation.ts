@@ -318,7 +318,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     'navState.focusedIndex': nullableNumber('navState.focusedIndex'),
     'navState.trailSeedIndex': nullableNumber('navState.trailSeedIndex'),
     'navState.trailCursor': nullableNumber('navState.trailCursor'),
-    'navState.focusPocketAnimationFrameId': nullableNumber('navState.focusPocketAnimationFrameId'),
     hoverHighlightIndex: (value: unknown): string | null => {
         if (value === -1) return null
         return nonNegativeInt('hoverHighlightIndex')(value)

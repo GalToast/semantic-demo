@@ -199,6 +199,18 @@ export function resetSemanticThreadWorker(): void {
     _dataWorker = null
 }
 
+function _handleBeforeUnload(): void {
+    resetSemanticThreadWorker()
+}
+
+if (
+    typeof window !== 'undefined' &&
+    typeof window.addEventListener === 'function'
+) {
+    window.addEventListener('beforeunload', _handleBeforeUnload)
+    window.addEventListener('pagehide', _handleBeforeUnload)
+}
+
 // ── Layout manifest loading ───────────────────────────────────────────────────
 
 async function _loadSemanticSpaceLayoutManifest(cacheBust: number): Promise<Record<string, unknown>> {

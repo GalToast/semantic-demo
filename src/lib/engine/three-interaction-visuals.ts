@@ -99,6 +99,12 @@ function isSemanticDiveActive() {
 const FOCUS_WISP_COUNT = 18
 const FOCUS_WISP_SEGMENTS = 18
 
+// ── Focus-index cache (avoid recomputing every frame) ───────────────────────
+
+let lastFocusIdx: number | null = null
+let cachedSignalScore = 0
+let cachedNeighborIndices: number[] = []
+
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
 function getSemanticLensNeighborIndices(focusedNode: number): number[] {
@@ -215,7 +221,6 @@ export function initSemanticManifold() {
             void main() {
                 vec2 centeredUv = vUv - 0.5;
                 float distToCenter = length(centeredUv) * 2.0;
-                if (distToCenter > 1.0) discard;
 
                 // Ripple interaction
                 float d = distance(vWorldPosition, uRippleCenter);
@@ -474,6 +479,16 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
         const focusPos = focusIdx !== null ? state.nodePositions?.[focusIdx] : undefined
         const hasFocus = Boolean(focusPos)
         const isInside = isSemanticDiveActive()
+
+        if (focusIdx !== lastFocusIdx) {
+            cachedSignalScore =
+                focusIdx !== null && typeof calculateSignalScore === 'function'
+                    ? calculateSignalScore(state.points?.[focusIdx])
+                    : 0
+            cachedNeighborIndices = focusIdx !== null ? getSemanticLensNeighborIndices(focusIdx) ?? [] : []
+            lastFocusIdx = focusIdx
+        }
+
         const group = state.semanticLensGroup
         const glowMat = state.semanticLensGlow.material ? asShaderMaterial(state.semanticLensGlow.material) : null
         const glowUniforms = glowMat?.uniforms
@@ -495,10 +510,8 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
             const targetOpacity = isInside ? 0.2 : 0.11
             opacityUniform.value += (targetOpacity - opacityUniform.value) * 0.12
 
-            if (glowUniforms.uSignalScore && focusIdx !== null) {
-                const targetSignal =
-                    typeof calculateSignalScore === 'function' ? calculateSignalScore(state.points?.[focusIdx]) : 0
-                glowUniforms.uSignalScore.value += (targetSignal - glowUniforms.uSignalScore.value) * 0.12
+            if (glowUniforms.uSignalScore) {
+                glowUniforms.uSignalScore.value += (cachedSignalScore - glowUniforms.uSignalScore.value) * 0.12
             }
 
             const positionAttr = spokes.geometry.attributes.position
@@ -515,7 +528,7 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
                     const maxSpokeLength = 0.12
                     let positionOffset = 0
                     let alphaOffset = 0
-                    getSemanticLensNeighborIndices(focusIdx).forEach((neighborIndex: number) => {
+                    cachedNeighborIndices.forEach((neighborIndex: number) => {
                         const neighborPos = state.nodePositions[neighborIndex]
                         if (!neighborPos) return
                         const neighborWorld = new Vector3(neighborPos.x, neighborPos.y, neighborPos.z)

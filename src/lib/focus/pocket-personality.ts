@@ -137,6 +137,7 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
     for (const cand of candidates) {
         if (!cand.condition) continue
         const count = countInRecent(cand.type)
+        // Cap at 3 consecutive same-type personalities to prevent visual monotony.
         if (count >= 3) continue
         const weight = count === 2 ? 0.4 : count === 1 ? 0.15 : 1.0
         if (weight < 1.0) {
@@ -153,11 +154,6 @@ export function getNeighborhoodPersonality(index: number): NeighborhoodPersonali
         personality.easing = cand.easing || 'easeInOutCubic'
         personality.motifOverride = cand.motifOverride || null
         break
-    }
-
-    if (Array.isArray(appState.recentArrangements)) {
-        ;(appState.recentArrangements as string[]).push(personality.type)
-        if ((appState.recentArrangements as string[]).length > 5) (appState.recentArrangements as string[]).shift()
     }
 
     return personality

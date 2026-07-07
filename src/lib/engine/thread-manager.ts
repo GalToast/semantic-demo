@@ -152,11 +152,15 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
         const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id)
         if (!leadId) return
         const record = state.semanticNeighborMapByLeadId.get(leadId)
-        record?.neighbors?.forEach((neighbor: SemanticNeighborDetail) => {
+        const sortedNeighbors = [...(record?.neighbors || [])]
+            .sort((a, b) => (b.semanticScore || 0) - (a.semanticScore || 0))
+            .slice(0, 20)
+        sortedNeighbors.forEach((neighbor: SemanticNeighborDetail) => {
             const otherIndex = state.pointIndexByLeadId.get(String(neighbor.leadId))
             if (otherIndex === undefined || otherIndex === index) return
             const key = pairKey(index, otherIndex)
             if (seen.has(key)) return
+            seen.add(key)
             const semanticScore = Number.isFinite(neighbor.semanticScore) ? neighbor.semanticScore : 0
             const bridgeScore = Number.isFinite(neighbor.bridgeScore) ? neighbor.bridgeScore : 0
             const sameCluster = state.points[index]?.cluster === state.points[otherIndex]?.cluster
@@ -174,7 +178,6 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
                 bridgeDegree.set(index, aDegree + 1)
                 bridgeDegree.set(otherIndex, bDegree + 1)
                 bridgePairs.push({ a: index, b: otherIndex })
-                seen.add(key)
                 return
             }
 
@@ -185,7 +188,6 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
                 coreDegree.set(index, aDegree + 1)
                 coreDegree.set(otherIndex, bDegree + 1)
                 corePairs.push({ a: index, b: otherIndex })
-                seen.add(key)
             } else if (semanticScore >= 0.42 || sameCity) {
                 const aDegree = wispyDegree.get(index) || 0
                 const bDegree = wispyDegree.get(otherIndex) || 0
@@ -193,13 +195,14 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
                 wispyDegree.set(index, aDegree + 1)
                 wispyDegree.set(otherIndex, bDegree + 1)
                 wispyPairs.push({ a: index, b: otherIndex })
-                seen.add(key)
             }
         })
     })
 
     return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null
 }
+
+let _cachedBezierViewVector: Vector3 | null = null
 
 function getBezierControlPoint(
     start: { x: number; y: number; z: number },
@@ -212,7 +215,9 @@ function getBezierControlPoint(
     const mid = a.clone().lerp(b, 0.5)
     const span = new Vector3().subVectors(b, a)
     const spanLength = Math.max(span.length(), 0.001)
-    const viewVector = webglContext.camera
+    const viewVector = _cachedBezierViewVector
+        ? _cachedBezierViewVector.clone()
+        : webglContext.camera
         ? new Vector3().subVectors(webglContext.camera.position, mid).normalize()
         : new Vector3(0.28, 0.2, 1).normalize()
     const up = new Vector3(0, 1, 0)
@@ -390,7 +395,8 @@ export function getMyceliumPresentationProfile() {
             linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 }
         }
     }
-    if (state.searchState.currentSearchSummary || state.searchState.searchGlowActive) {
+    const hasSearchSummary = Object.keys(state.searchState.currentSearchSummary || {}).length > 0
+    if (hasSearchSummary || state.searchState.searchGlowActive) {
         return {
             core: 0.32,
             wispy: 0.14,
@@ -446,34 +452,40 @@ export function createMycelium() {
     disposeMycelium()
 
     state.myceliumDirty = true
-
-    const clusterMembers = new Map()
-    const clusterCentroids = new Map()
-    state.points.forEach((point, index: number) => {
-        const pos = state.nodePositions[index]
-        if (!pos) return
-        if (!clusterMembers.has(point.cluster)) {
-            clusterMembers.set(point.cluster, [])
-            clusterCentroids.set(point.cluster, { x: 0, y: 0, z: 0, count: 0 })
-        }
-        clusterMembers.get(point.cluster).push(index)
-        const centroid = clusterCentroids.get(point.cluster)
-        centroid.x += pos.x
-        centroid.y += pos.y
-        centroid.z += pos.z
-        centroid.count += 1
-    })
-
-    clusterCentroids.forEach((centroid) => {
-        centroid.x /= centroid.count || 1
-        centroid.y /= centroid.count || 1
-        centroid.z /= centroid.count || 1
-    })
+    _cachedBezierViewVector = webglContext.camera
+        ? new Vector3().subVectors(webglContext.camera.position, new Vector3(0.5, 0.5, 0.5)).normalize()
+        : new Vector3(0.28, 0.2, 1).normalize()
 
     const semanticEdges = buildSemanticMyceliumEdges()
-    const edgeSets = (semanticEdges || buildGeometricMyceliumEdges(clusterMembers, clusterCentroids)) as
-        | MyceliumEdgeSets
-        | undefined
+    let edgeSets: MyceliumEdgeSets | undefined
+    if (semanticEdges) {
+        edgeSets = semanticEdges
+    } else {
+        const clusterMembers = new Map()
+        const clusterCentroids = new Map()
+        state.points.forEach((point, index: number) => {
+            const pos = state.nodePositions[index]
+            if (!pos) return
+            if (!clusterMembers.has(point.cluster)) {
+                clusterMembers.set(point.cluster, [])
+                clusterCentroids.set(point.cluster, { x: 0, y: 0, z: 0, count: 0 })
+            }
+            clusterMembers.get(point.cluster).push(index)
+            const centroid = clusterCentroids.get(point.cluster)
+            centroid.x += pos.x
+            centroid.y += pos.y
+            centroid.z += pos.z
+            centroid.count += 1
+        })
+
+        clusterCentroids.forEach((centroid) => {
+            centroid.x /= centroid.count || 1
+            centroid.y /= centroid.count || 1
+            centroid.z /= centroid.count || 1
+        })
+
+        edgeSets = buildGeometricMyceliumEdges(clusterMembers, clusterCentroids) || undefined
+    }
     if (!edgeSets) return
     const coreConnections: number[] = []
     const coreColors: number[] = []
@@ -481,6 +493,8 @@ export function createMycelium() {
     const wispyColors: number[] = []
     const bridgeConnections: number[] = []
     const bridgeColors: number[] = []
+
+    webglContext.myceliumConnectionPairs.length = 0
 
     edgeSets.corePairs.forEach((pair: EdgePair) => {
         pushBezierLinePair(coreConnections, coreColors, pair, semanticEdges ? 0.38 : 0.28)
