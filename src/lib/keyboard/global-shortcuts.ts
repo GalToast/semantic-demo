@@ -26,6 +26,24 @@
 import { dispatchNavTransition, NAV_TRANSITION_ACTIONS, navStore } from '@lib/stores/navigation.svelte.ts'
 import { initKeyboardShortcutsHint, showKeyboardShortcutsHint } from './keyboard-help'
 import { updateUrlState } from '@lib/orchestration/url-state'
+import { isModeLocked } from '@lib/navigation/mode-affordances'
+import { showExperienceToast } from '@lib/orchestration/toast'
+import type { NavMode } from '@lib/types/state'
+
+/**
+ * Maps Ctrl/Cmd+1-6 to the nav mode each shortcut targets. Used by the
+ * HIGH-1 (ocw_ui_fix_2026-07-07) selection-lock guard so the keyboard path
+ * consults isModeLocked() exactly like the Header chips and CompassRail,
+ * instead of dispatching the surface transition unconditionally.
+ */
+const KEY_TO_MODE: Record<string, NavMode | 'map'> = {
+    '1': 'overview',
+    '2': 'search',
+    '3': 'trail',
+    '4': 'focus',
+    '5': 'inside',
+    '6': 'map'
+}
 
 export interface GlobalShortcutsOptions {
     /**
@@ -61,6 +79,18 @@ export function setupGlobalShortcuts(options: GlobalShortcutsOptions): () => voi
         if ((e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)) {
             if (isFormField) return
             e.preventDefault()
+            const modeId = KEY_TO_MODE[e.key]
+            if (!modeId) return
+            const hasSelection = navStore().focusedIndex != null
+            // HIGH-1 (ocw_ui_fix_2026-07-07): enforce the same selection lock
+            // the Header chips and CompassRail use, so a user with no focused
+            // business can't enter a selection-dependent mode (focus / inside /
+            // trail) via the keyboard. Mirrors the selectMode() guard without
+            // depending on the Header module (which is edited concurrently).
+            if (isModeLocked(modeId, hasSelection)) {
+                showExperienceToast('Mode locked', 'Select a business first to use this view.')
+                return
+            }
             switch (e.key) {
                 case '1':
                     dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW)

@@ -44,11 +44,11 @@
   <div
     class="semantic-overlay"
     id="semantic-overlay"
-    aria-label="Semantic overlay"
+    aria-label="Relationship overlay"
     role="presentation"
   >
     <!-- Overlay indicator badge -->
-    <div class="overlay-badge" class:thread={overlayMode === 'thread'} title={overlayMode === 'thread' ? 'A path of connected businesses following the strongest signal chain.' : overlayMode === 'lens' ? 'Deep exploration lens focused on a single neighborhood.' : 'Semantic proximity is highlighted across the scene.'}>
+    <div class="overlay-badge" class:thread={overlayMode === 'thread'} title={overlayMode === 'thread' ? 'Connected businesses showing the strongest match.' : overlayMode === 'lens' ? 'Deep exploration lens focused on a single neighborhood.' : 'Nearby businesses are highlighted.'}>
       {#if overlayMode === 'manifold'}
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <circle cx="12" cy="12" r="10"/>
@@ -66,7 +66,7 @@
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
           <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/>
         </svg>
-        <span class="badge-label">Thread</span>
+        <span class="badge-label">Path</span>
       {/if}
     </div>
 
@@ -80,11 +80,11 @@
     {#if !$viewport.isCompact}
       <div class="overlay-hint">
         {#if overlayMode === 'manifold'}
-          Semantic proximity active
+          Nearby businesses highlighted
         {:else if overlayMode === 'lens'}
           Deep exploration lens
         {:else if overlayMode === 'thread'}
-          Thread connections visible
+          Connections visible
         {/if}
       </div>
     {/if}

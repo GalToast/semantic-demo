@@ -4,6 +4,7 @@ import { applyStoryPrompt } from '@lib/orchestration/cluster-filter-controller'
 import { focusSearchInputForReplacement, search } from '@lib/search/state'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { isModeLocked } from '@lib/navigation/mode-affordances'
+import type { NavMode } from '@lib/types/state'
 
 type SetMyceliumMode = (mode: string) => void
 
@@ -19,8 +20,8 @@ export function bindModeAndPromptControls(setMyceliumMode: SetMyceliumMode): voi
                 return
             }
             const mode = button.dataset.mode || 'default'
-            if (isModeLocked('trail', state.focusedNode != null)) {
-                showExperienceToast('Trail locked', 'Select a business first.')
+            if (isModeLocked(mode as NavMode, state.focusedNode != null)) {
+                showExperienceToast('Mode locked', 'Select a business first.')
                 return
             }
             setMyceliumMode(mode)

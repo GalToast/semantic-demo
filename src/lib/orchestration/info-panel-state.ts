@@ -68,9 +68,9 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         selectionSuppressed: true
     },
     'semantic-dive': {
-        headerText: 'Semantic Dive',
+        headerText: 'Deep exploration',
         headerVisible: true,
-        emptyHeadline: 'Exploring semantic neighborhood',
+        emptyHeadline: 'Exploring similar businesses nearby',
         emptySubtext: 'Select a business to dive deeper into its connections.',
         panelVisible: true,
         selectionSuppressed: false
@@ -87,12 +87,12 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         selectionSuppressed: false
     },
     'thread-inspect': {
-        // Thread inspection mode: user is inspecting a specific thread
-        // (connection). The InfoPanel shows the inspected thread.
-        headerText: 'Thread',
+        // Connection inspection mode: user is inspecting a specific
+        // connection between businesses. The InfoPanel shows it.
+        headerText: 'Connection preview',
         headerVisible: true,
-        emptyHeadline: 'Inspecting a thread',
-        emptySubtext: 'Read the connection between this business and its neighbor.',
+        emptyHeadline: 'Reading this connection',
+        emptySubtext: 'See how this business relates to its neighbors.',
         panelVisible: true,
         selectionSuppressed: true
     },

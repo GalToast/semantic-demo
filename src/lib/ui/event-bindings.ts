@@ -59,33 +59,14 @@ interface InitEventListenersOptions {
     updateUrlState?: (...args: unknown[]) => void
 }
 
-export async function initEventListeners({
-    onWindowResize = () => {},
-    recordSemanticLaneSnapshot = () => {},
-    setMyceliumMode = () => {},
-    setSemanticLaneUiState = () => {},
-    updateUrlState = () => {}
-}: InitEventListenersOptions = {}): Promise<void> {
-    // `updateUrlState` is part of the InitEventListenersOptions contract for
-    // callers that historically passed it; the body uses the bound DOM listeners
-    // directly. Reference it once to keep the linter quiet without breaking the API.
-    void updateUrlState
-    if (state.eventListenersInitialized) return
-    state.eventListenersInitialized = true
-
-    bindViewControls()
-    bindFocusControls()
-    bindSuggestionControls()
-    bindSearchControls()
-    bindSemanticLaneControls(recordSemanticLaneSnapshot, setSemanticLaneUiState)
-    bindGlobalEvents()
-    bindModeAndPromptControls(setMyceliumMode)
-    bindUtilityButtons()
-    bindFilterControls()
-    bindPanelControls(onWindowResize)
-    bindLegendControls()
-    bindFocusTrapObserver()
-
-    if (typeof buildLegend === 'function') buildLegend()
-    if (typeof syncClusterSectionState === 'function') syncClusterSectionState()
+export async function initEventListeners(options: InitEventListenersOptions = {}): Promise<void> {
+    // FOSSIL / NO-OP (ocw_ui_fix_2026-07-07, MED-2): This legacy DOM-binding
+    // orchestrator is dormant — never invoked anywhere in src/ — and all
+    // interactive behavior is now owned by Svelte component handlers (Header
+    // chips, CompassRail, AppBoot) that route through selectMode()/isModeLocked().
+    // Reviving it would silently re-activate the broken lock bypass in
+    // bindModeAndPromptControls() (hy3 L1). Keep it a no-op so the fossil code
+    // cannot run. The options arg is retained only for API compatibility.
+    void options
+    return
 }

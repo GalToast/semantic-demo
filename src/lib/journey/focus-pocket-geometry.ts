@@ -315,6 +315,7 @@ export function getFocusConstellationPlacement(
     // the downstream `undefined → NaN via *=` cascade that previously made
     // the delta motif nodes throb at 0.02 instead of the intended ~0.003
     // (see commit fixing the delta-branch gap).
+    // eslint-disable-next-line no-useless-assignment -- safety net: future motif branches may forget to assign
     let breatheAmp = 0.003
 
     const compressionMult = personality?.compressionMult || 1.0

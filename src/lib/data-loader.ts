@@ -99,6 +99,17 @@ interface WorkerResponse {
     payload: unknown
 }
 
+/** Optional controls for {@link callDataWorker}: abort + request correlation. */
+interface CallDataWorkerOptions {
+    /** AbortSignal; when aborted mid-flight the worker is terminated and the promise rejects with AbortError. */
+    signal?: AbortSignal
+    /** Optional caller-supplied request id; when omitted a monotonic id is generated so the worker's supersession guard stays live. */
+    requestId?: number
+}
+
+/** Monotonic request id source for callDataWorker (see CallDataWorkerOptions.requestId). */
+let _dataWorkerRequestId = 0
+
 interface LoadRecordsWorkerResult {
     points: Array<{
         cluster: number
@@ -121,16 +132,25 @@ interface LoadRecordsWorkerResult {
     invalidPositionIndices: number[]
 }
 
-function callDataWorker(type: 'LOAD_RECORDS', payload: { url: string }): Promise<LoadRecordsWorkerResult>
-function callDataWorker<T>(type: string, payload: unknown): Promise<T>
-function callDataWorker<T>(type: string, payload: unknown): Promise<T> {
+export function callDataWorker(
+    type: 'LOAD_RECORDS',
+    payload: { url: string },
+    options?: CallDataWorkerOptions
+): Promise<LoadRecordsWorkerResult>
+export function callDataWorker<T>(type: string, payload: unknown, options?: CallDataWorkerOptions): Promise<T>
+export function callDataWorker<T>(type: string, payload: unknown, options?: CallDataWorkerOptions): Promise<T> {
     return new Promise((resolve, reject) => {
         const worker = new Worker(workerUrl, { type: 'module' })
         let settled = false
+        // Each call gets a monotonic requestId so the worker's supersession
+        // guard (_activeRequestId) is live even though callDataWorker spins up
+        // a fresh worker per call.
+        const requestId = options?.requestId ?? ++_dataWorkerRequestId
         const settle = (fn: () => void): void => {
             if (settled) return
             settled = true
             clearTimeout(timeoutId)
+            if (signal) signal.removeEventListener('abort', abortHandler)
             worker.removeEventListener('message', handler)
             worker.removeEventListener('messageerror', messageErrorHandler)
             worker.removeEventListener('error', errorHandler)
@@ -141,6 +161,20 @@ function callDataWorker<T>(type: string, payload: unknown): Promise<T> {
         const timeoutId = setTimeout(() => {
             settle(() => reject(new Error('Worker timeout')))
         }, 30_000)
+        const signal = options?.signal
+        const abortHandler = (): void => {
+            // Aborted mid-flight: tear down the worker (cancels the in-flight
+            // 8,406-record / 40 MB artifact fetch) and reject.
+            settle(() => reject(new DOMException('Worker request aborted', 'AbortError')))
+        }
+        if (signal) {
+            if (signal.aborted) {
+                worker.terminate()
+                reject(new DOMException('Worker request aborted', 'AbortError'))
+                return
+            }
+            signal.addEventListener('abort', abortHandler)
+        }
         const handler = (event: MessageEvent<WorkerResponse>): void => {
             const res = event.data
             if (res.type === `${type}_SUCCESS`) {
@@ -159,7 +193,7 @@ function callDataWorker<T>(type: string, payload: unknown): Promise<T> {
         worker.addEventListener('message', handler)
         worker.addEventListener('messageerror', messageErrorHandler)
         worker.addEventListener('error', errorHandler)
-        worker.postMessage({ type, payload })
+        worker.postMessage({ type, payload, requestId })
     })
 }
 

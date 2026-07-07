@@ -55,7 +55,7 @@
   class:hidden={appState.semanticGuideState.isVisible || appState.currentView === 'map'}
 >
   <button id="btn-synthesize" type="button" class="btn-synthesize" onclick={requestSemanticGuide}>
-    Synthesize trail
+    Discover patterns
   </button>
 </div>
 
@@ -65,11 +65,11 @@
   class:hidden={!appState.semanticGuideState.isVisible}
   class:is-synthesizing={appState.semanticGuideState.isSynthesizing}
   role="region"
-  aria-label="Synthesis summary"
+  aria-label="Discovery summary"
 >
   <div class="summary-card-header">
-    <div id="summary-card-title-text" class="summary-title">{config.title || 'Synthesis'}</div>
-    <button type="button" class="summary-close" aria-label="Close synthesis" onclick={hideSummaryCard}>
+    <div id="summary-card-title-text" class="summary-title">{config.title || 'Discovery'}</div>
+    <button type="button" class="summary-close" aria-label="Close summary" onclick={hideSummaryCard}>
       Close
     </button>
   </div>
