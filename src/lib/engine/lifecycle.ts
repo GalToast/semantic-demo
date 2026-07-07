@@ -50,6 +50,8 @@ import {
     ensureCanvasNodeInteractionBindings,
     disposeCanvasNodeInteractionBindings
 } from '@lib/journey/canvas-interaction'
+import { destroyCanvasHoverPreview } from '@lib/journey/canvas-hover-preview'
+import { initTooltipEventBusSubscriptions, disposeTooltipEventBusSubscriptions } from '@lib/ui/tooltip'
 
 // Semantic threads are loaded in the heavy idle path to keep this chunk out of
 // the first-paint bundle.
@@ -397,6 +399,9 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
         // 9. Subscribe to the legacy event bus
         bindEventBridge(callbacks)
 
+        // 9a. Subscribe to tooltip hide requests
+        initTooltipEventBusSubscriptions()
+
         // 10. Start the animation loop
         // _animate() is started internally by initThreeJS on success
 
@@ -471,7 +476,10 @@ export function destroyEngine(): void {
     // 2. Unbind event bridge
     unbindEventBridge()
 
-    // 2a. Unsubscribe from data readiness
+    // 2a. Dispose tooltip event bus subscriptions
+    disposeTooltipEventBusSubscriptions()
+
+    // 2b. Unsubscribe from data readiness
     _dataReadyUnsub?.()
     _dataReadyUnsub = null
 
@@ -483,6 +491,13 @@ export function destroyEngine(): void {
             debugWarn('[engine/lifecycle] Best-effort canvas interaction dispose failed:', error)
         }
         _canvasInteractionBound = false
+    }
+
+    // 3a. Tear down canvas hover preview (fixes listener leak HIGH-1)
+    try {
+        destroyCanvasHoverPreview()
+    } catch (error) {
+        debugWarn('[engine/lifecycle] Best-effort canvas hover preview dispose failed:', error)
     }
 
     // FIX #3: Dispose Leaflet Map state recursively (was missing in bridge)

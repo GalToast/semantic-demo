@@ -37,7 +37,6 @@ type FocusPocketModule = typeof import('@lib/journey/focus-pocket')
 type SceneRevealModule = typeof import('./scene-reveal')
 type CameraControlsModule = typeof import('@lib/engine/camera-controls')
 type MapStateModule = typeof import('@lib/engine/map-state')
-type MyceliumEngineModule = typeof import('./mycelium-engine')
 type UiFeedbackModule = typeof import('@lib/ui/ui-feedback') &
     // PR-D7 merged in the Svelte toastOrchMod to expose showExperienceToast
     // after the legacy DOM-direct implementation was retired from ui-feedback.
@@ -65,7 +64,6 @@ export interface ThreeEngineState {
     sceneReveal: SceneRevealModule | null
     cameraControls: CameraControlsModule | null
     mapState: MapStateModule | null
-    myceliumEngine: MyceliumEngineModule | null
     uiFeedback: UiFeedbackModule | null
     mapFlattening: MapFlatteningModule | null
     webglRestore: WebGLRestoreModule | null
@@ -115,7 +113,6 @@ export const engineState: ThreeEngineState = {
     sceneReveal: null,
     cameraControls: null,
     mapState: null,
-    myceliumEngine: null,
     uiFeedback: null,
     mapFlattening: null,
     webglRestore: null,
@@ -163,7 +160,6 @@ import * as clusterLabelsMod from '@lib/ui/cluster-labels'
 import * as focusPocketMod from '@lib/journey/focus-pocket'
 import * as sceneRevealMod from './scene-reveal'
 import * as cameraControlsMod from '@lib/engine/camera-controls'
-import * as myceliumEngineMod from './mycelium-engine'
 import * as inspectedStrandMod from '@lib/journey/inspected-strand-overlay-adapter'
 import * as threeSearchAnimationsMod from './three-search-animations'
 import * as threeInteractionVisualsMod from './three-interaction-visuals'
@@ -184,7 +180,6 @@ export function ensureModules(): void {
         engineState.sceneReveal = sceneRevealMod
         engineState.cameraControls = cameraControlsMod
         engineState.mapState = mapStateMod
-        engineState.myceliumEngine = myceliumEngineMod
         engineState.uiFeedback = { ...uiFeedbackMod, ...toastOrchMod }
         engineState.mapFlattening = mapFlatteningMod
         engineState.webglRestore = webglRestoreMod
