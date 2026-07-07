@@ -295,6 +295,12 @@ export function cancelAnimate() {
             debugWarn('[three-engine] controls already disposed:', error)
         }
     }
+    // Tear down the mycelium line layers here (not only in deinit) so the
+    // webglContext.mycelium* handles are released on EVERY teardown path —
+    // including cancelAnimate(), which initThreeJS() calls on re-init. Without
+    // this, a stale mycelium group survives on webglContext across re-init and
+    // only self-heals because createMycelium() calls disposeMycelium() first.
+    disposeMyceliumPort()
     if (engineState.state) {
         engineState.state.scene = null
         engineState.state.camera = null
@@ -338,8 +344,28 @@ export function cancelAnimate() {
     webglContext.pointsMaterial = null
     webglContext.nodeSporeMesh = null
     webglContext.nodeSporeMaterial = null
+    // Cancel any pending semantic-thread retry timer so it cannot fire a worker
+    // load AFTER the engine has torn down (orphaned-timer leak). The timer id
+    // lives on the legacy state object — the same singleton semantic-threads.ts
+    // mutates — so clearing here keeps both teardown paths (cancelAnimate and
+    // deinit→cancelAnimate) free of stale timers. engineState.state is null in
+    // the unit-test mock, so this guard is a safe no-op there.
+    const legacyState = engineState.state as unknown as {
+        semanticThreadsRetryTimer?: ReturnType<typeof setTimeout> | null
+    } | null
+    if (legacyState && legacyState.semanticThreadsRetryTimer) {
+        try {
+            clearTimeout(legacyState.semanticThreadsRetryTimer)
+        } catch {
+            // clearTimeout on an already-fired/invalid id is a no-op; ignore.
+        }
+        legacyState.semanticThreadsRetryTimer = null
+    }
     engineState.lastHoveredNode = null
     engineState.hoverEmissiveFlash = 0
+    // Reset the camera-matrix snapshot so a fresh engine mount gets a
+    // non-stale baseline (W49-H doc contract: "Reset by the dispose path").
+    engineState.lastCameraSnapshot = null
 }
 
 export function deinit() {
@@ -356,7 +382,6 @@ export function deinit() {
         }
     }
     disposeNodeVisualsPort()
-    disposeMyceliumPort()
     engineState.threeInteractionVisuals?.disposeInteractionVisuals()
     engineState.audioScape?.disposeAudio()
     engineState.eventBindings?.disposeEventListeners()

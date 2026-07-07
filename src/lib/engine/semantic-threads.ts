@@ -203,10 +203,38 @@ function _handleBeforeUnload(): void {
     resetSemanticThreadWorker()
 }
 
-if (
-    typeof window !== 'undefined' &&
-    typeof window.addEventListener === 'function'
-) {
+// Stable window key for the unload handler.  Used to make the module-scope
+// registration idempotent across Vite HMR re-evaluations: a hot reload re-runs
+// this module, producing a NEW `_handleBeforeUnload` closure (which closes over
+// the NEW module scope's `_dataWorker`).  Without removing the previously
+// registered closure first, each re-eval leaks a stale `beforeunload`/`pagehide`
+// listener that can never be reached for removal — so the worker is never
+// terminated on page unload after the first hot reload.
+const _SEMANTIC_THREADS_UNLOAD_KEY = '__semanticThreadsUnloadHandler'
+
+/**
+ * Remove the `beforeunload`/`pagehide` listeners registered by this module.
+ * Safe to call multiple times; idempotent.
+ */
+export function detachSemanticThreadListeners(): void {
+    if (typeof window === 'undefined' || typeof window.removeEventListener !== 'function') return
+    window.removeEventListener('beforeunload', _handleBeforeUnload)
+    window.removeEventListener('pagehide', _handleBeforeUnload)
+    const store = window as unknown as Record<string, unknown>
+    if (store[_SEMANTIC_THREADS_UNLOAD_KEY] === _handleBeforeUnload) {
+        delete store[_SEMANTIC_THREADS_UNLOAD_KEY]
+    }
+}
+
+if (typeof window !== 'undefined' && typeof window.addEventListener === 'function') {
+    // Remove the PREVIOUS module-eval's closure (HMR), then register the new one.
+    const store = window as unknown as Record<string, unknown>
+    const prev = store[_SEMANTIC_THREADS_UNLOAD_KEY] as (() => void) | undefined
+    if (typeof prev === 'function') {
+        window.removeEventListener('beforeunload', prev)
+        window.removeEventListener('pagehide', prev)
+    }
+    store[_SEMANTIC_THREADS_UNLOAD_KEY] = _handleBeforeUnload
     window.addEventListener('beforeunload', _handleBeforeUnload)
     window.addEventListener('pagehide', _handleBeforeUnload)
 }
@@ -625,6 +653,12 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
 
     const state = getState()
     if (state.semanticThreadsLoadPromise) return state.semanticThreadsLoadPromise as Promise<boolean>
+    // Re-entry guard: a retry timer is already scheduled (failure path) while
+    // `semanticThreadsLoadPromise` has been cleared.  A duplicate caller during
+    // this window would start a second concurrent load.  Return a resolved
+    // false so the caller does not double-load (every path still yields a
+    // Promise<boolean>, which the `async` wrapper guarantees anyway).
+    if (state.semanticThreadsRetryTimer) return Promise.resolve(false)
 
     const cacheBust = Math.floor(Date.now() / (1000 * 60 * 60))
     const requestUrls = [

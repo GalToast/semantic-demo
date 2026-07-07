@@ -124,74 +124,19 @@ export type ClusterName =
     | 'Public Agencies'
     | 'Enterprise Brands'
 
-export interface ActiveFilters {
-    status: string
-    city: string
-    website: boolean
-    email: boolean
-    geocoded: boolean
-}
-
 export type ViewName = 'galaxy' | 'map' | 'focus' | 'trail' | 'semantic'
 
 export type CompassPhase = 'overview' | 'search' | 'focus' | 'inside' | 'map'
 
 export type ThreadSource = 'geometric-fallback' | string | null
 
-export interface NavFocusPocketMeta {
-    active?: boolean
-    viewportProfile?: {
-        key?: string
-        targetOffsetLimit?: number
-        [key: string]: unknown
-    }
-    [key: string]: unknown
-}
-
-export interface NavFocusFramingMeta {
-    transitionStyle?: string
-    distance?: number
-    verticalLift?: number
-    framingDrop?: number
-    targetOffset?: unknown
-    duration?: number
-    travelVector?: unknown
-    [key: string]: unknown
-}
-
-export interface NavState {
-    mode: string
-    surface?: string
-    previousSurface?: string
-    focusedIndex: number | null
-    trailDepth: number
-    trailSeedIndex: number | null
-    trailNeighborIndices: number[]
-    trailCursor: number
-    walkHistoryIndices: number[]
-    explorationHistoryIndices: number[]
-    lastTraversalReason: string | null
-    threadCandidates: ThreadCandidateLike[]
-    threadReasonByIndex: Map<number, string>
-    threadSource: ThreadSource
-    focusPocketIndices: number[]
-    focusPocketMeta: NavFocusPocketMeta | null
-    focusPocketRoleByIndex: Map<number, string>
-    focusFramingMeta: NavFocusFramingMeta | null
-    currentPersonality: Record<string, unknown> | null
-    neighborhoodIndices: number[]
-    currentView?: string
-    myceliumMode?: string
-    autoRotate?: boolean
-    autoRotateSuspended?: boolean
-    trailDepthFromExploration?: number
-    sceneRevealActive?: boolean
-    sceneRevealStartedAt?: number
-    loadingPhaseKey?: string
-    applyingUrlState?: boolean
-    restoringBrowserHistory?: boolean
-    urlStateRestoreToken?: number
-}
+// ── Canonical type re-exports ────────────────────────────────────────────────
+// `NavState` and `ActiveFilters` are defined ONCE in `@lib/types/state` (the
+// canonical app-state type surface). This module previously carried divergent
+// duplicate interfaces; they are now re-exported so existing importers
+// (legacy-state.ts, mutators.ts, engine/map-state.ts) resolve to the single
+// source of truth without edits. See tmp/bugsweep-2026-07-07 fix plan.
+export type { NavState, ActiveFilters } from '@lib/types/state'
 
 export interface CanvasHoverCandidate {
     index?: number
@@ -858,7 +803,7 @@ export interface SearchAppState {
 // Cross-file types — SearchStatus comes from @lib/types/state,
 // CacheEntry is re-exported above. Import SearchStatus locally for
 // the SearchAppState shape.
-import type { SearchStatus, FocusTransitionMode } from '@lib/types/state'
+import type { SearchStatus, FocusTransitionMode, NavState, ActiveFilters } from '@lib/types/state'
 
 /**
  * @lib/state/state-types.ts — FocusAppState sub-aggregate (Phase 6c)

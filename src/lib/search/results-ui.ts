@@ -242,6 +242,7 @@ export function renderSearchResultItems(
         renderContext,
         mode
     }
+    publish(EVENTS.TOOLTIP_HIDE_REQUESTED)
     publish(EVENTS.SEARCH_UI_SYNC_REQUESTED, { resultsEl, statusEl, results: dedupedResults, renderContext })
     publish(EVENTS.SEMANTIC_LANE_STATE_REQUESTED, {
         laneState: 'healthy',

@@ -27,6 +27,8 @@ import '@lib/state/session.svelte'
 import type { ViewName, SearchSummary, Point } from '@lib/state/state-types'
 import type { BusinessRecord } from '@lib/types/business'
 import { appInit } from '@lib/orchestration/app-init'
+import { registerUrlStateEventListeners } from '@lib/orchestration/url-state'
+import { registerClusterFilterEventListeners } from '@lib/orchestration/cluster-filter-controller'
 import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
@@ -162,6 +164,21 @@ const teardownGestureMonitor = installGestureMonitor({
     onReady: () => engineReady.signalReady()
 })
 window.addEventListener('beforeunload', () => teardownGestureMonitor(), { once: true })
+
+// Register URL-state + cluster-filter event-bus listeners exactly once and hold
+// their teardown handles (previously dropped → leak on HMR / module re-eval).
+// register* is idempotent, so the module-load auto-call and this explicit call
+// resolve to the same teardown.
+const teardownUrlStateListeners = registerUrlStateEventListeners()
+const teardownClusterFilterListeners = registerClusterFilterEventListeners()
+window.addEventListener(
+    'beforeunload',
+    () => {
+        teardownUrlStateListeners()
+        teardownClusterFilterListeners()
+    },
+    { once: true }
+)
 
 // Hydrate Svelte stores from the legacy state after mount.
 // The legacy init path sets __APP_STATE__ asynchronously; retry until the

@@ -357,7 +357,26 @@ export { clearSearchGlow } from '@lib/stores/search.svelte'
 
 // ── Event Subscriptions ────────────────────────────────────────────────────────
 
-subscribe(EVENTS.FILTER_CHANGED, () => {
-    syncFilterControls()
-    updateClusterList()
-})
+// Registered through `registerClusterFilterEventListeners()` so the unsubscribe
+// handle is captured (previously dropped on the floor → leak on HMR / module
+// re-evaluation). Idempotent within a module instance; auto-invoked once at
+// module load to preserve prior registration timing. main.ts holds the teardown.
+let _clusterFilterEventTeardown: (() => void) | null = null
+
+export function registerClusterFilterEventListeners(): () => void {
+    if (_clusterFilterEventTeardown) return _clusterFilterEventTeardown
+    const unsubscribers = [
+        subscribe(EVENTS.FILTER_CHANGED, () => {
+            syncFilterControls()
+            updateClusterList()
+        })
+    ]
+    _clusterFilterEventTeardown = () => {
+        for (const unsub of unsubscribers) unsub()
+        _clusterFilterEventTeardown = null
+    }
+    return _clusterFilterEventTeardown
+}
+
+// Preserve prior module-load registration behavior.
+registerClusterFilterEventListeners()
