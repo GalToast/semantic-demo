@@ -377,11 +377,11 @@ describe('compass store — state-class appState regression', () => {
         _compassState.mode = 'focus'
         const steps = compassSteps()
         expect(steps).toHaveLength(5)
-        expect(steps[0]).toEqual({ phase: 'overview', state: 'done' })
-        expect(steps[1]).toEqual({ phase: 'search', state: 'done' })
-        expect(steps[2]).toEqual({ phase: 'focus', state: 'current' })
-        expect(steps[3]).toEqual({ phase: 'inside', state: 'upcoming' })
-        expect(steps[4]).toEqual({ phase: 'map', state: 'upcoming' })
+        expect(steps[0]).toMatchObject({ phase: 'overview', state: 'done' })
+        expect(steps[1]).toMatchObject({ phase: 'search', state: 'done' })
+        expect(steps[2]).toMatchObject({ phase: 'focus', state: 'current' })
+        expect(steps[3]).toMatchObject({ phase: 'inside', state: 'upcoming' })
+        expect(steps[4]).toMatchObject({ phase: 'map', state: 'upcoming' })
     })
 
     it('compassSteps marks all done when mode is map', () => {

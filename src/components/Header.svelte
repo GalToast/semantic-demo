@@ -26,7 +26,6 @@
   import {
     isModeLocked,
     isActive,
-    getActiveIndexForMode,
     getActiveDescription,
     computeModeKeydown,
     indexForModeId,
@@ -63,7 +62,6 @@
   let hasSelection = $derived(
     appState.navState.focusedIndex != null && Number.isFinite(appState.navState.focusedIndex as number)
   );
-  let activeIndex = $derived(getActiveIndexForMode(activeMode, activeView));
   let activeDescription = $derived(getActiveDescription(activeMode, activeView));
 
   /** Roving tabindex: which chip currently has keyboard focus. Defaults to

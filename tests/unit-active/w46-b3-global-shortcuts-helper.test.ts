@@ -147,7 +147,7 @@ describe('W46-B3: the `trail as any` cast is preserved with the audit comment', 
         // inline note was preserved as a documented future-work marker.
         expect(src).toMatch(/surface:\s*['"]trail['"]/)
         // Inline note explains the historical loose typing
-        const trailContext = src.match(/['"]trail['"][\s\S]{0,200}/)
+        const trailContext = src.match(/surface:\s*['"]trail['"][\s\S]{0,200}/)
         expect(trailContext).not.toBeNull()
         expect(trailContext![0]).toMatch(/narrow|enum|surface|intentional/i)
         // Guard: no `as any` cast remains on the trail surface literal

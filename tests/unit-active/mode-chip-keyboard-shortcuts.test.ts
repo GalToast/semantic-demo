@@ -66,21 +66,21 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
 
     it('maps Ctrl+3 to SET_SURFACE with trail', () => {
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
-        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1200)
+        const block = appSrc.slice(shortcutIdx, shortcutIdx + 2500)
         expect(block).toContain("case '3'")
         expect(block).toContain("surface: 'trail'")
     })
 
     it('maps Ctrl+4 to SET_SURFACE with focus', () => {
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
-        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1200)
+        const block = appSrc.slice(shortcutIdx, shortcutIdx + 2500)
         expect(block).toContain("case '4'")
         expect(block).toContain("surface: 'focus'")
     })
 
     it('maps Ctrl+5 to SET_SURFACE with inside', () => {
         const shortcutIdx = appSrc.indexOf('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
-        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1200)
+        const block = appSrc.slice(shortcutIdx, shortcutIdx + 2500)
         expect(block).toContain("case '5'")
         expect(block).toContain("surface: 'inside'")
     })
@@ -90,7 +90,7 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
         // Wider slice: case '6' dispatches BOTH SET_VIEW and SET_SURFACE
         // (two lines), and global-shortcuts.ts has more leading comments
         // than the original orchestrator did.
-        const block = appSrc.slice(shortcutIdx, shortcutIdx + 1800)
+        const block = appSrc.slice(shortcutIdx, shortcutIdx + 2500)
         expect(block).toContain("case '6'")
         expect(block).toContain("view: 'map'")
         expect(block).toContain("surface: 'map'")

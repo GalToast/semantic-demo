@@ -66,7 +66,7 @@ describe('Info Panel per-state content', () => {
 
     it('info-panel-state helper defines content for semantic-dive surface', () => {
         expect(helperSource).toContain("'semantic-dive':")
-        expect(helperSource).toContain("headerText: 'Semantic Dive'")
+        expect(helperSource).toContain("headerText: 'Deep exploration'")
     })
 
     it('info-panel-state helper hides panel for map surfaces', () => {
@@ -139,15 +139,22 @@ describe('Info Panel per-state content', () => {
     // hardcoded mock in InfoPanel.svelte will fail this contract.
     describe('W48: no hardcoded mock business in InfoPanel', () => {
         it('does not contain the placeholder business name "Downtown Coffee Collective"', () => {
-            expect(infoPanelSource, 'hardcoded "Downtown Coffee Collective" mock must not be re-introduced').not.toContain('Downtown Coffee Collective')
+            expect(
+                infoPanelSource,
+                'hardcoded "Downtown Coffee Collective" mock must not be re-introduced'
+            ).not.toContain('Downtown Coffee Collective')
         })
 
         it('does not contain the placeholder phone "(936) 555-0123"', () => {
-            expect(infoPanelSource, 'hardcoded "(936) 555-0123" mock must not be re-introduced').not.toContain('555-0123')
+            expect(infoPanelSource, 'hardcoded "(936) 555-0123" mock must not be re-introduced').not.toContain(
+                '555-0123'
+            )
         })
 
         it('does not contain the placeholder domain "downtowncoffee.example"', () => {
-            expect(infoPanelSource, 'hardcoded mock domain must not be re-introduced').not.toContain('downtowncoffee.example')
+            expect(infoPanelSource, 'hardcoded mock domain must not be re-introduced').not.toContain(
+                'downtowncoffee.example'
+            )
         })
 
         it('does not cast "as unknown as BusinessRecord" (no escape hatch for a fake BusinessRecord)', () => {
@@ -155,10 +162,9 @@ describe('Info Panel per-state content', () => {
             // fields (id, category, zip, geocoded) that the fake object
             // didn't provide. With the mock removed, the cast should not
             // appear in InfoPanel.svelte.
-            expect(
-                infoPanelSource,
-                'InfoPanel must not use "as unknown as BusinessRecord" casts'
-            ).not.toMatch(/as\s+unknown\s+as\s+BusinessRecord/)
+            expect(infoPanelSource, 'InfoPanel must not use "as unknown as BusinessRecord" casts').not.toMatch(
+                /as\s+unknown\s+as\s+BusinessRecord/
+            )
         })
 
         it('routes data-not-ready state through selectedRecord=null (not a mock object)', () => {

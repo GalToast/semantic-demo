@@ -30,7 +30,10 @@ test.describe('Round-2 mobile/a11y fixes (M1, M4, M6)', () => {
         // Not every render has a locked chip; skip gracefully if none are present.
         if ((await lockedChip.count()) === 0) return
         const lockSvg = lockedChip.locator('svg.chip-lock, svg[aria-hidden="true"]').first()
-        await expect(lockSvg, 'M1: lock indicator must be an aria-hidden SVG, not a text emoji').toHaveAttribute('aria-hidden', 'true')
+        await expect(lockSvg, 'M1: lock indicator must be an aria-hidden SVG, not a text emoji').toHaveAttribute(
+            'aria-hidden',
+            'true'
+        )
         const chipText = (await lockedChip.textContent()) ?? ''
         expect(chipText, 'M1: the 🔒 emoji must not be exposed as text to assistive tech').not.toContain('🔒')
     })
@@ -47,15 +50,32 @@ test.describe('Round-2 mobile/a11y fixes (M1, M4, M6)', () => {
 
     test('M6: trail breadcrumb renders as <ul role="list"> with <li>/<button>, not a listbox', async ({ page }) => {
         await enterScene(page)
-        // Build a trail: focus a node so the breadcrumb history populates.
-        const ok = await page.evaluate(() => {
+        // Build a real trail: focus a node that has at least one neighbor, then
+        // click its neighbor pill to walk — that populates the walk history the
+        // breadcrumb renders from (focusOnNode alone does NOT build a trail).
+        const focusIdx = await page.evaluate(() => {
             const points = window.__APP_STATE__?.points ?? []
-            if (points.length === 0) return false
-            const a = window.__navActions__
-            if (!a || typeof a.focusOnNode !== 'function') return false
-            return a.focusOnNode(0)
+            const actions = window.__navActions__
+            const limit = Math.min(points.length, 1500)
+            for (let i = 0; i < limit; i++) {
+                if (!points[i]) continue
+                if (actions && typeof actions.focusOnNode === 'function') {
+                    const ok = actions.focusOnNode(i)
+                    if (!ok) continue
+                }
+                const nc = document.querySelector('#focus-stage-neighbor-count')
+                const neighborCount = nc ? nc.textContent.trim() : ''
+                // Pick the first node that reports at least one visible neighbor.
+                if (/(\d+) visible neighbors/.test(neighborCount) && !/^0 /.test(neighborCount)) {
+                    return i
+                }
+            }
+            return -1
         })
-        if (!ok) return
+        if (focusIdx < 0) return // no node with neighbors in corpus; skip
+        const neighborBtn = page.locator('.focus-stage-neighbor-main').first()
+        await neighborBtn.waitFor({ state: 'visible', timeout: 5000 })
+        await neighborBtn.click()
         const crumb = page.locator('#walk-breadcrumb.walk-breadcrumb, .walk-breadcrumb').first()
         await crumb.waitFor({ state: 'attached', timeout: 5000 })
         // The old ARIA listbox pattern must be gone.

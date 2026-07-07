@@ -34,8 +34,8 @@ describe('FocusCard component', () => {
         source = readSource()
     })
 
-    it('root #selected-card has aria-label="Selected business"', () => {
-        expect(source).toContain('id="selected-card"')
+    it('root #focus-card-selected has aria-label="Selected business"', () => {
+        expect(source).toContain('id="focus-card-selected"')
         expect(source).toContain('aria-label="Selected business"')
     })
 

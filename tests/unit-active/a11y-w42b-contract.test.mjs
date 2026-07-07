@@ -42,7 +42,7 @@ describe('A11y W42-B: Canvas focus-visible indicator', () => {
     })
 
     it('canvas element has aria-label', () => {
-        expect(src).toMatch(/aria-label="3D business explorer"/)
+        expect(src).toMatch(/aria-label="3D semantic business explorer"/)
     })
 
     it('canvas has :focus-visible CSS rule for visible focus ring', () => {

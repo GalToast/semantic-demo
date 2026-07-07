@@ -20,7 +20,6 @@ import { restoreActiveClusterFilterFromUrl, restoreActiveFiltersFromUrl } from '
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { updateSelectedBusiness } from '@lib/journey/selected-card'
 import { appState } from '@lib/state/app.svelte'
-import { legacyState } from '@lib/state/legacy-state-adapter'
 import { applyFilters } from '@lib/orchestration/search-filter-core'
 import { syncFilterControls } from '@lib/orchestration/cluster-filter-controller'
 import { semanticNeighborMap } from '@lib/data-store'
@@ -57,14 +56,6 @@ export interface UpdateUrlStateOptions {
     reason?: string
     /** Force update even when applyingUrlState is true. */
     force?: boolean
-}
-
-export interface ActiveFilters {
-    status: string
-    city: string
-    website: boolean
-    email: boolean
-    geocoded: boolean
 }
 
 // ── Internal State ────────────────────────────────────────────────────────────
@@ -263,8 +254,7 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         let anchorId = params.get('anchor')
         const recordId = params.get('record')
         if (recordId && !anchorId) {
-            const recordIndex =
-                appState.points?.findIndex((p) => String(p.lead_id) === recordId) ?? -1
+            const recordIndex = appState.points?.findIndex((p) => String(p.lead_id) === recordId) ?? -1
             if (recordIndex >= 0) {
                 anchorId = String(recordIndex)
             } else {
@@ -441,23 +431,41 @@ export async function copyCurrentViewLink(): Promise<string | null> {
 // Keep the browser URL aligned with Svelte-owned lifecycle/search events.
 // The legacy URL module already performs this cleanup; the Svelte shell needs
 // the same behavior so remounted search inputs do not restore stale ?q params.
-subscribe(EVENTS.SEARCH_CLEARED, () => {
-    updateUrlState({ q: null, offset: null }, { reason: 'search-clear' })
-})
+//
+// Registered through `registerUrlStateEventListeners()` so the unsubscribe
+// handles are captured (previously dropped on the floor → leak on HMR /
+// module re-evaluation). Idempotent within a module instance; auto-invoked
+// once at module load to preserve prior registration timing for importers
+// and tests. main.ts holds the returned teardown for app unload.
+let _urlStateEventTeardown: (() => void) | null = null
 
-subscribe(EVENTS.SEARCH_SUCCESS, () => {
-    updateUrlState({ offset: null }, { reason: 'search-payload' })
-})
-
-subscribe(EVENTS.SEARCH_EMPTY, () => {
-    updateUrlState({ offset: null }, { reason: 'search' })
-})
-
-subscribe(EVENTS.STATE_RESET, ({ options }: { options?: { skipUrlSync?: boolean } }) => {
-    if (!options?.skipUrlSync) {
-        updateUrlState({ q: null, record: null, anchor: null, depth: null }, { mode: 'push', reason: 'reset' })
+export function registerUrlStateEventListeners(): () => void {
+    if (_urlStateEventTeardown) return _urlStateEventTeardown
+    const unsubscribers = [
+        subscribe(EVENTS.SEARCH_CLEARED, () => {
+            updateUrlState({ q: null, offset: null }, { reason: 'search-clear' })
+        }),
+        subscribe(EVENTS.SEARCH_SUCCESS, () => {
+            updateUrlState({ offset: null }, { reason: 'search-payload' })
+        }),
+        subscribe(EVENTS.SEARCH_EMPTY, () => {
+            updateUrlState({ offset: null }, { reason: 'search' })
+        }),
+        subscribe(EVENTS.STATE_RESET, ({ options }: { options?: { skipUrlSync?: boolean } }) => {
+            if (!options?.skipUrlSync) {
+                updateUrlState({ q: null, record: null, anchor: null, depth: null }, { mode: 'push', reason: 'reset' })
+            }
+        })
+    ]
+    _urlStateEventTeardown = () => {
+        for (const unsub of unsubscribers) unsub()
+        _urlStateEventTeardown = null
     }
-})
+    return _urlStateEventTeardown
+}
+
+// Preserve prior module-load registration behavior.
+registerUrlStateEventListeners()
 
 // ── Internal Helpers ──────────────────────────────────────────────────────────
 
@@ -732,7 +740,7 @@ async function _restoreSearchFromParams(
         // after the publish above). The earlier call in _restoreAnchorFromParams
         // ran before search results were available, leaving the constellation
         // empty. See PR-B4 deep-link restoration path.
-        const rebuildIndex = byId ? byId.index : (numericAnchor ? Number(anchorId) : -1)
+        const rebuildIndex = byId ? byId.index : numericAnchor ? Number(anchorId) : -1
         if (rebuildIndex >= 0) {
             try {
                 const _focusPocketMod = (await import('@lib/focus/pocket', { signal } as never)) as {
