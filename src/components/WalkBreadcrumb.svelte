@@ -57,30 +57,31 @@
 
 <div class="walk-breadcrumb" id="walk-breadcrumb" role="navigation" aria-label="Trail history">
   <span class="walk-breadcrumb-label">Trail</span>
-  <div role="listbox" tabindex="-1" aria-label="Trail stops" aria-activedescendant={history.length > 0 ? `walk-chip-${activeChipIndex}` : undefined} onkeydown={handleKeydown} onfocusin={syncActiveFromFocus}>
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
+  <ul class="walk-breadcrumb-list" role="list" aria-label="Trail stops" onkeydown={handleKeydown} onfocusin={syncActiveFromFocus}>
     {#each history as idx, i}
-      {#if i > 0}
-        <span class="walk-breadcrumb-sep" aria-hidden="true">/</span>
-      {/if}
       {@const point = getPointForIndex(idx)}
       {@const name = point?.name ?? 'Stop'}
       {@const isCurrent = idx === focusedIndex}
-      <button
-        class="walk-breadcrumb-chip"
-        class:current={isCurrent}
-        id={`walk-chip-${i}`}
-        role="option"
-        aria-selected={i === activeChipIndex}
-        type="button"
-        tabindex={i === activeChipIndex ? 0 : -1}
-        data-walk-index={idx}
-        data-walk-order={i}
-        aria-current={isCurrent ? 'step' : undefined}
-        aria-label={isCurrent ? `Current stop: ${name}` : `Return to ${name}`}
-        onclick={() => onWalk(idx, i)}
-      >
-        {name}
-      </button>
+      <li class="walk-breadcrumb-item" role="listitem">
+        {#if i > 0}
+          <span class="walk-breadcrumb-sep" aria-hidden="true">/</span>
+        {/if}
+        <button
+          class="walk-breadcrumb-chip"
+          class:current={isCurrent}
+          id={`walk-chip-${i}`}
+          type="button"
+          tabindex={i === activeChipIndex ? 0 : -1}
+          data-walk-index={idx}
+          data-walk-order={i}
+          aria-current={isCurrent ? 'step' : undefined}
+          aria-label={isCurrent ? `Current stop: ${name}` : `Return to ${name}`}
+          onclick={() => onWalk(idx, i)}
+        >
+          {name}
+        </button>
+      </li>
     {/each}
-  </div>
+  </ul>
 </div>

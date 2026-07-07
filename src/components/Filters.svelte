@@ -263,7 +263,7 @@ function handleContactToggle(id: string): void {
 
 <style>
   .filters-section {
-    position: absolute;
+    position: fixed;
     bottom: 1rem;
     left: 50%;
     transform: translateX(-50%);
@@ -407,21 +407,23 @@ function handleContactToggle(id: string): void {
 
   /* W50-LAYOUT-1: One-time pulse-glow on the FILTERS pill to boost
      discoverability on first idle splash. Runs once then stops. */
-  body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle {
+  :global(body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle) {
     animation: filters-pulse-glow 3.6s ease-in-out 1;
   }
-  @keyframes filters-pulse-glow {
-    0%, 100% {
-      box-shadow: none;
-      border-color: rgba(var(--color-primary-alt-rgb), 0.25);
-    }
-    50% {
-      box-shadow: 0 0 14px 4px rgba(var(--color-primary-alt-rgb), 0.35);
-      border-color: rgba(var(--color-primary-alt-rgb), 0.6);
+  :global {
+    @keyframes filters-pulse-glow {
+      0%, 100% {
+        box-shadow: none;
+        border-color: rgba(var(--color-primary-alt-rgb), 0.25);
+      }
+      50% {
+        box-shadow: 0 0 14px 4px rgba(var(--color-primary-alt-rgb), 0.35);
+        border-color: rgba(var(--color-primary-alt-rgb), 0.6);
+      }
     }
   }
   @media (prefers-reduced-motion: reduce) {
-    body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle {
+    :global(body[data-panel-surface='idle'] .filters-section:not([open]) .filter-toggle) {
       animation: none;
     }
   }

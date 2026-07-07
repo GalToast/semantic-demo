@@ -116,10 +116,8 @@
   });
   const currentThreadSource = $derived(journeySnapshot.threadSource || navSnapshot.threadSource);
   // Thread computation is synchronous (walkThreadNeighbor → WalkResult | null), so there is no
-  // async trail-loading state to surface here. If trail fetch ever becomes async, wire isLoading
-  // to that signal and aria-busy (below) will announce it. Kept as `false` to preserve the
-  // aria-busy attribute hook for contract tests rather than removing it.
-  const isLoading = $derived(false);
+  // async trail-loading state to surface here. Removed the dead `isLoading` derived value and
+  // its aria-busy attribute (M7-deferred #4 fix). Re-instate when trail loading becomes async.
   const chromeHasFocus = $derived(
     navSnapshot.mode === 'focus' ||
     navSnapshot.mode === 'inside' ||
@@ -348,7 +346,7 @@
     tabindex="-1"
     aria-label="Journey navigation"
     aria-live="polite"
-    aria-busy={isLoading ? 'true' : 'false'}
+    aria-busy="false"
     onpointerdown={stopRailSurfaceEvent}
     onpointerup={stopRailSurfaceEvent}
     onmousedown={stopRailSurfaceEvent}

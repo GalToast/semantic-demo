@@ -21,7 +21,7 @@
   import { DEMO_SCRIPT } from '@lib/demo/demo-script';
   import type { DemoPhase } from '@lib/stores/demo.svelte.ts';
   import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
-  import { showToast } from '@lib/stores/toast.svelte';
+  import { showToastSpec, dismissToast } from '@lib/stores/toast.svelte';
   import { sceneReady } from '@lib/stores/scene-ready.svelte';
   import { debugWarn } from '@lib/utils/debug';
 
@@ -48,9 +48,16 @@
    * Closes the Phase 2 welcome-sequence pile-up (Scout B Rec #4).
    */
   let userInteractedSinceMount = false;
+  let interactionDismissed = false;
   const interactionAbortController = new AbortController();
   function markInteraction(): void {
     userInteractedSinceMount = true;
+    // Dismiss the fallback toast on the first user interaction so it
+    // doesn't linger over the map (M3).
+    if (!interactionDismissed) {
+      dismissToast();
+      interactionDismissed = true;
+    }
     interactionAbortController.abort();
   }
 
@@ -93,10 +100,11 @@
     // Phase 2: suppress if the user is already exploring (Scout B Rec #4).
     // A hint on top of active exploration is noise, not guidance.
     if (userInteractedSinceMount) return;
-    showToast(
-      'Getting started',
-      'Search for a business type above, or click any dot to explore connections.'
-    );
+    showToastSpec({
+      title: 'Getting started',
+      copy: 'Search for a business type above, or click any dot to explore connections.',
+      duration: 8000
+    });
   }
 
   function completeDemo() {

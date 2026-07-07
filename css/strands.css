@@ -1299,15 +1299,10 @@ body #mode-chips .mode-chip.is-locked {
 
 body .mode-grid .mode-chip.is-locked::after,
 body #mode-chips .mode-chip.is-locked::after {
-    content: '🔒';
-    position: absolute;
-    right: 0.4rem;
-    top: 50%;
-    transform: translateY(-50%);
-    font-size: 0.65rem;
-    line-height: 1;
-    opacity: 0.55;
-    filter: grayscale(0.45);
+    /* Lock indicator moved to an inline SVG (aria-hidden) inside the component
+       button markup. The pseudo-element is retired so screen readers no longer
+       encounter the 🔒 glyph as text content (M1). */
+    content: none;
 }
 
 body .mode-grid .mode-chip.is-locked .chip-icon,
@@ -1324,8 +1319,10 @@ body #mode-chips .mode-chip.is-locked .chip-icon {
 @media (max-width: 768px) {
     body .mode-grid .mode-chip.is-locked::after,
     body #mode-chips .mode-chip.is-locked::after {
-        content: '🔒';
-        margin-left: 0.35rem;
+        /* Lock indicator is an inline SVG (aria-hidden) in the component markup.
+           Removing the pseudo-element prevents the emoji from being exposed as
+           text content to assistive technology. */
+        content: none;
     }
 }
 

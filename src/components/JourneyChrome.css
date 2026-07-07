@@ -125,6 +125,24 @@ body.surface-focus-search .journey-header {
     opacity: 0.5;
 }
 
+/* M6 fix: inner list container for the breadcrumb trail. Changed from
+   <div> to <ul role="list"> with <li role="listitem"> children so the
+   structure is accessible while keeping the horizontal flex layout. */
+.walk-breadcrumb-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0;
+}
+.walk-breadcrumb-item {
+    display: flex;
+    align-items: center;
+    gap: 0.1rem;
+}
+
 /* ── Trail Controls ─────────────────────────────────────────────────────── */
 /* PR-E2: Visual styles for the trail-controls panel live in
    TrailControls.svelte (which owns the elements). This rule was
