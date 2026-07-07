@@ -912,13 +912,13 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     }
 
     body:is([data-panel-surface='focus'], [data-panel-surface='focus-search'], [data-panel-surface='semantic-dive'])
-        #info-panel.info-panel,
+        #info-panel.info-panel:not(.open),
     body:not(.surface-idle):is(
             [data-panel-surface='focus'],
             [data-panel-surface='focus-search'],
             [data-panel-surface='semantic-dive']
         )
-        #info-panel.info-panel {
+        #info-panel.info-panel:not(.open) {
         display: none;
         visibility: hidden;
         opacity: 0;
