@@ -597,14 +597,16 @@ test.describe('Widget journey', () => {
         })
         expect(ok, 'focusOnNode(0) must succeed').toBe(true)
 
-        // Wait for the focus-pocket A11y list to populate.
-        await page.waitForSelector('#focus-pocket-a11y li[role="button"]', { timeout: 5000 })
+        // Wait for the focus-pocket A11y list to populate. W1's F1-2 replaced
+        // the <li role="button"> anti-pattern with a real <button>, so list
+        // items are now <li><button class="focus-pocket-item-btn">…</button></li>.
+        await page.waitForSelector('#focus-pocket-a11y .focus-pocket-item-btn', { timeout: 5000 })
 
-        const items = await page.$$eval('#focus-pocket-a11y li[role="button"]', (lis) =>
-            lis.map((li) => ({
-                label: li.querySelector('.label')?.textContent || '',
-                role: li.querySelector('.role-dot')?.getAttribute('data-role') || '',
-                ariaLabel: li.getAttribute('aria-label') || ''
+        const items = await page.$$eval('#focus-pocket-a11y .focus-pocket-item-btn', (btns) =>
+            btns.map((b) => ({
+                label: b.querySelector('.label')?.textContent || '',
+                role: b.querySelector('.role-dot')?.getAttribute('data-role') || '',
+                ariaLabel: b.getAttribute('aria-label') || ''
             }))
         )
 
@@ -861,5 +863,85 @@ test.describe('Widget journey', () => {
         expect(result.open, 'legend should have .open class on desktop default').toBe(true)
         expect(result.ariaHidden, 'legend should not be aria-hidden when open').not.toBe('true')
         expect(result.inViewport, `legend x=${result.x} width=${result.width} should be in viewport`).toBe(true)
+    })
+
+    test('W52-a11y: no duplicate focus id, real buttons in focus pocket, friendly nearby-business label (bugsweep W1)', async ({
+        page
+    }) => {
+        // Regression guard for the bugsweep-fixes-2026-07-07 Worker 1 Svelte
+        // deliverable (f0142e3b). Covers F1-1 (duplicate DOM id), F1-2 (real
+        // <button> instead of <li role="button">), F1-5 (mobile z-index), and
+        // F1-8 (friendly "nearby business" aria-label).
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1000)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Populate the focus pocket + focus card via the nav-actions bridge.
+        const ok = await page.evaluate(() => {
+            const actions = window.__navActions__
+            return actions && typeof actions.focusOnNode === 'function' ? actions.focusOnNode(0) : false
+        })
+        expect(ok, 'focusOnNode(0) must succeed').toBe(true)
+
+        await page.waitForSelector('#focus-card-selected', { timeout: 5000 })
+        await page.waitForSelector('#focus-pocket-a11y .focus-pocket-item-btn', { timeout: 5000 })
+
+        // ── F1-1: exactly one #selected-card id (InfoPanel); FocusCard moved to #focus-card-selected ──
+        const idCounts = await page.evaluate(() => ({
+            selectedCard: document.querySelectorAll('[id="selected-card"]').length,
+            focusCardSelected: document.querySelectorAll('[id="focus-card-selected"]').length
+        }))
+        expect(idCounts.selectedCard, 'exactly one #selected-card id must remain (owned by InfoPanel)').toBe(1)
+        expect(idCounts.focusCardSelected, 'FocusCard must expose #focus-card-selected (F1-1)').toBe(1)
+
+        // ── F1-2: real <button>, no <li role="button"> anti-pattern ──
+        const pocket = await page.evaluate(() => ({
+            liButton: document.querySelectorAll('#focus-pocket-a11y li[role="button"]').length,
+            realButtons: document.querySelectorAll('#focus-pocket-a11y .focus-pocket-item-btn').length
+        }))
+        expect(pocket.liButton, 'F1-2: no <li role="button"> anti-pattern may remain').toBe(0)
+        expect(pocket.realButtons, 'F1-2: focus pocket must use real <button> elements').toBeGreaterThan(0)
+
+        // ── F1-8: friendly "nearby business" copy, no "focus pocket" jargon ──
+        const toggleLabel = await page.locator('#focus-pocket-list-toggle').getAttribute('aria-label')
+        expect(toggleLabel, 'F1-8: toggle aria-label must use friendly "nearby business" copy').toMatch(
+            /nearby business/i
+        )
+        expect(toggleLabel?.toLowerCase(), 'F1-8: no "focus pocket" jargon').not.toContain('focus pocket')
+
+        // ── F1-5: on mobile the focus card must sit BELOW the a11y toggle (var(--z-panels)=80) ──
+        await page.setViewportSize({ width: 375, height: 812 })
+        await page.waitForTimeout(400)
+        const layering = await page.evaluate(() => {
+            const cards = Array.from(document.querySelectorAll('.focus-card'))
+            const visible = cards.filter((c) => {
+                const r = c.getBoundingClientRect()
+                const cs = getComputedStyle(c)
+                return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'
+            })
+            const card = visible[0] || cards[0]
+            const toggle = document.querySelector('#focus-pocket-list-toggle')
+            const cardZ = card ? parseInt(getComputedStyle(card).zIndex || '0', 10) : null
+            const toggleZ = toggle ? parseInt(getComputedStyle(toggle).zIndex || '0', 10) : null
+            return { cardZ, toggleZ, cardCount: cards.length }
+        })
+        expect(layering.toggleZ, 'a11y toggle must be at z-index 80').toBe(80)
+        expect(
+            layering.cardZ,
+            `F1-5: mobile focus card (z=${layering.cardZ}) must sit below the a11y toggle (z=${layering.toggleZ})`
+        ).toBeLessThan(layering.toggleZ)
     })
 })

@@ -428,7 +428,18 @@
       border-radius: 22px 22px 0 0;
     }
 
-    .focus-card.surface-focus {
+    /* F1-5 fix (bugsweep W1): the focus card also carries .focus-stage-card,
+       whose z-index is var(--z-panels-elevated)=90 — ABOVE the a11y toggle
+       (var(--z-panels)=80). The shared mobile rule
+       `body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .focus-stage-card`
+       has specificity (0,4,1) (body element + :not()/attr classes) and beats any
+       class-only override on .focus-card. Svelte also strips selectors that
+       reference elements outside the component (html/body), so we stay on the
+       card's own classes and add the always-present .selected-card to reach
+       (0,5,0) — 5 classes beats 4 classes, no !important needed. Covers both
+       focus surface states. */
+    .focus-card.focus-stage-card.selected-card.surface-focus,
+    .focus-card.focus-stage-card.selected-card.surface-focus-search {
       z-index: 70;
     }
   }
