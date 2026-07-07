@@ -177,11 +177,9 @@ function setupMinimalState(pointsCount = 12) {
         state.navState.threadCandidates = []
         state.navState.threadSource = 'semantic'
         state.focusState.pocketMotionByIndex = new Map()
-        state.navState.focusPocketAnimationFrameId = undefined
         state.focusState.pocketTransitionStartedAt = 0
         state.focusState.nodesAreSettling = false
         state.camera = null
-        state.navState.focusPocketAnimationFrameId = undefined
     })
 
     return { pts, orig, tpos, npos }
@@ -615,7 +613,6 @@ function teardownState() {
         state.navState.threadSource = 'semantic'
     })
     state.focusState.pocketMotionByIndex = new Map()
-    state.navState.focusPocketAnimationFrameId = undefined
     state.focusState.pocketTransitionStartedAt = 0
     state.focusState.nodesAreSettling = false
     state.camera = null

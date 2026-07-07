@@ -543,8 +543,7 @@ const CANONICAL_WRITERS = {
     // They are mutated internally and must not be written by other modules.
     'navState.focusPocketIndices': new Set(['focus-pocket.ts']),
     'navState.focusPocketMeta': new Set(['focus-pocket.ts']),
-    'navState.focusPocketRoleByIndex': new Set(['focus-pocket.ts']),
-    'navState.focusPocketAnimationFrameId': new Set(['focus-pocket.ts'])
+    'navState.focusPocketRoleByIndex': new Set(['focus-pocket.ts'])
 }
 
 const MODULES_DIR = join(PROJECT_ROOT, 'js', 'modules')
@@ -677,8 +676,7 @@ console.log('PASS CONTRACT 13: focus-pocket.js does not directly write focus sta
 const focusPocketFields = [
     'navState.focusPocketIndices',
     'navState.focusPocketMeta',
-    'navState.focusPocketRoleByIndex',
-    'navState.focusPocketAnimationFrameId'
+    'navState.focusPocketRoleByIndex'
 ]
 let fpViolations = []
 for (const field of focusPocketFields) {

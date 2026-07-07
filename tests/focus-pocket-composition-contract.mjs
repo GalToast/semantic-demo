@@ -153,7 +153,6 @@ function setupState(pointsCount = 12) {
   state.navState.threadCandidates = [];
   state.navState.threadSource = 'semantic';
   state.pocketMotionByIndex = new Map();
-  state.focusPocketAnimationFrameId = undefined;
   state.pocketTransitionStartedAt = 0;
   state.nodesAreSettling = false;
   state.camera = null;
@@ -179,7 +178,6 @@ function teardownState() {
         state.navState.threadSource     = 'geometric-fallback';
     });
     state.pocketMotionByIndex  = new Map();
-    state.focusPocketAnimationFrameId = null;
     state.pocketTransitionStartedAt = 0;
     state.nodesAreSettling          = false;
 }

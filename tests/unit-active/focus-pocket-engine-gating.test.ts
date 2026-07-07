@@ -28,7 +28,6 @@ const mockAppState = vi.hoisted(() => ({
     navState: {
         focusPocketIndices: [] as number[],
         focusPocketMeta: null as { active?: boolean } | null,
-        focusPocketAnimationFrameId: undefined as number | undefined,
         focusedIndex: null as number | null,
         threadCandidates: [] as unknown[],
         threadSource: 'geometric-fallback' as string,

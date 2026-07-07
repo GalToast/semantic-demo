@@ -26,7 +26,6 @@ const _appState = vi.hoisted(() => ({
         focusPocketIndices: [],
         focusPocketMeta: null,
         focusPocketRoleByIndex: new Map(),
-        focusPocketAnimationFrameId: null,
         focusFramingMeta: null,
         currentPersonality: null,
         neighborhoodIndices: [],

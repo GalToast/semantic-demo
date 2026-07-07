@@ -186,7 +186,6 @@ describe('state-types — NavState (the 24-field navigation singleton)', () => {
         focusPocketIndices: [],
         focusPocketMeta: null,
         focusPocketRoleByIndex: new Map<number, string>(),
-        focusPocketAnimationFrameId: null,
         focusFramingMeta: null,
         currentPersonality: null,
         neighborhoodIndices: []
@@ -196,10 +195,10 @@ describe('state-types — NavState (the 24-field navigation singleton)', () => {
     // trailCursor, walkHistoryIndices, explorationHistoryIndices,
     // lastTraversalReason, threadCandidates, threadReasonByIndex,
     // threadSource, focusPocketIndices, focusPocketMeta,
-    // focusPocketRoleByIndex, focusPocketAnimationFrameId, focusFramingMeta,
+    // focusPocketRoleByIndex, focusFramingMeta,
     // currentPersonality, neighborhoodIndices) + ~13 optional. Bump this on
     // intentional surface changes.
-    const REQUIRED_NAV_FIELDS = 19;
+    const REQUIRED_NAV_FIELDS = 18;
 
     it('NavState accepts the canonical idle-fixture', () => {
         expect(sampleNav.mode).toBe('overview');
