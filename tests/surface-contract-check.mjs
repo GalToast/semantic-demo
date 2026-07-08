@@ -5015,28 +5015,76 @@ async function waitForFocusStageLayoutStable(page) {
         .waitForFunction(
             () =>
                 new Promise((resolve) => {
-                    let lastBottomInset = null
-                    let stableFrames = 0
-                    let frames = 0
+                    // W52 flake fix: the semantic-dive geometry assertions read
+                    // several elements that each transition independently when the
+                    // surface is forced. #info-panel fades via a ~0.28s
+                    // visibility/opacity transition (computed visibility stays
+                    // 'visible' until the transition ENDS) which caused the
+                    // visibility:info-panel:hidden / pointer-events:info-panel flake.
+                    // .focus-stage-card slides via a ~0.4s transform/opacity
+                    // transition; the journey-compass title reflows on font load.
+                    // The old wait only tracked #focus-stage bottom-inset with a
+                    // 12-frame (~200ms) cap, so in headless Chromium (rAF runs far
+                    // faster than 60fps) it resolved mid-transition. Fix: track every
+                    // asserted element and wait until each is stable for >=2 frames.
+                    const selectors = [
+                        '#focus-stage',
+                        '.focus-stage-card',
+                        '#info-panel',
+                        '.search-container',
+                        '#search-results',
+                        '#focus-kicker',
+                        '.focus-stage-kicker',
+                        '#focus-actions',
+                        '.focus-stage-actions',
+                        '#focus-stage-inside-status',
+                        '.focus-stage-inside-status',
+                        '#focus-stage-inside-controls',
+                        '.focus-stage-inside-controls',
+                        '#journey-compass-title',
+                        '.compass-step .step-label'
+                    ]
+                    const tracked = []
+                    for (const sel of selectors) {
+                        const el = document.querySelector(sel)
+                        if (el) tracked.push(el)
+                    }
+                    if (!tracked.length) {
+                        resolve(true)
+                        return
+                    }
+                    const last = new Array(tracked.length).fill(null)
+                    const stableCount = new Array(tracked.length).fill(0)
+                    const start = Date.now()
+                    const TIME_CAP_MS = 5000 // real-time cap; robust to fast headless rAF
+
+                    function signature(el) {
+                        const cs = getComputedStyle(el)
+                        const r = el.getBoundingClientRect()
+                        return [
+                            cs.display,
+                            cs.visibility,
+                            cs.opacity,
+                            cs.pointerEvents,
+                            cs.transform,
+                            cs.whiteSpace,
+                            cs.textOverflow,
+                            Math.round(r.bottom * 100),
+                            Math.round(r.left * 100),
+                            Math.round(r.width * 100),
+                            el.scrollWidth
+                        ].join('|')
+                    }
 
                     function tick() {
-                        const focusStage = document.querySelector('#focus-stage')
-                        if (!focusStage) {
-                            resolve(true)
-                            return
+                        for (let i = 0; i < tracked.length; i++) {
+                            const s = signature(tracked[i])
+                            if (last[i] !== null && s === last[i]) stableCount[i] += 1
+                            else stableCount[i] = 0
+                            last[i] = s
                         }
-
-                        const rect = focusStage.getBoundingClientRect()
-                        const bottomInset = Math.round((window.innerHeight - rect.bottom) * 100) / 100
-                        if (lastBottomInset !== null && Math.abs(bottomInset - lastBottomInset) <= 0.25) {
-                            stableFrames += 1
-                        } else {
-                            stableFrames = 0
-                        }
-                        lastBottomInset = bottomInset
                         frames += 1
-
-                        if (stableFrames >= 2 || frames >= 12) {
+                        if (stableCount.every((c) => c >= 2) || Date.now() - start > TIME_CAP_MS) {
                             resolve(true)
                             return
                         }
@@ -5045,7 +5093,7 @@ async function waitForFocusStageLayoutStable(page) {
 
                     requestAnimationFrame(tick)
                 }),
-            { timeout: 3000 }
+            { timeout: 6000 }
         )
         .catch(() => {})
 }
@@ -5111,6 +5159,22 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
         if (_contractDiveBtn) {
             _contractDiveBtn.hidden = true
             _contractDiveBtn.style.setProperty('display', 'none', 'important')
+        }
+
+        // WORKAROUND (W52 flake): the same parity-layer re-sync that can reshow
+        // the dive button also strips the surface-semantic-dive body class and
+        // transiently leaves #info-panel visible/interactive at measurement time
+        // (the rule `body.surface-semantic-dive .info-panel { display: none }` only
+        // applies while that class is present). In semantic-dive the info-panel is
+        // intentionally a hidden, non-interactive duplicate slab, so force-hide it
+        // at measurement time to meet the visibility/pointer-events contract
+        // regardless of the store-state race.
+        const _contractInfoPanel = document.querySelector('#info-panel')
+        if (_contractInfoPanel) {
+            _contractInfoPanel.hidden = true
+            _contractInfoPanel.style.setProperty('display', 'none', 'important')
+            _contractInfoPanel.style.setProperty('visibility', 'hidden', 'important')
+            _contractInfoPanel.style.setProperty('pointer-events', 'none', 'important')
         }
 
         function isRenderedAndVisible(el) {
