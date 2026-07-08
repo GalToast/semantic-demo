@@ -139,6 +139,7 @@
 </script>
 
 {#if visible}
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <nav
     class="compass-rail compass-steps"
     class:active={compassPhase() === 'active'}
