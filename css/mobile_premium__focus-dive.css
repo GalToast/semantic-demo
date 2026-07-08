@@ -1378,6 +1378,22 @@
         overscroll-behavior: contain;
     }
 
+    /* Step Inside (semantic-dive) overrides the trail-active two-lane top
+       layout: when the semantic-dive state is active the selected business
+       card becomes a bottom sheet, flush with the viewport bottom. Without
+       this, .focus-card stays top-anchored (top:10px; bottom:auto) even
+       though it should be bottom-flush in Step Inside. This matches the
+       contract oracle's expected geometry for the focus-pocket surface.
+       Scoped to [data-semantic-dive='active'] so the focus-search + trail
+       two-lane top layout (above) is unchanged for non-dive states. */
+    body.surface-focus-search[data-trail-state='active']:not([data-focus-panel-mode='field-node'])[data-semantic-dive='active']
+        .focus-card.focus-stage-card {
+        top: auto;
+        bottom: max(0px, env(safe-area-inset-bottom, 0px));
+        max-height: calc(100dvh - max(0px, env(safe-area-inset-bottom, 0px)) - 10px);
+        overflow-y: auto;
+    }
+
     body.surface-focus-search[data-trail-state='active'] #journey-chrome.journey-chrome {
         position: fixed;
         top: clamp(214px, 27dvh, 240px);
