@@ -42,6 +42,26 @@ function makeFakeLoader<T>(value: T, opts: { delay?: number; shouldReject?: bool
     }
 }
 
+/**
+ * Poll until the lazy handle settles (isPending flips false) instead of a
+ * fixed wall-clock wait. The earlier `await new Promise(r => setTimeout(r, 50))`
+ * pattern was intermittently flaky under the full unit-suite load: Node's
+ * timer queue drifts when 2800+ tests queue timers, so a 5ms loader could
+ * resolve AFTER the 50ms wait and the assertion would see `current === null`.
+ * Polling with a generous timeout eliminates the dependence on timer-queue
+ * scheduling accuracy while keeping the test fast on a quiet event loop
+ * (the 5ms poll interval exits within one loader-resolution cycle).
+ */
+async function awaitIdle(
+    lc: { readonly isPending: boolean },
+    timeoutMs = 2000
+): Promise<void> {
+    const start = Date.now()
+    while (lc.isPending && Date.now() - start < timeoutMs) {
+        await new Promise((r) => setTimeout(r, 5))
+    }
+}
+
 describe('createLazyComponent runtime behavior', () => {
     it('current and isPending are null/false initially', () => {
         const lc = createLazyComponent(() => Promise.resolve({ default: {} as never }))
@@ -57,7 +77,7 @@ describe('createLazyComponent runtime behavior', () => {
         // Wait for the fake loader's setTimeout to fire AND any microtask
         // queue to drain. 50ms is comfortable in batch runs (20ms was
         // occasionally flaky under parallel test load).
-        await new Promise((r) => setTimeout(r, 50))
+        await awaitIdle(lc)
         expect(lc.current).toEqual({ name: 'TestComponent' })
         expect(lc.isPending).toBe(false)
     })
@@ -68,7 +88,7 @@ describe('createLazyComponent runtime behavior', () => {
         lc.ensure(true)
         lc.ensure(true)
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 50))
+        await awaitIdle(lc)
         expect(fake.callCount).toBe(1)
         expect(lc.current).toEqual({ x: 1 })
     })
@@ -87,7 +107,7 @@ describe('createLazyComponent runtime behavior', () => {
         const fake = makeFakeLoader({ x: 1 }, { delay: 5 })
         const lc = createLazyComponent(fake.loader)
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 50))
+        await awaitIdle(lc)
         expect(lc.current).not.toBeNull()
         lc.ensure(false, { clearOnFalse: true })
         expect(lc.current).toBeNull()
@@ -98,7 +118,7 @@ describe('createLazyComponent runtime behavior', () => {
         const fake = makeFakeLoader({ x: 1 }, { delay: 5 })
         const lc = createLazyComponent(fake.loader)
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 50))
+        await awaitIdle(lc)
         expect(lc.current).not.toBeNull()
         lc.ensure(false) // no clearOnFalse
         expect(lc.current).not.toBeNull()
@@ -109,7 +129,7 @@ describe('createLazyComponent runtime behavior', () => {
         const lc = createLazyComponent(fake.loader, { logOnError: false })
         lc.ensure(true)
         expect(lc.isPending).toBe(true)
-        await new Promise((r) => setTimeout(r, 50))
+        await awaitIdle(lc)
         expect(lc.isPending).toBe(false)
         expect(lc.current).toBeNull()
     })
@@ -123,7 +143,7 @@ describe('createLazyComponent runtime behavior', () => {
         const failing = makeFakeLoader({}, { shouldReject: true })
         const lc = createLazyComponent(failing.loader, { logOnError: false })
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 50))
+        await awaitIdle(lc)
         expect(lc.isPending).toBe(false)
         // The handle's isPending flag is the gate; since it's false, a
         // future ensure(true) would proceed. Confirm by checking state.
@@ -143,7 +163,7 @@ describe('createLazyComponent idle option', () => {
         const fake = makeFakeLoader({ x: 1 }, { delay: 1 })
         const lc = createLazyComponent(fake.loader, { idle: false })
         lc.ensure(true)
-        await new Promise((r) => setTimeout(r, 50))
+        await awaitIdle(lc)
         expect(fake.callCount).toBe(1)
         expect(lc.current).toEqual({ x: 1 })
     })
