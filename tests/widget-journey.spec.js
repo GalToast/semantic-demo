@@ -82,21 +82,29 @@ test.describe('Widget journey', () => {
     })
 
     // Fixme (W52 playtest): the PR-W47-g fix that routes neighborCount===0
-    // to the "No more visible stops in this slice." fallback is verified in
-    // source — see src/lib/journey/focus-ui.ts line 628 and
-    // src/components/JourneyChrome.svelte lines 199-206 (commit 11b176e8).
-    // It is NOT deterministically exercisable as a runtime assertion in the
-    // current harness because: (a) the 8,406-point graph is dense enough
-    // that no naturally focused point has 0 visible neighbors, so the
-    // branch never fires in real data; and (b) updateTraversalUi is driven
-    // by a Svelte $effect chain that recomputes trailNeighborIndices from
-    // appState.points after any test-side mutation, overwriting a force-
-    // zeroed array before the test can read the fallback text. Forcing
-    // the 0-neighbor mid-trail state would require stubbing the recompute
-    // path, which is too invasive for a regression detector. Kept as
-    // test.fixme so the name remains a marker — if the branch logic in
-    // focus-ui.ts / JourneyChrome.svelte is ever changed, this test
-    // reminds the next reviewer to validate the fallback wording.
+    // to the "No more visible stops in this slice." fallback is locked in
+    // by a structural regression detector at
+    // tests/unit-active/focus-ui-pr-w47-g-fallback-structural.test.ts,
+    // which asserts the fallback string + the neighborCount>0 guard are
+    // present in BOTH src/lib/journey/focus-ui.ts and
+    // src/components/JourneyChrome.svelte. A full mocked-DOM runtime test
+    // of updateTraversalUi() would require a controlled appState fixture
+    // satisfying the module-level mirror inits in viewport / search /
+    // journey / filter / demo / parity stores (~15-20 min of shape
+    // matching) — deferred unless the structural detector ever slips.
+    //
+    // Why this is test.fixme and not test(): the 0-neighbor branch is NOT
+    // deterministically exercisable as a DOM-level journey assertion
+    // because: (a) the 8,406-point graph is dense enough that no naturally
+    // focused point has 0 visible neighbors, so the branch never fires in
+    // real data; and (b) updateTraversalUi is driven by a Svelte $effect
+    // chain that recomputes trailNeighborIndices from appState.points
+    // after any test-side mutation, overwriting a force-zeroed array
+    // before the test can read the fallback text. Kept as test.fixme so
+    // the name remains a marker — if the branch logic in focus-ui.ts /
+    // JourneyChrome.svelte is ever changed, this test reminds the next
+    // reviewer to validate the fallback wording AND to update the
+    // structural detector.
     test.fixme('5h. Trail counter never says "Stop N of 0" (W48 audit, JourneyChrome regression)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
@@ -840,12 +848,37 @@ test.describe('Widget journey', () => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1`, { waitUntil: 'domcontentloaded' })
 
-        // Wait for hydration + first paint
-        await page.waitForTimeout(1500)
-
         // Find the legend panel and check it's not translated off-screen
         const legend = page.locator('#legend-panel')
         await legend.waitFor({ state: 'attached', timeout: 5000 })
+
+        // W52: previously a fixed `waitForTimeout(1500)` raced with Svelte
+        // mount/hydration under CI load — the `.open` class (and the matching
+        // transform transition) sometimes landed a frame after the wait, so the
+        // first-paint assertions read the pre-open state and flaked. Wait for the
+        // settled open state explicitly instead. Pass criteria are unchanged —
+        // the `expect`s below still require `.open`, `aria-hidden !== 'true'`,
+        // and in-viewport. (`.catch` keeps a clear failure if the panel never
+        // opens, since the evaluate + expects below will report the real values.)
+        await page
+            .waitForFunction(
+                () => {
+                    const el = document.querySelector('#legend-panel')
+                    if (!el) return false
+                    const r = el.getBoundingClientRect()
+                    const cs = getComputedStyle(el)
+                    const inViewport = r.x + r.width > 0 && r.x < window.innerWidth
+                    return (
+                        el.classList.contains('open') &&
+                        el.getAttribute('aria-hidden') !== 'true' &&
+                        cs.display !== 'none' &&
+                        cs.visibility !== 'hidden' &&
+                        inViewport
+                    )
+                },
+                { timeout: 5000 }
+            )
+            .catch(() => {})
 
         const result = await legend.evaluate((el) => {
             const r = el.getBoundingClientRect()
