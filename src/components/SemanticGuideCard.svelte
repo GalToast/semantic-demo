@@ -143,10 +143,28 @@
      breakpoint — mobile users are action-oriented (tap results directly) and
      synthesis is a desktop ambient affordance. If/when mobile UX needs the
      synthesis flow, replace with a bottom-sheet anchored above the search panel. */
+  /* W52 fix (design-conflict finding): the W48 audit hid .summary-card on
+     mobile, which broke the synthesis-summary-card contract surface
+     (visibility:summary-card failed because display:none zeroes the rect).
+     Per the W48 comment's own guidance, render the summary as a bottom-sheet
+     anchored at the bottom of the viewport instead of hiding it. The match
+     list (search results) is top-anchored on mobile, so a bottom sheet does
+     not occlude it. The .synthesize-trigger CTA stays hidden on mobile (W48
+     intent — it overlapped the third match card). */
   @media (max-width: 768px) {
-    .synthesize-trigger:not(.hidden),
-    .summary-card:not(.hidden) {
+    .synthesize-trigger:not(.hidden) {
       display: none;
+    }
+    .summary-card:not(.hidden) {
+      left: 0;
+      right: 0;
+      top: auto;
+      bottom: 0;
+      width: auto;
+      max-width: 390px;
+      margin-inline: auto;
+      max-height: 45vh;
+      border-radius: 0.75rem 0.75rem 0 0;
     }
   }
   .summary-card.hidden {

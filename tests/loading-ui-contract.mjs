@@ -115,15 +115,18 @@ if (hasSvelte && svelteLoadingSource) {
 
     svelteTests.push(async function testSvelteLoadingStateAttribute() {
         if (!svelteLoadingSource) return skip('LoadingOverlay.svelte not readable')
-        const hasStateAttr = svelteLoadingSource.includes('data-loading-state="active"') ||
+        const hasStateAttr =
+            svelteLoadingSource.includes('data-loading-state="active"') ||
             svelteLoadingSource.includes("data-loading-state={isError ? 'error' : 'active'}") ||
             svelteLoadingSource.includes('data-loading-state={')
         // role: accepts either literal 'progressbar' or the conditional form
         // role={isError ? 'alert' : 'progressbar'} (error-state handling).
-        const hasRoleProgressbar = svelteLoadingSource.includes('role="progressbar"') ||
+        const hasRoleProgressbar =
+            svelteLoadingSource.includes('role="progressbar"') ||
             svelteLoadingSource.includes("role={isError ? 'alert' : 'progressbar'}")
         // aria-valuenow: accepts either literal or dynamic form.
-        const hasAriaValuenow = svelteLoadingSource.includes('aria-valuenow') &&
+        const hasAriaValuenow =
+            svelteLoadingSource.includes('aria-valuenow') &&
             (svelteLoadingSource.includes('aria-valuenow="') || svelteLoadingSource.includes('aria-valuenow={'))
         if (!hasStateAttr) throw new Error('LoadingOverlay must set data-loading-state attribute')
         if (!hasRoleProgressbar) throw new Error('LoadingOverlay must have role="progressbar" (literal or conditional)')
@@ -140,8 +143,12 @@ if (hasSvelte && svelteLoadingSource) {
         // must not re-declare backgrounds on .loading-overlay or .loading-shell.
         const overlayBg = /\.loading-overlay\s*\{[\s\S]*?background[\s\S]*?\}/.test(styleBlock)
         const shellBg = /\.loading-shell\s*\{[\s\S]*?background[\s\S]*?\}/.test(styleBlock)
-        if (overlayBg) throw new Error('LoadingOverlay scoped styles must not set .loading-overlay background; use css/loading.css')
-        if (shellBg) throw new Error('LoadingOverlay scoped styles must not set .loading-shell background; use css/loading.css')
+        if (overlayBg)
+            throw new Error(
+                'LoadingOverlay scoped styles must not set .loading-overlay background; use css/loading.css'
+            )
+        if (shellBg)
+            throw new Error('LoadingOverlay scoped styles must not set .loading-shell background; use css/loading.css')
         ok('LoadingOverlay scoped styles defer overlay/shell background to css/loading.css')
     })
 

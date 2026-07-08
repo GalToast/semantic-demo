@@ -47,9 +47,7 @@ function sectionBetween(source, startAnchor, endAnchor) {
     // Accept either literal strings or regexes (delimited by /.../).
     const isRe = startAnchor.startsWith('/') && startAnchor.endsWith('/')
     const startRe = isRe ? new RegExp(startAnchor.slice(1, -1)) : null
-    const start = isRe
-        ? source.search(startRe)
-        : source.indexOf(startAnchor)
+    const start = isRe ? source.search(startRe) : source.indexOf(startAnchor)
     const end = source.indexOf(endAnchor, Math.max(start, 0))
     assert(start >= 0 && end > start, `${startAnchor} section should exist`)
     return start >= 0 && end > start ? source.slice(start, end) : ''
@@ -58,7 +56,11 @@ function sectionBetween(source, startAnchor, endAnchor) {
 // Post-W8 extraction: bezier line-pair emission and per-frame thread updates
 // moved from mycelium-engine.ts (now fossilized) into thread-manager.ts.
 // Assert against thread-manager.ts where the live implementation lives.
-const pushBezierSource = sectionBetween(threadManager, 'function pushBezierLinePair', '// ── Dirty-node tracking for amortized updates')
+const pushBezierSource = sectionBetween(
+    threadManager,
+    'function pushBezierLinePair',
+    '// ── Dirty-node tracking for amortized updates'
+)
 includesAll(
     pushBezierSource,
     [
@@ -108,7 +110,9 @@ for (const profile of opacityProfiles) {
     )
 }
 
-const initThreeSource = sectionBetween(threeSetup, '/export (?:async )?function initThreeJS\(|{[^}]*\\binitThreeJS\\b[^}]*}\\s+from)/',
+const initThreeSource = sectionBetween(
+    threeSetup,
+    '/export (?:async )?function initThreeJS\(|{[^}]*\\binitThreeJS\\b[^}]*}\\s+from)/',
     'export function onWindowResize()'
 )
 includesAll(

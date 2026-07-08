@@ -669,23 +669,17 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
     animation-duration: 2.4s;
 }
 
-body.view-map[data-terrain-handoff='landing']
-    #map-container
-    .leaflet-interactive.semantic-map-route-line {
+body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactive.semantic-map-route-line {
     filter: drop-shadow(0 0 16px rgba(255, 226, 132, 0.38))
         drop-shadow(0 0 34px rgba(var(--color-primary-tint-rgb), 0.28));
     animation-duration: 1.55s;
 }
 
-body.view-map[data-terrain-handoff='landing']
-    #map-container
-    .leaflet-interactive.semantic-map-route-line-aura {
+body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactive.semantic-map-route-line-aura {
     filter: blur(1.4px) drop-shadow(0 0 26px rgba(var(--color-primary-tint-rgb), 0.28));
 }
 
-body.view-map[data-terrain-handoff='landing']
-    #map-container
-    .leaflet-interactive.semantic-map-route-pulse {
+body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactive.semantic-map-route-pulse {
     animation-duration: 1.65s;
 }
 
@@ -752,7 +746,6 @@ body.view-map[data-terrain-handoff='landing']
         transform: scale(1);
     }
 }
-
 
 @media (prefers-reduced-motion: reduce) {
     /* Silence terrain bridge and map route pulse animations for users who prefer reduced motion. */

@@ -53,16 +53,18 @@
     flex-direction: column;
     gap: 0.3rem;
   }
-  /* W48 mobile audit: the search-trail-cue anchors to bottom: 5rem (same
-     region as the bottom-anchored search panel on mobile). Even though
-     z-index 50 keeps it behind result cards (z=99), the result cards
-     have semi-transparent backgrounds and the cue text shows through.
-     Hide the cue below MOBILE_MAX_WIDTH (768) — the cue is a brief
-     search-stage narrative that loses its value once results are
-     visible on small screens where every pixel counts. */
+  /* W48 mobile audit: the search-trail-cue originally anchored to
+     bottom: 5rem — the same region as the bottom-anchored search panel
+     on mobile. Even though z-index 50 keeps it behind result cards
+     (z=99), the result cards have semi-transparent backgrounds and the
+     cue text showed through. Instead of hiding the cue entirely,
+     reposition it to the top of the viewport so it is genuinely visible
+     on mobile without overlapping the bottom search panel or result
+     cards. */
   @media (max-width: 768px) {
     .search-trail-cue:not([hidden]) {
-      display: none !important;
+      top: 1rem;
+      bottom: auto;
     }
   }
 
