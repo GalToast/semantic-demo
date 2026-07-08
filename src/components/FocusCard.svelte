@@ -131,8 +131,24 @@
   });
 
   let selectionSource = $derived.by((): 'search' | 'field' | null => {
-    if (currentActiveResult != null && selectedRecord != null) return 'search';
-    if (currentFocusedIdx != null && currentFocusedIdx >= 0 && selectedRecord != null) return 'field';
+    if (!selectedRecord) return null;
+    // A selection is 'search' ONLY when it is an active search result — i.e.
+    // the focused node is a member of the current search summary's result
+    // set. A plain field/canvas focus (focusedIndex set, no active search)
+    // is 'field'. This keeps the de-jargoned badge "Business view" for
+    // normal node selections (UX-2) and reserves "Search result" for real
+    // matches, fixing the 5k regression where activeResult() (keyed off
+    // focusedIndex for ANY focus) mislabeled field clicks as 'search'.
+    const summary = appState.searchState.currentSearchSummary as
+      | { resultIndices?: number[] }
+      | null;
+    const isSearchResult =
+      !!summary &&
+      Array.isArray(summary.resultIndices) &&
+      currentFocusedIdx != null &&
+      summary.resultIndices.includes(currentFocusedIdx as number);
+    if (isSearchResult) return 'search';
+    if (currentFocusedIdx != null && currentFocusedIdx >= 0) return 'field';
     return null;
   });
 

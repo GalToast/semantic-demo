@@ -547,6 +547,22 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
 
 #map-container .leaflet-control-attribution a {
     color: rgba(148, 232, 223, 0.88);
+    /* W-audit (global-spacing touch-target): Leaflet's attribution link is a
+       bare <a> injected by Leaflet (no Svelte scope class) and renders at
+       ~14px tall on idle, below the 44px tap-target minimum. Give it a 44px
+       tap target without changing its purpose. On surface-map-any the whole
+       attribution control is display:none (mobile map), so this only affects
+       the idle/desktop states where it is visible. */
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    min-width: 44px;
+    border-radius: 0.3rem;
+}
+
+#map-container .leaflet-control-attribution a:focus-visible {
+    outline: 2px solid rgba(78, 205, 196, 0.6);
+    outline-offset: 2px;
 }
 
 /* Map empty state */

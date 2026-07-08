@@ -113,6 +113,43 @@
       showErrorToast('Copy failed', 'Clipboard access was blocked. Long-press the address bar to copy the URL instead.')
     }
   }
+
+  // W51-C4: roving tabindex for the camera toolbar (WAI-ARIA toolbar pattern).
+  // The container is a non-tabbable toolbar (tabindex="-1"); exactly one
+  // button holds the roving tab stop (tabindex="0") and Arrow/Home/End move
+  // focus between buttons. Without this, keyboard users had to Tab through
+  // all five buttons individually.
+  let rovingIndex = $state(0);
+
+  function onCameraToolbarKeydown(e: KeyboardEvent): void {
+    const toolbar = e.currentTarget as HTMLElement;
+    const buttons = Array.from(toolbar.querySelectorAll<HTMLButtonElement>('button.control-btn'));
+    if (buttons.length === 0) return;
+    const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
+    if (current < 0) return;
+    let next = current;
+    switch (e.key) {
+      case 'ArrowRight':
+      case 'ArrowDown':
+        next = (current + 1) % buttons.length;
+        break;
+      case 'ArrowLeft':
+      case 'ArrowUp':
+        next = (current - 1 + buttons.length) % buttons.length;
+        break;
+      case 'Home':
+        next = 0;
+        break;
+      case 'End':
+        next = buttons.length - 1;
+        break;
+      default:
+        return;
+    }
+    e.preventDefault();
+    rovingIndex = next;
+    buttons[next]?.focus();
+  }
 </script>
 
 <div
@@ -121,13 +158,14 @@
     id="camera-controls"
     role="toolbar"
     aria-label="Camera controls"
-    tabindex="0"
+    tabindex="-1"
     hidden={!visible}
+    onkeydown={onCameraToolbarKeydown}
     onpointerdown={(e) => e.stopPropagation()}
     onwheel={(e) => e.stopPropagation()}
     ondblclick={(e) => e.stopPropagation()}
   >
-    <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in" type="button">
+    <button class="control-btn" onclick={zoomIn} title="Zoom in" aria-label="Zoom in" type="button" tabindex={rovingIndex === 0 ? 0 : -1}>
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="M10.5 7.8v5.4M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -136,7 +174,7 @@
       <span class="control-label">Zoom in</span>
     </button>
 
-    <button class="control-btn" onclick={zoomOut} title="Zoom out" aria-label="Zoom out" type="button">
+    <button class="control-btn" onclick={zoomOut} title="Zoom out" aria-label="Zoom out" type="button" tabindex={rovingIndex === 1 ? 0 : -1}>
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="10.5" cy="10.5" r="5.8" fill="none" stroke="currentColor" stroke-width="2"/>
         <path d="M7.8 10.5h5.4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -145,7 +183,7 @@
       <span class="control-label">Zoom out</span>
     </button>
 
-    <button class="control-btn" onclick={resetView} title="Reset view" aria-label="Reset view" type="button">
+    <button class="control-btn" onclick={resetView} title="Reset view" aria-label="Reset view" type="button" tabindex={rovingIndex === 2 ? 0 : -1}>
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M7 8a7 7 0 1 1-1 8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
         <path d="M7 4v4h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
@@ -163,6 +201,7 @@
       aria-label="Toggle auto-rotate"
       aria-pressed={cameraState.autoRotate}
       type="button"
+      tabindex={rovingIndex === 3 ? 0 : -1}
     >
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <path d="M12 4a8 8 0 1 1-7.4 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
@@ -171,7 +210,7 @@
       <span class="control-label">Rotate</span>
     </button>
 
-    <button class="control-btn" onclick={shareLink} title="Share link" aria-label="Share link" type="button">
+    <button class="control-btn" onclick={shareLink} title="Share link" aria-label="Share link" type="button" tabindex={rovingIndex === 4 ? 0 : -1}>
       <svg width="16" height="16" viewBox="0 0 24 24" aria-hidden="true">
         <circle cx="7" cy="12" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
         <circle cx="17" cy="6" r="2" fill="none" stroke="currentColor" stroke-width="2"/>
