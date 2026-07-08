@@ -67,7 +67,20 @@
   // ── Adapters ──────────────────────────────────────────────────────────────────
 
   const selectedDetailsAdapter: Record<string, (..._args: unknown[]) => unknown> = {
-    getSelectedBusinessRoleLabel: () => 'Business',
+    getSelectedBusinessRoleLabel: () => {
+      // UX-2 de-jargon (mirrors FocusCard.svelte): a plain field/canvas focus is
+      // labeled "Business view"; an active search result is "Search result".
+      // Previously hardcoded to "Business", which broke the 5k journey check
+      // (it reads the first #selected-role-badge, rendered by this panel).
+      const summary = searchSummary() as { resultIndices?: number[] } | null
+      const idx = currentFocusedIdx
+      const isSearchResult =
+        !!summary &&
+        Array.isArray(summary.resultIndices) &&
+        idx != null &&
+        (summary.resultIndices as number[]).includes(idx as number)
+      return isSearchResult ? 'Search result' : 'Business view'
+    },
     getInterestingBusinessNote: getInterestingBusinessNote as (..._args: unknown[]) => unknown,
     buildSelectedMatchNarrative: buildPointMatchNarrative as (..._args: unknown[]) => unknown,
     describeThreadLensForPoint: describeThreadLensForPoint as (..._args: unknown[]) => unknown
