@@ -22,6 +22,8 @@
         "model:health:smoke": "node scripts/model-health-check.mjs --smoke",
         "model:health:logfare": "node scripts/model-health-check.mjs --provider=logfare --smoke",
         "model:health:kimi": "node scripts/model-health-check.mjs --provider=logfare --limit=4",
+        "model:reasoning:check": "node scripts/model-health-check.mjs --reasoning-check",
+        "model:reasoning:logfare": "node scripts/model-health-check.mjs --provider=logfare,nvidia --reasoning-check",
         "format": "prettier --write \"{js,tests}/**/*.{js,ts,css}\"",
         "check:shell": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/shell-contract-check.js",
         "check:manifest": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-manifest-contract.mjs && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/package-script-targets-contract.mjs && node --loader ./tests/helpers/ts-resolve-loader.mjs tests/css-self-reference-check.mjs",
