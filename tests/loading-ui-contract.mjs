@@ -118,11 +118,16 @@ if (hasSvelte && svelteLoadingSource) {
         const hasStateAttr = svelteLoadingSource.includes('data-loading-state="active"') ||
             svelteLoadingSource.includes("data-loading-state={isError ? 'error' : 'active'}") ||
             svelteLoadingSource.includes('data-loading-state={')
-        const hasRoleProgressbar = svelteLoadingSource.includes('role="progressbar"')
-        const hasAriaValuenow = svelteLoadingSource.includes('aria-valuenow')
+        // role: accepts either literal 'progressbar' or the conditional form
+        // role={isError ? 'alert' : 'progressbar'} (error-state handling).
+        const hasRoleProgressbar = svelteLoadingSource.includes('role="progressbar"') ||
+            svelteLoadingSource.includes("role={isError ? 'alert' : 'progressbar'}")
+        // aria-valuenow: accepts either literal or dynamic form.
+        const hasAriaValuenow = svelteLoadingSource.includes('aria-valuenow') &&
+            (svelteLoadingSource.includes('aria-valuenow="') || svelteLoadingSource.includes('aria-valuenow={'))
         if (!hasStateAttr) throw new Error('LoadingOverlay must set data-loading-state attribute')
-        if (!hasRoleProgressbar) throw new Error('LoadingOverlay must have role="progressbar"')
-        if (!hasAriaValuenow) throw new Error('LoadingOverlay must have aria-valuenow')
+        if (!hasRoleProgressbar) throw new Error('LoadingOverlay must have role="progressbar" (literal or conditional)')
+        if (!hasAriaValuenow) throw new Error('LoadingOverlay must have aria-valuenow (literal or dynamic)')
         ok('Svelte LoadingOverlay has accessibility attributes and loading state')
     })
 

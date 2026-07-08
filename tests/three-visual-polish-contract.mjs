@@ -55,14 +55,17 @@ function sectionBetween(source, startAnchor, endAnchor) {
     return start >= 0 && end > start ? source.slice(start, end) : ''
 }
 
-const pushBezierSource = sectionBetween(myceliumEngine, 'function pushBezierLinePair', '// ── updateMyceliumThreads')
+// Post-W8 extraction: bezier line-pair emission and per-frame thread updates
+// moved from mycelium-engine.ts (now fossilized) into thread-manager.ts.
+// Assert against thread-manager.ts where the live implementation lives.
+const pushBezierSource = sectionBetween(threadManager, 'function pushBezierLinePair', '// ── Dirty-node tracking for amortized updates')
 includesAll(
     pushBezierSource,
     [
-        'const samples = []',
-        'for (let i = 0; i < samples.length - 1; i++)',
-        'target.push(start.x, start.y, start.z, end.x, end.y, end.z)',
-        'colorTarget.push(start.r, start.g, start.b, end.r, end.g, end.b)'
+        'const samples:',
+        'for (let i = 0; i < samples.length - 1',
+        'positions.push(a.x, a.y, a.z, b.x, b.y, b.z)',
+        'colors.push(a.r, a.g, a.b, b.r, b.g, b.b)'
     ],
     'pushBezierLinePair continuous LineSegments emission'
 )
@@ -144,18 +147,21 @@ assert(
     'focus halo should stay restrained so it does not wash out the selected-node scene'
 )
 
+// updateMyceliumThreads now uses LineSegments2 fat-line attributes
+// (instanceStart/instanceEnd) for per-pair continuity, with explicit
+// float accounting via SEGMENTS_PER_PAIR/FLOATS_PER_SEGMENT.
 const updateThreadsSource = sectionBetween(
-    myceliumEngine,
+    threadManager,
     'export function updateMyceliumThreads',
     'state.myceliumDirty = false'
 )
 includesAll(
     updateThreadsSource,
     [
-        'five explicit segment pairs: 10 vertices / 30 floats',
-        'const FLOATS_PER_BEZIER_EDGE = 30',
-        'for (let i = 0; i < samples.length - 1; i++)',
-        'verts.push(samples[i]!, samples[i + 1]!)'
+        'SEGMENTS_PER_PAIR = 5',
+        'FLOATS_PER_SEGMENT = 6',
+        "geom?.getAttribute('instanceStart')",
+        "geom?.getAttribute('instanceEnd')"
     ],
     'animated mycelium thread continuity'
 )

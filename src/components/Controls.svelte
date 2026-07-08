@@ -127,7 +127,7 @@
     if (buttons.length === 0) return;
     const current = buttons.indexOf(document.activeElement as HTMLButtonElement);
     if (current < 0) return;
-    let next = current;
+    let next: number;
     switch (e.key) {
       case 'ArrowRight':
       case 'ArrowDown':
