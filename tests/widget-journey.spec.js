@@ -196,44 +196,62 @@ test.describe('Widget journey', () => {
         )
         await page.waitForTimeout(800)
 
-        // The synthesize-trigger and search-trail-cue must both be hidden
-        // at mobile (max-width: 768px) regardless of whether their internal
-        // "show" state is true.
+        // W48 fix landed in d77bfeb7: the search-trail-cue is repositioned
+        // to top: 1rem on mobile (instead of hidden) so it stays visible
+        // on small screens without occluding the bottom-anchored search
+        // panel. The W48 audit invariant is "never overlap result cards",
+        // not "must be display:none" — assert the cue is visible and top
+        // anchored, and (below) that its rect does not intersect Match 3.
+        // The .synthesize-trigger remains display:none on mobile (W48
+        // intent preserved by the d77bfeb7 SemanticGuideCard change).
         const overlap = await page.evaluate(() => {
             const result = { synth: null, cue: null }
             const synth = document.querySelector('.synthesize-trigger')
             if (synth) {
                 const cs = getComputedStyle(synth)
+                const r = synth.getBoundingClientRect()
                 result.synth = {
                     display: cs.display,
                     visibility: cs.visibility,
-                    width: synth.getBoundingClientRect().width,
-                    height: synth.getBoundingClientRect().height
+                    width: r.width,
+                    height: r.height,
+                    top: r.top,
+                    bottom: r.bottom
                 }
             }
             const cue = document.querySelector('#search-trail-cue')
             if (cue) {
                 const cs = getComputedStyle(cue)
+                const r = cue.getBoundingClientRect()
                 result.cue = {
                     display: cs.display,
                     visibility: cs.visibility,
-                    width: cue.getBoundingClientRect().width,
-                    height: cue.getBoundingClientRect().height
+                    width: r.width,
+                    height: r.height,
+                    top: r.top,
+                    bottom: r.bottom
                 }
             }
             return result
         })
 
-        expect(overlap.synth, 'synthesize-trigger must be display:none on mobile (375px)').toMatchObject({
+        expect(overlap.synth, 'synthesize-trigger must be display:none on mobile (375px) — W48 intent').toMatchObject({
             display: 'none',
             width: 0,
             height: 0
         })
-        expect(overlap.cue, 'search-trail-cue must be display:none on mobile (375px)').toMatchObject({
-            display: 'none',
-            width: 0,
-            height: 0
-        })
+        // Cue is now top-anchored (W48 reposition): assert it's visible and
+        // sits at the top of the viewport, well above the bottom search panel.
+        expect(overlap.cue, 'search-trail-cue should be present on mobile').not.toBeNull()
+        expect(overlap.cue.display, 'search-trail-cue must not be display:none on mobile (W48 reposition keeps it visible)').not.toBe('none')
+        expect(overlap.cue.width, 'search-trail-cue must have positive width on mobile').toBeGreaterThan(0)
+        expect(overlap.cue.height, 'search-trail-cue must have positive height on mobile').toBeGreaterThan(0)
+        // Sanity: cue is positioned near the top (top: 1rem ~ 16px) so it
+        // cannot overlap the bottom-anchored search results panel.
+        expect(
+            overlap.cue.top,
+            `search-trail-cue must be top-anchored on mobile (got top=${overlap.cue.top}px; expected near 16px)`
+        ).toBeLessThan(64)
 
         // Also verify Match 3 is not occluded — its text rects should not be
         // covered by anything with the synth/cue classes.
