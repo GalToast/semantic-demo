@@ -214,8 +214,20 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         // re-fire: a SECOND SEARCH_FOCUS_REQUESTED + a SECOND applyLocalNeighborhoodFocus.
         semanticNeighborMapSet(new Map([['42', { neighbors: [{ leadId: '7', semanticScore: 0.9 }] }]]))
 
-        // The deferred re-fire is async (await import + microtasks). Flush.
-        await new Promise((r) => setTimeout(r, 10))
+        // The deferred re-fire is async (await import + microtasks). Poll
+        // for BOTH signals instead of a fixed 10ms to avoid timer-queue drift
+        // under suite load. applyLocalNeighborhoodFocus fires asynchronously
+        // after the publish call, so we wait for both before proceeding.
+        await vi.waitFor(() => {
+            const calls = mockState.publishCalls.filter(
+                (c) => c.type === 'search:search-focus-requested'
+            )
+            expect(calls.length).toBeGreaterThanOrEqual(2)
+            const focusCalls = mockState.applyLocalNeighborhoodFocusCalls.filter(
+                (i) => i === 42
+            )
+            expect(focusCalls.length).toBeGreaterThanOrEqual(2)
+        }, { timeout: 2000, interval: 5 })
 
         const allPublish = mockState.publishCalls.filter(
             (c) => c.type === 'search:search-focus-requested'
@@ -223,7 +235,6 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         const allFocus = [...mockState.applyLocalNeighborhoodFocusCalls]
 
         // The re-fire must have published a second SEARCH_FOCUS_REQUESTED for index 42.
-        expect(allPublish.length).toBeGreaterThanOrEqual(2)
         expect(allPublish[allPublish.length - 1].payload).toEqual({ index: 42 })
 
         // The re-fire must have called applyLocalNeighborhoodFocus a second time.
@@ -246,8 +257,13 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         ).length
         const focusCount = mockState.applyLocalNeighborhoodFocusCalls.filter((i) => i === 42).length
 
-        // Wait to confirm no deferred re-fire arrives.
-        await new Promise((r) => setTimeout(r, 10))
+        // Wait to confirm no deferred re-fire arrives. Use a deadline poll
+        // loop to isolate from timer-queue drift while keeping tests fast on
+        // a quiet loop (~100ms total). 10ms was tight under heavy suite load.
+        const absenceDeadline = Date.now() + 100
+        while (Date.now() < absenceDeadline) {
+            await new Promise((r) => setTimeout(r, 5))
+        }
 
         const publishCountAfter = mockState.publishCalls.filter(
             (c) => c.type === 'search:search-focus-requested'
@@ -276,7 +292,11 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
 
         // Now threads load — the deferred re-fire should bail (focusedIndex !== 42).
         semanticNeighborMapSet(new Map([['42', { neighbors: [{ leadId: '7', semanticScore: 0.9 }] }]]))
-        await new Promise((r) => setTimeout(r, 10))
+        // Poll briefly to confirm no re-fire fires. 10ms was tight under load.
+        const noReFireDeadline = Date.now() + 100
+        while (Date.now() < noReFireDeadline) {
+            await new Promise((r) => setTimeout(r, 5))
+        }
 
         const finalPublishCount = mockState.publishCalls.filter(
             (c) => c.type === 'search:search-focus-requested'

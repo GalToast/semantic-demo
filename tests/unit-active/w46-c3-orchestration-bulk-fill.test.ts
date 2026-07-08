@@ -196,8 +196,8 @@ describe('W46-C3: wait-for-gesture.ts contract', () => {
         // Note: in Playwright (navigator.webdriver=true) it auto-fires after a
         // microtask, so the assertion works in either environment.
         window.dispatchEvent(new Event('pointerdown'))
-        await new Promise((r) => setTimeout(r, 5))
-        expect(ready).toBe(true)
+        // Poll for gesture detection to fire onReady instead of fixed 5ms.
+        await vi.waitFor(() => expect(ready).toBe(true), { timeout: 2000, interval: 5 })
         cleanup()
     })
 })

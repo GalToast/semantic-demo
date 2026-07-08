@@ -193,12 +193,16 @@ describe('W11-T7: runtime — initAdapters() invokes all 10 adapters', () => {
         // W45: initRouteTraceSubscriptions is now loaded via dynamic import
         // (route-trace statically imports three.js for WebGL overlay rendering;
         // deferring keeps three out of the cold-load modulepreload set). The
-        // dynamic import is fire-and-forget inside initAdapters, so we wait
-        // for the microtask + dynamic-resolution cycle to complete before
-        // asserting.
-        await new Promise((resolve) => setTimeout(resolve, 50))
+        // dynamic import is fire-and-forget inside initAdapters, so we poll
+        // for all 10 adapter inits to complete instead of a fixed 50ms wait.
+        await vi.waitFor(() => {
+            for (const name of ADAPTER_INIT_NAMES) {
+                expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
+            }
+        }, { timeout: 2000, interval: 5 })
 
-        // All 10 should have been called exactly once
+        // All 10 should have been called exactly once (redundant with waitFor
+        // above but documents the invariant for human readers).
         for (const name of ADAPTER_INIT_NAMES) {
             expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
         }
@@ -206,9 +210,14 @@ describe('W11-T7: runtime — initAdapters() invokes all 10 adapters', () => {
         // Should now be initialized
         expect(areAdaptersInitialized()).toBe(true)
 
-        // Calling again should be a no-op (still 1 call each)
+        // Calling again should be a no-op (still 1 call each). Wait briefly
+        // to confirm no additional adapter init calls fire — _adaptersInitialized
+        // is synchronous so the second call returns immediately.
         initAdapters(mockDeps)
-        await new Promise((resolve) => setTimeout(resolve, 50))
+        const noopDeadline = Date.now() + 100
+        while (Date.now() < noopDeadline) {
+            await new Promise((resolve) => setTimeout(resolve, 5))
+        }
         for (const name of ADAPTER_INIT_NAMES) {
             expect(W11_MUTABLE_MOCK_FNS[name]).toHaveBeenCalledTimes(1)
         }

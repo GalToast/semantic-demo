@@ -45,8 +45,9 @@ describe('SearchBar component', () => {
         document.body.dataset.loadingPhase = 'searching'
         syncTestStateFromBody()
         const { container } = render(SearchBar)
-        // Flush any microticks and paint timings in Vitest JS-DOM
-        await new Promise((resolve) => setTimeout(resolve, 50))
+        // Poll for SearchResults to appear (Svelte reactivity + lazy import).
+        // Using waitFor directly replaces a fixed 50ms timer that was flaky
+        // under full suite load; waitFor polls every ~50ms by default.
         await waitFor(() => expect(container.querySelector('#search-results')).toBeTruthy(), { timeout: 30000 })
     })
 
