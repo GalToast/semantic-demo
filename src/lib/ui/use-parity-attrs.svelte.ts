@@ -53,6 +53,13 @@ export interface ParityAttrs {
      * recomputing the OR.
      */
     readonly focusSearchForced: boolean
+    /**
+     * Body data-render-kind (webgl | placeholder2d). Read via the bypass
+     * attribute snapshot so it tracks both the parityMap mirror and the
+     * raw DOM dataset — App.svelte's {#if renderKind !== 'placeholder2d'}
+     * gate depends on this reflecting the live body attribute.
+     */
+    readonly renderKind: string
 }
 
 /**
@@ -99,6 +106,12 @@ export function useParityAttrs(): ParityAttrs {
                 this.graphContext === 'focus-search' ||
                 document.body?.dataset.focusSearchForced === 'true'
             )
+        },
+        get renderKind(): string {
+            // Read via the bypass snapshot first (covers body dataset flips
+            // driven by setRenderKind and the auto-signal from App.svelte),
+            // then fall back to the live DOM dataset for tests/edge cases.
+            return getBypassAttr('renderKind') ?? document.body?.dataset.renderKind ?? ''
         }
     }
 }

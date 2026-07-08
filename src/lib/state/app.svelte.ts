@@ -281,7 +281,6 @@ class AppState {
         focusPocketIndices: [],
         focusPocketMeta: null,
         focusPocketRoleByIndex: new Map<number, string>(),
-        focusPocketAnimationFrameId: null,
         focusFramingMeta: null,
         currentPersonality: null,
         neighborhoodIndices: [],
@@ -516,7 +515,17 @@ class AppState {
     // ==== VIEWPORT / ENVIRONMENT STATE ====
     // Phase 6d: viewport fields moved into appState.viewportState sub-aggregate
     // ==== UI COMPONENT STATE ====
-    legendOpen = $state<boolean>(false)
+    // W51-UX-5: legend defaults to OPEN on desktop viewports (≥769px wide),
+    // closed on compact/mobile. The audit found that hiding the category
+    // legend behind a header toggle on desktop meant users never saw the
+    // 21-cluster color key without explicitly opening it — a critical
+    // mycelium-exploration affordance that was effectively invisible.
+    // SSR-safe: typeof window guard + matchMedia feature-detect.
+    legendOpen = $state<boolean>(
+        typeof window !== 'undefined' &&
+            typeof window.matchMedia === 'function' &&
+            !window.matchMedia('(max-width: 768px)').matches
+    )
     demoPhase = $state<string>('IDLE')
 
     // ==== WEATHER STATE (MIGRATED FROM weatherStateStore) ====
