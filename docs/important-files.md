@@ -6,10 +6,10 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 
 ## Engine
 
-- `src/lib/engine/three-engine.ts`
+- `src/lib/engine/three-engine.ts` — top-level engine orchestrator.
+- `src/lib/engine/three-engine-mycelium.ts` — live mycelium / thread wrapper; delegates to `thread-manager.ts` (the live line-builder, not the fossil `mycelium-engine.ts`).
+- `src/lib/engine/thread-manager.ts` — mycelium line geometry (core / wispy / bridge layers). Live path; replaces the fossil `mycelium-engine.ts`.
 - `src/lib/engine/node-manager.ts`
-- `src/lib/engine/mycelium-engine.ts`
-- `src/lib/engine/three-thread-manager.ts`
 - `src/lib/engine/resource-tracker.ts`
 
 ## Journey
