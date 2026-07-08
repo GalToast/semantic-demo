@@ -540,7 +540,7 @@
        (aria-hidden="true"). */
     border: none;
     background: transparent;
-    color: rgba(255, 255, 255, 0.45);
+    color: rgba(255, 255, 255, 0.45); /* a11y-ok: decorative kbd hint, aria-hidden="true", pointer-events: none */
     font-family: 'Bricolage Grotesque', monospace;
     font-size: 11px;
     font-weight: 600;
