@@ -4113,6 +4113,43 @@ const SURFACES = {
 async function assert_global_spacing(page, ctx) {
     await loadAndWait(page, positionalUrl)
 
+    // W52 flake fix (global-spacing): under the full 70-surface run (a single
+    // reused browser under load) interactive controls can still be animating
+    // when loadAndWait returns, so the touch-target check occasionally reads a
+    // control <44px mid-transition. Wait for layout to settle (control sizes
+    // stable across two rAF samples) before measuring. Pass criteria unchanged.
+    {
+        let prevSig = ''
+        let stableCount = 0
+        const deadline = Date.now() + 5000
+        while (Date.now() < deadline) {
+            const sig = await page
+                .evaluate(() => {
+                    const sel =
+                        'button:not([disabled]),input:not([disabled]),select:not([disabled]),a[href],[role="button"]:not([aria-disabled="true"]),[tabindex="0"]'
+                    return Array.from(document.querySelectorAll(sel))
+                        .filter((el) => {
+                            const s = getComputedStyle(el)
+                            return s.display !== 'none' && s.visibility !== 'hidden'
+                        })
+                        .map((el) => {
+                            const r = el.getBoundingClientRect()
+                            return `${Math.round(r.width)}x${Math.round(r.height)}`
+                        })
+                        .join('|')
+                })
+                .catch(() => '')
+            if (sig && sig === prevSig) {
+                stableCount += 1
+                if (stableCount >= 2) break
+            } else {
+                stableCount = 0
+            }
+            prevSig = sig
+            await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r()))).catch(() => {})
+        }
+    }
+
     const info = await page.evaluate(() => {
         function textClipped(el) {
             if (!el) return false

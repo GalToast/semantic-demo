@@ -316,11 +316,35 @@ test.describe('Widget journey', () => {
         await searchInput.waitFor({ state: 'attached', timeout: 10000 })
         await searchInput.fill('coffee')
         await page.keyboard.press('Enter')
+        // W52 flake fix: the old wait only waited for the wrapper to attach
+        // (12s) then a fixed 1500ms — under load the search-results panel is
+        // slow to render, so the wrapper was sometimes absent/null when the
+        // border was read (got `undefined`). Wait for the actual asserted
+        // post-condition (wrapper present AND border-top-width settled to
+        // '0px') instead of a fixed delay. Pass criteria unchanged.
+        // W48 flake fix: the .search-results-wrapper border is '0px' only once
+        // `.search-container` gains `.info-panel-contained` (the W48-UX CSS
+        // strips the border in panel-contained mode). Under load the class
+        // application + border transition lag the old fixed 12s+1500ms wait,
+        // so the assertion read `undefined` (wrapper absent) or `1px` (border
+        // not yet stripped). Wait for the exact asserted post-condition
+        // (container in panel-contained mode + wrapper present/visible + border
+        // settled to '0px') instead of a fixed delay. Pass criteria unchanged.
         await page
-            .locator('.search-results-wrapper')
-            .waitFor({ state: 'attached', timeout: 12000 })
+            .waitForFunction(
+                () => {
+                    const sc = document.querySelector('.search-container')
+                    if (!sc || !sc.classList.contains('info-panel-contained')) return false
+                    const sw = document.querySelector('.search-results-wrapper')
+                    if (!sw) return false
+                    const cs = getComputedStyle(sw)
+                    if (cs.display === 'none' || cs.visibility === 'hidden') return false
+                    return cs.borderTopWidth === '0px'
+                },
+                { timeout: 30000 }
+            )
             .catch(() => {})
-        await page.waitForTimeout(1500)
+        await page.waitForTimeout(100)
 
         const resultsStyles = await page.evaluate(() => {
             const sw = document.querySelector('.search-results-wrapper')
