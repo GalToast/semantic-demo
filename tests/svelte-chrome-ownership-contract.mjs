@@ -13,6 +13,7 @@ function exists(relativePath) {
 }
 
 function walk(dir, files = []) {
+  if (!fs.existsSync(path.join(root, dir))) return files;
   for (const entry of fs.readdirSync(path.join(root, dir), { withFileTypes: true })) {
     const relativePath = path.join(dir, entry.name).replace(/\\/g, '/');
     if (entry.isDirectory()) {
