@@ -48,15 +48,18 @@ const VIEW_MODEL = 'src/lib/view-models/selected-business-view-model.ts'
 const STAGE_RENDERER = 'src/lib/focus/stage-renderer.ts'
 const JOURNEY_STAGE_RENDERER = 'src/lib/journey/focus-stage-renderer.ts'
 const HTML_SHELL = 'vector-explorer-polished.html'
+const SELECTED_BUSINESS_DETAILS = 'src/components/SelectedBusinessDetails.svelte'
 
 // ── InfoPanel surface IDs (must ALL be owned by InfoPanel.svelte) ─────────────
 
-const INFO_PANEL_SURFACE_IDS = [
+const INFO_PANEL_STRUCTURAL_IDS = [
     'info-panel',
     'info-panel-content',
     'selected-card',
     'selected-empty',
-    'selected-details',
+    'selected-details'
+]
+const SELECTED_BUSINESS_DETAILS_CHILD_IDS = [
     'selected-name',
     'selected-what',
     'selected-meta-strip',
@@ -128,9 +131,14 @@ const RETIRED_COMPONENT_PATHS = [
 
 function testInfoPanelOwnsAllSurfaceIds() {
     const src = read(INFO_PANEL)
+    const sbdSrc = read(SELECTED_BUSINESS_DETAILS)
 
-    for (const id of INFO_PANEL_SURFACE_IDS) {
+    for (const id of INFO_PANEL_STRUCTURAL_IDS) {
         assert(src.includes(`id="${id}"`), `InfoPanel.svelte must own #${id}`)
+    }
+
+    for (const id of SELECTED_BUSINESS_DETAILS_CHILD_IDS) {
+        assert(sbdSrc.includes(`id="{idPrefix}${id}"`), `SelectedBusinessDetails.svelte must own prefixed #${id}`)
     }
 
     // Verify class-based surfaces

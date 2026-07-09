@@ -47,11 +47,11 @@ assert(
 );
 assert(
   componentSrc.includes('id="selected-details"') &&
-  selectedDetailsSrc.includes('id="${idPrefix}selected-action-row"') && selectedDetailsSrc.includes('id="${idPrefix}btn-selected-map"'),
+  selectedDetailsSrc.includes('id="{idPrefix}selected-action-row"') && selectedDetailsSrc.includes('id="{idPrefix}btn-selected-map"'),
   'InfoPanel.svelte owns #selected-details; SelectedBusinessDetails.svelte owns prefixed child action-row / map ids'
 );
 assert(
-  selectedDetailsSrc.includes('id="${idPrefix}selected-match-panel"') && selectedDetailsSrc.includes('{viewModel.matchNarrative}'),
+  selectedDetailsSrc.includes('id="{idPrefix}selected-match-panel"') && selectedDetailsSrc.includes('{viewModel.matchNarrative}'),
   'SelectedBusinessDetails.svelte must own the selected match panel copy'
 );
 assert(
