@@ -1113,7 +1113,7 @@ test.describe('Widget journey', () => {
         })
         expect(focused, 'a focus helper must be available to show the selected details').toBe(true)
 
-        const mapBtn = page.locator('#btn-selected-map')
+        const mapBtn = page.locator('#btn-selected-map').filter({ visible: true })
         await mapBtn.waitFor({ state: 'visible', timeout: 8000 })
 
         await mapBtn.click()
