@@ -329,8 +329,8 @@
 
     <!-- Populated state -->
     {#if !isEmpty}
-      <div id="selected-details" class="selected-details">
-        <SelectedBusinessDetails {viewModel} {selectedCity} />
+      <div id="fc-selected-details" class="selected-details">
+        <SelectedBusinessDetails {viewModel} {selectedCity} idPrefix="fc-" />
       </div>
     {/if}
   </div>

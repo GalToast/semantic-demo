@@ -202,7 +202,7 @@ function testRetiredMapSummaryElementsRemoved() {
         const src = read(component)
         for (const id of RETIRED_MAP_SUMMARY_IDS) {
             assert(
-                !src.includes(`id="${id}"`) && !src.includes(`id='${id}'`),
+                !src.includes(`id="{idPrefix}${id}"`) && !src.includes(`id='${id}'`),
                 `${component} must not render retired map-summary element #${id}`
             )
         }
@@ -222,7 +222,7 @@ function testRetiredMapSummaryElementsRemoved() {
     const html = read('src/index.html')
     for (const id of RETIRED_MAP_SUMMARY_IDS) {
         assert(
-            !html.includes(`id="${id}"`) && !html.includes(`id='${id}'`),
+            !html.includes(`id="{idPrefix}${id}"`) && !html.includes(`id='${id}'`),
             `HTML shell must not render retired map-summary element #${id}`
         )
     }
@@ -268,7 +268,7 @@ function testInfoPanelOwnsSurface() {
         'selected-action-row',
         'btn-selected-map'
     ]) {
-        assert(selectedDetailsSrc.includes(`id="${id}"`), `SelectedBusinessDetails.svelte must own #${id}`)
+        assert(selectedDetailsSrc.includes(`id="{idPrefix}${id}"`), `SelectedBusinessDetails.svelte must own #${id}`)
     }
 
     // Must use getInfoPanelContent() for per-surface content descriptors

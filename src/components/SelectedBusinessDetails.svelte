@@ -6,9 +6,10 @@
   interface Props {
     viewModel: Record<string, any>;
     selectedCity: string;
+    idPrefix?: string;
   }
 
-  let { viewModel, selectedCity }: Props = $props();
+  let { viewModel, selectedCity, idPrefix = '' }: Props = $props();
 
   // Reactive replacement for selectedPointStore(): the snapshot helper froze at
   // first render (null) because a $derived over a get()-snapshot establishes no
@@ -33,17 +34,17 @@
 
 <div class="selected-hero">
   <div class="selected-hero-main">
-    <h3 id="selected-name" title={viewModel.name} aria-label={viewModel.name}>{viewModel.name}</h3>
+    <h3 id="{idPrefix}selected-name" title={viewModel.name} aria-label={viewModel.name}>{viewModel.name}</h3>
     {#if viewModel.showFiledAs}
-      <div class="selected-filed-as" id="selected-filed-as">{viewModel.filedAs}</div>
+      <div class="selected-filed-as" id="{idPrefix}selected-filed-as">{viewModel.filedAs}</div>
     {/if}
-    <div class="selected-subtitle" id="selected-what">{viewModel.what}</div>
+    <div class="selected-subtitle" id="{idPrefix}selected-what">{viewModel.what}</div>
   </div>
-  <div class="selected-role-badge" id="selected-role-badge">{viewModel.role}</div>
+  <div class="selected-role-badge" id="{idPrefix}selected-role-badge">{viewModel.role}</div>
 </div>
 
 <!-- Meta strip -->
-<div class="selected-meta-strip" id="selected-meta-strip">
+<div class="selected-meta-strip" id="{idPrefix}selected-meta-strip">
   {#if viewModel.isPopulated}
     <span class="focus-stage-chip">{selectedCity}</span>
     <span class="focus-stage-chip">{viewModel.theme}</span>
@@ -52,7 +53,7 @@
 </div>
 
 <!-- Badge row -->
-<div class="badge-row" id="selected-badges">
+<div class="badge-row" id="{idPrefix}selected-badges">
   {#if point?.website}
     <span class="signal-badge meta" title="Website">Website</span>
   {/if}
@@ -65,7 +66,7 @@
 </div>
 
 <!-- Facts -->
-<div class="selected-facts" id="selected-facts">
+<div class="selected-facts" id="{idPrefix}selected-facts">
   {#if viewModel.facts.length > 0}
     {#each viewModel.facts as fact, i}
       {#if fact.type === 'link'}
@@ -96,23 +97,23 @@
 </div>
 
 <!-- Sensitivity -->
-<div class="selected-sensitivity" id="selected-sensitivity" hidden={viewModel.sensitivityBadges.length === 0}>
+<div class="selected-sensitivity" id="{idPrefix}selected-sensitivity" hidden={viewModel.sensitivityBadges.length === 0}>
   {#each viewModel.sensitivityBadges as b}
     <span class="signal-badge {b.class}">{b.text}</span>
   {/each}
 </div>
 
 <!-- Match panel -->
-<div class="selected-match-panel" id="selected-match-panel" hidden={!viewModel.showMatchPanel}>
-  <div class="selected-match-label" id="selected-match-label">Why this record</div>
-  <div class="selected-match-copy" id="selected-match-copy">{viewModel.matchNarrative}</div>
+<div class="selected-match-panel" id="{idPrefix}selected-match-panel" hidden={!viewModel.showMatchPanel}>
+  <div class="selected-match-label" id="{idPrefix}selected-match-label">Why this record</div>
+  <div class="selected-match-copy" id="{idPrefix}selected-match-copy">{viewModel.matchNarrative}</div>
 </div>
 
 <!-- Action row -->
-<div class="selected-action-row" id="selected-action-row" hidden={!viewModel.isPopulated}>
+<div class="selected-action-row" id="{idPrefix}selected-action-row" hidden={!viewModel.isPopulated}>
   <button
     class="action-btn biofield-glow"
-    id="btn-selected-map"
+    id="{idPrefix}btn-selected-map"
     type="button"
     aria-label="View selected business on map"
     onclick={handleMapClick}
@@ -124,12 +125,12 @@
 <!-- Relationship context (dominant relationship role + reason for neighbors) -->
 {#if viewModel.isPopulated && viewModel.relationshipContext}
   {@const ctx = viewModel.relationshipContext as Record<string, unknown>}
-  <div class="selected-relationship-context" id="selected-relationship-context">
+  <div class="selected-relationship-context" id="{idPrefix}selected-relationship-context">
     <div class="selected-relationship-header">
       <span class="selected-relationship-label">Why these neighbors</span>
-      <span class="selected-relationship-role" id="selected-relationship-role">{ctx.roleLabel}</span>
+      <span class="selected-relationship-role" id="{idPrefix}selected-relationship-role">{ctx.roleLabel}</span>
     </div>
-    <p class="selected-relationship-reason" id="selected-relationship-reason">{ctx.roleReason}</p>
+    <p class="selected-relationship-reason" id="{idPrefix}selected-relationship-reason">{ctx.roleReason}</p>
     {#if Array.isArray(ctx.distribution) && ctx.distribution.length > 1}
       <ul class="selected-relationship-distribution" aria-label="Relationship types">
         {#each ctx.distribution as item}
@@ -145,24 +146,24 @@
 <div class="selected-grid">
   <div class="selected-item">
     <div class="selected-item-label" title="The kind of business this is — what it does, based on similar listings in the area.">Business type</div>
-    <div class="selected-item-value" id="selected-theme">{viewModel.theme}</div>
+    <div class="selected-item-value" id="{idPrefix}selected-theme">{viewModel.theme}</div>
   </div>
   <div class="selected-item">
     <div class="selected-item-label">Status</div>
-    <div class="selected-item-value" id="selected-status">{viewModel.status}</div>
+    <div class="selected-item-value" id="{idPrefix}selected-status">{viewModel.status}</div>
   </div>
   <div class="selected-item">
     <div class="selected-item-label">Location</div>
-    <div class="selected-item-value" id="selected-map">{viewModel.mapText}</div>
+    <div class="selected-item-value" id="{idPrefix}selected-map">{viewModel.mapText}</div>
   </div>
   <div class="selected-item">
     <div class="selected-item-label" title="Other similar businesses in the area, ordered by how strongly they relate to this one.">Similar businesses</div>
-    <div class="selected-item-value" id="selected-thread">{viewModel.threadText}</div>
+    <div class="selected-item-value" id="{idPrefix}selected-thread">{viewModel.threadText}</div>
   </div>
 </div>
 
 {#if viewModel.showTrivia}
-  <div class="selected-trivia" id="selected-trivia">{viewModel.trivia}</div>
+  <div class="selected-trivia" id="{idPrefix}selected-trivia">{viewModel.trivia}</div>
 {/if}
 
 <style>
