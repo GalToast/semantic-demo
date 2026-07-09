@@ -1001,4 +1001,131 @@ test.describe('Widget journey', () => {
             `F1-5: mobile focus card (z=${layering.cardZ}) must sit below the a11y toggle (z=${layering.toggleZ})`
         ).toBeLessThan(layering.toggleZ)
     })
+
+    test('Bug 2: desktop "Inside" mode chip engages the semantic-dive surface (audit dead-end fix)', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1200)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        const focused = await page.evaluate(() => {
+            if (typeof window.__publishCameraNodeFocused__ === 'function') {
+                window.__publishCameraNodeFocused__(0)
+                return true
+            }
+            const a = window.__navActions__
+            return a && typeof a.focusOnNode === 'function' ? a.focusOnNode(0) : false
+        })
+        expect(focused, 'a focus helper must be available to unlock the Inside chip').toBe(true)
+        await page.waitForFunction(() => document.body.classList.contains('surface-focus'), null, { timeout: 8000 })
+
+        const insideChip = page.locator('#mode-chips [data-mode="inside"]')
+        await insideChip.waitFor({ state: 'attached', timeout: 5000 })
+        const insideLabel = await insideChip.getAttribute('aria-label')
+        expect(insideLabel?.toLowerCase(), 'Inside chip must be unlocked after a node is focused').not.toContain('lock')
+
+        await insideChip.click()
+        await page.waitForFunction(() => document.body.classList.contains('surface-semantic-dive'), null, { timeout: 8000 })
+
+        const state = await page.evaluate(() => {
+            const pocket = document.querySelector('#focus-pocket')
+            const cs = pocket ? getComputedStyle(pocket) : null
+            return {
+                semanticDive: document.body.classList.contains('surface-semantic-dive'),
+                pocketDisplay: cs?.display,
+                pocketAriaHidden: pocket?.getAttribute('aria-hidden')
+            }
+        })
+        expect(state.semanticDive, 'Inside chip must engage the semantic-dive surface').toBe(true)
+        expect(state.pocketDisplay, 'focus pocket must be visible in the dive surface').toBe('block')
+        expect(state.pocketAriaHidden, 'focus pocket must not be aria-hidden in the dive surface').not.toBe('true')
+    })
+
+    test('Bug 3a: mobile mode chips stay visible in the focus-search surface (audit CSS fix)', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1200)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        await page.evaluate(() => document.body.classList.add('surface-focus-search'))
+        await page.waitForTimeout(150)
+
+        const chipState = await page.evaluate(() => {
+            const chip = document.querySelector('#mode-chips .mode-chip[data-mode="trail"]')
+            if (!chip) return null
+            const cs = getComputedStyle(chip)
+            return { display: cs.display, visibility: cs.visibility }
+        })
+        expect(chipState, 'trail mode chip must exist in the focus-search surface').not.toBeNull()
+        expect(chipState.display, 'trail chip must be visible (display:flex) in focus-search, not display:none').toBe('flex')
+        expect(chipState.visibility, 'trail chip must be visible in focus-search').toBe('visible')
+    })
+
+    test('Bug 3b: mobile "View on Map" button switches to the map view (audit dead-end fix)', async ({ page }) => {
+        await page.setViewportSize({ width: 390, height: 844 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1200)
+
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        const focused = await page.evaluate(() => {
+            if (typeof window.__publishCameraNodeFocused__ === 'function') {
+                window.__publishCameraNodeFocused__(0)
+                return true
+            }
+            const a = window.__navActions__
+            return a && typeof a.focusOnNode === 'function' ? a.focusOnNode(0) : false
+        })
+        expect(focused, 'a focus helper must be available to show the selected details').toBe(true)
+
+        const mapBtn = page.locator('#btn-selected-map')
+        await mapBtn.waitFor({ state: 'visible', timeout: 8000 })
+
+        await mapBtn.click()
+        await page.waitForFunction(
+            () => document.body.classList.contains('surface-map-focus') && document.body.classList.contains('view-map'),
+            null,
+            { timeout: 8000 }
+        )
+
+        const bodyClass = await page.evaluate(() => document.body.className)
+        expect(bodyClass, 'map button must switch to the map view').toContain('view-map')
+        expect(bodyClass, 'map button must enter the map-focus surface').toContain('surface-map-focus')
+    })
+
 })
