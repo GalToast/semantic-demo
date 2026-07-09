@@ -85,6 +85,9 @@ let _sceneReadyHandler: (() => void) | null = null
 let _canvasInteractionBound = false
 let _destroyed = false
 let _dataReadyUnsub: (() => void) | null = null
+// W53 M5: track the dev-only simulateWebGLContextLoss restore timer so it can
+// be cleared on engine teardown before it fires against a disposed context.
+let _webglContextLossTimer: ReturnType<typeof setTimeout> | null = null
 
 // ── Data readiness subscription ─────────────────────────────────────────────
 
@@ -369,9 +372,10 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
                     debugLog('[simulateWebGLContextLoss] Triggering artificial context loss')
                     ext.loseContext()
                     // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-                    setTimeout(() => {
+                    _webglContextLossTimer = setTimeout(() => {
                         debugLog('[simulateWebGLContextLoss] Triggering artificial context restoration')
                         ext.restoreContext()
+                        _webglContextLossTimer = null
                     }, 500)
                     return true
                 }
@@ -469,6 +473,13 @@ export function resizeEngine(width: number, height: number): void {
 export function destroyEngine(): void {
     if (_destroyed) return
     _destroyed = true
+
+    // 0. Clear any pending dev-only WebGL context-loss restore timer so its
+    //    callback cannot run against a disposed context (W53 M5).
+    if (_webglContextLossTimer !== null) {
+        clearTimeout(_webglContextLossTimer)
+        _webglContextLossTimer = null
+    }
 
     // 1. Cancel the animation loop
     cancelAnimate()
