@@ -291,6 +291,10 @@ function testStageRendererRespectsSvelteOwnership() {
 // ── Test F: HTML shell has no stale surface slots ────────────────────────────
 
 function testHtmlShellNoStaleSlots() {
+    if (!exists(HTML_SHELL)) {
+        console.log('  SKIP - legacy HTML shell (vector-explorer-polished.html) removed during Svelte migration; nothing to verify')
+        return
+    }
     const html = read(HTML_SHELL)
 
     // The HTML shell should NOT render info-panel surface IDs directly
