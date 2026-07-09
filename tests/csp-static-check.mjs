@@ -79,17 +79,32 @@ const knownOrigins = {
     // script-src origins
     'script-src': [
         { origin: "'self'", source: 'Vite hashed module entry (./assets/index-*.js) + self-hosted modules' },
-        { origin: 'https://unpkg.com', source: 'Leaflet runtime JS injected via createElement("script").src (leaflet@1.9.4/dist/leaflet.js)' }
+        {
+            origin: 'https://unpkg.com',
+            source: 'Leaflet runtime JS injected via createElement("script").src (leaflet@1.9.4/dist/leaflet.js)'
+        }
     ],
     // style-src origins
     'style-src': [
-        { origin: "'self'", source: 'Self-hosted CSS (fonts/fonts.css, semantic-demo.css, css/mobile_premium__*.css, css/modules/*.css)' },
-        { origin: "'unsafe-inline'", source: 'Inline <style> blocks (z-index layer vars, spinner keyframes) + style= attributes in shell' },
-        { origin: 'https://unpkg.com', source: 'Leaflet runtime CSS (leaflet@1.9.4/dist/leaflet.css) injected via <link rel=stylesheet>' }
+        {
+            origin: "'self'",
+            source: 'Self-hosted CSS (fonts/fonts.css, semantic-demo.css, css/mobile_premium__*.css, css/modules/*.css)'
+        },
+        {
+            origin: "'unsafe-inline'",
+            source: 'Inline <style> blocks (z-index layer vars, spinner keyframes) + style= attributes in shell'
+        },
+        {
+            origin: 'https://unpkg.com',
+            source: 'Leaflet runtime CSS (leaflet@1.9.4/dist/leaflet.css) injected via <link rel=stylesheet>'
+        }
     ],
     // font-src origins
     'font-src': [
-        { origin: "'self'", source: 'Self-hosted variable woff2 (fonts/nunito-sans-*.woff2, etc.) — fonts are self-hosted (W45-A.3), no Google Fonts CDN' }
+        {
+            origin: "'self'",
+            source: 'Self-hosted variable woff2 (fonts/nunito-sans-*.woff2, etc.) — fonts are self-hosted (W45-A.3), no Google Fonts CDN'
+        }
     ],
     // img-src origins
     'img-src': [
@@ -100,8 +115,14 @@ const knownOrigins = {
     // connect-src origins
     'connect-src': [
         { origin: "'self'", source: 'api.php calls, JSON manifests, data.dat, same-origin worker fetches' },
-        { origin: 'https://api.open-meteo.com', source: 'Weather widget forecast fetch (api.open-meteo.com/v1/forecast)' },
-        { origin: 'https://ai.api.nvidia.com', source: 'NVIDIA reranking API (ai.api.nvidia.com/v1/retrieval/nvidia/reranking)' }
+        {
+            origin: 'https://api.open-meteo.com',
+            source: 'Weather widget forecast fetch (api.open-meteo.com/v1/forecast)'
+        },
+        {
+            origin: 'https://ai.api.nvidia.com',
+            source: 'NVIDIA reranking API (ai.api.nvidia.com/v1/retrieval/nvidia/reranking)'
+        }
     ],
     // worker-src origins
     'worker-src': [
@@ -166,13 +187,16 @@ if (directives['default-src'] && directives['default-src'].length > 1) {
 // is silently allowing inline script execution. This keeps the check real
 // rather than vacuous (a naive golden repoint with zero inline scripts would
 // have passed nothing).
-const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)]
-    .filter((match) => !/\bsrc\s*=/.test(match[1]))
+const inlineScripts = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi)].filter(
+    (match) => !/\bsrc\s*=/.test(match[1])
+)
 
 if (inlineScripts.length === 0) {
     console.log('  OK: live shell has no inline <script> (all JS externalized to self-hosted modules)')
 } else {
-    console.error(`WARN: live shell has ${inlineScripts.length} inline <script>(s); verifying each is hash-covered by script-src`)
+    console.error(
+        `WARN: live shell has ${inlineScripts.length} inline <script>(s); verifying each is hash-covered by script-src`
+    )
     const allowed = directives['script-src'] || []
     for (const match of inlineScripts) {
         const body = match[2]
