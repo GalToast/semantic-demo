@@ -121,7 +121,6 @@ const SVELTE_OWNED_CHILD_IDS = [
 // ── Retired component paths (must not exist) ──────────────────────────────────
 
 const RETIRED_COMPONENT_PATHS = [
-    'src/components/SelectedBusinessDetails.svelte',
     'src/components/InfoPanelSelectionSurface.svelte',
     'js/modules/components/SelectedBusinessDetails.svelte',
     'js/modules/components/InfoPanelSelectionSurface.svelte',
