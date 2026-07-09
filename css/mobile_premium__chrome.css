@@ -450,6 +450,32 @@
         -webkit-backdrop-filter: blur(var(--glass-blur));
     }
 
+    /* W54-M1: extend the utility-rail-to-fixed treatment to the placeholder
+       (idle) surface. The existing rule above is gated on :not(.surface-idle),
+       which left brand + 3 inline utility buttons + 6 chips in one
+       non-wrapping flex row that overflowed at 375/768px. Per F4 design
+       memo Option A: mirror the same fixed-rail treatment in idle so the
+       chip row fits. data-panel-surface='idle' is the body's surface attr
+       on the placeholder view (set by JourneyCompass.svelte:347). */
+    body.surface-idle[data-panel-surface='idle'] :is(.share-toggle, .help-toggle, .legend-toggle) {
+        position: fixed;
+        right: 14px;
+        width: 44px;
+        height: 44px;
+        z-index: var(--z-toast);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        pointer-events: auto;
+        visibility: visible;
+        opacity: 1;
+        background: var(--glass-bg);
+        border: var(--glass-border-glow);
+        border-radius: var(--glass-radius-action);
+        backdrop-filter: blur(var(--glass-blur));
+        -webkit-backdrop-filter: blur(var(--glass-blur));
+    }
+
     body:not(.surface-idle)[data-panel-surface] .share-toggle {
         top: 60px;
     }
@@ -457,6 +483,16 @@
         top: 112px;
     }
     body:not(.surface-idle)[data-panel-surface] .help-toggle {
+        top: 164px;
+    }
+
+    body.surface-idle[data-panel-surface='idle'] .share-toggle {
+        top: 60px;
+    }
+    body.surface-idle[data-panel-surface='idle'] .legend-toggle {
+        top: 112px;
+    }
+    body.surface-idle[data-panel-surface='idle'] .help-toggle {
         top: 164px;
     }
 
