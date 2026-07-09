@@ -81,14 +81,19 @@ const SELECTED_BUSINESS_DETAILS_CHILD_IDS = [
 
 // ── Classes (not IDs) that InfoPanel.svelte must own ──────────────────────────
 
-const INFO_PANEL_SURFACE_CLASSES = [
+const INFO_PANEL_STRUCTURAL_CLASSES = [
+    'selected-empty-headline',
+    'selected-empty-sub'
+]
+
+// Child classes owned by SelectedBusinessDetails.svelte (extracted from InfoPanel during the
+// chrome migration). Asserted against that component, not InfoPanel.svelte.
+const SELECTED_BUSINESS_DETAILS_CLASSES = [
     'selected-hero',
     'selected-hero-main',
     'selected-subtitle',
     'selected-grid',
-    'selected-item',
-    'selected-empty-headline',
-    'selected-empty-sub'
+    'selected-item'
 ]
 
 // ── Conditional classes (class:X={condition}) that InfoPanel.svelte must use ──
@@ -141,11 +146,19 @@ function testInfoPanelOwnsAllSurfaceIds() {
         assert(sbdSrc.includes(`id="{idPrefix}${id}"`), `SelectedBusinessDetails.svelte must own prefixed #${id}`)
     }
 
-    // Verify class-based surfaces
-    for (const cls of INFO_PANEL_SURFACE_CLASSES) {
+    // Verify structural class-based surfaces owned by InfoPanel.svelte
+    for (const cls of INFO_PANEL_STRUCTURAL_CLASSES) {
         assert(
             src.includes(`class="${cls}"`) || src.includes(`class="${cls} `) || src.includes(`.${cls}`),
             `InfoPanel.svelte must own class .${cls}`
+        )
+    }
+
+    // Verify child classes owned by SelectedBusinessDetails.svelte
+    for (const cls of SELECTED_BUSINESS_DETAILS_CLASSES) {
+        assert(
+            sbdSrc.includes(`class="${cls}"`) || sbdSrc.includes(`class="${cls} `) || sbdSrc.includes(`.${cls}`),
+            `SelectedBusinessDetails.svelte must own class .${cls}`
         )
     }
 
