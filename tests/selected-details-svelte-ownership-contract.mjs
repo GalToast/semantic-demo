@@ -31,6 +31,7 @@ const focusRendererPath = 'src/lib/focus/stage-renderer.ts';
 const componentSrc = read(componentPath);
 const viewModelSrc = read(viewModelPath);
 const focusRendererSrc = read(focusRendererPath);
+const selectedDetailsSrc = read('src/components/SelectedBusinessDetails.svelte');
 
 assert(
   !fs.existsSync(path.join(root, retiredComponentPath)),
@@ -46,12 +47,12 @@ assert(
 );
 assert(
   componentSrc.includes('id="selected-details"') &&
-  componentSrc.includes('id="selected-action-row"') && componentSrc.includes('id="btn-selected-map"'),
-  'src/components/InfoPanel.svelte should own the selected details action row markup'
+  selectedDetailsSrc.includes('id="${idPrefix}selected-action-row"') && selectedDetailsSrc.includes('id="${idPrefix}btn-selected-map"'),
+  'InfoPanel.svelte owns #selected-details; SelectedBusinessDetails.svelte owns prefixed child action-row / map ids'
 );
 assert(
-  componentSrc.includes('id="selected-match-panel"') && componentSrc.includes('{viewModel.matchNarrative}'),
-  'src/components/InfoPanel.svelte should own the selected match panel copy'
+  selectedDetailsSrc.includes('id="${idPrefix}selected-match-panel"') && selectedDetailsSrc.includes('{viewModel.matchNarrative}'),
+  'SelectedBusinessDetails.svelte must own the selected match panel copy'
 );
 assert(
   viewModelSrc.includes('matchNarrative') && viewModelSrc.includes('showMatchPanel'),
