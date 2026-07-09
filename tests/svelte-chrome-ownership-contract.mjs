@@ -40,8 +40,8 @@ assert(
   'src/App.svelte should import the canonical Legend component directly'
 );
 assert(
-  appSource.includes('<InfoPanel ') || appSource.includes('<InfoPanelComponent '),
-  'src/App.svelte should render InfoPanel'
+  appSource.includes('infoPanelLazy') || appSource.includes('<InfoPanel ') || appSource.includes('<InfoPanelComponent '),
+  'src/App.svelte should render InfoPanel (via lazy component)'
 );
 assert(appSource.includes('<Legend '), 'src/App.svelte should render Legend');
 
