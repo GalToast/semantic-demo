@@ -9,16 +9,10 @@
 import type {
     BusinessRecord,
     BusinessDataResult,
-    LeadEnrichment,
-    SemanticThreadBundle,
-    SemanticThreadDataResult,
-    SemanticNeighborEntry,
-    SemanticNeighborDetail,
-    LayoutManifest
+    LeadEnrichment
 } from '@lib/types/business'
 import { debugInfo, debugWarn } from '@lib/utils/debug'
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
-import { normalizeRelationshipRole } from '@lib/utils/relationship-roles'
 import { workerUrl } from '@lib/workers/data-worker-url'
 
 // ── Constants ─────────────────────────────────────────────────────────────────
@@ -44,15 +38,6 @@ const COL = {
 } as const
 
 const MAX_BUSINESS_RETRIES = 3
-
-const THREAD_REQUEST_URLS_REL = ['data/semantic_threads_ui.dat', 'data/semantic_threads.dat']
-
-const THREAD_FETCH_CONFIGS: RequestInit[] = [
-    { cache: 'default' },
-    { cache: 'force-cache' },
-    { cache: 'reload' },
-    { cache: 'no-store' }
-]
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -82,19 +67,6 @@ function normalizeSlugName(name: string | null): string | null {
 
 function cacheBustParam(): string {
     return `v=${Math.floor(Date.now() / (1000 * 60 * 60))}`
-}
-
-/**
- * @deprecated Fossil helper — only used by {@link _loadSemanticThreadsMainThread}.
- * Superseded by @lib/engine/semantic-threads. Kept only for test contract in
- * tests/unit-active/data-loader.test.ts. New code must not call this.
- */
-function artifactNameFromUrl(url: string): string {
-    try {
-        return new URL(url, window.location.href).pathname.split('/').pop() || url
-    } catch {
-        return url.split('?')[0] ?? url
-    }
 }
 
 // ── Web Worker helpers ──────────────────────────────────────────────────────
@@ -200,12 +172,6 @@ export function callDataWorker<T>(type: string, payload: unknown, options?: Call
         worker.addEventListener('error', errorHandler)
         worker.postMessage({ type, payload, requestId })
     })
-}
-
-interface LoadThreadsWorkerResult {
-    neighborEntries: Array<[string, SemanticNeighborEntry]>
-    artifactName: string | null
-    bundle: unknown
 }
 
 // ── Business Data Loading ─────────────────────────────────────────────────────
@@ -433,126 +399,6 @@ function replaceInvalidPositionsWithBoundsCenter(
     )
 }
 
-// ── Semantic Thread Loading ───────────────────────────────────────────────────
-
-/**
- * Fetches semantic thread neighbor data from semantic_threads.dat
- * (or semantic_threads_ui.dat as primary).
- *
- * The bundle contains a `nodes` object keyed by fallback lead_id,
- * each with neighbors that describe semantic relationships.
- *
- * Returns a normalized neighbor map keyed by lead_id.
- *
- * @deprecated Fossil function superseded by @lib/engine/semantic-threads
- * (loadSemanticThreads). Kept only for the test contract in
- * tests/unit-active/data-loader.test.ts. New code must not call this.
- */
-export async function loadSemanticThreads(): Promise<SemanticThreadDataResult> {
-    const requestUrls = THREAD_REQUEST_URLS_REL.map((rel) => buildAssetUrl(`${rel}?${cacheBustParam()}`))
-
-    try {
-        const result = await callDataWorker<LoadThreadsWorkerResult>('LOAD_THREADS', {
-            urls: requestUrls,
-            attemptConfigs: THREAD_FETCH_CONFIGS as Array<{ cache: string }>
-        })
-
-        const neighborMap = new Map<string, SemanticNeighborEntry>(result.neighborEntries)
-
-        debugInfo(
-            `[data-loader] Loaded semantic threads (via worker): ${result.artifactName}, ` +
-                `${neighborMap.size.toLocaleString()} node entries`
-        )
-
-        return {
-            bundle: result.bundle as SemanticThreadBundle,
-            artifactName: result.artifactName || 'unknown',
-            neighborMap,
-            layoutManifest: null
-        }
-    } catch (err) {
-        debugWarn('[data-loader] Worker thread load failed, falling back to main thread:', err)
-        return _loadSemanticThreadsMainThread(requestUrls)
-    }
-}
-
-/**
- * Main-thread fallback for semantic-thread loading (kept for worker failure / SSR / old browsers).
- *
- * @deprecated Fossil helper — only used by the deprecated {@link loadSemanticThreads}.
- * Superseded by @lib/engine/semantic-threads. Kept only for the test contract in
- * tests/unit-active/data-loader.test.ts. New code must not call this.
- */
-async function _loadSemanticThreadsMainThread(requestUrls: string[]): Promise<SemanticThreadDataResult> {
-    let bundle: SemanticThreadBundle | null = null
-    let artifactName: string | null = null
-    let lastError: Error | null = null
-
-    for (const url of requestUrls) {
-        const name = artifactNameFromUrl(url)
-        for (const config of THREAD_FETCH_CONFIGS) {
-            try {
-                const response = await fetch(url, config)
-                if (!response.ok) {
-                    throw new Error(`[data-loader] Semantic thread artifact unavailable (${response.status})`)
-                }
-                bundle = (await response.json()) as SemanticThreadBundle
-                artifactName = name
-                break
-            } catch (err) {
-                lastError = err instanceof Error ? err : new Error(String(err))
-                await delay(220 * (THREAD_FETCH_CONFIGS.indexOf(config) + 1))
-            }
-        }
-        if (bundle) break
-    }
-
-    if (!bundle || !artifactName) {
-        throw lastError ?? new Error('[data-loader] Semantic thread artifact unavailable')
-    }
-
-    if (!bundle.nodes || typeof bundle.nodes !== 'object') {
-        throw new Error('[data-loader] Semantic thread bundle has no nodes object')
-    }
-
-    const neighborMap = buildSemanticNeighborMap(bundle)
-
-    debugInfo(
-        `[data-loader] Loaded semantic threads (main thread): ${artifactName}, ` +
-            `${neighborMap.size.toLocaleString()} node entries`
-    )
-
-    return {
-        bundle,
-        artifactName,
-        neighborMap,
-        layoutManifest: null
-    }
-}
-
-/**
- * Load the semantic space layout manifest for validation.
- * Non-critical — returns null on failure.
- *
- * @deprecated Fossil function superseded by @lib/engine/semantic-threads.
- * Kept only for the test contract in
- * tests/unit-active/data-loader.test.ts. New code must not call this.
- */
-export async function loadLayoutManifest(): Promise<LayoutManifest | null> {
-    try {
-        const url = buildAssetUrl(`data/semantic_space_layout_manifest.json?${cacheBustParam()}`)
-        const response = await fetch(url, { cache: 'no-store' })
-        if (!response.ok) return null
-        const manifest = (await response.json()) as LayoutManifest
-        if (!manifest || typeof manifest !== 'object' || Array.isArray(manifest)) {
-            return null
-        }
-        return manifest
-    } catch {
-        return null
-    }
-}
-
 // ── Internal Helpers ─────────────────────────────────────────────────────────
 
 async function fetchWithRetries(url: string, maxAttempts: number): Promise<unknown> {
@@ -637,66 +483,6 @@ function checkDataBounds(buffer: Float32Array): void {
                 `Expected [0, 1] range. MYCELIUM_FIELD_SCALE will cause extreme camera scaling.`
         )
     }
-}
-
-/**
- * @deprecated Fossil helper — only used by {@link _loadSemanticThreadsMainThread}.
- * Superseded by @lib/engine/semantic-threads. Kept only for the test contract in
- * tests/unit-active/data-loader.test.ts. New code must not call this.
- */
-function buildSemanticNeighborMap(bundle: SemanticThreadBundle): Map<string, SemanticNeighborEntry> {
-    const map = new Map<string, SemanticNeighborEntry>()
-    const nodes = bundle.nodes
-
-    for (const [fallbackLeadId, node] of Object.entries(nodes)) {
-        const leadId = normalizeLeadId(node?.lead_id ?? fallbackLeadId)
-        if (!leadId) continue
-
-        const neighbors: SemanticNeighborDetail[] = Array.isArray(node?.neighbors)
-            ? node.neighbors
-                  .map((n) => {
-                      const nLeadId = normalizeLeadId(n?.lead_id)
-                      if (!nLeadId) return null
-                      return {
-                          leadId: nLeadId,
-                          score: Number(n?.score ?? 0),
-                          semanticScore: Number(n?.semantic_score ?? 0),
-                          sameCity: Boolean(n?.same_city),
-                          sameStatus: Boolean(n?.same_status),
-                          bridgeScore: Number(n?.bridge_score ?? 0),
-                          signalScore: Number(n?.signal_score ?? 0),
-                          threadType: cleanOptional(n?.thread_type) ?? 'local_semantic_neighbor',
-                          relationshipRole: normalizeRelationshipRole(cleanOptional(n?.relationship_role)),
-                          relationshipAxis: cleanOptional(n?.relationship_axis) ?? '',
-                          roleReason: cleanOptional(n?.role_reason) ?? '',
-                          reason: cleanOptional(n?.reason) ?? 'semantic neighbor'
-                      }
-                  })
-                  .filter((n): n is SemanticNeighborDetail => n !== null)
-            : []
-
-        map.set(leadId, {
-            leadId,
-            name: node?.name ?? null,
-            city: node?.city ?? null,
-            status: node?.status ?? null,
-            signalScore: Number(node?.signal_score ?? 0),
-            neighbors
-        })
-    }
-
-    return map
-}
-
-/**
- * @deprecated Fossil helper — only used by the deprecated {@link buildSemanticNeighborMap}.
- * Superseded by @lib/engine/semantic-threads. Kept only for the test contract in
- * tests/unit-active/data-loader.test.ts. New code must not call this.
- */
-function normalizeLeadId(id: unknown): string | null {
-    if (id === null || id === undefined) return null
-    const s = String(id).trim()
-    return s.length > 0 ? s : null
 }
 
 function delay(ms: number): Promise<void> {

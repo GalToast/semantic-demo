@@ -1,9 +1,13 @@
 /**
- * data-loader.test.ts — Direct unit coverage for the 642-LOC data orchestrator.
+ * data-loader.test.ts — Direct unit coverage for the data orchestrator.
  *
- * Covers all four named exports (loadBusinessData, loadSemanticThreads,
- * loadLayoutManifest, loadLeadEnrichmentData) plus the relationship-roles
- * normalization path, the worker cache, and worker teardown.
+ * Covers non-fossil exports (loadBusinessData, loadLeadEnrichmentData),
+ * the worker cache, and worker teardown.
+ *
+ * The deprecated fossil exports (loadSemanticThreads, loadLayoutManifest)
+ * and their helpers were removed in the F2 cleanup. Equivalent coverage
+ * lives in semantic-threads-worker-lifecycle.test.ts and
+ * relationship-roles.test.ts.
  *
  * Pattern mirrors the existing seam tests: mock the workerUrl helper, install
  * a fake Worker class on globalThis + window, dispatch synthetic MessageEvent
@@ -156,70 +160,6 @@ function makeLoadRecordsSuccess(points: ReturnType<typeof makePoints>) {
     }
 }
 
-function makeLoadThreadsSuccess() {
-    return {
-        type: 'LOAD_THREADS_SUCCESS',
-        payload: {
-            neighborEntries: [
-                [
-                    'lead-1',
-                    {
-                        leadId: 'lead-1',
-                        name: 'Coffee Shop',
-                        city: 'Rockville',
-                        status: 'active',
-                        signalScore: 0.9,
-                        neighbors: [
-                            {
-                                leadId: 'lead-2',
-                                score: 0.8,
-                                semanticScore: 0.7,
-                                sameCity: true,
-                                sameStatus: true,
-                                bridgeScore: 0.1,
-                                signalScore: 0.6,
-                                threadType: 'local_semantic_neighbor',
-                                relationshipRole: 'core_peer',
-                                relationshipAxis: '',
-                                roleReason: '',
-                                reason: 'semantic neighbor'
-                            }
-                        ]
-                    }
-                ] as [string, unknown]
-            ],
-            artifactName: 'semantic_threads_ui.dat',
-            bundle: {
-                nodes: {
-                    'lead-1': {
-                        lead_id: 'lead-1',
-                        name: 'Coffee Shop',
-                        city: 'Rockville',
-                        status: 'active',
-                        signal_score: 0.9,
-                        neighbors: [
-                            {
-                                lead_id: 'lead-2',
-                                score: 0.8,
-                                semantic_score: 0.7,
-                                same_city: true,
-                                same_status: true,
-                                bridge_score: 0.1,
-                                signal_score: 0.6,
-                                thread_type: 'local_semantic_neighbor',
-                                relationship_role: 'core_peer',
-                                relationship_axis: '',
-                                role_reason: '',
-                                reason: 'semantic neighbor'
-                            }
-                        ]
-                    }
-                }
-            }
-        }
-    }
-}
-
 function makeLoadEnrichmentSuccess() {
     return {
         type: 'LOAD_LEAD_ENRICHMENT_SUCCESS',
@@ -257,8 +197,6 @@ function restoreWorker(): void {
 // Import after mock registration
 import {
     loadBusinessData,
-    loadSemanticThreads,
-    loadLayoutManifest,
     loadLeadEnrichmentData
 } from '@lib/data-loader'
 
@@ -447,139 +385,6 @@ describe('data-loader direct coverage', () => {
         })
     })
 
-    // ── loadSemanticThreads ──────────────────────────────────────────────
-    describe('loadSemanticThreads', () => {
-        it('happy path: resolves with bundle, artifactName, and neighborMap', async () => {
-            harness.responseQueue.push((w) => {
-                w.listeners.get('message')?.forEach((fn) =>
-                    fn(new MessageEvent('message', { data: makeLoadThreadsSuccess() }))
-                )
-            })
-
-            const result = await loadSemanticThreads()
-
-            expect(FakeWorker.instances).toHaveLength(1)
-            const worker = FakeWorker.instances[0]!
-            expect(worker.lastPostMessage).toMatchObject({
-                type: 'LOAD_THREADS',
-                payload: {
-                    urls: expect.arrayContaining([expect.stringContaining('semantic_threads')]),
-                    attemptConfigs: expect.any(Array)
-                }
-            })
-
-            expect(result.bundle).toBeDefined()
-            expect(result.artifactName).toBe('semantic_threads_ui.dat')
-            expect(result.neighborMap).toBeInstanceOf(Map)
-            expect(result.neighborMap.has('lead-1')).toBe(true)
-            expect(result.neighborMap.get('lead-1')!.neighbors).toHaveLength(1)
-            expect(result.layoutManifest).toBeNull()
-        })
-
-        it('with skipWorker resetSemanticThreadWorker — falls back to main thread on worker error', async () => {
-            // Worker errors → fallback to main thread fetch path.
-            harness.responseQueue.push((w) => {
-                w.listeners.get('message')?.forEach((fn) =>
-                    fn(
-                        new MessageEvent('message', {
-                            data: { type: 'ERROR', payload: { message: 'worker unavailable' } }
-                        })
-                    )
-                )
-            })
-            const bundle = {
-                nodes: {
-                    'lead-1': {
-                        lead_id: 'lead-1',
-                        name: 'Coffee Shop',
-                        city: 'Rockville',
-                        status: 'active',
-                        signal_score: 0.9,
-                        neighbors: []
-                    }
-                }
-            }
-            const fetchMock = vi.fn(async (url: string) => {
-                if (url.includes('semantic_threads')) {
-                    return new Response(JSON.stringify(bundle), { status: 200 })
-                }
-                return new Response('not found', { status: 404 })
-            })
-            vi.stubGlobal('fetch', fetchMock)
-
-            const result = await loadSemanticThreads()
-
-            expect(result.bundle).toEqual(bundle)
-            expect(result.artifactName).toBe('semantic_threads_ui.dat')
-            expect(result.neighborMap.size).toBe(1)
-            expect(fetchMock).toHaveBeenCalled()
-        })
-
-        it('throws when no bundle can be fetched from any URL', async () => {
-            harness.responseQueue.push((w) => {
-                w.listeners.get('message')?.forEach((fn) =>
-                    fn(
-                        new MessageEvent('message', {
-                            data: { type: 'ERROR', payload: { message: 'worker unavailable' } }
-                        })
-                    )
-                )
-            })
-            // All fetches 404
-            await expect(loadSemanticThreads()).rejects.toThrow()
-        })
-    })
-
-    // ── loadLayoutManifest ───────────────────────────────────────────────
-    describe('loadLayoutManifest', () => {
-        it('happy path: returns parsed manifest object', async () => {
-            const manifest = {
-                generated_at: '2026-01-01T00:00:00Z',
-                method: 'umap',
-                rows: 100,
-                edges: 500,
-                thread_path: 'data/semantic_threads.dat',
-                data_path: 'data/data.dat'
-            }
-            vi.stubGlobal(
-                'fetch',
-                vi.fn(async () => new Response(JSON.stringify(manifest), { status: 200 }))
-            )
-
-            const result = await loadLayoutManifest()
-            expect(result).toEqual(manifest)
-        })
-
-        it('returns null on empty / non-object remote response', async () => {
-            vi.stubGlobal(
-                'fetch',
-                vi.fn(async () => new Response('[]', { status: 200 }))
-            )
-            const result = await loadLayoutManifest()
-            expect(result).toBeNull()
-        })
-
-        it('returns null on fetch failure', async () => {
-            vi.stubGlobal(
-                'fetch',
-                vi.fn(async () => new Response('boom', { status: 500 }))
-            )
-            const result = await loadLayoutManifest()
-            expect(result).toBeNull()
-        })
-
-        it('returns null on network error', async () => {
-            vi.stubGlobal(
-                'fetch',
-                vi.fn(async () => {
-                    throw new Error('network down')
-                })
-            )
-            const result = await loadLayoutManifest()
-            expect(result).toBeNull()
-        })
-    })
-
     // ── loadLeadEnrichmentData ───────────────────────────────────────────
     describe('loadLeadEnrichmentData', () => {
         it('happy path: parses rows into a Record keyed by lead-id', async () => {
@@ -651,150 +456,6 @@ describe('data-loader direct coverage', () => {
             // fetch returns 404 → fallback returns null
             const result = await loadLeadEnrichmentData()
             expect(result).toBeNull()
-        })
-    })
-
-    // ── relationship-roles normalization ─────────────────────────────────
-    describe('relationship-roles normalization path', () => {
-        it('normalizes malformed role strings to a known role', async () => {
-            // The worker path builds the neighborMap from `neighborEntries`,
-            // where each entry's neighbors have already been normalized by
-            // the worker. We simulate the worker returning pre-normalized
-            // entries to verify the normalization output lands in the map.
-            const successMsg = {
-                type: 'LOAD_THREADS_SUCCESS',
-                payload: {
-                    neighborEntries: [
-                        [
-                            'lead-1',
-                            {
-                                leadId: 'lead-1',
-                                name: 'Biz One',
-                                city: 'Rockville',
-                                status: 'active',
-                                signalScore: 0.5,
-                                neighbors: [
-                                    {
-                                        leadId: 'lead-2',
-                                        score: 0.7,
-                                        semanticScore: 0.6,
-                                        sameCity: true,
-                                        sameStatus: false,
-                                        bridgeScore: 0.2,
-                                        signalScore: 0.4,
-                                        threadType: 'local_semantic_neighbor',
-                                        // Worker normalizes "  Same-Owner  " → "same_owner"
-                                        relationshipRole: 'same_owner',
-                                        relationshipAxis: '',
-                                        roleReason: '',
-                                        reason: 'test neighbor'
-                                    } as unknown,
-                                    {
-                                        leadId: 'lead-3',
-                                        score: 0.5,
-                                        semanticScore: 0.4,
-                                        sameCity: false,
-                                        sameStatus: true,
-                                        bridgeScore: 0.1,
-                                        signalScore: 0.3,
-                                        threadType: 'local_semantic_neighbor',
-                                        // Unknown role falls back to "unclassified"
-                                        relationshipRole: 'unclassified',
-                                        relationshipAxis: '',
-                                        roleReason: '',
-                                        reason: 'test neighbor'
-                                    } as unknown
-                                ]
-                            }
-                        ] as [string, unknown]
-                    ],
-                    artifactName: 'semantic_threads.dat',
-                    bundle: { nodes: {} }
-                }
-            }
-            harness.responseQueue.push((w) => {
-                w.listeners.get('message')?.forEach((fn) =>
-                    fn(new MessageEvent('message', { data: successMsg }))
-                )
-            })
-
-            const result = await loadSemanticThreads()
-            const entry = result.neighborMap.get('lead-1')
-            expect(entry).toBeDefined()
-            // "same-owner" normalizes to "same_owner"
-            expect(entry!.neighbors[0]!.relationshipRole).toBe('same_owner')
-            // Unknown role falls back to "unclassified"
-            expect(entry!.neighbors[1]!.relationshipRole).toBe('unclassified')
-        })
-
-        it('main-thread path normalizes malformed role strings via buildSemanticNeighborMap', async () => {
-            // Exercise the main-thread fallback which calls
-            // buildSemanticNeighborMap → normalizeRelationshipRole.
-            harness.responseQueue.push((w) => {
-                w.listeners.get('message')?.forEach((fn) =>
-                    fn(
-                        new MessageEvent('message', {
-                            data: { type: 'ERROR', payload: { message: 'worker unavailable' } }
-                        })
-                    )
-                )
-            })
-            const rawBundle = {
-                nodes: {
-                    'lead-1': {
-                        lead_id: 'lead-1',
-                        name: 'Biz One',
-                        city: 'Rockville',
-                        status: 'active',
-                        signal_score: 0.5,
-                        neighbors: [
-                            {
-                                lead_id: 'lead-2',
-                                score: 0.7,
-                                semantic_score: 0.6,
-                                same_city: true,
-                                same_status: false,
-                                bridge_score: 0.2,
-                                signal_score: 0.4,
-                                thread_type: 'local_semantic_neighbor',
-                                relationship_role: '  Same-Owner  ',
-                                relationship_axis: '',
-                                role_reason: '',
-                                reason: 'test neighbor'
-                            },
-                            {
-                                lead_id: 'lead-3',
-                                score: 0.5,
-                                semantic_score: 0.4,
-                                same_city: false,
-                                same_status: true,
-                                bridge_score: 0.1,
-                                signal_score: 0.3,
-                                thread_type: 'local_semantic_neighbor',
-                                relationship_role: 'totally-unknown-role',
-                                relationship_axis: '',
-                                role_reason: '',
-                                reason: 'test neighbor'
-                            }
-                        ]
-                    }
-                }
-            }
-            vi.stubGlobal(
-                'fetch',
-                vi.fn(async (url: string) => {
-                    if (url.includes('semantic_threads')) {
-                        return new Response(JSON.stringify(rawBundle), { status: 200 })
-                    }
-                    return new Response('not found', { status: 404 })
-                })
-            )
-
-            const result = await loadSemanticThreads()
-            const entry = result.neighborMap.get('lead-1')
-            expect(entry).toBeDefined()
-            expect(entry!.neighbors[0]!.relationshipRole).toBe('same_owner')
-            expect(entry!.neighbors[1]!.relationshipRole).toBe('unclassified')
         })
     })
 
