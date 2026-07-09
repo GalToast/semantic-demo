@@ -89,9 +89,21 @@ function readJsonRequestBody(): array
 
 function requireSameHostReferrer(): void
 {
+    // H1 (W54 product call): Reference-presence is OPTIONAL. The api is
+    // JSON-only (php://input body, Content-Type: application/json) and
+    // all actions are read-only (semantic_search, get_record, etc.), so
+    // the CSRF risk of an empty Referer is theoretical. Empty Referer
+    // commonly happens on:
+    //   - mobile cold-loads (Referer can be empty on first page load)
+    //   - shared deep links (Referer stripped by chat apps)
+    //   - direct API hits (curl, Postman, monitoring/pingdom/uptime)
+    //   - embedded iframes where the parent doesn't forward Referer
+    // When a Referer IS present (browser-driven requests always send one),
+    // we still enforce the same-host check below to block cross-origin
+    // forged Referer values.
     $referrer = $_SERVER['HTTP_REFERER'] ?? '';
     if ($referrer === '') {
-        respond(403, ['error' => 'Missing referrer']);
+        return;
     }
 
     $host = strtolower((string)parse_url($referrer, PHP_URL_HOST));
