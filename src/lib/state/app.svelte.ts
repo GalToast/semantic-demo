@@ -234,7 +234,6 @@ class AppState {
     nodePositions = $state<NodePosition[]>([])
     targetPositions = $state<NodePosition[]>([])
     originalPositions = $state<NodePosition[]>([])
-    currentView = $state<ViewName>('galaxy')
     autoRotate = $state<boolean>(false)
     autoRotateSuspended = $state<boolean>(false)
     weather = $state<WeatherData | null>(null)
@@ -639,6 +638,21 @@ class AppState {
 
     set semanticDiveMode(active: boolean) {
         this.navState.trailDepth = active ? 2 : 0
+    }
+
+    /** Single source of truth: currentView is a direct alias over
+     * navState.currentView (canonical). Previously it was a parallel $state
+     * mirror with the same flat-vs-nested drift as trailDepth — the flat
+     * setter wrote only itself and the navigation bridge only synced for
+     * 'galaxy'/'map' via an explicit conditional. Now both reads and writes
+     * proxy to navState.currentView, so the two can never disagree.
+     * Mirrors the trailDepth and focusedNode aliases above. */
+    get currentView(): ViewName {
+        return this.navState.currentView
+    }
+
+    set currentView(value: ViewName) {
+        this.navState.currentView = value
     }
 
     // ==== URL STATE TRACKING ====
