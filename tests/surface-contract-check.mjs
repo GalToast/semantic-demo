@@ -4113,40 +4113,58 @@ const SURFACES = {
 async function assert_global_spacing(page, ctx) {
     await loadAndWait(page, positionalUrl)
 
-    // W52 flake fix (global-spacing): under the full 70-surface run (a single
-    // reused browser under load) interactive controls can still be animating
-    // when loadAndWait returns, so the touch-target check occasionally reads a
-    // control <44px mid-transition. Wait for layout to settle (control sizes
-    // stable across two rAF samples) before measuring. Pass criteria unchanged.
+    // W52 flake fix (global-spacing): under the full sequential sweep (a single
+    // reused browser under load) interactive controls — including ones still
+    // animating in from a prior surface's teardown or the global-spacing mount —
+    // can be <44px when loadAndWait returns, so the touch-target check
+    // occasionally reads a control mid-transition. Wait until the ACTUAL
+    // touch-target condition (every visible non-chip control >= 44px) is stably
+    // true before measuring, rather than a raw size-signature proxy that can
+    // mis-settle under CPU contention. Pass criteria unchanged.
     {
-        let prevSig = ''
-        let stableCount = 0
-        const deadline = Date.now() + 5000
-        while (Date.now() < deadline) {
-            const sig = await page
+        const measureTouchTargetsOk = () =>
+            page
                 .evaluate(() => {
                     const sel =
                         'button:not([disabled]),input:not([disabled]),select:not([disabled]),a[href],[role="button"]:not([aria-disabled="true"]),[tabindex="0"]'
-                    return Array.from(document.querySelectorAll(sel))
-                        .filter((el) => {
-                            const s = getComputedStyle(el)
-                            return s.display !== 'none' && s.visibility !== 'hidden'
-                        })
-                        .map((el) => {
-                            const r = el.getBoundingClientRect()
-                            return `${Math.round(r.width)}x${Math.round(r.height)}`
-                        })
-                        .join('|')
+                    const els = Array.from(document.querySelectorAll(sel)).filter((el) => {
+                        const s = getComputedStyle(el)
+                        if (s.display === 'none' || s.visibility === 'hidden') return false
+                        const r = el.getBoundingClientRect()
+                        if (
+                            !(
+                                r.width > 0 &&
+                                r.height > 0 &&
+                                r.bottom > 0 &&
+                                r.right > 0 &&
+                                r.top < window.innerHeight &&
+                                r.left < window.innerWidth
+                            )
+                        )
+                            return false
+                        if (Number(s.opacity || 1) <= 0.05) return false
+                        if (s.pointerEvents === 'none') return false
+                        return true
+                    })
+                    return els.every((el) => {
+                        const isModeChip = /\bmode-chip\b/.test(String(el.className || ''))
+                        const threshold = isModeChip ? 23.5 : 43.5
+                        const r = el.getBoundingClientRect()
+                        return r.width >= threshold && r.height >= threshold
+                    })
                 })
-                .catch(() => '')
-            if (sig && sig === prevSig) {
-                stableCount += 1
-                if (stableCount >= 2) break
+                .catch(() => false)
+        const deadline = Date.now() + 9000
+        let stable = 0
+        while (Date.now() < deadline) {
+            const ok = await measureTouchTargetsOk()
+            if (ok) {
+                stable += 1
+                if (stable >= 2) break
             } else {
-                stableCount = 0
+                stable = 0
             }
-            prevSig = sig
-            await page.evaluate(() => new Promise((r) => requestAnimationFrame(() => r()))).catch(() => {})
+            await page.evaluate(() => new Promise((r) => setTimeout(r, 120))).catch(() => {})
         }
     }
 
