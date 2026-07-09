@@ -52,10 +52,7 @@ function makeFakeLoader<T>(value: T, opts: { delay?: number; shouldReject?: bool
  * scheduling accuracy while keeping the test fast on a quiet event loop
  * (the 5ms poll interval exits within one loader-resolution cycle).
  */
-async function awaitIdle(
-    lc: { readonly isPending: boolean },
-    timeoutMs = 2000
-): Promise<void> {
+async function awaitIdle(lc: { readonly isPending: boolean }, timeoutMs = 2000): Promise<void> {
     const start = Date.now()
     while (lc.isPending && Date.now() - start < timeoutMs) {
         await new Promise((r) => setTimeout(r, 5))

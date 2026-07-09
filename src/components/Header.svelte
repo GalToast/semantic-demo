@@ -31,6 +31,8 @@
     indexForModeId,
     selectMode as applyModeSelect
   } from '@lib/components/header/mode-nav';
+  import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller';
+  import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
 
   interface Props {
     /** Whether the header is visible */
@@ -113,6 +115,12 @@
       debugWarn: debugWarn as unknown as (...args: unknown[]) => void
     });
     if (idx >= 0) keyboardFocusIndex = idx;
+    // Bug 2 fix: selecting "Inside" must also engage the semantic-dive surface
+    // (ENTRY_INSIDE). On desktop the journey-compass "Step Inside" button is
+    // display:none, so this is the only path that reveals #focus-pocket there.
+    if (modeId === 'inside') {
+      executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE);
+    }
   }
 
   function openKeyboardHelp(): void {
@@ -233,7 +241,7 @@
    * first-visit flag as ProximityLegend so we don't spam returning users.
    */
   $effect(() => {
-    if (engineReady.value && helpDialog && !helpDialogAutoOpened) {
+    if (engineReady.value && helpDialog && !helpDialogAutoOpened && !$viewport.isCompact) {
       try {
         const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
         if (!raw) {
@@ -245,6 +253,29 @@
         helpDialogAutoOpened = true;
       }
     }
+  });
+
+  /**
+   * W50-A11y: when the help dialog closes, land focus on the primary entry
+   * point (#search-input) instead of letting the browser restore it to
+   * <body>. Attached here — where `helpDialog` is bound via `bind:this` — so
+   * it depends on the dialog's reactive existence. The previous App.svelte
+   * effect queried the dialog once and only re-ran on engineReady, so it
+   * missed the dialog when Header wasn't mounted at engine-ready time
+   * (e.g. a ?view=map deep-link with headerVisible=false). The dialog only
+   * exists while Header is mounted, so this covers every case where it can
+   * actually be opened.
+   */
+  $effect(() => {
+    if (!helpDialog) return;
+    const onHelpDialogClose = () => {
+      const input = document.getElementById('search-input') as HTMLInputElement | null;
+      const ae = document.activeElement as HTMLElement | null;
+      const meaningful = !!ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
+      if (input && !meaningful) input.focus();
+    };
+    helpDialog.addEventListener('close', onHelpDialogClose);
+    return () => helpDialog.removeEventListener('close', onHelpDialogClose);
   });
 </script>
 

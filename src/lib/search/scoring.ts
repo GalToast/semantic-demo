@@ -71,11 +71,11 @@ function getMockPointSearchFields(point: Point): MockPointSearchFields {
         name: normalizeMockSearchText(point?.name),
         what: normalizeMockSearchText(point?.what),
         city: normalizeMockSearchText(point?.city),
-        naics_prefix: point?.naics ? (String(point.naics).match(/^(\d{6})/)?.[1] ?? null) : null,
+        naics_prefix: point?.naics ? (String(point.naics).match(/^(\d{2,6})/)?.[1] ?? null) : null,
         address: normalizeMockSearchText(enrichment?.address || point?.address),
         snapshot: normalizeMockSearchText(enrichment?.snapshot),
-        snapshot_alt: normalizeMockSearchText(enrichment?.business_overview),
-        business_overview: normalizeMockSearchText(enrichment?.business_overview_extended),
+        snapshot_alt: normalizeMockSearchText(enrichment?.snapshot_alt),
+        business_overview: normalizeMockSearchText(enrichment?.business_overview),
         business_overview_extended: normalizeMockSearchText(enrichment?.business_overview_extended),
         observations: normalizeMockSearchText(enrichment?.observations),
         contact_decision_makers: normalizeMockSearchText(enrichment?.contact_decision_makers),
@@ -121,7 +121,7 @@ export function buildDatasetBackedMockResults(
     const pointNaicsPrefix = (point: Point): string | null => {
         const n = point?.naics
         if (!n) return null
-        const m = String(n).match(/^(\d{6})/)
+        const m = String(n).match(/^(\d{2,6})/)
         return m?.[1] ?? null
     }
 
@@ -181,7 +181,11 @@ export function buildDatasetBackedMockResults(
             return {
                 lead_id: String(point.lead_id),
                 name: point.name ?? '',
-                score: Math.max(0.5, scoreBase - i * 0.05 + Math.min(score, 30) * 0.003),
+                // Score reflects the field-weighted relevance (`score`) rather
+                // than rank: `scoreBase` is a per-query floor and the relevance
+                // term scales the accumulated field weight. Ordering is already
+                // fixed by the upstream sort, so no rank penalty is applied here.
+                score: Math.max(0.5, scoreBase + Math.min(score, 30) * 0.01),
                 provenance: 'Static dev dataset fallback',
                 thread_type: 'Search match',
                 city: point.city ?? '',

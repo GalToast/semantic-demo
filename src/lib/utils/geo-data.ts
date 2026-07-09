@@ -93,10 +93,15 @@ export interface GeoPoint {
     z?: number
 }
 
-export interface TokenMatchResult {
-    exact: number
-    prefix: number
-}
+export type { TokenMatchResult } from '@lib/search/tokenizer'
+
+/**
+ * Search tokenization is owned by @lib/search/tokenizer.ts (Unicode-aware,
+ * shared SEARCH_STOP_WORDS default). Re-exported here so the geo/NAICS path
+ * and the `utils/index.ts` Legacy re-exports resolve to the single
+ * canonical implementation — no divergent second copy.
+ */
+export { tokenizeSearchText, countTokenMatches } from '@lib/search/tokenizer'
 
 export function pointHasGeocode(point: GeoPoint | null | undefined): boolean {
     if (!point) return false
@@ -173,34 +178,6 @@ export function highlightMatch(text: unknown, query: unknown): string {
     const escapedPrefix = escapeHtml(safeText.substring(0, idx))
     const escapedSuffix = escapeHtml(safeText.substring(idx + safeQuery.length))
     return escapedPrefix + '<mark class="search-result-match">' + escapedMatch + '</mark>' + escapedSuffix
-}
-
-export function tokenizeSearchText(text: unknown, stopWords: Set<string> = new Set()): string[] {
-    return [
-        ...[
-            ...new Set(
-                (String(text || '')
-                    .normalize('NFC')
-                    .toLowerCase()
-                    // \p{L} = any Unicode letter (é, ñ, ü, etc.), \p{N} = any Unicode number, u flag enables Unicode property escapes
-                    .match(/[\p{L}\p{N}]+/gu) || []) as string[]
-            )
-        ]
-            .filter(Boolean)
-            .filter((token) => token.length > 1 && !stopWords.has(token))
-    ]
-}
-
-export function countTokenMatches(fieldTokens: readonly string[], queryTokens: readonly string[]): TokenMatchResult {
-    if (!fieldTokens || !queryTokens) return { exact: 0, prefix: 0 }
-    if (!Array.isArray(queryTokens)) return { exact: 0, prefix: 0 }
-    let exact = 0
-    let prefix = 0
-    queryTokens.forEach((token) => {
-        if (fieldTokens.includes(token)) exact += 1
-        else if (fieldTokens.some((entry) => entry.startsWith(token) || token.startsWith(entry))) prefix += 1
-    })
-    return { exact, prefix }
 }
 
 export function computeOverviewScatterOffsets(

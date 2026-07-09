@@ -1,4 +1,4 @@
-import { writable } from 'svelte/store'
+import { writable, get } from 'svelte/store'
 
 /**
  * @lib/stores/toast.svelte.ts — Toast queue + lifetime orchestrator
@@ -124,11 +124,10 @@ function enqueue(spec: ToastSpec): void {
         return
     }
 
-    // Read current visible state via a fire-and-forget subscribe.
-    let isActive = false
-    toastStore.subscribe((s) => {
-        isActive = s.active
-    })()
+    // Read current visible state. Prefer get() over a throwaway subscribe
+    // snapshot (W-audit-G): get() is synchronous and leaves no dangling
+    // subscription.
+    const isActive = get(toastStore).active
 
     if (isActive) {
         queue.push(spec)

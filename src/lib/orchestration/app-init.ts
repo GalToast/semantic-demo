@@ -179,7 +179,7 @@ async function applyUrlStateAfterData(): Promise<void> {
  * @returns A cleanup function that removes the event listeners.
  */
 function setupWebglContextRestore(): () => void {
-    const canvas = document.querySelector<HTMLCanvasElement>('canvas')
+    const canvas = document.querySelector<HTMLCanvasElement>('#engine-canvas')
     if (!canvas) return () => {}
 
     const handleContextLost = (event: Event) => {
@@ -249,7 +249,12 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // thin shell that delegates lifecycle to appInit(). Cleanups are exposed
     // via teardownAppShell() so App.svelte's onMount return-cleanup can drive
     // teardown without re-importing the installers.
+    // W-audit-D: tear down any previously-installed listeners before
+    // re-installing. A WebGL context-restore re-run of appInit() would
+    // otherwise stack duplicate resize / matchMedia listeners.
+    _unsubViewport?.()
     _unsubViewport = initViewportListeners()
+    _unsubParity?.()
     _unsubParity = installParityAttributeSync()
 
     // ── Phase 3: Data loading ─────────────────────────────────────────────────
@@ -278,6 +283,8 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     await applyUrlStateAfterData()
 
     // ── Phase 5: WebGL context restore handler ────────────────────────────────
+    // W-audit-D: tear down a prior restore handler before re-adding.
+    _unsubWebglRestore?.()
     _unsubWebglRestore = setupWebglContextRestore()
 
     // ── Phase 6: First-paint coordination ─────────────────────────────────────

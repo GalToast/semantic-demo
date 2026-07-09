@@ -49,6 +49,7 @@ import { resetJourney } from './journey.svelte.ts'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import { SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
 
 // ── Configuration Constants (from state.js) ──────────────────────────────────
 
@@ -258,16 +259,16 @@ export const navStore: NavStoreApi = _createNavStore()
 export const isOverview = () => _readNavSnapshot().mode === 'overview'
 export const isExploration = () => {
     const m = _readNavSnapshot().mode
-    return m === 'trail' || m === 'focus' || m === 'inside'
+    return SELECTION_DEPENDENT_MODES.has(m)
 }
 export const hasFocus = () => {
     const local = _readNavSnapshot()
-    if (local.mode === 'focus' || local.mode === 'inside' || local.focusedIndex !== null) {
+    if (SELECTION_DEPENDENT_MODES.has(local.mode) || local.focusedIndex !== null) {
         return true
     }
     // Read directly from appState.navState — no fallback chain needed.
     const mirror = appState.navState
-    if (mirror.mode === 'focus' || mirror.mode === 'inside') return true
+    if (SELECTION_DEPENDENT_MODES.has(mirror.mode)) return true
     if (mirror.focusedIndex != null && Number.isFinite(mirror.focusedIndex)) return true
     return false
 }

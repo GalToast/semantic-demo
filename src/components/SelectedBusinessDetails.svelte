@@ -1,6 +1,7 @@
 <script lang="ts">
-  import { selectedPointStore } from '@lib/stores/index.svelte.ts';
-  import { publish, EVENTS } from '@lib/orchestration/event-bus';
+  import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
+  import { navStore, dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts';
+  import type { BusinessRecord } from '@lib/types/business';
 
   interface Props {
     viewModel: Record<string, any>;
@@ -9,10 +10,24 @@
 
   let { viewModel, selectedCity }: Props = $props();
 
-  const point = $derived(selectedPointStore());
+  // Reactive replacement for selectedPointStore(): the snapshot helper froze at
+  // first render (null) because a $derived over a get()-snapshot establishes no
+  // reactive dependency, so the Website/Email/Phone badge row (#selected-badges)
+  // never re-evaluated on selection. Derive from the reactive nav store so this
+  // re-runs whenever the focused index changes, reading the record list at derive
+  // time from the same source the helper used.
+  const point = $derived.by((): BusinessRecord | null => {
+    const idx = $navStore.focusedIndex;
+    if (idx == null || idx < 0) return null;
+    const records = getBusinessRecords();
+    return (records[idx] ?? null) as BusinessRecord | null;
+  });
 
   function handleMapClick(): void {
-    publish(EVENTS.VIEW_CHANGE_REQUESTED, { view: 'map' });
+    // VIEW_CHANGE_REQUESTED has no subscriber, so this button was a dead-end.
+    // Switch the view directly, matching the header "Map" chip behaviour.
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_VIEW, { view: 'map' });
+    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'map' });
   }
 </script>
 

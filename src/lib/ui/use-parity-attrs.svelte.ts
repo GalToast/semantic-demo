@@ -98,12 +98,15 @@ export function useParityAttrs(): ParityAttrs {
             return parityMap.strandJourney || 'idle'
         },
         get focusSearchForced(): boolean {
-            // Composes panelSurface/graphContext via getters so dependency
-            // tracking propagates through both. The body.dataset fallback
-            // is a contract-test escape hatch, not a normal-state path.
+            // W-audit-T5-5: read parityMap directly instead of via `this.*`
+            // getters, so the flag no longer depends on `this` binding (avoids
+            // a latent crash if the getter is ever detached as a callback).
+            // Dependency tracking still propagates through the parityMap reads.
+            // The body.dataset fallback is a contract-test escape hatch, not
+            // a normal-state path.
             return (
-                this.panelSurface === 'focus-search' ||
-                this.graphContext === 'focus-search' ||
+                (parityMap.panelSurface || '') === 'focus-search' ||
+                (parityMap.graphContext || '') === 'focus-search' ||
                 document.body?.dataset.focusSearchForced === 'true'
             )
         },

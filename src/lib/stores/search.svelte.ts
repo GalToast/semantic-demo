@@ -239,7 +239,7 @@ export const activeResult = () =>
 export function getSearchSummary(): SearchSummary | null {
     if (appState.searchState.currentSearchSummary) return appState.searchState.currentSearchSummary as SearchSummary
     const testState = testCompatStore()
-    // @ts-expect-error -- testCompatStore returns TestCompatState which lacks searchState; legacy bridge gap (w32-b)
+    // @ts-expect-error -- testCompatStore returns TestCompatState which lacks searchState; legacy bridge gap (w32-b). Remove when TestCompatState includes a searchState field (ticket W53-L2-followup)
     return (testState?.searchState?.summary as SearchSummary) ?? null
 }
 

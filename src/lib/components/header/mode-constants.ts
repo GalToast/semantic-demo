@@ -42,13 +42,14 @@ export interface ModeOption {
 }
 
 /**
- * Modes that require a focused business node to be meaningful. These match
- * the selection guard in navigation.svelte.ts (mode === 'focus' || 'inside'
- * || focusedIndex != null) and the trail lock in mode-bindings.ts. They
- * render empty / no-op without a selection, so they are proactively
- * disabled (aria-disabled) rather than appearing active.
+ * Selection-lock set is the single canonical source of truth defined in
+ * @lib/navigation/mode-affordances.ts. Re-exported here (instead of a
+ * duplicated local copy) so there is exactly ONE definition of which modes
+ * require a focused business. Keep this a re-export — do NOT define a second
+ * `new Set(...)` here; editing a local copy would have zero runtime effect
+ * (only the canonical set is read by `isModeLocked`).
  */
-export const SELECTION_DEPENDENT_MODES = new Set<string>(['trail', 'focus', 'inside'])
+export { SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
 
 /** Ordered mode-chip rail — the visual rail's source of truth. */
 export const modes: ModeOption[] = [

@@ -19,7 +19,7 @@
   import { journeyStore } from '@lib/stores/journey.svelte.ts';
   import { getJourneyCompassState } from '@lib/journey/compass-state';
   import { threadInspector, threadInspectorActive, pinThread, updateThreadInspector, focusStore, setPocketRoleFilter } from '@lib/stores/focus.svelte.ts';
-  import { getBusinessRecords, selectedPointStore } from '@lib/stores/index.svelte.ts';
+  import { getBusinessRecords } from '@lib/stores/index.svelte.ts';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
 
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
@@ -98,7 +98,16 @@
       .filter((candidate): candidate is NormalizedCandidate => candidate !== null);
   }
 
-  const currentPoint = $derived(selectedPointStore());
+  // Reactive replacement for selectedPointStore(): a $derived over a get()-
+  // snapshot freezes at first render (null), so currentPoint was permanently
+  // stale. Derive from the already-reactive currentFocusedIndex so this updates
+  // on every selection.
+  const currentPoint = $derived.by((): BusinessRecord | null => {
+    const idx = currentFocusedIndex;
+    if (idx == null || idx < 0) return null;
+    const records = getBusinessRecords();
+    return (records[idx] ?? null) as BusinessRecord | null;
+  });
   const navSnapshot = $derived($navStore);
   const journeySnapshot = $derived($journeyStore);
   const currentFocusedIndex = $derived(navSnapshot.focusedIndex);

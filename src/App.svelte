@@ -318,27 +318,6 @@
     });
   });
 
-  // W50-A11y: when the first-visit (or any) help dialog closes after the app
-  // is interactive, land focus on the primary entry point (#search-input)
-  // instead of letting the browser restore it to <body>. The Splash modal
-  // trap restores to <body> on dismiss, and the help dialog's showModal()
-  // restores to <body> on close — both stranded mobile screen-reader users
-  // at <body> with no focus target. The browser-native <dialog> fires a
-  // `close` event on .close(); refocus the search input there.
-  $effect(() => {
-    if (!engineReady.value) return;
-    const dialog = document.querySelector('dialog.help-dialog') as HTMLDialogElement | null;
-    if (!dialog) return;
-    const onHelpDialogClose = () => {
-      const input = document.getElementById('search-input') as HTMLInputElement | null;
-      const ae = document.activeElement as HTMLElement | null;
-      const meaningful = !!ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
-      if (input && !meaningful) input.focus();
-    };
-    dialog.addEventListener('close', onHelpDialogClose);
-    return () => dialog.removeEventListener('close', onHelpDialogClose);
-  });
-
   $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));
 </script>
 
@@ -512,8 +491,14 @@
       <Cmp visible={focusStageActive} forceSemanticDiveVisible={semanticDiveContractForced} />
     {/if}
 
-    <!-- Layer 200: Journey chrome (breadcrumb, trail indicators) -->
-    {#if journeyChromeLazy.current}
+    <!-- Layer 200: Journey chrome (breadcrumb, trail indicators).
+         Gate the mount on focusStageActive (not just the lazy chunk being
+         loaded) so it is never rendered inside the aria-hidden #focus-stage
+         wrapper in the map+focus edge (where focusStageActive is false but
+         focusActive is true). This keeps visibility/aria consistent with
+         FocusCard's `visible={focusStageActive}` and the wrapper's
+         aria-hidden predicate. Normal (non-map) focus rendering is unchanged. -->
+    {#if focusStageActive && journeyChromeLazy.current}
       {@const Cmp = journeyChromeLazy.current}
       <Cmp visible={true} />
     {/if}

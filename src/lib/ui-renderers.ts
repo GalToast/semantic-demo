@@ -102,10 +102,15 @@ export function getInterestingBusinessNote(point: BusinessRecord | null): string
         return t;
     }
     
-    // Fallback heuristics
-    if (point.email && point.phone) return null;
-    if (point.website && !point.email && !point.phone) return null;
-    return null;
+    // Fallback heuristic: when there is no curated trivia, synthesize a
+    // contact-presence summary from the available contact channels so
+    // callers get a useful note instead of null.
+    const channels: string[] = []
+    if (point.website) channels.push('has a website')
+    if (point.email) channels.push('lists an email')
+    if (point.phone) channels.push('lists a phone number')
+    if (channels.length === 0) return null
+    return `Contact info available — ${channels.join(', ')}.`
 }
 
 /** Build selected match narrative copy. */

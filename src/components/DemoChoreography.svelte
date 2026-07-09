@@ -34,6 +34,15 @@
 
   let eligible = $state(true);
 
+  /**
+   * T6 fix: the offerHintWhenReady / startWhenReady poll loops self-recurse via
+   * bare setTimeout(..., 200) while waiting for the scene. They are not part of
+   * the tracked scheduleDemoTimer list, so an unmount mid-poll could keep firing
+   * them (post-mount state writes). Set on destroy and checked at the top of
+   * each loop so recursion stops immediately after teardown.
+   */
+  let unmounted = false;
+
   const FORCED_START_DELAY_MS = 800;
   const RETRY_START_DELAY_MS = 250;
   /** Delay before the fallback onboarding toast appears after splash dismissal. */
@@ -185,6 +194,7 @@
       // listen for it, the hint is suppressed for every user who enters normally.
       const startTime = performance.now();
       const offerHintWhenReady = (): void => {
+        if (unmounted) return;
         if (sceneReady.value || sceneReady.error) {
           attachInteractionListeners();
           scheduleDemoTimer(() => showFallbackHint(), FALLBACK_HINT_DELAY_MS);
@@ -224,6 +234,7 @@
     // chrome beats no demo at all when the scene is slow to boot.
     const startTime = performance.now();
     const startWhenReady = (): void => {
+      if (unmounted) return;
       if (sceneReady.value) {
         scheduleDemoTimer(() => attemptStart(), force ? FORCED_START_DELAY_MS : DEMO_START_DELAY_MS);
         return;
@@ -254,6 +265,7 @@
   });
 
   onDestroy(() => {
+    unmounted = true;
     cancelAllDemoTimers();
     interactionAbortController.abort();
     if (isDemoActive()) {

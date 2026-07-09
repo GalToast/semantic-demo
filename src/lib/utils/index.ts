@@ -64,10 +64,12 @@ export {
     isPointVisible,
     calculateSignalScore,
     highlightMatch,
-    tokenizeSearchText as tokenizeSearchTextLegacy,
-    countTokenMatches as countTokenMatchesLegacy,
     computeOverviewScatterOffsets
 } from './geo-data'
+export {
+    tokenizeSearchText as tokenizeSearchTextLegacy,
+    countTokenMatches as countTokenMatchesLegacy
+} from '@lib/search/tokenizer'
 export type { ScatterOffset, ActiveFilters, GeoPoint, TokenMatchResult as GeoTokenMatchResult } from './geo-data'
 export {
     updateDocumentMeta,

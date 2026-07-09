@@ -75,6 +75,10 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   let activeCanvas: HTMLCanvasElement | null = null;
   let lastCommandCount = $state(0);
   let lastCaptureAt = $state<number | null>(null);
+  // T6 fix: the 5s capture timeout started inside the capture() promise was
+  // never cleared on component teardown (it was only cleared on success/error
+  // via clearTimeout(timeout)). Keep the handle here so onDestroy can clear it.
+  let captureTimeout: ReturnType<typeof setTimeout> | null = null;
 
   onMount(async () => {
     if (!visible || !import.meta.env.DEV) {
@@ -201,13 +205,14 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
           debugLog('[spector-inspector] pre-render threw:', renderErr);
         }
         return new Promise((resolve) => {
-          const timeout = setTimeout(() => {
+          captureTimeout = setTimeout(() => {
             resolve({ ok: false, reason: 'timeout' });
           }, 5000);
           try {
             // onCapture fires when a capture completes with commands.
             const onCapture = (capture: unknown) => {
-              clearTimeout(timeout);
+              clearTimeout(captureTimeout);
+              captureTimeout = null;
               activeCanvas = canvas;
               lastCapture = capture;
               const cmds = (capture as { commands?: unknown[] } | null)?.commands ?? [];
@@ -239,13 +244,15 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
             // functions with fewer parameters), so no cast is needed.
             spectorWithEvents.onCapture?.add(onCaptureTracked);
             spectorWithEvents.onError?.add((err: unknown) => {
-              clearTimeout(timeout);
+              clearTimeout(captureTimeout);
+              captureTimeout = null;
               resolve({ ok: false, reason: 'spector-error', error: String(err) });
             });
             // maxFrames=0 means "capture the next frame"
             spector.captureContext(existingCtx, maxFrames, false, false);
           } catch (err) {
-            clearTimeout(timeout);
+            clearTimeout(captureTimeout);
+            captureTimeout = null;
             resolve({ ok: false, reason: 'capture-failed', error: String(err) });
           }
         });
@@ -270,7 +277,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
       getActiveCanvas: () => (activeCanvas ? 'captured' : 'idle'),
     };
 
-    // @ts-ignore — bridge shape is wider than window.__spector type
+    // @ts-ignore — bridge shape is wider than window.__spector type. Remove when the window.d.ts __spector interface is widened to the full bridge shape (ticket W53-L6-followup)
     window.__spector = bridge;
     phase = 'ready';
     publishStatus();
@@ -296,6 +303,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
   }
 
   onDestroy(() => {
+    if (captureTimeout !== null) clearTimeout(captureTimeout);
     if (typeof window !== 'undefined') {
       delete window.__spector;
       delete window.__spectorStatus;

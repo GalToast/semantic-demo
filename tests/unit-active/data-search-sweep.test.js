@@ -7,7 +7,7 @@
  * 3. IndexedDB dbPromise reset on failure (module structure)
  */
 import { describe, it, expect } from 'vitest';
-import { tokenizeSearchText } from '../../src/lib/utils/geo-data';
+import { tokenizeSearchText } from '../../src/lib/search/tokenizer';
 
 describe('geo-data tokenizeSearchText — NFC + Unicode', () => {
     it('tokenizes ASCII normally (regression guard)', () => {
@@ -29,7 +29,8 @@ describe('geo-data tokenizeSearchText — NFC + Unicode', () => {
     });
 
     it('handles stop words with accented input', () => {
-        // "la" is not a stop word in this module (empty default stopWords)
+        // "la" is not a stop word in the canonical tokenizer (SEARCH_STOP_WORDS),
+        // so it is preserved as a token.
         const tokens = tokenizeSearchText('la café');
         expect(tokens).toContain('café');
     });

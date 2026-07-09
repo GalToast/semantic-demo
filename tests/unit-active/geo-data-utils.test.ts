@@ -5,10 +5,9 @@ import {
     isPointVisible,
     calculateSignalScore,
     highlightMatch,
-    tokenizeSearchText,
-    countTokenMatches,
     computeOverviewScatterOffsets
 } from '../../src/lib/utils/geo-data'
+import { tokenizeSearchText, countTokenMatches } from '../../src/lib/search/tokenizer'
 
 describe('geo-data utilities', () => {
     describe('pointHasGeocode', () => {

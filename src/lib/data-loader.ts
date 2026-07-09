@@ -84,6 +84,11 @@ function cacheBustParam(): string {
     return `v=${Math.floor(Date.now() / (1000 * 60 * 60))}`
 }
 
+/**
+ * @deprecated Fossil helper — only used by {@link _loadSemanticThreadsMainThread}.
+ * Superseded by @lib/engine/semantic-threads. Kept only for test contract in
+ * tests/unit-active/data-loader.test.ts. New code must not call this.
+ */
 function artifactNameFromUrl(url: string): string {
     try {
         return new URL(url, window.location.href).pathname.split('/').pop() || url
@@ -438,6 +443,10 @@ function replaceInvalidPositionsWithBoundsCenter(
  * each with neighbors that describe semantic relationships.
  *
  * Returns a normalized neighbor map keyed by lead_id.
+ *
+ * @deprecated Fossil function superseded by @lib/engine/semantic-threads
+ * (loadSemanticThreads). Kept only for the test contract in
+ * tests/unit-active/data-loader.test.ts. New code must not call this.
  */
 export async function loadSemanticThreads(): Promise<SemanticThreadDataResult> {
     const requestUrls = THREAD_REQUEST_URLS_REL.map((rel) => buildAssetUrl(`${rel}?${cacheBustParam()}`))
@@ -467,7 +476,13 @@ export async function loadSemanticThreads(): Promise<SemanticThreadDataResult> {
     }
 }
 
-/** Main-thread fallback for semantic-thread loading (kept for worker failure / SSR / old browsers). */
+/**
+ * Main-thread fallback for semantic-thread loading (kept for worker failure / SSR / old browsers).
+ *
+ * @deprecated Fossil helper — only used by the deprecated {@link loadSemanticThreads}.
+ * Superseded by @lib/engine/semantic-threads. Kept only for the test contract in
+ * tests/unit-active/data-loader.test.ts. New code must not call this.
+ */
 async function _loadSemanticThreadsMainThread(requestUrls: string[]): Promise<SemanticThreadDataResult> {
     let bundle: SemanticThreadBundle | null = null
     let artifactName: string | null = null
@@ -518,6 +533,10 @@ async function _loadSemanticThreadsMainThread(requestUrls: string[]): Promise<Se
 /**
  * Load the semantic space layout manifest for validation.
  * Non-critical — returns null on failure.
+ *
+ * @deprecated Fossil function superseded by @lib/engine/semantic-threads.
+ * Kept only for the test contract in
+ * tests/unit-active/data-loader.test.ts. New code must not call this.
  */
 export async function loadLayoutManifest(): Promise<LayoutManifest | null> {
     try {
@@ -620,6 +639,11 @@ function checkDataBounds(buffer: Float32Array): void {
     }
 }
 
+/**
+ * @deprecated Fossil helper — only used by {@link _loadSemanticThreadsMainThread}.
+ * Superseded by @lib/engine/semantic-threads. Kept only for the test contract in
+ * tests/unit-active/data-loader.test.ts. New code must not call this.
+ */
 function buildSemanticNeighborMap(bundle: SemanticThreadBundle): Map<string, SemanticNeighborEntry> {
     const map = new Map<string, SemanticNeighborEntry>()
     const nodes = bundle.nodes
@@ -664,6 +688,11 @@ function buildSemanticNeighborMap(bundle: SemanticThreadBundle): Map<string, Sem
     return map
 }
 
+/**
+ * @deprecated Fossil helper — only used by the deprecated {@link buildSemanticNeighborMap}.
+ * Superseded by @lib/engine/semantic-threads. Kept only for the test contract in
+ * tests/unit-active/data-loader.test.ts. New code must not call this.
+ */
 function normalizeLeadId(id: unknown): string | null {
     if (id === null || id === undefined) return null
     const s = String(id).trim()

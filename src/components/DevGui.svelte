@@ -96,7 +96,7 @@ import { debugLog, debugError } from '@lib/utils/debug'
       pocketFolder.open();
 
       // --- Postprocessing folder ---
-      // @ts-ignore — window.__semanticPostprocessing is typed in window.d.ts
+      // @ts-ignore — window.__semanticPostprocessing is typed in window.d.ts. Remove when the consumed methods (isPremiumMode etc.) are surfaced through a typed accessor instead of optional chaining on the loose Record shape (ticket W53-L6-followup)
       let ppEnabled = window.__semanticPostprocessing?.isPremiumMode?.() ?? false;
       let bloomIntensity = 0.5;
       let bloomThreshold = 0.6;
@@ -160,7 +160,7 @@ import { debugLog, debugError } from '@lib/utils/debug'
     })();
 
     return () => {
-      // @ts-ignore — guiInstance typed explicitly above
+      // @ts-ignore — guiInstance typed explicitly above. Remove when guiInstance is captured as a typed lil-gui instance instead of the nullable proxy above (ticket W53-L6-followup)
       void guiInstance?.destroy();
     };
   });

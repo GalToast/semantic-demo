@@ -445,6 +445,7 @@ export function updateJourneyCompass(): void {
         overview: 'See the whole county.',
         search: 'Find and center on a business.',
         focus: 'Inspect a centered anchor.',
+        trail: 'Project the connection trail onto the streets.',
         inside: 'Explore the neighborhood.',
         map: 'View the geographic layer.'
     }

@@ -21,7 +21,7 @@
 <script lang="ts">
   import { navStore } from '@lib/stores/navigation.svelte.ts';
   import { activeResult, searchSummary } from '@lib/stores/search.svelte';
-  import { getBusinessRecords, getIsDataReady, selectedPointStore } from '@lib/stores/index.svelte.ts';
+  import { getBusinessRecords, getIsDataReady } from '@lib/stores/index.svelte.ts';
   import { getBusinessNamePresentation, sanitizePublicFacingNote, getPublicRecordStatusLabel } from '@lib/utils';
   import { describeCluster } from '@lib/utils';
   import { buildSelectedMatchNarrative as buildSearchMatchNarrative, getInterestingBusinessNote } from '@lib/ui/renderers';
@@ -239,7 +239,13 @@
       isPopulated: false
     };
 
-    const point = selectedPointStore() as BusinessPoint | null;
+    // Reactive source for the selected business point: the view-model $derived
+    // already depends on `selectedRecord`, so reading it here (instead of the
+    // non-reactive selectedPointStore() snapshot) keeps the selected-business
+    // props live on every selection. selectedRecord carries the same record
+    // selectedPointStore() resolved for the focus case (and the active search
+    // result otherwise).
+    const point = selectedRecord as BusinessPoint | null;
     if (!point) {
       // Fallback: build view-model from selectedRecord (no 3D point available)
       const rawName = selectedRecord.name ?? '';

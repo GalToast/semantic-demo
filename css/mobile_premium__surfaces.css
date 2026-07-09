@@ -353,7 +353,6 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     /* Share button visibility handled by global mobile actions in mobile_base.css */
 
     body.surface-focus-search #mode-grid .mode-chip,
-    body.surface-focus-search #mode-chips .mode-chip,
     body.surface-semantic-dive #mode-grid .mode-chip,
     body.surface-semantic-dive #mode-chips .mode-chip {
         display: none;

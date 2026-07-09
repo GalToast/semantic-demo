@@ -210,7 +210,11 @@ export {
 import { get } from 'svelte/store'
 import type { BusinessRecord } from '@lib/types/business'
 import { navStore } from './navigation.svelte'
-import { getBusinessRecords as getDataBusinessRecords, getIsDataReady as getDataIsReady } from '../data-store'
+import {
+    businessRecords,
+    getBusinessRecords as getDataBusinessRecords,
+    getIsDataReady as getDataIsReady
+} from '../data-store'
 
 /** Returns the currently focused business record index. */
 export function getFocusedIndex(): number | null {
@@ -228,12 +232,41 @@ export function getIsDataReady(): boolean {
     return getDataIsReady()
 }
 
-/** Reactive store for the selected point record. */
-export function selectedPointStore() {
-    const idx = getFocusedIndex()
-    const records = getBusinessRecords()
+// Reactive mirrors of the underlying stores (finding T5-7). `$store` auto-subscription
+// is unavailable inside `.svelte.ts` modules, so we subscribe manually and expose
+// `$state` mirrors that `$derived.by` can track. This keeps `selectedPointStore()`
+// reactive so `$derived(selectedPointStore())` re-evaluates when the focused index
+// or the business records change.
+//
+// The subscription is set up lazily on first call (not at module init) because
+// `navStore` is defined by a sibling module that can still be initializing when
+// this module evaluates; reading it at init would throw (circular-import TDZ) and
+// break every importer of this module.
+let _focusedIndex = $state<number | null>(null)
+let _selectedRecords = $state<readonly BusinessRecord[]>([])
+let _selectedPointSubscribed = false
+function _ensureSelectedPointSubscribed(): void {
+    if (_selectedPointSubscribed) return
+    _selectedPointSubscribed = true
+    navStore.subscribe((v) => {
+        _focusedIndex = v?.focusedIndex ?? null
+    })
+    businessRecords.subscribe((v) => {
+        _selectedRecords = v
+    })
+}
+
+const _selectedPointDerived = $derived.by(() => {
+    const idx = _focusedIndex
+    const records = _selectedRecords
     if (idx == null || idx < 0 || !records || idx >= records.length) {
         return null
     }
     return records[idx] ?? null
+})
+
+/** Reactive store for the selected point record. */
+export function selectedPointStore() {
+    _ensureSelectedPointSubscribed()
+    return _selectedPointDerived
 }

@@ -361,6 +361,10 @@ export function getFocusConstellationPlacement(
         zOffset = isPrimary ? 0.018 * Math.cos(normalized * Math.PI * 2) : isHalo ? -0.034 : -0.024
         breatheAmp = isPrimary ? 0.0026 : isHalo ? 0.003 : 0.0038
     } else {
+        // Unknown motif key — explicit default (arc) placement. All four
+        // placement fields (angle, radius, zOffset, breatheAmp) are assigned
+        // below, so it is safe to fall through to the shared post-processing
+        // (compression, score tension, personality, viewport scaling).
         const arcSpan = isPrimary
             ? Math.min(Math.PI * 1.28, 1.0 + total * 0.18)
             : Math.min(Math.PI * 1.5, 1.15 + total * 0.2)

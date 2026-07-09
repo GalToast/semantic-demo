@@ -225,7 +225,15 @@ export function lerpNodesForFrame(now: number): boolean {
     if (!engineState.state) return true
 
     if (engineState.focusPocket?.applyFocusPocketBreathing(now, engineState.state.nodePositions)) {
-        engineState.state.focusPocketMotionByIndex.forEach((_motion: number, idx: number) => {
+        // Guard against focusPocketMotionByIndex being undefined (it is never
+        // initialized in appState and only declared in the LegacyState type).
+        // When undefined, read indices from the canonical Map source so GPU
+        // instance matrices stay in sync with breathing positions.
+        const pocketMotionIndices = engineState.state.focusPocketMotionByIndex ??
+            (engineState.focusPocket?.getFocusPocketMotionByIndex
+                ? Array.from(engineState.focusPocket!.getFocusPocketMotionByIndex().keys())
+                : undefined)
+        pocketMotionIndices?.forEach((idx: number) => {
             setNodeSporeInstanceMatrixPort(idx)
             movedIndices.push(idx)
         })

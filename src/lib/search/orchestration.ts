@@ -16,6 +16,9 @@
  * Re-exports panel-state helpers from `./search-panel-adapter` and
  * `./results-ui` so consumers can import everything from one place.
  *
+ * Note: `searchStore` is NOT re-exported here — consumers should import it
+ * directly from `@lib/stores/search.svelte`.
+ *
  * The search lifecycle is intentionally orchestrated here (rather than in the
  * store directly) so the UI concerns (DOM bindings, glow activation, degraded
  * states) are testable without a full Svelte runtime.
@@ -369,8 +372,6 @@ export {
 } from './results-ui'
 
 export {
-    searchStore,
-    searchState,
     setSearchQuery,
     setSearchStatus,
     setSearchSummary,

@@ -88,6 +88,16 @@ The 2026-06-25 sync (470 → 5) completes 5 sessions of type-tightening work. Ne
 
 ---
 
+## Removal Plans (suppression hygiene)
+
+Every `as any`, `// @ts-ignore`, and `// @ts-expect-error` must carry a **removal condition** alongside its justification — not just why it exists, but *when it can be deleted*. This keeps suppressions from becoming permanent debt.
+
+**Convention:** append `Remove when <observable condition> (ticket <Wxx-ID-followup>)` to the existing comment.
+
+- `@ts-expect-error` (legacy bridge gaps): `Remove when <source type> includes <field> (ticket W53-L2-followup)`.
+- `@ts-ignore` on a `window.*` global typed loosely in `window.d.ts`: `Remove when the consumed members are surfaced through a typed accessor, or the window.d.ts interface is widened to the full shape (ticket W53-L6-followup)`.
+- The ticket reference (`W53-L2-followup`, `W53-L6-followup`, etc.) ties the suppression to a tracked follow-up so it is reviewable later.
+
 ## How to Fix an `as any`
 
 1. **Check if the upstream type is wrong** — Add a `// @ts-expect-error` with a comment instead of `as any`.

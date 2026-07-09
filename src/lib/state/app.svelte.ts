@@ -65,6 +65,7 @@ import type { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { validateStateProperty, STATE_VALIDATION_STRICT, validateAppStateEnumFields } from './state-validation'
 import { debugWarn } from '@lib/utils/debug'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── App State class ─────────────────────────────────────────────────────────
 
@@ -391,7 +392,7 @@ class AppState {
     readonly ORBIT_PAN_SPEED_DEFAULT = 0.5
     readonly ORBIT_PAN_SPEED_FREE = 0.68
     readonly SEARCH_TRAIL_CUE_MIN_DWELL_MS = 920
-    JOURNEY_COMPASS_PHASE_ORDER = $state<string[]>(['overview', 'search', 'focus', 'inside', 'map'])
+    JOURNEY_COMPASS_PHASE_ORDER = $state<string[]>(['overview', 'search', 'focus', 'trail', 'inside', 'map'])
     readonly SCENE_REVEAL_DURATION_MS = 1650
     readonly LOADING_MIN_VISIBLE_MS = 1320
     readonly POINTS_MATERIAL_BASE_SIZE = 0.03
@@ -617,15 +618,16 @@ class AppState {
         this.navState.focusedIndex = nextIndex
     }
 
-    /** Compatibility view over trailDepth. Setting it keeps navState mirrored. */
+    /** Compatibility view over trailDepth. navState.trailDepth is canonical;
+     * this.trailDepth ($state) is a parallel mirror kept in sync by callers
+     * (lifecycle, navigation, thread-settler) but semanticDiveMode only
+     * writes the canonical copy. */
     get semanticDiveMode(): boolean {
-        return this.trailDepth === 2 || this.navState.trailDepth === 2
+        return this.navState.trailDepth === 2
     }
 
     set semanticDiveMode(active: boolean) {
-        const nextDepth = active ? 2 : 0
-        this.trailDepth = nextDepth
-        this.navState.trailDepth = nextDepth
+        this.navState.trailDepth = active ? 2 : 0
     }
 
     // ==== URL STATE TRACKING ====
@@ -711,7 +713,16 @@ export const appState: AppState = new Proxy({} as AppState, {
                 if (STATE_VALIDATION_STRICT) {
                     throw new Error(`[appState] ${error}`)
                 } else {
-                    debugWarn(`[appState] Invalid value rejected: ${error}`)
+                    // W-audit-F: rejections must be observable in production.
+                    // debugWarn is DEV-gated (silent in prod), so instead
+                    // publish an APP_ERROR_CAUGHT event that the error-boundary
+                    // subscribers surface. Keeps the no-ungated-console contract
+                    // and remains non-throwing.
+                    publish(EVENTS.APP_ERROR_CAUGHT, {
+                        source: `appState.proxy.set.${String(prop)}`,
+                        message: `Invalid value rejected: ${error}`,
+                        kind: 'rejection'
+                    })
                     return false
                 }
             }

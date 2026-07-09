@@ -275,6 +275,7 @@
     aria-describedby="canvas-hover-preview"
   >
     <canvas
+      id="engine-canvas"
       bind:this={canvasEl}
       class="semantic-canvas"
       width={$viewport.width * $viewport.dpr}

@@ -1386,7 +1386,9 @@
        contract oracle's expected geometry for the focus-pocket surface.
        Scoped to [data-semantic-dive='active'] so the focus-search + trail
        two-lane top layout (above) is unchanged for non-dive states. */
-    body.surface-focus-search[data-trail-state='active']:not([data-focus-panel-mode='field-node'])[data-semantic-dive='active']
+    body.surface-focus-search[data-trail-state='active']:not(
+            [data-focus-panel-mode='field-node']
+        )[data-semantic-dive='active']
         .focus-card.focus-stage-card {
         top: auto;
         bottom: max(0px, env(safe-area-inset-bottom, 0px));

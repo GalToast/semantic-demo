@@ -78,6 +78,11 @@ let _semanticThreadRequestId = 0
 let _workerFailureCount = 0
 const WORKER_MAX_FAILURES = 3
 const WORKER_RETRY_DELAYS = [500, 1500, 4000] // ms
+// Circuit-breaker cooldown (was a fire-and-forget setTimeout that could leak and
+// re-arm on every call). Now a timestamp: on the next call after this time the
+// breaker auto-resets. Cleared explicitly by resetSemanticThreadWorker().
+const WORKER_CIRCUIT_BREAKER_COOLDOWN_MS = 30_000
+let _circuitBreakerResetAt: number | null = null
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 
@@ -108,18 +113,22 @@ async function getWorker(): Promise<Worker | null> {
     // singleton until the next postMessage ERROR or crash event.
     if (_dataWorker) return _dataWorker
 
-    // Circuit breaker: if we've failed too many times, wait before retrying
+    // Circuit breaker: if we've failed too many times, wait before retrying.
+    // Timestamp-based (no untracked setTimeout): once the cooldown elapses the
+    // next caller auto-resets and retries instead of re-arming a new timer.
     if (_workerFailureCount >= WORKER_MAX_FAILURES) {
-        debugWarn(
-            `[semantic-threads] Worker circuit breaker open (${_workerFailureCount} consecutive failures). ` +
-                `Retrying in 30s...`
-        )
-        // Reset after cooldown so next caller can try again
-        // eslint-disable-next-line no-restricted-syntax -- fire-and-forget circuit-breaker reset
-        setTimeout(() => {
+        if (_circuitBreakerResetAt !== null && Date.now() >= _circuitBreakerResetAt) {
+            // Cooldown elapsed — clear the breaker and allow a fresh attempt.
             _workerFailureCount = 0
-        }, 30_000)
-        return null
+            _circuitBreakerResetAt = null
+        } else {
+            const remainingMs = _circuitBreakerResetAt !== null ? _circuitBreakerResetAt - Date.now() : 0
+            debugWarn(
+                `[semantic-threads] Worker circuit breaker open (${_workerFailureCount} consecutive failures). ` +
+                    `Retrying in ${Math.max(0, Math.round(remainingMs / 1000))}s...`
+            )
+            return null
+        }
     }
 
     for (let attempt = 0; attempt < WORKER_RETRY_DELAYS.length; attempt++) {
@@ -137,6 +146,12 @@ async function getWorker(): Promise<Worker | null> {
                 throw new Error('Worker ping failed after creation')
             }
             _dataWorker = worker
+            // Persistent crash guard (finding T4-A): if the worker dies asynchronously
+            // with no in-flight callWorker error handler attached, reset the cached
+            // singleton so the next getWorker() instantiates a fresh worker instead of
+            // reusing a dead object. resetSemanticThreadWorker() is idempotent.
+            worker.addEventListener('error', () => resetSemanticThreadWorker())
+            worker.addEventListener('messageerror', () => resetSemanticThreadWorker())
             _workerFailureCount = 0
             return worker
         } catch (err) {
@@ -152,6 +167,11 @@ async function getWorker(): Promise<Worker | null> {
     }
 
     _workerFailureCount++
+    // Arm the timestamp-based circuit-breaker cooldown only on first breach so a
+    // fresh call within the window returns null instead of re-arming a timer.
+    if (_workerFailureCount >= WORKER_MAX_FAILURES && _circuitBreakerResetAt === null) {
+        _circuitBreakerResetAt = Date.now() + WORKER_CIRCUIT_BREAKER_COOLDOWN_MS
+    }
     debugError(
         `[semantic-threads] Worker creation failed after ${WORKER_RETRY_DELAYS.length} attempts. ` +
             `Consecutive failure count: ${_workerFailureCount}/${WORKER_MAX_FAILURES}`
@@ -197,6 +217,10 @@ export function resetSemanticThreadWorker(): void {
         _dataWorker.terminate()
     }
     _dataWorker = null
+    // Explicitly clear the circuit breaker so a teardown/worker-reset does not
+    // leave the breaker stuck open (replaces the old untracked reset timer).
+    _workerFailureCount = 0
+    _circuitBreakerResetAt = null
 }
 
 function _handleBeforeUnload(): void {

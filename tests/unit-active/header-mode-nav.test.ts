@@ -14,9 +14,9 @@
 import { describe, it, expect } from 'vitest'
 import {
     MODE_DESCRIPTIONS,
-    modes,
-    SELECTION_DEPENDENT_MODES
+    modes
 } from '@lib/components/header/mode-constants'
+import { SELECTION_DEPENDENT_MODES } from '@lib/navigation/mode-affordances'
 import {
     isModeLocked,
     isActive,
