@@ -437,7 +437,6 @@ class AppState {
     activeClusterFilter = $state<number | null>(null)
     _showAllClusters = $state<boolean>(true)
     myceliumMode = $state<string>('default')
-    trailDepth = $state<number>(0)
     MODE_DESCRIPTIONS = $state<Record<string, string>>({})
     STORY_DESCRIPTIONS = $state<Record<string, string>>({})
     pointMarkers = $state<unknown[]>([])
@@ -618,10 +617,22 @@ class AppState {
         this.navState.focusedIndex = nextIndex
     }
 
-    /** Compatibility view over trailDepth. navState.trailDepth is canonical;
-     * this.trailDepth ($state) is a parallel mirror kept in sync by callers
-     * (lifecycle, navigation, thread-settler) but semanticDiveMode only
-     * writes the canonical copy. */
+    /** Single source of truth: trailDepth is a direct alias over
+     * navState.trailDepth (canonical). Previously it was a parallel $state
+     * mirror that could drift from navState.trailDepth — the semanticDiveMode
+     * setter wrote only the canonical copy and relied on callers to re-sync the
+     * flat field. Now both reads and writes proxy to navState.trailDepth, so the
+     * two can never disagree. Mirrors the focusedNode alias just above. */
+    get trailDepth(): number {
+        return this.navState.trailDepth
+    }
+
+    set trailDepth(value: number) {
+        this.navState.trailDepth = value
+    }
+
+    /** Compatibility view over navState.trailDepth (now a single source of
+     * truth — see the trailDepth alias above). */
     get semanticDiveMode(): boolean {
         return this.navState.trailDepth === 2
     }
