@@ -24,7 +24,9 @@ import { chromium } from 'playwright';
 
 const root = resolve(process.cwd());
 const outDir = resolve(root, 'tmp', 'css-seam-wave-20260520');
-const HTML_PAGE = resolve(root, 'vector-explorer-polished.html');
+// vector-explorer-polished.html is the deployed production shell, published from
+// dist/svelte/index.html. Load that built file for the diagnostic.
+const HTML_PAGE = resolve(root, 'dist/svelte/index.html');
 
 const DEFAULT_URL = `file://${HTML_PAGE}`;
 const PORT = 8815;

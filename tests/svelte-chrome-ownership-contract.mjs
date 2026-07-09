@@ -27,7 +27,9 @@ function walk(dir, files = []) {
 
 const appSource = read('src/App.svelte');
 const appIslandSource = read('src/main.ts');
-const shellSource = read('vector-explorer-polished.html');
+// vector-explorer-polished.html is the deployed production shell, published from
+// dist/svelte/index.html (see tests/shell-contract-check.js:189). Read the built file.
+const shellSource = read('dist/svelte/index.html');
 
 assert(
   appSource.includes("import('@components/InfoPanel.svelte')") || appSource.includes("import InfoPanel from '@components/InfoPanel.svelte'"),
