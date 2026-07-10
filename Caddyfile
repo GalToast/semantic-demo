@@ -1,0 +1,11 @@
+{
+	admin off
+}
+
+:8795 {
+	root * .
+	encode gzip
+	@php path *.php
+	php_fastcgi @php 127.0.0.1:9000
+	file_server
+}

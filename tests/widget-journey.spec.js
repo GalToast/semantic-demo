@@ -391,7 +391,7 @@ test.describe('Widget journey', () => {
         }
     })
 
-    test('5k. Focus card shows friendly role label "Business view" after selecting a node (UX-2 de-jargon)', async ({
+    test('5k. Focus card shows friendly role label "Business view" after selecting a node (UX-2 de-jargon)', { tag: '@live' }, async ({
         page
     }) => {
         // UX-2: the FocusCard role label was changed from internal-data jargon
@@ -928,7 +928,7 @@ test.describe('Widget journey', () => {
         expect(result.inViewport, `legend x=${result.x} width=${result.width} should be in viewport`).toBe(true)
     })
 
-    test('W52-a11y: no duplicate focus id, real buttons in focus pocket, friendly nearby-business label (bugsweep W1)', async ({
+    test('W52-a11y: no duplicate focus id, real buttons in focus pocket, friendly nearby-business label (bugsweep W1)', { tag: '@live' }, async ({
         page
     }) => {
         // Regression guard for the bugsweep-fixes-2026-07-07 Worker 1 Svelte
@@ -1059,7 +1059,7 @@ test.describe('Widget journey', () => {
         expect(state.pocketAriaHidden, 'focus pocket must not be aria-hidden in the dive surface').not.toBe('true')
     })
 
-    test('Bug 3a: mobile mode chips are hidden in the focus-search surface (mode-grid surface contract)', async ({ page }) => {
+    test('Bug 3a: mobile mode chips are hidden in the focus-search surface (mode-grid surface contract)', { tag: '@live' }, async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 844 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
@@ -1091,7 +1091,7 @@ test.describe('Widget journey', () => {
         expect(chipState.visibility, 'trail chip must be hidden (visibility:hidden) in focus-search').toBe('hidden')
     })
 
-    test('Bug 3b: mobile "View on Map" button switches to the map view (audit dead-end fix)', async ({ page }) => {
+    test('Bug 3b: mobile "View on Map" button switches to the map view (audit dead-end fix)', { tag: '@live' }, async ({ page }) => {
         await page.setViewportSize({ width: 390, height: 844 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
@@ -1134,7 +1134,7 @@ test.describe('Widget journey', () => {
         expect(bodyClass, 'map button must enter the map-focus surface').toContain('surface-map-focus')
     })
 
-    test('F7: SearchResults "Top match · X more" peek label tracks reactive parityMap (regression eb357ac6)', async ({ page }) => {
+    test('F7: SearchResults "Top match · X more" peek label tracks reactive parityMap (regression eb357ac6)', { tag: '@live' }, async ({ page }) => {
         // F7 (commit eb357ac6) regression. SearchResults.svelte previously read
         // `appState.composition.panelSurfaceDetail` — a dead mirror field frozen at
         // 'peek' — so the count label's peek branch ("Top match · X more") never
