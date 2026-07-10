@@ -14,7 +14,7 @@
   import { onDestroy } from 'svelte';
   import { applyLocalNeighborhoodFocus } from '@lib/journey/focus-pocket';
   import { clearPocketNodes } from '@lib/stores/focus.svelte';
-  import { getDataLoadState } from '@lib/data-store';
+  import { dataLoadState } from '@lib/data-store';
   import { engineStatusStore, type EngineStatus } from '@lib/stores/engine.svelte.ts';
   import { appState } from '@lib/state/app.svelte';
 
@@ -36,9 +36,12 @@
     Array.isArray(nav.threadCandidates) ? nav.threadCandidates : []
   );
 
-  // Loading state: true while data is loading and focus is active
+  // Loading state: true while data is loading and focus is active.
+  // M7/M8: read the reactive $state-backed store (auto-subscribed via
+  // `$dataLoadState`) instead of the non-reactive getDataLoadState() snapshot,
+  // so this $derived re-runs when the data flips ready.
   let isLoading = $derived(
-    hasFocus_ && !(getDataLoadState().status === 'ready')
+    hasFocus_ && !($dataLoadState.status === 'ready')
   );
 
   let engineStatus = $state<EngineStatus>('idle');
@@ -54,7 +57,7 @@
   let lastCandidateSignature: string | null = null;
 
   $effect(() => {
-    if (!(getDataLoadState().status === 'ready')) return;
+    if (!($dataLoadState.status === 'ready')) return;
     if (!(engineStatus === 'ready')) return;
     const idx = focusedIndex_;
     const signature = threadCandidates_.map((c: { index?: number }) => c.index).join(',') || '';

@@ -58,11 +58,14 @@ export const Z_LAYERS = {
   /** Generic blocker (modal backdrop, loading gate) */
   blocker: 1000,
 
+  /** Inside-walk HUD bars (status/controls) — above blocker, below toasts */
+  insideWalk: 1100,
+
   /** Journey modal (trail review, etc.) */
   journeyModal: 2000,
 
-  /** Loading overlay (highest priority — on top of everything) */
-  loading: 3000
+  /** Loading overlay (highest priority — on top of everything; matches --z-max ceiling) */
+  loading: 9999
 } as const;
 
 /** Z-index layer key type for type-safe access */

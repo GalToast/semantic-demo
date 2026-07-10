@@ -151,6 +151,23 @@ const INITIAL_JOURNEY: JourneyStoreState = {
  */
 let compassCache: CompassState = INITIAL_JOURNEY.compass as CompassState
 
+// M9: the compass *animation* state machine phase (idle/checking/synthesizing/
+// active/interrupted) must be reactive. The legacy `compassCache` is a plain
+// module `let` carrying the journeyStore() `compass` mirror — reading
+// `compassCache.phase` in a template never re-renders. We keep `compassCache`
+// for the journeyStore().compass field but drive the public `compassPhase()`
+// from this reactive `$state`.
+let compassAnimPhase = $state<CompassPhase>('idle')
+
+/**
+ * Reactive compass animation phase (state machine).
+ * Returns 'idle' | 'checking' | 'synthesizing' | 'active' | 'interrupted',
+ * driven by `transitionCompass`. Replaces the frozen `compassCache.phase`
+ * read that the CompassRail `class:active/checking/synthesizing` directives
+ * relied on.
+ */
+export const compassPhase = () => compassAnimPhase
+
 // ── Store ────────────────────────────────────────────────────────────────────
 
 /**
@@ -317,7 +334,6 @@ export const resetJourneyForTests = journeyMirror.resetForTests
 export const journeyPhase = () => appState.navState.mode
 export const journeyTrail = () =>
     finiteIndexList(appState.navState.walkHistoryIndices).map((index) => ({ index }) as TrailStop)
-export const compassPhase = () => compassCache.phase
 export const journeyNeighbors = () => finiteIndexList(appState.navState.trailNeighborIndices)
 export const journeySelectedId = () => {
     const focused = appState.navState.focusedIndex
@@ -367,9 +383,17 @@ export function addWalkHistoryIndex(index: number): void {
     })
 }
 
+// M9: the CompassRail animation state machine runs through
+// idle → checking → synthesizing → active → idle. Those are animation
+// phases (not journey phases), so they drive the reactive compassAnimPhase.
+const COMPASS_ANIM_PHASES = ['idle', 'checking', 'synthesizing', 'active', 'interrupted'] as const
 export function transitionCompass(phase: string): void {
-    // Compass phase is typically tied to nav mode or a sub-state.
-    // For now, we'll map it to nav mode if it matches a milestone.
+    if ((COMPASS_ANIM_PHASES as readonly string[]).includes(phase)) {
+        compassAnimPhase = phase as CompassPhase
+        return
+    }
+    // Legacy journey-phase mirror path (kept for any caller that passes a
+    // journey milestone like 'overview'/'search'/'focus'/'trail'/'inside'/'map').
     if ((JOURNEY_COMPASS_PHASE_ORDER as readonly string[]).includes(phase)) {
         withJourneyNotify((s) => ({ ...s, phase: phase as NavMode }))
     }

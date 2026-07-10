@@ -96,6 +96,33 @@ export function getJourneyCompassState(): CompassState {
         }
     }
 
+    // M3 — explicit trail phase.
+    // Previously the compass folded trail into 'focus', so JourneyCompass
+    // could never show a 'trail' phase and the rail step highlight disagreed
+    // with the journey-compass content. Emit 'trail' whenever the journey is
+    // in trail mode or a trail is being walked (trailDepth > 0).
+    const trailDepthVal: number = Number(appState.trailDepth || 0)
+    const inTrailMode: boolean = appState.navState?.mode === 'trail' || trailDepthVal > 0
+    if (inTrailMode) {
+        const trailWalkIndices: readonly number[] = Array.isArray(appState.navState?.walkHistoryIndices)
+            ? appState.navState!.walkHistoryIndices!
+            : []
+        const trailWalkLength: number = trailWalkIndices.length
+        const trailClusterName: string = focusedPoint ? describeCluster(focusedPoint.cluster!) : 'Trail'
+        return {
+            phase: 'trail',
+            kicker:
+                trailWalkLength > 1
+                    ? `Trail Step ${trailWalkLength} | ${trailClusterName}`
+                    : `Trail | ${trailClusterName}`,
+            title: '',
+            note: 'Follow the semantic trail linking related Montgomery County businesses.',
+            primaryAction: { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE },
+            secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
+            tertiaryAction: { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
+        }
+    }
+
     if (insideActive) {
         const focusIndex: number = Number.isFinite(appState.navState?.focusedIndex)
             ? appState.navState!.focusedIndex!
