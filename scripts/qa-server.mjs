@@ -119,13 +119,42 @@ function isPidAlive(pid) {
 // Server lifecycle
 
 function createServer() {
+    const serverStartTime = Date.now()
+    const DIST_SVELTE = path.resolve(ROOT, 'dist', 'svelte')
+
+    /**
+     * Resolve a URL path to a file path, preferring the build output
+     * (dist/svelte/) when a matching file exists there. This ensures
+     * the qa-server reflects the latest build after a rebuild without
+     * a restart — a common source of verification confusion (W5).
+     */
+    function resolveDistPreferringPath(urlPath) {
+        const relative = urlPath.replace(/^[/\\]+/, '')
+
+        // First check if the path exists under dist/svelte/
+        const distCandidate = path.resolve(DIST_SVELTE, relative)
+        try {
+            const distStat = fs.statSync(distCandidate)
+            if (distStat.isFile()) {
+                return distCandidate
+            }
+        } catch {
+            // Not in dist/svelte — will fall back to ROOT
+        }
+
+        // Fall back to ROOT (original behavior — for files like
+        // semantic-demo.css and vector-explorer-pandora.css that
+        // are served from the repo root during dev)
+        return path.resolve(ROOT, relative)
+    }
+
     const server = http.createServer((req, res) => {
         let urlPath = decodeURIComponent(req.url.split('?')[0])
         if (urlPath === '/') urlPath = '/dist/svelte/index.html'
         if (urlPath === '/data/' || urlPath.startsWith('/data/')) {
             urlPath = urlPath.replace('/data/', '/public/data/')
         }
-        const filePath = path.resolve(ROOT, urlPath.replace(/^[/\\]+/, ''))
+        const filePath = resolveDistPreferringPath(urlPath)
         const relativePath = path.relative(ROOT, filePath)
         if (relativePath.startsWith('..') || path.isAbsolute(relativePath)) {
             res.writeHead(403)
@@ -134,22 +163,50 @@ function createServer() {
         }
         fs.stat(filePath, (err, stat) => {
             if (err || !stat.isFile()) {
+                // If the path didn't exist under either dist/svelte or ROOT,
+                // try ROOT directly as final fallback with the /data/ remap
+                if (urlPath.startsWith('/public/data/')) {
+                    const rootFallback = path.resolve(ROOT, urlPath.replace(/^[/\\]+/, ''))
+                    return fs.stat(rootFallback, (err2, stat2) => {
+                        if (err2 || !stat2.isFile()) {
+                            res.writeHead(404, { 'Content-Type': 'text/plain' })
+                            res.end('Not found: ' + urlPath)
+                            return
+                        }
+                        serveFile(req, res, rootFallback, stat2, serverStartTime)
+                    })
+                }
                 res.writeHead(404, { 'Content-Type': 'text/plain' })
                 res.end('Not found: ' + urlPath)
                 return
             }
-            const ext = path.extname(filePath).toLowerCase()
-            const mime = MIME[ext] || 'application/octet-stream'
-            res.writeHead(200, {
-                'Content-Type': mime,
-                'Content-Length': stat.size,
-                'Access-Control-Allow-Origin': '*'
-            })
-            fs.createReadStream(filePath).pipe(res)
+            serveFile(req, res, filePath, stat, serverStartTime)
         })
     })
     return server
 }
+
+function serveFile(req, res, filePath, stat, serverStartTime) {
+    // W5: Log a warning when a file was modified after the server started.
+    // This helps catch rebuild-stale scenarios without forcing a restart.
+    if (stat.mtimeMs > serverStartTime) {
+        console.error(
+            `[qa-server] WARNING: "${path.basename(filePath)}" was modified ` +
+            `after server start (mtime ${new Date(stat.mtimeMs).toISOString()} > ` +
+            `start ${new Date(serverStartTime).toISOString()}). ` +
+            `The file may not reflect the latest build.`
+        )
+    }
+    const ext = path.extname(filePath).toLowerCase()
+    const mime = MIME[ext] || 'application/octet-stream'
+    res.writeHead(200, {
+        'Content-Type': mime,
+        'Content-Length': stat.size,
+        'Access-Control-Allow-Origin': '*'
+    })
+    fs.createReadStream(filePath).pipe(res)
+}
+
 
 async function cmdStart() {
     // 1. Check pidfile

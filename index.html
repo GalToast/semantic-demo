@@ -28,7 +28,7 @@
     <script>
         (function () {
             const target = new URL('case-study.html', window.location.href);
-            const explorer = new URL('vector-explorer-polished.html', window.location.href);
+            const explorer = new URL('./', window.location.href);
             target.search = window.location.search;
             target.hash = window.location.hash;
             explorer.search = window.location.search;
@@ -79,7 +79,7 @@
         <p class="byline">Built by Fred McCullough.</p>
         <p>Mapping 8,406 local businesses by what they do, not just where they are.</p>
         <p>Taking you to the recruiter-facing case study in a moment.</p>
-        <p>If you came for the live app, <a id="explorer-link" href="vector-explorer-polished.html">open the live explorer</a>.</p>
+        <p>If you came for the live app, <a id="explorer-link" href="./">open the live explorer</a>.</p>
         <p><a id="case-study-link" href="case-study.html">Read the case study now</a>.</p>
     </main>
 </body>
