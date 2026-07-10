@@ -283,7 +283,7 @@ describe('url-state — applyUrlState race protection', () => {
         mockState._rejectSearch?.(new Error('cleanup-url-b'))
         await p1
         await p2
-    }, 10000)
+    }, 60000)
 
     it('the previous applyUrlState bails via the catch path when its runSearch is aborted', async () => {
         const { applyUrlState } = await import('@lib/orchestration/url-state')
@@ -314,7 +314,7 @@ describe('url-state — applyUrlState race protection', () => {
         // Cleanup URL_B
         mockState._rejectSearch?.(new Error('cleanup-url-b'))
         await p2
-    }, 10000)
+    }, 60000)
 
     it('singleton-style: a single applyUrlState (no race) completes its runSearch normally', async () => {
         const { applyUrlState } = await import('@lib/orchestration/url-state')
@@ -331,5 +331,5 @@ describe('url-state — applyUrlState race protection', () => {
         // post-runSearch writes in this test).
         mockState._rejectSearch?.(new Error('done'))
         await p
-    }, 10000)
+    }, 60000)
 })

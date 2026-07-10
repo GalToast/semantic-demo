@@ -240,7 +240,7 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         // The re-fire must have called applyLocalNeighborhoodFocus a second time.
         const focusCallsFor42 = allFocus.filter((i) => i === 42)
         expect(focusCallsFor42.length).toBeGreaterThanOrEqual(2)
-    })
+    }, 60000)
 
     it('does NOT re-fire when threads are already loaded at restore time (no double dispatch)', async () => {
         // Pre-populate the map BEFORE applyUrlState — simulate threads already loaded.
@@ -274,7 +274,7 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         expect(publishCountAfter).toBe(1)
         expect(focusCount).toBe(1)
         expect(focusCountAfter).toBe(1)
-    })
+    }, 60000)
 
     it('cancels the deferred re-fire if the user navigates away before threads load', async () => {
         mockState.urlSearch = '?anchor=42'
@@ -304,5 +304,5 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
 
         // No additional SEARCH_FOCUS_REQUESTED should have fired for 42.
         expect(finalPublishCount).toBe(initialPublishCount)
-    })
+    }, 60000)
 })

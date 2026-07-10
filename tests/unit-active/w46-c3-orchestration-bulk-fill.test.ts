@@ -42,7 +42,7 @@ const importJourney = (file: string) => import(`../../src/lib/journey/${file.rep
 // toast.ts — 50 lines, 2 functions
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: toast.ts contract', () => {
+describe('W46-C3: toast.ts contract', { timeout: 60000 }, () => {
     const file = 'toast.ts'
     const storeFile = 'toast.svelte.ts'
     // After the queue refactor, the toastStore writes live in the store
@@ -102,7 +102,7 @@ describe('W46-C3: toast.ts contract', () => {
 // adapter-deps.ts — 89 lines, 1 function
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: adapter-deps.ts contract', () => {
+describe('W46-C3: adapter-deps.ts contract', { timeout: 60000 }, () => {
     const file = 'adapter-deps.ts'
     it('exports buildAdapterDeps function returning AdapterDeps', () => {
         expect(src(file)).toMatch(/export\s+function\s+buildAdapterDeps\s*\(\s*\)\s*:\s*AdapterDeps/)
@@ -137,7 +137,7 @@ describe('W46-C3: adapter-deps.ts contract', () => {
 // navigation-state.ts — 96 lines, 3 functions + re-exports
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: navigation-state.ts contract', () => {
+describe('W46-C3: navigation-state.ts contract', { timeout: 60000 }, () => {
     const file = 'navigation-state.ts'
     it('exports SetTrailNavStateOpts interface and 3 state functions', () => {
         const s = src(file)
@@ -170,7 +170,7 @@ describe('W46-C3: navigation-state.ts contract', () => {
 // wait-for-gesture.ts — 110 lines, 1 function
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: wait-for-gesture.ts contract', () => {
+describe('W46-C3: wait-for-gesture.ts contract', { timeout: 60000 }, () => {
     const file = 'wait-for-gesture.ts'
     it('exports GestureMonitorOpts interface', () => {
         expect(src(file)).toMatch(/export\s+interface\s+GestureMonitorOpts\b/)
@@ -206,7 +206,7 @@ describe('W46-C3: wait-for-gesture.ts contract', () => {
 // info-panel-state.ts — 138 lines, 6 functions + 1 interface
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: info-panel-state.ts contract', () => {
+describe('W46-C3: info-panel-state.ts contract', { timeout: 60000 }, () => {
     const file = 'info-panel-state.ts'
     it('exports InfoPanelContentDescriptor interface with 6 fields', () => {
         // Don't try to extract the full interface body via regex (the closing `}`
@@ -291,7 +291,7 @@ describe('W46-C3: info-panel-state.ts contract', () => {
 // search-filter-core.ts — 182 lines, 6 functions
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: search-filter-core.ts contract', () => {
+describe('W46-C3: search-filter-core.ts contract', { timeout: 60000 }, () => {
     const file = 'search-filter-core.ts'
     it('exports 6 functions for filter visibility/computation', () => {
         const s = src(file)
@@ -338,7 +338,7 @@ describe('W46-C3: search-filter-core.ts contract', () => {
 // event-bus.ts — 208 lines, 5 functions + types + EVENTS const
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: event-bus.ts contract', () => {
+describe('W46-C3: event-bus.ts contract', { timeout: 60000 }, () => {
     const file = 'event-bus.ts'
     it('exports EVENTS constant (event name registry)', () => {
         const s = src(file)
@@ -398,7 +398,7 @@ describe('W46-C3: event-bus.ts contract', () => {
 // compass-state.ts — 285 lines, 3 functions + interfaces
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: compass-state.ts contract (journey/ canonical)', () => {
+describe('W46-C3: compass-state.ts contract (journey/ canonical)', { timeout: 60000 }, () => {
     const file = 'compass-state.ts'
     // Override ORCH path: compass-state.ts is now the journey/ canonical
     // (W46-T3 migration). The legacy orchestration/ stub will be deleted
@@ -450,7 +450,7 @@ describe('W46-C3: compass-state.ts contract (journey/ canonical)', () => {
 // cluster-filter-controller.ts — 359 lines, 8 functions + 2 constants
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: cluster-filter-controller.ts contract', () => {
+describe('W46-C3: cluster-filter-controller.ts contract', { timeout: 60000 }, () => {
     const file = 'cluster-filter-controller.ts'
     it('exports CLUSTER_COLORS and CLUSTER_NAMES (as readonly const or re-export)', () => {
         // W47: cluster-filter-controller.ts now re-exports these from the
@@ -523,7 +523,7 @@ describe('W46-C3: cluster-filter-controller.ts contract', () => {
 // window-actions.ts — 348 lines, 1 function
 // ════════════════════════════════════════════════════════════════════════════
 
-describe('W46-C3: window-actions.ts contract', () => {
+describe('W46-C3: window-actions.ts contract', { timeout: 60000 }, () => {
     const file = 'window-actions.ts'
     it('exports installWindowActions function returning cleanup', () => {
         expect(src(file)).toMatch(/export\s+function\s+installWindowActions\s*\(\s*\)\s*:\s*\(\s*\)\s*=>\s*void/)

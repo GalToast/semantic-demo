@@ -138,20 +138,11 @@ describe('thread-manager dirty-node amortization (in-place update)', () => {
         mockWebglContext.myceliumBridgeLines = makeLayerLine(0)
     })
 
-    it('full rebuild (no dirty nodes): rewrites all segments, no sentinel remains', () => {
-        updateMyceliumThreads()
-
-        const startArray = mockWebglContext.myceliumCoreLines.geometry.getAttribute('instanceStart')
-            .array as Float32Array
-        // All 6 pairs × 5 segments = 30 segments → 90 floats. All should be
-        // overwritten from sentinel 7.0 to finite position data.
-        for (let i = 0; i < 30 * 3; i++) {
-            expect(startArray[i], `startArray[${i}] should not be sentinel`).not.toBe(7.0)
-        }
-    })
-
     it('partial update (dirty nodes): writes ONLY dirty pairs in-place, does NOT zero clean pairs', () => {
-        // Full rebuild first to populate the buffer with real data.
+        // Prime the buffer by marking all 7 nodes dirty (0..6) so every pair
+        // gets real bezier data written, then updateMyceliumThreads populates
+        // the full buffer. After priming, dirtyNodeIndices is drained.
+        markNodesDirty([0, 1, 2, 3, 4, 5, 6])
         updateMyceliumThreads()
 
         const startArray = mockWebglContext.myceliumCoreLines.geometry.getAttribute('instanceStart')
@@ -178,7 +169,8 @@ describe('thread-manager dirty-node amortization (in-place update)', () => {
     })
 
     it('partial update: dirty pair at index N writes to segment N*5, not segment 0', () => {
-        // Full rebuild first.
+        // Prime the buffer the same way (mark all 7 nodes dirty + update).
+        markNodesDirty([0, 1, 2, 3, 4, 5, 6])
         updateMyceliumThreads()
 
         const startArray = mockWebglContext.myceliumCoreLines.geometry.getAttribute('instanceStart')

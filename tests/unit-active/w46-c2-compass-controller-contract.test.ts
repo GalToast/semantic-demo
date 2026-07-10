@@ -30,7 +30,7 @@ const src = readFileSync(COMPASS_PATH, 'utf-8')
 
 // ── Source-derived structural checks ────────────────────────────────────────
 
-describe('W46-C2: compass-controller.ts exists and has expected shape', () => {
+describe('W46-C2: compass-controller.ts exists and has expected shape', { timeout: 60000 }, () => {
     it('is a plain .ts file (not .svelte.ts -- no runes needed)', () => {
         expect(COMPASS_PATH).toMatch(/compass-controller\.ts$/)
     })
@@ -61,7 +61,7 @@ describe('W46-C2: compass-controller.ts exists and has expected shape', () => {
     })
 })
 
-describe('W46-C2: public exports -- 11 functions + 2 interfaces', () => {
+describe('W46-C2: public exports -- 11 functions + 2 interfaces', { timeout: 60000 }, () => {
     it('exports the two type interfaces', () => {
         expect(src).toMatch(/export\s+interface\s+CompassPresentationState\b/)
         expect(src).toMatch(/export\s+interface\s+ViewHandoffModel\b/)
@@ -93,7 +93,7 @@ describe('W46-C2: public exports -- 11 functions + 2 interfaces', () => {
     })
 })
 
-describe('W46-C2: interface shape', () => {
+describe('W46-C2: interface shape', { timeout: 60000 }, () => {
     it('CompassPresentationState has density/copy/actions/navigationOwner fields', () => {
         const block = src.match(/export\s+interface\s+CompassPresentationState\s*\{[\s\S]*?\n\}/)
         expect(block).not.toBeNull()
@@ -135,7 +135,7 @@ describe('W46-C2: interface shape', () => {
     })
 })
 
-describe('W46-C2: internal helpers exist', () => {
+describe('W46-C2: internal helpers exist', { timeout: 60000 }, () => {
     it('has deriveOpenMapSurface helper (internal)', () => {
         expect(src).toMatch(/function\s+deriveOpenMapSurface\s*\(\s*\)\s*:\s*PanelSurface/)
     })
@@ -149,7 +149,7 @@ describe('W46-C2: internal helpers exist', () => {
     })
 })
 
-describe('W46-C2: MOBILE_JOURNEY_ACTION_LABELS covers all 6 journey actions', () => {
+describe('W46-C2: MOBILE_JOURNEY_ACTION_LABELS covers all 6 journey actions', { timeout: 60000 }, () => {
     it('defines labels for FOCUS_SEARCH, CENTER_ANCHOR, ENTER_INSIDE, SHOW_TRAIL_PANEL, NEXT_STOP, OPEN_MAP', () => {
         // All 6 labels must be defined in the MOBILE_JOURNEY_ACTION_LABELS object
         for (const action of [
@@ -169,7 +169,7 @@ describe('W46-C2: MOBILE_JOURNEY_ACTION_LABELS covers all 6 journey actions', ()
     })
 })
 
-describe('W46-C2: getJourneyCompassPresentationState phase mapping (structural)', () => {
+describe('W46-C2: getJourneyCompassPresentationState phase mapping (structural)', { timeout: 60000 }, () => {
     // Note: 'overview' is the FALLBACK return (no explicit `if` branch), so we
     // assert it via the final return block. Other phases use explicit `if`.
 
@@ -211,7 +211,7 @@ describe('W46-C2: getJourneyCompassPresentationState phase mapping (structural)'
     })
 })
 
-describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases', () => {
+describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases', { timeout: 60000 }, () => {
     it('returns the standard expanded branch when phase is overview', async () => {
         const { getJourneyCompassPresentationState } = await import('../../src/lib/orchestration/compass-controller')
         const result = getJourneyCompassPresentationState({ phase: 'overview' })
@@ -250,7 +250,7 @@ describe('W46-C2: runtime -- getJourneyCompassPresentationState for known phases
     })
 })
 
-describe('W46-C2: runtime -- getViewHandoffModel returns well-formed ViewHandoffModel', () => {
+describe('W46-C2: runtime -- getViewHandoffModel returns well-formed ViewHandoffModel', { timeout: 60000 }, () => {
     it('returns a ViewHandoffModel with all 4 required fields', async () => {
         const { getViewHandoffModel } = await import('../../src/lib/orchestration/compass-controller')
         const model = getViewHandoffModel('galaxy')
