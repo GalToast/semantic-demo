@@ -2,14 +2,14 @@
 
 import { defineConfig } from '@playwright/test'
 
-const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8797'
+const baseURL = process.env.TEST_BASE_URL || 'http://127.0.0.1:8795'
 const headed =
     process.env.CONTRACT_HEADED === '1' || process.env.PLAYWRIGHT_HEADED === '1' || process.env.PWDEBUG === '1'
 const webServer = process.env.TEST_BASE_URL
     ? undefined
     : {
-          command: 'python -m http.server 8797 --directory dist/svelte --bind 127.0.0.1',
-          port: 8797,
+          command: 'python -m http.server 8795 --directory . --bind 127.0.0.1',
+          port: 8795,
           reuseExistingServer: true,
           timeout: 120_000
       }
