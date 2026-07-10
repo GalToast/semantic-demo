@@ -262,17 +262,8 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     'focusOrbitSlackState.phase': oneOf(VALID_FOCUS_ORBIT_SLACK_PHASES, 'focusOrbitSlackState.phase'),
     'arrivalHandoffDiagnostics.phase': oneOf(VALID_ARRIVAL_HANDOFF_PHASES, 'arrivalHandoffDiagnostics.phase'),
 
-    // Composition
-    'composition.activeView': oneOf(VALID_VIEWS, 'composition.activeView'),
-    'composition.trailState': oneOf(VALID_COMPOSITION_TRAIL_STATES, 'composition.trailState'),
-    'composition.trailDepth': oneOf(VALID_COMPOSITION_TRAIL_DEPTHS, 'composition.trailDepth'),
-    'composition.graphContext': oneOf(VALID_COMPOSITION_GRAPH_CONTEXTS, 'composition.graphContext'),
-    'composition.mapContext': oneOf(VALID_COMPOSITION_MAP_CONTEXTS, 'composition.mapContext'),
-    'composition.semanticDive': oneOf(VALID_COMPOSITION_SEMANTIC_DIVE_STATES, 'composition.semanticDive'),
-    'composition.panelSurface': oneOf(VALID_COMPOSITION_PANEL_SURFACES, 'composition.panelSurface'),
-    'composition.panelSurfaceDetail': oneOf(VALID_COMPOSITION_PANEL_SURFACE_DETAILS, 'composition.panelSurfaceDetail'),
-    'composition.searchGlow': oneOf(VALID_COMPOSITION_SEARCH_GLOW_STATES, 'composition.searchGlow'),
-    'composition.isActive': boolean('composition.isActive'),
+    // Composition validators removed (W48-F): the composition field was
+    // deleted from appState; see app.svelte.ts and parity-attrs.svelte.ts.
 
     // Demo
     demoPhase: oneOf(VALID_DEMO_PHASES, 'demoPhase'),
@@ -359,7 +350,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     weatherState: passthrough,
     activeFilters: passthrough,
     semanticGuideState: passthrough,
-    composition: passthrough,
     semanticSearchCacheDiagnostics: passthrough,
     focusFrameDiagnostics: passthrough,
     focusThreadDiagnostics: passthrough,

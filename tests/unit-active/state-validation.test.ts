@@ -223,18 +223,6 @@ const _appState = vi.hoisted(() => ({
         indexCount: 0,
         lastCameraMove: null
     },
-    composition: {
-        activeView: 'galaxy',
-        trailState: 'inactive',
-        trailDepth: '0',
-        graphContext: 'idle',
-        mapContext: 'idle',
-        semanticDive: 'inactive',
-        panelSurface: 'idle',
-        panelSurfaceDetail: 'peek',
-        searchGlow: 'inactive',
-        isActive: false
-    },
     semanticGuideState: {
         isVisible: false,
         isSynthesizing: false,
@@ -504,16 +492,8 @@ describe('state validation — validateStateProperty', () => {
         expect(validateStateProperty('focusedNode', '42')).toContain('number | null')
     })
 
-    it('allows valid composition properties', () => {
-        expect(validateStateProperty('composition.activeView', 'galaxy')).toBeNull()
-        expect(validateStateProperty('composition.trailState', 'inactive')).toBeNull()
-        expect(validateStateProperty('composition.panelSurface', 'idle')).toBeNull()
-    })
-
-    it('rejects invalid composition properties', () => {
-        expect(validateStateProperty('composition.activeView', 'bogus')).toContain('activeView')
-        expect(validateStateProperty('composition.trailState', 'bogus')).toContain('trailState')
-    })
+    // composition property tests removed (W48-F): appState.composition deleted
+    // and the composition.* oneOf validators were removed from state-validation.ts.
 
     it('allows passthrough for unguarded properties', () => {
         expect(validateStateProperty('points', [])).toBeNull()

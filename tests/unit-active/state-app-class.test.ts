@@ -213,23 +213,7 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
         ['arrivalHandoffDiagnostics.phase', 'flying', true],
         ['arrivalHandoffDiagnostics.phase', 'bogus', false],
 
-        // Composition
-        ['composition.trailState', 'active', true],
-        ['composition.trailState', 'bogus', false],
-        ['composition.trailDepth', '1', true],
-        ['composition.trailDepth', 'bogus', false],
-        ['composition.graphContext', 'focus', true],
-        ['composition.graphContext', 'bogus', false],
-        ['composition.mapContext', 'map-trail', true],
-        ['composition.mapContext', 'bogus', false],
-        ['composition.semanticDive', 'active', true],
-        ['composition.semanticDive', 'bogus', false],
-        ['composition.panelSurface', 'peek', true],
-        ['composition.panelSurface', 'bogus', false],
-        ['composition.panelSurfaceDetail', 'full', true],
-        ['composition.panelSurfaceDetail', 'bogus', false],
-        ['composition.searchGlow', 'fading', true],
-        ['composition.searchGlow', 'bogus', false],
+        // Composition validators removed (W48-F): see appState.composition deletion.
 
         // Demo
         ['demoPhase', 'IDLE', true],
