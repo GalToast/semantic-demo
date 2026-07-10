@@ -240,11 +240,24 @@ export function findDemoNode(records?: readonly BusinessRecord[]): number | null
     return null
 }
 
+function isDeepLinkParams(params: URLSearchParams): boolean {
+    // Mirrors src/main.ts parseUrlParams().isDeepLink — keep in sync.
+    // ?story= intentionally NOT a deep-link (prompts fire post-splash).
+    const queryLen = params.get('q')?.trim().length ?? 0
+    return params.has('anchor') || params.has('record') || params.get('view') === 'map' || queryLen >= 2
+}
+
 export function shouldRunDemo(force = false): boolean {
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
     const forceDemo = force || params.get('demo') === 'force'
+    // Force always wins — allows ?demo=force&record=519 debugging.
     if (forceDemo) return true
     if (params.get('nodemo') === '1') return false
+    // H5 fix (Jul-10 bugsweep): first-time visitor on a deep-link (?record=N,
+    // ?anchor=N, ?view=map, ?q=coffee) must NOT get the 10-phase tour fighting
+    // the intended focus/search/map state. isDeepLink check sits here so the
+    // auto-demo is suppressed for share-links.
+    if (isDeepLinkParams(params)) return false
     if (hasDemoBeenSeen()) return false
     if (isDemoSuppressedThisSession()) return false
     // Restore legacy guard (dropped during the choreography.ts → demo.svelte.ts migration):
@@ -255,6 +268,9 @@ export function shouldRunDemo(force = false): boolean {
     if (!guardReducedMotion()) return false
     return true
 }
+
+/** Exported for contract tests — do not use in app code; prefer shouldRunDemo(). */
+export const __shouldRunDemo_testOnly_isDeepLinkParams = isDeepLinkParams
 
 export function hasDemoBeenSeen(): boolean {
     if (typeof localStorage === 'undefined') return false

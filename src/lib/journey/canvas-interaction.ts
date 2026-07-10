@@ -66,6 +66,11 @@ export function ensureCanvasNodeInteractionBindings(): void {
     _canvasInteractionAbort = new AbortController()
     const signal = _canvasInteractionAbort.signal
 
+    // H3 fix (Jul-10 bugsweep): hover must be preview-only per W48-B.
+    // Previously this handler called walkThreadNeighbor({force:true}) on every
+    // pointermove over a thread candidate, committing full focus + camera move
+    // per node and stomping the cursor-following preview. Now: hover path only
+    // shows hover preview + interaction debounces; focus commit reserved for click.
     canvas.addEventListener(
         'pointermove',
         (ev) => {
@@ -85,13 +90,6 @@ export function ensureCanvasNodeInteractionBindings(): void {
                 )
                 noteSceneInteraction()
                 releaseFocusCameraAssist('canvasHover')
-                if (isThreadCandidateVisibleOnCanvas(candidate.index)) {
-                    const { walkThreadNeighbor, inspectThreadNeighbor } = canvasInteractionAdapter
-                    const threadOk = walkThreadNeighbor(candidate.index, { force: true })
-                    if (threadOk) {
-                        inspectThreadNeighbor(candidate.index)
-                    }
-                }
             } else {
                 clearCanvasFieldHover(canvas)
             }

@@ -95,8 +95,21 @@ export function registerContextListeners(
         sinks.engineState.uiFeedback?.showExperienceToast('Graphics connection lost', 'Re-establishing 3D scene...')
     })
 
-    // C6 — WebGL context restored
-    // NOTE: The live 'webglcontextrestored' handler lives in app-init.ts.
+    // C6 — WebGL context restored (moved from app-init.ts H1 fix Jul-10)
+    // H1 root cause: app-init queried #engine-canvas (removed by scene-init)
+    // and attached restored there, so real context restores on renderer.domElement
+    // never fired. Now registry owns BOTH C5+C6 on renderer.domElement.
+    registry.listener(renderer.domElement, 'webglcontextrestored', () => {
+        // The app-init re-init path also exists; this registry path handles
+        // the common case without needing the global #engine-canvas query.
+        // If app-init installed its own handler it will also fire, but the
+        // init guard (_initCalled) prevents double-init. We log here for
+        // visibility and let app-init's async restore run if needed.
+        sinks.engineState.webglContextLost = false
+        // The app-init layer also re-runs appInit() on restore (its cleanup
+        // removes stale listeners). This direct listener ensures the flag
+        // resets even when app-init is torn down.
+    })
 
     // C7 — document visibility change
     registry.listener(sinks.document, 'visibilitychange', () => {

@@ -10,6 +10,7 @@
   import type { EngineCallbacks } from '@lib/engine/lifecycle';
   import type { LoadingPhase } from '@lib/types/state';
   import { handleCanvasKeydown } from '@lib/journey/canvas-keyboard-nav';
+  import { appState as _canvasAppState } from '@lib/state/app.svelte.ts';
 
   interface Props {
     interactive?: boolean;
@@ -94,22 +95,52 @@
     }
   }
 
+  // ── W48-C keyboard navigation — H1 fix (Jul-10) ────────────────────────────
+  // Previous code bound keydown to canvasEl (#engine-canvas) which is
+  // REMOVED by scene-init.ts:90 (orphan sweep) and replaced by
+  // renderer.domElement. So the handler lived on a detached node, OrbitControls
+  // on the real canvas stole arrows, and 6 aria-keyshortcuts were inert.
+  type CanvasWithKeyHandler = HTMLCanvasElement & {
+    _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
+  }
+  let liveCanvasBound: HTMLCanvasElement | null = null
+  function bindKeysToLiveCanvas(el: HTMLCanvasElement | null, handler: (e: KeyboardEvent) => void): void {
+    if (!el) return
+    if (el === liveCanvasBound) return
+    if (liveCanvasBound && liveCanvasBound !== canvasEl) {
+      const prev = (liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler
+      if (prev) liveCanvasBound.removeEventListener('keydown', prev)
+      ;(liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler = null
+    }
+    if (el === canvasEl) {
+      liveCanvasBound = el
+      return
+    }
+    const typed = el as CanvasWithKeyHandler
+    typed._canvasKeyHandler = handler
+    el.addEventListener('keydown', handler)
+    liveCanvasBound = el
+  }
+  function unbindLiveCanvasKeys(): void {
+    if (!liveCanvasBound) return
+    const prev = (liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler
+    if (prev) liveCanvasBound.removeEventListener('keydown', prev)
+    ;(liveCanvasBound as CanvasWithKeyHandler)._canvasKeyHandler = null
+    liveCanvasBound = null
+  }
+
   onMount(() => {
     if (!canvasEl) return;
 
-    // ── W48-C keyboard navigation ──────────────────────────────────────────────────
-    // Honor the canvas's declared aria-keyshortcuts
-    // (ArrowUp/Down/Left/Right, Home, End, Plus/Minus). The handler calls
-    // preventDefault + stopImmediatePropagation to override Three.js
-    // OrbitControls (also bound to this canvas DOM element, defaults to
-    // arrow-key camera pan). Listener pattern matches selected-card.ts:240-256:
-    // store the handler ref on the element for idempotent removal on destroy.
-    type CanvasWithKeyHandler = HTMLCanvasElement & {
-      _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
-    }
     const keyHandler = (e: KeyboardEvent): void => handleCanvasKeydown(e)
+    // Early binding for placeholder / test path (surface-contract tests that never init WebGL)
     ;(canvasEl as CanvasWithKeyHandler)._canvasKeyHandler = keyHandler
     canvasEl.addEventListener('keydown', keyHandler)
+    // Also try live canvas immediately in case engine already mounted (HMR)
+    const liveNow =
+      (_canvasAppState.renderer?.domElement as HTMLCanvasElement | null) ??
+      (typeof document !== 'undefined' ? (document.querySelector('#canvas-container canvas') as HTMLCanvasElement | null) : null)
+    if (liveNow && liveNow !== canvasEl) bindKeysToLiveCanvas(liveNow, keyHandler)
 
     // Fallback: hide overlay after 5 seconds if engine hasn't signalled ready.
     // Gate on !canvasReady so a fast scene-ready path (onLoadingPhase →
@@ -138,6 +169,14 @@
           return;
         }
         engineHasInit = true;
+        // H1a fix: after engine init, renderer.domElement is the canonical live
+        // canvas (placeholder #engine-canvas removed by scene-init). Bind kbd to it.
+        const liveAfterInit =
+          (_canvasAppState.renderer?.domElement as HTMLCanvasElement | null) ??
+          (typeof document !== 'undefined' ? (document.querySelector('#canvas-container canvas') as HTMLCanvasElement | null) : null)
+        if (liveAfterInit && liveAfterInit !== canvasEl) {
+          bindKeysToLiveCanvas(liveAfterInit, keyHandler)
+        }
         lifecycle.resizeEngine(viewportWidth(), viewportHeight());
       } catch (err) {
         debugError('Canvas: Engine init failed:', err);
@@ -218,23 +257,15 @@
   });
 
   onDestroy(() => {
-    // W48-C: remove the canvas keyboard listener (idempotent via the
-    // _canvasKeyHandler ref pattern, mirroring selected-card.ts:240-256).
+    // H1a: clean up BOTH placeholder and live canvas bindings (idempotent via _canvasKeyHandler ref)
     if (canvasEl) {
-      const handler = (
-        canvasEl as HTMLCanvasElement & {
-          _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
-        }
-      )._canvasKeyHandler
+      const handler = (canvasEl as CanvasWithKeyHandler)._canvasKeyHandler
       if (handler) {
         canvasEl.removeEventListener('keydown', handler)
-        ;(
-          canvasEl as HTMLCanvasElement & {
-            _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
-          }
-        )._canvasKeyHandler = null
+        ;(canvasEl as CanvasWithKeyHandler)._canvasKeyHandler = null
       }
     }
+    unbindLiveCanvasKeys()
 
     componentDestroyed = true;
     engineLifecycleDestroyed = true;

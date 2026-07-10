@@ -254,9 +254,12 @@ export class ThreadSettler {
         withStateMutation(() => {
             appState.focusState.pinnedThreadIndex = null
             appState.focusState.inspectedThreadIndex = null
-            // Only suppress canvas focus from pointermove-driven walks; clicks
-            // need to be able to focus when no pointermove has happened first.
-            if (!options.fromCanvasNode) {
+            // H4 fix (Jul-10 bugsweep): suppress logic was inverted — it set
+            // the debounce on !fromCanvasNode (hover) and checked it on
+            // fromCanvasNode (click), so every click <1200ms after hover was
+            // silently dropped. Correct intent: after a click/traversal we
+            // debounce hover re-focus; clicks must always succeed.
+            if (options.fromCanvasNode || options.fromTraversal) {
                 appState.suppressCanvasFocusUntil =
                     typeof performance !== 'undefined' ? performance.now() + 1200 : Date.now() + 1200
             }

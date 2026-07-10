@@ -580,7 +580,17 @@ export function updateMyceliumThreads(): void {
     if (!webglContext.myceliumConnectionPairs?.length) return
 
     // Fast path: no nodes moved this frame — skip the entire rebuild.
+    // H2 fix (Jul-10 bugsweep): the previous code had a comment above
+    // but inverted logic — when !hasDirtyNodes it FULL-rebuilt the buffer
+    // (~100k segs) + zeroed tail every idle continuous frame. Now we early-exit
+    // and drain the flag so RAF can go idle (see sceneNeedsContinuousFrame).
+    // Do NOT zero tail on skip — historic bug that collapsed visible mycelium.
     const hasDirtyNodes = dirtyNodeIndices.size > 0
+    if (!hasDirtyNodes) {
+        dirtyNodeIndices.clear()
+        state.myceliumDirty = false
+        return
+    }
 
     // Per-layer intensity values matching createMycelium() vertex color baking.
     // Without these, rebuilt threads flash to full brightness (intensity=1)
@@ -608,64 +618,11 @@ export function updateMyceliumThreads(): void {
         const colorStartArray = colorStartAttr?.array as Float32Array | undefined
         const colorEndArray = colorEndAttr?.array as Float32Array | undefined
 
-        // Full rebuild: no dirty set (or a create/rebuild signal) — rewrite
-        // the entire buffer from scratch, zeroing any tail slack.
-        if (!hasDirtyNodes) {
-            const nextPositions: number[] = []
-            const nextColors: number[] = []
-            webglContext.myceliumConnectionPairs.forEach((pair) => {
-                if (pair.layer !== layer) return
-                pushBezierLinePair(
-                    nextPositions,
-                    nextColors,
-                    { a: pair.a, b: pair.b },
-                    layerIntensity[layer] ?? 1,
-                    SEGMENTS_PER_PAIR
-                )
-            })
-            const maxSegs = Math.min(
-                startArray.length / 3,
-                endArray.length / 3,
-                nextPositions.length / FLOATS_PER_SEGMENT
-            )
-            for (let s = 0; s < maxSegs; s += 1) {
-                const pi = s * FLOATS_PER_SEGMENT
-                const si = s * 3
-                startArray[si] = Number.isFinite(nextPositions[pi]) ? nextPositions[pi]! : 0
-                startArray[si + 1] = Number.isFinite(nextPositions[pi + 1]) ? nextPositions[pi + 1]! : 0
-                startArray[si + 2] = Number.isFinite(nextPositions[pi + 2]) ? nextPositions[pi + 2]! : 0
-                endArray[si] = Number.isFinite(nextPositions[pi + 3]) ? nextPositions[pi + 3]! : 0
-                endArray[si + 1] = Number.isFinite(nextPositions[pi + 4]) ? nextPositions[pi + 4]! : 0
-                endArray[si + 2] = Number.isFinite(nextPositions[pi + 5]) ? nextPositions[pi + 5]! : 0
-            }
-            for (let s = maxSegs * 3; s < startArray.length; s += 1) startArray[s] = 0
-            for (let s = maxSegs * 3; s < endArray.length; s += 1) endArray[s] = 0
-            startAttr.needsUpdate = true
-            endAttr.needsUpdate = true
-
-            if (colorStartArray && colorEndArray && nextColors.length) {
-                const maxColorSegs = Math.min(
-                    colorStartArray.length / 3,
-                    colorEndArray.length / 3,
-                    nextColors.length / FLOATS_PER_SEGMENT
-                )
-                for (let s = 0; s < maxColorSegs; s += 1) {
-                    const ci = s * FLOATS_PER_SEGMENT
-                    const si = s * 3
-                    colorStartArray[si] = nextColors[ci] ?? 0
-                    colorStartArray[si + 1] = nextColors[ci + 1] ?? 0
-                    colorStartArray[si + 2] = nextColors[ci + 2] ?? 0
-                    colorEndArray[si] = nextColors[ci + 3] ?? 0
-                    colorEndArray[si + 1] = nextColors[ci + 4] ?? 0
-                    colorEndArray[si + 2] = nextColors[ci + 5] ?? 0
-                }
-                for (let s = maxColorSegs * 3; s < colorStartArray.length; s += 1) colorStartArray[s] = 0
-                for (let s = maxColorSegs * 3; s < colorEndArray.length; s += 1) colorEndArray[s] = 0
-                colorStartAttr!.needsUpdate = true
-                colorEndAttr!.needsUpdate = true
-            }
-            return
-        }
+        // Note: the historic `if(!hasDirtyNodes)` full-rebuild path is now
+        // handled by the function-level early return above, so this layer no
+        // longer needs to branch. This block intentionally left without a full
+        // rebuild — the partial dirty-pair in-place update below is the only
+        // path when we have dirty nodes.
 
         // Partial update (dirty-node amortization): update ONLY dirty pairs
         // IN-PLACE at their original buffer offset. Clean pairs are left

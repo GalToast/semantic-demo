@@ -55,8 +55,13 @@ export function focusOnNode(index: number, options: FocusOnNodeOptions = {}): bo
     if (!Number.isFinite(index) || index < 0 || !points || index >= points.length) return false
     const point = points[index]
     if (!point) return false
+    // H4 fix (Jul-10 bugsweep): was checking suppress on fromCanvasNode (click)
+    // while thread-settler set it on !fromCanvasNode (hover) — inverted, so
+    // clicks <1200ms after hover were dropped. Now hover path is debounced
+    // after a click/traversal; click/traversal always wins.
     const suppressCanvasFocusUntil = Number(appState.suppressCanvasFocusUntil) || 0
-    if (options.fromCanvasNode && typeof performance !== 'undefined' && performance.now() < suppressCanvasFocusUntil) {
+    const isHoverLike = !options.fromCanvasNode && !options.fromTraversal && !options.fromSearchResult
+    if (isHoverLike && typeof performance !== 'undefined' && performance.now() < suppressCanvasFocusUntil) {
         return false
     }
 

@@ -179,18 +179,43 @@ async function applyUrlStateAfterData(): Promise<void> {
  * @returns A cleanup function that removes the event listeners.
  */
 function setupWebglContextRestore(): () => void {
-    const canvas = document.querySelector<HTMLCanvasElement>('#engine-canvas')
+    // H1 fix (Jul-10 bugsweep cross-seam): previously queried #engine-canvas
+    // which is REMOVED by scene-init.ts:90 (all canvases != renderer.domElement
+    // are stripped). So lost/restored listeners on detached #engine-canvas
+    // never fired — context loss left animate() dead forever and W53 M5 dev
+    // test simulateWebGLContextLoss never restored.
+    //
+    // Canonical source of truth is now three-listener-registration which owns
+    // C5/C6 on renderer.domElement inside the DisposableRegistry. This app-init
+    // path remains as a safety re-init path and is re-bound lazily to the live
+    // renderer.domElement if available. If no live canvas yet, return no-op;
+    // the registry will handle restore when engine inits.
+    // Prefer live renderer.domElement if already mounted; fallback to id query
+    // only for very early boot before three init (will be superseded by registry).
+    const { appState: _appState } = (() => {
+        try {
+            // Dynamic to avoid circular
+            return { appState: (globalThis as unknown as { __APP_STATE__?: { renderer?: { domElement?: HTMLCanvasElement } } }).__APP_STATE__ }
+        } catch {
+            return { appState: undefined }
+        }
+    })()
+    // Try to resolve live canvas without importing appState statically (keeps module acyclic).
+    // The registry path is now primary; this fallback ensures restore still re-inits if registry torn down.
+    const liveCanvasFromDom =
+        (typeof document !== 'undefined' ? document.querySelector<HTMLCanvasElement>('#canvas-container canvas') : null) ??
+        document?.querySelector<HTMLCanvasElement>('#engine-canvas') ??
+        null
+    const canvas = liveCanvasFromDom
     if (!canvas) return () => {}
 
     const handleContextLost = (event: Event) => {
         event.preventDefault()
-        debugWarn('[app-init] WebGL context lost')
+        debugWarn('[app-init] WebGL context lost (app-init fallback)')
     }
 
     const handleContextRestored = async () => {
-        debugWarn('[app-init] WebGL context restored; reinitializing')
-        // Re-run the Svelte-first init. The init guard (_initCalled) will
-        // prevent double-init, so we reset it first.
+        debugWarn('[app-init] WebGL context restored; reinitializing (app-init fallback)')
         _initCalled = false
         try {
             await appInit()
