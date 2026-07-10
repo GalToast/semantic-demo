@@ -372,6 +372,29 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
         }
     }
 
+    // ── Surface-settled signal (T7 Part B) ───────────────────────────────
+    // Emit `data-surface-settled` once the surface layout is stable: the
+    // loading overlay is hidden AND the route has settled (scene ready /
+    // view-handoff finished / camera free / graphics fallback). This is the
+    // exact condition the surface-contract harness polls for; publishing it
+    // from the app removes the guesswork of timeout-based settling. The
+    // harness prefers this signal but falls back to composite polling when
+    // the attribute is absent, so this write is strictly additive.
+    const overlayHidden = map.loadingOverlay === 'hidden'
+    const routeSettled =
+        map.sceneReady === 'true' ||
+        map.viewHandoffActive === 'false' ||
+        map.cameraAssist === 'free' ||
+        map.graphicsMode === 'fallback'
+    if (overlayHidden && routeSettled) {
+        const settled = map.panelSurface ?? map.navSurface ?? 'true'
+        if (document.body.dataset.surfaceSettled !== settled) {
+            document.body.dataset.surfaceSettled = settled
+        }
+    } else if (document.body.dataset.surfaceSettled !== undefined) {
+        delete document.body.dataset.surfaceSettled
+    }
+
     // Note: The `is-active` body class was removed in Phase B3d.3.
     // It was redundant with the surface-{value} classes (is-active
     // ≡ panelSurface !== 'idle' ≡ :not(.surface-idle)). All CSS

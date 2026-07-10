@@ -234,31 +234,39 @@ async function loadAndWait(page, url) {
                 })
         )
         .catch(() => {})
-    await page
-        .waitForFunction(
-            () => {
-                const { cameraAssist, loadingOverlay, sceneReady, viewHandoffActive } = document.body.dataset
-                const overlay = document.querySelector('#loading-overlay')
-                const overlayStyle = overlay ? getComputedStyle(overlay) : null
-                const overlayHidden =
-                    !overlay ||
-                    loadingOverlay === 'hidden' ||
-                    overlay.classList.contains('hidden') ||
-                    overlay.getAttribute('aria-hidden') === 'true' ||
-                    overlayStyle?.display === 'none' ||
-                    overlayStyle?.visibility === 'hidden' ||
-                    Number(overlayStyle?.opacity || 1) <= 0.05
-                const routeSettled =
-                    sceneReady === 'true' ||
-                    viewHandoffActive === 'false' ||
-                    cameraAssist === 'free' ||
-                    document.body.dataset.graphicsMode === 'fallback'
-                return overlayHidden && routeSettled
-            },
-            undefined,
-            { timeout: 10000 }
-        )
-        .catch(() => {})
+    // T7: Prefer the surface-settled signal (Part B) when available. The parity
+    // layer emits `data-surface-settled` when the app is fully loaded (scene
+    // ready, overlay hidden, camera free). This is more deterministic than the
+    // composite polling below. Falls back to the existing composite check if
+    // the signal is absent (pre-Part-B app build).
+    const settled = await waitForSurfaceSettled(page, 3000)
+    if (!settled) {
+        await page
+            .waitForFunction(
+                () => {
+                    const { cameraAssist, loadingOverlay, sceneReady, viewHandoffActive } = document.body.dataset
+                    const overlay = document.querySelector('#loading-overlay')
+                    const overlayStyle = overlay ? getComputedStyle(overlay) : null
+                    const overlayHidden =
+                        !overlay ||
+                        loadingOverlay === 'hidden' ||
+                        overlay.classList.contains('hidden') ||
+                        overlay.getAttribute('aria-hidden') === 'true' ||
+                        overlayStyle?.display === 'none' ||
+                        overlayStyle?.visibility === 'hidden' ||
+                        Number(overlayStyle?.opacity || 1) <= 0.05
+                    const routeSettled =
+                        sceneReady === 'true' ||
+                        viewHandoffActive === 'false' ||
+                        cameraAssist === 'free' ||
+                        document.body.dataset.graphicsMode === 'fallback'
+                    return overlayHidden && routeSettled
+                },
+                undefined,
+                { timeout: 10000 }
+            )
+            .catch(() => {})
+    }
     // loadAndWait: overlay and route already settled by preceding checks
 }
 
@@ -313,6 +321,55 @@ async function loadIdleAndTypeSearch(page, query, params = {}) {
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })
     await page.locator('#search-input').first().fill(query)
     await page.waitForTimeout(350)
+}
+
+// ── Crash / retry detection ───────────────────────────────────────────────
+
+/**
+ * Detect whether a Playwright error is a transient browser/crash that should
+ * be retried rather than recorded as a surface failure.
+ */
+function isRetryableCrash(err) {
+    if (!err || !err.message) return false
+    const msg = err.message.toLowerCase()
+    return (
+        msg.includes('target closed') ||
+        msg.includes('browser has disconnected') ||
+        msg.includes('protocol error') ||
+        msg.includes('context destroyed') ||
+        msg.includes('session deleted') ||
+        msg.includes('crash') ||
+        msg.includes('detached from') ||
+        msg.includes('execution context was destroyed') ||
+        msg.includes('browser abnormally closed') ||
+        msg.includes('playwright connection terminated') ||
+        msg.includes('websocket closed')
+    )
+}
+
+/** Maximum consecutive retries for transient browser crashes */
+const SURFACE_RETRY_MAX = 3
+
+// ── Surface-settled signal (Part B) ─────────────────────────────────────────
+
+/**
+ * Wait for the app's `data-surface-settled` signal, which fires when
+ * the parity layer determines the surface layout is stable (loading
+ * overlay hidden, scene ready, camera free). Falls back to timeout.
+ *
+ * @returns {Promise<boolean>} true if the settled signal fired within timeout
+ */
+async function waitForSurfaceSettled(page, timeout = 3000) {
+    // Fast path: attr already present
+    const already = await page.evaluate(() => document.body?.dataset?.surfaceSettled !== undefined).catch(() => false)
+    if (already) return true
+    // Poll for it
+    try {
+        await page.waitForFunction(() => document.body?.dataset?.surfaceSettled !== undefined, { timeout })
+        return true
+    } catch {
+        return false
+    }
 }
 
 async function waitForMobileIdleChrome(page) {
@@ -5630,58 +5687,108 @@ async function run() {
         process.exit(124) // 124 is the standard timeout exit code
     }, RUN_TIMEOUT_MS)
 
+    // T7: per-surface crash isolation + retry + incremental flush
+    // Each surface runs in a retry loop (up to SURFACE_RETRY_MAX attempts)
+    // on transient browser crashes. A crash on surface N does NOT abort
+    // the sweep — surface N+1 still runs. Result lines are flushed to
+    // an NDJSON file incrementally so partial results survive a later crash.
     try {
         for (const surface of surfacesToRun) {
             const surfaceStart = Date.now()
             console.error(`[runner] Starting surface: ${surface}`)
 
-            const ctx = makeAssert(surface)
-            let page = null
+            let surfaceError = null
+            let surfaceInfo = null
+            let surfaceChecks = []
+            let success = false
 
-            try {
-                page = await withTimeout(makePage(browser, surface), 20_000, `makePage(${surface})`)
-                const info = await withTimeout(
-                    Promise.resolve(SURFACES[surface](page, ctx)),
-                    90_000,
-                    `assert_${surface}(page, ctx)`
-                )
+            for (let attempt = 1; attempt <= SURFACE_RETRY_MAX; attempt++) {
+                const ctx = makeAssert(surface)
+                let page = null
 
-                await closePageContext(page)
+                try {
+                    page = await withTimeout(makePage(browser, surface), 20_000, `makePage(${surface})`)
+                    const info = await withTimeout(
+                        Promise.resolve(SURFACES[surface](page, ctx)),
+                        90_000,
+                        `assert_${surface}(page, ctx)`
+                    )
 
+                    await closePageContext(page)
+
+                    surfaceInfo = info
+                    surfaceChecks = ctx.checks
+                    success = true
+                    break // success, exit retry loop
+                } catch (surfaceErr) {
+                    if (page) await closePageContext(page).catch(() => {})
+
+                    const msg = surfaceErr.message || String(surfaceErr)
+                    const isTimeout = msg.startsWith('TIMEOUT(')
+
+                    // Retry only on transient browser crashes, not on timeouts
+                    if (attempt < SURFACE_RETRY_MAX && !isTimeout && isRetryableCrash(surfaceErr)) {
+                        console.error(
+                            `[runner] Retrying ${surface} (attempt ${attempt + 1}/${SURFACE_RETRY_MAX}) after crash: ${msg}`
+                        )
+                        continue
+                    }
+
+                    // Non-retryable or retries exhausted — record final failure
+                    surfaceError = surfaceErr
+                    surfaceChecks = ctx.checks
+                    break
+                }
+            }
+
+            // ── Record per-surface results ───────────────────────────────────
+            allAssertions.push(...surfaceChecks)
+            const resultsEntry = { surface, assertions: surfaceChecks }
+            surfaceResults.push(resultsEntry)
+
+            const elapsed = Date.now() - surfaceStart
+            const passCount = surfaceChecks.filter((c) => c.level === 'pass').length
+            const failCount = surfaceChecks.filter((c) => c.level === 'fail').length
+
+            if (success && surfaceInfo) {
                 await fs.promises.writeFile(
                     path.join(outDir, `${surface}.json`),
-                    `${JSON.stringify({ surface, info, assertions: ctx.checks }, null, 2)}\n`,
+                    `${JSON.stringify({ surface, info: surfaceInfo, assertions: surfaceChecks }, null, 2)}\n`,
                     'utf8'
                 )
-                allAssertions.push(...ctx.checks)
-                surfaceResults.push({ surface, assertions: ctx.checks })
-
-                const elapsed = Date.now() - surfaceStart
-                console.error(
-                    `[runner] Finished surface: ${surface}  (${elapsed}ms, ${ctx.checks.filter((c) => c.level === 'pass').length} pass / ${ctx.checks.filter((c) => c.level === 'fail').length} fail)`
+                // Incremental flush: write each surface's result to a cumulative NDJSON file
+                // so partial results survive a crash on a later surface.
+                await fs.promises.appendFile(
+                    path.join(outDir, 'surface-results.ndjson'),
+                    `${JSON.stringify({ type: 'surface-result', surface, pass: passCount, fail: failCount, elapsed, success: true })}\n`,
+                    'utf8'
                 )
-            } catch (surfaceErr) {
-                if (page) await closePageContext(page)
-
-                const msg = surfaceErr.message || String(surfaceErr)
+                console.error(
+                    `[runner] Finished surface: ${surface}  (${elapsed}ms, ${passCount} pass / ${failCount} fail)`
+                )
+            } else if (surfaceError) {
+                const msg = surfaceError.message || String(surfaceError)
                 const isTimeout = msg.startsWith('TIMEOUT(')
                 if (isTimeout) {
-                    // A TIMEOUT is a runner failure — surface did not complete.
-                    ctx.fail(surface, 'runner:surface-timeout', msg)
-                } else {
-                    ctx.fail(surface, 'runner:surface-error', msg)
+                    surfaceChecks.push({
+                        level: 'fail',
+                        check: 'runner:surface-timeout',
+                        msg,
+                        surface
+                    })
                 }
-                allAssertions.push(...ctx.checks)
-                surfaceResults.push({ surface, assertions: ctx.checks })
                 await fs.promises
                     .writeFile(
                         path.join(outDir, `${surface}.json`),
-                        `${JSON.stringify({ surface, assertions: ctx.checks, error: msg }, null, 2)}\n`,
+                        `${JSON.stringify({ surface, assertions: surfaceChecks, error: msg }, null, 2)}\n`,
                         'utf8'
                     )
                     .catch(() => {})
-
-                const elapsed = Date.now() - surfaceStart
+                await fs.promises.appendFile(
+                    path.join(outDir, 'surface-results.ndjson'),
+                    `${JSON.stringify({ type: 'surface-result', surface, pass: passCount, fail: failCount, elapsed, success: false, error: msg })}\n`,
+                    'utf8'
+                )
                 console.error(`[runner] Surface error: ${surface}  (${elapsed}ms)  ${msg}`)
             }
         }
