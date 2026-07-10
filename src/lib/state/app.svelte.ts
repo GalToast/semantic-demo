@@ -540,30 +540,10 @@ class AppState {
         stalenessMsg: ''
     })
 
-    // ==== COMPOSITION STATE (MIGRATED FROM compositionStore) ====
-    composition = $state<{
-        activeView: string
-        trailState: string
-        trailDepth: string
-        graphContext: string
-        mapContext: string
-        semanticDive: string
-        panelSurface: string
-        panelSurfaceDetail: string
-        searchGlow: string
-        isActive: boolean
-    }>({
-        activeView: 'galaxy',
-        trailState: 'inactive',
-        trailDepth: '0',
-        graphContext: 'idle',
-        mapContext: 'idle',
-        semanticDive: 'inactive',
-        panelSurface: 'idle',
-        panelSurfaceDetail: 'peek',
-        searchGlow: 'inactive',
-        isActive: false
-    })
+    // ==== COMPOSITION STATE removed (W48-F): appState.composition was a dead
+    // mirror — initialized to defaults, never written by any module. parity-attrs
+    // owns the canonical surface (parityMap + body.dataset.*); former consumers
+    // (weather-ui, SearchResults) now read canonical sources directly. ====
 
     // ==== newly consolidated state (MIGRATED FROM INDIVIDUAL STORES) ====
     semanticNeighborMapByLeadId = $state<Map<string, SemanticNeighborEntry>>(new Map())

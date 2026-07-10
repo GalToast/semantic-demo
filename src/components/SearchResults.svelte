@@ -33,6 +33,7 @@
   import { showErrorToast, showExperienceToast } from '@lib/orchestration/toast';
   import { getSearchEngineEmptyStateSuggestions } from '@lib/search-engine';
   import { appState } from '@lib/state/app.svelte';
+  import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
   import { friendlyErrorMessage } from '@lib/utils/error-messages';
   import type { SearchResult } from '@lib/types/state';
   import SearchResultItem from '@components/SearchResultItem.svelte';
@@ -418,7 +419,7 @@
       <div id="search-results-count" class="search-results-count">
         {#if total === 1}
           <span class="search-results-count-anchor">Top match</span>
-        {:else if appState.composition.panelSurfaceDetail === 'peek' && total > visibleCount}
+        {:else if parityMap.panelSurfaceDetail === 'peek' && total > visibleCount}
           <span class="search-results-count-anchor">Top match</span>
           <span class="search-results-count-divider" aria-hidden="true">·</span>
           <span class="search-results-count-hidden">{total - visibleCount} more</span>

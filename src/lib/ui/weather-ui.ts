@@ -66,11 +66,11 @@ export function onWeatherStateChange(): void {
     }
 }
 
-/** Reactive handler — call whenever appState.composition changes. */
+/** Reactive handler — call whenever the active view changes. */
 export function onCompositionChange(): void {
     if (!canUseWeatherDom()) return
     const state = appState.weatherState
-    if (appState.composition.activeView === 'map' && state.weather) {
+    if (appState.currentView === 'map' && state.weather) {
         applyWeatherEffects(state.weather)
     } else {
         clearWeatherEffects()
@@ -134,7 +134,7 @@ export function updateWeatherUi(state: WeatherStateValue): void {
 
     updateWeatherStaleness(state.lastFetch)
 
-    if (appState.composition.activeView === 'map') {
+    if (appState.currentView === 'map') {
         applyWeatherEffects(weather)
     }
 
@@ -230,7 +230,7 @@ function scheduleLightning(): void {
     let flashCount = 0
     const flash = (): void => {
         if (generation !== lightningGeneration) return
-        if (appState.composition.activeView !== 'map') return
+        if (appState.currentView !== 'map') return
         const lightning = document.getElementById('lightning-flash')
         if (lightning) {
             lightning.classList.add('flash')

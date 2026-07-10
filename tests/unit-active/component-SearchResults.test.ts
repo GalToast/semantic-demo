@@ -89,7 +89,7 @@ describe('SearchResults component', () => {
         // Regression: previously read summary?.mode which never existed on the
         // SearchSummary shape (only resultIndices/anchorIndex/topIndex). The
         // mobile "Top match · X more" label never fired.
-        expect(source).toContain("appState.composition.panelSurfaceDetail === 'peek'")
+        expect(source).toContain("parityMap.panelSurfaceDetail === 'peek'")
         expect(source).not.toContain("summary?.mode === 'peek'")
         expect(source).toContain('Top match')
         expect(source).toContain('search-results-count-hidden')
