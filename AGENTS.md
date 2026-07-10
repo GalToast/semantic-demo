@@ -58,7 +58,7 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 - `getPointBoundsCenter(points, positionBuffer)` in `src/lib/engine/node-manager.ts` requires a non-null `Float32Array` `positionBuffer` (TypeScript-enforced). The legacy `point.x/y/z` fallback was removed because `state.points` is `BusinessRecord[]` at runtime and never carries those fields, so the fallback would silently produce `count=0` and a wrong center.
 - `src/lib/state/app.svelte.ts` is the Svelte 5 global state source of truth.
 - `js/workers/data-worker.ts` is active runtime via `data-worker-url-bridge.ts`.
-- `micro-demo.js` / `src/lib/demo/choreography.ts` is the sole demo entry point and owns first-visit eligibility.
+- `src/components/DemoChoreography.svelte` + `src/lib/stores/demo.svelte.ts` (10-phase) is the canonical demo; initMicroDemo() in `choreography.ts` is deprecated legacy (0 callers, warning only). Eligibility lives in `shouldRunDemo()` in the Svelte store (checks isDeepLink, seen, session, reduced-motion). Replay dispatches `demo-replay-requested` → DemoChoreography re-runs attemptStart after sceneReady (prevents stacked veils, M15).
 - CSS ownership is split by ordered modules under `css/`; use the ownership docs before editing mobile/surface styles.
 
 ## Conventions (header / mode / toast)
@@ -72,7 +72,7 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 
 ## Conventions (search fallback)
 
-- **The yellow "Showing demo data" banner is intentional, not a bug.** When the live `/api.php` endpoint is unreachable (typical in dev against a static server without PHP), the engine falls back to a 20-business mock catalog and surfaces the banner so a developer doesn't mistake a 20-row fake for the full 8,406-record dataset. Don't suppress the banner; if it's noisy, lower the trigger frequency, don't silence it.
+- **The yellow "Showing demo data" banner now only fires on the genuine 20-business mock fallback (M10), not the 8,406-record local index.** `SEARCH_MOCK_FALLBACK` event (search-engine emits it only when `performMockSearch` returns rows) drives the banner; `SEARCH_DEGRADED` (local index fallback) does NOT show it. When live `/api.php` is unreachable in dev against a static server, the engine first tries the real local 8,406 index (no banner); only on total miss does it fall back to 20 mock + banner. Don't suppress; if noisy, lower trigger frequency, don't silence.
 - **`sessionStorage.api_unreachable` is a time-bounded sticky bypass (PR-M), not a permanent lock.** The record is `{setAt: Date.now(), reason: string}` and expires after `API_BYPASS_STICKY_MS` (60s) on the read path. It also clears on the next successful API response. Legacy `'1'` strings are treated as expired so old tabs recover automatically. Helpers: `markApiUnreachable(reason)`, `clearApiUnreachable()`, `readApiUnreachable()` in `@lib/search/mock-search-fallback`. Never call `sessionStorage.setItem('api_unreachable', ...)` directly — go through `markApiUnreachable` so the timestamp is recorded.
 - **`?staticDev=0` forces live API and surfaces failures as errors.** Used by contract tests; do not use in normal dev flows.
 - **Vite dev proxies `/api*` to `127.0.0.1:8795`.** The system expects a PHP backend there (see `docs/ops/DEPLOY_STATUS.md` and `docs/ops/walkthrough-r7-findings.md`). For dev with live data: stop whatever's on 8795 (`python -m http.server` from `npm run serve` is the legacy JS track — see `memory/environment.md`, deleted 2026-06-07) and run `php -S 127.0.0.1:8795 -t .` from the repo root. PHP CLI server executes `/api.php` AND serves static files (replaces Python for both roles). PR-N makes `api.php` fall back to `src/data.dat` when no root-level `data.dat` exists, so a fresh checkout Just Works without copying.
@@ -148,9 +148,9 @@ Use narrower checks when validating a scoped change.
 ## Key Product Invariants (W47 hot-path)
 
 - **Svelte 5 reactivity fix pattern (PR-2 / 3-bug stack, see `346891d8`):**
-    - **One-time-snapshot state reads `const renderKind = getInitialRenderKind()`** is the foot-gun. Switch to `$state: $derived(getBypassAttr('renderKind') ?? getInitialRenderKind())" so body class flips react to gate flips.
-    - **Order matters:** `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)` so the Playwright auto-signal from `__PLAYWRIGHT__` wins cleanly when the test wants webgl, instead of being overwrote by the later placeholder-path setRenderKind.
-    - **First-visit help dialog** can sit on top of the search input on mobile; dismiss it in any test that types into the input (fills dialog + 1 .fill() line).
-    - All three land together in one fix. Same pattern recurs wherever a module has `const foo = getInitial*()` at the top.
+  - **One-time-snapshot state reads `const renderKind = getInitialRenderKind()`** is the foot-gun. Switch to `$state: $derived(getBypassAttr('renderKind') ?? getInitialRenderKind())" so body class flips react to gate flips.
+  - **Order matters:** `setRenderKind(getInitialRenderKind())` MUST run before `mount(App)` so the Playwright auto-signal from `__PLAYWRIGHT__` wins cleanly when the test wants webgl, instead of being overwrote by the later placeholder-path setRenderKind.
+  - **First-visit help dialog** can sit on top of the search input on mobile; dismiss it in any test that types into the input (fills dialog + 1 .fill() line).
+  - All three land together in one fix. Same pattern recurs wherever a module has `const foo = getInitial*()` at the top.
 
 ## Pi Harness Notes
