@@ -17,111 +17,113 @@
  * Output dir: tmp/css-seam-wave-20260520/
  */
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
-import { inflateSync } from 'node:zlib';
-import { chromium } from 'playwright';
+import { readFileSync } from 'node:fs'
+import { resolve } from 'node:path'
+import { inflateSync } from 'node:zlib'
+import { chromium } from 'playwright'
 
-const root = resolve(process.cwd());
-const outDir = resolve(root, 'tmp', 'css-seam-wave-20260520');
+const root = resolve(process.cwd())
+const outDir = resolve(root, 'tmp', 'css-seam-wave-20260520')
 // vector-explorer-polished.html is the deployed production shell, published from
 // dist/svelte/index.html. Load that built file for the diagnostic.
-const HTML_PAGE = resolve(root, 'dist/svelte/index.html');
+const HTML_PAGE = resolve(root, 'dist/svelte/index.html')
 
-const DEFAULT_URL = `file://${HTML_PAGE}`;
-const PORT = 8815;
-const SERVER_URL = `http://127.0.0.1:${PORT}`;
+const DEFAULT_URL = `file://${HTML_PAGE}`
+const PORT = 8815
+const SERVER_URL = `http://127.0.0.1:${PORT}`
 
 function paethPredictor(a, b, c) {
-    const p = a + b - c;
-    const pa = Math.abs(p - a);
-    const pb = Math.abs(p - b);
-    const pc = Math.abs(p - c);
-    if (pa <= pb && pa <= pc) return a;
-    if (pb <= pc) return b;
-    return c;
+    const p = a + b - c
+    const pa = Math.abs(p - a)
+    const pb = Math.abs(p - b)
+    const pc = Math.abs(p - c)
+    if (pa <= pb && pa <= pc) return a
+    if (pb <= pc) return b
+    return c
 }
 
 function parsePngRgba(buffer) {
-    const sig = buffer.subarray(0, 8).toString('hex');
-    if (sig !== '89504e470d0a1a0a') throw new Error('invalid PNG signature');
-    let offset = 8;
-    let width = 0, height = 0;
-    const idat = [];
+    const sig = buffer.subarray(0, 8).toString('hex')
+    if (sig !== '89504e470d0a1a0a') throw new Error('invalid PNG signature')
+    let offset = 8
+    let width = 0,
+        height = 0
+    const idat = []
     while (offset < buffer.length) {
-        const len = buffer.readUInt32BE(offset);
-        const type = buffer.subarray(offset + 4, offset + 8).toString('ascii');
-        const data = buffer.subarray(offset + 8, offset + 8 + len);
-        offset += 12 + len;
+        const len = buffer.readUInt32BE(offset)
+        const type = buffer.subarray(offset + 4, offset + 8).toString('ascii')
+        const data = buffer.subarray(offset + 8, offset + 8 + len)
+        offset += 12 + len
         if (type === 'IHDR') {
-            width = data.readUInt32BE(0);
-            height = data.readUInt32BE(4);
+            width = data.readUInt32BE(0)
+            height = data.readUInt32BE(4)
         } else if (type === 'IDAT') {
-            idat.push(data);
+            idat.push(data)
         } else if (type === 'IEND') {
-            break;
+            break
         }
     }
-    const inflated = inflateSync(Buffer.concat(idat));
-    const bpp = 3; // we convert to rgba below
-    const stride = width * bpp;
-    const rawRows = Buffer.alloc(width * height * bpp);
-    let srcOff = 0;
+    const inflated = inflateSync(Buffer.concat(idat))
+    const bpp = 3 // we convert to rgba below
+    const stride = width * bpp
+    const rawRows = Buffer.alloc(width * height * bpp)
+    let srcOff = 0
     for (let y = 0; y < height; y++) {
-        const filter = inflated[srcOff++];
-        const rowStart = y * stride;
-        const prevRowStart = rowStart - stride;
+        const filter = inflated[srcOff++]
+        const rowStart = y * stride
+        const prevRowStart = rowStart - stride
         for (let x = 0; x < stride; x++) {
-            const raw = inflated[srcOff + x];
-            const left  = x >= bpp ? rawRows[rowStart + x - bpp] : 0;
-            const up    = y > 0 ? rawRows[prevRowStart + x] : 0;
-            const upLeft = y > 0 && x >= bpp ? rawRows[prevRowStart + x - bpp] : 0;
-            let val = raw;
-            if (filter === 1) val = raw + left;
-            else if (filter === 2) val = raw + up;
-            else if (filter === 3) val = Math.floor((left + up) / 2);
-            else if (filter === 4) val = raw + paethPredictor(left, up, upLeft);
-            else if (filter !== 0) throw new Error(`unsupported PNG filter: ${filter}`);
-            rawRows[rowStart + x] = val & 255;
+            const raw = inflated[srcOff + x]
+            const left = x >= bpp ? rawRows[rowStart + x - bpp] : 0
+            const up = y > 0 ? rawRows[prevRowStart + x] : 0
+            const upLeft = y > 0 && x >= bpp ? rawRows[prevRowStart + x - bpp] : 0
+            let val = raw
+            if (filter === 1) val = raw + left
+            else if (filter === 2) val = raw + up
+            else if (filter === 3) val = Math.floor((left + up) / 2)
+            else if (filter === 4) val = raw + paethPredictor(left, up, upLeft)
+            else if (filter !== 0) throw new Error(`unsupported PNG filter: ${filter}`)
+            rawRows[rowStart + x] = val & 255
         }
-        srcOff += stride;
+        srcOff += stride
     }
-    const rgba = Buffer.alloc(width * height * 4);
+    const rgba = Buffer.alloc(width * height * 4)
     for (let i = 0; i < width * height; i++) {
-        const si = i * 3;
-        const ti = i * 4;
-        rgba[ti]   = rawRows[si];
-        rgba[ti+1] = rawRows[si+1];
-        rgba[ti+2] = rawRows[si+2];
-        rgba[ti+3] = 255;
+        const si = i * 3
+        const ti = i * 4
+        rgba[ti] = rawRows[si]
+        rgba[ti + 1] = rawRows[si + 1]
+        rgba[ti + 2] = rawRows[si + 2]
+        rgba[ti + 3] = 255
     }
-    return { width, height, rgba };
+    return { width, height, rgba }
 }
 
 function sampleRegion(rgba, width, height, region) {
-    const { left, top, right, bottom } = region;
-    const x0 = Math.max(0, Math.floor(width  * left));
-    const y0 = Math.max(0, Math.floor(height * top));
-    const x1 = Math.min(width,  Math.ceil(width  * right));
-    const y1 = Math.min(height, Math.ceil(height * bottom));
-    const samples = [];
+    const { left, top, right, bottom } = region
+    const x0 = Math.max(0, Math.floor(width * left))
+    const y0 = Math.max(0, Math.floor(height * top))
+    const x1 = Math.min(width, Math.ceil(width * right))
+    const y1 = Math.min(height, Math.ceil(height * bottom))
+    const samples = []
     for (let y = y0; y < y1; y += 2) {
         for (let x = x0; x < x1; x += 2) {
-            const i = (y * width + x) * 4;
-            const luma = Math.round((rgba[i]*299 + rgba[i+1]*587 + rgba[i+2]*114) / 1000);
-            samples.push(luma);
+            const i = (y * width + x) * 4
+            const luma = Math.round((rgba[i] * 299 + rgba[i + 1] * 587 + rgba[i + 2] * 114) / 1000)
+            samples.push(luma)
         }
     }
-    samples.sort((a, b) => a - b);
-    const count = samples.length || 1;
+    samples.sort((a, b) => a - b)
+    const count = samples.length || 1
     const pct = (p) => {
-        const idx = Math.min(samples.length - 1, Math.max(0, Math.floor((samples.length - 1) * p)));
-        return samples[idx] || 0;
-    };
-    let bright = 0, white = 0;
+        const idx = Math.min(samples.length - 1, Math.max(0, Math.floor((samples.length - 1) * p)))
+        return samples[idx] || 0
+    }
+    let bright = 0,
+        white = 0
     for (const l of samples) {
-        if (l >= 210) bright++;
-        if (l >= 236) white++;
+        if (l >= 210) bright++
+        if (l >= 236) white++
     }
     return {
         samples: count,
@@ -130,101 +132,131 @@ function sampleRegion(rgba, width, height, region) {
         p95: pct(0.95),
         p99: pct(0.99),
         brightRatio: Number((bright / count).toFixed(4)),
-        whiteRatio:  Number((white  / count).toFixed(4)),
-    };
+        whiteRatio: Number((white / count).toFixed(4))
+    }
 }
 
 async function waitForReady(page) {
     // Wait for domcontent
-    await page.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => {});
+    await page.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => {})
     // Wait for WebGL renderer + points loaded
-    await page.waitForFunction(() => {
-        const body = document.body?.dataset;
-        const canvas = document.querySelector('#canvas-container canvas');
-        const ready =
-            body?.graphicsMode === 'webgl' &&
-            canvas &&
-            window.__TEST_STATE__?.renderer &&
-            window.__TEST_STATE__?.scene &&
-            window.__TEST_STATE__?.camera &&
-            window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count;
-        return !!ready;
-    }, { timeout: 12000 }).catch(() => {});
+    await page
+        .waitForFunction(
+            () => {
+                const body = document.body?.dataset
+                const canvas = document.querySelector('#canvas-container canvas')
+                const ready =
+                    body?.graphicsMode === 'webgl' &&
+                    canvas &&
+                    window.__TEST_STATE__?.renderer &&
+                    window.__TEST_STATE__?.scene &&
+                    window.__TEST_STATE__?.camera &&
+                    window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count
+                return !!ready
+            },
+            { timeout: 12000 }
+        )
+        .catch(() => {})
     // Give scene reveal transition time to settle
-    await page.waitForFunction(() => new Promise(r => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), { timeout: 8000 }).catch(() => {});
+    await page
+        .waitForFunction(() => new Promise((r) => requestAnimationFrame(() => requestAnimationFrame(() => r(true)))), {
+            timeout: 8000
+        })
+        .catch(() => {})
 }
 
 async function startServer(port) {
-    const http = await import('node:http');
-    const fs = await import('node:fs');
-    const path = await import('node:path');
+    const http = await import('node:http')
+    const fs = await import('node:fs')
+    const path = await import('node:path')
+
+    // Serve the BUILT app (dist/svelte/), not repo root: its index.html
+    // references ./assets, ./fonts, ./css relatively, all under dist/svelte/.
+    const serveRoot = path.join(root, 'dist', 'svelte')
 
     const mimeTypes = {
         '.html': 'text/html',
-        '.css':  'text/css',
-        '.ts':   'application/javascript',
-        '.png':  'image/png',
-        '.svg':  'image/svg+xml',
-    };
+        '.css': 'text/css',
+        '.js': 'application/javascript',
+        '.ts': 'application/javascript',
+        '.png': 'image/png',
+        '.svg': 'image/svg+xml',
+        '.woff2': 'font/woff2',
+        '.dat': 'application/octet-stream',
+        '.br': 'application/octet-stream',
+        '.gz': 'application/octet-stream'
+    }
 
     const server = http.createServer((req, res) => {
         // Strip leading slash and resolve to root
-        let urlPath = req.url.split('?')[0];
+        let urlPath = req.url.split('?')[0]
         if (urlPath === '/' || !urlPath.includes('.')) {
-            urlPath = '/index.html';
+            urlPath = '/index.html'
         }
-        const filePath = path.join(root, urlPath);
+        const filePath = path.join(serveRoot, urlPath)
         try {
-            const data = fs.readFileSync(filePath);
-            const ext = path.extname(filePath);
-            res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' });
-            res.end(data);
+            const data = fs.readFileSync(filePath)
+            const ext = path.extname(filePath)
+            res.writeHead(200, { 'Content-Type': mimeTypes[ext] || 'text/plain' })
+            res.end(data)
         } catch {
             // Try index.html
             try {
-                const data = fs.readFileSync(path.join(root, 'index.html'));
-                res.writeHead(200, { 'Content-Type': 'text/html' });
-                res.end(data);
+                const data = fs.readFileSync(path.join(serveRoot, 'index.html'))
+                res.writeHead(200, { 'Content-Type': 'text/html' })
+                res.end(data)
             } catch {
-                res.writeHead(404);
-                res.end('Not found');
+                res.writeHead(404)
+                res.end('Not found')
             }
         }
-    });
+    })
 
     return new Promise((resolve) => {
-        server.listen(port, '127.0.0.1', () => resolve(server));
-    });
+        server.listen(port, '127.0.0.1', () => resolve(server))
+    })
 }
 
 async function run() {
-    let server;
+    let server
     try {
-        server = await startServer(PORT);
+        server = await startServer(PORT)
     } catch (err) {
-        console.error(JSON.stringify({ fatal: 'server-start-failed', port: PORT, error: String(err) }));
-        process.exit(1);
+        console.error(JSON.stringify({ fatal: 'server-start-failed', port: PORT, error: String(err) }))
+        process.exit(1)
     }
 
-    const browser = await chromium.launch({ headless: false, args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox'] });
-    let passed = false;
-    let diagnosticOutput = null;
+    const browser = await chromium.launch({
+        headless: false,
+        args: ['--use-gl=angle', '--enable-webgl', '--no-sandbox']
+    })
+    let passed = false
+    let diagnosticOutput = null
 
     try {
-        const page = await browser.newPage({ viewport: { width: 1440, height: 900 } });
+        const page = await browser.newPage({ viewport: { width: 1440, height: 900 } })
+
+        // Force the WebGL path: Playwright sets navigator.webdriver=true, which
+        // makes getInitialRenderKind() return 'placeholder2d'. ?webgl=1 overrides
+        // that, and window.__PLAYWRIGHT__ flips renderKind->webgl AND signals
+        // engineReady so the canvas actually mounts (otherwise we'd screenshot
+        // the static loading shell and false-positive a 'dark scene').
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
 
         // Emulate reduced motion
-        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await page.emulateMedia({ reducedMotion: 'reduce' })
 
-        const targetUrl = `${SERVER_URL}/index.html?nodemo=1`;
-        await page.goto(targetUrl, { waitUntil: 'commit', timeout: 15000 });
-        await waitForReady(page);
+        const targetUrl = `${SERVER_URL}/index.html?nodemo=1&webgl=1`
+        await page.goto(targetUrl, { waitUntil: 'commit', timeout: 15000 })
+        await waitForReady(page)
 
         // Collect diagnostic data
         const domState = await page.evaluate(() => {
-            const body = document.body?.dataset || {};
-            const loadingOverlay = document.querySelector('.loading-overlay');
-            const loadingOverlayStyle = loadingOverlay ? getComputedStyle(loadingOverlay) : null;
+            const body = document.body?.dataset || {}
+            const loadingOverlay = document.querySelector('.loading-overlay')
+            const loadingOverlayStyle = loadingOverlay ? getComputedStyle(loadingOverlay) : null
             const loadingOverlayActive = loadingOverlay
                 ? !loadingOverlay.hidden &&
                   loadingOverlay.getAttribute('aria-hidden') !== 'true' &&
@@ -233,15 +265,15 @@ async function run() {
                   loadingOverlayStyle.display !== 'none' &&
                   loadingOverlayStyle.visibility !== 'hidden' &&
                   Number(loadingOverlayStyle.opacity || 1) > 0.01
-                : false;
-            const canvasContainer = document.querySelector('#canvas-container');
-            const canvas = canvasContainer?.querySelector('canvas');
+                : false
+            const canvasContainer = document.querySelector('#canvas-container')
+            const canvas = canvasContainer?.querySelector('canvas')
             return {
-                graphicsMode:        body.graphicsMode,
-                sceneReveal:          body.sceneReveal,
+                graphicsMode: body.graphicsMode,
+                sceneReveal: body.sceneReveal,
                 reducedMotionActive: body.reducedMotion,
-                sceneReady:           body.sceneReady,
-                loadingOverlayState:  body.loadingOverlay,
+                sceneReady: body.sceneReady,
+                loadingOverlayState: body.loadingOverlay,
                 loadingOverlayActive,
                 loadingOverlayHidden: loadingOverlay
                     ? loadingOverlay.hidden ||
@@ -252,151 +284,188 @@ async function run() {
                       loadingOverlayStyle.visibility === 'hidden' ||
                       Number(loadingOverlayStyle.opacity || 1) <= 0.01
                     : true,
-                canvasPresent:  !!canvas,
-                canvasWidth:    canvas?.width  || 0,
-                canvasHeight:   canvas?.height || 0,
-                canvasParentWidth:  canvasContainer?.getBoundingClientRect().width  || 0,
+                canvasPresent: !!canvas,
+                canvasWidth: canvas?.width || 0,
+                canvasHeight: canvas?.height || 0,
+                canvasParentWidth: canvasContainer?.getBoundingClientRect().width || 0,
                 canvasParentHeight: canvasContainer?.getBoundingClientRect().height || 0,
-                stateRendererPresent: !!(window.__TEST_STATE__?.renderer),
-                stateScenePresent:    !!(window.__TEST_STATE__?.scene),
-                stateCameraPresent:   !!(window.__TEST_STATE__?.camera),
-                statePointsMeshPresent: !!(window.__TEST_STATE__?.pointsMesh),
-                pointsCount: window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count || 0,
-            };
-        });
+                stateRendererPresent: !!window.__TEST_STATE__?.renderer,
+                stateScenePresent: !!window.__TEST_STATE__?.scene,
+                stateCameraPresent: !!window.__TEST_STATE__?.camera,
+                statePointsMeshPresent: !!window.__TEST_STATE__?.pointsMesh,
+                pointsCount: window.__TEST_STATE__?.pointsMesh?.geometry?.attributes?.position?.count || 0
+            }
+        })
 
-        const screenshotBuffer = await page.screenshot({ type: 'png', fullPage: false });
-        const { width, height, rgba } = parsePngRgba(screenshotBuffer);
+        const screenshotBuffer = await page.screenshot({ type: 'png', fullPage: false })
+        const { width, height, rgba } = parsePngRgba(screenshotBuffer)
 
         // Desktop scene region (non-UI area)
-        const sceneRegion = { left: 0.18, top: 0.12, right: 0.82, bottom: 0.78 };
-        const sceneMetrics = sampleRegion(rgba, width, height, sceneRegion);
+        const sceneRegion = { left: 0.18, top: 0.12, right: 0.82, bottom: 0.78 }
+        const sceneMetrics = sampleRegion(rgba, width, height, sceneRegion)
 
         diagnosticOutput = {
-            url:            targetUrl,
+            url: targetUrl,
             emulatedMotion: 'reduce',
-            viewport:       { width: 1440, height: 900 },
+            viewport: { width: 1440, height: 900 },
             domState,
             sceneRegion,
             screenshotSize: { width, height },
-            sceneLuminance: sceneMetrics,
-        };
+            sceneLuminance: sceneMetrics
+        }
 
         // Diagnostic criteria for washout
-        const isSceneBlank =
-            sceneMetrics.whiteRatio > 0.55 &&
-            sceneMetrics.median >= 230;
+        const isSceneBlank = sceneMetrics.whiteRatio > 0.55 && sceneMetrics.median >= 230
 
-        const isLoadingStuck = domState.loadingOverlayActive;
+        const isLoadingStuck = domState.loadingOverlayActive
 
-        const noCanvas =
-            !domState.canvasPresent || domState.canvasWidth === 0;
+        const noCanvas = !domState.canvasPresent || domState.canvasWidth === 0
 
-        const noRenderer =
-            !domState.stateRendererPresent;
+        const noRenderer = !domState.stateRendererPresent
 
-        const wrongMode =
-            domState.graphicsMode !== 'webgl';
+        const wrongMode = domState.graphicsMode !== 'webgl'
 
         if (isLoadingStuck) {
-            console.error(JSON.stringify({
-                diagnostic: 'reduced-motion-scene-diagnostic',
-                status: 'FAIL',
-                reason: 'loading-overlay-stuck-in-reduced-motion',
-                ...diagnosticOutput,
-            }, null, 2));
-            await browser.close();
-            server.close();
-            process.exit(1);
+            console.error(
+                JSON.stringify(
+                    {
+                        diagnostic: 'reduced-motion-scene-diagnostic',
+                        status: 'FAIL',
+                        reason: 'loading-overlay-stuck-in-reduced-motion',
+                        ...diagnosticOutput
+                    },
+                    null,
+                    2
+                )
+            )
+            await browser.close()
+            server.close()
+            process.exit(1)
         }
 
         if (noCanvas) {
-            console.error(JSON.stringify({
-                diagnostic: 'reduced-motion-scene-diagnostic',
-                status: 'FAIL',
-                reason: 'canvas-missing',
-                ...diagnosticOutput,
-            }, null, 2));
-            await browser.close();
-            server.close();
-            process.exit(1);
+            console.error(
+                JSON.stringify(
+                    {
+                        diagnostic: 'reduced-motion-scene-diagnostic',
+                        status: 'FAIL',
+                        reason: 'canvas-missing',
+                        ...diagnosticOutput
+                    },
+                    null,
+                    2
+                )
+            )
+            await browser.close()
+            server.close()
+            process.exit(1)
         }
 
         if (noRenderer) {
-            console.error(JSON.stringify({
-                diagnostic: 'reduced-motion-scene-diagnostic',
-                status: 'FAIL',
-                reason: 'renderer-not-initialized',
-                ...diagnosticOutput,
-            }, null, 2));
-            await browser.close();
-            server.close();
-            process.exit(1);
+            console.error(
+                JSON.stringify(
+                    {
+                        diagnostic: 'reduced-motion-scene-diagnostic',
+                        status: 'FAIL',
+                        reason: 'renderer-not-initialized',
+                        ...diagnosticOutput
+                    },
+                    null,
+                    2
+                )
+            )
+            await browser.close()
+            server.close()
+            process.exit(1)
         }
 
         if (wrongMode) {
-            console.error(JSON.stringify({
-                diagnostic: 'reduced-motion-scene-diagnostic',
-                status: 'FAIL',
-                reason: `graphics-mode-is-${domState.graphicsMode}-expected-webgl`,
-                ...diagnosticOutput,
-            }, null, 2));
-            await browser.close();
-            server.close();
-            process.exit(1);
+            console.error(
+                JSON.stringify(
+                    {
+                        diagnostic: 'reduced-motion-scene-diagnostic',
+                        status: 'FAIL',
+                        reason: `graphics-mode-is-${domState.graphicsMode}-expected-webgl`,
+                        ...diagnosticOutput
+                    },
+                    null,
+                    2
+                )
+            )
+            await browser.close()
+            server.close()
+            process.exit(1)
         }
 
         if (isSceneBlank) {
-            console.error(JSON.stringify({
-                diagnostic: 'reduced-motion-scene-diagnostic',
-                status: 'FAIL',
-                reason: 'scene-region-is-white-blank-washout-detected',
-                sceneLuminance: sceneMetrics,
-                domState,
-                interpretation: {
-                    whiteRatio_threshold: 0.55,
-                    median_threshold: 230,
-                    whiteRatio_actual: sceneMetrics.whiteRatio,
-                    median_actual: sceneMetrics.median,
-                    likelyCause: sceneMetrics.whiteRatio > 0.8
-                        ? 'loading-overlay-never-cleared'
-                        : sceneMetrics.median > 240
-                            ? 'canvas-background-only-rendering'
-                            : 'scene-geometry-not-rendered-in-reduced-motion',
-                },
-                ...diagnosticOutput,
-            }, null, 2));
-            await browser.close();
-            server.close();
-            process.exit(1);
+            console.error(
+                JSON.stringify(
+                    {
+                        diagnostic: 'reduced-motion-scene-diagnostic',
+                        status: 'FAIL',
+                        reason: 'scene-region-is-white-blank-washout-detected',
+                        sceneLuminance: sceneMetrics,
+                        domState,
+                        interpretation: {
+                            whiteRatio_threshold: 0.55,
+                            median_threshold: 230,
+                            whiteRatio_actual: sceneMetrics.whiteRatio,
+                            median_actual: sceneMetrics.median,
+                            likelyCause:
+                                sceneMetrics.whiteRatio > 0.8
+                                    ? 'loading-overlay-never-cleared'
+                                    : sceneMetrics.median > 240
+                                      ? 'canvas-background-only-rendering'
+                                      : 'scene-geometry-not-rendered-in-reduced-motion'
+                        },
+                        ...diagnosticOutput
+                    },
+                    null,
+                    2
+                )
+            )
+            await browser.close()
+            server.close()
+            process.exit(1)
         }
 
         // All checks passed
-        passed = true;
-        console.log('reduced-motion-scene-diagnostic passed');
-        console.log(JSON.stringify({
-            diagnostic: 'reduced-motion-scene-diagnostic',
-            status: 'PASS',
-            sceneLuminance: sceneMetrics,
-            domState,
-        }, null, 2));
-
+        passed = true
+        console.log('reduced-motion-scene-diagnostic passed')
+        console.log(
+            JSON.stringify(
+                {
+                    diagnostic: 'reduced-motion-scene-diagnostic',
+                    status: 'PASS',
+                    sceneLuminance: sceneMetrics,
+                    domState
+                },
+                null,
+                2
+            )
+        )
     } catch (err) {
-        console.error(JSON.stringify({
-            diagnostic: 'reduced-motion-scene-diagnostic',
-            status: 'ERROR',
-            fatal: String(err),
-            outputSoFar: diagnosticOutput,
-        }, null, 2));
-        await browser.close();
-        server.close();
-        process.exit(1);
+        console.error(
+            JSON.stringify(
+                {
+                    diagnostic: 'reduced-motion-scene-diagnostic',
+                    status: 'ERROR',
+                    fatal: String(err),
+                    outputSoFar: diagnosticOutput
+                },
+                null,
+                2
+            )
+        )
+        await browser.close()
+        server.close()
+        process.exit(1)
     }
 
-    await browser.close();
-    server.close();
+    await browser.close()
+    server.close()
 
-    if (!passed) process.exit(1);
+    if (!passed) process.exit(1)
 }
 
-run();
+run()

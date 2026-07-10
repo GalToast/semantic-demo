@@ -66,16 +66,13 @@ RewriteRule ^reports/ - [F,L]
     Header set Referrer-Policy "strict-origin-when-cross-origin"
 
     # Content-Security-Policy
-    # Designed for the legacy shell (vector-explorer-polished.html):
-    #   script-src: 'self' for dist/bundle.js + worker initiator;
-    #              cdn.jsdelivr.net for three.js modules via importmap.
-    #              The inline importmap is allowed by exact sha256 hash.
-    #              No 'unsafe-inline' needed.
-    #   style-src:  'unsafe-inline' required for SVG style="..." attributes
-    #               and JS element.style.* assignments.
-    #   font-src:   fonts.gstatic.com for Google Fonts WOFF2.
-    #   img-src:    data: for inline SVG favicon.
-    #   connect-src: api.open-meteo.com for weather widget (CORS fetch).
-    #   worker-src: js/workers/data-worker.js via new Worker().
-    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://cdn.jsdelivr.net 'sha256-lGEOGKyonii9j2P4RYFKZhnwl8Yl+BS7clpvKExzXrM='; style-src 'self' https://fonts.googleapis.com 'unsafe-inline'; font-src 'self' https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://api.open-meteo.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; object-src 'none';"
+    # Designed for the Vite-built shell (dist/svelte/index.html):
+    #   script-src: 'self' for hashed module assets + https://unpkg.com (Leaflet runtime JS).
+    #   style-src:  'self' + 'unsafe-inline' (inline <style> layer vars) + https://unpkg.com (Leaflet CSS).
+    #   font-src:   'self' (self-hosted woff2 in fonts/; no Google Fonts CDN).
+    #   img-src:    'self' + data: (inline SVG favicon) + https://*.basemaps.cartocdn.com (Leaflet tiles).
+    #   connect-src: 'self' (api.php, data.dat) + https://api.open-meteo.com (weather).
+    #   worker-src: 'self' (data-worker via new Worker(new URL(...))).
+    #   No reranker hosted, so ai.api.nvidia.com is intentionally excluded.
+    Header always set Content-Security-Policy "default-src 'self'; script-src 'self' https://unpkg.com; style-src 'self' 'unsafe-inline' https://unpkg.com; font-src 'self'; img-src 'self' data: https://*.basemaps.cartocdn.com; connect-src 'self' https://api.open-meteo.com; worker-src 'self'; frame-ancestors 'none'; base-uri 'self'; form-action 'self'; manifest-src 'self'; object-src 'none';"
 </IfModule>

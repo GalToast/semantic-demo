@@ -68,7 +68,10 @@ console.log('')
 //     https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
 //   - Leaflet dark tiles load from basemaps.cartocdn.com/dark_all/
 //   - Weather widget fetches https://api.open-meteo.com/v1/forecast
-//   - Reranking API fetches https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking
+//   - Reranking API (https://ai.api.nvidia.com/v1/retrieval/nvidia/reranking) intentionally
+//     EXCLUDED: it is feature-gated in search-engine.ts (off by default via ?rerank=1 /
+//     localStorage flag) and no reranker is currently hosted, so the fetch fails regardless.
+//     Re-add this host to connect-src only if a reranker is deployed AND the feature is enabled.
 //   - Worker script is same-origin (new URL("data-worker-*.js", import.meta.url))
 //   - Fonts are SELF-HOSTED (fonts/*.woff2) — no Google Fonts CDN.
 // Hosts that only appear as doc strings / XML namespaces (svelte.dev/e/*,
@@ -110,7 +113,10 @@ const knownOrigins = {
     'img-src': [
         { origin: "'self'", source: 'Same-origin images, self-hosted fonts' },
         { origin: 'data:', source: 'Inline SVG favicon (data:image/svg+xml)' },
-        { origin: 'https://basemaps.cartocdn.com', source: 'Leaflet dark map tiles (basemaps.cartocdn.com/dark_all/)' }
+        {
+            origin: 'https://*.basemaps.cartocdn.com',
+            source: 'Leaflet dark map tiles (https://{s}.basemaps.cartocdn.com/dark_all/ — wildcard covers a/b/c/d subdomains)'
+        }
     ],
     // connect-src origins
     'connect-src': [
@@ -118,10 +124,6 @@ const knownOrigins = {
         {
             origin: 'https://api.open-meteo.com',
             source: 'Weather widget forecast fetch (api.open-meteo.com/v1/forecast)'
-        },
-        {
-            origin: 'https://ai.api.nvidia.com',
-            source: 'NVIDIA reranking API (ai.api.nvidia.com/v1/retrieval/nvidia/reranking)'
         }
     ],
     // worker-src origins
