@@ -90,7 +90,7 @@
         "qa:live-reset": "npx playwright test tests/live-reset-clear-demo-proof.spec.js --browser=chromium --headed",
         "qa:journey": "npx playwright test tests/widget-journey.spec.js --browser=chromium --headed",
         "qa:journey:headless": "npx playwright test tests/widget-journey.spec.js --browser=chromium",
-        "qa:journey:live": "npx playwright test tests/widget-journey.spec.js --browser=chromium --workers=2",
+        "qa:journey:live": "npx playwright test tests/widget-journey.spec.js --browser=chromium --workers=1",
         "qa:live-step-inside": "npx playwright test tests/live-step-inside-url-body-state-sync.spec.js --browser=chromium --headed",
         "qa:live-reset-interaction": "npx playwright test tests/live-ui-reset-interaction.spec.js --browser=chromium --headed",
         "qa:live-semantic-roles": "node --loader ./tests/helpers/ts-resolve-loader.mjs tests/live-semantic-roles-contract.mjs",
