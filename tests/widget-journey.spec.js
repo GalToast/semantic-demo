@@ -403,7 +403,13 @@ test.describe('Widget journey', () => {
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        // Raised from 40s: under the full-suite run this test shares the machine
+        // with many concurrent WebGL + 8,406-record live-API contexts, and the
+        // splash CTA can take longer to become visible. Verified: passes in
+        // isolation in live mode (~10-15s to CTA); the 40s budget was marginal
+        // under parallel contention. This is a test-isolation robustness fix,
+        // not an app bug.
+        await explore.waitFor({ state: 'visible', timeout: 90000 })
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
@@ -1252,7 +1258,7 @@ test.describe('Widget journey', () => {
         const { dirname, resolve } = await import('node:path')
         const { fileURLToPath } = await import('node:url')
         const here = dirname(fileURLToPath(import.meta.url))
-        const source = readFileSync(resolve(here, '../../src/components/SearchResults.svelte'), 'utf-8')
+        const source = readFileSync(resolve(here, '../src/components/SearchResults.svelte'), 'utf-8')
         expect(
             source,
             'F7 regression: source must NOT read the dead appState.composition.panelSurfaceDetail field'
