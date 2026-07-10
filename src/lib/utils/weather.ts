@@ -20,8 +20,11 @@ import {
 const WEATHER_REFRESH_MS: number = 1 * 60 * 1000
 const state = appState as typeof appState & Record<string, unknown>
 const DEFAULT_WEATHER_COORDS = { latitude: 30.3119, longitude: -95.4561 } as const
+// M14 fix: request apparent_temperature (feels-like) from Open-Meteo
+// so WeatherWidget shows a distinct feels-like, not temp≡feels-like.
 const OPEN_METEO_CURRENT_FIELDS: string = [
     'temperature_2m',
+    'apparent_temperature',
     'relative_humidity_2m',
     'weather_code',
     'wind_speed_10m',
@@ -32,6 +35,7 @@ let weatherRefreshTimer: number | null = null
 
 export interface WeatherData {
     temp: number
+    feelsLike: number
     humidity: number | null
     code: number
     description: string
@@ -207,6 +211,7 @@ function buildOpenMeteoPayload(payload: Record<string, unknown>): Record<string,
         current: {
             time: current.time || null,
             temperature_f: current.temperature_2m,
+            apparent_temperature_f: current.apparent_temperature ?? current.temperature_2m,
             humidity: current.relative_humidity_2m,
             weather_code: code,
             description: condition.label,
@@ -228,8 +233,10 @@ function normalizeWeatherPayload(payload: Record<string, unknown>): WeatherData 
     if (!Number.isFinite(temp) || !Number.isFinite(windSpeed) || !Number.isFinite(windDirection)) {
         return null
     }
+    const apparent = Number(current.apparent_temperature_f ?? current.temperature_f ?? temp)
     return {
         temp: Math.round(temp),
+        feelsLike: Number.isFinite(apparent) ? Math.round(apparent) : Math.round(temp),
         humidity: (current.humidity as number) ?? null,
         code: Number(current.weather_code) || 0,
         description: (current.description as string) || 'Current weather',

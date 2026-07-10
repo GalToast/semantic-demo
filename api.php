@@ -180,9 +180,11 @@ if ($action === 'semantic_search') {
 
     $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 18;
     $limit = max(1, min(48, $limit));
+    // M11 fix: honor ?offset= for pagination so page>1 doesn't return page-1 dupes.
+    $offset = isset($_GET['offset']) ? max(0, (int)$_GET['offset']) : 0;
 
     $normalizedQuery = normalizeSemanticSearchQuery($query);
-    $cacheKey = hash('sha256', 'semantic-search-v4|' . $normalizedQuery . '|' . $limit);
+    $cacheKey = hash('sha256', 'semantic-search-v4|' . $normalizedQuery . '|' . $limit . '|' . $offset);
     $cacheFile = rtrim($semanticSearchCacheDir, '/\\') . DIRECTORY_SEPARATOR . $cacheKey . '.json';
     $lockFile = rtrim($semanticSearchCacheDir, '/\\') . DIRECTORY_SEPARATOR . $cacheKey . '.lock';
 
@@ -217,7 +219,7 @@ if ($action === 'semantic_search') {
     $searchServiceHealthy = serviceHealthy($semanticSearchHealthUrl, 1);
     if (!$searchServiceHealthy) {
         $dataset = getSemanticDataset();
-        $fallback = buildLocalSemanticSearchPayload($dataset['points'], $clusterNames, $query, $limit, 'semantic_service_offline');
+        $fallback = buildLocalSemanticSearchPayload($dataset['points'], $clusterNames, $query, $limit, 'semantic_service_offline', $offset);
         $fallback['cached'] = false;
         $fallback['cache_age_seconds'] = null;
         $fallback['cache_source'] = 'local-records';
@@ -234,11 +236,12 @@ if ($action === 'semantic_search') {
         $serviceResponse = postJson('http://127.0.0.1:8020/search', [
             'query' => $query,
             'limit' => $limit,
+            'offset' => $offset,
         ], 8);
 
         if (!$serviceResponse['ok']) {
             $dataset = getSemanticDataset();
-            $fallback = buildLocalSemanticSearchPayload($dataset['points'], $clusterNames, $query, $limit, 'semantic_service_unavailable');
+            $fallback = buildLocalSemanticSearchPayload($dataset['points'], $clusterNames, $query, $limit, 'semantic_service_unavailable', $offset);
             $fallback['cached'] = false;
             $fallback['cache_age_seconds'] = null;
             $fallback['cache_source'] = 'local-records';
@@ -265,7 +268,7 @@ if ($action === 'semantic_search') {
 
         if ((int)$serviceResponse['status'] >= 500 || (($responseBody['ok'] ?? true) === false)) {
             $dataset = getSemanticDataset();
-            $fallback = buildLocalSemanticSearchPayload($dataset['points'], $clusterNames, $query, $limit, 'semantic_service_degraded');
+            $fallback = buildLocalSemanticSearchPayload($dataset['points'], $clusterNames, $query, $limit, 'semantic_service_degraded', $offset);
             $fallback['cached'] = false;
             $fallback['cache_age_seconds'] = null;
             $fallback['cache_source'] = 'local-records';

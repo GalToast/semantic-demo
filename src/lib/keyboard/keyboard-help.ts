@@ -8,7 +8,7 @@
  * until the panel is ported to a Svelte component.
  */
 
-import { startMicroDemo } from '@lib/demo/choreography'
+import { startMicroDemo, cancelMicroDemo } from '@lib/demo/choreography'
 import { showToast } from '@lib/stores/toast.svelte'
 
 // ── Pure utilities (native, no legacy deps) ─────────────────────────────────
@@ -155,24 +155,39 @@ export function initKeyboardShortcutsHint(): void {
             // work but the click handler still closes the panel and tries.
         }
         closePanel()
-        // Listen for 'demo-cancelled' (fires when _startMicroDemo() exhausts
-        // its retry loop or _getDemoNode() returns null). Without this
-        // listener the replay button silently fails and the user has no idea
-        // why nothing happened. The listener auto-removes on fire ({once});
-        // a 10s cleanup setTimeout also removes it if the demo succeeds (so
-        // we don't leak a handler that fires later on an unrelated event).
+        // M15 fix: Replay must NOT stack demos. The legacy 6-phase
+        // micro-demo and the canonical 10-phase have independent guards —
+        // firing both races two camera writers + two veils producing stacked
+        // veils. Replay now: cancel any active micro-demo, dispatch
+        // demo-replay-requested so the canonical DemoChoreography does
+        // store reset + attemptStart after sceneReady (one veil, one writer).
+        // Keep micro-demo fallback for when DemoChoreography hasn't mounted.
         const onCancelled = (): void => {
             showToast(
                 'Replay unavailable',
                 'Search for a business type above, or click any dot to explore connections.'
             )
         }
-        // { once: true } auto-removes the listener; no setTimeout fallback needed.
         document.addEventListener('demo-cancelled', onCancelled, { once: true })
-        // Fire the choreography demo. startMicroDemo() owns the re-entry
-        // guard (W47 fix) and clears the session gate via shouldRunMicroDemo().
-        // It returns silently if guards fail (reduced-motion, no WebGL, etc.).
-        startMicroDemo()
+        try {
+            cancelMicroDemo('replay')
+            // Prefer canonical path via event (M15)
+            const evt = new CustomEvent('demo-replay-requested')
+            document.dispatchEvent(evt)
+            // Legacy fallback: if no listener consumed it after a tick, fire
+            // the old entry point so Help still does something in tests.
+            setTimeout(() => {
+                // If phase still IDLE after event, fallback
+                try {
+                    const phase = (document.getElementById('demo-choreography')?.textContent ?? '').trim()
+                    if (!phase) startMicroDemo()
+                } catch {
+                    startMicroDemo()
+                }
+            }, 500)
+        } catch {
+            startMicroDemo()
+        }
     })
     panel.appendChild(replayBtn)
 

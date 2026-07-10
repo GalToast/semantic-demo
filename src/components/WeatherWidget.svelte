@@ -10,6 +10,7 @@
   import { onMount } from 'svelte';
   import {
     weatherTemperature,
+    weatherFeelsLike,
     weatherLabel,
     weatherIconKey,
     weatherHumidity,
@@ -40,6 +41,7 @@
   let bodyFocusPanelMode = $derived(getBypassAttr('focusPanelMode') ?? '');
 
   let temperature = $derived(weatherTemperature());
+  let feelsLikeVal = $derived(weatherFeelsLike());
   let label = $derived(weatherLabel());
   let iconKey = $derived(weatherIconKey());
   let humidity = $derived(weatherHumidity());
@@ -130,7 +132,7 @@
         </div>
         <div class="weather-detail-row">
           <span class="detail-label">Feels like</span>
-          <span class="detail-value">{temperature}&deg;F</span>
+          <span class="detail-value">{feelsLikeVal}&deg;F</span>
         </div>
         <div class="weather-detail-row">
           <span class="detail-label">Humidity</span>

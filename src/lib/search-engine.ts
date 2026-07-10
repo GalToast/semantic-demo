@@ -25,6 +25,7 @@ import { get } from 'svelte/store'
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
 import { debugWarn } from '@lib/utils/debug'
 import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search-cache'
+import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 import {
     PAGE_SIZE,
@@ -287,9 +288,15 @@ async function _executeSearch(
             }
         }
 
-        // Mock fallback (last resort — only the static-dev path uses this)
+        // Mock fallback (last resort — only the static-dev path uses this).
+        // M10 fix: only fire SEARCH_MOCK_FALLBACK when we genuinely fall back
+        // to the 20-row mock catalog. The 8,406-record local index is real
+        // data and must NOT trip the banner.
         if (results.length === 0 && canUseStaticDevFallback()) {
             results = await performMockSearch(trimmed, signal, offset, limit)
+            if (results.length > 0) {
+                publish(EVENTS.SEARCH_MOCK_FALLBACK, { query: trimmed, count: results.length })
+            }
         }
 
         // Optional rerank

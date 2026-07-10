@@ -120,25 +120,31 @@ function _getDemoNode(): number | null {
 
 // ── Public API ──────────────────────────────────────────────────────────────
 
+// M12: LEGACY 6-phase entry — zero callers since DemoChoreography.svelte
+// replaced it with the 10-phase store (demo.svelte.ts). Kept as a thin
+// forward so the module remains importable but marked deprecated so new
+// code doesn't resurrect the split-brain demo.
+/** @deprecated Use src/lib/stores/demo.svelte.ts (10-phase) — micro-demo is legacy */
 export function initMicroDemo(): void {
+    debugWarn('[demo] initMicroDemo() is deprecated — use DemoChoreography.svelte 10-phase')
     const params = new URLSearchParams(window.location.search)
     const forceDemo = params.get('demo') === 'force'
 
     if (!forceDemo) {
         if (!guardNotSeen()) {
-            debugWarn('[demo] blocked \u2014 already seen')
+            debugWarn('[demo] blocked — already seen')
             return
         }
         if (!guardReducedMotion()) {
-            debugWarn('[demo] blocked \u2014 reduced motion')
+            debugWarn('[demo] blocked — reduced motion')
             return
         }
         if (!guardWebGL()) {
-            debugWarn('[demo] blocked \u2014 no WebGL / software renderer')
+            debugWarn('[demo] blocked — no WebGL / software renderer')
             return
         }
         if (!guardUrlParam()) {
-            debugWarn('[demo] blocked \u2014 nodemo URL param')
+            debugWarn('[demo] blocked — nodemo URL param')
             return
         }
     }
@@ -274,8 +280,11 @@ async function _startMicroDemo(): Promise<void> {
     _releaseStartGuard()
 }
 
+// M13 cross-system: keep micro-demo's own guard in sync with the
+// canonical 10-phase store. Cancel/completion must release BOTH guards.
 export function cancelMicroDemo(reason = 'user-input'): void {
     _cancelChoreographyLegacy(reason)
+    _releaseStartGuard()
     cancelDemo()
 }
 

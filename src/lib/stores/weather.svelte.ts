@@ -33,6 +33,7 @@ export type CanonicalCondition = 'sun' | 'cloud' | 'fog' | 'rain' | 'snow' | 'st
 
 interface CanonicalWeather {
     temp: number
+    feelsLike: number
     humidity: number | null
     code: number
     description: string
@@ -90,7 +91,7 @@ export const weatherData = {
         return readCanonical()?.temp ?? 0
     },
     get feelsLike(): number {
-        return readCanonical()?.temp ?? 0
+        return readCanonical()?.feelsLike ?? readCanonical()?.temp ?? 0
     },
     get condition(): WeatherCondition {
         const c = readCanonical()?.condition

@@ -15,6 +15,7 @@
     shouldRunDemo,
     markDemoCompleted,
     markDemoSessionSkipped,
+    resetDemo,
     DEMO_START_DELAY_MS,
     MAX_START_RETRIES
   } from '@lib/stores/demo.svelte.ts';
@@ -24,6 +25,12 @@
   import { showToastSpec, dismissToast } from '@lib/stores/toast.svelte';
   import { sceneReady } from '@lib/stores/scene-ready.svelte';
   import { debugWarn } from '@lib/utils/debug';
+
+  // M12-M15 demo-cleanup: canonical 10-phase is the sole entry now.
+  // initMicroDemo() (legacy 6-phase) is deprecated (M12). Keyboard-help's
+  // replay dispatches 'demo-replay-requested' consumed here — cancels any
+  // active veil, clears session gate, resets guards, re-runs attemptStart
+  // after sceneReady so veils don't stack (M15) and guard doesn't latch (M13).
 
   interface Props {
     force?: boolean;
@@ -181,7 +188,30 @@
     runDemoSequence();
   }
 
+  // Replay helper: canonical path that prevents stacked veils (M15)
+  function requestReplay(): void {
+    cancelAllDemoTimers()
+    if (isDemoActive()) cancelDemo()
+    try { resetDemo() } catch {}
+    try { sessionStorage.removeItem('moco_mycelium_demo_session_v1') } catch {}
+    eligible = true
+    unmounted = false
+    const replayStart = performance.now()
+    const wait = (): void => {
+      if (unmounted) return
+      if (sceneReady.value) { attemptStart(); return }
+      if (performance.now() - replayStart > SCENE_READY_TIMEOUT_MS) { attemptStart(); return }
+      setTimeout(wait, 200)
+    }
+    setTimeout(wait, 300)
+  }
+
+  let replayListener: ((e: Event) => void) | null = null
+
   onMount(() => {
+    replayListener = () => requestReplay()
+    document.addEventListener('demo-replay-requested', replayListener as EventListener)
+
     if (suppress || (!force && !shouldRunDemo())) {
       eligible = false;
       // W6 audit: Show a fallback onboarding hint when the demo is suppressed.
@@ -268,6 +298,8 @@
     unmounted = true;
     cancelAllDemoTimers();
     interactionAbortController.abort();
+    if (replayListener) document.removeEventListener('demo-replay-requested', replayListener as EventListener)
+    replayListener = null
     if (isDemoActive()) {
       cancelDemo();
     }

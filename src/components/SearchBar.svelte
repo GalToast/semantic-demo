@@ -17,7 +17,6 @@
   import SearchInput from './SearchInput.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import { subscribe, EVENTS } from '@lib/orchestration/event-bus';
-  import { readApiUnreachable } from '@lib/search/mock-search-fallback';
 
   // ── Props ─────────────────────────────────────────────────────────────────────
 
@@ -67,34 +66,30 @@
     }
   });
 
-  // W47-E: dev-only mock-data banner. When the search API fails the engine
-  // falls back to a local mock catalog (`@lib/search/mock-catalog.ts`) and
-  // fires SEARCH_DEGRADED via the event bus. Without this banner a developer
-  // searching in localhost sees the mock results and assumes they're real
-  // data — easy to mistake a 20-business fake catalog for the full 8,406-
-  // point Montgomery County dataset. The banner makes the fallback explicit.
+  // W47-E / M10: dev-only mock-data banner. Shown ONLY when the search
+  // engine genuinely falls back to the 20-business mock catalog
+  // (`@lib/search/mock-catalog.ts`), signaled by SEARCH_MOCK_FALLBACK.
+  // This is distinct from the common API-down case where the engine serves
+  // the real local 8,406-record index — that path must NOT trip the banner
+  // (it would be a misleading false-positive). The banner makes the genuine
+  // mock fallback explicit so a developer doesn't mistake the 20-business
+  // fake for the full dataset.
   //
-  // Previously this polled sessionStorage every 750ms. That was timer
-  // sprawl: a single setInterval running forever just to flip one boolean.
-  // Now we react to SEARCH_DEGRADED (show) / SEARCH_SUCCESS (hide) and
-  // initialize from sessionStorage on mount for the page-reload case.
+  // Previously this polled sessionStorage every 750ms (timer sprawl) and
+  // later keyed off generic api_unreachable flag which fired on ANY failed
+  // API call — including the real local-index fallback. Now event-driven on
+  // SEARCH_MOCK_FALLBACK (show) / SEARCH_SUCCESS (hide).
   let mockBannerVisible = $state(false)
   onMount(() => {
-    // PR-M: use the timestamp-aware reader so an expired bypass flag
-    // doesn't paint the banner after a transient dev-server restart.
-    try {
-      mockBannerVisible = readApiUnreachable() !== null
-    } catch {
-      mockBannerVisible = false
-    }
-    const unsubDegraded = subscribe(EVENTS.SEARCH_DEGRADED, () => {
+    mockBannerVisible = false
+    const unsubMock = subscribe(EVENTS.SEARCH_MOCK_FALLBACK, () => {
       mockBannerVisible = true
     })
     const unsubSuccess = subscribe(EVENTS.SEARCH_SUCCESS, () => {
       mockBannerVisible = false
     })
     return () => {
-      unsubDegraded()
+      unsubMock()
       unsubSuccess()
     }
   })

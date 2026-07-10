@@ -164,6 +164,10 @@ export function cancelDemo(): boolean {
     const phase = appState.demoPhase
     // Mirror the legacy choreography guard: terminal states are already settled.
     if (phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED') return false
+    // M13 fix: mark as cancelled AND release the start guard so a second
+    // startDemo() (e.g., Replay tour) doesn't silently no-op. Previously
+    // only resetDemo() cleared _startGuardClaimed — cancel/complete latched.
+    _startGuardClaimed = false
     demoMirror.update((s) => ({ ...s, phase: 'CANCELLED' }))
     return true
 }
@@ -310,6 +314,9 @@ export function isDemoSuppressedThisSession(): boolean {
 }
 
 export function markDemoCompleted(): void {
+    // M13 fix: release guard on successful completion same as cancel —
+    // otherwise a post-card replay would never start.
+    _startGuardClaimed = false
     setDemoPhase('COMPLETE')
     try {
         localStorage.setItem(

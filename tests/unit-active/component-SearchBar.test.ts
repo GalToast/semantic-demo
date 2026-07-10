@@ -85,32 +85,44 @@ describe('SearchBar component', () => {
         // Source-level regression: the previous implementation used a 750ms
         // setInterval to poll sessionStorage['api_unreachable']. That was
         // timer sprawl — a forever-running interval just to flip one boolean.
-        // Now it reacts to SEARCH_DEGRADED / SEARCH_SUCCESS via the event bus.
+        // W47-E/M10: now reacts to SEARCH_MOCK_FALLBACK (genuine 20-row mock)
+        // / SEARCH_SUCCESS via event bus — SEARCH_DEGRADED (8406 local-index)
+        // does NOT trip the banner.
         const { readFileSync } = await import('fs')
         const { resolve } = await import('path')
         const source = readFileSync(resolve(__dirname, '../../src/components/SearchBar.svelte'), 'utf-8')
         // Strip Svelte comments and JS comments so doc references don't trip the check
         const stripped = source.replace(/<!--[\s\S]*?-->/g, '').replace(/\/\/[^\n]*/g, '')
         expect(stripped).not.toMatch(/setInterval\(/)
-        expect(source).toMatch(/EVENTS\.SEARCH_DEGRADED/)
+        expect(source).toMatch(/EVENTS\.SEARCH_MOCK_FALLBACK/)
         expect(source).toMatch(/EVENTS\.SEARCH_SUCCESS/)
         // Banner copy must remain (this is a refactor, not a removal)
         expect(source).toMatch(/mock-banner/)
         expect(source).toMatch(/Demo data/)
     })
 
-    it('publishing SEARCH_DEGRADED shows the mock-banner, SEARCH_SUCCESS hides it', async () => {
+    it('publishing SEARCH_MOCK_FALLBACK shows the mock-banner, SEARCH_SUCCESS hides it (M10)', async () => {
         const { publish, EVENTS } = await import('../../src/lib/orchestration/event-bus')
         const { container } = render(SearchBar)
-        // After mount the banner should be hidden (no api_unreachable sessionStorage)
         await new Promise((resolve) => setTimeout(resolve, 0))
         expect(container.querySelector('[data-testid="mock-banner"]')).toBeNull()
 
-        publish(EVENTS.SEARCH_DEGRADED, { query: 'coffee' })
+        publish(EVENTS.SEARCH_MOCK_FALLBACK, { query: 'coffee', count: 20 })
         await new Promise((resolve) => setTimeout(resolve, 0))
         expect(container.querySelector('[data-testid="mock-banner"]')).toBeTruthy()
 
         publish(EVENTS.SEARCH_SUCCESS, { query: 'coffee' })
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        expect(container.querySelector('[data-testid="mock-banner"]')).toBeNull()
+    })
+
+    it('publishing SEARCH_DEGRADED does NOT show mock-banner (M10 fix — DEGRADED is 8406 local-index, not mock)', async () => {
+        const { publish, EVENTS } = await import('../../src/lib/orchestration/event-bus')
+        const { container } = render(SearchBar)
+        await new Promise((resolve) => setTimeout(resolve, 0))
+        expect(container.querySelector('[data-testid="mock-banner"]')).toBeNull()
+
+        publish(EVENTS.SEARCH_DEGRADED, { query: 'coffee' })
         await new Promise((resolve) => setTimeout(resolve, 0))
         expect(container.querySelector('[data-testid="mock-banner"]')).toBeNull()
     })
