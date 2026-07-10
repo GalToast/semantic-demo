@@ -38,8 +38,14 @@ import {
     onWindowResize,
     cancelAnimate,
     updateCameraViewportOffset,
-    createPoints
+    createPoints,
+    disposeInteractionVisuals
 } from '@lib/engine/three-engine'
+// M2 (W47): disposeHeroAnimation is not re-exported through the three-engine
+// barrel, so import it directly. disposeInteractionVisuals() also calls it
+// internally, but we call it explicitly to mirror deinit() and cancel the
+// corridor-glow timers deterministically.
+import { disposeHeroAnimation } from '@lib/engine/three-search-animations'
 import { destroyMap } from '@lib/engine/map-state'
 import { createMycelium } from '@lib/engine/thread-manager'
 // Dynamic import: postprocessing is code-split to save ~150-200 kB
@@ -524,10 +530,55 @@ export function destroyEngine(): void {
         w.__THREE_APP__ = null
     }
 
-    // 5. Null out scene/renderer/camera references so reinit starts clean
+    // 4b. Dispose interaction visuals + search hero animation (mirrors the
+    //     now-dead three-engine-core deinit() teardown, W47 M2). Called BEFORE
+    //     the appState null-out below so the THREE objects are still referenced
+    //     while being disposed.
+    try {
+        disposeInteractionVisuals()
+    } catch (error) {
+        debugWarn('[engine/lifecycle] interaction visuals dispose failed:', error)
+    }
+    try {
+        disposeHeroAnimation()
+    } catch (error) {
+        debugWarn('[engine/lifecycle] hero animation dispose failed:', error)
+    }
+
+    // 5. Null out engine THREE-object references so a hot remount never sees
+    //    disposed refs (W47 M1). Mirrors three-engine-core deinit() cleanup but
+    //    targets appState (the Svelte 5 state source of truth). disposeInteractionVisuals()
+    //    already nulled the focus/semantic lens refs; the remainder are asserted
+    //    here for determinism so reinit starts clean.
     appState.scene = null
     appState.renderer = null
     appState.camera = null
+    appState.controls = null
+    appState.pointsMesh = null
+    appState.pointsMaterial = null
+    appState.nodeSporeMesh = null
+    appState.nodeSporeMaterial = null
+    appState.myceliumGroup = null
+    appState.myceliumLines = null
+    appState.myceliumCoreLines = null
+    appState.myceliumWispyLines = null
+    appState.myceliumBridgeLines = null
+    appState.searchCorridorGroup = null
+    appState.focusSemanticLines = null
+    appState.focusAnchorGroup = null
+    appState.focusAnchorRingMesh = null
+    appState.focusAnchorHaloSprite = null
+    appState.focusLens = null
+    appState.focusHalo = null
+    appState.focusCore = null
+    appState.focusMoteGroup = null
+    appState.focusMotes = []
+    appState.focusPetalGroup = null
+    appState.focusPetals = []
+    appState.focusFilaments = null
+    appState.hoverHalo = null
+    appState.anchorBloomLight = null
+    appState.semanticManifold = null
 
     // 6. Set status to idle
     setEngineStatus('idle')
