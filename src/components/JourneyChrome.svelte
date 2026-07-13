@@ -23,6 +23,7 @@
   import { viewport } from '@lib/stores/viewport.svelte.ts';
 
   import { walkThreadNeighbor } from '@lib/journey/thread-settler';
+  import { roleToFilterBucket } from '@lib/journey/role-filter-bucket';
   import { normalizeRelationshipRole, getRelationshipRoleLabel } from '@lib/utils/relationship-roles';
   import { formatThreadSourceLabel } from '@lib/utils/dom-formatters';
   import type { BusinessRecord } from '@lib/types/business';
@@ -261,10 +262,30 @@
   const ROLE_FILTER_OPTIONS: Array<'all' | 'direct' | 'support' | 'civic'> = ['all', 'direct', 'support', 'civic'];
   const currentRoleFilter = $derived(focusStore().pocketRoleFilter ?? 'all');
 
+  // roleToFilterBucket (imported from @lib/journey/role-filter-bucket) collapses
+  // the 26-role enum into the 3 chip buckets, so the filter matches candidates
+  // by bucket rather than by strict role equality (which matched almost nothing
+  // and silently emptied the rail). The raw relationshipRole string is
+  // normalized first (it may arrive cased/aliased).
+
   function applyRoleFilter(candidates: NormalizedCandidate[]): NormalizedCandidate[] {
     if (currentRoleFilter === 'all') return candidates;
-    return candidates.filter((c) => c.relationshipRole === currentRoleFilter);
+    return candidates.filter(
+      (c) => roleToFilterBucket(normalizeRelationshipRole(c.relationshipRole)) === currentRoleFilter
+    );
   }
+
+  // Per-bucket counts so each chip can show how many neighbors it would
+  // surface (and signal an empty bucket before the user commits to it).
+  const roleFilterCounts = $derived.by(() => {
+    const counts: Record<'direct' | 'support' | 'civic', number> = { direct: 0, support: 0, civic: 0 };
+    const focusIdx = currentFocusedIndex;
+    for (const c of currentThreadCandidates) {
+      if (!Number.isFinite(c.index) || c.index === focusIdx) continue;
+      counts[roleToFilterBucket(normalizeRelationshipRole(c.relationshipRole))]++;
+    }
+    return counts;
+  });
 
   const filteredCandidates = $derived.by(() => {
     const candidates = currentThreadCandidates;
@@ -396,15 +417,19 @@
         {#each ROLE_FILTER_OPTIONS as filter}
           {@const label = filter === 'all' ? 'All' : getRelationshipRoleLabel(filter, 'rail')}
           {@const active = currentRoleFilter === filter}
+          {@const count = filter === 'all' ? null : roleFilterCounts[filter]}
+          {@const isEmpty = count !== null && count === 0}
           <button
             class="focus-role-filter-chip"
             class:active
+            class:empty={isEmpty}
             type="button"
             data-role-filter={filter}
             aria-pressed={active}
+            aria-label={count !== null ? `${label} (${count})` : label}
             onclick={() => selectRoleFilter(filter)}
           >
-            {label}
+            {label}{#if count !== null}<span class="filter-count" aria-hidden="true"> {count}</span>{/if}
           </button>
         {/each}
       </div>
