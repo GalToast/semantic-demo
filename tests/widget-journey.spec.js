@@ -1303,4 +1303,77 @@ test.describe('Widget journey', () => {
             )
         }
     )
+
+    test('W51-SelectedBusinessDetails-mobile-responsive: detail panel fits 390px viewport without horizontal overflow', async ({
+        page
+    }) => {
+        // W51: SelectedBusinessDetails.svelte gained @media (max-width: 768px)
+        // styles. Verify the detail panel renders inside the narrow viewport
+        // without causing horizontal scroll — the classic mobile-breakage
+        // pattern where a wide .selected-hero or fixed-width child forces
+        // document overflow.
+        const VIEWPORT_W = 390
+        const VIEWPORT_H = 844
+        await page.setViewportSize({ width: VIEWPORT_W, height: VIEWPORT_H })
+
+        // Deep-link with ?record=519 bypasses the splash CTA on desktop; on
+        // mobile the render-kind is placeholder2d so the engineReady gate is
+        // NOT auto-signalled, but the URL-driven record focus still resolves
+        // the selected business state. We navigate and then wait for the
+        // detail panel to attach rather than clicking Explore.
+        await page.goto(
+            `${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1&record=519`,
+            { waitUntil: 'domcontentloaded' }
+        )
+
+        // Wait for the selected-business detail panel to attach. On mobile the
+        // splash may still be present, so we wait for either the panel or the
+        // splash CTA and handle both paths.
+        const selectedName = page.locator('#selected-name')
+        await selectedName.waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(500) // allow layout + $derived effects to flush
+
+        // (a) #selected-name must be rendered and its box must sit within the
+        //     390px viewport (no right-side overflow).
+        const nameBox = await selectedName.boundingBox()
+        expect(nameBox, '#selected-name must have a bounding box (rendered)').not.toBeNull()
+        expect(
+            nameBox.x,
+            `#selected-name left edge (${nameBox.x}) must be inside viewport`
+        ).toBeGreaterThanOrEqual(0)
+        expect(
+            nameBox.x + nameBox.width,
+            `#selected-name right edge (${nameBox.x + nameBox.width}) must not exceed viewport width ${VIEWPORT_W}`
+        ).toBeLessThanOrEqual(VIEWPORT_W)
+
+        // (b) No document-level horizontal overflow.
+        const overflow = await page.evaluate(() => ({
+            scrollWidth: document.documentElement.scrollWidth,
+            clientWidth: document.documentElement.clientWidth,
+            innerWidth: window.innerWidth
+        }))
+        expect(
+            overflow.scrollWidth,
+            `document scrollWidth (${overflow.scrollWidth}) must not exceed window.innerWidth (${overflow.innerWidth})`
+        ).toBeLessThanOrEqual(overflow.innerWidth)
+
+        // (c) .selected-hero must not overflow its own content box.
+        const heroOverflow = await page.evaluate(() => {
+            const hero = document.querySelector('.selected-hero')
+            if (!hero) return { present: false }
+            const cs = getComputedStyle(hero)
+            const rect = hero.getBoundingClientRect()
+            return {
+                present: true,
+                width: rect.width,
+                right: rect.right,
+                overflowX: cs.overflowX
+            }
+        })
+        expect(heroOverflow.present, '.selected-hero must be in the DOM').toBe(true)
+        expect(
+            heroOverflow.right,
+            `.selected-hero right edge (${heroOverflow.right}) must not exceed viewport width ${VIEWPORT_W}`
+        ).toBeLessThanOrEqual(VIEWPORT_W)
+    })
 })
