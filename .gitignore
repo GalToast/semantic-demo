@@ -111,7 +111,12 @@ bun.lock
 # Temporary directories at root
 None/
 
-# Root data duplication — canonical copies live in src/
+# Root data duplication — canonical copies live in public/data/ (byte-identical duplicates)
+# Anchored to root only (/...) so public/data/*.dat stays tracked.
+/semantic_threads.dat
+/semantic_threads_ui.dat
+
+# Root data duplication — root-level data.dat (canonical elsewhere)
 data.dat
 data.dat.gz
 
