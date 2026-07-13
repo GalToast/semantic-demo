@@ -238,8 +238,8 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
     const regionExists = await page.evaluate(() => {
       const main = document.getElementById('main-content');
       if (!main) return { found: false, reason: 'no main element' };
-      const region = main.querySelector('section[aria-label="Semantic overlay layer"]');
-      if (!region) return { found: false, reason: 'no section[aria-label="Semantic overlay layer"]' };
+      const region = main.querySelector('section[aria-label="Overlay layer"]');
+      if (!region) return { found: false, reason: 'no section[aria-label="Overlay layer"]' };
       // Verify it's inside main and has the correct ARIA attributes
       const isInsideMain = main.contains(region);
       const ariaLabel = region.getAttribute('aria-label');
@@ -251,9 +251,9 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
       };
     });
 
-    expect(regionExists.found, 'section[aria-label="Semantic overlay layer"] must exist in main').toBe(true);
+    expect(regionExists.found, 'section[aria-label="Overlay layer"] must exist in main').toBe(true);
     expect(regionExists.isInsideMain, 'region landmark must be inside <main>').toBe(true);
-    expect(regionExists.ariaLabel, 'region landmark must have aria-label').toBe('Semantic overlay layer');
+    expect(regionExists.ariaLabel, 'region landmark must have aria-label').toBe('Overlay layer');
   });
 
   test('a11y color contrast: focus pocket secondary text meets WCAG AA 4.5:1', async ({ page }) => {

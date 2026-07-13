@@ -197,7 +197,7 @@
       Semantic Explorer
       <span class="placeholder-badge">Preview</span>
     </h1>
-    <p class="placeholder-subtitle">Preview · Montgomery County business mycelium</p>
+    <p class="placeholder-subtitle">Preview · Montgomery County businesses</p>
 
     <button
       class="placeholder-cta"

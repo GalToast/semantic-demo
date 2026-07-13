@@ -416,7 +416,7 @@
     eliminates the 4-state violation (idle-overview, search-mode,
     focus-search, focus-programmatic).
   -->
-  <section aria-label="Semantic overlay layer">
+  <section aria-label="Overlay layer">
     <!-- Layer 30: Semantic overlays (manifold, lens) -->
     <SemanticOverlay visible={true} />
   </section>

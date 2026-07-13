@@ -153,8 +153,7 @@
           lastOverlayLogAt = now;
           debugWarn('Canvas: Overlay fallback timeout — hiding loading overlay');
         }
-        overlayVisible = false;
-        overlayTimeout = undefined;
+        hideOverlay();
       }
     }, 5000);
 
@@ -312,7 +311,7 @@
       width={$viewport.width * $viewport.dpr}
       height={$viewport.height * $viewport.dpr}
       role="application"
-      aria-label="3D semantic business explorer"
+      aria-label="3D business network"
       aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Plus Minus"
       tabindex={interactive ? 0 : -1}
     ></canvas>
@@ -321,7 +320,7 @@
   <!-- Loading overlay: visible during engine init, hides on scene-ready or 5s timeout -->
   {#if overlayVisible}
     <div class="canvas-loading-overlay" aria-live="polite">
-      <span class="loading-pulse">Loading mycelium…</span>
+      <span class="loading-pulse">Loading the map…</span>
     </div>
   {/if}
 

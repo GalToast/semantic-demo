@@ -44,7 +44,7 @@ describe('A2-7: Canvas aria-keyshortcuts', () => {
   });
 
   it('canvas retains aria-label for accessible name', () => {
-    expect(canvasSrc).toMatch(/aria-label="3D semantic business explorer"/);
+    expect(canvasSrc).toMatch(/aria-label="3D business network"/);
   });
 
   it('aria-keyshortcuts declares all navigation and zoom keys', () => {
