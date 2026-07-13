@@ -17,12 +17,15 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/journey/journey.ts`
 - `src/lib/journey/compass-state.ts`
 - `src/lib/journey/selected-card.ts`
-- `src/lib/journey/thread-inspector.ts`
+- `src/lib/journey/thread-inspector-state.ts` — ThreadInspector state owner (the former `thread-inspector.ts` was split into `-state` / `-adapter` / `-render` / `-webgl`).
+- `src/lib/journey/thread-inspector-adapter.ts`
+- `src/lib/journey/thread-inspector-render.ts`
+- `src/lib/journey/thread-inspector-webgl.ts`
 
 ## Focus
 
 - `src/lib/focus/pocket.ts`
-- `src/lib/focus/geometry.ts`
+- `src/lib/journey/focus-pocket-geometry.ts` — focus constellation geometry (moved out of `src/lib/focus/`).
 - `src/lib/focus/stage-renderer.ts`
 
 ## Orchestration
@@ -39,12 +42,12 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/state/state-types.ts`
 - `src/lib/data-store.ts`
 - `src/lib/data-loader.ts`
-- `src/lib/semantic-threads.ts`
+- `src/lib/engine/semantic-threads.ts`
 - `src/lib/search-engine.ts`
 
 ## Search
 
-- `src/lib/search/index.ts`
+- `src/lib/search-engine.ts` — search engine entry (init/performSearch). Note: the search subdir is `src/lib/search/` (tokenizer/scoring/orchestration), not `src/lib/search/index.ts`.
 - `src/lib/search/tokenizer.ts`
 - `src/lib/search/scoring.ts`
 - `src/lib/search/orchestration.ts`

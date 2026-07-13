@@ -85,25 +85,23 @@ describe('installErrorHandlers — window error capture', () => {
         expect(errorStore.items[0].kind).toBe('error')
     })
 
-    it("unhandledrejection event is captured with kind='rejection'", (done) => {
-        // PromiseRejectionEvent constructor is not always available in jsdom,
-        // so we build it manually with the expected shape. We attach a Promise
-        // but attach a .catch() to suppress jsdom's unhandled-rejection noise —
-        // the handler under test will still see the .reason field.
+    it("unhandledrejection event is captured with kind='rejection'", () => {
+        // dispatchEvent invokes listeners synchronously, so assert immediately.
+        // The original 50ms setTimeout + done() was the flake vector under
+        // vitest 4's timer/teardown ordering; the handler runs synchronously.
+        // Clear first as a belt-and-suspenders guard against any cross-test
+        // ErrorStore leakage (module-level singleton).
+        errorStore.clear()
         const event = new Event('unhandledrejection') as Event & PromiseRejectionEvent
         ;(event as unknown as Record<string, unknown>).reason = 'something broke'
         const promise = Promise.reject('something broke')
         promise.catch(() => undefined) // suppress jsdom unhandled-rejection report
         ;(event as unknown as Record<string, unknown>).promise = promise
         window.dispatchEvent(event)
-        // The handler runs synchronously, but let's be safe:
-        setTimeout(() => {
-            expect(errorStore.items.length).toBe(1)
-            expect(errorStore.items[0].source).toBe('unhandledrejection')
-            expect(errorStore.items[0].kind).toBe('rejection')
-            expect(errorStore.items[0].message).toBe('something broke')
-            ;(done as unknown as () => void)()
-        }, 50)
+        expect(errorStore.items.length).toBe(1)
+        expect(errorStore.items[0].source).toBe('unhandledrejection')
+        expect(errorStore.items[0].kind).toBe('rejection')
+        expect(errorStore.items[0].message).toBe('something broke')
     })
 
     it('APP_ERROR_CAUGHT is published with correct payload shape', () => {

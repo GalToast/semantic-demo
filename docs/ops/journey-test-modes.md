@@ -7,10 +7,10 @@ out of AGENTS.md to avoid bloat).
 
 ## Two modes
 
-| Mode | How to get it | Server | Data | Stability |
-|------|---------------|--------|------|-----------|
-| **Mock (standalone) — the gate** | `qa:journey:headless` with PHP **down** | Playwright auto-starts `python -m http.server 8795` | 20-record mock catalog | **Deterministic green** |
-| **Live** | `qa:journey:live` with the **Caddy** dev server up on :8795 | Caddy + php-cgi (FastCGI) → real API | real 8,406-record API | **Stable via `@live` subset** (full suite may abort — see below) |
+| Mode                             | How to get it                                               | Server                                              | Data                   | Stability                                                        |
+| -------------------------------- | ----------------------------------------------------------- | --------------------------------------------------- | ---------------------- | ---------------------------------------------------------------- |
+| **Mock (standalone) — the gate** | `qa:journey:headless` with PHP **down**                     | Playwright auto-starts `python -m http.server 8795` | 20-record mock catalog | **Deterministic green**                                          |
+| **Live**                         | `qa:journey:live` with the **Caddy** dev server up on :8795 | Caddy + php-cgi (FastCGI) → real API                | real 8,406-record API  | **Stable via `@live` subset** (full suite may abort — see below) |
 
 ## It already runs serial
 

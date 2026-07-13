@@ -391,69 +391,73 @@ test.describe('Widget journey', () => {
         }
     })
 
-    test('5k. Focus card shows friendly role label "Business view" after selecting a node (UX-2 de-jargon)', { tag: '@live' }, async ({
-        page
-    }) => {
-        // UX-2: the FocusCard role label was changed from internal-data jargon
-        // "Field Node" to "Business view" (and "Search Match" to "Search result").
-        // This test exercises the real DOM after clicking a node.
-        // NOTE: the badge may be visually hidden by the info-panel CSS, but its
-        // textContent is still deterministically "Business view" after focus.
-        await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+    test(
+        '5k. Focus card shows friendly role label "Business view" after selecting a node (UX-2 de-jargon)',
+        { tag: '@live' },
+        async ({ page }) => {
+            // UX-2: the FocusCard role label was changed from internal-data jargon
+            // "Field Node" to "Business view" (and "Search Match" to "Search result").
+            // This test exercises the real DOM after clicking a node.
+            // NOTE: the badge may be visually hidden by the info-panel CSS, but its
+            // textContent is still deterministically "Business view" after focus.
+            await page.setViewportSize({ width: 1440, height: 900 })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        // Raised from 40s: under the full-suite run this test shares the machine
-        // with many concurrent WebGL + 8,406-record live-API contexts, and the
-        // splash CTA can take longer to become visible. Verified: passes in
-        // isolation in live mode (~10-15s to CTA); the 40s budget was marginal
-        // under parallel contention. This is a test-isolation robustness fix,
-        // not an app bug.
-        await explore.waitFor({ state: 'visible', timeout: 90000 })
-        await explore.click()
+            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+            // Raised from 40s: under the full-suite run this test shares the machine
+            // with many concurrent WebGL + 8,406-record live-API contexts, and the
+            // splash CTA can take longer to become visible. Verified: passes in
+            // isolation in live mode (~10-15s to CTA); the 40s budget was marginal
+            // under parallel contention. This is a test-isolation robustness fix,
+            // not an app bug.
+            await explore.waitFor({ state: 'visible', timeout: 90000 })
+            await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-        await page.waitForTimeout(1200)
+            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+                timeout: 15000
+            })
+            await page.waitForTimeout(1200)
 
-        // Dismiss first-visit help dialog if present.
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // Click the first data point to enter focus mode (same idiom as 5g/5h).
-        await page.evaluate(() => {
-            const actions = window.__navActions__
-            const points = window.__APP_STATE__?.points
-            if (!actions || typeof actions.focusOnNode !== 'function') {
-                throw new Error('__navActions__.focusOnNode is not exposed')
+            // Dismiss first-visit help dialog if present.
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+                await page.waitForTimeout(200)
             }
-            if (!points || points.length === 0) throw new Error('no points available')
-            const ok = actions.focusOnNode(0)
-            if (!ok) throw new Error('focusOnNode(0) returned falsy')
-        })
 
-        // Wait for the badge text to update (it may be hidden by CSS but still
-        // in the DOM — we validate the content, not presentation).
-        await page.waitForFunction(
-            () => {
-                const el = document.querySelector('#selected-role-badge')
-                return !!el && el.textContent?.trim() === 'Business view'
-            },
-            null,
-            { timeout: 10000 }
-        )
+            // Click the first data point to enter focus mode (same idiom as 5g/5h).
+            await page.evaluate(() => {
+                const actions = window.__navActions__
+                const points = window.__APP_STATE__?.points
+                if (!actions || typeof actions.focusOnNode !== 'function') {
+                    throw new Error('__navActions__.focusOnNode is not exposed')
+                }
+                if (!points || points.length === 0) throw new Error('no points available')
+                const ok = actions.focusOnNode(0)
+                if (!ok) throw new Error('focusOnNode(0) returned falsy')
+            })
 
-        // Also assert no stale "Field Node" string remains anywhere in the
-        // rendered focus card.
-        const cardHtml = await page.evaluate(() => {
-            const card = document.querySelector('#selected-card, .focus-card')
-            return card?.outerHTML ?? ''
-        })
-        expect(cardHtml, 'focus card must not contain the old jargon "Field Node"').not.toContain('Field Node')
-    })
+            // Wait for the badge text to update (it may be hidden by CSS but still
+            // in the DOM — we validate the content, not presentation).
+            await page.waitForFunction(
+                () => {
+                    const el = document.querySelector('#selected-role-badge')
+                    return !!el && el.textContent?.trim() === 'Business view'
+                },
+                null,
+                { timeout: 10000 }
+            )
+
+            // Also assert no stale "Field Node" string remains anywhere in the
+            // rendered focus card.
+            const cardHtml = await page.evaluate(() => {
+                const card = document.querySelector('#selected-card, .focus-card')
+                return card?.outerHTML ?? ''
+            })
+            expect(cardHtml, 'focus card must not contain the old jargon "Field Node"').not.toContain('Field Node')
+        }
+    )
 
     test('W50-A11y: focus moves to #search-input on mobile after splash dismiss', async ({ page }) => {
         // Regression: App.svelte's post-engineReady focus effect was gated on
@@ -779,92 +783,96 @@ test.describe('Widget journey', () => {
         }
     })
 
-    test('W51-demo-auto-cancel: user interaction during auto-demo dismisses the choreography', { tag: '@live' }, async ({ page }) => {
-        // W51 audit #4 (M3). The 10-phase auto-demo runs for ~41 seconds
-        // and ends with a "Now explore your way" caption that would normally
-        // linger for 3 more seconds. If the user clicks a 3D dot during
-        // the demo, markInteraction() should call cancelDemo() so the
-        // caption clears immediately.
-        //
-        // ?demo=force bypasses the demo-session/eligibility guards so the
-        // choreography starts immediately after the splash dismisses.
-        await page.setViewportSize({ width: 1440, height: 900 })
-        // Clear any sessionStorage left over from previous tests (the demo
-        // session flag persists across tests in the same browser context).
-        await page.context().clearCookies()
-        await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' })
-        await page.evaluate(() => {
-            try {
-                sessionStorage.clear()
-            } catch {
-                // ignore
+    test(
+        'W51-demo-auto-cancel: user interaction during auto-demo dismisses the choreography',
+        { tag: '@live' },
+        async ({ page }) => {
+            // W51 audit #4 (M3). The 10-phase auto-demo runs for ~41 seconds
+            // and ends with a "Now explore your way" caption that would normally
+            // linger for 3 more seconds. If the user clicks a 3D dot during
+            // the demo, markInteraction() should call cancelDemo() so the
+            // caption clears immediately.
+            //
+            // ?demo=force bypasses the demo-session/eligibility guards so the
+            // choreography starts immediately after the splash dismisses.
+            await page.setViewportSize({ width: 1440, height: 900 })
+            // Clear any sessionStorage left over from previous tests (the demo
+            // session flag persists across tests in the same browser context).
+            await page.context().clearCookies()
+            await page.goto(`${BASE_URL}/`, { waitUntil: 'domcontentloaded' })
+            await page.evaluate(() => {
+                try {
+                    sessionStorage.clear()
+                } catch {
+                    // ignore
+                }
+                try {
+                    localStorage.clear()
+                } catch {
+                    // ignore
+                }
+            })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?demo=force`, { waitUntil: 'domcontentloaded' })
+
+            // Get past the splash
+            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.click()
+
+            // Wait for the demo choreography box to appear
+            const demo = page.locator('#demo-choreography')
+            await demo.waitFor({ state: 'visible', timeout: 15000 })
+
+            // The help dialog auto-opens on first visit (W52-UX) once the 3D scene
+            // is ready. Dismiss it so it doesn't intercept the click on the demo's
+            // dismiss button below.
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 3000 })
             }
-            try {
-                localStorage.clear()
-            } catch {
-                // ignore
-            }
-        })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?demo=force`, { waitUntil: 'domcontentloaded' })
 
-        // Get past the splash
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
-        await explore.click()
+            // Wait for the first demo phase to render — confirms the interaction
+            // listeners were attached (they're added in onMount before attemptStart
+            // schedules the first transition).
+            await page.waitForFunction(
+                () => {
+                    const el = document.querySelector('#demo-choreography')
+                    return el && el.querySelector('p')?.textContent && el.querySelector('p').textContent.length > 0
+                },
+                null,
+                { timeout: 5000 }
+            )
 
-        // Wait for the demo choreography box to appear
-        const demo = page.locator('#demo-choreography')
-        await demo.waitFor({ state: 'visible', timeout: 15000 })
+            // Wait for the interaction listeners to be definitely attached. The
+            // demo's onMount schedules `attachInteractionListeners()` synchronously
+            // before scheduling the first transition, but Svelte 5 hydration can
+            // delay this by a tick. Give it a beat before we click.
+            await page.waitForTimeout(800)
 
-        // The help dialog auto-opens on first visit (W52-UX) once the 3D scene
-        // is ready. Dismiss it so it doesn't intercept the click on the demo's
-        // dismiss button below.
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 3000 })
-        }
-
-        // Wait for the first demo phase to render — confirms the interaction
-        // listeners were attached (they're added in onMount before attemptStart
-        // schedules the first transition).
-        await page.waitForFunction(
-            () => {
+            // Verify the choreography box is rendered (markInteraction is wired
+            // up, sceneReady signal may take a moment to fire).
+            const beforePhase = await page.evaluate(() => {
                 const el = document.querySelector('#demo-choreography')
-                return el && el.querySelector('p')?.textContent && el.querySelector('p').textContent.length > 0
-            },
-            null,
-            { timeout: 5000 }
-        )
+                return {
+                    exists: !!el,
+                    text: el?.querySelector('p')?.textContent
+                }
+            })
+            expect(beforePhase.exists, 'demo should still be visible before interaction').toBe(true)
 
-        // Wait for the interaction listeners to be definitely attached. The
-        // demo's onMount schedules `attachInteractionListeners()` synchronously
-        // before scheduling the first transition, but Svelte 5 hydration can
-        // delay this by a tick. Give it a beat before we click.
-        await page.waitForTimeout(800)
+            // Click the demo's dismiss × button — this exercises the same
+            // user-interaction pattern markInteraction() listens for (a real
+            // click event). The dismiss button is also the primary user gesture
+            // for "I'm done watching, let me explore." Verifying the dismiss
+            // works confirms the demo's reactive state machine is wired correctly.
+            const dismissBtn = page.locator('#demo-choreography .demo-dismiss')
+            await dismissBtn.click({ timeout: 5000 })
 
-        // Verify the choreography box is rendered (markInteraction is wired
-        // up, sceneReady signal may take a moment to fire).
-        const beforePhase = await page.evaluate(() => {
-            const el = document.querySelector('#demo-choreography')
-            return {
-                exists: !!el,
-                text: el?.querySelector('p')?.textContent
-            }
-        })
-        expect(beforePhase.exists, 'demo should still be visible before interaction').toBe(true)
-
-        // Click the demo's dismiss × button — this exercises the same
-        // user-interaction pattern markInteraction() listens for (a real
-        // click event). The dismiss button is also the primary user gesture
-        // for "I'm done watching, let me explore." Verifying the dismiss
-        // works confirms the demo's reactive state machine is wired correctly.
-        const dismissBtn = page.locator('#demo-choreography .demo-dismiss')
-        await dismissBtn.click({ timeout: 5000 })
-
-        // The choreography box should disappear within a couple of frames
-        await demo.waitFor({ state: 'detached', timeout: 5000 })
-    })
+            // The choreography box should disappear within a couple of frames
+            await demo.waitFor({ state: 'detached', timeout: 5000 })
+        }
+    )
 
     test('W51-category-legend-default-open: legend panel visible on desktop first paint', async ({ page }) => {
         // W51 audit #5. On desktop viewport, the category legend must be
@@ -928,87 +936,93 @@ test.describe('Widget journey', () => {
         expect(result.inViewport, `legend x=${result.x} width=${result.width} should be in viewport`).toBe(true)
     })
 
-    test('W52-a11y: no duplicate focus id, real buttons in focus pocket, friendly nearby-business label (bugsweep W1)', { tag: '@live' }, async ({
+    test(
+        'W52-a11y: no duplicate focus id, real buttons in focus pocket, friendly nearby-business label (bugsweep W1)',
+        { tag: '@live' },
+        async ({ page }) => {
+            // Regression guard for the bugsweep-fixes-2026-07-07 Worker 1 Svelte
+            // deliverable (f0142e3b). Covers F1-1 (duplicate DOM id), F1-2 (real
+            // <button> instead of <li role="button">), F1-5 (mobile z-index), and
+            // F1-8 (friendly "nearby business" aria-label).
+            await page.setViewportSize({ width: 1440, height: 900 })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.click()
+
+            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+                timeout: 15000
+            })
+            await page.waitForTimeout(1000)
+
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+                await page.waitForTimeout(200)
+            }
+
+            // Populate the focus pocket + focus card via the nav-actions bridge.
+            const ok = await page.evaluate(() => {
+                const actions = window.__navActions__
+                return actions && typeof actions.focusOnNode === 'function' ? actions.focusOnNode(0) : false
+            })
+            expect(ok, 'focusOnNode(0) must succeed').toBe(true)
+
+            await page.waitForSelector('#focus-card-selected', { timeout: 15000 })
+            await page.waitForSelector('#focus-pocket-a11y .focus-pocket-item-btn', { timeout: 15000 })
+
+            // ── F1-1: exactly one #selected-card id (InfoPanel); FocusCard moved to #focus-card-selected ──
+            const idCounts = await page.evaluate(() => ({
+                selectedCard: document.querySelectorAll('[id="selected-card"]').length,
+                focusCardSelected: document.querySelectorAll('[id="focus-card-selected"]').length
+            }))
+            expect(idCounts.selectedCard, 'exactly one #selected-card id must remain (owned by InfoPanel)').toBe(1)
+            expect(idCounts.focusCardSelected, 'FocusCard must expose #focus-card-selected (F1-1)').toBe(1)
+
+            // ── F1-2: real <button>, no <li role="button"> anti-pattern ──
+            const pocket = await page.evaluate(() => ({
+                liButton: document.querySelectorAll('#focus-pocket-a11y li[role="button"]').length,
+                realButtons: document.querySelectorAll('#focus-pocket-a11y .focus-pocket-item-btn').length
+            }))
+            expect(pocket.liButton, 'F1-2: no <li role="button"> anti-pattern may remain').toBe(0)
+            expect(pocket.realButtons, 'F1-2: focus pocket must use real <button> elements').toBeGreaterThan(0)
+
+            // ── F1-8: friendly "nearby business" copy, no "focus pocket" jargon ──
+            const toggleLabel = await page.locator('#focus-pocket-list-toggle').getAttribute('aria-label')
+            expect(toggleLabel, 'F1-8: toggle aria-label must use friendly "nearby business" copy').toMatch(
+                /nearby business/i
+            )
+            expect(toggleLabel?.toLowerCase(), 'F1-8: no "focus pocket" jargon').not.toContain('focus pocket')
+
+            // ── F1-5: on mobile the focus card must sit BELOW the a11y toggle (var(--z-panels)=80) ──
+            await page.setViewportSize({ width: 375, height: 812 })
+            await page.waitForTimeout(400)
+            const layering = await page.evaluate(() => {
+                const cards = Array.from(document.querySelectorAll('.focus-card'))
+                const visible = cards.filter((c) => {
+                    const r = c.getBoundingClientRect()
+                    const cs = getComputedStyle(c)
+                    return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'
+                })
+                const card = visible[0] || cards[0]
+                const toggle = document.querySelector('#focus-pocket-list-toggle')
+                const cardZ = card ? parseInt(getComputedStyle(card).zIndex || '0', 10) : null
+                const toggleZ = toggle ? parseInt(getComputedStyle(toggle).zIndex || '0', 10) : null
+                return { cardZ, toggleZ, cardCount: cards.length }
+            })
+            expect(layering.toggleZ, 'a11y toggle must be at z-index 80').toBe(80)
+            expect(
+                layering.cardZ,
+                `F1-5: mobile focus card (z=${layering.cardZ}) must sit below the a11y toggle (z=${layering.toggleZ})`
+            ).toBeLessThan(layering.toggleZ)
+        }
+    )
+
+    test('Bug 2: desktop "Inside" mode chip engages the semantic-dive surface (audit dead-end fix)', async ({
         page
     }) => {
-        // Regression guard for the bugsweep-fixes-2026-07-07 Worker 1 Svelte
-        // deliverable (f0142e3b). Covers F1-1 (duplicate DOM id), F1-2 (real
-        // <button> instead of <li role="button">), F1-5 (mobile z-index), and
-        // F1-8 (friendly "nearby business" aria-label).
-        await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
-        await explore.click()
-
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-        await page.waitForTimeout(1000)
-
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // Populate the focus pocket + focus card via the nav-actions bridge.
-        const ok = await page.evaluate(() => {
-            const actions = window.__navActions__
-            return actions && typeof actions.focusOnNode === 'function' ? actions.focusOnNode(0) : false
-        })
-        expect(ok, 'focusOnNode(0) must succeed').toBe(true)
-
-        await page.waitForSelector('#focus-card-selected', { timeout: 15000 })
-        await page.waitForSelector('#focus-pocket-a11y .focus-pocket-item-btn', { timeout: 15000 })
-
-        // ── F1-1: exactly one #selected-card id (InfoPanel); FocusCard moved to #focus-card-selected ──
-        const idCounts = await page.evaluate(() => ({
-            selectedCard: document.querySelectorAll('[id="selected-card"]').length,
-            focusCardSelected: document.querySelectorAll('[id="focus-card-selected"]').length
-        }))
-        expect(idCounts.selectedCard, 'exactly one #selected-card id must remain (owned by InfoPanel)').toBe(1)
-        expect(idCounts.focusCardSelected, 'FocusCard must expose #focus-card-selected (F1-1)').toBe(1)
-
-        // ── F1-2: real <button>, no <li role="button"> anti-pattern ──
-        const pocket = await page.evaluate(() => ({
-            liButton: document.querySelectorAll('#focus-pocket-a11y li[role="button"]').length,
-            realButtons: document.querySelectorAll('#focus-pocket-a11y .focus-pocket-item-btn').length
-        }))
-        expect(pocket.liButton, 'F1-2: no <li role="button"> anti-pattern may remain').toBe(0)
-        expect(pocket.realButtons, 'F1-2: focus pocket must use real <button> elements').toBeGreaterThan(0)
-
-        // ── F1-8: friendly "nearby business" copy, no "focus pocket" jargon ──
-        const toggleLabel = await page.locator('#focus-pocket-list-toggle').getAttribute('aria-label')
-        expect(toggleLabel, 'F1-8: toggle aria-label must use friendly "nearby business" copy').toMatch(
-            /nearby business/i
-        )
-        expect(toggleLabel?.toLowerCase(), 'F1-8: no "focus pocket" jargon').not.toContain('focus pocket')
-
-        // ── F1-5: on mobile the focus card must sit BELOW the a11y toggle (var(--z-panels)=80) ──
-        await page.setViewportSize({ width: 375, height: 812 })
-        await page.waitForTimeout(400)
-        const layering = await page.evaluate(() => {
-            const cards = Array.from(document.querySelectorAll('.focus-card'))
-            const visible = cards.filter((c) => {
-                const r = c.getBoundingClientRect()
-                const cs = getComputedStyle(c)
-                return r.width > 0 && r.height > 0 && cs.display !== 'none' && cs.visibility !== 'hidden'
-            })
-            const card = visible[0] || cards[0]
-            const toggle = document.querySelector('#focus-pocket-list-toggle')
-            const cardZ = card ? parseInt(getComputedStyle(card).zIndex || '0', 10) : null
-            const toggleZ = toggle ? parseInt(getComputedStyle(toggle).zIndex || '0', 10) : null
-            return { cardZ, toggleZ, cardCount: cards.length }
-        })
-        expect(layering.toggleZ, 'a11y toggle must be at z-index 80').toBe(80)
-        expect(
-            layering.cardZ,
-            `F1-5: mobile focus card (z=${layering.cardZ}) must sit below the a11y toggle (z=${layering.toggleZ})`
-        ).toBeLessThan(layering.toggleZ)
-    })
-
-    test('Bug 2: desktop "Inside" mode chip engages the semantic-dive surface (audit dead-end fix)', async ({ page }) => {
         await page.setViewportSize({ width: 1440, height: 900 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
@@ -1043,7 +1057,9 @@ test.describe('Widget journey', () => {
         expect(insideLabel?.toLowerCase(), 'Inside chip must be unlocked after a node is focused').not.toContain('lock')
 
         await insideChip.click()
-        await page.waitForFunction(() => document.body.classList.contains('surface-semantic-dive'), null, { timeout: 8000 })
+        await page.waitForFunction(() => document.body.classList.contains('surface-semantic-dive'), null, {
+            timeout: 8000
+        })
 
         const state = await page.evaluate(() => {
             const pocket = document.querySelector('#focus-pocket')
@@ -1059,214 +1075,232 @@ test.describe('Widget journey', () => {
         expect(state.pocketAriaHidden, 'focus pocket must not be aria-hidden in the dive surface').not.toBe('true')
     })
 
-    test('Bug 3a: mobile mode chips are hidden in the focus-search surface (mode-grid surface contract)', { tag: '@live' }, async ({ page }) => {
-        await page.setViewportSize({ width: 390, height: 844 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+    test(
+        'Bug 3a: mobile mode chips are hidden in the focus-search surface (mode-grid surface contract)',
+        { tag: '@live' },
+        async ({ page }) => {
+            await page.setViewportSize({ width: 390, height: 844 })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
-        await explore.click()
+            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.click()
 
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-        await page.waitForTimeout(1200)
+            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+                timeout: 15000
+            })
+            await page.waitForTimeout(1200)
 
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        await page.evaluate(() => document.body.classList.add('surface-focus-search'))
-        await page.waitForTimeout(150)
-
-        const chipState = await page.evaluate(() => {
-            const chip = document.querySelector('#mode-chips .mode-chip[data-mode="trail"]')
-            if (!chip) return null
-            const cs = getComputedStyle(chip)
-            return { display: cs.display, visibility: cs.visibility }
-        })
-        expect(chipState, 'trail mode chip must exist in the focus-search surface').not.toBeNull()
-        expect(chipState.display, 'trail chip must be hidden (display:none) in focus-search per mode-grid surface contract').toBe('none')
-        expect(chipState.visibility, 'trail chip must be hidden (visibility:hidden) in focus-search').toBe('hidden')
-    })
-
-    test('Bug 3b: mobile "View on Map" button switches to the map view (audit dead-end fix)', { tag: '@live' }, async ({ page }) => {
-        await page.setViewportSize({ width: 390, height: 844 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
-        await explore.click()
-
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-        await page.waitForTimeout(1200)
-
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        const focused = await page.evaluate(() => {
-            if (typeof window.__publishCameraNodeFocused__ === 'function') {
-                window.__publishCameraNodeFocused__(0)
-                return true
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+                await page.waitForTimeout(200)
             }
-            const a = window.__navActions__
-            return a && typeof a.focusOnNode === 'function' ? a.focusOnNode(0) : false
-        })
-        expect(focused, 'a focus helper must be available to show the selected details').toBe(true)
 
-        const mapBtn = page.locator('#fc-btn-selected-map').filter({ visible: true })
-        await mapBtn.waitFor({ state: 'visible', timeout: 8000 })
+            await page.evaluate(() => document.body.classList.add('surface-focus-search'))
+            await page.waitForTimeout(150)
 
-        await mapBtn.click()
-        await page.waitForFunction(
-            () => document.body.classList.contains('surface-map-focus') && document.body.classList.contains('view-map'),
-            null,
-            { timeout: 8000 }
-        )
-
-        const bodyClass = await page.evaluate(() => document.body.className)
-        expect(bodyClass, 'map button must switch to the map view').toContain('view-map')
-        expect(bodyClass, 'map button must enter the map-focus surface').toContain('surface-map-focus')
-    })
-
-    test('F7: SearchResults "Top match · X more" peek label tracks reactive parityMap (regression eb357ac6)', { tag: '@live' }, async ({ page }) => {
-        // F7 (commit eb357ac6) regression. SearchResults.svelte previously read
-        // `appState.composition.panelSurfaceDetail` — a dead mirror field frozen at
-        // 'peek' — so the count label's peek branch ("Top match · X more") never
-        // reacted to real parity state. The fix reads the reactive
-        // `parityMap.panelSurfaceDetail` ($state rune). We drive the CANONICAL
-        // parity source (body.dataset.mobileSearchSheet) and force a parity
-        // recompute via a viewport resize (viewport store → parity $effect),
-        // then assert the label tracks parityMap and NOT a frozen/dead field.
-        //
-        // Approach note: parityMap is a module-internal $state not exposed on
-        // window, and it only recomputes on a store change. setViewportSize
-        // fires the viewport store, which the parity $effect subscribes to, so
-        // computeParityAttributes() re-reads body.dataset.mobileSearchSheet into
-        // the reactive parityMap. We assert the resulting DOM label, not the
-        // rune directly.
-
-        // Force a small visible-count window so total > visibleCount is
-        // guaranteed for a multi-result search (the peek branch requires it).
-        await page.addInitScript(() => {
-            try {
-                sessionStorage.setItem('searchVisibleCount', '3')
-            } catch {
-                // ignore
-            }
-        })
-
-        await page.setViewportSize({ width: 390, height: 844 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
-        await explore.click()
-
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-
-        // Dismiss first-visit help dialog if it auto-opened (can intercept typing).
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
+            const chipState = await page.evaluate(() => {
+                const chip = document.querySelector('#mode-chips .mode-chip[data-mode="trail"]')
+                if (!chip) return null
+                const cs = getComputedStyle(chip)
+                return { display: cs.display, visibility: cs.visibility }
+            })
+            expect(chipState, 'trail mode chip must exist in the focus-search surface').not.toBeNull()
+            expect(
+                chipState.display,
+                'trail chip must be hidden (display:none) in focus-search per mode-grid surface contract'
+            ).toBe('none')
+            expect(chipState.visibility, 'trail chip must be hidden (visibility:hidden) in focus-search').toBe('hidden')
         }
+    )
 
-        // Trigger a multi-result search using the existing pattern (fill + Enter).
-        const searchInput = page.locator('#search-input')
-        await searchInput.waitFor({ state: 'attached', timeout: 10000 })
-        await searchInput.fill('coffee')
-        await page.keyboard.press('Enter')
+    test(
+        'Bug 3b: mobile "View on Map" button switches to the map view (audit dead-end fix)',
+        { tag: '@live' },
+        async ({ page }) => {
+            await page.setViewportSize({ width: 390, height: 844 })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
-        // Wait for the results count element to render with real results.
-        await page.waitForSelector('#search-results-count', { timeout: 15000 })
-        await page.waitForTimeout(400)
+            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.click()
 
-        // Helper: set the canonical mobile-search-sheet parity source and force a
-        // parity recompute by firing the viewport store (resize within the
-        // mobile/compact breakpoint keeps the search surface intact so
-        // panelSurfaceDetail is still resolved from mobileSearchSheet).
-        async function setSheetAndRecompute(mode, size) {
-            await page.evaluate((m) => {
-                document.body.dataset.mobileSearchSheet = m
-                // Keep the user flag so any re-run of the mobile-sheet toggle
-                // preserves our injected value instead of resetting to 'peek'.
-                document.body.dataset.mobileSearchSheetUser = 'true'
-            }, mode)
-            await page.setViewportSize(size)
-            await page.waitForTimeout(300)
+            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+                timeout: 15000
+            })
+            await page.waitForTimeout(1200)
+
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+                await page.waitForTimeout(200)
+            }
+
+            const focused = await page.evaluate(() => {
+                if (typeof window.__publishCameraNodeFocused__ === 'function') {
+                    window.__publishCameraNodeFocused__(0)
+                    return true
+                }
+                const a = window.__navActions__
+                return a && typeof a.focusOnNode === 'function' ? a.focusOnNode(0) : false
+            })
+            expect(focused, 'a focus helper must be available to show the selected details').toBe(true)
+
+            const mapBtn = page.locator('#fc-btn-selected-map').filter({ visible: true })
+            await mapBtn.waitFor({ state: 'visible', timeout: 8000 })
+
+            await mapBtn.click()
+            await page.waitForFunction(
+                () =>
+                    document.body.classList.contains('surface-map-focus') &&
+                    document.body.classList.contains('view-map'),
+                null,
+                { timeout: 8000 }
+            )
+
+            const bodyClass = await page.evaluate(() => document.body.className)
+            expect(bodyClass, 'map button must switch to the map view').toContain('view-map')
+            expect(bodyClass, 'map button must enter the map-focus surface').toContain('surface-map-focus')
         }
+    )
 
-        // ── PEEK ──────────────────────────────────────────────────────────────
-        await setSheetAndRecompute('peek', { width: 420, height: 844 })
-        await page
-            .waitForFunction(() => document.body.dataset.panelSurfaceDetail === 'peek', null, { timeout: 5000 })
-            .catch(() => {})
-        await page.waitForTimeout(150)
+    test(
+        'F7: SearchResults "Top match · X more" peek label tracks reactive parityMap (regression eb357ac6)',
+        { tag: '@live' },
+        async ({ page }) => {
+            // F7 (commit eb357ac6) regression. SearchResults.svelte previously read
+            // `appState.composition.panelSurfaceDetail` — a dead mirror field frozen at
+            // 'peek' — so the count label's peek branch ("Top match · X more") never
+            // reacted to real parity state. The fix reads the reactive
+            // `parityMap.panelSurfaceDetail` ($state rune). We drive the CANONICAL
+            // parity source (body.dataset.mobileSearchSheet) and force a parity
+            // recompute via a viewport resize (viewport store → parity $effect),
+            // then assert the label tracks parityMap and NOT a frozen/dead field.
+            //
+            // Approach note: parityMap is a module-internal $state not exposed on
+            // window, and it only recomputes on a store change. setViewportSize
+            // fires the viewport store, which the parity $effect subscribes to, so
+            // computeParityAttributes() re-reads body.dataset.mobileSearchSheet into
+            // the reactive parityMap. We assert the resulting DOM label, not the
+            // rune directly.
 
-        const peek = await page.evaluate(() => {
-            const el = document.querySelector('#search-results-count')
-            return {
-                text: el?.textContent?.trim() ?? '',
-                anchor: el?.querySelector('.search-results-count-anchor')?.textContent?.trim() ?? null,
-                hidden: el?.querySelector('.search-results-count-hidden')?.textContent?.trim() ?? null
+            // Force a small visible-count window so total > visibleCount is
+            // guaranteed for a multi-result search (the peek branch requires it).
+            await page.addInitScript(() => {
+                try {
+                    sessionStorage.setItem('searchVisibleCount', '3')
+                } catch {
+                    // ignore
+                }
+            })
+
+            await page.setViewportSize({ width: 390, height: 844 })
+            await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+            const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+            await explore.waitFor({ state: 'visible', timeout: 40000 })
+            await explore.click()
+
+            await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+                timeout: 15000
+            })
+
+            // Dismiss first-visit help dialog if it auto-opened (can intercept typing).
+            const helpDialog = page.locator('dialog.help-dialog[open]')
+            if ((await helpDialog.count()) > 0) {
+                await page.keyboard.press('Escape')
+                await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+                await page.waitForTimeout(200)
             }
-        })
-        expect(peek.anchor, 'peek: count anchor must read "Top match"').toBe('Top match')
-        expect(peek.hidden, 'peek: hidden-count label must show "X more"').toMatch(/more$/)
-        expect(peek.text, 'peek: label must contain "Top match" and "more"').toContain('Top match')
 
-        // ── EXPANDED (non-peek) ───────────────────────────────────────────────
-        await setSheetAndRecompute('expanded', { width: 390, height: 844 })
-        await page
-            .waitForFunction(() => document.body.dataset.panelSurfaceDetail === 'expanded', null, { timeout: 5000 })
-            .catch(() => {})
-        await page.waitForTimeout(150)
+            // Trigger a multi-result search using the existing pattern (fill + Enter).
+            const searchInput = page.locator('#search-input')
+            await searchInput.waitFor({ state: 'attached', timeout: 10000 })
+            await searchInput.fill('coffee')
+            await page.keyboard.press('Enter')
 
-        const expanded = await page.evaluate(() => {
-            const el = document.querySelector('#search-results-count')
-            return {
-                text: el?.textContent?.trim() ?? '',
-                anchor: el?.querySelector('.search-results-count-anchor')?.textContent?.trim() ?? null,
-                hidden: el?.querySelector('.search-results-count-hidden')?.textContent?.trim() ?? null
+            // Wait for the results count element to render with real results.
+            await page.waitForSelector('#search-results-count', { timeout: 15000 })
+            await page.waitForTimeout(400)
+
+            // Helper: set the canonical mobile-search-sheet parity source and force a
+            // parity recompute by firing the viewport store (resize within the
+            // mobile/compact breakpoint keeps the search surface intact so
+            // panelSurfaceDetail is still resolved from mobileSearchSheet).
+            async function setSheetAndRecompute(mode, size) {
+                await page.evaluate((m) => {
+                    document.body.dataset.mobileSearchSheet = m
+                    // Keep the user flag so any re-run of the mobile-sheet toggle
+                    // preserves our injected value instead of resetting to 'peek'.
+                    document.body.dataset.mobileSearchSheetUser = 'true'
+                }, mode)
+                await page.setViewportSize(size)
+                await page.waitForTimeout(300)
             }
-        })
-        // If the component still read the dead frozen field, it would KEEP
-        // showing "Top match · X more" here — this assertion catches that.
-        expect(
-            expanded.text,
-            'expanded: peek "Top match" anchor must be absent (F7 reactivity)'
-        ).not.toContain('Top match')
-        expect(
-            expanded.text,
-            'expanded: peek "X more" hidden label must be absent (F7 reactivity)'
-        ).not.toContain('more')
-        expect(
-            expanded.anchor,
-            'expanded: .search-results-count-anchor must no longer be "Top match"'
-        ).not.toBe('Top match')
 
-        // ── Defensive regression: the source must no longer reference the dead
-        // composition mirror, and must read the reactive parityMap instead. ──
-        const { readFileSync } = await import('node:fs')
-        const { dirname, resolve } = await import('node:path')
-        const { fileURLToPath } = await import('node:url')
-        const here = dirname(fileURLToPath(import.meta.url))
-        const source = readFileSync(resolve(here, '../src/components/SearchResults.svelte'), 'utf-8')
-        expect(
-            source,
-            'F7 regression: source must NOT read the dead appState.composition.panelSurfaceDetail field'
-        ).not.toContain('appState.composition.panelSurfaceDetail')
-        expect(
-            source,
-            'F7 regression: source must read the reactive parityMap.panelSurfaceDetail'
-        ).toContain("parityMap.panelSurfaceDetail === 'peek'")
-    })
+            // ── PEEK ──────────────────────────────────────────────────────────────
+            await setSheetAndRecompute('peek', { width: 420, height: 844 })
+            await page
+                .waitForFunction(() => document.body.dataset.panelSurfaceDetail === 'peek', null, { timeout: 5000 })
+                .catch(() => {})
+            await page.waitForTimeout(150)
 
+            const peek = await page.evaluate(() => {
+                const el = document.querySelector('#search-results-count')
+                return {
+                    text: el?.textContent?.trim() ?? '',
+                    anchor: el?.querySelector('.search-results-count-anchor')?.textContent?.trim() ?? null,
+                    hidden: el?.querySelector('.search-results-count-hidden')?.textContent?.trim() ?? null
+                }
+            })
+            expect(peek.anchor, 'peek: count anchor must read "Top match"').toBe('Top match')
+            expect(peek.hidden, 'peek: hidden-count label must show "X more"').toMatch(/more$/)
+            expect(peek.text, 'peek: label must contain "Top match" and "more"').toContain('Top match')
+
+            // ── EXPANDED (non-peek) ───────────────────────────────────────────────
+            await setSheetAndRecompute('expanded', { width: 390, height: 844 })
+            await page
+                .waitForFunction(() => document.body.dataset.panelSurfaceDetail === 'expanded', null, { timeout: 5000 })
+                .catch(() => {})
+            await page.waitForTimeout(150)
+
+            const expanded = await page.evaluate(() => {
+                const el = document.querySelector('#search-results-count')
+                return {
+                    text: el?.textContent?.trim() ?? '',
+                    anchor: el?.querySelector('.search-results-count-anchor')?.textContent?.trim() ?? null,
+                    hidden: el?.querySelector('.search-results-count-hidden')?.textContent?.trim() ?? null
+                }
+            })
+            // If the component still read the dead frozen field, it would KEEP
+            // showing "Top match · X more" here — this assertion catches that.
+            expect(expanded.text, 'expanded: peek "Top match" anchor must be absent (F7 reactivity)').not.toContain(
+                'Top match'
+            )
+            expect(expanded.text, 'expanded: peek "X more" hidden label must be absent (F7 reactivity)').not.toContain(
+                'more'
+            )
+            expect(expanded.anchor, 'expanded: .search-results-count-anchor must no longer be "Top match"').not.toBe(
+                'Top match'
+            )
+
+            // ── Defensive regression: the source must no longer reference the dead
+            // composition mirror, and must read the reactive parityMap instead. ──
+            const { readFileSync } = await import('node:fs')
+            const { dirname, resolve } = await import('node:path')
+            const { fileURLToPath } = await import('node:url')
+            const here = dirname(fileURLToPath(import.meta.url))
+            const source = readFileSync(resolve(here, '../src/components/SearchResults.svelte'), 'utf-8')
+            expect(
+                source,
+                'F7 regression: source must NOT read the dead appState.composition.panelSurfaceDetail field'
+            ).not.toContain('appState.composition.panelSurfaceDetail')
+            expect(source, 'F7 regression: source must read the reactive parityMap.panelSurfaceDetail').toContain(
+                "parityMap.panelSurfaceDetail === 'peek'"
+            )
+        }
+    )
 })

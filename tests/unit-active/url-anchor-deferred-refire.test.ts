@@ -31,7 +31,7 @@ const mockState = vi.hoisted(() => ({
         urlStateRestoreToken: 0,
         applyingUrlState: false,
         restoringBrowserHistory: false,
-        focusedIndex: null as number | null,
+        focusedIndex: null as number | null
         // setTrailFromSeed in triggers.ts and the FocusPocket effect read these,
         // but url-state itself only writes focusedIndex via writeNavStateMirror.
     } as Record<string, unknown>,
@@ -115,7 +115,13 @@ vi.mock('@lib/state/app.svelte', () => ({
             return null
         },
         get viewportState() {
-            return { viewportWidth: 1920, viewportHeight: 1080, viewportDpr: 1, viewportReducedMotion: false, viewportIsCompact: false }
+            return {
+                viewportWidth: 1920,
+                viewportHeight: 1080,
+                viewportDpr: 1,
+                viewportReducedMotion: false,
+                viewportIsCompact: false
+            }
         }
     }
 }))
@@ -202,9 +208,7 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         await applyUrlState({})
 
         // Initial restore fires one SEARCH_FOCUS_REQUESTED + one applyLocalNeighborhoodFocus.
-        const initialPublish = mockState.publishCalls.filter(
-            (c) => c.type === 'search:search-focus-requested'
-        )
+        const initialPublish = mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested')
         const initialFocus = [...mockState.applyLocalNeighborhoodFocusCalls]
         expect(initialPublish.length).toBeGreaterThanOrEqual(1)
         expect(initialFocus).toContain(42)
@@ -218,20 +222,17 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         // for BOTH signals instead of a fixed 10ms to avoid timer-queue drift
         // under suite load. applyLocalNeighborhoodFocus fires asynchronously
         // after the publish call, so we wait for both before proceeding.
-        await vi.waitFor(() => {
-            const calls = mockState.publishCalls.filter(
-                (c) => c.type === 'search:search-focus-requested'
-            )
-            expect(calls.length).toBeGreaterThanOrEqual(2)
-            const focusCalls = mockState.applyLocalNeighborhoodFocusCalls.filter(
-                (i) => i === 42
-            )
-            expect(focusCalls.length).toBeGreaterThanOrEqual(2)
-        }, { timeout: 2000, interval: 5 })
-
-        const allPublish = mockState.publishCalls.filter(
-            (c) => c.type === 'search:search-focus-requested'
+        await vi.waitFor(
+            () => {
+                const calls = mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested')
+                expect(calls.length).toBeGreaterThanOrEqual(2)
+                const focusCalls = mockState.applyLocalNeighborhoodFocusCalls.filter((i) => i === 42)
+                expect(focusCalls.length).toBeGreaterThanOrEqual(2)
+            },
+            { timeout: 2000, interval: 5 }
         )
+
+        const allPublish = mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested')
         const allFocus = [...mockState.applyLocalNeighborhoodFocusCalls]
 
         // The re-fire must have published a second SEARCH_FOCUS_REQUESTED for index 42.
@@ -252,9 +253,7 @@ describe('url-anchor deferred constellation re-fire (PR-B5)', () => {
         await applyUrlState({})
 
         // Only the initial fire should have happened (no deferred re-fire needed).
-        const publishCount = mockState.publishCalls.filter(
-            (c) => c.type === 'search:search-focus-requested'
-        ).length
+        const publishCount = mockState.publishCalls.filter((c) => c.type === 'search:search-focus-requested').length
         const focusCount = mockState.applyLocalNeighborhoodFocusCalls.filter((i) => i === 42).length
 
         // Wait to confirm no deferred re-fire arrives. Use a deadline poll
