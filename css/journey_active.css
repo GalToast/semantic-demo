@@ -566,14 +566,15 @@ body.surface-map-idle .map-view-title {
         display: none;
     }
 
-    body.surface-focus-search .search-results.active {
-        max-height: min(24vh, 180px);
-        margin: 8px 0 0;
-        padding: 6px;
-        opacity: 0.94;
-        overflow-y: auto;
-        overflow-x: hidden;
-        pointer-events: auto;
+    /* LOW1: hide stale search DOM behind focus pocket — SearchResults.svelte is .search-results-wrapper, not legacy .search-results */
+    body.surface-focus-search .search-results.active,
+    body.surface-focus-search .search-results-wrapper {
+        display: none !important;
+    }
+    body.surface-focus .search-results-wrapper,
+    body.surface-semantic-dive .search-results-wrapper,
+    body.surface-inside .search-results-wrapper {
+        display: none !important;
     }
 
     body.surface-focus-search .focus-lens-truth {

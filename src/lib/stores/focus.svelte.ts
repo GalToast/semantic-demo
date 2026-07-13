@@ -63,6 +63,7 @@ import { writeNavStateMirror } from '@lib/stores/navigation.svelte'
 import { getBusinessRecords } from '@lib/data-store'
 import { createStateMirror } from '@lib/state/create-state-mirror'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
+import { formatBusinessName } from '@lib/utils/dom-formatters'
 
 // ── Initial State ────────────────────────────────────────────────────────────
 
@@ -236,7 +237,7 @@ function _readFocusSnapshot(): FocusStoreState {
                   ? 'civic'
                   : 'support'
         const record = records[idx]
-        const label = record?.name ?? `Node ${idx}`
+        const label = record?.name ? formatBusinessName(record.name as string) : `Node ${idx}`
         nodes.push({
             index: idx,
             position: [position.x ?? 0, position.y ?? 0, position.z ?? 0],

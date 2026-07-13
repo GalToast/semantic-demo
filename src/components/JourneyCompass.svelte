@@ -37,6 +37,7 @@
   import { appState } from '@lib/state/app.svelte';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey.svelte.ts';
   import { focusStore } from '@lib/stores/focus.svelte.ts';
+  import { dataLoadState } from '@lib/data-store';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import {
     getJourneyCompassState,
@@ -143,6 +144,9 @@
   }
 
   function handleStepInside(): void {
+    // W-low3: defensive guard — if the dive is not yet ready (data/pocket not
+    // loaded), no-op instead of firing into an inactive state.
+    if (!canDive) return;
     executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE);
   }
 
@@ -180,14 +184,21 @@
     (navState.currentView === 'galaxy' && activeTrailDepth >= 2)
   );
   let hasDiveFocus = $derived(focusState.semanticDiveMode || navState.focusedIndex != null || Number.isFinite(bodyFocusedIndex));
+  // LOW3: gate on pocket ready + trailDepth>=1 to prevent <100ms race where focusStore hasn't populated pocketNodes yet
+  let isDataLoading = $derived(!($dataLoadState.status === 'ready'));
+  let pocketReady = $derived((focusState.pocketNodes?.length ?? 0) > 0);
+  let hasTrailDepth = $derived(activeTrailDepth >= 1);
   let canDive = $derived(
     navState.currentView === 'galaxy'
       && hasDiveFocus
+      && !isDataLoading
+      && pocketReady
   );
   let showDiveButton = $derived(
     bodyCanStepInside ||
-    (activeTrailDepth >= 1
+    (hasTrailDepth
       && hasDiveFocus
+      && pocketReady
       && !semanticDiveActive)
   );
   let primaryCanStepInside = $derived(
@@ -474,6 +485,7 @@
   type="button"
   data-journey-action="enter-inside"
   hidden={!showDiveButton}
+  disabled={!canDive}
   aria-hidden={!showDiveButton ? 'true' : 'false'}
   aria-pressed={semanticDiveActive ? 'true' : 'false'}
   aria-disabled={!canDive ? 'true' : 'false'}
