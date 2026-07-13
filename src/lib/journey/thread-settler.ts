@@ -132,38 +132,27 @@ export function summarizeNeighborReason(
     } = {}
 ): string {
     if (!candidate || Object.keys(candidate).length === 0) {
-        return 'Nearby cloud stop.'
+        return 'Nearby business.'
     }
 
     if (candidate.relationshipRole) {
-        if (candidate.roleReason) {
-            const match = candidate.roleReason.match(/^(?:candidate looks like an |acts as an |serves as an )(.+)$/i)
-            if (match) return `An ${match[1]}`
-            return candidate.roleReason.charAt(0).toUpperCase() + candidate.roleReason.slice(1)
-        }
         const roleLabels: Record<string, string> = {
-            upstream: 'An input provider',
-            downstream: 'A downstream consumer',
-            peer: 'A peer in the network'
+            core_peer: 'A similar local business',
+            upstream: 'A local input-type business',
+            downstream: 'A local customer-type business',
+            complement: 'A business that complements this one',
+            same_market: 'Another business in the same local market',
+            bridge: 'A business that links different parts of the market',
+            geo_echo: 'A similar business in another nearby town',
+            peer: 'A similar local business'
         }
         const label = roleLabels[candidate.relationshipRole]
         if (label) return label
     }
 
-    if (candidate.reason && candidate.reason.includes('close semantic neighbor')) {
-        if (candidate.sameCity) return 'Same-city relationship grounded in shared record language'
-        return 'Deep record relationship grounded in shared record language'
-    }
-
-    if (candidate.sameCity && candidate.reason?.includes('semantic neighbor')) {
-        return 'Same-city relationship grounded in semantic link'
-    }
-
-    if (candidate.reason) return candidate.reason
-
-    if (candidate.threadType === 'approximate_projected_neighbor') return 'approximate cloud projection neighbor'
-    if (candidate.source === 'semantic') return 'semantic business relationship'
-    return 'nearby business relationship'
+    if (candidate.sameCity) return 'A nearby business in the same local market'
+    if (candidate.source === 'semantic') return 'A related local business'
+    return 'A nearby business'
 }
 
 export function getInsideRelationshipLabel(
@@ -181,18 +170,23 @@ export function getInsideRelationshipLabel(
 
     if (candidate.relationshipRole) {
         const roleLabels: Record<string, string> = {
-            upstream: 'serves trail',
-            downstream: 'served by trail',
-            peer: 'trail peer'
+            core_peer: 'similar local business',
+            upstream: 'local input-type business',
+            downstream: 'local customer-type business',
+            complement: 'complements this business',
+            same_market: 'same local market',
+            bridge: 'links market areas',
+            geo_echo: 'nearby in another town',
+            peer: 'similar local business'
         }
         const label = roleLabels[candidate.relationshipRole]
         if (label) return label
         return candidate.relationshipRole
     }
 
-    if (candidate.sameCity) return 'On the same trail'
-    if (candidate.source === 'semantic') return 'related connection'
-    if (candidate.sameStatus) return 'Same trail layer'
+    if (candidate.sameCity) return 'In the same local market'
+    if (candidate.source === 'semantic') return 'Related local business'
+    if (candidate.sameStatus) return 'Same local market'
 
     return 'Nearby connection'
 }

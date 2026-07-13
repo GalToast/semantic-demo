@@ -197,7 +197,7 @@
       return `Stop ${walkLen}: ${name}. ${lastReason ? `Source: ${formatThreadSourceLabel(currentThreadSource)}` : ''}`;
     }
     if (neighborCount === 0 && currentThreadSource === 'semantic') {
-      return `Semantic connections exist around ${name}, but none survive the current slice.`;
+      return `Related connections exist around ${name}, but none survive the current slice.`;
     }
     return `${neighborCount} candidate steps around ${name}.`;
   });
@@ -242,7 +242,7 @@
     if (!first || !Number.isFinite(first.index)) return;
     walkThreadNeighbor(first.index, {
       surface: 'rail',
-      reason: first.roleReason || first.reason || 'nearby business relationship'
+      reason: getRelationshipRoleLabel(normalizeRelationshipRole(first.relationshipRole)) || first.reason || 'nearby business relationship'
     });
   }
 
@@ -327,7 +327,7 @@
   function walkToCandidate(candidate: NormalizedCandidate): void {
     walkThreadNeighbor(candidate.index, {
       surface: 'rail',
-      reason: candidate.roleReason || candidate.reason || 'nearby business relationship'
+      reason: getRelationshipRoleLabel(normalizeRelationshipRole(candidate.relationshipRole)) || candidate.reason || 'nearby business relationship'
     });
   }
 

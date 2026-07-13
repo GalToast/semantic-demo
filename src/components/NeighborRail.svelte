@@ -96,7 +96,7 @@
       {@const isNextStop = i === 0}
       {@const relationshipRole = candidate.relationshipRole}
       {@const relationshipLabel = getRelationshipRoleLabel(relationshipRole, 'rail')}
-      {@const reasonLabel = candidate.roleReason || candidate.reason || 'Neighborhood connection'}
+      {@const reasonLabel = getRelationshipRoleLabel(relationshipRole, 'rail') || candidate.reason || 'Neighborhood connection'}
       <div
         class="focus-stage-neighbor-pill"
         class:is-next-stop={isNextStop}

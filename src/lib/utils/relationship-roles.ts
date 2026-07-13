@@ -44,13 +44,13 @@ export type RelationshipRole = (typeof RELATIONSHIP_ROLES)[number];
 const ROLE_COPY: Record<RelationshipRole, { label: string; title: string; reason: string }> = {
 	unclassified: {
 		label: 'Connection',
-		title: 'Connection',
-		reason: 'This connection was identified through semantic similarity, but the specific relationship type is not classified.'
+		title: 'Nearby connection',
+		reason: 'These businesses appear near each other in the local market.'
 	},
 	direct: {
 		label: 'Direct link',
 		title: 'Direct link',
-		reason: 'These businesses share a direct, strong semantic signal — often the same category, city, and complementary services.'
+		reason: 'These businesses share a strong, direct match — often the same type, nearby, with complementary services.'
 	},
 	support: {
 		label: 'Supporting link',
@@ -128,9 +128,9 @@ const ROLE_COPY: Record<RelationshipRole, { label: string; title: string; reason
 		reason: 'Nearby business in the same category or complementary sector.'
 	},
 	semantic_bridge: {
-		label: 'Semantic bridge',
-		title: 'Semantic bridge',
-		reason: 'Connects two otherwise separate semantic clusters through shared language.'
+		label: 'Cross-category link',
+		title: 'Cross-category link',
+			reason: 'Links two different business categories through shared services.'
 	},
 	category_bridge: {
 		label: 'Category bridge',
@@ -144,38 +144,38 @@ const ROLE_COPY: Record<RelationshipRole, { label: string; title: string; reason
 	},
 	core_peer: {
 		label: 'Peer',
-		title: 'Same beat',
-		reason: 'High-similarity peer in the same local business ecosystem.'
+		title: 'Similar local business',
+		reason: 'A close match — a similar business in the same area.'
 	},
 	upstream: {
-		label: 'Support',
-		title: 'Anchors the trail',
-		reason: 'Likely input, infrastructure, or support provider for this trail.'
+		label: 'Input-type',
+		title: 'Local input-type business',
+		reason: 'A nearby business in an input or supply-type field.'
 	},
 	downstream: {
-		label: 'Served by',
-		title: 'Served by trail',
-		reason: 'Likely customer, beneficiary, or demand-side market for this trail.'
+		label: 'Customer-type',
+		title: 'Local customer-type business',
+		reason: 'A nearby business that buys from local suppliers.'
 	},
 	complement: {
-		label: 'Pairs',
-		title: 'Pairs with trail',
-		reason: 'Adjacent sector that often appears in the same customer journey.'
+		label: 'Complements',
+		title: 'Complements this business',
+		reason: 'A nearby business in a field that serves the same customers.'
 	},
 	same_market: {
-		label: 'Same lane',
-		title: 'Same lane',
-		reason: 'Same market signal with local context.'
+		label: 'Same market',
+		title: 'Same local market',
+		reason: 'Another business serving the same local customers.'
 	},
 	geo_echo: {
-		label: 'Echo',
-		title: 'Echo elsewhere',
-		reason: 'Same market signal across different towns.'
+		label: 'Nearby elsewhere',
+		title: 'Also in other towns',
+		reason: 'A similar business in another nearby town.'
 	},
 	bridge: {
 		label: 'Bridge',
-		title: 'Bridges towns',
-		reason: 'Cross-market or cross-city semantic bridge.'
+		title: 'Connects areas',
+		reason: 'Links different parts of the local market.'
 	}
 };
 
@@ -211,10 +211,11 @@ export function getRelationshipRoleCopy(role: RelationshipRole): { label: string
 /**
  * Describe the role reason in a human-friendly way.
  */
-export function describeRelationshipRoleReason(role: RelationshipRole, roleReason?: string): string {
+export function describeRelationshipRoleReason(role: RelationshipRole, _roleReason?: string): string {
+	// The raw data-derived roleReason asserts business relationships (e.g.
+	// "input provider") that the source data cannot verify — it is inferred
+	// from co-location + industry similarity only. Always surface the honest,
+	// defensible copy instead of the over-claimed raw text.
 	const copy = ROLE_COPY[role] || ROLE_COPY[UNCLASSIFIED_RELATIONSHIP_ROLE];
-	if (roleReason && roleReason.trim()) {
-		return roleReason.trim();
-	}
 	return copy.reason;
 }
