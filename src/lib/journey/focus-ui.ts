@@ -595,13 +595,13 @@ export function updateTraversalUi(): void {
     if (coldDegradedNoRail) {
         const queryLabel = appState.semanticLaneSnapshot?.query
             ? `"${appState.semanticLaneSnapshot.query}"`
-            : 'this semantic trail'
+            : 'this trail'
         prevBtn.disabled = true
         nextBtn.disabled = true
         focusPrevBtn.disabled = true
         focusNextBtn.disabled = true
         contextEl.textContent = `${currentName} restored from this shared link, but the ${queryLabel} did not restore while the semantic lane is degraded. Retry now to rebuild it, or use Overview to step back to the county.`
-        focusProgressEl.textContent = `Semantic trail unavailable for ${queryLabel} while the lane is degraded.`
+        focusProgressEl.textContent = `Trail unavailable for ${queryLabel} while the lane is degraded.`
         if (focusNextEl) focusNextEl.textContent = 'Retry the semantic lane before continuing this trail.'
         updateWalkBreadcrumb(false)
         updateFocusNeighborRail()
@@ -645,7 +645,7 @@ export function updateTraversalUi(): void {
         const focusPocketMeta = nav.focusPocketMeta
         const pocketNote =
             nav.threadSource === 'semantic' && focusPocketMeta?.active
-                ? ` Focus lens is staging ${focusPocketMeta.nodeCount} related records as a ${focusPocketMeta.motifLabel || 'semantic constellation'} for readability; the links still come from the semantic trail.`
+                ? ` Focus lens is staging ${focusPocketMeta.nodeCount} related records as a ${focusPocketMeta.motifLabel || 'semantic constellation'} for readability; the links still come from the trail.`
                 : ''
         contextEl.textContent = `${neighborCount} candidate steps around ${currentName}. ${nav.threadSource === 'semantic' ? 'These come from record-backed relationships, and the bright spokes show the same links even when spacing stays approximate.' : fallbackLeadIn}${pocketNote} Use Prev / Next to continue.`
         focusProgressEl.textContent = neighborCount

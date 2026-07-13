@@ -39,7 +39,7 @@
        (panels z=80, results z=99). Search results now win the overlap on
        mobile; the cue remains visible when no result list is on screen
        (intro beat). */
-    z-index: 50;
+    z-index: var(--z-trail-cue);
     width: min(90vw, 400px);
     background: rgba(7, 16, 24, 0.94);
     backdrop-filter: blur(14px);

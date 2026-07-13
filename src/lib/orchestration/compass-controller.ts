@@ -431,7 +431,7 @@ export function updateJourneyCompass(): void {
     }
 
     if (note) {
-        note.textContent = compassState.note || 'Search to open one semantic trail.'
+        note.textContent = compassState.note || 'Search to open a trail.'
     }
 
     // Sync action buttons and map trail strip
@@ -480,7 +480,7 @@ export function getViewHandoffModel(view: string): ViewHandoffModel {
             return {
                 icon: 'map',
                 kicker: 'Route layer: map',
-                title: 'The semantic trail lands on terrain',
+                title: 'The trail lands on terrain',
                 note: `${focusName} stays anchored while "${searchLabel}" becomes physical distance.`
             }
         }

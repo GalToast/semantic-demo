@@ -69,7 +69,7 @@ function getPreviewElement(): HTMLElement {
     el.setAttribute('role', 'tooltip')
     el.setAttribute('aria-hidden', 'true')
     el.style.cssText = `
-    position: fixed; z-index: 9999; pointer-events: none;
+    position: fixed; z-index: var(--z-max); pointer-events: none;
     opacity: 0; transform: translateY(8px) scale(0.96);
     transition: opacity 0.18s ease, transform 0.18s ease;
     max-width: 260px; padding: 0;`

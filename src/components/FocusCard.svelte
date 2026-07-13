@@ -456,7 +456,7 @@
        focus surface states. */
     .focus-card.focus-stage-card.selected-card.surface-focus,
     .focus-card.focus-stage-card.selected-card.surface-focus-search {
-      z-index: 70;
+      z-index: var(--z-focus-stage-card);
     }
   }
 </style>

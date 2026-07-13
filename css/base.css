@@ -132,9 +132,12 @@
     --z-threads: 20;
     --z-overlays: 30;
     --z-legend: 50;
+    --z-trail-cue: 50; /* search trail cue — above canvas/threads, below interactive chrome */
+    --z-focus-stage-card: 70; /* mobile focus bottom-sheet — below panels(80) so a11y toggle wins */
     --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
     --z-panels-elevated: 90;
     --z-search: 100;
+    --z-neighbor-rail: 110; /* focus neighbor rail — above search, below journey chrome */
     --z-overlay: 100;
     --z-overlay-raised: 101;
     --z-overlay-floating: 102;
@@ -154,6 +157,7 @@
     --z-toast-above: 1300;
     --z-journey-modal: 2000;
     --z-loading: 3000;
+    --z-canvas-interaction: 9998; /* click-pulse ring — just below the max tooltip layer */
     --z-max: 9999;
 
     /* Shared panel elevation and glass treatment */

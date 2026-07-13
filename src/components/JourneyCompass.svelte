@@ -388,7 +388,7 @@
     id="journey-compass-note"
     class="journey-compass-note"
   >
-    {compass.note || 'Search to open one semantic trail.'}
+    {compass.note || 'Search to open a trail.'}
   </div>
 
   <div

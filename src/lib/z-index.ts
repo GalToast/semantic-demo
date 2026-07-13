@@ -28,6 +28,12 @@ export const Z_LAYERS = {
   /** Legend panel */
   legend: 50,
 
+  /** Search trail cue (mobile) — above canvas/threads, below interactive chrome */
+  trailCue: 50,
+
+  /** Mobile focus bottom-sheet card — below panels so the a11y toggle wins */
+  focusStageCard: 70,
+
   /** Info panel and side panels */
   panels: 80,
 
@@ -36,6 +42,9 @@ export const Z_LAYERS = {
 
   /** Search input and results */
   search: 100,
+
+  /** Focus neighbor rail — above search, below journey chrome */
+  neighborRail: 110,
 
   /** Journey chrome (compass, breadcrumb, step indicators) */
   journeyChrome: 200,
@@ -65,7 +74,10 @@ export const Z_LAYERS = {
   journeyModal: 2000,
 
   /** Loading overlay (highest priority — on top of everything; matches --z-max ceiling) */
-  loading: 9999
+  loading: 9999,
+
+  /** Click-pulse interaction ring — just below the max tooltip layer */
+  canvasInteraction: 9998
 } as const;
 
 /** Z-index layer key type for type-safe access */

@@ -151,7 +151,7 @@
 <style>
   .focus-stage-neighbors {
     position: relative;
-    z-index: 110;
+    z-index: var(--z-neighbor-rail);
   }
   .neighbor-count {
     /* M6 visual fix (2026-07-10): clipped "5 visibl neighb" — 71px too narrow for mono 9.6px+tracking */

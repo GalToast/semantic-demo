@@ -39,7 +39,7 @@ function showClickPulse(x: number, y: number): void {
     pulse.style.cssText = `
         position: fixed; left: ${x}px; top: ${y}px;
         width: 8px; height: 8px; margin: -4px 0 0 -4px;
-        border-radius: 50%; pointer-events: none; z-index: 9998;
+        border-radius: 50%; pointer-events: none; z-index: var(--z-canvas-interaction);
         border: 2px solid rgba(78, 205, 196, 0.8);
         box-shadow: 0 0 8px rgba(78, 205, 196, 0.4);
     `

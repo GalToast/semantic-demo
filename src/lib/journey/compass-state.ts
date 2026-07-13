@@ -116,7 +116,7 @@ export function getJourneyCompassState(): CompassState {
                     ? `Trail Step ${trailWalkLength} | ${trailClusterName}`
                     : `Trail | ${trailClusterName}`,
             title: '',
-            note: 'Follow the semantic trail linking related Montgomery County businesses.',
+            note: 'Follow the trail linking related Montgomery County businesses.',
             primaryAction: { label: 'Step Inside', action: JOURNEY_ACTIONS.ENTER_INSIDE },
             secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
             tertiaryAction: { label: 'County', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW, hint: 'Exit trail' }
