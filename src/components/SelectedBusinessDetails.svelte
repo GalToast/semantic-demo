@@ -265,4 +265,140 @@
     font-weight: 600;
     color: rgba(224, 240, 240, 0.92);
   }
+
+  /*
+   * Mobile responsive pass (<=768px). Desktop keeps its existing clustered
+   * grid + inline hero; these overrides only take effect on small screens so
+   * the business detail panel stays usable: no horizontal overflow, readable
+   * type via --mobile-type-* tokens, and tighter --space-* rhythm. Every value
+   * below is a design token from docs/semantic-demo-design-tokens.md — no raw
+   * hex is introduced. Selectors are scoped to this component's elements, so
+   * the desktop appearance is untouched.
+   */
+  @media (max-width: 768px) {
+    /* Hero: allow the name + role badge to wrap instead of forcing a
+       horizontal scroll when either is long. */
+    .selected-hero {
+      flex-wrap: wrap;
+      gap: var(--space-2);
+      margin-bottom: var(--space-3);
+      padding-bottom: var(--space-3);
+    }
+
+    .selected-hero-main {
+      gap: var(--space-1);
+      min-width: 0;
+    }
+
+    .selected-hero-main h3 {
+      font-size: var(--mobile-type-title);
+      line-height: var(--mobile-line-tight);
+    }
+
+    .selected-subtitle {
+      font-size: var(--mobile-type-body);
+      line-height: var(--mobile-line-normal);
+    }
+
+    .selected-filed-as {
+      font-size: var(--mobile-type-caption);
+    }
+
+    .selected-role-badge {
+      font-size: var(--mobile-type-caption);
+      padding: var(--space-1) var(--space-2);
+    }
+
+    /* Meta / badge / sensitivity rows: wrap, never overflow the panel. */
+    .selected-meta-strip,
+    .badge-row,
+    .selected-sensitivity {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-2);
+    }
+
+    .selected-facts {
+      font-size: var(--mobile-type-body);
+      line-height: var(--mobile-line-normal);
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+
+    /* Match panel: longer explanatory copy stays legible. */
+    .selected-match-panel {
+      padding: var(--space-3);
+    }
+
+    .selected-match-label {
+      font-size: var(--mobile-type-kicker);
+    }
+
+    .selected-match-copy {
+      font-size: var(--mobile-type-body);
+      line-height: var(--mobile-line-relaxed);
+    }
+
+    /* Action button: full-width with a 44px touch target. */
+    .selected-action-row .action-btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: var(--mobile-touch-min);
+      padding: var(--space-2) var(--space-3);
+    }
+
+    /* Relationship context: tighten spacing, keep text readable. */
+    .selected-relationship-context {
+      margin: var(--space-3) 0 var(--space-2);
+      padding: var(--space-3);
+    }
+
+    .selected-relationship-label {
+      font-size: var(--mobile-type-kicker);
+    }
+
+    .selected-relationship-role {
+      font-size: var(--mobile-type-caption);
+    }
+
+    .selected-relationship-reason {
+      font-size: var(--mobile-type-body);
+      line-height: var(--mobile-line-relaxed);
+    }
+
+    .selected-relationship-distribution {
+      gap: var(--space-2) var(--space-3);
+      font-size: var(--mobile-type-caption);
+    }
+
+    /* Facts grid: single column for readability on narrow screens. The
+       underlying .selected-item already sets min-width: 0 so long values
+       wrap instead of pushing the panel wider. */
+    .selected-grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-2);
+      margin-top: var(--space-3);
+    }
+
+    .selected-item {
+      padding: var(--space-2) var(--space-3);
+      border-radius: var(--glass-radius-action);
+    }
+
+    .selected-item-label {
+      font-size: var(--mobile-type-kicker);
+    }
+
+    .selected-item-value {
+      font-size: var(--mobile-type-body);
+      line-height: var(--mobile-line-normal);
+    }
+
+    .selected-trivia {
+      font-size: var(--mobile-type-caption);
+      line-height: var(--mobile-line-normal);
+    }
+  }
 </style>

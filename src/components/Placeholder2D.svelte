@@ -156,13 +156,13 @@
         </g>
       </g>
       <g class="orb-anim orb-3">
-        <g style="color:#ffd93d" transform="translate(130,410) scale(78)">
+        <g style="color:var(--color-accent)" transform="translate(130,410) scale(78)">
           <use href="#orb" fill="currentColor" opacity="0.82" />
           <use href="#orb" fill="url(#orb-shade)" />
         </g>
       </g>
       <g class="orb-anim orb-4">
-        <g style="color:#6bcb77" transform="translate(260,430) scale(100)">
+        <g style="color:var(--status-success)" transform="translate(260,430) scale(100)">
           <use href="#orb" fill="currentColor" opacity="0.86" />
           <use href="#orb" fill="url(#orb-shade)" />
         </g>
@@ -170,7 +170,7 @@
     </g>
 
     <!-- Fine spore dots -->
-    <g fill="#ffffff" opacity="0.06">
+    <g style="fill: var(--color-text-teal-light)" opacity="0.06">
       {#each Array.from({ length: 60 }) as _, i}
         {@const x = 30 + (i * 173) % 315}
         {@const y = 120 + (i * 307) % 500}
