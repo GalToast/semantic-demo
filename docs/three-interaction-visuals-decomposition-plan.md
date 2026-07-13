@@ -3,6 +3,14 @@
 > **Source**: `src/lib/engine/three-interaction-visuals.ts` (915 LOC)  
 > **Pattern reference**: `docs/three-engine-decomposition-plan.md` (Worker D, three-engine-core.ts)  
 > **Status**: Research only — DO NOT implement
+>
+> **Update (2026-07-13):** `src/lib/engine/three-lens-halos.ts` (the Phase 3 halos
+> extraction listed in the inventories below) was **removed** — it was extracted but
+> never wired in (0 importers at runtime), making it a dead duplicate of the inline halo
+> logic that still lives in `initSemanticLens()` in `three-interaction-visuals.ts`
+> (the `state.focusHalo` create / dispose / per-frame path). The other Phase-3
+> `three-lens-*` modules (anchor-bloom, filaments, focusgeo, glow-spoke, motes, petals)
+> remain because they ARE referenced. Don't re-attempt the abandoned halos extraction.
 
 ---
 
