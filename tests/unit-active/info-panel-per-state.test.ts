@@ -109,7 +109,7 @@ describe('Info Panel per-state content', () => {
     // must now have its own contextually appropriate descriptor in the helper.
     it('info-panel-state helper has a content descriptor for the inside surface (regression: was idle fallback)', () => {
         // Must have a 'inside' key in CONTENT_BY_SURFACE, not just the FALLBACK.
-        expect(helperSource).toMatch(/'inside':\s*\{/)
+        expect(helperSource).toMatch(/\binside:\s*\{/)
     })
 
     it('info-panel-state helper has a content descriptor for the thread-inspect surface (regression: was idle fallback)', () => {
@@ -117,7 +117,7 @@ describe('Info Panel per-state content', () => {
     })
 
     it('info-panel-state helper has a content descriptor for the trail surface (regression: was idle fallback)', () => {
-        expect(helperSource).toMatch(/'trail':\s*\{/)
+        expect(helperSource).toMatch(/\btrail:\s*\{/)
     })
 
     it('info-panel-state helper has content descriptors for transition states (walking/arriving/settling)', () => {

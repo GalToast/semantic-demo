@@ -91,9 +91,9 @@
     selectedEmptyName: 'Business Name',
     selectedEmptyWhat: 'What they do',
     selectedEmptyRole: 'Business',
-    selectedEmptyMap: 'No geocoded point yet',
-    selectedEmptyThread: 'Waiting for a related path.',
-    selectedEmptyTheme: 'Theme',
+    selectedEmptyMap: 'No location yet',
+    selectedEmptyThread: 'Waiting for similar businesses.',
+    selectedEmptyTheme: 'Business type',
     selectedEmptyStatus: 'Business status'
   };
 

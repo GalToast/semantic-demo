@@ -82,7 +82,7 @@ describe('A11y W42-B: Thread inspector screen reader labels', () => {
     })
 
     it('title is descriptive (not just "Node N thread")', () => {
-        // Renders as 'Connection to {name}' (when name present) or 'Connection to business #N'.
+        // Renders as 'Connection to {name}' (when name present) or 'Connection to a nearby business'.
         expect(src).toMatch(/Connection to \$?\{/)
     })
 

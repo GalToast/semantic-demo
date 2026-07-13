@@ -82,7 +82,7 @@ test.describe('Widget journey', () => {
     })
 
     // Fixme (W52 playtest): the PR-W47-g fix that routes neighborCount===0
-    // to the "No more visible stops in this slice." fallback is locked in
+    // to the "No more visible stops with these filters." fallback is locked in
     // by a structural regression detector at
     // tests/unit-active/focus-ui-pr-w47-g-fallback-structural.test.ts,
     // which asserts the fallback string + the neighborCount>0 guard are

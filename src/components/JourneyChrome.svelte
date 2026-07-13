@@ -189,17 +189,14 @@
     if (!chromeHasFocus || !currentPoint) return '';
     const name = currentPoint?.name || 'this business';
     const walkLen = currentWalkHistory.length;
-    const focusIdx = currentFocusedIndex;
-    const lastReason = (focusIdx != null && focusIdx >= 0 && focusIdx < getBusinessRecords().length)
-      ? (getBusinessRecords()[focusIdx] as BusinessRecord)?.name ?? ''
-      : '';
     if (currentTrailDepth >= 1 && walkLen >= 1) {
-      return `Stop ${walkLen}: ${name}. ${lastReason ? `Source: ${formatThreadSourceLabel(currentThreadSource)}` : ''}`;
+      const sourceLabel = currentThreadSource ? formatThreadSourceLabel(currentThreadSource) : '';
+      return `Stop ${walkLen}: ${name}${sourceLabel ? `. Matched by ${sourceLabel}` : ''}`;
     }
     if (neighborCount === 0 && currentThreadSource === 'semantic') {
-      return `Related connections exist around ${name}, but none survive the current slice.`;
+      return `Related businesses are near ${name}, but none are visible with the current filters.`;
     }
-    return `${neighborCount} candidate steps around ${name}.`;
+    return `${neighborCount} nearby stops around ${name}.`;
   });
 
   const progressText = $derived.by(() => {
@@ -212,10 +209,10 @@
       // stops in this slice." copy that already exists in the focus-ui.ts twin.
       return neighborCount > 0
         ? `Stop ${currentWalkHistory.length} of ${neighborCount}`
-        : `Stop ${currentWalkHistory.length}. No more visible stops in this slice.`;
+        : `Stop ${currentWalkHistory.length}. No more visible stops with these filters.`;
     }
     return neighborCount
-      ? `${neighborCount} nearby ready`
+      ? `${neighborCount} nearby to explore`
       : `Start exploring.`;
   });
 

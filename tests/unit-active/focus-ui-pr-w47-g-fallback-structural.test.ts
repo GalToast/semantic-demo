@@ -2,7 +2,7 @@
  * focus-ui — PR-W47-g 0-neighbor fallback structural regression test (W52)
  *
  * Locks in the PR-W47-g fix (commit 11b176e8) that routes neighborCount===0
- * in the trailDepth>=1 branch to the "No more visible stops in this slice."
+ * in the trailDepth>=1 branch to the "No more visible stops with these filters."
  * fallback copy, instead of the buggy "Stop N of 0" total. Asserts the
  * fallback string + the conditional guard are present in both the focus-ui
  * function and the JourneyChrome twin, so a future refactor that drops the
@@ -32,8 +32,8 @@ const FOCUS_UI = resolve(REPO_ROOT, 'src/lib/journey/focus-ui.ts')
 const JOURNEY_CHROME = resolve(REPO_ROOT, 'src/components/JourneyChrome.svelte')
 
 // The PR-W47-g fallback copy. Must match exactly the string set in
-// focus-ui.ts line 628 and JourneyChrome.svelte lines 199-206.
-const FALLBACK_PROGRESS = 'No more visible stops in this slice.'
+// focus-ui.ts and JourneyChrome.svelte (0-neighbor branch).
+const FALLBACK_PROGRESS = 'No more visible stops with these filters.'
 // The contextual cue that swaps the "Use Next to continue" tail for the
 // "return to Overview" tail when neighborCount===0 in the trailDepth>=1
 // branch of focus-ui.ts.
@@ -43,7 +43,7 @@ describe('PR-W47-g 0-neighbor fallback — structural regression detector', () =
     const focusUiSrc = readFileSync(FOCUS_UI, 'utf8')
     const journeyChromeSrc = readFileSync(JOURNEY_CHROME, 'utf8')
 
-    it('focus-ui.ts contains the "No more visible stops in this slice." fallback', () => {
+    it('focus-ui.ts contains the "No more visible stops with these filters." fallback', () => {
         expect(focusUiSrc).toContain(FALLBACK_PROGRESS)
     })
 
@@ -58,7 +58,7 @@ describe('PR-W47-g 0-neighbor fallback — structural regression detector', () =
         expect(focusUiSrc).toContain(FALLBACK_CONTEXT_CUE)
     })
 
-    it('JourneyChrome.svelte twin also contains the "No more visible stops in this slice." fallback', () => {
+    it('JourneyChrome.svelte twin also contains the "No more visible stops with these filters." fallback', () => {
         // The twin in JourneyChrome.svelte was missed by the original
         // PR-W47-g fix and caught by the W48 audit. Lock it in too so the
         // pair can never drift apart again.

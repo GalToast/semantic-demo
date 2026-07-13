@@ -130,3 +130,4 @@ server.err
 ts
 tmp-*.py
 tmp-*.ts
+ocw_*/

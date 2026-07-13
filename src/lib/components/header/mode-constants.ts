@@ -23,11 +23,11 @@ import type { NavMode } from '@lib/types/state'
 export const MODE_DESCRIPTIONS: Record<NavMode, string> = {
     overview: 'See all 8,406 Montgomery County businesses in one view.',
     search: 'Find businesses by name, type, or location.',
-    trail: 'Walk from the focused business to its closest neighbors — click any node to keep going.',
-    focus: 'See all businesses linked to the focused node, ranked by relationship strength.',
+    trail: 'Walk from the focused business to its closest neighbors — click any business to keep going.',
+    focus: 'See all businesses linked to the focused one, ranked by how strongly they relate.',
     inside: 'Surround yourself with the focused business and its local neighborhood.',
     map: 'Switch to a geographic map view of the county.',
-    bridge: 'Transitioning between navigation states.'
+    bridge: 'Moving between views.'
 }
 
 export interface ModeOption {

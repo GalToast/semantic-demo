@@ -127,17 +127,17 @@ export function buildSelectedBusinessProps(
             filedAs: '',
             showFiledAs: false,
             what: COPY.selectedEmptyWhat || 'What they do',
-            role: COPY.selectedEmptyRole || 'Record',
-            theme: COPY.selectedEmptyTheme || 'Theme',
-            status: COPY.selectedEmptyStatus || 'Record status',
+            role: COPY.selectedEmptyRole || 'Listing',
+            theme: COPY.selectedEmptyTheme || 'Business type',
+            status: COPY.selectedEmptyStatus || 'Business status',
             trivia: '',
             showTrivia: false,
             matchNarrative: '',
             showMatchPanel: false,
             facts: [],
             sensitivityBadges: [],
-            mapText: COPY.selectedEmptyMap || 'No geocoded point yet',
-            threadText: COPY.selectedEmptyThread || 'Waiting for a related path.',
+            mapText: COPY.selectedEmptyMap || 'No location yet',
+            threadText: COPY.selectedEmptyThread || 'Waiting for similar businesses.',
             isPopulated: false
         }
     }
@@ -153,7 +153,7 @@ export function buildSelectedBusinessProps(
             : `Filed as ${namePresentation.raw ?? ''}`
 
     const what = sanitizePublicFacingNote ? sanitizePublicFacingNote(point.what ?? '') : point.what || ''
-    const defaultWhat = what || 'Montgomery County business record'
+    const defaultWhat = what || 'Montgomery County business'
 
     const role =
         adapter && typeof adapter.getSelectedBusinessRoleLabel === 'function'

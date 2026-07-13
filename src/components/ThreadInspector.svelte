@@ -194,8 +194,8 @@
   {@const followAriaLabel = journeyPhaseIsExploring
     ? 'Following this connection'
     : followTargetsCurrent
-      ? 'This connection is the current path stop'
-      : 'Follow this connection as the next path stop'}
+      ? 'This connection is the current stop'
+      : 'Follow this connection as the next stop'
   {@const followDisabled = inspectedIndex === null || followTargetsCurrent || journeyPhaseIsExploring}
   <div
     class="thread-inspector"
@@ -220,11 +220,11 @@
       </div>
       <h2 id="focus-thread-inspector-title" class="focus-thread-inspector-title inspector-title">
         <!-- Renders as 'Connection to business #N' (when name missing) or 'Connection to {name}' when present. -->
-        {inspectedIndex != null ? `Connection to ${appState.points[inspectedIndex]?.name ?? `business #${inspectedIndex}`}` : 'Connection Inspector'}
+        {inspectedIndex != null ? `Connection to ${appState.points[inspectedIndex]?.name ?? 'a nearby business'}` : 'Connection Inspector'}
       </h2>
       <p id="focus-thread-inspector-copy" class="focus-thread-inspector-copy inspector-source">
         {inspectedIndex != null
-          ? `Previewing the connection from ${localizeSource(inspector.source)} to ${appState.points[inspectedIndex]?.name ?? `business #${inspectedIndex}`}.`
+          ? `Previewing the connection from ${localizeSource(inspector.source)} to ${appState.points[inspectedIndex]?.name ?? 'a nearby business'}.`
           : 'Preview why this nearby stop belongs in the current focus path.'}
       </p>
       {#if inspector.segmentCount > 0 || inspector.braidCount > 0 || inspector.endpointCount > 0}

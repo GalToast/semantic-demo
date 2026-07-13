@@ -600,9 +600,9 @@ export function updateTraversalUi(): void {
         nextBtn.disabled = true
         focusPrevBtn.disabled = true
         focusNextBtn.disabled = true
-        contextEl.textContent = `${currentName} restored from this shared link, but the ${queryLabel} did not restore while the semantic lane is degraded. Retry now to rebuild it, or use Overview to step back to the county.`
-        focusProgressEl.textContent = `Trail unavailable for ${queryLabel} while the lane is degraded.`
-        if (focusNextEl) focusNextEl.textContent = 'Retry the semantic lane before continuing this trail.'
+        contextEl.textContent = `${currentName} restored from this shared link, but the ${queryLabel} did not restore while the data is degraded. Retry now to rebuild it, or use Overview to step back to the county.`
+        focusProgressEl.textContent = `Trail unavailable for ${queryLabel} while the data is degraded.`
+        if (focusNextEl) focusNextEl.textContent = 'Retry loading before continuing this trail.'
         updateWalkBreadcrumb(false)
         updateFocusNeighborRail()
         removeFocusSemanticOverlay()
@@ -619,42 +619,42 @@ export function updateTraversalUi(): void {
         // shadowed the dedicated empty-neighbor branch below, producing the documented
         // "Stop 2 of 0". Guard the "of ${neighborCount}" total so the progress line never shows a
         // total smaller than the current stop, and drop the "Use Next" cue when Next is disabled.
-        contextEl.textContent = `Stop ${stepNumber}: ${currentName}. Why here: ${reason}. Source: ${sourceLabel}. Use Prev to go back${
+        contextEl.textContent = `Stop ${stepNumber}: ${currentName}. Why here: ${reason}. Matched by ${sourceLabel}. Use Prev to go back${
             neighborCount > 0 ? ' or Next to continue' : ', then return to Overview to find more connections'
         }.`
         focusProgressEl.textContent =
             neighborCount > 0
                 ? `Stop ${stepNumber} of ${neighborCount}`
-                : `Stop ${stepNumber}. No more visible stops in this slice.`
+                : `Stop ${stepNumber}. No more visible stops with these filters.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`
-                : 'This exploration has no unseen visible stop left in the current slice.'
+                : 'No more stops to explore with these filters.'
             if (nextWalkName) focusNextEl.title = focusNextEl.textContent!
             else focusNextEl.removeAttribute('title')
         }
     } else if (neighborCount === 0 && nav.threadSource === 'semantic') {
-        contextEl.textContent = `Semantic connections exist around ${currentName}, but none survive the current slice. Broaden the view to see the record-backed relationship.`
-        focusProgressEl.textContent = `No visible nearby records from ${currentName} in this slice.`
-        if (focusNextEl) focusNextEl.textContent = 'No visible next stop in this filtered slice.'
+        contextEl.textContent = `Related businesses are near ${currentName}, but none are visible with the current filters. Broaden the view to see them.`
+        focusProgressEl.textContent = `No visible nearby businesses from ${currentName} with these filters.`
+        if (focusNextEl) focusNextEl.textContent = 'No visible next stop with these filters.'
     } else {
         const fallbackLeadIn =
             appState.semanticThreadsStatus === 'loading'
-                ? 'Semantic connections are still loading. Showing approximate neighbors from the current cluster until they finish.'
-                : 'No record-backed connections found for this trail. Showing approximate neighbors based on shared cluster membership.'
+                ? 'Related businesses are still loading. Showing nearby businesses by category until they finish.'
+                : 'No relationship data found for this trail. Showing nearby businesses based on shared category.'
         const focusPocketMeta = nav.focusPocketMeta
         const pocketNote =
             nav.threadSource === 'semantic' && focusPocketMeta?.active
-                ? ` Focus lens is staging ${focusPocketMeta.nodeCount} related records as a ${focusPocketMeta.motifLabel || 'semantic constellation'} for readability; the links still come from the trail.`
+                ? ` Arranging ${focusPocketMeta.nodeCount} related businesses as a ${focusPocketMeta.motifLabel || 'group'} for readability; the links still come from the trail.`
                 : ''
-        contextEl.textContent = `${neighborCount} candidate steps around ${currentName}. ${nav.threadSource === 'semantic' ? 'These come from record-backed relationships, and the bright spokes show the same links even when spacing stays approximate.' : fallbackLeadIn}${pocketNote} Use Prev / Next to continue.`
+        contextEl.textContent = `${neighborCount} nearby stops around ${currentName}. ${nav.threadSource === 'semantic' ? 'These come from matched relationships, and the connecting lines show the same links even when spacing stays approximate.' : fallbackLeadIn}${pocketNote} Use Prev / Next to continue.`
         focusProgressEl.textContent = neighborCount
-            ? `${neighborCount} nearby ready from ${currentName}`
+            ? `${neighborCount} nearby to explore from ${currentName}`
             : `Start with ${currentName}, then explore the neighborhood.`
         if (focusNextEl) {
             focusNextEl.textContent = nextWalkName
                 ? `Next: ${nextWalkName} - ${nextWalkReason}.`
-                : 'Choose a nearby business to continue the path.'
+                : 'Choose a nearby business to continue.'
             if (nextWalkName) focusNextEl.title = focusNextEl.textContent!
             else focusNextEl.removeAttribute('title')
         }

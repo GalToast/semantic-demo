@@ -47,7 +47,7 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         headerText: 'Business Details',
         headerVisible: true,
         emptyHeadline: 'Select a business to see details',
-        emptySubtext: 'Click a node in the field to explore its connections.',
+        emptySubtext: 'Click a business to see its connections.',
         panelVisible: true,
         selectionSuppressed: false
     },
@@ -55,7 +55,7 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         headerText: 'Business Details',
         headerVisible: true,
         emptyHeadline: 'Select a business to see details',
-        emptySubtext: 'Click a search result or node to explore.',
+        emptySubtext: 'Click a search result or business to explore.',
         panelVisible: true,
         selectionSuppressed: true
     },
@@ -75,7 +75,7 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         panelVisible: true,
         selectionSuppressed: false
     },
-    'inside': {
+    inside: {
         // Deep-dive mode: user has entered the focused business's local
         // neighborhood. The InfoPanel shows the anchor business with
         // context-appropriate copy.
@@ -96,12 +96,12 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         panelVisible: true,
         selectionSuppressed: true
     },
-    'trail': {
+    trail: {
         // Trail mode: user is walking a trail of connected businesses.
         headerText: 'Trail',
         headerVisible: true,
         emptyHeadline: 'Following a trail',
-        emptySubtext: 'Walk from the anchor through its connected businesses.',
+        emptySubtext: 'Walk from the focused business through its connected businesses.',
         panelVisible: true,
         selectionSuppressed: false
     },
@@ -113,7 +113,7 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         headerText: 'Business Details',
         headerVisible: true,
         emptyHeadline: 'Select a business to see details',
-        emptySubtext: 'Click a node in the field to explore its connections.',
+        emptySubtext: 'Click a business to see its connections.',
         panelVisible: true,
         selectionSuppressed: false
     },
@@ -121,7 +121,7 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         headerText: 'Business Details',
         headerVisible: true,
         emptyHeadline: 'Select a business to see details',
-        emptySubtext: 'Click a node in the field to explore its connections.',
+        emptySubtext: 'Click a business to see its connections.',
         panelVisible: true,
         selectionSuppressed: false
     },
@@ -129,7 +129,7 @@ const CONTENT_BY_SURFACE: Record<string, InfoPanelContentDescriptor> = {
         headerText: 'Business Details',
         headerVisible: true,
         emptyHeadline: 'Select a business to see details',
-        emptySubtext: 'Click a node in the field to explore its connections.',
+        emptySubtext: 'Click a business to see its connections.',
         panelVisible: true,
         selectionSuppressed: false
     }
