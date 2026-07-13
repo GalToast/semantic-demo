@@ -223,11 +223,7 @@ export class ThreadSettler {
         // quick succession. Clicks/traversal still run so the user can re-select a
         // focused node if they explicitly click it again.
         const focusedIndex = get(navStore).focusedIndex
-        if (
-            index === focusedIndex &&
-            appState.navState?.mode === 'trail' &&
-            !options.fromCanvasNode
-        ) {
+        if (index === focusedIndex && appState.navState?.mode === 'trail' && !options.fromCanvasNode) {
             return null
         }
         const fromIndex = Number.isFinite(options.fromIndex)
@@ -350,7 +346,7 @@ export class ThreadSettler {
 
         showExperienceToast(
             'Following connection',
-            `Moving along the semantic trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
+            `Moving along the trail to ${formatBusinessName(targetPoint?.name || 'the next stop')}.`
         )
 
         const capturedIndex = index
