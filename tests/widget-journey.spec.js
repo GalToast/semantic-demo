@@ -779,7 +779,7 @@ test.describe('Widget journey', () => {
         }
     })
 
-    test('W51-demo-auto-cancel: user interaction during auto-demo dismisses the choreography', async ({ page }) => {
+    test('W51-demo-auto-cancel: user interaction during auto-demo dismisses the choreography', { tag: '@live' }, async ({ page }) => {
         // W51 audit #4 (M3). The 10-phase auto-demo runs for ~41 seconds
         // and ends with a "Now explore your way" caption that would normally
         // linger for 3 more seconds. If the user clicks a 3D dot during
