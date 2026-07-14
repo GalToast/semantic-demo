@@ -289,6 +289,9 @@ class AppState {
         sceneRevealActive: false,
         sceneRevealStartedAt: 0,
         loadingPhaseKey: 'records',
+        // navState is the canonical source for URL-state fields; the flat
+        // appState $state duplicates (urlStateRestoreToken / applyingUrlState /
+        // restoringBrowserHistory) were removed as orphans with zero consumers.
         applyingUrlState: false,
         restoringBrowserHistory: false,
         urlStateRestoreToken: 0,
@@ -442,7 +445,6 @@ class AppState {
     suppressCanvasFocusUntil = $state<number>(0)
     focusPocketTransitionStartedAt = $state<number>(0)
     mobileRouteFieldPeekTimer = $state<ReturnType<typeof setTimeout> | null>(null)
-    urlStateRestoreToken = $state<number>(0)
     dataLoadAttempt = $state<number>(0)
     semanticSpaceLayoutManifest = $state<unknown>(null)
     semanticSpaceLayoutStatus = $state<string>('')
@@ -631,10 +633,6 @@ class AppState {
     set currentView(value: ViewName) {
         this.navState.currentView = value
     }
-
-    // ==== URL STATE TRACKING ====
-    applyingUrlState = $state<boolean>(false)
-    restoringBrowserHistory = $state<boolean>(false)
 }
 
 // Singleton opt-in instance — consumers can import and use this instead of the legacy state.
@@ -734,7 +732,10 @@ export const appState: AppState = new Proxy({} as AppState, {
                         message: `Invalid value rejected: ${error}`,
                         kind: 'rejection'
                     })
-                    return false
+                    // Return true so the trap does not throw a strict-mode
+                    // TypeError. The rejection is already surfaced via the
+                    // APP_ERROR_CAUGHT event; the invalid value is not set.
+                    return true
                 }
             }
         }

@@ -58,6 +58,7 @@ import {
 } from './results-ui'
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
+import { appState } from '@lib/state/app.svelte'
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -131,9 +132,10 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     incrementFocusTransitionToken()
     if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer()
 
-    // Abort any in-flight search
+    // Abort any in-flight search and store the new controller on appState
+    appState.searchAbortController?.abort()
     const currentController = new AbortController()
-    // Store controller for abort (simplified - in production this would be in appState)
+    appState.searchAbortController = currentController
 
     if (!trimmedQuery || trimmedQuery.length < 2) {
         stopSearchVectorScramble()

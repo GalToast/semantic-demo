@@ -181,7 +181,7 @@ async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsR
         const x = xVal ?? 0
         const y = yVal ?? 0
         const z = zVal ?? 0
-        const cluster = p.length > 3 ? parseInt(p[3] as string, 10) || 0 : 0
+        const cluster = p.length > 3 ? (parseFiniteNumber(p[3]) ?? 0) | 0 : 0
 
         if (xVal === null || yVal === null || zVal === null) {
             invalidPositionIndices.push(i)
@@ -238,14 +238,17 @@ async function handleLoadThreads(
             try {
                 const cacheMode = typeof config === 'string' ? config : (config as AttemptConfig)?.cache
                 const response = await fetch(url, cacheMode ? { cache: cacheMode as RequestCache } : undefined)
-                if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
                 if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
+                if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
                 bundle = await response.json()
                 loadedArtifactName = artifactName
                 break outer
             } catch (error) {
+                // Supersede errors must propagate immediately — do not
+                // swallow them as lastError (which would waste remaining
+                // fetch attempts and surface a misleading error message).
+                if (requestId !== _activeRequestId) throw error
                 lastError = error
-                // No delay in worker; we want to proceed as fast as possible or let the next loop handle it
             }
         }
     }
@@ -311,8 +314,12 @@ function cleanOptionalValue(value: unknown): string | null {
 }
 
 function parseFiniteNumber(value: unknown): number | null {
-    const num = parseFloat(value as string)
-    return Number.isFinite(num) ? num : null
+    if (typeof value === 'number') return Number.isFinite(value) ? value : null
+    if (typeof value !== 'string') return null
+    const trimmed = value.trim()
+    if (trimmed === '') return null
+    const num = Number(trimmed)
+    return Number.isFinite(num) && String(num) === trimmed ? num : null
 }
 
 function normalizeLeadId(id: unknown): string | null {
@@ -329,12 +336,8 @@ function artifactNameFromUrl(url: string): string {
     }
 }
 
-const STREAMING_THRESHOLD_BYTES = 8 * 1024 * 1024 // 8 MB
-
 /**
  * Load and parse lead enrichment JSON.
- * For payloads >8 MB, uses streaming TextDecoder + iterative JSON parse
- * to avoid a single large parse() call on the worker thread.
  */
 async function handleLoadLeadEnrichment(
     { url }: { url: string },
@@ -344,38 +347,6 @@ async function handleLoadLeadEnrichment(
     if (!response.ok) throw new Error(`Failed to fetch enrichment: ${response.status}`)
     if (requestId !== _activeRequestId) return { enrichment: null }
 
-    const contentLength = Number(response.headers.get('content-length')) || 0
-
-    if (contentLength > STREAMING_THRESHOLD_BYTES || contentLength === 0) {
-        // Streaming path: read body in chunks, decode, and accumulate.
-        // For very large payloads we parse incrementally.
-        const reader = response.body?.getReader()
-        if (reader) {
-            const chunks: Uint8Array[] = []
-            let totalBytes = 0
-            while (true) {
-                if (requestId !== _activeRequestId) {
-                    reader.cancel()
-                    return { enrichment: null }
-                }
-                const { done, value } = await reader.read()
-                if (done) break
-                chunks.push(value)
-                totalBytes += value.length
-            }
-            // Merge into a single ArrayBuffer for decoding
-            const merged = new Uint8Array(totalBytes)
-            let offset = 0
-            for (const chunk of chunks) {
-                merged.set(chunk, offset)
-                offset += chunk.length
-            }
-            const text = new TextDecoder().decode(merged)
-            return { enrichment: parseEnrichmentJson(text) }
-        }
-    }
-
-    // Small payload path: straightforward JSON parse
     const text = await response.text()
     if (requestId !== _activeRequestId) return { enrichment: null }
     return { enrichment: parseEnrichmentJson(text) }
