@@ -68,7 +68,6 @@ const LEGACY_CSS_LINKS = [
     '<link rel="stylesheet" href="css/mobile_premium__chrome.css">',
     '<link rel="stylesheet" href="css/mobile_premium__state.css">',
     '<link rel="stylesheet" href="css/mobile_premium__idle.css">',
-    '<link rel="stylesheet" href="css/mobile_premium__map.css">',
     '<link rel="stylesheet" href="css/mobile_premium__surfaces.css">',
     '<link rel="stylesheet" href="css/mobile_premium__narrow.css">',
     '<link rel="stylesheet" href="css/modules/focus_stage.css">'
