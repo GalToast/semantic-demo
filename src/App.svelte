@@ -20,6 +20,9 @@
   import { useNavState } from '@lib/ui/use-nav-state.svelte';
   import { threadInspectorActive } from '@lib/stores/focus.svelte';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
+  import { removeStaticPlaceholder, computeDevToolsVisible, isPlaywrightEnvironment } from '@lib/app/app-lifecycle.ts';
+  import { createAppBootHandlers } from '@lib/app/app-event-handlers.ts';
+  import { focusSearchInput } from '@lib/app/app-render.ts';
 
   // Side-effect import: biofield glow animation CSS
   import '@lib/css/biofield.css';
@@ -99,7 +102,7 @@
     canvasLazy.ensure(true)
   }
 
-  const isPlaywright = typeof window !== 'undefined' && !!window.__PLAYWRIGHT__;
+  const isPlaywright = isPlaywrightEnvironment();
 
   // W46-B2b: scheduleIdleComponentImport was moved to lazy-component.svelte.ts
   // as scheduleIdleImport, used internally by createLazyComponent. No call
@@ -149,32 +152,10 @@
   let s3dSceneReady = $state(false);
   let s3dSceneError = $state(false);
 
-  const devToolsVisible = import.meta.env.MODE === 'development'
-    && typeof window !== 'undefined'
-    && (() => {
-      const params = new URLSearchParams(window.location.search || '');
-      return params.has('debug') || params.has('devtools') || params.has('spector');
-    })();
+  const devToolsVisible = computeDevToolsVisible();
 
   onMount(() => {
-    // App lifecycle moved to AppBoot.svelte (W48-T2). Kept here as a
-    // no-op placeholder so the visual layers below don't change shape.
-    //
-    // W49b session #2: dismiss the static #app-loading-placeholder that
-    // index.html ships for first-paint. The Svelte LoadingOverlay component
-    // owns the #loading-overlay id once mounted; the static first-paint
-    // placeholder uses the distinct id #app-loading-placeholder so the two
-    // never collide. When `actuallyVisible` flips to false (phase === 'launch'
-    // or data-load error) the Svelte element is removed but the pre-mount
-    // static one would otherwise survive — sits on top of the scene forever
-    // and intercepts pointer events. Cleaning it up here:
-    //   - Once, on App mount (so it never races the LoadingOverlay render)
-    //   - Only matches the static index.html placeholder (distinct id, no
-    //     Svelte class needed for filtering).
-    if (typeof document !== 'undefined') {
-      const candidates = document.querySelectorAll<HTMLElement>('#app-loading-placeholder');
-      candidates.forEach((el) => el.remove());
-    }
+    removeStaticPlaceholder();
   });
 
   // The parity-attrs installer is the single source of truth for all body
@@ -312,10 +293,7 @@
   // a11y gap was worse. Focus the search input on all viewports.
   $effect(() => {
     if (!engineReady.value) return;
-    requestAnimationFrame(() => {
-      const input = document.getElementById('search-input') as HTMLInputElement | null;
-      if (input && document.activeElement !== input) input.focus();
-    });
+    focusSearchInput();
   });
 
   $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));
@@ -335,17 +313,10 @@
 
 <!-- App lifecycle bootstrap (side-effect component, no DOM output) -->
 <AppBoot
-  toggleWeather={() => {
-    weatherVisible = !weatherVisible
-  }}
-  toggleAudioMute={() => {
-    import('@lib/audio/audio-scape')
-      .then(({ setAudioMuted, isAudioMuted }) => setAudioMuted(!isAudioMuted()))
-      .catch(() => {})
-  }}
-  onContractSurfaceForced={() => {
-    semanticDiveContractForced = true
-  }}
+  {...createAppBootHandlers({
+    toggleWeather: () => { weatherVisible = !weatherVisible },
+    setContractForced: (v) => { semanticDiveContractForced = v }
+  })}
 />
 
 <!-- Screen-reader-only live region for dynamic announcements.
