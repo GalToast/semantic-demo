@@ -3,6 +3,22 @@
 > Read-only investigation. No source edits, no builds, no tests. Every claim cites `file:line`.
 > Repo: `/c/Users/HP/repos/semantic-explorer`, branch `master`. Investigated at HEAD `161194f1`; **current HEAD `5222e684`** after a parallel-lane merge of 7 commits. None of the CSS shards cited below were structurally modified by that merge — `5222e684` only touched `css/clusters.css` (7 lines) and `css/layout_base.css` (8 lines) cosmetically. Section cites remain valid.
 
+## 0. Status — updated 2026-07-14 (main-lane execution, post-plan)
+
+**Done (low-risk commits landed on `master`):**
+
+- `2eba62bf` `refactor(css): delete empty mobile_premium__map.css stub` — plan §7 step 2.
+- `ce6d6e8d` `docs(css): add live css-ownership.md; repoint AGENTS.md` — plan §7 step 1.
+- `49ff54d6` `test(css): align mobile-chrome-ownership-contract with map.css deletion` — regression fix caused by `2eba62bf` (see §6 update below).
+
+**BLOCKED: complex merges (plan §7 steps 3–5).** The plan's §6 verification list **missed hard-coded contract tests** that gate the shard merges:
+
+- `tests/mobile-chrome-ownership-contract.mjs` — `MOBILE_PREMIUM_SPLIT` array hard-codes the 7 shard filenames and `readFileSync`s each. `2eba62bf` (map.css delete) broke it (ENOENT); fixed in `49ff54d6`. Each merge (3–5) must update this array.
+- `tests/css-ownership-check.mjs` — `selectorBaselines` hard-codes **per-file selector counts** (e.g. `.focus-stage-card` → `mobile_premium__focus-dive.css: 30`). Any merge shifts counts → fails. **This test is ALREADY FAILING pre-existing** (stale baseline; failures cite files not touched by this plan: `journey_active.css`, `chrome.css`, `focus-dive.css`, `idle.css`, `search.css` — parallel-session drift). Because the gate is already red, merges cannot be verified against it.
+- `tests/cache-buster-check.js` — checks `<link>` injection order in built `dist/svelte/index.html`; fails pre-existing on a `case-study.html` build-dist issue, unrelated to source edits.
+
+**Decision: defer steps 3–5.** Do not execute autonomously while `css-ownership-check.mjs` is red — the gate cannot distinguish merge-introduced regressions from pre-existing drift. Revisit only after the parallel session settles AND contract baselines are green. When resumed, each merge must also update the three contract tests above (see §7 revised steps).
+
 ## 1. Executive Summary (ranked by impact ÷ effort)
 
 1. **7 `mobile_premium__*.css` shards are micro-sliced with documented overlap and one is empty** — `css/mobile_premium__map.css:1` is a 1-line stub, and the cascade header itself records that the 7-way split was _already collapsed on 2026-06-02 "because the chrome/state/surfaces files all targeted 6-8 of the same data-panel-surface values with overlapping concerns"_ (`css/mobile_premium__focus-dive.css:3-5`). Merge 7→3.
@@ -48,10 +64,10 @@ Load order (injection via `transformIndexHtml`): `vite.config.ts:65-74` — `sem
 
 - **Empty/dead:** `mobile_premium__map.css` (1 line), `demo_ui.css` (12 lines, mostly comment).
 - **Overlapping selectors (same selector in >1 file):**
-    - `body.surface-idle .info-panel` — `chrome` (1) + `state` (2) + `surfaces` (1) + `narrow` (1). Verified per-file counts.
-    - `body.surface-semantic-dive .view-toggle` — `chrome` (1) + `narrow` (2).
-    - `body.surface-semantic-dive .focus-stage-card` — 9 blocks within `focus-dive.css` (intra-file dup).
-    - Broad shared _state-prefix_ selectors (`body.surface-idle`, `body.surface-focus`, `.journey-compass`, `#canvas-container`, `.stat-caption`, `.info-header`, `.rail-section`, `.view-toggle`) appear in 8–13 files each — these are state-gated _context_ prefixes, not necessarily duplicate rules; the real duplication is the component-level selectors above.
+  - `body.surface-idle .info-panel` — `chrome` (1) + `state` (2) + `surfaces` (1) + `narrow` (1). Verified per-file counts.
+  - `body.surface-semantic-dive .view-toggle` — `chrome` (1) + `narrow` (2).
+  - `body.surface-semantic-dive .focus-stage-card` — 9 blocks within `focus-dive.css` (intra-file dup).
+  - Broad shared _state-prefix_ selectors (`body.surface-idle`, `body.surface-focus`, `.journey-compass`, `#canvas-container`, `.stat-caption`, `.info-header`, `.rail-section`, `.view-toggle`) appear in 8–13 files each — these are state-gated _context_ prefixes, not necessarily duplicate rules; the real duplication is the component-level selectors above.
 - **One un-gated rule in `surfaces.css`:** `body:not(.surface-idle) #selected-details.active:not([hidden])` (`css/mobile_premium__surfaces.css:3-5`) has **no `@media`** and applies at all viewports — a desktop-leak risk to verify, not introduced by this plan.
 
 ## 3. Mobile Premium Shard Consolidation Assessment
@@ -111,15 +127,18 @@ Run by main lane (NOT by this subagent):
 - `npm run qa:surface:mobile-idle` — primary surface the shards style.
 - `npm run qa:surface:all` — full surface regression.
 - `npm run test:contract` — includes CSS-touching contract tests: `tests/unit-active/css-important-invariant.test.ts` (merges must not alter `!important` counts), `tests/unit-active/component-SelectedBusinessDetails.test.ts`, `tests/unit-active/legend-display-none-offscreen.test.ts`, `tests/shell-contract-check.js`, `tests/cache-buster-check.js` (link injection order), `tests/sd143-map-search-visual.spec.js`.
+  - **ADDITIONALLY (missed in original plan — these gate the merges):** `tests/mobile-chrome-ownership-contract.mjs` (`MOBILE_PREMIUM_SPLIT` hard-codes the 7 shard filenames; update per merge) and `tests/css-ownership-check.mjs` (`selectorBaselines` hard-codes per-file selector counts; update per merge). **`css-ownership-check.mjs` is currently RED pre-existing** (stale baseline vs parallel-session drift in `journey_active.css` / `chrome.css` / `focus-dive.css` / `idle.css` / `search.css`) — the merge gate cannot be considered green until the owning session resolves it.
 - `node tests/visual-state-audit.mjs` — captures surfaces incl. `01-mobile-idle`, `07-desktop-idle`, `16-desktop-info-panel-populated`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`, `04-mobile-field-node-active`, search-error, map-trail-strip, focus-thread-inspector (`tests/visual-state-audit.mjs:79,82,650,654,658,666,676,734-805,926-961`). Verify no desktop leak from the un-gated `surfaces.css:3-5` rule after merge.
 
 ## 7. Recommended Execution Order
 
-1. `docs: add docs/css-ownership.md; repoint AGENTS.md:86` (pure doc, no CSS risk).
-2. `css: delete empty mobile_premium__map.css; remove its link in vite.config.ts:71`.
-3. `css: merge chrome+narrow → mobile_premium__layout.css` (update `vite.config.ts:68,73`).
-4. `css: merge state+surfaces → mobile_premium__state.css` (update `vite.config.ts:69,72`; gate `surfaces.css:3-5`).
-5. `css: fold idle into components file; rename focus-dive → mobile_premium__components.css` (update `vite.config.ts:67,70`); de-dup `info-panel` + `.focus-stage-card`.
-6. `docs: refresh vite.config.ts comment + cross-file shard references` listed in §3.
+- [x] **1. `docs: add docs/css-ownership.md; repoint AGENTS.md:86`** — DONE (`ce6d6e8d`).
+- [x] **2. `css: delete empty mobile_premium__map.css; remove its link in vite.config.ts:71`** — DONE (`2eba62bf`); regression in `mobile-chrome-ownership-contract.mjs` fixed in `49ff54d6`.
+- [ ] **3. `css: merge chrome+narrow → mobile_premium__layout.css`** (update `vite.config.ts` link list) — **BLOCKED** (see §0). Requires updating `MOBILE_PREMIUM_SPLIT` in `tests/mobile-chrome-ownership-contract.mjs` and `selectorBaselines` in `tests/css-ownership-check.mjs` for the renamed/merged files.
+- [ ] **4. `css: merge state+surfaces → mobile_premium__state.css`** (update `vite.config.ts`; gate `surfaces.css:3-5`) — **BLOCKED** (same contract-test updates + gate-green precondition).
+- [ ] **5. `css: fold idle into components file; rename focus-dive → mobile_premium__components.css`** (update `vite.config.ts`); de-dup `info-panel` + `.focus-stage-card` — **BLOCKED** (same).
+- [ ] **6. `docs: refresh vite.config.ts comment + cross-file shard references`** listed in §3 — pending steps 3–5.
 
-PLAN SAVED TO: tmp/wave1-plans/css-surface-cleanup-plan.md
+**Precondition to resume steps 3–6:** parallel session settled AND `tests/css-ownership-check.mjs` + `tests/cache-buster-check.js` green. Each merge must update the three hard-coded contract tests (§6) in the same commit as the CSS/link change, so the merge is verifiable.
+
+PLAN SAVED TO: tmp/wave1-plans/css-surface-cleanup-plan.md · revised 2026-07-14 (see §0).
