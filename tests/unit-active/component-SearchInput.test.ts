@@ -63,9 +63,9 @@ describe('SearchInput component', () => {
         // had to wait the 300ms debounce.
         const src = readFileSync(SEARCH_INPUT_SOURCE, 'utf-8')
         expect(src).toMatch(/e\.key === 'Enter'/)
-        // Enter must clear the debounce so the search fires immediately,
+        // Enter must cancel the debounce so the search fires immediately,
         // not after the 300ms debounce timer.
-        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?clearTimeout\(debounceTimer\)/)
+        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?searchDebounce\.cancel\(\)/)
         // And it must fire dispatchSearch synchronously.
         expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?dispatchSearch\(q\)/)
         // The Enter handler must set the deferred-focus flag (the focus now
