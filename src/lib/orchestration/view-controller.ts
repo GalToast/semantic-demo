@@ -194,9 +194,8 @@ export function switchView(view: ViewName, options: SwitchViewOptions = {}): voi
         hideViewHandoff()
     }
 
-    // Leaving galaxy: clean up orphaned timers
+    // Leaving galaxy: apply the map flattening layout
     if (view !== 'galaxy') {
-        _clearGalaxyTimers()
         applyMapFlatteningLayout(true)
     } else {
         applyMapFlatteningLayout(false)
@@ -244,11 +243,6 @@ function _startTerrainPrelude(_view: ViewName, options: SwitchViewOptions, _nav:
             handoffFrom: options.handoffFrom
         })
     }, CONFIG.MAP_HANDOFF_PRELUDE_MS)
-}
-
-function _clearGalaxyTimers(): void {
-    // Legacy: clears clockTimer, weatherRefreshTimer, semanticLaneMonitorTimer, etc.
-    // These are managed by their respective modules in the new architecture.
 }
 
 function _syncButtonState(view: ViewName): void {

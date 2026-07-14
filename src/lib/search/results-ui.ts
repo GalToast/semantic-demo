@@ -49,12 +49,6 @@ interface SearchSummaryState {
     visibleMatches?: number
 }
 
-interface LegacyRenderCache {
-    dedupedResults: SearchResult[]
-    total: number
-    renderContext: RenderContext
-}
-
 // ── HELPERS ────────────────────────────────────────────────────────────────
 
 function syncSearchResultsA11y(resultsEl: HTMLElement | null): void {
@@ -64,8 +58,6 @@ function syncSearchResultsA11y(resultsEl: HTMLElement | null): void {
 }
 
 // ── Legacy DOM rendering ───────────────────────────────────────────────────
-
-const _lastLegacyRender: LegacyRenderCache | null = null
 
 function clearLegacySearchResultsDom(resultsEl: HTMLElement): void {
     if (!resultsEl) return
