@@ -1,6 +1,13 @@
 /**
- * @lib/search/result-renderer.ts — Dedicated module for rendering search result
- * HTML and managing the result list DOM.
+ * @lib/search/result-renderer.ts — DOM-mutating search result list management.
+ *
+ * Pure presentation helpers (renderResultCountLine, getSearchResultStrength,
+ * getSearchResultStrengthLabel, getSearchResultCardClasses,
+ * buildSearchResultSnippet, buildSearchRankLabel) were extracted to
+ * result-presentation.ts and are re-exported here for backward compatibility.
+ *
+ * buildSearchStageLabel remains here because it reads appState.points
+ * (state-dependent, not pure).
  *
  * Port of
  */
@@ -8,43 +15,34 @@
 import { appState } from '@lib/state/app.svelte'
 import { getViewportSize, prefersReducedMotion } from '../utils/environment'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
-import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
 import { getSearchStateNamespace } from './results-ui'
 
-// ── PRIVATE HELPERS — typed accessors (Phase 17 cast consolidation) ───────
+// Re-export pure helpers + types (extracted to result-presentation.ts)
+import {
+    renderResultCountLine,
+    getSearchResultStrength,
+    getSearchResultStrengthLabel,
+    getSearchResultCardClasses,
+    buildSearchResultSnippet,
+    buildSearchRankLabel,
+    type SearchResultPoint,
+    type SearchResult,
+    type SearchRankParams
+} from './result-presentation'
 
-interface SearchResultPoint {
-    lead_id?: string | number
-    name?: string
-    what?: string
-    city?: string
-    lat?: number
-    lng?: number
-    cluster?: number
-    status?: string
-    website?: string
-    email?: string
-    phone?: string
-    trivia?: string
-    [key: string]: unknown
+export {
+    renderResultCountLine,
+    getSearchResultStrength,
+    getSearchResultStrengthLabel,
+    getSearchResultCardClasses,
+    buildSearchResultSnippet,
+    buildSearchRankLabel,
+    type SearchResultPoint,
+    type SearchResult,
+    type SearchRankParams
 }
 
-interface SearchResult {
-    point: SearchResultPoint
-    index: number
-    score: number
-    publicNote?: string
-    publicDetail?: string
-    [key: string]: unknown
-}
-
-interface SearchRankParams {
-    index: number | string | null | undefined
-    order: number
-    topIndex: number | null | undefined
-    anchorIndex?: number | null
-    exploreIndex?: number | null
-}
+// ── TYPES (state-dependent, stays here) ────────────────────────────────────
 
 interface SearchSummary {
     query?: string
@@ -54,132 +52,7 @@ interface SearchSummary {
     dedupedResultCount?: number
 }
 
-// ── PRIVATE HELPERS ────────────────────────────────────────────────────────
-
-function humanizeSearchSnippetCase(value: string): string {
-    const clean = cleanPublicNoteText(value)
-    if (!clean) return ''
-    return clean
-        .toLowerCase()
-        .replace(/\b([a-z])/g, (match) => match.toUpperCase())
-        .replace(/\b(Llc|Lp|Ltd|Pc|Pllc|Inc)\b/g, (match) => match.toUpperCase())
-}
-
-function compactSearchSnippetText(value: string, _max: number = 128): string {
-    const clean = sanitizePublicFacingNote(value)
-    return clean || ''
-}
-
-function buildCategoryLocationSnippet(point: SearchResultPoint): string {
-    const category = humanizeSearchSnippetCase(sanitizePublicFacingNote(point?.what || ''))
-    const city = cleanPublicNoteText(point?.city || '')
-    const hasUsefulCategory =
-        category && !/^(local business|montgomery county business|registry or thin business record)$/i.test(category)
-    if (hasUsefulCategory && city) return `${category} in ${city}.`
-    if (hasUsefulCategory) return category
-    if (city) return `Montgomery County business in ${city}.`
-    return 'Montgomery County business.'
-}
-
-function buildOfficialSiteSnippet(note: string, point: SearchResultPoint): string {
-    const category = humanizeSearchSnippetCase(sanitizePublicFacingNote(point?.what || '')).toLowerCase()
-    const city = cleanPublicNoteText(point?.city || '')
-    if (category && city) return `Official site confirms this ${category} in ${city}.`
-    if (category) return `Official site confirms this ${category}.`
-    return compactSearchSnippetText(note)
-}
-
-// ── SEARCH RENDERERS ────────────────────────────────────────────────────────
-
-export function renderResultCountLine(total: number, currentVisibleCount: number, mode: string = 'initial'): string {
-    if (total === 0) return ''
-    if (total === 1) return '1 anchor'
-    const hidden = total - currentVisibleCount
-    if (mode === 'peek') {
-        return `Anchor · ${hidden} more`
-    }
-    if (currentVisibleCount >= total) {
-        return `All ${total} matches`
-    }
-    return `${currentVisibleCount} of ${total} · ${hidden} behind`
-}
-
-export function getSearchResultStrength(result: SearchResult | null, topScore: number): number {
-    if (!Number.isFinite(topScore) || topScore <= 0) return 14
-    if (!Number.isFinite(result?.score)) return 14
-    return Math.max(14, Math.min(100, Math.round((result!.score / topScore) * 100)))
-}
-
-export function getSearchResultStrengthLabel(order: number, strength: number): string {
-    if (order === 0) return 'Best match'
-    if (strength >= 90) return 'Strong match'
-    if (strength >= 75) return 'Good match'
-    if (strength >= 50) return 'Related'
-    return 'Broader match'
-}
-
-export function getSearchResultCardClasses(order: number, isAnchor: boolean): string {
-    return ['search-result-item', order === 0 ? 'top-result' : '', isAnchor ? 'is-anchor' : 'is-secondary']
-        .filter(Boolean)
-        .join(' ')
-}
-
-export function buildSearchResultSnippet(result: SearchResult | null): string {
-    const point: SearchResultPoint = result?.point || {}
-    const rawNote = result?.publicNote || result?.publicDetail || ''
-    if (!rawNote) return buildCategoryLocationSnippet(point)
-
-    const sanitized = sanitizePublicFacingNote(rawNote)
-    const lower = cleanPublicNoteText(rawNote).toLowerCase()
-
-    if (sanitized && (sanitized !== rawNote || /^legal name:/i.test(rawNote))) {
-        return sanitized
-    }
-
-    if (
-        lower === 'pending research.' ||
-        lower === 'pending research' ||
-        lower.startsWith('no public') ||
-        lower.startsWith('no verified') ||
-        lower.startsWith('no verifiable') ||
-        lower.startsWith('official texas comptroller') ||
-        lower.startsWith('texas taxpayer record') ||
-        lower.startsWith('registry-only') ||
-        lower.startsWith('search for exact') ||
-        lower.includes('no reliable public business contact')
-    ) {
-        return buildCategoryLocationSnippet(point)
-    }
-
-    if (/^official .*site identifies/i.test(rawNote) || /^official .*site confirms/i.test(rawNote)) {
-        return buildOfficialSiteSnippet(rawNote, point)
-    }
-
-    return compactSearchSnippetText(rawNote)
-}
-
-export function buildSearchRankLabel({
-    index,
-    order,
-    topIndex,
-    anchorIndex = null,
-    exploreIndex = null
-}: SearchRankParams): string {
-    if (index === null || index === undefined) return 'Match'
-    if (exploreIndex !== null && exploreIndex !== undefined && index === exploreIndex) return 'Current stop'
-    if (anchorIndex !== null && anchorIndex !== undefined && index === anchorIndex) {
-        if (exploreIndex !== null && exploreIndex !== undefined && exploreIndex !== anchorIndex)
-            return 'Original anchor'
-        return 'Anchor'
-    }
-    if (topIndex !== null && topIndex !== undefined && index === topIndex) {
-        return exploreIndex !== null && exploreIndex !== undefined && exploreIndex !== topIndex
-            ? 'Original top match'
-            : 'Top match'
-    }
-    const orderNum = Number(order)
-    return orderNum === 0 ? 'Top result' : `Result ${orderNum + 1}`
-}
+// ── STATE-DEPENDENT LABEL (reads appState.points) ──────────────────────────
 
 export function buildSearchStageLabel(
     index: number | string | null | undefined,
