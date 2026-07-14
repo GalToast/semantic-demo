@@ -195,7 +195,7 @@
     ? 'Following this connection'
     : followTargetsCurrent
       ? 'This connection is the current stop'
-      : 'Follow this connection as the next stop'
+      : 'Follow this connection as the next stop'}
   {@const followDisabled = inspectedIndex === null || followTargetsCurrent || journeyPhaseIsExploring}
   <div
     class="thread-inspector"

@@ -192,8 +192,10 @@
   function requestReplay(): void {
     cancelAllDemoTimers()
     if (isDemoActive()) cancelDemo()
-    try { resetDemo() } catch {}
-    try { sessionStorage.removeItem('moco_mycelium_demo_session_v1') } catch {}
+    // eslint-disable-next-line no-empty
+    try { resetDemo() } catch { /* no-op: teardown race */ }
+    // eslint-disable-next-line no-empty
+    try { sessionStorage.removeItem('moco_mycelium_demo_session_v1') } catch { /* no-op: storage may be unavailable during teardown */ }
     eligible = true
     unmounted = false
     const replayStart = performance.now()

@@ -229,9 +229,10 @@ export function lerpNodesForFrame(now: number): boolean {
         // initialized in appState and only declared in the LegacyState type).
         // When undefined, read indices from the canonical Map source so GPU
         // instance matrices stay in sync with breathing positions.
-        const pocketMotionIndices = engineState.state.focusPocketMotionByIndex ??
-            (engineState.focusPocket?.getFocusPocketMotionByIndex
-                ? Array.from(engineState.focusPocket!.getFocusPocketMotionByIndex().keys())
+        const pocketMotionIndices =
+            engineState.state.focusPocketMotionByIndex ??
+            (engineState.focusPocket
+                ? Array.from(engineState.focusPocket.getFocusPocketMotionByIndex().keys())
                 : undefined)
         pocketMotionIndices?.forEach((idx: number) => {
             setNodeSporeInstanceMatrixPort(idx)

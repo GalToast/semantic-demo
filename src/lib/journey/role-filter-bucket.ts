@@ -7,9 +7,9 @@
  * real buckets (direct / support / civic).
  */
 
-import type { RelationshipRole } from '@lib/utils/relationship-roles';
+import type { RelationshipRole } from '@lib/utils/relationship-roles'
 
-export type RoleFilterBucket = 'direct' | 'support' | 'civic';
+export type RoleFilterBucket = 'direct' | 'support' | 'civic'
 
 // Indirect/contextual connections — same area/market, complements, and bridges
 // across categories or cities. Bucketed as the "Supporting link" chip.
@@ -22,7 +22,7 @@ export const SUPPORT_BUCKET_ROLES: ReadonlySet<RelationshipRole> = new Set([
     'semantic_bridge',
     'category_bridge',
     'city_bridge'
-]);
+])
 
 /**
  * Map any of the 26 relationship roles into one of the 3 filter buckets the
@@ -37,7 +37,7 @@ export const SUPPORT_BUCKET_ROLES: ReadonlySet<RelationshipRole> = new Set([
  * and unclassified as the catch-all) buckets as direct.
  */
 export function roleToFilterBucket(role: RelationshipRole): RoleFilterBucket {
-    if (role === 'civic') return 'civic';
-    if (SUPPORT_BUCKET_ROLES.has(role)) return 'support';
-    return 'direct';
+    if (role === 'civic') return 'civic'
+    if (SUPPORT_BUCKET_ROLES.has(role)) return 'support'
+    return 'direct'
 }
