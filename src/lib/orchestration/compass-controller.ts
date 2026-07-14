@@ -488,39 +488,39 @@ export function getViewHandoffModel(view: string): ViewHandoffModel {
             return {
                 icon: 'map',
                 kicker: 'Route layer: map',
-                title: 'The focused record lands on terrain',
-                note: `${focusName} keeps its semantic context while county distance becomes visible.`
+                title: 'The focused listing lands on the map',
+                note: `${focusName} keeps its place while county distance becomes visible.`
             }
         }
         return {
             icon: 'map',
             kicker: 'Route layer: map',
             title: 'Geography carries the last layer',
-            note: 'Semantic colors remain, but physical distance is now the thing to read.'
+            note: 'Business categories remain, but physical distance is now the thing to read.'
         }
     }
 
     if (focusName && hasSearch) {
         return {
             icon: 'mycelium',
-            kicker: 'Route layer: mycelium',
-            title: 'The trail returns to the living field',
-            note: `${focusName} remains the anchor for "${searchLabel}" inside the semantic cloud.`
+            kicker: 'Route layer: network',
+            title: 'The trail returns to the network',
+            note: `${focusName} remains the anchor for "${searchLabel}" while connections rebuild.`
         }
     }
     if (focusName) {
         return {
             icon: 'mycelium',
-            kicker: 'Route layer: mycelium',
-            title: 'The record returns to its pocket',
-            note: `${focusName} is back inside its semantic neighborhood.`
+            kicker: 'Route layer: network',
+            title: 'The listing returns to its connections',
+            note: `${focusName} is back among its related businesses.`
         }
     }
     return {
         icon: 'mycelium',
-        kicker: 'Route layer: mycelium',
-        title: 'Mycelium view restored',
-        note: 'Semantic neighborhoods breathe as one living field.'
+        kicker: 'Route layer: network',
+        title: 'Network view restored',
+        note: 'Related businesses, visible in one view.'
     }
 }
 

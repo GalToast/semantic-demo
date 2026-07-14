@@ -97,7 +97,7 @@ export function showViewHandoff(view: ViewName): void {
         // returns a <svg> string with escaped label/icon; we replicate the same
         // output via createElementNS to keep the DOM API invariant.
         const iconId = model.icon
-        const label = view === 'map' ? 'Map view' : 'Mycelium view'
+        const label = view === 'map' ? 'Map view' : 'Network view'
         runeEl.replaceChildren()
         if (iconId) {
             const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg')
@@ -312,8 +312,8 @@ export function getViewHandoffModel(view: ViewName): HandoffModel {
     return {
         icon: 'mycelium',
         kicker: 'Switching views',
-        title: 'Returning to mycelium',
-        note: 'Semantic network is restoring.'
+        title: 'Returning to the Network',
+        note: 'Network view is restoring.'
     }
 }
 

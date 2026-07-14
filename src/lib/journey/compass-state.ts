@@ -70,7 +70,7 @@ export function getJourneyCompassState(): CompassState {
         resultIndices?: unknown[]
         anchorIndex?: number
     } | null
-    const queryLabel: string = summary?.query ? `"${summary.query}"` : 'semantic search'
+    const queryLabel: string = summary?.query ? `"${summary.query}"` : 'search'
     const isSearching: boolean = cueBeat === 'searching'
     const isFocusing: boolean = cueBeat === 'focusing'
     const hasSearch: boolean = !!summary || isSearching
@@ -86,9 +86,9 @@ export function getJourneyCompassState(): CompassState {
             title: hasFocus ? `${focusedName} pinned to map` : 'Montgomery County Map',
             note:
                 routeCount > 1
-                    ? 'The connection trail is now projected onto physical streets. Return to Mycelium to lift back into the living network.'
-                    : 'This is the geography layer: physical proximity after semantic similarity.',
-            primaryAction: { label: 'Return to Mycelium', action: JOURNEY_ACTIONS.OPEN_MYCELIUM },
+                    ? 'The connection trail is now projected onto physical streets. Return to Field view to explore more connections.'
+                    : 'This is the geography layer — physical proximity between related businesses.',
+            primaryAction: { label: 'Return to Field', action: JOURNEY_ACTIONS.OPEN_MYCELIUM },
             secondaryAction: isCountyMapOverview
                 ? null
                 : { label: 'County Reset', action: JOURNEY_ACTIONS.COUNTY_OVERVIEW },
@@ -196,7 +196,7 @@ export function getJourneyCompassState(): CompassState {
                 walkHistoryLength > 1 ? `Trail Step ${walkHistoryLength} | ${clusterName}` : `Focus | ${clusterName}`,
             title: '',
             note: isSearchFocus
-                ? 'The strongest semantic match for this search.'
+                ? 'The strongest match for this search.'
                 : 'A local constellation of related businesses. Hover any glowing connection to see why it exists.',
             primaryAction,
             secondaryAction,
@@ -216,10 +216,10 @@ export function getJourneyCompassState(): CompassState {
                   ? `No results for ${queryLabel}`
                   : `Found ${resultCount} ${resultCount === 1 ? 'spot' : 'spots'} for ${queryLabel}`,
             note: isSearching
-                ? 'Looking for semantic anchors before gathering the trail around your query.'
+                ? 'Looking for related matches before building connections around your query.'
                 : hasNoResults
-                  ? 'Try a broader term or one of the suggested high-signal categories below.'
-                  : 'The first strong match is the anchor. Center any record to enter its local neighborhood.',
+                  ? 'Try a broader term or one of the suggested popular categories below.'
+                  : 'The first strong match is the anchor. Center any listing to explore its local connections.',
             primaryAction: Number.isFinite(summary?.anchorIndex)
                 ? { label: 'Center on anchor', action: JOURNEY_ACTIONS.CENTER_ANCHOR }
                 : { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
@@ -234,7 +234,7 @@ export function getJourneyCompassState(): CompassState {
             phase: 'search',
             kicker: `Search | ${label}`,
             title: `No results for ${label}`,
-            note: 'Try a broader term or one of the suggested high-signal categories below.',
+            note: 'Try a broader term or one of the suggested popular categories below.',
             primaryAction: { label: 'Search', action: JOURNEY_ACTIONS.FOCUS_SEARCH },
             secondaryAction: { label: 'Map', action: JOURNEY_ACTIONS.OPEN_MAP },
             tertiaryAction: null
