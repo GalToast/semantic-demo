@@ -160,7 +160,7 @@ const updateThreadsSource = sectionBetween(
     'state.myceliumDirty = false'
 )
 includesAll(
-    updateThreadsSource,
+    threadManager,
     [
         'SEGMENTS_PER_PAIR = 5',
         'FLOATS_PER_SEGMENT = 6',

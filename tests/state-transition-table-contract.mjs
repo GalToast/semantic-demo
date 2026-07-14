@@ -499,8 +499,9 @@ console.log('  PASS')
 // CONTRACTS 37-48: dispatchNavTransition reducer actions (source-only)
 // Since we can't call the runtime, we verify the reducer cases exist in source.
 // ---------------------------------------------------------------------------
-// Reducer case handlers live in navigation.svelte.ts (not the re-export barrel).
-const reducerSrc = navigationSvelteSrc
+// Reducer case handlers moved into src/lib/stores/navigation/mode-transitions.svelte.ts
+// during the consolidation; the barrel (navigation.svelte.ts) only re-exports dispatchNavTransition.
+const reducerSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation/mode-transitions.svelte.ts', ROOT), 'utf8')
 
 console.log('CONTRACTS 37-48: dispatchNavTransition reducer action handlers (source-only)')
 

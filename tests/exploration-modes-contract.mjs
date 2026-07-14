@@ -15,7 +15,7 @@ import { resolveSource } from './source-path.mjs'
 
 const lifecycleSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle.ts', process.cwd()), 'utf8')
 const modesReexportSrc = fs.readFileSync(resolveSource('src/lib/stores/lifecycle/modes.ts', process.cwd()), 'utf8')
-const navigationSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation.svelte.ts', process.cwd()), 'utf8')
+const navigationSrc = fs.readFileSync(resolveSource('src/lib/stores/navigation/navigation-state.svelte.ts', process.cwd()), 'utf8')
 const focusSrc = fs.readFileSync(resolveSource('src/lib/stores/focus.svelte.ts', process.cwd()), 'utf8')
 const clusterFilterSrc = fs.readFileSync(resolveSource('src/lib/stores/filter.svelte.ts', process.cwd()), 'utf8')
 // applyStoryPrompt lives in orchestration/cluster-filter-controller.ts after the TS split.
