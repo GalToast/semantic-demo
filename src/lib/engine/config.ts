@@ -98,9 +98,6 @@ export const CONFIG = {
     HOVER_LOCK_CONFIRM_MS: 80,
     HOVER_SAMPLE_MS: 24,
 
-    LEAFLET_CSS_URL: 'vendor/leaflet/leaflet.css',
-    LEAFLET_JS_URL: 'vendor/leaflet/leaflet.js',
-
     // ==== COLORS / CLUSTER NAMES ====
     COLORS: CLUSTER_COLORS,
 

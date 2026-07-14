@@ -220,8 +220,6 @@ export interface StateConfig {
     FOCUS_THREAD_SEGMENTS: number
     HOVER_LOCK_CONFIRM_MS: number
     HOVER_SAMPLE_MS: number
-    LEAFLET_CSS_URL: string
-    LEAFLET_JS_URL: string
     COLORS: readonly string[]
     CLUSTER_NAMES: readonly ClusterName[]
     LOADING_PHASE_META: Record<LoadingPhaseKey, LoadingPhaseMeta>

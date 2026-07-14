@@ -399,9 +399,6 @@ class AppState {
     readonly FOCUS_THREAD_SEGMENTS = 16
     readonly HOVER_LOCK_CONFIRM_MS = 80
     readonly HOVER_SAMPLE_MS = 24
-    readonly LEAFLET_CSS_URL = 'vendor/leaflet/leaflet.css'
-    readonly LEAFLET_JS_URL = 'vendor/leaflet/leaflet.js'
-
     // ==== COLORS / CLUSTER NAMES ====
     COLORS = $state(CLUSTER_COLORS)
     CLUSTER_NAMES = $state<string[]>([
