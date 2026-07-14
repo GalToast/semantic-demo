@@ -69,12 +69,16 @@ import { initAnchorBloomLight } from './three-lens-anchor-bloom'
 // All focus/mote/petal/halo objects in this codebase are constructed with a single
 // Material. These helpers narrow the union type at the Three.js interop boundary.
 
-/** Narrow a single-material object's material to a single Material instance. */
+/** Narrow a single-material object's material to a single Material instance.
+ *
+ * Every focus/mote/petal/halo/lens object in this codebase is constructed
+ * with exactly one Material, so the `Material[]` branch of three.js's
+ * `material` union never occurs at runtime. Rather than run a per-frame
+ * `Array.isArray` guard (and a defensive throw) for a case that cannot
+ * happen, we narrow at the interop boundary with a single assertion.
+ */
 function asSingleMaterial(mat: Material | Material[]): Material {
-    if (!Array.isArray(mat)) return mat
-    const first = mat[0]
-    if (!first) throw new Error('Expected a single material, received an empty material array.')
-    return first
+    return mat as Material
 }
 
 /** Narrow material to ShaderMaterial when possible. Returns null for non-shader materials. */

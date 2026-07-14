@@ -20,6 +20,7 @@
 import type { SearchResult } from '@lib/types/state'
 import type { BusinessRecord } from '@lib/types/business'
 import { getBusinessRecords } from '@lib/data-store'
+import { getEnvFlag } from '@lib/utils/env-flag'
 
 // ── Local Index Search (8,406-record fallback) ────────────────────────────────
 
@@ -397,10 +398,6 @@ export function getSearchEngineEmptyStateSuggestions(): string[] {
  * semantic ranking from regressing while making every dev query feel alive.
  */
 export function shouldPreferLiveSearch(): boolean {
-    try {
-        const flag = (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_USE_LIVE_SEARCH
-        return flag === '1' || flag === 'true'
-    } catch {
-        return false
-    }
+    const flag = getEnvFlag('VITE_USE_LIVE_SEARCH')
+    return flag === '1' || flag === 'true'
 }

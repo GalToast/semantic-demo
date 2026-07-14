@@ -114,8 +114,7 @@
       class="mock-banner"
       role="status"
       data-testid="mock-banner"
-      title="The search API fell back to a local mock catalog. To force the
-        real API, append ?staticDev=0 to the URL."
+      title="Demo data: search is using a 20-business mock catalog. Append ?staticDev=0 for the real API."
     >
       <strong>Demo data:</strong> search is using a 20-business mock catalog.
       Append <code>?staticDev=0</code> for the real API.

@@ -18,6 +18,7 @@
 
 import type { SearchResult } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/debug'
+import { getEnvFlag } from '@lib/utils/env-flag'
 
 interface MockBusiness {
     id: string
@@ -208,6 +209,18 @@ export function sleep(ms: number, signal: AbortSignal): Promise<void> {
     })
 }
 
+/**
+ * Artificial latency for the mock search path (ms). Overridable at build
+ * time via `VITE_MOCK_SEARCH_DELAY_MS`; defaults to 165ms so the dev loading
+ * spinner has time to render. Negative or unparsable overrides fall back to
+ * the default.
+ */
+const MOCK_SEARCH_DELAY_MS = (() => {
+    const override = getEnvFlag('VITE_MOCK_SEARCH_DELAY_MS')
+    const parsed = override !== undefined ? Number.parseInt(override, 10) : NaN
+    return Number.isFinite(parsed) && parsed >= 0 ? parsed : 165
+})()
+
 export function scoreBusiness(biz: MockBusiness, queryLower: string): number {
     const nameLower = biz.name.toLowerCase()
     if (nameLower.includes(queryLower)) return 0.85 + (nameLower.startsWith(queryLower) ? 0.15 : 0)
@@ -227,7 +240,7 @@ export function performMockSearch(query: string, signal: AbortSignal, offset = 0
     const scored = MOCK_BUSINESSES.map((biz) => ({ biz, score: scoreBusiness(biz, queryLower) }))
         .filter((entry) => entry.score > 0)
         .sort((a, b) => b.score - a.score || a.biz.name.localeCompare(b.biz.name))
-    return sleep(165, signal).then(() =>
+    return sleep(MOCK_SEARCH_DELAY_MS, signal).then(() =>
         scored.slice(offset, offset + limit).map(({ biz, score }) => ({
             id: biz.id,
             name: biz.name,

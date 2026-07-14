@@ -39,9 +39,8 @@
   let componentDestroyed = $state(false);
   let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   let engineReadyUnsub: (() => void) | null = null;
-  // W6-T5: Track whether the engine lifecycle has been destroyed so we
-  // don't reset overlay state on re-mount after the engine already warmed up.
-  let engineLifecycleDestroyed = false;
+  // W6-T5: Overlay teardown flag tracked to avoid resetting overlay state on
+  // re-mount after the engine already warmed up.
   // W6-T5: Track the last overlay log to prevent spam on rapid remounts.
   let lastOverlayLogAt = 0;
   let canvasError = $state(false);
@@ -267,14 +266,13 @@
     unbindLiveCanvasKeys()
 
     componentDestroyed = true;
-    engineLifecycleDestroyed = true;
     engineHasInit = false;
     canvasReady = false;
     engineReadyUnsub?.();
     engineReadyUnsub = null;
-    // W6-T5: Don't reset overlay to visible on destroy if we already had a
-    // successful engine lifecycle. This prevents overlay flash on re-mount.
-    overlayVisible = !engineLifecycleDestroyed;
+    // W6-T5: keep the overlay hidden on destroy to prevent an overlay flash on
+    // re-mount after a successful engine lifecycle.
+    overlayVisible = false;
     engineLifecycle?.destroyEngine();
     engineLifecycle = null;
     if (overlayTimeout !== undefined) { // audit-ok: onDestroy is a plain hook, not a reactive block
