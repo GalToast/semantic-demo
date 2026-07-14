@@ -842,9 +842,7 @@ body:has(.info-panel.active) .panel-toggle {
         -webkit-line-clamp: 1;
     }
 
-    body.route-peek[data-panel-surface]:not(.surface-map-any)
-        .search-container
-        #synthesize-trigger {
+    body.route-peek[data-panel-surface]:not(.surface-map-any) .search-container #synthesize-trigger {
         display: none;
     }
 
@@ -934,7 +932,9 @@ body:has(.info-panel.active) .panel-toggle {
         flex-direction: column;
         align-items: flex-start;
         gap: 2px;
-        padding: 8px 12px;
+        padding: 10px 12px;
+        min-height: var(--mobile-touch-min, 44px);
+        box-sizing: border-box;
         border: 1px solid var(--color-border-muted);
         border-radius: 8px;
         background: var(--glass-reflection-muted);

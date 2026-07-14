@@ -4,7 +4,6 @@
  * Port of
  */
 
-import { appState } from '../state/app.svelte'
 import type { Point } from '../state/state-types'
 import {
     normalizeMockSearchText,
@@ -62,10 +61,15 @@ interface MockPointSearchFields {
     evidence: string
 }
 
-function getMockPointSearchFields(point: Point): MockPointSearchFields {
+interface MockSearchDataset {
+    points: Point[]
+    leadEnrichment: Record<string, Record<string, unknown>> | null
+}
+
+function getMockPointSearchFields(point: Point, dataset: MockSearchDataset): MockPointSearchFields {
     const enrichment =
         point?.lead_id !== null && point?.lead_id !== undefined
-            ? (appState.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[String(point.lead_id)]
+            ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null)
             : null
     return {
         name: normalizeMockSearchText(point?.name),
@@ -110,9 +114,10 @@ interface ScoredResult {
 export function buildDatasetBackedMockResults(
     query: string,
     matchedTerm: string | null,
-    scoreBase: number
+    scoreBase: number,
+    dataset: MockSearchDataset
 ): ScoredResult[] {
-    if (!Array.isArray(appState.points) || appState.points.length === 0) return []
+    if (!Array.isArray(dataset.points) || dataset.points.length === 0) return []
     const terms = getMockDatasetTerms(query, matchedTerm)
     if (!terms.length) return []
 
@@ -125,10 +130,10 @@ export function buildDatasetBackedMockResults(
         return m?.[1] ?? null
     }
 
-    return appState.points
+    return dataset.points
         .map((point, index) => {
             if (!point || point.lead_id === null || point.lead_id === undefined || point.lead_id === '') return null
-            const fields = getMockPointSearchFields(point)
+            const fields = getMockPointSearchFields(point, dataset)
             let score = 0
             const pNaicsPrefix = pointNaicsPrefix(point)
             if (naicsDenyList && pNaicsPrefix && naicsDenyList.some((deny) => pNaicsPrefix.startsWith(deny))) {
@@ -171,12 +176,10 @@ export function buildDatasetBackedMockResults(
         .filter((r): r is { point: Point; index: number; score: number } => r !== null)
         .sort((a, b) => b.score - a.score || a.index - b.index)
         .slice(0, 5)
-        .map(({ point, score }, i) => {
+        .map(({ point, score }) => {
             const enrichment =
                 point.lead_id !== null && point.lead_id !== undefined
-                    ? (appState.leadEnrichment as Record<string, Record<string, unknown>> | null)?.[
-                          String(point.lead_id)
-                      ]
+                    ? (dataset.leadEnrichment?.[String(point.lead_id)] ?? null)
                     : null
             return {
                 lead_id: String(point.lead_id),

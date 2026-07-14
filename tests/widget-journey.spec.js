@@ -1331,10 +1331,7 @@ test.describe('Widget journey', () => {
             window.__PLAYWRIGHT__ = true
         })
 
-        await page.goto(
-            `${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`,
-            { waitUntil: 'domcontentloaded' }
-        )
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
 
         // Wait for the selected-business detail panel to attach. The name
         // element id is `{idPrefix}selected-name`; FocusCard mounts it with
@@ -1348,10 +1345,7 @@ test.describe('Widget journey', () => {
         //     390px viewport (no right-side overflow).
         const nameBox = await selectedName.boundingBox()
         expect(nameBox, '#selected-name must have a bounding box (rendered)').not.toBeNull()
-        expect(
-            nameBox.x,
-            `#selected-name left edge (${nameBox.x}) must be inside viewport`
-        ).toBeGreaterThanOrEqual(0)
+        expect(nameBox.x, `#selected-name left edge (${nameBox.x}) must be inside viewport`).toBeGreaterThanOrEqual(0)
         expect(
             nameBox.x + nameBox.width,
             `#selected-name right edge (${nameBox.x + nameBox.width}) must not exceed viewport width ${VIEWPORT_W}`

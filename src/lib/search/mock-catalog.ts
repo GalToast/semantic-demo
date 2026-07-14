@@ -5,6 +5,7 @@
  * `` and its bridge.
  */
 
+import { appState } from '../state/app.svelte'
 import { buildDatasetBackedMockResults } from './scoring'
 import {
     MOCK_QUERY_ALIASES,
@@ -246,7 +247,10 @@ export function buildMockCatalogForQuery(query: string): MockResult[] {
     if (!matchedTerm) {
         scoreBase = 0.6
     }
-    const datasetResults = buildDatasetBackedMockResults(query, matchedTerm, scoreBase)
+    const datasetResults = buildDatasetBackedMockResults(query, matchedTerm, scoreBase, {
+        points: appState.points,
+        leadEnrichment: appState.leadEnrichment as Record<string, Record<string, unknown>> | null
+    })
     if (datasetResults.length) return datasetResults as MockResult[]
 
     return bucket.map((entry, i) => ({

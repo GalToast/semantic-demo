@@ -36,26 +36,25 @@ export interface CacheDiagnosticsSnapshot extends SemanticSearchCacheDiagnostics
     maxEntries: number
 }
 
-if (!appState.searchState.semanticSearchResultCache) {
-    withStateMutation(() => {
-        appState.searchState.semanticSearchResultCache = new Map<string, CacheEntry>()
-    })
-}
-if (!appState.searchState.semanticSearchCacheDiagnostics) {
-    withStateMutation(() => {
-        appState.searchState.semanticSearchCacheDiagnostics = {
-            hits: 0,
-            misses: 0,
-            stores: 0,
-            evictions: 0,
-            lastKey: null,
-            lastSource: null,
-            lastAgeMs: null
-        }
-    })
-}
-
 export async function initSearchCache(): Promise<void> {
+    if (!appState.searchState.semanticSearchResultCache) {
+        withStateMutation(() => {
+            appState.searchState.semanticSearchResultCache = new Map<string, CacheEntry>()
+        })
+    }
+    if (!appState.searchState.semanticSearchCacheDiagnostics) {
+        withStateMutation(() => {
+            appState.searchState.semanticSearchCacheDiagnostics = {
+                hits: 0,
+                misses: 0,
+                stores: 0,
+                evictions: 0,
+                lastKey: null,
+                lastSource: null,
+                lastAgeMs: null
+            }
+        })
+    }
     try {
         const dbEntries = await idb.entries()
         const now = Date.now()

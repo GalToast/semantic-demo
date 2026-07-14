@@ -276,13 +276,16 @@ body.surface-map-focus-search .selected-role-badge {
 }
 
 @media (max-width: 768px) {
+    #focus-card-selected,
     body.surface-focus .selected-card,
     body.surface-focus-search .selected-card {
+        position: fixed;
+        top: auto;
         bottom: 12px;
         left: 12px;
         right: 12px;
-        top: auto;
-        width: auto;
+        max-height: 40vh;
+        overflow-y: auto;
     }
 }
 

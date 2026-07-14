@@ -68,8 +68,12 @@ describe('SearchInput component', () => {
         expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?clearTimeout\(debounceTimer\)/)
         // And it must fire dispatchSearch synchronously.
         expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?dispatchSearch\(q\)/)
-        // Finally it should move focus to the first result, matching the
-        // WAI-ARIA combobox/listbox pattern (Enter submits + activates).
-        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?data-order="0"[\s\S]*?first\?\.focus/)
+        // The Enter handler must set the deferred-focus flag (the focus now
+        // happens in an $effect after the async results arrive, instead of
+        // synchronously inside the handler where the list doesn't exist yet).
+        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?_pendingEnterFocus = true/)
+        // The file must still contain the deferred-focus path that queries
+        // the first result and focuses it.
+        expect(src).toMatch(/data-order="0"[\s\S]*?first\?\.focus/)
     })
 })

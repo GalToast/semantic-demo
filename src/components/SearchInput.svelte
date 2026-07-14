@@ -58,6 +58,7 @@
   let searchAbortController: AbortController | null = null;
   let searchStartTime = 0;
   let surfaceSwitchedToSearch = false;
+  let _pendingEnterFocus = $state(false);
 
   // ── Exported actions ────────────────────────────────────────────────────────
   export function focusInput(): void {
@@ -99,6 +100,28 @@
     setSearchQuery(staged);
     dispatchSearch(staged);
     requestAnimationFrame(() => inputEl?.focus());
+  });
+
+  // ── Deferred Enter-focus fulfillment ───────────────────────────────────────-
+  // W48-G (fix): previously the Enter handler synchronously focused the first
+  // result via document.getElementById('search-result-list'). The list does
+  // not exist yet because the search is async, so the focus call hit a
+  // null list and silently did nothing. Defer the focus until the store
+  // reports 'results' with at least one row, then focus the first item.
+  $effect(() => {
+    if (!_pendingEnterFocus) return;
+    const status = $searchState.status;
+    const results = $searchState.results;
+    if (status === 'results' && results.length > 0) {
+      _pendingEnterFocus = false;
+      requestAnimationFrame(() => {
+        const list = document.getElementById('search-result-list');
+        if (list) {
+          const first = list.querySelector('[data-order="0"]') as HTMLElement | null;
+          first?.focus();
+        }
+      });
+    }
   });
 
   // ── Search dispatch ───────────────────────────────────────────────────────────
@@ -249,12 +272,8 @@
           clearTimeout(debounceTimer)
           debounceTimer = null
         }
+        _pendingEnterFocus = true
         dispatchSearch(q)
-      }
-      const list = document.getElementById('search-result-list')
-      if (list) {
-        const first = list.querySelector('[data-order="0"]') as HTMLElement | null
-        first?.focus()
       }
     } else if (e.key === 'ArrowDown') {
       // Move focus to first search result if results are visible

@@ -19,7 +19,7 @@
 import type { NavMode } from '@lib/types/state'
 import type { ModeOption } from './mode-constants'
 import { modes } from './mode-constants'
-import { SELECTION_DEPENDENT_MODES, isModeLocked } from '@lib/navigation/mode-affordances'
+import { isModeLocked } from '@lib/navigation/mode-affordances'
 
 /** Side-effecting collaborators passed into `selectMode`. Types are
  * kept deliberately loose so test code can substitute recordings with

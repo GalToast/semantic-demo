@@ -52,6 +52,8 @@ export interface SemanticSearchPayload {
 
 const SEMANTIC_SEARCH_RETRY_DELAYS_MS: readonly number[] = [900, 1800]
 
+let cacheInitialized = false
+
 function isRetryableSemanticSearchError(error: unknown): boolean {
     const err = error as { name?: string; message?: string } | null
     const message = String(err?.message || err || '').toLowerCase()
@@ -100,6 +102,11 @@ export async function fetchSemanticSearchResults(
     const trimmedQuery = typeof query === 'string' ? query.trim() : ''
     if (!trimmedQuery) return { ok: false, results: [] } as SemanticSearchPayload
     const offset = Number.isFinite(options.offset) ? Math.max(0, options.offset!) : 0
+
+    if (!cacheInitialized) {
+        await initSearchCache()
+        cacheInitialized = true
+    }
 
     if (options.preferCachedResults !== false && offset === 0) {
         const cachedPayload = getCachedSemanticSearchPayload(trimmedQuery, offset)
