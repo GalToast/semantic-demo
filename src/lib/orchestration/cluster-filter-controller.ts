@@ -32,7 +32,7 @@ import { normalizeCityForFilter } from '@lib/utils/geo-data'
 import { describeCluster } from '@lib/utils/ui-presentation'
 import { el, setChildren } from '@lib/utils/dom-builder'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-import { legacyState } from '@lib/state/legacy-state-adapter'
+import { legacyState } from '@lib/state/app.svelte'
 import type { BusinessRecord } from '@lib/types/business'
 import type { ActiveFilters } from '@lib/types/state'
 

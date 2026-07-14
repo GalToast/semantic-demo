@@ -13,7 +13,7 @@
  */
 
 import type { WebGLContextState } from '@lib/engine/webgl-context'
-import type { SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
+import type { BusinessRecord, SemanticNeighborEntry, SemanticThreadBundle } from '@lib/types/business'
 import type { WeatherData } from '@lib/utils/weather'
 import type { SpatialGrid } from '@lib/journey/thread-model'
 import type { PocketMotionWithFrame } from '@lib/types/state'
@@ -26,7 +26,19 @@ import type { CacheEntry } from '@lib/search/cache'
  * and matches the local cast in engine/map-state.ts.
  */
 type LeafletLayer = Record<string, unknown> | null
-import type { Vector3 } from 'three'
+import type {
+    Group,
+    HemisphereLight,
+    InstancedMesh,
+    Material,
+    PerspectiveCamera,
+    Points,
+    Scene,
+    Vector3,
+    WebGLRenderer,
+    DirectionalLight
+} from 'three'
+import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 
 export interface Vector3Like {
     x: number
@@ -871,4 +883,83 @@ export interface ViewportAppState {
     viewportDpr: number
     viewportReducedMotion: boolean
     viewportIsCompact: boolean
+}
+
+/**
+ * Engine-internal state surface (moved from legacy-state.ts 2026-07-14).
+ * This is the typed shape of `appState` as consumed by the engine subsystems.
+ * The `[key: string]: unknown` index signature preserves dynamic access
+ * (`legacyState[prop]`) while forcing narrowing at use sites.
+ */
+export interface LegacyState {
+    // ── Engine scene graph
+    scene: Scene | null
+    camera: PerspectiveCamera | null
+    renderer: WebGLRenderer | null
+    controls: { update(): void; enabled: boolean; target: Vector3; dispose(): void } | null
+
+    // ── Mycelium meshes
+    pointsMesh: Points | null
+    pointsMaterial: Material | null
+    nodeSporeMesh: InstancedMesh | null
+    nodeSporeMaterial: Material | null
+    myceliumGroup: Group | null
+    myceliumCoreLines: LineSegments2 | null
+    myceliumWispyLines: LineSegments2 | null
+    myceliumBridgeLines: LineSegments2 | null
+    myceliumConnectionPairs: Array<{ a: number; b: number; layer?: number }>
+
+    // ── Lighting
+    hemiLight: HemisphereLight | null
+    dirLight: DirectionalLight | null
+
+    // ── Animation / motion
+    autoRotate: boolean
+    autoRotateSuspended: boolean
+    autoRotateResumeDueAt?: number
+    forceAnimate: boolean
+    pulsePhase: number
+    weather: { wind_speed_10m?: number }
+
+    // ── View / scene state
+    currentView: string
+    focusedNode: number | null
+    selectedPoint: BusinessRecord | null
+    sceneRevealActive: boolean
+    searchState?: { searchGlowActive?: boolean }
+    focusState?: {
+        selectedPoint?: BusinessRecord | null
+        pinnedThreadIndex?: number | null
+        inspectedThreadIndex?: number | null
+        nodesAreSettling?: boolean
+    }
+
+    // ── Thread inspection
+    inspectedThreadIndex?: number | null
+    pinnedThreadIndex?: number | null
+    inspectedStrandGroup: Group | null
+
+    // ── Camera reveal
+    sceneRevealCameraStart: Vector3 | null
+    sceneRevealCameraEnd: Vector3 | null
+
+    // ── Performance / diagnostics
+    scenePerformanceDiagnostics: ScenePerformanceDiagnostics | null
+
+    // ── Trail / neighborhood state
+    trailDepth: number
+    navState: NavState | null
+    activeClusterFilter: number | null
+
+    // ── Points / positions
+    points: Point[]
+    nodePositions: NodePosition[]
+    targetPositions: NodePosition[]
+    nodesAreSettling: boolean
+    focusPocketMotionByIndex: number[]
+    hoverHighlightIndex: number
+    myceliumDirty: boolean
+
+    // ── Index signature for dynamic reads
+    [key: string]: unknown
 }

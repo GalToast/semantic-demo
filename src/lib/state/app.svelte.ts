@@ -765,3 +765,9 @@ if (typeof window !== 'undefined') {
         configurable: true
     })
 }
+
+// ── LegacyState bridge ─────────────────────────────────────────────────────
+// Replaces legacy-state-adapter.ts — the typed escape hatch for engine
+// subsystems that read appState through the LegacyState interface.
+import type { LegacyState } from './state-types'
+export const legacyState = appState as unknown as LegacyState

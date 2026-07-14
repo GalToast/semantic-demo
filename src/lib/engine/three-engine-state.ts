@@ -142,7 +142,7 @@ export const engineState: ThreeEngineState = {
 
 // ── Module Bootstrap ─────────────────────────────────────────────────────────
 
-import { legacyState } from '@lib/state/legacy-state-adapter'
+import { legacyState } from '@lib/state/app.svelte'
 import * as viewControllerMod from '@lib/orchestration/view-controller'
 import * as mapStateMod from '@lib/engine/map-state'
 import * as uiFeedbackMod from '@lib/ui/ui-feedback'

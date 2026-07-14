@@ -18,7 +18,7 @@ import {
     currentView,
     setMyceliumMode as _setMyceliumMode
 } from './navigation.svelte'
-import { legacyState } from '@lib/state/legacy-state-adapter'
+import { legacyState } from '@lib/state/app.svelte'
 import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } from './focus.svelte'
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'

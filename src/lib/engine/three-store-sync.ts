@@ -41,8 +41,7 @@ import type { LegacyState } from '@lib/state/legacy-state'
 import type { ThreeEngineState } from './three-engine-state'
 import type { WebGLContextState } from '@lib/engine/webgl-context'
 import { webglContext } from '@lib/engine/webgl-context'
-import { appState } from '@lib/state/app.svelte'
-import { legacyState } from '@lib/state/legacy-state-adapter'
+import { appState, legacyState } from '@lib/state/app.svelte'
 import { engineState } from './three-engine-state'
 
 // ── Sink contracts ───────────────────────────────────────────────────────────

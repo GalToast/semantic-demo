@@ -20,7 +20,7 @@ import { installGestureMonitor } from '@lib/orchestration/wait-for-gesture'
 import { engineReady } from '@lib/stores/engine-ready.svelte'
 import { hydrateFromLegacyState } from '@lib/data-store'
 import type { WeatherData } from '@lib/utils/weather'
-import { appState } from '@lib/state/app.svelte.ts'
+import { appState, legacyState } from '@lib/state/app.svelte.ts'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 // Side-effect: generates and exposes window.__semanticExplorerSessionSeed
 import '@lib/state/session.svelte'
@@ -29,7 +29,6 @@ import type { BusinessRecord } from '@lib/types/business'
 import { appInit } from '@lib/orchestration/app-init'
 import { registerUrlStateEventListeners } from '@lib/orchestration/url-state'
 import { registerClusterFilterEventListeners } from '@lib/orchestration/cluster-filter-controller'
-import { legacyState } from '@lib/state/legacy-state-adapter'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
@@ -379,13 +378,23 @@ const cleanupWindowActions = installWindowActions()
 
 // ── Cleanup on page unload ────────────────────────────────────────────────
 
-window.addEventListener('beforeunload', () => {
+// Shared teardown for the tests-state subscription, window actions, journey
+// WebGL preload, app-init, and the mounted App. Extracted so the same logic
+// can back both the real `beforeunload` path and the Vite HMR dispose path.
+function disposeAppListeners(): void {
     unsubTestState()
     cleanupWindowActions()
     disposeJourneyWebglPreload()
     appInitCleanup?.()
     if (app) unmount(app)
-})
+}
+
+// NOTE: deliberately NOT `{ once: true }`. We keep an explicit handle so the
+// HMR dispose below can remove it -- see the comment there. Without removal,
+// every Vite hot reload re-runs this module (firing no real page unload) and
+// stacks another `beforeunload` closure capturing a stale `app`; they would
+// all fire (calling unmount on stale instances) on the next real unload.
+window.addEventListener('beforeunload', disposeAppListeners)
 
 // Hot Module Replacement (dev mode only): Vite re-executes this module on
 // every hot reload, but unlike page navigation it does not fire
@@ -398,9 +407,11 @@ window.addEventListener('beforeunload', () => {
 // sessions stay sane. Production builds tree-shake this branch.
 if (import.meta.hot) {
     import.meta.hot.dispose(() => {
-        unsubTestState()
-        cleanupWindowActions()
-        disposeJourneyWebglPreload()
+        disposeAppListeners()
+        // Remove the beforeunload listener added above. HMR re-evaluates this
+        // module without a real page unload, so the listener would otherwise
+        // accumulate across reloads (each capturing a stale `app`).
+        window.removeEventListener('beforeunload', disposeAppListeners)
         teardownGestureMonitor()
         appInitCleanup?.()
         if (app) unmount(app)

@@ -10,7 +10,7 @@
 import { get } from 'svelte/store'
 import { navStore, switchView as navSwitchView, writeNavStateMirror } from '@lib/stores/navigation.svelte.ts'
 import { searchStore } from '@lib/stores/search.svelte'
-import { legacyState } from '@lib/state/legacy-state-adapter'
+import { legacyState } from '@lib/state/app.svelte'
 import {
     JOURNEY_COMPASS_PHASE_ORDER,
     JOURNEY_CONFIG,

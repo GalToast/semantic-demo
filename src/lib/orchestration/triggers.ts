@@ -44,10 +44,9 @@ import {
 import { activeClusterFilter } from '@lib/stores/filter.svelte'
 import { addTrailStop, setThreadCandidates, setTrailDepth, setTrailNeighborIndices } from '@lib/stores/journey.svelte'
 import { getBusinessRecords } from '@lib/data-store'
-import { appState } from '@lib/state/app.svelte.ts'
+import { appState, legacyState } from '@lib/state/app.svelte.ts'
 import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
 import { withStateMutation } from '@lib/state/with-state-mutation'
-import { legacyState } from '@lib/state/legacy-state-adapter'
 import {
     bindSearchResultInteractions,
     getPendingFocusTransitionToken,
