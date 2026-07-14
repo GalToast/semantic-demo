@@ -32,6 +32,7 @@
   import { publish, EVENTS } from '@lib/orchestration/event-bus';
   import { showExperienceToast } from '@lib/orchestration/toast';
   import { debugWarn } from '@lib/utils/debug';
+  import { SearchDebounce } from '@lib/search/search-debounce';
 
   interface Props {
     /** Placeholder text for the input */
@@ -55,7 +56,7 @@
 
   let queryInput = $state('');
   let inputEl: HTMLInputElement | undefined = undefined;
-  let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let searchDebounce = new SearchDebounce();
   let searchAbortController: AbortController | null = null;
   let searchStartTime = 0;
   let surfaceSwitchedToSearch = false;
@@ -178,13 +179,7 @@
   }
 
   function debounceDispatch(query: string): void {
-    if (debounceTimer !== null) {
-      clearTimeout(debounceTimer);
-    }
-    debounceTimer = setTimeout(() => {
-      debounceTimer = null;
-      dispatchSearch(query);
-    }, debounceMs);
+    searchDebounce.schedule(() => dispatchSearch(query), debounceMs);
   }
 
   // ── Event handlers ────────────────────────────────────────────────────────────
@@ -213,10 +208,7 @@
   function handleClearQuery(): void {
     queryInput = '';
     setSearchQuery('');
-    if (debounceTimer !== null) {
-      clearTimeout(debounceTimer);
-      debounceTimer = null;
-    }
+    searchDebounce.cancel();
     if (searchAbortController) {
       searchAbortController.abort();
       searchAbortController = null;
@@ -229,10 +221,7 @@
 
   function handleClear(): void {
     queryInput = '';
-    if (debounceTimer !== null) {
-      clearTimeout(debounceTimer);
-      debounceTimer = null;
-    }
+    searchDebounce.cancel();
     if (searchAbortController) {
       searchAbortController.abort();
       searchAbortController = null;
@@ -269,10 +258,7 @@
       e.preventDefault()
       const q = queryInput.trim()
       if (q.length > 0) {
-        if (debounceTimer !== null) {
-          clearTimeout(debounceTimer)
-          debounceTimer = null
-        }
+        searchDebounce.cancel()
         _pendingEnterFocus = true
         dispatchSearch(q)
       }
@@ -292,10 +278,7 @@
       searchAbortController.abort();
       searchAbortController = null;
     }
-    if (debounceTimer !== null) {
-      clearTimeout(debounceTimer);
-      debounceTimer = null;
-    }
+    searchDebounce.cancel();
     const durationMs = searchStartTime > 0 ? Math.round(performance.now() - searchStartTime) : 0;
     setSearchStatus('idle');
     publish(EVENTS.SEARCH_CANCELLED, { query: cancelledQuery, durationMs });
@@ -320,7 +303,7 @@
       // Cleanup runs on both remix-mount AND full unmount. The author-intent
       // note about preserving debounce across view swaps conflicts with the
       // reality of component destruction — be conservative here and clear.
-      if (debounceTimer !== null) clearTimeout(debounceTimer);
+      searchDebounce.cancel();
       searchAbortController?.abort();
     };
   });
