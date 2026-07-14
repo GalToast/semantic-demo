@@ -85,8 +85,8 @@
    * (where the nav store may not be initialized yet) and on canvas re-show
    * (where we just want to flip `currentView` without animation/sync overhead).
    *
-   * Direct assignment is type-safe: `view: 'galaxy' | 'map'` is a subset of
-   * `ViewName` ('galaxy' | 'map' | 'focus' | 'trail' | 'semantic'), so TS
+   * Direct assignment is type-safe: `view: 'galaxy' | 'map'` matches
+   * `ViewName` ('galaxy' | 'map'), so TS
    * accepts the write without any cast. The previous `as unknown as RuntimeState`
    * cast was dishonest — it widened `currentView` from a 5-value union to
    * `string` via a locally-fabricated `RuntimeState` interface, hiding the

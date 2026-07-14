@@ -211,7 +211,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
           try {
             // onCapture fires when a capture completes with commands.
             const onCapture = (capture: unknown) => {
-              clearTimeout(captureTimeout);
+              if (captureTimeout !== null) clearTimeout(captureTimeout);
               captureTimeout = null;
               activeCanvas = canvas;
               lastCapture = capture;
@@ -244,7 +244,7 @@ import { debugWarn, debugLog } from '@lib/utils/debug'
             // functions with fewer parameters), so no cast is needed.
             spectorWithEvents.onCapture?.add(onCaptureTracked);
             spectorWithEvents.onError?.add((err: unknown) => {
-              clearTimeout(captureTimeout);
+              if (captureTimeout !== null) clearTimeout(captureTimeout);
               captureTimeout = null;
               resolve({ ok: false, reason: 'spector-error', error: String(err) });
             });
