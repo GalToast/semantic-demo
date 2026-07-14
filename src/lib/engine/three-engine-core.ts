@@ -322,6 +322,22 @@ export function cancelAnimate() {
     }
     if (renderer) {
         renderer.dispose()
+        // W53 WebGL-context leak fix: Three.js r163+ `dispose()` frees GPU
+        // programs/buffers but does NOT force context loss. A renderer that is
+        // only disposed (and whose refs are later nulled) leaves its GL context
+        // counted as "active" by Chromium until garbage collection — so each
+        // journey test that mounted the 3D canvas leaked one context, and the
+        // suite hit Chrome's active-context ceiling (~16) and aborted around
+        // test ~18 with "Too many active WebGL contexts" / context-creation
+        // failure. forceContextLoss() calls WEBGL_lose_context.loseContext(),
+        // which releases the context from the active pool on the same tick as
+        // teardown. This is the canonical engine-teardown cleanup and must run
+        // BEFORE the canvas is detached and the refs are nulled below.
+        try {
+            renderer.forceContextLoss()
+        } catch (error) {
+            debugWarn('[three-engine] forceContextLoss failed:', error)
+        }
         const canvas = renderer.domElement
         try {
             canvas?.parentNode?.removeChild(canvas)
