@@ -253,7 +253,7 @@ function normalizeWeatherIcon(icon: string): string {
     return ['sun', 'cloud', 'rain'].includes(icon) ? icon : 'cloud'
 }
 
-export function describeWeatherCode(code: number): WeatherCondition {
+function describeWeatherCode(code: number): WeatherCondition {
     if (code === 0) return { label: 'Clear', icon: 'sun', condition: 'sun' }
     if (code <= 3) return { label: 'Partly cloudy', icon: 'cloud', condition: 'cloud' }
     if (code <= 49) return { label: 'Fog', icon: 'cloud', condition: 'fog' }

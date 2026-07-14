@@ -292,10 +292,10 @@ export function clearStrandContinuityState(reason: string = 'clear'): StrandCont
 
 // ── Standalone timer wrappers (legacy kernel import-API) ───────────────────
 //
-// The legacy kernel (``) exported top-level
-// `setTimer`, `clearTimer`, and `disposeTimers` consumed by thread-inspector
-// and journey-thread-settler. These thin wrappers delegate to the wrapper
-// manager so consumers can switch import paths without touching call sites.
+// The legacy kernel exported top-level `setTimer` and `clearTimer` consumed
+// by thread-inspector and journey-thread-settler. These thin wrappers
+// delegate to the wrapper manager so consumers can switch import paths
+// without touching call sites.
 
 /**
  * Set a named timer via the wrapper manager. Drop-in for the kernel's
@@ -311,14 +311,6 @@ export function setTimer(key: string, ms: number, callback: () => void): void {
  */
 export function clearTimer(key: string): void {
     getWrapperManager().clearTimer(key)
-}
-
-/**
- * Clear ALL tracked timers via the wrapper manager. Drop-in for the
- * kernel's `disposeTimers()` (maps to the manager's `cancelAll()`).
- */
-export function disposeTimers(): void {
-    getWrapperManager().cancelAll()
 }
 
 // ── Standalone getStrandArrivalNote ────────────────────────────────────────
