@@ -1321,15 +1321,26 @@ test.describe('Widget journey', () => {
         // NOT auto-signalled, but the URL-driven record focus still resolves
         // the selected business state. We navigate and then wait for the
         // detail panel to attach rather than clicking Explore.
+        // Force webgl render-kind (the real WebGL scene, not the mobile
+        // placeholder2d fallback) so the deep-link resolves at boot: with
+        // renderKind !== 'placeholder2d' + a deep-link, engineReady fires
+        // immediately and the ?anchor=519 focus applies once the 8,406
+        // records load. This is the same mechanism canvas-dependent journey
+        // tests use (window.__PLAYWRIGHT__ => setRenderKind('webgl')).
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+
         await page.goto(
-            `${BASE_URL}/dist/svelte/index.html?nodemo=1&webgl=1&record=519`,
+            `${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`,
             { waitUntil: 'domcontentloaded' }
         )
 
-        // Wait for the selected-business detail panel to attach. On mobile the
-        // splash may still be present, so we wait for either the panel or the
-        // splash CTA and handle both paths.
-        const selectedName = page.locator('#selected-name')
+        // Wait for the selected-business detail panel to attach. The name
+        // element id is `{idPrefix}selected-name`; FocusCard mounts it with
+        // idPrefix="fc-" (so the id is `fc-selected-name`), while InfoPanel
+        // mounts it without a prefix. Match either via a suffix selector.
+        const selectedName = page.locator('[id$="selected-name"]')
         await selectedName.waitFor({ state: 'attached', timeout: 30000 })
         await page.waitForTimeout(500) // allow layout + $derived effects to flush
 
