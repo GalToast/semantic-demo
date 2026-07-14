@@ -84,6 +84,7 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 Read these only when relevant:
 
 - CSS ownership: `docs/archive/semantic-demo-css-authority-map.md`, `docs/archive/semantic-demo-mobile-state-ownership.md`
+- Cleanup plans (Wave 1): `docs/cleanup-plans/` — three investigation-and-execution plans for the project's worst three areas (search layer, CSS surface, big components), each with verified `file:line` cites (audited against current HEAD `5222e684`), topic-pure commit order, and per-commit verification gates. Wave 2 executors should treat these as the source-of-truth work list.
 - State transitions: `docs/semantic-demo-state-transition-table.md`
 - Design tokens: `docs/semantic-demo-design-tokens.md`
 - Surface style matrix: `docs/semantic-demo-surface-style-matrix.md`
