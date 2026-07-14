@@ -25,7 +25,7 @@
  * are the new canonical handlers. Once all callers publish to the
  * Svelte bus, the legacy `subscribeKeyed` calls can be retired.
  */
-import { subscribeKeyed, EVENTS } from '@lib/orchestration/event-bus'
+import { subscribeKeyed, publish, EVENTS } from '@lib/orchestration/event-bus'
 import { updateJourneyCompass } from '@lib/orchestration/compass-controller'
 import { refreshCompositionState } from '@lib/stores/lifecycle/modes'
 import { recordEmptySearch } from '@lib/stores/lifecycle/search-sync'
@@ -48,7 +48,11 @@ import { appState } from '@lib/state/app.svelte.ts'
 import { buildNeighborhoodManifest, getSemanticThreadDisplayLimit } from '@lib/journey/neighborhood'
 import { withStateMutation } from '@lib/state/with-state-mutation'
 import { legacyState } from '@lib/state/legacy-state-adapter'
-import { bindSearchResultInteractions } from '@lib/search/orchestration'
+import {
+    bindSearchResultInteractions,
+    getPendingFocusTransitionToken,
+    clearPendingFocusTransitionToken
+} from '@lib/search/orchestration'
 import type { Point } from '@lib/state/state-types'
 import type { SearchResult } from '@lib/types/state'
 import type { SearchContext } from '@lib/search/state'
@@ -176,6 +180,12 @@ subscribeKeyed(
             }
         }
         updateJourneyCompass()
+
+        const pendingToken = getPendingFocusTransitionToken()
+        if (pendingToken !== null) {
+            publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, { transitionToken: pendingToken })
+            clearPendingFocusTransitionToken()
+        }
     }
 )
 subscribeKeyed('triggers.ts:EXPLORATION_DEPTH_CHANGED', EVENTS.EXPLORATION_DEPTH_CHANGED, updateJourneyCompass)

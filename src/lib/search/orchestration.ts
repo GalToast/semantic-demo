@@ -52,7 +52,8 @@ import {
     activateSearchGlow,
     resetSemanticGuideUi,
     clearShortSemanticSearchState,
-    clearSearchPreviewHoverTimer
+    clearSearchPreviewHoverTimer,
+    setSearchStateNamespace
 } from './results-ui'
 import { setupMobileSearchSheetToggle } from './search-panel-adapter'
 import { setActiveSearchResultRow } from './result-renderer'
@@ -88,6 +89,23 @@ function _clearSearchFocusTimers(): void {
 // ── Search Orchestration ───────────────────────────────────────────────────
 
 /**
+ * Pending focus transition token. STARTED is published synchronously by
+ * beginSearchFocusTransition(); SETTLED is emitted later by the camera/focus
+ * pipeline once CAMERA_NODE_FOCUSED fires. Keeping the token here lets the
+ * focus pipeline correlate the SETTLED event with its STARTED event across
+ * overlapping transitions without coupling the two modules.
+ */
+let _pendingFocusTransitionToken: number | null = null
+
+export function getPendingFocusTransitionToken(): number | null {
+    return _pendingFocusTransitionToken
+}
+
+export function clearPendingFocusTransitionToken(): void {
+    _pendingFocusTransitionToken = null
+}
+
+/**
  * Execute a search and update the UI.
  * Single-track implementation using Svelte store and search engine.
  */
@@ -102,11 +120,11 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     const statusEl = document.getElementById('search-status')
     const searchInput = document.getElementById('search-input') as HTMLInputElement | null
     if (!resultsEl || !statusEl) return // Self-register for circular dependency handling by UI module
-    ;(resultsEl as unknown as Record<string, unknown>)._searchStateNamespace = {
+    setSearchStateNamespace(resultsEl, {
         search,
         clearSearch: () => clearSearch(),
         bindSearchResultInteractions
-    }
+    })
 
     incrementFocusTransitionToken()
     if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer()
@@ -304,6 +322,7 @@ export function beginSearchFocusTransition(
     if (!el) return
     _clearSearchFocusTimers()
     const token = incrementFocusTransitionToken()
+    _pendingFocusTransitionToken = token
 
     publish(EVENTS.SEARCH_FOCUS_TRANSITION_STARTED, {
         resultsEl,
@@ -320,14 +339,6 @@ export function beginSearchFocusTransition(
 
     // Focus the result in the 3D scene
     publish(EVENTS.SEARCH_FOCUS_REQUESTED, { point, index: targetIndex })
-    publish(EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED, {
-        resultsEl,
-        statusEl,
-        resultIndices,
-        targetIndex,
-        point,
-        transitionToken: token
-    })
 }
 
 /**

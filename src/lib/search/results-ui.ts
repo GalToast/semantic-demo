@@ -81,15 +81,32 @@ function clearLegacySearchResultsDom(resultsEl: HTMLElement): void {
     resultsEl.removeAttribute('data-legacy-results-mode')
 }
 
-interface SearchStateNamespace {
+// ── Search State Namespace Registry (replaces DOM property mutation) ────
+
+const _searchStateRegistry = new WeakMap<HTMLElement, SearchStateNamespace>()
+
+export interface SearchStateNamespace {
     search?: (query: string, options?: { preferCachedResults?: boolean }) => void
+    clearSearch?: () => void
     bindSearchResultInteractions?: unknown
 }
 
-function getSearchStateNamespace(resultsEl: HTMLElement | null): SearchStateNamespace | null {
-    const namespace = (resultsEl as (HTMLElement & { _searchStateNamespace?: SearchStateNamespace }) | null)
-        ?._searchStateNamespace
-    return namespace ?? null
+/**
+ * Register a SearchStateNamespace for a given DOM element, replacing the
+ * previous fragile _searchStateNamespace property attached directly to the
+ * element. Callers MUST remove the mapping via clearSearchState().
+ */
+export function setSearchStateNamespace(el: HTMLElement, ns: SearchStateNamespace): void {
+    _searchStateRegistry.set(el, ns)
+}
+
+/**
+ * Look up the SearchStateNamespace previously registered for a DOM element.
+ * Returns null when no namespace has been registered.
+ */
+export function getSearchStateNamespace(el: HTMLElement | null): SearchStateNamespace | null {
+    if (!el) return null
+    return _searchStateRegistry.get(el) ?? null
 }
 
 function appendQueryInQuotes(parent: HTMLElement, query: string): void {
@@ -369,6 +386,9 @@ export function clearSearchState(_resultsEl: HTMLElement | null, _statusEl: HTML
         _resultsEl.setAttribute('aria-busy', 'false')
         clearLegacySearchResultsDom(_resultsEl)
         syncSearchResultsA11y(_resultsEl)
+    }
+    if (_resultsEl) {
+        _searchStateRegistry.delete(_resultsEl)
     }
     if (_statusEl) {
         _statusEl.hidden = true

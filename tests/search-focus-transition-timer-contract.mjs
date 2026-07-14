@@ -48,18 +48,37 @@ assert(
 )
 console.log('  PASS')
 
-console.log('\n[TEST 4] Focus transition publishes start and settled events with transitionToken')
+console.log('\n[TEST 4] Focus transition publishes STARTED with token in beginSearchFocusTransition')
 const startedIndex = fnRegion.indexOf('EVENTS.SEARCH_FOCUS_TRANSITION_STARTED')
-const settledIndex = fnRegion.indexOf('EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED')
 assert(startedIndex !== -1, 'beginSearchFocusTransition must publish SEARCH_FOCUS_TRANSITION_STARTED')
-assert(settledIndex !== -1, 'beginSearchFocusTransition must publish SEARCH_FOCUS_TRANSITION_SETTLED')
-assert(startedIndex < settledIndex, 'SEARCH_FOCUS_TRANSITION_STARTED must be published before SETTLED')
 const startedPayload = fnRegion.slice(startedIndex, startedIndex + 350)
-const settledPayload = fnRegion.slice(settledIndex, settledIndex + 350)
 assert(
     startedPayload.includes('transitionToken'),
     'SEARCH_FOCUS_TRANSITION_STARTED payload must include transitionToken'
 )
+console.log('  PASS')
+
+console.log('\n[TEST 5] SETTLED is no longer published synchronously inside beginSearchFocusTransition')
+const settledInOrchestration = fnRegion.indexOf('EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED')
+assert(
+    settledInOrchestration === -1,
+    'beginSearchFocusTransition must not publish SEARCH_FOCUS_TRANSITION_SETTLED synchronously'
+)
+console.log('  PASS')
+
+console.log('\n[TEST 6] SETTLED is published by the focus pipeline on CAMERA_NODE_FOCUSED with transitionToken')
+const triggersSrc = readFileSync(path.join(ROOT, 'src/lib/orchestration/triggers.ts'))
+const cameraFocusedIndex = triggersSrc.indexOf("'triggers.ts:CAMERA_NODE_FOCUSED'")
+const settledInTriggersIndex = triggersSrc.lastIndexOf('EVENTS.SEARCH_FOCUS_TRANSITION_SETTLED')
+const tokenReadIndex = triggersSrc.indexOf('getPendingFocusTransitionToken()')
+assert(cameraFocusedIndex !== -1, 'triggers.ts must subscribe to CAMERA_NODE_FOCUSED')
+assert(settledInTriggersIndex !== -1, 'triggers.ts must publish SEARCH_FOCUS_TRANSITION_SETTLED')
+assert(tokenReadIndex !== -1, 'triggers.ts must read the pending focus transition token')
+assert(
+    settledInTriggersIndex > tokenReadIndex && tokenReadIndex > cameraFocusedIndex,
+    'SETTLED must be published inside the CAMERA_NODE_FOCUSED subscriber using the pending token'
+)
+const settledPayload = triggersSrc.slice(settledInTriggersIndex, settledInTriggersIndex + 350)
 assert(
     settledPayload.includes('transitionToken'),
     'SEARCH_FOCUS_TRANSITION_SETTLED payload must include transitionToken'
