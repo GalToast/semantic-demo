@@ -471,6 +471,7 @@ test.describe('ThreadInspector A11y Journey — PR-T1/T2/T3 fixes', () => {
         // Set focus on a known trigger element
         const helpBtn = page.locator('button[aria-label*="Help"]').first()
         if ((await helpBtn.count()) === 0) {
+            // Legitimate env limitation: DOM-dependent element may not render in all environments
             test.skip(true, 'help button not found — environment limitation')
             return
         }

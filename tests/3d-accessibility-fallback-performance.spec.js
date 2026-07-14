@@ -178,6 +178,7 @@ test.describe('3D accessibility, fallback, and performance contracts', () => {
 
     const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt);
     if (!extAvailable) {
+      // Legitimate env limitation: WEBGL_lose_context not available in this browser context
       test.skip('WEBGL_lose_context extension is not available in this browser context');
       return;
     }

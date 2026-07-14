@@ -207,8 +207,9 @@ test.describe('W15 body-attr live probe', () => {
                     expect(attrs.trailDepth, 'data-trail-depth should be at least 1').toBe('1')
                 } else {
                     // No field-node visible — skip with a note
+                    // Environment limitation: field-node rendering depends on WebGL init and canvas sizing
                     console.log('  [focus] No field-node visible in overview; skipping focus assertion')
-                    test.skip()
+                    test.skip('field-node not rendered in this environment — no visible node to click')
                 }
             },
             { maxAttempts: 2, backoffMs: 1000, label: 'focus (programmatic)' }

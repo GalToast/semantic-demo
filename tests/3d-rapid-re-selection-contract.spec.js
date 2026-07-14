@@ -274,12 +274,14 @@ test.describe('rapid re-selection contract', () => {
     // Verify A is reachable at its screen coordinate
     const reachableA = await isReachableScreenCoordinate(page, pair.nodeA.screenX, pair.nodeA.screenY);
     if (!reachableA) {
+      // Legitimate env limitation: node may be off-screen in headless Playwright viewport
       test.skip('node A screen coordinate not reachable — skipping click test');
       return;
     }
 
     const reachableB = await isReachableScreenCoordinate(page, pair.nodeB.screenX, pair.nodeB.screenY);
     if (!reachableB) {
+      // Legitimate env limitation: node may be off-screen in headless Playwright viewport
       test.skip('node B screen coordinate not reachable — skipping click test');
       return;
     }

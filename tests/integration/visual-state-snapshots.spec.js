@@ -111,8 +111,9 @@ test.describe('Visual state snapshots', () => {
             })
         } else {
             // If no field-node is visible, skip the snapshot
+            // Environment limitation: field-node rendering depends on WebGL init and canvas sizing
             console.log('  [focus-programmatic] No field-node visible; skipping snapshot')
-            test.skip()
+            test.skip('field-node not rendered in this environment — no visible node to focus')
         }
     })
 })

@@ -220,6 +220,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
         const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt)
         if (!extAvailable) {
+            // Legitimate env limitation: WEBGL_lose_context not available in this browser/build
             test.skip('WEBGL_lose_context not available')
             return
         }
@@ -286,6 +287,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
         const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt)
         if (!extAvailable) {
+            // Legitimate env limitation: WEBGL_lose_context not available in this browser/build
             test.skip('WEBGL_lose_context not available')
             return
         }
@@ -352,6 +354,7 @@ test.describe('WebGL Context Loss Resilience', () => {
 
         const extAvailable = await page.evaluate(() => !!window.__webglLoseContextExt)
         if (!extAvailable) {
+            // Legitimate env limitation: WEBGL_lose_context not available in this browser/build
             test.skip('WEBGL_lose_context not available')
             return
         }
