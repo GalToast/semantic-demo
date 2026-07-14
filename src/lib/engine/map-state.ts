@@ -18,8 +18,14 @@ import { isMobileViewport } from '@lib/utils/environment'
 import { debugWarn } from '@lib/utils/debug'
 import { useSearchSummary } from '@lib/ui/use-search-summary.svelte'
 
-export const LEAFLET_CSS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-export const LEAFLET_JS_URL = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
+// Leaflet is vendored locally under `public/vendor/leaflet/` (was: unpkg CDN
+// with no SRI). Self-hosting removes the CDN supply-chain + offline dependency
+// while preserving the lazy script/link injection (Leaflet stays out of the
+// initial bundle). Relative paths resolve against the document base (app runs
+// at the root path; same pattern as the `data.dat` fetch).
+export const LEAFLET_VERSION = '1.9.4'
+export const LEAFLET_CSS_URL = 'vendor/leaflet/leaflet.css'
+export const LEAFLET_JS_URL = 'vendor/leaflet/leaflet.js'
 
 /**
  * Leaflet mutates the DOM container at runtime to attach _leaflet_id.

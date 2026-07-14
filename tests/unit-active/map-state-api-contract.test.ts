@@ -27,17 +27,22 @@ describe('map-state.ts public API contract', () => {
     })
 
     it('pins Leaflet to v1.9.4 (CVE pinning contract)', () => {
-        // If a future bump changes the major version (e.g. 2.x), this test
-        // fails. Pin the major+minor in the URL. A patch bump is allowed
-        // (just update the test along with the URL).
-        expect(module.LEAFLET_CSS_URL).toMatch(/leaflet@1\.9\./)
-        expect(module.LEAFLET_JS_URL).toMatch(/leaflet@1\.9\./)
+        // Leaflet is now vendored locally (public/vendor/leaflet/) instead of
+        // the unpkg CDN, so the version no longer appears in the URL — it is
+        // tracked by LEAFLET_VERSION. If a future bump changes the major
+        // version (e.g. 2.x), this test fails. A patch bump is allowed (just
+        // update LEAFLET_VERSION, the vendored assets, and this test).
+        expect(module.LEAFLET_VERSION).toMatch(/^1\.9\./)
+        expect(module.LEAFLET_CSS_URL).toMatch(/vendor\/leaflet\/leaflet\.css$/)
+        expect(module.LEAFLET_JS_URL).toMatch(/vendor\/leaflet\/leaflet\.js$/)
     })
 
-    it('LEAFLET_CSS_URL and LEAFLET_JS_URL point to the same version', () => {
-        const cssVer = module.LEAFLET_CSS_URL.match(/leaflet@([\d.]+)/)?.[1]
-        const jsVer = module.LEAFLET_JS_URL.match(/leaflet@([\d.]+)/)?.[1]
-        expect(cssVer).toBe(jsVer)
+    it('LEAFLET_CSS_URL and LEAFLET_JS_URL point to the same vendored version', () => {
+        // Both assets are served from the same vendor/leaflet/ directory, so
+        // they are the same version by construction; LEAFLET_VERSION records it.
+        expect(typeof module.LEAFLET_VERSION).toBe('string')
+        expect(module.LEAFLET_CSS_URL).toContain('vendor/leaflet/')
+        expect(module.LEAFLET_JS_URL).toContain('vendor/leaflet/')
     })
 
     // ── Function exports (15 total) ──────────────────────────────────────────

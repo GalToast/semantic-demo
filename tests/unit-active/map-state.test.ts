@@ -192,12 +192,12 @@ function resetAppState(): void {
 // ── Tests ───────────────────────────────────────────────────────────────────
 
 describe('map-state — constants', () => {
-    it('LEAFLET_CSS_URL points to the 1.9.4 unpkg CSS', () => {
-        expect(LEAFLET_CSS_URL).toBe('https://unpkg.com/leaflet@1.9.4/dist/leaflet.css')
+    it('LEAFLET_CSS_URL points to the vendored local CSS', () => {
+        expect(LEAFLET_CSS_URL).toBe('vendor/leaflet/leaflet.css')
     })
 
-    it('LEAFLET_JS_URL points to the 1.9.4 unpkg JS', () => {
-        expect(LEAFLET_JS_URL).toBe('https://unpkg.com/leaflet@1.9.4/dist/leaflet.js')
+    it('LEAFLET_JS_URL points to the vendored local JS', () => {
+        expect(LEAFLET_JS_URL).toBe('vendor/leaflet/leaflet.js')
     })
 })
 
