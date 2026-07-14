@@ -576,6 +576,108 @@ export function syncMyceliumLineResolution(): void {
     }
 }
 
+// ── updateMyceliumThreads helpers ─────────────────────────────────────────
+
+/**
+ * Per-layer intensity values matching createMycelium() vertex color baking.
+ * Without these, rebuilt threads flash to full brightness (intensity=1)
+ * when nodes move, breaking the visual continuity of the mycelium layers.
+ */
+function computeLayerIntensityMap(): Record<number, number> {
+    const hasSemantic = !!state.semanticNeighborMapByLeadId?.size
+    return {
+        0: hasSemantic ? 0.38 : 0.28, // core
+        1: hasSemantic ? 0.22 : 0.16, // wispy
+        2: hasSemantic ? 0.32 : 0.24 // bridge
+    }
+}
+
+/**
+ * Rebuild only dirty pairs for a single mycelium line layer, writing
+ * bezier segments IN-PLACE at their original buffer offset. Clean pairs
+ * are left untouched — no repacking, no zeroing.
+ */
+function rebuildDirtyPairsInLayer(
+    line: LineSegments2 | null,
+    layer: number,
+    layerIntensity: Record<number, number>
+): void {
+    const SEGMENTS_PER_PAIR = 5
+    const FLOATS_PER_SEGMENT = 6 // 3 start + 3 end
+
+    const geom = line?.geometry as LineGeometry | undefined
+    const startAttr = geom?.getAttribute('instanceStart') as BufferAttribute | undefined
+    const endAttr = geom?.getAttribute('instanceEnd') as BufferAttribute | undefined
+    const colorStartAttr = geom?.getAttribute('instanceColorStart') as BufferAttribute | undefined
+    const colorEndAttr = geom?.getAttribute('instanceColorEnd') as BufferAttribute | undefined
+    if (!startAttr || !endAttr) return
+
+    const startArray = startAttr.array as Float32Array
+    const endArray = endAttr.array as Float32Array
+    const colorStartArray = colorStartAttr?.array as Float32Array | undefined
+    const colorEndArray = colorEndAttr?.array as Float32Array | undefined
+
+    let layerPairIndex = 0
+    webglContext.myceliumConnectionPairs.forEach((pair) => {
+        if (pair.layer !== layer) return
+        const pairIsDirty = dirtyNodeIndices.has(pair.a) || dirtyNodeIndices.has(pair.b)
+        layerPairIndex += 1
+        if (!pairIsDirty) return
+
+        const pairPositions: number[] = []
+        const pairColors: number[] = []
+        pushBezierLinePair(
+            pairPositions,
+            pairColors,
+            { a: pair.a, b: pair.b },
+            layerIntensity[layer] ?? 1,
+            SEGMENTS_PER_PAIR
+        )
+
+        // Write this pair's segments to its original buffer offset.
+        // Pair N in the layer starts at segment (N-1)*SEGMENTS_PER_PAIR.
+        const baseSeg = (layerPairIndex - 1) * SEGMENTS_PER_PAIR
+        const maxSegsForPair = Math.min(
+            SEGMENTS_PER_PAIR,
+            Math.floor(startArray.length / 3) - baseSeg,
+            Math.floor(pairPositions.length / FLOATS_PER_SEGMENT)
+        )
+        for (let s = 0; s < maxSegsForPair; s += 1) {
+            const pi = s * FLOATS_PER_SEGMENT
+            const si = (baseSeg + s) * 3
+            startArray[si] = Number.isFinite(pairPositions[pi]) ? pairPositions[pi]! : 0
+            startArray[si + 1] = Number.isFinite(pairPositions[pi + 1]) ? pairPositions[pi + 1]! : 0
+            startArray[si + 2] = Number.isFinite(pairPositions[pi + 2]) ? pairPositions[pi + 2]! : 0
+            endArray[si] = Number.isFinite(pairPositions[pi + 3]) ? pairPositions[pi + 3]! : 0
+            endArray[si + 1] = Number.isFinite(pairPositions[pi + 4]) ? pairPositions[pi + 4]! : 0
+            endArray[si + 2] = Number.isFinite(pairPositions[pi + 5]) ? pairPositions[pi + 5]! : 0
+        }
+        if (colorStartArray && colorEndArray && pairColors.length) {
+            const maxColorSegsForPair = Math.min(
+                SEGMENTS_PER_PAIR,
+                Math.floor(colorStartArray.length / 3) - baseSeg,
+                Math.floor(pairColors.length / FLOATS_PER_SEGMENT)
+            )
+            for (let s = 0; s < maxColorSegsForPair; s += 1) {
+                const ci = s * FLOATS_PER_SEGMENT
+                const si = (baseSeg + s) * 3
+                colorStartArray[si] = pairColors[ci] ?? 0
+                colorStartArray[si + 1] = pairColors[ci + 1] ?? 0
+                colorStartArray[si + 2] = pairColors[ci + 2] ?? 0
+                colorEndArray[si] = pairColors[ci + 3] ?? 0
+                colorEndArray[si + 1] = pairColors[ci + 4] ?? 0
+                colorEndArray[si + 2] = pairColors[ci + 5] ?? 0
+            }
+            colorStartAttr!.needsUpdate = true
+            colorEndAttr!.needsUpdate = true
+        }
+    })
+    startAttr.needsUpdate = true
+    endAttr.needsUpdate = true
+}
+
+// ── Orchestrator ────────────────────────────────────────────────────────────
+
 export function updateMyceliumThreads(): void {
     if (!webglContext.myceliumConnectionPairs?.length) return
 
@@ -592,106 +694,11 @@ export function updateMyceliumThreads(): void {
         return
     }
 
-    // Per-layer intensity values matching createMycelium() vertex color baking.
-    // Without these, rebuilt threads flash to full brightness (intensity=1)
-    // when nodes move, breaking the visual continuity of the mycelium layers.
-    const hasSemantic = !!state.semanticNeighborMapByLeadId?.size
-    const layerIntensity: Record<number, number> = {
-        0: hasSemantic ? 0.38 : 0.28, // core
-        1: hasSemantic ? 0.22 : 0.16, // wispy
-        2: hasSemantic ? 0.32 : 0.24 // bridge
-    }
+    const layerIntensity = computeLayerIntensityMap()
 
-    const SEGMENTS_PER_PAIR = 5
-    const FLOATS_PER_SEGMENT = 6 // 3 start + 3 end
-
-    const updateLayer = (line: LineSegments2 | null, layer: number): void => {
-        const geom = line?.geometry as LineGeometry | undefined
-        const startAttr = geom?.getAttribute('instanceStart') as BufferAttribute | undefined
-        const endAttr = geom?.getAttribute('instanceEnd') as BufferAttribute | undefined
-        const colorStartAttr = geom?.getAttribute('instanceColorStart') as BufferAttribute | undefined
-        const colorEndAttr = geom?.getAttribute('instanceColorEnd') as BufferAttribute | undefined
-        if (!startAttr || !endAttr) return
-
-        const startArray = startAttr.array as Float32Array
-        const endArray = endAttr.array as Float32Array
-        const colorStartArray = colorStartAttr?.array as Float32Array | undefined
-        const colorEndArray = colorEndAttr?.array as Float32Array | undefined
-
-        // Note: the historic `if(!hasDirtyNodes)` full-rebuild path is now
-        // handled by the function-level early return above, so this layer no
-        // longer needs to branch. This block intentionally left without a full
-        // rebuild — the partial dirty-pair in-place update below is the only
-        // path when we have dirty nodes.
-
-        // Partial update (dirty-node amortization): update ONLY dirty pairs
-        // IN-PLACE at their original buffer offset. Clean pairs are left
-        // untouched — no repacking, no zeroing. The previous implementation
-        // packed dirty pairs at buffer index 0 and zeroed the rest, which
-        // collapsed the entire mycelium to ~12 visible segments during focus
-        // pocket breathing (every frame had ~12 dirty nodes).
-        let layerPairIndex = 0
-        webglContext.myceliumConnectionPairs.forEach((pair) => {
-            if (pair.layer !== layer) return
-            const pairIsDirty = dirtyNodeIndices.has(pair.a) || dirtyNodeIndices.has(pair.b)
-            layerPairIndex += 1
-            if (!pairIsDirty) return
-
-            const pairPositions: number[] = []
-            const pairColors: number[] = []
-            pushBezierLinePair(
-                pairPositions,
-                pairColors,
-                { a: pair.a, b: pair.b },
-                layerIntensity[layer] ?? 1,
-                SEGMENTS_PER_PAIR
-            )
-
-            // Write this pair's segments to its original buffer offset.
-            // Pair N in the layer starts at segment (N-1)*SEGMENTS_PER_PAIR.
-            const baseSeg = (layerPairIndex - 1) * SEGMENTS_PER_PAIR
-            const maxSegsForPair = Math.min(
-                SEGMENTS_PER_PAIR,
-                Math.floor(startArray.length / 3) - baseSeg,
-                Math.floor(pairPositions.length / FLOATS_PER_SEGMENT)
-            )
-            for (let s = 0; s < maxSegsForPair; s += 1) {
-                const pi = s * FLOATS_PER_SEGMENT
-                const si = (baseSeg + s) * 3
-                startArray[si] = Number.isFinite(pairPositions[pi]) ? pairPositions[pi]! : 0
-                startArray[si + 1] = Number.isFinite(pairPositions[pi + 1]) ? pairPositions[pi + 1]! : 0
-                startArray[si + 2] = Number.isFinite(pairPositions[pi + 2]) ? pairPositions[pi + 2]! : 0
-                endArray[si] = Number.isFinite(pairPositions[pi + 3]) ? pairPositions[pi + 3]! : 0
-                endArray[si + 1] = Number.isFinite(pairPositions[pi + 4]) ? pairPositions[pi + 4]! : 0
-                endArray[si + 2] = Number.isFinite(pairPositions[pi + 5]) ? pairPositions[pi + 5]! : 0
-            }
-            if (colorStartArray && colorEndArray && pairColors.length) {
-                const maxColorSegsForPair = Math.min(
-                    SEGMENTS_PER_PAIR,
-                    Math.floor(colorStartArray.length / 3) - baseSeg,
-                    Math.floor(pairColors.length / FLOATS_PER_SEGMENT)
-                )
-                for (let s = 0; s < maxColorSegsForPair; s += 1) {
-                    const ci = s * FLOATS_PER_SEGMENT
-                    const si = (baseSeg + s) * 3
-                    colorStartArray[si] = pairColors[ci] ?? 0
-                    colorStartArray[si + 1] = pairColors[ci + 1] ?? 0
-                    colorStartArray[si + 2] = pairColors[ci + 2] ?? 0
-                    colorEndArray[si] = pairColors[ci + 3] ?? 0
-                    colorEndArray[si + 1] = pairColors[ci + 4] ?? 0
-                    colorEndArray[si + 2] = pairColors[ci + 5] ?? 0
-                }
-                colorStartAttr!.needsUpdate = true
-                colorEndAttr!.needsUpdate = true
-            }
-        })
-        startAttr.needsUpdate = true
-        endAttr.needsUpdate = true
-    }
-
-    updateLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0)
-    updateLayer(webglContext.myceliumWispyLines as unknown as LineSegments2, 1)
-    updateLayer(webglContext.myceliumBridgeLines as unknown as LineSegments2, 2)
+    rebuildDirtyPairsInLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0, layerIntensity)
+    rebuildDirtyPairsInLayer(webglContext.myceliumWispyLines as unknown as LineSegments2, 1, layerIntensity)
+    rebuildDirtyPairsInLayer(webglContext.myceliumBridgeLines as unknown as LineSegments2, 2, layerIntensity)
 
     // Drain the dirty set — consumed for this frame.
     dirtyNodeIndices.clear()

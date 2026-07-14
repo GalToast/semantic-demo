@@ -182,17 +182,21 @@ function buildCorridorLineGeometry(anchorIndex: number, routeIndices: number[]) 
 /**
  * Builds the particle trail geometry — sparse particles that flow along each corridor path.
  */
-function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[]) {
-    const anchorPos = state.nodePositions[anchorIndex]
-    if (!anchorPos) return null
 
-    const targetIndices = (routeIndices || [])
-        .filter((i: number) => Number.isFinite(i) && i !== anchorIndex)
-        .slice(0, 12)
+// ── buildCorridorParticleTrail helpers ──────────────────────────────────────
 
-    if (targetIndices.length === 0) return null
-
-    const PARTICLE_COUNT = 36
+/** Compute target indices and fill per-particle attribute buffers. */
+function computeCorridorParticleBuffers(
+    anchorPos: { x: number; y: number; z: number },
+    targetIndices: number[],
+    PARTICLE_COUNT: number
+): {
+    positions: Float32Array
+    progressValues: Float32Array
+    lifetimes: Float32Array
+    segmentOffsets: Float32Array
+    speeds: Float32Array
+} | null {
     const positions = new Float32Array(PARTICLE_COUNT * 3)
     const progressValues = new Float32Array(PARTICLE_COUNT)
     const lifetimes = new Float32Array(PARTICLE_COUNT)
@@ -234,14 +238,29 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
         speeds[i] = 1.0
     }
 
-    const particleGeometry = new BufferGeometry()
-    particleGeometry.setAttribute('position', new BufferAttribute(positions, 3))
-    particleGeometry.setAttribute('aProgress', new BufferAttribute(progressValues, 1))
-    particleGeometry.setAttribute('aLifetime', new BufferAttribute(lifetimes, 1))
-    particleGeometry.setAttribute('aOffset', new BufferAttribute(segmentOffsets, 1))
-    particleGeometry.setAttribute('aSpeed', new BufferAttribute(speeds, 1))
+    return { positions, progressValues, lifetimes, segmentOffsets, speeds }
+}
 
-    const particleMaterial = new ShaderMaterial({
+/** Assemble a BufferGeometry from the particle attribute buffers. */
+function assembleCorridorParticleGeometry(
+    positions: Float32Array,
+    progressValues: Float32Array,
+    lifetimes: Float32Array,
+    segmentOffsets: Float32Array,
+    speeds: Float32Array
+): BufferGeometry {
+    const geometry = new BufferGeometry()
+    geometry.setAttribute('position', new BufferAttribute(positions, 3))
+    geometry.setAttribute('aProgress', new BufferAttribute(progressValues, 1))
+    geometry.setAttribute('aLifetime', new BufferAttribute(lifetimes, 1))
+    geometry.setAttribute('aOffset', new BufferAttribute(segmentOffsets, 1))
+    geometry.setAttribute('aSpeed', new BufferAttribute(speeds, 1))
+    return geometry
+}
+
+/** Create the ShaderMaterial for corridor particles (vertex + fragment shaders). */
+function createCorridorParticleMaterial(): ShaderMaterial {
+    return new ShaderMaterial({
         uniforms: {
             uTime: { value: 0 },
             uDrawProgress: { value: 0 },
@@ -292,8 +311,30 @@ function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[])
         depthWrite: false,
         blending: AdditiveBlending
     })
+}
 
-    const particles = new Points(particleGeometry, particleMaterial)
+// ── Orchestrator ────────────────────────────────────────────────────────────
+
+function buildCorridorParticleTrail(anchorIndex: number, routeIndices: number[]) {
+    const anchorPos = state.nodePositions[anchorIndex]
+    if (!anchorPos) return null
+
+    const targetIndices = (routeIndices || [])
+        .filter((i: number) => Number.isFinite(i) && i !== anchorIndex)
+        .slice(0, 12)
+
+    if (targetIndices.length === 0) return null
+
+    const PARTICLE_COUNT = 36
+    const buffers = computeCorridorParticleBuffers(anchorPos, targetIndices, PARTICLE_COUNT)
+    if (!buffers) return null
+
+    const geometry = assembleCorridorParticleGeometry(
+        buffers.positions, buffers.progressValues, buffers.lifetimes,
+        buffers.segmentOffsets, buffers.speeds
+    )
+    const material = createCorridorParticleMaterial()
+    const particles = new Points(geometry, material)
     particles.frustumCulled = false
     return particles
 }
