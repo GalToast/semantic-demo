@@ -146,7 +146,7 @@ function testStoreDoesNotImportLifecycleOrEventBindings() {
 function testEventBindingsImportsFromCanonicalStore() {
     console.log('\n[TEST 6] event-bindings imports from the canonical store')
 
-    const eventBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/event-bindings.ts')
+    const eventBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/panel-bindings.ts')
     const legendBindingsPath = path.join(SEMDEMO_ROOT, 'src/lib/ui/legend-bindings.ts')
 
     // event-bindings.ts imports buildLegend from the store

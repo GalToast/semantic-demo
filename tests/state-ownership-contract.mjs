@@ -86,7 +86,7 @@ const PROJECT_ROOT = resolve(__dirname, '..')
 const STATE_SOURCE_PATH = join(PROJECT_ROOT, 'src', 'lib', 'state', 'app.svelte.ts')
 const ORCHESTRATION_LIFECYCLE_PATH = join(PROJECT_ROOT, 'src', 'lib', 'orchestration', 'lifecycle.ts')
 const JOURNEY_PATH = join(PROJECT_ROOT, 'src', 'lib', 'journey', 'journey.ts')
-const EVENT_BINDINGS_PATH = join(PROJECT_ROOT, 'src', 'lib', 'ui', 'event-bindings.ts')
+const EVENT_BINDINGS_PATH = join(PROJECT_ROOT, 'src', 'lib', 'ui', 'panel-bindings.ts')
 const FOCUS_POCKET_PATH = join(PROJECT_ROOT, 'src', 'lib', 'focus', 'pocket.ts')
 
 // ─── Fake DOM bootstrap ───────────────────────────────────────────────────────

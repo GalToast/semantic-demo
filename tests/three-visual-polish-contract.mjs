@@ -27,7 +27,7 @@ const canvasPath = path.join(repoRoot, 'src', 'components', 'Canvas.svelte')
 const canvasSrc = fs.existsSync(canvasPath) ? fs.readFileSync(canvasPath, 'utf8') : ''
 const searchAnimationsPath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-search-animations.ts')
 const searchAnimations = fs.readFileSync(searchAnimationsPath, 'utf8')
-const myceliumEnginePath = path.join(repoRoot, 'src', 'lib', 'engine', 'mycelium-engine.ts')
+const myceliumEnginePath = path.join(repoRoot, 'src', 'lib', 'engine', 'three-engine-mycelium.ts')
 const myceliumEngine = fs.readFileSync(myceliumEnginePath, 'utf8')
 
 function assert(condition, message) {

@@ -24,7 +24,7 @@ const JOURNEY_PATH = path.join(SEMDEMO_ROOT, 'src/lib/journey/journey.ts')
 const LIFECYCLE_PATH = resolveSource('src/lib/stores/lifecycle.ts', SEMDEMO_ROOT)
 const JOURNEY_COMPASS_CONTROLLER_PATH = resolveSource('src/lib/journey/compass-state.ts', SEMDEMO_ROOT)
 const ORCH_COMPASS_CONTROLLER_PATH = resolveSource('src/lib/orchestration/compass-controller.ts', SEMDEMO_ROOT)
-const UI_EVENT_BINDINGS_PATH = resolveSource('src/lib/ui/event-bindings.ts', SEMDEMO_ROOT)
+const UI_EVENT_BINDINGS_PATH = resolveSource('src/lib/ui/panel-bindings.ts', SEMDEMO_ROOT)
 
 function assert(cond, msg) {
     if (!cond) throw new Error(`ASSERTION FAILED: ${msg}`)
