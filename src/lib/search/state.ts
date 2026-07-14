@@ -62,16 +62,6 @@ export {
 
 export { setSearchContainerState, setSearchGlowState, setupMobileSearchSheetToggle } from './search-panel-adapter'
 export { tokenizeSearchText, expandSearchIntent, countTokenMatches } from './tokenizer'
-export {
-    getSemanticSearchServiceResults,
-    getSemanticSearchTotalMatches,
-    isNumericOnlySearchQuery,
-    resultMatchesNumericSearchQuery,
-    mapSemanticSearchServiceResult,
-    mapSemanticSearchResults,
-    hydrateSemanticResultContexts,
-    type ServiceResultRow
-} from './mapper'
 export { refreshSearchResultHierarchy, getSearchResultStrength, getSearchResultStrengthLabel } from './result-renderer'
 export { updateSearchTrailCue } from '@lib/journey/search-trail-cue-renderer'
 
