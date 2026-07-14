@@ -9,23 +9,9 @@ import { appState } from '@lib/state/app.svelte'
 import { getViewportSize, prefersReducedMotion } from '../utils/environment'
 import { isCompactSearchViewport } from '@lib/utils/ui-presentation'
 import { sanitizePublicFacingNote, cleanPublicNoteText } from '../utils/dom-formatters'
+import { getSearchStateNamespace } from './results-ui'
 
 // ── PRIVATE HELPERS — typed accessors (Phase 17 cast consolidation) ───────
-
-/**
- * Some host elements carry a `_searchStateNamespace` data slot populated by
- * the search-result DOM lifecycle. The slot is optional and unstructured at
- * the DOM type level; this interface narrows what we actually read.
- */
-interface SearchStateNamespacedElement {
-    _searchStateNamespace?: Record<string, unknown>
-}
-
-function getSearchStateNamespace(el: HTMLElement): SearchStateNamespacedElement {
-    return el as unknown as SearchStateNamespacedElement
-}
-
-// ── Types ──────────────────────────────────────────────────────────────────
 
 interface SearchResultPoint {
     lead_id?: string | number
@@ -283,7 +269,9 @@ export function scheduleCompactSearchResultReveal(resultsEl: HTMLElement, active
     requestAnimationFrame(() => requestAnimationFrame(reveal))
     if (!appState.compactSearchRevealTimers) appState.compactSearchRevealTimers = []
     ;[80, 240, 520].forEach((delay: number) => {
-        appState.compactSearchRevealTimers.push(window.setTimeout(reveal, delay) as unknown as ReturnType<typeof setTimeout>)
+        appState.compactSearchRevealTimers.push(
+            window.setTimeout(reveal, delay) as unknown as ReturnType<typeof setTimeout>
+        )
     })
 }
 
@@ -335,12 +323,8 @@ export function setActiveSearchResultRow(
     }
 
     if (reveal && activeRow) {
-        const searchState = getSearchStateNamespace(resultsEl)._searchStateNamespace
-        if (
-            searchState &&
-            typeof searchState.isMobileRouteFieldPeekActive === 'function' &&
-            searchState.isMobileRouteFieldPeekActive()
-        ) {
+        const searchState = getSearchStateNamespace(resultsEl)
+        if (searchState?.isMobileRouteFieldPeekActive && searchState.isMobileRouteFieldPeekActive()) {
             return
         }
         const rowToReveal: HTMLElement = activeRow

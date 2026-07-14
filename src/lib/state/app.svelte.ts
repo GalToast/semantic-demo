@@ -57,14 +57,12 @@ import type {
     Sprite,
     HemisphereLight,
     DirectionalLight,
-    WebGLRenderer,
-    Texture
+    WebGLRenderer
 } from 'three'
 import type { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import type { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import type { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { validateStateProperty, STATE_VALIDATION_STRICT, validateAppStateEnumFields } from './state-validation'
-import { debugWarn } from '@lib/utils/debug'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 // ── App State class ─────────────────────────────────────────────────────────
@@ -645,6 +643,11 @@ const GLOBAL_APP_STATE_KEY = '__SEMANTIC_EXPLORER_APP_STATE_V1__'
 // created by another Vite chunk.  MUST be a plain data property (not a getter);
 // the getter on GLOBAL_APP_STATE_KEY calls getAppState() itself, so reading it
 // inside getAppState() would create infinite recursion.
+//
+// We store the validation Proxy wrapper (`appState`) here, NOT the raw
+// AppState instance.  This ensures that any chunk which reads the shared
+// singleton receives the Proxy and its validateStateProperty guards, not an
+// unvalidated raw object.
 const APP_STATE_DIRECT_KEY = '__SEMANTIC_EXPLORER_APP_STATE_DIRECT__'
 
 let _appStateInstance: AppState | null = null
@@ -671,26 +674,30 @@ function getAppState(): AppState {
         } else {
             _appStateInstance = new AppState()
             if (typeof window !== 'undefined') {
-                ;(window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] = _appStateInstance
+                // Store the validation Proxy wrapper so other chunks receive
+                // the same guarded object.  The Proxy delegates to the raw
+                // instance held in this module's _appStateInstance, so no
+                // recursion occurs when a foreign chunk reads the stored Proxy.
+                ;(window as unknown as Record<string, unknown>)[APP_STATE_DIRECT_KEY] = appState
             }
-        }
 
-        // ── Phase 6a — startup enum safety net ─────────────────────────────
-        // Run once per appState initialization to surface invalid enum values
-        // that would otherwise propagate silently. This catches partition
-        // mistakes (Phase 6b) where field paths get misaligned with their
-        // VALID_* sets. We console.warn instead of throwing so production
-        // doesn't crash on the first violation — only the dev/strict path
-        // (validateStateProperty at the proxy setter) is fatal.
-        try {
-            const result = validateAppStateEnumFields(_appStateInstance)
-            if (result.errors.length > 0 && typeof console !== 'undefined' && import.meta.env.DEV) {
-                console.warn(
-                    `[appState] Phase 6a enum validation found ${result.errors.length} invalid value(s) (${result.checked} checked): ${result.errors.join('; ')}`
-                )
+            // ── Phase 6a — startup enum safety net ─────────────────────────────
+            // Run once per appState initialization to surface invalid enum values
+            // that would otherwise propagate silently. This catches partition
+            // mistakes (Phase 6b) where field paths get misaligned with their
+            // VALID_* sets. We console.warn instead of throwing so production
+            // doesn't crash on the first violation — only the dev/strict path
+            // (validateStateProperty at the proxy setter) is fatal.
+            try {
+                const result = validateAppStateEnumFields(_appStateInstance)
+                if (result.errors.length > 0 && typeof console !== 'undefined' && import.meta.env.DEV) {
+                    console.warn(
+                        `[appState] Phase 6a enum validation found ${result.errors.length} invalid value(s) (${result.checked} checked): ${result.errors.join('; ')}`
+                    )
+                }
+            } catch {
+                // Defensive: validation must never block appState init.
             }
-        } catch {
-            // Defensive: validation must never block appState init.
         }
     }
     return _appStateInstance

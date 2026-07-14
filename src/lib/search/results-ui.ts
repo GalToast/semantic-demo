@@ -89,6 +89,7 @@ export interface SearchStateNamespace {
     search?: (query: string, options?: { preferCachedResults?: boolean }) => void
     clearSearch?: () => void
     bindSearchResultInteractions?: unknown
+    isMobileRouteFieldPeekActive?: () => boolean
 }
 
 /**
