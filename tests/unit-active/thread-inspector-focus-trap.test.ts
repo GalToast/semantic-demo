@@ -47,13 +47,13 @@ describe('PR-T3: ThreadInspector focus trap', () => {
         expect(src).toMatch(/['"]\.controls['"]/)
     })
 
-    it('selector list is inside a setupFocusTrap([...]) call within the focus surface branch', () => {
+    it('selector list is inside a trapFocusIn([...]) call within the focus surface branch', () => {
         const src = readFocusTrapBindings()
         // The selectors are only active when panelSurface is one of
         // search/focus-search/focus/semantic-dive (the inspector
         // opens in those states). Verify the placement.
         expect(src).toMatch(
-            /surface === ['"]focus['"][\s\S]{0,500}setupFocusTrap\(\[[\s\S]{0,2000}\.thread-inspector[\s\S]{0,500}\]\)/
+            /surface === ['"]focus['"][\s\S]{0,500}trapFocusIn\(\[[\s\S]{0,2000}\.thread-inspector[\s\S]{0,500}\]\)/
         )
     })
 

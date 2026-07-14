@@ -120,12 +120,13 @@ describe('mock-search-fallback bypass (PR-M time-bounded flag)', () => {
         expect(shouldBypassApiSearch()).toBe(false)
     })
 
-    it('shouldBypassApiSearch honours ?offline=1 and stores url-param reason', () => {
+    it('shouldBypassApiSearch honours ?offline=1 (permanent bypass, no sticky flag)', () => {
         setUrlSearch('?offline=1')
         expect(shouldBypassApiSearch()).toBe(true)
+        // URL params are an explicit, permanent bypass — they must NOT write
+        // the transient 60s sticky flag (see mock-search-fallback.ts comment).
         const record = readApiUnreachable()
-        expect(record).not.toBeNull()
-        expect(record!.reason).toBe('url-param')
+        expect(record).toBeNull()
     })
 
     it('shouldBypassApiSearch respects expiry on the next read after 60s', () => {

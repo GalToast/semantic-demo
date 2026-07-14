@@ -129,13 +129,20 @@ const FOCUS_TARGETS = { core: 0.14, wispy: 0.045, bridge: 0.07 };
 
 test.describe('dynamic-lighting: mycelium opacity responds to focus state', () => {
 
-  test.skip('overview opacities are at overview-mode values', async ({ page }) => {
+  // Re-enabled (was test.skip): the overview-mode opacity contract is a first-class
+  // invariant of getMyceliumPresentationProfile() and is exercised by the focus/return
+  // tests in this same suite. The inner guard below remains a legitimate environment
+  // limitation — if the scene has not yet produced mycelium materials on overview load
+  // we still skip rather than fail.
+  test('overview opacities are at overview-mode values', async ({ page }) => {
     test.setTimeout(60000);
     await openApp(page, { width: 1440, height: 900 });
 
     const opacities = await probeOpacities(page);
 
     const available = availableOpacityEntries(opacities);
+    // Environment limitation: mycelium LineSegments materials are created lazily; on a
+    // plain overview load they may not exist yet in some build/render timings.
     test.skip(available.length === 0, 'overview load did not naturally create mycelium materials');
 
     // Overview-mode reference values from getMyceliumPresentationProfile()
