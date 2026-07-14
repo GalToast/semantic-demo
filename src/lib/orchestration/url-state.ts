@@ -533,9 +533,18 @@ function preserveDomForcedFocusSearchSurface(): void {
  * inside `_restoreSearchFromParams` after the search round-trip, because they
  * need a result list to map against.
  */
-async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, signal: AbortSignal): Promise<void> {
+// --- Helpers for _restoreAnchorFromParams ---
+
+/**
+ * Parse and validate a numeric anchor id against the loaded dataset.
+ * Returns `{ valid: false }` if the id is non-numeric or out of range
+ * (after writing fallback state and stripping the URL param).
+ */
+function _validateAnchorIndex(
+    anchorId: string
+): { valid: false } | { valid: true; numericId: number } {
     const numericId = Number(anchorId)
-    if (!Number.isFinite(numericId)) return
+    if (!Number.isFinite(numericId)) return { valid: false }
 
     // A3-3: Validate the anchor index against the loaded dataset.
     // Out-of-range, negative, or dataset-not-yet-loaded indices fall back to
@@ -564,16 +573,19 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
         } catch {
             // URL rewrite is best-effort
         }
-        return
+        return { valid: false }
     }
 
-    // PR-B4: set focusedIndex / mode / surface directly. The legacy URL
-    // writes `record=<lead_id>` when a business is focused, and the focus
-    // state must be restored even if triggers.ts (which normally handles
-    // SEARCH_FOCUS_REQUESTED) is still loading via requestIdleCallback.
-    // Without this direct write, the event is published but no subscriber
-    // has registered yet, so focusedIndex stays null and the app falls back
-    // to overview (showing the wrong/default business).
+    return { valid: true, numericId }
+}
+
+/**
+ * PR-B4: write focus state directly and publish the focus event.
+ * The legacy URL writes `record=<lead_id>` when a business is focused, and
+ * the focus state must be restored even if triggers.ts is still loading via
+ * requestIdleCallback.
+ */
+function _restoreFocusStateForAnchor(numericId: number): void {
     writeNavStateMirror({
         focusedIndex: numericId,
         mode: 'focus',
@@ -583,12 +595,19 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
     })
 
     publish(EVENTS.SEARCH_FOCUS_REQUESTED, { index: numericId })
-    // W44-S5: dynamic import keeps Three.js + focus-pocket geometry off the
-    // cold-load modulepreload list. focus/pocket.ts imports Vector3 / PerspectiveCamera
-    // from 'three' for layout math; url-state sits on App.svelte's cold path so any
-    // static import here would pull the entire Three chunk into cold-preload.
-    // The function is only called for numeric `?anchor=` params, so lazy-loading
-    // it does not affect anything outside the anchor-restoration path.
+}
+
+/**
+ * W44-S5: dynamic import keeps Three.js + focus-pocket geometry off the
+ * cold-load modulepreload list. Returns `true` if the focus-pocket was
+ * applied (or skipped because no import was needed), `false` if a newer
+ * restore superseded this one (caller should bail).
+ */
+async function _applyFocusPocketForAnchor(
+    numericId: number,
+    restoreToken: number,
+    signal: AbortSignal
+): Promise<boolean> {
     try {
         // Pass signal so a newer applyUrlState aborts the dynamic import
         // mid-flight rather than completing a now-stale focus-pocket mutation.
@@ -601,44 +620,49 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
         const applyLocalNeighborhoodFocus = _focusPocketMod.applyLocalNeighborhoodFocus
         // Token-abort: bail before the focus-pocket mutation if a newer
         // applyUrlState bumped the token while the dynamic import resolved.
-        if (_isRestoreStale(restoreToken)) return
+        if (_isRestoreStale(restoreToken)) return false
         applyLocalNeighborhoodFocus(numericId)
     } catch (e) {
         debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e)
     }
+    return true
+}
 
-    // PR-B5: deep-link constellation race fix.
-    //
-    // The initial focus dispatch above runs immediately after `initData()`
-    // resolves, but `initData()` explicitly does NOT wait for the 40 MB
-    // semantic-thread artifact — see data-store.ts:initData():
-    //   "Semantic threads are deferred to engine/lifecycle.ts so the main
-    //    startup path does not block on the 40 MB thread artifact."
-    // Threads load later (requestIdleCallback → loadSemanticThreads),
-    // populating `semanticNeighborMap`. At the time this function runs,
-    // `semanticNeighborMap` is empty, so the `SEARCH_FOCUS_REQUESTED`
-    // subscriber's `buildNeighborhoodManifest` call resolves 0 semantic
-    // neighbors and writes empty `threadCandidates`. The FocusPocket
-    // `$effect` builds an empty/geom-fallback constellation, and nothing
-    // re-fires focus when threads arrive — so `?record=N` deep-links show
-    // "0 visible neighbors" / "No neighboring stops found in this area".
-    //
-    // The normal click flow doesn't hit this: by the time a user clicks,
-    // threads are loaded, so `getSemanticThreadCandidates` returns real
-    // neighbors. The deep-link path runs at boot, before threads.
-    //
-    // Fix: if threads aren't loaded yet, subscribe to `semanticNeighborMap`
-    // and re-fire the focus pipeline (SEARCH_FOCUS_REQUESTED +
-    // applyLocalNeighborhoodFocus) EXACTLY ONCE when it becomes non-empty.
-    // This is idempotent:
-    //   - The triggers.ts subscriber overwrites `threadCandidates` on each
-    //     publish (no accumulation).
-    //   - FocusPocket.svelte's `$effect` dedupes rebuilds by candidate
-    //     signature (`lastCandidateSignature`), so a no-op re-fire is cheap.
-    //   - We guard on `focusedIndex === numericId` so a user navigation away
-    //     from the deep-linked business cancels the deferred re-fire.
-    //   - We guard on the restore token so a newer applyUrlState supersedes
-    //     this one (the subscription is torn down before firing).
+/**
+ * PR-B5: deep-link constellation race fix.
+ *
+ * The initial focus dispatch above runs immediately after `initData()`
+ * resolves, but `initData()` explicitly does NOT wait for the 40 MB
+ * semantic-thread artifact — see data-store.ts:initData():
+ *   "Semantic threads are deferred to engine/lifecycle.ts so the main
+ *    startup path does not block on the 40 MB thread artifact."
+ * Threads load later (requestIdleCallback → loadSemanticThreads),
+ * populating `semanticNeighborMap`. At the time this function runs,
+ * `semanticNeighborMap` is empty, so the `SEARCH_FOCUS_REQUESTED`
+ * subscriber's `buildNeighborhoodManifest` call resolves 0 semantic
+ * neighbors and writes empty `threadCandidates`. The FocusPocket
+ * `$effect` builds an empty/geom-fallback constellation, and nothing
+ * re-fires focus when threads arrive — so `?record=N` deep-links show
+ * "0 visible neighbors" / "No neighboring stops found in this area".
+ *
+ * The normal click flow doesn't hit this: by the time a user clicks,
+ * threads are loaded, so `getSemanticThreadCandidates` returns real
+ * neighbors. The deep-link path runs at boot, before threads.
+ *
+ * Fix: if threads aren't loaded yet, subscribe to `semanticNeighborMap`
+ * and re-fire the focus pipeline (SEARCH_FOCUS_REQUESTED +
+ * applyLocalNeighborhoodFocus) EXACTLY ONCE when it becomes non-empty.
+ * This is idempotent:
+ *   - The triggers.ts subscriber overwrites `threadCandidates` on each
+ *     publish (no accumulation).
+ *   - FocusPocket.svelte's `$effect` dedupes rebuilds by candidate
+ *     signature (`lastCandidateSignature`), so a no-op re-fire is cheap.
+ *   - We guard on `focusedIndex === numericId` so a user navigation away
+ *     from the deep-linked business cancels the deferred re-fire.
+ *   - We guard on the restore token so a newer applyUrlState supersedes
+ *     this one (the subscription is torn down before firing).
+ */
+function _setupDeferredNeighborRefire(numericId: number, restoreToken: number): void {
     if (get(semanticNeighborMap).size === 0) {
         let unsub: Unsubscriber | null = null
         const refire = async (): Promise<void> => {
@@ -669,6 +693,26 @@ async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, 
             }
         })
     }
+}
+
+/**
+ * _restoreAnchorFromParams — restore focus for a numeric anchor id,
+ * independent of any `q` query.
+ *
+ * Why a separate helper: the previous design routed anchor handling through
+ * `_restoreSearchFromParams`, which only ran when `q?.trim().length >= 2`.
+ * Bare `?anchor=<id>` URLs (no query) silently skipped focus dispatch and the
+ * focus pocket never rebuilt. Splitting the path means anchor restoration now
+ * runs whenever `?anchor` is present, regardless of whether a query followed.
+ */
+async function _restoreAnchorFromParams(anchorId: string, restoreToken: number, signal: AbortSignal): Promise<void> {
+    const validation = _validateAnchorIndex(anchorId)
+    if (!validation.valid) return
+
+    _restoreFocusStateForAnchor(validation.numericId)
+    const applied = await _applyFocusPocketForAnchor(validation.numericId, restoreToken, signal)
+    if (!applied) return
+    _setupDeferredNeighborRefire(validation.numericId, restoreToken)
 }
 
 /**

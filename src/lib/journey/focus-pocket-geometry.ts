@@ -582,20 +582,21 @@ export interface PocketStagedResult {
     viewportProfile: ViewportProfile | null
 }
 
-export function buildFocusedPocketStagedPositions(
-    index: number,
-    pocketEntries: Map<number, PocketEntry>
-): PocketStagedResult {
-    if (!state.points || !Array.isArray(state.points) || !state.originalPositions)
-        return { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null }
-    const focusOrig = state.originalPositions[index]
-    if (!focusOrig)
-        return { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null }
-    const focusVector = new Vec3(focusOrig.x, focusOrig.y, focusOrig.z)
-    const { viewVector, rightVector, upVector } = getFocusViewBasis(focusVector)
+// --- Helpers for buildFocusedPocketStagedPositions ---
 
-    const pocketPositions = new Map<number, { x: number; y: number; z: number }>()
-    pocketPositions.set(index, { x: focusOrig.x, y: focusOrig.y, z: focusOrig.z })
+interface EntryLayout {
+    primaryEntries: PocketEntry[]
+    supportEntries: PocketEntry[]
+    haloEntries: PocketEntry[]
+    personality: NeighborhoodPersonality
+    motif: ConstellationMotif
+    vpProfile: ViewportProfile
+}
+
+function _computeEntryLayout(index: number, pocketEntries: Map<number, PocketEntry>): EntryLayout | null {
+    if (!state.points || !Array.isArray(state.points) || !state.originalPositions) return null
+    const focusOrig = state.originalPositions[index]
+    if (!focusOrig) return null
 
     const entries = [...pocketEntries.values()].sort((a: PocketEntry, b: PocketEntry) => {
         const rank: Record<string, number> = { primary: 0, support: 1, halo: 2 }
@@ -618,8 +619,16 @@ export function buildFocusedPocketStagedPositions(
     }
     const personality = (state.navState.currentPersonality as NeighborhoodPersonality | null) || fallbackPersonality
     const motif = getFocusConstellationMotifForPersonality(index, personality)
-
     const vpProfile = getFocusConstellationViewportProfile()
+
+    return { primaryEntries, supportEntries, haloEntries, personality, motif, vpProfile }
+}
+
+function _initializeAnchorMotion(
+    index: number,
+    motifKey: string,
+    personality: NeighborhoodPersonality
+): { motion: Map<number, PocketMotionWithFrame>; roles: Map<number, string> } {
     const motion = new Map<number, PocketMotionWithFrame>()
     const roles = new Map<number, string>([[index, 'anchor']])
     motion.set(index, {
@@ -627,104 +636,162 @@ export function buildFocusedPocketStagedPositions(
         delay: 0,
         duration: personality.cameraDuration * 0.7,
         speed: 0.42,
-        motif: motif.key,
+        motif: motifKey,
         breatheAmp: 0.0022,
         personality: personality.type
     })
+    return { motion, roles }
+}
 
-    const placeEntry = (entry: PocketEntry, order: number, group: string): void => {
-        const original = state.originalPositions[entry.index]
-        if (!original) return
-        const score = safeUnitScore(entry.score, 0)
-        const safeEntry = { ...entry, score }
-        const isPrimary = group === 'primary'
-        const isHalo = group === 'halo'
-        const total = isPrimary ? primaryEntries.length : isHalo ? haloEntries.length : supportEntries.length
-        const placement = {
-            ...getFocusConstellationPlacement(motif, safeEntry, order, group, total, vpProfile, personality)
-        }
-        applyRelationshipRolePlacementBias(placement, safeEntry.relationshipRole || '', order, group)
-        const relationSeed = seededUnit(index, entry.index, order, total, score)
-        const relationSwing = isPrimary ? 0.18 : isHalo ? 0.16 : 0.24
-        placement.angle += (relationSeed - 0.5) * relationSwing
-        placement.radius *= 0.94 + seededUnit(entry.index, index, group.length, order) * (isPrimary ? 0.13 : 0.17)
-        placement.radius *= isPrimary
-            ? vpProfile.primarySpreadScale || 1
-            : isHalo
-              ? vpProfile.haloSpreadScale || 1
-              : vpProfile.supportSpreadScale || 1
-        if (isPrimary) {
-            placement.radius = clampNumber(
-                placement.radius,
-                vpProfile.primaryRadiusFloor || 0.24,
-                vpProfile.primaryRadiusCeiling || 0.52
-            )
-        } else if (!isHalo) {
-            placement.radius = clampNumber(
-                placement.radius,
-                vpProfile.supportRadiusFloor || 0.3,
-                vpProfile.supportRadiusCeiling || 0.66
-            )
-        }
+interface PlaceEntryContext {
+    index: number
+    focusOrig: { x: number; y: number; z: number }
+    focusVector: Vec3
+    rightVector: Vec3
+    upVector: Vec3
+    primaryCount: number
+    supportCount: number
+    haloCount: number
+    motif: ConstellationMotif
+    vpProfile: ViewportProfile
+    personality: NeighborhoodPersonality
+}
 
-        const stagedOffset = new Vec3()
-            .addScaledVector(rightVector, Math.cos(placement.angle) * placement.radius)
-            .addScaledVector(upVector, Math.sin(placement.angle) * placement.radius)
-            .addScaledVector(viewVector, placement.zOffset)
-
-        if (personality.microVariation) {
-            stagedOffset.applyAxisAngle(viewVector, personality.microVariation.rotation)
-            stagedOffset.multiplyScalar(personality.microVariation.scale)
-        }
-
-        const originalOffset = new Vec3(original.x - focusOrig.x, original.y - focusOrig.y, original.z - focusOrig.z)
-        const originalDistance = originalOffset.length()
-        if (originalDistance > 0.0001) {
-            originalOffset.normalize().multiplyScalar(Math.min(originalDistance, placement.radius * 1.35))
-        }
-
-        stagedOffset.multiplyScalar(
-            isPrimary
-                ? (vpProfile.primaryStagedBlend ?? 0.82)
-                : isHalo
-                  ? (vpProfile.haloStagedBlend ?? 0.9)
-                  : (vpProfile.supportStagedBlend ?? 0.86)
+function _placeSingleEntry(
+    entry: PocketEntry,
+    order: number,
+    group: string,
+    ctx: PlaceEntryContext,
+    pocketPositions: Map<number, { x: number; y: number; z: number }>,
+    motion: Map<number, PocketMotionWithFrame>,
+    roles: Map<number, string>
+): void {
+    const original = state.originalPositions[entry.index]
+    if (!original) return
+    const score = safeUnitScore(entry.score, 0)
+    const safeEntry = { ...entry, score }
+    const isPrimary = group === 'primary'
+    const isHalo = group === 'halo'
+    const total = isPrimary ? ctx.primaryCount : isHalo ? ctx.haloCount : ctx.supportCount
+    const placement = {
+        ...getFocusConstellationPlacement(ctx.motif, safeEntry, order, group, total, ctx.vpProfile, ctx.personality)
+    }
+    applyRelationshipRolePlacementBias(placement, safeEntry.relationshipRole || '', order, group)
+    const relationSeed = seededUnit(ctx.index, entry.index, order, total, score)
+    const relationSwing = isPrimary ? 0.18 : isHalo ? 0.16 : 0.24
+    placement.angle += (relationSeed - 0.5) * relationSwing
+    placement.radius *= 0.94 + seededUnit(entry.index, ctx.index, group.length, order) * (isPrimary ? 0.13 : 0.17)
+    placement.radius *= isPrimary
+        ? ctx.vpProfile.primarySpreadScale || 1
+        : isHalo
+          ? ctx.vpProfile.haloSpreadScale || 1
+          : ctx.vpProfile.supportSpreadScale || 1
+    if (isPrimary) {
+        placement.radius = clampNumber(
+            placement.radius,
+            ctx.vpProfile.primaryRadiusFloor || 0.24,
+            ctx.vpProfile.primaryRadiusCeiling || 0.52
         )
-        originalOffset.multiplyScalar(
-            isPrimary
-                ? (vpProfile.primaryOriginBlend ?? 0.18)
-                : isHalo
-                  ? (vpProfile.haloOriginBlend ?? 0.055)
-                  : (vpProfile.supportOriginBlend ?? 0.12)
+    } else if (!isHalo) {
+        placement.radius = clampNumber(
+            placement.radius,
+            ctx.vpProfile.supportRadiusFloor || 0.3,
+            ctx.vpProfile.supportRadiusCeiling || 0.66
         )
-        const finalVector = focusVector.clone().add(stagedOffset).add(originalOffset)
-        pocketPositions.set(entry.index, { x: finalVector.x, y: finalVector.y, z: finalVector.z })
-        roles.set(entry.index, isPrimary ? 'primary' : isHalo ? 'halo' : 'support')
-
-        const baseDelay = isPrimary ? order * 52 : isHalo ? 300 + order * 58 : 210 + order * 62
-        const baseDuration = isPrimary ? 980 : isHalo ? 1280 : 1120
-
-        const origin = state.nodePositions[entry.index] || state.originalPositions[entry.index] || finalVector
-        motion.set(entry.index, {
-            role: isPrimary ? 'primary' : isHalo ? 'halo' : 'support',
-            relationshipRole: safeEntry.relationshipRole || '',
-            relationshipAxis: safeEntry.relationshipAxis || '',
-            roleReason: safeEntry.roleReason || '',
-            motif: motif.key,
-            delay: baseDelay * personality.staggerMult,
-            duration: baseDuration * (personality.cameraDuration / 980),
-            speed: isPrimary ? 0.24 : isHalo ? 0.14 : 0.19,
-            breatheAmp: placement.breatheAmp,
-            phase: placement.angle,
-            personality: personality.type,
-            _originPos: { x: origin.x, y: origin.y, z: origin.z },
-            _firstFrameApplied: false
-        })
     }
 
-    primaryEntries.forEach((entry, order) => placeEntry(entry, order, 'primary'))
-    supportEntries.forEach((entry, order) => placeEntry(entry, order, 'support'))
-    haloEntries.forEach((entry, order) => placeEntry(entry, order, 'halo'))
+    const stagedOffset = new Vec3()
+        .addScaledVector(ctx.rightVector, Math.cos(placement.angle) * placement.radius)
+        .addScaledVector(ctx.upVector, Math.sin(placement.angle) * placement.radius)
+        .addScaledVector(ctx.focusVector, placement.zOffset)
+
+    if (ctx.personality.microVariation) {
+        stagedOffset.applyAxisAngle(ctx.focusVector, ctx.personality.microVariation.rotation)
+        stagedOffset.multiplyScalar(ctx.personality.microVariation.scale)
+    }
+
+    const originalOffset = new Vec3(original.x - ctx.focusOrig.x, original.y - ctx.focusOrig.y, original.z - ctx.focusOrig.z)
+    const originalDistance = originalOffset.length()
+    if (originalDistance > 0.0001) {
+        originalOffset.normalize().multiplyScalar(Math.min(originalDistance, placement.radius * 1.35))
+    }
+
+    stagedOffset.multiplyScalar(
+        isPrimary
+            ? (ctx.vpProfile.primaryStagedBlend ?? 0.82)
+            : isHalo
+              ? (ctx.vpProfile.haloStagedBlend ?? 0.9)
+              : (ctx.vpProfile.supportStagedBlend ?? 0.86)
+    )
+    originalOffset.multiplyScalar(
+        isPrimary
+            ? (ctx.vpProfile.primaryOriginBlend ?? 0.18)
+            : isHalo
+              ? (ctx.vpProfile.haloOriginBlend ?? 0.055)
+              : (ctx.vpProfile.supportOriginBlend ?? 0.12)
+    )
+    const finalVector = ctx.focusVector.clone().add(stagedOffset).add(originalOffset)
+    pocketPositions.set(entry.index, { x: finalVector.x, y: finalVector.y, z: finalVector.z })
+    roles.set(entry.index, isPrimary ? 'primary' : isHalo ? 'halo' : 'support')
+
+    const baseDelay = isPrimary ? order * 52 : isHalo ? 300 + order * 58 : 210 + order * 62
+    const baseDuration = isPrimary ? 980 : isHalo ? 1280 : 1120
+
+    const origin = state.nodePositions[entry.index] || state.originalPositions[entry.index] || finalVector
+    motion.set(entry.index, {
+        role: isPrimary ? 'primary' : isHalo ? 'halo' : 'support',
+        relationshipRole: safeEntry.relationshipRole || '',
+        relationshipAxis: safeEntry.relationshipAxis || '',
+        roleReason: safeEntry.roleReason || '',
+        motif: ctx.motif.key,
+        delay: baseDelay * ctx.personality.staggerMult,
+        duration: baseDuration * (ctx.personality.cameraDuration / 980),
+        speed: isPrimary ? 0.24 : isHalo ? 0.14 : 0.19,
+        breatheAmp: placement.breatheAmp,
+        phase: placement.angle,
+        personality: ctx.personality.type,
+        _originPos: { x: origin.x, y: origin.y, z: origin.z },
+        _firstFrameApplied: false
+    })
+}
+
+export function buildFocusedPocketStagedPositions(
+    index: number,
+    pocketEntries: Map<number, PocketEntry>
+): PocketStagedResult {
+    const empty: PocketStagedResult = { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null }
+    const layout = _computeEntryLayout(index, pocketEntries)
+    if (!layout) return empty
+
+    const focusOrig = state.originalPositions[index]
+    if (!focusOrig) return empty
+
+    const focusVector = new Vec3(focusOrig.x, focusOrig.y, focusOrig.z)
+    const { rightVector, upVector } = getFocusViewBasis(focusVector)
+
+    const pocketPositions = new Map<number, { x: number; y: number; z: number }>()
+    pocketPositions.set(index, { x: focusOrig.x, y: focusOrig.y, z: focusOrig.z })
+
+    const { primaryEntries, supportEntries, haloEntries, personality, motif, vpProfile } = layout
+    const { motion, roles } = _initializeAnchorMotion(index, motif.key, personality)
+
+    const placeCtx: PlaceEntryContext = {
+        index,
+        focusOrig,
+        focusVector,
+        rightVector,
+        upVector,
+        primaryCount: primaryEntries.length,
+        supportCount: supportEntries.length,
+        haloCount: haloEntries.length,
+        motif,
+        vpProfile,
+        personality
+    }
+
+    primaryEntries.forEach((entry, order) => _placeSingleEntry(entry, order, 'primary', placeCtx, pocketPositions, motion, roles))
+    supportEntries.forEach((entry, order) => _placeSingleEntry(entry, order, 'support', placeCtx, pocketPositions, motion, roles))
+    haloEntries.forEach((entry, order) => _placeSingleEntry(entry, order, 'halo', placeCtx, pocketPositions, motion, roles))
     return { positions: pocketPositions, motion, roles, motif, viewportProfile: vpProfile }
 }
 
