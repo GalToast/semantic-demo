@@ -14,6 +14,7 @@
  */
 import type { SearchResult } from '@lib/types/state'
 import { debugWarn } from '@lib/utils/debug'
+import { getEnvFlag } from '@lib/utils/env-flag'
 
 // ── Types ────────────────────────────────────────────────────────────────────
 
@@ -171,9 +172,5 @@ export async function rerankResults(
  * and the caller falls back gracefully.
  */
 function getNimApiKey(): string {
-    try {
-        return (import.meta as unknown as { env?: Record<string, string> })?.env?.VITE_NIM_API_KEY ?? ''
-    } catch {
-        return ''
-    }
+    return getEnvFlag('VITE_NIM_API_KEY') ?? ''
 }
