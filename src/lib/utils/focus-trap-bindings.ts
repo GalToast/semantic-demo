@@ -7,7 +7,7 @@
  * Port of
  */
 
-import { setupFocusTrap, releaseFocusTrap } from './focus-trap'
+import { trapFocusIn, releaseFocusTrapNow } from '@lib/focus/focus-coordinator'
 
 let _focusTrapObserver: MutationObserver | null = null
 
@@ -17,7 +17,7 @@ export function bindFocusTrapObserver(): void {
     _focusTrapObserver = new MutationObserver(() => {
         const surface = (document.body as HTMLElement).dataset.panelSurface || 'idle'
         if (surface === 'search' || surface === 'focus-search' || surface === 'focus' || surface === 'semantic-dive') {
-            setupFocusTrap([
+            trapFocusIn([
                 '.search-container',
                 '#info-panel',
                 '.journey-compass',
@@ -33,7 +33,7 @@ export function bindFocusTrapObserver(): void {
                 '.thread-inspector'
             ])
         } else {
-            releaseFocusTrap()
+            releaseFocusTrapNow()
         }
     })
 

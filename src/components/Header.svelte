@@ -22,6 +22,7 @@
   import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   import { debugWarn } from '@lib/utils/debug'
   import { engineReady } from '@lib/stores/engine-ready.svelte';
+  import { requestEntryFocus, isMeaningfulActiveElement, emitFocusLifecycleSignal } from '@lib/focus/focus-coordinator';
   import { modes } from '@lib/components/header/mode-constants';
   import {
     isModeLocked,
@@ -256,28 +257,17 @@
   });
 
   /**
-   * W50-A11y: when the help dialog closes, land focus on the primary entry
-   * point (#search-input) instead of letting the browser restore it to
-   * <body>. Attached here — where `helpDialog` is bound via `bind:this` — so
-   * it depends on the dialog's reactive existence. The previous App.svelte
-   * effect queried the dialog once and only re-ran on engineReady, so it
-   * missed the dialog when Header wasn't mounted at engine-ready time
-   * (e.g. a ?view=map deep-link with headerVisible=false). The dialog only
-   * exists while Header is mounted, so this covers every case where it can
-   * actually be opened.
+   * W50-A11y: when the help dialog closes, route entry-point focus through
+   * the focus coordinator (single owner of document.activeElement transitions).
+   * Attached here — where `helpDialog` is bound via `bind:this` — so it
+   * depends on the dialog's reactive existence.
    */
   $effect(() => {
     if (!helpDialog) return;
-    // Capture the narrowed non-null dialog in a const so the returned
-    // cleanup closure sees a definite HTMLDialogElement. The reactive
-    // `helpDialog` (bind:this) widens back to `| undefined` inside the
-    // closure, so the cleanup must not reference it directly.
     const dialog = helpDialog;
     const onHelpDialogClose = () => {
-      const input = document.getElementById('search-input') as HTMLInputElement | null;
-      const ae = document.activeElement as HTMLElement | null;
-      const meaningful = !!ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
-      if (input && !meaningful) input.focus();
+      emitFocusLifecycleSignal('dialog-close');
+      requestEntryFocus('#search-input', { signal: 'dialog-close' });
     };
     dialog.addEventListener('close', onHelpDialogClose);
     return () => dialog.removeEventListener('close', onHelpDialogClose);
@@ -287,25 +277,15 @@
    * W50-A11y (mobile): the help-dialog auto-open above is gated to desktop
    * (!$viewport.isCompact), so on mobile the dialog never opens and the
    * close-handler focus path never fires — mobile screen-reader users strand
-   * at <body> with no focus target after dismissing the splash. Land focus on
-   * the primary entry point (#search-input) directly once the 3D scene is
-   * ready. Mirrors the meaningful-active-element guard used by the close
-   * handler. Skip while the dialog is open (desktop handles focus on close).
+   * at <body> with no focus target after dismissing the splash. Route through
+   * the focus coordinator once the 3D scene is ready.
    */
   $effect(() => {
     if (!engineReady.value || !$viewport.isCompact) return;
     if (helpDialog?.open) return;
-    const ae = document.activeElement as HTMLElement | null;
-    const meaningful = !!ae && (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable);
-    if (meaningful) return;
-    // Defer one frame so the header (and #search-input) is mounted after the
-    // splash is removed — matches the rAF focus idiom used in SearchInput.svelte.
-    requestAnimationFrame(() => {
-      const input = document.getElementById('search-input') as HTMLInputElement | null;
-      const cur = document.activeElement as HTMLElement | null;
-      const stillMeaningful = !!cur && (cur.tagName === 'INPUT' || cur.tagName === 'TEXTAREA' || cur.isContentEditable);
-      if (input && !stillMeaningful) input.focus();
-    });
+    if (isMeaningfulActiveElement()) return;
+    emitFocusLifecycleSignal('scene-ready');
+    requestEntryFocus('#search-input', { signal: 'scene-ready' });
   });
 </script>
 

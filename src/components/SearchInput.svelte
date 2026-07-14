@@ -23,6 +23,7 @@
     consumeSearchInputFocusIntent
   } from '@lib/stores/search.svelte';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
+  import { requestEntryFocus } from '@lib/focus/focus-coordinator';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
   import {
     dispatchNavTransition,
@@ -99,7 +100,7 @@
     queryInput = staged;
     setSearchQuery(staged);
     dispatchSearch(staged);
-    requestAnimationFrame(() => inputEl?.focus());
+    requestEntryFocus(() => inputEl, { signal: 'scene-ready' });
   });
 
   // ── Deferred Enter-focus fulfillment ───────────────────────────────────────-
