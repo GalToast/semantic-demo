@@ -341,24 +341,13 @@ export function computeParityAttributes(): ParityAttributeMap {
 
 // ── DOM Writer ──────────────────────────────────────────────────────────────
 
-/**
- * Apply the parity attribute map to document.body.
- * SSR-safe (no-op when document/body is unavailable).
- * Idempotent: setting the same value is a no-op for browser.
- *
- * Also manages the body class list — the legacy composition-state.ts:106
- * line `root.classList.toggle('is-active', Boolean(surface))` was the
- * single source of truth for many mobile CSS rules (e.g.,
- * mobile_premium__chrome.css:789 hides the welcome card on search
- * mode, gated on `body.is-active`). The Svelte parity port originally
- * scoped itself to data-* only and missed the class toggle, which
- * left dozens of CSS rules silently dormant. This function now owns
- * the class along with the data-* attrs so the parity contract is
- * complete.
- */
-export function applyParityAttributes(map: ParityAttributeMap): void {
-    if (typeof document === 'undefined' || !document.body) return
+// ── applyParityAttributes helpers ─────────────────────────────────────────
 
+/**
+ * Write the computed parity map entries to body data-* attributes.
+ * Null/undefined values remove the attribute; strings set it.
+ */
+function applyDataAttributes(map: ParityAttributeMap): void {
     for (const [key, value] of Object.entries(map)) {
         if (value === null || value === undefined) {
             if (document.body.dataset[key] !== undefined) {
@@ -371,15 +360,14 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
             document.body.dataset[key] = str
         }
     }
+}
 
-    // ── Surface-settled signal (T7 Part B) ───────────────────────────────
-    // Emit `data-surface-settled` once the surface layout is stable: the
-    // loading overlay is hidden AND the route has settled (scene ready /
-    // view-handoff finished / camera free / graphics fallback). This is the
-    // exact condition the surface-contract harness polls for; publishing it
-    // from the app removes the guesswork of timeout-based settling. The
-    // harness prefers this signal but falls back to composite polling when
-    // the attribute is absent, so this write is strictly additive.
+/**
+ * Emit data-surface-settled once the surface layout is stable:
+ * loading overlay hidden AND route settled (scene ready / view-handoff
+ * finished / camera free / graphics fallback).
+ */
+function applySurfaceSettledSignal(map: ParityAttributeMap): void {
     const overlayHidden = map.loadingOverlay === 'hidden'
     const routeSettled =
         map.sceneReady === 'true' ||
@@ -394,25 +382,15 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
     } else if (document.body.dataset.surfaceSettled !== undefined) {
         delete document.body.dataset.surfaceSettled
     }
+}
 
-    // Note: The `is-active` body class was removed in Phase B3d.3.
-    // It was redundant with the surface-{value} classes (is-active
-    // ≡ panelSurface !== 'idle' ≡ :not(.surface-idle)). All CSS
-    // rules that previously used `body.is-active` have been migrated
-    // to use surface-{value} classes directly.
-    //
-    // Test contract hooks (e.g., __forceSemanticDiveContractSurface)
-    // may still add `is-active` directly to body for backward compat,
-    // but parity-attrs no longer manages it.
-
-    // ── CSS class mirrors for body[data-...] selectors ──────────────────────
-    // Each class enables CSS selectors to target body state via class-based
-    // selectors instead of attribute selectors. The classes are kept in sync
-    // with the data-* attributes above.
-    //
-    // Map of attribute key → class prefix. For a key like 'panelSurface' with
-    // value 'focus', this adds class 'surface-focus' and removes stale
-    // 'surface-*' siblings.
+/**
+ * Keep body CSS classes in sync with data-* attributes. Manages:
+ * - Value-based mirrors (panelSurface→surface-*, activeView→view-*, etc.)
+ * - Static compound mirrors (surface-map-any, route-peek)
+ */
+function applyBodyClassMirrors(map: ParityAttributeMap): void {
+    // Value-based class mirrors
     const BODY_CLASS_MAP: Record<string, string> = {
         panelSurface: 'surface',
         activeView: 'view',
@@ -443,14 +421,7 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
         }
     }
 
-    // ── Static class mirrors for compound selectors ─────────────────────
-    // Some CSS rules target "any surface that's a map variant" (e.g.,
-    // map-trail, map-focus, map-search, map-focus-search). The
-    // value-based class mirror above emits surface-{value} for each, but
-    // CSS substring matching (body[class*='surface-map-']) is fragile
-    // when someone adds a new map variant — codemod requires another
-    // pass. The static class surface-map-any is added whenever
-    // panelSurface starts with 'map-', giving CSS a stable hook.
+    // Static compound class: surface-map-any
     const isMapSurface = typeof map.panelSurface === 'string' && (map.panelSurface as string).startsWith('map-')
     if (isMapSurface) {
         if (!document.body.classList.contains('surface-map-any')) {
@@ -460,14 +431,7 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
         document.body.classList.remove('surface-map-any')
     }
 
-    // ── Route peek class mirror ──────────────────────────────────────
-    // mobileRoutePeek is a transient choreography state set during
-    // search-result hover/focus on mobile (results-ui.ts → appState).
-    // CSS rules in layout_base.css, search.css, and shell.css gate on
-    // the body[data-mobile-route-peek='active'] attribute. The static
-    // class `route-peek` mirrors the active state for class-based
-    // selectors, enabling migration from body[data-mobile-route-peek=...]
-    // to body.route-peek without losing the reactive sync.
+    // Static class: route-peek
     const isRoutePeekActive = map.mobileRoutePeek === 'active'
     if (isRoutePeekActive) {
         if (!document.body.classList.contains('route-peek')) {
@@ -476,6 +440,41 @@ export function applyParityAttributes(map: ParityAttributeMap): void {
     } else if (document.body.classList.contains('route-peek')) {
         document.body.classList.remove('route-peek')
     }
+}
+
+// ── Orchestrator ───────────────────────────────────────────────────────────
+
+/**
+ * Apply the parity attribute map to document.body.
+ * SSR-safe (no-op when document/body is unavailable).
+ * Idempotent: setting the same value is a no-op for browser.
+ *
+ * Also manages the body class list — the legacy composition-state.ts:106
+ * line `root.classList.toggle('is-active', Boolean(surface))` was the
+ * single source of truth for many mobile CSS rules (e.g.,
+ * mobile_premium__chrome.css:789 hides the welcome card on search
+ * mode, gated on `body.is-active`). The Svelte parity port originally
+ * scoped itself to data-* only and missed the class toggle, which
+ * left dozens of CSS rules silently dormant. This function now owns
+ * the class along with the data-* attrs so the parity contract is
+ * complete.
+ */
+export function applyParityAttributes(map: ParityAttributeMap): void {
+    if (typeof document === 'undefined' || !document.body) return
+
+    applyDataAttributes(map)
+    applySurfaceSettledSignal(map)
+    applyBodyClassMirrors(map)
+
+    // Note: The `is-active` body class was removed in Phase B3d.3.
+    // It was redundant with the surface-{value} classes (is-active
+    // ≡ panelSurface !== 'idle' ≡ :not(.surface-idle)). All CSS
+    // rules that previously used `body.is-active` have been migrated
+    // to use surface-{value} classes directly.
+    //
+    // Test contract hooks (e.g., __forceSemanticDiveContractSurface)
+    // may still add `is-active` directly to body for backward compat,
+    // but parity-attrs no longer manages it.
 }
 
 // ── Installer (rune-based) ─────────────────────────────────────────────────
@@ -606,14 +605,12 @@ export function setRenderKind(value: string): void {
  *   sync after subscription. Useful for tests that want a deterministic
  *   first read.
  */
-export function installParityAttributeSync(options: { initialSync?: boolean } = {}): () => void {
-    const { initialSync = true } = options
+// ── installParityAttributeSync helpers ────────────────────────────────────
 
-    if (typeof document === 'undefined' || !document.body) {
-        return () => {}
-    }
-
-    // Clean up any previous root
+/**
+ * Tear down any previous parity sync state (effect root + bypass observer).
+ */
+function cleanupPreviousParityState(): void {
     if (_effectRoot) {
         _effectRoot()
         _effectRoot = null
@@ -622,13 +619,17 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
         _bypassObserver.disconnect()
         _bypassObserver = null
     }
+}
 
-    // One shared MutationObserver for the 4 bypass attrs (focusPanelMode,
-    // insideWalkState, renderKind, mobileSearchSheet). Each component used
-    // to run its own observer with its own attributeFilter — consolidating
-    // here means N components → 1 observer + 4 fast property reads on
-    // each fire. _bypassSnapshot is $state so consumers reading
-    // getBypassAttr() inside `$derived` automatically re-run.
+/**
+ * Install the shared MutationObserver for bypass attrs (focusPanelMode,
+ * insideWalkState, renderKind, mobileSearchSheet). Each component used
+ * to run its own observer with its own attributeFilter — consolidating
+ * here means N components → 1 observer + 4 fast property reads on
+ * each fire. _bypassSnapshot is $state so consumers reading
+ * getBypassAttr() inside `$derived` automatically re-run.
+ */
+function installBypassObserver(): void {
     const syncBypassSnapshot = (): void => {
         _bypassSnapshot.focusPanelMode = document.body.dataset.focusPanelMode ?? null
         _bypassSnapshot.insideWalkState = document.body.dataset.insideWalkState ?? null
@@ -646,93 +647,130 @@ export function installParityAttributeSync(options: { initialSync?: boolean } = 
             'data-mobile-search-sheet'
         ]
     })
+}
 
-    _effectRoot = $effect.root(() => {
-        let scheduled = false
-        // Phase 1 timing-maze fix: the mirror's single timing layer is
-        // queueMicrotask(syncNow). This gives Svelte 5 reactivity time to
-        // settle (Object.assign(parityMap, map) triggers $derived/$effect
-        // cascades that may call back into store mutators) before we write
-        // to body.dataset.
-        //
-        // The CALLERS' timing workarounds (cursor.ts queueMicrotask,
-        // setTimeout 50ms/250ms) have been removed — the mirror's microtask
-        // is the single source of truth for body.dataset writes.
-        //
-        // `scheduled` is reset in `finally` to guarantee it's cleared even
-        // when the snapshot short-circuit returns early. This prevents the
-        // mirror from being permanently disabled by a JSON-equal snapshot.
-        const syncNow = (): void => {
-            try {
-                const map = computeParityAttributes()
+/**
+ * Create the reactive sync effect body: subscribes to all parity feeds,
+ * recomputes + applies parity attributes on change via microtask coalescing.
+ * Returns the inner disposer that unsubscribes all store subscriptions.
+ */
+function createParitySyncEffectBody(initialSync: boolean): () => void {
+    let scheduled = false
+    // Phase 1 timing-maze fix: the mirror's single timing layer is
+    // queueMicrotask(syncNow). This gives Svelte 5 reactivity time to
+    // settle (Object.assign(parityMap, map) triggers $derived/$effect
+    // cascades that may call back into store mutators) before we write
+    // to body.dataset.
+    //
+    // The CALLERS' timing workarounds (cursor.ts queueMicrotask,
+    // setTimeout 50ms/250ms) have been removed — the mirror's microtask
+    // is the single source of truth for body.dataset writes.
+    //
+    // `scheduled` is reset in `finally` to guarantee it's cleared even
+    // when the snapshot short-circuit returns early. This prevents the
+    // mirror from being permanently disabled by a JSON-equal snapshot.
+    const syncNow = (): void => {
+        try {
+            const map = computeParityAttributes()
 
-                // Mirror the computed map into the rune-backed `parityMap` so
-                // Svelte 5 components that read `parityMap.x` inside a
-                // reactive context (template, $derived, $effect) get auto-
-                // re-runs. Object.assign triggers per-key reactivity so
-                // components only re-run when their specific key changes.
-                //
-                // Done BEFORE the snapshot short-circuit so consumers see
-                // parityMap updates even when the DOM write is skipped (e.g.,
-                // when two consecutive snapshots are JSON-equal).
-                Object.assign(parityMap, map)
+            // Mirror the computed map into the rune-backed `parityMap` so
+            // Svelte 5 components that read `parityMap.x` inside a
+            // reactive context (template, $derived, $effect) get auto-
+            // re-runs. Object.assign triggers per-key reactivity so
+            // components only re-run when their specific key changes.
+            //
+            // Done BEFORE the snapshot short-circuit so consumers see
+            // parityMap updates even when the DOM write is skipped (e.g.,
+            // when two consecutive snapshots are JSON-equal).
+            Object.assign(parityMap, map)
 
-                // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
-                const snapshot = JSON.stringify(map)
-                if (snapshot === _lastSnapshot) return
-                _lastSnapshot = snapshot
+            // Cheap short-circuit: same JSON snapshot means no DOM changes needed.
+            const snapshot = JSON.stringify(map)
+            if (snapshot === _lastSnapshot) return
+            _lastSnapshot = snapshot
 
-                applyParityAttributes(map)
-            } finally {
-                // Always reset scheduled, even on early return, so the next
-                // external store change can trigger a fresh sync.
-                scheduled = false
-            }
+            applyParityAttributes(map)
+        } finally {
+            // Always reset scheduled, even on early return, so the next
+            // external store change can trigger a fresh sync.
+            scheduled = false
         }
-        const scheduleSync = (): void => {
-            if (scheduled) return
-            scheduled = true
-            // Coalesce multiple store updates in the same tick to avoid
-            // redundant recomputes (e.g., when navigation fires both
-            // navStore and journeyStore). The microtask gives Svelte 5
-            // reactivity time to settle before the body.dataset write.
-            queueMicrotask(syncNow)
-        }
+    }
+    const scheduleSync = (): void => {
+        if (scheduled) return
+        scheduled = true
+        // Coalesce multiple store updates in the same tick to avoid
+        // redundant recomputes (e.g., when navigation fires both
+        // navStore and journeyStore). The microtask gives Svelte 5
+        // reactivity time to settle before the body.dataset write.
+        queueMicrotask(syncNow)
+    }
 
-        // Explicit .subscribe() per store. Plain function-call reads
-        // (e.g. `navStore()`) inside $effect are transient in Svelte 5 and
-        // do NOT establish a dependency; .subscribe() does.
-        const unsubNav = navStore.subscribe(scheduleSync)
-        const unsubJourney = journeyStore.subscribe(scheduleSync)
-        const unsubFocus = focusStore.subscribe(scheduleSync)
-        const unsubSearch = searchStore.subscribe(scheduleSync)
-        const unsubFilter = filterState.subscribe(scheduleSync)
-        const unsubViewport = viewport.subscribe(scheduleSync)
-        const unsubDemo = demoStore.subscribe(scheduleSync)
-        const unsubCamera = cameraStore.subscribe(scheduleSync)
-        const unsubLoadingPhase = loadingPhaseStore.subscribe(scheduleSync)
-        const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync)
-        const unsubEngineReady = engineReady.subscribe(scheduleSync)
+    // Explicit .subscribe() per store. Plain function-call reads
+    // (e.g. `navStore()`) inside $effect are transient in Svelte 5 and
+    // do NOT establish a dependency; .subscribe() does.
+    const unsubNav = navStore.subscribe(scheduleSync)
+    const unsubJourney = journeyStore.subscribe(scheduleSync)
+    const unsubFocus = focusStore.subscribe(scheduleSync)
+    const unsubSearch = searchStore.subscribe(scheduleSync)
+    const unsubFilter = filterState.subscribe(scheduleSync)
+    const unsubViewport = viewport.subscribe(scheduleSync)
+    const unsubDemo = demoStore.subscribe(scheduleSync)
+    const unsubCamera = cameraStore.subscribe(scheduleSync)
+    const unsubLoadingPhase = loadingPhaseStore.subscribe(scheduleSync)
+    const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync)
+    const unsubEngineReady = engineReady.subscribe(scheduleSync)
 
-        if (initialSync) {
-            // Force an initial compute on install
-            syncNow()
-        }
+    if (initialSync) {
+        // Force an initial compute on install
+        syncNow()
+    }
 
-        return () => {
-            unsubNav()
-            unsubJourney()
-            unsubFocus()
-            unsubSearch()
-            unsubFilter()
-            unsubViewport()
-            unsubDemo()
-            unsubCamera()
-            unsubLoadingPhase()
-            unsubGraphicsMode()
-            unsubEngineReady()
-        }
-    })
+    return () => {
+        unsubNav()
+        unsubJourney()
+        unsubFocus()
+        unsubSearch()
+        unsubFilter()
+        unsubViewport()
+        unsubDemo()
+        unsubCamera()
+        unsubLoadingPhase()
+        unsubGraphicsMode()
+        unsubEngineReady()
+    }
+}
+
+// ── Orchestrator ───────────────────────────────────────────────────────────
+
+/**
+ * Install the parity attribute sync layer.
+ *
+ * Subscribes to every Svelte store that feeds computeParityAttributes().
+ * Note: calling a store's function form (e.g. `navStore()`) inside a
+ * `$effect` is a snapshot read — Svelte 5's rune tracking does NOT
+ * establish a reactive subscription on transient `get()` calls. We
+ * therefore use explicit `.subscribe()` per store so the effect actually
+ * re-runs on store changes. (See qa-screenshots/PARITY_GAP_AUDIT.md
+ * for the Svelte 5 reactivity gotcha and how it bites this module.)
+ *
+ * Returns a cleanup function that stops all subscriptions.
+ *
+ * @param options.initialSync When true (default), performs an initial
+ *   sync after subscription. Useful for tests that want a deterministic
+ *   first read.
+ */
+export function installParityAttributeSync(options: { initialSync?: boolean } = {}): () => void {
+    const { initialSync = true } = options
+
+    if (typeof document === 'undefined' || !document.body) {
+        return () => {}
+    }
+
+    cleanupPreviousParityState()
+    installBypassObserver()
+
+    _effectRoot = $effect.root(() => createParitySyncEffectBody(initialSync))
 
     return () => {
         if (_effectRoot) {
