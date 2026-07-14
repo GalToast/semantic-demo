@@ -321,27 +321,12 @@ async function initEngineHeavy(callbacks: EngineCallbacks): Promise<void> {
             liveCanvas.style.display = 'block'
         }
 
-        // W5-T1b: yield before mycelium geometry creation (the second-largest
-        // single CPU step — float-buffer allocation + LineSegments construction
-        // for ~10k nodes × 3 layers = ~30k line segments).
+        // W5-T1b: yield between canvas CSS sizing and interaction bindings
+        // so the long task breaks into multiple sub-200 ms chunks.
         await yieldToBrowser()
         if (!engineInitStillActive('geometry-yield')) return
 
-        // 5. Create mycelium thread geometry
-        if (appState.points?.length && appState.nodePositions?.length) {
-            try {
-                createMycelium()
-            } catch (threadErr) {
-                debugWarn('[engine/lifecycle] mycelium creation failed:', threadErr)
-            }
-        }
-
-        // W5-T1b: yield before interaction bindings (raycaster setup + event
-        // listener registration; ~50-100 ms but worth separating).
-        await yieldToBrowser()
-        if (!engineInitStillActive('interaction-yield')) return
-
-        // 6. Wire canvas click/hover interaction bindings
+        // 5. Wire canvas click/hover interaction bindings
         try {
             ensureCanvasNodeInteractionBindings()
             _canvasInteractionBound = true
@@ -559,7 +544,6 @@ export function destroyEngine(): void {
     appState.nodeSporeMesh = null
     appState.nodeSporeMaterial = null
     appState.myceliumGroup = null
-    appState.myceliumLines = null
     appState.myceliumCoreLines = null
     appState.myceliumWispyLines = null
     appState.myceliumBridgeLines = null

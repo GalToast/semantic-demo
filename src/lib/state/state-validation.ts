@@ -12,7 +12,7 @@
 
 // ── Valid value sets (mirrored from @lib/types/state) ───────────────────────
 
-export const VALID_VIEWS = new Set<string>(['galaxy', 'map', 'focus', 'trail', 'semantic'])
+export const VALID_VIEWS = new Set<string>(['galaxy', 'map'])
 
 export const VALID_NAV_MODES = new Set<string>(['overview', 'search', 'trail', 'focus', 'inside', 'map', 'bridge'])
 
@@ -409,7 +409,6 @@ export const STATE_VALIDATORS: Readonly<Record<string, StateValidator>> = {
     nodePositions: passthrough,
     targetPositions: passthrough,
     originalPositions: passthrough,
-    myceliumLines: passthrough,
     myceliumCoreLines: passthrough,
     myceliumWispyLines: passthrough,
     myceliumBridgeLines: passthrough,

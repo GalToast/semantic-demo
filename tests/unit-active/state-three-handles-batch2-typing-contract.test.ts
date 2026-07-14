@@ -2,10 +2,10 @@
  * @file state-three-handles-batch2-typing-contract.test.ts
  *
  * Lock-in test for the engine-boundary refactor Tier D second bite:
- * direct Three.js types for 14 more state class handle fields.
+ * direct Three.js types for 13 state class handle fields.
  *
  * Fields tightened (Batch 2 — non-camera Three.js handles):
- *   myceliumLines, myceliumGroup, myceliumCoreLines, myceliumWispyLines,
+ *   myceliumGroup, myceliumCoreLines, myceliumWispyLines,
  *   myceliumBridgeLines, focusSemanticLines, focusAnchorGroup,
  *   focusAnchorRingMesh, focusAnchorHaloSprite, semanticLensGroup,
  *   semanticLensGlow, semanticLensSpokes, hemiLight, dirLight
@@ -45,7 +45,6 @@ describe('engine-boundary refactor / Tier D second bite / Three.js handles batch
     })
 
     const batchFields: Array<{ field: string; type: string }> = [
-        { field: 'myceliumLines', type: 'LineSegments' },
         { field: 'myceliumGroup', type: 'Group' },
         // 2d4b210e refactor(engine): Line2 variable-width mycelium threads
         // — these mycelium fields are LineSegments2 (from three/examples/jsm/lines),
@@ -78,7 +77,6 @@ describe('engine-boundary refactor / Tier D second bite / Three.js handles batch
 
     it('no `null as unknown as SemanticState[...]` boilerplate remains for batch 2 fields', () => {
         const source = readSource('src/lib/state/app.svelte.ts')
-        expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['myceliumLines']/)
         expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['myceliumGroup']/)
         expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['myceliumCoreLines']/)
         expect(source).not.toMatch(/null\s+as\s+unknown\s+as\s+SemanticState\['myceliumWispyLines']/)

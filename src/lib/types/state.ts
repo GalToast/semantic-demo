@@ -409,7 +409,7 @@ export interface ActiveFilters {
 
 // ── Composition / Panel Surface ───────────────────────────────────────────────
 
-export type ViewName = 'galaxy' | 'map' | 'focus' | 'trail' | 'semantic'
+export type ViewName = 'galaxy' | 'map'
 
 // ── Loading State ─────────────────────────────────────────────────────────────
 

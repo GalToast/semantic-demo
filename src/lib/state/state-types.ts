@@ -124,7 +124,7 @@ export type ClusterName =
     | 'Public Agencies'
     | 'Enterprise Brands'
 
-export type ViewName = 'galaxy' | 'map' | 'focus' | 'trail' | 'semantic'
+export type ViewName = 'galaxy' | 'map'
 
 export type CompassPhase = 'overview' | 'search' | 'focus' | 'inside' | 'map'
 
@@ -541,7 +541,6 @@ export interface SemanticState extends StateConfig {
     rawPositionsBuffer: Float32Array | null
     rawClustersBuffer: Uint16Array | null
     leadEnrichment: Record<string, unknown> | null
-    myceliumLines: WebGLContextState['myceliumLines']
     myceliumGroup: WebGLContextState['myceliumGroup']
     myceliumCoreLines: WebGLContextState['myceliumCoreLines']
     myceliumWispyLines: WebGLContextState['myceliumWispyLines']

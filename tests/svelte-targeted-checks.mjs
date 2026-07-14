@@ -108,7 +108,6 @@ async function main() {
         semanticThreads: state.semanticThreads,
         threadData: state.threadData,
         threadLines: state.threadLines,
-        myceliumLines: state.myceliumLines,
         threadManager: state.threadManager,
         threeThreadManager: state.threeThreadManager,
       };

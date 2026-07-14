@@ -35,7 +35,6 @@ export interface WebGLContextState {
     pointsMaterial: PointsMaterial | null
     nodeSporeMesh: InstancedMesh | null
     nodeSporeMaterial: Material | null
-    myceliumLines: LineSegments | null
     myceliumGroup: Group | null
     myceliumCoreLines: LineSegments2 | null
     myceliumWispyLines: LineSegments2 | null
@@ -84,7 +83,6 @@ export const webglContext: WebGLContextState = {
     pointsMaterial: null,
     nodeSporeMesh: null,
     nodeSporeMaterial: null,
-    myceliumLines: null,
     myceliumGroup: null,
     myceliumCoreLines: null,
     myceliumWispyLines: null,

@@ -386,11 +386,13 @@ describe('engine-lifecycle — initEngine behavior', () => {
         expect(loadSemanticThreads).toHaveBeenCalledOnce()
     })
 
-    it('calls createMycelium from thread-manager', async () => {
+    it('does not call createMycelium directly from lifecycle', async () => {
+        // The cold-path mycelium build now lives inside initThreeJS().
+        // lifecycle.ts only calls createMycelium() on the late-data path.
         const canvas = createMockCanvas()
         await initEngine(canvas, createMockCallbacks())
 
-        expect(createMycelium).toHaveBeenCalledOnce()
+        expect(createMycelium).not.toHaveBeenCalled()
     })
 
     it('calls ensureCanvasNodeInteractionBindings', async () => {

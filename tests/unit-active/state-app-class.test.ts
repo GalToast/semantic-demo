@@ -60,7 +60,7 @@ import {
 // Total count: 24 (task spec mentioned ~25; the actual export count in
 // state-validation.ts is 24). Adjust if upstream adds/removes a set.
 const VALID_SET_SNAPSHOTS: ReadonlyArray<readonly [string, ReadonlySet<string>, number]> = [
-    ['VALID_VIEWS', VALID_VIEWS, 5],
+    ['VALID_VIEWS', VALID_VIEWS, 2],
     ['VALID_NAV_MODES', VALID_NAV_MODES, 7],
     ['VALID_PANEL_SURFACES', VALID_PANEL_SURFACES, 14],
     ['VALID_SEARCH_STATUS', VALID_SEARCH_STATUS, 6],
@@ -154,11 +154,12 @@ import { validateStateProperty, passthrough } from '@lib/state/state-validation'
 
 describe('state-app-class — validateStateProperty (enum paths)', () => {
     type Case = readonly [string, unknown, boolean]
-    const cases: readonly Case[] = [
+    const cases: Case[] = [
         // Views
         ['currentView', 'galaxy', true],
         ['currentView', 'bogus', false],
-        ['navState.currentView', 'focus', true],
+        ['navState.currentView', 'map', true],
+        ,
         ['navState.currentView', 'xur', false],
 
         // Navigation mode
@@ -223,7 +224,7 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
         ['__unknown_path_xyz__', 'whatever', true]
     ]
 
-    for (const [path, value, isExpectedValid] of cases) {
+    cases.forEach(([path, value, isExpectedValid]) => {
         it(`[${path}] = ${JSON.stringify(value)} → ${isExpectedValid ? 'null' : 'string'}`, () => {
             const result = validateStateProperty(path, value)
             if (isExpectedValid) {
@@ -236,7 +237,7 @@ describe('state-app-class — validateStateProperty (enum paths)', () => {
                 expect(result).toContain(path)
             }
         })
-    }
+    })
 
     // Type-badness cases — the oneOf/nonNegativeInt/etc validators reject
     // types with "must be a..." messages.
@@ -392,7 +393,7 @@ describe('state-app-class — AppState class surface (5-field structural fixture
     const currentView: AppState['currentView'] = 'galaxy'
     it('currentView is a ViewName', () => {
         expect(VALID_VIEWS.has(currentView)).toBe(true)
-        const altView: AppState['currentView'] = 'focus'
+        const altView: AppState['currentView'] = 'map'
         expect(VALID_VIEWS.has(altView)).toBe(true)
     })
 

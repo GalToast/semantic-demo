@@ -332,9 +332,6 @@ describe('state validation — allowed value sets', () => {
     it('VALID_VIEWS contains the canonical views', () => {
         expect(VALID_VIEWS.has('galaxy')).toBe(true)
         expect(VALID_VIEWS.has('map')).toBe(true)
-        expect(VALID_VIEWS.has('focus')).toBe(true)
-        expect(VALID_VIEWS.has('trail')).toBe(true)
-        expect(VALID_VIEWS.has('semantic')).toBe(true)
         expect(VALID_VIEWS.has('bogus')).toBe(false)
     })
 
@@ -379,7 +376,6 @@ describe('state validation — validateStateProperty', () => {
     it('allows valid currentView values', () => {
         expect(validateStateProperty('currentView', 'galaxy')).toBeNull()
         expect(validateStateProperty('currentView', 'map')).toBeNull()
-        expect(validateStateProperty('currentView', 'focus')).toBeNull()
     })
 
     it('rejects invalid currentView values', () => {

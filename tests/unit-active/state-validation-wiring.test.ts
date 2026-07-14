@@ -164,10 +164,7 @@ describe('Phase 6a — VALID_* sets shape (sanity)', () => {
     it('VALID_VIEWS contains expected views', () => {
         expect(VALID_VIEWS.has('galaxy')).toBe(true)
         expect(VALID_VIEWS.has('map')).toBe(true)
-        expect(VALID_VIEWS.has('focus')).toBe(true)
-        expect(VALID_VIEWS.has('trail')).toBe(true)
-        expect(VALID_VIEWS.has('semantic')).toBe(true)
-        expect(VALID_VIEWS.size).toBe(5)
+        expect(VALID_VIEWS.size).toBe(2)
     })
 
     it('VALID_NAV_MODES contains expected modes', () => {

@@ -201,7 +201,6 @@ class AppState {
     rawClustersBuffer = $state<Uint16Array | null>(null)
     overviewBounds = $state<Record<string, unknown> | null>(null)
     leadEnrichment = $state<Record<string, unknown> | null>(null)
-    myceliumLines = $state<LineSegments | null>(null)
     myceliumGroup = $state<Group | null>(null)
     searchCorridorGroup = $state<Group | null>(null)
     myceliumCoreLines = $state<LineSegments2 | null>(null)
