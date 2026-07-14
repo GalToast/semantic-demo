@@ -372,9 +372,12 @@ export function shouldBypassApiSearch(): boolean {
     if (readApiUnreachable() !== null) return true
     const params = new URLSearchParams(window.location.search || '')
     const bypass = params.get('staticOnly') === '1' || params.get('offline') === '1' || params.get('noApi') === '1'
-    if (bypass) {
-        markApiUnreachable('url-param')
-        return true
-    }
-    return false
+    // URL params (staticOnly/offline/noApi) are an explicit, permanent bypass —
+    // but they must NOT write the transient 60s sticky flag. The sticky
+    // sessionStorage.api_unreachable record is only meant to capture *real*
+    // API failures (the search-engine caller runs markApiUnreachable on a
+    // genuine unreachable response), so that transient dev restarts don't
+    // permanently lock the tab. Writing it here would let a permanent
+    // url-param bypass pollute that transient flag.
+    return bypass
 }
