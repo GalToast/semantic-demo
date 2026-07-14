@@ -389,12 +389,9 @@ function disposeAppListeners(): void {
     if (app) unmount(app)
 }
 
-// NOTE: deliberately NOT `{ once: true }`. We keep an explicit handle so the
-// HMR dispose below can remove it -- see the comment there. Without removal,
-// every Vite hot reload re-runs this module (firing no real page unload) and
-// stacks another `beforeunload` closure capturing a stale `app`; they would
-// all fire (calling unmount on stale instances) on the next real unload.
-window.addEventListener('beforeunload', disposeAppListeners)
+// Use `{ once: true }` so the listener auto-removes after it fires, preventing
+// accumulation across HMR reloads (each re-execution re-adds the listener).
+window.addEventListener('beforeunload', disposeAppListeners, { once: true })
 
 // Hot Module Replacement (dev mode only): Vite re-executes this module on
 // every hot reload, but unlike page navigation it does not fire
@@ -408,10 +405,8 @@ window.addEventListener('beforeunload', disposeAppListeners)
 if (import.meta.hot) {
     import.meta.hot.dispose(() => {
         disposeAppListeners()
-        // Remove the beforeunload listener added above. HMR re-evaluates this
-        // module without a real page unload, so the listener would otherwise
-        // accumulate across reloads (each capturing a stale `app`).
-        window.removeEventListener('beforeunload', disposeAppListeners)
+        // { once: true } on the beforeunload listener handles auto-removal;
+        // no explicit removeEventListener needed.
         teardownGestureMonitor()
         appInitCleanup?.()
         if (app) unmount(app)

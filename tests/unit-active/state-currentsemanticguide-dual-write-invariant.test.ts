@@ -61,14 +61,15 @@ describe('engine-boundary refactor / Phase 2 latent-bug fix / currentSemanticGui
     })
 
     it('state-types.ts documents the currentSemanticGuide vs GuideConfig split', () => {
-        const stateTypes = readSource('src/lib/state/state-types.ts')
+        // Types are re-exported from state-types.ts (thin barrel) — check the actual definition
+        const engineTypes = readSource('src/lib/state/types/engine-types.ts')
         // The comment block explaining the split must exist
-        expect(stateTypes).toMatch(
+        expect(engineTypes).toMatch(
             /Plain-text semantic guide payload[\s\S]*Distinct from GuideConfig[\s\S]*setSemanticGuide/
         )
         // The declaration type must be string | null (NOT unknown)
-        expect(stateTypes).toMatch(/currentSemanticGuide:\s*string\s*\|\s*null\b/)
-        expect(stateTypes).not.toMatch(/currentSemanticGuide:\s*unknown\b/)
+        expect(engineTypes).toMatch(/currentSemanticGuide:\s*string\s*\|\s*null\b/)
+        expect(engineTypes).not.toMatch(/currentSemanticGuide:\s*unknown\b/)
     })
 
     it('setSemanticGuide() still writes strings to currentSemanticGuide', () => {

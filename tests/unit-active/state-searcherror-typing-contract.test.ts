@@ -31,9 +31,9 @@ function readSource(rel: string): string {
 describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () => {
     it('appState declares searchError with SearchErrorData type (not unknown)', () => {
         // Phase 6b: searchError moved into appState.searchState sub-aggregate
-        // The SearchAppState interface in state-types.ts declares the field type.
-        const stateTypes = readSource('src/lib/state/state-types.ts')
-        const declMatch = stateTypes.match(/searchError:\s*SearchErrorData\s*\|\s*null/)
+        // The SearchAppState interface in types/search-types.ts declares the field type.
+        const searchTypes = readSource('src/lib/state/types/search-types.ts')
+        const declMatch = searchTypes.match(/searchError:\s*SearchErrorData\s*\|\s*null/)
         expect(declMatch, 'SearchAppState.searchError declaration not found').not.toBeNull()
         const declaredType = declMatch![0]
         expect(
@@ -47,14 +47,16 @@ describe('engine-boundary refactor / Phase 2-1 / searchError field typing', () =
 
     it('SearchErrorData interface is exported from state-types.ts', () => {
         const stateTypes = readSource('src/lib/state/state-types.ts')
+        // Types are re-exported from state-types.ts (thin barrel) — check the actual definition
+        const searchTypes = readSource('src/lib/state/types/search-types.ts')
         // Must export the interface (not just declare it)
-        expect(stateTypes).toMatch(/export\s+interface\s+SearchErrorData\b/)
+        expect(searchTypes).toMatch(/export\s+interface\s+SearchErrorData\b/)
         // Must contain the three required fields
-        expect(stateTypes).toMatch(/interface\s+SearchErrorData\s*\{[\s\S]*query\s*:\s*string/)
-        expect(stateTypes).toMatch(
+        expect(searchTypes).toMatch(/interface\s+SearchErrorData\s*\{[\s\S]*query\s*:\s*string/)
+        expect(searchTypes).toMatch(
             /interface\s+SearchErrorData\s*\{[\s\S]*type\s*:\s*['"]inline['"]\s*\|\s*['"]full['"]/
         )
-        expect(stateTypes).toMatch(/interface\s+SearchErrorData\s*\{[\s\S]*message\s*:\s*string/)
+        expect(searchTypes).toMatch(/interface\s+SearchErrorData\s*\{[\s\S]*message\s*:\s*string/)
     })
 
     it('results-ui.ts no longer has local SearchErrorData interface (imported instead)', () => {

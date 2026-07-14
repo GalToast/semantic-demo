@@ -46,27 +46,31 @@ describe('engine-boundary refactor / Phase 2-2 / searchResults field typing', ()
 
     it('SearchResult interface is exported from state-types.ts with required fields', () => {
         const stateTypes = readSource('src/lib/state/state-types.ts')
-        expect(stateTypes).toMatch(/export\s+interface\s+SearchResult\b/)
+        // Types are re-exported from state-types.ts (thin barrel) — check the actual definition
+        const searchTypes = readSource('src/lib/state/types/search-types.ts')
+        expect(searchTypes).toMatch(/export\s+interface\s+SearchResult\b/)
         // Required fields
-        expect(stateTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*point\s*:\s*SearchResultPoint/)
-        expect(stateTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*index\s*:\s*number/)
-        expect(stateTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*score\s*:\s*number/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*point\s*:\s*SearchResultPoint/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*index\s*:\s*number/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*score\s*:\s*number/)
         // Optional fields
-        expect(stateTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*publicNote\?\s*:\s*string/)
-        expect(stateTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*publicDetail\?\s*:\s*string/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*publicNote\?\s*:\s*string/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*publicDetail\?\s*:\s*string/)
         // Index signature for back-compat
-        expect(stateTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*\[key: string\]:\s*unknown/)
+        expect(searchTypes).toMatch(/interface\s+SearchResult\s*\{[\s\S]*\[key: string\]:\s*unknown/)
     })
 
     it('SearchResultPoint interface is exported from state-types.ts with required fields', () => {
         const stateTypes = readSource('src/lib/state/state-types.ts')
-        expect(stateTypes).toMatch(/export\s+interface\s+SearchResultPoint\b/)
+        // Types are re-exported from state-types.ts (thin barrel) — check the actual definition
+        const searchTypes = readSource('src/lib/state/types/search-types.ts')
+        expect(searchTypes).toMatch(/export\s+interface\s+SearchResultPoint\b/)
         // Optional fields
-        expect(stateTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*lead_id\?\s*:\s*string\s*\|\s*number/)
-        expect(stateTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*name\?\s*:\s*string/)
-        expect(stateTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*city\?\s*:\s*string/)
+        expect(searchTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*lead_id\?\s*:\s*string\s*\|\s*number/)
+        expect(searchTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*name\?\s*:\s*string/)
+        expect(searchTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*city\?\s*:\s*string/)
         // Index signature for back-compat
-        expect(stateTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*\[key: string\]:\s*unknown/)
+        expect(searchTypes).toMatch(/interface\s+SearchResultPoint\s*\{[\s\S]*\[key: string\]:\s*unknown/)
     })
 
     it('results-ui.ts no longer has local SearchResult / SearchResultPoint interfaces', () => {
