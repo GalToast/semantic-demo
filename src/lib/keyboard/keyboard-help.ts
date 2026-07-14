@@ -176,6 +176,7 @@ export function initKeyboardShortcutsHint(): void {
             document.dispatchEvent(evt)
             // Legacy fallback: if no listener consumed it after a tick, fire
             // the old entry point so Help still does something in tests.
+            // eslint-disable-next-line no-restricted-syntax -- legacy fallback timer in test path
             setTimeout(() => {
                 // If phase still IDLE after event, fallback
                 try {

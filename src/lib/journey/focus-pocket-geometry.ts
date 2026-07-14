@@ -376,7 +376,6 @@ export function getFocusConstellationPlacement(
               : 0.258 + absNormalized * 0.062 + (1 - score) * 0.022
         zOffset = isPrimary ? 0.03 * Math.cos(normalized * Math.PI) : isHalo ? -0.036 : -0.022 - (order % 2) * 0.016
         if (motif.key !== 'market' && import.meta.env.DEV) {
-            // eslint-disable-next-line no-console
             console.warn(`[focus-pocket-geometry] Unknown motif key "${motif.key}" — using default placement.`)
         }
         breatheAmp = 0.003

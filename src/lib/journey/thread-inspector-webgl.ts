@@ -29,7 +29,6 @@ import {
     Object3D,
     Scene,
     SpriteMaterial,
-    Texture,
     Sprite,
     AdditiveBlending
 } from 'three'

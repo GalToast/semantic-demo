@@ -7,7 +7,7 @@
 
 import { appState as state } from '@lib/state/app.svelte'
 import { subscribe, EVENTS } from '@lib/orchestration/event-bus'
-import { Vector3, Vector2, Color, AdditiveBlending, Float32BufferAttribute, LineSegments } from 'three'
+import { Vector3, Vector2, Color, AdditiveBlending, Float32BufferAttribute } from 'three'
 import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'

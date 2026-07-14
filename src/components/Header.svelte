@@ -108,11 +108,11 @@
     const idx = applyModeSelect(modeId, hasSelection, {
       navActions: NAV_TRANSITION_ACTIONS,
       dispatchNavTransition: dispatchNavTransition as unknown as (
-        action: unknown,
-        payload?: Record<string, unknown>
+        _action: unknown,
+        _payload?: Record<string, unknown>
       ) => unknown,
-      updateUrlState: updateUrlState as unknown as (...args: unknown[]) => void,
-      debugWarn: debugWarn as unknown as (...args: unknown[]) => void
+      updateUrlState: updateUrlState as unknown as (..._args: unknown[]) => void,
+      debugWarn: debugWarn as unknown as (..._args: unknown[]) => void
     });
     if (idx >= 0) keyboardFocusIndex = idx;
     // Bug 2 fix: selecting "Inside" must also engage the semantic-dive surface

@@ -101,10 +101,10 @@
   // renderer.domElement. So the handler lived on a detached node, OrbitControls
   // on the real canvas stole arrows, and 6 aria-keyshortcuts were inert.
   type CanvasWithKeyHandler = HTMLCanvasElement & {
-    _canvasKeyHandler?: ((e: KeyboardEvent) => void) | null
+    _canvasKeyHandler?: ((_e: KeyboardEvent) => void) | null
   }
   let liveCanvasBound: HTMLCanvasElement | null = null
-  function bindKeysToLiveCanvas(el: HTMLCanvasElement | null, handler: (e: KeyboardEvent) => void): void {
+  function bindKeysToLiveCanvas(el: HTMLCanvasElement | null, handler: (_e: KeyboardEvent) => void): void {
     if (!el) return
     if (el === liveCanvasBound) return
     if (liveCanvasBound && liveCanvasBound !== canvasEl) {
