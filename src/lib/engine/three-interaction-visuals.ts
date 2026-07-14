@@ -393,24 +393,16 @@ export function initSemanticLens() {
     state.scene.add(state.focusFilaments)
 }
 
-export function updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void {
-    if (!state.pointsMesh) return
-    const reducedMotion = prefersReducedMotion()
-    const time = reducedMotion ? 0 : now / 1000
+// ── updateInteractionVisuals helpers ────────────────────────────────────────
 
-    const activeNode =
-        focusedNode !== null && Number.isFinite(focusedNode) && focusedNode >= 0
-            ? focusedNode
-            : Number.isFinite(hoveredNode) && hoveredNode >= 0
-              ? hoveredNode
-              : null
-    const isFocused = activeNode === focusedNode
-
+function updateHoverHalo(): void {
     if (state.hoverHalo) {
         asSingleMaterial(state.hoverHalo.material).opacity = 0
         state.hoverHalo.visible = false
     }
+}
 
+function updateFocusCoreVisuals(time: number, reducedMotion: boolean, focusedNode: number | null, isFocused: boolean): void {
     if (state.focusCore) {
         // Narrow the nullable focusedNode once at the top. `hasFocus` is
         // derived from this narrowed value so subsequent uses can rely on
@@ -477,7 +469,9 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
         updateSelectedNodePetals(null, time, false)
         updateSelectedNodeFilaments(null, time, false)
     }
+}
 
+function updateSemanticLensVisuals(time: number, focusedNode: number | null): void {
     if (state.semanticLensGroup && state.semanticLensGlow && state.semanticLensSpokes) {
         const focusIdx: number | null = focusedNode !== null && focusedNode >= 0 ? focusedNode : null
         const focusPos = focusIdx !== null ? state.nodePositions?.[focusIdx] : undefined
@@ -557,7 +551,9 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
             }
         }
     }
+}
 
+function updateFocusLensVisuals(time: number, reducedMotion: boolean, focusedNode: number | null): void {
     if (state.focusLens) {
         const focusIdx: number | null = focusedNode !== null && focusedNode >= 0 ? focusedNode : null
         const hasFocus = focusIdx !== null
@@ -599,7 +595,9 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
             state.focusLens.scale.set(pulse, pulse, pulse)
         }
     }
+}
 
+function updateAnchorBloomLight(focusedNode: number | null): void {
     // 4. Step Inside anchor bloom light
     if (state.anchorBloomLight) {
         const focusIdx: number | null = focusedNode !== null && focusedNode >= 0 ? focusedNode : null
@@ -614,6 +612,28 @@ export function updateInteractionVisuals(now: number, hoveredNode: number, focus
         }
         state.anchorBloomLight.visible = state.anchorBloomLight.intensity > 0.01
     }
+}
+
+// ── Orchestrator ────────────────────────────────────────────────────────────
+
+export function updateInteractionVisuals(now: number, hoveredNode: number, focusedNode: number | null): void {
+    if (!state.pointsMesh) return
+    const reducedMotion = prefersReducedMotion()
+    const time = reducedMotion ? 0 : now / 1000
+
+    const activeNode =
+        focusedNode !== null && Number.isFinite(focusedNode) && focusedNode >= 0
+            ? focusedNode
+            : Number.isFinite(hoveredNode) && hoveredNode >= 0
+              ? hoveredNode
+              : null
+    const isFocused = activeNode === focusedNode
+
+    updateHoverHalo()
+    updateFocusCoreVisuals(time, reducedMotion, focusedNode, isFocused)
+    updateSemanticLensVisuals(time, focusedNode)
+    updateFocusLensVisuals(time, reducedMotion, focusedNode)
+    updateAnchorBloomLight(focusedNode)
 
     // 5. Focus anchor indicator (size + ring + pulse).  Honors
     //    prefers-reduced-motion inside the module — the pulse is dropped
