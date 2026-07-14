@@ -47,7 +47,6 @@ type InspectedStrandModule = typeof import('@lib/journey/inspected-strand-overla
 type FocusAnchorModule = typeof import('@lib/journey/focus-anchor-indicator')
 type ThreeSearchAnimationsModule = typeof import('./three-search-animations')
 type AudioScapeModule = typeof import('@lib/audio/audio-scape')
-type EventBindingsModule = typeof import('@lib/ui/event-bindings')
 type LoadingUiModule = typeof import('../ui/loading')
 type ThreeInteractionVisualsModule = typeof import('./three-interaction-visuals')
 
@@ -71,7 +70,6 @@ export interface ThreeEngineState {
     focusAnchor: FocusAnchorModule | null
     threeSearchAnimations: ThreeSearchAnimationsModule | null
     audioScape: AudioScapeModule | null
-    eventBindings: EventBindingsModule | null
     loadingUi: LoadingUiModule | null
     threeInteractionVisuals: ThreeInteractionVisualsModule | null
     state: LegacyState | null
@@ -120,7 +118,6 @@ export const engineState: ThreeEngineState = {
     focusAnchor: null,
     threeSearchAnimations: null,
     audioScape: null,
-    eventBindings: null,
     loadingUi: null,
     threeInteractionVisuals: null,
     state: null,
@@ -154,7 +151,6 @@ import * as mapFlatteningMod from '../utils/map-flattening-layout'
 import * as webglRestoreMod from '@lib/utils/webgl-restore-adapter'
 import * as focusAnchorMod from '@lib/journey/focus-anchor-indicator'
 import * as audioScapeMod from '@lib/audio/audio-scape'
-import * as eventBindingsMod from '@lib/ui/event-bindings'
 import * as loadingUiMod from '../ui/loading'
 import * as clusterLabelsMod from '@lib/ui/cluster-labels'
 import * as focusPocketMod from '@lib/journey/focus-pocket'
@@ -187,7 +183,6 @@ export function ensureModules(): void {
         engineState.focusAnchor = focusAnchorMod
         engineState.threeSearchAnimations = threeSearchAnimationsMod
         engineState.audioScape = audioScapeMod
-        engineState.eventBindings = eventBindingsMod
         engineState.loadingUi = loadingUiMod
         engineState.threeInteractionVisuals = threeInteractionVisualsMod
         engineState.loaded = true

@@ -20,15 +20,14 @@ import {
     exposeDevEngineBridge
 } from './three-engine-init-helpers'
 import { sceneNeedsContinuousFrame } from './three-engine-helpers'
-import * as sceneRevealMod from './scene-reveal'
 // LegacyState is imported from @lib/state/legacy-state (Phase 4, 2026-06-25)
 // so it can be shared with legacy-state-adapter.ts without a circular import.
 import type { LegacyState } from '@lib/state/legacy-state'
 export type { LegacyState }
 import { webglContext } from '@lib/engine/webgl-context'
+import { disposeEventListeners } from '@lib/ui/global-bindings'
 
 import { sampleScenePerformance } from './renderer/renderer-diagnostics'
-import { CONFIG } from '@lib/engine/config'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
 import {
     compilePointMaterialForReadiness as compilePointMaterialForReadinessPort,
@@ -66,7 +65,6 @@ import {
 } from './renderer/scene-static-tracker'
 import { ensurePostProcessing } from './three-pp-init'
 import { syncSceneHandles, syncPointsHandles, syncMyceliumHandles } from './three-store-sync'
-import { easeOutQuint } from '@lib/utils/math-easing'
 import { debugWarn, debugInfo, debugError } from '@lib/utils/debug'
 import { isMobileViewport } from '@lib/utils/environment'
 import { appState } from '@lib/state/app.svelte'
@@ -400,7 +398,7 @@ export function deinit() {
     disposeNodeVisualsPort()
     engineState.threeInteractionVisuals?.disposeInteractionVisuals()
     engineState.audioScape?.disposeAudio()
-    engineState.eventBindings?.disposeEventListeners()
+    disposeEventListeners()
     // Reset module-cache flag so ensureModules() re-reads fresh references on
     // subsequent initThreeJS() calls (W1-M1).
     engineState.loaded = false
