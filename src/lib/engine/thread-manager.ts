@@ -11,7 +11,6 @@
 
 import { webglContext } from './webgl-context'
 import { Vector3, Vector2, Object3D, LineSegments, NormalBlending, Group, BufferAttribute } from 'three'
-import { updateFocusConnectionRays as updateFocusConnectionRaysPositions } from './focus-connection-rays'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
@@ -219,8 +218,8 @@ function getBezierControlPoint(
     const viewVector = _cachedBezierViewVector
         ? _cachedBezierViewVector.clone()
         : webglContext.camera
-        ? new Vector3().subVectors(webglContext.camera.position, mid).normalize()
-        : new Vector3(0.28, 0.2, 1).normalize()
+          ? new Vector3().subVectors(webglContext.camera.position, mid).normalize()
+          : new Vector3(0.28, 0.2, 1).normalize()
     const up = new Vector3(0, 1, 0)
     const right = new Vector3().crossVectors(up, viewVector)
     if (right.lengthSq() < 0.0001) right.set(1, 0, 0)
@@ -700,11 +699,6 @@ export function updateMyceliumThreads(): void {
     rebuildDirtyPairsInLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0, layerIntensity)
     rebuildDirtyPairsInLayer(webglContext.myceliumWispyLines as unknown as LineSegments2, 1, layerIntensity)
     rebuildDirtyPairsInLayer(webglContext.myceliumBridgeLines as unknown as LineSegments2, 2, layerIntensity)
-
-    // Update focus connection ray endpoints to track moving nodes.
-    // This runs alongside the mycelium rebuild so rays stay synced
-    // with the lerp/breathe motion of pocket satellites.
-    updateFocusConnectionRaysPositions()
 
     // Drain the dirty set — consumed for this frame.
     dirtyNodeIndices.clear()

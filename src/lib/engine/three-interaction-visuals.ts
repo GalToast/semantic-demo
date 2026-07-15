@@ -60,7 +60,6 @@ import { prefersReducedMotion } from '@lib/utils/environment'
 import { updateSelectedNodeMotes } from './three-lens-motes'
 import { updateSelectedNodePetals } from './three-lens-petals'
 import { updateSelectedNodeFilaments } from './three-lens-filaments'
-import { destroyFocusConnectionRays } from './focus-connection-rays'
 import { initMicroDemoBridge, disposeMicroDemoBridge } from './three-micro-demo-bridge'
 import { initLensGlowSpoke } from './three-lens-glow-spoke'
 import { initFocusLens } from './three-lens-focusgeo'
@@ -192,9 +191,6 @@ export function disposeSemanticLens() {
         disposeObject3D(state.focusFilaments)
         state.focusFilaments = null
     }
-    // Focus connection rays (anchor→satellite): runs on focus exit, new-focus
-    // rebuild, and full engine teardown (disposeInteractionVisuals → here).
-    destroyFocusConnectionRays()
     if (state.focusSemanticConnectionPairs) state.focusSemanticConnectionPairs.length = 0
 }
 

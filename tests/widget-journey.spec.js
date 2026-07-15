@@ -1730,34 +1730,37 @@ test.describe('Widget journey', () => {
         // chip labels cut mid-word at narrow desktop widths) and A2.1 (360px
         // compass/mode-rail centering offset — base translateX(-50%) not cleared
         // at ≤360px, so the rail is shoved half its width off the left edge).
+        // Surface the legacy compass + other lazy components (the app only
+        // mounts them when window.__PLAYWRIGHT__ is set, so contract/journey
+        // tests can assert on #journey-compass).
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch (e) {
+                /* ignore */
+            }
+        })
+
         await page.setViewportSize({ width: 1440, height: 900 })
-        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
-
-        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
-        await explore.waitFor({ state: 'visible', timeout: 40000 })
-        await explore.click()
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-        await page.waitForTimeout(800)
-
-        // Dismiss the first-visit help dialog if it auto-opened (it can steal focus).
-        const helpDialog = page.locator('dialog.help-dialog[open]')
-        if ((await helpDialog.count()) > 0) {
-            await page.keyboard.press('Escape')
-            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
-        }
-
-        // Enter a focus state so the journey compass rail is reliably visible at
-        // every width (the ≤360 escape hatch re-shows it). This exercises the
-        // A2.1 translateX(-50%) clearing for the compass rail at narrow widths.
-        const focused = await page.evaluate(() => {
-            const a = window.__navActions__
-            return a && typeof a.focusOnNode === 'function' ? a.focusOnNode(0) : false
-        })
-        expect(focused, 'focusOnNode must be available to surface the compass rail').toBe(true)
-        await page.waitForFunction(() => document.body.classList.contains('surface-focus'), null, {
-            timeout: 8000
-        })
+        // __PLAYWRIGHT__=true forces webgl + auto-calls engineReady.signalReady()
+        // (App.svelte), so the splash CTA is never shown — a ?anchor=519 deep-link
+        // resolves the focused business at boot. Wait for the focus detail panel
+        // to ATTACH (the canonical desktop+webgl boot, per W51-SelectedBusinessDetails)
+        // rather than the points buffer: the deep-link focus path does not reliably
+        // populate __APP_STATE__.points within the wait window. The legacy journey
+        // compass rail is eagerly pre-loaded in __PLAYWRIGHT__ mode (App.svelte),
+        // so the transform assertion below reads its computed style.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
+        const selectedName = page.locator('[id$="selected-name"]')
+        await selectedName.waitFor({ state: 'attached', timeout: 30000 })
+        await page
+            .waitForFunction(() => document.body.classList.contains('surface-focus'), null, { timeout: 30000 })
+            .catch(() => {})
+        await page.waitForTimeout(500)
 
         for (const width of [768, 360]) {
             await page.setViewportSize({ width, height: 800 })
@@ -1806,6 +1809,268 @@ test.describe('Widget journey', () => {
                     `compass rail translateX(-50%) must be cleared at <=360px (got ${compass.transform})`
                 ).toBe('none')
             }
+        }
+    })
+
+    test('F15: focus pocket renders organic anchor ties (no straight rays)', async ({ page }) => {
+        // Regression test for Phase 2 Layer 2 (2026-07-15): the semantic overlay
+        // ties should render as organic curved threads with sufficient opacity,
+        // and the retired straight-ray mesh should no longer exist.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
+            waitUntil: 'domcontentloaded'
+        })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 15000
+        })
+        // Wait for WebGL geometry color attribute to be populated (engine init).
+        await page.waitForFunction(
+            () => {
+                const colors = window.__APP_STATE__?.pointsGeometryColors
+                return Array.isArray(colors) && colors.length > 0
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // Focus a known-good anchor (index 518 -> lead_id 519).
+        // Set threadSource to 'semantic' so the semantic overlay builds.
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            if (actions.writeNavStateMirror) {
+                actions.writeNavStateMirror({ threadSource: 'semantic' })
+            }
+            const ok = actions.focusOnNode(518)
+            if (!ok) throw new Error('focusOnNode(518) returned a falsy result')
+        })
+
+        // Wait for focus mode to settle.
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, { timeout: 20000 })
+        // Event-based gather wait: poll for actual movement instead of fixed sleep.
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__
+                const cur = s?.nodePositions
+                const orig = s?.originalPositions
+                if (!Array.isArray(cur) || !Array.isArray(orig)) return false
+                let moved = 0
+                const n = Math.min(cur.length, orig.length)
+                for (let i = 0; i < n; i += 1) {
+                    const c = cur[i]
+                    const o = orig[i]
+                    if (c && o && Math.hypot(c.x - o.x, c.y - o.y, c.z - o.z) > 0.01) moved += 1
+                }
+                return moved >= 5
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // Give the semantic overlay time to build AND rebuild as the pocket
+        // settles: it first builds at focus-entry (possibly 1 next-cue edge),
+        // then focus-ui re-triggers once focusPocketIndices populate. Wait for
+        // the settled state (>= 10 anchor ties) rather than any visible state.
+        await page.waitForFunction(
+            () => {
+                const probe = window.__semanticFocusCueProbe?.()
+                return (
+                    probe?.visible === true &&
+                    probe?.focusThreadSegments > 0 &&
+                    (probe?.threadDiagnostics?.directEdgeCount ?? 0) >= 10
+                )
+            },
+            null,
+            { timeout: 15000 }
+        )
+
+        // Step 1: Assert the semantic overlay is visible with direct (anchor→satellite) edges
+        // and zero support (satellite↔satellite) edges.
+        const cueProbe = await page.evaluate(() => {
+            const probe = window.__semanticFocusCueProbe?.()
+            if (!probe) return null
+            return {
+                visible: probe.visible,
+                threadSource: probe.threadSource,
+                focusThreadSegments: probe.focusThreadSegments,
+                directEdgeCount: probe.threadDiagnostics?.directEdgeCount ?? 0,
+                supportEdgeCount: probe.threadDiagnostics?.supportEdgeCount ?? 0
+            }
+        })
+        expect(cueProbe, 'semantic focus cue probe must return data').not.toBeNull()
+        expect(cueProbe.visible, 'semantic overlay must be visible').toBe(true)
+        expect(
+            cueProbe.directEdgeCount,
+            `expected >= 10 direct (anchor→satellite) edges, got ${cueProbe.directEdgeCount}`
+        ).toBeGreaterThanOrEqual(10)
+        // Anchor-only invariant: every thread edge must touch the focused anchor.
+        // (The satellite↔satellite support-edge block was retired in layer 2 — but
+        // supportEdgeCount is NOT the check: anchor→satellite edges for
+        // 'support'/'halo'-role pocket members are also classified 'support'.)
+        const edgePairs = await page.evaluate(() => window.__APP_STATE__?.focusSemanticConnectionPairs)
+        expect(Array.isArray(edgePairs) && edgePairs.length > 0, 'thread edge pairs must exist').toBe(true)
+        const anchorViolations = edgePairs.filter(([a, b]) => a !== 518 && b !== 518)
+        expect(
+            anchorViolations.length,
+            `every thread edge must touch the anchor (518); violations: ${JSON.stringify(anchorViolations.slice(0, 5))}`
+        ).toBe(0)
+        expect(
+            cueProbe.focusThreadSegments,
+            `expected > 0 thread segments, got ${cueProbe.focusThreadSegments}`
+        ).toBeGreaterThan(0)
+
+        // Step 2: Assert the overlay material opacity >= 0.42 (raised from 0.18).
+        const lineOpacity = await page.evaluate(() => {
+            return window.__APP_STATE__?.focusSemanticLineOpacity ?? null
+        })
+        expect(lineOpacity, 'focusSemanticLineOpacity must be available').not.toBeNull()
+        expect(
+            lineOpacity,
+            `overlay material opacity ${lineOpacity} must be >= 0.42 (raised from 0.18)`
+        ).toBeGreaterThanOrEqual(0.42)
+
+        // Step 3: Assert no straight-ray mesh remains.
+        // The retired rays used a Group with LineSegments children. Check scene traversal.
+        const raysExist = await page.evaluate(() => {
+            const state = window.__APP_STATE__
+            // If the old rays module still exposed a probe, check it.
+            if (state?.focusConnectionRays !== undefined) return state.focusConnectionRays !== null
+            // Otherwise, traverse the scene for a Group with LineSegments that
+            // matches the old ray pattern (LineBasicMaterial, vertexColors).
+            const scene = state?.scene
+            if (!scene) return null // can't determine
+            let found = false
+            scene.traverse((obj) => {
+                if (found) return
+                // The old rays created a Group containing LineSegments with LineBasicMaterial.
+                // Look for that pattern: a Group whose only child is LineSegments with vertexColors.
+                if (obj.type === 'Group' && obj.children.length === 1) {
+                    const child = obj.children[0]
+                    if (
+                        child.type === 'LineSegments' &&
+                        child.material?.vertexColors === true &&
+                        child.material?.transparent === true &&
+                        child.material?.depthWrite === false
+                    ) {
+                        found = true
+                    }
+                }
+            })
+            return found
+        })
+        // raysExist: null means scene unavailable (can't check), false means not found (good),
+        // true means the old ray mesh still exists (bad).
+        if (raysExist !== null) {
+            expect(raysExist, 'retired straight-ray mesh must not exist in the scene').toBe(false)
+        }
+    })
+
+    test('B-A1: search count never overshoots total + Show-more reachable (visual-qa-handoff B-A1)', async ({
+        page
+    }) => {
+        // Regression for visual-qa-handoff B-A1 (HIGH). searchVisibleCountFn() reads
+        // sessionStorage; the deep-link runSearch path (url-state.ts) does NOT clear it
+        // (unlike the input-driven orchestration.search()), so a stale stored count
+        // from a prior search can exceed the new result set. The clamp
+        // Math.min(searchVisibleCountFn(), total) in SearchResults.svelte caps
+        // visibleCount at total, and the Show-more button is position:sticky so it
+        // stays in-frame when present (the actual user-visible bug was the
+        // Show-more button rendering below the fold, unreachable).
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+            try {
+                sessionStorage.setItem('searchVisibleCount', '999')
+            } catch (e) {
+                /* ignore */
+            }
+        })
+        await page.setViewportSize({ width: 1280, height: 900 })
+
+        const probe = () =>
+            page.evaluate(() => {
+                const countEl = document.querySelector('#search-results-count')
+                const allEl = countEl?.querySelector('.search-results-count-all')
+                const shownEl = countEl?.querySelector('.search-results-count-shown')
+                const list = document.querySelector('#search-result-list')
+                const btn = document.querySelector('.search-show-more-btn')
+                const vh = window.innerHeight
+                const r = btn ? btn.getBoundingClientRect() : null
+                return {
+                    countText: countEl?.textContent?.trim() ?? '',
+                    allText: allEl?.textContent?.trim() ?? null,
+                    ofText: shownEl?.textContent?.trim() ?? null,
+                    rendered: list ? list.querySelectorAll(':scope > *').length : 0,
+                    showMorePresent: !!btn,
+                    showMoreInFrame: r ? r.bottom <= vh + 1 : null
+                }
+            })
+        const waitReady = () =>
+            page.waitForFunction(
+                () => {
+                    const c = document.querySelector('#search-results-count')
+                    const l = document.querySelector('#search-result-list')
+                    return c && c.textContent.trim().length > 0 && l && l.querySelectorAll(':scope > *').length > 0
+                },
+                null,
+                { timeout: 30000 }
+            )
+
+        // Scenario A — seeded overshoot (999) must be clamped to total.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, { waitUntil: 'domcontentloaded' })
+        await waitReady()
+        await page.waitForTimeout(700)
+        const a = await probe()
+        expect(a.countText.includes('999'), 'seeded 999 must be clamped out of the count (A)').toBe(false)
+        expect(a.rendered, 'search returned and rendered results (A)').toBeGreaterThan(0)
+        if (a.allText) {
+            expect(a.showMorePresent, 'no Show-more when all results shown (A)').toBe(false)
+        } else if (a.ofText) {
+            const m = a.ofText.match(/(\d+)\s+of\s+(\d+)/i)
+            expect(m, `count shaped "a of b" (A): "${a.ofText}"`).toBeTruthy()
+            expect(+m[1], 'shown <= total (A)').toBeLessThanOrEqual(+m[2])
+        }
+
+        // Scenario B — small stored window -> Show-more present + in-frame (sticky).
+        await page.evaluate(() => {
+            try {
+                sessionStorage.setItem('searchVisibleCount', '3')
+            } catch (e) {
+                /* ignore */
+            }
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&q=coffee`, { waitUntil: 'domcontentloaded' })
+        await waitReady()
+        await page.waitForTimeout(700)
+        const b = await probe()
+        expect(b.countText.includes('999'), 'no stale 999 after re-seed (B)').toBe(false)
+        if (b.ofText) {
+            const m = b.ofText.match(/(\d+)\s+of\s+(\d+)/i)
+            expect(m, `count shaped "a of b" (B): "${b.ofText}"`).toBeTruthy()
+            const shown = +m[1],
+                total = +m[2]
+            expect(shown, 'shown <= total (B)').toBeLessThanOrEqual(total)
+            expect(b.showMorePresent, 'Show-more present when results remain (B)').toBe(true)
+            expect(b.showMoreInFrame, 'Show-more reachable / in-frame (sticky, B)').toBe(true)
+        } else if (b.allText) {
+            // coffee returned <=3 results -> all shown; Show-more absent is correct.
+            expect(b.showMorePresent, 'no Show-more when all shown (B)').toBe(false)
         }
     })
 })

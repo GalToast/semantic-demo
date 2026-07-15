@@ -263,6 +263,29 @@ function getCompatValue(prop: string | symbol): unknown {
             return null
         }
     }
+    // F15 probe (2026-07-15): live opacity of the focus semantic overlay line material.
+    if (prop === 'focusSemanticLineOpacity') {
+        try {
+            const line = appState.focusSemanticLines
+            if (!line) return null
+            const mat = line.material
+            const m = Array.isArray(mat) ? mat[0] : mat
+            return m?.opacity ?? null
+        } catch {
+            return null
+        }
+    }
+    // F15 probe (2026-07-15): anchor→satellite thread edge pairs so journey tests
+    // can assert the anchor-only invariant (every edge touches the focused anchor).
+    if (prop === 'focusSemanticConnectionPairs') {
+        try {
+            const pairs = appState.focusSemanticConnectionPairs
+            if (!Array.isArray(pairs)) return null
+            return pairs.map((p: { a?: number; b?: number }) => [p?.a ?? -1, p?.b ?? -1])
+        } catch {
+            return null
+        }
+    }
     if (prop === 'state') {
         return {
             ...asRecord(legacyState.state),

@@ -12,11 +12,10 @@ import { Line2 } from 'three/examples/jsm/lines/Line2.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
 import { LineMaterial } from 'three/examples/jsm/lines/LineMaterial.js'
 import { isPointVisible } from '@lib/utils/geo-data'
-import { getNextExploreCandidateForIndex, getThreadCandidatesForIndex } from '@lib/journey/thread-model'
+import { getNextExploreCandidateForIndex } from '@lib/journey/thread-model'
 import { getCurrentTrailFocusIndex, getNextWalkCandidateForIndex } from '@lib/journey/neighborhood'
 import { getFocusThreadCurvePoint } from '@lib/journey/focus-pocket'
 import type { ThreadEdge } from '@lib/journey/focus-pocket-geometry'
-import type { ThreadCandidate } from '@lib/journey/thread-model'
 import type { ThreadCandidateRef } from '@lib/types/state'
 import type { FocusConnectionSegment } from '@lib/state/state-types'
 import { prefersReducedMotion } from '@lib/utils/environment'
@@ -122,7 +121,7 @@ function getFocusCurvePointLocal(edge: ThreadEdge, t: number): Vector3 {
 }
 
 function buildFocusThreadLineMaterial(): LineMaterial {
-    const baseOpacity = state.navState.focusPocketMeta?.active ? 0.18 : 0.24
+    const baseOpacity = state.navState.focusPocketMeta?.active ? 0.42 : 0.50
     const lineMaterial = new LineMaterial({
         linewidth: 1.35,
         transparent: true,
@@ -245,7 +244,14 @@ export function refreshFocusSemanticOverlay(): void {
         resetFocusThreadDiagnostics('no-focus')
         return
     }
-    if (state.navState.threadSource !== 'semantic') {
+    // Gate (widened F15, 2026-07-15): build anchor ties whenever the focus pocket
+    // is active — the pocket IS the honest anchor→neighbor relationship data
+    // (focusPocketIndices + roles come from semanticScore). The threadSource gate
+    // remains for the next-cue/staged-thread extras, but on 'geometric-fallback'
+    // boots the pocket ties must still render, or the constellation loses its
+    // connective tissue for every non-semantic-manifest node.
+    const pocketActiveForTies = (state.navState.focusPocketIndices || []).length > 0
+    if (state.navState.threadSource !== 'semantic' && !pocketActiveForTies) {
         resetFocusThreadDiagnostics('non-semantic-thread')
         return
     }
@@ -389,16 +395,6 @@ export function refreshFocusSemanticOverlay(): void {
         addEdge(focusIndex, index, edgeRole, isNext ? 1 : getPocketEdgePriority(index, order))
     })
 
-    overlayIndices.slice(0, 3).forEach((index: number) => {
-        getThreadCandidatesForIndex(index)
-            .filter(
-                (candidate: ThreadCandidate) =>
-                    overlayIndices.includes(candidate.index) && candidate.index !== focusIndex
-            )
-            .slice(0, 1)
-            .forEach((candidate: ThreadCandidate) => addEdge(index, candidate.index, 'support', 0.28))
-    })
-
     const lineGeometry = new LineGeometry()
     lineGeometry.setPositions(positions)
     lineGeometry.setColors(colors)
@@ -442,6 +438,7 @@ export function refreshFocusSemanticOverlay(): void {
     state.focusSemanticLines!.userData = {
         focusedIndex: focusIndex,
         nextIndex: Number.isFinite(nextFocusIndex) ? nextFocusIndex : null,
+        pocketIndexCount: (state.navState.focusPocketIndices || []).length,
         nextCueSegments,
         edgeCount: localEdgeKeys.size,
         directEdgeCount,
@@ -483,6 +480,31 @@ export function refreshFocusSemanticOverlay(): void {
 
 export function updateFocusSemanticOverlayPositions(now: number = performance.now()): void {
     const line = state.focusSemanticLines
+    // Pocket-settle rebuild (F15, 2026-07-15): the overlay first builds at
+    // focus-entry — often just the next-cue edge — before focusPocketIndices
+    // populate. When pocket membership changes, rebuild so the anchor ties
+    // appear deterministically instead of waiting on a UI-path re-trigger.
+    // Self-settling: the rebuild records the new count; on focus exit the
+    // count drops to 0 and refreshFocusSemanticOverlay tears the line down.
+    if (line) {
+        const currentPocketCount = (state.navState.focusPocketIndices || []).length
+        const builtPocketCount =
+            typeof line.userData?.pocketIndexCount === 'number' ? line.userData.pocketIndexCount : -1
+        if (currentPocketCount !== builtPocketCount) {
+            refreshFocusSemanticOverlay()
+            return
+        }
+    } else {
+        // Bootstrap (F15): programmatic focus paths (focusOnNode without camera
+        // choreography, e.g. nodemo/headless boots) never publish
+        // CAMERA_NODE_FOCUSED, so no event fires to build the overlay. When a
+        // pocket exists with an active focus and no line, build it here.
+        const currentPocketCount = (state.navState.focusPocketIndices || []).length
+        if (currentPocketCount > 0 && Number.isFinite(state.navState.focusedIndex)) {
+            refreshFocusSemanticOverlay()
+        }
+        return
+    }
     const pairs = (state.focusSemanticConnectionPairs || []) as Array<{
         t0: number
         t1: number

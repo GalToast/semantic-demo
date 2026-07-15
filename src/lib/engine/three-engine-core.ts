@@ -72,9 +72,9 @@ import {
     updateRouteTraceOverlayFrame,
     updateArrivalHandoffOverlayFrame,
     updateFocusSemanticOverlayFrame,
-    syncFocusSemanticOverlayResolutionPort
+    syncFocusSemanticOverlayResolutionPort,
+    updateFocusSemanticOverlayPositions
 } from '@lib/engine/journey-webgl-lazy'
-import { updateFocusConnectionRaysOpacity } from '@lib/engine/focus-connection-rays'
 
 export function updateCameraViewportOffset() {
     const camera = webglContext.camera || appState.camera
@@ -496,6 +496,7 @@ export function animate() {
                 updateRouteTraceOverlayFrame(frameNow)
                 updateArrivalHandoffOverlayFrame(frameNow)
                 updateFocusSemanticOverlayFrame(frameNow)
+                updateFocusSemanticOverlayPositions()
             } catch (overlayErr) {
                 debugWarn('overlay update threw:', overlayErr)
             }
@@ -525,11 +526,6 @@ export function animate() {
             engineState.cameraControls?.applySemanticCentroidCamera(frameNow)
             engineState.clusterLabels?.updateClusterLabels()
         }
-
-        // Per-frame opacity fade for focus connection rays (runs every frame,
-        // not just on dirty nodes, so rays smoothly fade in/out with mode
-        // transitions regardless of whether node positions changed this tick).
-        updateFocusConnectionRaysOpacity()
 
         const updateEnd = performance.now()
         const renderStart = performance.now()
