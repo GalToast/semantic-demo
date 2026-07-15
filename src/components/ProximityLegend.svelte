@@ -11,19 +11,7 @@
   import { DisposableRegistry } from '@lib/utils/disposable-registry';
   import { isDemoActive } from '@lib/stores/demo.svelte.ts';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
-
-
-  const STORAGE_KEY = 'moco_onboarding_seen_v1';
-
-  /** Mark onboarding as seen (exported for other components). */
-  export function markOnboardingSeen(): void {
-    if (typeof window === 'undefined') return;
-    try {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify({ seen: true, seenAt: new Date().toISOString() }));
-    } catch {
-      /* storage full / private browsing – silently ignore */
-    }
-  }
+  import { ONBOARDING_STORAGE_KEY, markOnboardingSeen } from '@lib/onboarding/onboarding-storage';
 
   // Top-8 category swatches for the color key
   const SWATCH_COUNT = 8;
@@ -64,7 +52,7 @@
   onMount(() => {
     // Check localStorage
     try {
-      const raw = window.localStorage.getItem(STORAGE_KEY);
+      const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
       if (raw) {
         const parsed = JSON.parse(raw);
         if (parsed?.seen === true) {
