@@ -28,6 +28,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { ONBOARDING_STORAGE_KEY } from '@lib/onboarding/onboarding-storage'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:5183').replace(/\/$/, '')
 
@@ -40,7 +41,7 @@ test.describe('SearchInput Escape→cancel', () => {
         // Pre-seed onboarding-seen flag so the welcome sequence does not
         // overlay the input or steal focus.
         await page.addInitScript(() => {
-            localStorage.setItem('moco_onboarding_seen_v1', 'true')
+            localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
         })
 
         // ── Debounce-handling: hang search API calls ─────────────────────

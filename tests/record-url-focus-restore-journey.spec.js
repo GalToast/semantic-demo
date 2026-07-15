@@ -14,6 +14,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { ONBOARDING_STORAGE_KEY } from '@lib/onboarding/onboarding-storage'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:5173'
 
@@ -29,7 +30,7 @@ test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
         try {
             localStorage.setItem(
-                'moco_onboarding_seen_v1',
+                ONBOARDING_STORAGE_KEY,
                 JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
             )
         } catch {

@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { ONBOARDING_STORAGE_KEY } from '@lib/onboarding/onboarding-storage'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:5173'
 
@@ -10,7 +11,7 @@ test.describe('Weather widget context journey', () => {
         // Suppress onboarding help dialog via localStorage and reload so the
         // widget is unobstructed.
         await page.evaluate(() => {
-            localStorage.setItem('moco_onboarding_seen_v1', JSON.stringify({ seen: true, ts: Date.now() }))
+            localStorage.setItem(ONBOARDING_STORAGE_KEY, JSON.stringify({ seen: true, ts: Date.now() }))
         })
         await page.goto(`${BASE_URL}?nodemo=1&webgl=1`, { waitUntil: 'domcontentloaded' })
 

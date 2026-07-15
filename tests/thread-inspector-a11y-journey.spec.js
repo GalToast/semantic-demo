@@ -36,6 +36,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { ONBOARDING_STORAGE_KEY } from '@lib/onboarding/onboarding-storage'
 
 const BASE_URL = process.env.TEST_BASE_URL || 'http://localhost:8797'
 
@@ -125,7 +126,7 @@ test.beforeEach(async ({ page }) => {
     // rely on the flag) — we trade "engine flips ready fast" for
     // "splash stays visible long enough to click it".
 
-    // Pre-seed `localStorage.moco_onboarding_seen_v1` so the W52 help
+    // Pre-seed the ONBOARDING_STORAGE_KEY flag so the W52 help
     // dialog does NOT auto-open after the splash dismisses. The dialog
     // would otherwise intercept pointer events for the splash button's
     // subsequent transitions (see the 44-retry "intercepts pointer
@@ -134,7 +135,7 @@ test.beforeEach(async ({ page }) => {
     await page.addInitScript(() => {
         try {
             localStorage.setItem(
-                'moco_onboarding_seen_v1',
+                ONBOARDING_STORAGE_KEY,
                 JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
             )
         } catch {

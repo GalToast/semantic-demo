@@ -17,6 +17,7 @@
  */
 
 import { test, expect } from '@playwright/test'
+import { ONBOARDING_STORAGE_KEY } from '@lib/onboarding/onboarding-storage'
 
 const BASE_URL = (process.env.TEST_BASE_URL || 'http://127.0.0.1:8797').replace(/\/$/, '')
 
@@ -26,7 +27,7 @@ test.describe('LoadingOverlay error-state role=alert transition', () => {
 
         // Pre-seed onboarding-seen flag so the welcome dialog does not overlay.
         await page.addInitScript(() => {
-            localStorage.setItem('moco_onboarding_seen_v1', 'true')
+            localStorage.setItem(ONBOARDING_STORAGE_KEY, 'true')
         })
 
         await page.setViewportSize({ width: 1280, height: 800 })
