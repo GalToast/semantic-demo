@@ -21,7 +21,6 @@ const VALID_ROLES = new Set(['core_peer', 'upstream', 'downstream', 'complement'
 
 const CODE_PROPAGATION_FILES = [
     'src/lib/workers/data-worker.ts',
-    'src/lib/data-loader.ts',
     'src/lib/engine/semantic-threads.ts',
     'src/lib/journey/thread-model.ts',
     'src/lib/journey/focus-pocket.ts',
@@ -100,8 +99,8 @@ assert(
     'semantic-threads.ts must normalize worker-loaded neighbor entries through the relationship role owner'
 )
 assert(
-    /relationshipRole:\s*normalizeRelationshipRole\([\s\S]*neighbor\?\.relationship_role/.test(semanticThreadsSource),
-    'semantic-threads.ts must normalize snake_case artifact relationship_role values'
+    /relationshipRole:\s*normalizeRelationshipRole\([\s\S]*neighbor\?\.relationshipRole/.test(semanticThreadsSource),
+    'semantic-threads.ts must normalize the worker-loaded neighbor relationshipRole through the shared relationship role normalizer (worker emits camelCase upstream; data-loader.ts left the neighbor pipeline in the camelCase refactor)'
 )
 assert(
     /async function _guardSemanticSpaceLayout\s*\(/.test(semanticThreadsSource) &&
@@ -120,13 +119,11 @@ assert(
     'journey thread model geometric fallback must compare normalized city values'
 )
 
-const dataLoaderSource = read('src/lib/data-loader.ts')
-assert(
-    /relationshipRole:\s*normalizeRelationshipRole\(cleanOptional\(n\?\.relationship_role\)\)/.test(dataLoaderSource),
-    'data-loader.ts must propagate relationship_role through the shared relationship role normalizer'
-)
-
 const workerSource = read('src/lib/workers/data-worker.ts')
+assert(
+    /relationshipRole:\s*String\(neighbor\?\.relationship_role/.test(workerSource),
+    'data-worker.ts must propagate the raw snake_case artifact relationship_role field as camelCase relationshipRole (moved out of data-loader.ts by the camelCase neighbor refactor)'
+)
 assert(
     !/relationshipRole:\s*String\(neighbor\?\.relationship_role\s*\|\|\s*['"]bridge['"]/.test(workerSource),
     'data-worker.ts must not own relationship-role fallback classification'
