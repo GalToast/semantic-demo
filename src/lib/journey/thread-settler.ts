@@ -297,7 +297,7 @@ export class ThreadSettler {
         writeNavStateMirror({
             focusedIndex: index,
             mode: 'trail',
-            surface: 'focus',
+            surface: appState.navState.surface === 'focus-search' ? 'focus-search' : 'focus',
             trailDepth: Math.max(1, Number(appState.navState.trailDepth) || 0),
             walkHistoryIndices: nextHistory,
             lastTraversalReason: reason
@@ -319,7 +319,7 @@ export class ThreadSettler {
             writeNavStateMirror({
                 focusedIndex: index,
                 mode: 'trail',
-                surface: 'focus',
+                surface: appState.navState.surface === 'focus-search' ? 'focus-search' : 'focus',
                 trailDepth: Math.max(1, Number(appState.navState.trailDepth) || 0),
                 walkHistoryIndices: reassertHistory,
                 lastTraversalReason: reason

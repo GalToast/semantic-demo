@@ -167,7 +167,7 @@ export interface SemanticNeighborEntry {
 
 /** A single neighbor detail in the normalized neighbor map */
 export interface SemanticNeighborDetail {
-    leadId: string
+    leadId: string | null
     score: number
     semanticScore: number
     sameCity: boolean

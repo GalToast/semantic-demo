@@ -128,9 +128,7 @@ export function buildSpatialGrid(originalPositions: readonly Point3D[], cellSize
 export function buildSpatialGrid(arg1?: number | readonly Point3D[], arg2?: number): SpatialGrid {
     const cellSize = Array.isArray(arg1) && arg2 !== undefined ? arg2 : typeof arg1 === 'number' ? arg1 : 0.12
 
-    const originalPositions = Array.isArray(arg1)
-        ? arg1
-        : getOriginalPositions()
+    const originalPositions = Array.isArray(arg1) ? arg1 : getOriginalPositions()
 
     const grid = new Map<string, number[]>()
     for (let i = 0; i < originalPositions.length; i++) {
@@ -306,7 +304,7 @@ export function getSemanticThreadCandidates(
         string,
         {
             neighbors: Array<{
-                leadId: string
+                leadId: string | null
                 score?: number
                 semanticScore?: number
                 sameCity?: boolean
@@ -341,7 +339,7 @@ export function getSemanticThreadCandidates(index: number, ...args: unknown[]): 
 
         const results: ThreadCandidate[] = []
         for (const neighbor of threadNode.neighbors) {
-            const candidateIndex = pointIndexByLeadId.get(neighbor.leadId)
+            const candidateIndex = pointIndexByLeadId.get(neighbor.leadId ?? '')
             if (candidateIndex === undefined || candidateIndex === index) continue
 
             const n = neighbor
@@ -394,7 +392,7 @@ export function getSemanticThreadCandidates(index: number, ...args: unknown[]): 
                 roleReason?: string
                 reason?: string
             }) => {
-                const candidateIndex = (state.pointIndexByLeadId as Map<string, number>).get(neighbor.leadId)
+                const candidateIndex = (state.pointIndexByLeadId as Map<string, number>).get(neighbor.leadId ?? '')
                 if (candidateIndex === undefined || candidateIndex === index) return null
 
                 return {

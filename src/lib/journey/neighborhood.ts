@@ -401,7 +401,7 @@ export function getSemanticNeighborRecordBetween(
     const idxMap = get(pointIndexByLeadId)
     return (
         sourceNode.neighbors.find((neighbor: SemanticNeighborDetail) => {
-            const candidateIndex = idxMap.get(neighbor.leadId)
+            const candidateIndex = idxMap.get(neighbor.leadId ?? '')
             return candidateIndex === targetIndex
         }) || null
     )

@@ -117,7 +117,7 @@ export function getSemanticNeighborRecordBetween(
     const idxMap = get(pointIndexByLeadId)
     return (
         sourceNode.neighbors.find((neighbor: SemanticNeighborDetail) => {
-            const candidateIndex = idxMap.get(neighbor.leadId)
+            const candidateIndex = idxMap.get(neighbor.leadId ?? '')
             return candidateIndex === targetIndex
         }) || null
     )
@@ -154,7 +154,7 @@ export function resolveSemanticNeighbors(
     const seen = new Set<number>([anchorIndex])
 
     for (const n of entry.neighbors) {
-        const nIdx = idxMap.get(n.leadId)
+        const nIdx = idxMap.get(n.leadId ?? '')
         if (nIdx === undefined || seen.has(nIdx)) continue
         seen.add(nIdx)
 
@@ -426,7 +426,7 @@ export function buildNeighborhoodManifest(
         const candidateNode = nMap.get(candidate.leadId!)
         if (!candidateNode?.neighbors?.length) continue
         candidateNode.neighbors.forEach((neighbor: SemanticNeighborDetail) => {
-            const peerIndex = idxMap.get(neighbor.leadId)
+            const peerIndex = idxMap.get(neighbor.leadId ?? '')
             if (
                 !Number.isFinite(peerIndex) ||
                 peerIndex === anchorIndex ||

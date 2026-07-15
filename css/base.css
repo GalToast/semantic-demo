@@ -156,7 +156,7 @@
     --z-toast-plus: 1201;
     --z-toast-above: 1300;
     --z-journey-modal: 2000;
-    --z-loading: 3000;
+    --z-loading: 9999;
     --z-canvas-interaction: 9998; /* click-pulse ring — just below the max tooltip layer */
     --z-max: 9999;
 

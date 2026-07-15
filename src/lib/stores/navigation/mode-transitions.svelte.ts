@@ -10,12 +10,7 @@ import { NAV_TRANSITION_ACTIONS, type NavTransitionAction } from '@lib/navigatio
 import { clearSearch } from '../search.svelte.ts'
 import { resetFocus } from '../focus.svelte.ts'
 import { resetJourney } from '../journey.svelte.ts'
-import {
-    _readNavSnapshot,
-    readNavMirrorValue,
-    writeNavStateMirror,
-    resetNavState
-} from './navigation-state.svelte.ts'
+import { _readNavSnapshot, readNavMirrorValue, writeNavStateMirror, resetNavState } from './navigation-state.svelte.ts'
 
 // ── Re-exports ───────────────────────────────────────────────────────────────
 
@@ -198,7 +193,7 @@ export function dispatchNavTransition(
             writeNavStateMirror({
                 focusedIndex: nextIndex,
                 mode: 'trail' as NavMode,
-                surface: 'focus' as PanelSurface,
+                surface: (current.surface === 'focus-search' ? 'focus-search' : 'focus') as PanelSurface,
                 walkHistoryIndices
             })
             break

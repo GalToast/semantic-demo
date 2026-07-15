@@ -126,7 +126,9 @@ function buildSearchStoreSnapshot(): SearchStoreState {
         ...INITIAL_SEARCH_STATE,
         query: appState.searchState.currentSearchSummary?.query ?? '',
         results:
-            buildSearchResultsFromIndices(appState.searchState.currentSearchSummary?.resultIndices as number[] | undefined) ?? [],
+            buildSearchResultsFromIndices(
+                appState.searchState.currentSearchSummary?.resultIndices as number[] | undefined
+            ) ?? [],
         activeResultId: appState.navState.focusedIndex !== null ? String(appState.navState.focusedIndex) : null,
         summary: appState.searchState.currentSearchSummary ? { ...appState.searchState.currentSearchSummary } : null,
         status: appState.searchState.searchStatus,
@@ -458,7 +460,7 @@ export function clearSearchResults(): void {
             appState.searchState.currentSearchSummary.anchorIndex = null
             appState.searchState.currentSearchSummary.topIndex = null
         }
-        appState.searchState.searchStatus = (appState.searchState.currentSearchSummary?.query ?? '').trim() ? 'idle' : 'idle'
+        appState.searchState.searchStatus = 'idle'
         appState.searchState.searchError = null
         appState.searchState.isSearching = false
         appState.searchState.searchAnchorIndex = null

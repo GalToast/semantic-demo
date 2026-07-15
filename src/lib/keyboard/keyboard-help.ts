@@ -174,18 +174,10 @@ export function initKeyboardShortcutsHint(): void {
             // Prefer canonical path via event (M15)
             const evt = new CustomEvent('demo-replay-requested')
             document.dispatchEvent(evt)
-            // Legacy fallback: if no listener consumed it after a tick, fire
-            // the old entry point so Help still does something in tests.
-            // eslint-disable-next-line no-restricted-syntax -- legacy fallback timer in test path
-            setTimeout(() => {
-                // If phase still IDLE after event, fallback
-                try {
-                    const phase = (document.getElementById('demo-choreography')?.textContent ?? '').trim()
-                    if (!phase) startMicroDemo()
-                } catch {
-                    startMicroDemo()
-                }
-            }, 500)
+            // Replay is handled by the canonical `demo-replay-requested` event,
+            // which DemoChoreography consumes and re-runs attemptStart after
+            // sceneReady (M15 — prevents stacked veils). No legacy setTimeout
+            // fallback: it could start a second demo on top of an active one.
         } catch {
             startMicroDemo()
         }

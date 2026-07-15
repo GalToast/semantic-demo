@@ -464,7 +464,7 @@ function normalizeSemanticNeighborEntries(
             signalScore: Number(node?.signalScore ?? 0),
             neighbors: Array.isArray(node?.neighbors)
                 ? node.neighbors.map((neighbor) => ({
-                      leadId: normalizeLeadId(neighbor?.leadId) ?? '',
+                      leadId: normalizeLeadId(neighbor?.leadId) ?? null,
                       score: Number(neighbor?.score ?? 0),
                       semanticScore: Number(neighbor?.semanticScore ?? 0),
                       sameCity: Boolean(neighbor?.sameCity),

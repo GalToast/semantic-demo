@@ -19,6 +19,11 @@
         opacity 0.82s ease,
         visibility 0s linear 0s;
     visibility: visible;
+    pointer-events: none;
+}
+
+.loading-overlay.is-error {
+    pointer-events: auto;
 }
 
 .loading-overlay::before,
@@ -336,7 +341,6 @@
         transform: rotate(360deg);
     }
 }
-
 
 @media (prefers-reduced-motion: reduce) {
     /* Silence loading field drift, aura, and spore animations for users who prefer reduced motion. */
