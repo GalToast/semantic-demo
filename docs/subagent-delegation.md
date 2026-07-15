@@ -139,7 +139,7 @@ LESSON: One provider's failure does NOT generalize to other providers of the sam
 
 - `kilo/openrouter/owl-alpha` (UNVERIFIED — assume no vision, fine for code work)
 - `kimi-k2.7-code` (NO vision on freeinference.org; UNVERIFIED on other providers — fine for code)
-- `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free`, `north-mini-code-free`
+- `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free` (not in live free catalog 2026-07-15), `north-mini-code-free`, `hy3-free` (new free-tier lane, bare ref → `opencode-zen/hy3-free`)
 
 **Text-only confirmed (DO NOT use for images):**
 

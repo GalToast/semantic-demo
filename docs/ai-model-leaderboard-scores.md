@@ -1,7 +1,7 @@
 # AI Model LLM Leaderboard Scores
 
 **Source:** [artificialanalysis.ai LLM Leaderboard](https://artificialanalysis.ai/leaderboards/models)  
-**Date verified:** 2026-06-27
+**Date verified:** 2026-07-15
 
 ## Intelligence Scores
 
@@ -11,10 +11,11 @@ Models from the project's Pi harness lane inventory, mapped to their official na
 | --------------------------- | --------------------------- | ------------------ | ----------------------------------- |
 | `mimo-v2.5-free`            | **MiMo-V2.5-Pro**           | **42**             | Reasoning model variant             |
 | `deepseek-v4-flash-free`    | **DeepSeek V4 Flash (Max)** | **40**             | Max effort reasoning                |
-| `qwen3.6-plus-free`         | **Qwen3.6 Plus**            | **40**             | —                                   |
+| `qwen3.6-plus-free`         | **Qwen3.6 Plus**            | **40**             | Not in live free catalog 2026-07-15 |
 | `nemotron-3-ultra-free`     | **Nemotron 3 Ultra**        | **38**             | —                                   |
 | `grok 4.3`                  | **Grok 4.3 (high)**         | **38**             | High reasoning tier                 |
 | `north-mini-code-free`      | **North Mini Code**         | **21\***           | Asterisk = reasoning variant        |
+| `hy3-free`                  | —                           | **N/A**            | Not listed on artificialanalysis.ai, new lane (added 2026-07-15) |
 | `kilo/openrouter/owl-alpha` | —                           | **N/A**            | Not listed on artificialanalysis.ai |
 | `agnes-2.0-flash`           | —                           | **N/A**            | Not listed on artificialanalysis.ai |
 
@@ -29,10 +30,11 @@ Models from the project's Pi harness lane inventory, mapped to their official na
 | --------------------------- | ------------ | --------------------------- |
 | `mimo-v2.5-free`            | —            | **Not currently available** |
 | `deepseek-v4-flash-free`    | —            | **Not currently available** |
-| `qwen3.6-plus-free`         | —            | **Not currently available** |
+| `qwen3.6-plus-free`         | —            | **Not currently available** (dormant in live free catalog 2026-07-15) |
 | `nemotron-3-ultra-free`     | —            | **Not currently available** |
 | `grok 4.3`                  | —            | **Not currently available** |
 | `north-mini-code-free`      | —            | **Not currently available** |
+| `hy3-free`                  | —            | **N/A** (new lane, score TBD) |
 | `kilo/openrouter/owl-alpha` | —            | Not listed                  |
 | `agnes-2.0-flash`           | —            | Not listed                  |
 

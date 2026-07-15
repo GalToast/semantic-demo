@@ -19,7 +19,7 @@ Need a subagent worker?
 │
 ├─ Quick / Low-stakes (formatting, simple queries, data processing)?
 │  ├─ Any tier → MiMo V2.5 (repo default, fast)
-│  └─ Free → North Mini Code or DeepSeek V4 Flash free
+│  └─ Free → hy3-free, North Mini Code, or DeepSeek V4 Flash free
 │
 └─ Domain-specific (image, video, embedding, speech)?
    └─ Not suitable for general subagent work — use primary model instead
@@ -51,6 +51,7 @@ Need a subagent worker?
 - **All models** are accessed through the `openai` provider key in `model-providers.json` (they're routed via OpenAI-compatible endpoints)
 - **Free routes** are marked with `free: true` in the config
 - **Avoid** `owl-alpha` and `agnes-2.0-flash` for production subagent work (no public benchmark trail, reliability concerns)
+- **Free-tier general-investigation pick:** `hy3-free` (bare ref → `opencode-zen/hy3-free`) — new lane, viable alternative to `mimo-v2.5-free` for free-tier workers
 - **Embedding/image/video models** in the catalog are not suitable for general-purpose subagent tasks
 
 ## File Locations
