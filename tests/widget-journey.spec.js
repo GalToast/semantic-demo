@@ -2177,4 +2177,48 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         const infoPanel = page.locator('.info-panel.open')
         await infoPanel.waitFor({ state: 'attached', timeout: 10000 })
     })
+
+    // Fix Y (tmp/glm52-preview-overlay-take.md): a deep link on a desktop
+    // webdriver session with NO __PLAYWRIGHT__ flag must dismiss the preview
+    // overlay (Splash + "Enter 3D Scene" placeholder-layer) instead of leaving
+    // it occluding the correctly-populated focus pocket.
+    test('Fix Y: deep-link desktop (webdriver, no __PLAYWRIGHT__) dismisses the preview overlay', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        // Deliberately do NOT set window.__PLAYWRIGHT__. Without Fix Y,
+        // getInitialRenderKind() returns 'placeholder2d' under navigator.webdriver,
+        // main.ts:160's deep-link signalReady() guard is false, signalReady never
+        // fires, and the Splash + placeholder-layer stay visible/occluding.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
+
+        // 1) Splash must dismiss (engineReady fired via main.ts:160 guard).
+        const overlay = page.locator('.loading-overlay')
+        await overlay.waitFor({ state: 'hidden', timeout: 20000 })
+
+        // 2) The placeholder2d branch ("Enter 3D Scene") must NOT be mounted —
+        // Fix Y makes getInitialRenderKind() return 'webgl' for a desktop deep link.
+        await page.waitForFunction(
+            () => {
+                const layer = document.querySelector('.placeholder-layer')
+                return !layer || !layer.classList.contains('active')
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // 3) The focus pocket must actually be populated (not blank) and the
+        // info panel open — proving the overlay was occluding real content.
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__?.navState
+                return !!s && s.focusedIndex === 519 && s.mode === 'focus' &&
+                    (Array.isArray(s.focusPocketIndices) ? s.focusPocketIndices.length > 0 : false)
+            },
+            null,
+            { timeout: 20000 }
+        )
+        const infoPanel = page.locator('.info-panel.open')
+        await infoPanel.waitFor({ state: 'attached', timeout: 10000 })
+    })
 })

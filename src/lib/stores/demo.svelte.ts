@@ -22,6 +22,7 @@ import { createStateMirror } from '@lib/state/create-state-mirror'
 import type { BusinessRecord } from '@lib/types/business'
 import { getBusinessRecords } from '@lib/data-store'
 import { guardReducedMotion } from '@lib/demo/guards'
+import { isDeepLinkParams } from '@lib/orchestration/responsive-renderer'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -244,12 +245,6 @@ export function findDemoNode(records?: readonly BusinessRecord[]): number | null
     return null
 }
 
-function isDeepLinkParams(params: URLSearchParams): boolean {
-    // Mirrors src/main.ts parseUrlParams().isDeepLink — keep in sync.
-    // ?story= intentionally NOT a deep-link (prompts fire post-splash).
-    const queryLen = params.get('q')?.trim().length ?? 0
-    return params.has('anchor') || params.has('record') || params.get('view') === 'map' || queryLen >= 2
-}
 
 export function shouldRunDemo(force = false): boolean {
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()

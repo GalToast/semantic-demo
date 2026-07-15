@@ -31,7 +31,7 @@ import { registerUrlStateEventListeners } from '@lib/orchestration/url-state'
 import { registerClusterFilterEventListeners } from '@lib/orchestration/cluster-filter-controller'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
 import { webglContext } from '@lib/engine/webgl-context'
-import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
+import { getInitialRenderKind, isDeepLinkParams } from '@lib/orchestration/responsive-renderer'
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
 import { debugError, debugWarn } from '@lib/utils/debug'
@@ -40,7 +40,6 @@ import { debugError, debugWarn } from '@lib/utils/debug'
 
 function parseUrlParams(): { forceDemo: boolean; noDemo: boolean; isDeepLink: boolean } {
     const params = new URLSearchParams(window.location.search)
-    const queryLen = params.get('q')?.trim().length ?? 0
     return {
         forceDemo: params.get('demo') === 'force',
         noDemo: params.get('nodemo') === '1',
@@ -51,7 +50,9 @@ function parseUrlParams(): { forceDemo: boolean; noDemo: boolean; isDeepLink: bo
         // for ?q=coffee (search results) and ?view=map (map deep-link).
         // ?story= is intentionally NOT included — story prompts fire
         // post-splash as part of DemoChoreography.
-        isDeepLink: params.has('anchor') || params.has('record') || params.get('view') === 'map' || queryLen >= 2
+        // Uses the canonical classifier in @lib/orchestration/responsive-renderer
+        // (single source of truth, shared with demo.svelte.ts).
+        isDeepLink: isDeepLinkParams(params)
     }
 }
 
@@ -282,6 +283,18 @@ function getCompatValue(prop: string | symbol): unknown {
             const pairs = appState.focusSemanticConnectionPairs
             if (!Array.isArray(pairs)) return null
             return pairs.map((p: { a?: number; b?: number }) => [p?.a ?? -1, p?.b ?? -1])
+        } catch {
+            return null
+        }
+    }
+    // F16 probe (2026-07-15): twin-mesh pocket size overlay info (count + size).
+    if (prop === 'focusPocketSizeMeshInfo') {
+        try {
+            const mesh = appState.focusPocketSizeMesh
+            if (!mesh) return null
+            const ids = mesh.userData?.indices
+            const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material
+            return { count: Array.isArray(ids) ? ids.length : 0, size: mat?.size ?? null }
         } catch {
             return null
         }
