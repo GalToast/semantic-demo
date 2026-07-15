@@ -32,17 +32,17 @@ import { describe, it, expect, beforeAll } from 'vitest'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
-const HEADER_PATH = resolve(__dirname, '../../src/components/Header.svelte')
+const HELPDIALOG_PATH = resolve(__dirname, '../../src/lib/components/header/HelpDialog.svelte')
 
-function readHeaderSource(): string {
-    return readFileSync(HEADER_PATH, 'utf-8')
+function readHelpDialogSource(): string {
+    return readFileSync(HELPDIALOG_PATH, 'utf-8')
 }
 
 describe('Header help-dialog content (W49-B)', () => {
     let src: string
 
     beforeAll(() => {
-        src = readHeaderSource()
+        src = readHelpDialogSource()
     })
 
     it('title names what the user can do, not what the app is', () => {

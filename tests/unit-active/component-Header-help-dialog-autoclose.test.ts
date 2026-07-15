@@ -5,7 +5,7 @@
  * the search surface. The dialog's showModal() backdrop blocks pointer
  * events + .focus() calls, stranding the user.
  *
- * Header.svelte registers document-level capture-phase listeners for
+ * HelpDialog.svelte registers document-level capture-phase listeners for
  * focusin (focus into search bar), keydown (/, char keys, Backspace,
  * Delete), and pointerdown (any click outside the dialog). All three
  * call closeHelpDialog when the dialog is open.
@@ -19,18 +19,18 @@ import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-function readHeader(): string {
+function readHelpDialog(): string {
     // Read inside a function so vitest's per-test execution refreshes the
     // source if a watch-mode rebuild produced a new version.
     return readFileSync(
-        resolve(__dirname, '../../src/components/Header.svelte'),
+        resolve(__dirname, '../../src/lib/components/header/HelpDialog.svelte'),
         'utf-8'
     );
 }
 
 describe('W49-I: Help dialog auto-close listeners', () => {
     it('registers focusin + keydown + pointerdown capture listeners that all call closeHelpDialog', () => {
-        const src = readHeader();
+        const src = readHelpDialog();
         const listeners = {
             focusin: /document\.addEventListener\(\s*['"]focusin['"]\s*,\s*handleSearchSurfaceFocus\s*,\s*true\s*\)/.test(
                 src
@@ -73,7 +73,7 @@ describe('W49-I: Help dialog auto-close listeners', () => {
         // have removed the dialog's own Escape handler, which is what
         // explicit dismissal relies on.
         const escapeHandler = /onkeydown=\{[^}]*e\.key\s*===\s*['"]Escape['"][^}]*closeHelpDialog/.test(
-            readHeader()
+            readHelpDialog()
         );
         expect(escapeHandler, 'Escape → closeHelpDialog handler still required').toBe(true);
     });
