@@ -49,12 +49,9 @@
   function selectMode(modeId: NavMode | 'map'): void {
     applyModeSelect(modeId, hasSelection, {
       navActions: NAV_TRANSITION_ACTIONS,
-      dispatchNavTransition: dispatchNavTransition as unknown as (
-        _action: unknown,
-        _payload?: Record<string, unknown>
-      ) => unknown,
-      updateUrlState: updateUrlState as unknown as (..._args: unknown[]) => void,
-      debugWarn: debugWarn as unknown as (..._args: unknown[]) => void
+      dispatchNavTransition,
+      updateUrlState,
+      debugWarn,
     });
     // Bug 2 fix: selecting "Inside" must also engage the semantic-dive surface
     // (ENTRY_INSIDE). On desktop the journey-compass "Step Inside" button is

@@ -302,7 +302,7 @@
     }
 
     // Point data available — delegate to shared view-model
-    return buildSelectedBusinessProps(point as unknown as import('@lib/view-models/selected-business-view-model').BusinessPoint, {}, selectedDetailsAdapter as SelectedCardAdapter | undefined, {
+    return buildSelectedBusinessProps(point, {}, selectedDetailsAdapter as SelectedCardAdapter | undefined, {
       getBusinessNamePresentation,
       sanitizePublicFacingNote,
       describeCluster,

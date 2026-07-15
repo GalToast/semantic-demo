@@ -108,12 +108,9 @@
     if (KNOWN_NAV_MODES.includes(phase)) {
       applyModeSelect(phase as NavMode, hasSelection, {
         navActions: NAV_TRANSITION_ACTIONS,
-        dispatchNavTransition: dispatchNavTransition as unknown as (
-          _action: unknown,
-          _payload?: Record<string, unknown>
-        ) => unknown,
-        updateUrlState: updateUrlState as unknown as (..._args: unknown[]) => void,
-        debugWarn: debugWarn as unknown as (..._args: unknown[]) => void,
+        dispatchNavTransition,
+        updateUrlState,
+        debugWarn,
       });
     } else {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET);
