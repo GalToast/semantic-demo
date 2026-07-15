@@ -24,15 +24,9 @@
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { requestEntryFocus, isMeaningfulActiveElement, emitFocusLifecycleSignal } from '@lib/focus/focus-coordinator';
   import { modes } from '@lib/components/header/mode-constants';
-  import {
-    isModeLocked,
-    isActive,
-    getActiveDescription,
-    computeModeKeydown,
-    indexForModeId,
-    selectMode as applyModeSelect
-  } from '@lib/components/header/mode-nav';
+  import { getActiveDescription, selectMode as applyModeSelect } from '@lib/components/header/mode-nav';
   import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller';
+  import ModeChipRail from '@lib/components/header/ModeChipRail.svelte';
   import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
 
   interface Props {
@@ -67,46 +61,8 @@
   );
   let activeDescription = $derived(getActiveDescription(activeMode, activeView));
 
-  /** Roving tabindex: which chip currently has keyboard focus. Defaults to
-   * the active-mode index; diverges after keyboard navigation. */
-  let keyboardFocusIndex = $state<number>(0);
-
-  /** Thin wrappers that close over the Svelte 5 derived values. These exist
-   * because the module functions take hasSelection / activeMode / activeView
-   * as explicit args (pure), while the Svelte template expects single-arg
-   * chip-id calls. Mapping names so we don't shadow the imported `isModeLocked`
-   * / `isActive`. */
-  function isChipLocked(modeId: NavMode | 'map'): boolean {
-    return isModeLocked(modeId, hasSelection);
-  }
-  function isChipActive(modeId: NavMode | 'map'): boolean {
-    return isActive(modeId, activeMode, activeView);
-  }
-
-  function handleModeKeydown(e: KeyboardEvent): void {
-    const result = computeModeKeydown(
-      e.key,
-      keyboardFocusIndex,
-      (id) => isModeLocked(id, hasSelection)
-    );
-    if (result.kind === 'noop') return;
-    e.preventDefault();
-    keyboardFocusIndex = result.index;
-    const target = modes[result.index];
-    if (!target) return;
-    const chip = document.querySelector<HTMLElement>(`.mode-chip[data-mode="${target.id}"]`);
-    chip?.focus();
-  }
-
-  function handleModeFocusin(e: FocusEvent): void {
-    const target = e.target as HTMLElement;
-    if (!target?.classList.contains('mode-chip')) return;
-    const idx = indexForModeId(target.getAttribute('data-mode'));
-    if (idx >= 0) keyboardFocusIndex = idx;
-  }
-
   function selectMode(modeId: NavMode | 'map'): void {
-    const idx = applyModeSelect(modeId, hasSelection, {
+    applyModeSelect(modeId, hasSelection, {
       navActions: NAV_TRANSITION_ACTIONS,
       dispatchNavTransition: dispatchNavTransition as unknown as (
         _action: unknown,
@@ -115,10 +71,11 @@
       updateUrlState: updateUrlState as unknown as (..._args: unknown[]) => void,
       debugWarn: debugWarn as unknown as (..._args: unknown[]) => void
     });
-    if (idx >= 0) keyboardFocusIndex = idx;
     // Bug 2 fix: selecting "Inside" must also engage the semantic-dive surface
     // (ENTRY_INSIDE). On desktop the journey-compass "Step Inside" button is
     // display:none, so this is the only path that reveals #focus-pocket there.
+    // Roving tabindex (keyboardFocusIndex) now lives in ModeChipRail, set via
+    // focusin before click fires, so nothing to harvest here.
     if (modeId === 'inside') {
       executeJourneyCompassAction(JOURNEY_ACTIONS.ENTER_INSIDE);
     }
@@ -361,60 +318,9 @@
       </button>
     </div>
 
-    <!-- A2-4: Mode chips are always rendered for accessibility. CSS controls visibility per state. -->
-    <div
-      class="mode-chips"
-      id="mode-chips"
-      role="radiogroup"
-      aria-label="View mode"
-      aria-keyshortcuts="ArrowUp ArrowDown ArrowLeft ArrowRight Home End Control+1 Control+2 Control+3 Control+4 Control+5 Control+6"
-      tabindex="-1"
-      onkeydown={handleModeKeydown}
-      onfocusin={handleModeFocusin}
-    >
-      {#each modes as mode (mode.id)}
-        <button type="button"
-          class="mode-chip"
-          class:active={isChipActive(mode.id)}
-          class:is-locked={isChipLocked(mode.id)}
-          disabled={isChipLocked(mode.id)}
-          aria-disabled={isChipLocked(mode.id)}
-          role="radio"
-          tabindex={isChipActive(mode.id) ? 0 : -1}
-          aria-checked={isChipActive(mode.id)}
-          aria-label={isChipLocked(mode.id)
-            ? `${mode.label} — locked, select a business to unlock`
-            : mode.label}
-          title={isChipLocked(mode.id)
-            ? `${mode.label}: ${mode.description} Select a business to unlock.`
-            : mode.description}
-          data-mode={mode.id}
-          onclick={() => selectMode(mode.id)}
-        >
-          <svg class="chip-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><use href="#{mode.iconId}"/></svg>
-          <span class="chip-label">{mode.label}</span>
-          {#if isChipLocked(mode.id)}
-            <!-- PR-D (2026-06-30): visible lock indicator on locked chips.
-                 Previously the chip relied solely on dimmed opacity
-                 (`.is-locked` at 0.35) and the title tooltip to convey
-                 "this is locked". Users had to hover/long-press to
-                 discover the lock.
-                 2026-07-03: lock was at 11×11 / opacity 0.7, layered on a
-                 0.45 chip — net ~0.31 effective alpha — reading as
-                 broken. Bumped to 13×13, full opacity, and switched the
-                 stroke from `currentColor` (which inherits the dimmed
-                 chip color) to the warning palette so the lock reads as
-                 an amber status dot rather than a fading decoration.
-                 Filled the shackle so the icon is recognizable at glance
-                 and screen-reader/zoom users see a clear symbol. -->
-            <svg class="chip-lock" width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-              <rect x="3" y="7.5" width="10" height="6.5" rx="1" fill="currentColor" fill-opacity="0.25" />
-              <path d="M5.5 7.5V5a2.5 2.5 0 0 1 5 0v2.5" fill="currentColor" fill-opacity="0.45" />
-            </svg>
-          {/if}
-        </button>
-      {/each}
-    </div>
+    <!-- Mode chips radiogroup extracted to ModeChipRail.svelte (W52). Props
+         mirror Header's derived nav values; selectMode is the single funnel. -->
+    <ModeChipRail {modes} {activeMode} {hasSelection} {activeView} {selectMode} />
 
     {#if activeDescription && !$viewport.isCompact}
       <span class="header-description">{activeDescription}</span>

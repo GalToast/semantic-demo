@@ -13,19 +13,19 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 
 const APP = resolve(import.meta.dirname, '../../src/lib/keyboard/global-shortcuts.ts')
-const HEADER = resolve(import.meta.dirname, '../../src/components/Header.svelte')
+const CHIPRAIL = resolve(import.meta.dirname, '../../src/lib/components/header/ModeChipRail.svelte')
 
 function readApp(): string {
     return readFileSync(APP, 'utf-8')
 }
 
-function readHeader(): string {
-    return readFileSync(HEADER, 'utf-8')
+function readChipRail(): string {
+    return readFileSync(CHIPRAIL, 'utf-8')
 }
 
 describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
     const appSrc = readApp()
-    const headerSrc = readHeader()
+    const chipRailSrc = readChipRail()
 
     it('has a Ctrl/Cmd+1-6 handler block in App.svelte', () => {
         expect(appSrc).toContain('(e.ctrlKey || e.metaKey) && /^[1-6]$/.test(e.key)')
@@ -108,10 +108,10 @@ describe('A2-4: Ctrl+1-6 keyboard shortcuts for mode switching', () => {
     })
 
     it('mode-chips radiogroup has aria-keyshortcuts including Control+1-6', () => {
-        expect(headerSrc).toMatch(/aria-keyshortcuts="[^"]*Control\+1[^"]*Control\+6[^"]*"/)
+        expect(chipRailSrc).toMatch(/aria-keyshortcuts="[^"]*Control\+1[^"]*Control\+6[^"]*"/)
     })
 
     it('aria-keyshortcuts preserves existing Arrow/Home/End shortcuts', () => {
-        expect(headerSrc).toMatch(/aria-keyshortcuts="[^"]*ArrowUp[^"]*ArrowDown[^"]*Home[^"]*End[^"]*"/)
+        expect(chipRailSrc).toMatch(/aria-keyshortcuts="[^"]*ArrowUp[^"]*ArrowDown[^"]*Home[^"]*End[^"]*"/)
     })
 })
