@@ -51,7 +51,7 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 
 - Primary: `kilo/openrouter/owl-alpha`
 - Registered alt: `agnes-2.0-flash` (bare ref for subagent — no provider prefix)
-- Free fallbacks: `mimo-v2.5-free`, `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free`, `north-mini-code-free`
+- Free fallbacks: `mimo-v2.5-free`, `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free` (not in live free catalog 2026-07-15), `north-mini-code-free`, `hy3-free`
 
 ## Key Product Invariants
 
