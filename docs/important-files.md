@@ -51,6 +51,8 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/search/tokenizer.ts`
 - `src/lib/search/scoring.ts`
 - `src/lib/search/orchestration.ts`
+- `src/lib/search/cache.ts` — canonical search cache entry (W52 `8a467b72` consolidated the legacy root `src/lib/search-cache.ts` here — 11 cache exports appended, append-only merge, no name collisions).
+- `src/lib/search/state.ts` — search Svelte-state saga (used by search-engine + state modules).
 
 ## UI / Chrome
 
@@ -62,3 +64,13 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/components/header/mode-nav.ts` — `selectMode` is the canonical mode-switch entry point.
 - `src/lib/components/header/header.css` — extracted Header visual contract.
 - `src/components/CompassRail.svelte` — 6-phase compass rail.
+- `src/components/JourneyCompass.svelte` — Phase-A/B journey compass parent; the 3-way split trio below was extracted from this file during W52.
+- `src/lib/components/journey/CompassHeader.svelte` — compass header strip + kicker (extracted at W52 `12ae8927`).
+- `src/lib/components/journey/CompassActionButton.svelte` — action-button UI primitive (extracted at W52 `12ae8927`).
+- `src/lib/components/journey/CompassDiveSurface.svelte` — Phase-B dive block (focus-dive / county-reset / inside-next buttons; uses parent-passed `insideNextDisabled` reactive prop — extracted at W52 `2537a84c`).
+- `src/lib/components/header/ModeChipRail.svelte` — chip-rail mode switch extracted from Header at W52 `4dde21b7`.
+- `src/lib/components/header/HelpDialog.svelte` — help dialog extracted from Header at W52 `2833be6c`.
+
+## Onboarding
+
+- `src/lib/onboarding/onboarding-storage.ts` — canonical onboarding-run storage key + seen-reset helpers (W52 `29da7961` — supersedes ad-hoc key literals across journey specs).
