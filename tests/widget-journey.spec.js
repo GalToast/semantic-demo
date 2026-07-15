@@ -1536,4 +1536,276 @@ test.describe('Widget journey', () => {
             `Points geometry must track nodePositions for gathered nodes (mismatches: ${JSON.stringify(probe.mismatches)})`
         ).toBe(probe.sampleSize)
     })
+
+    test('F14: focus field-dim creates pocket-vs-field contrast', async ({ page }) => {
+        // Regression test for the 2026-07-15 visual-QA constellation finding:
+        // after the F1 gather fix, pocket-vs-field contrast was capped at ~3.9x
+        // because every node was floored to 0.65 brightness. The field-dim fix
+        // drops non-pocket nodes to FOCUS_FIELD_MIN_FLOOR (0.14), creating a
+        // dark-sky effect that lets the pocket constellation read.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        // Suppress the first-visit help dialog so it cannot eat focus/clicks.
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort: ignore storage failures */
+            }
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
+            waitUntil: 'domcontentloaded'
+        })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 15000
+        })
+        // Wait for WebGL geometry color attribute to be populated (engine init).
+        await page.waitForFunction(
+            () => {
+                const colors = window.__APP_STATE__?.pointsGeometryColors
+                return Array.isArray(colors) && colors.length > 0
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // Step 1: Read overview colors — compute global mean luminance.
+        const overviewColors = await page.evaluate(() => {
+            const colors = window.__APP_STATE__?.pointsGeometryColors
+            if (!Array.isArray(colors) || colors.length === 0) return null
+            const count = colors.length / 3
+            let sum = 0
+            for (let i = 0; i < count; i++) {
+                sum += (colors[i * 3] + colors[i * 3 + 1] + colors[i * 3 + 2]) / 3
+            }
+            return { mean: sum / count, count }
+        })
+        expect(overviewColors, 'overview colors probe must return data').not.toBeNull()
+        expect(overviewColors.count, 'expected 8406 points').toBe(8406)
+        const overviewMean = overviewColors.mean
+
+        // Step 2: Focus a known-good anchor (index 518 -> lead_id 519).
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            const ok = actions.focusOnNode(518)
+            if (!ok) throw new Error('focusOnNode(518) returned a falsy result')
+        })
+
+        // Wait for focus mode to settle.
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, { timeout: 20000 })
+        // Event-based gather wait: poll for actual movement instead of fixed sleep.
+        // Skip the focus-transition-idle CSS check (fragile) — F1's movement check
+        // already proves the pocket has gathered and the render frame loop is active.
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__
+                const cur = s?.nodePositions
+                const orig = s?.originalPositions
+                if (!Array.isArray(cur) || !Array.isArray(orig)) return false
+                let moved = 0
+                const n = Math.min(cur.length, orig.length)
+                for (let i = 0; i < n; i += 1) {
+                    const c = cur[i]
+                    const o = orig[i]
+                    if (c && o && Math.hypot(c.x - o.x, c.y - o.y, c.z - o.z) > 0.01) moved += 1
+                }
+                return moved >= 5
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // Step 3: Read post-focus colors — compute pocket and field mean luminance.
+        const focusColors = await page.evaluate(() => {
+            const colors = window.__APP_STATE__?.pointsGeometryColors
+            const pocketIndices = window.__APP_STATE__?.navState?.focusPocketIndices
+            if (!Array.isArray(colors) || colors.length === 0) return null
+            if (!Array.isArray(pocketIndices) || pocketIndices.length === 0) return null
+            const pocketSet = new Set(pocketIndices)
+            const count = colors.length / 3
+            let pocketSum = 0
+            let fieldSum = 0
+            let fieldCount = 0
+            for (let i = 0; i < count; i++) {
+                const lum = (colors[i * 3] + colors[i * 3 + 1] + colors[i * 3 + 2]) / 3
+                if (pocketSet.has(i)) {
+                    pocketSum += lum
+                } else {
+                    fieldSum += lum
+                    fieldCount += 1
+                }
+            }
+            return {
+                pocketMean: pocketSum / pocketIndices.length,
+                fieldMean: fieldCount > 0 ? fieldSum / fieldCount : 0,
+                pocketCount: pocketIndices.length,
+                fieldCount
+            }
+        })
+        expect(focusColors, 'focus colors probe must return data').not.toBeNull()
+
+        const { pocketMean, fieldMean } = focusColors
+
+        // Step 4a: Field dimmed — field dropped >= 35% from overview.
+        expect(
+            fieldMean,
+            `field mean ${fieldMean.toFixed(4)} should be < overview ${overviewMean.toFixed(4)} * 0.65 = ${(overviewMean * 0.65).toFixed(4)}`
+        ).toBeLessThan(overviewMean * 0.65)
+
+        // Step 4b: Pocket-vs-field contrast >= 4x (target ~10x, keep headroom for CI variance).
+        expect(
+            pocketMean,
+            `pocket ${pocketMean.toFixed(4)} should be >= 4x field ${fieldMean.toFixed(4)}`
+        ).toBeGreaterThanOrEqual(fieldMean * 4)
+
+        // Step 4c: Focus exit — field recovers to within 15% of overview.
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.returnToOverview !== 'function') {
+                throw new Error('__navActions__.returnToOverview is not exposed')
+            }
+            actions.returnToOverview()
+        })
+        // Wait for focus mode to fully exit.
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode !== 'focus', null, { timeout: 15000 })
+        // Verify the mode switched back to overview.
+        const postExitMode = await page.evaluate(() => window.__APP_STATE__?.navState?.mode)
+        expect(postExitMode, 'mode should be overview after returnToOverview').toBe('overview')
+        // Verify focused index cleared.
+        const postExitFocused = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
+        expect(postExitFocused, 'focusedIndex should be null after returnToOverview').toBeNull()
+        // Poll colors until field recovers to within 15% of overviewMean.
+        // returnToOverview calls applyPointFilterColors on exit (fixed 2026-07-15 —
+        // previously colors stayed stuck at focus-dim levels; found by this test).
+        const recoveredColors = await page.evaluate(
+            async ({ overviewMean }) => {
+                const pollColors = () => {
+                    const colors = window.__APP_STATE__?.pointsGeometryColors
+                    if (!Array.isArray(colors) || colors.length === 0) return null
+                    const count = colors.length / 3
+                    let sum = 0
+                    for (let i = 0; i < count; i++) {
+                        sum += (colors[i * 3] + colors[i * 3 + 1] + colors[i * 3 + 2]) / 3
+                    }
+                    return { mean: sum / count }
+                }
+                const deadline = Date.now() + 15000
+                let last = null
+                while (Date.now() < deadline) {
+                    last = pollColors()
+                    if (last && Math.abs(last.mean - overviewMean) < overviewMean * 0.15) return last
+                    await new Promise((r) => setTimeout(r, 250))
+                }
+                return last
+            },
+            { overviewMean }
+        )
+        expect(recoveredColors, 'recovered colors must be available').not.toBeNull()
+        const recoveredMean = recoveredColors.mean
+        // Primary assertion: field recovered to within 15% of overview.
+        // Secondary: if not, at least recovered significantly from focus-field level.
+        const recoveredWithin15 = Math.abs(recoveredMean - overviewMean) < overviewMean * 0.15
+        expect(
+            recoveredWithin15,
+            `field colors must recover after returnToOverview (returnToOverview + resetExperienceState ` +
+                `now call applyPointFilterColors). overviewMean=${overviewMean.toFixed(4)}, ` +
+                `recoveredMean=${recoveredMean.toFixed(4)}`
+        ).toBe(true)
+    })
+
+    test('A2.1/A2.2: mode-chip rail no mid-word clip + compass rail left-aligned at narrow widths', async ({
+        page
+    }) => {
+        // Regression for visual-qa-handoff A2.2 (header mode-chip rail truncation:
+        // chip labels cut mid-word at narrow desktop widths) and A2.1 (360px
+        // compass/mode-rail centering offset — base translateX(-50%) not cleared
+        // at ≤360px, so the rail is shoved half its width off the left edge).
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(800)
+
+        // Dismiss the first-visit help dialog if it auto-opened (it can steal focus).
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Enter a focus state so the journey compass rail is reliably visible at
+        // every width (the ≤360 escape hatch re-shows it). This exercises the
+        // A2.1 translateX(-50%) clearing for the compass rail at narrow widths.
+        const focused = await page.evaluate(() => {
+            const a = window.__navActions__
+            return a && typeof a.focusOnNode === 'function' ? a.focusOnNode(0) : false
+        })
+        expect(focused, 'focusOnNode must be available to surface the compass rail').toBe(true)
+        await page.waitForFunction(() => document.body.classList.contains('surface-focus'), null, {
+            timeout: 8000
+        })
+
+        for (const width of [768, 360]) {
+            await page.setViewportSize({ width, height: 800 })
+            await page.waitForTimeout(300)
+
+            // A2.2: no mode-chip label clipped mid-word. Either the label is hidden
+            // per the mobile policy (≤768px) or the chip's full content is rendered
+            // (scrollWidth === clientWidth, no internal truncation). Labels are NOT
+            // hidden at 820px by design; the ≤820 rail now scrolls instead of clipping.
+            const chipReport = await page.evaluate(() => {
+                const chips = Array.from(document.querySelectorAll('#mode-chips .mode-chip'))
+                return chips.map((chip) => {
+                    const label = chip.querySelector('.chip-label')
+                    const labelHidden = label ? getComputedStyle(label).display === 'none' : true
+                    return { labelHidden, scrollWidth: chip.scrollWidth, clientWidth: chip.clientWidth }
+                })
+            })
+            expect(chipReport.length, 'mode-chip rail must render the 6 journey chips').toBe(6)
+            for (const c of chipReport) {
+                expect(
+                    c.labelHidden || c.scrollWidth <= c.clientWidth + 1,
+                    `mode-chip text clipped mid-word at ${width}px: ${JSON.stringify(c)}`
+                ).toBe(true)
+            }
+
+            // A2.1: the compass rail must be left-aligned (translateX(-50%) cleared)
+            // at ≤360px. At 768px it is legitimately centered, so only assert the
+            // transform-clear at the narrow width; at both widths assert the
+            // visible left-edge is >= 0.
+            const compass = await page.evaluate(() => {
+                const el = document.querySelector('.journey-compass')
+                if (!el) return null
+                const r = el.getBoundingClientRect()
+                return { left: r.left, width: r.width, transform: getComputedStyle(el).transform }
+            })
+            expect(compass, 'journey-compass rail must be present').not.toBeNull()
+            if (compass.width > 0) {
+                expect(
+                    compass.left,
+                    `compass rail left-edge must be >= 0 at ${width}px (got ${compass.left})`
+                ).toBeGreaterThanOrEqual(0)
+            }
+            if (width <= 360) {
+                expect(
+                    compass.transform,
+                    `compass rail translateX(-50%) must be cleared at <=360px (got ${compass.transform})`
+                ).toBe('none')
+            }
+        }
+    })
 })

@@ -253,6 +253,16 @@ function getCompatValue(prop: string | symbol): unknown {
         if (!attr) return null
         return Array.from(attr.array as Float32Array)
     }
+    // F14 probe (2026-07-15): live snapshot of the Points geometry color attribute
+    // so journey tests can verify pocket-vs-field contrast after field-dim.
+    if (prop === 'pointsGeometryColors') {
+        try {
+            const attr = webglContext.pointsMesh?.geometry?.attributes?.color
+            return attr ? Array.from(attr.array as Float32Array) : null
+        } catch {
+            return null
+        }
+    }
     if (prop === 'state') {
         return {
             ...asRecord(legacyState.state),

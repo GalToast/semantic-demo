@@ -23,6 +23,7 @@ import { setSemanticDiveMode as _setSemanticDiveMode, focusStore, resetFocus } f
 import { searchStore, clearSearch, clearSearchGlow, setSearchStatus } from './search.svelte'
 import { resetJourney, setTrailDepth as _setTrailDepth } from './journey.svelte'
 import { publish, EVENTS } from '../orchestration/event-bus'
+import { applyPointFilterColors } from '../journey/point-color'
 import { computeParityAttributes, applyParityAttributes } from '../orchestration/parity-attrs.svelte.ts'
 
 // ── Delegates to real stores ─────────────────────────────────────────────────
@@ -299,6 +300,9 @@ export function resetExperienceState(): void {
 
     setSearchStatus('idle')
     refreshCompositionState()
+    // Restore point colors after any focus/trail dimming (F14, 2026-07-15) —
+    // applyPointFilterColors early-returns when the color state key is unchanged.
+    applyPointFilterColors()
     publish(EVENTS.STATE_RESET, { reason: 'manual-reset' })
 }
 
@@ -312,6 +316,9 @@ export function returnToOverview(): void {
         switchView('galaxy')
     }
     refreshCompositionState()
+    // Mode + focus have settled by here; rewrite colors so the field-dim lifts
+    // on focus exit (F14, 2026-07-15). No-op when colors are already current.
+    applyPointFilterColors()
 }
 
 // ── Search Glow (ported from ) ────────────

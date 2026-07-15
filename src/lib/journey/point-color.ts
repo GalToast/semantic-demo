@@ -78,7 +78,10 @@ export function applyPointFilterColors(): void {
         const isVisited = historySet.has(i)
         let factor = visible ? 1 : 0.08
         if (visible) {
-            const nodeMinFloor = 0.65
+            const FOCUS_MEMBER_MIN_FLOOR = 0.65
+            const FOCUS_FIELD_MIN_FLOOR = 0.14
+            const FOCUS_FIELD_RAW_SEMANTIC = 0.2
+            const FOCUS_FIELD_RAW_DEFAULT = 0.16
             if (_state.navState.focusedIndex !== null) {
                 const semanticFocus = _state.navState.threadSource === 'semantic'
                 if (_state.navState.mode === 'trail') {
@@ -115,9 +118,10 @@ export function applyPointFilterColors(): void {
                         : isVisited
                           ? 1.28
                           : semanticFocus
-                            ? 0.32
-                            : 0.22
-                    factor = Math.max(raw, nodeMinFloor)
+                            ? FOCUS_FIELD_RAW_SEMANTIC
+                            : FOCUS_FIELD_RAW_DEFAULT
+                    const minFloor = focusLocalIndices.has(i) ? FOCUS_MEMBER_MIN_FLOOR : FOCUS_FIELD_MIN_FLOOR
+                    factor = Math.max(raw, minFloor)
                 }
             } else if (_state.myceliumMode === 'bloom') {
                 factor = _state.bloomIndices.has(i)
