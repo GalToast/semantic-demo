@@ -30,6 +30,7 @@ import { appInit } from '@lib/orchestration/app-init'
 import { registerUrlStateEventListeners } from '@lib/orchestration/url-state'
 import { registerClusterFilterEventListeners } from '@lib/orchestration/cluster-filter-controller'
 import { preloadJourneyWebgl } from '@lib/engine/journey-webgl-lazy'
+import { webglContext } from '@lib/engine/webgl-context'
 import { getInitialRenderKind } from '@lib/orchestration/responsive-renderer'
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
@@ -241,6 +242,17 @@ function getCompatValue(prop: string | symbol): unknown {
     if (typeof prop !== 'string') return undefined
     const { legacyState, svelteState } = getCompatSources()
     if (prop === 'navState') return getCompatNavState()
+    // F1 regression probe (2026-07-15): live snapshot of the Points geometry
+    // position attribute, so journey tests can verify the dominant
+    // points-instanced-field layer tracks state.nodePositions during the
+    // focus-pocket gather (previously the geometry was written once at
+    // creation and never updated — the pocket was invisible in the Points layer).
+    if (prop === 'pointsGeometryPositions') {
+        const mesh = webglContext.pointsMesh
+        const attr = mesh?.geometry?.attributes?.position
+        if (!attr) return null
+        return Array.from(attr.array as Float32Array)
+    }
     if (prop === 'state') {
         return {
             ...asRecord(legacyState.state),

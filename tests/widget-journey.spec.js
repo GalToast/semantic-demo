@@ -465,6 +465,21 @@ test.describe('Widget journey', () => {
         // with no focus target after dismissing the splash. Verify focus lands
         // on #search-input (the primary entry point) on a mobile viewport.
         await page.setViewportSize({ width: 375, height: 667 })
+        // Suppress the first-visit onboarding/help auto-dialog so it cannot
+        // confound the focus assertion. The dialog is gated to desktop, but
+        // the gating races on mobile viewports and intermittently steals focus
+        // (W50-A11y then flakes). This isolates the behavior under test: focus
+        // must land on #search-input after splash dismiss on mobile.
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort: ignore storage failures (e.g. private mode) */
+            }
+        })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
 
         const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
@@ -484,6 +499,17 @@ test.describe('Widget journey', () => {
         }
 
         // The fix: focus must be on #search-input, NOT <body>.
+        // Focus lands via a requestAnimationFrame effect after splash dismiss /
+        // help-dialog close. Wait for it rather than reading immediately — the
+        // navigation-store split added latency that exposed this race (focus
+        // sometimes still on <body> at read time). If it never lands, the
+        // assertion below fails with a clear activeId mismatch.
+        await page
+            .waitForFunction(() => document.activeElement && document.activeElement.id === 'search-input', null, {
+                timeout: 5000
+            })
+            .catch(() => {})
+
         const focusState = await page.evaluate(() => {
             const el = document.activeElement
             const input = document.getElementById('search-input')
@@ -1061,6 +1087,20 @@ test.describe('Widget journey', () => {
             timeout: 8000
         })
 
+        // FocusPocket.svelte is lazy-hydrated; until it mounts, #focus-pocket is the
+        // skeleton placeholder (aria-hidden="true"). The navigation-store split (3e5a2fac)
+        // slowed that hydration enough to expose this race, so wait for the hydrated
+        // (non-skeleton) pocket before asserting a11y state. The transient aria-hidden
+        // skeleton is acceptable (empty region); the steady state must not be aria-hidden.
+        await page.waitForFunction(
+            () => {
+                const pocket = document.querySelector('#focus-pocket')
+                return pocket != null && pocket.getAttribute('aria-hidden') !== 'true'
+            },
+            null,
+            { timeout: 8000 }
+        )
+
         const state = await page.evaluate(() => {
             const pocket = document.querySelector('#focus-pocket')
             const cs = pocket ? getComputedStyle(pocket) : null
@@ -1380,5 +1420,120 @@ test.describe('Widget journey', () => {
             heroOverflow.right,
             `.selected-hero right edge (${heroOverflow.right}) must not exceed viewport width ${VIEWPORT_W}`
         ).toBeLessThanOrEqual(VIEWPORT_W)
+    })
+
+    test('F1. Focus-pocket gather syncs the Points geometry layer', async ({ page }) => {
+        // Regression test for the 2026-07-15 visual-QA F1 finding: the dominant
+        // points-instanced-field (THREE.Points, 8,406 vertices) never pocket-
+        // transformed its position attribute — only the spore InstancedMesh did —
+        // so the gathered constellation was invisible in the layer users see.
+        // Fix: lerpNodesForFrame pushes moved nodePositions into the Points
+        // geometry each frame. This test asserts geometry <-> state sync for
+        // every gathered node. Probe: window.__APP_STATE__.pointsGeometryPositions
+        // (live BufferAttribute snapshot exposed via the test-compat proxy).
+        await page.setViewportSize({ width: 1440, height: 900 })
+        // Suppress the first-visit help dialog so it cannot eat focus/clicks.
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort: ignore storage failures */
+            }
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+
+        // Focus a known-good anchor (array index 518 -> lead_id 519; verified to
+        // build a ~21-satellite pocket against the bundled local index).
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            const ok = actions.focusOnNode(518)
+            if (!ok) throw new Error('focusOnNode(518) returned a falsy result')
+        })
+
+        // Wait for focus mode to settle (camera + pocket gather transitions done).
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, { timeout: 20000 })
+        await page.waitForFunction(() => document.body.className.includes('focus-transition-idle'), null, {
+            timeout: 20000
+        })
+        // Event-based gather wait: the pocket build is async (semantic worker +
+        // settle lerp), so poll for actual movement instead of sleeping a fixed
+        // interval — fixed sleeps flake under load (run-3 regression, moved=0).
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__
+                const cur = s?.nodePositions
+                const orig = s?.originalPositions
+                if (!Array.isArray(cur) || !Array.isArray(orig)) return false
+                let moved = 0
+                const n = Math.min(cur.length, orig.length)
+                for (let i = 0; i < n; i += 1) {
+                    const c = cur[i]
+                    const o = orig[i]
+                    if (c && o && Math.hypot(c.x - o.x, c.y - o.y, c.z - o.z) > 0.01) moved += 1
+                }
+                return moved >= 5
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        const probe = await page.evaluate(() => {
+            const s = window.__APP_STATE__
+            const geo = s?.pointsGeometryPositions
+            const cur = s?.nodePositions
+            const orig = s?.originalPositions
+            if (!Array.isArray(geo) || !Array.isArray(cur) || !Array.isArray(orig)) {
+                return {
+                    error: 'missing probe arrays',
+                    hasGeo: Array.isArray(geo),
+                    hasCur: Array.isArray(cur),
+                    hasOrig: Array.isArray(orig)
+                }
+            }
+            const EPS = 1e-4
+            const moved = []
+            const n = Math.min(cur.length, orig.length)
+            for (let i = 0; i < n; i += 1) {
+                const c = cur[i]
+                const o = orig[i]
+                if (!c || !o) continue
+                const d = Math.hypot(c.x - o.x, c.y - o.y, c.z - o.z)
+                if (d > 0.01) moved.push(i) // gather deltas are large; breathing is ~1e-3
+            }
+            // Both snapshots are read inside one evaluate (single JS task), so no
+            // frame can interleave: geo reflects the last frame's write of cur.
+            const sample = moved.slice(0, 40)
+            let synced = 0
+            const mismatches = []
+            for (const i of sample) {
+                const c = cur[i]
+                const d = Math.hypot(geo[i * 3] - c.x, geo[i * 3 + 1] - c.y, geo[i * 3 + 2] - c.z)
+                if (d < EPS) synced += 1
+                else mismatches.push({ i, d })
+            }
+            return { movedCount: moved.length, sampleSize: sample.length, synced, mismatches: mismatches.slice(0, 5) }
+        })
+
+        expect(probe.error, JSON.stringify(probe)).toBeUndefined()
+        expect(
+            probe.movedCount,
+            `expected the focus pocket to gather nodes (moved >= 5), got ${probe.movedCount}`
+        ).toBeGreaterThanOrEqual(5)
+        expect(
+            probe.synced,
+            `Points geometry must track nodePositions for gathered nodes (mismatches: ${JSON.stringify(probe.mismatches)})`
+        ).toBe(probe.sampleSize)
     })
 })

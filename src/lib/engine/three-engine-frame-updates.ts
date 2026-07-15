@@ -31,6 +31,37 @@ import {
 import { easeOutQuint, easeInOutCubic } from '@lib/utils/math-easing'
 import * as sceneRevealMod from './scene-reveal'
 
+// ── F1 Fix: Points-layer pocket gather ──────────────────────────────────────
+
+/**
+ * Push lerp'd node positions into the Points geometry so the dominant
+ * points-instanced-field layer gathers with the spore layer during focus.
+ *
+ * Called once per frame from `lerpNodesForFrame` after `nodePositions`
+ * has been updated; writes only the moved indices and batches a single
+ * `needsUpdate` flag.
+ */
+function syncPointsGeometryPositions(movedIndices: readonly number[]): void {
+    const pointsMesh = webglContext.pointsMesh
+    if (!pointsMesh) return
+    const attr = pointsMesh.geometry.attributes.position
+    if (!attr) return
+    const arr = attr.array as Float32Array
+    if (!arr) return
+    // nodePositions rides the runtime state object (LegacyState index-signature
+    // member); assert the structural shape like camera-choreography/routes.ts does.
+    const nodePositions = engineState.state?.nodePositions as NodePosition[] | undefined
+    if (!nodePositions) return
+    for (const i of movedIndices) {
+        const pos = nodePositions[i]
+        if (!pos) continue
+        arr[i * 3] = pos.x
+        arr[i * 3 + 1] = pos.y
+        arr[i * 3 + 2] = pos.z
+    }
+    attr.needsUpdate = true
+}
+
 // ── A4 — Reveal progression ──────────────────────────────────────────────────
 
 /**
@@ -247,6 +278,9 @@ export function lerpNodesForFrame(now: number): boolean {
         markNodesDirty(movedIndices)
         if (webglContext.nodeSporeMesh) webglContext.nodeSporeMesh.instanceMatrix.needsUpdate = true
         if (engineState.state) engineState.state.myceliumDirty = true
+        // F1 Fix: push lerp'd positions into the Points geometry so the
+        // dominant points-instanced-field layer gathers with the spore layer.
+        syncPointsGeometryPositions(movedIndices)
     }
     return false
 }

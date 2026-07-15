@@ -41,6 +41,10 @@ import { prefersReducedMotion } from '@lib/utils/environment'
 import { setPocketNodes } from '@lib/stores/focus.svelte'
 import { getBusinessRecords } from '@lib/data-store'
 import type { FocusPocketNode } from '@lib/types/state'
+import {
+    computeFocusConnectionPairs,
+    ensureFocusConnectionRays
+} from '@lib/engine/focus-connection-rays'
 
 export {
     clampNumber,
@@ -219,6 +223,9 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
                     motifLabel: pocketMotifLabel
                 }
             )
+            // Wire anchor→satellite connection rays
+            computeFocusConnectionPairs(index)
+            ensureFocusConnectionRays()
             appState.focusState.nodesAreSettling = true
             appState.autoRotate = false
             return true
@@ -379,6 +386,10 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
         personality: personality.type
     })
     setFocusPocketIndices([...localIndices].filter((candidateIndex: number) => candidateIndex !== index))
+
+    // Wire anchor→satellite connection rays
+    computeFocusConnectionPairs(index)
+    ensureFocusConnectionRays()
 
     appState.focusState.nodesAreSettling = true
     appState.autoRotate = false

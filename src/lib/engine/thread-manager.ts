@@ -11,6 +11,7 @@
 
 import { webglContext } from './webgl-context'
 import { Vector3, Vector2, Object3D, LineSegments, NormalBlending, Group, BufferAttribute } from 'three'
+import { updateFocusConnectionRays as updateFocusConnectionRaysPositions } from './focus-connection-rays'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
 import { LineGeometry } from 'three/examples/jsm/lines/LineGeometry.js'
@@ -699,6 +700,11 @@ export function updateMyceliumThreads(): void {
     rebuildDirtyPairsInLayer(webglContext.myceliumCoreLines as unknown as LineSegments2, 0, layerIntensity)
     rebuildDirtyPairsInLayer(webglContext.myceliumWispyLines as unknown as LineSegments2, 1, layerIntensity)
     rebuildDirtyPairsInLayer(webglContext.myceliumBridgeLines as unknown as LineSegments2, 2, layerIntensity)
+
+    // Update focus connection ray endpoints to track moving nodes.
+    // This runs alongside the mycelium rebuild so rays stay synced
+    // with the lerp/breathe motion of pocket satellites.
+    updateFocusConnectionRaysPositions()
 
     // Drain the dirty set — consumed for this frame.
     dirtyNodeIndices.clear()

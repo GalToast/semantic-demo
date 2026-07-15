@@ -60,6 +60,7 @@ import { prefersReducedMotion } from '@lib/utils/environment'
 import { updateSelectedNodeMotes } from './three-lens-motes'
 import { updateSelectedNodePetals } from './three-lens-petals'
 import { updateSelectedNodeFilaments } from './three-lens-filaments'
+import { destroyFocusConnectionRays } from './focus-connection-rays'
 import { initMicroDemoBridge, disposeMicroDemoBridge } from './three-micro-demo-bridge'
 import { initLensGlowSpoke } from './three-lens-glow-spoke'
 import { initFocusLens } from './three-lens-focusgeo'
@@ -118,7 +119,7 @@ function getSemanticLensNeighborIndices(focusedNode: number): number[] {
     const semanticNode = state.semanticNeighborMapByLeadId ? state.semanticNeighborMapByLeadId.get(leadId) : null
     if (!semanticNode?.neighbors?.length || !state.pointIndexByLeadId?.size) return []
     return semanticNode.neighbors
-        .map((neighbor: { leadId: string | number }) => state.pointIndexByLeadId.get(String(neighbor.leadId)))
+        .map((neighbor: { leadId: string | number | null }) => state.pointIndexByLeadId.get(String(neighbor.leadId)))
         .filter(
             (index: number | undefined): index is number =>
                 Number.isFinite(index) && index !== focusedNode && Boolean(state.nodePositions?.[index as number])
@@ -191,6 +192,10 @@ export function disposeSemanticLens() {
         disposeObject3D(state.focusFilaments)
         state.focusFilaments = null
     }
+    // Focus connection rays (anchor→satellite): runs on focus exit, new-focus
+    // rebuild, and full engine teardown (disposeInteractionVisuals → here).
+    destroyFocusConnectionRays()
+    if (state.focusSemanticConnectionPairs) state.focusSemanticConnectionPairs.length = 0
 }
 
 export function initSemanticManifold() {
@@ -402,7 +407,12 @@ function updateHoverHalo(): void {
     }
 }
 
-function updateFocusCoreVisuals(time: number, reducedMotion: boolean, focusedNode: number | null, isFocused: boolean): void {
+function updateFocusCoreVisuals(
+    time: number,
+    reducedMotion: boolean,
+    focusedNode: number | null,
+    isFocused: boolean
+): void {
     if (state.focusCore) {
         // Narrow the nullable focusedNode once at the top. `hasFocus` is
         // derived from this narrowed value so subsequent uses can rely on
@@ -483,7 +493,7 @@ function updateSemanticLensVisuals(time: number, focusedNode: number | null): vo
                 focusIdx !== null && typeof calculateSignalScore === 'function'
                     ? calculateSignalScore(state.points?.[focusIdx])
                     : 0
-            cachedNeighborIndices = focusIdx !== null ? getSemanticLensNeighborIndices(focusIdx) ?? [] : []
+            cachedNeighborIndices = focusIdx !== null ? (getSemanticLensNeighborIndices(focusIdx) ?? []) : []
             lastFocusIdx = focusIdx
         }
 
