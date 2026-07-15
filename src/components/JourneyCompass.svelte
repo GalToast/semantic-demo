@@ -50,6 +50,9 @@
   } from '@lib/orchestration/compass-controller';
   import { JOURNEY_ACTIONS, type CompassAction } from '@lib/stores/compass.svelte.ts';
   import { parityMap, getBypassAttr } from '@lib/orchestration/parity-attrs.svelte';
+  import CompassStepIndicators from '@lib/components/journey/CompassStepIndicators.svelte';
+  import CompassHeader from '@lib/components/journey/CompassHeader.svelte';
+  import CompassActionButton from '@lib/components/journey/CompassActionButton.svelte';
 
   interface Props {
     /** Suppress the compass in overview mode when URL has ?nodemo=1 */
@@ -360,85 +363,56 @@
   data-focus-panel-mode={bodyFocusPanelMode}
   aria-live="polite"
 >
-  <!-- Step indicators (legacy [data-journey-step] hook) -->
-  {#each JOURNEY_COMPASS_PHASE_ORDER as stepPhase, stepIndex (stepPhase)}
-    <span
-      data-journey-step={stepPhase}
-      class="journey-compass-step"
-      class:current={stepPhase === phase}
-      class:done={JOURNEY_COMPASS_PHASE_ORDER.indexOf(phase) > stepIndex}
-      aria-label={`${stepIndex + 1}. ${stepPhase}: ${STEP_DESCRIPTIONS[stepPhase] || stepPhase}`}
-      title={STEP_DESCRIPTIONS[stepPhase] || stepPhase}
-    >{stepPhase}</span>
-  {/each}
+  <CompassStepIndicators
+    phase={phase}
+    order={JOURNEY_COMPASS_PHASE_ORDER}
+    descriptions={STEP_DESCRIPTIONS}
+  />
 
-  <div id="journey-compass-kicker" class="journey-compass-kicker">
-    {compass.kicker || 'Journey'}
-  </div>
-
-  <div
-    id="journey-compass-title"
-    class="journey-compass-title"
-    class:sr-only={!visibleTitle}
-  >
-    {visibleTitle || titleSrOnlyText}
-  </div>
-
-  <div
-    id="journey-compass-note"
-    class="journey-compass-note"
-  >
-    {compass.note || 'Search to open a trail.'}
-  </div>
+  <CompassHeader
+    kicker={compass.kicker}
+    title={compass.title}
+    note={compass.note}
+    visibleTitle={visibleTitle}
+    titleSrOnlyText={titleSrOnlyText}
+  />
 
   <div
     class="journey-compass-actions"
     class:standard-flex={!$viewport.isCompact && actionsProfile === 'standard'}
   >
-    <button
-      id="btn-journey-primary"
-      class="journey-compass-action primary"
-      type="button"
-      data-journey-action={actionKey(primaryAction)}
-      data-mobile-label={actionKey(primaryAction) === JOURNEY_ACTIONS.ENTER_INSIDE ? 'Inside' : undefined}
+    <CompassActionButton
+      role="primary"
       hidden={buttonHidden(primaryAction, 'primary')}
-      aria-disabled={buttonDisabled(primaryAction) || suppressInsideDiveActions}
+      ariaDisabled={buttonDisabled(primaryAction) || suppressInsideDiveActions}
+      ariaHidden={buttonHidden(primaryAction, 'primary') ? 'true' : 'false'}
+      ariaLabel={buttonLabel(primaryAction, 'primary')}
       tabindex={buttonHidden(primaryAction, 'primary') ? -1 : 0}
-      aria-hidden={buttonHidden(primaryAction, 'primary') ? 'true' : 'false'}
-      aria-label={buttonLabel(primaryAction, 'primary')}
+      dataJourneyAction={actionKey(primaryAction)}
+      dataMobileLabel={actionKey(primaryAction) === JOURNEY_ACTIONS.ENTER_INSIDE ? 'Inside' : undefined}
       onclick={() => handleAction(primaryAction)}
-    >
-      {buttonLabel(primaryAction, 'primary')}
-    </button>
-    <button
-      id="btn-journey-secondary"
-      class="journey-compass-action secondary"
-      type="button"
-      data-journey-action={actionKey(compass.secondaryAction)}
+    />
+    <CompassActionButton
+      role="secondary"
       hidden={buttonHidden(compass.secondaryAction, 'secondary')}
-      aria-disabled={buttonDisabled(compass.secondaryAction) || suppressInsideDiveActions}
+      ariaDisabled={buttonDisabled(compass.secondaryAction) || suppressInsideDiveActions}
+      ariaHidden={buttonHidden(compass.secondaryAction, 'secondary') ? 'true' : 'false'}
+      ariaLabel={buttonLabel(compass.secondaryAction, 'secondary')}
       tabindex={buttonHidden(compass.secondaryAction, 'secondary') ? -1 : 0}
-      aria-hidden={buttonHidden(compass.secondaryAction, 'secondary') ? 'true' : 'false'}
-      aria-label={buttonLabel(compass.secondaryAction, 'secondary')}
+      dataJourneyAction={actionKey(compass.secondaryAction)}
       onclick={() => handleAction(compass.secondaryAction)}
-    >
-      {buttonLabel(compass.secondaryAction, 'secondary')}
-    </button>
-    <button
-      id="btn-journey-tertiary"
-      class="journey-compass-action tertiary"
-      type="button"
-      data-journey-action={actionKey(compass.tertiaryAction)}
+    />
+    <CompassActionButton
+      role="tertiary"
       hidden={buttonHidden(compass.tertiaryAction, 'tertiary')}
-      aria-disabled={buttonDisabled(compass.tertiaryAction) || suppressInsideDiveActions}
-      aria-expanded={buttonHidden(compass.tertiaryAction, 'tertiary') ? 'false' : 'true'}
+      ariaDisabled={buttonDisabled(compass.tertiaryAction) || suppressInsideDiveActions}
+      ariaExpanded={buttonHidden(compass.tertiaryAction, 'tertiary') ? 'false' : 'true'}
+      ariaHidden={buttonHidden(compass.tertiaryAction, 'tertiary') ? 'true' : 'false'}
+      ariaLabel={buttonLabel(compass.tertiaryAction, 'tertiary')}
       tabindex={buttonHidden(compass.tertiaryAction, 'tertiary') ? -1 : 0}
-      aria-hidden={buttonHidden(compass.tertiaryAction, 'tertiary') ? 'true' : 'false'}
-      aria-label={buttonLabel(compass.tertiaryAction, 'tertiary')}
+      dataJourneyAction={actionKey(compass.tertiaryAction)}
       onclick={() => handleAction(compass.tertiaryAction)}
-    >
-      {buttonLabel(compass.tertiaryAction, 'tertiary')}
-    </button>
+    />
   </div>
 
 </section>
@@ -560,23 +534,7 @@
   </button>
 </div>
 
-<!--
-  Minimal CSS for sr-only.
-  Full styling is owned by the legacy CSS modules; this is just enough
-  to keep the data-attr-based layout functional during the migration.
--->
 <style>
-  .sr-only {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    padding: 0;
-    margin: -1px;
-    overflow: hidden;
-    clip: rect(0, 0, 0, 0);
-    white-space: nowrap;
-    border: 0;
-  }
   /* Hide compass in overview when ?nodemo=1 */
   .journey-compass.hidden-by-nodemo {
     display: none !important;
@@ -584,11 +542,6 @@
   /* Hide compass when search results are active to prevent overlap */
   .journey-compass.hidden-by-search {
     display: none !important;
-  }
-  .journey-compass-title {
-    overflow: visible;
-    text-overflow: clip;
-    white-space: normal;
   }
   .journey-compass-actions.standard-flex {
     display: flex;
@@ -614,7 +567,7 @@
     and redundant. Keep them visible in search/map/overview phases where the
     chip rail is partially hidden or the user needs progress orientation.
   */
-  .journey-compass.suppress-step-indicators [data-journey-step] {
+  :global(.journey-compass.suppress-step-indicators [data-journey-step]) {
     display: none;
     visibility: hidden;
     pointer-events: none;
@@ -637,7 +590,7 @@
     when the header chip rail is visible but condensed.
   */
   @media (max-width: 768px) {
-    .journey-compass.suppress-step-indicators [data-journey-step] {
+    :global(.journey-compass.suppress-step-indicators [data-journey-step]) {
       display: none;
       visibility: hidden;
       pointer-events: none;
