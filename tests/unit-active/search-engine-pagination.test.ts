@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { clearSearchCache } from '../../src/lib/search-cache'
+import { clearSearchCache } from '../../src/lib/search/cache'
 import { performSearch } from '../../src/lib/search-engine'
 
 describe('search-engine pagination', () => {

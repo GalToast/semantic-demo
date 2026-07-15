@@ -24,7 +24,7 @@ import { searchUseRerank } from '@lib/stores/search.svelte'
 import { get } from 'svelte/store'
 import { shouldLogStaticDevFallback } from '@lib/utils/ui-presentation'
 import { debugWarn } from '@lib/utils/debug'
-import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search-cache'
+import { getCachedSearch, setCachedSearch, getPendingSearch, setPendingSearch } from '@lib/search/cache'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 
 import {

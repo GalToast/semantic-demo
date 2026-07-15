@@ -5,7 +5,7 @@ import {
     qHash,
     setCachedSearch,
     setSearchCacheTTL
-} from '../../src/lib/search-cache'
+} from '../../src/lib/search/cache'
 
 describe('search-cache keying', () => {
     beforeEach(() => {

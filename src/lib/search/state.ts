@@ -69,5 +69,5 @@ import { pointMatchesActiveFilters } from '@lib/stores/filter.svelte'
 export { applyFilters, getFilteredIndices } from '@lib/orchestration/search-filter-core'
 export { pointMatchesActiveFilters }
 
-export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics } from '@lib/search-cache'
+export { getSearchCacheDiagnostics as getSemanticSearchCacheDiagnostics } from '@lib/search/cache'
 export { publish, EVENTS } from '@lib/orchestration/event-bus'

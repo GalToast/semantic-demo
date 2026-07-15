@@ -7,7 +7,7 @@ import {
   getSearchCacheDiagnostics,
   setPendingSearch,
   setSearchCacheTTL
-} from '../../src/lib/search-cache'
+} from '../../src/lib/search/cache'
 
 describe('search-cache pending-request dedup', () => {
   beforeEach(() => {
