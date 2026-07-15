@@ -135,6 +135,58 @@ export function clearFocusPocketMeta(): void {
     writeFocusPocketMirror({ pocketMeta: null })
 }
 
+/**
+ * Topological k-NN fallback for the focus pocket.
+ *
+ * Deep-link focus boots before the 40 MB semantic-thread artifact
+ * (`semanticNeighborMap`) is loaded, so `navState.threadCandidates` is empty
+ * and `applyLocalNeighborhoodFocus` would otherwise build an EMPTY pocket and
+ * render a blank/dark focus frame (see tmp/focus-blank-investigation.md).
+ * When no semantic/thread candidates exist yet, build a neighborhood from the
+ * K nearest businesses in `[0,1]³` original positions so the pocket is always
+ * non-empty. The deferred semantic refire upgrades to real neighbors later.
+ */
+function topoKnnCandidates(
+    seed: number,
+    positions: Array<{ x: number; y: number; z: number } | undefined>,
+    k: number,
+    points: { name?: string }[]
+): Array<{
+    index: number
+    semanticScore: number
+    score: number
+    relationshipRole: string
+    relationshipAxis: string
+    roleReason: string
+    reason: string
+}> {
+    const seedPos = positions[seed]
+    if (!seedPos) return []
+    const scored: Array<{ index: number; d: number }> = []
+    for (let i = 0; i < positions.length; i++) {
+        if (i === seed) continue
+        const p = positions[i]
+        if (!p) continue
+        const dx = seedPos.x - p.x
+        const dy = seedPos.y - p.y
+        const dz = seedPos.z - p.z
+        scored.push({ index: i, d: dx * dx + dy * dy + dz * dz })
+    }
+    if (scored.length === 0) return []
+    scored.sort((a, b) => a.d - b.d)
+    const top = scored.slice(0, k)
+    const maxD = top[top.length - 1].d || 1
+    return top.map(({ index, d }) => ({
+        index,
+        semanticScore: maxD > 0 ? 1 - d / maxD : 0,
+        score: maxD > 0 ? 1 - d / maxD : 0,
+        relationshipRole: '',
+        relationshipAxis: '',
+        roleReason: 'nearby business (topological neighbor)',
+        reason: `nearby business (topological neighbor of ${points[seed]?.name ?? '#' + seed})`
+    }))
+}
+
 export function applyLocalNeighborhoodFocus(index: number): boolean {
     const points = appState.points
     const originalPositions = appState.originalPositions
@@ -180,7 +232,12 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
 
     if (navState.threadSource === 'semantic') {
         const pocket = buildFocusedSemanticPocket(index)
-        if (pocket?.positions?.size) {
+        const _pocketIndices = pocket?.indices?.filter((candidateIndex) => candidateIndex !== index) ?? []
+        // Only take the semantic pocket if it actually has neighbors. An empty
+        // semantic pocket (deep-link boot before the 40 MB artifact loads)
+        // must fall through to the topological k-NN fallback below so the
+        // focus pocket is never blank (tmp/focus-blank-investigation.md).
+        if (pocket?.positions?.size && _pocketIndices.length > 0) {
             pocket.positions.forEach((position, pocketIndex) => {
                 if (position && targetPositions) {
                     targetPositions[pocketIndex] = { x: position.x, y: position.y, z: position.z }
@@ -234,8 +291,19 @@ export function applyLocalNeighborhoodFocus(index: number): boolean {
     }
     const viewportProfile = getFocusConstellationViewportProfile()
     const threadCandidates = navState.threadCandidates
-    const neighborhoodCandidates = threadCandidates.slice(0, viewportProfile.primaryLimit)
-
+    let neighborhoodCandidates = threadCandidates.slice(0, viewportProfile.primaryLimit)
+    // Fix A (tmp/focus-blank-investigation.md): deep-link focus boots before the
+    // 40 MB semantic-thread artifact loads, so threadCandidates is empty and the
+    // pocket would render blank. Fall back to a topological k-NN neighborhood so
+    // the focus pocket is never empty; the deferred semantic refire upgrades it.
+    if (neighborhoodCandidates.length === 0 && originalPositions && points) {
+        neighborhoodCandidates = topoKnnCandidates(
+            index,
+            originalPositions as Array<{ x: number; y: number; z: number } | undefined>,
+            viewportProfile.primaryLimit,
+            points
+        )
+    }
     const primaryIndices = neighborhoodCandidates.map((candidate) => candidate.index)
     const supportIndices: number[] = []
 

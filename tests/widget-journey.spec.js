@@ -2073,4 +2073,108 @@ test.describe('Widget journey', () => {
             expect(b.showMorePresent, 'no Show-more when all shown (B)').toBe(false)
         }
     })
+
+    test('F16: pocket size twin-mesh renders larger dots and tears down on exit', async ({ page }) => {
+        // Phase 2 Layer 3 (2026-07-15): the twin-mesh size channel — a tiny second
+        // Points cloud at 2.5× base size tracking the gathered pocket — is what
+        // lets the constellation read as LARGER dots (the jury's missing channel).
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.addInitScript(() => {
+            try {
+                localStorage.setItem(
+                    'moco_onboarding_seen_v1',
+                    JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
+                )
+            } catch {
+                /* best-effort */
+            }
+        })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
+            waitUntil: 'domcontentloaded'
+        })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 15000
+        })
+
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            actions.focusOnNode(518)
+        })
+        await page.waitForFunction(() => window.__APP_STATE__?.navState?.mode === 'focus', null, {
+            timeout: 20000
+        })
+
+        // Wait for the twin mesh to build with the pocket membership.
+        await page.waitForFunction(
+            () => {
+                const info = window.__APP_STATE__?.focusPocketSizeMeshInfo
+                return info && info.count >= 10
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        const info = await page.evaluate(() => window.__APP_STATE__?.focusPocketSizeMeshInfo)
+        expect(info, 'focusPocketSizeMeshInfo must be available').not.toBeNull()
+        // 2.5 × POINTS_MATERIAL_BASE_SIZE (0.026) = 0.065; keep float headroom.
+        expect(info.size, `twin-mesh size ${info.size} must be >= 2x base (0.052)`).toBeGreaterThanOrEqual(0.052)
+        const pocketLen = await page.evaluate(() => window.__APP_STATE__?.navState?.focusPocketIndices?.length ?? 0)
+        expect(info.count, 'twin count must cover the pocket').toBeGreaterThanOrEqual(pocketLen)
+
+        // Exit: twin must tear down.
+        await page.evaluate(() => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.returnToOverview !== 'function') {
+                throw new Error('__navActions__.returnToOverview is not exposed')
+            }
+            actions.returnToOverview()
+        })
+        await page.waitForFunction(() => window.__APP_STATE__?.focusPocketSizeMeshInfo === null, null, {
+            timeout: 15000
+        })
+    })
+})
+
+test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investigation.md)', () => {
+    test('deep-link ?anchor=N renders a non-empty focus pocket (not blank)', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, { waitUntil: 'domcontentloaded' })
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
+
+        const overlay = page.locator('.loading-overlay')
+        await overlay.waitFor({ state: 'hidden', timeout: 20000 }).catch(() => {})
+
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__?.navState
+                return !!s && s.focusedIndex === 519 && s.mode === 'focus'
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // Fix A+B (tmp/focus-blank-investigation.md): the deep-link focus pocket
+        // must populate (not render blank). It builds asynchronously after the
+        // fire-and-forget URL-state restore, so wait for it.
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__?.navState
+                return Array.isArray(s?.focusPocketIndices) ? s.focusPocketIndices.length > 0 : false
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        const infoPanel = page.locator('.info-panel.open')
+        await infoPanel.waitFor({ state: 'attached', timeout: 10000 })
+    })
 })

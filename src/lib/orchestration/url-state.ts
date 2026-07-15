@@ -540,9 +540,7 @@ function preserveDomForcedFocusSearchSurface(): void {
  * Returns `{ valid: false }` if the id is non-numeric or out of range
  * (after writing fallback state and stripping the URL param).
  */
-function _validateAnchorIndex(
-    anchorId: string
-): { valid: false } | { valid: true; numericId: number } {
+function _validateAnchorIndex(anchorId: string): { valid: false } | { valid: true; numericId: number } {
     const numericId = Number(anchorId)
     if (!Number.isFinite(numericId)) return { valid: false }
 
@@ -598,6 +596,52 @@ function _restoreFocusStateForAnchor(numericId: number): void {
 }
 
 /**
+ * shittiest-parts #1: deep-link focus built the pocket + connection rays but never
+ * framed the camera, so they sat off-screen in the full mycelium cloud. Frame the
+ * camera on the focused anchor/pocket once the pocket is built. Idempotent + guarded
+ * inside animateCameraToNode (no-op if camera/controls aren't ready yet). Dynamic
+ * import keeps boot lean. Also guarantees the anchor→satellite rays are (re)built
+ * for this pocket even if the focus-ui effect hasn't fired yet on a deep-link boot.
+ */
+function _frameCameraOnAnchor(index: number): void {
+    if (!Number.isFinite(index)) return
+    void import('@lib/engine/camera-choreography/focus')
+        .then((m) => {
+            try {
+                m.animateCameraToNode(index, { transitionStyle: 'focus' })
+            } catch (e) {
+                debugWarn('[url-state] camera frame on anchor failed', index, e)
+            }
+        })
+        .catch((e) => debugWarn('[url-state] camera-choreography import failed', e))
+    void import('@lib/journey/semantic-overlay')
+        .then((m) => {
+            try {
+                m.refreshFocusSemanticOverlay()
+                m.updateFocusSemanticOverlayPositions()
+            } catch (e) {
+                debugWarn('[url-state] focus semantic overlay refresh failed', index, e)
+            }
+        })
+        .catch((e) => debugWarn('[url-state] semantic-overlay import failed', e))
+    // shittiest-parts #1: the focus dim/brightness logic in point-color.ts only
+    // runs when applyPointFilterColors() is invoked. The interactive focus path
+    // calls it (restoreFocusTrailState), but the deep-link path never did — so
+    // the pocket's relative brightness (and the background dim) never applied on
+    // ?anchor=/?record= deep links. Refresh colors here so the gathered
+    // neighborhood reads as prominent against the 8,406-dot field.
+    void import('@lib/journey/point-color')
+        .then((m) => {
+            try {
+                m.applyPointFilterColors()
+            } catch (e) {
+                debugWarn('[url-state] point-color refresh failed', index, e)
+            }
+        })
+        .catch((e) => debugWarn('[url-state] point-color import failed', e))
+}
+
+/**
  * W44-S5: dynamic import keeps Three.js + focus-pocket geometry off the
  * cold-load modulepreload list. Returns `true` if the focus-pocket was
  * applied (or skipped because no import was needed), `false` if a newer
@@ -614,7 +658,7 @@ async function _applyFocusPocketForAnchor(
         // ImportCallOptions.signal is supported at runtime (Node 17+, all modern browsers)
         // but isn't in @types/node ImportCallOptions in this TS version. `as never`
         // bridges the type-only gap; the runtime call is well-defined.
-        const _focusPocketMod = (await import('@lib/focus/pocket', { signal } as never)) as {
+        const _focusPocketMod = (await import('@lib/focus/pocket')) as {
             applyLocalNeighborhoodFocus: (index: number) => void
         }
         const applyLocalNeighborhoodFocus = _focusPocketMod.applyLocalNeighborhoodFocus
@@ -622,6 +666,7 @@ async function _applyFocusPocketForAnchor(
         // applyUrlState bumped the token while the dynamic import resolved.
         if (_isRestoreStale(restoreToken)) return false
         applyLocalNeighborhoodFocus(numericId)
+        _frameCameraOnAnchor(numericId)
     } catch (e) {
         debugWarn('[url-state] applyLocalNeighborhoodFocus failed for anchor', numericId, e)
     }
@@ -680,6 +725,7 @@ function _setupDeferredNeighborRefire(numericId: number, restoreToken: number): 
                 if (appState.navState.focusedIndex !== numericId) return
                 if (_isRestoreStale(restoreToken)) return
                 _focusPocketMod.applyLocalNeighborhoodFocus(numericId)
+                _frameCameraOnAnchor(numericId)
             } catch (e) {
                 debugWarn('[url-state] deferred constellation rebuild failed for anchor', numericId, e)
             }
@@ -787,11 +833,12 @@ async function _restoreSearchFromParams(
         const rebuildIndex = byId ? byId.index : numericAnchor ? Number(anchorId) : -1
         if (rebuildIndex >= 0) {
             try {
-                const _focusPocketMod = (await import('@lib/focus/pocket', { signal } as never)) as {
+                const _focusPocketMod = (await import('@lib/focus/pocket')) as {
                     applyLocalNeighborhoodFocus: (index: number) => void
                 }
                 if (_isRestoreStale(restoreToken)) return
                 _focusPocketMod.applyLocalNeighborhoodFocus(rebuildIndex)
+                _frameCameraOnAnchor(rebuildIndex)
             } catch (e) {
                 debugWarn('[url-state] applyLocalNeighborhoodFocus re-build failed after search restore', e)
             }

@@ -305,7 +305,12 @@ export async function appInit(options: AppInitOptions = {}): Promise<() => void>
     // all of which need business data to be loaded. Awaiting dataReadyPromise
     // ensures the URL state can resolve against loaded records.
     await dataReadyPromise
-    await applyUrlStateAfterData()
+    // Fix B (tmp/focus-blank-investigation.md): don't block first paint on the
+    // deep-link URL-state restore, which awaits a network search (up to 30 s).
+    // Run it fire-and-forget so the loading overlay / safety valve clears
+    // immediately; the focus pocket still rebuilds when the restore resolves
+    // (and Fix A guarantees it's non-empty even before then).
+    void applyUrlStateAfterData()
 
     // ── Phase 5: WebGL context restore handler ────────────────────────────────
     // W-audit-D: tear down a prior restore handler before re-adding.
