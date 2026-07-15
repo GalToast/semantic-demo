@@ -53,6 +53,7 @@
   import CompassStepIndicators from '@lib/components/journey/CompassStepIndicators.svelte';
   import CompassHeader from '@lib/components/journey/CompassHeader.svelte';
   import CompassActionButton from '@lib/components/journey/CompassActionButton.svelte';
+  import CompassDiveSurface from '@lib/components/journey/CompassDiveSurface.svelte';
 
   interface Props {
     /** Suppress the compass in overview mode when URL has ?nodemo=1 */
@@ -417,122 +418,19 @@
 
 </section>
 
-<div
-  id="map-trail-strip"
-  class="map-trail-strip"
-  hidden={!showMapTrailStrip}
-  aria-hidden={!showMapTrailStrip ? 'true' : 'false'}
->
-  {#if showMapTrailStrip}
-    <div class="map-strip-title" data-route-director={showMapTrailStrip ? 'map-trail' : undefined} title={stripAccessibleTitle} aria-label={stripAccessibleTitle}>
-      {stripAccessibleTitle}
-    </div>
-  {/if}
-</div>
-
-<button
-  id="btn-map-county"
-  class="map-county-reset-btn"
-  type="button"
-  data-journey-action={JOURNEY_ACTIONS.COUNTY_OVERVIEW}
-  hidden={!showMapTrailStrip}
-  aria-hidden={!showMapTrailStrip ? 'true' : 'false'}
-  aria-label="Return to county overview"
-  onclick={handleInsideCounty}
->
-  County
-</button>
-
-<!--
-  Step Inside / focus-dive button.
- Mirrors ensureDiveButton and
- syncSemanticDiveUi.
-
-  Legacy hit-test contract (tests/canvas-hit-test-interaction.spec.js):
-    - The button must be the topmost element at its center
-    - The body data-semantic-dive attribute must be 'active' or
-      'transitioning' when the click reaches the engine
--->
-<button
-  id="btn-focus-dive"
-  class="focus-stage-dive-btn"
-  type="button"
-  data-journey-action="enter-inside"
-  hidden={!showDiveButton}
-  disabled={!canDive}
-  aria-hidden={!showDiveButton ? 'true' : 'false'}
-  aria-pressed={semanticDiveActive ? 'true' : 'false'}
-  aria-disabled={!canDive ? 'true' : 'false'}
-  aria-label="Explore the neighborhood around this business"
-  onclick={handleStepInside}
->
-  <span class="focus-stage-dive-label">
-    {semanticDiveActive ? 'Inside Neighborhood' : 'Explore Neighborhood'}
-  </span>
-  <span class="focus-stage-dive-copy">
-    {semanticDiveActive
-      ? 'Use Next Stop to continue or County to exit.'
-      : 'Explore related businesses in the neighborhood.'}
-  </span>
-</button>
-
-<div class="focus-stage-kicker" hidden aria-hidden="true">Focus stage</div>
-
-<div
-  id="focus-stage-inside-status"
-  class="focus-stage-inside-status"
-  hidden={!showInsideControls}
-  aria-hidden={!showInsideControls ? 'true' : 'false'}
->
-  <span class="focus-stage-inside-status-copy">Inside neighborhood</span>
-</div>
-
-<div
-  id="focus-stage-inside-controls"
-  class="focus-stage-inside-controls"
-  hidden={!showInsideControls}
-  aria-hidden={!showInsideControls ? 'true' : 'false'}
->
-  <button
-    id="btn-inside-next"
-    class="focus-stage-inside-btn biofield-glow"
-    type="button"
-    data-journey-action={JOURNEY_ACTIONS.NEXT_STOP}
-    hidden={!showInsideControls}
-    aria-hidden={!showInsideControls ? 'true' : 'false'}
-    aria-disabled={buttonDisabled({ label: 'Next Stop', action: JOURNEY_ACTIONS.NEXT_STOP })}
-    tabindex={showInsideControls ? 0 : -1}
-    onclick={handleInsideNext}
-  >
-    Next Stop
-  </button>
-  <button
-    id="btn-inside-map"
-    class="focus-stage-inside-btn"
-    type="button"
-    data-journey-action={JOURNEY_ACTIONS.OPEN_MAP}
-    hidden={!showInsideControls}
-    aria-hidden={!showInsideControls ? 'true' : 'false'}
-    aria-disabled={!showInsideControls ? 'true' : 'false'}
-    tabindex={showInsideControls ? 0 : -1}
-    onclick={handleInsideMap}
-  >
-    Map
-  </button>
-  <button
-    id="btn-inside-county"
-    class="focus-stage-inside-btn"
-    type="button"
-    data-journey-action={JOURNEY_ACTIONS.COUNTY_OVERVIEW}
-    hidden={!showInsideControls}
-    aria-hidden={!showInsideControls ? 'true' : 'false'}
-    aria-disabled={!showInsideControls ? 'true' : 'false'}
-    tabindex={showInsideControls ? 0 : -1}
-    onclick={handleInsideCounty}
-  >
-    County
-  </button>
-</div>
+<CompassDiveSurface
+  showMapTrailStrip={showMapTrailStrip}
+  stripAccessibleTitle={stripAccessibleTitle}
+  showDiveButton={showDiveButton}
+  canDive={canDive}
+  semanticDiveActive={semanticDiveActive}
+  showInsideControls={showInsideControls}
+  handleInsideCounty={handleInsideCounty}
+  handleStepInside={handleStepInside}
+  handleInsideNext={handleInsideNext}
+  handleInsideMap={handleInsideMap}
+  insideNextDisabled={buttonDisabled({ label: 'Next Stop', action: JOURNEY_ACTIONS.NEXT_STOP })}
+/>
 
 <style>
   /* Hide compass in overview when ?nodemo=1 */
@@ -548,12 +446,12 @@
     align-items: center;
     gap: 8px;
   }
-  .focus-stage-dive-btn[hidden] {
+  :global(.focus-stage-dive-btn[hidden]) {
     display: none;
     visibility: hidden;
     pointer-events: none;
   }
-  .map-county-reset-btn[hidden] {
+  :global(.map-county-reset-btn[hidden]) {
     display: none;
     visibility: hidden;
     pointer-events: none;
