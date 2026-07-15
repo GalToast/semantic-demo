@@ -96,7 +96,7 @@ assert(
 
 const semanticThreadsSource = read('src/lib/engine/semantic-threads.ts')
 assert(
-    /function _normalizeSemanticNeighborEntries\s*\(/.test(semanticThreadsSource),
+    /function normalizeSemanticNeighborEntries\s*\(/.test(semanticThreadsSource),
     'semantic-threads.ts must normalize worker-loaded neighbor entries through the relationship role owner'
 )
 assert(

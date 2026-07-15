@@ -444,13 +444,13 @@ async function callWorker(type: string, payload: unknown): Promise<WorkerThreadR
 
 // ── Neighbor normalization helpers ────────────────────────────────────────────
 
-function _normalizeLeadId(id: unknown): string | null {
+function normalizeLeadId(id: unknown): string | null {
     if (id === null || id === undefined) return null
     const s = String(id).trim()
     return s.length > 0 ? s : null
 }
 
-function _normalizeSemanticNeighborEntries(
+function normalizeSemanticNeighborEntries(
     neighborEntries: Array<[string, NeighborEntry]>
 ): Array<[string, SemanticNeighborEntry]> {
     if (!Array.isArray(neighborEntries)) return []
@@ -464,7 +464,7 @@ function _normalizeSemanticNeighborEntries(
             signalScore: Number(node?.signalScore ?? 0),
             neighbors: Array.isArray(node?.neighbors)
                 ? node.neighbors.map((neighbor) => ({
-                      leadId: _normalizeLeadId(neighbor?.leadId) ?? '',
+                      leadId: normalizeLeadId(neighbor?.leadId) ?? '',
                       score: Number(neighbor?.score ?? 0),
                       semanticScore: Number(neighbor?.semanticScore ?? 0),
                       sameCity: Boolean(neighbor?.sameCity),
@@ -710,7 +710,7 @@ export async function loadSemanticThreads(options: LoadSemanticThreadsOptions = 
                     attemptConfigs
                 })
                 const { manifest } = await _guardSemanticSpaceLayout(bundle, artifactName, cacheBust)
-                const neighborMap = new Map(_normalizeSemanticNeighborEntries(neighborEntries))
+                const neighborMap = new Map(normalizeSemanticNeighborEntries(neighborEntries))
                 withStateMutation(() => {
                     state.semanticThreadBundle = bundle
                     state.semanticThreadArtifactName = artifactName

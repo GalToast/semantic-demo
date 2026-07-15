@@ -63,7 +63,7 @@ function createSemanticThreadNode(): SemanticThreadNode {
  * Create a node matching the real worker output shape (camelCase, normalized).
  * This mirrors the `NeighborEntry` interface in src/lib/workers/data-worker.ts
  * — the worker builds these entries with `leadId` (not `lead_id`), so the
- * main-thread `_normalizeSemanticNeighborEntries` MUST read camelCase.
+ * main-thread `normalizeSemanticNeighborEntries` MUST read camelCase.
  */
 function createWorkerOutputNode(): {
     leadId: string
@@ -332,7 +332,7 @@ describe('semantic thread worker lifecycle', () => {
 
 describe('semantic thread worker — camelCase worker output (regression: empty-leadId cascade)', () => {
     /**
-     * Regression: src/lib/engine/semantic-threads.ts `_normalizeSemanticNeighborEntries`
+     * Regression: src/lib/engine/semantic-threads.ts `normalizeSemanticNeighborEntries`
      * historically read snake_case fields (`neighbor.lead_id`) from the worker's
      * postMessage payload, but the worker (src/lib/workers/data-worker.ts) sends
      * camelCase (`neighbor.leadId`). The mismatch produced empty-string leadIds
