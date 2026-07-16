@@ -102,6 +102,17 @@ body.surface-map-idle .map-empty-state-note {
     font-size: 11px;
     line-height: 1.3;
     max-width: 240px;
+    /* W52-vision-fix-E (2026-07-16): The base shell.css rule colors the
+       note with `var(--color-text-muted)` which resolves to
+       rgba(255,255,255,0.58) — a fade the W52 vision jury flagged as
+       "low-contrast white text" on Surface 06 (desktop map @view=map).
+       Pull desktop note contrast up to match the mobile idle overlay in
+       css/mobile_premium__chrome.css `.map-empty-state-note` override
+       (rgba(218,232,229,0.85)) so both surfaces read at the same A-RANK
+       contrast against the 0.82-alpha dark gradient pill background.
+       Title is already concentrated at rgba(255,255,255,0.94) and
+       needs no change. */
+    color: rgba(228, 240, 240, 0.85);
 }
 
 /* D: Hide the redundant "County terrain" h2 in map-idle mode.

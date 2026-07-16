@@ -391,12 +391,27 @@
         margin-top: 0.25rem;
         text-align: left;
         max-width: 100%;
-        /* PR-F (2026-06-30): Truncate the focus-mode description at the
-           viewport edge with an ellipsis. The full sentence
-           ("See all businesses linked to the focused node, ranked by
-           relationship strength") doesn't fit in 390px and was bleeding
-           off-screen before this fix. */
-        white-space: nowrap;
+        /* PR-F (2026-06-30, W52-vision-fix-D 2026-07-16): Originally the
+           focus-mode description was truncated at the viewport edge with
+           `white-space: nowrap` + `text-overflow: ellipsis`. True text
+           width at 0.65rem/10.4px in a 390px-wide mobile header (~374px
+           clientW minus padding) is ~375px so the ellipsis clipped the
+           final `.relate.` into `relate…`, leaving the message visually
+           incomplete — flagged HIGH by the W52 vision jury on Surface
+           04 (@record=519). The fix: wrap the caption to at most 2 lines
+           via `-webkit-line-clamp: 2` instead of single-line clip. The
+           description still occupies its own row below the chip rail
+           (PR-B's flex-basis: 100% above), so chips are unchanged; the
+           description's max height = 2 × line-height(13.52px) ≈ 27px.
+           `overflow: hidden` + `text-overflow: ellipsis` are retained
+           only as a fallback in case a future mode description exceeds
+           the 2-line cap. */
+        white-space: normal;
+        overflow-wrap: anywhere;
+        line-height: 1.3;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
         overflow: hidden;
         text-overflow: ellipsis;
     }
