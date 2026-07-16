@@ -25,10 +25,6 @@ let _lastIdbError: unknown = null
 function markIdbDegraded(err: unknown): void {
     _idbDegraded = true
     _lastIdbError = err
-    console.warn(
-        '[semantic-search-cache] IndexedDB operation failed; cache running in-memory only (degraded):',
-        err
-    )
     debugWarn('[semantic-search-cache] IndexedDB degraded:', err)
 }
 

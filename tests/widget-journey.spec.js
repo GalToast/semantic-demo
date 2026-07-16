@@ -2354,7 +2354,11 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         })
 
         // Wait for engine ready + points loaded.
-        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
+        await page.waitForFunction(
+            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
+            null,
+            { timeout: 20000 }
+        )
 
         // Wait for loading overlay to dismiss (deep-link signalReady path).
         const overlay = page.locator('.loading-overlay')
@@ -2362,7 +2366,10 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // CORE ASSERTION: help dialog must NOT be open on a deep-link first visit.
         const helpCount = await page.locator('dialog.help-dialog[open]').count()
-        expect(helpCount, 'help dialog must not auto-open over a shared deep-link target (Fix #2)').toBe(0)
+        expect(
+            helpCount,
+            'help dialog must not auto-open over a shared deep-link target (Fix #2)'
+        ).toBe(0)
 
         // Confirm focus mode is active (deep-link resolved correctly).
         await page.waitForFunction(

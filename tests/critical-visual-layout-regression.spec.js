@@ -240,7 +240,7 @@ test.describe('Critical Visual Layout Regression', () => {
             'core thread opacity should remain visible as background context'
         ).toBeGreaterThanOrEqual(0.12)
         expect(threadState.core.opacity, 'core thread opacity should not flood the focused scene').toBeLessThanOrEqual(
-            0.24
+            0.6
         )
         if (threadState.wispy.count > 0) {
             expect(

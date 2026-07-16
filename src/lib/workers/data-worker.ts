@@ -260,14 +260,6 @@ async function handleLoadThreads(
                 // (and surfaces a clear ERROR if all are malformed) instead of
                 // silently emitting an empty map.
                 if (!isValidThreadArtifact(parsed)) {
-                    console.warn('[data-worker] Malformed thread artifact; trying alternate source/attempt.', {
-                        artifactName,
-                        bundleType: typeof parsed,
-                        hasNodes:
-                            parsed != null &&
-                            typeof parsed === 'object' &&
-                            'nodes' in (parsed as Record<string, unknown>)
-                    })
                     throw new Error(`Thread artifact shape invalid (artifact=${artifactName})`)
                 }
                 bundle = parsed
