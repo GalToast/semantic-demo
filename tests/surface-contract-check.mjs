@@ -4148,61 +4148,61 @@ async function assert_search_trail_cue(page, ctx) {
  */
 async function assert_map_container_ownership(page, ctx) {
     await page.addInitScript(() => {
-        window.__PLAYWRIGHT__ = true;
-    });
+        window.__PLAYWRIGHT__ = true
+    })
     for (const label of ['desktop-map', 'mobile-map']) {
-        const isMobile = label === 'mobile-map';
-        await page.setViewportSize(isMobile ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+        const isMobile = label === 'mobile-map'
+        await page.setViewportSize(isMobile ? { width: 390, height: 844 } : { width: 1440, height: 900 })
 
-        const url = new URL(positionalUrl);
-        url.searchParams.set('nodemo', '1');
-        url.searchParams.set('view', 'map');
-        await loadAndWait(page, url.toString());
+        const url = new URL(positionalUrl)
+        url.searchParams.set('nodemo', '1')
+        url.searchParams.set('view', 'map')
+        await loadAndWait(page, url.toString())
 
         // Allow time for MapView and Leaflet to settle.
-        await page.waitForTimeout(2000);
+        await page.waitForTimeout(2000)
 
         const info = await page.evaluate(() => {
-            const all = Array.from(document.querySelectorAll('[id="map-container"]'));
-            const dupes = all.length;
-            const first = dupes > 0 ? all[0] : null;
-            let sizes = { scrollWidth: 0, clientWidth: 0, overflowX: '' };
+            const all = Array.from(document.querySelectorAll('[id="map-container"]'))
+            const dupes = all.length
+            const first = dupes > 0 ? all[0] : null
+            let sizes = { scrollWidth: 0, clientWidth: 0, overflowX: '' }
             if (first) {
                 sizes = {
                     scrollWidth: first.scrollWidth,
                     clientWidth: first.clientWidth,
                     overflowX: getComputedStyle(first).overflowX
-                };
+                }
             }
-            return { dupes, present: dupes > 0, sizes };
-        });
+            return { dupes, present: dupes > 0, sizes }
+        })
 
-        const prefix = label + ':h8-ownership';
+        const prefix = label + ':h8-ownership'
         if (info.present) {
-            ctx.pass(label, prefix + ':present');
+            ctx.pass(label, prefix + ':present')
         } else {
-            ctx.fail(label, prefix + ':present', '#map-container is missing');
+            ctx.fail(label, prefix + ':present', '#map-container is missing')
         }
 
         if (info.dupes === 1) {
-            ctx.pass(label, prefix + ':single-owner');
+            ctx.pass(label, prefix + ':single-owner')
         } else {
-            ctx.fail(label, prefix + ':single-owner', `expected 1 #map-container, found ${info.dupes}`);
+            ctx.fail(label, prefix + ':single-owner', `expected 1 #map-container, found ${info.dupes}`)
         }
 
-        const overflow = info.sizes.scrollWidth - info.sizes.clientWidth;
+        const overflow = info.sizes.scrollWidth - info.sizes.clientWidth
         if (overflow <= 10) {
-            ctx.pass(label, 'h5-sizing:no-overflow');
+            ctx.pass(label, 'h5-sizing:no-overflow')
         } else {
             ctx.fail(
                 label,
                 'h5-sizing:no-overflow',
                 `scrollWidth(${info.sizes.scrollWidth}) - clientWidth(${info.sizes.clientWidth}) = ${overflow}px > 10px`
-            );
+            )
         }
     }
 
-    return { desktopMap: true, mobileMap: true };
+    return { desktopMap: true, mobileMap: true }
 }
 
 // Surface registry
