@@ -543,8 +543,37 @@ export default defineConfig({
         rollupOptions: {
             output: {
                 manualChunks(id) {
+                    // (a) Three.js engine → isolated chunk. It is loaded eagerly by the
+                    // WebGL scene path, but we keep it as its own named chunk and exclude
+                    // it from module preload (see modulePreload.resolveDependencies) so the
+                    // bytes are not inlined into the entry and are fetched on a dedicated
+                    // request rather than bloating the initial parse.
                     if (id.includes('node_modules/three/')) {
                         return 'three'
+                    }
+                    // (b) Heavy mode-transition transitive deps → isolated chunk. The
+                    // mode-transitions dispatcher itself is tiny (~10KB src), but it
+                    // statically pulls in the entire navigation/orchestration/journey/search
+                    // cluster (the 212KB `mode-transitions.svelte-*.js` balloon). Route that
+                    // transitive closure into its own chunk so the dispatcher stays lean and
+                    // the heavy deps live in a clearly separated, cacheable artifact.
+                    if (
+                        id.includes('/src/lib/stores/navigation/') ||
+                        id.includes('/src/lib/stores/search.svelte') ||
+                        id.includes('/src/lib/stores/focus.svelte') ||
+                        id.includes('/src/lib/stores/journey.svelte') ||
+                        id.includes('/src/lib/orchestration/') ||
+                        id.includes('/src/lib/journey/') ||
+                        id.includes('/src/lib/search/') ||
+                        id.includes('/src/lib/navigation-actions')
+                    ) {
+                        return 'mode-transition-deps'
+                    }
+                    // (c) Svelte runtime → isolated vendor chunk so it is not inlined into
+                    // the entry chunk. This keeps the entry `index-*.js` file smaller while
+                    // every Svelte component still shares one runtime chunk.
+                    if (id.includes('node_modules/svelte/')) {
+                        return 'svelte-vendor'
                     }
                 }
             }
