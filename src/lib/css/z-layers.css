@@ -13,112 +13,117 @@
  */
 
 :root {
-  /* ── Z-Index Layer System ──────────────────────────────────────────────── */
-  /* Mirror of src/lib/z-index.ts — keep in sync if adding layers.          */
-  /* Reconciled with css/base.css z-index tokens (Layering Manifest).       */
+    /* ── Z-Index Layer System ──────────────────────────────────────────────── */
+    /* Mirror of src/lib/z-index.ts — keep in sync if adding layers.          */
+    /* Reconciled with css/base.css z-index tokens (Layering Manifest).       */
 
-  /* Base scene and underlay */
-  --z-canvas: 0;
-  --z-underlay: -1;
+    /* Base scene and underlay */
+    --z-canvas: 0;
+    --z-underlay: -1;
 
-  /* Base content layers */
-  --z-base: 1;
-  --z-base-raised: 2;
-  --z-content: 5;
+    /* Base content layers */
+    --z-base: 1;
+    --z-base-raised: 2;
+    --z-content: 5;
 
-  /* Chrome (UI furniture) and field nodes */
-  --z-chrome: 10;
-  --z-chrome-raised: 11;
-  --z-chrome-overlay: 12;
-  --z-chrome-elevated: 14;
-  --z-chrome-popover: 20;
+    /* Chrome (UI furniture) and field nodes */
+    --z-chrome: 10;
+    --z-chrome-raised: 11;
+    --z-chrome-overlay: 12;
+    --z-chrome-elevated: 14;
+    --z-chrome-popover: 20;
 
-  /* Field nodes */
-  --z-field-nodes: 10;
+    /* Field nodes */
+    --z-field-nodes: 10;
 
-  /* Thread/mycelium lines */
-  --z-threads: 20;
+    /* Thread/mycelium lines */
+    --z-threads: 20;
 
-  /* Semantic manifold and lens overlays */
-  --z-overlays: 30;
+    /* Semantic manifold and lens overlays */
+    --z-overlays: 30;
 
-  /* Legend panel */
-  --z-legend: 50;
+    /* Legend panel */
+    --z-legend: 50;
 
-  /* Search trail cue — above canvas/threads, below interactive chrome */
-  --z-trail-cue: 50;
+    /* Search trail cue — above canvas/threads, below interactive chrome */
+    --z-trail-cue: 50;
 
-  /* Info panel and side panels */
-  --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
+    /* Info panel and side panels */
+    --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
 
-  /* Mobile focus bottom-sheet — below panels(80) so a11y toggle wins */
-  --z-focus-stage-card: 70;
+    /* Mobile focus bottom-sheet — below panels(80) so a11y toggle wins */
+    --z-focus-stage-card: 70;
 
-  /* Elevated panels (popovers, dropdowns) */
-  --z-panels-elevated: 90;
+    /* Elevated panels (popovers, dropdowns) */
+    --z-panels-elevated: 90;
 
-  /* Search input and results */
-  --z-search: 100;
+    /* Search input and results */
+    --z-search: 100;
+    /* Search bar container (info-panel-contained variant) — mirrors --z-search */
+    --z-search-bar: 100;
 
-  /* Focus neighbor rail — above search, below journey chrome */
-  --z-neighbor-rail: 110;
+    /* Focus neighbor rail — above search, below journey chrome */
+    --z-neighbor-rail: 110;
 
-  /* Generic overlay layers */
-  --z-overlay: 100;
-  /* Map overlay layer (alias of --z-overlay; resolves MapView.svelte:264) */
-  --z-overlay-100: 100;
-  --z-overlay-raised: 101;
-  --z-overlay-floating: 102;
-  --z-overlay-elevated: 150;
+    /* Generic overlay layers */
+    --z-overlay: 100;
+    /* Map overlay layer (alias of --z-overlay; resolves MapView.svelte:264) */
+    --z-overlay-100: 100;
+    --z-overlay-raised: 101;
+    --z-overlay-floating: 102;
+    --z-overlay-elevated: 150;
 
-  /* Tooltips */
-  --z-tooltips: 200;
+    /* Tooltips */
+    --z-tooltips: 200;
 
-  /* Journey chrome (compass, breadcrumb, step indicators) */
-  --z-journey-chrome: 200;
+    /* Journey chrome (compass, breadcrumb, step indicators) */
+    --z-journey-chrome: 200;
 
-  /* Modals */
-  --z-modal: 400;
+    /* Modals */
+    --z-modal: 400;
 
-  /* Active journey trail visualization */
-  --z-journey-active: 500;
+    /* Active journey trail visualization */
+    --z-journey-active: 500;
 
-  /* Focus pocket card */
-  --z-focus-card: 600;
+    /* Focus pocket card */
+    --z-focus-card: 600;
 
-  /* Compass rail */
-  --z-compass: 700;
+    /* Compass rail */
+    --z-compass: 700;
 
-  /* Camera/interaction controls */
-  --z-controls: 800;
+    /* Camera/interaction controls */
+    --z-controls: 800;
 
-  /* Journey blocking overlay */
-  --z-journey-block: 900;
+    /* Journey blocking overlay */
+    --z-journey-block: 900;
 
-  /* Generic blocker backdrop (modal backdrop) — mirrors css/base.css:127 */
-  /* NOTE: Not yet in src/lib/z-index.ts — add blockerBackdrop: 900 there when syncing */
-  --z-blocker-backdrop: 900;
+    /* Generic blocker backdrop (modal backdrop) — mirrors css/base.css:127 */
+    /* NOTE: Not yet in src/lib/z-index.ts — add blockerBackdrop: 900 there when syncing */
+    --z-blocker-backdrop: 900;
 
-  /* Generic blocker (modal backdrop) */
-  --z-blocker: 1000;
+    /* Generic blocker (modal backdrop) */
+    --z-blocker: 1000;
 
-  /* Inside-walk HUD bars (status/controls) — above blocker, below toasts */
-  --z-inside-walk: 1100;
+    /* Inside-walk HUD bars (status/controls) — above blocker, below toasts */
+    --z-inside-walk: 1100;
 
-  /* Toast notifications */
-  --z-toast: 1200;
-  --z-toast-plus: 1201;
-  --z-toast-above: 1300;
+    /* Toast notifications */
+    --z-toast: 1200;
+    --z-toast-plus: 1201;
+    --z-toast-above: 1300;
 
-  /* Journey modal */
-  --z-journey-modal: 2000;
+    /* Journey modal */
+    --z-journey-modal: 2000;
 
-  /* Loading overlay (highest priority — matches --z-max ceiling) */
-  --z-loading: 9999;
+    /* Loading overlay (highest priority — matches --z-max ceiling) */
+    --z-loading: 9999;
 
-  /* Click-pulse interaction ring — just below the max tooltip layer */
-  --z-canvas-interaction: 9998;
+    /* Click-pulse interaction ring — just below the max tooltip layer */
+    --z-canvas-interaction: 9998;
 
-  /* Maximum */
-  --z-max: 9999;
+    /* Dev telemetry / inspector HUD — above toasts, below loading */
+    --z-devtools: 9000;
+
+    /* Maximum */
+    --z-max: 9999;
 }

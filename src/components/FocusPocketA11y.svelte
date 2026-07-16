@@ -174,7 +174,9 @@
   }
 
   .focus-pocket-a11y .focus-pocket-item-btn:focus-visible {
-    box-shadow: 0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.4);
+    outline: 2px solid var(--color-primary-alt);
+    outline-offset: 2px;
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-alt-rgb), 0.6);
   }
 
   .role-dot {

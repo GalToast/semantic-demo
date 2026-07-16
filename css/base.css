@@ -137,6 +137,7 @@
     --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
     --z-panels-elevated: 90;
     --z-search: 100;
+    --z-search-bar: 100; /* search bar container (info-panel-contained variant) — mirrors --z-search */
     --z-neighbor-rail: 110; /* focus neighbor rail — above search, below journey chrome */
     --z-overlay: 100;
     --z-overlay-100: 100; /* map overlay layer — alias of --z-overlay; resolves MapView.svelte:264 */
@@ -153,12 +154,14 @@
     --z-journey-block: 900;
     --z-blocker-backdrop: 900;
     --z-blocker: 1000;
+    --z-inside-walk: 1100; /* inside-walk HUD bars — above blocker, below toasts */
     --z-toast: 1200;
     --z-toast-plus: 1201;
     --z-toast-above: 1300;
     --z-journey-modal: 2000;
     --z-loading: 9999;
     --z-canvas-interaction: 9998; /* click-pulse ring — just below the max tooltip layer */
+    --z-devtools: 9000; /* dev telemetry / inspector HUD — above toasts, below loading */
     --z-max: 9999;
 
     /* Shared panel elevation and glass treatment */
