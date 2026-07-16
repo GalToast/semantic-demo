@@ -2468,6 +2468,16 @@ async function assert_loading_overlay(page, ctx) {
 async function assert_mode_grid(page, ctx) {
     await loadAndWait(page, positionalUrl)
 
+    // Stabilize: wait for the Header ModeChipRail to mount/settle before the
+    // assertion samples the grid. Without this the first run can evaluate the
+    // DOM before Svelte's chip rail has rendered, yielding <4 .mode-chip nodes
+    // (flaky), while a re-run passes 10/10 once the rail is already mounted.
+    // We wait for >= 4 chips with a timeout and let the gate proceed either way
+    // so the existing threshold assertions remain authoritative (unchanged).
+    await page
+        .waitForFunction(() => document.querySelectorAll('.mode-chip').length >= 4, undefined, { timeout: 8000 })
+        .catch(() => {})
+
     const info = await page.evaluate(() => {
         function textClipped(el) {
             if (!el) return false
@@ -5167,6 +5177,7 @@ async function waitForFocusStageLayoutStable(page) {
                     }
                     const last = new Array(tracked.length).fill(null)
                     const stableCount = new Array(tracked.length).fill(0)
+                    let frames = 0
                     const start = Date.now()
                     const TIME_CAP_MS = 5000 // real-time cap; robust to fast headless rAF
 
