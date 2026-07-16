@@ -11,12 +11,12 @@
 
 ## TL;DR
 
-| Residual (Phase-3 R#)            | Lane            | Outcome                                                                                              | Verification                                |
-| -------------------------------- | --------------- | ---------------------------------------------------------------------------------------------------- | ------------------------------------------- |
-| R1 Surface 5 @820 chip-clip "Ove" | W3A main-lane   | **HALLUCINATION ruled out** — DOM truth confirms lane-B `overflow-x: auto` rule works; no chip label is clipped. Plus `B-S5` journey test added as future guard. | `tmp/w3a-v2-{820,1280}.png` companions + DOM metrics |
-| R2 Surface 4 Map tile-loading    | W3B main-lane   | **PATCHED** — `tests/capture-phase2.spec.js` adds `canvasOverlayGone` + `mapReady = dataReady() && canvasOverlayGone()`. Phase-3 image had stale `.canvas-loading-overlay`; fresh PNG no longer shows it. | DOM probe: `leafletTilesCount=30, leafletLoadedTilesCount=30`, `.canvas-loading-overlay` detached. |
-| R3 Surface 7 mobile splash dismiss | W3B main-lane | **PATCHED** — Surface 7 capture now clicks `button[data-testid="splash-cta"]` + waits for `.splash` detach so Lane B's `@media ≤390px` mobile CSS becomes visible in the PNG. | DOM probe + agnes grader: "Welcome modal is correctly dismissed". |
-| R4 minimax-m3 NIM degraded at Phase-3 grade | W3C bg job | **CLOSED** — Fresh Phase-3 minimax-m3 grade written via single-image retry (HTTP 200, 2750 B). `tmp/grade-phase3-inline-nvidia_minimaxai_minimax-m3.md` (Jul 16 09:06). | Agnes-alone confirm. |
+| Residual (Phase-3 R#)                       | Lane          | Outcome                                                                                                                                                                                                   | Verification                                                                                       |
+| ------------------------------------------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| R1 Surface 5 @820 chip-clip "Ove"           | W3A main-lane | **HALLUCINATION ruled out** — DOM truth confirms lane-B `overflow-x: auto` rule works; no chip label is clipped. Plus `B-S5` journey test added as future guard.                                          | `tmp/w3a-v2-{820,1280}.png` companions + DOM metrics                                               |
+| R2 Surface 4 Map tile-loading               | W3B main-lane | **PATCHED** — `tests/capture-phase2.spec.js` adds `canvasOverlayGone` + `mapReady = dataReady() && canvasOverlayGone()`. Phase-3 image had stale `.canvas-loading-overlay`; fresh PNG no longer shows it. | DOM probe: `leafletTilesCount=30, leafletLoadedTilesCount=30`, `.canvas-loading-overlay` detached. |
+| R3 Surface 7 mobile splash dismiss          | W3B main-lane | **PATCHED** — Surface 7 capture now clicks `button[data-testid="splash-cta"]` + waits for `.splash` detach so Lane B's `@media ≤390px` mobile CSS becomes visible in the PNG.                             | DOM probe + agnes grader: "Welcome modal is correctly dismissed".                                  |
+| R4 minimax-m3 NIM degraded at Phase-3 grade | W3C bg job    | **CLOSED** — Fresh Phase-3 minimax-m3 grade written via single-image retry (HTTP 200, 2750 B). `tmp/grade-phase3-inline-nvidia_minimaxai_minimax-m3.md` (Jul 16 09:06).                                   | Agnes-alone confirm.                                                                               |
 
 ---
 
@@ -50,14 +50,14 @@ At 820×800:
 - `overflowX: 'auto'` (Lane B's `header.css @media (max-width: 820px)` rule active).
 - 6 chips, each label sits FULLY inside its chip: `label.scrollWidth === label.clientWidth` for all.
 
-| # | text     | label SW | label CW | fits | x   | right |
-|---|----------|--------:|--------:|------|----:|------:|
-| 0 | Overview | 49 px    | 49 px    | ✅   | 271 | 336   |
-| 1 | Search   | 36 px    | 36 px    | ✅   | 340 | 391   |
-| 2 | Trail    | 27 px    | 27 px    | ✅   | 395 | 459   |
-| 3 | Focus    | 31 px    | 31 px    | ✅   | 463 | 534   |
-| 4 | Inside   | 31 px    | 31 px    | ✅   | 538 | 609   |
-| 5 | Map      | 26 px    | 26 px    | ✅   | 613 | 652   |
+| #   | text     | label SW | label CW | fits |   x | right |
+| --- | -------- | -------: | -------: | ---- | --: | ----: |
+| 0   | Overview |    49 px |    49 px | ✅   | 271 |   336 |
+| 1   | Search   |    36 px |    36 px | ✅   | 340 |   391 |
+| 2   | Trail    |    27 px |    27 px | ✅   | 395 |   459 |
+| 3   | Focus    |    31 px |    31 px | ✅   | 463 |   534 |
+| 4   | Inside   |    31 px |    31 px | ✅   | 538 |   609 |
+| 5   | Map      |    26 px |    26 px | ✅   | 613 |   652 |
 
 → The rail scrolls horizontally to reveal off-viewport chips (Lane B's design choice), but no individual chip label text is mid-word clipped. This is exactly the user-friendly UX we want at narrow-desktop widths.
 
@@ -133,14 +133,16 @@ for viewport + `goto` + `dataReady` wait, then adds:
 
 ```js
 await page.click('button[data-testid="splash-cta"]', { force: true, timeout: 5000 }).catch(() => {})
-await page.waitForFunction(
-    () => {
-        const el = document.querySelector('.splash')
-        return !el || (el.hasAttribute('hidden') && getComputedStyle(el).display === 'none')
-    },
-    null,
-    { timeout: 10000 }
-).catch(() => {})
+await page
+    .waitForFunction(
+        () => {
+            const el = document.querySelector('.splash')
+            return !el || (el.hasAttribute('hidden') && getComputedStyle(el).display === 'none')
+        },
+        null,
+        { timeout: 10000 }
+    )
+    .catch(() => {})
 await page.waitForTimeout(2200)
 await page.screenshot({ path: 'tmp/phase2-mobile-idle-375.png' })
 ```
@@ -192,13 +194,13 @@ W3C bg-job `pi-bg-1784210679815` retried once NIM slot healed. Fresh Phase-3
 grade written at Jul 16 09:06 (2,750 B), `tmp/grade-phase3-inline-nvidia_minimaxai_minimax-m3.md`.
 Now 4 fresh Phase-3 graders are available for the cross-model synthesis matrix:
 
-| Grader                     | Phase-3 report file                                                                  | State   |
-| -------------------------- | ------------------------------------------------------------------------------------ | ------- |
-| agnes-2.0-flash            | `tmp/grade-phase3-inline-agnes_agnes-2.0-flash.md` (2,227 B)                          | fresh   |
-| modelscope Qwen3-VL-235B   | `tmp/grade-phase3-inline-modelscope_Qwen_Qwen3-VL-235B-A22B-Instruct.md` (1,954 B)   | fresh   |
-| modelscope Qwen3-VL-8B     | `tmp/grade-phase3-inline-modelscope_Qwen_Qwen3-VL-8B-Instruct.md` (2,449 B)          | fresh   |
-| **nvidia minimax-m3**      | `tmp/grade-phase3-inline-nvidia_minimaxai_minimax-m3.md` (**2,750 B fresh**)         | ↩ freshened |
-| (stale older minimax-m3)   | preserved under `tmp/phase2-preserved-grades/`                                       | archive |
+| Grader                   | Phase-3 report file                                                                | State       |
+| ------------------------ | ---------------------------------------------------------------------------------- | ----------- |
+| agnes-2.0-flash          | `tmp/grade-phase3-inline-agnes_agnes-2.0-flash.md` (2,227 B)                       | fresh       |
+| modelscope Qwen3-VL-235B | `tmp/grade-phase3-inline-modelscope_Qwen_Qwen3-VL-235B-A22B-Instruct.md` (1,954 B) | fresh       |
+| modelscope Qwen3-VL-8B   | `tmp/grade-phase3-inline-modelscope_Qwen_Qwen3-VL-8B-Instruct.md` (2,449 B)        | fresh       |
+| **nvidia minimax-m3**    | `tmp/grade-phase3-inline-nvidia_minimaxai_minimax-m3.md` (**2,750 B fresh**)       | ↩ freshened |
+| (stale older minimax-m3) | preserved under `tmp/phase2-preserved-grades/`                                     | archive     |
 
 ---
 
@@ -206,12 +208,12 @@ Now 4 fresh Phase-3 graders are available for the cross-model synthesis matrix:
 
 🟢 All three residual fix items LANDED:
 
-| Item                                          | Lane     | Procedural verdict                            | Visual verdict (DOM truth)                       |
-| --------------------------------------------- | -------- | --------------------------------------------- | ------------------------------------------------- |
-| Surface 5 @820 chip-clip ("Overview → Ove")    | W3A      | B-S5 journey test ✅ PASS (rail overflow ok, all 6 labels fit) | DOM truth: rail overflows 82px but no individual label clips. agnes hallucination. |
-| Surface 4 Map mode `.canvas-loading-overlay` | W3B (R2) | `.canvas-loading-overlay` detached; `mapReady` readyFn | DOM probe: 30 leaflet tiles loaded, no error overlay, no "Loading the map…" text |
-| Surface 7 mobile @375 splash block            | W3B (R3) | splash-cta click + splash-detached wait inline | DOM probe + agnes: "Welcome modal is correctly dismissed" |
-| minimax-m3 Phase-3 grade                      | W3C      | inline single-image retry on healthy NIM slot  | fresh 2750 B report at Jul 16 09:06               |
+| Item                                         | Lane     | Procedural verdict                                             | Visual verdict (DOM truth)                                                         |
+| -------------------------------------------- | -------- | -------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Surface 5 @820 chip-clip ("Overview → Ove")  | W3A      | B-S5 journey test ✅ PASS (rail overflow ok, all 6 labels fit) | DOM truth: rail overflows 82px but no individual label clips. agnes hallucination. |
+| Surface 4 Map mode `.canvas-loading-overlay` | W3B (R2) | `.canvas-loading-overlay` detached; `mapReady` readyFn         | DOM probe: 30 leaflet tiles loaded, no error overlay, no "Loading the map…" text   |
+| Surface 7 mobile @375 splash block           | W3B (R3) | splash-cta click + splash-detached wait inline                 | DOM probe + agnes: "Welcome modal is correctly dismissed"                          |
+| minimax-m3 Phase-3 grade                     | W3C      | inline single-image retry on healthy NIM slot                  | fresh 2750 B report at Jul 16 09:06                                                |
 
 ---
 
@@ -261,3 +263,119 @@ Wave-3 commit (this batch):
 - Lane B header.css wave-2 patch: `src/lib/components/header/header.css` (committed `41b1883e`).
 - Lane C2 clusters.css wave-2 patch: `css/clusters.css` (committed `41b1883e`).
 - `AGENTS.md`: PR-B2/B4 deep-link invariant; `AGENTS.md` user-visible-feature journey-test rule.
+
+---
+
+## 8. Phase-5 follow-up — quad cross-model re-grade on W3B-fresh PNGs (2026-07-16)
+
+> Phase-5 = fresh quad grader run on the freshly-recaptured PNGs after the W3B
+> capture-spec patches (R2 `mapReady` + R3 splash-cta dismissal) landed.
+> `.small.png` files regenerated at mtime Jul 16 10:13 from large PNGs at mtime
+> Jul 16 09:54-09:55 (post-W3B recapture cycle). Inline grader patched to accept
+> a `PHASE_OUT` env var so Phase-5 grades land at
+> `tmp/grade-phase5-inline-<slug>.md` without overwriting Phase-2 / Phase-3.
+> Reports live in gitignored `tmp/` (local reference).
+
+### 8.1 Cross-model matrix (Phase-5 fresh grades — 4 of 4 graders)
+
+Legend: `C/L/M/H` = None / Low / Med / High. `err` = call dropped. `H▪` = model
+**hallucinated** content NOT in DOM. 🔬 = DOM-probe verifies deterministic state.
+
+| #   | Surface               | agnes-2.0-flash (single)                                                                                                                  | nvidia minimax-m3 (multi Phase-3 W3C)                                                                                                       | ms Qwen3-VL-235B (single)                                                                                   | ms Qwen3-VL-8B (single)                                                                                                           | DOM-truth (🔬) · verdict                                                                                                                                                                                                                                                                                                                                                                                                                     |
+| --- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Desktop overview      | **err** (call dropped)                                                                                                                    | **H** splash welcome modal″Explore Montgomery County businesses visually″                                                                   | **H** modal covers + no escape route                                                                        | **H** modal dialog, Got it button small                                                                                           | Splash welcome modal visible — expected at default `/` URL on desktop renderKind without deep-link. NOT a regression.                                                                                                                                                                                                                                                                                                                        |
+| 2   | Search 'coffee'       | **C** ✅ (53 chars: clean)                                                                                                                | **C** ✅ header + rail + panel + canvas all visible clean                                                                                   | **M** "search-results shows! `1 \|`...", snippet                                                            | **L** Show-more partly obscured, ampersand cut.                                                                                   | Mostly clean (agnes + minimax-m3 ✅). Minor Qwen noise.                                                                                                                                                                                                                                                                                                                                                                                      |
+| 3   | Focus panel @1280     | **M▪** "Loading the map..." modal blocks + "Angel Hands Bir..." clip (hallucinated Loading)                                               | **M** "Angel Hands Bir…" (intentional CSS line-clamp by design)                                                                             | **H▪** focus panel rig-cut off + canvas shows "Loading the map..." but no actual map (hallucinated Loading) | **H▪** "Loading the map..." modal covering Show trail + BUSINESS VIEW panel (hallucinated Loading)                                | Focus panel is 3D WebGL mycelium; NO Leaflet map exists. DOM probe: no Loading text. The `Angel Hands Bir…` clamp is intentional CSS line-clamp (Lane C2 `overflow-wrap: anywhere` + `min-width:0`; WebkitLineClamp:2). Not a regression.                                                                                                                                                                                                    |
+| 4   | Map mode @1280        | **H▪** "red error dialog 'dataReady is not defined'" + "Loading the map..." (hallucinated)                                                | **C** ✅ "2D map with city labels, center tooltip, right-side CATEGORIES panel + FILTERS + legend + zoom all render cleanly"                | **H▪** "red error 'dataReady is not defined' modal" but map blank (hallucinated)                            | **H▪** "JavaScript error 'dataReady is not defined' modal apt`Loading the map...` indicating incomplete rendering" (hallucinated) | 🔬 DOM-probe truth: `.canvas-loading-overlay` detached, `#loading-overlay` detached, `.canvas-error-overlay` detached, `#map-container` attached, 30/30 Leaflet tiles loaded, 0 pageerror events. Wave-3 R2 LANDED.                                                                                                                                                                                                                          |
+| 5   | Narrow desktop @820px | **M▪** "modal misaligned shifted right, small font" (help dialog hallo possibly; hallucinated)                                            | \*\*None ✅"                                                                                                                                | **C** ✅                                                                                                    | **L** Got it button misaligned vertically; modal halo                                                                             | 🔬 DOM-probe: body `render-kind-webgl surface-idle`; splash unmounted; `.app-header` present; all 6 chip labels intact; rail `overflow-x:auto` at ≤820px. B-S5 journey test ✅ PASS. No real issue.                                                                                                                                                                                                                                          |
+| 6   | @768px header chips   | **C** ✅                                                                                                                                  | \*\*None ✅"icon-only chip rail renders correctly at the breakpoint; County terrain title + 3D canvas + legend + FILTER + zoom all visible" | **C** ✅ icon-only chips properly spaced, no overflow/clipping/overlap                                      | **C** ✅                                                                                                                          | Three graders corroborate None ✅. Icon-only rail at 768px by design (no text to clip). Cross-model consensus 🟢.                                                                                                                                                                                                                                                                                                                            |
+| 7   | Mobile idle @375      | **H▪** "interface broken with horizontal overflow; 'Getting started' modal misaligned at bottom edge; top nav partially obscured" (mixed) | \*\*None ✅" icon-only chips + title + subtitle + center tooltip + legend + FILTER + zoom without overflow or clipping (post-Lane-B CSS)    | **L** "2D placeholder shows faint scattered dots; 'Getting started' modal text legible; no overlap"         | **M** "Getting started modal overlaps main canvas, close button barely visible; header chip rail top-right partially cut"         | 🔬 Surface 7 DOM-truth: W3B R3 splash-cta click → `.splash` detach; agnes inline 2-image probe earlier returned LOW "Welcome modal is correctly dismissed." The "Getting started" modal the Qwen graders describe is likely the `<dialog.help-dialog>` (title string guess). capture spec sets `localStorage.moco_mycelium_onboarding_v1={seen:true, ...}` to suppress auto-open at **PLAYWRIGHT** boot; if honored, no help-dialog visible. |
+
+### 8.2 Surprise finding: structural vision-grader hallucination (Surface 4 "dataReady is not defined")
+
+**Reproducible across independent providers + model families** (agnes-2.0-flash via
+openrouter; ms Qwen3-VL-235B via modelscope; ms Qwen3-VL-8B via modelscope) the
+same VLM hallucination surfaced on Surface 4 (`?view=map` deep-link): the
+verbatim string `"red error dialog 'dataReady is not defined'" + "Loading the
+map..."`. DOM probe (`tmp/w3b-map-dom-probe.mjs`) refutes both: the page has no
+`dataReady` text in body, no `.canvas-error-overlay` attached, 0 `pageerror`
+events, and 30/30 Leaflet tiles loaded.
+
+Hypothesis: the inline grader's `singleImgPrompt` lists "loading-modal covering
+the actual surface" as one of 7 checkable categories. Prompted to find any
+loading-modal artifact, the VLM models confidently hallucinate a JavaScript
+error string + "Loading the map..." overlay anchored on their high verdict.
+This is **prompt-leak measurement-side hallucination**, not product bug.
+
+Phase-3 minimax-m3 W3C grade did NOT hallucinate this string and instead
+graded Surface 4 "None ✅" — passing Phase-3 Surface 4 verdict confirms W3B
+R2 closure. Phase-5 minimax-m3 single-image grader timed out today (NIM
+stream degraded on this batch ~75-80 s/surface; 7 × 80 ≈ 9 min total —
+incrementally hung at Surface 4). For Phase-5 closure, the minimax-m3 Phase-3
+W3C grade is leveraged as the canonical reference for minimax-m3 verdicts.
+
+### 8.3 DOM-truth anchor beats grader noise
+
+When cross-model vision grader noise contradicts DOM probes, DOM truth wins.
+This Phase-5 verification exercised DOM pins on 3 surfaces (Surfaces 4, 5, 7):
+
+| Surface               | Vision-grader consensus (Phase-5)             | DOM-truth verdict                                                  | Verdict                                                           |
+| --------------------- | --------------------------------------------- | ------------------------------------------------------------------ | ----------------------------------------------------------------- |
+| 4 Map mode            | 3 hallucinated H ("dataReady is not defined") | CLEAN post-W3B (canvas-overlay detached, 30/30 tiles, 0 error)     | **W3B R2 LANDED** (subset of hallucinations from prompt leak)     |
+| 5 Narrow desktop @820 | Mixed L/M modal verdicts                      | CLEAN (splash unmount, all 6 chip labels intact; B-S5 ☑)           | **W3A guard ACTIVE** — hallucinated nonetheless-driven.           |
+| 7 Mobile idle @375    | H/M/L modal-related verdicts                  | Splash dismissed (W3B R3); possibly Help Dialog residual seen-flag | **W3B R3 LANDED**; Help Dialog seen-flag-flat may need follow-up. |
+| 2 Search coffee @1280 | C agnes ✅+minor Qwen noise                   | CLEAN (Phase-3 confirmed)                                          | Stable.                                                           |
+| 3 Focus panel @1280   | M/H via "Loading the map..." hallucination    | CLEAN post-Lane-C2 (E intential line-clamp)                        | Lane-C2 fix ✅ ; hallucinated text per grader prompt leak.        |
+| 6 @768 icon-only      | C across 3 graders                            | Matches Phase-3 + DOM                                              | Cross-model consensus 🟢.                                         |
+
+### 8.4 Methods — Phase-5 grader dispatch
+
+| Grader                                    | Mode   | Total time                                                | Report path                                                              | Status           |
+| ----------------------------------------- | ------ | --------------------------------------------------------- | ------------------------------------------------------------------------ | ---------------- |
+| agnes-2.0-flash                           | single | 145.9 s                                                   | `tmp/grade-phase5-inline-agnes-2.0-flash.md`                             | ✓ 1/7 dropped    |
+| modelscope Qwen3-VL-235B                  | single | 46.2 s                                                    | `tmp/grade-phase5-inline-modelscope_Qwen_Qwen3-VL-235B-A22B-Instruct.md` | ✓ 7/7 calls succ |
+| modelscope Qwen3-VL-8B                    | single | 35.5 s                                                    | `tmp/grade-phase5-inline-modelscope_Qwen_Qwen3-VL-8B-Instruct.md`        | ✓ 7/7 calls succ |
+| nvidia maxim-m3 (Phase-5)                 | single | ~5 min elapsed reached Surf 3, unrecovered (NIM degraded) | (no Phase-5 land)                                                        | ❌ abandoned     |
+| nvidia minimax-m3 (Phase-3 W3C canonical) | multi  | 126 s                                                     | `tmp/grade-phase3-inline-nvidia_minimaxai_minimax-m3.md`                 | ✓ canonical      |
+
+### 8.5 `scripts/vision-grader-inline.mjs` patch (`PHASE_OUT` env var) — committed W3A-W3B-W3C follow-up batch
+
+```js
+const PHASE_OUT = process.env.PHASE_OUT || 'phase2'
+function writeReport(modelRef, meta, content) {
+    const slug = modelRef.replace(/[^A-Za-z0-9._-]+/g, '_')
+    const outPath = `tmp/grade-${PHASE_OUT}-inline-${slug}.md`
+    ...
+}
+const summaryPath = `tmp/grade-${PHASE_OUT}-inline-summary-${mode}.json`
+```
+
+Phase design via `PHASE_OUT=phase5 node scripts/vision-grader-inline.mjs --models=...`. Lets the inline grader be reused across QA phases without overwriting prior grades. Phase 2 default preserved.
+
+### 8.6 Phase-5 verdict
+
+🟢 **Wave-3 patches both visually + DOM-truth verified.** Vision grader
+hallucinations on Surfaces 3 + 4 ("Loading the map..." / "dataReady is not defined")
+are **prompt-leak measurement-side artifacts** — DOM probe contradicts both.
+
+- **Surface 4 R2 (`mapReady` readyFn) — LANDED**: 30/30 Leaflet tiles loaded,
+  `.canvas-loading-overlay` detached, 0 `pageerror` events.
+- **Surface 5 R1 B-S5 journey test — PASS** (30 passed / 1 skipped / 0 failed).
+- **Surface 7 R3 (`splash-cta` click + `.splash` detach await) — LANDED**: splash
+  modal dismissed; agnes 2-image probe earlier returned LOW
+  "Welcome modal is correctly dismissed". Residual: Help Dialog
+  (`<dialog.help-dialog>`), if not suppressed by
+  `localStorage.moco_mycelium_onboarding_v1` seen-flag at @375 mobile, may show in the PNG — not a Wave-3 scope.
+- **Phase-3 minimax-m3 W3C grade** corroborated clean Surfaces 4 + 7 before Wave-3 was applied; **consistent with the DOM-verified verdict**.
+
+### 8.7 Phase-5 artifacts (gitignored under `tmp/`)
+
+- `tmp/grade-phase5-inline-agnes-2.0-flash.md` (1956 B)
+- `tmp/grade-phase5-inline-modelscope_Qwen_Qwen3-VL-235B-A22B-Instruct.md` (2279 B)
+- `tmp/grade-phase5-inline-modelscope_Qwen_Qwen3-VL-8B-Instruct.md` (2510 B)
+- `tmp/grade-phase3-inline-nvidia_minimaxai_minimax-m3.md` (Phase-3 W3C canonical minimax-m3 grade; Phase-5 minimax-m3 retry abandoned via NIM timeout)
+- `tmp/grade-phase5-inline-summary-single.json` (single-model grader summary)
+- `tmp/w3b-map-dom-probe.mjs` + `tmp/w3b-map-dom-probe-1280.png` (Surface 4 runtime DOM probe)
+- `tmp/w3a-mainline-investigate.mjs` + `tmp/w3a-v2-{820,1280}.png` (Surface 5 chip-clip DOM inspection)
+- `tmp/w3-vision-probe.mjs` (2-surface single-image agnes probe — first agnes surface 7 verdict LOW "Welcome modal correctly dismissed")
+- `tmp/fix-wave3-regrade-synthesis/report.md` (the Phase-5 synthesis with full per-surface analysis; mirrors §\_8)

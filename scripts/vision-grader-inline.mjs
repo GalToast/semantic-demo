@@ -170,9 +170,14 @@ function resolveRoute(modelRef) {
     return { url: `${ROUTER}${prefix}/chat/completions`, bareModel }
 }
 
+// PHASE_OUT env var selects the output prefix (default 'phase2'); e.g.
+// PHASE_OUT=phase5 node scripts/vision-grader-inline.mjs --models=... → writes
+// tmp/grade-phase5-inline-<slug>.md + tmp/grade-phase5-inline-summary-<mode>.json.
+// Lets the script be re-reused across QA phases without overwriting prior grades.
+const PHASE_OUT = process.env.PHASE_OUT || 'phase2'
 function writeReport(modelRef, meta, content) {
     const slug = modelRef.replace(/[^A-Za-z0-9._-]+/g, '_')
-    const outPath = `tmp/grade-phase2-inline-${slug}.md`
+    const outPath = `tmp/grade-${PHASE_OUT}-inline-${slug}.md`
     fs.writeFileSync(outPath, content)
     process.stderr.write(`    ✓ wrote ${outPath} (${content.length} bytes)\n`)
     return { ok: true, status: 200, contentLen: content.length, outPath, ...meta }
@@ -288,7 +293,7 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
         results.push({ model: m, ...r })
         await sleep(500)
     }
-    const summaryPath = `tmp/grade-phase2-inline-summary-${mode}.json`
+    const summaryPath = `tmp/grade-${PHASE_OUT}-inline-summary-${mode}.json`
     fs.writeFileSync(
         summaryPath,
         JSON.stringify({ generatedAt: new Date().toISOString(), mode, models: results }, null, 2)
