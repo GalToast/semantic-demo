@@ -13,6 +13,7 @@
  *   rule_6  rgba(..., alpha<0.6) referenced as a color value (decorations count)
  *   rule_7  outline: none / 0 without focus-visible fallback
  *   rule_8  aria-hidden="true" element contains focusable children
+ *   rule_9  prefers-reduced-motion: animation/transition without motion guard
  *
  * Usage:
  *   node scripts/audit-a11y.mjs                  # tabular report, exit 0
@@ -460,12 +461,116 @@ function auditFile(filePath) {
         }
     }
 
+    // rule_9: prefers-reduced-motion guard for animations/transitions.
+    // Checks CSS blocks within <style> for motion tokens (keyframes, animation,
+    // transition on motion properties). Flags MED if tokens present and no
+    // @media (prefers-reduced-motion: reduce) guard exists.
+    {
+        const styleMatch = content.match(/<style[^>]*>([\s\S]*?)<\/style>/i)
+        const cssContent = styleMatch ? styleMatch[1] : ''
+        if (cssContent && !isCssWhitelisted(baseName)) {
+            const inScopeLine = findFirstMotionToken(cssContent)
+            if (inScopeLine !== null && !hasReducedMotionGuard(cssContent)) {
+                pushOnce({
+                    file: baseName,
+                    line: inScopeLine,
+                    severity: 'MEDIUM',
+                    rule: 9,
+                    desc: 'CSS has animation/transition on motion properties without @media (prefers-reduced-motion: reduce) guard'
+                })
+            }
+        }
+    }
+
     return findings
+}
+
+// ── rule_9: prefers-reduced-motion guard (file-level) ─────────────────
+// Checks CSS content for in-scope motion tokens (keyframes, animation,
+// transition on motion properties). Flags MED if tokens present and no
+// @media (prefers-reduced-motion: reduce) guard exists.
+
+const CSS_WHITELIST = ['animations.css', 'base.css']
+function isCssWhitelisted(baseName) {
+    return CSS_WHITELIST.includes(baseName)
+}
+
+function hasReducedMotionGuard(css) {
+    return /@media\s*\(\s*prefers-reduced-motion\s*:\s*(reduce|no-preference)\s*\)/.test(css)
+}
+
+const EXEMPT_PROPS = new Set([
+    'opacity', 'color', 'background', 'background-color',
+    'background-opacity', 'border-color', 'box-shadow',
+    'text-shadow', 'filter', 'outline-color', 'caret-color'
+])
+
+function hasMotionTransition(value) {
+    const parts = value.split(',').map(p => p.trim()).filter(Boolean)
+    for (const part of parts) {
+        const match = part.match(/^([\w-]+)/)
+        if (!match) continue
+        const prop = match[1].toLowerCase()
+        if (prop === 'none' || prop === 'initial' || prop === 'unset') continue
+        if (EXEMPT_PROPS.has(prop)) continue
+        return true
+    }
+    return false
+}
+
+function findFirstMotionToken(css) {
+    const lines = css.split('\n')
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i]
+        if (/\b@keyframes\b/.test(line)) return i + 1
+        if (/\banimation(?:-name)?\s*:/.test(line) && !/\b(?:none|initial)\s*;/.test(line)) {
+            return i + 1
+        }
+        const transMatch = line.match(/^\s*transition(?:-(\w[\w-]*))?\s*:/)
+        if (transMatch) {
+            const prop = transMatch[1]
+            if (!prop || prop === 'property') {
+                let value = line.replace(/^\s*transition(?:-\w[\w-]*)?\s*:\s*/, '')
+                for (let j = i + 1; j < lines.length && value.split('(').length > value.split(')').length; j++) {
+                    value += ' ' + lines[j].trim()
+                }
+                const varMatch = value.match(/var\(--[\w-]+(?:,\s*([^)]+))?\)/)
+                const effective = varMatch ? (varMatch[1] || '') : value
+                if (hasMotionTransition(effective)) return i + 1
+                if (varMatch && !varMatch[1] && /--transition-/i.test(value)) return i + 1
+            }
+        }
+    }
+    return null
 }
 
 let allFindings = []
 for (const file of svelteFiles) {
     allFindings.push(...auditFile(file))
+}
+
+// ── rule_9: scan standalone CSS files for motion guard gaps ──────────────
+
+const CSS_DIR = 'css'
+const cssFiles = fs
+    .readdirSync(CSS_DIR)
+    .filter((f) => f.endsWith('.css'))
+    .map((f) => path.join(CSS_DIR, f))
+
+for (const filePath of cssFiles) {
+    const baseName = path.basename(filePath)
+    if (isCssWhitelisted(baseName)) continue
+    const content = fs.readFileSync(filePath, 'utf8')
+    const inScopeLine = findFirstMotionToken(content)
+    if (inScopeLine !== null && !hasReducedMotionGuard(content)) {
+        allFindings.push({
+            file: baseName,
+            line: inScopeLine,
+            severity: 'MEDIUM',
+            rule: 9,
+            desc: 'CSS has animation/transition on motion properties without @media (prefers-reduced-motion: reduce) guard'
+        })
+    }
 }
 
 if (severityFilter && severityFilter.size > 0) {
