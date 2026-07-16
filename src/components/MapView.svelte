@@ -371,7 +371,7 @@
   }
   .map-status-detail {
     font-size: 0.78rem;
-    color: rgba(255, 225, 209, 0.78);
+    color: rgba(255, 225, 209, 0.85);
     font-weight: 400;
   }
   .map-status-technical {
@@ -381,13 +381,13 @@
   .map-status-technical summary {
     cursor: pointer;
     user-select: none;
-    color: rgba(255, 225, 209, 0.6);
+    color: rgba(255, 225, 209, 0.85);
   }
   .map-status-technical code {
     display: block;
     font-family: var(--font-mono, monospace);
     font-size: 0.6rem;
-    color: rgba(255, 225, 209, 0.5); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
+    color: rgba(255, 225, 209, 0.85); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
     word-break: break-word;
     margin-top: 0.2rem;
   }
@@ -441,7 +441,7 @@
     padding: 7px 10px;
     border-radius: 8px;
     background: rgba(4, 10, 13, 0.55);
-    color: rgba(218, 239, 234, 0.72);
+    color: rgba(218, 239, 234, 0.85);
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.66rem;
   }

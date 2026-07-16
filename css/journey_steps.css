@@ -67,7 +67,7 @@
     background:
         radial-gradient(circle at 8% 45%, rgba(var(--color-primary-tint-rgb), 0.18), transparent 32%),
         linear-gradient(135deg, rgba(255, 217, 122, 0.08), rgba(var(--color-primary-tint-rgb), 0.05));
-    color: rgba(222, 241, 240, 0.76);
+    color: rgba(222, 241, 240, 0.85);
     font-size: 10.5px;
     line-height: 1.35;
     letter-spacing: 0.01em;
@@ -736,7 +736,7 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 .focus-thread-inspector-kicker[data-thread-inspect-surface='canvas']::after,
 .focus-thread-inspector.active.from-canvas .focus-thread-inspector-kicker::after {
     content: ' / 3D hover';
-    color: rgba(185, 255, 242, 0.74);
+    color: rgba(185, 255, 242, 0.85);
 }
 
 /* polish185: inside-pocket previews should feel guided, not like a loose hover. */
@@ -754,7 +754,7 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 
 .focus-thread-inspector-kicker[data-thread-inspect-surface='inside-cue']::after {
     content: ' / next strand';
-    color: rgba(185, 255, 242, 0.78);
+    color: rgba(185, 255, 242, 0.85);
 }
 
 @media (min-width: 769px) {
@@ -868,7 +868,7 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 
 .focus-thread-inspector-btn.secondary {
     border-color: rgba(185, 255, 242, 0.18);
-    color: rgba(203, 229, 226, 0.74);
+    color: rgba(203, 229, 226, 0.85);
     background: rgba(5, 12, 17, 0.34);
 }
 
@@ -886,7 +886,7 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 }
 
 .focus-thread-inspector-kicker {
-    color: rgba(255, 226, 132, 0.72);
+    color: rgba(255, 226, 132, 0.85);
 }
 
 .focus-thread-inspector-title {
@@ -901,7 +901,7 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 }
 
 .focus-thread-inspector-copy {
-    color: rgba(211, 236, 234, 0.72);
+    color: rgba(211, 236, 234, 0.85);
     font-size: 9.5px;
     line-height: 1.35;
     display: -webkit-box;
@@ -911,6 +911,6 @@ body[data-panel-surface]:not(.surface-map-any)[data-strand-journey='exploring']
 }
 
 .focus-thread-inspector-meta {
-    color: rgba(161, 198, 197, 0.58);
+    color: rgba(161, 198, 197, 0.85);
     line-height: 1.45;
 }

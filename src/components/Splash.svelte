@@ -277,7 +277,7 @@
   }
 
   .splash-search-input::placeholder {
-    color: rgba(231, 240, 240, 0.4);
+    color: rgba(231, 240, 240, 0.85);
   }
 
   .splash-search-input::-webkit-search-cancel-button {
@@ -314,7 +314,7 @@
     margin-top: 1.25rem;
     background: transparent;
     border: none;
-    color: rgba(231, 240, 240, 0.6);
+    color: rgba(231, 240, 240, 0.85);
     font-size: 0.95rem;
     font-family: inherit;
     padding: 0.5rem 1rem;

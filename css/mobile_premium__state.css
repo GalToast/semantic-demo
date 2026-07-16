@@ -213,7 +213,7 @@
     }
 
     body.surface-search[data-panel-surface-detail='peek'] .search-label-text {
-        color: rgba(224, 242, 239, 0.78);
+        color: rgba(224, 242, 239, 0.85);
     }
 
     body.surface-search[data-panel-surface-detail='peek'] .search-input-wrapper {
@@ -241,7 +241,7 @@
     }
 
     body.surface-search[data-panel-surface-detail='peek'] .search-input::placeholder {
-        color: rgba(222, 238, 236, 0.58);
+        color: rgba(222, 238, 236, 0.85);
         opacity: 1;
     }
 
@@ -644,14 +644,14 @@
     body.surface-map-search .search-result-meta,
     body.surface-map-search .search-result-type,
     body.surface-map-search .search-result-location {
-        color: rgba(211, 228, 224, 0.76);
+        color: rgba(211, 228, 224, 0.85);
         font-size: 12px;
         line-height: 1.22;
     }
 
     body.surface-map-search .search-result-badges,
     body.surface-map-search .search-result-actions {
-        color: rgba(164, 236, 227, 0.78);
+        color: rgba(164, 236, 227, 0.85);
     }
 
     body.surface-map-focus-search .search-container {

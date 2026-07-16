@@ -643,7 +643,7 @@
     font-weight: 600;
     line-height: 1;
     letter-spacing: 0.02em;
-    color: rgba(224, 240, 240, 0.7);
+    color: rgba(224, 240, 240, 0.85);
     padding: 0 1rem 0.35rem;
     margin: 56px 0 0;
     max-width: 100%;

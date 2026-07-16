@@ -202,7 +202,7 @@
     right: 8px;
     background: none;
     border: none;
-    color: rgba(224, 240, 240, 0.6);
+    color: rgba(224, 240, 240, 0.85);
     font-size: 1.3rem;
     cursor: pointer;
     padding: 2px 6px;
@@ -236,7 +236,7 @@
   .proximity-legend-sub {
     margin: 0 0 10px 0;
     font-size: 0.8rem;
-    color: rgba(224, 240, 240, 0.7);
+    color: rgba(224, 240, 240, 0.85);
   }
 
   .proximity-legend-swatches {

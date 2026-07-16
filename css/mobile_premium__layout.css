@@ -349,7 +349,7 @@
         max-width: 232px;
         font-size: 12px;
         line-height: 1.34;
-        color: rgba(218, 232, 229, 0.72);
+        color: rgba(218, 232, 229, 0.85);
     }
 
     /* ----------------------------------------------------------------
@@ -659,7 +659,7 @@
         font-size: 13px;
         font-weight: 700;
         line-height: 1.15;
-        color: rgba(221, 239, 236, 0.76);
+        color: rgba(221, 239, 236, 0.85);
     }
 
     .keyboard-hint-panel .kh-row:last-of-type {
@@ -719,7 +719,7 @@
         border: 1px solid rgba(126, 242, 226, 0.14);
         border-radius: 999px;
         background: rgba(255, 255, 255, 0.025);
-        color: rgba(221, 239, 236, 0.62);
+        color: rgba(221, 239, 236, 0.85);
         font-size: 22px;
         line-height: 1;
         box-shadow: none;

@@ -106,7 +106,7 @@
   }
   .search-trail-cue-note {
     font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.72); /* caption-text — stronger contrast over the 3D scene */
+    color: rgba(224, 240, 240, 0.85); /* caption-text — stronger contrast over the 3D scene */
     line-height: 1.4;
     overflow-wrap: break-word;
   }

@@ -522,7 +522,7 @@
    * ~0.07 alpha over a dark canvas) so the search bar's affordance is
    * actually readable. Previous 0.35 was ≈ 2.5:1 — failed WCAG 2 AA. */
   .search-input::placeholder {
-    color: rgba(224, 240, 240, 0.62);
+    color: rgba(224, 240, 240, 0.85);
   }
   .search-input::-webkit-search-cancel-button {
     display: none;
@@ -543,7 +543,7 @@
        (aria-hidden="true"). */
     border: none;
     background: transparent;
-    color: rgba(255, 255, 255, 0.45); /* a11y-ok: decorative kbd hint, aria-hidden="true", pointer-events: none */
+    color: rgba(255, 255, 255, 0.85); /* a11y-ok: decorative kbd hint, aria-hidden="true", pointer-events: none */
     font-family: 'Bricolage Grotesque', monospace;
     font-size: 11px;
     font-weight: 600;
@@ -559,7 +559,7 @@
   .search-clear {
     background: none;
     border: none;
-    color: rgba(224, 240, 240, 0.5); /* a11y-ok: decorative icon, aria-label on button */
+    color: rgba(224, 240, 240, 0.85); /* a11y-ok: decorative icon, aria-label on button */
     cursor: pointer;
     padding: 0.25rem;
     border-radius: 0.25rem;

@@ -67,7 +67,7 @@
 }
 .selected-empty-sub {
     font-size: 0.75rem;
-    color: rgba(224, 240, 240, 0.3);
+    color: rgba(224, 240, 240, 0.85);
     margin: 0;
 }
 
@@ -124,7 +124,7 @@
 }
 .note-text {
     font-size: 0.75rem;
-    color: rgba(224, 240, 240, 0.6);
+    color: rgba(224, 240, 240, 0.85);
     line-height: 1.4;
     margin: 0;
 }
@@ -139,7 +139,7 @@
 }
 .snippet-text {
     font-size: 0.75rem;
-    color: rgba(224, 240, 240, 0.6);
+    color: rgba(224, 240, 240, 0.85);
     line-height: 1.4;
     margin: 0;
 }
@@ -197,7 +197,7 @@
     }
     .info-panel-error .error-sub {
         font-size: 0.75rem;
-        color: rgba(224, 240, 240, 0.35);
+        color: rgba(224, 240, 240, 0.85);
         margin: 0;
     }
 
@@ -207,7 +207,7 @@
         justify-content: center;
         gap: 0.5rem;
         padding: 1.5rem;
-        color: rgba(224, 240, 240, 0.5);
+        color: rgba(224, 240, 240, 0.85);
         font-size: 0.8rem;
     }
     .info-panel-loading svg {

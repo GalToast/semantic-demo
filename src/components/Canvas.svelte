@@ -418,7 +418,7 @@
   }
   .error-message {
     font-size: 0.8rem;
-    color: rgba(224, 240, 240, 0.7);
+    color: rgba(224, 240, 240, 0.85);
     margin-bottom: 1.5rem;
   }
   .error-dismiss {

@@ -217,7 +217,7 @@
     font-weight: 600;
     text-transform: uppercase;
     letter-spacing: 0.05em;
-    color: rgba(224, 240, 240, 0.7);
+    color: rgba(224, 240, 240, 0.85);
   }
 
   .selected-relationship-role {
@@ -245,7 +245,7 @@
     padding: 0;
     list-style: none;
     font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.7);
+    color: rgba(224, 240, 240, 0.85);
   }
 
   .selected-relationship-distribution li {

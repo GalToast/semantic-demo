@@ -100,7 +100,7 @@ body[data-panel-surface] .control-btn {
     font-size: 10px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
-    color: rgba(255, 247, 214, 0.78);
+    color: rgba(255, 247, 214, 0.85);
 }
 
 .experience-reset-toast {
@@ -151,7 +151,7 @@ body[data-panel-surface] .control-btn {
     right: 68px;
     bottom: 26px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.4);
+    color: rgba(255, 255, 255, 0.85);
     z-index: var(--z-overlay);
 }
 
@@ -285,7 +285,7 @@ body.view-map .onboarding-hint {
 
 .onboarding-hint p {
     font-size: 13px;
-    color: rgba(255, 255, 255, 0.74);
+    color: rgba(255, 255, 255, 0.85);
     margin: 4px 0;
     line-height: 1.5;
 }
@@ -345,7 +345,7 @@ body.view-map .onboarding-hint {
     gap: 10px;
     margin-bottom: 6px;
     font-size: 12px;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.85);
 }
 .kh-row:last-of-type {
     margin-bottom: 0;
@@ -369,7 +369,7 @@ body.view-map .onboarding-hint {
     right: 10px;
     background: none;
     border: none;
-    color: rgba(255, 255, 255, 0.5);
+    color: rgba(255, 255, 255, 0.85);
     font-size: 16px;
     cursor: pointer;
     line-height: 1;
@@ -423,7 +423,7 @@ body.view-map .onboarding-hint {
     font-weight: 600;
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.85);
     list-style: none;
     padding: 4px 0;
     user-select: none;
@@ -467,7 +467,7 @@ body.view-map .onboarding-hint {
     margin: 2px 0 0 0;
     font-size: 12px;
     line-height: 1.45;
-    color: rgba(255, 255, 255, 0.78);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 /* Mode-grid computing state (pulse during heavy recomputation) */

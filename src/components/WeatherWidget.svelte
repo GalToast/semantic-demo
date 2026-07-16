@@ -293,7 +293,7 @@
 
   .detail-label {
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.5); /* a11y-ok: caption-text — UPPERCASE tracked label */
+    color: rgba(176, 208, 208, 0.85); /* a11y-ok: caption-text — UPPERCASE tracked label */
     text-transform: uppercase;
     letter-spacing: 0.06em;
     font-weight: 600;
