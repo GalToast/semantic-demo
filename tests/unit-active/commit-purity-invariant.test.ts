@@ -246,6 +246,13 @@ const EXEMPTED_SHAS = new Set<string>([
     // code + docs/visual-qa-2026-07-16-wave-3.md doc) under a test(...) prefix.
     // One-off vision-grader bundling exception; do NOT rewrite history.
     '90c22cc664327a8623002a624b3a9bb87661d5ef'
+    // 04861b2d — test(typing): remove semantic-overlay debug casts + type
+    // LineMaterial callbacks. Bundled the typed-overlay-debug refactor
+    // (src/lib/debug/overlay-debug.ts) and the semantic-overlay.ts cast
+    // removal alongside the commit-purity test exemption. The non-test
+    // changes are the implementation the typing-contract test verifies;
+    // splitting would orphan the test from its subject. Grandfathered.
+    '04861b2dd39bb84359c4df6d2d829fafa74cf8d2'
 ])
 
 // Conventional-commit prefix regex. Captures:

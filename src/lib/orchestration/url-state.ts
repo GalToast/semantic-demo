@@ -296,7 +296,9 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         try {
             showExperienceToast('Link state could not be restored', 'Showing the default view.')
         } catch {
-            console.warn('[deep-link] restore failed', err)
+            // showExperienceToast itself failed; surface via the gated diagnostic
+            // (never an ungated console.* in production paths).
+            debugWarn('[deep-link] restore failed (toast unavailable)', err)
         }
     } finally {
         const current = get(navStore)
