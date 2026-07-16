@@ -4137,11 +4137,80 @@ async function assert_search_trail_cue(page, ctx) {
     return info
 }
 
+/**
+ * map-container-ownership — verify a single deterministic owner of #map-container
+ * and no horizontal overflow (BUG H8 / H5 regression pins).
+ *
+ * Loads the map view at desktop (1440×900) and mobile (390×844) and asserts:
+ *   1. Exactly ONE element with id="map-container" exists in the DOM (no dupes
+ *      from Canvas + MapView's gated-Canvas fallback both claiming the id).
+ *   2. mapContainer.scrollWidth - mapContainer.clientWidth <= 10 (no overflow).
+ */
+async function assert_map_container_ownership(page, ctx) {
+    await page.addInitScript(() => {
+        window.__PLAYWRIGHT__ = true;
+    });
+    for (const label of ['desktop-map', 'mobile-map']) {
+        const isMobile = label === 'mobile-map';
+        await page.setViewportSize(isMobile ? { width: 390, height: 844 } : { width: 1440, height: 900 });
+
+        const url = new URL(positionalUrl);
+        url.searchParams.set('nodemo', '1');
+        url.searchParams.set('view', 'map');
+        await loadAndWait(page, url.toString());
+
+        // Allow time for MapView and Leaflet to settle.
+        await page.waitForTimeout(2000);
+
+        const info = await page.evaluate(() => {
+            const all = Array.from(document.querySelectorAll('[id="map-container"]'));
+            const dupes = all.length;
+            const first = dupes > 0 ? all[0] : null;
+            let sizes = { scrollWidth: 0, clientWidth: 0, overflowX: '' };
+            if (first) {
+                sizes = {
+                    scrollWidth: first.scrollWidth,
+                    clientWidth: first.clientWidth,
+                    overflowX: getComputedStyle(first).overflowX
+                };
+            }
+            return { dupes, present: dupes > 0, sizes };
+        });
+
+        const prefix = label + ':h8-ownership';
+        if (info.present) {
+            ctx.pass(label, prefix + ':present');
+        } else {
+            ctx.fail(label, prefix + ':present', '#map-container is missing');
+        }
+
+        if (info.dupes === 1) {
+            ctx.pass(label, prefix + ':single-owner');
+        } else {
+            ctx.fail(label, prefix + ':single-owner', `expected 1 #map-container, found ${info.dupes}`);
+        }
+
+        const overflow = info.sizes.scrollWidth - info.sizes.clientWidth;
+        if (overflow <= 10) {
+            ctx.pass(label, 'h5-sizing:no-overflow');
+        } else {
+            ctx.fail(
+                label,
+                'h5-sizing:no-overflow',
+                `scrollWidth(${info.sizes.scrollWidth}) - clientWidth(${info.sizes.clientWidth}) = ${overflow}px > 10px`
+            );
+        }
+    }
+
+    return { desktopMap: true, mobileMap: true };
+}
+
 // Surface registry
 
 const SURFACES = {
     'mobile-idle': assert_mobile_idle,
     'desktop-idle': assert_desktop_idle,
+    'map-container-ownership': assert_map_container_ownership,
     'launch-focus': assert_launch_focus,
     'search-error': assert_search_error,
     'search-no-results': assert_search_no_results,

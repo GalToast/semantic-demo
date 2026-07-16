@@ -52,6 +52,9 @@
   let friendlyMapError = $derived(status === 'error' ? friendlyErrorMessage(rawError) : null);
   let mounted = false;
   let activationToken = 0;
+  // H5: observes #map-container so Leaflet recalculates tile layout on viewport
+  // resizes (notably mobile orientation changes). Disconnected on teardown.
+  let resizeObserver: ResizeObserver | null = null;
 
   function activateMapShell(): void {
     // Ensure the map container exists — Canvas.svelte may not be loaded yet
@@ -169,6 +172,18 @@
         _registry.schedule(120, () => map?.invalidateSize?.());
       });
 
+      // H5: keep Leaflet tiles sized to the viewport on resize. The container is
+      // created by Canvas (or MapView's fallback); we observe whatever exists and
+      // bail gracefully if it is absent at activation time.
+      const mc = document.getElementById('map-container');
+      if (mc && !resizeObserver) {
+        resizeObserver = new ResizeObserver(() => {
+          const map = appState.map as unknown as LeafletMapWithInvalidateSize | undefined;
+          map?.invalidateSize?.();
+        });
+        resizeObserver.observe(mc);
+      }
+
       status = 'ready';
       statusDetail = 'County terrain active';
     } catch (error) {
@@ -196,6 +211,8 @@
     return () => {
       mounted = false;
       activationToken += 1;
+      resizeObserver?.disconnect();
+      resizeObserver = null;
       deactivateMapShell();
       _registry.disposeAll();
     };
@@ -459,6 +476,16 @@
 
   .map-view.is-compact .map-attribution {
     display: none;
+  }
+
+  :global(#map-container) {
+    display: flow-root;
+    /* Cap to the parent's content box (100%, not 100vw) so the map shell never
+       produces a horizontal scrollbar on mobile where 100vw exceeds the layout
+       viewport. clip (not hidden) avoids scroll containers while still preventing
+       overflow paint. No !important needed — this id selector outranks defaults. */
+    max-width: 100%;
+    overflow: clip;
   }
 
   :global(#map-container.active) {

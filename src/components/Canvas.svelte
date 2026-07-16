@@ -39,6 +39,11 @@
   let componentDestroyed = $state(false);
   let overlayTimeout: ReturnType<typeof setTimeout> | undefined = undefined;
   let engineReadyUnsub: (() => void) | null = null;
+  // H8: bound ref to the map-container element so we can claim the #map-container
+  // id defensively (see onMount) and avoid a duplicate-id race with MapView's
+  // gated-Canvas fallback, which also creates #map-container when Canvas hasn't
+  // rendered yet.
+  let mapContainerEl: HTMLDivElement | undefined = $state(undefined);
   // W6-T5: Overlay teardown flag tracked to avoid resetting overlay state on
   // re-mount after the engine already warmed up.
   // W6-T5: Track the last overlay log to prevent spam on rapid remounts.
@@ -129,6 +134,13 @@
   }
 
   onMount(() => {
+    // H8: claim the #map-container id only if no other component (e.g. MapView's
+    // gated-Canvas fallback) has already claimed it. This makes Canvas + MapView
+    // idempotent owners and prevents a duplicate-id DOM race.
+    if (mapContainerEl && !document.getElementById('map-container')) {
+      mapContainerEl.id = 'map-container';
+    }
+
     if (!canvasEl) return;
 
     const keyHandler = (e: KeyboardEvent): void => handleCanvasKeydown(e)
@@ -288,7 +300,7 @@
     is removed by initThreeJS() and replaced with the live WebGL canvas.
   -->
   <div
-    id="map-container"
+    bind:this={mapContainerEl}
     class="map-container"
     aria-hidden="true"
     data-active-view="idle"
