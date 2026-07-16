@@ -75,3 +75,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 ## Onboarding
 
 - `src/lib/onboarding/onboarding-storage.ts` — canonical onboarding-run storage key + seen-reset helpers (W52 `29da7961` — supersedes ad-hoc key literals across journey specs).
+
+## Repo reference docs
+
+- `docs/tool-guide.md` — Pi-harness tool selection, native-vs-MCP routing, profile policy, switchboard API quick-start, common pitfalls (linked from `AGENTS.md` → Reference Docs).
