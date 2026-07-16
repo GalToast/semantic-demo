@@ -3,12 +3,14 @@
 > Read-only investigation. Source files were NOT edited. All claims cite `file:line`
 > from `rg`/`find`/`wc`/`sed`. HEAD `161194f1` at investigation; **current HEAD `5222e684`** after the parallel-lane merge of 7 commits landed between investigation and polish (no files cited in this plan were structurally relocated by that merge — line numbers below are stable at `5222e684` for verified cites).
 
+> **⚠️ Superseded by W52 `8a467b72`:** the legacy root `search-cache.ts` was consolidated into `src/lib/search/cache.ts` (11 cache exports appended, no name collisions); `search-cache.ts` no longer exists. So §1 #1's original “live cache is `search-cache.ts`” framing and §2c's “THREE overlapping caches (cache.ts / search-cache.ts / mock)” premise are post-consolidation stale — the live path is now just `cache.ts` + the mock fallback. The narrative below is retained as a historical Wave-1 investigation; treat §2c as needing reconciliation before any further search-cache work.
+
 ## 1. Executive Summary (ranked by impact ÷ effort)
 
 1. **`src/lib/search/api-cache.ts` is fully orphaned (224 lines, ~0 callers).** It is the
    "concentric" duplicate of the live cache. `rg` finds no importer outside itself and the
    deprecation shim in `cache.ts` (`src/lib/search/api-cache.ts:1-2`; the live cache is
-   `src/lib/search-cache.ts`). Delete it. Confirmed: `rg -rn "from '@lib/search/api-cache'" src tests`
+   `src/lib/search/cache.ts`). Delete it. Confirmed: `rg -rn "from '@lib/search/api-cache'" src tests`
    → empty.
 2. **`shouldBypassApiSearch()` writes the transient-error sticky flag on permanent URL params
    (side-effect bug).** `src/lib/search/mock-search-fallback.ts:359-377` calls
@@ -46,12 +48,12 @@
   during `storeSemanticSearchPayload` LRU sweep (`cache.ts:108-150`, `cache.ts:152-229`). Backed by
   IndexedDB via `idb-service` (`cache.ts:18`, `cache.ts:38-60`).
 - **Callers of its exports:**
-    - `getCachedSemanticSearchPayload` / `storeSemanticSearchPayload` / `initSearchCache` /
+  - `getCachedSemanticSearchPayload` / `storeSemanticSearchPayload` / `initSearchCache` /
       `getSemanticSearchCacheDiagnostics` ARE re-exported FROM `api-cache.ts`
       (`api-cache.ts:9-12`, `api-cache.ts:18`, `api-cache.ts:225-226`) — but `api-cache.ts` is itself
       orphaned (see 2c).
-    - `state-types.ts:20` + `state-types.ts:448` import **only the `CacheEntry` type** (type-only).
-    - `app.svelte.ts:94` declares `semanticSearchResultCache: new Map<string, CacheEntry>()` and is
+  - `state-types.ts:20` + `state-types.ts:448` import **only the `CacheEntry` type** (type-only).
+  - `app.svelte.ts:94` declares `semanticSearchResultCache: new Map<string, CacheEntry>()` and is
       guarded by `tests/unit-active/state-semanticsearchcache-typing-contract.test.ts:28-69`
       (asserts the `CacheEntry` shape + `initSearchCache` pattern).
 - **Duplication flag:** This module's payload cache is functionally a near-duplicate of the LIVE
@@ -74,7 +76,7 @@
   `staticOnly/offline/noApi` URL params — mixing a permanent intent with the transient 60s sticky
   flag. (See §1 #2.)
 
-### 2c. `src/lib/search/api-cache.ts` (224 lines) + the LIVE `src/lib/search-cache.ts` (235 lines)
+### 2c. `src/lib/search/api-cache.ts` (224 lines) + the LIVE `src/lib/search/cache.ts` (235 lines)
 
 - **`search-cache.ts` (LIVE):** `getCachedSearch`/`setCachedSearch`/`getPendingSearch`/
   `setPendingSearch` (`search-cache.ts:1-235`). Key = `{query, page, offset}` via
@@ -89,7 +91,7 @@
 - **Duplication/incompatibility flag:** THREE overlapping result caches exist:
   `cache.ts` (query+offset, 10min, max 8, IDB), `search-cache.ts` (query+page+offset, 5min, max
   128, in-memory), and `mock-catalog`/`mock-search-fallback` (hand-curated). Only `search-cache.ts`
-    - the `mock-search-fallback` sticky flag are on the live path. `api-cache.ts` + `cache.ts`'s
+  - the `mock-search-fallback` sticky flag are on the live path. `api-cache.ts` + `cache.ts`'s
       payload-caching half are concentric dead weight.
 
 ## 3. Consolidation Candidates

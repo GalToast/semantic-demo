@@ -32,6 +32,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 
 - `src/lib/orchestration/app-init.ts`
 - `src/lib/orchestration/lifecycle.ts`
+- `src/lib/orchestration/responsive-renderer.ts` — canonical render-kind classifier (`getInitialRenderKind`) + canonical deep-link classification helper (`isDeepLinkParams`, added at `b33f35ba`; supersedes the duplicated deep-link check previously inlined inside `parseUrlParams` + `shouldRunDemo`).
 - `src/lib/orchestration/view-controller.ts`
 - `src/lib/orchestration/event-bus.ts`
 - `src/lib/orchestration/toast.ts` — canonical toast path (Svelte store; replaces the DOM-direct version in `src/lib/ui/ui-feedback.ts`).
@@ -51,7 +52,7 @@ This is the canonical file inventory for the repo. Linked from `AGENTS.md` → "
 - `src/lib/search/tokenizer.ts`
 - `src/lib/search/scoring.ts`
 - `src/lib/search/orchestration.ts`
-- `src/lib/search/cache.ts` — canonical search cache entry (W52 `8a467b72` consolidated the legacy root `src/lib/search-cache.ts` here — 11 cache exports appended, append-only merge, no name collisions).
+- `src/lib/search/cache.ts` — canonical search cache entry (W52 `8a467b72` consolidated the legacy root `search-cache.ts` into this file — 11 cache exports appended, append-only merge, no name collisions).
 - `src/lib/search/state.ts` — search Svelte-state saga (used by search-engine + state modules).
 
 ## UI / Chrome
