@@ -3,10 +3,9 @@
  * transition on `dataLoadState.status === 'error'`.
  *
  * Companion to `component-LoadingOverlay.test.ts` (which covers the structural
- * defaults: role="progressbar", aria-label="Loading semantic explorer", aria-valuenow,
+ * defaults: role="progressbar", aria-label="Loading…", aria-valuenow,
  * data-loading-state="active"). This suite drives the store directly to assert
- * that the same overlay flips to role="alert" / aria-label="Loading failed —
- * Semantic Explorer" / data-loading-state="error" / aria-valuenow absent when the
+ * that the same overlay flips to role="alert" / aria-label="Loading failed" / data-loading-state="error" / aria-valuenow absent when the
  * data load errors.
  *
  * This used to require a Playwright journey test against a live vite+php stack,
@@ -42,12 +41,12 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
         })
     })
 
-    it('renders with role="progressbar" and aria-label="Loading semantic explorer" while loading', () => {
+    it('renders with role="progressbar" and aria-label="Loading…" while loading', () => {
         const { container } = render(LoadingOverlay)
         const overlay = container.querySelector('#loading-overlay')
         expect(overlay).toBeTruthy()
         expect(overlay!.getAttribute('role')).toBe('progressbar')
-        expect(overlay!.getAttribute('aria-label')).toBe('Loading semantic explorer')
+        expect(overlay!.getAttribute('aria-label')).toBe('Loading…')
         expect(overlay!.getAttribute('data-loading-state')).toBe('active')
         // role=progressbar MUST carry aria-valuenow
         expect(overlay!.getAttribute('aria-valuenow')).toMatch(/\d+/)
@@ -77,7 +76,7 @@ describe('LoadingOverlay error state (role=alert transition)', () => {
         // On error the overlay switches to alert so screen readers announce the
         // failure; the raw/technical error is preserved in the details block.
         expect(overlay.getAttribute('role')).toBe('alert')
-        expect(overlay.getAttribute('aria-label')).toBe('Loading failed — Semantic Explorer')
+        expect(overlay.getAttribute('aria-label')).toBe('Loading failed')
         expect(overlay.getAttribute('data-loading-state')).toBe('error')
         expect(overlay.getAttribute('aria-describedby')).toBe('loading-error-message')
 

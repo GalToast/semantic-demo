@@ -139,6 +139,7 @@
     --z-search: 100;
     --z-neighbor-rail: 110; /* focus neighbor rail — above search, below journey chrome */
     --z-overlay: 100;
+    --z-overlay-100: 100; /* map overlay layer — alias of --z-overlay; resolves MapView.svelte:264 */
     --z-overlay-raised: 101;
     --z-overlay-floating: 102;
     --z-overlay-elevated: 150;
@@ -186,9 +187,9 @@
     --glass-blur-ultra: 44px;
 
     /* Short-Landscape Layout Heights */
-    --landscape-info-panel-idle-max-height: min(calc(100vh - 86px), 178px);
+    --landscape-info-panel-idle-max-height: min(calc(100dvh - 86px), 178px);
     --landscape-info-content-idle-max-height: calc(var(--landscape-info-panel-idle-max-height) - 42px);
-    --landscape-search-panel-height: min(calc(100vh - 82px), 308px);
+    --landscape-search-panel-height: min(calc(100dvh - 82px), 308px);
     --landscape-search-results-max-height: min(250px, calc(100dvh - 390px));
     --landscape-weather-widget-height: 62px;
     --landscape-focus-stage-card-max-height: min(72vh, 282px);

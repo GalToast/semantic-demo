@@ -77,7 +77,7 @@
     aria-valuenow={isError ? null : Math.round(progress * 100)}
     aria-valuemin={isError ? null : 0}
     aria-valuemax={isError ? null : 100}
-    aria-label={isError ? 'Loading failed — Semantic Explorer' : 'Loading semantic explorer'}
+    aria-label={isError ? 'Loading failed' : 'Loading…'}
     data-loading-phase={phase}
     data-loading-state={isError ? 'error' : 'active'}
     transition:fade={{ duration: 600 }}

@@ -873,7 +873,7 @@
         bottom: 0;
         left: 0;
         right: 0;
-        max-height: calc(100vh - 96px); /* don't overflow past the stage top */
+        max-height: calc(100dvh - 96px); /* don't overflow past the stage top */
         overflow-y: auto;
     }
 
@@ -1532,7 +1532,7 @@
         display: flex;
         flex-direction: column;
         bottom: 0;
-        max-height: calc(100vh - 96px);
+        max-height: calc(100dvh - 96px);
     }
 
     body.surface-focus .focus-stage-card,

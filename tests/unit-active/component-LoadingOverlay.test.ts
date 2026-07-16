@@ -21,7 +21,7 @@ describe('LoadingOverlay component', () => {
         const overlay = container.querySelector('#loading-overlay')
         expect(overlay).toBeTruthy()
         expect(overlay!.getAttribute('role')).toBe('progressbar')
-        expect(overlay!.getAttribute('aria-label')).toBe('Loading semantic explorer')
+        expect(overlay!.getAttribute('aria-label')).toBe('Loading…')
     })
 
     it('progress bar has aria-valuemin=0 and aria-valuemax=100', () => {

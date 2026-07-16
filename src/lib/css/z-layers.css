@@ -45,8 +45,14 @@
   /* Legend panel */
   --z-legend: 50;
 
+  /* Search trail cue — above canvas/threads, below interactive chrome */
+  --z-trail-cue: 50;
+
   /* Info panel and side panels */
   --z-panels: 80; /* canonical: matches src/lib/z-index.ts + src/index.html */
+
+  /* Mobile focus bottom-sheet — below panels(80) so a11y toggle wins */
+  --z-focus-stage-card: 70;
 
   /* Elevated panels (popovers, dropdowns) */
   --z-panels-elevated: 90;
@@ -54,8 +60,13 @@
   /* Search input and results */
   --z-search: 100;
 
+  /* Focus neighbor rail — above search, below journey chrome */
+  --z-neighbor-rail: 110;
+
   /* Generic overlay layers */
   --z-overlay: 100;
+  /* Map overlay layer (alias of --z-overlay; resolves MapView.svelte:264) */
+  --z-overlay-100: 100;
   --z-overlay-raised: 101;
   --z-overlay-floating: 102;
   --z-overlay-elevated: 150;
@@ -104,6 +115,9 @@
 
   /* Loading overlay (highest priority — matches --z-max ceiling) */
   --z-loading: 9999;
+
+  /* Click-pulse interaction ring — just below the max tooltip layer */
+  --z-canvas-interaction: 9998;
 
   /* Maximum */
   --z-max: 9999;
