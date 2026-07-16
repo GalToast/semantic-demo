@@ -4,6 +4,8 @@
 `agnes/agnes-2.0-flash` (vision model) reading the PNGs. (Hybrid avoids the autonomous-nav
 worker timeouts that blocked earlier QA workers.)
 
+> **Follow-up — 2026-07-16 Wave-3 Phase-4 closure:** see `docs/visual-qa-2026-07-16-wave-3.md`. Three of four Phase-3 residuals closed-green: R1 Surface 5 @820 chip-clip was ruled an agnes-2.0-flash hallucination (DOM truth: no chip label is clipped), R2 Surface 4 Map tile-loading + R3 Surface 7 mobile splash dismiss patched. The B-A1 finding below has parallel-session guard-test coverage via `tests/widget-journey.spec.js` test 'B-A1: search count never overshoots total + Show-more reachable' added at `80f7d93c`; the substantive fix (`SearchResults.svelte` visibleCount clamp `Math.min(searchVisibleCountFn(), total)`) remains working-tree-uncommitted at time of this banner. Treat the per-surface "Status" cells below as the Phase-3 grader reads, not as current truth — see the Wave-3 doc for the final disposition.
+
 Screenshots (in `tmp/`): `qa-A2.1-360.png`, `qa-A2.2-820.png`, `qa-A3-focus.png`,
 `qa-search-coffee.png`, `qa-B1-filters.png` (downscaled `*.small.jpg` used for grading).
 
