@@ -22,6 +22,68 @@ import { seededUnit } from '@lib/utils/seeded-random'
 let _suggestionPickSeed = 0
 const _nextSeededRandom = (): number => seededUnit(_suggestionPickSeed++, 0)
 
+// ── Memoized O(8406) caches ────────────────────────────────────────────────
+
+/** Cached eligible-points list (status !== 'disqualified'), invalidated on dataset change. */
+let _cachedEligiblePoints: Point[] | null = null
+let _cachedPointsLength = 0
+let _cachedEligibleLength = 0
+
+function _invalidatePointCaches(): void {
+    _cachedEligiblePoints = null
+    _cachedEligibleLength = 0
+}
+
+/** Get the cached eligible-points list, recomputing only when the dataset length changes. */
+function _getEligiblePoints(): Point[] {
+    const pts = state.points
+    const len = pts?.length ?? 0
+    if (_cachedEligiblePoints !== null && _cachedPointsLength === len) {
+        return _cachedEligiblePoints
+    }
+    const eligible = (pts as Point[]).filter((p) => p && p.status !== 'disqualified')
+    _cachedEligiblePoints = eligible
+    _cachedPointsLength = len
+    _cachedEligibleLength = eligible.length
+    return eligible
+}
+
+/** Memoized cluster-index map: for each cluster, list of point indices (excluding the focused index). */
+let _cachedClusterIndex: number | null = null
+let _cachedSameCluster: { p: Point; i: number }[] | null = null
+
+function _getSameCluster(focusedIdx: number): { p: Point; i: number }[] {
+    const cluster = state.points[focusedIdx]?.cluster
+    if (Number.isFinite(cluster)) {
+        if (_cachedClusterIndex === focusedIdx && _cachedSameCluster !== null) {
+            return _cachedSameCluster
+        }
+        const same = state.points
+            .map((p, i) => ({ p, i }))
+            .filter(({ p, i }: { p: Point; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
+        _cachedClusterIndex = focusedIdx
+        _cachedSameCluster = same
+        return same
+    }
+    return []
+}
+
+/** Memoized nearest-neighbor index per focused point index. */
+let _cachedNearestIdx: number | null = null
+let _cachedNearestFocusedIdx: number | null = null
+
+/**
+ * Invalidate all point-based caches. Called when dataset may have changed.
+ * Exported so journey code can call it after a dataset swap.
+ */
+export function invalidatePointCaches(): void {
+    _invalidatePointCaches()
+    _cachedClusterIndex = null
+    _cachedSameCluster = null
+    _cachedNearestIdx = null
+    _cachedNearestFocusedIdx = null
+}
+
 const _registry = new DisposableRegistry({ label: 'suggestion' })
 
 export function disposeSuggestionBindings(): void {
@@ -47,39 +109,41 @@ export function bindSuggestionControls(): void {
         }
 
         // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        _registry.timer(setTimeout(() => {
-            const eligible = state.points.filter((p) => p && p.status !== 'disqualified')
-            if (!eligible.length) {
-                const summaryEl = document.getElementById('summary-text')
-                if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
+        _registry.timer(
+            setTimeout(() => {
+                const eligible = _getEligiblePoints()
+                if (!eligible.length) {
+                    const summaryEl = document.getElementById('summary-text')
+                    if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
+                    if (btn) {
+                        btn.classList.add('disabled')
+                        btn.setAttribute('aria-disabled', 'true')
+                        btn.title = 'No eligible businesses for surprise selection'
+                        btn.textContent = originalText
+                    }
+                    return
+                }
+
                 if (btn) {
-                    btn.classList.add('disabled')
-                    btn.setAttribute('aria-disabled', 'true')
-                    btn.title = 'No eligible businesses for surprise selection'
+                    btn.classList.remove('is-loading')
+                    btn.classList.remove('disabled')
+                    btn.removeAttribute('aria-disabled')
+                    btn.removeAttribute('title')
                     btn.textContent = originalText
                 }
-                return
-            }
 
-            if (btn) {
-                btn.classList.remove('is-loading')
-                btn.classList.remove('disabled')
-                btn.removeAttribute('aria-disabled')
-                btn.removeAttribute('title')
-                btn.textContent = originalText
-            }
+                const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]
+                const idx = state.points.indexOf(rand as Point)
 
-            const rand = eligible[Math.floor(_nextSeededRandom() * eligible.length)]
-            const idx = state.points.indexOf(rand as Point)
+                if (idx >= 0) {
+                    const searchInput = document.getElementById('search-input') as HTMLInputElement | null
+                    if (searchInput) searchInput.value = ''
+                    clearShortSemanticSearchState(null, null)
 
-            if (idx >= 0) {
-                const searchInput = document.getElementById('search-input') as HTMLInputElement | null
-                if (searchInput) searchInput.value = ''
-                clearShortSemanticSearchState(null, null)
-
-                focusOnNode(idx, { fromCanvasNode: true })
-            }
-        }))
+                    focusOnNode(idx, { fromCanvasNode: true })
+                }
+            })
+        )
     }
 
     bindClick('btn-launch', focusRandomBusiness, { optional: true })
@@ -108,18 +172,13 @@ export function bindSuggestionControls(): void {
                 }
                 return
             }
-            const cluster = state.points[focusedIdx]?.cluster
-            if (Number.isFinite(cluster)) {
-                const sameCluster = state.points
-                    .map((p, i) => ({ p, i }))
-                    .filter(({ p, i }: { p: Point; i: number }) => p && p.cluster === cluster && i !== focusedIdx)
-                if (sameCluster.length) {
-                    const _randPick = sameCluster[Math.floor(_nextSeededRandom() * sameCluster.length)] as
-                        | { p: Point; i: number }
-                        | undefined
-                    const i = _randPick ? _randPick.i : -1
-                    focusOnNode(i, { fromCanvasNode: true })
-                }
+            const sameCluster = _getSameCluster(focusedIdx)
+            if (sameCluster.length) {
+                const _randPick = sameCluster[Math.floor(_nextSeededRandom() * sameCluster.length)] as
+                    | { p: Point; i: number }
+                    | undefined
+                const i = _randPick ? _randPick.i : -1
+                focusOnNode(i, { fromCanvasNode: true })
             }
         } else if (action === 'neighbor') {
             if (focusedIdx === null) {
@@ -136,19 +195,24 @@ export function bindSuggestionControls(): void {
             if (!state.points) return
             const fp = state.points[focusedIdx]
             if (fp) {
-                let nearest: number | null = null
-                let nearestDist = Infinity
-                state.points.forEach((p, i) => {
-                    if (!p || i === focusedIdx) return
-                    const dx = (Number(p.x) || 0) - (Number(fp.x) || 0)
-                    const dy = (Number(p.y) || 0) - (Number(fp.y) || 0)
-                    const dz = (Number(p.z) || 0) - (Number(fp.z) || 0)
-                    const d = dx * dx + dy * dy + dz * dz
-                    if (d < nearestDist) {
-                        nearestDist = d
-                        nearest = i
-                    }
-                })
+                let nearest: number | null = _cachedNearestIdx
+                if (_cachedNearestFocusedIdx !== focusedIdx || nearest === null) {
+                    nearest = null
+                    let nearestDist = Infinity
+                    state.points.forEach((p, i) => {
+                        if (!p || i === focusedIdx) return
+                        const dx = (Number(p.x) || 0) - (Number(fp.x) || 0)
+                        const dy = (Number(p.y) || 0) - (Number(fp.y) || 0)
+                        const dz = (Number(p.z) || 0) - (Number(fp.z) || 0)
+                        const d = dx * dx + dy * dy + dz * dz
+                        if (d < nearestDist) {
+                            nearestDist = d
+                            nearest = i
+                        }
+                    })
+                    _cachedNearestIdx = nearest
+                    _cachedNearestFocusedIdx = focusedIdx
+                }
                 if (nearest !== null) focusOnNode(nearest, { fromCanvasNode: true })
             }
         } else if (action === 'report') {

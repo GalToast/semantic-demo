@@ -36,6 +36,7 @@
  */
 
 import { setupFocusTrap, releaseFocusTrap, FOCUSABLE_SELECTORS } from '@lib/utils/focus-trap'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 /** Lifecycle transitions that legitimately move entry-point focus. */
 export type FocusLifecycleSignal = 'scene-ready' | 'surface-change' | 'dialog-close'
@@ -56,6 +57,9 @@ export interface RequestEntryFocusOptions {
 }
 
 const MAX_RETRIES = 3
+
+/** Registry for tracking pending focus-attempt rAFs so cancelEntryFocus() can dispose them. */
+let _pendingFocusRegistry: DisposableRegistry | null = null
 
 /** Lifecycle signals observed so far this session (single source of truth). */
 const lifecycleSignalsFired = new Set<FocusLifecycleSignal>()
@@ -110,12 +114,24 @@ export function isMeaningfulActiveElement(): boolean {
  * after a surface swap or splash removal, and retries a few frames if the
  * element is still absent (surface still swapping).
  */
+/** Cancel any pending entry-focus attempt. Call this before a focus change to
+ *  prevent the old rAF chain from stealing focus after the new target mounts. */
+export function cancelEntryFocus(): void {
+    if (_pendingFocusRegistry) {
+        _pendingFocusRegistry.disposeAll()
+        _pendingFocusRegistry = null
+    }
+}
+
 export function requestEntryFocus(
     target: string | (() => HTMLElement | null | undefined),
     opts: RequestEntryFocusOptions = {}
 ): void {
     if (typeof document === 'undefined' || typeof requestAnimationFrame === 'undefined') return
+    // Cancel any previous focus attempt so chains don't stack
+    cancelEntryFocus()
     const { guardMeaningful = true, retries = MAX_RETRIES } = opts
+    _pendingFocusRegistry = new DisposableRegistry({ label: 'focus-coordinator' })
     scheduleFocus(target, guardMeaningful, retries, 0)
 }
 
@@ -130,7 +146,11 @@ function scheduleFocus(
     retries: number,
     attempt: number
 ): void {
-    requestAnimationFrame(() => {
+    if (!_pendingFocusRegistry || _pendingFocusRegistry.isDisposed) return
+    // eslint-disable-next-line no-restricted-syntax -- rAF is registered with _pendingFocusRegistry.raf() immediately below
+    const id = requestAnimationFrame(() => {
+        // If cancelled between scheduling and execution, bail out
+        if (!_pendingFocusRegistry || _pendingFocusRegistry.isDisposed) return
         if (guardMeaningful && isMeaningfulActiveElement()) return
         const el = resolveTarget(target)
         if (el) {
@@ -142,6 +162,7 @@ function scheduleFocus(
             scheduleFocus(target, guardMeaningful, retries, attempt + 1)
         }
     })
+    _pendingFocusRegistry.raf(id)
 }
 
 /** Read the current DOM focus owner (test/diagnostic helper). */

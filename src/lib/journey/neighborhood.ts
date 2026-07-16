@@ -65,6 +65,62 @@ let boundedNeighborhoodActive = false
 let boundedNeighborhoodAnchorIndex: number | null = null
 let boundedNeighborhoodCandidates: number[] = []
 
+// ── Memoized candidate cache ────────────────────────────────────────────────
+// Cache the sorted/filtered candidate result from setTrailFromSeed so
+// repeated calls with the same seedIndex + activeFilters skip the O(N) sort+filter.
+
+interface SeedFilterKey {
+    seedIndex: number
+    status: string
+    city: string
+    website: boolean
+    email: boolean
+    geocoded: boolean
+}
+
+interface CachedSeedResult {
+    candidates: ThreadCandidateLike[]
+    source: string
+    reasonByIndex: Map<number, string>
+    neighborIndices: number[]
+    cursor: number
+}
+
+let _lastSeedKey: SeedFilterKey | null = null
+let _lastSeedResult: CachedSeedResult | null = null
+
+/**
+ * Build a stable cache key from the seed index and active filters.
+ */
+function _seedKey(seedIndex: number): SeedFilterKey {
+    const f = appState.activeFilters
+    return {
+        seedIndex,
+        status: f.status,
+        city: f.city,
+        website: f.website,
+        email: f.email,
+        geocoded: f.geocoded
+    }
+}
+
+function _keyEquals(a: SeedFilterKey | null, b: SeedFilterKey | null): boolean {
+    if (a === b) return true
+    if (!a || !b) return false
+    return (
+        a.seedIndex === b.seedIndex &&
+        a.status === b.status &&
+        a.city === b.city &&
+        a.website === b.website &&
+        a.email === b.email &&
+        a.geocoded === b.geocoded
+    )
+}
+
+// Memoized trail-indices cache: seedIndex + filters → visible indices set
+let _lastTrailKey: SeedFilterKey | null = null
+let _lastTrailIndices: number[] | null = null
+
 // ── Public API ───────────────────────────────────────────────────────────────
 
 /**
@@ -481,8 +537,24 @@ export function ensureBoundedNeighborhoodFromActivePocket(seedIndex: number): vo
  * Ported from journey-neighborhood.js setTrailFromSeed().
  */
 export function setTrailFromSeed(seedIndex: number): void {
+    const key = _seedKey(seedIndex)
+    if (_keyEquals(_lastSeedKey, key) && _lastSeedResult !== null) {
+        // Cache hit — reuse previously computed candidates
+        const cached = _lastSeedResult
+        writeNavStateMirror({
+            trailSeedIndex: seedIndex,
+            threadCandidates: cached.candidates,
+            threadSource: cached.source,
+            threadReasonByIndex: cached.reasonByIndex,
+            trailNeighborIndices: cached.neighborIndices,
+            trailCursor: cached.cursor
+        })
+        return
+    }
+
     const semanticCandidates = getSemanticThreadCandidates(seedIndex)
     const limit = getSemanticThreadDisplayLimit()
+    // Sort once, outside the hot path
     const allCandidates = (
         semanticCandidates.length ? semanticCandidates : getGeometricThreadCandidates(seedIndex)
     ).sort((a, b) => {
@@ -510,6 +582,9 @@ export function setTrailFromSeed(seedIndex: number): void {
         return tc >= 0 ? tc : 0
     })()
 
+    _lastSeedKey = key
+    _lastSeedResult = { candidates, source, reasonByIndex, neighborIndices, cursor }
+
     writeNavStateMirror({
         trailSeedIndex: seedIndex,
         threadCandidates: candidates,
@@ -534,12 +609,20 @@ export function updateTrailIndices(
     const filters = appState.activeFilters
     if (!isPointVisible(seedIndex, records, null, filters)) return
     appState.trailIndices.add(seedIndex)
-    const limit = getSemanticThreadDisplayLimit()
-    const candidates = valueArray(nav.threadCandidates).length
-        ? valueArray(nav.threadCandidates)
-        : getThreadCandidatesForIndex(seedIndex).slice(0, limit)
-    candidates
-        .map((candidate: unknown) => candidateIndex(candidate))
-        .filter((index): index is number => index !== null && isPointVisible(index, records, null, filters))
-        .forEach((index: number) => appState.trailIndices.add(index))
+
+    // Check cache: same seedIndex + filters
+    const key = _seedKey(seedIndex)
+    if (!_keyEquals(_lastTrailKey, key) || _lastTrailIndices === null) {
+        const limit = getSemanticThreadDisplayLimit()
+        const candidates = valueArray(nav.threadCandidates).length
+            ? valueArray(nav.threadCandidates)
+            : getThreadCandidatesForIndex(seedIndex).slice(0, limit)
+        const visible = candidates
+            .map((candidate: unknown) => candidateIndex(candidate))
+            .filter((index): index is number => index !== null && isPointVisible(index, records, null, filters))
+        _lastTrailKey = key
+        _lastTrailIndices = visible
+    }
+
+    _lastTrailIndices.forEach((index: number) => appState.trailIndices.add(index))
 }
