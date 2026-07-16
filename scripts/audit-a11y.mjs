@@ -130,7 +130,22 @@ function auditFile(filePath) {
             const basePart = part.replace(/:[a-z-]+(\([^)]*\))?$/i, '')
             const focusSel = `${basePart}:focus-visible`
             const props = selectorToProps.get(focusSel)
-            return props !== undefined && (/\boutline\s*:/i.test(props) || /\bbox-shadow\s*:/i.test(props))
+            // Match `outline:` only if it provides an actual *visible* indicator — `outline: none`
+            // (or `outline: 0`) must NOT count as a "fallback" because they are explicit
+            // suppressions. Pre-patch the bare `/\boutline\s*:/i` matcher silently treated
+            // the colon prefix alone as "indicator present", leaking WCAG 2.4.7 (focus-visible)
+            // failures — see commit `ed0e12be` (UI hardening) for the smoking-gun class of
+            // `.foo:focus-visible { outline: none }` color-only blocks this would have caught.
+            // Negative lookahead `(?!none|0\b)` skips suppression values; trailing `\S` anchors
+            // the lookahead to the start-of-value position so the `\s*` greedy-backtrack cannot
+            // defeat the lookahead (audit-a11y.mjs rule_7 tightens per W52 P1 worker proposal —
+            // `tmp/w52-a11y-extension-REPORT.md` Proposal 1; regex refined + proven via Node
+            // playground by main lane during apply, since the worker's first-pass regex
+            // `/\boutline\s*:\s*(?!none|0\b)/i` had a greedy-backtrack false-positive bug).
+            return (
+                props !== undefined &&
+                (/\boutline\s*:\s*(?!none|0\b)\S/i.test(props) || /\bbox-shadow\s*:/i.test(props))
+            )
         })
     }
 
