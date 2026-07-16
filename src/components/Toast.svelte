@@ -148,7 +148,7 @@
 
   .experience-toast-copy {
     font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.85);
+    color: rgba(224, 240, 240, 0.92);
     line-height: 1.4;
     overflow-wrap: break-word;
   }

@@ -110,6 +110,9 @@ export function bindFocusControls(): void {
     bindClick('btn-focus-dive', () => {
         setSemanticDiveMode(!state.semanticDiveMode)
     })
+    bindClick('btn-focus-dive-legacy', () => {
+        setSemanticDiveMode(!state.semanticDiveMode)
+    }, { optional: true })
     bindClick(
         'btn-inside-next',
         () => {

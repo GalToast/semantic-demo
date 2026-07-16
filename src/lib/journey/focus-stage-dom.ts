@@ -211,7 +211,7 @@ function appendTrailControls(root: HTMLElement): void {
 
 function appendDiveButton(root: HTMLElement): void {
     const diveBtn = makeElement('button', {
-        id: 'btn-focus-dive',
+        id: 'btn-focus-dive-legacy',
         className: 'focus-stage-dive-btn',
         hidden: true,
         attributes: {

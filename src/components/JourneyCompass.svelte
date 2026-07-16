@@ -15,7 +15,7 @@
       </div>
     </section>
     <div id="map-trail-strip" hidden></div>
-    <button type="button" id="btn-focus-dive" hidden>...</button>
+    <button type="button" id="btn-focus-dive-legacy" hidden>...</button>
 
   This is the Svelte-side replacement for the DOM that
  + semantic-dive-ui.js
