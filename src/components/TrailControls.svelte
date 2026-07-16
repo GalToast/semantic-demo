@@ -161,4 +161,12 @@
     background: rgba(var(--color-primary-alt-rgb), 0.1);
     border-color: rgba(var(--color-primary-alt-rgb), 0.4);
   }
+
+  /* Reduced-motion: the trail-button state transition is decorative; disable
+     it for users who prefer reduced motion. Steady-state layout is unchanged. */
+  @media (prefers-reduced-motion: reduce) {
+    .trail-btn {
+      transition: none;
+    }
+  }
 </style>

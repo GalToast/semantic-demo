@@ -297,4 +297,13 @@
     background: rgba(78, 205, 196, 0.15);
     margin: 0.25rem 0;
   }
+
+  /* Reduced-motion: the control-button state transition is decorative;
+     disable it for users who prefer reduced motion. Steady-state layout is
+     unchanged. */
+  @media (prefers-reduced-motion: reduce) {
+    .control-btn {
+      transition: none;
+    }
+  }
 </style>

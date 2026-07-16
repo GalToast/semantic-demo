@@ -141,11 +141,18 @@
       panelScrollHeight = panelEl?.scrollHeight ?? 0;
       panelClientHeight = panelEl?.clientHeight ?? 0;
     };
-    measure();
+    // Defer the first layout read off the render critical path. Reading
+    // scrollHeight/clientHeight synchronously inside this effect forces a
+    // synchronous reflow (layout flush) on every reactive render. Scheduling
+    // the initial measure in requestAnimationFrame lets the browser batch it
+    // before paint; the ResizeObserver below also re-measures (after layout)
+    // whenever the panel's box changes, so steady-state output is identical.
+    const rafId = requestAnimationFrame(measure);
     const ro = new ResizeObserver(measure);
     ro.observe(panelEl);
     window.addEventListener('resize', measure);
     return () => {
+      cancelAnimationFrame(rafId);
       ro.disconnect();
       window.removeEventListener('resize', measure);
     };
@@ -415,5 +422,13 @@
     font-size: 0.6rem;
     color: rgba(176, 208, 208, 0.6);
     text-align: center;
+  }
+
+  /* Reduced-motion: the slide-in transition is decorative; disable it for
+     users who prefer reduced motion. Steady-state layout is unchanged. */
+  @media (prefers-reduced-motion: reduce) {
+    .legend {
+      transition: none;
+    }
   }
 </style>

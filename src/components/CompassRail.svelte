@@ -244,4 +244,12 @@
       display: none;
     }
   }
+
+  /* Reduced-motion: the step hover/state transition is decorative; disable
+     it for users who prefer reduced motion. Steady-state layout is unchanged. */
+  @media (prefers-reduced-motion: reduce) {
+    .compass-step {
+      transition: none;
+    }
+  }
 </style>

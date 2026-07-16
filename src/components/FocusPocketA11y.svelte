@@ -264,4 +264,14 @@
   .focus-keyboard-hint .hint-sep {
     opacity: 0.5;
   }
+
+  /* Reduced-motion: the list-button + toggle transitions are decorative;
+     disable them for users who prefer reduced motion. Steady-state layout is
+     unchanged. */
+  @media (prefers-reduced-motion: reduce) {
+    .focus-pocket-a11y .focus-pocket-item-btn,
+    .focus-pocket-list-toggle {
+      transition: none;
+    }
+  }
 </style>

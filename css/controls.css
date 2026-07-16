@@ -449,3 +449,18 @@ body.view-map[data-terrain-handoff='landing'] .view-handoff {
         top: calc(122px + env(safe-area-inset-top, 0px));
     }
 }
+
+/* Reduced-motion: disable the premium/spring transitions and the view-handoff
+   transform/opacity transitions for users who prefer reduced motion. State
+   still changes instantly; the decorative motion is removed. */
+@media (prefers-reduced-motion: reduce) {
+  .view-toggle button,
+  .control-btn,
+  .panel-toggle,
+  [id='btn-legend'],
+  [id='btn-share-view'],
+  .view-handoff {
+    transition: none !important;
+    animation: none !important;
+  }
+}

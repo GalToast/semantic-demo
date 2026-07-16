@@ -1290,3 +1290,26 @@ body:has(.info-panel.active) .panel-toggle {
 body.render-kind-placeholder2d .info-panel {
     display: none !important;
 }
+
+/* Reduced-motion: honor prefers-reduced-motion by disabling transitions and
+   animations on the surfaces that otherwise animate (info panel, toggles,
+   mode chips, legend panel). Visual state still changes; only the motion is
+   removed so users who prefer reduced motion are not subjected to it. */
+@media (prefers-reduced-motion: reduce) {
+  .info-panel,
+  .info-header,
+  .info-toggle-icon,
+  .info-toggle-icon .ui-icon,
+  .launch-btn,
+  .mode-grid .mode-chip,
+  .mode-grid .mode-caption,
+  .info-panel.collapsed,
+  .panel-toggle,
+  .share-toggle,
+  .legend-toggle,
+  .help-toggle,
+  .legend-panel {
+    transition: none !important;
+    animation: none !important;
+  }
+}
