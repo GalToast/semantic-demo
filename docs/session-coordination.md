@@ -252,7 +252,8 @@ list via `-like` globs.
 
 ## See also
 
-- `scripts/session-lock.mjs` — the tool
+- `scripts/session-lock.mjs` — the file-lock tool
+- `docs/tool-guide.md` §4-5 — switchboard API quick-start + pitfalls (cross-session chat bus + taskboard complement to the file lock)
 - AGENTS.md → "Session Lock Protocol" — quick reference
 - `docs/parallel-sessions-incident-2026-06-24.md` (TODO) — postmortem
   of the incident that motivated this
@@ -273,3 +274,35 @@ git status --short
 - If 5+ unseen commits landed since last verified `HEAD`, queue work but do not commit until the stream quiesces.
 - If tracked files you did not touch are modified, evaluate the diff on merit. Good changes stay; bad ones get fixed or reverted with an explanation. Pause and coordinate when the change is unclear-to-you-but-claimed-by-someone-else.
 - For dirty worktrees, inspect before removal. Do not force-remove a worktree that may contain another session's WIP.
+
+## Switchboard coordination — beyond the file lock
+
+`.session-lock` says *"this worktree is held by someone"* but does not say *what* the holder is doing today, when they expect to be done, or whether they're reachable. The switchboard (via the `mcp` gateway, server `switchboard`) is the bus for that.
+
+**Compose, don't replace.** Hold the file lock AND register on the bus concurrently. The lock makes git-state conflicts visible; the switchboard makes your intention visible.
+
+Suggested workflow when other sessions may be active:
+
+1. Acquire the file lock per `## The tool` (above).
+2. Join the bus: `mcp { tool: "switchboard_join_chat", args: { harness: "pi", agent_id: "<stable id>", nickname: "<human>", requested_tag: "<short handle>", description: "<one-line current posture>", capabilities: [ ...strings ] } }`. Returned `display_name` is `@<tag>`.
+3. Heartbeat every ~5-15 min while active: `mcp { tool: "switchboard_heartbeat_agent", args: { agent_name: "@<tag>" } }`. Online entries decay to `stale: true` after 5 min with no heartbeat.
+4. Post a brief broadcast stating your intent + ETA: `mcp { tool: "switchboard_post_message", args: { sender: "@<tag>", content: "...", to: "ALL", channel: "general" } }`. Direct message: `to: "@peer-tag"`.
+5. List peers + inbound attention: `mcp { tool: "switchboard_list_agents" }` and `mcp { tool: "switchboard_get_inbox", args: { agent_name: "@<tag>" } }` (or `get_next_action` for a cockpit summary).
+6. For a durable coordination item the bus should track: `mcp { tool: "switchboard_create_task", args: { creator: "@<tag>", title: "...", description: "...", priority: "normal", labels: [ ...] } }`. `claim_task` + `heartbeat_task` while held; `release_task` to free for re-claim.
+7. For urgent-but-asynchronous peer signal: `mcp { tool: "switchboard_ring_agent", args: { agent: "@peer-tag", message: "..." } }`. Doorbell appears in their next `get_inbox`; ack via `ack_doorbell`. Reserve for one-shot urgents; persistent coordination goes to `post_message`.
+8. For shared browser/MCP/deploy slots: `mcp { tool: "switchboard_claim_resource_preset", args: { agent: "@<tag>", preset: "browser-window" } }` (list presets first via `list_resource_presets`). Release when done.
+9. For contested or significant decisions: `create_decision` + `request_signoff` + `approve_signoff` flow.
+
+### When the bus is empty
+
+Peers may only use the file lock, not the switchboard bus. If `list_agents` returns zero, fall back to the file lock + (if needed) the user as dispatcher. The switchboard is voluntary; do not block work pending bus attendance.
+
+### Common pitfalls
+
+- **Heartbeats required.** Stop → you appear `stale: true` to peers after 5 min. Treat going-online-without-heartbeat as *invisibility*.
+- **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a *claimed* task fresh (default 120 min).
+- **Bus ≠ worktree authority.** `list_agents` reflects online + recently-seen peers; pair it with `.session-lock` + the pre-commit branch guard.
+- **Resource locks differ from file locks.** Switchboard resource locks cover shared browser windows / MCP surfaces / deploy environments — NOT the worktree itself.
+- **Don't ring broadly.** `ring_agent` is for one-shot urgency; persistent messages go to `post_message to: "ALL"`.
+
+Full API surface + parameter-level recipes: `docs/tool-guide.md` §4 + §5.

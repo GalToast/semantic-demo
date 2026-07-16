@@ -18,6 +18,7 @@ This file is loaded into every Pi model call. Keep it concise. Detailed referenc
 - Check this repo-local `AGENTS.md` before repo-specific work.
 - Prefer scoped reads/searches over broad recursive scans in this repo.
 - Use `rg` for text search unless an ast-grep skill/tool is available and the task is structural TypeScript/Svelte matching.
+- **Tool routing:** `ast-grep` (via `pi_tool ast_grep_search` or the `ast-grep` skill) for structural TS/Svelte; `lsp-navigation` for go-to-def/references/diagnostics; `mcp` for browser (`playwright`), `external_subagents`, `switchboard`, `websearch`, `chrome-devtools`, `nvidia-capabilities`; `pi_tool` for `ctx_*`, `ast_grep_*`, `memory_*`, `preview_export`, `session_search`. Full policy: `docs/tool-guide.md`.
 - Do not kill broad `node`, PowerShell, browser, Claude, Gemini, Pi, or MCP process trees. Stop only exact PIDs with command-line evidence.
 - Evaluate unfamiliar changes on their merits — good changes should stick, bad ones should be fixed. Don't reflexively revert a parallel-lane change just because it doesn't match your mental model; if it improves the code, keep it. Don't preserve bad code silently because authorship is murky either — if a change introduces an error or breaks an invariant, fix it (or revert it with a brief explanation, not as a stealth revert). When parallel sessions land conflicting changes, surface the conflict in chat rather than silently picking a side.
 - If durable repo behavior changes, update the appropriate repo doc in the same turn.
@@ -34,7 +35,7 @@ Before starting multi-commit work that will touch files another Pi/Codex/subagen
 
 ## Parallel Sessions
 
-See `docs/session-coordination.md` — session lock + parallel-session coordination rules.
+See `docs/session-coordination.md` — session lock + parallel-session + switchboard coordination. Join the switchboard bus via `mcp switchboard_join_chat` (server `switchboard`) when other sessions may be active; quick-start in `docs/tool-guide.md` §4.
 
 ## Subagents
 
@@ -97,6 +98,7 @@ Read these only when relevant:
 - Subagent delegation: `docs/subagent-delegation.md` — delegation lifecycle, rate/polish, vision matrix, lane inventory.
 - Important files: `docs/important-files.md` — canonical file inventory by module.
 - UX copy rules: `docs/ux-copy-rules.md` — forbidden jargon in user-facing strings, friendly copy patterns, label conventions. For any change that touches strings the user sees (`.svelte` template text, copy returned by helpers, status messages), check against this list.
+- Tool routing + switchboard: `docs/tool-guide.md` — Pi-harness tool selection, native-vs-MCP routing, profile switching, switchboard coordination recipe.
 - Historical full agent reference: `docs/archive/agents-full-reference-2026-06-19.md`
 
 If a referenced doc is missing, use the archived full reference as fallback and consider restoring a concise dedicated doc.
