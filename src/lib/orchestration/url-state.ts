@@ -288,6 +288,16 @@ export async function applyUrlState(options: UrlStateOptions = {}): Promise<void
         if (!options.fromHistory) {
             updateUrlState({}, { reason: 'apply-url', force: true })
         }
+    } catch (err) {
+        // Non-fatal: a deep-link restore failure must never crash boot or
+        // surface as an unhandled rejection. Emit a non-fatal signal and
+        // continue; the finally block still clears the applyingUrlState flag.
+        debugWarn('[deep-link] restore failed', err)
+        try {
+            showExperienceToast('Link state could not be restored', 'Showing the default view.')
+        } catch {
+            console.warn('[deep-link] restore failed', err)
+        }
     } finally {
         const current = get(navStore)
         if (current.urlStateRestoreToken === restoreToken || restoreToken === current.urlStateRestoreToken) {

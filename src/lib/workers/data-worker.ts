@@ -223,6 +223,18 @@ async function handleLoadRecords({ url }: { url: string }): Promise<LoadRecordsR
     return { points, pointIndexByLeadId, positionsBuffer, clustersBuffer, invalidPositionIndices }
 }
 
+/**
+ * Validate the shape of a decoded semantic-thread artifact. The artifact is
+ * the relationship map keyed by lead id under `nodes`; `nodes` MUST be present
+ * and a (possibly empty) object. A malformed (but valid-JSON) artifact would
+ * otherwise yield an empty neighbor map and silently lose every relationship.
+ */
+function isValidThreadArtifact(bundle: unknown): boolean {
+    if (!bundle || typeof bundle !== 'object' || Array.isArray(bundle)) return false
+    const nodes = (bundle as Record<string, unknown>).nodes
+    return nodes != null && typeof nodes === 'object' && !Array.isArray(nodes)
+}
+
 async function handleLoadThreads(
     { urls, attemptConfigs }: { urls: string[]; attemptConfigs: (string | AttemptConfig)[] },
     requestId: number
@@ -240,7 +252,25 @@ async function handleLoadThreads(
                 const response = await fetch(url, cacheMode ? { cache: cacheMode as RequestCache } : undefined)
                 if (requestId !== _activeRequestId) throw new Error('Request superseded by newer request')
                 if (!response.ok) throw new Error(`Thread artifact unavailable (${response.status})`)
-                bundle = await response.json()
+                const parsed = await response.json()
+                // A malformed (but valid-JSON) ~40MB artifact would otherwise
+                // yield an empty neighbor map and silently lose every
+                // relationship. Validate the shape and, on failure, treat it
+                // like a fetch error so the loop retries alternate sources
+                // (and surfaces a clear ERROR if all are malformed) instead of
+                // silently emitting an empty map.
+                if (!isValidThreadArtifact(parsed)) {
+                    console.warn('[data-worker] Malformed thread artifact; trying alternate source/attempt.', {
+                        artifactName,
+                        bundleType: typeof parsed,
+                        hasNodes:
+                            parsed != null &&
+                            typeof parsed === 'object' &&
+                            'nodes' in (parsed as Record<string, unknown>)
+                    })
+                    throw new Error(`Thread artifact shape invalid (artifact=${artifactName})`)
+                }
+                bundle = parsed
                 loadedArtifactName = artifactName
                 break outer
             } catch (error) {
