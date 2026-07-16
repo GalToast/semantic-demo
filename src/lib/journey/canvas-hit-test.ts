@@ -162,7 +162,8 @@ function _screenCacheKey(): ScreenCandidateCacheKey | null {
         website: filters.website,
         email: filters.email,
         geocoded: filters.geocoded,
-        positionsRef: (appState.nodePositions?.length ?? 0) +
+        positionsRef:
+            (appState.nodePositions?.length ?? 0) +
             (appState.targetPositions?.length ?? 0) +
             (appState.originalPositions?.length ?? 0)
     }

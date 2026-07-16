@@ -109,39 +109,41 @@ export function bindSuggestionControls(): void {
         }
 
         // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
-        _registry.timer(setTimeout(() => {
-            const eligible = _getEligiblePoints()
-            if (!eligible.length) {
-                const summaryEl = document.getElementById('summary-text')
-                if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
+        _registry.timer(
+            setTimeout(() => {
+                const eligible = _getEligiblePoints()
+                if (!eligible.length) {
+                    const summaryEl = document.getElementById('summary-text')
+                    if (summaryEl) summaryEl.textContent = 'No eligible businesses for surprise selection.'
+                    if (btn) {
+                        btn.classList.add('disabled')
+                        btn.setAttribute('aria-disabled', 'true')
+                        btn.title = 'No eligible businesses for surprise selection'
+                        btn.textContent = originalText
+                    }
+                    return
+                }
+
                 if (btn) {
-                    btn.classList.add('disabled')
-                    btn.setAttribute('aria-disabled', 'true')
-                    btn.title = 'No eligible businesses for surprise selection'
+                    btn.classList.remove('is-loading')
+                    btn.classList.remove('disabled')
+                    btn.removeAttribute('aria-disabled')
+                    btn.removeAttribute('title')
                     btn.textContent = originalText
                 }
-                return
-            }
 
-            if (btn) {
-                btn.classList.remove('is-loading')
-                btn.classList.remove('disabled')
-                btn.removeAttribute('aria-disabled')
-                btn.removeAttribute('title')
-                btn.textContent = originalText
-            }
+                const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]
+                const idx = state.points.indexOf(rand as Point)
 
-            const rand = eligible[Math.floor(_nextSeededRandom() * _cachedEligibleLength)]
-            const idx = state.points.indexOf(rand as Point)
+                if (idx >= 0) {
+                    const searchInput = document.getElementById('search-input') as HTMLInputElement | null
+                    if (searchInput) searchInput.value = ''
+                    clearShortSemanticSearchState(null, null)
 
-            if (idx >= 0) {
-                const searchInput = document.getElementById('search-input') as HTMLInputElement | null
-                if (searchInput) searchInput.value = ''
-                clearShortSemanticSearchState(null, null)
-
-                focusOnNode(idx, { fromCanvasNode: true })
-            }
-        }))
+                    focusOnNode(idx, { fromCanvasNode: true })
+                }
+            })
+        )
     }
 
     bindClick('btn-launch', focusRandomBusiness, { optional: true })
