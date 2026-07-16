@@ -205,6 +205,7 @@ class AppState {
     myceliumWispyLines = $state<LineSegments2 | null>(null)
     myceliumBridgeLines = $state<LineSegments2 | null>(null)
     focusSemanticLines = $state<Line2 | null>(null)
+    focusPocketSizeMesh = $state<Points | null>(null)
     focusAnchorGroup = $state<Group | null>(null)
     focusAnchorRingMesh = $state<Mesh | null>(null)
     focusAnchorHaloSprite = $state<Sprite | null>(null)

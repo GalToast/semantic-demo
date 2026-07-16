@@ -245,7 +245,6 @@ export function findDemoNode(records?: readonly BusinessRecord[]): number | null
     return null
 }
 
-
 export function shouldRunDemo(force = false): boolean {
     const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
     const forceDemo = force || params.get('demo') === 'force'

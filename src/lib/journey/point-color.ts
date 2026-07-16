@@ -84,6 +84,12 @@ export function applyPointFilterColors(): void {
             const FOCUS_FIELD_RAW_DEFAULT = 0.16
             if (_state.navState.focusedIndex !== null) {
                 const semanticFocus = _state.navState.threadSource === 'semantic'
+                // shittiest-parts #1: when a focus pocket is active, dim the rest of
+                // the 8,406-dot field so the gathered neighborhood reads as prominent
+                // (vision jury: pocket was "subtle compared to many scattered dots").
+                const pocketActive = (focusPocketIndices?.length ?? 0) > 0
+                const FIELD_BG_RAW = pocketActive ? 0.09 : (semanticFocus ? FOCUS_FIELD_RAW_SEMANTIC : FOCUS_FIELD_RAW_DEFAULT)
+                const FIELD_BG_FLOOR = pocketActive ? 0.05 : FOCUS_FIELD_MIN_FLOOR
                 if (_state.navState.mode === 'trail') {
                     factor = _state.trailIndices.size
                         ? _state.trailIndices.has(i)
@@ -117,10 +123,8 @@ export function applyPointFilterColors(): void {
                                     : 1.34
                         : isVisited
                           ? 1.28
-                          : semanticFocus
-                            ? FOCUS_FIELD_RAW_SEMANTIC
-                            : FOCUS_FIELD_RAW_DEFAULT
-                    const minFloor = focusLocalIndices.has(i) ? FOCUS_MEMBER_MIN_FLOOR : FOCUS_FIELD_MIN_FLOOR
+                          : FIELD_BG_RAW
+                    const minFloor = focusLocalIndices.has(i) ? FOCUS_MEMBER_MIN_FLOOR : FIELD_BG_FLOOR
                     factor = Math.max(raw, minFloor)
                 }
             } else if (_state.myceliumMode === 'bloom') {

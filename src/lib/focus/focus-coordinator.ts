@@ -76,14 +76,26 @@ export function hasFocusLifecycleSignalFired(signal: FocusLifecycleSignal): bool
     return lifecycleSignalsFired.has(signal)
 }
 
-/** True when a typing surface already owns focus. */
+/** True when a typing surface or interactive control already owns focus. */
 export function isMeaningfulActiveElement(): boolean {
     if (typeof document === 'undefined') return false
     const ae = document.activeElement as HTMLElement | null
-    return (
-        !!ae &&
-        (ae.tagName === 'INPUT' || ae.tagName === 'TEXTAREA' || ae.isContentEditable)
-    )
+    if (!ae) return false
+    if (
+        ae.tagName === 'INPUT' ||
+        ae.tagName === 'TEXTAREA' ||
+        ae.tagName === 'BUTTON' ||
+        ae.tagName === 'SELECT' ||
+        ae.isContentEditable
+    ) {
+        return true
+    }
+    // Protect any interactive element with an explicit role or roving tab stop.
+    const role = ae.getAttribute('role')
+    if (role === 'button' || role === 'toolbar' || ae.getAttribute('tabindex') === '0') {
+        return true
+    }
+    return false
 }
 
 /**

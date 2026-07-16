@@ -94,7 +94,7 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     if (transitionStyle === 'search') defaultDistance = 1.08
     if (transitionStyle === 'walk' || transitionStyle === 'dive' || transitionStyle === 'dive-walk')
         defaultDistance = 1.0
-    const distance = framing.distance || defaultDistance
+    let distance = framing.distance || defaultDistance
 
     const verticalLift = framing.verticalLift || 0.045
     const framingDrop = framing.framingDrop ?? 0.02
@@ -108,7 +108,14 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
     let stageRightVector: Vector3 | null = null
     let safeTargetOffset: Vector3 | null = null
     const navState = appState.navState
-    const isSemanticPocketFocus = navState.threadSource === 'semantic' && navState.focusPocketMeta?.active
+    // shittiest-parts #1: frame the whole pocket (not just the anchor) whenever a
+    // focus pocket is active — including 'geometric-fallback' deep-link boots where
+    // threadSource is not 'semantic' but the pocket (focusPocketIndices) is genuinely
+    // built. Previously deep-link focus left the pocket + connection rays off-screen
+    // in the full 8,406-node mycelium cloud because pocket-framing was gated on
+    // threadSource === 'semantic'.
+    const isSemanticPocketFocus =
+        navState.focusPocketMeta?.active === true && (navState.focusPocketIndices?.length ?? 0) > 0
 
     if (isSemanticPocketFocus && navState.focusPocketIndices?.length) {
         const pocketBounds = computeFocusPocketScreenBounds(
@@ -141,6 +148,11 @@ export function animateCameraToNode(index: number, options: FocusFramingOptions 
             }
         }
     }
+    // shittiest-parts #1: zoom in tighter on an active focus pocket so the
+    // gathered neighborhood reads as prominent against the full 8,406-dot
+    // cloud (instead of a small cluster lost in the noise). Only when the
+    // caller didn't specify an explicit distance.
+    if (isSemanticPocketFocus && !framing.distance) distance = 0.62
     if (safeTargetOffset) {
         focusTarget = focusTarget.clone().add(safeTargetOffset)
     }

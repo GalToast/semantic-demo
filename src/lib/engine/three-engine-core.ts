@@ -75,6 +75,7 @@ import {
     syncFocusSemanticOverlayResolutionPort,
     updateFocusSemanticOverlayPositions
 } from '@lib/engine/journey-webgl-lazy'
+import { syncFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 
 export function updateCameraViewportOffset() {
     const camera = webglContext.camera || appState.camera
@@ -497,6 +498,7 @@ export function animate() {
                 updateArrivalHandoffOverlayFrame(frameNow)
                 updateFocusSemanticOverlayFrame(frameNow)
                 updateFocusSemanticOverlayPositions()
+                syncFocusPocketSizeMesh()
             } catch (overlayErr) {
                 debugWarn('overlay update threw:', overlayErr)
             }

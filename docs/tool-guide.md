@@ -7,21 +7,21 @@
 
 Pick the search/inspection tool by job, not by default. For deeper structural choices consult the `ast-grep-decision-tree` skill.
 
-| Job | Tool |
-|---|---|
-| Plain text / simple regex search | `bash rg` or `grep` tool |
-| Structural TS/Svelte search/replace | `pi_tool ast_grep_search` / `ast_grep_replace` |
-| AST inspection dump | `pi_tool ast_dump` |
-| LSP go-to-def, references, hover, diagnostics | `lsp-navigation` skill (pi-lens) |
-| Run sandboxed JS / shell / Python without bloating context | `pi_tool ctx_execute` (or `ctx_batch_execute` for many at once) |
-| bm25 search across indexed repo docs/code | `pi_tool ctx_search` (index first via `ctx_index`) |
-| Search past conversation messages | `pi_tool session_search` |
-| Persistent durable memory | `pi_tool memory_search` / `memory_write` (see `memory-routing-policy` skill) |
-| Browser automation (Playwright) | `mcp { tool: "playwright_*" }` (server `playwright`, direct from lean) |
-| Chrome DevTools MCP | `mcp { server: "chrome-devtools", tool: ... }` |
-| Web search | `mcp { server: "websearch", tool: ... }` |
-| NVIDIA model/capability interop | `mcp { server: "nvidia-capabilities", tool: ... }` |
-| Dispatch background subagent | `mcp { tool: "external_subagents_external_subagent_start", ... }` — poll/steer/followup need `worker_id` |
+| Job                                                        | Tool                                                                                                     |
+| ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| Plain text / simple regex search                           | `bash rg` or `grep` tool                                                                                 |
+| Structural TS/Svelte search/replace                        | `pi_tool ast_grep_search` / `ast_grep_replace`                                                           |
+| AST inspection dump                                        | `pi_tool ast_dump`                                                                                       |
+| LSP go-to-def, references, hover, diagnostics              | `lsp-navigation` skill (pi-lens)                                                                         |
+| Run sandboxed JS / shell / Python without bloating context | `pi_tool ctx_execute` (or `ctx_batch_execute` for many at once)                                          |
+| bm25 search across indexed repo docs/code                  | `pi_tool ctx_search` (index first via `ctx_index`)                                                       |
+| Search past conversation messages                          | `pi_tool session_search`                                                                                 |
+| Persistent durable memory                                  | `pi_tool memory_search` / `memory_write` (see `memory-routing-policy` skill)                             |
+| Browser automation (Playwright)                            | `mcp { tool: "playwright_*" }` (server `playwright`, direct from lean)                                   |
+| Chrome DevTools MCP                                        | `mcp { server: "chrome-devtools", tool: ... }`                                                           |
+| Web search                                                 | `mcp { server: "websearch", tool: ... }`                                                                 |
+| NVIDIA model/capability interop                            | `mcp { server: "nvidia-capabilities", tool: ... }`                                                       |
+| Dispatch background subagent                               | `mcp { tool: "external_subagents_external_subagent_start", ... }` — poll/steer/followup need `worker_id` |
 
 ## 2. Tool surface
 
@@ -56,7 +56,7 @@ Invoke via `mcp { tool: "<owner>_<tool>", args: {...} }` (or use `mcp { server: 
 
 ## 4. Cross-session switchboard — API quick-start
 
-The switchboard complements the file-based `.session-lock` (see `docs/session-coordination.md`): the lock says *"worktree held"*; the bus says *"what peer is doing"*. Use both concurrently.
+The switchboard complements the file-based `.session-lock` (see `docs/session-coordination.md`): the lock says _"worktree held"_; the bus says _"what peer is doing"_. Use both concurrently.
 
 ### 4.1 Join
 
@@ -143,8 +143,8 @@ For a custom scope, `claim_resource uri: "..."` (with `ttl` for expiry).
 ## 5. Common pitfalls
 
 - **Switchboard is voluntary.** Peers may only use the file lock. If `list_agents` returns zero, fall back to `.session-lock` (and via the user as dispatcher if needed). Never block work pending bus attendance.
-- **Heartbeat is required** to remain visible. Stop heartbeating → peers see `stale: true` after 5 min. Treat going-online-without-heartbeat as *invisibility*.
-- **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a *claimed* task fresh (default 120 min).
+- **Heartbeat is required** to remain visible. Stop heartbeating → peers see `stale: true` after 5 min. Treat going-online-without-heartbeat as _invisibility_.
+- **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a _claimed_ task fresh (default 120 min).
 - **`external_subagents_*` `worker_id` is mandatory** for every post-start call (poll / steer / followup). Without it, "not-found".
 - **Workers don't inherit browser/MCP.** Dispatch with `mcp_profile: browser` AND consult the `subagent-mcp-browser-profile-fix` skill if MCP fails to surface — Pi-harness lean-startup strips MCP from workers by default.
 - **`mcp` is the route to switchboard**, NOT `pi_tool`. Per AGENTS.md native-vs-MCP policy: allowlisted native tools go through `pi_tool`; MCP-hosted servers (switchboard, playwright, external_subagents, websearch, chrome-devtools, nvidia-capabilities) go through `mcp`.
@@ -161,7 +161,7 @@ For a custom scope, `claim_resource uri: "..."` (with `ttl` for expiry).
 - `~/.pi/agent/skills/app-context/` (pi-context) — sandboxed execution + FTS5 index.
 - `~/.pi/agent/pi-hermes-memory/skills/js-repl/SKILL.md` — sandboxed JS scratch without polluting the lane.
 - **Subagent-recovery trio** (a 3-way decision tree lives in the `worker-timeout-on-disk-edits-takeover` skill's `## When to Use`):
-  - `subagent-timeout-recovery` — Kind-3: worker still alive, steer it.
-  - `subagent-followup-recovery` — Kind-2: terminated mid-thinking, no edits on disk, followup inherits `session_id`.
-  - `worker-timeout-on-disk-edits-takeover` — Kind-1: terminal + on-disk edits, main-lane takeover (don't followup).
+    - `subagent-timeout-recovery` — Kind-3: worker still alive, steer it.
+    - `subagent-followup-recovery` — Kind-2: terminated mid-thinking, no edits on disk, followup inherits `session_id`.
+    - `worker-timeout-on-disk-edits-takeover` — Kind-1: terminal + on-disk edits, main-lane takeover (don't followup).
 - Repo-side references: `docs/session-coordination.md`, `docs/subagent-delegation.md`, `docs/subagent-models.md`, `docs/subagent-dispatch-cheatsheet.md`.

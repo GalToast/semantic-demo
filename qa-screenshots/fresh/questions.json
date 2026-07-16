@@ -1,0 +1,74 @@
+[
+    {
+        "id": "Q1-focus-deeplink",
+        "images": ["small/v-focus-deeplink.jpg"],
+        "text": "This is a desktop focus view reached via a deep link (?anchor=519). Describe what you see around the focused business. Is there a visible tight CLUSTER/CONSTELLATION of brighter or larger points gathered closely around a central bright node (a 'pocket'), or do the points around the focus look like the rest of the background field (scattered, uniform density, indistinguishable from everywhere else)? Answer with specific visual observations about point density, brightness, and any rays/lines connecting the central node to neighbors."
+    },
+    {
+        "id": "Q2-focus-interactive",
+        "images": ["small/v-focus-interactive.jpg"],
+        "text": "This is a desktop focus view reached by CLICKING a search result (interactive path). Compared to a deep-link focus, is there a visible tight cluster of gathered points around the central bright node here? Are there teal RAY lines connecting the central node to neighboring points? Describe point density, brightness, and any rays."
+    },
+    {
+        "id": "Q3-pocket-gap-yesno",
+        "images": ["small/v-focus-deeplink.jpg"],
+        "consensus": "yes-no",
+        "text": "Looking ONLY at this deep-link focus image: is there a tight, readable cluster of gathered points around the central bright node that a new viewer could find WITHOUT being told where to look? Answer yes or no."
+    },
+    {
+        "id": "Q4-rays-yesno",
+        "images": ["small/v-focus-interactive.jpg"],
+        "consensus": "yes-no",
+        "text": "In this interactive focus image, are there visible teal ray lines connecting the central bright node to neighboring points (not just a single blob at the center)? Answer yes or no."
+    },
+    {
+        "id": "Q5-trail",
+        "images": ["small/v-trail.jpg"],
+        "text": "This is the TRAIL mode focus view. Describe the visual scene: what elements are present (thread paths, stops, chrome), and is anything broken, overlapping, or hard to read?"
+    },
+    {
+        "id": "Q6-inside",
+        "images": ["small/v-inside.jpg"],
+        "text": "This is the INSIDE mode focus view. Describe the visual scene and note any broken, overlapping, clipped, or hard-to-read elements."
+    },
+    {
+        "id": "Q7-map",
+        "images": ["small/v-map.jpg"],
+        "text": "This is the MAP view. Describe what is shown (map tiles, plotted points, overlays) and note any broken, missing, or hard-to-read elements."
+    },
+    {
+        "id": "Q8-dive",
+        "images": ["small/v-dive.jpg"],
+        "text": "This is a SEMANTIC DIVE focus view. Compared to a normal focus view, what is DIFFERENT? Is the background dimmed? Are intra-neighborhood edges emphasized? Or does it look essentially IDENTICAL to a normal focus view? Describe specifically."
+    },
+    {
+        "id": "Q9-mobile-focus-webgl",
+        "images": ["small/v-mobile-focus-webgl.jpg"],
+        "text": "This is a MOBILE (390x844) forced-WebGL focus view. Examine the chrome/header carefully: (a) Is the mode-chip rail present? (b) Is the header text clipped or overlapping other elements (e.g., a back arrow)? (c) Is there a state inconsistency such as a 'View as list' pill active while 3D is shown? (d) Any bottom pill clipped? Describe any layout/clipping/overlap problems precisely."
+    },
+    {
+        "id": "Q10-mobile-idle",
+        "images": ["small/v-mobile-idle.jpg"],
+        "text": "This is a MOBILE idle view. Describe what surface is shown (2D placeholder preview? 3D scene? splash/CTA?). Is it a coherent, polished product surface or does something look broken/empty?"
+    },
+    {
+        "id": "Q11-search",
+        "images": ["small/v-search-coffee.jpg"],
+        "text": "This is a desktop SEARCH RESULTS view (?q=coffee). Describe the search UI and the 3D scene behind it. Note any duplicated status surfaces, clipped text, or readability problems with the threads/mycelium lines."
+    },
+    {
+        "id": "Q12-overall-ranked",
+        "images": [
+            "small/v-search-coffee.jpg",
+            "small/v-focus-deeplink.jpg",
+            "small/v-focus-interactive.jpg",
+            "small/v-trail.jpg",
+            "small/v-inside.jpg",
+            "small/v-map.jpg",
+            "small/v-dive.jpg",
+            "small/v-mobile-idle.jpg",
+            "small/v-mobile-focus-webgl.jpg"
+        ],
+        "text": "Across these 9 product screenshots (desktop search, deep-link focus, interactive focus, trail, inside, map, semantic dive, mobile idle, mobile focus), list the TOP visual/UX problems you observe, RANKED by severity (worst first). For each: where (which image/screen), what is wrong, and why it hurts the user. Be specific and skeptical — only report things you can actually see."
+    }
+]

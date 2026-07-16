@@ -99,7 +99,7 @@ function hasOpacityProfile(source, values) {
 }
 const opacityProfiles = [
     { core: 0.58, wispy: 0.28, bridge: 0.42, pulse: 0.04 },
-    { core: 0.16, wispy: 0.055, bridge: 0.085, pulse: 0.008 },
+    { core: 0.5, wispy: 0.24, bridge: 0.36, pulse: 0.012 },
     { core: 0.32, wispy: 0.14, bridge: 0.22, pulse: 0.072 },
     { core: 0.2, wispy: 0.08, bridge: 0.13, pulse: 0.044 }
 ]

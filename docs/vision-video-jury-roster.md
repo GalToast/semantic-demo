@@ -8,12 +8,12 @@ Phase V benchmark of which routes through the OpenCode key router
 
 Breakdown by probe:
 
-| Probe | Lanes probed | Concurrency | Wall time | Script |
-|-------|--------------|------------|-----------|--------|
-| vision-route-inventory (`/v1/models` scrape × 10 providers, regex/classify) | 10 providers, 479 vision / 84 video candidates | parallel fetch | ~10s | `scripts/vision-route-inventory.mjs` |
-| vision-jury-probe (quadrant PNG, 4/4 color match) | curated ~60 lanes | 8 | ~63s | `scripts/vision-jury-probe.mjs` |
-| vision-video-probe sequential (test MP4, motion description) | all 21 VISION_ON lanes | 1 | ~30 min (stalled at lane 15, partial) | `scripts/vision-video-probe.mjs` |
-| **vision-video-jury-probe parallel** (superset) | 111 lanes (vision-on ∪ catalog-video ∪ agnes retry ∪ logfare) | 8 | ~2 min | `scripts/vision-video-jury-probe.mjs` |
+| Probe                                                                       | Lanes probed                                                  | Concurrency    | Wall time                             | Script                                |
+| --------------------------------------------------------------------------- | ------------------------------------------------------------- | -------------- | ------------------------------------- | ------------------------------------- |
+| vision-route-inventory (`/v1/models` scrape × 10 providers, regex/classify) | 10 providers, 479 vision / 84 video candidates                | parallel fetch | ~10s                                  | `scripts/vision-route-inventory.mjs`  |
+| vision-jury-probe (quadrant PNG, 4/4 color match)                           | curated ~60 lanes                                             | 8              | ~63s                                  | `scripts/vision-jury-probe.mjs`       |
+| vision-video-probe sequential (test MP4, motion description)                | all 21 VISION_ON lanes                                        | 1              | ~30 min (stalled at lane 15, partial) | `scripts/vision-video-probe.mjs`      |
+| **vision-video-jury-probe parallel** (superset)                             | 111 lanes (vision-on ∪ catalog-video ∪ agnes retry ∪ logfare) | 8              | ~2 min                                | `scripts/vision-video-jury-probe.mjs` |
 
 ## Confirmed vision-on lanes (jury, 4/4 color quadrants)
 
@@ -50,56 +50,56 @@ VIDEO_ON confirmed; the parallel-dispatch probe completed all 111 lanes and
 surfaced **5 additional** video-capable lanes the sequential probe had not yet
 reached.
 
-| Lane | Verdict | Latency | Provider block |
-|------|---------|---------|----------------|
-| `nvidia:google/diffusiongemma-26b-a4b-it` | VIDEO_ON | 2.1s | NIM |
-| `modelscope:Qwen/Qwen3-VL-8B-Instruct` | VIDEO_ON | 3.7s | ModelScope |
-| `modelscope:Qwen/Qwen3-VL-235B-A22B-Instruct` | VIDEO_ON | 4.0s | ModelScope |
-| `nvidia:google/gemma-4-31b-it` | VIDEO_ON | 4.2s | NIM |
-| `logfare:minimax-m3` | VIDEO_ON | 7.4s | Logfare (NEW) |
-| `cloudflare:@cf/moonshotai/kimi-k2.6` | VIDEO_ON | 9.5s | Cloudflare Workers (NEW!) |
-| `nvidia:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` | VIDEO_ON | 19.4s | NIM |
-| `kilo:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | VIDEO_ON | 22.3s | Kilo `:free` tier (NEW!) |
-| `modelscope:Qwen/Qwen3-VL-8B-Thinking` | VIDEO_ON | 35.1s | ModelScope (upgraded from PARTIAL) |
-| `logfare:glm-5.2` | VIDEO_PARTIAL | 47.4s | Logfare (NEW — also stale-opencode-UI root cause!) |
-| `logfare:kimi-k2.6` | VIDEO_ON | 48.2s | Logfare (NEW) |
-| `nvidia:minimaxai/minimax-m3` | VIDEO_ON | 88.8s | NIM (slowest) |
+| Lane                                                      | Verdict       | Latency | Provider block                                     |
+| --------------------------------------------------------- | ------------- | ------- | -------------------------------------------------- |
+| `nvidia:google/diffusiongemma-26b-a4b-it`                 | VIDEO_ON      | 2.1s    | NIM                                                |
+| `modelscope:Qwen/Qwen3-VL-8B-Instruct`                    | VIDEO_ON      | 3.7s    | ModelScope                                         |
+| `modelscope:Qwen/Qwen3-VL-235B-A22B-Instruct`             | VIDEO_ON      | 4.0s    | ModelScope                                         |
+| `nvidia:google/gemma-4-31b-it`                            | VIDEO_ON      | 4.2s    | NIM                                                |
+| `logfare:minimax-m3`                                      | VIDEO_ON      | 7.4s    | Logfare (NEW)                                      |
+| `cloudflare:@cf/moonshotai/kimi-k2.6`                     | VIDEO_ON      | 9.5s    | Cloudflare Workers (NEW!)                          |
+| `nvidia:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`    | VIDEO_ON      | 19.4s   | NIM                                                |
+| `kilo:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | VIDEO_ON      | 22.3s   | Kilo `:free` tier (NEW!)                           |
+| `modelscope:Qwen/Qwen3-VL-8B-Thinking`                    | VIDEO_ON      | 35.1s   | ModelScope (upgraded from PARTIAL)                 |
+| `logfare:glm-5.2`                                         | VIDEO_PARTIAL | 47.4s   | Logfare (NEW — also stale-opencode-UI root cause!) |
+| `logfare:kimi-k2.6`                                       | VIDEO_ON      | 48.2s   | Logfare (NEW)                                      |
+| `nvidia:minimaxai/minimax-m3`                             | VIDEO_ON      | 88.8s   | NIM (slowest)                                      |
 
 Source: `tmp/vision-video-jury-passing-results-passing.json` (generated by
 `scripts/vision-video-jury-probe.mjs`, 111 lanes × concurrency 8).
 
 ## Verdict distribution (parallel probe, 111 lanes)
 
-| Verdict | Count | Meaning |
-|---------|-------|---------|
-| `CREDITS_EXHAUSTED` (402) | 82 | openrouter + kilo paid routes — credits ran out |
-| `NO_VIDEO_SUPPORT` | 5 | NIM rejects (`--limit-mm-per-prompt video=0`) — llama-3.2-vision + gemma-3n |
-| `PAYLOAD_FORMAT_REJECT` (422/400) | 6 | Mistral rejects array-content for video + cloudflare gemma/llama-4 |
-| `RATE_LIMITED` (429) | 2 | agnes-video-v2.0 + openrouter meta/muse-spark-1.1 |
-| `TRANSPORT_ERROR` (timeout/null) | 3 | nemotron-nano-12b-v2-vl timed out at 120s, logfare deepseek-v4-pro + mimo-v2.5-pro 503/null |
-| `GENERIC_OR_HALLUCINATED` | 1 | agnes-2.0-flash returned plain "Hello! How can I help you today?" (text-only fallback) |
-| `VIDEO_ON` | 11 | successful motion description |
-| `VIDEO_PARTIAL` | 1 | `logfare:glm-5.2` |
+| Verdict                           | Count | Meaning                                                                                     |
+| --------------------------------- | ----- | ------------------------------------------------------------------------------------------- |
+| `CREDITS_EXHAUSTED` (402)         | 82    | openrouter + kilo paid routes — credits ran out                                             |
+| `NO_VIDEO_SUPPORT`                | 5     | NIM rejects (`--limit-mm-per-prompt video=0`) — llama-3.2-vision + gemma-3n                 |
+| `PAYLOAD_FORMAT_REJECT` (422/400) | 6     | Mistral rejects array-content for video + cloudflare gemma/llama-4                          |
+| `RATE_LIMITED` (429)              | 2     | agnes-video-v2.0 + openrouter meta/muse-spark-1.1                                           |
+| `TRANSPORT_ERROR` (timeout/null)  | 3     | nemotron-nano-12b-v2-vl timed out at 120s, logfare deepseek-v4-pro + mimo-v2.5-pro 503/null |
+| `GENERIC_OR_HALLUCINATED`         | 1     | agnes-2.0-flash returned plain "Hello! How can I help you today?" (text-only fallback)      |
+| `VIDEO_ON`                        | 11    | successful motion description                                                               |
+| `VIDEO_PARTIAL`                   | 1     | `logfare:glm-5.2`                                                                           |
 
 ## Outstanding auth / unlock lanes (recovering could double the bench)
 
-| Failure | Lane count | Symptom | Probable repair |
-|---------|-----------|---------|-----------------|
-| openrouter 402 | 44 catalog-flagged video lanes | credits exhausted on the router API key | add OpenRouter credit OR switch to alternative prepaid key |
-| kilo 402 (paid) | 40 catalog-flagged video lanes | credits exhausted on the kilo router proxy | replenish kilo prepaid balance |
-| kilo `:free` works | 1 confirmed VIDEO_ON (*) | free tier is alive — see `kilo:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | expand `:free` tier coverage |
-| opencode-zen 401 | not in 111 set but ~17 vision candidates flagged in inventory | auth expired | refresh ZEN OAuth flow |
-| freemodel 401 | not in 111 set | auth expired | refresh freemodel key |
-| agnes agnes-video-v2.0 429 | 1 lane | rate limited | retry after backoff |
+| Failure                    | Lane count                                                    | Symptom                                                                            | Probable repair                                            |
+| -------------------------- | ------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| openrouter 402             | 44 catalog-flagged video lanes                                | credits exhausted on the router API key                                            | add OpenRouter credit OR switch to alternative prepaid key |
+| kilo 402 (paid)            | 40 catalog-flagged video lanes                                | credits exhausted on the kilo router proxy                                         | replenish kilo prepaid balance                             |
+| kilo `:free` works         | 1 confirmed VIDEO_ON (\*)                                     | free tier is alive — see `kilo:nvidia/nemotron-3-nano-omni-30b-a3b-reasoning:free` | expand `:free` tier coverage                               |
+| opencode-zen 401           | not in 111 set but ~17 vision candidates flagged in inventory | auth expired                                                                       | refresh ZEN OAuth flow                                     |
+| freemodel 401              | not in 111 set                                                | auth expired                                                                       | refresh freemodel key                                      |
+| agnes agnes-video-v2.0 429 | 1 lane                                                        | rate limited                                                                       | retry after backoff                                        |
 
-(*) Note: `kilo:` paid routes returned 402 across the board, but `kilo:nvidia/...:free`
+(\*) Note: `kilo:` paid routes returned 402 across the board, but `kilo:nvidia/...:free`
 returned a clean `VIDEO_ON` — kilo's free tier survived the credit check.
 
 ## Notes
 
 - **NIM video hard cap (server-side):** Most NIM-deployed VLMs reject video with
   `At most 0 video(s) may be provided in one request. You can set
-  --limit-mm-per-prompt to increase this limit if the model supports it.`
+--limit-mm-per-prompt to increase this limit if the model supports it.`
   Confirmed acceptors: `nemotron-nano-12b-v2-vl`, `nemotron-3-nano-omni-30b-a3b-reasoning`,
   `gemma-4-31b-it`, `diffusiongemma-26b-a4b-it`, `minimaxai/minimax-m3`.
   Rejecters: `llama-3.2-90b-vision-instruct`, `llama-3.2-11b-vision-instruct`,
@@ -133,21 +133,21 @@ medium selectors.
 Full `glm-5.2` entry map in `C:/Users/HP/.config/opencode/opencode.json`
 (verified 2026-07-16):
 
-| Line | ID | Owning provider block | `variants`? | max selector maps to |
-|------|----|----------------------|-------------|----------------|
-| 1218 | `z-ai/glm-5.2` | `nvidia` (NVIDIA NIM) | ✅ `{low, medium, high, max}` | `reasoningEffort:"max"` ✅ proper exposure |
-| 2288 | `z-ai/glm-5.2` (DUPLICATE) | `qwen-nvidia-router` (Qwen NVIDIA Router) | ✅ `{high, max}` | `reasoningEffort:"high"` ❌ **silent downgrade** (max selector gives user HIGH) |
-| 9036 | `zai-org/GLM-5.2` | `qwen-modelscope-router` (Qwen ModelScope Router) | ❌ NONE | — || 9996 | `glm-5.2` | `freeinference` (FreeInference) | ❌ NONE | — |
-| 10150 | `glm-5.2` | `logfare` (Logfare (Router)) | ❌ NONE | — |
-| 18111 | `glm-5.2-fast` | `neuralwatt` (Neuralwatt (Router)) | ❌ NONE, reasoning=false | — |
-| 18216 | `glm-5.2` | `neuralwatt` (Neuralwatt (Router)) | ❌ NONE | — |
+| Line  | ID                         | Owning provider block                             | `variants`?                   | max selector maps to                                                            |
+| ----- | -------------------------- | ------------------------------------------------- | ----------------------------- | ------------------------------------------------------------------------------- | --- | ---- | --------- | ------------------------------- | ------- | --- |
+| 1218  | `z-ai/glm-5.2`             | `nvidia` (NVIDIA NIM)                             | ✅ `{low, medium, high, max}` | `reasoningEffort:"max"` ✅ proper exposure                                      |
+| 2288  | `z-ai/glm-5.2` (DUPLICATE) | `qwen-nvidia-router` (Qwen NVIDIA Router)         | ✅ `{high, max}`              | `reasoningEffort:"high"` ❌ **silent downgrade** (max selector gives user HIGH) |
+| 9036  | `zai-org/GLM-5.2`          | `qwen-modelscope-router` (Qwen ModelScope Router) | ❌ NONE                       | —                                                                               |     | 9996 | `glm-5.2` | `freeinference` (FreeInference) | ❌ NONE | —   |
+| 10150 | `glm-5.2`                  | `logfare` (Logfare (Router))                      | ❌ NONE                       | —                                                                               |
+| 18111 | `glm-5.2-fast`             | `neuralwatt` (Neuralwatt (Router))                | ❌ NONE, reasoning=false      | —                                                                               |
+| 18216 | `glm-5.2`                  | `neuralwatt` (Neuralwatt (Router))                | ❌ NONE                       | —                                                                               |
 
 Quirk to surface: **`xhigh` is Qwen's vocabulary — NOT GLM's.** The canonical
 Qwen reference (`qwen/qwen3.5-397b-a17b` at line 1370) maps `variants.max.reasoningEffort = "xhigh"` — meaning for Qwen the `max` selector DOES send
 `xhigh` upstream. For GLM upstream, the top reasoning-effort string is `max`
 (NOT `xhigh`), so `z-ai/glm-5.2` at line 1218 correctly maps
 `variants.max.reasoningEffort = "max"`. There is no `xhigh` to expose for GLM
- upstream — `max` IS GLM's highest tier. So the user-visible complaint reduces to:
+upstream — `max` IS GLM's highest tier. So the user-visible complaint reduces to:
 
 - **`max` missing** on all bare aliases (lines 9996, 10150, 18111, 18216, 9036) — opencode UI shows no max selector when GLM-5.2 is reached via freeinference/logfare/neuralwatt/modelscope-router routes. **THIS is the actual bug.**
 - **silent downgrade bug** at the duplicate line-2288 `z-ai/glm-5.2` — `max` selector exists but routes to `reasoningEffort:"high"` upstream.
@@ -181,7 +181,7 @@ variant to map `reasoningEffort:"max"`, OR delete the duplicate (it lives in
 
 The parallel video-jury probe returned `logfare:glm-5.2` VIDEO_PARTIAL at 47.4s —
 meaning the upstream GLM-5.2 model genuinely accepts `type:"video_url"`
-chat-completions input. So the user-reported defect is purely a *config-layer*
+chat-completions input. So the user-reported defect is purely a _config-layer_
 opencode.json `variants` gap on the bare aliases — the upstream model itself works.
 
 ## How to regenerate

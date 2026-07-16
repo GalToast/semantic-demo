@@ -291,9 +291,24 @@
   // mobile keyboard, but that stranded mobile screen-reader users at <body>
   // with no focus target at all. The keyboard pop is a minor UX cost; the
   // a11y gap was worse. Focus the search input on all viewports.
+  //
+  // W50-A11y flake: a single rAF focus can race the Splash modal-trap teardown
+  // / lazy hydration (or run before #search-input is focusable) and silently
+  // no-op, stranding focus on <body> ~1/3 of runs. Retry across frames for a
+  // short window (focusSearchInput is idempotent) until focus lands on the
+  // primary entry point.
   $effect(() => {
-    if (!engineReady.value) return;
-    focusSearchInput();
+    if (!engineReady.value) return
+    const start = performance.now()
+    let tries = 0
+    const retry = (): void => {
+      focusSearchInput()
+      tries++
+      if (performance.now() - start < 1500 && tries < 90) {
+        requestAnimationFrame(retry)
+      }
+    }
+    requestAnimationFrame(retry)
   });
 
   $effect(() => legacyCompassSurfaceLazy.ensure(legacyCompassSurfaceActive));

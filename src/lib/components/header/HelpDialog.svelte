@@ -15,6 +15,7 @@
     emitFocusLifecycleSignal,
   } from '@lib/focus/focus-coordinator';
   import { ONBOARDING_STORAGE_KEY, markOnboardingSeen } from '@lib/onboarding/onboarding-storage';
+  import { isDeepLink } from '@lib/orchestration/deep-link';
 
   /** Show / hide the "What is this?" help dialog. */
   let helpDialog: HTMLDialogElement | undefined = $state();
@@ -64,10 +65,15 @@
    */
   function handleSearchSurfaceFocus(e: FocusEvent): void {
     if (!helpDialog?.open) return;
+    const target = e.target;
+    // Skip the camera-controls toolbar (roving-tabindex toolbar): focus
+    // inside it is intentional keyboard navigation, not a search-intent
+    // signal that should close the help dialog or rebound focus.
+    const toolbar = document.querySelector('#camera-controls');
+    if (toolbar instanceof Element && toolbar.contains(target)) return;
     // Skip focus events that originate from inside the dialog itself —
     // showModal() moves focus into the dialog and that focusin must not
     // immediately re-close the dialog we just opened.
-    const target = e.target;
     if (target instanceof Node && helpDialog.contains(target)) return;
     closeHelpDialog();
   }
@@ -126,7 +132,10 @@
    * first-visit flag as ProximityLegend so we don't spam returning users.
    */
   $effect(() => {
-    if (engineReady.value && helpDialog && !helpDialogAutoOpened && !$viewport.isCompact) {
+    // W47-UI #2: never auto-open onboarding over a shared deep-link target
+    // (?anchor= / ?record= / ?view=map / ?q≥2) — that's the product's primary
+    // distribution path and the dialog would occlude the promised business.
+    if (engineReady.value && helpDialog && !helpDialogAutoOpened && !$viewport.isCompact && !isDeepLink) {
       try {
         const raw = window.localStorage.getItem(ONBOARDING_STORAGE_KEY);
         if (!raw) {

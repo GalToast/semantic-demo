@@ -19,34 +19,34 @@ import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
 const FILES = [
-  resolve(__dirname, '../../src/components/DemoChoreography.svelte'),
-  resolve(__dirname, '../../src/components/LoadingOverlay.svelte'),
-  resolve(__dirname, '../../src/components/Legend.svelte'),
+    resolve(__dirname, '../../src/components/DemoChoreography.svelte'),
+    resolve(__dirname, '../../src/components/LoadingOverlay.svelte'),
+    resolve(__dirname, '../../src/components/Legend.svelte')
 ]
 
 function readAll(): string {
-  return FILES.map((f) => readFileSync(f, 'utf8')).join('\n')
+    return FILES.map((f) => readFileSync(f, 'utf8')).join('\n')
 }
 
 describe('UI friendly copy (UI-hardening pass)', () => {
-  const src = readAll()
+    const src = readAll()
 
-  it('locks the friendly demo/tour copy', () => {
-    // New friendly phrasings present
-    expect(src).toContain("'Follow the trail back to its source…'")
-    expect(src).toContain("'…or dive into a whole kind of business.'")
-    // Old jargon gone
-    expect(src).not.toContain('Follow a thread to its source')
-    expect(src).not.toContain('dive inside a whole cluster')
-  })
+    it('locks the friendly demo/tour copy', () => {
+        // New friendly phrasings present
+        expect(src).toContain("'Follow the trail back to its source…'")
+        expect(src).toContain("'…or dive into a whole kind of business.'")
+        // Old jargon gone
+        expect(src).not.toContain('Follow a thread to its source')
+        expect(src).not.toContain('dive inside a whole cluster')
+    })
 
-  it('locks the friendly loading aria-label', () => {
-    expect(src).toContain("aria-label={isError ? 'Loading failed' : 'Loading…'}")
-    expect(src).not.toContain('Loading semantic explorer')
-  })
+    it('locks the friendly loading aria-label', () => {
+        expect(src).toContain("aria-label={isError ? 'Loading failed' : 'Loading…'}")
+        expect(src).not.toContain('Loading semantic explorer')
+    })
 
-  it('locks the friendly legend tooltip', () => {
-    expect(src).toContain('The 12 categories are color-coded in the legend.')
-    expect(src).not.toContain('The 12 clusters are color-coded')
-  })
+    it('locks the friendly legend tooltip', () => {
+        expect(src).toContain('The 12 categories are color-coded in the legend.')
+        expect(src).not.toContain('The 12 clusters are color-coded')
+    })
 })

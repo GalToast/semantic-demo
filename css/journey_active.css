@@ -25,6 +25,22 @@
         box-shadow 0.3s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+/* A2.1 (2026-07-15): at ≤360px the narrow tier (css/mobile_premium__narrow.css,
+   the ≤360 block gated on body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any))
+   re-pins .journey-compass with left:10px; right:10px but never clears the base
+   translateX(-50%) centering from the rule above. The result: the compass panel
+   is shoved half its width off the left viewport edge (rail centering offset).
+   journey_active.css is @import-ed into semantic-demo.css (the first legacy link),
+   so it cascades BEFORE mobile_premium__narrow.css — this override must mirror the
+   narrow gate exactly so it only clears the transform where narrow re-pins left/right.
+   Surface-map-any / idle keep translateX(-50%) centering (correct at these widths);
+   widths ≥361px keep translateX(-50%) centering untouched. */
+@media (max-width: 360px) {
+    body:not(.surface-idle)[data-panel-surface]:not(.surface-map-any) .journey-compass {
+        transform: none;
+    }
+}
+
 /* D: Hide the journey compass panel in map mode (no active route context).
  * The component sets data-density='hidden' to signal "I'm not relevant now"
  * (see src/lib/orchestration/compass-controller.ts: density = 'hidden' when

@@ -37,7 +37,9 @@ describe('engine-boundary refactor / Phase 2-2 / searchResults field typing', ()
         expect(declMatch, 'appState.searchResults declaration not found').not.toBeNull()
         const declaredType = declMatch![1]
         const normalized = declaredType.replace(/\s+/g, ' ').trim()
-        expect(normalized, `appState.searchResults declared as "${declaredType}" — must be SearchResult[]`).toBe('SearchResult[]')
+        expect(normalized, `appState.searchResults declared as "${declaredType}" — must be SearchResult[]`).toBe(
+            'SearchResult[]'
+        )
         // Negative: must not be loosely typed
         expect(declaredType).not.toMatch(/\bunknown\b/)
         expect(declaredType).not.toMatch(/\bany\b/)
@@ -80,7 +82,9 @@ describe('engine-boundary refactor / Phase 2-2 / searchResults field typing', ()
         expect(resultsUi).not.toMatch(/^\s*interface\s+SearchResult\b/m)
         // Must import the types from state-types.ts
         expect(resultsUi).toMatch(/import\s+type\s*\{[^}]*\bSearchResult\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/)
-        expect(resultsUi).toMatch(/import\s+type\s*\{[^}]*\bSearchResultPoint\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/)
+        expect(resultsUi).toMatch(
+            /import\s+type\s*\{[^}]*\bSearchResultPoint\b[^}]*\}\s+from\s+['"][^'"]*state-types['"]/
+        )
     })
 
     it('search-results field validation only checks array-ness (no narrow validation)', () => {
@@ -88,7 +92,9 @@ describe('engine-boundary refactor / Phase 2-2 / searchResults field typing', ()
         // — does NOT narrow the inner element type. Lock this in to detect
         // accidental over-validation that would conflict with SearchResult[].
         const validation = readSource('src/lib/state/state-validation.ts')
-        expect(validation).toMatch(/searchResults:\s*\(value:\s*unknown\)\s*:\s*string\s*\|\s*null\s*=>\s*\{[\s\S]*Array\.isArray/)
+        expect(validation).toMatch(
+            /searchResults:\s*\(value:\s*unknown\)\s*:\s*string\s*\|\s*null\s*=>\s*\{[\s\S]*Array\.isArray/
+        )
     })
 
     it('runtime assignments to appState.searchResults use SearchResult[] shape or empty array', () => {

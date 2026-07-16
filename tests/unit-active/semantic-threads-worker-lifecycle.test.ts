@@ -409,10 +409,13 @@ describe('semantic thread worker — camelCase worker output (regression: empty-
 
         await expect(promise).resolves.toBe(true)
 
-        const map = state.semanticNeighborMapByLeadId as Map<string, {
-            leadId: string
-            neighbors: Array<{ leadId: string; score: number; sameCity: boolean; relationshipRole: string }>
-        }>
+        const map = state.semanticNeighborMapByLeadId as Map<
+            string,
+            {
+                leadId: string
+                neighbors: Array<{ leadId: string; score: number; sameCity: boolean; relationshipRole: string }>
+            }
+        >
 
         const entry = map.get('519')
         expect(entry).toBeDefined()

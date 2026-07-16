@@ -277,7 +277,7 @@ git status --short
 
 ## Switchboard coordination — beyond the file lock
 
-`.session-lock` says *"this worktree is held by someone"* but does not say *what* the holder is doing today, when they expect to be done, or whether they're reachable. The switchboard (via the `mcp` gateway, server `switchboard`) is the bus for that.
+`.session-lock` says _"this worktree is held by someone"_ but does not say _what_ the holder is doing today, when they expect to be done, or whether they're reachable. The switchboard (via the `mcp` gateway, server `switchboard`) is the bus for that.
 
 **Compose, don't replace.** Hold the file lock AND register on the bus concurrently. The lock makes git-state conflicts visible; the switchboard makes your intention visible.
 
@@ -299,8 +299,8 @@ Peers may only use the file lock, not the switchboard bus. If `list_agents` retu
 
 ### Common pitfalls
 
-- **Heartbeats required.** Stop → you appear `stale: true` to peers after 5 min. Treat going-online-without-heartbeat as *invisibility*.
-- **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a *claimed* task fresh (default 120 min).
+- **Heartbeats required.** Stop → you appear `stale: true` to peers after 5 min. Treat going-online-without-heartbeat as _invisibility_.
+- **Task heartbeats ≠ agent heartbeats.** `heartbeat_agent` keeps you visible; `heartbeat_task` keeps only a _claimed_ task fresh (default 120 min).
 - **Bus ≠ worktree authority.** `list_agents` reflects online + recently-seen peers; pair it with `.session-lock` + the pre-commit branch guard.
 - **Resource locks differ from file locks.** Switchboard resource locks cover shared browser windows / MCP surfaces / deploy environments — NOT the worktree itself.
 - **Don't ring broadly.** `ring_agent` is for one-shot urgency; persistent messages go to `post_message to: "ALL"`.

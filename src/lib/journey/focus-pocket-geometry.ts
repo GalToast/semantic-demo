@@ -710,7 +710,11 @@ function _placeSingleEntry(
         stagedOffset.multiplyScalar(ctx.personality.microVariation.scale)
     }
 
-    const originalOffset = new Vec3(original.x - ctx.focusOrig.x, original.y - ctx.focusOrig.y, original.z - ctx.focusOrig.z)
+    const originalOffset = new Vec3(
+        original.x - ctx.focusOrig.x,
+        original.y - ctx.focusOrig.y,
+        original.z - ctx.focusOrig.z
+    )
     const originalDistance = originalOffset.length()
     if (originalDistance > 0.0001) {
         originalOffset.normalize().multiplyScalar(Math.min(originalDistance, placement.radius * 1.35))
@@ -759,7 +763,13 @@ export function buildFocusedPocketStagedPositions(
     index: number,
     pocketEntries: Map<number, PocketEntry>
 ): PocketStagedResult {
-    const empty: PocketStagedResult = { positions: new Map(), motion: new Map(), roles: new Map(), motif: null, viewportProfile: null }
+    const empty: PocketStagedResult = {
+        positions: new Map(),
+        motion: new Map(),
+        roles: new Map(),
+        motif: null,
+        viewportProfile: null
+    }
     const layout = _computeEntryLayout(index, pocketEntries)
     if (!layout) return empty
 
@@ -789,9 +799,15 @@ export function buildFocusedPocketStagedPositions(
         personality
     }
 
-    primaryEntries.forEach((entry, order) => _placeSingleEntry(entry, order, 'primary', placeCtx, pocketPositions, motion, roles))
-    supportEntries.forEach((entry, order) => _placeSingleEntry(entry, order, 'support', placeCtx, pocketPositions, motion, roles))
-    haloEntries.forEach((entry, order) => _placeSingleEntry(entry, order, 'halo', placeCtx, pocketPositions, motion, roles))
+    primaryEntries.forEach((entry, order) =>
+        _placeSingleEntry(entry, order, 'primary', placeCtx, pocketPositions, motion, roles)
+    )
+    supportEntries.forEach((entry, order) =>
+        _placeSingleEntry(entry, order, 'support', placeCtx, pocketPositions, motion, roles)
+    )
+    haloEntries.forEach((entry, order) =>
+        _placeSingleEntry(entry, order, 'halo', placeCtx, pocketPositions, motion, roles)
+    )
     return { positions: pocketPositions, motion, roles, motif, viewportProfile: vpProfile }
 }
 

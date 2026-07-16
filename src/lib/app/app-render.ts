@@ -15,9 +15,9 @@
 export function focusSearchInput(): void {
     // eslint-disable-next-line no-restricted-syntax -- one-shot focus defer; the frame callback runs once and completes, so there is no recurring loop to dispose via DisposableRegistry
     requestAnimationFrame(() => {
-        const input = document.getElementById('search-input') as HTMLInputElement | null;
-        if (input && document.activeElement !== input) input.focus();
-    });
+        const input = document.getElementById('search-input') as HTMLInputElement | null
+        if (input && document.activeElement !== input) input.focus()
+    })
 }
 
 /**
@@ -26,5 +26,5 @@ export function focusSearchInput(): void {
  * search lane activity.
  */
 export function isMapPrefixedSurface(surface: string): boolean {
-    return surface.startsWith('map-');
+    return surface.startsWith('map-')
 }

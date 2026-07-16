@@ -64,10 +64,10 @@ Load order (injection via `transformIndexHtml`): `vite.config.ts:65-74` — `sem
 
 - **Empty/dead:** `mobile_premium__map.css` (1 line), `demo_ui.css` (12 lines, mostly comment).
 - **Overlapping selectors (same selector in >1 file):**
-  - `body.surface-idle .info-panel` — `chrome` (1) + `state` (2) + `surfaces` (1) + `narrow` (1). Verified per-file counts.
-  - `body.surface-semantic-dive .view-toggle` — `chrome` (1) + `narrow` (2).
-  - `body.surface-semantic-dive .focus-stage-card` — 9 blocks within `focus-dive.css` (intra-file dup).
-  - Broad shared _state-prefix_ selectors (`body.surface-idle`, `body.surface-focus`, `.journey-compass`, `#canvas-container`, `.stat-caption`, `.info-header`, `.rail-section`, `.view-toggle`) appear in 8–13 files each — these are state-gated _context_ prefixes, not necessarily duplicate rules; the real duplication is the component-level selectors above.
+    - `body.surface-idle .info-panel` — `chrome` (1) + `state` (2) + `surfaces` (1) + `narrow` (1). Verified per-file counts.
+    - `body.surface-semantic-dive .view-toggle` — `chrome` (1) + `narrow` (2).
+    - `body.surface-semantic-dive .focus-stage-card` — 9 blocks within `focus-dive.css` (intra-file dup).
+    - Broad shared _state-prefix_ selectors (`body.surface-idle`, `body.surface-focus`, `.journey-compass`, `#canvas-container`, `.stat-caption`, `.info-header`, `.rail-section`, `.view-toggle`) appear in 8–13 files each — these are state-gated _context_ prefixes, not necessarily duplicate rules; the real duplication is the component-level selectors above.
 - **One un-gated rule in `surfaces.css`:** `body:not(.surface-idle) #selected-details.active:not([hidden])` (`css/mobile_premium__surfaces.css:3-5`) has **no `@media`** and applies at all viewports — a desktop-leak risk to verify, not introduced by this plan.
 
 ## 3. Mobile Premium Shard Consolidation Assessment
@@ -127,7 +127,7 @@ Run by main lane (NOT by this subagent):
 - `npm run qa:surface:mobile-idle` — primary surface the shards style.
 - `npm run qa:surface:all` — full surface regression.
 - `npm run test:contract` — includes CSS-touching contract tests: `tests/unit-active/css-important-invariant.test.ts` (merges must not alter `!important` counts), `tests/unit-active/component-SelectedBusinessDetails.test.ts`, `tests/unit-active/legend-display-none-offscreen.test.ts`, `tests/shell-contract-check.js`, `tests/cache-buster-check.js` (link injection order), `tests/sd143-map-search-visual.spec.js`.
-  - **ADDITIONALLY (missed in original plan — these gate the merges):** `tests/mobile-chrome-ownership-contract.mjs` (`MOBILE_PREMIUM_SPLIT` hard-codes the 7 shard filenames; update per merge) and `tests/css-ownership-check.mjs` (`selectorBaselines` hard-codes per-file selector counts; update per merge). **`css-ownership-check.mjs` is currently RED pre-existing** (stale baseline vs parallel-session drift in `journey_active.css` / `chrome.css` / `focus-dive.css` / `idle.css` / `search.css`) — the merge gate cannot be considered green until the owning session resolves it.
+    - **ADDITIONALLY (missed in original plan — these gate the merges):** `tests/mobile-chrome-ownership-contract.mjs` (`MOBILE_PREMIUM_SPLIT` hard-codes the 7 shard filenames; update per merge) and `tests/css-ownership-check.mjs` (`selectorBaselines` hard-codes per-file selector counts; update per merge). **`css-ownership-check.mjs` is currently RED pre-existing** (stale baseline vs parallel-session drift in `journey_active.css` / `chrome.css` / `focus-dive.css` / `idle.css` / `search.css`) — the merge gate cannot be considered green until the owning session resolves it.
 - `node tests/visual-state-audit.mjs` — captures surfaces incl. `01-mobile-idle`, `07-desktop-idle`, `16-desktop-info-panel-populated`, `18-mobile-loading-overlay`, `19-mobile-compass-rail`, `20-mobile-mode-grid-visible`, `04-mobile-field-node-active`, search-error, map-trail-strip, focus-thread-inspector (`tests/visual-state-audit.mjs:79,82,650,654,658,666,676,734-805,926-961`). Verify no desktop leak from the un-gated `surfaces.css:3-5` rule after merge.
 
 ## 7. Recommended Execution Order

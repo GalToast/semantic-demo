@@ -79,7 +79,6 @@ const MOBILE_PREMIUM_SPLIT = [
     'css/mobile_premium__chrome.css',
     'css/mobile_premium__state.css',
     'css/mobile_premium__idle.css',
-    'css/mobile_premium__map.css',
     'css/mobile_premium__surfaces.css',
     'css/mobile_premium__narrow.css'
 ]

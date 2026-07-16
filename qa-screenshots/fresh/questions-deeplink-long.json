@@ -1,0 +1,13 @@
+[
+    {
+        "id": "Q1B-focus-deeplink-long",
+        "images": ["small/v-focus-deeplink-long.jpg"],
+        "text": "This is a desktop focus view reached via a deep link (?anchor=519) after the scene fully loaded. Describe what you see around the focused business. Is there a visible tight CLUSTER/CONSTELLATION of brighter or larger points gathered closely around a central bright node (a 'pocket')? Are there teal RAY lines connecting the central node to neighboring points? Answer with specific visual observations."
+    },
+    {
+        "id": "Q3B-pocket-gap-yesno",
+        "images": ["small/v-focus-deeplink-long.jpg"],
+        "consensus": "yes-no",
+        "text": "Looking ONLY at this deep-link focus image (after full load): is there a tight, readable cluster of gathered points around the central bright node that a new viewer could find WITHOUT being told where to look? Answer yes or no."
+    }
+]

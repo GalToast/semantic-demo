@@ -387,12 +387,21 @@ export function getMyceliumPresentationProfile() {
         }
     }
     if (state.focusedNode !== null && state.focusedNode !== undefined) {
+        // Plain FOCUS profile (no semantic-dive, no deep trail). In this branch
+        // three-engine-frame-updates applies semanticDiveThreadScale = 1, so these
+        // base opacities are used directly as the line opacities. The previous
+        // 0.16/0.055/0.085 made the focus-neighborhood threads (the core
+        // "dots close together do similar things" connection display) nearly
+        // invisible on the most important view. Bumped toward Overview
+        // readability (0.58/0.28/0.42) while staying a touch subordinate so the
+        // focused point and pocket dots still dominate. Widths raised slightly
+        // to match so the threads read clearly without overpowering the pocket.
         return {
-            core: 0.16,
-            wispy: 0.055,
-            bridge: 0.085,
-            pulse: 0.008,
-            linewidth: { core: 2.0, wispy: 0.8, bridge: 1.4 }
+            core: 0.5,
+            wispy: 0.24,
+            bridge: 0.36,
+            pulse: 0.012,
+            linewidth: { core: 2.2, wispy: 1.0, bridge: 1.6 }
         }
     }
     const hasSearchSummary = Object.keys(state.searchState.currentSearchSummary || {}).length > 0

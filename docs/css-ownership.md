@@ -25,9 +25,9 @@ mobile_premium__map.css stub`):
 4. `css/mobile_premium__chrome.css`
 5. `css/mobile_premium__state.css`
 6. `css/mobile_premium__idle.css`
-7. `css/mobile_premium__surfaces.css`   (`mobile_premium__map.css` deleted)
+7. `css/mobile_premium__surfaces.css` (`mobile_premium__map.css` deleted)
 8. `css/mobile_premium__narrow.css`
-9. `css/modules/focus_stage.css`   (loaded last)
+9. `css/modules/focus_stage.css` (loaded last)
 
 ## 2. Module ownership table
 
@@ -35,31 +35,31 @@ Total: **23 files** (`css/*.css` roots + `css/modules/focus_stage.css`).
 LOC from `find css -name '*.css' | xargs wc -l` at plan-investigation HEAD.
 `mobile_premium__map.css` (was 1 line, empty stub) deleted by `2eba62bf`.
 
-| File                                  | LOC  | Owns                                                                                  |
-| ------------------------------------- | ---- | ------------------------------------------------------------------------------------- |
-| `css/mobile_premium__focus-dive.css`  | 2107 | FOCUS/DIVE states; journey-compass focus geometry; focus-stage-card; cascade header   |
-| `css/search.css`                      | 1822 | Search chrome, results, filters, `.rail-section` (desktop+global)                     |
-| `css/mobile_premium__surfaces.css`    | 1512 | Panel-specific surface rules (info-panel, selected-details, view-toggle in idle)      |
-| `css/strands.css`                     | 1421 | Strand/thread visuals, compass geometry, canvas                                      |
-| `css/layout_base.css`                 | 1292 | Core desktop layout; references shard interplay                                      |
-| `css/modules/focus_stage.css`         | 1290 | Focus-stage visibility/positioning; loaded last via `<link>`                         |
-| `css/progressive_disclosure.css`      | 1061 | Disclosure/rail expansions; references `surfaces.css`                                |
-| `css/mobile_premium__chrome.css`      | 961  | Chrome/furniture across states (≤768px + 900 landscape)                              |
-| `css/journey_steps.css`               | 916  | Journey step UI                                                                       |
-| `css/mobile_premium__state.css`       | 859  | State-machine styles (≤640px + 641–768px)                                            |
-| `css/shell.css`                       | 759  | App shell                                                                            |
-| `css/journey_active.css`              | 668  | Active journey state                                                                 |
-| `css/mobile_base.css`                 | 566  | Base mobile layout                                                                   |
-| `css/controls.css`                    | 451  | Control widgets                                                                      |
-| `css/time_weather.css`                | 441  | Weather/time widget                                                                  |
-| `css/clusters.css`                   | 401  | Cluster visuals                                                                      |
-| `css/loading.css`                    | 350  | Loading overlay                                                                      |
-| `css/base.css`                        | 285  | Root base                                                                            |
-| `css/mobile_premium__narrow.css`      | 253  | ≤360px narrow viewport tightening                                                    |
-| `css/synthesis.css`                   | 196  | Synthesis panel                                                                      |
-| `css/animations.css`                  | 129  | Keyframes                                                                            |
-| `css/mobile_premium__idle.css`        | 102  | Idle surface rules (≤768px)                                                          |
-| `css/demo_ui.css`                     | 12   | **Near-dead** — 1 live rule (`body[data-demo-active='true'] .view-toggle`), rest comment |
+| File                                 | LOC  | Owns                                                                                     |
+| ------------------------------------ | ---- | ---------------------------------------------------------------------------------------- |
+| `css/mobile_premium__focus-dive.css` | 2107 | FOCUS/DIVE states; journey-compass focus geometry; focus-stage-card; cascade header      |
+| `css/search.css`                     | 1822 | Search chrome, results, filters, `.rail-section` (desktop+global)                        |
+| `css/mobile_premium__surfaces.css`   | 1512 | Panel-specific surface rules (info-panel, selected-details, view-toggle in idle)         |
+| `css/strands.css`                    | 1421 | Strand/thread visuals, compass geometry, canvas                                          |
+| `css/layout_base.css`                | 1292 | Core desktop layout; references shard interplay                                          |
+| `css/modules/focus_stage.css`        | 1290 | Focus-stage visibility/positioning; loaded last via `<link>`                             |
+| `css/progressive_disclosure.css`     | 1061 | Disclosure/rail expansions; references `surfaces.css`                                    |
+| `css/mobile_premium__chrome.css`     | 961  | Chrome/furniture across states (≤768px + 900 landscape)                                  |
+| `css/journey_steps.css`              | 916  | Journey step UI                                                                          |
+| `css/mobile_premium__state.css`      | 859  | State-machine styles (≤640px + 641–768px)                                                |
+| `css/shell.css`                      | 759  | App shell                                                                                |
+| `css/journey_active.css`             | 668  | Active journey state                                                                     |
+| `css/mobile_base.css`                | 566  | Base mobile layout                                                                       |
+| `css/controls.css`                   | 451  | Control widgets                                                                          |
+| `css/time_weather.css`               | 441  | Weather/time widget                                                                      |
+| `css/clusters.css`                   | 401  | Cluster visuals                                                                          |
+| `css/loading.css`                    | 350  | Loading overlay                                                                          |
+| `css/base.css`                       | 285  | Root base                                                                                |
+| `css/mobile_premium__narrow.css`     | 253  | ≤360px narrow viewport tightening                                                        |
+| `css/synthesis.css`                  | 196  | Synthesis panel                                                                          |
+| `css/animations.css`                 | 129  | Keyframes                                                                                |
+| `css/mobile_premium__idle.css`       | 102  | Idle surface rules (≤768px)                                                              |
+| `css/demo_ui.css`                    | 12   | **Near-dead** — 1 live rule (`body[data-demo-active='true'] .view-toggle`), rest comment |
 
 ## 3. Mobile premium shard map
 

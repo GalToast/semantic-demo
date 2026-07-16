@@ -51,12 +51,22 @@
   let status = $derived($searchState.status);
   let summary = $derived($searchState.summary);
   let activeId = $derived($searchState.activeResultId);
-  let visibleCount = $derived(searchVisibleCountFn());
   let searchError = $derived(appState.searchState.searchError);
   let isSearching = $derived(status === 'searching');
 
-  const resultSlice = $derived(results.slice(0, visibleCount));
+  // total MUST be derived before visibleCount so the clamp below can read it.
   const total = $derived(results.length);
+
+  // FIX (search-results count overshoot): clamp the persisted visible-count to
+  // the current result set so we never render "18 of 17" (visibleCount > total)
+  // and never hide the Show more control while results remain unreachable.
+  // searchVisibleCountFn() reads sessionStorage, which can hold a value larger
+  // than the current results length after a shorter follow-up search — e.g. the
+  // deep-link runSearch path (url-state.ts) does NOT clear the stored count the
+  // way orchestration.search() does.
+  const visibleCount = $derived(Math.min(searchVisibleCountFn(), total));
+
+  const resultSlice = $derived(results.slice(0, visibleCount));
   const remaining = $derived(total - visibleCount);
   const showMore = $derived(total > visibleCount);
 
@@ -213,6 +223,10 @@
   // ── Handlers ──────────────────────────────────────────────────────────────────
 
   function handleShowMore(): void {
+    // Defensive clamp: the persisted visible count must never exceed the current
+    // result set (mirrors the derived-site clamp above). The follow-up search
+    // clears the stored count, but this guard protects any path that increments
+    // from a stale source. nextVisibleCount is already <= total here.
     const nextVisibleCount = total;
     const firstNewIndex = visibleCount;
 
@@ -556,7 +570,12 @@
     min-height: 44px;
     margin-top: 0.5rem;
     padding: 0 1rem;
-    background: rgba(var(--color-primary-alt-rgb), 0.08);
+    /* Sticky so the control stays in-frame at the bottom of the scrollable
+       results surface and is always reachable when results remain. */
+    position: sticky;
+    bottom: 0;
+    z-index: 1;
+    background: rgba(var(--color-surface-chrome-rgb), 0.96);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 0.4rem;
     color: rgba(224, 240, 240, 0.9);

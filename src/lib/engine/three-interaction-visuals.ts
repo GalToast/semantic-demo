@@ -45,6 +45,7 @@ import {
     Group
 } from 'three'
 import { appState as _state } from '@lib/state/app.svelte'
+import { disposeFocusPocketSizeMesh } from './focus-pocket-size-mesh'
 const state = _state
 import { disposeHeroAnimation } from './three-search-animations'
 import { calculateSignalScore } from '@lib/utils/geo-data'
@@ -136,6 +137,7 @@ export function disposeInteractionVisuals() {
 }
 
 export function disposeSemanticLens() {
+    disposeFocusPocketSizeMesh()
     if (state.anchorBloomLight) {
         state.scene?.remove(state.anchorBloomLight)
         state.anchorBloomLight.dispose?.()
