@@ -23,10 +23,8 @@ const ROOT = resolve(__dirname, '../..')
  * -1: Placeholder2D behind-canvas layer
  *  0: canvas base layer
  *  1: base/content layer (Placeholder2D overlay, SearchResults sticky btn)
- *  9999: loading/skip-link intentional top
- * 10000: canvas-hover-preview overlay (above loading veil)
  */
-const INTENTIONAL_ALLOWLIST = new Set([-1, 0, 1, 9999, 10000])
+const INTENTIONAL_ALLOWLIST = new Set([-1, 0, 1])
 
 /** Files to skip in the literal-scan (dead template, vendor code). */
 const SKIP_PATHS = ['src/app.html', 'src/public/vendor']

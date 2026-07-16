@@ -177,7 +177,7 @@ body.focus-transition-arriving::before {
     top: 1rem;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 10000;
+    z-index: var(--z-canvas-hover);
     padding: 0.4rem 0.9rem;
     background: rgba(7, 16, 24, 0.88);
     backdrop-filter: blur(8px);

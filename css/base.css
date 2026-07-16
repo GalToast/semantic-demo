@@ -161,6 +161,7 @@
     --z-loading: 9999;
     --z-canvas-interaction: 9998; /* click-pulse ring — just below the max tooltip layer */
     --z-devtools: 9000; /* dev telemetry / inspector HUD — above toasts, below loading */
+    --z-canvas-hover: 10000; /* canvas hover-preview overlay — above the loading veil */
     --z-max: 9999;
 
     /* Shared panel elevation and glass treatment */
