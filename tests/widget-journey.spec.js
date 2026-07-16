@@ -2335,30 +2335,34 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
     // Fix 2 (sub-ui-fix-2): a first-visit desktop deep-link must NOT auto-open the
     // onboarding help dialog, because the shared link should show the target state
     // instead of covering it with onboarding chrome.
-    test('Fix 2: deep-link first visit suppresses help dialog auto-open', async ({ page }) => {
-        await page.setViewportSize({ width: 1280, height: 800 })
+    test('Fix 2: deep-link first visit suppresses help dialog auto-open', async ({ browser }) => {
+        // Use a fresh browser context so we can clear onboarding storage without
+        // polluting the shared context for subsequent tests (see journey-hang report).
+        const context = await browser.newContext({ viewport: { width: 1280, height: 800 } })
+        const page = await context.newPage()
+        await context.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
 
-        // Clear onboarding flags to guarantee the "first visit" auto-open branch.
-        await page.addInitScript(() => {
+        // Navigate first, then clear onboarding flags so the first-visit auto-open
+        // branch is guaranteed, then reload so the app initializes with cleared state.
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, {
+            waitUntil: 'domcontentloaded'
+        })
+        await page.evaluate(() => {
             try {
                 localStorage.removeItem('moco_onboarding_seen_v1')
                 sessionStorage.removeItem('moco_mycelium_demo_session_v1')
             } catch {
                 /* ignore */
             }
-            window.__PLAYWRIGHT__ = true
         })
-
         await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, {
             waitUntil: 'domcontentloaded'
         })
 
         // Wait for engine ready + points loaded.
-        await page.waitForFunction(
-            () => (window.__APP_STATE__?.points?.length ?? 0) > 100,
-            null,
-            { timeout: 20000 }
-        )
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
 
         // Wait for loading overlay to dismiss (deep-link signalReady path).
         const overlay = page.locator('.loading-overlay')
@@ -2366,10 +2370,7 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
 
         // CORE ASSERTION: help dialog must NOT be open on a deep-link first visit.
         const helpCount = await page.locator('dialog.help-dialog[open]').count()
-        expect(
-            helpCount,
-            'help dialog must not auto-open over a shared deep-link target (Fix #2)'
-        ).toBe(0)
+        expect(helpCount, 'help dialog must not auto-open over a shared deep-link target (Fix #2)').toBe(0)
 
         // Confirm focus mode is active (deep-link resolved correctly).
         await page.waitForFunction(
@@ -2380,6 +2381,8 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             null,
             { timeout: 20000 }
         )
+
+        await context.close()
     })
 
     // Fix Y (tmp/glm52-preview-overlay-take.md): a deep link on a desktop
