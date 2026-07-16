@@ -3,7 +3,20 @@
 > Read-only investigation. Source files were NOT edited. All claims cite `file:line`
 > from `rg`/`find`/`wc`/`sed`. HEAD `161194f1` at investigation; **current HEAD `5222e684`** after the parallel-lane merge of 7 commits landed between investigation and polish (no files cited in this plan were structurally relocated by that merge — line numbers below are stable at `5222e684` for verified cites).
 
-> **⚠️ Superseded by W52 `8a467b72`:** the legacy root `search-cache.ts` was consolidated into `src/lib/search/cache.ts` (11 cache exports appended, no name collisions); `search-cache.ts` no longer exists. So §1 #1's original “live cache is `search-cache.ts`” framing and §2c's “THREE overlapping caches (cache.ts / search-cache.ts / mock)” premise are post-consolidation stale — the live path is now just `cache.ts` + the mock fallback. The narrative below is retained as a historical Wave-1 investigation; treat §2c as needing reconciliation before any further search-cache work.
+> **⚠️ SUPERSEDED — most of this Wave-1 plan is now CLOSED** (2026-07-16 audit; status compiled from `git log --oneline -- <file>`). All 5 `§5` execution-order steps are DONE by prior commits, so the §1 #1 / §2c “THREE overlapping result caches” framing is retire-grade stale (the referenced files `api-cache.ts`, `mapper.ts`, `search-cache.ts` no longer exist). Wave-1 closure record:
+>
+> - **§2a (cache lifecycle consolidation)** — `search-cache.ts` merged into `cache.ts`; 11 cache exports appended, 0 name collisions. Closed by W52 `8a467b72`.
+> - **§3a / §5 #1 (DELETE orphan `api-cache.ts`)** — file removed; no live importers existed. Closed by `eb82baa3 refactor(search): delete orphaned api-cache.ts`.
+> - **§3b / §5 #3 (DELETE dead `mapper.ts`)** — file removed; `semantic-search-mapper.ts` already carries the live API; `SearchResult` lifted to `state-types.ts` (W49-ish via `ce958405` state-split commits). Closed by `88df7661 refactor(search): remove dead mapper.ts`.
+> - **§3c / §5 #4 (EXTRACT `result-presentation.ts`)** — pure helpers migrated out of `result-renderer.ts`, which dropped 374 → 247 LOC. New `src/lib/search/result-presentation.ts` (≈6.9 KB). Closed via the state-types split commit lineage (`ce958405` family).
+> - **§4a / §5 #5 (EXTRACT `search-debounce.ts`)** — new `src/lib/search/search-debounce.ts` (≈1.4 KB); `SearchInput.svelte` dropped 678 → 662 LOC. Closed by `9d1610a1 refactor(search): extract SearchDebounce timer from SearchInput.svelte`.
+> - **§5 #2 (sticky bypass respect + reload recovery)** — `markApiUnreachable` / `clearApiUnreachable` / `readApiUnreachable` helper-triad + `API_BYPASS_STICKY_MS = 60_000` expiry on read path; legacy `'1'` string treated as expired so old tabs recover automatically. Closed by PR-M loose commits (see `src/lib/search/mock-search-fallback.ts:285-378` + AGENTS.md “Conventions (search fallback)” documentation).
+>
+> The narrative below is retained as a **historical Wave-1 investigation** — the line cites (`search-cache.ts:N`, `api-cache.ts:N`, `mapper.ts:N`) reference now-absent files.
+>
+> **Still open (Wave-2 follow-up, NOT Wave-1):**
+>
+> - **§4 Wave-2 `search-dispatch.ts` controller** — extract `searchState` / `pendingSearch` / `engineReady` orchestration out of `SearchInput.svelte`. Per §4 note this was deferred “until after §3c” (now DONE, so unlocked); defer until SearchInput.svelte owner-converges with the parallel session sprint.
 
 ## 1. Executive Summary (ranked by impact ÷ effort)
 
@@ -48,12 +61,12 @@
   during `storeSemanticSearchPayload` LRU sweep (`cache.ts:108-150`, `cache.ts:152-229`). Backed by
   IndexedDB via `idb-service` (`cache.ts:18`, `cache.ts:38-60`).
 - **Callers of its exports:**
-  - `getCachedSemanticSearchPayload` / `storeSemanticSearchPayload` / `initSearchCache` /
+    - `getCachedSemanticSearchPayload` / `storeSemanticSearchPayload` / `initSearchCache` /
       `getSemanticSearchCacheDiagnostics` ARE re-exported FROM `api-cache.ts`
       (`api-cache.ts:9-12`, `api-cache.ts:18`, `api-cache.ts:225-226`) — but `api-cache.ts` is itself
       orphaned (see 2c).
-  - `state-types.ts:20` + `state-types.ts:448` import **only the `CacheEntry` type** (type-only).
-  - `app.svelte.ts:94` declares `semanticSearchResultCache: new Map<string, CacheEntry>()` and is
+    - `state-types.ts:20` + `state-types.ts:448` import **only the `CacheEntry` type** (type-only).
+    - `app.svelte.ts:94` declares `semanticSearchResultCache: new Map<string, CacheEntry>()` and is
       guarded by `tests/unit-active/state-semanticsearchcache-typing-contract.test.ts:28-69`
       (asserts the `CacheEntry` shape + `initSearchCache` pattern).
 - **Duplication flag:** This module's payload cache is functionally a near-duplicate of the LIVE
@@ -91,7 +104,7 @@
 - **Duplication/incompatibility flag:** THREE overlapping result caches exist:
   `cache.ts` (query+offset, 10min, max 8, IDB), `search-cache.ts` (query+page+offset, 5min, max
   128, in-memory), and `mock-catalog`/`mock-search-fallback` (hand-curated). Only `search-cache.ts`
-  - the `mock-search-fallback` sticky flag are on the live path. `api-cache.ts` + `cache.ts`'s
+    - the `mock-search-fallback` sticky flag are on the live path. `api-cache.ts` + `cache.ts`'s
       payload-caching half are concentric dead weight.
 
 ## 3. Consolidation Candidates
