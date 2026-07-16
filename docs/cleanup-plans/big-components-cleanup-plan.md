@@ -5,6 +5,8 @@
 **Scope:** Cleanup plan for the 6 Svelte components >450 LOC. SearchInput-side extraction is intentionally deferred to the search-layer plan (see §2 note); this plan covers SearchInput only for cross-cutting concerns and focuses the 5 others.
 **Method:** `rg` / `wc -l` / `git log` / `git status` only. No edits, no builds, no tests. Every factual claim cites `file:line`.
 
+> **⚠️ Superseded by W52 `4dde21b7` + `2833be6c` + `12ae8927` + `2537a84c`:** the Header.svelte + JourneyCompass.svelte extractions described in §1 #1 + §1 #2 below were already executed during the W52 cleanup campaign — `ModeChipRail.svelte` + `HelpDialog.svelte` extracted at `4dde21b7` / `2833be6c`; JourneyCompass split into `CompassHeader` + `CompassActionButton` + `CompassDiveSurface` at `12ae8927` / `2537a84c`. The Header.svelte line-number ranges `311-484` + JourneyCompass `357-440` referenced below are pre-extraction numbers (revision-checked at the then-current HEAD `5222e684`). The SearchResults/MapView `ErrorState` / `RetryButton` shared-seam proposal in §1 #3 remains a live follow-up pending parallel-session convergence on `SearchResults.svelte`. Treat the §1 #1 + §1 #2 narratives as historical (see post-W52 `docs/important-files.md` for the canonical parent → child inventory).
+
 ---
 
 ## 1. Executive Summary
@@ -37,8 +39,8 @@ LOC measured via `wc -l src/components/*.svelte`; region boundaries via `grep -n
 - **Top responsibilities:** Owns `queryInput`, debounce timer, `searchAbortController`, focus-intent consumption (`SearchInput.svelte:46-56`); emits search via `dispatchSearch`/`publish(SEARCH_CANCELLED)` (`:129`, `:300`); Enter-to-focus-first-result scrolling (`:280-288`).
 - **Concurrent-edit risk:** Working tree clean (`git status -uall` → "nothing to commit"). Churn: touched in all of last 20 commits (`git log --oneline -20` → 20 rows). → **HIGH-CHURN-BE-CAUTIOUS**. The dominant extraction (e.g. the semantic-lane health pill `:347-352`, suggestion/clear sub-UI) belongs to the **search-layer plan** — do NOT duplicate it here.
 - **Extraction candidates (cross-cutting only):**
-    - `useSearchDebounce` / focus-intent helper in `@lib/search/` — absorbs the debounce+abort logic (`:179-210`). Shared with SearchResults consumers. ~40 LOC → parent ~638.
-    - `SearchStatusHint.svelte` — the `semantic-lane-pill` health indicator (`:347-352`, `:660-678` style). ~10 LOC + style → parent ~628.
+  - `useSearchDebounce` / focus-intent helper in `@lib/search/` — absorbs the debounce+abort logic (`:179-210`). Shared with SearchResults consumers. ~40 LOC → parent ~638.
+  - `SearchStatusHint.svelte` — the `semantic-lane-pill` health indicator (`:347-352`, `:660-678` style). ~10 LOC + style → parent ~628.
 - **Risk:** med (high churn; script-coupled to search stores).
 
 ### 2.2 JourneyCompass.svelte (646)
@@ -46,9 +48,9 @@ LOC measured via `wc -l src/components/*.svelte`; region boundaries via `grep -n
 - **Top responsibilities:** Subscribes to `journeyStore`/`focusStore`/`navState` and recomputes compass + presentation state (`:76-140`); renders step indicators, kicker/title/note, and primary/secondary/step-inside action buttons; emits via `handleAction`/`executeJourneyCompassAction` (`:141`). Owns `compass`, `presentation`, `phase`, `density`, `copy`, parity-derived body attrs (`:114-136`).
 - **Concurrent-edit risk:** Clean tree. Churn: 11 of last 20 commits. → **HIGH-CHURN-BE-CAUTIOUS** (recent `consolidate z-index tokens` + `remove duplicate mode picker overlay` PR-C, `c1a9119a`, `43dc5c73`).
 - **Extraction candidates (all pure prop-driven, no store ownership → low risk):**
-    - `CompassStepIndicators.svelte` — the `{#each JOURNEY_COMPASS_PHASE_ORDER}` step spans (`:357-372`). Props: `phase`, `order`, `STEP_DESCRIPTIONS`. ~30 LOC → parent ~616.
-    - `CompassHeader.svelte` — kicker/title/note block (`:374-392`). Props: `kicker`, `title`, `note`, `visibleTitle`. ~20 LOC → parent ~596.
-    - `CompassActionButton.svelte` — primary/secondary/step-inside buttons driven by `buttonHidden`/`buttonDisabled`/`buttonLabel`/`actionKey` (`:393-440`). Props: `action`, `variant`, `onclick`. ~50 LOC → parent ~546.
+  - `CompassStepIndicators.svelte` — the `{#each JOURNEY_COMPASS_PHASE_ORDER}` step spans (`:357-372`). Props: `phase`, `order`, `STEP_DESCRIPTIONS`. ~30 LOC → parent ~616.
+  - `CompassHeader.svelte` — kicker/title/note block (`:374-392`). Props: `kicker`, `title`, `note`, `visibleTitle`. ~20 LOC → parent ~596.
+  - `CompassActionButton.svelte` — primary/secondary/step-inside buttons driven by `buttonHidden`/`buttonDisabled`/`buttonLabel`/`actionKey` (`:393-440`). Props: `action`, `variant`, `onclick`. ~50 LOC → parent ~546.
 - **Result:** parent 646 → ~540. **Risk:** low-med.
 
 ### 2.3 SearchResults.svelte (588)
@@ -56,9 +58,9 @@ LOC measured via `wc -l src/components/*.svelte`; region boundaries via `grep -n
 - **Top responsibilities:** Derives `resultSlice`/`total`/`visibleCount`/`suggestions`/`isResultsSurfaceActive` (`:58-103`); keyboard listbox nav (`handleContainerKeyDown`, `setActiveResultByIndex`, `:110-138`); emits `URL_SYNC_REQUESTED`, `SEARCH_FOCUS_REQUESTED`, `SEARCH_CLEARED` (`:227`, `:314`, `:339-344`). Already delegates rows to `SearchResultItem` (`:448`).
 - **Concurrent-edit risk:** Clean tree. Churn: 20/20 commits (very active — F7 dead-mirror removal `eb357ac6`, W48 polish `025a8e36`). → **HIGH-CHURN-BE-CAUTIOUS**.
 - **Extraction candidates:**
-    - `SearchErrorState.svelte` — the `isFullError` block (`:354-377`). Props: `friendlyError`, `onRetry`, `onClear`. ~45 LOC → parent ~543. **Shares shape with MapView error overlay (see §3).**
-    - `SearchEmptyState.svelte` — the `isEmpty` block + suggestions chips (`:378-405`). Props: `summary`, `suggestions`, `onSuggestionClick`. ~55 LOC → parent ~488.
-    - `SearchResultList.svelte` — listbox + `showMore` (`:420-470`). Optional; keep if it clarifies keyboard-nav ownership. ~50 LOC → parent ~438.
+  - `SearchErrorState.svelte` — the `isFullError` block (`:354-377`). Props: `friendlyError`, `onRetry`, `onClear`. ~45 LOC → parent ~543. **Shares shape with MapView error overlay (see §3).**
+  - `SearchEmptyState.svelte` — the `isEmpty` block + suggestions chips (`:378-405`). Props: `summary`, `suggestions`, `onSuggestionClick`. ~55 LOC → parent ~488.
+  - `SearchResultList.svelte` — listbox + `showMore` (`:420-470`). Optional; keep if it clarifies keyboard-nav ownership. ~50 LOC → parent ~438.
 - **Result:** parent 588 → ~480 (with first two). **Risk:** med (high churn; listbox a11y tested).
 
 ### 2.4 MapView.svelte (531)
@@ -66,8 +68,8 @@ LOC measured via `wc -l src/components/*.svelte`; region boundaries via `grep -n
 - **Top responsibilities:** Leaflet lifecycle — `activateMapShell`/`deactivateMapShell`/`initMap` with `DisposableRegistry` + `activationToken` (`:42-182`); publishes `VIEW_CHANGED`/`TOOLTIP_HIDE_REQUESTED` (`:105`, `:155`); owns `status`/`statusDetail`/`rawError` and `friendlyMapError` via `friendlyErrorMessage` (`:26-31`, `src/lib/utils/error-messages.ts`). Template is thin (56 LOC) but `<style>` is 272 LOC.
 - **Concurrent-edit risk:** Clean tree. Churn: 20/20 (W49-F view-transition `7d49971d`, tooltip gaps `6433a31b`). → **HIGH-CHURN-BE-CAUTIOUS**.
 - **Extraction candidates:**
-    - `MapStatusOverlay.svelte` — loading shimmer + error status + retry (`:216-243`). Props: `status`, `statusDetail`, `friendlyMapError`, `onRetry`. ~30 LOC → parent ~501. **Reuses the shared `ErrorState`/`RetryButton` from §3.**
-    - `MapBackButton.svelte` — footer back control (`:245-258`). Props: `onclick`. ~15 LOC → parent ~486.
+  - `MapStatusOverlay.svelte` — loading shimmer + error status + retry (`:216-243`). Props: `status`, `statusDetail`, `friendlyMapError`, `onRetry`. ~30 LOC → parent ~501. **Reuses the shared `ErrorState`/`RetryButton` from §3.**
+  - `MapBackButton.svelte` — footer back control (`:245-258`). Props: `onclick`. ~15 LOC → parent ~486.
 - **Result:** parent 531 → ~486. **Risk:** high — Leaflet DOM is injected into `#map-container`/`#canvas-container` (`:67`, `:115-122`); the style block is huge and regression-prone; script is tightly coupled to `activationToken` race-gating. Lower priority than Header/JourneyCompass/SearchResults.
 
 ### 2.5 Placeholder2D.svelte (507)
@@ -75,8 +77,8 @@ LOC measured via `wc -l src/components/*.svelte`; region boundaries via `grep -n
 - **Top responsibilities:** Mobile 2D splash — inline SVG orb cluster (`placeholder-svg`, `:88-180`), category legend, CTA `enter3d` → `engineReady.signalReady()` (`:67-73`), auto-open legend on mobile (`onMount`, `:54-64`). Script only 46 LOC; `<style>` 280 LOC.
 - **Concurrent-edit risk:** Clean tree. Churn: 14/20 (W50-UX-2 `7f43a9e3`, a11y landmark fixes `f477e1c8`). → **SAFE-TO-TOUCH** (moderate churn, no parallel WIP).
 - **Extraction candidates:**
-    - `PlaceholderCategoryLegend.svelte` — `previewCategories` `<ul>` (`:80`, `:190-205`). Props: `categories`. ~20 LOC → parent ~487.
-    - `OrbCluster.svelte` — the SVG orb composition (`:104-180`). Purely presentational; low ROI. ~80 LOC → parent ~427. (Optional — SVG is a single cohesive block.)
+  - `PlaceholderCategoryLegend.svelte` — `previewCategories` `<ul>` (`:80`, `:190-205`). Props: `categories`. ~20 LOC → parent ~487.
+  - `OrbCluster.svelte` — the SVG orb composition (`:104-180`). Purely presentational; low ROI. ~80 LOC → parent ~427. (Optional — SVG is a single cohesive block.)
 - **Result:** parent 507 → ~467 (first only). **Risk:** low-med (style-bound; changes must keep `data-testid="placeholder-2d"` `:88` and `placeholder-cta` `:192` stable for existing tests).
 
 ### 2.6 Header.svelte (487) — highest ROI
@@ -84,9 +86,9 @@ LOC measured via `wc -l src/components/*.svelte`; region boundaries via `grep -n
 - **Top responsibilities:** Mode-chip radiogroup (`:386-450`, roving tabindex via `keyboardFocusIndex` `:73`, `handleModeKeydown` `:85`), legend/keyboard-help/app-help utility buttons (`:318-328`), and a full `<dialog>` help overlay (`:451-482`). Mode logic already extracted to `@lib/components/header/mode-nav.ts` (`selectMode`/`isModeLocked`/`computeModeKeydown`, imported around `:32`) and CSS to `header.css` via `@import` (`:486`). Template is 174 LOC but 150 of it is the dialog + chip rail.
 - **Concurrent-edit risk:** Clean tree. Churn: 20/20 (W50 focus-on-#search-input `81efadcb`, bugsweep `01c31a2e`). → **HIGH-CHURN-BE-CAUTIOUS** but the extraction is mechanically safe (logic already externalized).
 - **Extraction candidates:**
-    - `HelpDialog.svelte` — the entire `<dialog class="help-dialog">` block (`:451-482`). Props: `bind:this`, `onClose`. Can reuse `src/lib/utils/focus-trap.ts` (exists, see §3). ~90 LOC → parent ~397.
-    - `ModeChipRail.svelte` — the `mode-chips` radiogroup (`:386-450`). Props: `modes`, `activeMode`, `hasSelection`, `keyboardFocusIndex`, handler closures. ~60 LOC → parent ~337.
-    - `OnboardingToast.svelte` (optional) — first-visit onboarding logic (`markOnboardingSeen`, `:47`, storage key `:44`) is shared with ProximityLegend; a small toast component could absorb it.
+  - `HelpDialog.svelte` — the entire `<dialog class="help-dialog">` block (`:451-482`). Props: `bind:this`, `onClose`. Can reuse `src/lib/utils/focus-trap.ts` (exists, see §3). ~90 LOC → parent ~397.
+  - `ModeChipRail.svelte` — the `mode-chips` radiogroup (`:386-450`). Props: `modes`, `activeMode`, `hasSelection`, `keyboardFocusIndex`, handler closures. ~60 LOC → parent ~337.
+  - `OnboardingToast.svelte` (optional) — first-visit onboarding logic (`markOnboardingSeen`, `:47`, storage key `:44`) is shared with ProximityLegend; a small toast component could absorb it.
 - **Result:** parent 487 → ~337. **Risk:** med (high churn, but the dialog/chip-rail are leaf UI; keep `aria-label`/`role="radiogroup"`/`#mode-chips`/`#btn-*` ids stable — they are asserted by `widget-journey.spec.js:777,1054,1105`).
 
 ### 2.7 Additional big-but-not-top (mention only, no detailed plan)
