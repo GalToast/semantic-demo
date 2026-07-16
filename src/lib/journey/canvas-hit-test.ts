@@ -130,6 +130,59 @@ interface ScreenCandidate {
     distanceFromFocus: number | null
 }
 
+/**
+ * Memoized screen-candidate cache: recompute only when threadCandidates,
+ * focusIndex, activeFilters, or the positions reference changes.
+ */
+interface ScreenCandidateCacheKey {
+    candidatesLen: number
+    focusIndex: number | null
+    status: string
+    city: string
+    website: boolean
+    email: boolean
+    geocoded: boolean
+    positionsRef: number // hash of nodePositions length
+}
+
+let _lastScreenKey: ScreenCandidateCacheKey | null = null
+let _lastScreenCandidates: ScreenCandidate[] | null = null
+
+function _screenCacheKey(): ScreenCandidateCacheKey | null {
+    const navState = appState.navState
+    const focusIndex =
+        navState?.focusedIndex != null && Number.isFinite(navState.focusedIndex) ? navState.focusedIndex : null
+    const threadCandidates = navState?.threadCandidates ?? []
+    const filters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS
+    return {
+        candidatesLen: threadCandidates.length,
+        focusIndex,
+        status: filters.status,
+        city: filters.city,
+        website: filters.website,
+        email: filters.email,
+        geocoded: filters.geocoded,
+        positionsRef: (appState.nodePositions?.length ?? 0) +
+            (appState.targetPositions?.length ?? 0) +
+            (appState.originalPositions?.length ?? 0)
+    }
+}
+
+function _screenKeyEquals(a: ScreenCandidateCacheKey | null, b: ScreenCandidateCacheKey | null): boolean {
+    if (a === b) return true
+    if (!a || !b) return false
+    return (
+        a.candidatesLen === b.candidatesLen &&
+        a.focusIndex === b.focusIndex &&
+        a.status === b.status &&
+        a.city === b.city &&
+        a.website === b.website &&
+        a.email === b.email &&
+        a.geocoded === b.geocoded &&
+        a.positionsRef === b.positionsRef
+    )
+}
+
 function getFocusThreadScreenCandidates(): ScreenCandidate[] {
     const camera = (appState.camera ?? undefined) as Camera | undefined
     const canvas = appState.renderer?.domElement as HTMLCanvasElement | undefined
@@ -140,13 +193,19 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
         navState?.focusedIndex != null && Number.isFinite(navState.focusedIndex) ? navState.focusedIndex : null
     const points = appState.points as GeoPoint[]
     const threadCandidates = navState?.threadCandidates ?? []
+
+    // Memoize: skip recomputation when inputs haven't changed
+    const key = _screenCacheKey()
+    if (key && _screenKeyEquals(_lastScreenKey, key) && _lastScreenCandidates !== null) {
+        return _lastScreenCandidates
+    }
     const pointsMesh = (appState.pointsMesh ?? undefined) as Object3D | undefined
     const nodePositions = appState.nodePositions
     const targetPositions = appState.targetPositions
     const originalPositions = appState.originalPositions
     const activeFilters = appState.activeFilters ?? DEFAULT_ACTIVE_FILTERS
 
-    return threadCandidates
+    const result = threadCandidates
         .filter((candidate: ThreadCandidateRef) => candidate.source === 'semantic' && candidate.index !== focusIndex)
         .filter((candidate: ThreadCandidateRef) => isPointVisible(candidate.index, points, null, activeFilters))
         .slice(0, getSemanticThreadDisplayLimit())
@@ -196,6 +255,11 @@ function getFocusThreadScreenCandidates(): ScreenCandidate[] {
             }
         })
         .filter((c): c is ScreenCandidate => c !== null)
+
+    // Update cache for next call
+    _lastScreenKey = key
+    _lastScreenCandidates = result
+    return result
 }
 
 // ── Nearest Candidate ───────────────────────────────────────────────────────
