@@ -2802,4 +2802,80 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             `body min-height (${viewportResult.computedMinHeight}) must be >= viewport innerHeight (${viewportResult.innerHeight})`
         ).toBeGreaterThanOrEqual(viewportResult.innerHeight * 0.9) // 10% tolerance for dvh rounding
     })
+
+    test('5n. MapView deep-link ?view=map renders Leaflet chrome + bypasses splash gate (W52 parked-item #5)', async ({
+        page
+    }) => {
+        // W52 parked-item #5 closure: AGENTS.md Conventions → 'Splash dismissal on
+        // deep-links (PR-B2/B4)': parseUrlParams() returns isDeepLink for ?view=map;
+        // on desktop, the splash gate dismisses immediately (main.ts signalReady()
+        // fires at boot via the isDeepLink guard). src/lib/orchestration/url-state.ts:209
+        // applies the URL `view` param to navState.currentView via writeNavStateMirror,
+        // so ?view=map flips state to currentView='map', which triggers
+        // MapView.svelte mount + activateMapShell() on the shared #map-container
+        // owned by Canvas.svelte. This is the first journey test covering the
+        // map-deep-link entry path against dist/svelte/index.html.
+
+        await page.setViewportSize({ width: 1440, height: 900 })
+
+        // Force webgl render-kind (the real WebGL scene) so the desktop deep-link
+        // resolves at boot — same pattern as the ?anchor=519 deep-link test at
+        // line 1517. Without __PLAYWRIGHT__, navigator.webdriver stays in
+        // placeholder2d, engineReady doesn't signalReady, and the splash layer
+        // stays occluding regardless of isDeepLink.
+        await page.addInitScript(() => {
+            window.__PLAYWRIGHT__ = true
+        })
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&view=map`, { waitUntil: 'domcontentloaded' })
+
+        // 1) Splash + loading overlay hidden (deep-link desktop signalReady path).
+        const overlay = page.locator('.loading-overlay')
+        await overlay.waitFor({ state: 'hidden', timeout: 20000 }).catch(() => {})
+
+        // 2) Points loaded (8,406) so applyUrlStateAfterData can resolve.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
+
+        // 3) URL-state restore flipped navState.currentView to 'map'
+        //    (url-state.ts:209 view=map → writeNavStateMirror currentView='map').
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__?.navState
+                return !!s && s.currentView === 'map'
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // 4) #map-container (owned by Canvas.svelte) is now activated. MapView.svelte
+        //    activateMapShell() sets data-active-view='map' + class 'active'
+        //    + aria-hidden='false'. See src/components/MapView.svelte:77.
+        await page.waitForFunction(
+            () => {
+                const map = document.getElementById('map-container')
+                return !!map && map.dataset.activeView === 'map'
+            },
+            null,
+            { timeout: 20000 }
+        )
+
+        // 5) Leaflet initializes inside #map-container once MapView's initMap()
+        //    finishes — Leaflet adds 'leaflet-container' to the host element.
+        //    tests/product-playthrough-audit.mjs:761 uses '#map-container.leaflet-container'
+        //    as the canonical map-ready selector.
+        await page.locator('#map-container.leaflet-container').first().waitFor({ state: 'attached', timeout: 30000 })
+
+        // 6) No error chrome (status !== 'error'); the MapView chrome must not
+        //    have surfaced a tile-load failure label.
+        const errChrome = page.locator('.map-view.is-error, .map-status.is-error')
+        expect(await errChrome.count(), 'map must not surface error chrome under ?view=map deep-link').toBe(0)
+
+        // 7) MapView.svelte chrome mounted — .map-view wrapper is the outermost
+        //    surface MapView renders (header/footer + status-dot + retry/back).
+        //    See src/components/MapView.svelte styling.
+        const chrome = page.locator('.map-view')
+        expect(await chrome.count(), 'MapView chrome (.map-view) must mount under ?view=map deep-link').toBeGreaterThan(
+            0
+        )
+    })
 })
