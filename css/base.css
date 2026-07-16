@@ -129,7 +129,6 @@
     --z-chrome-elevated: 14;
     --z-chrome-popover: 20;
     --z-field-nodes: 10;
-    --z-threads: 20;
     --z-overlays: 30;
     --z-legend: 50;
     --z-trail-cue: 50; /* search trail cue — above canvas/threads, below interactive chrome */

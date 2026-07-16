@@ -32,10 +32,10 @@
 
 @keyframes rain-fall {
     0% {
-        transform: translateY(-100vh) translateX(0);
+        transform: translateY(-100dvh) translateX(0);
     }
     100% {
-        transform: translateY(100vh) translateX(-20px);
+        transform: translateY(100dvh) translateX(-20px);
     }
 }
 
