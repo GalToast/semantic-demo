@@ -132,9 +132,18 @@ export async function search(query: string, options: SearchOptions = {}): Promis
     incrementFocusTransitionToken()
     if (typeof clearSearchPreviewHoverTimer === 'function') clearSearchPreviewHoverTimer()
 
-    // Abort any in-flight search and store the new controller on appState
-    appState.searchAbortController?.abort()
-    const currentController = new AbortController()
+    // Abort any in-flight search and store the new controller on appState.
+    // Only abort when the new query differs from the one currently in flight;
+    // re-entrant calls for the SAME query (deep-link re-parse, re-render) must
+    // NOT cancel the live request, or the UI gets stuck on "Searching…".
+    const prevController = appState.searchAbortController as (AbortController & { query?: string }) | null
+    if (prevController && prevController.query === trimmedQuery && !prevController.signal.aborted) {
+        // Same query already in flight — reuse it; don't restart or abort.
+        return
+    }
+    prevController?.abort()
+    const currentController = new AbortController() as AbortController & { query?: string }
+    currentController.query = trimmedQuery
     appState.searchAbortController = currentController
 
     if (!trimmedQuery || trimmedQuery.length < 2) {

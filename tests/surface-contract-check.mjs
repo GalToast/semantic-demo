@@ -180,9 +180,17 @@ async function makePage(browser, surface) {
         window.__PLAYWRIGHT__ = true
     })
     const page = await context.newPage()
+    page.__suppressMock503ConsoleError = false
     page.on('console', (msg) => {
         const type = msg.type()
         const text = msg.text()
+        if (
+            page.__suppressMock503ConsoleError &&
+            type === 'error' &&
+            /Failed to load resource: the server responded with a status of 503/i.test(text)
+        ) {
+            return
+        }
         if (
             type === 'error' ||
             type === 'warning' ||
@@ -869,6 +877,7 @@ async function assert_search_error(page, ctx) {
     url.searchParams.set('staticDev', '0')
     url.searchParams.set('q', 'forced-surface-contract-search-error')
     url.searchParams.delete('anchor')
+    page.__suppressMock503ConsoleError = true
     await loadAndWait(page, url.toString())
     await page.waitForSelector('.search-error-state', { state: 'visible', timeout: 10000 })
 
@@ -982,6 +991,7 @@ async function assert_search_error(page, ctx) {
     if (info.errorHasOverlay) ctx.fail('search-error', 'overlay:search-error-state', 'error state has blocking overlay')
     else if (info.errorHasOverlay === false) ctx.pass('search-error', 'overlay:search-error-state')
 
+    page.__suppressMock503ConsoleError = false
     return info
 }
 

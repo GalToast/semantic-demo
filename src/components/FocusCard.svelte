@@ -417,7 +417,7 @@
 
   @media (max-width: 768px) {
     .focus-card.surface-semantic-dive,
-    .focus-card.surface-focus-search.mode-field-node,
+    .focus-card.surface-focus-search,
     .focus-card.surface-focus {
       position: fixed;
       left: 0;

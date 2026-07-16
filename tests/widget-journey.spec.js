@@ -2332,6 +2332,49 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         await infoPanel.waitFor({ state: 'attached', timeout: 10000 })
     })
 
+    // Fix 2 (sub-ui-fix-2): a first-visit desktop deep-link must NOT auto-open the
+    // onboarding help dialog, because the shared link should show the target state
+    // instead of covering it with onboarding chrome.
+    test('Fix 2: deep-link first visit suppresses help dialog auto-open', async ({ page }) => {
+        await page.setViewportSize({ width: 1280, height: 800 })
+
+        // Clear onboarding flags to guarantee the "first visit" auto-open branch.
+        await page.addInitScript(() => {
+            try {
+                localStorage.removeItem('moco_onboarding_seen_v1')
+                sessionStorage.removeItem('moco_mycelium_demo_session_v1')
+            } catch {
+                /* ignore */
+            }
+            window.__PLAYWRIGHT__ = true
+        })
+
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1&anchor=519`, {
+            waitUntil: 'domcontentloaded'
+        })
+
+        // Wait for engine ready + points loaded.
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 20000 })
+
+        // Wait for loading overlay to dismiss (deep-link signalReady path).
+        const overlay = page.locator('.loading-overlay')
+        await overlay.waitFor({ state: 'hidden', timeout: 20000 }).catch(() => {})
+
+        // CORE ASSERTION: help dialog must NOT be open on a deep-link first visit.
+        const helpCount = await page.locator('dialog.help-dialog[open]').count()
+        expect(helpCount, 'help dialog must not auto-open over a shared deep-link target (Fix #2)').toBe(0)
+
+        // Confirm focus mode is active (deep-link resolved correctly).
+        await page.waitForFunction(
+            () => {
+                const s = window.__APP_STATE__?.navState
+                return !!s && s.focusedIndex === 519 && s.mode === 'focus'
+            },
+            null,
+            { timeout: 20000 }
+        )
+    })
+
     // Fix Y (tmp/glm52-preview-overlay-take.md): a deep link on a desktop
     // webdriver session with NO __PLAYWRIGHT__ flag must dismiss the preview
     // overlay (Splash + "Enter 3D Scene" placeholder-layer) instead of leaving
