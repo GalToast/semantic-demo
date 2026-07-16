@@ -13,6 +13,42 @@ import { debugWarn } from '@lib/utils/debug'
 import type { SearchResult } from '@lib/types/state'
 import * as idb from '../utils/idb-service'
 
+// ── IndexedDB degradation observability ────────────────────────────────────
+// IDB failures used to be fire-and-forget `.catch(debugWarn)` no-ops: the
+// cache kept running in-memory while IDB silently failed underneath. Track a
+// degraded flag + last error and surface it via diagnostics so the failure is
+// observable rather than swallowed.
+
+let _idbDegraded = false
+let _lastIdbError: unknown = null
+
+function markIdbDegraded(err: unknown): void {
+    _idbDegraded = true
+    _lastIdbError = err
+    console.warn(
+        '[semantic-search-cache] IndexedDB operation failed; cache running in-memory only (degraded):',
+        err
+    )
+    debugWarn('[semantic-search-cache] IndexedDB degraded:', err)
+}
+
+/**
+ * Observe a fire-and-forget IDB operation: clear the degraded flag on
+ * success, mark it (and log) on failure. Swallows the rejection so callers'
+ * unawaited promises never surface as unhandled rejections.
+ */
+function observeIdb(p: Promise<unknown>): void {
+    void p.then(
+        () => {
+            _idbDegraded = false
+            _lastIdbError = null
+        },
+        (err: unknown) => {
+            markIdbDegraded(err)
+        }
+    )
+}
+
 export const SEMANTIC_SEARCH_CACHE_MAX_ENTRIES: number = 8
 export const SEMANTIC_SEARCH_CACHE_TTL_MS: number = 10 * 60 * 1000
 
@@ -35,6 +71,10 @@ export interface CacheDiagnosticsSnapshot extends SemanticSearchCacheDiagnostics
     keys: string[]
     ttlMs: number
     maxEntries: number
+    /** True when the last IndexedDB operation failed; cache is in-memory only. */
+    idbDegraded: boolean
+    /** Last IndexedDB error, if any. */
+    lastIdbError: string | null
 }
 
 export async function initSearchCache(): Promise<void> {
@@ -58,19 +98,21 @@ export async function initSearchCache(): Promise<void> {
     }
     try {
         const dbEntries = await idb.entries()
+        _idbDegraded = false
+        _lastIdbError = null
         const now = Date.now()
         for (const [key, entry] of dbEntries) {
             const cacheEntry = entry as CacheEntry
             if (!entry || typeof cacheEntry.storedAt !== 'number') continue
             const ageMs = now - cacheEntry.storedAt
             if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
-                idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] cleanup failed:', err))
+                observeIdb(idb.remove(key as string))
             } else {
                 appState.searchState.semanticSearchResultCache.set(key as string, cacheEntry)
             }
         }
     } catch (err) {
-        debugWarn('[semantic-search-api-cache] Failed to initialize IDB cache:', err)
+        markIdbDegraded(err)
     }
 }
 
@@ -135,7 +177,7 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
     const ageMs = now - (entry as CacheEntry).storedAt
     if (ageMs > SEMANTIC_SEARCH_CACHE_TTL_MS) {
         cache.delete(key)
-        idb.remove(key as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err))
+        observeIdb(idb.remove(key as string))
 
         const diagnostics = appState.searchState.semanticSearchCacheDiagnostics
         updateSemanticSearchCacheDiagnostics({
@@ -148,9 +190,7 @@ export function getCachedSemanticSearchPayload(query: string, offset: number = 0
 
     // lastAccessedAt is an internal cache field; mutation here does not affect Svelte 5 reactivity.
     ;(entry as CacheEntry).lastAccessedAt = now
-    idb.set(key as string, entry as CacheEntry).catch((err: unknown) =>
-        debugWarn('[idb-service] access update failed:', err)
-    )
+    observeIdb(idb.set(key as string, entry as CacheEntry))
 
     updateSemanticSearchCacheDiagnostics({
         hits: appState.searchState.semanticSearchCacheDiagnostics.hits + 1
@@ -181,7 +221,7 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
     }
 
     appState.searchState.semanticSearchResultCache.set(key, entry)
-    idb.set(key, entry).catch((err: unknown) => debugWarn('[idb-service] store failed:', err))
+    observeIdb(idb.set(key, entry))
 
     updateSemanticSearchCacheDiagnostics({
         stores: appState.searchState.semanticSearchCacheDiagnostics.stores + 1
@@ -194,7 +234,7 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
             const ce = e as CacheEntry
             if (e && now - ce.storedAt > SEMANTIC_SEARCH_CACHE_TTL_MS) {
                 cache.delete(k)
-                idb.remove(k as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err))
+                observeIdb(idb.remove(k as string))
                 updateSemanticSearchCacheDiagnostics({
                     evictions: appState.searchState.semanticSearchCacheDiagnostics.evictions + 1
                 })
@@ -212,7 +252,7 @@ export function storeSemanticSearchPayload(query: string, payload: SearchPayload
             }
             if (!oldestKey) break
             cache.delete(oldestKey)
-            idb.remove(oldestKey as string).catch((err: unknown) => debugWarn('[idb-service] eviction failed:', err))
+            observeIdb(idb.remove(oldestKey as string))
             updateSemanticSearchCacheDiagnostics({
                 evictions: appState.searchState.semanticSearchCacheDiagnostics.evictions + 1
             })
@@ -227,7 +267,9 @@ export function getSemanticSearchCacheDiagnostics(): CacheDiagnosticsSnapshot {
         size: cache?.size || 0,
         keys: cache ? Array.from(cache.keys()) : [],
         ttlMs: SEMANTIC_SEARCH_CACHE_TTL_MS,
-        maxEntries: SEMANTIC_SEARCH_CACHE_MAX_ENTRIES
+        maxEntries: SEMANTIC_SEARCH_CACHE_MAX_ENTRIES,
+        idbDegraded: _idbDegraded,
+        lastIdbError: _lastIdbError instanceof Error ? _lastIdbError.message : _lastIdbError ? String(_lastIdbError) : null
     }
 }
 

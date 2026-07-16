@@ -35,6 +35,33 @@ import { getInitialRenderKind, isDeepLinkParams } from '@lib/orchestration/respo
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
 import { debugError, debugWarn } from '@lib/utils/debug'
+import { handleError } from '@lib/utils/error-handler'
+
+// ── Global error sink ──────────────────────────────────────────────────────
+// Top-level catch for otherwise-uncaught errors / unhandled promise
+// rejections so failures are observable instead of vanishing into the console
+// or crashing boot silently. Keep minimal.
+function installGlobalErrorSink(): void {
+    window.addEventListener('error', (event: ErrorEvent) => {
+        const err = event.error ?? event.message
+        debugError('[global-error] uncaught error:', err)
+        try {
+            handleError({ context: 'global-error', rethrow: false })(err)
+        } catch {
+            /* reporter is non-fatal */
+        }
+    })
+    window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
+        const reason = event.reason
+        debugError('[global-error] unhandled promise rejection:', reason)
+        try {
+            handleError({ context: 'unhandled-rejection', rethrow: false })(reason)
+        } catch {
+            /* reporter is non-fatal */
+        }
+    })
+}
+installGlobalErrorSink()
 
 // ── URL parameter initialization ──────────────────────────────────────────────
 
