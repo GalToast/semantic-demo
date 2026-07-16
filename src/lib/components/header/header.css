@@ -339,6 +339,40 @@
     border-color: rgba(var(--color-primary-alt-rgb), 0.5);
 }
 
+/* A2.2 (2026-07-15): between 769–820px the header still shows full
+   chip labels (white-space:nowrap on .chip-label) but the 6 journey chips
+   can exceed the available width and clip a label mid-word. Tighten the
+   chip spacing and let the rail scroll horizontally as a fallback so a
+   label is never cut mid-word. We deliberately do NOT hide labels here —
+   the icon-only policy only kicks in at ≤768px via the mobile breakpoint
+   below (per the W46-D4 mobile label-hiding contract). Desktop widths
+   (≥821px) are untouched. */
+@media (max-width: 820px) {
+    .app-header {
+        gap: 0.6rem;
+    }
+    .mode-chips {
+        gap: 0.25rem;
+        /* allow the rail to scroll instead of clipping a label mid-word */
+        overflow-x: auto;
+        min-width: 0;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+    }
+    .mode-chips::-webkit-scrollbar {
+        display: none;
+    }
+    .mode-chip {
+        padding: 0.3rem 0.45rem;
+        font-size: 0.7rem;
+    }
+    .header-description {
+        /* keep the orientation caption from competing with the chips on
+           narrow desktop (its ellipsis truncation is intentional per PR-G) */
+        max-width: 14rem;
+    }
+}
+
 @media (max-width: 768px) {
     .app-header {
         padding: 0.35rem 0.5rem;
@@ -424,5 +458,22 @@
         width: 44px;
         height: 44px;
         background: transparent;
+    }
+}
+
+/* S7-Fix (2026-07-15): ≤390px the brand-label "MONTGOMERY COUNTY" overflows
+   the header flex row and overlaps the mode-chip rail / FILTERS button.
+   Hide the text label so only the brand-mark "SE" icon remains visible.
+   The brand-mark is NOT hidden here — it is only hidden on the idle surface
+   (mobile_premium__chrome.css:body.surface-idle .brand-mark) because the
+   placeholder H1 already brands the page. On non-idle surfaces the SE icon
+   is the sole brand signal and must survive. Tighten chip gap to reclaim
+   ~0.25rem of horizontal budget. */
+@media (max-width: 390px) {
+    .brand-label {
+        display: none;
+    }
+    .mode-chips {
+        gap: 0.2rem;
     }
 }

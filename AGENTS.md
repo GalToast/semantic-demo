@@ -43,13 +43,14 @@ See `docs/session-coordination.md` — session lock + parallel-session coordinat
 - Worker prompts must define scope, allowed files, no-revert boundaries, expected evidence, and verification commands.
 - Have workers write reports/evidence under `tmp/` when practical; main lane reviews diffs and reruns deterministic checks.
 - Lightly poll long-running workers (~every 2-3 min) when live steering is available — give them runway, don't micro-manage.
+- **Steering a live worker:** `external_subagent_steer({ worker_id, prompt_text })` — the message goes in `prompt_text`; `message`/`session_id` are NOT steer params (using them trips the start-handler validation and falsely looks like a broken endpoint). True live input requires the target worker launched with `live_steer=true` (verify `steerable: true`); otherwise steer returns a `delegate_to_followup` decision. Steer only for mid-flight nudges — relaunch when a worker is mis-launched (broken `cwd`, wrong harness) with zero progress.
 - Do not assume workers inherit browser/MCP tools. Have workers report exposed tools before artifact-producing work that depends on them.
 
 **Delegation rules:** Full lifecycle, rate/polish, parallel divide-and-conquer, visual verification, and vision capability matrix are in `docs/subagent-delegation.md`.
 
 **Lane inventory (from `model-providers.json`):**
 
-- Primary: `kilo/openrouter/owl-alpha`
+- Primary: `minimax-m3` (MiniMax-M3 — main lane; verified vision-capable 2026-07-15, routes: kilo/minimax, logfare, opencode-zen, minimax-direct). Previous `kilo/openrouter/owl-alpha` is dead (404 on both the kilo gateway and OpenRouter; absent from `/v1/models`) — do not re-add.
 - Registered alt: `agnes-2.0-flash` (bare ref for subagent — no provider prefix)
 - Free fallbacks: `mimo-v2.5-free`, `deepseek-v4-flash-free`, `nemotron-3-ultra-free`, `qwen3.6-plus-free` (not in live free catalog 2026-07-15), `north-mini-code-free`, `hy3-free`
 

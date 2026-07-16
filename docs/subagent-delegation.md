@@ -28,8 +28,8 @@ When a task arrives, run this loop on the main lane before touching anything:
 2. **Plan** — design the solution in main-lane head. Identify scope, allowed files, no-revert boundaries, verification commands. Write the design to a `tmp/<topic>-<date>/worker-prompt.md` if it will be delegated.
 3. **Decompose** — split into sub-tasks. For each sub-task, ask: is this bigger than ~50 LOC of code or ~100 LOC of test, OR does it require more than one read cycle of investigation? If yes → delegate. If no → main-lane is faster. Don't ask permission, just decide.
 4. **Delegate** — `external_subagent_start` with `model: kilo/openrouter/owl-alpha` (primary) or `agnes-2.0-flash` (registered alt — bare ref, no provider prefix) or a free fallback. Provide: scope, allowed files, no-revert boundaries, expected evidence (diff + verification output + tmp/report.md), verification commands. `timeout_seconds: 900`. `mode: yolo`. `mcp_profile: subagent`. `owner_tag: kimi-main`. Acquire session lock if multi-commit.
-   - **Quick model lookup**: `node scripts/list-subagent-models.mjs` filters the live catalog to project-relevant refs.
-   - **Steer tool**: `external_subagent_steer` requires `prompt_text` (not `message`).
+    - **Quick model lookup**: `node scripts/list-subagent-models.mjs` filters the live catalog to project-relevant refs.
+    - **Steer tool**: `external_subagent_steer` requires `prompt_text` (not `message`).
 5. **Judge** — when the worker finishes, read `tmp/<topic>/report.md` + `git diff`. Score 1-10 against the brief. Look for: scope creep, broken types/tests, missing a11y, formatting drift, half-applied edits, parallel-session interference, missing evidence.
 6. **Polish** — if score <10, take over on the main lane and finish the gap. Examples: missing styles → add them; failing test → fix it; scope creep → revert and re-apply tightly; whitespace drift in unrelated files → revert that drift. If score =10, ship (commit + push).
 

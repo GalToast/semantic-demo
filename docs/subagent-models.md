@@ -16,14 +16,14 @@ agnes-2.0-flash          ← bare ref, NO provider prefix
 
 ## Free Fallbacks
 
-| Model ID                 | Intelligence Score (AA) |
-| ------------------------ | ----------------------- |
-| `mimo-v2.5-free`         | **42**                  |
-| `deepseek-v4-flash-free` | **40**                  |
+| Model ID                 | Intelligence Score (AA)                      |
+| ------------------------ | -------------------------------------------- |
+| `mimo-v2.5-free`         | **42**                                       |
+| `deepseek-v4-flash-free` | **40**                                       |
 | `qwen3.6-plus-free`      | **40** (not in live free catalog 2026-07-15) |
-| `nemotron-3-ultra-free`  | **38**                  |
-| `north-mini-code-free`   | **21\***                |
-| `hy3-free`               | **?** (new lane, score TBD) |
+| `nemotron-3-ultra-free`  | **38**                                       |
+| `north-mini-code-free`   | **21\***                                     |
+| `hy3-free`               | **?** (new lane, score TBD)                  |
 
 > **Note:** Coding Index scores are **not currently available** on artificialanalysis.ai (per-model Coding Index tabs shows "Not currently available" across all tested models). See [`docs/ai-model-leaderboard-scores.md`](ai-model-leaderboard-scores.md) for full details.
 > **`hy3-free`** is a new free-tier lane (bare ref → `opencode-zen/hy3-free`); Intelligence Score not yet fetched — score TBD.
