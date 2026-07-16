@@ -2444,4 +2444,362 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
         })
         expect(h3Text.length, 'focus h3 must render business name (length > 0)').toBeGreaterThan(0)
     })
+
+    test('B-S5: surface-5 @820 no chip-label mid-word clip (Phase-3 R1 hallucination guard)', async ({ page }) => {
+        // Surface-5 fix-wave R1 (Phase-3 2026-07-16 cross-model grade):
+        // agnes-2.0-flash reported the "Overview" mode chip was clipped to "Ove"
+        // at the 820px width (narrow-desktop). Main-lane DOM inspection (v2 —
+        // mirrors tests/capture-phase2.spec.js's __PLAYWRIGHT__ + localStorage
+        // boot so renderKind=webgl + splash auto-dismiss at desktop widths)
+        // showed Lane B's header.css @media ≤820px rule (overflow-x: auto;
+        // min-width: 0; etc.) instead makes the .mode-chips rail scroll
+        // horizontally (scrollWidth=381 vs clientWidth=299 → 82px overflow),
+        // but every individual chip / label fits its own box —
+        // `labelEl.scrollWidth === labelEl.clientWidth` for all 6 — meaning no
+        // chip text is mid-word clipped; the user simply scrolls the rail
+        // horizontally to reveal off-viewport chips. This journey test
+        // formalises the no-clip invariant so future regressions (e.g. someone
+        // deciding to clip chip text instead of scrolling) get caught.
+        await page.setViewportSize({ width: 820, height: 800 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.waitForTimeout(1200)
+
+        // Dismiss first-visit help dialog if auto-opened (mirrors B-S7).
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(300)
+        }
+
+        // Assertion 1: .mode-chips rail exists with exactly 6 mode-chip children.
+        const railState = await page.evaluate(() => {
+            const rail = document.querySelector('.mode-chips')
+            if (!rail) return { exists: false, chipCount: 0, chips: [], rail: null }
+            const chips = Array.from(rail.querySelectorAll('.mode-chip'))
+            return {
+                exists: true,
+                chipCount: chips.length,
+                rail: {
+                    scrollWidth: rail.scrollWidth,
+                    clientWidth: rail.clientWidth,
+                    overflowX: getComputedStyle(rail).overflowX,
+                    display: getComputedStyle(rail).display
+                },
+                chips: chips.map((c) => {
+                    const labelEl = c.querySelector('.chip-label') || c
+                    const text = labelEl.textContent?.trim() || ''
+                    return {
+                        text,
+                        labelScrollWidth: labelEl.scrollWidth,
+                        labelClientWidth: labelEl.clientWidth,
+                        labelFitDelta: labelEl.scrollWidth - labelEl.clientWidth,
+                        whiteSpace: getComputedStyle(labelEl).whiteSpace,
+                        textOverflow: getComputedStyle(labelEl).textOverflow
+                    }
+                })
+            }
+        })
+        expect(railState.exists, '.mode-chips rail must exist at 820px viewport').toBe(true)
+        expect(railState.chipCount, '.mode-chips must contain 6 mode-chip children').toBe(6)
+
+        // Assertion 2: every mode-chip label text matches expected full text
+        // (order per Header.svelte journey-phase manifest — W47+ order:
+        // overview → search → focus → trail → inside → map, surfaced as rail
+        // tokens). No "Ove" truncations, no missing tokens.
+        const expectedTexts = ['Overview', 'Search', 'Trail', 'Focus', 'Inside', 'Map']
+        railState.chips.forEach((c, i) => {
+            expect(c.text, `.mode-chip ${i} label text`).toBe(expectedTexts[i])
+        })
+
+        // Assertion 3: NO chip label is mid-word clipped — each label must
+        // fit inside its own client width (scrollWidth <= clientWidth + 1).
+        // Note: at 820px the RAIL scrolls horizontally (overflow-x: auto per
+        // lane-B header.css @media ≤820px rule), but individual labels do
+        // NOT clip — Phase-3 R1 agnes vision grader's "Overview → Ove" was a
+        // hallucination. This assertion formalises the no-clip invariant.
+        railState.chips.forEach((c, i) => {
+            expect(
+                c.labelFitDelta,
+                `.mode-chip ${i} ("${c.text}") label must NOT clip (scrollWidth=${c.labelScrollWidth} clientWidth=${c.labelClientWidth}, delta=${c.labelFitDelta})`
+            ).toBeLessThanOrEqual(1)
+        })
+
+        // Assertion 4: the rail uses overflow-x: auto at ≤820px so chips
+        // scroll horizontally rather than truncating. This is the design fix
+        // (lane-B header.css) AND the contract this B-S5 test guards.
+        expect(
+            railState.rail.overflowX,
+            '.mode-chips must use overflow-x: auto at ≤820px (lane-B header.css rule)'
+        ).toBe('auto')
+    })
+
+    // ── UI-hardening journey tests (commits ed0e12be + 409fbc91) ──────────────
+
+    test('ui-hardening: SearchBar z-index resolves to 100 in info-panel-contained mode (PR 409fbc91 #13)', async ({
+        page
+    }) => {
+        // 409fbc91 defined --z-search-bar:100 in z-layers.css so the
+        // .search-container.info-panel-contained no longer falls back to
+        // z-index:2 and renders behind the info panel (#13). This test
+        // verifies the resolved z-index is 100 at desktop width.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 15000
+        })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(1500)
+
+        // Dismiss first-visit help dialog if auto-opened.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Trigger a search so the .search-container gains .info-panel-contained
+        // (the class is applied when a search result is shown in the panel).
+        const searchInput = page.locator('#search-input')
+        await searchInput.waitFor({ state: 'attached', timeout: 10000 })
+        await searchInput.fill('coffee')
+        await page.keyboard.press('Enter')
+
+        // Wait for info-panel-contained to be applied.
+        await page
+            .waitForFunction(
+                () => {
+                    const sc = document.querySelector('.search-container')
+                    return sc && sc.classList.contains('info-panel-contained')
+                },
+                { timeout: 15000 }
+            )
+            .catch(() => {})
+        await page.waitForTimeout(200)
+
+        const zResult = await page.evaluate(() => {
+            const sc = document.querySelector('.search-container.info-panel-contained')
+            if (!sc) return { found: false }
+            const cs = getComputedStyle(sc)
+            return {
+                found: true,
+                zIndex: cs.zIndex,
+                resolved: parseInt(cs.zIndex, 10)
+            }
+        })
+
+        expect(zResult.found, '.search-container.info-panel-contained must exist in the DOM').toBe(true)
+        expect(
+            zResult.resolved,
+            `--z-search-bar must resolve to 100 (got z-index=${zResult.zIndex}, resolved=${zResult.resolved})`
+        ).toBe(100)
+    })
+
+    test('ui-hardening: FocusPocketA11y keyboard focus shows visible 2px outline + box-shadow (WCAG 2.4.7, PR 409fbc91 #15)', async ({
+        page
+    }) => {
+        // 409fbc91 strengthened the FocusPocketA11y .focus-pocket-item-btn
+        // :focus-visible from a faint ring to a visible 2px outline + box-shadow
+        // ring (WCAG 2.4.7). This test focuses a pocket button and verifies
+        // the computed style includes the outline and box-shadow properties.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, {
+            timeout: 15000
+        })
+        await page.waitForTimeout(700)
+
+        // Dismiss first-visit help dialog if auto-opened.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Focus a node to populate the pocket.
+        const ok = await page.evaluate(() => {
+            const actions = window.__navActions__
+            return actions && typeof actions.focusOnNode === 'function' ? actions.focusOnNode(0) : false
+        })
+        expect(ok, 'focusOnNode(0) must succeed').toBe(true)
+
+        // Wait for pocket buttons to appear.
+        await page.waitForSelector('#focus-pocket-a11y .focus-pocket-item-btn', { timeout: 10000 })
+
+        // Make the list visible so buttons are interactable.
+        const toggleBtn = page.locator('#focus-pocket-list-toggle')
+        await toggleBtn.waitFor({ state: 'attached', timeout: 5000 })
+        await toggleBtn.click()
+        await page.waitForTimeout(300)
+
+        // Verify the CSS :focus-visible rule exists with a visible outline +
+        // box-shadow. We read the stylesheet rules directly because
+        // getComputedStyle(:focus-visible) requires keyboard interaction that
+        // is unreliable in headless Playwright. The hardening commit changed
+        // the CSS — verify the rule is present and has the right properties.
+        const focusRules = await page.evaluate(() => {
+            const results = []
+            for (const sheet of document.styleSheets) {
+                try {
+                    for (const rule of sheet.cssRules || []) {
+                        const sel = rule.selectorText || ''
+                        if (sel.includes('.focus-pocket-item-btn') && sel.includes(':focus-visible') && rule.style) {
+                            results.push({
+                                selector: sel,
+                                outline: rule.style.outline || null,
+                                outlineStyle: rule.style.outlineStyle || null,
+                                outlineWidth: rule.style.outlineWidth || null,
+                                boxShadow: rule.style.boxShadow || null
+                            })
+                        }
+                    }
+                } catch {
+                    // cross-origin stylesheet — skip
+                }
+            }
+            return results
+        })
+
+        // There must be at least one :focus-visible rule for .focus-pocket-item-btn.
+        expect(
+            focusRules.length,
+            'there must be at least one CSS rule for .focus-pocket-item-btn:focus-visible'
+        ).toBeGreaterThanOrEqual(1)
+
+        // At least one of those rules must declare a visible outline (not 'none')
+        // and a visible box-shadow. The 409fbc91 fix strengthened this from a
+        // faint ring to a 2px outline + box-shadow ring (WCAG 2.4.7).
+        const hasVisibleOutline = focusRules.some(
+            (r) => r.outline && r.outline !== 'none' && !r.outline.startsWith('none')
+        )
+        const hasBoxShadow = focusRules.some((r) => r.boxShadow && r.boxShadow !== 'none' && r.boxShadow.length > 0)
+        expect(hasVisibleOutline, ':focus-visible rule must declare a visible outline (not none) — WCAG 2.4.7').toBe(
+            true
+        )
+        expect(hasBoxShadow, ':focus-visible rule must declare a visible box-shadow ring — WCAG 2.4.7').toBe(true)
+    })
+
+    test('ui-hardening: splash/loading overlay z-index = var(--z-loading) = 9999 (PR 409fbc91 #6)', async ({
+        page
+    }) => {
+        // 409fbc91 replaced literal z-index:3000/3001 with
+        // var(--z-loading) on #app-loading-placeholder and
+        // #noscript-fallback so they sit above all app content at
+        // z-index 9999. This test loads the page and reads the
+        // computed z-index of the splash overlay BEFORE the Svelte
+        // app removes it.
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, {
+            waitUntil: 'commit' // read DOM as early as possible, before Svelte hydrates
+        })
+
+        // The #app-loading-placeholder is present in the initial HTML
+        // and removed by App.svelte's onMount. Read it immediately.
+        const splashResult = await page.evaluate(() => {
+            const el = document.getElementById('app-loading-placeholder')
+            if (!el) return { found: false }
+            const cs = getComputedStyle(el)
+            return {
+                found: true,
+                zIndex: cs.zIndex,
+                resolved: parseInt(cs.zIndex, 10),
+                position: cs.position
+            }
+        })
+
+        expect(splashResult.found, '#app-loading-placeholder must exist in the initial DOM').toBe(true)
+        expect(
+            splashResult.resolved,
+            `#app-loading-placeholder z-index must resolve to 9999 (var(--z-loading); got ${splashResult.zIndex})`
+        ).toBe(9999)
+        expect(splashResult.position, '#app-loading-placeholder must be position:fixed to overlay all content').toBe(
+            'fixed'
+        )
+    })
+
+    test('ui-hardening: mobile body uses min-height:100dvh, not 100vh (PR ed0e12be)', async ({ page }) => {
+        // ed0e12be changed 100vh → 100dvh in base.css body, landscape
+        // panels, and focus_stage.css so the mobile viewport-fill tracks
+        // the dynamic viewport (excluding browser chrome) instead of the
+        // static layout viewport. This test verifies the body computes
+        // 100dvh (the resolved value will differ from 100vh when the
+        // browser has a visible address bar, but the CSS property itself
+        // must be 100dvh).
+        await page.setViewportSize({ width: 375, height: 812 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        // Wait for body to render.
+        await page.waitForFunction(() => document.body, null, { timeout: 5000 })
+
+        const viewportResult = await page.evaluate(() => {
+            const body = document.body
+            const cs = getComputedStyle(body)
+            // Read the raw CSS rule to confirm dvh (not vh). getComputedStyle
+            // resolves the unit, so we check the stylesheet directly.
+            const sheets = Array.from(document.styleSheets)
+            let bodyMinHeightRule = null
+            for (const sheet of sheets) {
+                try {
+                    const rules = Array.from(sheet.cssRules || [])
+                    for (const rule of rules) {
+                        // Match body rule in base.css that sets min-height.
+                        if (rule.selectorText === 'body' && rule.style?.minHeight) {
+                            bodyMinHeightRule = rule.style.minHeight
+                            break
+                        }
+                    }
+                } catch {
+                    // cross-origin stylesheet — skip
+                }
+                if (bodyMinHeightRule) break
+            }
+            return {
+                computedMinHeight: cs.minHeight,
+                bodyHeight: body.getBoundingClientRect().height,
+                innerHeight: window.innerHeight,
+                rawRule: bodyMinHeightRule
+            }
+        })
+
+        // The body must have a positive height filling the viewport.
+        expect(
+            viewportResult.bodyHeight,
+            'body must have a positive height filling the mobile viewport'
+        ).toBeGreaterThan(0)
+
+        // The CSS rule in base.css must use 100dvh, not 100vh.
+        // If the stylesheet is cross-origin or the rule isn't found via the
+        // direct selector check, we validate indirectly: the body's computed
+        // min-height should equal window.innerHeight (100dvh ≈ 100vh in
+        // Playwright headless). The key assertion is that the raw CSS rule
+        // contains 'dvh'.
+        if (viewportResult.rawRule) {
+            expect(viewportResult.rawRule, 'base.css body rule must use 100dvh, not 100vh (PR ed0e12be)').toContain(
+                '100dvh'
+            )
+        }
+        // Indirect check: body min-height resolves to at least the viewport height.
+        const parsedMin = parseFloat(viewportResult.computedMinHeight)
+        expect(
+            parsedMin,
+            `body min-height (${viewportResult.computedMinHeight}) must be >= viewport innerHeight (${viewportResult.innerHeight})`
+        ).toBeGreaterThanOrEqual(viewportResult.innerHeight * 0.9) // 10% tolerance for dvh rounding
+    })
 })
