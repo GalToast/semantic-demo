@@ -155,14 +155,14 @@
   .overlay-node-indicator {
     font-family: 'JetBrains Mono', monospace;
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.4); /* a11y-ok: caption-text — mono node indicator */
+    color: rgba(176, 208, 208, 0.85); /* a11y-ok: caption-text — mono node indicator */
     /* PR-E1: Node index fades alongside the badge. */
     animation: overlay-out 0.3s ease-in 4s forwards;
   }
 
   .overlay-hint {
     font-size: 0.55rem;
-    color: rgba(176, 208, 208, 0.35); /* a11y-ok: caption-text — italic overlay hint */
+    color: rgba(176, 208, 208, 0.85); /* a11y-ok: caption-text — italic overlay hint */
     font-style: italic;
     /* PR-E1: Hint text fades alongside the badge (desktop only). */
     animation: overlay-out 0.3s ease-in 4s forwards;

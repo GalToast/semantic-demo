@@ -79,7 +79,7 @@
     .error-fallback-dismiss {
         background: none;
         border: none;
-        color: rgba(224, 240, 240, 0.5);
+        color: rgba(224, 240, 240, 0.85);
         cursor: pointer;
         padding: 0.25rem 0.5rem;
         border-radius: 0.25rem;

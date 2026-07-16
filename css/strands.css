@@ -1291,7 +1291,7 @@ body #mode-chips .mode-chip.is-locked {
     border-color: rgba(180, 195, 205, 0.4);
     border-style: dashed;
     background: rgba(160, 175, 185, 0.06);
-    color: rgba(220, 230, 235, 0.78);
+    color: rgba(220, 230, 235, 0.85);
     box-shadow: none;
     position: relative;
     padding-right: calc(1ch + 0.5rem);

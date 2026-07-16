@@ -185,7 +185,7 @@
   }
   .loading-error-technical {
     font-size: 0.7rem;
-    color: rgba(255, 230, 230, 0.65);
+    color: rgba(255, 230, 230, 0.85);
     margin: 0.25rem 0 0.5rem;
   }
   .loading-error-technical summary {
@@ -197,7 +197,7 @@
     display: block;
     font-family: var(--font-mono, monospace);
     font-size: 0.65rem;
-    color: rgba(255, 230, 230, 0.5); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
+    color: rgba(255, 230, 230, 0.85); /* a11y-ok: technical-only, rendered inside <details> collapsed by default */
     word-break: break-word;
     padding: 0.25rem 0.5rem;
     background: rgba(0, 0, 0, 0.25);

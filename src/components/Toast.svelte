@@ -148,7 +148,7 @@
 
   .experience-toast-copy {
     font-size: 0.65rem;
-    color: rgba(224, 240, 240, 0.7);
+    color: rgba(224, 240, 240, 0.85);
     line-height: 1.4;
     overflow-wrap: break-word;
   }
@@ -170,7 +170,7 @@
      chrome bg is documented by the a11y-ok comment. */
   .experience-toast-next {
     font-size: 0.6rem;
-    color: rgba(224, 240, 240, 0.6); /* a11y-ok: supplementary preview line — same as .experience-toast-queue-count */
+    color: rgba(224, 240, 240, 0.85); /* a11y-ok: supplementary preview line — same as .experience-toast-queue-count */
     margin-top: 0.25rem;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -185,7 +185,7 @@
     font-size: 0.6rem;
     /* a11y-ok: queue-count badge is mono-cased supplementary text, not a primary label.
      * Adjacent aria-live live region announces the same content semantically. */
-    color: rgba(224, 240, 240, 0.55); /* a11y-ok: supplementary count, aria-live announces content */
+    color: rgba(224, 240, 240, 0.85); /* a11y-ok: supplementary count, aria-live announces content */
     letter-spacing: 0.02em;
   }
 
@@ -225,7 +225,7 @@
     background: rgba(var(--color-primary-alt-rgb), 0.1);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
     border-radius: 4px;
-    color: rgba(224, 240, 240, 0.5); /* a11y-ok: icon-color — toast close button */
+    color: rgba(224, 240, 240, 0.85); /* a11y-ok: icon-color — toast close button */
     cursor: pointer;
     transition: all 0.15s ease;
     flex-shrink: 0;
@@ -251,7 +251,7 @@
     color: #ffc107;
   }
   .experience-reset-toast.warning .experience-toast-copy {
-    color: rgba(255, 224, 130, 0.75);
+    color: rgba(255, 224, 130, 0.85);
   }
   .experience-reset-toast.warning .experience-toast-close {
     background: rgba(255, 193, 7, 0.1);
@@ -271,7 +271,7 @@
     color: var(--status-danger);
   }
   .experience-reset-toast.error .experience-toast-copy {
-    color: rgba(255, 200, 200, 0.7);
+    color: rgba(255, 200, 200, 0.85);
   }
   .experience-reset-toast.error .experience-toast-close {
     background: rgba(255, 107, 107, 0.1);

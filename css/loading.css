@@ -186,7 +186,7 @@
     font-size: 11px;
     letter-spacing: 0.24em;
     text-transform: uppercase;
-    color: rgba(150, 235, 227, 0.76);
+    color: rgba(150, 235, 227, 0.85);
 }
 
 .loading-title {
@@ -199,7 +199,7 @@
 .loading-note {
     font-size: 13px;
     line-height: 1.55;
-    color: rgba(228, 245, 242, 0.72);
+    color: rgba(228, 245, 242, 0.85);
     max-width: 26ch;
 }
 
@@ -245,7 +245,7 @@
     font-size: 10px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: rgba(225, 240, 237, 0.54);
+    color: rgba(225, 240, 237, 0.85);
     background: var(--glass-reflection-fade);
     border: 1px solid var(--glass-reflection-muted);
     transition:
@@ -271,7 +271,7 @@
 .loading-foot {
     font-size: 11px;
     line-height: 1.45;
-    color: rgba(218, 236, 234, 0.58);
+    color: rgba(218, 236, 234, 0.85);
     max-width: 30ch;
 }
 

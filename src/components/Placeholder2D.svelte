@@ -380,7 +380,7 @@
     align-items: center;
     gap: 0.45rem;
     font-size: 0.7rem;
-    color: rgba(231, 240, 240, 0.78);
+    color: rgba(231, 240, 240, 0.85);
     letter-spacing: 0.01em;
   }
   .placeholder-legend-dot {

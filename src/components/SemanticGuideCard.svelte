@@ -195,7 +195,7 @@
     border: 1px solid rgba(224, 240, 240, 0.22);
     border-radius: 0.35rem;
     background: rgba(224, 240, 240, 0.06);
-    color: rgba(224, 240, 240, 0.78);
+    color: rgba(224, 240, 240, 0.85);
     font-size: 0.62rem;
     line-height: 1;
     padding: 0.35rem 0.45rem;
@@ -209,7 +209,7 @@
 
   .typewriter-content {
     font-size: 0.7rem;
-    color: rgba(224, 240, 240, 0.7);
+    color: rgba(224, 240, 240, 0.85);
     line-height: 1.5;
     overflow-wrap: break-word;
   }
@@ -259,7 +259,7 @@
   }
 
   .suggestion-reason {
-    color: rgba(224, 240, 240, 0.62);
+    color: rgba(224, 240, 240, 0.85);
     font-size: 0.62rem;
     line-height: 1.35;
     overflow-wrap: anywhere;
@@ -267,7 +267,7 @@
 
   .summary-lane-status {
     margin-top: 0.65rem;
-    color: rgba(224, 240, 240, 0.54); /* a11y-ok: caption-text — UPPERCASE status label */
+    color: rgba(224, 240, 240, 0.85); /* a11y-ok: caption-text — UPPERCASE status label */
     font-size: 0.56rem;
     letter-spacing: 0;
     text-transform: uppercase;
@@ -284,7 +284,7 @@
   }
 
   .summary-gemma-story-text {
-    color: rgba(224, 240, 240, 0.64);
+    color: rgba(224, 240, 240, 0.85);
     font-size: 0.65rem;
     line-height: 1.45;
   }
@@ -292,7 +292,7 @@
   .summary-gemma-story-source {
     display: block;
     margin-top: 0.35rem;
-    color: rgba(224, 240, 240, 0.42); /* a11y-ok: caption-text — small source line */
+    color: rgba(224, 240, 240, 0.85); /* a11y-ok: caption-text — small source line */
     font-size: 0.56rem;
   }
 </style>

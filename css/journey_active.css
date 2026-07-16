@@ -308,7 +308,7 @@ body.surface-map-idle .map-view-title {
 .journey-compass-note {
     margin-top: 3px;
     max-width: 48ch;
-    color: rgba(218, 238, 236, 0.72);
+    color: rgba(218, 238, 236, 0.85);
     font-size: 10.5px;
     line-height: 1.34;
 }
@@ -444,7 +444,7 @@ body.surface-map-idle .map-view-title {
 }
 
 .journey-compass-step:not(.current):not(.done) {
-    color: rgba(255, 255, 255, 0.55);
+    color: rgba(255, 255, 255, 0.85);
 }
 
 .journey-compass-step.done {
@@ -558,7 +558,7 @@ body.surface-map-idle .map-view-title {
     body.surface-focus-search #synthesize-trigger .btn-synthesize::after {
         content: 'optional read';
         margin-left: auto;
-        color: rgba(255, 226, 132, 0.66);
+        color: rgba(255, 226, 132, 0.85);
         font-family: 'JetBrains Mono', monospace;
         font-size: 8px;
         font-weight: 700;
@@ -616,11 +616,11 @@ body.surface-map-idle .map-view-title {
     }
 
     body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-kicker {
-        color: rgba(255, 226, 132, 0.6);
+        color: rgba(255, 226, 132, 0.85);
     }
 
     body.surface-focus-search .focus-thread-inspector:not(.active) .focus-thread-inspector-title {
-        color: rgba(220, 241, 238, 0.72);
+        color: rgba(220, 241, 238, 0.85);
         font-size: 9.5px;
         font-weight: 700;
     }
