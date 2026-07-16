@@ -22,10 +22,21 @@ import { prefersReducedMotion } from '@lib/utils/environment'
 import { CLUSTER_COLORS, FOCUS_SEMANTIC_COLORS } from '@lib/utils/design-tokens'
 import { getLineSegmentCount } from '@lib/journey/webgl-utils'
 import { registerDiagnosticProbe } from '@lib/utils/diagnostic-adapter'
+import {
+    overlayDebug,
+    setOverlayDebugRfso,
+    setOverlayDebugOverlayN,
+    setOverlayDebugPushRef,
+    setOverlayDebugPushN,
+    setOverlayDebugRefreshEnd,
+    setOverlayDebugPairsLen,
+    setOverlayDebugEndRef,
+    setOverlayDebugPushEndEq
+} from '@lib/debug/overlay-debug'
 
 /** Local typed extension of LineMaterial for the custom uniforms our GLSL shader injects.
  *  Three.js' LineMaterial type doesn't include these custom fields; we use this
- *  locally to avoid unsafe casts at every uniforms / shader access site. */
+ *  locally to avoid untyped casts at every uniforms / shader access site. */
 export interface SemanticLineMaterialUniforms {
     time: { value: number }
     semanticScore: { value: number }
@@ -83,6 +94,7 @@ export function removeFocusSemanticOverlay(): void {
     else mat?.dispose?.()
     state.focusSemanticLines = null
     state.focusSemanticConnectionPairs = []
+    setOverlayDebugRfso(overlayDebug.rfso + 1)
 }
 
 /**
@@ -303,9 +315,11 @@ export function refreshFocusSemanticOverlay(): void {
     )
 
     if (!overlayIndices.length) {
+        setOverlayDebugOverlayN(overlayDebug.overlayN || 0)
         resetFocusThreadDiagnostics('empty-overlay')
         return
     }
+    setOverlayDebugOverlayN(overlayIndices.length)
 
     const positions: number[] = []
     const colors: number[] = []
@@ -361,6 +375,7 @@ export function refreshFocusSemanticOverlay(): void {
             const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS
             const segmentEdge: FocusConnectionSegment = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
             state.focusSemanticConnectionPairs.push(segmentEdge)
+        setOverlayDebugPushRef(state.focusSemanticConnectionPairs); setOverlayDebugPushN(overlayDebug.pushN + 1)
             const p0 = getFocusCurvePointLocal(segmentEdge, t0)
             const p1 = getFocusCurvePointLocal(segmentEdge, t1)
             const c0 = focusColor.clone().lerp(candidateColor, t0)
@@ -574,7 +589,13 @@ export function updateFocusSemanticOverlayTime(now: number = performance.now()):
             mat.uniforms.time.value = now / 1000
         }
     }
-    // debug instrumentation removed
+    // DIAG
+    if (typeof window !== 'undefined') {
+        setOverlayDebugRefreshEnd(overlayDebug.refreshEnd + 1)
+        setOverlayDebugPairsLen(state.focusSemanticConnectionPairs.length)
+        setOverlayDebugEndRef(state.focusSemanticConnectionPairs)
+        setOverlayDebugPushEndEq(overlayDebug.pushRef === state.focusSemanticConnectionPairs)
+    }
 }
 
 export function getSemanticFocusCueProbeSnapshot(): Record<string, unknown> {

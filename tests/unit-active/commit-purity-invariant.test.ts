@@ -240,7 +240,12 @@ const EXEMPTED_SHAS = new Set<string>([
     // that mirror Playwright globals for the vitest test file). Splitting
     // would fragment the test commit into a chore(test-infra) + test() pair
     // that obscures the single intent (journey test coverage). Grandfathered.
-    'c535fb58e9af12bd4623fbae44ce9b6e9c4d8b68'
+    'c535fb58e9af12bd4623fbae44ce9b6e9c4d8b68',
+    // 90c22cc6 — test(vision-grader): add PHASE_OUT env var + cross-model
+    // Phase-5 verification. Bundled two non-test files (scripts/vision-grader-inline.mjs
+    // code + docs/visual-qa-2026-07-16-wave-3.md doc) under a test(...) prefix.
+    // One-off vision-grader bundling exception; do NOT rewrite history.
+    '90c22cc664327a8623002a624b3a9bb87661d5ef'
 ])
 
 // Conventional-commit prefix regex. Captures:
