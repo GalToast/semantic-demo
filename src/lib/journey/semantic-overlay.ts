@@ -25,7 +25,7 @@ import { registerDiagnosticProbe } from '@lib/utils/diagnostic-adapter'
 
 /** Local typed extension of LineMaterial for the custom uniforms our GLSL shader injects.
  *  Three.js' LineMaterial type doesn't include these custom fields; we use this
- *  locally to avoid `as any` at every uniforms / shader access site. */
+ *  locally to avoid unsafe casts at every uniforms / shader access site. */
 export interface SemanticLineMaterialUniforms {
     time: { value: number }
     semanticScore: { value: number }
@@ -83,7 +83,6 @@ export function removeFocusSemanticOverlay(): void {
     else mat?.dispose?.()
     state.focusSemanticLines = null
     state.focusSemanticConnectionPairs = []
-    if (typeof window !== 'undefined') (window as any).__DBG_RFSO__ = ((window as any).__DBG_RFSO__ || 0) + 1
 }
 
 /**
@@ -304,11 +303,9 @@ export function refreshFocusSemanticOverlay(): void {
     )
 
     if (!overlayIndices.length) {
-        if (typeof window !== 'undefined') (window as any).__DBG_OVERLAY_N__ = (window as any).__DBG_OVERLAY_N__ || 0
         resetFocusThreadDiagnostics('empty-overlay')
         return
     }
-    if (typeof window !== 'undefined') (window as any).__DBG_OVERLAY_N__ = overlayIndices.length
 
     const positions: number[] = []
     const colors: number[] = []
@@ -364,7 +361,6 @@ export function refreshFocusSemanticOverlay(): void {
             const t1 = (segment + 1) / state.FOCUS_THREAD_SEGMENTS
             const segmentEdge: FocusConnectionSegment = { ...edge, t0, t1, cue: isNextEdge ? 1 : 0 }
             state.focusSemanticConnectionPairs.push(segmentEdge)
-        if (typeof window !== 'undefined') {(window as any).__DBG_PUSH_REF__ = state.focusSemanticConnectionPairs; (window as any).__DBG_PUSH_N__ = ((window as any).__DBG_PUSH_N__ || 0) + 1}
             const p0 = getFocusCurvePointLocal(segmentEdge, t0)
             const p1 = getFocusCurvePointLocal(segmentEdge, t1)
             const c0 = focusColor.clone().lerp(candidateColor, t0)
@@ -578,13 +574,7 @@ export function updateFocusSemanticOverlayTime(now: number = performance.now()):
             mat.uniforms.time.value = now / 1000
         }
     }
-    // DIAG
-    if (typeof window !== 'undefined') {
-        (window as any).__DBG_REFRESH_END__ = ((window as any).__DBG_REFRESH_END__ || 0) + 1
-        ;(window as any).__DBG_PAIRS_LEN__ = state.focusSemanticConnectionPairs.length
-        ;(window as any).__DBG_END_REF__ = state.focusSemanticConnectionPairs
-        ;(window as any).__DBG_PUSH_END_EQ__ = (window as any).__DBG_PUSH_REF__ === state.focusSemanticConnectionPairs
-    }
+    // debug instrumentation removed
 }
 
 export function getSemanticFocusCueProbeSnapshot(): Record<string, unknown> {

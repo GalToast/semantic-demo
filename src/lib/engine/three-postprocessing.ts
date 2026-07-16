@@ -301,8 +301,14 @@ export function disposePostProcessing(): void {
                 pass.dispose()
             }
         }
+        _composer.dispose?.()
         _composer = null
     }
+    _bloomEffect?.dispose()
+    _vignetteEffect?.dispose()
+    _chromaticAberrationEffect?.dispose()
+    _dofEffect?.dispose()
+    _ditherEffect?.dispose()
     _bloomEffect = null
     _dofEffect = null
     _vignetteEffect = null

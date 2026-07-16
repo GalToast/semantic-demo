@@ -26,6 +26,7 @@ import type { LegacyState } from '@lib/state/legacy-state'
 export type { LegacyState }
 import { webglContext } from '@lib/engine/webgl-context'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
+import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
 
 import { sampleScenePerformance } from './renderer/renderer-diagnostics'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
@@ -386,6 +387,7 @@ export function cancelAnimate() {
 
 export function deinit() {
     cancelAnimate()
+    cancelOverviewCameraAnimation()
     engineState.cameraControls?.cancelFocusCameraAnimation()
     engineState.loadingUi?.cancelLoadingHide()
     engineState.threeSearchAnimations?.disposeHeroAnimation()
