@@ -435,9 +435,9 @@
   }
 
   @media (max-width: 768px) {
-    .focus-card.surface-semantic-dive,
-    .focus-card.surface-focus-search,
-    .focus-card.surface-focus {
+    #focus-card-selected.focus-card.surface-semantic-dive,
+    #focus-card-selected.focus-card.surface-focus-search,
+    #focus-card-selected.focus-card.surface-focus {
       position: fixed;
       left: 0;
       right: 0;
@@ -452,14 +452,14 @@
       z-index: var(--z-focus-card, 600);
     }
 
-    .focus-card.surface-semantic-dive {
+    #focus-card-selected.focus-card.surface-semantic-dive {
       border-radius: 22px 22px 0 0;
       padding: 18px 14px 10px;
     }
 
     /* Bottom-sheet radius for all mobile focus states */
-    .focus-card.surface-focus-search,
-    .focus-card.surface-focus {
+    #focus-card-selected.focus-card.surface-focus-search,
+    #focus-card-selected.focus-card.surface-focus {
       border-radius: 22px 22px 0 0;
     }
 
@@ -470,11 +470,12 @@
        has specificity (0,4,1) (body element + :not()/attr classes) and beats any
        class-only override on .focus-card. Svelte also strips selectors that
        reference elements outside the component (html/body), so we stay on the
-       card's own classes and add the always-present .selected-card to reach
-       (0,5,0) — 5 classes beats 4 classes, no !important needed. Covers both
-       focus surface states. */
-    .focus-card.focus-stage-card.selected-card.surface-focus,
-    .focus-card.focus-stage-card.selected-card.surface-focus-search {
+       card's own classes and add the always-present ID to reach (1,3,0) —
+       ID + 3 classes beats both the global rule and the legacy clusters.css
+       `#focus-card-selected` rule that was pinning the card at bottom:12px.
+       Covers both focus surface states. */
+    #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus,
+    #focus-card-selected.focus-card.focus-stage-card.selected-card.surface-focus-search {
       z-index: var(--z-focus-stage-card);
     }
   }
