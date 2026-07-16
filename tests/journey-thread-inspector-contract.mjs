@@ -193,9 +193,9 @@ function testApplyPointFilterColorsFactorRanges() {
 
     const pointColorSrc = fs.readFileSync(JOURNEY_POINT_COLOR_PATH, 'utf-8')
 
-    // nodeMinFloor must be 0.65 (applied in pocket mode)
-    assertContains(pointColorSrc, 'const nodeMinFloor = 0.65', 'nodeMinFloor = 0.65')
-    assertContains(pointColorSrc, 'Math.max(raw, nodeMinFloor)', 'nodeMinFloor applied via Math.max')
+    // FOCUS_MEMBER_MIN_FLOOR must be 0.65 (applied in pocket mode); local minFloor is derived from it
+    assertContains(pointColorSrc, 'const FOCUS_MEMBER_MIN_FLOOR = 0.65', 'FOCUS_MEMBER_MIN_FLOOR = 0.65')
+    assertContains(pointColorSrc, 'Math.max(raw, minFloor)', 'minFloor applied via Math.max')
 
     // Trail mode unvisited factor must be >= 0.08 (not invisible)
     assertMatches(
@@ -205,11 +205,13 @@ function testApplyPointFilterColorsFactorRanges() {
     )
     assertMatches(pointColorSrc, /isVisited\s*\?\s*1\.18\s*:\s*0\.28/, 'trail mode pre-trailIndices unvisited factor')
 
-    // Pocket mode non-focusLocalIndices factor must be >= 0.22
+    // Pocket mode non-focusLocalIndices factor now derives from FIELD_BG_RAW
+    // (WIP refactor renamed the old 0.22 literal into FOCUS_FIELD_RAW_* floor
+    // constants; FIELD_BG_RAW = pocketActive ? 0.09 : semanticFocus ? 0.2 : 0.16).
     assertMatches(
         pointColorSrc,
-        /isVisited\s*\?\s*1\.28\s*:\s*\(?\s*semanticFocus\s*\?\s*0\.32\s*:\s*0\.22\s*\)?/,
-        'pocket mode non-focusLocal factor >= 0.22'
+        /isVisited\s*\?\s*1\.28\s*:\s*FIELD_BG_RAW/,
+        'pocket mode non-focusLocal factor uses FIELD_BG_RAW floor'
     )
 
     // Bloom mode dimmed factor must be 0.08 (invisible)
