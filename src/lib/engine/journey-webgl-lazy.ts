@@ -12,6 +12,7 @@
 import { setInspectedStrandOverlayUpdater as setAdapterInspectedStrandOverlayUpdater } from '@lib/journey/inspected-strand-overlay-adapter'
 import { silenceError } from '@lib/utils/error-handler'
 import { silentNull } from '@lib/utils/silent-null'
+import { debugWarn } from '@lib/utils/debug'
 
 // ── Lazy module cache ────────────────────────────────────────────────────────
 
@@ -31,12 +32,18 @@ function ensureWebglModule(): Promise<typeof import('@lib/journey/webgl')> {
                 webglModule = mod
                 return mod
             })
-            .catch(() => {
-                // Suppress unhandled rejections during test teardown or when
-                // the environment is unavailable. The next call to ensureWebglModule
-                // will retry the import.
+            .catch((e) => {
+                // The dynamic import failed. silentNull() fails loud (throws), which
+                // would surface as an unhandled rejection (noisy during test teardown).
+                // Catch it, log the real import error, and resolve to null so fire-and-forget
+                // callers of ensureWebglModule() don't trigger an unhandledrejection.
                 webglPromise = null
-                return silentNull<typeof import('@lib/journey/webgl')>()
+                try {
+                    return silentNull<typeof import('@lib/journey/webgl')>()
+                } catch {
+                    debugWarn('journey-webgl-lazy: @lib/journey/webgl dynamic import failed; overlay unavailable', e)
+                    return null as unknown as typeof import('@lib/journey/webgl')
+                }
             })
     }
     return webglPromise
@@ -176,9 +183,14 @@ function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
                 routeArrivalModule = mod
                 return mod
             })
-            .catch(() => {
+            .catch((e) => {
                 routeArrivalPromise = null
-                return silentNull<RouteArrivalModule>()
+                try {
+                    return silentNull<RouteArrivalModule>()
+                } catch {
+                    debugWarn('journey-webgl-lazy: @lib/journey/route-arrival-overlay-adapter dynamic import failed; overlay unavailable', e)
+                    return null as unknown as RouteArrivalModule
+                }
             })
     }
     return routeArrivalPromise
@@ -210,9 +222,14 @@ function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/threa
                 inspectorWebglModule = mod
                 return mod
             })
-            .catch(() => {
+            .catch((e) => {
                 inspectorWebglPromise = null
-                return silentNull<typeof import('@lib/journey/thread-inspector-webgl')>()
+                try {
+                    return silentNull<typeof import('@lib/journey/thread-inspector-webgl')>()
+                } catch {
+                    debugWarn('journey-webgl-lazy: @lib/journey/thread-inspector-webgl dynamic import failed; overlay unavailable', e)
+                    return null as unknown as typeof import('@lib/journey/thread-inspector-webgl')
+                }
             })
     }
     return inspectorWebglPromise
