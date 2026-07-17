@@ -12,6 +12,7 @@
   import { isDemoActive } from '@lib/stores/demo.svelte.ts';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
   import { ONBOARDING_STORAGE_KEY, markOnboardingSeen } from '@lib/onboarding/onboarding-storage';
+  import { appState } from '@lib/state/app.svelte.ts';
 
   // Top-8 category swatches for the color key
   const SWATCH_COUNT = 8;
@@ -114,6 +115,19 @@
   $effect(() => {
     if (engineReady.value && !isDemoActive() && !dismissed && !visible) {
       reveal();
+    }
+  });
+
+  // The proximity legend is first-visit onboarding; once the user starts a
+  // search the card competes with the search cue and result panels for the
+  // same bottom-left / bottom-center space on mobile. Dismiss it immediately
+  // and mark onboarding as seen so it doesn't reappear.
+  $effect(() => {
+    const summary = appState.searchState.currentSearchSummary;
+    const cueActive = appState.searchTrailCueLastRenderedAt > 0;
+    const searchStarted = appState.searchState.searchStatus === 'searching' || !!(summary && ('query' in summary));
+    if ((searchStarted || cueActive) && !dismissed) {
+      handleDismiss();
     }
   });
 
@@ -279,6 +293,31 @@
 
   .swatch-label {
     white-space: nowrap;
+  }
+
+  /* Mobile: the onboarding card sits on top of the search input at the
+     bottom of the viewport. Move it to the top-left so it teaches the
+     concept without blocking the primary search affordance. */
+  @media (max-width: 768px) {
+    .proximity-legend-wrapper {
+      top: calc(var(--app-header-height, 64px) + 12px);
+      left: 12px;
+      bottom: auto;
+      max-width: calc(100vw - 24px);
+    }
+    .proximity-legend-card {
+      max-width: 280px;
+      padding: 12px 14px;
+    }
+    .proximity-legend-headline {
+      font-size: 0.85rem;
+    }
+    .proximity-legend-sub {
+      font-size: 0.75rem;
+    }
+    .swatch-item {
+      font-size: 0.7rem;
+    }
   }
 
   @media (prefers-reduced-motion: reduce) {
