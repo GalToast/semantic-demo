@@ -1080,11 +1080,40 @@ async function assert_map_trail(page, ctx) {
     // Simulate trail reveal (Show Trail button)
     // 30s timeout: hydration races in headless Playwright sometimes take
     // 15-30s for the bridge+mount chain to settle. 10s and 15s were both
-    // insufficient in 30-70% of runs.
-    await page.waitForSelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]', {
-        state: 'attached',
-        timeout: 30000
-    })
+    // insufficient in 30-70% of runs; 30s gives a margin to absorb cold
+    // starts, font cache misses, and Svelte reactive settling.
+    try {
+        await page.waitForSelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]', {
+            state: 'attached',
+            timeout: 30000
+        })
+    } catch (e) {
+        // Diagnostic: capture state at timeout
+        const state = await page.evaluate(() => {
+            const w = window
+            const navState = w.__navStore__ ? 'has-navstore' : 'no-navstore'
+            const navActions = w.__navActions__ ? 'has-actions' : 'no-actions'
+            const focusedIndex = w.__navStore__ && w.__navStore__() ? w.__navStore__().focusedIndex : 'unknown'
+            const mode = w.__navStore__ && w.__navStore__() ? w.__navStore__().mode : 'unknown'
+            const surface = w.__navStore__ && w.__navStore__() ? w.__navStore__().surface : 'unknown'
+            return {
+                navState,
+                navActions,
+                focusedIndex,
+                mode,
+                surface,
+                bodyPanelSurface: document.body.dataset.panelSurface,
+                bodyGraphContext: document.body.dataset.graphContext,
+                btnFocusPath: !!document.querySelector('#btn-focus-path'),
+                trailControls: !!document.querySelector('#trail-controls'),
+                focusStage: !!document.querySelector('#focus-stage'),
+                focusStageHidden: document.querySelector('#focus-stage')?.hidden,
+                journeyChrome: !!document.querySelector('#journey-chrome')
+            }
+        })
+        console.error('[TIMEOUT-STATE]', JSON.stringify(state))
+        throw e
+    }
     await page.evaluate(() => {
         const showTrailBtn = document.querySelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]')
         if (showTrailBtn) showTrailBtn.click()
