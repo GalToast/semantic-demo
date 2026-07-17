@@ -311,7 +311,11 @@ async function loadIdleAndTypeSearch(page, query, params = {}) {
         if (!el) return
         el.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true, view: window }))
     })
-    await page.waitForTimeout(300)
+    // Wait for the splash to dismiss and the surface to settle instead of a fixed sleep.
+    await page.waitForFunction(() => {
+      const cta = document.querySelector('[data-testid="splash-cta"]')
+      return !cta || document.body.dataset.surfaceSettled === 'true'
+    }, null, { timeout: 5000 }).catch(() => {})
     // Dismiss the first-visit help dialog if it's open. It auto-opens on
     // first visit (W47) and sits at z-index above #search-input, so
     // page.fill() can't reach the input while it's open. The dialog's
@@ -319,16 +323,24 @@ async function loadIdleAndTypeSearch(page, query, params = {}) {
     // already closed (e.g., on a re-run with persisted onboarding state).
     const helpDialog = page.locator('dialog.help-dialog[open]')
     if (await helpDialog.isVisible().catch(() => false)) {
-        await helpDialog
-            .locator('button')
-            .first()
-            .click()
-            .catch(() => {})
-        await page.waitForTimeout(150)
-    }
+            await helpDialog
+                .locator('button')
+                .first()
+                .click()
+                .catch(() => {})
+            // Wait for the help dialog to close instead of a fixed sleep.
+            await page.waitForFunction(() => {
+              const d = document.querySelector('dialog.help-dialog')
+              return !d || !d.open
+            }, null, { timeout: 5000 }).catch(() => {})
+        }
     await page.waitForSelector('#search-input', { state: 'visible', timeout: 15000 })
     await page.locator('#search-input').first().fill(query)
-    await page.waitForTimeout(350)
+    // Wait for the search input to register the query instead of a fixed sleep.
+    await page.waitForFunction((q) => {
+      const el = document.querySelector('#search-input')
+      return !!el && el.value === q
+    }, query, { timeout: 5000 }).catch(() => {})
 }
 
 // ── Crash / retry detection ───────────────────────────────────────────────
@@ -1204,7 +1216,8 @@ async function assert_focus_pocket(page, ctx) {
     // Allow the app to settle its own surface state after the bridge update
     // (the line below manually un-hides #focus-stage; bridge-driven surface
     // state ensures #focus-stage is in the live render tree by then).
-    await page.waitForTimeout(500)
+    // Wait for the surface to settle after the bridge update instead of a fixed sleep.
+    await page.waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 5000 }).catch(() => {})
 
     await page.evaluate(() => {
         document.body.classList.add('is-active')
@@ -1486,7 +1499,7 @@ async function assert_field_node(page, ctx) {
         if (window.__navActions__?.setSurface) window.__navActions__.setSurface('focus-search')
     })
     // Allow the app to settle its own surface state after the bridge update.
-    await page.waitForTimeout(500)
+    await page.waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 5000 }).catch(() => {})
 
     // Simulate field-node state
     await page.evaluate(() => {
@@ -3658,7 +3671,11 @@ async function assert_info_panel_populated(page, ctx) {
         const cta = document.querySelector('[data-testid="splash-cta"]')
         if (cta) cta.click()
     })
-    await page.waitForTimeout(3000)
+    // Wait for the splash to dismiss instead of a fixed 3s sleep.
+    await page.waitForFunction(() => {
+      const cta = document.querySelector('[data-testid="splash-cta"]')
+      return !cta || document.body.dataset.surfaceSettled === 'true'
+    }, null, { timeout: 8000 }).catch(() => {})
 
     // Wait for data to be ready. The data-store initData() loads business
     // records via a web worker and then syncs them to the Svelte stores.
@@ -3707,7 +3724,7 @@ async function assert_info_panel_populated(page, ctx) {
         }
     })
     // Allow Svelte reactivity + component mount to settle.
-    await page.waitForTimeout(2500)
+    await page.waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 8000 }).catch(() => {})
 
     const info = await page.evaluate(() => {
         function textClipped(el) {
@@ -4958,7 +4975,8 @@ async function forceProductFocusRouteSurface(page, { preview = false } = {}) {
             window.__navActions__.setSurface('focus-search')
         }
     })
-    await page.waitForTimeout(250)
+    // Wait for the surface to settle after the bridge update instead of a fixed sleep.
+    await page.waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 5000 }).catch(() => {})
 
     await page.evaluate(forceSurface, { preview })
     await page.waitForTimeout(25)
@@ -5205,7 +5223,8 @@ async function forceFocusSearchSurface(page) {
                 window.__navActions__.setFocusedIndex(1)
             }
         })
-        await page.waitForTimeout(300)
+        // Wait for the surface to settle after the bridge update instead of a fixed sleep.
+        await page.waitForFunction(() => document.body.dataset.surfaceSettled === 'true', null, { timeout: 5000 }).catch(() => {})
     } catch {
         // bridge not ready
     }

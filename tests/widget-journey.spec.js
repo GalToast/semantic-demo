@@ -687,14 +687,34 @@ test.describe('Widget journey', () => {
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-        await page.waitForTimeout(1500)
+        // Poll for the help dialog or help button to appear after Svelte
+        // derived effects flush — replaces a fixed 1500ms sleep.
+        await page
+            .waitForFunction(
+                () => {
+                    const dialog = document.querySelector('dialog.help-dialog')
+                    const helpBtn = document.querySelector('#btn-app-help')
+                    return dialog !== null || helpBtn !== null
+                },
+                { timeout: 10000 }
+            )
+            .catch(() => {})
 
         // Dismiss first-visit help dialog if auto-opened.
         const helpDialog = page.locator('dialog.help-dialog[open]')
         if ((await helpDialog.count()) > 0) {
             await page.keyboard.press('Escape')
             await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(300)
+            // Poll for the dialog to close instead of a fixed wait.
+            await page
+                .waitForFunction(
+                    () => {
+                        const d = document.querySelector('dialog.help-dialog')
+                        return !d || !d.open
+                    },
+                    { timeout: 5000 }
+                )
+                .catch(() => {})
         }
 
         // Pre-condition: dialog is closed.
@@ -708,7 +728,16 @@ test.describe('Widget journey', () => {
         const helpBtn = page.locator('#btn-app-help').first()
         await helpBtn.waitFor({ state: 'attached', timeout: 5000 })
         await helpBtn.click()
-        await page.waitForTimeout(500)
+        // Poll for the dialog to open after click instead of a fixed wait.
+        await page
+            .waitForFunction(
+                () => {
+                    const d = document.querySelector('dialog.help-dialog')
+                    return d && d.open
+                },
+                { timeout: 5000 }
+            )
+            .catch(() => {})
 
         // The fix: dialog must be OPEN after the click.
         const openAfter = await page.evaluate(() => {
@@ -1200,13 +1229,33 @@ test.describe('Widget journey', () => {
         await explore.click()
 
         await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
-        await page.waitForTimeout(1200)
+        // Poll for the help dialog or mode chips rail to appear after Svelte
+        // derived effects flush — replaces a fixed 1200ms sleep.
+        await page
+            .waitForFunction(
+                () => {
+                    const dialog = document.querySelector('dialog.help-dialog')
+                    const chips = document.querySelector('.mode-chips')
+                    return dialog !== null || chips !== null
+                },
+                { timeout: 10000 }
+            )
+            .catch(() => {})
 
         const helpDialog = page.locator('dialog.help-dialog[open]')
         if ((await helpDialog.count()) > 0) {
             await page.keyboard.press('Escape')
             await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
-            await page.waitForTimeout(200)
+            // Poll for the dialog to close instead of a fixed wait.
+            await page
+                .waitForFunction(
+                    () => {
+                        const d = document.querySelector('dialog.help-dialog')
+                        return !d || !d.open
+                    },
+                    { timeout: 5000 }
+                )
+                .catch(() => {})
         }
 
         const focused = await page.evaluate(() => {
