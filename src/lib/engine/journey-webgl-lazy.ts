@@ -11,6 +11,8 @@
 
 import { setInspectedStrandOverlayUpdater as setAdapterInspectedStrandOverlayUpdater } from '@lib/journey/inspected-strand-overlay-adapter'
 import { silenceError } from '@lib/utils/error-handler'
+import { debugWarn } from '@lib/utils/debug'
+import { silentNull } from '@lib/utils/silent-null'
 
 // ── Lazy module cache ────────────────────────────────────────────────────────
 
@@ -30,7 +32,12 @@ function ensureWebglModule(): Promise<typeof import('@lib/journey/webgl')> {
                 webglModule = mod
                 return mod
             })
-            .catch(() => {
+            .catch((err) => {
+                try {
+                    silentNull<typeof import('@lib/journey/webgl')>()
+                } catch {
+                    debugWarn('[journey-webgl-lazy] webgl import failed; resolving to null', err)
+                }
                 // Module unavailable (test environment, teardown, etc.).
                 // Return null — all callers check `if (!webglModule)` before
                 // accessing, so the null is handled. The next call to
@@ -176,7 +183,12 @@ function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
                 routeArrivalModule = mod
                 return mod
             })
-            .catch(() => {
+            .catch((err) => {
+                try {
+                    silentNull<RouteArrivalModule>()
+                } catch {
+                    debugWarn('[journey-webgl-lazy] route-arrival-overlay-adapter import failed; resolving to null', err)
+                }
                 // Module unavailable — null is safe because all callers
                 // guard with `if (!routeArrivalModule)` before accessing.
                 routeArrivalPromise = null
@@ -212,7 +224,12 @@ function ensureInspectorWebglModule(): Promise<typeof import('@lib/journey/threa
                 inspectorWebglModule = mod
                 return mod
             })
-            .catch(() => {
+            .catch((err) => {
+                try {
+                    silentNull<typeof import('@lib/journey/thread-inspector-webgl')>()
+                } catch {
+                    debugWarn('[journey-webgl-lazy] thread-inspector-webgl import failed; resolving to null', err)
+                }
                 // Module unavailable — null is safe because all callers
                 // guard with `if (!inspectorWebglModule)` before accessing.
                 inspectorWebglPromise = null
