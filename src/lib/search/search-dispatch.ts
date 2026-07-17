@@ -1,14 +1,7 @@
-import {
-    runSearch,
-    setSearchStatus,
-    setSearchQuery
-} from '@lib/stores/search.svelte'
+import { runSearch, setSearchStatus, setSearchQuery } from '@lib/stores/search.svelte'
 import { requestEntryFocus } from '@lib/focus/focus-coordinator'
 import { pendingSearch } from '@lib/stores/pending-search.svelte'
-import {
-    dispatchNavTransition,
-    NAV_TRANSITION_ACTIONS
-} from '@lib/stores/navigation.svelte.ts'
+import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte.ts'
 import { publish, EVENTS } from '@lib/orchestration/event-bus'
 import { showExperienceToast } from '@lib/orchestration/toast'
 import { debugWarn } from '@lib/utils/debug'
@@ -100,15 +93,14 @@ export class SearchDispatch {
         dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' })
         this.surfaceSwitchedToSearch = true
 
-        runSearch(trimmed, signal)
-            .catch((err: unknown) => {
-                // runSearch already handles AbortError + setSearchError internally;
-                // only catch non-AbortError so a hung promise doesn't hang the
-                // dispatch chain. The intent here is to keep the Svelte store's
-                // status updated by runSearch's own error path.
-                if (err instanceof DOMException && err.name === 'AbortError') return
-                debugWarn('SearchInput.dispatchSearch runSearch failed:', err)
-            })
+        runSearch(trimmed, signal).catch((err: unknown) => {
+            // runSearch already handles AbortError + setSearchError internally;
+            // only catch non-AbortError so a hung promise doesn't hang the
+            // dispatch chain. The intent here is to keep the Svelte store's
+            // status updated by runSearch's own error path.
+            if (err instanceof DOMException && err.name === 'AbortError') return
+            debugWarn('SearchInput.dispatchSearch runSearch failed:', err)
+        })
     }
 
     cancel(cancelledQuery: string): void {
@@ -125,10 +117,7 @@ export class SearchDispatch {
         // that their cancel took effect. Only show if a query was actually in flight
         // — avoids noisy toasts on a stray Escape / click.
         if (cancelledQuery.length > 0) {
-            showExperienceToast(
-                'Search cancelled',
-                'Cancelled mid-search. Try a different term or refine the query.'
-            )
+            showExperienceToast('Search cancelled', 'Cancelled mid-search. Try a different term or refine the query.')
         }
     }
 
