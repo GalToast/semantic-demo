@@ -19,170 +19,161 @@
  *                    based on comparing ownerCount to baselineOwnerCount
  */
 
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, resolve } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
 
-const RATCHET = process.env.RATCHET === '1';
-const root = process.cwd();
+const RATCHET = process.env.RATCHET === '1'
+const root = process.cwd()
 
 function read(path) {
-  return readFileSync(resolve(root, path), 'utf8');
+    return readFileSync(resolve(root, path), 'utf8')
 }
 
 function importPaths(cssPath) {
-  const css = read(cssPath);
-  return [...css.matchAll(/@import\s+url\(["']?([^"')?]+)(?:\?[^"')]+)?["']?\)/g)]
-    .map((match) => match[1])
-    .map((path) => path.startsWith('./') ? path.slice(2) : path)
-    .map((path) => {
-      if (cssPath.includes('/')) return `${dirname(cssPath)}/${path}`.replaceAll('\\', '/');
-      return path;
-    });
+    const css = read(cssPath)
+    return [...css.matchAll(/@import\s+url\(["']?([^"')?]+)(?:\?[^"')]+)?["']?\)/g)]
+        .map((match) => match[1])
+        .map((path) => (path.startsWith('./') ? path.slice(2) : path))
+        .map((path) => {
+            if (cssPath.includes('/')) return `${dirname(cssPath)}/${path}`.replaceAll('\\', '/')
+            return path
+        })
 }
 
 const MOBILE_PREMIUM_SPLIT = [
-  'css/mobile_premium__focus-dive.css',
-  'css/mobile_premium__chrome.css',
-  'css/mobile_premium__state.css',
-  'css/mobile_premium__idle.css',
-  'css/mobile_premium__surfaces.css',
-  'css/mobile_premium__narrow.css',
-];
+    'css/mobile_premium__focus-dive.css',
+    'css/mobile_premium__chrome.css',
+    'css/mobile_premium__state.css',
+    'css/mobile_premium__idle.css',
+    'css/mobile_premium__surfaces.css',
+    'css/mobile_premium__narrow.css'
+]
 
-const cascade = [
-  ...importPaths('semantic-demo.css'),
-  ...MOBILE_PREMIUM_SPLIT,
-];
+const cascade = [...importPaths('semantic-demo.css'), ...MOBILE_PREMIUM_SPLIT]
 
 const registry = [
-  {
-    primitive: 'journey-compass',
-    selector: '.journey-compass',
-    terminalOwner: 'css/mobile_premium__focus-dive.css',
-    baselineOwnerCount: 11,
-    allowedOwners: [
-      'css/layout_base.css',
-      'css/search.css',
-      'css/mobile_base.css',
-      'css/journey_steps.css',
-      'css/journey_active.css',
-      'css/progressive_disclosure.css',
-      'css/strands.css',
-      'css/animations.css',
-      ...MOBILE_PREMIUM_SPLIT,
-    ],
-  },
-  {
-    primitive: 'search-container',
-    selector: '.search-container',
-    terminalOwner: 'css/mobile_premium__chrome.css',
-    allowedOwners: [
-      'css/search.css',
-      'css/layout_base.css',
-      'css/mobile_base.css',
-      'css/journey_active.css',
-      'css/progressive_disclosure.css',
-      'css/strands.css',
-      'css/animations.css',
-      ...MOBILE_PREMIUM_SPLIT,
-    ],
-  },
-  {
-    primitive: 'focus-stage-card',
-    selector: '.focus-stage-card',
-    terminalOwner: 'css/mobile_premium__focus-dive.css',
-    baselineOwnerCount: 4,
-    allowedOwners: [
-      'css/journey_steps.css',
-      'css/animations.css',
-      'css/mobile_premium__focus-dive.css',
-    ],
-  },
-  {
-    primitive: 'map-trail-compass-hide',
-    selector: "data-panel-surface='map-trail'] .journey-compass",
-    terminalOwner: 'css/mobile_premium__state.css',
-    baselineOwnerCount: 3,
-    allowedOwners: [
-      'css/mobile_premium__state.css',
-    ],
-  },
-];
+    {
+        primitive: 'journey-compass',
+        selector: '.journey-compass',
+        terminalOwner: 'css/mobile_premium__focus-dive.css',
+        baselineOwnerCount: 11,
+        allowedOwners: [
+            'css/layout_base.css',
+            'css/search.css',
+            'css/mobile_base.css',
+            'css/journey_steps.css',
+            'css/journey_active.css',
+            'css/progressive_disclosure.css',
+            'css/strands.css',
+            'css/animations.css',
+            ...MOBILE_PREMIUM_SPLIT
+        ]
+    },
+    {
+        primitive: 'search-container',
+        selector: '.search-container',
+        terminalOwner: 'css/mobile_premium__chrome.css',
+        allowedOwners: [
+            'css/search.css',
+            'css/layout_base.css',
+            'css/mobile_base.css',
+            'css/journey_active.css',
+            'css/progressive_disclosure.css',
+            'css/strands.css',
+            'css/animations.css',
+            ...MOBILE_PREMIUM_SPLIT
+        ]
+    },
+    {
+        primitive: 'focus-stage-card',
+        selector: '.focus-stage-card',
+        terminalOwner: 'css/mobile_premium__focus-dive.css',
+        baselineOwnerCount: 4,
+        allowedOwners: ['css/journey_steps.css', 'css/animations.css', 'css/mobile_premium__focus-dive.css']
+    },
+    {
+        primitive: 'map-trail-compass-hide',
+        selector: "data-panel-surface='map-trail'] .journey-compass",
+        terminalOwner: 'css/mobile_premium__state.css',
+        baselineOwnerCount: 3,
+        allowedOwners: ['css/mobile_premium__state.css']
+    }
+]
 
 function ownersFor(selector) {
-  return cascade.filter((file) => {
-    try {
-      return read(file).includes(selector);
-    } catch {
-      return false;
-    }
-  });
+    return cascade.filter((file) => {
+        try {
+            return read(file).includes(selector)
+        } catch {
+            return false
+        }
+    })
 }
 
 function lineHits(file, selector) {
-  return read(file)
-    .split(/\r?\n/)
-    .map((line, index) => ({ line: index + 1, text: line.trim() }))
-    .filter((entry) => entry.text.includes(selector));
+    return read(file)
+        .split(/\r?\n/)
+        .map((line, index) => ({ line: index + 1, text: line.trim() }))
+        .filter((entry) => entry.text.includes(selector))
 }
 
 const report = {
-  generatedAt: new Date().toISOString(),
-  cascade,
-  primitives: [],
-};
+    generatedAt: new Date().toISOString(),
+    cascade,
+    primitives: []
+}
 
-const failures = [];
+const failures = []
 
 for (const item of registry) {
-  const owners = ownersFor(item.selector);
-  const unknownOwners = owners.filter((owner) => !item.allowedOwners.includes(owner));
-  const terminalOwner = owners.at(-1) || null;
-  const ownerCount = owners.length;
-  const registeredCount = item.allowedOwners.length;
-  const knownDebt = ownerCount - registeredCount;
-  const baselineOwnerCount = item.baselineOwnerCount ?? ownerCount;
-  const debtSign =
-    ownerCount < baselineOwnerCount ? 'shrinking'
-    : ownerCount > baselineOwnerCount ? 'growing'
-    : 'stable';
-  // mobile_premium split distributes selectors across 6 files; the test should
-  // accept any of them as the terminal owner (last in cascade order).
-  const expectedTerminal = MOBILE_PREMIUM_SPLIT.includes(item.terminalOwner)
-    ? MOBILE_PREMIUM_SPLIT
-    : [item.terminalOwner];
-  const primitiveReport = {
-    primitive: item.primitive,
-    selector: item.selector,
-    terminalOwner,
-    expectedTerminalOwner: item.terminalOwner,
-    ownerCount,
-    registeredCount,
-    knownDebt,
-    baselineOwnerCount,
-    debtSign,
-    owners,
-    unknownOwners,
-    lineHits: Object.fromEntries(owners.map((owner) => [owner, lineHits(owner, item.selector)])),
-  };
-  report.primitives.push(primitiveReport);
+    const owners = ownersFor(item.selector)
+    const unknownOwners = owners.filter((owner) => !item.allowedOwners.includes(owner))
+    const terminalOwner = owners.at(-1) || null
+    const ownerCount = owners.length
+    const registeredCount = item.allowedOwners.length
+    const knownDebt = ownerCount - registeredCount
+    const baselineOwnerCount = item.baselineOwnerCount ?? ownerCount
+    const debtSign =
+        ownerCount < baselineOwnerCount ? 'shrinking' : ownerCount > baselineOwnerCount ? 'growing' : 'stable'
+    // mobile_premium split distributes selectors across 6 files; the test should
+    // accept any of them as the terminal owner (last in cascade order).
+    const expectedTerminal = MOBILE_PREMIUM_SPLIT.includes(item.terminalOwner)
+        ? MOBILE_PREMIUM_SPLIT
+        : [item.terminalOwner]
+    const primitiveReport = {
+        primitive: item.primitive,
+        selector: item.selector,
+        terminalOwner,
+        expectedTerminalOwner: item.terminalOwner,
+        ownerCount,
+        registeredCount,
+        knownDebt,
+        baselineOwnerCount,
+        debtSign,
+        owners,
+        unknownOwners,
+        lineHits: Object.fromEntries(owners.map((owner) => [owner, lineHits(owner, item.selector)]))
+    }
+    report.primitives.push(primitiveReport)
 
-  if (unknownOwners.length && RATCHET) {
-    failures.push(`${item.primitive}: unregistered owners ${unknownOwners.join(', ')}`);
-  }
-  if (!expectedTerminal.includes(terminalOwner)) {
-    failures.push(`${item.primitive}: terminal owner ${terminalOwner || 'none'} should be one of ${expectedTerminal.join(', ')}`);
-  }
+    if (unknownOwners.length && RATCHET) {
+        failures.push(`${item.primitive}: unregistered owners ${unknownOwners.join(', ')}`)
+    }
+    if (!expectedTerminal.includes(terminalOwner)) {
+        failures.push(
+            `${item.primitive}: terminal owner ${terminalOwner || 'none'} should be one of ${expectedTerminal.join(', ')}`
+        )
+    }
 }
 
-const outPath = resolve(root, 'tmp/surface-redundancy-contract/latest.json');
-mkdirSync(dirname(outPath), { recursive: true });
-writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`);
+const outPath = resolve(root, 'tmp/surface-redundancy-contract/latest.json')
+mkdirSync(dirname(outPath), { recursive: true })
+writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`)
 
 if (failures.length) {
-  failures.forEach((failure) => console.error(`FAIL: ${failure}`));
-  console.error(`Surface redundancy report written to ${outPath}`);
-  process.exit(1);
+    failures.forEach((failure) => console.error(`FAIL: ${failure}`))
+    console.error(`Surface redundancy report written to ${outPath}`)
+    process.exit(1)
 }
 
-console.log(`surface-redundancy-contract passed; report written to ${outPath}`);
+console.log(`surface-redundancy-contract passed; report written to ${outPath}`)
