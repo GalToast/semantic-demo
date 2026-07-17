@@ -64,7 +64,7 @@ test.describe('Reduced Motion Interruption & State Consistency', () => {
         await page.addInitScript(() => {
             window.__PLAYWRIGHT__ = true
         })
-        await page.goto(APP_URL, { waitUntil: 'commit' })
+        await page.goto(APP_URL, { waitUntil: 'domcontentloaded' })
         await waitForReady(page)
 
         // Verify baseline
