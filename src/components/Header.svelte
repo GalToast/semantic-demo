@@ -21,7 +21,7 @@
   import { initKeyboardShortcutsHint, toggleKeyboardShortcutsHint } from '@lib/keyboard/keyboard-help';
   import { debugWarn } from '@lib/utils/debug'
   import { modes } from '@lib/components/header/mode-constants';
-  import { getActiveDescription, selectMode as applyModeSelect } from '@lib/components/header/mode-nav';
+  import { getActiveDescription, selectMode as applyModeSelect, type SelectModeContext } from '@lib/components/header/mode-nav';
   import { executeJourneyCompassAction } from '@lib/orchestration/compass-controller';
   import ModeChipRail from '@lib/components/header/ModeChipRail.svelte';
   import HelpDialog from '@lib/components/header/HelpDialog.svelte';
@@ -52,7 +52,7 @@
       dispatchNavTransition,
       updateUrlState,
       debugWarn,
-    });
+    } as SelectModeContext);
     // Bug 2 fix: selecting "Inside" must also engage the semantic-dive surface
     // (ENTRY_INSIDE). On desktop the journey-compass "Step Inside" button is
     // display:none, so this is the only path that reveals #focus-pocket there.
