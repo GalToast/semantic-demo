@@ -35,30 +35,36 @@ import { getInitialRenderKind, isDeepLinkParams } from '@lib/orchestration/respo
 import { setRenderKind } from '@lib/orchestration/parity-attrs.svelte'
 import './lib/css/biofield.css'
 import { debugError, debugWarn } from '@lib/utils/debug'
-import { handleError } from '@lib/utils/error-handler'
 
-// ── Global error sink ──────────────────────────────────────────────────────
+// ── Global error sink (ring buffer) ────────────────────────────────────────
 // Top-level catch for otherwise-uncaught errors / unhandled promise
-// rejections so failures are observable instead of vanishing into the console
-// or crashing boot silently. Keep minimal.
+// rejections. Keeps a tiny ring buffer so recent failures are inspectable
+// via window.__ERROR_RING__.
+const ERROR_RING_MAX = 20
+const errorRing: Array<{ timestamp: number; message: string; stack?: string }> = []
+
 function installGlobalErrorSink(): void {
+    function pushToRing(err: unknown): void {
+        errorRing.push({
+            timestamp: Date.now(),
+            message: String(err),
+            stack: err instanceof Error ? err.stack : undefined
+        })
+        if (errorRing.length > ERROR_RING_MAX) errorRing.shift()
+    }
     window.addEventListener('error', (event: ErrorEvent) => {
         const err = event.error ?? event.message
         debugError('[global-error] uncaught error:', err)
-        try {
-            handleError({ context: 'global-error', rethrow: false })(err)
-        } catch {
-            /* reporter is non-fatal */
-        }
+        pushToRing(err)
     })
     window.addEventListener('unhandledrejection', (event: PromiseRejectionEvent) => {
         const reason = event.reason
         debugError('[global-error] unhandled promise rejection:', reason)
-        try {
-            handleError({ context: 'unhandled-rejection', rethrow: false })(reason)
-        } catch {
-            /* reporter is non-fatal */
-        }
+        pushToRing(reason)
+    })
+    Object.defineProperty(window, '__ERROR_RING__', {
+        get: () => errorRing,
+        configurable: true
     })
 }
 installGlobalErrorSink()
