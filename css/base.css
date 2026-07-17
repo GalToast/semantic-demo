@@ -103,6 +103,15 @@
     --status-warning: #ffd66b;
     --status-danger: #ff6b6b;
     --status-info: #bae6fd;
+    --color-white: #fff;
+    --color-black: #000;
+    --color-ink-deep: #0a0a0f;
+    --color-white-warm: #f7fffd;
+    --color-ink: #0d141c;
+    --color-text-faint: #f8fafc;
+    --color-text-faint-2: #e5e7eb;
+    --color-warning-soft: #ffd98c;
+    --color-danger-soft: #ff9e9e;
     --space-1: 4px;
     --space-2: 8px;
     --space-3: 12px;
@@ -244,8 +253,8 @@ body {
     position: absolute;
     top: -40px;
     left: 0;
-    background: #000;
-    color: #fff;
+    background: var(--color-black);
+    color: var(--color-white);
     padding: 8px 16px;
     z-index: var(--z-max);
     text-decoration: none;
