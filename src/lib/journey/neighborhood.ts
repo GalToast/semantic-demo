@@ -34,6 +34,7 @@ import {
 } from './thread-model'
 import { valueArray, candidateIndex, normalizeThreadCandidates, finiteIndexList } from './neighborhood-helpers'
 import type { ThreadCandidateLike } from './neighborhood-helpers'
+import type { ThreadCandidateRef } from '@lib/types/state'
 // Re-export manifest types and builder for backward-compatible imports.
 export {
     buildNeighborhoodManifest,
@@ -79,7 +80,7 @@ interface SeedFilterKey {
 }
 
 interface CachedSeedResult {
-    candidates: ThreadCandidateLike[]
+    candidates: ThreadCandidateRef[]
     source: string
     reasonByIndex: Map<number, string>
     neighborIndices: number[]

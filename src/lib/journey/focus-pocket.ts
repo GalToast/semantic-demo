@@ -42,7 +42,6 @@ import { setPocketNodes } from '@lib/stores/focus.svelte'
 import { getBusinessRecords } from '@lib/data-store'
 import type { FocusPocketNode } from '@lib/types/state'
 
-
 export {
     clampNumber,
     easeOutQuint,
@@ -150,9 +149,10 @@ function topoKnnCandidates(
     seed: number,
     positions: Array<{ x: number; y: number; z: number } | undefined>,
     k: number,
-    points: { name?: string }[]
+    points: { name?: string | null }[]
 ): Array<{
     index: number
+    source: string
     semanticScore: number
     score: number
     relationshipRole: string
@@ -175,9 +175,10 @@ function topoKnnCandidates(
     if (scored.length === 0) return []
     scored.sort((a, b) => a.d - b.d)
     const top = scored.slice(0, k)
-    const maxD = top[top.length - 1].d || 1
+    const maxD = top[top.length - 1]?.d || 1
     return top.map(({ index, d }) => ({
         index,
+        source: 'geometric-fallback',
         semanticScore: maxD > 0 ? 1 - d / maxD : 0,
         score: maxD > 0 ? 1 - d / maxD : 0,
         relationshipRole: '',

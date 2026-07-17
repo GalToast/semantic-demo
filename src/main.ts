@@ -321,7 +321,8 @@ function getCompatValue(prop: string | symbol): unknown {
             if (!mesh) return null
             const ids = mesh.userData?.indices
             const mat = Array.isArray(mesh.material) ? mesh.material[0] : mesh.material
-            return { count: Array.isArray(ids) ? ids.length : 0, size: mat?.size ?? null }
+            const size = mat && 'size' in mat ? (mat as { size: number }).size : null
+            return { count: Array.isArray(ids) ? ids.length : 0, size }
         } catch {
             return null
         }

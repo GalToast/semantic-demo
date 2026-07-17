@@ -78,7 +78,7 @@ export function syncFocusPocketSizeMesh(): void {
     const srcColors = state.pointsMesh?.geometry?.attributes?.color?.array as Float32Array | undefined
     const ids = mesh.userData.indices as number[]
     for (let k = 0; k < ids.length; k++) {
-        const i = ids[k]
+        const i = ids[k]!
         const p = state.nodePositions[i]
         posAttr.setXYZ(k, p?.x ?? 0, p?.y ?? 0, p?.z ?? 0)
         if (srcColors) {
