@@ -157,10 +157,10 @@ export function startDeferredHydration(): void {
             // rendering layer reads point.visible during the next frame.
             await threadsPromise
 
-            // Create mycelium thread geometry (sync, requires pointsMesh + nodePositions)
+            // Create mycelium thread geometry (fire-and-forget async; requires pointsMesh + nodePositions)
             try {
                 const { createMycelium } = await import('@lib/engine/thread-manager')
-                createMycelium()
+                void createMycelium()
             } catch (threadErr) {
                 debugWarn('[Loading] deferred mycelium creation failed:', threadErr)
             }
@@ -291,5 +291,3 @@ function _updatePhaseChips(activePhase: string): void {
         chip.classList.toggle('is-complete', chipPhaseIndex > -1 && activeIndex > chipPhaseIndex)
     })
 }
-
-

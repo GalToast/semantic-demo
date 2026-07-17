@@ -20,6 +20,7 @@ import { withStateMutation } from '@lib/state/with-state-mutation'
 import { CONFIG } from './config'
 import { disposeObject3D } from './resource-tracker'
 import { getThreadCategoryColor } from '@lib/utils/ui-presentation-three'
+import { yieldToBrowser } from '@lib/engine/three-engine-timers'
 import type { SemanticNeighborDetail } from '@lib/types/business'
 
 // ── Helpers ─────────────────────────────────────────────────────────────────
@@ -138,7 +139,7 @@ function buildGeometricMyceliumEdges(
     return { corePairs, wispyPairs, bridgePairs }
 }
 
-function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
+async function buildSemanticMyceliumEdges(): Promise<MyceliumEdgeSets | null> {
     if (!state.semanticNeighborMapByLeadId?.size || !state.pointIndexByLeadId?.size) return null
     const seen = new Set<string>()
     const corePairs: EdgePair[] = []
@@ -148,9 +149,10 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
     const wispyDegree = new Map<number, number>()
     const bridgeDegree = new Map<number, number>()
 
-    state.points.forEach((point, index: number) => {
+    for (let index = 0; index < state.points.length; index += 1) {
+        const point = state.points[index]
         const leadId = point?.lead_id === null || point?.lead_id === undefined ? '' : String(point.lead_id)
-        if (!leadId) return
+        if (!leadId) continue
         const record = state.semanticNeighborMapByLeadId.get(leadId)
         const sortedNeighbors = [...(record?.neighbors || [])]
             .sort((a, b) => (b.semanticScore || 0) - (a.semanticScore || 0))
@@ -197,7 +199,8 @@ function buildSemanticMyceliumEdges(): MyceliumEdgeSets | null {
                 wispyPairs.push({ a: index, b: otherIndex })
             }
         })
-    })
+        if (index % 250 === 0) await yieldToBrowser()
+    }
 
     return corePairs.length || wispyPairs.length || bridgePairs.length ? { corePairs, wispyPairs, bridgePairs } : null
 }
@@ -455,7 +458,7 @@ export function disposeMycelium() {
     webglContext.myceliumConnectionPairs = []
 }
 
-export function createMycelium() {
+export async function createMycelium() {
     if (!webglContext.pointsMesh || !state.points?.length || !state.nodePositions?.length) return
 
     disposeMycelium()
@@ -465,7 +468,7 @@ export function createMycelium() {
         ? new Vector3().subVectors(webglContext.camera.position, new Vector3(0.5, 0.5, 0.5)).normalize()
         : new Vector3(0.28, 0.2, 1).normalize()
 
-    const semanticEdges = buildSemanticMyceliumEdges()
+    const semanticEdges = await buildSemanticMyceliumEdges()
     let edgeSets: MyceliumEdgeSets | undefined
     if (semanticEdges) {
         edgeSets = semanticEdges

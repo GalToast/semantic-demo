@@ -110,7 +110,7 @@ function _onDataReady(): void {
     try {
         createPoints()
         if (appState.points?.length && appState.nodePositions?.length) {
-            createMycelium()
+            void createMycelium()
         }
     } catch (err) {
         debugWarn('[engine/lifecycle] Late geometry creation failed:', err)
