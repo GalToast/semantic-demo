@@ -162,6 +162,10 @@ export function startDemo(): boolean {
 }
 
 export function cancelDemo(): boolean {
+    // Release pending timers so runDemoSequence's scheduled transitionDemo cannot
+    // slam phase back over 'CANCELLED'. Must run before the early-return guard so
+    // this cleanup happens even when cancellation is idempotent.
+    cancelAllDemoTimers()
     const phase = appState.demoPhase
     // Mirror the legacy choreography guard: terminal states are already settled.
     if (phase === 'IDLE' || phase === 'COMPLETE' || phase === 'CANCELLED') return false
@@ -312,6 +316,9 @@ export function markDemoCompleted(): void {
     // otherwise a post-card replay would never start.
     _startGuardClaimed = false
     setDemoPhase('COMPLETE')
+    // Release pending timers too — M13 fix released _startGuardClaimed here but
+    // didn't cancel scheduled transitionDemo calls, same gap as cancelDemo().
+    cancelAllDemoTimers()
     try {
         localStorage.setItem(
             DEMO_LIFETIME_KEY,
