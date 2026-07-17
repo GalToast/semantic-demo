@@ -63,7 +63,11 @@
      cards. */
   @media (max-width: 768px) {
     .search-trail-cue:not([hidden]) {
-      top: 1rem;
+      /* W53 vision-refresh issue #10: top:1rem placed the "Search opens a
+         trail" title behind the notch / status bar on phones with a
+         safe-area-inset-top, clipping the kicker + title text. Offset by
+         the safe-area inset so the cue clears the top-of-screen chrome. */
+      top: calc(1rem + max(0px, env(safe-area-inset-top, 0px)));
       bottom: auto;
     }
   }

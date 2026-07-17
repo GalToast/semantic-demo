@@ -101,6 +101,39 @@
   .trail-controls.idle {
     opacity: 0.6;
   }
+
+  /* W53 vision-refresh issue #9: "Show trail" (#btn-focus-path) carries only
+     .focus-stage-action-btn and inherited the faint global styling, reading
+     as a low-contrast outline (~3.2:1) on the 0.92-alpha chrome panel. Give
+     it the same visible-button treatment as Prev/Next: a 0.1 fill, 0.45
+     border, teal-light text, and the 44px touch floor. */
+  #btn-focus-path {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0.25rem 0.7rem;
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.45);
+    border-radius: 0.3rem;
+    color: var(--color-text-teal-light);
+    cursor: pointer;
+    font-family: var(--font-body);
+    font-size: 0.65rem;
+    font-weight: 600;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  #btn-focus-path:hover {
+    background: rgba(var(--color-primary-alt-rgb), 0.2);
+    border-color: rgba(var(--color-primary-alt-rgb), 0.65);
+  }
+  #btn-focus-path:focus-visible,
+  .trail-btn:focus-visible {
+    outline: 2px solid var(--color-primary-alt);
+    outline-offset: 2px;
+  }
   .trail-context-wrapper {
     display: flex;
     flex-direction: column;
@@ -140,12 +173,13 @@
     opacity: 0.9;
   }
   .trail-btn {
-    background: none;
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
+    background: rgba(var(--color-primary-alt-rgb), 0.1);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.45);
     border-radius: 0.3rem;
     color: var(--color-primary-alt);
     cursor: pointer;
     padding: 0.25rem 0.6rem;
+    min-height: 44px;
     font-family: var(--font-body);
     font-size: 0.65rem;
     font-weight: 600;

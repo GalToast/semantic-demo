@@ -155,6 +155,12 @@
     padding: 0;
     max-width: 28rem;
     width: 90vw;
+    /* W53 vision-refresh issue #8: short landscape viewports (~414px tall)
+       clipped the dialog top/bottom; cap height to the safe viewport and
+       let .help-dialog-inner scroll so the "Got it" button is always
+       reachable. */
+    max-height: calc(100dvh - max(0px, env(safe-area-inset-top, 0px)) - max(0px, env(safe-area-inset-bottom, 0px)) - 1rem);
+    overflow-y: auto;
     color: rgba(224, 240, 240, 0.9);
     box-shadow:
         0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.1),
@@ -165,7 +171,10 @@
     backdrop-filter: blur(4px);
 }
 .help-dialog-inner {
-    padding: 1.5rem;
+    /* W53 issue #8: keep the "Got it" button clear of the bottom
+       safe-area / gesture bar on short landscape phones, even when the
+       dialog scrolls. */
+    padding: 1.5rem 1.5rem calc(1.5rem + max(0px, env(safe-area-inset-bottom, 0px)));
 }
 .help-dialog-inner h3 {
     font-family: var(--font-display);
@@ -243,11 +252,16 @@
 }
 .help-dialog-close {
     padding: 0.4rem 1rem;
-    background: rgba(var(--color-primary-alt-rgb), 0.12);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.3);
+    /* W53 vision-refresh issue #7: the 0.12 fill + 0.3 border read at
+       ~3.2:1 against the 0.95-alpha chrome background. Bump fill to 0.25
+       and border to 0.55 + font-weight 600 so the "Got it" CTA clears
+       WCAG AA (≥4.5:1). */
+    background: rgba(var(--color-primary-alt-rgb), 0.25);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.55);
     border-radius: 0.3rem;
     color: var(--color-text-teal-light);
     font-size: 0.75rem;
+    font-weight: 600;
     cursor: pointer;
     transition: all 0.15s;
     /* Touch target: keep the 'Got it' text visually centered when the

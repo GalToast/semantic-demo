@@ -31,6 +31,7 @@
   } from '@lib/utils/relationship-roles';
   import { fade } from 'svelte/transition';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
+  import { returnToOverview } from '@lib/orchestration/lifecycle';
 
 
   // ── Business records (reactive store subscription) ─────────────────────
@@ -342,6 +343,21 @@
     role="region"
     aria-label="Selected business"
   >
+    {#if !isEmpty}
+      <div class="focus-card-grip">
+        <button
+          class="focus-card-close"
+          type="button"
+          aria-label="Close business card and return to overview"
+          data-test-id="focus-card-close"
+          onclick={() => returnToOverview()}
+        >
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true">
+            <path d="M18 6 6 18M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+    {/if}
     <!-- Empty state (fades out smoothly when populated data arrives —
          W53 corrective: prevents abrupt DOM swap that could appear as a
          double-render flash during the load-to-populated transition.) -->
@@ -443,6 +459,51 @@
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+  }
+
+  /* W53 vision-refresh issue #6 (Tier-1 HIGH — only cross-juror consensus
+     HIGH): the FocusCard bottom-sheet (mobile surface-focus /
+     semantic-dive) had no visible dismiss affordance — users could only
+     escape by selecting another business or pressing Escape. Add an inline
+     top-grip with a 44×44 close button (WCAG 2.5.5 touch floor) that calls
+     returnToOverview(), which clears focusedIndex + nav mode → isFocused
+     becomes false → cardVisible ($derived) flips false → card unmounts.
+     Rendered only when a business is populated (not the empty prompt).
+     Inline grip (not absolute) avoids overlapping the role badge on both
+     the 260px desktop card and the full-width mobile bottom-sheet. */
+  .focus-card-grip {
+    display: flex;
+    justify-content: flex-end;
+    margin-bottom: 0.25rem;
+  }
+  .focus-card-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    min-width: 44px;
+    min-height: 44px;
+    padding: 0;
+    background: transparent;
+    border: none;
+    border-radius: 0.35rem;
+    color: var(--color-text-teal-light);
+    opacity: 0.75;
+    cursor: pointer;
+    transition: opacity 0.15s, background 0.15s;
+  }
+  .focus-card-close:hover {
+    opacity: 1;
+    background: rgba(255, 255, 255, 0.08);
+  }
+  .focus-card-close:focus-visible {
+    outline: 2px solid var(--color-primary-alt);
+    outline-offset: 2px;
+    opacity: 1;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .focus-card-close { transition: none; }
   }
 
   @media (max-width: 768px) {

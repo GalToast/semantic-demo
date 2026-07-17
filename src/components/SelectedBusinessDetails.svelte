@@ -196,6 +196,29 @@
     color: rgba(var(--color-primary-alt-rgb), 0.9);
   }
 
+  /* W53 vision-refresh issue #5: the bare <a> links inside .selected-facts
+     (Website / Email) inherited only the global anchor color, which rendered
+     near-invisible (sub-3:1) on the dark focus-card / info-panel background.
+     Scope a clear teal-light link with an underline at AA contrast so the
+     contact links read as actionable. (The badge row above already surfaces
+     the same info as chips; this makes the actual link usable.) */
+  .selected-facts a {
+    color: var(--color-text-teal-light);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    text-decoration-color: rgba(var(--color-primary-alt-rgb), 0.6);
+    opacity: 1;
+  }
+  .selected-facts a:hover,
+  .selected-facts a:focus {
+    text-decoration-color: var(--color-primary-alt);
+  }
+  .selected-facts a:focus-visible {
+    outline: 2px solid var(--color-primary-alt);
+    outline-offset: 2px;
+    border-radius: 0.2rem;
+  }
+
   .selected-relationship-context {
     margin: 0.6rem 0 0.4rem;
     padding: 0.6rem 0.75rem;
