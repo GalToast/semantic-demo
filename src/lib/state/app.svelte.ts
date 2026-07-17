@@ -232,8 +232,27 @@ class AppState {
     nodePositions = $state<NodePosition[]>([])
     targetPositions = $state<NodePosition[]>([])
     originalPositions = $state<NodePosition[]>([])
-    autoRotate = $state<boolean>(false)
-    autoRotateSuspended = $state<boolean>(false)
+    // Single source of truth: autoRotate / autoRotateSuspended are direct
+    // aliases over navState (canonical), mirroring the focusedNode / trailDepth /
+    // currentView aliases below. They were previously parallel $state mirrors that
+    // could drift from navState.autoRotate — which writeNavStateMirror() writes —
+    // while focus-pocket / camera.svelte wrote the flat field. Now every writer
+    // converges on navState.
+    get autoRotate(): boolean {
+        return this.navState.autoRotate
+    }
+
+    set autoRotate(value: boolean) {
+        this.navState.autoRotate = value
+    }
+
+    get autoRotateSuspended(): boolean {
+        return this.navState.autoRotateSuspended
+    }
+
+    set autoRotateSuspended(value: boolean) {
+        this.navState.autoRotateSuspended = value
+    }
     weather = $state<WeatherData | null>(null)
     weatherInitialized = $state<boolean>(false)
     clockTimer = $state<ReturnType<typeof setTimeout> | null>(null)
@@ -284,7 +303,7 @@ class AppState {
         neighborhoodIndices: [],
         currentView: 'galaxy',
         myceliumMode: 'dormant',
-        autoRotate: true,
+        autoRotate: false,
         autoRotateSuspended: false,
         trailDepthFromExploration: 0,
         sceneRevealActive: false,
