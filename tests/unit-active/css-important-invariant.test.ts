@@ -42,19 +42,21 @@ const SKIP_PATTERNS = [
 // Baseline count of approved `!important` uses. Update this when
 // approving a new use (see comment in the test body).
 //
-// 5 approved uses:
-//   css/search.css × 2                         — historical fixes
-//   src/lib/css/canvas-hover-preview.css × 3   —
-//       inside @media (prefers-reduced-motion: reduce) for the floating
-//       hover-preview tooltip, the click-pulse ring, and the hover-preview
-//       container; standard accessibility pattern, requires !important to
-//       override any animated transition when the user requests reduced motion.
-// Justification for reduced-motion trio: the [class*=…] catch-all and the
-// .canvas-hover-preview container must override any component-level transition
-// durations to honour the user's accessibility preference. Cascade-only
-// approaches can't guarantee this because the targeted selectors intersect
-// components with varying specificity from other stylesheets.
-const APPROVED_BASELINE = 7
+// 9 approved uses:
+//   controls.css × 2                          — reduced-motion override for control buttons
+//                                                (transition: none + animation: none)
+//   journey_active.css × 2                    — display:none for stale search DOM behind
+//                                                focus pocket and focus/semantic-dive/inside
+//   layout_base.css × 3                       — placeholder2d info-panel suppression +
+//                                                reduced-motion override for panels/
+//                                                toggles/modes (transition + animation)
+//   src/lib/css/canvas-hover-preview.css × 2  — reduced-motion: overrides inline
+//                                                transitions set by JS
+//                                                (canvas-hover-preview.ts line 74,
+//                                                canvas-interaction.ts line 48);
+//                                                !important is required because cascade
+//                                                alone cannot override inline styles.
+const APPROVED_BASELINE = 9
 
 interface ImportantUse {
     file: string
