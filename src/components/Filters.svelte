@@ -26,6 +26,12 @@
 
   let { open = false }: Props = $props();
 
+  let detailsEl: HTMLDetailsElement;
+
+  function handleScrimClick() {
+    if (detailsEl) detailsEl.open = false;
+  }
+
   interface FilterOption {
     id: string;
     label: string;
@@ -176,6 +182,7 @@ function handleContactToggle(id: string): void {
   id="filters-section"
   aria-label="Business filters"
   {open}
+  bind:this={detailsEl}
 >
   <summary class="filter-toggle" aria-label="Toggle business filters">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
@@ -260,6 +267,14 @@ function handleContactToggle(id: string): void {
     </button>
   </div>
 </details>
+
+<!-- Scrim backdrop — appears when filters panel is open, dismisses on tap -->
+<div
+  class="filters-scrim"
+  onclick={handleScrimClick}
+  role="presentation"
+  aria-hidden="true"
+></div>
 
 <style>
   .filters-section {
@@ -433,5 +448,12 @@ function handleContactToggle(id: string): void {
       width: 90vw;
       bottom: 0.5rem;
     }
+  }
+  /* ── Scrim backdrop ───────────────────────────────────────────────────── */
+  .filters-scrim {
+    display: none;
+  }
+  details[open] ~ .filters-scrim {
+    display: block;
   }
 </style>

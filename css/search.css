@@ -1112,6 +1112,29 @@ body.searching .search-container.has-query .search-clear-btn {
     filter: drop-shadow(0 0 10px rgba(255, 225, 139, 0.18));
 }
 
+/* ── Filters scrim (W53-V3) ────────────────────────────────────────────────────
+   Full-viewport dark backdrop shown when the filters panel is open.
+   Dismisses the filters panel on tap via onclick in Filters.svelte.
+   Visual styling lives here (search.css OWNS filters per css-ownership.md);
+   the show/hide toggle uses the scoped sibling combinator in Filters.svelte.
+
+   The .filters-scrim element is rendered by Filters.svelte as a sibling of
+   the <details id="filters-section"> element; the sibling combinator
+   details[open] ~ .filters-scrim in the component's scoped <style> controls
+   display. The z-index (--z-overlay-elevated: 150) sits below
+   --z-controls (800, where the filters panel lives) but above the rest of UI. */
+.filters-scrim {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 14, 24, 0.55);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: var(--z-overlay-elevated);
+    cursor: pointer;
+    pointer-events: auto;
+    transition: opacity 0.2s ease;
+}
+
 @media (min-width: 769px) {
     body.surface-search .search-results.active {
         flex: 1 1 auto;
