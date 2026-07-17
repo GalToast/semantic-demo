@@ -1461,8 +1461,8 @@ body.surface-map-focus-search .search-container {
 
 body.surface-map-focus-search[data-journey-navigation-owner='map-trail-strip'] .search-container {
     position: fixed;
-    display: block !important;
-    visibility: visible !important;
+    display: block;
+    visibility: visible;
     pointer-events: auto;
     left: 8px;
     right: 8px;
