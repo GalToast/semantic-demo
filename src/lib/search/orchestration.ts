@@ -215,6 +215,7 @@ export async function search(query: string, options: SearchOptions = {}): Promis
 
     if (!isRequestCurrent(requestId)) return
     if (!results.length) {
+        setSearchStatus('empty')
         publish(EVENTS.SEARCH_EMPTY, { query: trimmedQuery })
         return
     }
