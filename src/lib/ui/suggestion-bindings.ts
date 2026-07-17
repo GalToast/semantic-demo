@@ -108,8 +108,8 @@ export function bindSuggestionControls(): void {
             btn.textContent = 'Finding...'
         }
 
-        // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup
         _registry.timer(
+            // eslint-disable-next-line no-restricted-syntax -- one-shot timer scoped to local promise / effect cleanup, wrapped by _registry.timer
             setTimeout(() => {
                 const eligible = _getEligiblePoints()
                 if (!eligible.length) {

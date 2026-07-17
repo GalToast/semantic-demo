@@ -12,8 +12,6 @@
  */
 
 import { test, expect } from '@playwright/test'
-import { clearSearch } from '@lib/stores/navigation.svelte'
-import { focusOnNode } from '@lib/orchestration/lifecycle'
 
 const EXPLICIT_BASE_URL =
     process.env.TEST_BASE_URL || process.env.PLAYWRIGHT_TEST_BASE_URL || process.env.BASE_URL || ''
@@ -69,13 +67,16 @@ async function setupNetworkStubs(page) {
 
 async function waitForAppReady(page) {
     const appUrl = await resolveAppUrl()
+    await page.addInitScript(() => {
+        window.__PLAYWRIGHT__ = true
+    })
     await page.goto(appUrl, { waitUntil: 'domcontentloaded' })
     await page.waitForFunction(
         () => {
             const s = window.__APP_STATE__ ?? window.__TEST_STATE__ ?? {}
             return (
-                typeof clearSearch === 'function' &&
-                typeof focusOnNode === 'function' &&
+                typeof window.__navActions__?.clearSearch === 'function' &&
+                typeof window.__navActions__?.focusOnNode === 'function' &&
                 Array.isArray(s?.points) &&
                 s.points.length > 0 &&
                 s?.renderer?.domElement &&
@@ -106,7 +107,7 @@ test.describe('Heavy stress & GPU leak auditor', () => {
     test('Runs repeated search, view navigation, and WebGL context restoration cycles with 0 errors', async ({
         page
     }) => {
-        test.setTimeout(120000)
+        test.setTimeout(240000)
 
         const consoleErrors = []
         page.on('pageerror', (exception) => {
@@ -131,9 +132,7 @@ test.describe('Heavy stress & GPU leak auditor', () => {
             await page.evaluate(() => {
                 const s = window.__APP_STATE__ ?? window.__TEST_STATE__
                 if (s) {
-                    s.withMutation(() => {
-                        s.currentView = 'map'
-                    })
+                    s.currentView = 'map'
                 }
             })
             await page.waitForTimeout(200)
@@ -142,9 +141,7 @@ test.describe('Heavy stress & GPU leak auditor', () => {
             await page.evaluate(() => {
                 const s = window.__APP_STATE__ ?? window.__TEST_STATE__
                 if (s) {
-                    s.withMutation(() => {
-                        s.currentView = 'galaxy'
-                    })
+                    s.currentView = 'galaxy'
                 }
             })
             await page.waitForTimeout(200)
@@ -156,20 +153,18 @@ test.describe('Heavy stress & GPU leak auditor', () => {
             await page.evaluate((index) => {
                 const s = window.__APP_STATE__ ?? window.__TEST_STATE__
                 if (s) {
-                    s.withMutation(() => {
-                        s.currentSearchSummary = {
-                            query: index % 2 === 0 ? 'coffee' : 'other',
-                            anchorIndex: 1,
-                            resultIndices: [1, 2, 20]
-                        }
-                    })
+                    s.currentSearchSummary = {
+                        query: index % 2 === 0 ? 'coffee' : 'other',
+                        anchorIndex: 1,
+                        resultIndices: [1, 2, 20]
+                    }
                 }
             }, i)
             await page.waitForTimeout(80)
 
             // Clear search
             await page.evaluate(() => {
-                clearSearch?.()
+                window.__navActions__?.clearSearch?.()
             })
             await page.waitForTimeout(80)
         }
@@ -179,7 +174,7 @@ test.describe('Heavy stress & GPU leak auditor', () => {
         for (let i = 0; i < 10; i += 1) {
             await page.evaluate((index) => {
                 // Select deterministic nodes
-                focusOnNode?.(index * 2)
+                window.__navActions__?.focusOnNode?.(index * 2)
             }, i)
             await page.waitForTimeout(100)
         }

@@ -662,7 +662,7 @@ function _frameCameraOnAnchor(index: number): void {
 async function _applyFocusPocketForAnchor(
     numericId: number,
     restoreToken: number,
-    signal: AbortSignal
+    _signal: AbortSignal
 ): Promise<boolean> {
     try {
         // Pass signal so a newer applyUrlState aborts the dynamic import

@@ -22,7 +22,7 @@ const { resolutionSet, getSize, getPixelRatio } = vi.hoisted(() => ({
         target.x = 1920
         target.y = 1080
     }),
-    getPixelRatio: vi.fn(() => 2),
+    getPixelRatio: vi.fn(() => 2)
 }))
 
 vi.mock('@lib/engine/webgl-context', () => ({
@@ -30,12 +30,12 @@ vi.mock('@lib/engine/webgl-context', () => ({
         renderer: { getSize, getPixelRatio },
         myceliumCoreLines: { material: { resolution: { set: resolutionSet } } },
         myceliumWispyLines: { material: { resolution: { set: resolutionSet } } },
-        myceliumBridgeLines: { material: { resolution: { set: resolutionSet } } },
-    },
+        myceliumBridgeLines: { material: { resolution: { set: resolutionSet } } }
+    }
 }))
 
 vi.mock('@lib/state/with-state-mutation', () => ({
-    withStateMutation: (fn: () => void) => fn(),
+    withStateMutation: (fn: () => void) => fn()
 }))
 
 vi.mock('@lib/state/app.svelte', () => ({
@@ -47,7 +47,33 @@ vi.mock('@lib/state/app.svelte', () => ({
         semanticNeighborMapByLeadId: new Map(),
         myceliumDirty: false,
         scenePerformanceDiagnostics: {},
-    },
+        viewportState: {
+            viewportWidth: 1920,
+            viewportHeight: 1080,
+            viewportIsCompact: false,
+            viewportDpr: 2,
+            viewportReducedMotion: false
+        },
+        focusState: {},
+        navState: {},
+        searchState: {
+            currentSearchSummary: null,
+            searchStatus: 'idle',
+            searchRequestSequence: 0,
+            searchAnchorIndex: null,
+            searchPreviewIndex: null,
+            searchGlowIndices: [],
+            searchGlowTopIndex: null,
+            searchGlowActive: false,
+            currentEmptyQuery: null,
+            searchFocusTransitionToken: 0,
+            semanticTrailCue: 'idle',
+            isCompactViewport: false,
+            semanticGuideRequestSequence: 0,
+            currentSemanticGuide: null,
+            summaryCardTypeToken: 0
+        }
+    }
 }))
 
 import { syncMyceliumLineResolution } from '../../src/lib/engine/thread-manager'
@@ -73,4 +99,3 @@ describe('W50: LineMaterial.resolution sync (TS-port regression)', () => {
         expect(resolutionSet).toHaveBeenLastCalledWith(3840, 2160)
     })
 })
-

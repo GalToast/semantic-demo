@@ -110,9 +110,7 @@ export function updateFocusNeighborRail(): void {
         if (countEl) countEl.textContent = '0 visible neighbors'
         clearThreadInspection({
             force: true,
-            preserveJourney: ['exploring', 'arrived'].includes(
-                appState.strandContinuityState.phase
-            )
+            preserveJourney: ['exploring', 'arrived'].includes(appState.strandContinuityState.phase)
         })
         return
     }
@@ -151,9 +149,7 @@ export function updateFocusNeighborRail(): void {
         if (countEl) countEl.textContent = '0 visible neighbors'
         clearThreadInspection({
             force: true,
-            preserveJourney: ['exploring', 'arrived'].includes(
-                appState.strandContinuityState.phase
-            )
+            preserveJourney: ['exploring', 'arrived'].includes(appState.strandContinuityState.phase)
         })
         return
     }

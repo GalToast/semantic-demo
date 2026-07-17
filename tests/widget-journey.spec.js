@@ -1932,7 +1932,7 @@ test.describe('Widget journey', () => {
                     'moco_onboarding_seen_v1',
                     JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
                 )
-            } catch (e) {
+            } catch (_e) {
                 /* ignore */
             }
         })
@@ -2200,7 +2200,7 @@ test.describe('Widget journey', () => {
             window.__PLAYWRIGHT__ = true
             try {
                 sessionStorage.setItem('searchVisibleCount', '999')
-            } catch (e) {
+            } catch (_e) {
                 /* ignore */
             }
         })
@@ -2254,7 +2254,7 @@ test.describe('Widget journey', () => {
         await page.evaluate(() => {
             try {
                 sessionStorage.setItem('searchVisibleCount', '3')
-            } catch (e) {
+            } catch (_e) {
                 /* ignore */
             }
         })

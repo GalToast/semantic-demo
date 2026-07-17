@@ -20,15 +20,19 @@ const IDLE_STATIC_FRAME_INTERVAL_MS = 125
 // `animate` is defined in three-engine-core.ts. To avoid a circular import,
 // core sets this reference once at module-init time. The function pointer is
 // stable (function declaration), so a single assignment is sufficient.
-
-let animateFn: (() => void) | null = null
-
+//
+// Use a property on the hoisted function to store the callback, avoiding a
+// module-level `let`/`const` temporal dead zone. The engine's circular import
+// graph can re-enter this module during initialization, so any top-level
+// variable declared in this module would be uninitialized when
+// three-engine-core.ts calls setAnimateFn(animate).
 export function setAnimateFn(fn: () => void): void {
-    animateFn = fn
+    ;(setAnimateFn as unknown as { __fn?: () => void }).__fn = fn
 }
 
 function animate(): void {
-    if (animateFn) animateFn()
+    const fn = (setAnimateFn as unknown as { __fn?: () => void }).__fn
+    if (fn) fn()
 }
 
 // ── Yield helper for breaking up long tasks (W5-T1b / W8) ──────────────────────

@@ -13,32 +13,58 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest'
 
 // Shared mutable state object so each test can reconfigure before calling.
-const testState = {
-    nodePositions: [] as Array<{ x: number; y: number; z: number }>,
-    points: [] as Array<{ cluster: number }>
-}
-
-const { mockWebglContext, mockState } = vi.hoisted(() => ({
-    mockWebglContext: {
-        myceliumConnectionPairs: [] as Array<{ a: number; b: number; layer: number }>,
-        myceliumCoreLines: null as any,
-        myceliumWispyLines: null as any,
-        myceliumBridgeLines: null as any,
-        pointsMesh: {},
-        renderer: null as any
-    },
-    mockState: {
-        get nodePositions() {
-            return testState.nodePositions
-        },
-        get points() {
-            return testState.points
-        },
-        semanticNeighborMapByLeadId: new Map(),
-        navState: { mode: 'focus', trailDepth: 0 },
-        myceliumDirty: false
+const { mockWebglContext, mockState, testState } = vi.hoisted(() => {
+    const testState = {
+        nodePositions: [] as Array<{ x: number; y: number; z: number }>,
+        points: [] as Array<{ cluster: number }>
     }
-}))
+    return {
+        mockWebglContext: {
+            myceliumConnectionPairs: [] as Array<{ a: number; b: number; layer: number }>,
+            myceliumCoreLines: null as any,
+            myceliumWispyLines: null as any,
+            myceliumBridgeLines: null as any,
+            pointsMesh: {},
+            renderer: null as any
+        },
+        mockState: {
+            get nodePositions() {
+                return testState.nodePositions
+            },
+            get points() {
+                return testState.points
+            },
+            semanticNeighborMapByLeadId: new Map(),
+            navState: { mode: 'focus', trailDepth: 0 },
+            myceliumDirty: false,
+            viewportState: {
+                viewportWidth: 1920,
+                viewportHeight: 1080,
+                viewportIsCompact: false,
+                viewportDpr: 2,
+                viewportReducedMotion: false
+            },
+            searchState: {
+                currentSearchSummary: null,
+                searchStatus: 'idle',
+                searchRequestSequence: 0,
+                searchAnchorIndex: null,
+                searchPreviewIndex: null,
+                searchGlowIndices: [],
+                searchGlowTopIndex: null,
+                searchGlowActive: false,
+                currentEmptyQuery: null,
+                searchFocusTransitionToken: 0,
+                semanticTrailCue: 'idle',
+                isCompactViewport: false,
+                semanticGuideRequestSequence: 0,
+                currentSemanticGuide: null,
+                summaryCardTypeToken: 0
+            }
+        },
+        testState
+    }
+})
 
 vi.mock('@lib/engine/webgl-context', () => ({
     webglContext: mockWebglContext

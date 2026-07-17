@@ -16,7 +16,7 @@ test('phase2 visual capture across surfaces + widths', async ({ page }) => {
                 ONBOARDING_STORAGE_KEY,
                 JSON.stringify({ seen: true, seenAt: new Date().toISOString() })
             )
-        } catch (e) {
+        } catch (_e) {
             /* ignore */
         }
     })
