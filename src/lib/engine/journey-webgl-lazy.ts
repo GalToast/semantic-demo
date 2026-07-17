@@ -187,7 +187,10 @@ function ensureRouteArrivalModule(): Promise<RouteArrivalModule> {
                 try {
                     silentNull<RouteArrivalModule>()
                 } catch {
-                    debugWarn('[journey-webgl-lazy] route-arrival-overlay-adapter import failed; resolving to null', err)
+                    debugWarn(
+                        '[journey-webgl-lazy] route-arrival-overlay-adapter import failed; resolving to null',
+                        err
+                    )
                 }
                 // Module unavailable — null is safe because all callers
                 // guard with `if (!routeArrivalModule)` before accessing.

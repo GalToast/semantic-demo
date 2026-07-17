@@ -22,7 +22,9 @@ test.describe('Map empty-state dismiss (W53 V2)', () => {
         })
     })
 
-    test('V2.1 — empty-state shows an accessible dismissible ✕ that hides it and persists across map re-entry', async ({ page }) => {
+    test('V2.1 — empty-state shows an accessible dismissible ✕ that hides it and persists across map re-entry', async ({
+        page
+    }) => {
         await page.setViewportSize({ width: 1280, height: 800 })
         await page.goto(`${BASE_URL}/dist/svelte/index.html?view=map&nodemo=1`, {
             waitUntil: 'domcontentloaded'
