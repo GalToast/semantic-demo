@@ -57,17 +57,13 @@ describe('SearchInput component', () => {
     })
 
     it('W48-G: handleKeydown routes Enter to dispatchSearch + moves focus to first result', () => {
-        // Regression: previously the keydown handler only handled Escape
-        // and ArrowDown. Enter did nothing because the input isn't in a
-        // <form>. Users typing-then-Enter saw no immediate action — they
-        // had to wait the 300ms debounce.
         const src = readFileSync(SEARCH_INPUT_SOURCE, 'utf-8')
         expect(src).toMatch(/e\.key === 'Enter'/)
         // Enter must cancel the debounce so the search fires immediately,
         // not after the 300ms debounce timer.
-        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?searchDebounce\.cancel\(\)/)
+        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?dispatch\.cancelDebounce\(\)/)
         // And it must fire dispatchSearch synchronously.
-        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?dispatchSearch\(q\)/)
+        expect(src).toMatch(/e\.key === 'Enter'[\s\S]*?dispatch\.dispatchSearch\(q\)/)
         // The Enter handler must set the deferred-focus flag (the focus now
         // happens in an $effect after the async results arrive, instead of
         // synchronously inside the handler where the list doesn't exist yet).

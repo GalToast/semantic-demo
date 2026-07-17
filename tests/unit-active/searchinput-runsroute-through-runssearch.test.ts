@@ -14,65 +14,67 @@ import { describe, it, expect } from 'vitest'
 import { readFileSync } from 'fs'
 import { resolve } from 'path'
 
+function readSearchDispatch(): string {
+    const p = resolve(__dirname, '../../src/lib/search/search-dispatch.ts')
+    return readFileSync(p, 'utf-8')
+}
+
 function readSearchInput(): string {
     const p = resolve(__dirname, '../../src/components/SearchInput.svelte')
     return readFileSync(p, 'utf-8')
 }
 
 describe('PR-O5: SearchInput routes through runSearch', () => {
-    it('imports runSearch from @lib/stores/search.svelte', () => {
-        const src = readSearchInput()
+    it('search-dispatch imports runSearch from @lib/stores/search.svelte', () => {
+        const src = readSearchDispatch()
         expect(src).toMatch(/import\s*\{[^}]*runSearch[^}]*\}\s*from\s*['"]@lib\/stores\/search\.svelte['"]/)
     })
 
-    it('does NOT import performSearch from @lib/search-engine', () => {
-        const src = readSearchInput()
-        // The performSearch direct import was removed in PR-O5
+    it('search-dispatch does NOT import performSearch from @lib/search-engine', () => {
+        const src = readSearchDispatch()
         expect(src).not.toMatch(/import\s*\{[^}]*performSearch[^}]*\}\s*from\s*['"]@lib\/search-engine['"]/)
     })
 
-    it('does NOT call performSearch() directly in dispatchSearch', () => {
-        const src = readSearchInput()
-        // Extract the dispatchSearch function body
-        const body = src.slice(src.indexOf('function dispatchSearch'), src.indexOf('function debounceDispatch'))
+    it('search-dispatch does NOT call performSearch() directly in dispatchSearch', () => {
+        const src = readSearchDispatch()
+        const body = src.slice(
+            src.indexOf('dispatchSearch(query: string)'),
+            src.indexOf('cancel(cancelledQuery: string)')
+        )
         expect(body).not.toMatch(/performSearch\s*\(/)
         expect(body).toMatch(/runSearch\s*\(/)
     })
 
-    it('does NOT call setSearchResults or setSearchError directly', () => {
-        // runSearch handles those — SearchInput should defer to it
-        const src = readSearchInput()
+    it('search-dispatch does NOT call setSearchResults or setSearchError directly', () => {
+        const src = readSearchDispatch()
         expect(src).not.toMatch(/setSearchResults\s*\(/)
         expect(src).not.toMatch(/setSearchError\s*\(/)
     })
 
-    it('preserves the dispatchNavTransition to search surface (SearchInput-only)', () => {
-        // This is the one side effect runSearch does NOT do — only
-        // SearchInput knows to flip the nav surface when the user types
-        const src = readSearchInput()
-        const body = src.slice(src.indexOf('function dispatchSearch'), src.indexOf('function debounceDispatch'))
+    it('search-dispatch preserves the dispatchNavTransition to search surface', () => {
+        const src = readSearchDispatch()
+        const body = src.slice(
+            src.indexOf('dispatchSearch(query: string)'),
+            src.indexOf('cancel(cancelledQuery: string)')
+        )
         expect(body).toMatch(
             /dispatchNavTransition\(NAV_TRANSITION_ACTIONS\.SET_SURFACE,\s*\{\s*surface:\s*['"]search['"]\s*\}\)/
         )
         expect(body).toMatch(/surfaceSwitchedToSearch\s*=\s*true/)
     })
 
-    it('still sets status to searching before runSearch (immediate UI feedback)', () => {
-        // runSearch also sets status, but SearchInput's pre-set gives
-        // the UI immediate feedback before the await microtask fires
-        const src = readSearchInput()
-        const body = src.slice(src.indexOf('function dispatchSearch'), src.indexOf('function debounceDispatch'))
+    it('search-dispatch still sets status to searching before runSearch (immediate UI feedback)', () => {
+        const src = readSearchDispatch()
+        const body = src.slice(
+            src.indexOf('dispatchSearch(query: string)'),
+            src.indexOf('cancel(cancelledQuery: string)')
+        )
         expect(body).toMatch(/setSearchStatus\(['"]searching['"]\)/)
     })
 
     it('handleInput skips redundant dispatch when input value matches the store query (defense-in-depth dedup)', () => {
-        // PR-O5 followup: even though the synthetic input event was
-        // removed from url-state.ts, this guard ensures any future
-        // path that sets the input value to match the store (e.g. a
-        // browser autofill, an a11y tool, or a custom event) does NOT
-        // re-trigger runSearch. Defense in depth.
         const src = readSearchInput()
-        const handler = src.slice(src.indexOf('function handleInput'), src.indexOf('function handleClear'))
+        const handler = src.slice(src.indexOf('function handleInput'), src.indexOf('function handleClearQuery'))
         expect(handler).toMatch(/value\s*===\s*\(\$searchState\.query\s*\?\?\s*['"]['"]\)/)
         expect(handler).toMatch(/return;[\s\S]{0,50}\}/)
     })

@@ -20,8 +20,13 @@ import { resolve } from 'node:path'
 
 // -- Helpers -----------------------------------------------------------------
 
-function readSource(): string {
+function readSearchInput(): string {
     const srcPath = resolve(__dirname, '../../src/components/SearchInput.svelte')
+    return readFileSync(srcPath, 'utf-8')
+}
+
+function readSearchDispatch(): string {
+    const srcPath = resolve(__dirname, '../../src/lib/search/search-dispatch.ts')
     return readFileSync(srcPath, 'utf-8')
 }
 
@@ -29,9 +34,11 @@ function readSource(): string {
 
 describe('search-back-affordance (UI-9)', () => {
     let source: string
+    let dispatchSource: string
 
     beforeEach(() => {
-        source = readSource()
+        source = readSearchInput()
+        dispatchSource = readSearchDispatch()
     })
 
     describe('DOM structure', () => {
@@ -72,12 +79,17 @@ describe('search-back-affordance (UI-9)', () => {
             expect(source).toContain('onclick={handleClear}')
         })
 
-        it('handleClear returns to overview via RETURN_OVERVIEW', () => {
-            expect(source).toContain('RETURN_OVERVIEW')
+        it('handleClear delegates to the search dispatch controller', () => {
+            expect(source).toContain('function handleClear')
+            expect(source).toContain('dispatch.clear()')
         })
 
-        it('handleClear dispatches SET_SURFACE to idle', () => {
-            expect(source).toContain("surface: 'idle'")
+        it('SearchDispatch.clear returns to overview via RETURN_OVERVIEW', () => {
+            expect(dispatchSource).toContain('RETURN_OVERVIEW')
+        })
+
+        it('SearchDispatch short-query path dispatches SET_SURFACE to idle', () => {
+            expect(dispatchSource).toContain("surface: 'idle'")
         })
     })
 
@@ -100,20 +112,18 @@ describe('search-back-affordance (UI-9)', () => {
     })
 
     describe('state machine integration', () => {
-        it('imports from search store', () => {
-            // W11-T8: the two-source shim was deleted; consumers now import
-            // the Svelte 5 rune-class source directly. Accept either the
-            // bare shim path (legacy) or the new .svelte.ts source path.
-            expect(source).toMatch(/from\s+['"]@lib\/stores\/search(?:\.svelte)?(?:\.ts)?['"]/)
+        it('imports the SearchDispatch controller', () => {
+            // Wave 2 search-layer cleanup: SearchInput delegates nav transitions
+            // to the search-dispatch controller instead of importing them directly.
+            expect(source).toContain("import { SearchDispatch } from '@lib/search/search-dispatch'")
+            expect(source).toContain('new SearchDispatch')
+            expect(source).toContain('dispatch.clear()')
         })
 
-        it('imports dispatchNavTransition for surface switching', () => {
-            // W11-T8 Wave 2H: the bare @lib/stores/navigation shim was deleted;
-            // consumers now import the canonical @lib/stores/navigation.svelte.ts.
-            // Accept either the bare shim path (legacy) or the .svelte.ts path.
-            expect(source).toMatch(/from\s+['"]@lib\/stores\/navigation(?:\.svelte\.ts)?['"]/)
-            expect(source).toContain('dispatchNavTransition')
-            expect(source).toContain('NAV_TRANSITION_ACTIONS')
+        it('SearchDispatch imports dispatchNavTransition for surface switching', () => {
+            expect(dispatchSource).toMatch(/from\s+['"]@lib\/stores\/navigation\.svelte\.ts['"]/)
+            expect(dispatchSource).toContain('dispatchNavTransition')
+            expect(dispatchSource).toContain('NAV_TRANSITION_ACTIONS')
         })
     })
 })
