@@ -26,7 +26,6 @@ import {
 } from '@lib/engine/journey-webgl-lazy'
 import { isCompactLandscape, isUltraCompactPortrait } from '@lib/utils/environment'
 import { getRelationshipRoleLabel, normalizeRelationshipRole } from '@lib/utils/relationship-roles'
-import type { StrandContinuityState } from '@lib/types/state'
 import { appState } from '@lib/state/app.svelte'
 
 export function isCondensedFocusStageViewport(): boolean {
@@ -112,7 +111,7 @@ export function updateFocusNeighborRail(): void {
         clearThreadInspection({
             force: true,
             preserveJourney: ['exploring', 'arrived'].includes(
-                (appState.strandContinuityState as StrandContinuityState).phase
+                appState.strandContinuityState.phase
             )
         })
         return
@@ -153,7 +152,7 @@ export function updateFocusNeighborRail(): void {
         clearThreadInspection({
             force: true,
             preserveJourney: ['exploring', 'arrived'].includes(
-                (appState.strandContinuityState as StrandContinuityState).phase
+                appState.strandContinuityState.phase
             )
         })
         return

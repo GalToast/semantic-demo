@@ -491,7 +491,7 @@ class AppState {
         startedAt: 0,
         arrivalTimeoutId: undefined,
         settleTimeoutId: undefined
-    } as StrandContinuityState)
+    })
     focusOrbitSlackState = $state<FocusOrbitSlackState>({
         phase: 'idle',
         reason: '',
