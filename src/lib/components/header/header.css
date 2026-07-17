@@ -328,7 +328,7 @@
     }
 }
 
-/* ── W53 worker C — V9 PREVIEW / title overlap ───────────────────────────
+/* ── W53 V9 PREVIEW / title overlap (worker C takeover, main-lane selector fix) ─
    The 2D placeholder (Placeholder2D.svelte, shown on narrow / landscape
    cold loads) brands the page with its own hero: an uppercase
    "SEMANTIC EXPLORER" H1 plus an inline "Preview" badge. On short /
@@ -342,19 +342,25 @@
       two titles don't compete under the header.
    2. Push the placeholder hero down (via :global, which escapes this
       component's scoping) so the "Preview" badge clears the header bar
-      at all widths, including the landscape LD1 896×414 case. The
-      body.n-placeholder2d class is set by the parity render-kind writer.
-   */
-body.n-placeholder2d .header-brand .brand-mark,
-body.n-placeholder2d .header-brand .brand-label {
+      at all widths, including the landscape LD1 896×414 case.
+
+   Selector note: targets the `data-render-kind` dataset attribute
+   written by setRenderKind() in src/lib/orchestration/parity-attrs.svelte.ts:583.
+   Worker C's first pass used `body.n-placeholder2d`, a class nobody
+   writes (silent no-op); main-lane takeover replaced it with the
+   actually-written dataset attribute, matching the established
+   `body[data-render-kind='placeholder2d']` convention in
+   Placeholder2D.svelte:74. */
+body[data-render-kind='placeholder2d'] .header-brand .brand-mark,
+body[data-render-kind='placeholder2d'] .header-brand .brand-label {
     display: none;
 }
 
-:global(body.n-placeholder2d .placeholder-overlay) {
+:global(body[data-render-kind='placeholder2d'] .placeholder-overlay) {
     padding-top: 3.5rem;
 }
 @media (max-width: 768px) {
-    :global(body.n-placeholder2d .placeholder-overlay) {
+    :global(body[data-render-kind='placeholder2d'] .placeholder-overlay) {
         padding-top: 4rem;
     }
 }
