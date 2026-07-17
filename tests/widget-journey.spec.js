@@ -2980,4 +2980,82 @@ test.describe('Focus deep-link blank-render regression (tmp/focus-blank-investig
             0
         )
     })
+
+    test('W53 issue #6 (Tier-1 HIGH — cross-juror consensus): FocusCard dismiss button deselects the business', async ({ page }) => {
+        await page.setViewportSize({ width: 1440, height: 900 })
+        await page.goto(`${BASE_URL}/dist/svelte/index.html?nodemo=1`, { waitUntil: 'domcontentloaded' })
+
+        const explore = page.locator('[data-testid="splash-cta"], button[aria-label="Enter 3D scene"]').first()
+        await explore.waitFor({ state: 'visible', timeout: 40000 })
+        await explore.click()
+
+        await page.waitForFunction(() => (window.__APP_STATE__?.points?.length ?? 0) > 100, null, { timeout: 15000 })
+        await page.locator('.weather-widget').waitFor({ state: 'attached', timeout: 30000 })
+        await page.waitForTimeout(1500)
+
+        // Close the first-visit help dialog so its backdrop doesn't absorb the dismiss click.
+        const helpDialog = page.locator('dialog.help-dialog[open]')
+        if ((await helpDialog.count()) > 0) {
+            await page.keyboard.press('Escape')
+            await helpDialog.waitFor({ state: 'hidden', timeout: 5000 }).catch(() => {})
+            await page.waitForTimeout(200)
+        }
+
+        // Focus a business that has a website so the FocusCard renders the
+        // POPULATED state (the dismiss grip is gated on !isEmpty).
+        const targetIndex = await page.evaluate(() => {
+            const points = window.__APP_STATE__?.points ?? []
+            const limit = Math.min(points.length, 1000)
+            for (let i = 0; i < limit; i++) {
+                const p = points[i]
+                if (p && p.website) return i
+            }
+            return -1
+        })
+        expect(
+            targetIndex,
+            'pre-condition: a point with a website must exist to render the populated FocusCard'
+        ).toBeGreaterThanOrEqual(0)
+
+        await page.evaluate((idx) => {
+            const actions = window.__navActions__
+            if (!actions || typeof actions.focusOnNode !== 'function') {
+                throw new Error('__navActions__.focusOnNode is not exposed')
+            }
+            if (!actions.focusOnNode(idx)) throw new Error(`focusOnNode(${idx}) returned a falsy result`)
+        }, targetIndex)
+
+        // FocusCard is lazy-loaded; wait for the populated card + dismiss button.
+        const card = page.locator('.focus-card').first()
+        await card.waitFor({ state: 'visible', timeout: 10000 })
+
+        const closeBtn = page.locator('[data-test-id="focus-card-close"]')
+        await expect(closeBtn).toBeVisible()
+        await expect(closeBtn).toHaveAttribute('aria-label', /close business card/i)
+
+        // WCAG 2.5.5: 44×44 touch floor on the dismiss button.
+        const box = await closeBtn.boundingBox()
+        expect(box, 'close button must have a measurable bounding box').not.toBeNull()
+        expect(box.width, 'dismiss hit area ≥44px wide (WCAG 2.5.5)').toBeGreaterThanOrEqual(44)
+        expect(box.height, 'dismiss hit area ≥44px tall (WCAG 2.5.5)').toBeGreaterThanOrEqual(44)
+
+        // Pre-condition: a business is focused before dismissing.
+        const focusedBefore = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
+        expect(focusedBefore, 'a business must be focused before dismissing').not.toBeNull()
+
+        // Dismiss — the button calls returnToOverview(), which clears
+        // focusedIndex + routes to overview, flipping cardVisible ($derived)
+        // false so the FocusCard unmounts.
+        await closeBtn.click()
+
+        await page.waitForFunction(
+            () =>
+                document.querySelectorAll('.focus-card').length === 0 &&
+                window.__APP_STATE__?.navState?.focusedIndex == null,
+            null,
+            { timeout: 5000 }
+        )
+        const focusedAfter = await page.evaluate(() => window.__APP_STATE__?.navState?.focusedIndex)
+        expect(focusedAfter, 'dismiss must clear the focused business (focusedIndex === null)').toBeNull()
+    })
 })
