@@ -55,7 +55,7 @@
   // ── Local state ───────────────────────────────────────────────────────────────
 
   let queryInput = $state('');
-  let inputEl: HTMLInputElement | undefined = undefined;
+  let inputEl = $state<HTMLInputElement | undefined>(undefined);
   let searchDebounce = new SearchDebounce();
   let searchAbortController: AbortController | null = null;
   let searchStartTime = 0;

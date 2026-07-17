@@ -131,6 +131,12 @@ export async function buildThreeScene(
     scene.add(ambient)
 
     // ── Atmosphere Spheres ────────────────────────────────────────────────
+    // DEPENDENCY: These spheres must remain children of `scene` so that
+    // `disposeObject3D(scene)` in three-engine-core.ts (engine teardown)
+    // traverses the full scene graph and disposes them. If a future refactor
+    // removes or detaches glowSphere/refSphere from the scene, the disposal
+    // path orphans their GPU resources (geometry, materials).
+    //
     // W48-T1A: Atmosphere sphere upgraded from invisible (0x0d2024@0.026) to
     // visible warm haze (0x2a1f0a@0.10). 0.026 was below perceptual threshold
     // on most office displays. Reference sphere bumped from 0.0045 to 0.03

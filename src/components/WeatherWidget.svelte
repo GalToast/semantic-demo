@@ -156,7 +156,7 @@
        the legend button (z=100, fixed). `+ 10rem` (~221px) clears both
        buttons with an 8px gap. */
     top: calc(var(--app-header-height, 60.8px) + 10rem);
-    right: 0.5rem;
+    right: 0.75rem;
     z-index: var(--z-legend, 50);
     pointer-events: auto;
     display: block;
@@ -195,7 +195,7 @@
     -webkit-backdrop-filter: blur(10px) saturate(140%);
     border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
     border-radius: 999px;
-    color: #cfe4e0;
+    color: #dcecea;
     cursor: pointer;
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.85rem;
@@ -244,12 +244,14 @@
     display: block;
   }
 
-  /* W46-D4: temperature is always visible — primary data point. */
+  /* W46-D4: temperature is always visible — primary data point.
+     Raised contrast from var(--color-primary-alt) (~#4ecdc4) to a brighter
+     white-teal for WCAG 2.1 AA (4.5:1) against the dark pill background. */
   .weather-temp {
     font-family: 'JetBrains Mono', monospace;
     font-weight: 600;
     font-size: 0.75rem;
-    color: var(--color-primary-alt);
+    color: #d0ece8;
     white-space: nowrap;
     line-height: 1;
   }

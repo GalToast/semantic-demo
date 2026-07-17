@@ -355,6 +355,11 @@
     width: 100%;
     height: 100%;
     touch-action: none;
+    /* Prevent minor horizontal overflow (14px desktop, 3–4px mobile) without
+       breaking the WebGL canvas mount — overflow-x:hidden on this container
+       clips only the container, not the canvas that initThreeJS appends into
+       it at 100% width. */
+    overflow-x: hidden;
     z-index: var(--z-canvas);
   }
 

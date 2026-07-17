@@ -128,5 +128,128 @@
 </div>
 
 <style>
-  @import '@lib/components/header/header.css';
+  /* ── Mode chips ─────────────────────────────────────────────────────────── */
+  .mode-chips {
+      display: flex;
+      gap: 0.35rem;
+      align-items: center;
+  }
+  .mode-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      padding: 0.35rem 0.6rem;
+      background: rgba(var(--color-primary-alt-rgb), 0.06);
+      border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
+      border-radius: 999px;
+      color: rgba(176, 208, 208, 0.85);
+      font-family: var(--font-body);
+      font-size: 0.75rem;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      pointer-events: auto;
+      outline: none;
+  }
+  .mode-chip:hover:not(:disabled) {
+      background: rgba(var(--color-primary-alt-rgb), 0.15);
+      color: var(--color-text-teal-light);
+      border-color: rgba(var(--color-primary-alt-rgb), 0.4);
+  }
+  .mode-chip.active {
+      background: rgba(var(--color-primary-alt-rgb), 0.25);
+      color: var(--color-text-teal-light);
+      border-color: rgba(var(--color-primary-alt-rgb), 0.5);
+      box-shadow: 0 0 12px rgba(var(--color-primary-alt-rgb), 0.18);
+  }
+  .mode-chip:focus-visible {
+      outline: 2px solid var(--color-text-teal-light);
+      outline-offset: 2px;
+  }
+  /* Selection-dependent modes (trail / focus / inside) are dimmed when no
+     business is focused — proactively disabled (aria-disabled) rather than
+     appearing active. Matches the lock guard in navigation.svelte.ts. */
+  .mode-chip.is-locked {
+      opacity: 0.35;
+      cursor: not-allowed;
+  }
+  .mode-chip.is-locked:hover {
+      background: rgba(var(--color-primary-alt-rgb), 0.06);
+      border-color: rgba(var(--color-primary-alt-rgb), 0.18);
+      color: rgba(176, 208, 208, 0.85);
+      box-shadow: none;
+  }
+  .chip-icon {
+      display: none; /* hidden on desktop by default */
+      width: 0.9rem;
+      height: 0.9rem;
+  }
+  .chip-lock {
+      width: 0.8125rem;
+      height: 0.8125rem;
+      color: var(--status-warning);
+      opacity: 1;
+      flex-shrink: 0;
+  }
+  .chip-label {
+      white-space: nowrap;
+  }
+
+  /* Mobile: tighten spacing */
+  @media (max-width: 820px) {
+      .mode-chips {
+          gap: 0.25rem;
+          overflow-x: auto;
+          min-width: 0;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+      }
+      .mode-chips::-webkit-scrollbar {
+          display: none;
+      }
+      .mode-chip {
+          padding: 0.3rem 0.45rem;
+          font-size: 0.7rem;
+      }
+  }
+
+  @media (max-width: 768px) {
+      .mode-chip .chip-label {
+          display: none;
+      }
+      .mode-chip.active .chip-label {
+          display: inline;
+          margin-left: 0.25rem;
+      }
+      .mode-chip .chip-icon {
+          display: block;
+      }
+      .mode-chip {
+          padding: 0.6rem;
+          justify-content: center;
+      }
+      .mode-chip.active {
+          padding: 0.4rem 0.7rem;
+          gap: 0.3rem;
+      }
+      .mode-chip {
+          position: relative;
+      }
+      .mode-chip::before {
+          content: '';
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 44px;
+          height: 44px;
+          background: transparent;
+      }
+  }
+
+  @media (max-width: 390px) {
+      .mode-chips {
+          gap: 0.2rem;
+      }
+  }
 </style>

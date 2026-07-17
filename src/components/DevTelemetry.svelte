@@ -30,7 +30,16 @@
   }
   let { visible = false }: Props = $props()
 
-  let snapshot: TelemetrySnapshot = $state(telemetryStore.getSnapshot())
+  // Initialize with empty default instead of calling getSnapshot() at init,
+  // which would capture a stale snapshot. The $effect subscription below
+  // populates the real snapshot on the first reactive tick.
+  let snapshot: TelemetrySnapshot = $state({
+      config: { enabled: false, bufferSize: 200, mirrorToConsole: false },
+      events: [],
+      counts: {},
+      totalRecorded: 0,
+      dropped: 0
+  })
   let autoScroll = $state(true)
   let mounted = $state(false)
 

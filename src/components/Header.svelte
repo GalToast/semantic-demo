@@ -44,7 +44,7 @@
   );
   let activeDescription = $derived(getActiveDescription(activeMode, activeView));
 
-  let helpDialogComp: HelpDialog | undefined;
+  let helpDialogComp = $state<HelpDialog | undefined>();
 
   function selectMode(modeId: NavMode | 'map'): void {
     applyModeSelect(modeId, hasSelection, {

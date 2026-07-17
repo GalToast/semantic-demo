@@ -36,7 +36,9 @@
 <script lang="ts">
   import { appState } from '@lib/state/app.svelte';
   import { journeyStore, JOURNEY_COMPASS_PHASE_ORDER } from '@lib/stores/journey.svelte.ts';
+  import type { JourneyStoreState } from '@lib/stores/journey.svelte.ts';
   import { focusStore } from '@lib/stores/focus.svelte.ts';
+  import type { FocusStoreState } from '@lib/stores/focus.svelte.ts';
   import { dataLoadState } from '@lib/data-store';
   import { viewport } from '@lib/stores/viewport.svelte.ts';
   import {
@@ -68,10 +70,54 @@
   // Svelte equivalent of the legacy updateJourneyCompass() call that
   // the EVENT bus fires on every state change.
   // The reactive $effect below recomputes both on every store change.
-  let compass: CompassStateContext = $state(getJourneyCompassState());
+  // Initialize with defaults rather than calling state-producing functions
+  // at init, which would capture a stale snapshot. The $effect subscriptions
+  // below populate the real values on the first reactive tick.
+  let compass: CompassStateContext = $state({
+    phase: 'overview',
+    kicker: '',
+    title: '',
+    note: '',
+    primaryAction: { label: '', action: '' },
+    secondaryAction: null,
+    tertiaryAction: null
+  });
   let navState = $derived(appState.navState);
-  let journeyState = $state(journeyStore());
-  let focusState = $state(focusStore());
+  // Initialize with defaults (not function snapshots) so template reads
+  // (`journeyState.depth >= 1`) don't throw during the first render tick
+  // before the $effect subscriptions populate the real values.
+  let journeyState = $state<JourneyStoreState>({
+    phase: 'overview', trail: [], cursor: -1, depth: 0,
+    threadCandidates: [], threadReasonByIndex: new Map(),
+    threadSource: 'geometric-fallback', lastTraversalReason: null,
+    terrainHandoffPhase: 'idle', routeExplorationPhase: 'idle',
+    routeChoreographyPhase: 'overview', selectedId: null,
+    selectedStopIndex: null, neighbors: [],
+    compass: { phase: 'idle' as const, currentAction: 'none' as const,
+      previousAction: 'none' as const, lastTransitionAt: 0 },
+    walkHistory: [], trailDepth: 0, walkHistoryIndices: [],
+    trailSeedIndex: null
+  } as unknown as JourneyStoreState);
+  let focusState = $state<FocusStoreState>({
+    pocketNodes: [], pocketMeta: null, pocketRoleByIndex: new Map(),
+    pocketMotionByIndex: new Map(), pocketTransitionStartedAt: 0,
+    nodesAreSettling: false, semanticDiveMode: false,
+    strandContinuityPhase: 'idle', inspectedStrandIndex: null,
+    pinnedThreadIndex: null, threadInspectorPointerInside: false,
+    canvasThreadInspectionClearTimer: null, selectedBusiness: null,
+    infoPanelOpen: true, pocketListVisible: false,
+    pocketRoleFilter: 'all', settling: false,
+    transitionMode: 'idle', transitionStartedAt: 0,
+    orbitSlack: { phase: 'idle', reason: '', startedAt: 0,
+      targetShift: 0, cameraShift: 0, distanceBefore: 0,
+      distanceAfter: 0, maxDistance: 5.5, rotateSpeed: 0.6,
+      panSpeed: 0.5, inspectedIndex: null, pinnedIndex: null,
+      pointerInside: false, segmentCount: 0, braidCount: 0,
+      endpointCount: 0 },
+    threadInspector: { active: false, source: 'none',
+      inspectedIndex: null, pinnedIndex: null, pointerInside: false,
+      segmentCount: 0, braidCount: 0, endpointCount: 0 }
+  } as unknown as FocusStoreState);
 
   // Subscribe to all stores that the legacy updateJourneyCompass() reacts to.
   // The hybrid callable stores return snapshots, so explicit subscriptions keep
