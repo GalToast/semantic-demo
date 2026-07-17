@@ -245,7 +245,7 @@
   }
 
   /* W46-D4: temperature is always visible — primary data point.
-     Raised contrast from var(--color-primary-alt) (~#4ecdc4) to a brighter
+     Raised contrast from var(--color-primary-alt) to a brighter
      white-teal for WCAG 2.1 AA (4.5:1) against the dark pill background. */
   .weather-temp {
     font-family: 'JetBrains Mono', monospace;
@@ -288,7 +288,7 @@
     padding: 0.18rem 0;
   }
   .weather-detail-row + .weather-detail-row {
-    border-top: 1px solid rgba(78, 205, 206, 0.07);
+    border-top: 1px solid rgba(var(--color-primary-alt-rgb), 0.07);
     margin-top: 0.1rem;
     padding-top: 0.28rem;
   }
