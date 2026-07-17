@@ -17,22 +17,12 @@
   import {
     searchState,
     setSearchQuery,
-    setSearchStatus,
-    runSearch,
     requestSearchInputFocus,
     consumeSearchInputFocusIntent
   } from '@lib/stores/search.svelte';
   import { engineReady } from '@lib/stores/engine-ready.svelte';
-  import { requestEntryFocus } from '@lib/focus/focus-coordinator';
   import { pendingSearch } from '@lib/stores/pending-search.svelte';
-  import {
-    dispatchNavTransition,
-    NAV_TRANSITION_ACTIONS
-  } from '@lib/stores/navigation.svelte.ts';
-  import { publish, EVENTS } from '@lib/orchestration/event-bus';
-  import { showExperienceToast } from '@lib/orchestration/toast';
-  import { debugWarn } from '@lib/utils/debug';
-  import { SearchDebounce } from '@lib/search/search-debounce';
+  import { SearchDispatch } from '@lib/search/search-dispatch';
 
   interface Props {
     /** Placeholder text for the input */
@@ -56,10 +46,10 @@
 
   let queryInput = $state('');
   let inputEl = $state<HTMLInputElement | undefined>(undefined);
-  let searchDebounce = new SearchDebounce();
-  let searchAbortController: AbortController | null = null;
-  let searchStartTime = 0;
-  let surfaceSwitchedToSearch = false;
+  let dispatch = new SearchDispatch({
+    onQuerySet: (q) => { queryInput = q; },
+    getInputElement: () => inputEl
+  });
   let _pendingEnterFocus = $state(false);
 
   // ── Exported actions ────────────────────────────────────────────────────────
@@ -94,14 +84,7 @@
   // through the normal dispatch path. onMount's one-shot `?q=` read already ran
   // at boot, so the URL param alone is not enough for the splash-submit case.
   $effect(() => {
-    const staged = pendingSearch.value;
-    if (!engineReady.value || !staged) return;
-    pendingSearch.consume();
-    if (staged.length < 2) return;
-    queryInput = staged;
-    setSearchQuery(staged);
-    dispatchSearch(staged);
-    requestEntryFocus(() => inputEl, { signal: 'scene-ready' });
+    dispatch.fulfillPending(pendingSearch.value, engineReady.value);
   });
 
   // ── Deferred Enter-focus fulfillment ───────────────────────────────────────-
@@ -127,60 +110,7 @@
   });
 
   // ── Search dispatch ───────────────────────────────────────────────────────────
-
-  function dispatchSearch(query: string): void {
-    if (searchAbortController) {
-      searchAbortController.abort();
-      searchAbortController = null;
-    }
-
-    const trimmed = query.trim();
-
-    if (trimmed.length === 0) {
-      dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-      surfaceSwitchedToSearch = false;
-      return;
-    }
-
-    if (trimmed.length < 2) {
-      setSearchStatus('idle');
-      if (surfaceSwitchedToSearch) {
-        dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'idle' });
-        surfaceSwitchedToSearch = false;
-      }
-      return;
-    }
-
-    searchAbortController = new AbortController();
-    searchStartTime = performance.now();
-    const signal = searchAbortController.signal;
-    setSearchStatus('searching');
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.SET_SURFACE, { surface: 'search' });
-    surfaceSwitchedToSearch = true;
-
-    // Route through runSearch (the URL-hydration gateway) instead of calling
-    // performSearch directly. This unifies the two call paths so that during
-    // `?q=` URL hydration the same query doesn't fire two separate
-    // performSearch invocations: the url-state path calls runSearch, and the
-    // SearchInput input event handler now also calls runSearch. The
-    // performSearch cache + pending-request layer still dedups the index
-    // scan, but routing through one gateway keeps the state-update side
-    // effects (setSearchResults, event bus publish) consistent across
-    // entry points. PR-O5.
-    runSearch(trimmed, signal)
-      .catch((err: unknown) => {
-        // runSearch already handles AbortError + setSearchError internally;
-        // only catch non-AbortError so a hung promise doesn't hang the
-        // dispatch chain. The intent here is to keep the Svelte store's
-        // status updated by runSearch's own error path.
-        if (err instanceof DOMException && err.name === 'AbortError') return;
-        debugWarn('SearchInput.dispatchSearch runSearch failed:', err);
-      });
-  }
-
-  function debounceDispatch(query: string): void {
-    searchDebounce.schedule(() => dispatchSearch(query), debounceMs);
-  }
+  // Orchestrated by SearchDispatch (src/lib/search/search-dispatch.ts).
 
   // ── Event handlers ────────────────────────────────────────────────────────────
 
@@ -202,18 +132,13 @@
     // must reclaim focus so the keystroke stream isn't interrupted.
     requestSearchInputFocus();
     setSearchQuery(queryInput);
-    debounceDispatch(queryInput);
+    dispatch.debounceDispatch(queryInput, debounceMs);
   }
 
   function handleClearQuery(): void {
     queryInput = '';
     setSearchQuery('');
-    searchDebounce.cancel();
-    if (searchAbortController) {
-      searchAbortController.abort();
-      searchAbortController = null;
-    }
-    setSearchStatus('idle');
+    dispatch.clearQuery();
     requestAnimationFrame(() => {
       inputEl?.focus();
     });
@@ -221,13 +146,7 @@
 
   function handleClear(): void {
     queryInput = '';
-    searchDebounce.cancel();
-    if (searchAbortController) {
-      searchAbortController.abort();
-      searchAbortController = null;
-    }
-    dispatchNavTransition(NAV_TRANSITION_ACTIONS.RETURN_OVERVIEW);
-    surfaceSwitchedToSearch = false;
+    dispatch.clear();
     requestAnimationFrame(() => {
       document.getElementById('search-input')?.focus();
     });
@@ -258,9 +177,9 @@
       e.preventDefault()
       const q = queryInput.trim()
       if (q.length > 0) {
-        searchDebounce.cancel()
+        dispatch.cancelDebounce()
         _pendingEnterFocus = true
-        dispatchSearch(q)
+        dispatch.dispatchSearch(q)
       }
     } else if (e.key === 'ArrowDown') {
       // Move focus to first search result if results are visible
@@ -274,26 +193,7 @@
 
   function handleCancel(): void {
     const cancelledQuery = queryInput.trim();
-    if (searchAbortController) {
-      searchAbortController.abort();
-      searchAbortController = null;
-    }
-    searchDebounce.cancel();
-    const durationMs = searchStartTime > 0 ? Math.round(performance.now() - searchStartTime) : 0;
-    setSearchStatus('idle');
-    publish(EVENTS.SEARCH_CANCELLED, { query: cancelledQuery, durationMs });
-    searchStartTime = 0;
-    // W52-UX-cancel: surface a transient toast so the user has visible feedback
-    // that their cancel took effect. Without this, the spinner + cancel button
-    // both vanish in the same frame and the user is left wondering whether
-    // anything happened. Only show if a query was actually in flight —
-    // avoids noisy toasts on a stray Escape / click.
-    if (cancelledQuery.length > 0) {
-      showExperienceToast(
-        'Search cancelled',
-        'Cancelled mid-search. Try a different term or refine the query.'
-      );
-    }
+    dispatch.cancel(cancelledQuery);
   }
 
   // ── Cleanup on unmount ────────────────────────────────────────────────────────
@@ -303,8 +203,7 @@
       // Cleanup runs on both remix-mount AND full unmount. The author-intent
       // note about preserving debounce across view swaps conflicts with the
       // reality of component destruction — be conservative here and clear.
-      searchDebounce.cancel();
-      searchAbortController?.abort();
+      dispatch.dispose();
     };
   });
 
@@ -323,7 +222,7 @@
     }
     queryInput = query;
     setSearchQuery(query);
-    dispatchSearch(query);
+    dispatch.dispatchSearch(query);
   });
 </script>
 
