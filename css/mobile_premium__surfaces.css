@@ -85,7 +85,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         left: 10px;
         right: 10px;
         top: auto;
-        bottom: 0;
+        bottom: max(0px, env(safe-area-inset-bottom, 0px));
         width: auto;
         height: min(42dvh, 320px);
         min-height: 214px;
@@ -400,7 +400,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         position: fixed;
         left: 0;
         right: 0;
-        bottom: 0;
+        bottom: max(0px, env(safe-area-inset-bottom, 0px));
         top: auto;
         width: 100%;
         max-width: 100%;
@@ -495,7 +495,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         left: 0;
         right: 0;
         top: auto;
-        bottom: 0;
+        bottom: max(0px, env(safe-area-inset-bottom, 0px));
         width: 100%;
         max-width: 100%;
         height: auto;
@@ -1112,7 +1112,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     body.surface-map-focus-search #info-panel.info-panel {
         left: 10px;
         right: 10px;
-        bottom: 0;
+        bottom: max(0px, env(safe-area-inset-bottom, 0px));
         top: auto;
         width: auto;
         height: min(22dvh, 192px);

@@ -220,6 +220,7 @@
   @media (max-width: 820px) {
       .mode-chips {
           gap: 0.25rem;
+          padding: 0 0.4rem;
           overflow-x: auto;
           min-width: 0;
           scrollbar-width: none;

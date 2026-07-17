@@ -311,8 +311,8 @@
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    background: rgba(var(--color-primary-alt-rgb), 0.18);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.6);
+    background: rgba(var(--color-primary-alt-rgb), 0.42);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.88);
     color: rgba(255, 255, 255, 0.98);
     font-size: 1rem;
     padding: 0.75rem 2rem;
