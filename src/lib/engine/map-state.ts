@@ -350,7 +350,16 @@ export function refreshMapRouteEmbodiment(): void {
         const trailStateActive = document.body?.dataset?.trailState === 'active'
         if (appState.currentView === 'map' && !trailStateActive) {
             const container = document.getElementById('map-container')
-            if (container && !container.querySelector('.map-empty-state')) {
+            // V2 (W53): honor a per-session dismiss so users browsing the raw
+            // county markers aren't blocked by the centered empty-state.
+            const mapEmptyDismissed = (() => {
+                try {
+                    return sessionStorage.getItem('mco:map-empty-dismissed') === '1'
+                } catch {
+                    return false
+                }
+            })()
+            if (container && !container.querySelector('.map-empty-state') && !mapEmptyDismissed) {
                 const emptyEl = document.createElement('div')
                 emptyEl.className = 'map-empty-state'
                 emptyEl.setAttribute('role', 'status')
@@ -387,6 +396,27 @@ export function refreshMapRouteEmbodiment(): void {
                 note.textContent =
                     'Search or select a business in the mycelium view, then open Map to see its nearby records here.'
                 emptyEl.appendChild(note)
+
+                // V2 (W53): jurors flagged this centered empty-state obscuring
+                // the densest marker cluster with no dismiss affordance (D4 +
+                // M4, both models). Add a ✕ that hides it for the rest of the
+                // map session (persisted via sessionStorage). The parent
+                // .map-empty-state is pointer-events:none, so the button opts
+                // back in with pointer-events:auto (see css/shell.css).
+                const closeBtn = document.createElement('button')
+                closeBtn.className = 'map-empty-state-close'
+                closeBtn.type = 'button'
+                closeBtn.setAttribute('aria-label', 'Dismiss and explore the county map')
+                closeBtn.textContent = '✕'
+                closeBtn.addEventListener('click', () => {
+                    try {
+                        sessionStorage.setItem('mco:map-empty-dismissed', '1')
+                    } catch {
+                        /* sessionStorage unavailable — still hide immediately */
+                    }
+                    emptyEl.style.setProperty('display', 'none', 'important')
+                })
+                emptyEl.appendChild(closeBtn)
 
                 container.appendChild(emptyEl)
             }
