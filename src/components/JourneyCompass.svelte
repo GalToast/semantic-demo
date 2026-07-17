@@ -97,7 +97,7 @@
       previousAction: 'none' as const, lastTransitionAt: 0 },
     walkHistory: [], trailDepth: 0, walkHistoryIndices: [],
     trailSeedIndex: null
-  } as unknown as JourneyStoreState);
+  });
   let focusState = $state<FocusStoreState>({
     pocketNodes: [], pocketMeta: null, pocketRoleByIndex: new Map(),
     pocketMotionByIndex: new Map(), pocketTransitionStartedAt: 0,
@@ -111,13 +111,11 @@
     orbitSlack: { phase: 'idle', reason: '', startedAt: 0,
       targetShift: 0, cameraShift: 0, distanceBefore: 0,
       distanceAfter: 0, maxDistance: 5.5, rotateSpeed: 0.6,
-      panSpeed: 0.5, inspectedIndex: null, pinnedIndex: null,
-      pointerInside: false, segmentCount: 0, braidCount: 0,
-      endpointCount: 0 },
+      panSpeed: 0.5 },
     threadInspector: { active: false, source: 'none',
       inspectedIndex: null, pinnedIndex: null, pointerInside: false,
       segmentCount: 0, braidCount: 0, endpointCount: 0 }
-  } as unknown as FocusStoreState);
+  });
 
   // Subscribe to all stores that the legacy updateJourneyCompass() reacts to.
   // The hybrid callable stores return snapshots, so explicit subscriptions keep
