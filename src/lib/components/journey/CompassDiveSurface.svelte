@@ -10,6 +10,7 @@
   hit-test comment are byte-identical to the original source block.
 -->
 <script lang="ts">
+  import { onMount } from 'svelte';
   import { JOURNEY_ACTIONS } from '@lib/journey/compass-state';
 
   interface Props {
@@ -50,6 +51,28 @@
     handleInsideMap,
     insideNextDisabled
   }: Props = $props();
+
+  // W53 F5: defensive id-uniqueness guard. The `id="btn-focus-dive"` literal
+  // lives only HERE in source, but Svelte can briefly co-mount two instances of
+  // this child during a remount-straddling transition / HMR re-mount — the W53
+  // visual capture caught this transient duplicate (both jurors flagged
+  // [HIGH]). Steady state always reconciles to exactly one. On mount, if a
+  // stale sibling still carries the same id, strip the id from those orphans
+  // (NEVER our own node) so HTML5 id-uniqueness holds and
+  // getElementById('btn-focus-dive') always resolves to the canonical (this)
+  // button. Orphan nodes are left for Svelte to tear down — we never remove DOM
+  // Svelte owns. Detection moment was faithful (`querySelectorAll('[id]')`
+  // grouping), so the transient dup was real at the capture instant.
+  let diveButton: HTMLButtonElement | null = $state(null);
+
+  onMount(() => {
+    const all = Array.from(document.querySelectorAll('#btn-focus-dive'));
+    if (all.length > 1 && diveButton) {
+      for (const o of all) {
+        if (o !== diveButton) o.removeAttribute('id');
+      }
+    }
+  });
 </script>
 
 <div
@@ -89,6 +112,7 @@
       'transitioning' when the click reaches the engine
 -->
 <button
+  bind:this={diveButton}
   id="btn-focus-dive"
   class="focus-stage-dive-btn"
   type="button"
