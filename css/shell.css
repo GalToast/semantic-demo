@@ -806,6 +806,31 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactiv
     }
 }
 
+/* ─── V5 + V6: Splash gate polish — mobile touch-target, contrast, safe-area ── */
+/* V5: lift the "Explore" CTA to ≥44×44px touch target + WCAG AA contrast
+   against the dark radial-gradient backdrop. Button gets a subtle teal
+   border + background so it reads as a distinct interactive element
+   rather than an underlined link. */
+button.splash-cta[data-testid="splash-cta"] {
+    min-width: 44px;
+    background: rgba(78, 205, 196, 0.14);
+    border: 1px solid rgba(78, 205, 196, 0.35);
+    border-radius: 8px;
+    color: rgba(244, 252, 251, 0.96);
+    text-decoration: none;
+    padding: 0.5rem 1.25rem;
+}
+
+/* V6: safe-area bottom lift for the splash gate dialog so the home indicator
+   on iOS doesn't overlap the bottom content (hint text). Matches the
+   FocusCard pattern: bottom: max(0px, env(safe-area-inset-bottom, 0px)).
+   Using box-sizing: border-box so the padding shrinks the content area
+   rather than extending beyond inset:0. */
+div.splash[role="dialog"] {
+    box-sizing: border-box;
+    padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
+}
+
 @media (prefers-reduced-motion: reduce) {
     /* Silence terrain bridge and map route pulse animations for users who prefer reduced motion. */
     body.view-map[data-terrain-handoff='landing'] #map-container::before,
