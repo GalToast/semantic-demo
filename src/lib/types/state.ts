@@ -395,6 +395,8 @@ export interface StrandContinuityState {
     fromIndex: number | null
     reason: string
     startedAt: number
+    arrivalTimeoutId: ReturnType<typeof setTimeout> | undefined
+    settleTimeoutId: ReturnType<typeof setTimeout> | undefined
 }
 
 // ── Filter State ──────────────────────────────────────────────────────────────

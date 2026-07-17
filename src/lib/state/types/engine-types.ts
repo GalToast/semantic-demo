@@ -168,15 +168,7 @@ export interface RouteChoreographyState {
     lastCameraMove: number | null
 }
 
-export interface StrandContinuityState {
-    phase: string
-    targetIndex: number | null
-    fromIndex: number | null
-    reason: string
-    startedAt: number
-    arrivalTimeoutId: ReturnType<typeof setTimeout> | undefined
-    settleTimeoutId: ReturnType<typeof setTimeout> | undefined
-}
+export type { StrandContinuityState } from '@lib/types/state'
 
 export interface FocusOrbitSlackState {
     phase: string
