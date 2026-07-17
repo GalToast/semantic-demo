@@ -192,12 +192,12 @@
     const walkLen = currentWalkHistory.length;
     if (currentTrailDepth >= 1 && walkLen >= 1) {
       const sourceLabel = currentThreadSource ? formatThreadSourceLabel(currentThreadSource) : '';
-      return `Stop ${walkLen}: ${name}${sourceLabel ? `. Matched by ${sourceLabel}` : ''}`;
+      return `Exploring ${name}${sourceLabel ? `. Matched by ${sourceLabel}` : ''}`;
     }
     if (neighborCount === 0 && currentThreadSource === 'semantic') {
       return `Related businesses are near ${name}, but none are visible with the current filters.`;
     }
-    return `${neighborCount} nearby stops around ${name}.`;
+    return `${neighborCount} related businesses near ${name}.`;
   });
 
   const progressText = $derived.by(() => {
@@ -209,8 +209,8 @@
       // never shows a total smaller than the current stop, and route to the "No more visible
       // stops in this slice." copy that already exists in the focus-ui.ts twin.
       return neighborCount > 0
-        ? `Stop ${currentWalkHistory.length} of ${neighborCount}`
-        : `Stop ${currentWalkHistory.length}. No more visible stops with these filters.`;
+        ? `Step ${currentWalkHistory.length + 1} of ${neighborCount}`
+        : `Step ${currentWalkHistory.length + 1}. No more visible stops with these filters.`;
     }
     return neighborCount
       ? `${neighborCount} nearby to explore`
