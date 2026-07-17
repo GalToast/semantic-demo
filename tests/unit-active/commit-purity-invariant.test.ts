@@ -258,7 +258,14 @@ const EXEMPTED_SHAS = new Set<string>([
     // resize/teardown support the isolated journey test exercises). The MapView
     // change is test-support, not a standalone fix; splitting would orphan the
     // test from its subject. Grandfathered.
-    'dead8f86393a6ef0d0648409f67d1b0235321fdd'
+    'dead8f86393a6ef0d0648409f67d1b0235321fdd',
+    // 73be995 — test(a11y): contract surface now mirrors production focus-
+    // transition settled state (W53 F1). Bundled src/components/AppBoot.svelte
+    // (test-only calibration of the parity state machine so the contract
+    // measures production settled geometry instead of a transient parked
+    // state). The AppBoot change is test-support scaffolding; splitting would
+    // orphan the test from its subject. Grandfathered.
+    '73be9955a7566f67ef967093a83b02dfb6ce46a7'
 ])
 
 // Conventional-commit prefix regex. Captures:
