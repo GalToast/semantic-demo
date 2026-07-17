@@ -70,7 +70,7 @@
     // inside it is intentional keyboard navigation, not a search-intent
     // signal that should close the help dialog or rebound focus.
     const toolbar = document.querySelector('#camera-controls');
-    if (toolbar instanceof Element && toolbar.contains(target)) return;
+    if (target instanceof Node && toolbar instanceof Element && toolbar.contains(target)) return;
     // Skip focus events that originate from inside the dialog itself —
     // showModal() moves focus into the dialog and that focusin must not
     // immediately re-close the dialog we just opened.

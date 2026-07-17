@@ -21,7 +21,7 @@
   import { dispatchNavTransition, NAV_TRANSITION_ACTIONS } from '@lib/stores/navigation.svelte';
 
   import { parityMap } from '@lib/orchestration/parity-attrs.svelte';
-  import { selectMode as applyModeSelect } from '@lib/components/header/mode-nav';
+  import { selectMode as applyModeSelect, type SelectModeContext } from '@lib/components/header/mode-nav';
   import { appState } from '@lib/state/app.svelte';
   import { updateUrlState } from '@lib/orchestration/url-state';
   import { debugWarn } from '@lib/utils/debug';
@@ -111,7 +111,7 @@
         dispatchNavTransition,
         updateUrlState,
         debugWarn,
-      });
+      } as SelectModeContext);
     } else {
       dispatchNavTransition(NAV_TRANSITION_ACTIONS.RESET);
     }
