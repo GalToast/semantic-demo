@@ -27,6 +27,8 @@ export type { LegacyState }
 import { webglContext } from '@lib/engine/webgl-context'
 import { disposeEventListeners } from '@lib/ui/global-bindings'
 import { cancelOverviewCameraAnimation } from '@lib/demo/camera'
+import { disposeCanvasNodeInteractionBindings } from '@lib/journey/canvas-interaction'
+import { cancelRouteAnimations } from '@lib/engine/camera-choreography/routes'
 
 import { sampleScenePerformance } from './renderer/renderer-diagnostics'
 import { disposeObject3D } from '@lib/engine/resource-tracker'
@@ -265,6 +267,12 @@ export function onWindowResize() {
 
 export function cancelAnimate() {
     pauseRenderLoopTimers({ clearRestoreTimer: true })
+    // M4/M7: cancel any pending route animation rAFs before the renderer/canvas
+    // are torn down, so a pending step() won't fire against nulled camera/controls.
+    cancelRouteAnimations()
+    // M8: abort canvas pointer listeners before the renderer/canvas are torn
+    // down, so stale AbortController listeners don't survive across re-init.
+    disposeCanvasNodeInteractionBindings()
     // Dispose all registered event listeners and timers via the central
     // registry.  Replaces the previous per-handler null-check dance.
     engineState.sceneRegistry?.disposeAll()

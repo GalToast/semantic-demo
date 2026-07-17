@@ -479,23 +479,17 @@ export function clearShortSemanticSearchState(resultsEl: HTMLElement | null, sta
     clearSearchState(resultsEl, statusEl)
 }
 
-export function startMobileRouteFieldPeek(reason: string = 'hover'): void {
-    state.mobileRouteFieldPeekToken = (state.mobileRouteFieldPeekToken || 0) + 1
-    // W47+ parity migration: parity-attrs.svelte.ts owns the body[data-mobile-route-peek]
-    // mirror (and the route-peek static class) — toggle the source-of-truth rune
-    // fields and let the effect chain write the DOM.
-    state.mobileRoutePeekActive = true
-    state.mobileRoutePeekReason = reason
+export function startMobileRouteFieldPeek(_reason: string = 'hover'): void {
+    // W47+ parity migration: parity-attrs.svelte.ts owns the body data-* attribute
+    // mirror via appState rune reactivity. The appState.mobileRoutePeekActive rune
+    // is the source of truth — callers write directly to the rune.
+    // This stub is kept for barrel re-export compatibility only (no runtime callers).
 }
 
 export function clearMobileRouteFieldPeek(): void {
-    if (state.mobileRouteFieldPeekTimer) clearTimeout(state.mobileRouteFieldPeekTimer)
-    state.mobileRouteFieldPeekTimer = null
-    // W47+ parity migration: clear the rune fields; parity-attrs will
-    // delete body.dataset.mobileRoutePeek / .mobileRoutePeekReason and
-    // remove the route-peek class on its next snapshot.
-    state.mobileRoutePeekActive = false
-    state.mobileRoutePeekReason = ''
+    // W47+ parity migration: parity-attrs clears body attrs / route-peek class
+    // on its next reactive snapshot when appState.mobileRoutePeekActive is cleared.
+    // This stub is kept for barrel re-export compatibility only (no runtime callers).
 }
 
 export function isMobileRouteFieldPeekActive(): boolean {

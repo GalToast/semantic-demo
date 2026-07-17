@@ -13,6 +13,7 @@ import { noteSceneInteraction } from '@lib/engine/camera-controls-restore.svelte
 import { setFocusTransitionMode } from '@lib/engine/camera-controls-core'
 import { appState } from '@lib/state/app.svelte'
 import { debugError } from '@lib/utils/debug'
+import { DisposableRegistry } from '@lib/utils/disposable-registry'
 
 // ── Local Types ──────────────────────────────────────────────────────────────
 
@@ -38,6 +39,26 @@ interface Point {
 // ── Module-level Mutable State ───────────────────────────────────────────────
 
 let _insideCentroidLerpToken = 0
+
+// M7: reusable DisposableRegistry for requestAnimationFrame tracking across
+// all route animations. Each animation function clears the previous registry
+// (cancelling any pending rAF) before creating new entries.
+//
+// M4: stored rAF ids ensure cancelAnimationFrame is called during teardown
+// rather than relying solely on the module token check at step() top, which
+// still lets the pending rAF fire once against potentially-nulled camera/controls.
+let _routeRafRegistry: DisposableRegistry | null = null
+
+/**
+ * Cancel all pending route animations and clear the rAF registry.
+ * Safe to call even when no animation is active.
+ */
+export function cancelRouteAnimations(): void {
+    if (_routeRafRegistry) {
+        _routeRafRegistry.disposeAll()
+        _routeRafRegistry = null
+    }
+}
 
 // ── animateCameraToSearchCorridor ────────────────────────────────────────────
 
@@ -148,6 +169,10 @@ export function animateCameraToSearchCorridor(
 
     const controlTarget = startTarget.clone().lerp(endTarget, 0.56).add(worldUp.clone().multiplyScalar(0.025))
 
+    // M4/M7: cancel any prior route rAF and create a fresh registry for this animation.
+    cancelRouteAnimations()
+    _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-search-corridor' })
+
     function step(now: number) {
         if (
             animationToken! !== appState.routeCameraAnimationToken ||
@@ -164,9 +189,11 @@ export function animateCameraToSearchCorridor(
             quadraticBezierComponent(startTarget.z, controlTarget.z, endTarget.z, eased)
         )
         activeCamera.position.lerpVectors(startPos, endPos, eased)
-        if (t < 1) requestAnimationFrame(step)
+        if (t < 1) {
+            _routeRafRegistry!.raf(requestAnimationFrame(step))
+        }
     }
-    requestAnimationFrame(step)
+    _routeRafRegistry.raf(requestAnimationFrame(step))
     return true
 }
 
@@ -205,6 +232,10 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
         const priorControlsEnabled = activeControls.enabled
         activeControls.enabled = false
 
+        // M4/M7: cancel any prior route rAF and create a fresh registry.
+        cancelRouteAnimations()
+        _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-terrain-prelude' })
+
         function step(now: number) {
             if (animationToken !== appState.focusCameraAnimationToken) {
                 activeControls.enabled = priorControlsEnabled
@@ -216,12 +247,12 @@ export function animateCameraToTerrainPrelude(options: RouteOptions = {}): void 
             activeCamera.position.lerpVectors(startPos, desiredPos, eased)
 
             if (t < 1) {
-                requestAnimationFrame(step)
+                _routeRafRegistry!.raf(requestAnimationFrame(step))
             } else {
                 activeControls.enabled = priorControlsEnabled
             }
         }
-        requestAnimationFrame(step)
+        _routeRafRegistry.raf(requestAnimationFrame(step))
     } catch (_err) {
         debugError('animateCameraToTerrainPrelude failed:', _err)
     } finally {
@@ -293,19 +324,25 @@ export function applySemanticCentroidCamera(now = performance.now()): void {
     const reducedMotion = prefersReducedMotion()
     const duration = reducedMotion ? 1 : 1600
 
+    // M4/M7: cancel any prior route rAF and create a fresh registry for centroid.
+    cancelRouteAnimations()
+    _routeRafRegistry = new DisposableRegistry({ label: 'camera-route-centroid' })
+
     function stepCentroid(nowInner: number) {
         if (token !== _insideCentroidLerpToken) return
         const t = Math.min(1, (nowInner - startTime) / duration)
         const eased = easeInOutCubic(t)
         activeControls.target.lerpVectors(startTarget, lookAtTarget, eased)
         activeControls.update()
-        if (t < 1) requestAnimationFrame(stepCentroid)
+        if (t < 1) {
+            _routeRafRegistry!.raf(requestAnimationFrame(stepCentroid))
+        }
     }
     if (prefersReducedMotion()) {
         activeControls.target.copy(lookAtTarget)
         activeControls.update()
     } else {
-        requestAnimationFrame(stepCentroid)
+        _routeRafRegistry.raf(requestAnimationFrame(stepCentroid))
     }
 }
 

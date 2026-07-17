@@ -721,6 +721,20 @@ function createParitySyncEffectBody(initialSync: boolean): () => void {
     const unsubGraphicsMode = graphicsModeStore.subscribe(scheduleSync)
     const unsubEngineReady = engineReady.subscribe(scheduleSync)
 
+    // M1 reactivity gap: track appState rune changes (mobileRoutePeekActive /
+    // mobileRoutePeekReason) that are NOT served by store subscriptions.
+    // appState is a $state class instance (not a Svelte store), so bare
+    // reads inside computeParityAttributes() do NOT trigger scheduleSync.
+    // This $effect inside the $effect.root() scope establishes reactive
+    // tracking on the appState runes so parity sync fires when they change.
+    $effect(() => {
+        // Read appState runes to establish reactive dependency — scheduleSync
+        // runs when either field changes, triggering a parity recompute.
+        const _active = appState.mobileRoutePeekActive
+        const _reason = appState.mobileRoutePeekReason
+        scheduleSync()
+    })
+
     if (initialSync) {
         // Force an initial compute on install
         syncNow()
