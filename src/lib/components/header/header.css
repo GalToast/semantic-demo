@@ -327,3 +327,34 @@
         text-overflow: ellipsis;
     }
 }
+
+/* ── W53 worker C — V9 PREVIEW / title overlap ───────────────────────────
+   The 2D placeholder (Placeholder2D.svelte, shown on narrow / landscape
+   cold loads) brands the page with its own hero: an uppercase
+   "SEMANTIC EXPLORER" H1 plus an inline "Preview" badge. On short /
+   landscape viewports that hero can collide with the absolutely-
+   positioned header bar. Two header-side mitigations (the placeholder
+   hero itself is owned by Placeholder2D.svelte, outside this worker's
+   edit set):
+
+   1. Suppress the header's own duplicate "Semantic Explorer" brand
+      (brand-mark + brand-label) while the placeholder is active, so the
+      two titles don't compete under the header.
+   2. Push the placeholder hero down (via :global, which escapes this
+      component's scoping) so the "Preview" badge clears the header bar
+      at all widths, including the landscape LD1 896×414 case. The
+      body.n-placeholder2d class is set by the parity render-kind writer.
+   */
+body.n-placeholder2d .header-brand .brand-mark,
+body.n-placeholder2d .header-brand .brand-label {
+    display: none;
+}
+
+:global(body.n-placeholder2d .placeholder-overlay) {
+    padding-top: 3.5rem;
+}
+@media (max-width: 768px) {
+    :global(body.n-placeholder2d .placeholder-overlay) {
+        padding-top: 4rem;
+    }
+}

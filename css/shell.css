@@ -610,7 +610,8 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
 /* V2 (W53): dismissible map empty-state. The parent .map-empty-state is
    pointer-events: none (so underlying map markers stay clickable); the close
    button opts back in with pointer-events: auto. Absolute-anchored top-right
-   of the glass panel. Touch-target >=28px (mobile) / accessible. */
+   of the glass panel. Touch-target >=44px (mobile, WCAG 2.5.8 / surface
+   touch-targets:all-44px) / accessible. */
 .map-empty-state-close {
     position: absolute;
     top: 8px;
@@ -654,15 +655,17 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
     outline-offset: 2px;
 }
 
-/* mobile: enlarge the dismiss target to a comfortable 44px hit area */
+/* mobile: dismiss target >=44px hit area (WCAG 2.5.8 / surface
+   touch-targets:all-44px). The 28px desktop default is below AA target;
+   bump mobile media-query to 44px so the surface contract holds. */
 @media (max-width: 640px) {
     .map-empty-state-close {
-        width: 36px;
-        height: 36px;
-        min-width: 36px;
-        min-height: 36px;
-        top: 6px;
-        right: 6px;
+        width: 44px;
+        height: 44px;
+        min-width: 44px;
+        min-height: 44px;
+        top: 4px;
+        right: 4px;
     }
 }
 

@@ -180,12 +180,15 @@
   }
 
   /* W46-D4: pill always shows icon + temperature. No more icon-only
-     collapsed state — the temperature is the primary signal. */
+     collapsed state — the temperature is the primary signal.
+     W53: min-height 44px enforced for WCAG 2.5.8 touch-targets:all-44px
+     (global-spacing surface contract). */
   .weather-toggle {
     display: inline-flex;
     align-items: center;
     gap: 0.45rem;
     padding: 0.45rem 0.75rem;
+    min-height: 44px;
     background: linear-gradient(
       180deg,
       rgba(11, 22, 32, 0.78),

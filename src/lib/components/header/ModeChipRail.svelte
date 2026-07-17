@@ -156,11 +156,20 @@
       color: var(--color-text-teal-light);
       border-color: rgba(var(--color-primary-alt-rgb), 0.4);
   }
+  /* W53 worker C — V8: make the active chip clearly distinct from
+     inactive chips. The prior 0.06→0.25 teal-fill delta was too subtle
+     (audit V8: "identical teal fill"). Use a high-contrast fill, full-
+     strength border, bolder text, and a clear glow so the selected mode
+     reads at a glance. Driven by `class:active` (isChipActive → isActive
+     from mode-nav), so it always reflects the current mode. */
   .mode-chip.active {
-      background: rgba(var(--color-primary-alt-rgb), 0.25);
-      color: var(--color-text-teal-light);
-      border-color: rgba(var(--color-primary-alt-rgb), 0.5);
-      box-shadow: 0 0 12px rgba(var(--color-primary-alt-rgb), 0.18);
+      background: rgba(var(--color-primary-alt-rgb), 0.42);
+      color: #ffffff;
+      font-weight: 700;
+      border-color: var(--color-primary-alt);
+      box-shadow:
+          0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.65),
+          0 0 14px rgba(var(--color-primary-alt-rgb), 0.4);
   }
   .mode-chip:focus-visible {
       outline: 2px solid var(--color-text-teal-light);
@@ -168,12 +177,21 @@
   }
   /* Selection-dependent modes (trail / focus / inside) are dimmed when no
      business is focused — proactively disabled (aria-disabled) rather than
-     appearing active. Matches the lock guard in navigation.svelte.ts. */
-  .mode-chip.is-locked {
+     appearing active. Matches the lock guard in navigation.svelte.ts.
+     A locked chip must NEVER read as active: the combined `.is-locked.active`
+     rule keeps it visually unavailable even if both classes are ever present
+     (defensive — locked chips cannot be selected via selectMode). */
+  .mode-chip.is-locked,
+  .mode-chip.is-locked.active {
       opacity: 0.35;
+      background: rgba(var(--color-primary-alt-rgb), 0.06);
+      color: rgba(176, 208, 208, 0.85);
+      border-color: rgba(var(--color-primary-alt-rgb), 0.18);
+      box-shadow: none;
       cursor: not-allowed;
   }
-  .mode-chip.is-locked:hover {
+  .mode-chip.is-locked:hover,
+  .mode-chip.is-locked.active:hover {
       background: rgba(var(--color-primary-alt-rgb), 0.06);
       border-color: rgba(var(--color-primary-alt-rgb), 0.18);
       color: rgba(176, 208, 208, 0.85);
@@ -250,6 +268,35 @@
   @media (max-width: 390px) {
       .mode-chips {
           gap: 0.2rem;
+      }
+  }
+
+  /* W53 worker C — V9-N1: at the narrowest tier (≤360px, covers the 320px
+     N1 viewport) keep the chip rail on a single, horizontally scrollable
+     row so chips never wrap / clip. Chips keep a ≥40px tap target and do
+     not shrink. (The chip styles are component-scoped here, so the fix
+     lives in this file rather than the legacy narrow.css global, which
+     cannot out-specify the scoped rule.) */
+  @media (max-width: 360px) {
+      .mode-chips {
+          gap: 0.2rem;
+          flex-wrap: nowrap;
+          overflow-x: auto;
+          scrollbar-width: none;
+          -ms-overflow-style: none;
+          min-width: 0;
+      }
+      .mode-chips::-webkit-scrollbar {
+          display: none;
+      }
+      .mode-chip {
+          flex: 0 0 auto;
+          min-width: 40px;
+          min-height: 40px;
+          padding: 0.5rem;
+      }
+      .mode-chip.active {
+          padding: 0.35rem 0.6rem;
       }
   }
 </style>
