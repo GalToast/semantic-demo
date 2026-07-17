@@ -162,7 +162,7 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
         }
     }
 
-    .journey-compass[data-panel-surface]:not(.surface-map-any) .journey-compass-title {
+    .journey-compass[data-panel-surface]:not(.surface-map-any):not([data-panel-surface='focus-search']):not([data-panel-surface='semantic-dive']) .journey-compass-title {
         margin: 0;
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 13.5px;
