@@ -407,20 +407,20 @@
     padding: 0.5rem 0.75rem 0.5rem;
     background: linear-gradient(180deg, rgba(7, 16, 24, 0) 0%, rgba(7, 16, 24, 0.92) 35%, rgba(7, 16, 24, 0.96) 100%);
     border-top: 1px solid rgba(var(--color-primary-rgb), 0.18);
-    color: rgba(176, 208, 208, 0.78);
+    color: rgba(176, 208, 208, 0.85);
     backdrop-filter: blur(2px);
   }
   .legend-overflow-text {
     font-family: 'JetBrains Mono', monospace;
-    font-size: 0.6rem;
-    font-weight: 600;
-    color: rgba(126, 231, 219, 0.85);
+    font-size: 0.65rem;
+    font-weight: 700;
+    color: rgba(126, 231, 219, 0.92);
     letter-spacing: 0.04em;
   }
   .legend-overflow-hint {
     font-family: 'Nunito Sans', sans-serif;
-    font-size: 0.6rem;
-    color: rgba(176, 208, 208, 0.6);
+    font-size: 0.65rem;
+    color: rgba(176, 208, 208, 0.78);
     text-align: center;
   }
 

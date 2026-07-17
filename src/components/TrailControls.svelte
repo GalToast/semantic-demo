@@ -91,12 +91,12 @@
   .trail-controls {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    background: rgba(var(--color-surface-chrome-rgb), 0.9);
+    gap: 0.75rem;
+    background: rgba(var(--color-surface-chrome-rgb), 0.92);
     backdrop-filter: blur(var(--glass-blur-light));
     border-radius: var(--radius-tight);
-    padding: 0.35rem 0.65rem;
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.12);
+    padding: 0.45rem 0.75rem;
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
   }
   .trail-controls.idle {
     opacity: 0.6;
@@ -107,6 +107,7 @@
     align-items: center;
     gap: 0.15rem;
     min-width: 0;
+    flex: 1 1 auto;
   }
   .trail-context {
     /* Parent of the trail-context-text span; kept unstyled by design so
@@ -116,18 +117,16 @@
   .trail-context-text {
     font-family: var(--font-body);
     font-size: 0.6rem;
-    color: var(--color-text-teal-muted);
+    color: var(--color-text-teal-light);
     text-align: center;
     line-height: 1.3;
     max-width: 320px;
-    /* Wrap instead of ellipsis so the full trail context stays readable.
-       Cap at 2 lines to keep the journey chrome height bounded. */
-    white-space: normal;
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
     line-clamp: 2;
     -webkit-box-orient: vertical;
+    text-overflow: ellipsis;
   }
   .progress-text {
     font-family: var(--font-mono);
@@ -138,11 +137,11 @@
     font-family: var(--font-body);
     font-size: 0.55rem;
     color: var(--color-primary-alt);
-    opacity: 0.8;
+    opacity: 0.9;
   }
   .trail-btn {
     background: none;
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.2);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.25);
     border-radius: 0.3rem;
     color: var(--color-primary-alt);
     cursor: pointer;
@@ -152,9 +151,10 @@
     font-weight: 600;
     transition: all 0.15s;
     white-space: nowrap;
+    flex-shrink: 0;
   }
   .trail-btn:disabled {
-    opacity: 0.3;
+    opacity: 0.5;
     cursor: default;
   }
   .trail-btn:not(:disabled):hover {

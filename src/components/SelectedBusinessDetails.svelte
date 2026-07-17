@@ -192,7 +192,7 @@
      an aria-hidden span so humans get a clean divider and AT skips it. */
   .fact-sep {
     margin: 0 0.4rem;
-    opacity: 0.45;
+    opacity: 0.7;
     color: rgba(var(--color-primary-alt-rgb), 0.9);
   }
 
