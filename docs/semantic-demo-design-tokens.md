@@ -52,6 +52,15 @@ Do not inject CSS custom properties from JavaScript. CSS root tokens stay in `cs
 | `--status-warning`           |                   `#ffd66b` | Semantic lane degraded / warning state                            |
 | `--status-danger`            |                   `#ff6b6b` | Semantic lane failure / error state                               |
 | `--status-info`              |                   `#bae6fd` | Semantic lane info / neutral update                               |
+| `--color-white`              |                   `#fff`    | Pure white — text/icon fills on dark chrome                      |
+| `--color-black`              |                   `#000`    | Pure black — mask/gradient stops, deep inset backgrounds          |
+| `--color-ink-deep`           |                   `#0a0a0f` | Near-black panel/inset background                                 |
+| `--color-white-warm`         |                   `#f7fffd` | Warm near-white text on dark surfaces                             |
+| `--color-ink`                |                   `#0d141c` | Dark ink text (e.g., focus-dive light surfaces)                   |
+| `--color-text-faint`         |                   `#f8fafc` | Faint light-gray text on dark surfaces                            |
+| `--color-text-faint-2`       |                   `#e5e7eb` | Secondary faint light-gray text                                   |
+| `--color-warning-soft`       |                   `#ffd98c` | Soft warning highlight (light amber)                              |
+| `--color-danger-soft`        |                   `#ff9e9e` | Soft danger highlight (light red)                                 |
 
 Policy: avoid one-note color expansion. New UI should not become only cyan-on-slate; use the accent, neutral contrast, hierarchy, and spacing before adding more glow.
 

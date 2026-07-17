@@ -548,7 +548,7 @@ body[data-semantic-dive='transitioning'] #canvas-container {
     background: rgba(20, 25, 35, 0.85);
     backdrop-filter: blur(12px);
     border: 1px solid rgba(var(--color-primary-tint-rgb), 0.3);
-    color: #79ebde;
+    color: var(--color-primary-tint);
     padding: 6px 14px;
     border-radius: 100px;
     font-size: 11px;
@@ -648,7 +648,7 @@ body.surface-semantic-dive::after {
 .search-empty-title {
     font-size: 18px;
     font-weight: 800;
-    color: #fff;
+    color: var(--color-white);
     margin-bottom: 8px;
     letter-spacing: -0.01em;
 }
@@ -694,7 +694,7 @@ body.surface-semantic-dive::after {
 .search-suggestion-chip:hover {
     background: rgba(var(--color-primary-alt-rgb), 0.15);
     border-color: rgba(var(--color-primary-alt-rgb), 0.4);
-    color: #fff;
+    color: var(--color-white);
     transform: translateY(-1px);
 }
 
@@ -712,8 +712,8 @@ body.surface-semantic-dive::after {
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.1em;
-    background: #ffd66b;
-    color: #000;
+    background: var(--status-warning);
+    color: var(--color-black);
     padding: 2px 8px;
     border-radius: 4px;
 }
@@ -726,7 +726,7 @@ body.surface-semantic-dive::after {
 
 /* 10/10 Polish: Journey Compass Discovery Active State */
 #journey-compass-note.discovery-active {
-    color: #ffd66b;
+    color: var(--status-warning);
     font-style: italic;
     background: rgba(255, 214, 107, 0.12);
     padding: 4px 8px;
@@ -964,7 +964,7 @@ body.surface-semantic-dive .launch-btn {
     margin: 0;
     font-size: 1rem;
     font-weight: 700;
-    color: #f8fafc;
+    color: var(--color-text-faint);
 }
 
 .trail-review-close {
@@ -973,7 +973,7 @@ body.surface-semantic-dive .launch-btn {
     border-radius: 8px;
     border: 1px solid var(--glass-reflection-strong);
     background: var(--glass-reflection);
-    color: #f8fafc;
+    color: var(--color-text-faint);
     font-size: 1.35rem;
     line-height: 1;
     cursor: pointer;
@@ -987,7 +987,7 @@ body.surface-semantic-dive .launch-btn {
     background: rgba(13, 18, 30, 0.96);
     border: 1px solid var(--glass-reflection-strong);
     border-top: 0;
-    color: #e5e7eb;
+    color: var(--color-text-faint-2);
 }
 
 .trail-step {
@@ -1004,7 +1004,7 @@ body.surface-semantic-dive .launch-btn {
     height: 28px;
     border-radius: 50%;
     background: rgba(56, 189, 248, 0.18);
-    color: #bae6fd;
+    color: var(--status-info);
     font-weight: 700;
     font-size: 0.82rem;
 }

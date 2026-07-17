@@ -447,7 +447,7 @@
         border-radius: 10px;
         background: linear-gradient(180deg, var(--glass-reflection-muted), rgba(255, 255, 255, 0.028));
         border: 1px solid rgba(160, 232, 220, 0.14);
-        color: #fff;
+        color: var(--color-white);
         font-size: 10.5px;
         font-weight: 800;
         text-transform: uppercase;
@@ -474,7 +474,7 @@
         height: 48px;
         border-radius: 12px;
         background: var(--color-primary, var(--color-primary-alt));
-        color: #0d141c;
+        color: var(--color-ink);
         font-size: 12.5px;
         font-weight: 800;
         text-transform: uppercase;
@@ -513,7 +513,7 @@
         border-radius: 12px;
         background: var(--glass-reflection-muted);
         border: 1px solid var(--glass-reflection-strong);
-        color: #fff;
+        color: var(--color-white);
         display: flex;
         align-items: center;
         justify-content: center;

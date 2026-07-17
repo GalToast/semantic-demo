@@ -621,19 +621,19 @@ body.surface-focus-search .search-container {
 }
 
 .semantic-lane-pill[data-state='healthy'] {
-    color: #8ff7d0;
+    color: var(--status-success);
     background: rgba(64, 214, 156, 0.12);
     border-color: rgba(110, 245, 192, 0.24);
 }
 
 .semantic-lane-pill[data-state='reconnecting'] {
-    color: #ffd98c;
+    color: var(--color-warning-soft);
     background: rgba(255, 196, 83, 0.12);
     border-color: rgba(255, 215, 128, 0.24);
 }
 
 .semantic-lane-pill[data-state='degraded'] {
-    color: #ff9e9e;
+    color: var(--color-danger-soft);
     background: rgba(255, 107, 107, 0.12);
     border-color: rgba(255, 145, 145, 0.24);
 }
@@ -868,8 +868,8 @@ body.surface-focus-search .search-container {
     transition: opacity 0.3s ease;
     z-index: var(--z-chrome);
     text-align: right;
-    mask-image: linear-gradient(90deg, transparent, #000 15%);
-    -webkit-mask-image: linear-gradient(90deg, transparent, #000 15%);
+    mask-image: linear-gradient(90deg, transparent, var(--color-black) 15%);
+    -webkit-mask-image: linear-gradient(90deg, transparent, var(--color-black) 15%);
 }
 
 .search-vector-scramble.active {

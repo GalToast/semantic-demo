@@ -36,8 +36,8 @@
 }
 
 .filter-select option {
-    background: #0a0a0f;
-    color: #fff;
+    background: var(--color-ink-deep);
+    color: var(--color-white);
 }
 
 /* Controls - desktop default */
@@ -143,7 +143,7 @@ body[data-panel-surface] .control-btn {
     margin-bottom: 2px;
     font-family: 'Bricolage Grotesque', sans-serif;
     font-size: 14px;
-    color: #f7fffd;
+    color: var(--color-white-warm);
 }
 
 .control-hint {
@@ -219,7 +219,7 @@ body[data-panel-surface] .control-btn {
     border-radius: 8px;
     background: rgba(15, 15, 25, 0.85);
     border: 1px solid var(--glass-reflection);
-    color: #fff;
+    color: var(--color-white);
     font-size: 18px;
     cursor: pointer;
     display: flex;
