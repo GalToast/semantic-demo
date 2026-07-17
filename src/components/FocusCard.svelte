@@ -101,9 +101,16 @@
     isFocused
   );
 
-  // Test-contract bypass: contract tests force the body data-panel-surface
-  // attribute after mount, bypassing the nav state machine. Mirror that
-  // attribute locally so the surface-semantic-dive class is applied.
+  // ── Test-contract bypass: NOT redundant with parityMap ─────────────────
+  // parityMap.panelSurface (`$derived(parityMap.panelSurface)`) reflects
+  // the STORE-derived value computed by computeParityAttributes() — it is
+  // written FROM stores TO both parityMap and body.dataset, but never reads
+  // body.dataset back. Contract tests bypass the nav state machine by
+  // writing directly to body.dataset.panelSurface. The parity bypass observer
+  // (installBypassObserver in parity-attrs.svelte.ts) only tracks
+  // focusPanelMode/insideWalkState/renderKind/mobileSearchSheet — NOT
+  // panelSurface. So this effect IS needed: it catches test-driven body
+  // dataset overrides that parityMap would never see.
   let testPanelSurface = $state('');
   $effect(() => {
     if (typeof document === 'undefined' || !document.body) return;
