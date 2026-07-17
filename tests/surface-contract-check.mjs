@@ -4180,11 +4180,8 @@ async function assert_map_container_ownership(page, ctx) {
             // because overflow:clip leaves clipped content that still reports a
             // diff; the document-level check captures the actual user-visible
             // overflow. We also flag an egregiously oversized container.
-            const pageOverflowX =
-                document.documentElement.scrollWidth - window.innerWidth
-            const containerOverflowX = first
-                ? first.scrollWidth - first.clientWidth
-                : 0
+            const pageOverflowX = document.documentElement.scrollWidth - window.innerWidth
+            const containerOverflowX = first ? first.scrollWidth - first.clientWidth : 0
             return {
                 dupes,
                 present: dupes > 0,
