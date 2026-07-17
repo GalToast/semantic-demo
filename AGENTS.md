@@ -115,9 +115,9 @@ npm run lint
 npm run test
 npm run test:unit
 npm run test:contract
-npm run qa:contract
-npm run qa:surface:all
-npm run qa:surface:mobile-idle
+npm run qa:contract                            # all surface-contract checks (desktop + mobile)
+npm run qa:contract:mobile-critical             # 12 mobile-critical surfaces (includes mobile-idle)
+# single-surface: node scripts/qa.mjs contract --surface=mobile-idle --headed
 npm run test:microdemo
 npm run serve
 npm run audit:a11y           # a11y lint for src/components/*.svelte (tabulated)
