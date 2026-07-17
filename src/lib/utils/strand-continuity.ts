@@ -27,8 +27,13 @@ import { syncArrivalHandoffOverlay, disposeArrivalHandoffOverlay } from '@lib/en
 import { cleanOptionalValue } from '@lib/utils/dom-formatters'
 import type { StrandContinuityState } from '@lib/state/state-types'
 
-/** Phase value type (simple string, but kept as alias for clarity) */
-export type StrandContinuityPhase = string
+// W53 follow-up to 9f2c326c: previously aliased to bare `string`, which widened
+// the manager's `state.phase` past the canonical union (`'idle' | 'preview' | ...
+// | 'returning'`) exported from `@lib/types/state` and broke the L107/L219
+// `StrandContinuityState` assignments downstream. Re-export the canonical union so
+// changes in the canonical file propagate here too.
+import type { StrandContinuityPhase as _CanonPhase } from '@lib/types/state'
+export type StrandContinuityPhase = _CanonPhase
 
 /** Valid phase transitions for strand continuity */
 const VALID_PHASES = new Set<string>(['idle', 'preview', 'pinned', 'exploring', 'arrived', 'returning'])
@@ -56,7 +61,7 @@ export interface StrandContinuityConfig {
  */
 export class StrandContinuityManager {
     state = {
-        phase: 'idle' as string,
+        phase: 'idle' as StrandContinuityPhase,
         targetIndex: null as number | null,
         fromIndex: null as number | null,
         reason: '',
@@ -82,7 +87,7 @@ export class StrandContinuityManager {
             reason?: string
         } = {}
     ): StrandContinuityState {
-        const normalizedPhase = VALID_PHASES.has(phase) ? phase : 'idle'
+        const normalizedPhase = (VALID_PHASES.has(phase) ? phase : 'idle') as StrandContinuityPhase
 
         // Update state fields individually — never replace the whole object
         this.state.phase = normalizedPhase

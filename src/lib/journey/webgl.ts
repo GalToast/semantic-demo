@@ -55,7 +55,7 @@ function lazyUpdateRouteTraceOverlayPositions(now?: number): void {
 
 function lazyUpdateArrivalHandoffOverlay(now?: number): void {
     ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.updateArrivalHandoffOverlay?.(now)
+        (mod) => mod.updateArrivalHandoffOverlay?.()
     )
 }
 
@@ -131,9 +131,9 @@ export function removeArrivalHandoffOverlay(): void {
     )
 }
 
-export function buildArrivalHandoffOverlay(): void {
+export function buildArrivalHandoffOverlay(fromIndex: number, targetIndex: number): void {
     ensureRouteArrivalOverlayAdapterModule().then(
-        (mod) => mod.buildArrivalHandoffOverlay?.()
+        (mod) => mod.buildArrivalHandoffOverlay?.(fromIndex, targetIndex)
     )
 }
 

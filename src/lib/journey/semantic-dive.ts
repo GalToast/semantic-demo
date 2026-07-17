@@ -115,7 +115,7 @@ export function syncSemanticDiveUi(): void {
     const focusKicker = document.getElementById('focus-stage-kicker')
     const journeyCompass = document.getElementById('journey-compass')
     const journeyPhase = appState.strandContinuityState?.phase
-    const isExploring = journeyPhase === 'walking' || journeyPhase === 'exploring'
+    const isExploring = journeyPhase === 'exploring'
     // KEEP: insideWalkState is a standalone non-mirrored attr with CSS+JS
     // consumers (focus_stage.css:349, App.svelte:287,549,296 MutationObserver).
     // Parity-attrs does NOT write it — this is the canonical writer.

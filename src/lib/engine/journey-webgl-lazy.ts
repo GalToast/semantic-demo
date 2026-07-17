@@ -97,12 +97,12 @@ export function refreshFocusSemanticOverlay(): void {
     webglModule.refreshFocusSemanticOverlay()
 }
 
-export function updateFocusSemanticOverlayPositions(): void {
+export function updateFocusSemanticOverlayPositions(now: number = performance.now()): void {
     if (!webglModule) {
         ensureWebglModule()
         return
     }
-    webglModule.updateFocusSemanticOverlayPositions()
+    webglModule.updateFocusSemanticOverlayPositions(now)
 }
 
 export function updateFocusSemanticOverlayFrame(now: number = performance.now()): void {

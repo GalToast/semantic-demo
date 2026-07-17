@@ -168,7 +168,12 @@ export interface RouteChoreographyState {
     lastCameraMove: number | null
 }
 
-export type { StrandContinuityState } from '@lib/types/state'
+// W53 follow-up to 9f2c326c: previously only a re-export (`export type { X } from 'm'`),
+// which does NOT create a local binding — so the local usage at `strandContinuityState:
+// StrandContinuityState` below errored with `Cannot find name 'StrandContinuityState'`.
+// Split into a local `import type` + plain re-export so the name binds locally.
+import type { StrandContinuityState } from '@lib/types/state'
+export type { StrandContinuityState }
 
 export interface FocusOrbitSlackState {
     phase: string
