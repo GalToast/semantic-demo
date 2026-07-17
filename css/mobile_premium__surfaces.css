@@ -165,7 +165,10 @@ body:not(.surface-idle) #selected-details.active:not([hidden]) {
     /* F3-b (W53): exclude 'search' too so search-chrome surface contract
        (style:compass-title:white-space / text-overflow) holds — the title
        must wrap, not nowrap/ellipsis, when panel-surface='search'. */
-    .journey-compass[data-panel-surface]:not(.surface-map-any):not([data-panel-surface='focus-search']):not([data-panel-surface='semantic-dive']):not([data-panel-surface='search']) .journey-compass-title {
+    .journey-compass[data-panel-surface]:not(.surface-map-any):not([data-panel-surface='focus-search']):not(
+            [data-panel-surface='semantic-dive']
+        ):not([data-panel-surface='search'])
+        .journey-compass-title {
         margin: 0;
         font-family: var(--font-display, 'Bricolage Grotesque', sans-serif);
         font-size: 13.5px;

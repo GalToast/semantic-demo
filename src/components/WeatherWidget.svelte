@@ -196,16 +196,18 @@
     );
     backdrop-filter: blur(10px) saturate(140%);
     -webkit-backdrop-filter: blur(10px) saturate(140%);
-    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.18);
+    border: 1px solid rgba(var(--color-primary-alt-rgb), 0.45);
     border-radius: 999px;
-    color: #dcecea;
+    color: #eaf6f4;
     cursor: pointer;
     font-family: 'Nunito Sans', sans-serif;
     font-size: 0.85rem;
     line-height: 1;
     box-shadow:
-      0 1px 0 rgba(255, 255, 255, 0.04) inset,
-      0 6px 18px rgba(0, 0, 0, 0.35);
+      0 1px 0 rgba(255, 255, 255, 0.06) inset,
+      0 6px 18px rgba(0, 0, 0, 0.4),
+      0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.12),
+      0 0 16px rgba(var(--color-primary-alt-rgb), 0.16);
     transition:
       border-color 0.18s ease,
       background 0.18s ease,

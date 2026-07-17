@@ -274,6 +274,7 @@ function handleContactToggle(id: string): void {
   onclick={handleScrimClick}
   role="presentation"
   aria-hidden="true"
+  tabindex="-1"
 ></div>
 
 <style>

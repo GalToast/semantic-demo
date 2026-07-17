@@ -163,13 +163,16 @@
      reads at a glance. Driven by `class:active` (isChipActive → isActive
      from mode-nav), so it always reflects the current mode. */
   .mode-chip.active {
-      background: rgba(var(--color-primary-alt-rgb), 0.42);
-      color: #ffffff;
+      background: var(--color-primary-alt);
+      /* Dark ink on the bright teal fill: ~8.5:1 (AA) and keeps the chip
+         popping off the dark header (chip-vs-header ~9:1). White label on
+         this fill was only ~1.9:1 and failed text contrast. */
+      color: #06222a;
       font-weight: 700;
       border-color: var(--color-primary-alt);
       box-shadow:
-          0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.65),
-          0 0 14px rgba(var(--color-primary-alt-rgb), 0.4);
+          0 0 0 1px rgba(var(--color-primary-alt-rgb), 0.85),
+          0 0 16px rgba(var(--color-primary-alt-rgb), 0.55);
   }
   .mode-chip:focus-visible {
       outline: 2px solid var(--color-text-teal-light);

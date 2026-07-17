@@ -29,6 +29,7 @@
     describeRelationshipRoleReason,
     type RelationshipRole
   } from '@lib/utils/relationship-roles';
+  import { fade } from 'svelte/transition';
   import SelectedBusinessDetails from '@components/SelectedBusinessDetails.svelte';
 
 
@@ -341,9 +342,11 @@
     role="region"
     aria-label="Selected business"
   >
-    <!-- Empty state -->
+    <!-- Empty state (fades out smoothly when populated data arrives —
+         W53 corrective: prevents abrupt DOM swap that could appear as a
+         double-render flash during the load-to-populated transition.) -->
     {#if isEmpty}
-    <div id="selected-empty" class="selected-empty">
+    <div id="selected-empty" class="selected-empty" transition:fade={{ duration: 150 }}>
       <svg class="empty-icon" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true">
         <circle cx="12" cy="12" r="10"/>
         <path d="M12 16v-4M12 8h.01"/>
@@ -353,9 +356,10 @@
     </div>
     {/if}
 
-    <!-- Populated state -->
+    <!-- Populated state (fades in as the empty state fades out,
+         W53 corrective: no double-render during load transition.) -->
     {#if !isEmpty}
-      <div id="fc-selected-details" class="selected-details">
+      <div id="fc-selected-details" class="selected-details" transition:fade={{ duration: 150 }}>
         <SelectedBusinessDetails {viewModel} {selectedCity} idPrefix="fc-" />
       </div>
     {/if}

@@ -412,8 +412,14 @@
         </div>
       {/if}
 
-      <!-- Populated state -->
-      {#if !isEmpty || effectiveSurface === 'focus'}
+      <!-- Populated state (only when data is available — prevents placeholder
+           text from the empty-state viewModel overlapping/duplicating the
+           empty headline 'Select a business...' during focus transitions).
+           Previously used `|| effectiveSurface === 'focus'` which rendered
+           BOTH the empty state AND the populated placeholder state
+           simultaneously when a node was focused but data hadn't loaded yet.
+           See W53 corrective pass. -->
+      {#if !isEmpty}
       <div id="selected-details" class="info-panel-surface-selection selected-details">
         <SelectedBusinessDetails viewModel={viewModel} selectedCity={selectedCity} />
       </div>

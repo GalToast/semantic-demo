@@ -134,8 +134,14 @@
      * with an ellipsis; the title + aria-label attributes still expose the full
      * name to keyboard / screen-reader users per WCAG 1.4.13.
      */
+    /* W53 corrective: overflow-wrap:break-word (not anywhere) so long business
+       names break at word boundaries rather than arbitrary character positions,
+       preventing a jagged clipped look at narrow card widths (260px FocusCard,
+       320px InfoPanel). The -webkit-line-clamp:2 + text-overflow:ellipsis still
+       truncate to 2 lines with an ellipsis on the second line. */
     overflow: hidden;
-    overflow-wrap: anywhere;
+    overflow-wrap: break-word;
+    word-break: break-word;
     text-overflow: ellipsis;
     display: -webkit-box;
     -webkit-line-clamp: 2;

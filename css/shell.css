@@ -655,6 +655,16 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-tile-pane 
     outline-offset: 2px;
 }
 
+/* V2 (W53): in map view the Leaflet #map-container shares the fixed full-viewport
+   layer with the 3D #canvas-container, but with an implicit z-index (auto/0)
+   below the canvas's z-base=1. That let the full-viewport <canvas> intercept
+   pointer events over the .map-empty-state overlay, making its ✕ unclickable
+   (playwright journey test: locator.click blocked by canvas subtree). Raise the
+   map container above the canvas in map view so the dismiss button is reachable. */
+body.view-map #map-container {
+    z-index: var(--z-base-raised);
+}
+
 /* mobile: dismiss target >=44px hit area (WCAG 2.5.8 / surface
    touch-targets:all-44px). The 28px desktop default is below AA target;
    bump mobile media-query to 44px so the surface contract holds. */
@@ -814,7 +824,7 @@ body.view-map[data-terrain-handoff='landing'] #map-container .leaflet-interactiv
    against the dark radial-gradient backdrop. Button gets a subtle teal
    border + background so it reads as a distinct interactive element
    rather than an underlined link. */
-button.splash-cta[data-testid="splash-cta"] {
+button.splash-cta[data-testid='splash-cta'] {
     min-width: 44px;
     background: rgba(78, 205, 196, 0.14);
     border: 1px solid rgba(78, 205, 196, 0.35);
@@ -829,7 +839,7 @@ button.splash-cta[data-testid="splash-cta"] {
    FocusCard pattern: bottom: max(0px, env(safe-area-inset-bottom, 0px)).
    Using box-sizing: border-box so the padding shrinks the content area
    rather than extending beyond inset:0. */
-div.splash[role="dialog"] {
+div.splash[role='dialog'] {
     box-sizing: border-box;
     padding-bottom: max(0px, env(safe-area-inset-bottom, 0px));
 }
