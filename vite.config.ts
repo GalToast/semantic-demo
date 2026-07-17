@@ -45,6 +45,7 @@ const COMPRESSION_MIN_BYTES = 100
 const ROOT_ASSETS = new Map<string, string>([
     ['/semantic-demo.css', 'semantic-demo.css'],
     ['/vector-explorer-pandora.css', 'vector-explorer-pandora.css'],
+    ['/case-study.html', 'case-study.html'],
     ['/data.dat', 'src/data.dat'],
     ['/data.dat.gz', 'src/data.dat.gz'],
     ['/semantic_threads_ui.dat', 'public/data/semantic_threads_ui.dat'],

@@ -45,7 +45,6 @@ const MOBILE_PREMIUM_SPLIT = [
   'css/mobile_premium__chrome.css',
   'css/mobile_premium__state.css',
   'css/mobile_premium__idle.css',
-  'css/mobile_premium__map.css',
   'css/mobile_premium__surfaces.css',
   'css/mobile_premium__narrow.css',
 ];
@@ -147,7 +146,7 @@ for (const item of registry) {
     ownerCount < baselineOwnerCount ? 'shrinking'
     : ownerCount > baselineOwnerCount ? 'growing'
     : 'stable';
-  // mobile_premium split distributes selectors across 7 files; the test should
+  // mobile_premium split distributes selectors across 6 files; the test should
   // accept any of them as the terminal owner (last in cascade order).
   const expectedTerminal = MOBILE_PREMIUM_SPLIT.includes(item.terminalOwner)
     ? MOBILE_PREMIUM_SPLIT
