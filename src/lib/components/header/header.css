@@ -351,8 +351,8 @@
    actually-written dataset attribute, matching the established
    `body[data-render-kind='placeholder2d']` convention in
    Placeholder2D.svelte:74. */
-body[data-render-kind='placeholder2d'] .header-brand .brand-mark,
-body[data-render-kind='placeholder2d'] .header-brand .brand-label {
+:global(body[data-render-kind='placeholder2d'] .header-brand .brand-mark),
+:global(body[data-render-kind='placeholder2d'] .header-brand .brand-label) {
     display: none;
 }
 
