@@ -59,7 +59,7 @@ export const INITIAL_NAV_STATE: NavState = {
     explorationHistoryIndices: [],
     currentView: 'galaxy',
     myceliumMode: 'dormant',
-    autoRotate: true,
+    autoRotate: false,
     autoRotateSuspended: false,
     trailDepthFromExploration: 0,
     sceneRevealActive: false,

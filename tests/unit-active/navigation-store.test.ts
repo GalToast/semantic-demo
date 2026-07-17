@@ -49,7 +49,7 @@ const mockAppState = vi.hoisted(() => ({
         explorationHistoryIndices: [],
         currentView: 'galaxy',
         myceliumMode: 'dormant',
-        autoRotate: true,
+        autoRotate: false,
         autoRotateSuspended: false,
         trailDepthFromExploration: 0,
         sceneRevealActive: false,
@@ -252,7 +252,7 @@ async function freshNavStore() {
         explorationHistoryIndices: [],
         currentView: 'galaxy',
         myceliumMode: 'dormant',
-        autoRotate: true,
+        autoRotate: false,
         autoRotateSuspended: false,
         trailDepthFromExploration: 0,
         sceneRevealActive: false,
@@ -295,7 +295,7 @@ const DEFAULT_NAV_STATE = {
     explorationHistoryIndices: [],
     currentView: 'galaxy',
     myceliumMode: 'dormant',
-    autoRotate: true,
+    autoRotate: false,
     autoRotateSuspended: false,
     trailDepthFromExploration: 0,
     sceneRevealActive: false,
@@ -365,8 +365,8 @@ describe('navStore — initial state', () => {
         expect(navStore().myceliumMode).toBe('dormant')
     })
 
-    it('starts with autoRotate=true', () => {
-        expect(navStore().autoRotate).toBe(true)
+    it('starts with autoRotate=false', () => {
+        expect(navStore().autoRotate).toBe(false)
     })
 
     it('starts with autoRotateSuspended=false', () => {
@@ -1040,13 +1040,13 @@ describe('navStore — updateNavState', () => {
             focusPocketIndices: [],
             focusPocketMeta: null,
             focusPocketRoleByIndex: new Map(),
-                focusFramingMeta: null,
+            focusFramingMeta: null,
             currentPersonality: null,
             neighborhoodIndices: [],
             explorationHistoryIndices: [],
             currentView: 'galaxy',
             myceliumMode: 'dormant',
-            autoRotate: true,
+            autoRotate: false,
             autoRotateSuspended: false,
             trailDepthFromExploration: 0,
             sceneRevealActive: false,
@@ -1114,13 +1114,13 @@ describe('navStore — resetNavState', () => {
             focusPocketIndices: [],
             focusPocketMeta: null,
             focusPocketRoleByIndex: new Map(),
-                focusFramingMeta: null,
+            focusFramingMeta: null,
             currentPersonality: null,
             neighborhoodIndices: [],
             explorationHistoryIndices: [],
             currentView: 'galaxy',
             myceliumMode: 'dormant',
-            autoRotate: true,
+            autoRotate: false,
             autoRotateSuspended: false,
             trailDepthFromExploration: 0,
             sceneRevealActive: false,
@@ -1151,7 +1151,7 @@ describe('navStore — resetNavState', () => {
         expect(navStore().trailDepth).toBe(0)
         expect(navStore().currentView).toBe('galaxy')
         expect(navStore().myceliumMode).toBe('dormant')
-        expect(navStore().autoRotate).toBe(true)
+        expect(navStore().autoRotate).toBe(false)
         expect(navStore().urlStateRestoreToken).toBe(0)
     })
 
@@ -1218,8 +1218,8 @@ describe('navStore — auto-rotate lifecycle', () => {
         resetAllNavState()
     })
 
-    it('default state: enabled, not suspended', () => {
-        expect(navStore().autoRotate).toBe(true)
+    it('default state: disabled, not suspended', () => {
+        expect(navStore().autoRotate).toBe(false)
         expect(navStore().autoRotateSuspended).toBe(false)
     })
 
@@ -1230,16 +1230,16 @@ describe('navStore — auto-rotate lifecycle', () => {
         expect(navStore().autoRotate).toBe(false) // still disabled
     })
 
-    it('suspendAutoRotate() preserves autoRotate=true but sets suspended=true', () => {
+    it('suspendAutoRotate() preserves autoRotate=false but sets suspended=true', () => {
         suspendAutoRotate()
-        expect(navStore().autoRotate).toBe(true)
+        expect(navStore().autoRotate).toBe(false)
         expect(navStore().autoRotateSuspended).toBe(true)
     })
 
     it('resumeAutoRotate() clears suspended flag', () => {
         suspendAutoRotate()
         resumeAutoRotate()
-        expect(navStore().autoRotate).toBe(true)
+        expect(navStore().autoRotate).toBe(false)
         expect(navStore().autoRotateSuspended).toBe(false)
     })
 
