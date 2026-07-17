@@ -52,6 +52,16 @@
       document.body.classList.add('is-active');
       document.body.classList.add('surface-semantic-dive');
       document.body.classList.remove('surface-idle', 'surface-focus', 'surface-focus-search');
+      // F1 (W53): match production's post-settle focus-transition state. The
+      // real dive entry writes `focus-transition-active` via the focus store's
+      // transition state machine; without it the stage sits in the parity
+      // "parked pre-transition" state carrying a translateY(18px) transform,
+      // so the stage measures +18px past the viewport bottom. Replicating the
+      // settled class here makes the contract measure the *production* geometry
+      // (flush) instead of a transient parked state. (Test-only calibration;
+      // see `tmp/w53-visual-audit-report.md` F1 — not a product bug.)
+      document.body.classList.remove('focus-transition-idle', 'focus-transition-arriving');
+      document.body.classList.add('focus-transition-active');
       document.body.dataset.activeView = 'galaxy';
       document.body.dataset.graphContext = 'focus';
       document.body.dataset.semanticDive = 'active';
@@ -65,6 +75,10 @@
         focusStage.style.removeProperty('display');
         focusStage.style.removeProperty('visibility');
         focusStage.style.removeProperty('opacity');
+        // F1 (W53): clear any parked transition transform left by the
+        // focus-transition phase system (belt-and-suspenders alongside the
+        // `focus-transition-active` class flip above).
+        focusStage.style.removeProperty('transform');
       }
 
       for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {

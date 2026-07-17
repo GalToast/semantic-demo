@@ -1036,7 +1036,16 @@ async function assert_map_trail(page, ctx) {
             focusStage.setAttribute('aria-hidden', 'false')
         }
     })
-    await page.waitForTimeout(500)
+    // Wait for focus-stage to be visible after forcing focus-search mode.
+    await page
+        .waitForFunction(
+            () => {
+                const fs = document.querySelector('#focus-stage')
+                return fs && !fs.hidden && fs.getAttribute('aria-hidden') !== 'true'
+            },
+            { timeout: 5000 }
+        )
+        .catch(() => {})
 
     // Simulate trail reveal (Show Trail button)
     // 30s timeout: hydration races in headless Playwright sometimes take
@@ -1050,7 +1059,17 @@ async function assert_map_trail(page, ctx) {
         const showTrailBtn = document.querySelector('#btn-focus-path, .focus-stage-action-btn[aria-label*="trail"]')
         if (showTrailBtn) showTrailBtn.click()
     })
-    await page.waitForTimeout(250)
+    // Poll for trail UI to render after clicking the trail button.
+    await page
+        .waitForFunction(
+            () => {
+                const trailStrip = document.querySelector('#map-trail-strip, #map-trail, .map-summary')
+                const trailOverlay = document.querySelector('.trail-review-overlay, #trail-review-overlay')
+                return trailStrip !== null || trailOverlay !== null
+            },
+            { timeout: 5000 }
+        )
+        .catch(() => {})
 
     const info = await page.evaluate(() => {
         function textClipped(el) {
@@ -4159,8 +4178,18 @@ async function assert_map_container_ownership(page, ctx) {
         url.searchParams.set('view', 'map')
         await loadAndWait(page, url.toString())
 
-        // Allow time for MapView and Leaflet to settle.
-        await page.waitForTimeout(2000)
+        // Poll for MapView and Leaflet to settle by checking #map-container
+        // presence AND no page-level horizontal overflow (H5/H8 regression pins).
+        await page
+            .waitForFunction(
+                () => {
+                    const all = document.querySelectorAll('[id="map-container"]')
+                    if (all.length !== 1) return false
+                    return document.documentElement.scrollWidth <= window.innerWidth + 10
+                },
+                { timeout: 10000 }
+            )
+            .catch(() => {})
 
         const info = await page.evaluate(() => {
             const all = Array.from(document.querySelectorAll('[id="map-container"]'))
@@ -5344,6 +5373,11 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
             function forceSemanticDiveContractSurface() {
                 document.body.classList.add('is-active', 'surface-semantic-dive')
                 document.body.classList.remove('surface-idle', 'surface-focus', 'surface-focus-search')
+                // F1 (W53): parity-mirror production's focus-transition-active
+                // settled state so #focus-stage measures flush (no parked
+                // translateY(18px)). Matches the AppBoot helper fix.
+                document.body.classList.remove('focus-transition-idle', 'focus-transition-arriving')
+                document.body.classList.add('focus-transition-active')
                 document.body.dataset.activeView = 'galaxy'
                 document.body.dataset.graphContext = 'focus'
                 document.body.dataset.semanticDive = 'active'
@@ -5357,6 +5391,8 @@ async function assert_semantic_dive_geometry(page, ctx, surfaceName) {
                     focusStage.style.removeProperty('display')
                     focusStage.style.removeProperty('visibility')
                     focusStage.style.removeProperty('opacity')
+                    // F1 (W53): clear any parked transition transform.
+                    focusStage.style.removeProperty('transform')
                 }
 
                 for (const selector of ['#focus-stage-inside-status', '#focus-stage-inside-controls']) {
