@@ -4835,7 +4835,7 @@ async function assert_mobile_focus_search(page, ctx) {
 
     if (info.controlsPresent) {
         // On mobile focus-search the view-toggle (.controls-rail) is intentionally
-        // restored visible via mobile_premium__chrome.css:822 so the user can
+        // restored visible via mobile_premium__layout.css:822 so the user can
         // switch between galaxy/map views. Accept both hidden and visible.
         if (info.controlsHidden) ctx.pass('mobile-focus-search', 'visibility:controls-rail:hidden')
         else ctx.pass('mobile-focus-search', 'visibility:controls-rail:visible')

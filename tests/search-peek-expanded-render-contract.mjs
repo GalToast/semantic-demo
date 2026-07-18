@@ -698,7 +698,7 @@ async function main() {
             await installSearchFixture(page, 'peek')
             // Inject peek-mode CSS rules that the standalone HTML page doesn't load.
             // These mirror css/mobile_premium__state.css L324-337 and
-            // css/mobile_premium__surfaces.css L757-762.
+            // css/mobile_premium__state.css L757-762.
             await page.addStyleTag({
                 content: `
         body.is-active[data-panel-surface='search'][data-panel-surface-detail='peek'] .search-container #search-results.active {

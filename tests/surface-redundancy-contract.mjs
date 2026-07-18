@@ -41,12 +41,9 @@ function importPaths(cssPath) {
 }
 
 const MOBILE_PREMIUM_SPLIT = [
-    'css/mobile_premium__focus-dive.css',
-    'css/mobile_premium__chrome.css',
-    'css/mobile_premium__state.css',
-    'css/mobile_premium__idle.css',
-    'css/mobile_premium__surfaces.css',
-    'css/mobile_premium__narrow.css'
+    'css/mobile_premium__components.css',
+    'css/mobile_premium__layout.css',
+    'css/mobile_premium__state.css'
 ]
 
 const cascade = [...importPaths('semantic-demo.css'), ...MOBILE_PREMIUM_SPLIT]
@@ -55,7 +52,7 @@ const registry = [
     {
         primitive: 'journey-compass',
         selector: '.journey-compass',
-        terminalOwner: 'css/mobile_premium__focus-dive.css',
+        terminalOwner: 'css/mobile_premium__components.css',
         baselineOwnerCount: 11,
         allowedOwners: [
             'css/layout_base.css',
@@ -72,7 +69,7 @@ const registry = [
     {
         primitive: 'search-container',
         selector: '.search-container',
-        terminalOwner: 'css/mobile_premium__chrome.css',
+        terminalOwner: 'css/mobile_premium__layout.css',
         allowedOwners: [
             'css/search.css',
             'css/layout_base.css',
@@ -87,9 +84,9 @@ const registry = [
     {
         primitive: 'focus-stage-card',
         selector: '.focus-stage-card',
-        terminalOwner: 'css/mobile_premium__focus-dive.css',
+        terminalOwner: 'css/mobile_premium__components.css',
         baselineOwnerCount: 4,
-        allowedOwners: ['css/journey_steps.css', 'css/animations.css', 'css/mobile_premium__focus-dive.css']
+        allowedOwners: ['css/journey_steps.css', 'css/animations.css', 'css/mobile_premium__components.css']
     },
     {
         primitive: 'map-trail-compass-hide',

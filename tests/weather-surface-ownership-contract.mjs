@@ -75,12 +75,12 @@ assert.doesNotMatch(
 )
 
 const MOBILE_PREMIUM_SPLIT = [
-    'css/mobile_premium__focus-dive.css',
-    'css/mobile_premium__chrome.css',
+    'css/mobile_premium__components.css',
+    'css/mobile_premium__layout.css',
     'css/mobile_premium__state.css',
-    'css/mobile_premium__idle.css',
-    'css/mobile_premium__surfaces.css',
-    'css/mobile_premium__narrow.css'
+    'css/mobile_premium__components.css',
+    'css/mobile_premium__state.css',
+    'css/mobile_premium__layout.css'
 ]
 
 const forbiddenWeatherOwners = [

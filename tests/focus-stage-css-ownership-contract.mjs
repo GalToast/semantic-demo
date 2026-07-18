@@ -156,12 +156,12 @@ const FORWARD_ONLY_LIMITS = [
 ]
 
 const MOBILE_PREMIUM_SPLIT = [
-    'mobile_premium__focus-dive.css',
-    'mobile_premium__chrome.css',
+    'mobile_premium__components.css',
+    'mobile_premium__layout.css',
     'mobile_premium__state.css',
-    'mobile_premium__idle.css',
-    'mobile_premium__surfaces.css',
-    'mobile_premium__narrow.css'
+    'mobile_premium__components.css',
+    'mobile_premium__state.css',
+    'mobile_premium__layout.css'
 ]
 function readMobilePremium() {
     return MOBILE_PREMIUM_SPLIT.map((f) => read(`css/${f}`)).join('\n')
