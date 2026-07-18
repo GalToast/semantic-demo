@@ -39,12 +39,12 @@ Total: **21 files** (`css/*.css` roots + `css/modules/focus_stage.css`).
 | ------------------------------------ | ---- | -------------------------------------------------------------------------------------------- |
 | `css/mobile_premium__components.css` | 2185 | FOCUS/DIVE/IDLE components; journey-compass focus geometry; focus-stage-card; cascade header |
 | `css/search.css`                     | 1822 | Search chrome, results, filters, `.rail-section` (desktop+global)                            |
-| `css/mobile_premium__state.css`      | 1664 | Surface state-machine + panel-specific rules (info-panel, selected-details, view-toggle)       |
+| `css/mobile_premium__state.css`      | 1664 | Surface state-machine + panel-specific rules (info-panel, selected-details, view-toggle)     |
 | `css/strands.css`                    | 1421 | Strand/thread visuals, compass geometry, canvas                                              |
-| `css/layout_base.css`                | 1292 | Core desktop layout; references shard interplay                                                |
+| `css/layout_base.css`                | 1292 | Core desktop layout; references shard interplay                                              |
 | `css/modules/focus_stage.css`        | 1290 | Focus-stage visibility/positioning; loaded last via `<link>`                                 |
-| `css/progressive_disclosure.css`     | 1061 | Disclosure/rail expansions; references state.css                                               |
-| `css/mobile_premium__layout.css`     | 1048 | Mobile chrome/furniture across states + ≤360px narrow breakpoint                               |
+| `css/progressive_disclosure.css`     | 1061 | Disclosure/rail expansions; references state.css                                             |
+| `css/mobile_premium__layout.css`     | 1048 | Mobile chrome/furniture across states + ≤360px narrow breakpoint                             |
 | `css/journey_steps.css`              | 916  | Journey step UI                                                                              |
 | `css/journey_active.css`             | 668  | Active journey state                                                                         |
 | `css/shell.css`                      | 759  | App shell                                                                                    |
@@ -52,23 +52,23 @@ Total: **21 files** (`css/*.css` roots + `css/modules/focus_stage.css`).
 | `css/controls.css`                   | 451  | Control widgets                                                                              |
 | `css/time_weather.css`               | 441  | Weather/time widget                                                                          |
 | `css/clusters.css`                   | 401  | Cluster visuals                                                                              |
-| `css/loading.css`                      | 350  | Loading overlay                                                                              |
+| `css/loading.css`                    | 350  | Loading overlay                                                                              |
 | `css/base.css`                       | 285  | Root base                                                                                    |
 | `css/synthesis.css`                  | 196  | Synthesis panel                                                                              |
 | `css/animations.css`                 | 129  | Keyframes                                                                                    |
-| `css/demo_ui.css`                    | 12   | **Near-dead** — 1 live rule (`body[data-demo-active='true'] .view-toggle`), rest comment      |
+| `css/demo_ui.css`                    | 12   | **Near-dead** — 1 live rule (`body[data-demo-active='true'] .view-toggle`), rest comment     |
 
 ## 3. Mobile premium shard map
 
 The previous 7-way shard split was consolidated in `7726d39c` to remove
 overlapping ownership and fragmented breakpoint tiers. The current 3-file map:
 
-| File | Source files | Concern |
-| ---- | ------------ | ------- |
-| `css/mobile_premium__components.css` | `focus-dive` + `idle` | FOCUS/DIVE/IDLE component geometry, focus-stage-card, journey-compass focus geometry |
-| `css/mobile_premium__state.css` | `state` + `surfaces` | Surface state machine + panel-specific rules (info-panel, selected-details, view-toggle) |
-| `css/mobile_premium__layout.css` | `chrome` + `narrow` | Mobile chrome/furniture and ≤360px narrow breakpoint |
-| *(deleted)* | `map.css` | Empty 1-line stub removed in `2eba62bf` |
+| File                                 | Source files          | Concern                                                                                  |
+| ------------------------------------ | --------------------- | ---------------------------------------------------------------------------------------- |
+| `css/mobile_premium__components.css` | `focus-dive` + `idle` | FOCUS/DIVE/IDLE component geometry, focus-stage-card, journey-compass focus geometry     |
+| `css/mobile_premium__state.css`      | `state` + `surfaces`  | Surface state machine + panel-specific rules (info-panel, selected-details, view-toggle) |
+| `css/mobile_premium__layout.css`     | `chrome` + `narrow`   | Mobile chrome/furniture and ≤360px narrow breakpoint                                     |
+| _(deleted)_                          | `map.css`             | Empty 1-line stub removed in `2eba62bf`                                                  |
 
 Within each file, the original source order is preserved so the cascade is
 stable. Cross-file references in `journey_active.css`, `layout_base.css`,
@@ -98,7 +98,7 @@ State is gated via `body.surface-*` classes and `data-panel-surface`
 attributes (idle / search / focus / semantic-dive / map). Many broad
 selectors (`body.surface-idle`, `body.surface-focus`, `.journey-compass`,
 `#canvas-container`, `.stat-caption`, `.info-header`, `.rail-section`,
-`.view-toggle`) appear in 8–13 files each — these are state-gated *context*
+`.view-toggle`) appear in 8–13 files each — these are state-gated _context_
 prefixes, not duplicate rules. When editing a surface rule, grep every shard
 that gates the same `body.surface-*` class to avoid silent cascade drift.
 

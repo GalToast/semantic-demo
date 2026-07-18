@@ -20,7 +20,8 @@
         display: none;
     }
 
-    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='map-focus-search']) #canvas-container {
+    body:not(.surface-idle):is([data-panel-surface='focus-search'], [data-panel-surface='map-focus-search'])
+        #canvas-container {
         pointer-events: none;
     }
 
@@ -140,12 +141,8 @@
         overflow: hidden;
     }
 
-    body.surface-search:not([data-panel-surface-detail])
-        .search-container.has-query
-        #search-results.active,
-    body.surface-search[data-panel-surface-detail='none']
-        .search-container.has-query
-        #search-results.active {
+    body.surface-search:not([data-panel-surface-detail]) .search-container.has-query #search-results.active,
+    body.surface-search[data-panel-surface-detail='none'] .search-container.has-query #search-results.active {
         flex: 1 1 auto;
         min-height: 0;
         max-height: min(50vh, 400px);
@@ -293,9 +290,7 @@
         overflow: hidden;
     }
 
-    body.surface-focus-search[data-panel-surface-detail='peek']
-        .search-container
-        #search-results.active {
+    body.surface-focus-search[data-panel-surface-detail='peek'] .search-container #search-results.active {
         display: none;
     }
 
@@ -335,13 +330,9 @@
         visibility: hidden;
     }
 
-    body.surface-search[data-panel-surface-detail='peek']
-        .search-result-listitem:not(:first-child),
-    body.surface-focus-search[data-panel-surface-detail='peek']
-        .search-result-listitem:not(:first-child),
-    body.surface-search[data-panel-surface-detail='peek']
-        .search-result-listitem:not(:first-child)
-        .search-result-item,
+    body.surface-search[data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child),
+    body.surface-focus-search[data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child),
+    body.surface-search[data-panel-surface-detail='peek'] .search-result-listitem:not(:first-child) .search-result-item,
     body.surface-focus-search[data-panel-surface-detail='peek']
         .search-result-listitem:not(:first-child)
         .search-result-item {
@@ -410,10 +401,8 @@
     /* Search peek exposes one clean anchor row. Expanded mode owns the full
        result list; clipped secondary-row slivers are a visual regression. */
 
-    body.surface-search[data-panel-surface-detail='peek']
-        .search-results.active:has(.search-error-state),
-    body.surface-focus-search[data-panel-surface-detail='peek']
-        .search-results.active:has(.search-error-state) {
+    body.surface-search[data-panel-surface-detail='peek'] .search-results.active:has(.search-error-state),
+    body.surface-focus-search[data-panel-surface-detail='peek'] .search-results.active:has(.search-error-state) {
         padding: 8px 10px;
         overflow-y: hidden;
     }
